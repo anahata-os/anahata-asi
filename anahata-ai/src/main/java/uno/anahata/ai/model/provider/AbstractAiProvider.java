@@ -122,22 +122,32 @@ public abstract class AbstractAiProvider {
         }
 
         if (!Files.exists(keysFilePath)) {
-            log.warn("API key file not found at {}. Please create it with your API key(s).", keysFilePath);
+            log.warn("API key file not found at {}. Creating a template.", keysFilePath);
+            try {
+                String template = "# These are your API keys for the '" + getProviderId() + "' provider.\n"
+                              + "# Add one key per line.\n"
+                              + "# Lines starting with '#' or '//' are treated as comments and ignored.\n"
+                              + "# Inline comments using '//' are also supported.\n";
+                Files.writeString(keysFilePath, template);
+            } catch (IOException e) {
+                log.error("Failed to create API key template file at: {}", keysFilePath, e);
+            }
             return Collections.emptyList();
         }
 
         try {
             List<String> keys = Files.lines(keysFilePath)
                     .map(String::trim)
-                    .filter(line -> !line.isEmpty() && !line.startsWith("//"))
+                    .filter(line -> !line.isEmpty() && !line.startsWith("#") && !line.startsWith("//"))
                     .map(line -> {
                         int commentIndex = line.indexOf("//");
                         return (commentIndex != -1) ? line.substring(0, commentIndex).trim() : line;
                     })
+                    .filter(key -> !key.isEmpty())
                     .collect(Collectors.toList());
 
             if (keys.isEmpty()) {
-                log.error("No API keys found in {}. Cannot initialize provider.", keysFilePath);
+                log.error("No active API keys found in {}. Please add your keys to the file.", keysFilePath);
                 return Collections.emptyList();
             }
 
