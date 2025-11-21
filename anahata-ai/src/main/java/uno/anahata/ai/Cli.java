@@ -3,39 +3,80 @@ package uno.anahata.ai;
 import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
+import uno.anahata.ai.config.ChatConfig;
+import uno.anahata.ai.model.core.AbstractMessage;
+import uno.anahata.ai.model.core.ModelMessage;
 import uno.anahata.ai.model.core.Request;
 import uno.anahata.ai.model.core.RequestConfig;
 import uno.anahata.ai.model.core.Response;
 import uno.anahata.ai.model.core.TextPart;
 import uno.anahata.ai.model.core.UserMessage;
-import uno.anahata.ai.model.provider.AbstractAiProvider;
 import uno.anahata.ai.model.provider.AbstractModel;
 
 /**
- * Encapsulates the logic for an interactive command-line chat session.
+ * A simple, interactive command-line interface for testing the Anahata AI framework.
  * @author Anahata
  */
 public class Cli {
 
-    private final Scanner scanner;
-    private final AbstractAiProvider provider;
-    private final List<? extends AbstractModel> models;
+    public static void main(String[] args) {
+        System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "info");
+        System.out.println("Starting Anahata AI CLI...");
 
-    public Cli(Scanner scanner, AbstractAiProvider provider) {
-        this.scanner = scanner;
-        this.provider = provider;
-        this.models = provider.getModels();
-    }
-
-    public void start() {
-        if (models.isEmpty()) {
-            System.out.println("No models found for provider '" + provider.getProviderId() + "'. Cannot start chat.");
+        // The application needs a name for its config directory
+        AiConfig appConfig = new AiConfig("AnahataCli");
+        
+        // The ChatConfig defines which provider adapters to load.
+        // We will look for a GeminiCliChatConfig on the classpath.
+        ChatConfig chatConfig = findChatConfig(appConfig);
+        
+        if (chatConfig == null) {
+            System.err.println("FATAL: Could not find a 'GeminiCliChatConfig' class on the classpath.");
+            System.err.println("Please create a class named 'GeminiCliChatConfig' that extends 'uno.anahata.ai.config.ChatConfig' in your provider's sources.");
             return;
         }
-        
+
+        Chat chat = new Chat(chatConfig);
+        List<? extends AbstractModel> models = chat.getAllModels();
+
+        if (models.isEmpty()) {
+            System.out.println("No models found from any registered providers. Exiting.");
+            return;
+        }
+
+        try (Scanner scanner = new Scanner(System.in)) {
+            runMainLoop(scanner, chat, models);
+        }
+
+        System.out.println("\nAnahata AI CLI shutting down.");
+    }
+
+    private static void runMainLoop(Scanner scanner, Chat chat, List<? extends AbstractModel> models) {
+        while (true) {
+            System.out.println("\n===== Main Menu =====");
+            System.out.println("1. Chat with a Model");
+            System.out.println("2. Exit");
+            System.out.print("Enter your choice: ");
+
+            String choice = scanner.nextLine();
+
+            switch (choice) {
+                case "1":
+                    selectModelAndChat(scanner, chat, models);
+                    break;
+                case "2":
+                    return;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+        }
+    }
+
+    private static void selectModelAndChat(Scanner scanner, Chat chat, List<? extends AbstractModel> models) {
         System.out.println("\nAvailable Models for Chat:");
         for (int i = 0; i < models.size(); i++) {
-            System.out.printf("%d: %s (%s)\n", i + 1, models.get(i).getDisplayName(), models.get(i).getModelId());
+            AbstractModel model = models.get(i);
+            System.out.printf("%d: %s (%s) - Provider: %s\n", i + 1, model.getDisplayName(), model.getModelId(), model.getProviderId());
         }
 
         System.out.print("Select a model number: ");
@@ -51,8 +92,9 @@ public class Cli {
             return;
         }
 
-        AbstractModel selectedModel = models.get(modelIndex);
-        System.out.println("\nStarting chat with '" + selectedModel.getDisplayName() + "'. Type 'exit' or 'quit' to return to the menu.");
+        // Set the selected model on the chat session
+        chat.setSelectedModel(models.get(modelIndex));
+        System.out.println("\nStarting chat with '" + chat.getSelectedModel().getDisplayName() + "'. Type 'exit' or 'quit' to return to the menu.");
 
         while (true) {
             System.out.print("\nYou: ");
@@ -64,17 +106,31 @@ public class Cli {
 
             UserMessage userMessage = new UserMessage();
             userMessage.getParts().add(new TextPart(userInput));
-
-            Request request = new Request(selectedModel, Collections.singletonList(userMessage), RequestConfig.builder().build());
             
             System.out.println("Model: ...");
-            Response response = provider.generateContent(request);
+            Response response = chat.sendMessage(userMessage);
 
+            // The caller is now responsible for choosing a candidate and adding it to the history
             response.getCandidates().stream()
                 .findFirst()
-                .ifPresent(message -> System.out.println(message.asText()));
+                .ifPresent(message -> {
+                    System.out.println(message.asText());
+                    if (message instanceof ModelMessage) {
+                        chat.chooseCandidate((ModelMessage) message); // Add the chosen one to the history
+                    }
+                });
             
             System.out.println("[Finish Reason: " + response.getFinishReason() + ", Total Tokens: " + response.getTotalTokenCount() + "]");
+        }
+    }
+    
+    private static ChatConfig findChatConfig(AiConfig appConfig) {
+        try {
+            // This uses reflection to find the config from a provider module
+            Class<?> clazz = Class.forName("uno.anahata.ai.gemini.GeminiCliChatConfig");
+            return (ChatConfig) clazz.getConstructor(AiConfig.class).newInstance(appConfig);
+        } catch (Exception e) {
+            return null;
         }
     }
 }

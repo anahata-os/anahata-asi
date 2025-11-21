@@ -6,10 +6,11 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import uno.anahata.ai.AiConfig;
+import uno.anahata.ai.model.provider.AbstractAiProvider;
 
 /**
  * A model-agnostic, intelligent configuration object for a single chat session.
- * It is not a simple DTO but contains logic for session-specific settings.
+ * It defines the blueprint for a chat, including which AI providers and tools are available.
  */
 @Getter
 @RequiredArgsConstructor
@@ -23,30 +24,20 @@ public class ChatConfig {
     @NonNull
     private final String sessionId;
 
-    /** The identifier for the AI model to be used in this session (e.g., "gemini-pro-latest"). */
-    @NonNull
-    private final String modelId;
-
     /**
-     * Gets the list of tool classes to be used in this chat session.
-     * This can be overridden by subclasses to provide a custom set of tools.
-     * @return A list of classes annotated with @AITool.
+     * The list of AI provider classes available for this chat session.
+     * The Chat orchestrator will use this list to discover and instantiate providers.
      */
-    public List<Class<?>> getToolClasses() {
-        // Default implementation can be provided here or left abstract
-        return new ArrayList<>();
-    }
-
-    /**
-     * Gets the list of context providers to be used in this chat session.
-     * @return A list of ContextProvider instances.
-     */
-    /*
-    public List<ContextProvider> getContextProviders() {
-        // Default implementation can be provided here or left abstract
-        return new ArrayList<>();
-    }*/
+    @Getter
+    protected List<Class<? extends AbstractAiProvider>> providerClasses = new ArrayList<>();
     
+    /**
+     * The list of tool classes to be used in this chat session.
+     * This can be overridden by subclasses to provide a custom set of tools.
+     */
+    @Getter
+    protected List<Class<?>> toolClasses = new ArrayList<>();
+
     /**
      * Convenience method to get the host application ID from the parent AiConfig.
      * @return The host application ID.

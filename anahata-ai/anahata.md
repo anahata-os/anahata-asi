@@ -17,8 +17,8 @@ The framework is built on a sophisticated, decoupled architecture centered aroun
 The foundation of the framework is a set of abstract models that create a standardized language for all AI interactions.
 
 -   **Provider Abstraction (`.provider`):**
-    -   `AbstractAiProvider`: The key extension point for new AI providers. Each adapter module must provide a concrete implementation of this class.
-    -   `AbstractModel`: A standard representation of an AI model's capabilities, decoupled from any specific provider's API.
+    -   `AbstractAiProvider`: The key extension point for new AI providers. It uses a **two-phase initialization**: it is instantiated with a no-argument constructor, and then the `Chat` session is injected via an `init(Chat)` method.
+    -   `AbstractModel`: A standard representation of an AI model's capabilities. In the V2 architecture, this class is now responsible for the core `generateContent(Request)` action, creating a more intuitive, object-oriented API.
 
 -   **Core Conversation Model (`.core`):**
     -   `Request` & `Response`: Standardized, immutable objects for all generateContent calls.

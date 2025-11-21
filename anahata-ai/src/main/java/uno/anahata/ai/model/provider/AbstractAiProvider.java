@@ -9,21 +9,22 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.AiConfig;
-import uno.anahata.ai.model.core.Request;
-import uno.anahata.ai.model.core.Response;
+import uno.anahata.ai.Chat;
 
 /**
  * The abstract base class for all AI model providers, now with model caching.
+ * Its primary responsibilities are to discover available models and manage API keys.
  *
  * @author anahata
  */
 @Getter
 @Slf4j
 public abstract class AbstractAiProvider {
-    /** The application-wide configuration, available to all provider subclasses. */
-    protected final AiConfig config;
+    /** The parent Chat session, giving the provider access to the full context. */
+    protected final Chat chat;
     
     private final String providerId;
     private int round = 0;
@@ -33,22 +34,13 @@ public abstract class AbstractAiProvider {
 
     /**
      * Constructs a new provider instance.
-     * @param config The application-wide configuration.
+     * @param chat The parent Chat session.
      * @param providerId The unique ID for this provider (e.g., "gemini").
      */
-    public AbstractAiProvider(AiConfig config, String providerId) {
-        this.config = config;
+    public AbstractAiProvider(@NonNull Chat chat, String providerId) {
+        this.chat = chat;
         this.providerId = providerId;
     }
-    
-    /**
-     * Generates content based on a model-agnostic request.
-     * This is the core method that provider implementations must override.
-     *
-     * @param request The standardized model request.
-     * @return The standardized model response.
-     */
-    public abstract Response generateContent(Request request);
 
     /**
      * Fetches the list of all models available from the provider's API.

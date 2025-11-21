@@ -18,7 +18,7 @@ public final class AnahataExecutors {
      */
     public static ExecutorService newCachedThreadPoolExecutor(String threadPreffix) {
         BasicThreadFactory factory = new BasicThreadFactory.Builder()
-                .namingPattern("anahata-chat-" + threadPreffix + "-thread-%d")
+                .namingPattern("anahata-ai-" + threadPreffix + "-thread-%d")
                 .daemon(true)
                 .priority(Thread.NORM_PRIORITY)
                 .build();

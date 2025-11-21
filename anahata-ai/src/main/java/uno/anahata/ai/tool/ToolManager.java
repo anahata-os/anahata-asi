@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.AiConfig;
+import uno.anahata.ai.Chat;
 import uno.anahata.ai.model.tool.AbstractTool;
 import uno.anahata.ai.model.tool.AbstractToolCall;
 import uno.anahata.ai.model.tool.bad.BadTool;
@@ -30,10 +31,25 @@ import uno.anahata.ai.model.tool.java.JavaObjectToolkit;
 public class ToolManager {
     private static final AtomicInteger callIdGenerator = new AtomicInteger(0);
 
+    private final Chat chat;
     private final AiConfig config;
     private final Map<String, AbstractToolkit<?>> toolkits = new HashMap<>();
 
+    /**
+     * Primary constructor for use in a live chat session.
+     * @param chat The parent chat orchestrator.
+     */
+    public ToolManager(@NonNull Chat chat) {
+        this.chat = chat;
+        this.config = chat.getConfig().getAiConfig();
+    }
+    
+    /**
+     * Secondary constructor for lightweight instantiation, primarily for unit tests.
+     * @param config The global AI configuration.
+     */
     public ToolManager(@NonNull AiConfig config) {
+        this.chat = null; // No parent chat in this context
         this.config = config;
     }
 
