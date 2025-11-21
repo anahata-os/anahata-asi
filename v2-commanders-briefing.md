@@ -11,7 +11,7 @@
 
 ## 2. V2 Migration Plan: "The Forward Base"
 -   **Active Battlefield:** The new, multi-module `anahata-ai-parent` project is the sole source of truth for all V2 development.
--   **Intelligence Asset:** The old, monolithic `gemini-java-client` project is a **read-only asset**. Its battle-tested code will be surgically migrated, file-by-file, into the new V2 structure. We will not attempt to fix it in place.
+-   **Intelligence Asset:** The old, monolithic `gemini-java-client` project is a **read-only, battle-tested asset**. Its code will be surgically migrated, file-by-file, into the new V2 structure. We will not attempt to fix it in place.
 
 ## 3. Core V2 Architecture
 -   **Structure:** A three-module Maven project:
@@ -26,9 +26,9 @@
     -   **Phase 2:** Develop custom adapters for high-value, non-compatible APIs (e.g., Anthropic Claude).
 
 ## 4. High-Priority Tactical Objectives
--   **Objective 1 (Pre-Migration):** Resolve all compilation errors in the V1 `gemini-java-client` codebase. This is necessary to create a stable intelligence asset for the migration.
--   **Objective 2 (Migration):** Begin the surgical migration, starting with `ToolManager.java`. Use `git diff` on the V1 asset to ensure the latest refactoring work is included.
--   **Objective 3 (Core Implementation):** Implement the model-agnostic domain, the `ProviderMetadata` sidecar pattern, and the core managers (`ToolManager`, `ContextManager`) in the new V2 project.
+-   **Objective 1 (COMPLETE):** Stabilize the V1 `gemini-java-client` codebase. This has been achieved by stashing the compilation errors, establishing a clean, functional baseline to serve as our primary intelligence asset for the migration.
+-   **Objective 2 (ACTIVE):** Commence the surgical migration of functionality from the V1 asset into the V2 `anahata-ai` project structure, starting with the `ToolManager` and its related components.
+-   **Objective 3 (ONGOING):** Continue the implementation of the model-agnostic domain, the `ProviderMetadata` sidecar pattern, and the core managers (`ToolManager`, `ContextManager`) in the new V2 project, ensuring all new code adheres to the V2 architectural principles.
 
 ## 5. Monetization & Community
 -   **Model:** Open Core (AGPLv3 for open-source, paid Commercial License for proprietary use).

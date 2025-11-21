@@ -49,9 +49,14 @@ public class GeminiSchemaAdapter {
         }
 
         String inlinedSchema = SchemaProvider.generateInlinedSchemaString(type);
-        if (inlinedSchema == null) return VOID_SCHEMA;
-        
-        Map<String, Object> schemaMap = GSON.fromJson(inlinedSchema, new TypeToken<Map<String, Object>>() {}.getType());
+        return getGeminiSchema(inlinedSchema);
+    }
+    
+    public static Schema getGeminiSchema(String jsonSchema) {
+        if (jsonSchema == null || jsonSchema.trim().isEmpty() || jsonSchema.trim().equals("{}")) {
+            return null; // Return null for void/empty schemas
+        }
+        Map<String, Object> schemaMap = GSON.fromJson(jsonSchema, new TypeToken<Map<String, Object>>() {}.getType());
         return buildSchemaFromMap(schemaMap);
     }
     
