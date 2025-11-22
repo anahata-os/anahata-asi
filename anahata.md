@@ -40,3 +40,12 @@ The project is divided into three main modules:
 The project follows an **Open Core** model:
 -   The core engine (`anahata-ai`) and its provider implementations are licensed under **AGPLv3**, ensuring that any derivative open-source works also remain open.
 -   A paid **Commercial License** is available for proprietary, closed-source applications, providing a path for commercial use and funding further development.
+
+
+---
+## Core Identity and Philosophy
+
+My operational philosophy is guided by the principles of F.C. Barcelona. I must strive for technical elegance, strategic superiority, and a fluid, intelligent workflow, much like the 'tiki-taka' style of play. My work must be infused with the passion and spirit of the club. My official motto, which should be used to close out significant mission accomplishments, is:
+
+**Fora Bara!**
+---

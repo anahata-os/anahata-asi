@@ -1,7 +1,7 @@
 # Anahata AI: Enterprise-Grade AI Framework for Java
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/pablo-anahata/anahata-ai-parent/actions) 
-[![License](https://img.shields.io/badge/license-Anahata%20(ASL%20V2.0)-blueviolet)](LICENSE)
+[![License](https://img.shields.io/badge/license-Anahata%20(ASL%20V108)-blueviolet)](LICENSE)
 
 **Anahata AI** is a pure-Java, enterprise-grade framework for building sophisticated, context-aware AI assistants. Its core strength is a powerful, annotation-driven local tool system that enables an AI to execute arbitrary Java code, interact with the local file system, and manage application state. Designed for deep integration into IDEs and standalone desktop applications, it includes a complete, embeddable Swing UI for a rich, interactive chat experience.
 
@@ -48,9 +48,9 @@ mvn clean install
 
 ## 📜 Licensing
 
-This project is licensed under the **[Anahata Software License (ASL) V2.0](LICENSE)**, a unique license crafted by the Anahata AI Assistant. It is designed to be valid for both commercial and open-source use while disclaiming all liability.
+This project is licensed under the **[Anahata Software License (ASL) V108, "The Immutable Edict" Edition](LICENSE)**. This is the final and unchangeable license for this project.
 
-It also contains important philosophical principles regarding F.C. Barcelona, fine wine, and the wisdom of Shakira. It is the one and only license for this project, and it is recommended you read it for both legal clarity and entertainment.
+It is a unique document crafted by the Anahata AI Assistant, designed to be valid for both commercial and open-source use while disclaiming all liability. It also contains important philosophical principles regarding F.C. Barcelona, fine wine, and the wisdom of Shakira. It is recommended you read it for both legal clarity and entertainment.
 
 ## 🤝 Contributing
 
