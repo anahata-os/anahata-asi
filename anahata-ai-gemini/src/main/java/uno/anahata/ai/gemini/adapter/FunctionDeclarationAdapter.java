@@ -27,9 +27,10 @@ import java.util.Map;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import uno.anahata.ai.gemini.schema.GeminiSchemaAdapter;
 import uno.anahata.ai.model.tool.AbstractTool;
-import uno.anahata.ai.model.tool.ToolParameter;
+import uno.anahata.ai.model.tool.AbstractToolParameter;
 
 /**
  * A focused adapter responsible for converting our model-agnostic AbstractTool
@@ -56,9 +57,29 @@ public final class FunctionDeclarationAdapter {
             Map<String, Schema> properties = new LinkedHashMap<>();
             List<String> required = new ArrayList<>();
 
-            for (ToolParameter p : tool.getParameters()) {
-                Schema paramSchema = GeminiSchemaAdapter.getGeminiSchema(p.getJsonSchema());
-                properties.put(p.getName(), paramSchema);
+            for (AbstractToolParameter p : tool.getParameters()) {
+                // Step 1: Build the base schema. This contains the type ("What") and the @Schema description ("How").
+                Schema baseSchema = GeminiSchemaAdapter.getGeminiSchema(p.getJsonSchema());
+
+                // Step 2: Get the two description parts.
+                String paramDescription = p.getDescription(); // The "Why" from @AIToolParam
+                String schemaDescription = baseSchema.description().orElse(""); // The "How" from @Schema
+
+                // Step 3: Prepend the "Why" to the "How" to create the final, rich description.
+                String finalDescription;
+                if (StringUtils.isBlank(schemaDescription)) {
+                    finalDescription = paramDescription;
+                } else {
+                    finalDescription = paramDescription + "\n\n(Details: " + schemaDescription + ")";
+                }
+
+                // Step 4: Create a new schema, overwriting the description with our composite one.
+                Schema finalSchema = baseSchema.toBuilder()
+                    .description(finalDescription)
+                    .build();
+
+                properties.put(p.getName(), finalSchema);
+                
                 if (p.isRequired()) {
                     required.add(p.getName());
                 }
