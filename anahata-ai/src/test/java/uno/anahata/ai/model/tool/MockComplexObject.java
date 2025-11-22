@@ -15,16 +15,21 @@
  *
  * Força Barça!
  */
-package uno.anahata.ai.tool.schema;
+package uno.anahata.ai.model.tool;
 
+import java.util.List;
 import lombok.Data;
 
 /**
- * A nested mock object, part of the structure for testing rich schema generation.
+ * A mock object with a variety of field types, designed to test the richness
+ * of the generated JSON schema.
+ *
  * @author anahata-gemini-pro-2.5
  */
 @Data
-public class MockNestedObject {
-    private boolean booleanField;
-    private double doubleField;
+public class MockComplexObject {
+    private int primitiveField;
+    private String stringField;
+    private List<String> listField;
+    private MockNestedObject nestedObject;
 }

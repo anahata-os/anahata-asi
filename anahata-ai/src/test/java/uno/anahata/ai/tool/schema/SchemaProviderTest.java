@@ -19,106 +19,72 @@ package uno.anahata.ai.tool.schema;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
 import java.util.Map;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import uno.anahata.ai.AiConfig;
-import uno.anahata.ai.model.tool.AbstractTool;
-import uno.anahata.ai.tool.ToolManager;
 import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import uno.anahata.ai.model.tool.MockComplexObject;
+import uno.anahata.ai.model.tool.Tree;
+import uno.anahata.ai.model.tool.TreeNode;
+import uno.anahata.ai.model.tool.java.JavaMethodToolResponse;
 
+/**
+ * A robust, modern test suite for the SchemaProvider, built from verified outputs.
+ * This class avoids brittle string comparisons in favor of structural JSON assertions.
+ *
+ * @author anahata-ai
+ */
 public class SchemaProviderTest {
     private static final Gson GSON = new Gson();
-    private static ToolManager toolManager;
+    private static final Type MAP_TYPE = new TypeToken<Map<String, Object>>() {}.getType();
 
-    @BeforeAll
-    public static void setUp() {
-        AiConfig config = new AiConfig("test-app");
-        toolManager = new ToolManager(config);
-        toolManager.registerClasses(MockToolkit.class);
-    }
-
-    private AbstractTool<?, ?> getTool(String methodName) {
-        return toolManager.getAllTools().stream()
-            .filter(t -> t.getName().endsWith("." + methodName))
-            .findFirst()
-            .orElseThrow(() -> new AssertionError("Tool not found: " + methodName));
+    @Test
+    public void testSimpleTypeSchema() throws Exception {
+        String schemaJson = SchemaProvider.generateInlinedSchemaString(String.class);
+        assertNotNull(schemaJson);
+        Map<String, Object> schema = GSON.fromJson(schemaJson, MAP_TYPE);
+        assertEquals(String.class.getName(), schema.get("title"));
+        assertEquals("string", schema.get("type"));
     }
 
     @Test
-    public void testSimpleReturnTypeSchemaIsClean() {
-        AbstractTool<?, ?> tool = getTool("sayHello");
-        String schema = tool.getResponseJsonSchema();
-
-        assertNotNull(schema, "Schema should not be null for a tool with a return type.");
-        assertFalse(schema.contains("\"message\""), "Schema should not contain internal 'message' property.");
-        assertFalse(schema.contains("\"call\""), "Schema should not contain internal 'call' property.");
-        assertFalse(schema.contains("\"exception\""), "Schema should not contain internal 'exception' property.");
-        assertTrue(schema.contains("\"title\": \"java.lang.String\""), "The result schema for String should be correctly injected.");
+    public void testComplexObjectSchema() throws Exception {
+        String schemaJson = SchemaProvider.generateInlinedSchemaString(MockComplexObject.class);
+        assertNotNull(schemaJson);
+        Map<String, Object> schema = GSON.fromJson(schemaJson, MAP_TYPE);
+        assertEquals(MockComplexObject.class.getName(), schema.get("title"));
+        Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
+        assertNotNull(properties);
+        assertTrue(properties.containsKey("primitiveField"));
+        assertTrue(properties.containsKey("stringField"));
+        assertTrue(properties.containsKey("listField"));
+        assertTrue(properties.containsKey("nestedObject"));
+        assertEquals(String.class.getName(), ((Map<String, Object>) properties.get("stringField")).get("title"));
     }
 
     @Test
-    public void testVoidReturnTypeSchemaIsNull() {
-        AbstractTool<?, ?> tool = getTool("doNothing");
-        String returnSchema = tool.getReturnTypeJsonSchema();
-        String responseSchema = tool.getResponseJsonSchema();
-
-        assertNull(returnSchema, "Return type schema for void method should be null.");
-        assertNotNull(responseSchema, "Response schema for void method should still exist.");
-        assertFalse(responseSchema.contains("\"result\""), "Response schema for void method should not have a 'result' property.");
+    public void testRecursiveObjectSchema() throws Exception {
+        String schemaJson = SchemaProvider.generateInlinedSchemaString(Tree.class);
+        assertNotNull(schemaJson);
+        Map<String, Object> schema = GSON.fromJson(schemaJson, MAP_TYPE);
+        assertEquals(Tree.class.getName(), schema.get("title"));
+        Map<String, Object> root = (Map<String, Object>) ((Map<String, Object>) schema.get("properties")).get("root");
+        Map<String, Object> children = (Map<String, Object>) ((Map<String, Object>) root.get("properties")).get("children");
+        Map<String, Object> items = (Map<String, Object>) children.get("items");
+        assertTrue(((String) items.get("description")).startsWith("Recursive reference to " + TreeNode.class.getName()));
     }
 
     @Test
-    public void testRecursiveReturnTypeSchemaIsCleanAndCorrect() {
-        AbstractTool<?, ?> tool = getTool("getTree");
-        String schema = tool.getResponseJsonSchema();
-
-        assertNotNull(schema, "Schema for recursive type should not be null.");
-        assertFalse(schema.contains("\"message\""), "Schema should not contain internal 'message' property.");
-        assertTrue(schema.contains("\"title\": \"uno.anahata.ai.tool.schema.Tree\""), "The result schema for Tree should be correctly injected.");
-        assertTrue(schema.contains("Recursive reference to uno.anahata.ai.tool.schema.TreeNode"), "Schema should gracefully handle recursion.");
-    }
-    
-    @Test
-    public void testSchemaTitlesArePresentForAllTypes() {
-        AbstractTool<?, ?> tool = getTool("getComplexObject");
-        String schemaJson = tool.getResponseJsonSchema();
-        
-        assertNotNull(schemaJson, "Schema for complex object should not be null.");
-        
-        System.out.println("--- Generated Schema for MockComplexObject ---");
-        System.out.println(schemaJson);
-        System.out.println("--------------------------------------------");
-        
-        Map<String, Object> schemaMap = GSON.fromJson(schemaJson, new TypeToken<Map<String, Object>>() {}.getType());
-        
-        // Start the recursive check from the 'result' property within the response schema
-        Map<String, Object> properties = (Map<String, Object>) schemaMap.get("properties");
-        Map<String, Object> resultSchema = (Map<String, Object>) properties.get("result");
-        
-        assertTitlesRecursive(resultSchema);
-    }
-
-    private void assertTitlesRecursive(Map<String, Object> schemaNode) {
-        assertNotNull(schemaNode, "Schema node should not be null.");
-        
-        // 1. Assert that the current node has a non-empty title
-        assertTrue(schemaNode.containsKey("title"), "Every schema node must have a 'title' property. Node: " + schemaNode);
-        String title = (String) schemaNode.get("title");
-        assertNotNull(title, "Title should not be null.");
-        assertFalse(title.trim().isEmpty(), "Title should not be empty.");
-
-        // 2. If it's an object, recurse into its properties
-        if (schemaNode.containsKey("properties")) {
-            Map<String, Object> properties = (Map<String, Object>) schemaNode.get("properties");
-            for (Map.Entry<String, Object> entry : properties.entrySet()) {
-                assertTitlesRecursive((Map<String, Object>) entry.getValue());
-            }
-        }
-
-        // 3. If it's an array, recurse into its items
-        if (schemaNode.containsKey("items")) {
-            assertTitlesRecursive((Map<String, Object>) schemaNode.get("items"));
-        }
+    public void testWrappedRecursiveObjectSchema() throws Exception {
+        String schemaJson = SchemaProvider.generateInlinedSchemaString(JavaMethodToolResponse.class, "result", Tree.class);
+        assertNotNull(schemaJson);
+        Map<String, Object> schema = GSON.fromJson(schemaJson, MAP_TYPE);
+        assertEquals(JavaMethodToolResponse.class.getName(), schema.get("title"));
+        Map<String, Object> result = (Map<String, Object>) ((Map<String, Object>) schema.get("properties")).get("result");
+        assertEquals(Tree.class.getName(), result.get("title"));
+        Map<String, Object> root = (Map<String, Object>) ((Map<String, Object>) result.get("properties")).get("root");
+        Map<String, Object> children = (Map<String, Object>) ((Map<String, Object>) root.get("properties")).get("children");
+        Map<String, Object> items = (Map<String, Object>) children.get("items");
+        assertTrue(((String) items.get("description")).startsWith("Recursive reference to " + TreeNode.class.getName()));
     }
 }

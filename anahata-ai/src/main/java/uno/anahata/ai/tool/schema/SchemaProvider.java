@@ -54,6 +54,74 @@ public class SchemaProvider {
     
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
+    /**
+     * Generates a complete, inlined JSON schema for a wrapper type, but with the
+     * schema for a specific 'result' type surgically injected into its 'result' property.
+     *
+     * @param wrapperType The container type (e.g., JavaMethodToolResponse.class).
+     * @param attributeName The name of the property in the wrapper to replace.
+     * @param wrappedType The specific type of the result to inject (e.g., Tree.class or void.class).
+     * @return A complete, final JSON schema string.
+     * @throws JsonProcessingException if schema generation fails.
+     */
+    public static String generateInlinedSchemaString(Type wrapperType, String attributeName, Type wrappedType) throws JsonProcessingException {
+        if (wrapperType == null) {
+            return null;
+        }
+
+        // 1. Generate the standard, non-inlined schema for the wrapper
+        String baseSchemaJson = generateStandardSchema(wrapperType);
+        if (baseSchemaJson == null) {
+            return null;
+        }
+
+        // 2. Parse the base schema into a mutable JsonNode
+        JsonNode rootNode = OBJECT_MAPPER.readTree(baseSchemaJson);
+        ObjectNode mutableRoot = (ObjectNode) rootNode;
+
+        // 3. Get the properties node from the base schema
+        JsonNode propertiesNode = mutableRoot.path("properties");
+        if (!propertiesNode.isObject()) {
+            return GSON.toJson(OBJECT_MAPPER.treeToValue(mutableRoot, Map.class));
+        }
+        ObjectNode properties = (ObjectNode) propertiesNode;
+
+        // 4. Handle the wrappedType
+        if (wrappedType == null || wrappedType.equals(void.class) || wrappedType.equals(Void.class)) {
+            properties.remove(attributeName);
+        } else {
+            String wrappedSchemaJson = generateStandardSchema(wrappedType);
+            if (wrappedSchemaJson != null && properties.has(attributeName)) {
+                JsonNode wrappedRootNode = OBJECT_MAPPER.readTree(wrappedSchemaJson);
+                
+                // Merge the definitions ('components.schemas') from the wrapped schema into the base schema
+                JsonNode wrappedDefinitions = wrappedRootNode.path("components").path("schemas");
+                ObjectNode baseDefinitions = (ObjectNode) mutableRoot.path("components").path("schemas");
+                
+                if (wrappedDefinitions.isObject()) {
+                    wrappedDefinitions.fields().forEachRemaining(entry -> {
+                        baseDefinitions.set(entry.getKey(), entry.getValue());
+                    });
+                }
+                
+                // Now, inject the main part of the wrapped schema (without its components)
+                ObjectNode wrappedSchemaObject = (ObjectNode) wrappedRootNode.deepCopy();
+                wrappedSchemaObject.remove("components");
+                properties.set(attributeName, wrappedSchemaObject);
+            }
+        }
+        
+        // 5. Now, with the schemas combined and definitions merged, perform a single recursive inlining pass.
+        JsonNode definitions = mutableRoot.path("components").path("schemas");
+        JsonNode inlinedNode = inlineDefinitionsRecursive(mutableRoot, definitions, new HashSet<>());
+        
+        // 6. Clean up and return the final schema string
+        if (inlinedNode instanceof ObjectNode) {
+            ((ObjectNode) inlinedNode).remove("components");
+        }
+        return GSON.toJson(OBJECT_MAPPER.treeToValue(inlinedNode, Map.class));
+    }
+    
     public static String generateInlinedSchemaString(Type type) throws JsonProcessingException {
         if (type == null || type.equals(void.class) || type.equals(Void.class)) {
             return null;
@@ -72,7 +140,6 @@ public class SchemaProvider {
     }
 
     private static String generateStandardSchema(Type type) throws JsonProcessingException {
-        // First, try to handle simple types directly.
         String simpleSchema = handleSimpleTypeSchema(type);
         if (simpleSchema != null) {
             return simpleSchema;
@@ -97,7 +164,7 @@ public class SchemaProvider {
     
     private static String handleSimpleTypeSchema(Type type) {
         if (!(type instanceof Class)) {
-            return null; // Let the complex handler deal with ParameterizedType etc.
+            return null;
         }
         Class<?> clazz = (Class<?>) type;
         Map<String, Object> schemaMap = new LinkedHashMap<>();
@@ -119,7 +186,7 @@ public class SchemaProvider {
             List<String> enumValues = Arrays.stream(clazz.getEnumConstants()).map(Object::toString).collect(Collectors.toList());
             schemaMap.put("enum", enumValues);
         } else {
-            return null; // Not a simple type we can handle here.
+            return null;
         }
 
         return GSON.toJson(schemaMap);

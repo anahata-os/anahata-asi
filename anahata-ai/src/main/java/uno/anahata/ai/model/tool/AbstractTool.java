@@ -1,20 +1,4 @@
-/*
- * Copyright 2025 Anahata.
- *
- * Licensed under the Anahata Software License (ASL) V2.0;
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://github.com/pablo-anahata/anahata-ai-parent/blob/main/LICENSE
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Força Barça!
- */
+/* Licensed under the Anahata Software License, Version 108 - https://github.com/anahata-os/anahata-ai/blob/main/LICENSE */
 package uno.anahata.ai.model.tool;
 
 import com.google.gson.Gson;
@@ -66,7 +50,8 @@ public abstract class AbstractTool<P extends AbstractToolParameter, C extends Ab
     private final List<P> parameters = new ArrayList<>();
     
     /** A pre-generated, language-agnostic JSON schema for the tool's return type. Can be null for void methods. */
-    protected String returnTypeJsonSchema;
+    @Getter
+    protected String responseJsonSchema;
 
     protected AbstractTool(@NonNull String name) {
         this.name = name;
@@ -91,6 +76,7 @@ public abstract class AbstractTool<P extends AbstractToolParameter, C extends Ab
      * including status, errors, and the specific schema of the 'result' field.
      * @return A JSON schema string, or null on failure.
      */
+    /*
     public String getResponseJsonSchema() {
         try {
             Type responseType = getResponseType();
@@ -138,4 +124,5 @@ public abstract class AbstractTool<P extends AbstractToolParameter, C extends Ab
             return null;
         }
     }
+*/
 }

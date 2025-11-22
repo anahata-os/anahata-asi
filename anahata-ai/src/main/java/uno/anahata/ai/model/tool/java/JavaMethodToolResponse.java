@@ -1,20 +1,4 @@
-/*
- * Copyright 2025 Anahata.
- *
- * Licensed under the Anahata Software License (ASL) V2.0;
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://github.com/pablo-anahata/anahata-ai-parent/blob/main/LICENSE
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Força Barça!
- */
+/* Licensed under the Anahata Software License, Version 108 - https://github.com/anahata-os/anahata-ai/blob/main/LICENSE */
 package uno.anahata.ai.model.tool.java;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -29,10 +13,12 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.model.tool.AbstractToolResponse;
 import uno.anahata.ai.model.tool.ToolExecutionStatus;
 import uno.anahata.ai.tool.AiToolException;
+import uno.anahata.ai.tool.JavaTool;
 
 /**
  * A rich POJO that captures the complete and final outcome of a single tool
- * call. This class now follows a deferred execution model.
+ * call. This class now follows a deferred execution model and manages the
+ * thread-local context for {@link JavaTool} instances.
  *
  * @author anahata-gemini-pro-2.5
  */
@@ -48,7 +34,7 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
     @JsonIgnore
     private final JavaMethodToolCall call;
 
-    /** 
+    /**
      * The raw exception thrown during execution, for debugging and session serialization.
      * Ignored during schema generation as it's an internal detail.
      */
@@ -68,11 +54,16 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
     @Override
     public void execute() {
         long startTime = System.currentTimeMillis();
-        try {
-            JavaMethodTool tool = getCall().getTool();
-            var method = tool.getMethod();
-            var toolInstance = tool.getToolInstance();
+        JavaMethodTool tool = getCall().getTool();
+        Object toolInstance = tool.getToolInstance();
+        JavaTool contextAwareTool = (toolInstance instanceof JavaTool) ? (JavaTool) toolInstance : null;
 
+        try {
+            if (contextAwareTool != null) {
+                contextAwareTool.setContext(this);
+            }
+
+            var method = tool.getMethod();
             Parameter[] methodParameters = method.getParameters();
             Object[] argsToInvoke = new Object[methodParameters.length];
             Map<String, Object> argsFromModel = getCall().getArgs();
@@ -84,14 +75,14 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
             }
 
             Object result = method.invoke(toolInstance, argsToInvoke);
-            
+
             setResult(result);
             setStatus(ToolExecutionStatus.EXECUTED);
 
         } catch (Exception e) {
             Throwable cause = (e instanceof InvocationTargetException && e.getCause() != null) ? e.getCause() : e;
             this.exception = cause;
-            
+
             log.error("Tool execution failed for: {}", getCall().getName(), cause);
 
             if (cause instanceof AiToolException) {
@@ -100,12 +91,15 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
                 setError(getStackTraceAsString(cause));
             }
             setStatus(ToolExecutionStatus.FAILED);
-            
+
         } finally {
+            if (contextAwareTool != null) {
+                contextAwareTool.clearContext();
+            }
             setExecutionTimeMillis(System.currentTimeMillis() - startTime);
         }
     }
-    
+
     private String getStackTraceAsString(Throwable throwable) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);

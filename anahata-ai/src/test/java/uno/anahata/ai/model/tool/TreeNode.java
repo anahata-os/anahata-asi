@@ -15,17 +15,18 @@
  *
  * Força Barça!
  */
-package uno.anahata.ai.tool.schema;
+package uno.anahata.ai.model.tool;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import lombok.Data;
 
 @Data
-@Schema(description = "Represents a tree data structure with a single root node.")
-public class Tree {
-    @Schema(description = "The name of this tree.", required = true)
-    private String name;
-    
-    @Schema(description = "The root node of the tree.")
-    private TreeNode root;
+@Schema(description = "Represents a node in a tree structure.")
+public class TreeNode {
+    @Schema(description = "The data held by this node.", required = true)
+    private String data;
+
+    @Schema(description = "A list of child nodes.")
+    private List<TreeNode> children;
 }

@@ -1,61 +1,52 @@
-# Anahata AI V2 Tool Framework Architecture
+# Anahata AI V2 Tool Framework
 
-This document provides a detailed technical explanation of the `anahata-ai` tool framework. The framework is designed to be model-agnostic, reflection-based, type-safe, and self-documenting.
+This document provides a comprehensive overview of the Anahata AI V2 tool framework, a sophisticated, annotation-driven system for defining, managing, and executing Java-based tools for Large Language Models (LLMs).
 
-## 1. Core Principles
+## 1. Core Philosophy
 
--   **Model-Agnostic:** The entire framework is defined within the `anahata-ai` core module. It has no dependency on any specific AI provider. Provider-specific "adapter" modules are responsible for translating their native function-calling formats to and from this core model.
--   **Annotation-Driven:** The framework uses a simple set of annotations to discover and define tools directly from Java source code, minimizing boilerplate.
--   **Type-Safe & Self-Documenting:** By leveraging Java reflection and a powerful schema generator, the framework automatically creates rich, detailed schemas for all tools, parameters, and return types. This ensures the AI model has a precise understanding of how to use the tools.
--   **Deferred Execution:** The framework follows a deferred execution model. A tool call from the model creates a `ToolCall` object which contains a corresponding `ToolResponse` object. The `execute()` method on the response object is called later, providing a clean separation between parsing the model's request and executing the business logic.
+The V2 framework is built on a foundation of **decoupling, type safety, and automation**. It aims to make the process of creating and exposing Java methods as tools as seamless as possible, while providing a rich, model-agnostic domain that ensures robustness and extensibility.
 
-## 2. Key Components
+## 2. The Lifecycle of a Tool
 
-### 2.1. Annotations (`uno.anahata.ai.tool`)
+The entire process, from a simple Java method to a model-callable function, is handled by the framework in a series of automated steps.
 
--   `@AiToolkit`: A class-level annotation that marks a class as a container for related tools. It requires a description of the toolkit's purpose.
--   `@AiTool`: A method-level annotation that marks a public method within a toolkit as an AI-callable tool. It requires a detailed description of what the tool does.
--   `@AIToolParam`: A parameter-level annotation that provides a description for each parameter of an `@AiTool`-annotated method.
+### 2.1. Definition: Annotation-Driven Discovery
 
-### 2.2. The Tool Manager (`uno.anahata.ai.tool.ToolManager`)
+Tools are defined in standard Java classes using a set of intuitive annotations:
 
-The `ToolManager` is the central orchestrator of the framework. Its responsibilities include:
+-   **`@AiToolkit`**: Marks a class as a container for related tools. It provides a high-level description for the entire toolkit.
+-   **`@AiTool`**: Marks a public method within a toolkit class as an AI-callable tool. It contains the detailed description that the model will use to understand the tool's purpose.
+-   **`@AIToolParam`**: Describes a parameter of a tool method, providing the model with essential information about what to pass as an argument.
 
-1.  **Discovery & Registration:** It scans specified classes, finds those annotated with `@AiToolkit`, and uses reflection to parse them into `JavaObjectToolkit` domain objects.
-2.  **Lifecycle Management:** It manages the collection of all available toolkits and tools.
-3.  **Tool Call Factory:** Its primary runtime role is to act as a factory for creating `AbstractToolCall` objects. When the AI provider's adapter receives a tool call request, it passes the tool name and raw JSON arguments to `ToolManager.createToolCall()`. The manager finds the correct tool definition and initiates the type conversion and validation process.
+### 2.2. Registration and Parsing
 
-### 2.3. The Domain Model (`uno.anahata.ai.model.tool.*`)
+At application startup, the `ToolManager` is responsible for discovering and registering all annotated tool classes.
 
-This is the heart of the frameworka rich, hierarchical set of POJOs representing the entire tool ecosystem.
+1.  **Discovery**: The `ToolManager.registerClasses(...)` method is called with the toolkit classes.
+2.  **Parsing**: For each class, a `JavaObjectToolkit` is created. This object uses reflection to parse the class, its methods, and its parameters, building a rich, in-memory representation of the toolkit.
+3.  **Domain Model**: This process creates a tree of rich domain objects:
+    -   `JavaObjectToolkit` holds the toolkit's metadata and a list of...
+    -   `JavaMethodTool` objects, each representing a single tool and containing its `java.lang.reflect.Method`, which in turn holds a list of...
+    -   `JavaMethodToolParameter` objects, each containing its `java.lang.reflect.Parameter` and full generic `Type`.
 
--   **`JavaObjectToolkit`**: Represents a single class annotated with `@AiToolkit`. It contains a list of all the tools discovered within it.
--   **`JavaMethodTool`**: Represents a single method annotated with `@AiTool`. This is a rich object containing:
-    -   The tool's name and description.
-    -   A reference to the underlying Java `Method` object.
-    -   A list of `JavaMethodToolParameter` objects.
-    -   The user's configured permissions (`ToolPermission`).
--   **`JavaMethodToolParameter`**: Represents a single method parameter. Crucially, it stores not only the name and description but also the Java reflection `Type`, which is essential for accurate deserialization of arguments.
+### 2.3. Schema Generation: The Role of `SchemaProvider`
 
-### 2.4. The Execution Lifecycle
+This is the cornerstone of the framework's intelligence. Once the tool is parsed into the domain model, the `SchemaProvider` is invoked to automatically generate a detailed, **OpenAPI 3.0 compliant JSON schema**.
 
-1.  An AI model decides to call a tool and sends the tool name and arguments (as JSON) to the provider-specific adapter.
-2.  The adapter calls `ToolManager.createToolCall(name, args)`.
-3.  The `ToolManager` finds the corresponding `JavaMethodTool`.
-4.  The `JavaMethodTool.createCall()` factory method is invoked. This method:
-    a. Validates that all required parameters are present.
-    b. Iterates through the `JavaMethodToolParameter` list. For each parameter, it uses `GSON` and the stored Java `Type` to deserialize the raw JSON value from the model into the correct Java object (e.g., `String`, `Integer`, `List<String>`, custom POJOs).
-    c. Returns a new `JavaMethodToolCall` object containing the fully typed and validated Java arguments.
-5.  The `JavaMethodToolCall` constructor automatically creates its corresponding `JavaMethodToolResponse` object, linking the call and response together.
-6.  At a later stage, the `JavaMethodToolResponse.execute()` method is called.
-7.  This `execute()` method uses the stored `Method` reference and the converted Java arguments to invoke the actual tool code via `method.invoke()`.
-8.  The result, status, execution time, and any exceptions are captured within the `JavaMethodToolResponse` object, completing the cycle.
+-   **Deep Reflection**: The `SchemaProvider` performs a deep, recursive analysis of the tool's return type and parameter types.
+-   **Rich Type Information**: It enriches the schema by embedding the fully qualified Java class name into the `title` field of every object, property, and array item. This provides the model with unambiguous type information.
+-   **Automatic Response Wrapping**: The provider intelligently wraps the tool's actual return type within a standardized response schema (`JavaMethodToolResponse`). This wrapper includes common fields like `status`, `logs`, and `attachments`.
+-   **Void Method Handling**: If a tool method returns `void` or `Void`, the `SchemaProvider` automatically removes the `result` property from the final schema, correctly signaling to the model that no return value should be expected.
+-   **Robust Inlining**: The provider correctly handles complex, nested, and recursive object graphs. It generates a complete schema map with internal references (`$ref`) first, then performs a single, final inlining pass to produce a clean, fully resolved schema. This robust order of operations prevents bugs with nested types.
 
-### 2.5. Schema Generation (`uno.anahata.ai.tool.schema.SchemaProvider`)
+### 2.4. Execution: A Type-Safe, Deferred Process
 
-The `SchemaProvider` is a critical component that makes the framework self-documenting.
+When the model requests a tool call, the framework follows a robust, multi-step process:
 
--   It uses a combination of Jackson, Swagger Core, and deep reflection.
--   It generates OpenAPI 3-compliant JSON schemas for tool parameters and return types.
--   **Key Feature:** It recursively analyzes Java types (including complex generics like `List<Map<String, MyObject>>`) and embeds the fully qualified Java class name into the `title` field of the schema. This provides unparalleled clarity for both the AI model and human developers.
--   The generated schemas are used by the provider adapters to construct the function declarations in the format required by the specific AI model's API.
+1.  **Call Creation**: The `ToolManager` creates a `JavaMethodToolCall` object, which represents the model's request.
+2.  **Argument Conversion**: The `JavaMethodTool` uses the rich `JavaMethodToolParameter` models to perform a **type-safe conversion** of the model's JSON arguments into the precise Java types required by the method signature. It uses `Gson` and the stored generic `Type` for each parameter to handle complex types like `List<String>` correctly.
+3.  **Deferred Execution**: The call is not executed immediately. Instead, a `JavaMethodToolResponse` object is created and paired with the call.
+4.  **Invocation**: The `JavaMethodToolResponse.execute()` method is called. This method uses the stored `java.lang.reflect.Method` and the converted arguments to invoke the actual Java tool method.
+5.  **Result Capturing**: The result, or any exception, is captured in the `JavaMethodToolResponse` object, which is then sent back to the model.
+
+This architecture ensures a clean separation of concerns, robust error handling, and a high degree of type safety throughout the entire tool lifecycle.

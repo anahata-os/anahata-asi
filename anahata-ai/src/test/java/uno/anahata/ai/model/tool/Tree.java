@@ -15,21 +15,17 @@
  *
  * Força Barça!
  */
-package uno.anahata.ai.tool.schema;
+package uno.anahata.ai.model.tool;
 
-import java.util.List;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-/**
- * A mock object with a variety of field types, designed to test the richness
- * of the generated JSON schema.
- *
- * @author anahata-gemini-pro-2.5
- */
 @Data
-public class MockComplexObject {
-    private int primitiveField;
-    private String stringField;
-    private List<String> listField;
-    private MockNestedObject nestedObject;
+@Schema(description = "Represents a tree data structure with a single root node.")
+public class Tree {
+    @Schema(description = "The name of this tree.", required = true)
+    private String name;
+    
+    @Schema(description = "The root node of the tree.")
+    private TreeNode root;
 }

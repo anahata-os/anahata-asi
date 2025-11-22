@@ -76,7 +76,7 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         this.permission = toolAnnotation.requiresApproval()
             ? ToolPermission.APPROVE
             : ToolPermission.APPROVE_ALWAYS;
-        this.returnTypeJsonSchema = SchemaProvider.generateInlinedSchemaString(method.getGenericReturnType());
+        super.responseJsonSchema = SchemaProvider.generateInlinedSchemaString(getResponseType(), "result", method.getGenericReturnType());
         
         // Set own fields
         this.method = method;
