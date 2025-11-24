@@ -1,4 +1,6 @@
-/* Licensed under the Anahata Software License, Version 2.0 - https://github.com/anahata-os/anahata-ai/blob/main/LICENSE */
+/*
+ * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
+ */
 package uno.anahata.ai.internal;
 
 import java.io.File;
