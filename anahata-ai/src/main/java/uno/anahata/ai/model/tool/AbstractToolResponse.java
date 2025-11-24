@@ -1,4 +1,4 @@
-/* Licensed under the Anahata Software License, Version 108 - https://github.com/anahata-os/anahata-ai/blob/main/LICENSE */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.ai.model.tool;
 
 import java.util.ArrayList;
@@ -13,6 +13,7 @@ import uno.anahata.ai.model.core.TextPart;
 /**
  * Represents the response of a tool call, designed for deferred execution.
  * The fields are populated by the {@link #execute()} method.
+ * 
  * @author anahata-gemini-pro-2.5
  * @param <C> The specific type of the Call this response is for.
  */
