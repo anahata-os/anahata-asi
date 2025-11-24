@@ -1,4 +1,4 @@
-/* Licensed under the Anahata Software License, Version 108 - https://github.com/anahata-os/anahata-ai/blob/main/LICENSE */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.ai.model.core;
 
 import java.io.File;
@@ -14,7 +14,7 @@ import uno.anahata.ai.internal.TikaUtils;
  * It can be created from raw bytes or directly from a file path, in which case
  * it retains a reference to the source path for traceability.
  *
- * @author anahata-ai
+ * @author anahata-gemini-pro-2.5
  */
 @Getter
 public class BlobPart extends AbstractPart {
