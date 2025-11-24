@@ -72,10 +72,9 @@ public final class ResponseAdapter {
 
     private static ModelMessage toAnahataMessage(Candidate candidate, ToolManager toolManager, String modelId) {
         // The ContentAdapter handles the conversion of the message content.
-        ModelMessage message = ContentAdapter.toAnahata(candidate.content().get(), toolManager);
+        ModelMessage message = ContentAdapter.toAnahata(candidate.content().get(), toolManager, modelId);
         // We then populate the metadata from the higher-level Candidate object.
         message.setTokenCount(candidate.tokenCount().orElse(0));
-        message.setModelId(modelId);
         return message;
     }
 }

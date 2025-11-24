@@ -20,6 +20,7 @@ package uno.anahata.ai.model.core;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 import uno.anahata.ai.model.tool.AbstractToolCall;
 
@@ -33,13 +34,10 @@ import uno.anahata.ai.model.tool.AbstractToolCall;
 public class ModelMessage extends AbstractMessage {
     
     /** The ID of the model that generated this message. */
-    private String modelId;
+    private final String modelId;
     
-    /** The number of tokens used by this message. */
-    private int tokenCount;
-    
-    public ModelMessage() {
-        //no arg constructor
+    public ModelMessage(@NonNull String modelId) {
+        this.modelId = modelId;
     }
     
     @Override

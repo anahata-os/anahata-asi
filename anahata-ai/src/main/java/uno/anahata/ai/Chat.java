@@ -18,7 +18,6 @@
 package uno.anahata.ai;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
@@ -28,20 +27,23 @@ import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.config.ChatConfig;
+import uno.anahata.ai.context.ContextManager;
 import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.ModelMessage;
-import uno.anahata.ai.model.core.Request;
 import uno.anahata.ai.model.core.RequestConfig;
 import uno.anahata.ai.model.core.Response;
+import uno.anahata.ai.model.core.ToolMessage;
 import uno.anahata.ai.model.core.UserMessage;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
 import uno.anahata.ai.model.provider.AbstractModel;
+import uno.anahata.ai.model.tool.AbstractToolCall;
+import uno.anahata.ai.status.StatusManager;
 import uno.anahata.ai.tool.ToolManager;
 
 /**
  * The central, provider-agnostic orchestrator for a single chat session in the V2 architecture.
- * This class manages the conversation history, orchestrates calls to the AI provider,
- * and handles the tool execution lifecycle.
+ * This class manages the conversation flow, orchestrates calls to the AI provider,
+ * and delegates context management to a specialized ContextManager.
  *
  * @author anahata-gemini-pro-2.5
  */
@@ -51,26 +53,38 @@ public class Chat {
 
     private final ChatConfig config;
     private final ToolManager toolManager;
+    private final ContextManager contextManager;
     private final ExecutorService executor;
+    private final StatusManager statusManager;
     private final List<AbstractAiProvider> providers = new ArrayList<>();
 
-    // The complete, canonical conversation history for this session.
-    private final List<AbstractMessage> history = new ArrayList<>();
-
+    /** The user-defined name for this chat session. */
+    @Setter
+    private String name;
+    
     /** The currently selected model for the chat session. */
     @Setter
     private AbstractModel selectedModel;
+    
+    /** A thread-safe flag indicating if the main chat loop is currently active. */
+    private volatile boolean running = false;
 
-    /** The configuration for the next generateContent request. */
-    @Setter
-    private RequestConfig requestConfig;
+    /** A queue for a single user message, used to handle input that arrives while the chat loop is busy. */
+    private UserMessage stagedUserMessage;
 
     @SneakyThrows
     public Chat(@NonNull ChatConfig config) {
         this.config = config;
+        this.name = config.getSessionId(); // Default name to session ID
         this.executor = AnahataExecutors.newCachedThreadPoolExecutor(config.getSessionId());
         this.toolManager = new ToolManager(this);
-        this.requestConfig = RequestConfig.builder().build(); // Initialize with a default
+        this.contextManager = new ContextManager(this);
+        this.statusManager = new StatusManager(this);
+        
+        // Crucially, set the back-reference *before* initializing managers
+        this.config.setChat(this);
+        
+        contextManager.init();
         
         // Discover and instantiate providers
         for (Class<? extends AbstractAiProvider> providerClass : config.getProviderClasses()) {
@@ -99,16 +113,15 @@ public class Chat {
             throw new IllegalStateException("A model must be selected before sending a message. Call setSelectedModel().");
         }
         
-        history.add(message);
+        contextManager.addMessage(message);
         
-        Request request = new Request(
-            selectedModel,
-            Collections.unmodifiableList(history),
-            requestConfig
-        );
+        RequestConfig requestConfig = config.getRequestConfig();
+        List<AbstractMessage> history = contextManager.buildVisibleHistory();
 
-        log.info("Sending request to model '{}' with {} messages in history.", selectedModel.getModelId(), history.size());
-        Response response = selectedModel.generateContent(request);
+        log.info("Sending request to model '{}' with {} messages in history ({} sent to API).",
+                 selectedModel.getModelId(), contextManager.getHistory().size(), history.size());
+        
+        Response response = selectedModel.generateContent(requestConfig, history);
         
         // TODO: Implement the full tool processing logic from V1's Chat.java
         
@@ -117,10 +130,19 @@ public class Chat {
     
     /**
      * Adds a chosen model message (a candidate from a Response) to the conversation history.
+     * If the message contains tool calls, it automatically creates and adds the corresponding
+     * ToolMessage to the history as well.
      * @param message The model message to add.
      */
     public void chooseCandidate(@NonNull ModelMessage message) {
-        history.add(message);
+        contextManager.addMessage(message);
+        
+        List<AbstractToolCall> toolCalls = message.getToolCalls();
+        if (!toolCalls.isEmpty()) {
+            ToolMessage toolMessage = new ToolMessage();
+            toolCalls.forEach(tc -> toolMessage.getParts().add(tc.getResponse()));
+            contextManager.addMessage(toolMessage);
+        }
     }
     
     /**

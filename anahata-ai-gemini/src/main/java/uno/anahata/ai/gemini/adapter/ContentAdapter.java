@@ -25,6 +25,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.ModelMessage;
+import uno.anahata.ai.model.core.RequestConfig;
 import uno.anahata.ai.tool.ToolManager;
 
 /**
@@ -36,18 +37,40 @@ import uno.anahata.ai.tool.ToolManager;
 public final class ContentAdapter {
 
     /**
-     * Converts an Anahata AbstractMessage to a Google GenAI Content object.
-     * @param anahataMessage The message to convert.
-     * @return The corresponding Content object.
+     * Converts a list of Anahata AbstractMessages to a list of Google GenAI Content objects,
+     * respecting the pruning configuration.
+     * @param config  The request configuration, containing the includePruned flag.
+     * @param history The list of messages to convert.
+     * @return The corresponding list of Content objects.
      */
-    public static Content toGoogle(AbstractMessage anahataMessage) {
+    public static List<Content> toGoogle(RequestConfig config, List<AbstractMessage> history) {
+        boolean includePruned = config.isIncludePruned();
+        
+        return history.stream()
+            .map(msg -> toGoogle(msg, includePruned))
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Converts a single Anahata AbstractMessage to a Google GenAI Content object.
+     * @param anahataMessage The message to convert.
+     * @param includePruned  Whether to include parts that are effectively pruned.
+     * @return The corresponding Content object, or null if the message has no visible parts.
+     */
+    private static Content toGoogle(AbstractMessage anahataMessage, boolean includePruned) {
         Content.Builder builder = Content.builder()
             .role(anahataMessage.getRole().name().toLowerCase());
 
         List<com.google.genai.types.Part> googleParts = anahataMessage.getParts().stream()
+            .filter(part -> includePruned || !part.isEffectivelyPruned())
             .map(PartAdapter::toGoogle)
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
+
+        if (googleParts.isEmpty()) {
+            return null; // Don't create a Content object if there are no visible parts
+        }
 
         builder.parts(googleParts);
         return builder.build();
@@ -55,19 +78,20 @@ public final class ContentAdapter {
 
     /**
      * Converts a Google GenAI Content object to an Anahata ModelMessage.
-     * Note: This method does not populate metadata like tokenCount or modelId,
-     * as that information is only available at a higher level (e.g., the Candidate).
+     * Note: This method does not populate metadata like tokenCount, as that
+     * information is only available at a higher level (e.g., the Candidate).
      * @param googleContent The content to convert.
      * @param toolManager The ToolManager, required for creating tool calls.
+     * @param modelId The ID of the model generating this content.
      * @return The corresponding ModelMessage.
      */
-    public static ModelMessage toAnahata(com.google.genai.types.Content googleContent, ToolManager toolManager) {
+    public static ModelMessage toAnahata(com.google.genai.types.Content googleContent, ToolManager toolManager, String modelId) {
         List<uno.anahata.ai.model.core.AbstractPart> anahataParts = googleContent.parts().get().stream()
             .map(part -> PartAdapter.toAnahata(part, toolManager))
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
         
-        ModelMessage modelMessage = new ModelMessage();
+        ModelMessage modelMessage = new ModelMessage(modelId);
         modelMessage.getParts().addAll(anahataParts);
         return modelMessage;
     }

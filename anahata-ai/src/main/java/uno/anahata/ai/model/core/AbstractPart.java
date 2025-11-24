@@ -63,30 +63,38 @@ public abstract class AbstractPart {
     private Integer turnsToKeep = null;
 
     /**
-     * The core logic of the V3 context management system. Determines if this
-     * part should be considered "pruned" and excluded from the context sent
-     * to the model.
+     * Calculates the EFFECTIVE pruned state of this part.
+     * A part is effectively pruned if it was explicitly pruned, if its PARENT MESSAGE
+     * was explicitly pruned, or if its time-to-live has expired.
      * @return {@code true} if the part is effectively pruned, {@code false} otherwise.
      */
     public boolean isEffectivelyPruned() {
-        if (pruned != null) {
-            return pruned; // Respect explicit pinning/pruning
+        // 1. Check the explicit flag on the part itself.
+        if (Boolean.TRUE.equals(this.pruned)) {
+            return true;
         }
-        int effectiveTurns = getEffectiveTurnsToKeep();
-        if (effectiveTurns < 0) {
-            return false; // Negative value means indefinite retention
+
+        // 2. BREAK THE RECURSION: Check the PARENT'S EXPLICIT state, not its effective state.
+        if (Boolean.TRUE.equals(getMessage().isPruned())) {
+            return true;
         }
-        return getMessage().getDepth() > effectiveTurns;
+
+        // 3. Finally, check the time-based auto-pruning logic.
+        if (getTurnsLeft() <= 0) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
      * Calculates the remaining turns before this part is auto-pruned.
-     * @return The number of turns left, or -1 for indefinite retention.
+     * @return The number of turns left, or a large positive number for indefinite retention.
      */
     public int getTurnsLeft() {
         int effectiveTurns = getEffectiveTurnsToKeep();
         if (effectiveTurns < 0) {
-            return -1; // Indefinite
+            return Integer.MAX_VALUE; // Indefinite
         }
         return effectiveTurns - getMessage().getDepth();
     }

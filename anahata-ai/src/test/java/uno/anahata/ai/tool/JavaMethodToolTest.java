@@ -56,7 +56,7 @@ public class JavaMethodToolTest {
         assertEquals(1, sayHelloTool.getParameters().size());
 
         JavaMethodToolParameter nameParam = sayHelloTool.getParameters().get(0);
-        assertEquals("The name to say hello to.", nameParam.getDescription());
+        assertEquals("The name to greet.", nameParam.getDescription());
 
         Map<String, Object> schema = GSON.fromJson(nameParam.getJsonSchema(), MAP_TYPE);
         assertEquals(String.class.getName(), schema.get("title"));

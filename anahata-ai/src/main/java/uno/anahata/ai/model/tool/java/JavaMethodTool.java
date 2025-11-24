@@ -89,7 +89,7 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
 
         // Set retention using the clean inheritance model
         int retention = toolAnnotation.retention();
-        if (retention == -1) { // Sentinel for inherit
+        if (retention == -1 && toolkit != null) { // Sentinel for inherit
             retention = toolkit.getDefaultRetention();
         }
         setRetentionTurns(retention);

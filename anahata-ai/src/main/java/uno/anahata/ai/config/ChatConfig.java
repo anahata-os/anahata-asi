@@ -24,6 +24,8 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import uno.anahata.ai.AiConfig;
+import uno.anahata.ai.Chat;
+import uno.anahata.ai.model.core.RequestConfig;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
 
 /**
@@ -42,6 +44,10 @@ public class ChatConfig {
     /** The unique identifier for this specific chat session. */
     @NonNull
     private final String sessionId;
+    
+    /** A late-binding reference to the parent Chat. Set during Chat construction. */
+    @Setter
+    private Chat chat;
 
     /**
      * The list of AI provider classes available for this chat session.
@@ -54,6 +60,17 @@ public class ChatConfig {
      * This can be overridden by subclasses to provide a custom set of tools.
      */
     private List<Class<?>> toolClasses = new ArrayList<>();
+
+    /** The default request configuration for this chat session. Lazily initialized. */
+    private RequestConfig requestConfig;
+    
+    //<editor-fold defaultstate="collapsed" desc="V2 Chat Loop">
+    /** If true, local Java tools are enabled. If false, server-side tools (like Google Search) are used. */
+    private boolean localToolsEnabled = true;
+
+    /** If true, the chat loop will automatically re-prompt the model after executing tools. */
+    private boolean autoReplyTools = false;
+    //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="V3 Context Management">
     /** The default number of user turns a TextPart should be kept in context. */
@@ -68,6 +85,21 @@ public class ChatConfig {
     /** The number of turns a part must be soft-pruned before it is eligible for hard-pruning (permanent deletion). */
     private int hardPruneDelay = 108;
     //</editor-fold>
+    
+    /**
+     * Gets the request configuration, initializing it with a reference to the chat
+     * on first access.
+     * @return The request configuration.
+     */
+    public RequestConfig getRequestConfig() {
+        if (requestConfig == null) {
+            if (chat == null) {
+                throw new IllegalStateException("Chat reference has not been set in ChatConfig");
+            }
+            requestConfig = new RequestConfig(chat);
+        }
+        return requestConfig;
+    }
     
     /**
      * Convenience method to get the host application ID from the parent AiConfig.

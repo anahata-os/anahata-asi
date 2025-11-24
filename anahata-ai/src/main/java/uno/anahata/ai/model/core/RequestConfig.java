@@ -17,53 +17,60 @@
  */
 package uno.anahata.ai.model.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
-import lombok.Builder;
 import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import uno.anahata.ai.Chat;
 import uno.anahata.ai.model.tool.AbstractTool;
 
 /**
- * A comprehensive, model-agnostic configuration for a single generateContent request.
- * @author anahata-gemini-pro-2.5
+ * The definitive, model-agnostic configuration object for a single API request.
+ * It holds both the static behavioral parameters and provides live, just-in-time
+ * access to dynamic request data like tools and system instructions via its
+ * reference to the parent Chat.
+ *
+ * @author anahata-ai
  */
 @Getter
-@Builder
+@Setter
+@RequiredArgsConstructor
 public class RequestConfig {
+    @NonNull
+    @JsonIgnore
+    private final Chat chat;
+
+    //== Behavioral Parameters ==//
+    private Float temperature;
+    private Integer maxOutputTokens;
+    private Integer topK;
+    private Float topP;
+    
+    /** If true, the adapter should include pruned messages and parts in the API request. For debugging. */
+    private boolean includePruned = false;
+
+    //== Live Data Getters ==//
     /**
-     * A list of tools that the model may call.
+     * Gets the system instructions for this request, assembled just-in-time
+     * by the ContextManager.
+     * @return A list of TextParts representing the system instructions.
      */
-    private final List<AbstractTool> tools;
+    public List<TextPart> getSystemInstructions() {
+        return chat.getContextManager().getSystemInstructions();
+    }
 
     /**
-     * A list of TextParts to be used as system instructions.
+     * Gets the tools for this request, determined just-in-time based on the
+     * chat's configuration (local vs. server-side).
+     * @return A list of AbstractTools, or null if server-side tools are active.
      */
-    private final List<TextPart> systemInstructions;
-
-    /**
-     * Controls the randomness of the output. Must be a value between 0.0 and 1.0.
-     */
-    private final Float temperature;
-
-    /**
-     * The maximum number of tokens to generate in the response.
-     */
-    private final Integer maxOutputTokens;
-    
-    /**
-     * The maximum number of tokens to generate in the response.
-     * The model considers only the **K** most likely next tokens.
-     */
-    private final Integer topK;
-    
-    /**
-     * The maximum number of tokens to generate in the response.
-     * The model considers the smallest set of tokens whose cumulative probability exceeds the threshold **P**.
-     */
-    private final Float topP;
-    
-    /**
-     * A flag to indicate whether the model should include its internal "thoughts" or reasoning process in the output.
-     * Note: This is a conceptual parameter; actual support depends on the provider and model.
-     */
-    private final boolean includeThoughts;
+    public List<? extends AbstractTool> getTools() {
+        if (chat.getConfig().isLocalToolsEnabled()) {
+            return chat.getToolManager().getEnabledTools();
+        }
+        // In the future, this could return a representation of server-side tools.
+        return null;
+    }
 }

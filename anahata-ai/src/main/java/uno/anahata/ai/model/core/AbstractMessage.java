@@ -70,6 +70,14 @@ public abstract class AbstractMessage {
      * transient to support full serialization with Kryo.
      */
     private Chat chat;
+    
+    /**
+     * A three-state flag for explicit pruning control.
+     * - {@code true}: This message is explicitly pruned and will be hidden.
+     * - {@code false}: This message is "pinned" and will never be auto-pruned.
+     * - {@code null}: (Default) Auto-pruning is active based on the state of its parts.
+     */
+    private Boolean pruned = null;
 
     /**
      * Gets the role of the entity that created this message.
@@ -88,11 +96,13 @@ public abstract class AbstractMessage {
         if (chat == null) {
             return -1;
         }
-        int index = chat.getHistory().indexOf(this);
+        // Optimized to fetch the history only once.
+        List<AbstractMessage> history = chat.getContextManager().getHistory();
+        int index = history.indexOf(this);
         if (index == -1) {
             return -1;
         }
-        return chat.getHistory().size() - 1 - index;
+        return history.size() - 1 - index;
     }
     
     /**
@@ -105,5 +115,41 @@ public abstract class AbstractMessage {
         return getParts().stream()
             .map(AbstractPart::asText)
             .collect(Collectors.joining());
+    }
+    
+    /**
+     * A simple getter for the EXPLICIT pruned state of this message.
+     * This is used by child parts to break the circular dependency in pruning logic.
+     * @return The explicit pruned state.
+     */
+    public Boolean isPruned() {
+        return pruned;
+    }
+    
+    /**
+     * Calculates the EFFECTIVE pruned state of this message.
+     * A message is effectively pruned if it was explicitly pruned OR if all of its
+     * constituent parts are effectively pruned.
+     * @return {@code true} if the message is effectively pruned.
+     */
+    public boolean isEffectivelyPruned() {
+        // 1. Check the explicit flag on the message itself.
+        if (Boolean.TRUE.equals(this.pruned)) {
+            return true;
+        }
+        // 2. If not explicitly pruned, it is effectively pruned only if ALL its parts are.
+        // Note: stream().allMatch() correctly returns true for an empty stream.
+        return getParts().stream().allMatch(AbstractPart::isEffectivelyPruned);
+    }
+    
+    /**
+     * The definitive convenience method for adapters. It returns a filtered list
+     * containing only the parts of this message that are not effectively pruned.
+     * @return A new list of the visible parts.
+     */
+    public List<AbstractPart> getVisibleParts() {
+        return getParts().stream()
+            .filter(p -> !p.isEffectivelyPruned())
+            .collect(Collectors.toList());
     }
 }

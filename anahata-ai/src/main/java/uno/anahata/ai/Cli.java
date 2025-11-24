@@ -23,7 +23,6 @@ import java.util.Scanner;
 import uno.anahata.ai.config.ChatConfig;
 import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.ModelMessage;
-import uno.anahata.ai.model.core.Request;
 import uno.anahata.ai.model.core.RequestConfig;
 import uno.anahata.ai.model.core.Response;
 import uno.anahata.ai.model.core.TextPart;
