@@ -12,12 +12,13 @@
     <module>anahata-ai-gemini</module>
     <module>anahata-ai-swing</module>
     <module>anahata-ai-cli</module>
+    <module>anahata-ai-yam</module>
   </modules>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>17</maven.compiler.release>
     <!-- Dependency Group Versions -->
-    <swagger.version>2.2.22</swagger.version>
+    <swagger.version>2.2.40</swagger.version>
     <jackson.version>2.17.1</jackson.version>
     <junit.version>5.10.3</junit.version>
     <!-- Plugin Versions -->
@@ -54,7 +55,7 @@
       <dependency>
         <groupId>io.swagger.core.v3</groupId>
         <artifactId>swagger-annotations</artifactId>
-        <version>2.2.40</version>
+        <version>${swagger.version}</version>
       </dependency>
       <dependency>
           <groupId>io.swagger.core.v3</groupId>
