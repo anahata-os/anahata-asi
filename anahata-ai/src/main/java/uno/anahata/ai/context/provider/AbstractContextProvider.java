@@ -7,7 +7,7 @@ import java.util.List;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import uno.anahata.ai.Chat;
+import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.model.core.AbstractPart;
 
 /**

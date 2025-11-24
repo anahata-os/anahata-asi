@@ -7,7 +7,7 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import uno.anahata.ai.Chat;
+import uno.anahata.ai.chat.Chat;
 
 /**
  * Manages and broadcasts chat status events to registered listeners.

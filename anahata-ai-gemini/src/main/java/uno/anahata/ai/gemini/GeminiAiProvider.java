@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import lombok.Getter;
 import lombok.NonNull;
-import uno.anahata.ai.Chat;
+import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
 import uno.anahata.ai.model.provider.AbstractModel;
 

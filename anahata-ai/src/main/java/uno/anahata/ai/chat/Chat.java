@@ -1,7 +1,7 @@
 /*
  * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
  */
-package uno.anahata.ai;
+package uno.anahata.ai.chat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +12,8 @@ import lombok.NonNull;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.ai.config.ChatConfig;
+import uno.anahata.ai.AiExecutors;
+import uno.anahata.ai.chat.ChatConfig;
 import uno.anahata.ai.context.ContextManager;
 import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.ModelMessage;
@@ -62,7 +63,7 @@ public class Chat {
     public Chat(@NonNull ChatConfig config) {
         this.config = config;
         this.name = config.getSessionId(); // Default name to session ID
-        this.executor = AnahataExecutors.newCachedThreadPoolExecutor(config.getSessionId());
+        this.executor = AiExecutors.newCachedThreadPoolExecutor(config.getSessionId());
         this.toolManager = new ToolManager(this);
         this.contextManager = new ContextManager(this);
         this.statusManager = new StatusManager(this);

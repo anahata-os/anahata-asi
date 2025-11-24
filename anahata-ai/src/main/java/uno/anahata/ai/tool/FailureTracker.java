@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.ai.Chat;
+import uno.anahata.ai.chat.Chat;
 
 /**
  * Tracks repeated failures of specific tool calls to temporarily block them

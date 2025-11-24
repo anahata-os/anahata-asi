@@ -1,7 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Fora Bara! */
 package uno.anahata.ai.tool.prompt;
 
-import uno.anahata.ai.Chat;
+import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.model.core.ModelMessage;
 
 /**

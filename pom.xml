@@ -1,106 +1,157 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-
-    <groupId>uno.anahata</groupId>
-    <artifactId>anahata-ai-parent</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
-    <packaging>pom</packaging>
-
-    <name>Anahata AI Parent</name>
-    <description>Parent POM for the Anahata AI multi-module project.</description>
-
-    <modules>
-        <module>anahata-ai</module>
-        <module>anahata-ai-gemini</module>
-        <module>anahata-ai-swing</module>
-    </modules>
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>21</java.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
-
-        <!-- Dependency Versions -->
-        <lombok.version>1.18.42</lombok.version>
-        <slf4j.version>2.0.17</slf4j.version>
-        <swagger.version>2.2.40</swagger.version>
-        <junit.version>5.10.3</junit.version>
-
-        <!-- Plugin Versions -->
-        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
-        <maven-surefire-plugin.version>3.3.1</maven-surefire-plugin.version>
-    </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <!-- Logging -->
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>${slf4j.version}</version>
-            </dependency>
-
-            <!-- Boilerplate Reduction -->
-            <dependency>
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>uno.anahata</groupId>
+  <artifactId>anahata-ai-parent</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>Anahata AI Parent</name>
+  <description>Parent POM for the Anahata AI multi-module project.</description>
+  <modules>
+    <module>anahata-ai</module>
+    <module>anahata-ai-gemini</module>
+    <module>anahata-ai-swing</module>
+    <module>anahata-ai-cli</module>
+  </modules>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>17</maven.compiler.release>
+    <!-- Dependency Group Versions -->
+    <swagger.version>2.2.22</swagger.version>
+    <jackson.version>2.17.1</jackson.version>
+    <junit.version>5.10.3</junit.version>
+    <!-- Plugin Versions -->
+    <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+    <maven-surefire-plugin.version>3.3.1</maven-surefire-plugin.version>
+  </properties>
+  <dependencyManagement>
+    <dependencies>
+      <!-- Anahata Modules -->
+      <dependency>
+          <groupId>uno.anahata</groupId>
+          <artifactId>anahata-ai</artifactId>
+          <version>${project.version}</version>
+      </dependency>
+      <!-- Logging -->
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>2.0.17</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-simple</artifactId>
+        <version>2.0.17</version>
+      </dependency>
+      <!-- Boilerplate Reduction -->
+      <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>1.18.42</version>
+        <scope>provided</scope>
+      </dependency>
+      <!-- Schema & JSON Serialization -->
+      <dependency>
+        <groupId>io.swagger.core.v3</groupId>
+        <artifactId>swagger-annotations</artifactId>
+        <version>2.2.40</version>
+      </dependency>
+      <dependency>
+          <groupId>io.swagger.core.v3</groupId>
+          <artifactId>swagger-core</artifactId>
+          <version>${swagger.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>com.fasterxml.jackson.module</groupId>
+          <artifactId>jackson-module-jsonSchema</artifactId>
+          <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>com.fasterxml.jackson.module</groupId>
+          <artifactId>jackson-module-mrbean</artifactId>
+          <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>com.google.code.gson</groupId>
+          <artifactId>gson</artifactId>
+          <version>2.10.1</version>
+      </dependency>
+      <!-- Framework Serialization (Kryo) -->
+      <dependency>
+          <groupId>com.esotericsoftware</groupId>
+          <artifactId>kryo</artifactId>
+          <version>5.6.0</version>
+      </dependency>
+      <dependency>
+          <groupId>org.objenesis</groupId>
+          <artifactId>objenesis</artifactId>
+          <version>3.3</version>
+      </dependency>
+      <!-- Utilities -->
+      <dependency>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-text</artifactId>
+          <version>1.12.0</version>
+      </dependency>
+      <dependency>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
+          <version>3.14.0</version>
+      </dependency>
+      <dependency>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-core</artifactId>
+          <version>3.2.3</version>
+      </dependency>
+      <!-- Google Gemini API Client -->
+      <dependency>
+          <groupId>com.google.genai</groupId>
+          <artifactId>google-genai</artifactId>
+          <version>1.26.0</version>
+      </dependency>
+      <!-- Testing -->
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+        <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+  <build>
+    <pluginManagement>
+      <plugins>
+        <!-- Compiler Plugin -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>${maven-compiler-plugin.version}</version>
+          <configuration>
+            <compilerArgs>
+              <arg>-parameters</arg>
+            </compilerArgs>
+            <annotationProcessorPaths>
+              <path>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
-                <version>${lombok.version}</version>
-                <scope>provided</scope>
-            </dependency>
-
-            <!-- API Annotations for Schema Generation -->
-            <dependency>
-                <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-annotations</artifactId>
-                <version>${swagger.version}</version>
-            </dependency>
-
-            <!-- Testing -->
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-api</artifactId>
-                <version>${junit.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-engine</artifactId>
-                <version>${junit.version}</version>
-                <scope>test</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
-    <build>
-        <pluginManagement>
-            <plugins>
-                <!-- Compiler Plugin -->
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>${maven-compiler-plugin.version}</version>
-                    <configuration>
-                        <compilerArgs>
-                            <arg>-parameters</arg>
-                        </compilerArgs>
-                        <annotationProcessorPaths>
-                            <path>
-                                <groupId>org.projectlombok</groupId>
-                                <artifactId>lombok</artifactId>
-                                <version>${lombok.version}</version>
-                            </path>
-                        </annotationProcessorPaths>
-                    </configuration>
-                </plugin>
-                <!-- Surefire Plugin for running tests -->
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <version>${maven-surefire-plugin.version}</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-    </build>
+                <version>1.18.42</version>
+              </path>
+            </annotationProcessorPaths>
+          </configuration>
+        </plugin>
+        <!-- Surefire Plugin for running tests -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${maven-surefire-plugin.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
 </project>

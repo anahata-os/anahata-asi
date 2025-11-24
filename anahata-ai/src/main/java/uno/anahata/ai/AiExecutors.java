@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public final class AnahataExecutors {
+public final class AiExecutors {
 
     /**
      * Creates a new cached thread pool specifically for managing the lifecycle of a single chat session.

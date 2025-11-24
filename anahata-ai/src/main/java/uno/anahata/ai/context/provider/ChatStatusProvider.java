@@ -5,7 +5,7 @@ package uno.anahata.ai.context.provider;
 
 import java.util.Collections;
 import java.util.List;
-import uno.anahata.ai.Chat;
+import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.model.core.AbstractPart;
 import uno.anahata.ai.model.core.TextPart;
 import uno.anahata.ai.status.ChatStatus;

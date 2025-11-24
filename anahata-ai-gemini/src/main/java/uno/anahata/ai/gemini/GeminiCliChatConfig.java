@@ -2,7 +2,7 @@
 package uno.anahata.ai.gemini;
 
 import uno.anahata.ai.AiConfig;
-import uno.anahata.ai.config.ChatConfig;
+import uno.anahata.ai.chat.ChatConfig;
 
 /**
  * A production-ready {@code ChatConfig} for the Gemini CLI that registers the {@code GeminiAiProvider}.

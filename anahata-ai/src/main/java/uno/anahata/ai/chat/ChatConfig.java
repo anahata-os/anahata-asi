@@ -1,7 +1,7 @@
 /*
  * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
  */
-package uno.anahata.ai.config;
+package uno.anahata.ai.chat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +10,6 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import uno.anahata.ai.AiConfig;
-import uno.anahata.ai.Chat;
 import uno.anahata.ai.model.core.RequestConfig;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
 

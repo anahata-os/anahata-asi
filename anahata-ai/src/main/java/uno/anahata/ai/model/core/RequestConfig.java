@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import uno.anahata.ai.Chat;
+import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.model.tool.AbstractTool;
 
 /**

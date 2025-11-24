@@ -109,6 +109,14 @@ public class SchemaProvider {
         return GSON.toJson(OBJECT_MAPPER.treeToValue(inlinedNode, Map.class));
     }
     
+    /**
+     * Generates a complete, inlined JSON schema for a given Java type.
+     * This method is used for generating schemas for tool parameters and simple return types.
+     *
+     * @param type The Java type to generate the schema for.
+     * @return A complete, final JSON schema string, or {@code null} for void types.
+     * @throws JsonProcessingException if schema generation fails.
+     */
     public static String generateInlinedSchemaString(Type type) throws JsonProcessingException {
         if (type == null || type.equals(void.class) || type.equals(Void.class)) {
             return null;

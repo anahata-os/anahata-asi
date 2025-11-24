@@ -3,10 +3,11 @@
  */
 package uno.anahata.ai;
 
+import uno.anahata.ai.chat.Chat;
 import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
-import uno.anahata.ai.config.ChatConfig;
+import uno.anahata.ai.chat.ChatConfig;
 import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.ModelMessage;
 import uno.anahata.ai.model.core.RequestConfig;

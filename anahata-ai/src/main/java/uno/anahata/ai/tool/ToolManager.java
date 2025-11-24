@@ -28,7 +28,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.AiConfig;
-import uno.anahata.ai.Chat;
+import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.model.tool.AbstractTool;
 import uno.anahata.ai.model.tool.AbstractToolCall;
 import uno.anahata.ai.model.tool.bad.BadTool;

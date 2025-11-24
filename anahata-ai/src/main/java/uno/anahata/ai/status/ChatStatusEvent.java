@@ -5,7 +5,7 @@ package uno.anahata.ai.status;
 
 import java.beans.PropertyChangeEvent;
 import lombok.Getter;
-import uno.anahata.ai.Chat;
+import uno.anahata.ai.chat.Chat;
 
 /**
  * The base event object for all chat status changes.

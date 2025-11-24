@@ -15,7 +15,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.AiConfig;
-import uno.anahata.ai.Chat;
+import uno.anahata.ai.chat.Chat;
 
 /**
  * The abstract base class for all AI model providers, now with model caching.

@@ -12,7 +12,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.ai.Chat;
+import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.context.provider.AbstractContextProvider;
 import uno.anahata.ai.context.provider.ChatStatusProvider;
 import uno.anahata.ai.context.provider.ContextPosition;

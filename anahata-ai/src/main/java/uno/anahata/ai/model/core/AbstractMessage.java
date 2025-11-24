@@ -7,7 +7,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
-import uno.anahata.ai.Chat;
+import uno.anahata.ai.chat.Chat;
 
 /**
  * The abstract base class for all messages in a conversation, providing common

@@ -8,11 +8,11 @@ This module's sole responsibility is to act as an **Adapter** between the Google
 
 ## 2. Key Components
 
--   **`GeminiAiProvider`:** The concrete implementation of the `AbstractAiProvider`. It uses a no-argument constructor and is initialized via the `init(Chat)` method. It also includes a "fail-fast" check for the Gemini API key.
+-   **`GeminiAiProvider`:** The concrete implementation of the `AbstractAiProvider`. It is initialized via its constructor, which accepts a `Chat` instance, following the single-phase initialization pattern of the V2 architecture.
 
--   **`GeminiModel`:** A wrapper around the native Google GenAI `Model` object. It implements the `generateContent(Request)` method, which is the core of the V2 design.
+-   **`GeminiModel`:** A wrapper around the native Google GenAI `GenerativeModel` object. It implements the `generateContent(RequestConfig, ...)` method, which is the core of the V2 design.
 
--   **`adapter` Package:** This package contains all the logic for translating between the core `anahata-ai` domain model (e.g., `Request`, `Response`, `ModelMessage`) and the Google GenAI API's native types (e.g., `GenerateContentResponse`, `Content`).
+-   **`adapter` Package:** This package contains all the logic for translating between the core `anahata-ai` domain model (e.g., `RequestConfig`, `Response`, `ModelMessage`) and the Google GenAI API's native types (e.g., `GenerateContentResponse`, `Content`).
 
 ## 3. CLI Test Harness
 

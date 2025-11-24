@@ -4,8 +4,8 @@ package uno.anahata.ai.model.core;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
-import uno.anahata.ai.Chat;
-import uno.anahata.ai.config.ChatConfig;
+import uno.anahata.ai.chat.Chat;
+import uno.anahata.ai.chat.ChatConfig;
 
 /**
  * The abstract base class for all components of a {@link AbstractMessage}.
