@@ -8,7 +8,7 @@
   <name>Anahata AI Parent</name>
   <description>Parent POM for the Anahata AI multi-module project.</description>
   <modules>
-    <module>anahata-ai</module>
+    <module>anahata-ai-core</module>
     <module>anahata-ai-gemini</module>
     <module>anahata-ai-swing</module>
     <module>anahata-ai-cli</module>
@@ -18,21 +18,19 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>17</maven.compiler.release>
     <!-- Dependency Group Versions -->
+    <lombok.version>1.18.42</lombok.version>
     <swagger.version>2.2.22</swagger.version>
     <jackson.version>2.17.1</jackson.version>
+    <slf4j.version>2.17.1</slf4j.version>
     <junit.version>5.10.3</junit.version>
+    
     <!-- Plugin Versions -->
     <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
     <maven-surefire-plugin.version>3.3.1</maven-surefire-plugin.version>
   </properties>
   <dependencyManagement>
     <dependencies>
-      <!-- Anahata Modules -->
-      <dependency>
-          <groupId>uno.anahata</groupId>
-          <artifactId>anahata-ai</artifactId>
-          <version>${project.version}</version>
-      </dependency>
+      
       <!-- Logging -->
       <dependency>
         <groupId>org.slf4j</groupId>
@@ -48,7 +46,7 @@
       <dependency>
         <groupId>org.projectlombok</groupId>
         <artifactId>lombok</artifactId>
-        <version>1.18.42</version>
+        <version>${lombok.version}</version>
         <scope>provided</scope>
       </dependency>
       <!-- Schema & JSON Serialization -->
@@ -108,7 +106,7 @@
       <dependency>
           <groupId>com.google.genai</groupId>
           <artifactId>google-genai</artifactId>
-          <version>1.26.0</version>
+          <version>1.28.0</version>
       </dependency>
       <!-- Testing -->
       <dependency>
@@ -141,7 +139,7 @@
               <path>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
-                <version>1.18.42</version>
+                <version>${lombok.version}</version>
               </path>
             </annotationProcessorPaths>
           </configuration>

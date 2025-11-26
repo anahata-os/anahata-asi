@@ -8,7 +8,7 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     
-    <artifactId>anahata-ai</artifactId>
+    <artifactId>anahata-ai-core</artifactId>
     <packaging>jar</packaging>
     
     <name>Anahata AI Core</name>

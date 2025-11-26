@@ -15,7 +15,8 @@
     <dependencies>
         <dependency>
             <groupId>uno.anahata</groupId>
-            <artifactId>anahata-ai</artifactId>
+            <artifactId>anahata-ai-core</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
