@@ -4,6 +4,7 @@
 package uno.anahata.ai.model.provider;
 
 import java.util.List;
+import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.RequestConfig;
 import uno.anahata.ai.model.core.Response;
@@ -64,5 +65,5 @@ public abstract class AbstractModel {
      * @param history The list of messages forming the conversation history.
      * @return A standardized {@link Response} object.
      */
-    public abstract Response generateContent(RequestConfig config, List<AbstractMessage> history);
+    public abstract Response generateContent(Chat chat, RequestConfig config, List<AbstractMessage> history);
 }

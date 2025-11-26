@@ -3,17 +3,19 @@
  */
 package uno.anahata.ai;
 
-import uno.anahata.ai.model.tool.ToolPreferences;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.AiConfig;
 import uno.anahata.ai.internal.kryo.KryoUtils;
+import uno.anahata.ai.model.tool.ToolPermission;
 
 /**
  * A unified, serializable POJO that acts as a container for all user-configured preferences.
@@ -28,7 +30,11 @@ public class Preferences {
     /**
      * Holds all preferences related to tool execution permissions.
      */
-    private ToolPreferences toolPreferences = new ToolPreferences();
+    /**
+     * A map where the key is the tool name (e.g., "LocalFiles.readFile") and the value
+     * is the user's stored preference for that tool.
+     */
+    private Map<String, ToolPermission> toolPermissions = new HashMap<>();
 
     // Other preference categories (e.g., ModelPreferences, UIPreferences) can be added here in the future.
 

@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.ai.model.core.AbstractModelMessage;
 
 /**
  * The abstract base class for a tool, now generic on its Parameter and Call types.
@@ -58,11 +59,12 @@ public abstract class AbstractTool<P extends AbstractToolParameter, C extends Ab
     
     /**
      * Factory method to create a tool-specific call object from raw model data.
+     * @param message the model message the call will belong to.
      * @param id The call ID.
      * @param args The raw arguments from the model.
      * @return A new tool call instance.
      */
-    public abstract C createCall(String id, Map<String, Object> args);
+    public abstract C createCall(AbstractModelMessage message, String id, Map<String, Object> args);
     
     /**
      * Template method hook for subclasses to provide their specific Response type.

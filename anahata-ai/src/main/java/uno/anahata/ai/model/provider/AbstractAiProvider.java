@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -64,6 +65,18 @@ public abstract class AbstractAiProvider {
             }
         }
         return this.models;
+    }
+    
+    /**
+     * Finds a single model by its unique ID within this provider.
+     *
+     * @param modelId The ID of the model to find.
+     * @return An Optional containing the model if found, otherwise empty.
+     */
+    public Optional<? extends AbstractModel> findModel(String modelId) {
+        return getModels().stream()
+            .filter(model -> model.getModelId().equals(modelId))
+            .findFirst();
     }
 
     /**

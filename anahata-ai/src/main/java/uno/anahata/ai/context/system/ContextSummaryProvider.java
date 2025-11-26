@@ -1,7 +1,7 @@
 /*
  * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
  */
-package uno.anahata.ai.context.provider;
+package uno.anahata.ai.context.system;
 
 import java.util.Collections;
 import java.util.List;
@@ -15,19 +15,19 @@ import uno.anahata.ai.model.core.TextPart;
  * 
  * @author pablo
  */
-public class ContextSummaryProvider extends AbstractContextProvider {
+public class ContextSummaryProvider extends AbstractSystemInstructionsProvider {
 
-    public ContextSummaryProvider() {
-        super("core-context-summary", "Context Summary", "Provides a summary of the conversation context.", ContextPosition.PROMPT_AUGMENTATION);
+    public ContextSummaryProvider(Chat chat) {
+        super(chat, "core-context-summary", "Context Summary", "Provides a summary of the conversation context.");
     }
 
     @Override
-    public List<AbstractPart> getParts(Chat chat) throws Exception {
+    public List<String> getSystemInstructions() throws Exception {
         StringBuilder sb = new StringBuilder();
         sb.append("# Context Summary\n");
         sb.append("This is a summary of the current conversation context.\n\n");
         // TODO: Implement the full summary logic from V1
         
-        return Collections.singletonList(new TextPart(sb.toString()));
+        return Collections.singletonList(sb.toString());
     }
 }

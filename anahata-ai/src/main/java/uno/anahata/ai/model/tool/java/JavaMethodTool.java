@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
+import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.tool.AbstractTool;
 import uno.anahata.ai.model.tool.ToolPermission;
 import uno.anahata.ai.tool.AiTool;
@@ -102,7 +103,7 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
     }
 
     @Override
-    public JavaMethodToolCall createCall(String id, Map<String, Object> jsonArgs) {
+    public JavaMethodToolCall createCall(AbstractModelMessage modelMessage, String id, Map<String, Object> jsonArgs) {
         // 1. Pre-flight validation for required parameters
         List<String> missingParams = new ArrayList<>();
         for (JavaMethodToolParameter param : getParameters()) {
@@ -112,7 +113,7 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         }
         if (!missingParams.isEmpty()) {
             String reason = "Tool call rejected: Missing required parameters: " + String.join(", ", missingParams);
-            JavaMethodToolCall call = new JavaMethodToolCall(id, this, jsonArgs);
+            JavaMethodToolCall call = new JavaMethodToolCall(modelMessage, id, this, jsonArgs);
             call.getResponse().reject(reason);
             return call;
         }
@@ -132,13 +133,13 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
             }
         } catch (JsonSyntaxException e) {
             String reason = "Tool call rejected: Failed to convert arguments. Error: " + e.getMessage();
-            JavaMethodToolCall call = new JavaMethodToolCall(id, this, jsonArgs);
+            JavaMethodToolCall call = new JavaMethodToolCall(modelMessage, id, this, jsonArgs);
             call.getResponse().reject(reason);
             return call;
         }
 
         // 3. Create the final call object
-        return new JavaMethodToolCall(id, this, convertedArgs);
+        return new JavaMethodToolCall(modelMessage, id, this, convertedArgs);
     }
 
     @Override

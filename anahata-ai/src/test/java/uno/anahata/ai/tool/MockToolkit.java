@@ -6,7 +6,7 @@ import uno.anahata.ai.model.tool.MockComplexObject;
 import uno.anahata.ai.model.tool.Tree;
 
 @AiToolkit(value = "A mock toolkit for testing schema generation and context injection.", retention = 10)
-public class MockToolkit extends JavaTool {
+public class MockToolkit extends AbstractJavaTool {
 
     @AiTool("Returns a greeting for the given name.")
     public String sayHello(@AIToolParam("The name to greet.") String name) {
@@ -31,7 +31,6 @@ public class MockToolkit extends JavaTool {
     @AiTool(value = "A tool specifically for testing the JavaTool context.", requiresApproval = false)
     public String testContext(@AIToolParam("A message to add to the logs.") String logMessage) {
         log("This is a log message from inside the tool: " + logMessage);
-        attach(new TextPart("This is an attachment from inside the tool."));
         return "Context test completed successfully.";
     }
 }

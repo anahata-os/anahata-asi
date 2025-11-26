@@ -7,6 +7,7 @@ import uno.anahata.ai.model.core.TextPart;
 import uno.anahata.ai.model.tool.java.JavaMethodTool;
 import uno.anahata.ai.model.tool.java.JavaMethodToolCall;
 import uno.anahata.ai.model.tool.java.JavaMethodToolResponse;
+import uno.anahata.ai.resource.ResourceManager;
 
 /**
  * An optional, abstract base class for toolkits that provides a rich,
@@ -19,7 +20,7 @@ import uno.anahata.ai.model.tool.java.JavaMethodToolResponse;
  *
  * @author anahata-gemini-pro-2.5
  */
-public abstract class JavaTool {
+public abstract class AbstractJavaTool {
 
     private static final ThreadLocal<JavaMethodToolResponse> context = new ThreadLocal<>();
 
@@ -78,10 +79,18 @@ public abstract class JavaTool {
     protected ToolManager getToolManager() {
         return getTool().getToolkit().getToolManager();
     }
+    
+    /**
+     * Convenience method to get the application's ResourceManager.
+     * @return The ResourceManager.
+     */
+    protected ResourceManager getResourceManager() {
+        return getChat().getResourceManager();
+    }
 
     /**
-     * Convenience method to get the parent Chat session.
-     * @return The Chat session.
+     * Convenience method to get the parent ToolManager session.
+     * @return The ToolManager session.
      */
     protected Chat getChat() {
         return getToolManager().getChat();
@@ -99,15 +108,17 @@ public abstract class JavaTool {
      * Attaches a binary part (e.g., an image) to the current tool's response.
      * @param attachment The BlobPart to attach.
      */
+    /*
     protected void attach(BlobPart attachment) {
         getResponse().addAttachment(attachment);
-    }
+    }*/
 
     /**
      * Attaches a text part (e.g., a code snippet) to the current tool's response.
      * @param attachment The TextPart to attach.
      */
+    /*
     protected void attach(TextPart attachment) {
         getResponse().addAttachment(attachment);
-    }
+    }*/
 }

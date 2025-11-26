@@ -3,6 +3,7 @@ package uno.anahata.ai.model.tool.bad;
 
 import java.lang.reflect.Type;
 import java.util.Map;
+import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.tool.AbstractTool;
 import uno.anahata.ai.model.tool.ToolPermission;
 
@@ -22,8 +23,8 @@ public class BadTool extends AbstractTool<BadToolParam, BadToolCall> {
     }
 
     @Override
-    public BadToolCall createCall(String id, Map<String, Object> args) {
-        return new BadToolCall(id, this, args);
+    public BadToolCall createCall(AbstractModelMessage amm, String id, Map<String, Object> args) {
+        return new BadToolCall(amm, id, this, args);
     }
 
     @Override

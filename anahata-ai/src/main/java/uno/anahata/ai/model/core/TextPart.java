@@ -13,10 +13,14 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public class TextPart extends AbstractPart {
     private String text;
+
+    public TextPart(AbstractMessage message, String text) {
+        super(message);
+        this.text = text;
+    }
+    
 
     @Override
     public String asText() {

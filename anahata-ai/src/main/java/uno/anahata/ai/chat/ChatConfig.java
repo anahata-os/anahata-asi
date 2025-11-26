@@ -12,6 +12,7 @@ import lombok.Setter;
 import uno.anahata.ai.AiConfig;
 import uno.anahata.ai.model.core.RequestConfig;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
+import uno.anahata.ai.tool.files.Files;
 
 /**
  * A model-agnostic, intelligent configuration object for a single chat session.
@@ -42,9 +43,15 @@ public class ChatConfig {
     
     /**
      * The list of tool classes to be used in this chat session.
-     * This can be overridden by subclasses to provide a custom set of tools.
+     * This is pre-populated with core tools and can be modified by the user
+     * before the Chat session is created.
      */
-    private List<Class<?>> toolClasses = new ArrayList<>();
+    private final List<Class<?>> toolClasses = new ArrayList<>();
+
+    {
+        // Pre-populate with core, essential tools.
+        toolClasses.add(Files.class);
+    }
 
     /** The default request configuration for this chat session. Lazily initialized. */
     private RequestConfig requestConfig;

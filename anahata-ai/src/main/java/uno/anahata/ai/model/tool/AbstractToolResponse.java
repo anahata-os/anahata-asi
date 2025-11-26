@@ -6,8 +6,10 @@ import java.util.Collections;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
+import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.AbstractPart;
 import uno.anahata.ai.model.core.BlobPart;
+import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.TextPart;
 
 /**
@@ -44,6 +46,10 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall> extends A
     /** Optional feedback from the user if the tool execution was prompted. */
     @Setter
     private String userFeedback;
+
+    public AbstractToolResponse(AbstractToolCall call) {
+        super(call.getMessage().getToolMessage());
+    }
     
     /**
      * Gets the original invocation request that this result corresponds to.

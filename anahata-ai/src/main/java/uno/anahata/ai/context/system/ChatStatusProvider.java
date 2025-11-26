@@ -1,7 +1,7 @@
 /*
  * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
  */
-package uno.anahata.ai.context.provider;
+package uno.anahata.ai.context.system;
 
 import java.util.Collections;
 import java.util.List;
@@ -16,19 +16,19 @@ import uno.anahata.ai.status.ChatStatus;
  * 
  * @author pablo
  */
-public class ChatStatusProvider extends AbstractContextProvider {
+public class ChatStatusProvider extends AbstractSystemInstructionsProvider {
 
-    public ChatStatusProvider() {
-        super("core-chat-status", "Chat Status", "Provides the current status of the chat session.", ContextPosition.PROMPT_AUGMENTATION);
+    public ChatStatusProvider(Chat chat) {
+        super(chat, "core-chat-status", "Chat Status", "Provides the current status of the chat session.");
     }
 
     @Override
-    public List<AbstractPart> getParts(Chat chat) throws Exception {
+    public List<String> getSystemInstructions() throws Exception {
         ChatStatus status = chat.getStatusManager().getLastEvent() != null
             ? chat.getStatusManager().getLastEvent().getStatus()
             : ChatStatus.IDLE_WAITING_FOR_USER;
             
         String statusString = "- Chat Status: " + status.getDisplayName() + "\n";
-        return Collections.singletonList(new TextPart(statusString));
+        return Collections.singletonList(statusString);
     }
 }

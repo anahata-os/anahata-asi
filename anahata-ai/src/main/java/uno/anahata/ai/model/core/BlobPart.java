@@ -28,7 +28,7 @@ public class BlobPart extends AbstractPart {
     private final byte[] data;
     
     /** The original source path if this blob was created from a file. Can be null. */
-    private final Path sourcePath;
+    private Path sourcePath;
 
     /**
      * Constructs a BlobPart from raw byte data and a specified MIME type.
@@ -37,15 +37,14 @@ public class BlobPart extends AbstractPart {
      * @param mimeType The MIME type.
      * @param data The binary data.
      */
-    public BlobPart(@NonNull String mimeType, @NonNull byte[] data) {
+    public BlobPart(@NonNull AbstractMessage message, @NonNull String mimeType, @NonNull byte[] data) {
+        super(message);
         this.mimeType = mimeType;
         this.data = data;
-        this.sourcePath = null;
     }
     
-    private BlobPart(@NonNull String mimeType, @NonNull byte[] data, @NonNull Path sourcePath) {
-        this.mimeType = mimeType;
-        this.data = data;
+    private BlobPart(@NonNull AbstractMessage message, @NonNull String mimeType, @NonNull byte[] data, @NonNull Path sourcePath) {
+        this(message, mimeType, data);
         this.sourcePath = sourcePath;
     }
 
@@ -59,18 +58,18 @@ public class BlobPart extends AbstractPart {
      * @throws IOException if there's an error reading the file.
      * @throws Exception if there's an error detecting the MIME type.
      */
-    public static BlobPart from(@NonNull Path path) throws Exception {
+    public static BlobPart from(@NonNull AbstractMessage message, @NonNull Path path) throws Exception {
         byte[] data = Files.readAllBytes(path);
         String mimeType = TikaUtils.detectMimeType(path.toFile());
-        return new BlobPart(mimeType, data, path);
+        return new BlobPart(message, mimeType, data, path);
     }
     
     /**
      * A convenience factory method to create a BlobPart from a legacy {@link File} object.
      * @see #from(Path) 
      */
-    public static BlobPart from(@NonNull File file) throws Exception {
-        return from(file.toPath());
+    public static BlobPart from(@NonNull AbstractMessage message, @NonNull File file) throws Exception {
+        return from(message, file.toPath());
     }
     
     @Override

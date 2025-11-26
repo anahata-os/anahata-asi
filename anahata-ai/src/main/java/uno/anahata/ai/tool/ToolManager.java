@@ -29,6 +29,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.AiConfig;
 import uno.anahata.ai.chat.Chat;
+import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.tool.AbstractTool;
 import uno.anahata.ai.model.tool.AbstractToolCall;
 import uno.anahata.ai.model.tool.bad.BadTool;
@@ -55,12 +56,20 @@ public class ToolManager {
 
     /**
      * Primary constructor for use in a live chat session.
+     * This constructor is now self-initializing, registering all tools
+     * defined in the ChatConfig.
      *
      * @param chat The parent chat orchestrator.
      */
     public ToolManager(@NonNull Chat chat) {
         this.chat = chat;
         this.config = chat.getConfig().getAiConfig();
+        
+        // Self-initialize by registering tools from the config.
+        List<Class<?>> toolClasses = chat.getConfig().getToolClasses();
+        if (toolClasses != null) {
+            registerClasses(toolClasses.toArray(new Class[0]));
+        }
     }
 
     /**
@@ -106,7 +115,7 @@ public class ToolManager {
      * @return An {@link AbstractToolCall} with its corresponding, possibly
      * pre-rejected, response.
      */
-    public AbstractToolCall createToolCall(String id, String name, Map<String, Object> jsonArgs) {
+    public AbstractToolCall createToolCall(AbstractModelMessage amm, String id, String name, Map<String, Object> jsonArgs) {
         String callId = (id == null || id.isEmpty()) ? String.valueOf(callIdGenerator.incrementAndGet()) : id;
 
         Optional<? extends AbstractTool> toolOpt = findToolByName(name);
@@ -118,7 +127,7 @@ public class ToolManager {
             tool = new BadTool(name);
         }
 
-        AbstractToolCall call = tool.createCall(callId, jsonArgs);
+        AbstractToolCall call = tool.createCall(amm, callId, jsonArgs);
 
         // Post-creation checks
         AbstractToolkit toolkit = tool.getToolkit();

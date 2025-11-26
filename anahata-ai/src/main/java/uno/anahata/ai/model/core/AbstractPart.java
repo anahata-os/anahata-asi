@@ -3,6 +3,7 @@ package uno.anahata.ai.model.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.chat.ChatConfig;
@@ -45,6 +46,27 @@ public abstract class AbstractPart {
      * {@link #getDefaultTurnsToKeep()} template method.
      */
     private Integer turnsToKeep = null;
+
+    public AbstractPart(@NonNull AbstractMessage message) {
+        message.addPart(this);
+        this.message = message;
+    }
+    
+    public void remove() {
+        message.removePart(this);
+        this.message = null;
+    }
+    
+    
+    /*
+    void setMessage(AbstractMessage message) {
+        if (this.message == null) {
+            this.message = message;
+            message.addPart(this);
+        } else {
+            
+        }
+    }*/
 
     /**
      * Calculates the EFFECTIVE pruned state of this part.

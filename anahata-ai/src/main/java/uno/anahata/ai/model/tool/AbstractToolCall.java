@@ -6,6 +6,8 @@ import java.util.Map;
 import lombok.Getter;
 import lombok.NonNull;
 import uno.anahata.ai.model.core.AbstractPart;
+import uno.anahata.ai.model.core.AbstractModelMessage;
+import uno.anahata.ai.model.core.AbstractToolMessage;
 
 /**
  * Represents a request to execute a specific tool. It holds a direct reference
@@ -45,11 +47,12 @@ public abstract class AbstractToolCall<T extends AbstractTool, R extends Abstrac
     @JsonIgnore
     private final R response;
 
-    public AbstractToolCall(@NonNull String id, @NonNull T tool, @NonNull Map<String, Object> args) {
+    public AbstractToolCall(AbstractModelMessage message, @NonNull String id, @NonNull T tool, @NonNull Map<String, Object> args) {
+        super(message);
         this.id = id;
         this.tool = tool;
         this.args = args;
-        this.response = createResponse();
+        this.response = createResponse(message.getToolMessage());
     }
 
     /**
@@ -59,13 +62,17 @@ public abstract class AbstractToolCall<T extends AbstractTool, R extends Abstrac
     public String getName() {
         return tool.getName();
     }
+    
+    public AbstractModelMessage getMessage() {
+        return (AbstractModelMessage) super.getMessage();
+    }
 
     /**
      * Creates the corresponding response object for this tool call.
      * This acts as a factory method and is called once by the constructor.
      * @return A new, un-executed tool response.
      */
-    protected abstract R createResponse();
+    protected abstract R createResponse(AbstractToolMessage toolMessage);
     
     //<editor-fold defaultstate="collapsed" desc="V3 Context Management Delegation">
     @Override

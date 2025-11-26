@@ -41,7 +41,7 @@ public class RequestConfig {
      * by the ContextManager.
      * @return A list of TextParts representing the system instructions.
      */
-    public List<TextPart> getSystemInstructions() {
+    public List<String> getSystemInstructions() {
         return chat.getContextManager().getSystemInstructions();
     }
 

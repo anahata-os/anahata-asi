@@ -13,12 +13,12 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.model.tool.AbstractToolResponse;
 import uno.anahata.ai.model.tool.ToolExecutionStatus;
 import uno.anahata.ai.tool.AiToolException;
-import uno.anahata.ai.tool.JavaTool;
+import uno.anahata.ai.tool.AbstractJavaTool;
 
 /**
  * A rich POJO that captures the complete and final outcome of a single tool
  * call. This class now follows a deferred execution model and manages the
- * thread-local context for {@link JavaTool} instances.
+ * thread-local context for {@link AbstractJavaTool} instances.
  *
  * @author anahata-gemini-pro-2.5
  */
@@ -42,6 +42,7 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
     private Throwable exception;
 
     public JavaMethodToolResponse(@NonNull JavaMethodToolCall call) {
+        super(call);
         this.call = call;
         setStatus(ToolExecutionStatus.PENDING);
     }
@@ -56,7 +57,7 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
         long startTime = System.currentTimeMillis();
         JavaMethodTool tool = getCall().getTool();
         Object toolInstance = tool.getToolInstance();
-        JavaTool contextAwareTool = (toolInstance instanceof JavaTool) ? (JavaTool) toolInstance : null;
+        AbstractJavaTool contextAwareTool = (toolInstance instanceof AbstractJavaTool) ? (AbstractJavaTool) toolInstance : null;
 
         try {
             if (contextAwareTool != null) {

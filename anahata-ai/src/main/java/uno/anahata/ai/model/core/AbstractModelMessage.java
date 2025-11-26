@@ -3,9 +3,11 @@ package uno.anahata.ai.model.core;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
+import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.model.tool.AbstractToolCall;
 
 /**
@@ -16,15 +18,17 @@ import uno.anahata.ai.model.tool.AbstractToolCall;
  */
 @Getter
 @Setter
-public class ModelMessage extends AbstractMessage {
+public abstract class AbstractModelMessage<T extends AbstractToolMessage> extends AbstractMessage {
     
     /** The ID of the model that generated this message. */
     private final String modelId;
     
     /** A paired message containing the responses to any tool calls in this message. */
-    private ToolMessage toolMessage;
+    @Getter(AccessLevel.NONE)
+    private T toolMessage;
     
-    public ModelMessage(@NonNull String modelId) {
+    public AbstractModelMessage(@NonNull Chat chat, @NonNull String modelId) {
+        super(chat);
         this.modelId = modelId;
     }
     
@@ -33,6 +37,14 @@ public class ModelMessage extends AbstractMessage {
         return Role.MODEL;
     }
 
+    public T getToolMessage() {
+        if (toolMessage == null) {
+            createToolMessage();
+        }
+        return toolMessage;
+    }
+    
+    
     /**
      * Filters and returns only the tool call parts from this message.
      * @return A list of {@link AbstractToolCall} parts, or an empty list if none exist.
@@ -44,23 +56,7 @@ public class ModelMessage extends AbstractMessage {
                 .collect(Collectors.toList());
     }
     
-    /**
-     * Lazily creates and returns the associated ToolMessage.
-     * It ensures the ToolMessage is properly initialized with the same Chat context
-     * and establishes the back-reference from the ToolMessage to this ModelMessage.
-     * @return The associated ToolMessage, creating it if it doesn't exist.
-     */
-    public ToolMessage getToolMessage() {
-        if (toolMessage == null && !getToolCalls().isEmpty()) {
-            toolMessage = new ToolMessage();
-            toolMessage.setChat(getChat()); // Propagate the chat context
-            toolMessage.setModelMessage(this); // Set the back-reference
-            for (AbstractToolCall toolCall : getToolCalls()) {
-                toolMessage.getParts().add(toolCall.getResponse());
-            }
-        }
-        return toolMessage;
-    }
+    protected abstract T createToolMessage();
     
     
 }

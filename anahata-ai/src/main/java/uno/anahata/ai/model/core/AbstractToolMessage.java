@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
+import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.model.tool.AbstractTool;
 import uno.anahata.ai.model.tool.AbstractToolResponse;
 import uno.anahata.ai.model.tool.ToolExecutionStatus;
@@ -13,17 +14,24 @@ import uno.anahata.ai.model.tool.ToolPermission;
 /**
  * Represents a message containing the results of tool executions.
  * This message is sent from the client back to the model after function calls.
- * It holds a direct reference to the {@link ModelMessage} that initiated the tool calls.
+ * It holds a direct reference to the {@link AbstractModelMessage} that initiated the tool calls.
  *
  * @author anahata-gemini-pro-2.5
  */
 @Getter
 @Setter
-public class ToolMessage extends AbstractMessage {
+public abstract class AbstractToolMessage<T extends AbstractModelMessage> extends AbstractMessage {
     /**
-     * The ModelMessage that contains the tool calls this message is responding to.
+     * The AbstractModelMessage that contains the tool calls this message is responding to.
      */
-    private ModelMessage modelMessage;
+    private final T modelMessage;
+
+    public AbstractToolMessage(T modelMessage) {
+        super(modelMessage.getChat());
+        this.modelMessage = modelMessage;
+        modelMessage.setToolMessage(this);
+    }
+    
     
     @Override
     public Role getRole() {
@@ -49,7 +57,7 @@ public class ToolMessage extends AbstractMessage {
      */
     public boolean isAutoRunnable() {
         // Condition 1: Check global configuration settings.
-        if (getChat() == null || !getChat().getConfig().isLocalToolsEnabled() || !getChat().getConfig().isAutoReplyTools()) {
+        if (!getChat().getConfig().isLocalToolsEnabled() || !getChat().getConfig().isAutoReplyTools()) {
             return false;
         }
         

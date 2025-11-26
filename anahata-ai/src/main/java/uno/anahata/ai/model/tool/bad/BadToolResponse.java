@@ -19,6 +19,7 @@ public class BadToolResponse extends AbstractToolResponse<BadToolCall> {
     private final BadToolCall call;
 
     public BadToolResponse(@NonNull BadToolCall call) {
+        super(call);
         this.call = call;
         setStatus(ToolExecutionStatus.NOT_EXECUTED);
         setError("Tool call rejected: The tool '" + call.getName() + "' was not found.");
