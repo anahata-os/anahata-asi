@@ -13,6 +13,14 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <dependencies>
+        <!-- Core UI Module -->
+        <dependency>
+            <groupId>uno.anahata</groupId>
+            <artifactId>anahata-ai-swing</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        
+        <!-- Existing Dependencies -->
         <dependency>
             <groupId>uno.anahata</groupId>
             <artifactId>anahata-ai-cli</artifactId>
@@ -27,6 +35,12 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <scope>runtime</scope>
+        </dependency>
+        
+        <!-- Re-adding Lombok for annotation processing -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
         </dependency>
     </dependencies>
     <build>

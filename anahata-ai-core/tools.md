@@ -15,7 +15,7 @@ The entire process, from a simple Java method to a model-callable function, is h
 Tools are defined in standard Java classes using a set of intuitive annotations:
 
 -   **`@AiToolkit`**: Marks a class as a container for related tools. It provides a high-level description for the entire toolkit.
--   **`@AiTool`**: Marks a public method within a toolkit class as an AI-callable tool. It contains the detailed description that the model will use to understand the tool's purpose.
+-   **`@AiTool`**: Marks a public method within a toolkit class as an AI-callable tool. It contains the detailed description that the model will use to understand the tool's purpose and a `retention` policy.
 -   **`@AIToolParam`**: Describes a parameter of a tool method, providing the model with essential information about what to pass as an argument.
 
 ### 2.2. Registration and Parsing
@@ -35,9 +35,9 @@ This is the cornerstone of the framework's intelligence. Once the tool is parsed
 
 -   **Deep Reflection**: The `SchemaProvider` performs a deep, recursive analysis of the tool's return type and parameter types.
 -   **Rich Type Information**: It enriches the schema by embedding the fully qualified Java class name into the `title` field of every object, property, and array item. This provides the model with unambiguous type information.
--   **Automatic Response Wrapping**: The provider intelligently wraps the tool's actual return type within a standardized response schema (`JavaMethodToolResponse`). This wrapper includes common fields like `status`, `logs`, and `attachments`.
+-   **Automatic Response Wrapping**: The provider intelligently wraps the tool's actual return type within a standardized response schema (`JavaMethodToolResponse`). This wrapper includes common fields like `status`, `logs`, and `executionTimeMillis`.
 -   **Void Method Handling**: If a tool method returns `void` or `Void`, the `SchemaProvider` automatically removes the `result` property from the final schema, correctly signaling to the model that no return value should be expected.
--   **Robust Inlining**: The provider correctly handles complex, nested, and recursive object graphs. It generates a complete schema map with internal references (`$ref`) first, then performs a single, final inlining pass to produce a clean, fully resolved schema. This robust order of operations prevents bugs with nested types.
+-   **Robust Inlining**: The provider correctly handles complex, nested, and recursive object graphs. It generates a complete schema map with internal references (`$ref`) first, then performs a single, final inlining pass to produce a clean, fully resolved schema.
 
 ### 2.4. Execution: A Type-Safe, Deferred Process
 
@@ -49,11 +49,13 @@ When the model requests a tool call, the framework follows a robust, multi-step 
 4.  **Invocation**: The `JavaMethodToolResponse.execute()` method is called. This method uses the stored `java.lang.reflect.Method` and the converted arguments to invoke the actual Java tool method.
 5.  **Result Capturing**: The result, or any exception, is captured in the `JavaMethodToolResponse` object, which is then sent back to the model.
 
-This architecture ensures a clean separation of concerns, robust error handling, and a high degree of type safety throughout the entire tool lifecycle.
+## 3. Context-Aware Tools
 
-### 2.5. V3 Context-Aware Tools
+The V2 architecture allows tools to be aware of and interact with the chat context.
 
-The V3 architecture introduces a new layer of intelligence, allowing tools to participate in their own context lifecycle.
+-   **Context-Aware API**: Toolkits can extend the `AbstractJavaTool` base class. This gives any tool method access to the current execution context via a `ThreadLocal`. This allows tools to call methods like `log(String message)` or `getChat()` to interact with the session without needing extra parameters in their method signature.
+-   **Tool-Driven Retention:** A tool's retention policy is defined in its `@AiTool(retention = ...)` annotation, providing a default number of turns for its call/response pair to remain in the context.
 
--   **Tool-Driven Retention:** A tool can now dynamically set its own retention policy based on its execution outcome. For example, a `suggestChange` tool can set its `turnsToKeep` to `0` on success (as the change is now in the source code) but set it to `10` on failure or rejection, ensuring the model retains the context of the failed interaction.
--   **Model-Driven Retention:** A new tool, `ContextWindow.setTurnsToKeep(long partId, int turns)`, will be introduced. This will give the model direct, granular control over the context, allowing it to "pin" critical information (like a `git diff` or a specific error message) for as long as it's needed.
+## 4. Planned Enhancements
+
+-   **Model-Driven Retention:** A `ContextWindow.setTurnsToKeep(long partId, int turns)` tool will be introduced. This will give the model direct, granular control over the context, allowing it to "pin" critical information (like a `git diff` or a specific error message) for as long as it's needed.

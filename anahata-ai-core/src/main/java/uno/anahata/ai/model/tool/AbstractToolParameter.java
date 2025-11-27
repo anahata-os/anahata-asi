@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
+import uno.anahata.ai.internal.TokenizerUtils;
 
 /**
  * A rich, self-documenting, abstract representation of a single parameter for a tool method.
@@ -37,4 +38,15 @@ public abstract class AbstractToolParameter<T extends AbstractTool<?, ?>> {
 
     /** An optional identifier for a custom UI renderer for this parameter. */
     private final String rendererId;
+    
+    /**
+     * Calculates the token count of this parameter on-the-fly.
+     * The count is a provider-agnostic approximation of the token overhead,
+     * calculated by summing the tokens in its description and JSON schema.
+     *
+     * @return The total token count.
+     */
+    public int getTokenCount() {
+        return TokenizerUtils.countTokens(description) + TokenizerUtils.countTokens(jsonSchema);
+    }
 }

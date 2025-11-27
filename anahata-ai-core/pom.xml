@@ -15,6 +15,12 @@
     <description>Core, model-agnostic AI framework components.</description>
     
     <dependencies>
+        <!-- LLM Tokenizer -->
+        <dependency>
+            <groupId>com.knuddels</groupId>
+            <artifactId>jtokkit</artifactId>
+        </dependency>
+        
         <!-- Core & Logging -->
         <dependency>
             <groupId>org.slf4j</groupId>

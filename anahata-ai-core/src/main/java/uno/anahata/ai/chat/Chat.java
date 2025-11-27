@@ -46,12 +46,6 @@ public class Chat {
     private final List<AbstractAiProvider> providers = new ArrayList<>();
 
     /**
-     * The user-defined name for this chat session.
-     */
-    @Setter
-    private String name;
-
-    /**
      * The currently selected model for the chat session.
      */
     @Setter
@@ -71,7 +65,6 @@ public class Chat {
     @SneakyThrows
     public Chat(@NonNull ChatConfig config) {
         this.config = config;
-        this.name = config.getSessionId(); // Default name to session ID
         this.executor = AiExecutors.newCachedThreadPoolExecutor(config.getSessionId());
         this.toolManager = new uno.anahata.ai.tool.ToolManager(this);
         this.contextManager = new ContextManager(this);

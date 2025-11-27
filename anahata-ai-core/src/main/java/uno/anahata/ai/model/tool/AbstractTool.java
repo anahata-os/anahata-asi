@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.ai.internal.TokenizerUtils;
 import uno.anahata.ai.model.core.AbstractModelMessage;
 
 /**
@@ -71,4 +72,24 @@ public abstract class AbstractTool<P extends AbstractToolParameter, C extends Ab
      * @return The reflection Type of the corresponding AbstractToolResponse subclass.
      */
     public abstract Type getResponseType();
+    
+    /**
+     * Calculates the total token count of this tool on-the-fly.
+     * The count is a provider-agnostic approximation of the token overhead,
+     * calculated by summing the tokens in its description, response schema,
+     * and all of its parameters.
+     *
+     * @return The total token count.
+     */
+    public int getTokenCount() {
+        int totalTokens = 0;
+        totalTokens += TokenizerUtils.countTokens(description);
+        totalTokens += TokenizerUtils.countTokens(responseJsonSchema);
+
+        for (AbstractToolParameter<?> param : parameters) {
+            totalTokens += param.getTokenCount();
+        }
+
+        return totalTokens;
+    }
 }

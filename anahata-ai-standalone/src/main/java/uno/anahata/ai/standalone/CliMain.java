@@ -11,7 +11,7 @@ import uno.anahata.ai.gemini.GeminiCliChatConfig;
  * and hands control over to the CLI application.
  * @author anahata-ai
  */
-public class Main {
+public class CliMain {
     public static void main(String[] args) {
         System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "info");
         System.out.println("Starting Anahata AI Standalone...");

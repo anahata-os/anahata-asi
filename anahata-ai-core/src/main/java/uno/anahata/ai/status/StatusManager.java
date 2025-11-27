@@ -3,24 +3,25 @@
  */
 package uno.anahata.ai.status;
 
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.chat.Chat;
 
 /**
  * Manages and broadcasts chat status events to registered listeners.
- * This is a direct port of the proven V1 StatusManager, using the standard
- * java.beans.PropertyChangeSupport for robust, decoupled event handling.
- * 
+ * This is a direct port of the proven V1 StatusManager, using a type-safe listener pattern.
+ *
  * @author pablo
  */
 @RequiredArgsConstructor
+@Slf4j
 public class StatusManager {
 
-    private final PropertyChangeSupport changeSupport = new PropertyChangeSupport(this);
-    
+    private final List<StatusListener> listeners = new CopyOnWriteArrayList<>();
+
     @Getter
     private final Chat chat;
 
@@ -33,14 +34,20 @@ public class StatusManager {
 
     public void fireStatusChanged(ChatStatus status, String message) {
         lastEvent = new ChatStatusEvent(chat, status, message);
-        changeSupport.firePropertyChange(lastEvent);
+        for (StatusListener listener : listeners) {
+            try {
+                listener.statusChanged(lastEvent);
+            } catch (Exception e) {
+                log.error("StatusListener {} threw an exception", listener.getClass().getName(), e);
+            }
+        }
     }
 
-    public void addPropertyChangeListener(PropertyChangeListener listener) {
-        changeSupport.addPropertyChangeListener(listener);
+    public void addStatusListener(StatusListener listener) {
+        listeners.add(listener);
     }
 
-    public void removePropertyChangeListener(PropertyChangeListener listener) {
-        changeSupport.removePropertyChangeListener(listener);
+    public void removeStatusListener(StatusListener listener) {
+        listeners.remove(listener);
     }
 }

@@ -69,23 +69,34 @@ public abstract class AbstractPart {
     }*/
 
     /**
-     * Calculates the EFFECTIVE pruned state of this part.
+     * Calculates the EFFECTIVE pruned state of this part, now with "deep pinning" logic.
      * A part is effectively pruned if it was explicitly pruned, if its PARENT MESSAGE
-     * was explicitly pruned, or if its time-to-live has expired.
+     * was explicitly pruned, or if its time-to-live has expired. Crucially, it is
+     * considered NOT pruned if it or its parent message is "pinned" (pruned=false).
+     *
      * @return {@code true} if the part is effectively pruned, {@code false} otherwise.
      */
     public boolean isEffectivelyPruned() {
-        // 1. Check the explicit flag on the part itself.
+        // --- PINNING LOGIC (takes precedence) ---
+        // 1. Is the part itself explicitly pinned?
+        if (Boolean.FALSE.equals(this.pruned)) {
+            return false; // It's pinned, not pruned.
+        }
+        // 2. Is the parent message pinned? (Deep Pin)
+        if (Boolean.FALSE.equals(getMessage().isPruned())) {
+            return false; // Inherits pin, not pruned.
+        }
+
+        // --- PRUNING LOGIC ---
+        // 3. Is the part itself explicitly pruned?
         if (Boolean.TRUE.equals(this.pruned)) {
             return true;
         }
-
-        // 2. BREAK THE RECURSION: Check the PARENT'S EXPLICIT state, not its effective state.
+        // 4. Is the parent message explicitly pruned?
         if (Boolean.TRUE.equals(getMessage().isPruned())) {
             return true;
         }
-
-        // 3. Finally, check the time-based auto-pruning logic.
+        // 5. Finally, check the time-based auto-pruning logic (only if pruned is null for both).
         if (getTurnsLeft() <= 0) {
             return true;
         }

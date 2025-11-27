@@ -31,6 +31,9 @@ public class ChatConfig {
     @NonNull
     private final String sessionId;
     
+    /** The user-defined name for this chat session. Defaults to the session ID. */
+    private String name;
+    
     /** A late-binding reference to the parent Chat. Set during Chat construction. */
     @Setter
     private Chat chat;
@@ -56,7 +59,7 @@ public class ChatConfig {
     /** The default request configuration for this chat session. Lazily initialized. */
     private RequestConfig requestConfig;
     
-    //<editor-fold defaultstate="collapsed" desc="V2 Chat Loop">
+    //<editor-fold defaultstate="collapsed" desc="Chat Loop">
     /** If true, local Java tools are enabled. If false, server-side tools (like Google Search) are used. */
     private boolean localToolsEnabled = true;
 
@@ -64,7 +67,7 @@ public class ChatConfig {
     private boolean autoReplyTools = false;
     //</editor-fold>
 
-    //<editor-fold defaultstate="collapsed" desc="V3 Context Management">
+    //<editor-fold defaultstate="collapsed" desc="Context Management">
     /** The default number of user turns a TextPart should be kept in context. */
     private int defaultTextPartTurnsToKeep = 108;
     

@@ -16,6 +16,9 @@ public enum ChatStatus {
     /** A normal API call is in progress (e.g., waiting for a model response). */
     API_CALL_IN_PROGRESS("API Call in Progress...", "Waiting for a response from the model."),
     
+    /** The assistant is waiting for the user to approve/deny tool calls. */
+    TOOL_PROMPT("Tool Prompt", "Waiting for user to approve/deny tool calls."),
+    
     /** Local tool (function) execution is in progress. */
     TOOL_EXECUTION_IN_PROGRESS("Tool Execution...", "Executing local Java tools (functions)."),
     

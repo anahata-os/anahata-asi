@@ -161,14 +161,15 @@ public class ContextManager {
         }
         synchronized (history) {
             for (AbstractMessage message : history) {
+                // Use getParts(true) to iterate over all parts, including soft-pruned ones
                 for (AbstractPart ap : message.getParts(true)) {
                     if (ap.isEffectivelyPruned() && ap.getTurnsLeft() < -hardPruneDelay) {
                         ap.remove();
                     }
                 }
             }
-            // Remove empty messages
-            history.removeIf(msg -> msg.getParts().isEmpty() && !msg.isEffectivelyPruned());
+            // Remove empty messages, but NEVER remove an explicitly pinned message (pruned=false)
+            history.removeIf(msg -> msg.getParts(true).isEmpty() && !Boolean.FALSE.equals(msg.isPruned()));
         }
     }
 
