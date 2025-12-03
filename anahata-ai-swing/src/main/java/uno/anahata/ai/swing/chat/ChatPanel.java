@@ -22,6 +22,8 @@ public class ChatPanel extends JPanel {
     private final JTabbedPane tabbedPane;
     private final ToolsPanel toolsPanel;
     private final InputPanel inputPanel;
+    private final HeaderPanel headerPanel;
+    private final ToolbarPanel toolbarPanel;
     private final JPanel conversationPanel; // Placeholder for the main chat view
 
     public ChatPanel(Chat chat) {
@@ -29,6 +31,8 @@ public class ChatPanel extends JPanel {
         this.tabbedPane = new JTabbedPane();
         this.toolsPanel = new ToolsPanel(chat);
         this.inputPanel = new InputPanel(chat);
+        this.headerPanel = new HeaderPanel(chat);
+        this.toolbarPanel = new ToolbarPanel(chat);
         this.conversationPanel = new JPanel(); // Simple placeholder
     }
 
@@ -40,12 +44,16 @@ public class ChatPanel extends JPanel {
 
         // Initialize child components first
         toolsPanel.initComponents();
+        headerPanel.initComponents();
+        toolbarPanel.initComponents();
 
         // Configure Tabbed Pane
         tabbedPane.addTab("Chat", conversationPanel);
         tabbedPane.addTab("Tools", toolsPanel);
 
         // Add components to the main panel
+        add(headerPanel, BorderLayout.NORTH);
+        add(toolbarPanel, BorderLayout.WEST);
         add(tabbedPane, BorderLayout.CENTER);
         add(inputPanel, BorderLayout.SOUTH);
     }

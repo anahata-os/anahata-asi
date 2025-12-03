@@ -31,7 +31,7 @@ public class SwingChatConfig extends ChatConfig {
                 return new Color(128, 0, 128); // PURPLE
             case WAITING_WITH_BACKOFF:
                 return new Color(255, 0, 0); // RED
-            case IDLE_WAITING_FOR_USER:
+            case IDLE:
                 return new Color(0, 128, 0); // GREEN
             default:
                 return Color.BLACK;
