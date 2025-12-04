@@ -17,18 +17,16 @@
  */
 package uno.anahata.ai.swing.provider;
 
+import uno.anahata.ai.swing.components.HtmlWrappingToolTip;
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableRowSorter;
 import uno.anahata.ai.AiConfig;
 
-import uno.anahata.ai.model.provider.AbstractAiProvider;
 import uno.anahata.ai.model.provider.AiProviderRegistry;
 import uno.anahata.ai.model.provider.AbstractModel;
 

@@ -65,6 +65,15 @@ public class ChatConfig {
 
     /** If true, the chat loop will automatically re-prompt the model after executing tools. */
     private boolean autoReplyTools = false;
+    
+    /** The maximum number of times to retry an API call on failure. */
+    private int apiMaxRetries = 5;
+
+    /** The initial delay in milliseconds before the first retry. */
+    private long apiInitialDelayMillis = 2000;
+
+    /** The maximum delay in milliseconds between retries. */
+    private long apiMaxDelayMillis = 30000;
     //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Context Management">

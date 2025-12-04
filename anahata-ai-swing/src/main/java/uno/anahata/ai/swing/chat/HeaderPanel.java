@@ -17,9 +17,9 @@ import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
 import uno.anahata.ai.model.provider.AbstractModel;
-import uno.anahata.ai.swing.LoadSessionIcon;
-import uno.anahata.ai.swing.SaveSessionIcon;
-import uno.anahata.ai.swing.SearchIcon;
+import uno.anahata.ai.swing.icons.LoadSessionIcon;
+import uno.anahata.ai.swing.icons.SaveSessionIcon;
+import uno.anahata.ai.swing.icons.SearchIcon;
 import uno.anahata.ai.swing.provider.ProviderRegistryViewer;
 
 /**

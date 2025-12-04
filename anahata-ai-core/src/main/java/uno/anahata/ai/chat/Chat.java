@@ -23,6 +23,7 @@ import uno.anahata.ai.model.core.UserMessage;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
 import uno.anahata.ai.model.provider.AbstractModel;
 import uno.anahata.ai.resource.ResourceManager;
+import uno.anahata.ai.status.ChatStatus;
 import uno.anahata.ai.status.StatusManager;
 import uno.anahata.ai.tool.ToolManager;
 
@@ -57,12 +58,6 @@ public class Chat {
      */
     private volatile boolean running = false;
 
-    /**
-     * A queue for a single user message, used to handle input that arrives
-     * while the chat loop is busy.
-     */
-    private UserMessage stagedUserMessage;
-
     @SneakyThrows
     public Chat(@NonNull ChatConfig config) {
         this.config = config;
@@ -91,42 +86,94 @@ public class Chat {
     }
 
     /**
-     * Adds a user message to the context and then triggers the model to
-     * generate a response.
+     * The primary entry point for the UI to send a message. This method is
+     * designed to be called from a background thread (e.g., a SwingWorker). It
+     * adds the message to the context and then ensures the processing loop is
+     * running.
+     * <ul>
+     * <li>If the chat is idle, this method will start the processing loop and
+     * block the calling thread until the entire conversation turn is
+     * complete.</li>
+     * <li>If the chat is already busy, it simply adds the message to the
+     * context and returns immediately. The ongoing loop will pick up the new
+     * message on its next iteration.</li>
+     * </ul>
      *
      * @param message The user's message.
-     * @return The model's response.
      */
-    public Response<?> sendMessage(UserMessage message) {
+    public void sendMessage(@NonNull UserMessage message) {
         contextManager.addMessage(message);
-        return sendToModel();
+
+        if (running) {
+            log.info("Chat is busy. Message added to context and will be processed in the current turn.");
+            return;
+        }
+
+        running = true;
+        try {
+            sendToModel();
+        } finally {
+            running = false;
+        }
     }
 
     /**
      * The core method for interacting with the model. It builds the history,
-     * sends it, and processes the response.
-     *
-     * @return The model's response.
+     * sends it, and processes the response, including handling retries and
+     * multiple candidates.
      */
-    private Response<?> sendToModel() {
+    private void sendToModel() {
         if (selectedModel == null) {
-            throw new IllegalStateException("A model must be selected before sending a message. Call setSelectedModel().");
+            throw new IllegalStateException("A model must be selected before sending a message.");
         }
 
-        RequestConfig requestConfig = config.getRequestConfig();
-        List<AbstractMessage> history = contextManager.buildVisibleHistory();
+        int maxRetries = config.getApiMaxRetries();
+        long initialDelayMillis = config.getApiInitialDelayMillis();
+        long maxDelayMillis = config.getApiMaxDelayMillis();
 
-        log.info("Sending request to model '{}' with {} messages in history ({} sent to API).",
-                selectedModel.getModelId(), contextManager.getHistory().size(), history.size());
+        for (int attempt = 0; attempt < maxRetries; attempt++) {
+            try {
+                // Build config and history *inside* the loop for freshness on retries
+                RequestConfig requestConfig = config.getRequestConfig();
+                List<AbstractMessage> history = contextManager.buildVisibleHistory();
 
-        Response<?> response = selectedModel.generateContent(this, requestConfig, history);
+                statusManager.fireStatusChanged(ChatStatus.API_CALL_IN_PROGRESS);
+                log.info("Sending request to model '{}' (attempt {}/{}) with {} messages.",
+                         selectedModel.getModelId(), attempt + 1, maxRetries, history.size());
 
-        // If the model returns only one candidate, choose it automatically.
-        if (response.getCandidates().size() == 1) {
-            chooseCandidate(response.getCandidates().get(0));
+                Response<?> response = selectedModel.generateContent(this, requestConfig, history);
+
+                if (response.getCandidates().size() == 1) {
+                    chooseCandidate(response.getCandidates().get(0));
+                } else {
+                    log.info("Model returned multiple candidates. Pausing for user selection.");
+                    statusManager.fireStatusChanged(ChatStatus.CANDIDATE_CHOICE_PROMPT);
+                }
+                return; // Success, exit the retry loop.
+
+            } catch (Exception e) {
+                log.warn("API Error on attempt {}: {}", attempt + 1, e.toString());
+
+                if (attempt == maxRetries - 1) {
+                    log.error("Max retries reached. Aborting.", e);
+                    statusManager.fireStatusChanged(ChatStatus.MAX_RETRIES_REACHED);
+                    // Re-throw the final exception to be handled by the UI layer
+                    throw new RuntimeException("Failed after " + maxRetries + " attempts.", e);
+                }
+
+                // Calculate exponential backoff with jitter
+                long delay = (long) (initialDelayMillis * Math.pow(2, attempt)) + (long) (Math.random() * 500);
+                long backoffAmount = Math.min(delay, maxDelayMillis);
+
+                try {
+                    statusManager.fireStatusChanged(ChatStatus.WAITING_WITH_BACKOFF, "Retrying in " + backoffAmount + "ms");
+                    Thread.sleep(backoffAmount);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Chat interrupted during retry delay.", ie);
+                }
+            }
         }
-
-        return response;
     }
 
     /**
@@ -150,26 +197,27 @@ public class Chat {
     }
 
     /**
-     * Resets the entire chat session to a clean slate, ready for a new conversation.
-     * This clears all history, resources, and resets the session ID and all counters.
+     * Resets the entire chat session to a clean slate, ready for a new
+     * conversation. This clears all history, resources, and resets the session
+     * ID and all counters.
      */
     public void clear() {
         log.info("Clearing chat session {}", config.getSessionId());
-        
+
         // 1. Clear history and all context-related counters.
         contextManager.clear();
-        
+
         // 2. Reset status
         statusManager.reset();
-        
+
         // 3. Reset tool call counters
         toolManager.reset();
-        
+
         // 4. Start a new session by updating the ID and name
         String newSessionId = UUID.randomUUID().toString();
         config.setSessionId(newSessionId);
         config.setName(null); // Clear the name, let it default or be set by user
-        
+
         log.info("Chat session cleared. New session ID: {}", newSessionId);
     }
 

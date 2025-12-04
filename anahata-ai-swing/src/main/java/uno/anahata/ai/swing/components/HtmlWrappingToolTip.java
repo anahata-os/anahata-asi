@@ -15,7 +15,7 @@
  *
  * Força Barça!
  */
-package uno.anahata.ai.swing.provider;
+package uno.anahata.ai.swing.components;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;

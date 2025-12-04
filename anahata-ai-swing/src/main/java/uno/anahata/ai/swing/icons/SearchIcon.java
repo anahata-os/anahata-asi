@@ -1,7 +1,7 @@
 /*
  * Licensed under the Anahata Software License (AS IS) v 108. See the LICENSE file for details. Fora Bara!
  */
-package uno.anahata.ai.swing;
+package uno.anahata.ai.swing.icons;
 
 import java.awt.BasicStroke;
 import java.awt.Color;

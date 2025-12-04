@@ -1,7 +1,7 @@
 /*
  * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details.
  */
-package uno.anahata.ai.swing;
+package uno.anahata.ai.swing.icons;
 
 import java.awt.BasicStroke;
 import java.awt.Color;

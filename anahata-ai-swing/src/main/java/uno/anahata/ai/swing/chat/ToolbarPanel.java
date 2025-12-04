@@ -15,11 +15,11 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.chat.ChatConfig;
-import uno.anahata.ai.swing.AutoReplyIcon;
-import uno.anahata.ai.swing.CompressIcon;
-import uno.anahata.ai.swing.LocalToolsIcon;
-import uno.anahata.ai.swing.RestartIcon;
-import uno.anahata.ai.swing.ServerToolsIcon;
+import uno.anahata.ai.swing.icons.AutoReplyIcon;
+import uno.anahata.ai.swing.icons.CompressIcon;
+import uno.anahata.ai.swing.icons.LocalToolsIcon;
+import uno.anahata.ai.swing.icons.RestartIcon;
+import uno.anahata.ai.swing.icons.ServerToolsIcon;
 
 /**
  * The vertical toolbar panel for the chat UI, containing primary action toggles.
