@@ -50,7 +50,9 @@ public final class PlaybackLinePanel extends JPanel {
     }
 
     private void initPlaybackLineComboBox() {
-        new SwingTask<List<LineInfo>>("Load Playback Lines",
+        new SwingTask<List<LineInfo>>(
+            this, // Pass 'this' as the owner
+            "Load Playback Lines",
             () -> SoundUtils.getAvailablePlaybackLines(),
             (lines) -> {
                 if (lines != null && !lines.isEmpty()) {
@@ -68,10 +70,9 @@ public final class PlaybackLinePanel extends JPanel {
                 }
             },
             (error) -> {
-                log.error("Failed to load playback lines", error);
                 playbackLineComboBox.setEnabled(false);
                 playbackLineComboBox.setToolTipText("Error loading playback lines: " + error.getMessage());
-                SwingUtils.showException("Load Playback Lines", "Failed to load playback lines", error);
+                SwingUtils.showException(this, "Load Playback Lines", "Failed to load playback lines", error);
             }
         ).execute();
     }

@@ -39,8 +39,14 @@ public class GeminiAiProvider extends AbstractAiProvider {
             client = Client.builder()
                     .apiKey(getApiKey())
                     .build();
-        }
+        }        
         return client;
+    }
+    /**
+     * Resets the client to null to force a new key on the next call.
+     */
+    public synchronized void resetClient() {
+        client = null;
     }
 
     @Override

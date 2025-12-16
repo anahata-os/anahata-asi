@@ -13,6 +13,8 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.swing.*;
 import lombok.Getter;
@@ -165,94 +167,109 @@ public class InputPanel extends JPanel { // Changed from JXTitledPanel
         if (result == JFileChooser.APPROVE_OPTION) {
             File[] selectedFiles = fileChooser.getSelectedFiles();
 
-            new SwingTask<>(
+            executeTask(
                     "Attach Files",
                     () -> {
-                        // Collect Paths from selected Files
                         List<Path> paths = Arrays.stream(selectedFiles)
                                 .map(File::toPath)
                                 .collect(Collectors.toList());
-
-                        // Use the new convenience method
                         currentMessage.addAttachments(paths);
                         return null;
                     },
                     (v) -> inputMessageRenderer.render() // Refresh preview
-            ).execute();
+            );
         }
     }
 
     private void attachScreenshot() {
-        new SwingTask<>(
+        executeTask(
                 "Attach Screenshot",
                 () -> {
-                    // Get Paths from UICapture
                     List<Path> files = UICapture.screenshotAllScreenDevices();
-
-                    // Use the new convenience method
                     currentMessage.addAttachments(files);
                     return null;
                 },
                 (v) -> inputMessageRenderer.render() // Refresh preview
-        ).execute();
+        );
     }
 
     private void attachWindowCaptures() {
-        new SwingTask<>(
+        executeTask(
                 "Attach Application Frames",
                 () -> {
-                    // Get Paths from UICapture
                     List<Path> files = UICapture.screenshotAllJFrames();
-
-                    // Use the new convenience method
                     currentMessage.addAttachments(files);
                     return null;
                 },
                 (v) -> inputMessageRenderer.render() // Refresh preview
-        ).execute();
+        );
     }
 
     /**
-     * Sends the {@code currentMessage} to the chat asynchronously.
+     * Sends the {@code currentMessage} to the chat asynchronously, or resends the context if the input is empty.
      */
     private void sendMessage() {
-        if (currentMessage.isEmpty()) {
-            return; // Don't send empty messages
-        }
-
-        final InputUserMessage messageToSend = this.currentMessage;
-        final String textToRestoreOnError = inputTextArea.getText(); // Keep a copy
-
-        // --- UX IMPROVEMENT ---
-        // Clear the input immediately and create a new message for the next turn.
-        resetMessage();
-        // --------------------
-
         setButtonsEnabled(false);
 
-        // Use the generic SwingTask to run the blocking chat method in the background.
-        new SwingTask<>(
-                "Send Message",
-                () -> {
-                    chat.sendMessage(messageToSend);
-                    return null; // Return Void
-                },
+        Callable<Void> backgroundTask;
+        String taskName;
+
+        if (currentMessage.isEmpty() && !chat.getContextManager().getHistory().isEmpty()) {
+            // Resend context (API call without a new user message)
+            taskName = "Resend Context";
+            backgroundTask = () -> {
+                chat.sendContext();
+                return null;
+            };
+        } else if (!currentMessage.isEmpty()) {
+            // Send a new message
+            taskName = "Send Message";
+            final InputUserMessage messageToSend = this.currentMessage; // Capture for the task
+            backgroundTask = () -> {
+                chat.sendMessage(messageToSend);
+                return null;
+            };
+        } else {
+            // Input is empty and no history, do nothing.
+            setButtonsEnabled(true);
+            return;
+        }
+
+        executeTask(
+                taskName,
+                backgroundTask,
                 (result) -> {
                     // On Success (UI Thread)
-                    log.info("Message sent successfully.");
+                    log.info(taskName + " completed successfully.");
                     setButtonsEnabled(true);
                     inputTextArea.requestFocusInWindow();
+                    resetMessage(); // Clear the input and prepare a new message on success
                 },
                 (error) -> {
                     // On Error (UI Thread)
-                    // Error dialog handled by SwingTask
-                    // Restore UI state
                     setButtonsEnabled(true);
-                    inputTextArea.setText(textToRestoreOnError); // Restore the text
-
-                    // Create a new renderer for the restored message and replace the old one
-                    replaceRenderer(messageToSend);
+                    resetMessage(); // Clear the input area and prepare a new message on error
                 }
+        );
+    }
+
+    /**
+     * Helper method to execute a SwingTask with common success/error handling.
+     */
+    private <T> void executeTask(String taskName, Callable<T> backgroundTask, Consumer<T> onDone) {
+        executeTask(taskName, backgroundTask, onDone, null);
+    }
+
+    /**
+     * Helper method to execute a SwingTask with common success/error handling.
+     */
+    private <T> void executeTask(String taskName, Callable<T> backgroundTask, Consumer<T> onDone, Consumer<Exception> onError) {
+        new SwingTask<>(
+                this, // Pass 'this' as the owner
+                taskName,
+                backgroundTask,
+                onDone,
+                onError
         ).execute();
     }
 

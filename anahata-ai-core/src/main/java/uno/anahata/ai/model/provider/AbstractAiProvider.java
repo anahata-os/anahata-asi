@@ -164,6 +164,7 @@ public abstract class AbstractAiProvider {
                     })
                     .filter(key -> !key.isEmpty())
                     .collect(Collectors.toList());
+            Collections.shuffle(keys);
 
             if (keys.isEmpty()) {
                 log.error("No active API keys found in {}. Please add your keys to the file.", keysFilePath);

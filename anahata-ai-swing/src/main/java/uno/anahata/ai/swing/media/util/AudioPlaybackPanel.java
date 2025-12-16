@@ -192,7 +192,9 @@ public final class AudioPlaybackPanel extends JPanel {
     }
 
     private void initPlaybackLineComboBox() {
-        new SwingTask<List<LineInfo>>("Load Playback Lines",
+        new SwingTask<List<LineInfo>>(
+            this, // Pass 'this' as the owner
+            "Load Playback Lines",
             () -> SoundUtils.getAvailablePlaybackLines(),
             (lines) -> {
                 if (lines != null && !lines.isEmpty()) {
@@ -208,6 +210,10 @@ public final class AudioPlaybackPanel extends JPanel {
                     playbackLineComboBox.setEnabled(false);
                     playbackLineComboBox.setToolTipText("No playback lines found.");
                 }
+            },
+            (error) -> {
+                playbackLineComboBox.setEnabled(false);
+                playbackLineComboBox.setToolTipText("Error loading playback lines: " + ((Exception) error).getMessage());
             }
         ).execute();
     }

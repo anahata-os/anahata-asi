@@ -2,7 +2,9 @@
 package uno.anahata.ai.gemini;
 
 import com.google.genai.Client;
+import com.google.genai.errors.ClientException;
 import com.google.genai.types.Content;
+import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.GenerateContentResponse;
 import com.google.genai.types.Model;
 import java.util.Collections;
@@ -95,7 +97,7 @@ public class GeminiModel extends AbstractModel {
                 + escapeHtml(json)
                 + "</pre>"
                 + "<hr>"
-*/
+                 */
                 + "<b>toString():</b><pre style='white-space: pre-wrap; word-wrap: break-word;'></pre>"
                 + "<div style='width: 300px;'>"
                 + toString
@@ -146,25 +148,40 @@ public class GeminiModel extends AbstractModel {
                 .map(msg -> new GeminiContentAdapter(msg, includePruned).toGoogle())
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+        log.info("Sending request to Gemini model: {} {} content elements", getModelId(), googleHistory.size());
+        for (Content content : googleHistory) {
+            log.info(content.toJson());
+        }
 
         // 2. Make the API call
         log.info("Sending request to Gemini model: {}", getModelId());
-        GenerateContentResponse response = client.models.generateContent(
-                getModelId(),
-                googleHistory,
-                RequestConfigAdapter.toGoogle(config)
-        );
-        log.info("Got respnse from Gemini model: {}", response.toJson());
+        try {
+            GenerateContentConfig gcc = RequestConfigAdapter.toGoogle(config);
+            GenerateContentResponse response = client.models.generateContent(
+                    getModelId(),
+                    googleHistory,
+                    gcc
+                    
+            );
+            log.info("Got response from Gemini model: {}", response.toJson());
 
-        // 3. Convert the Gemini response to the Anahata response using the new OO response class.
-        return new GeminiResponse(chat, getModelId(), response);
+            // 3. Convert the Gemini response to the Anahata response using the new OO response class.
+            return new GeminiResponse(gcc.toJson(), chat, getModelId(), response);
+        } catch (ClientException e) {
+            log.error("Exception in generateContent", e);
+            if (e.getMessage().contains("429")) {
+                log.error("429 exception, resetting client", e.getMessage());
+                provider.resetClient();
+            }
+            throw e;
+        }
+
     }
 
     @Override
     public String toString() {
         return genaiModel.displayName().orElse(genaiModel.name().orElse("??"));
-        
+
     }
-    
-    
+
 }

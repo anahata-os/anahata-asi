@@ -5,9 +5,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Map;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import uno.anahata.ai.model.core.AbstractPart;
 import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.AbstractToolMessage;
+import uno.anahata.ai.model.core.ThoughtSignature;
 
 /**
  * Represents a request to execute a specific tool. It holds a direct reference
@@ -18,7 +20,8 @@ import uno.anahata.ai.model.core.AbstractToolMessage;
  * @param <R> The specific type of the Response.
  */
 @Getter
-public abstract class AbstractToolCall<T extends AbstractTool, R extends AbstractToolResponse> extends AbstractPart {
+@Setter // Added @Setter for thoughtSignature
+public abstract class AbstractToolCall<T extends AbstractTool, R extends AbstractToolResponse> extends AbstractPart implements ThoughtSignature {
 
     /**
      * A unique, immutable identifier for this specific invocation request.
@@ -46,6 +49,9 @@ public abstract class AbstractToolCall<T extends AbstractTool, R extends Abstrac
     @NonNull
     @JsonIgnore
     private final R response;
+    
+    /** The signature of the thought process as a byte array. */
+    private byte[] thoughtSignature;
 
     public AbstractToolCall(AbstractModelMessage message, @NonNull String id, @NonNull T tool, @NonNull Map<String, Object> args) {
         super(message);

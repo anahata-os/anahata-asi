@@ -20,7 +20,9 @@ import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.AbstractPart;
 import uno.anahata.ai.model.core.AbstractToolMessage;
+import uno.anahata.ai.model.core.ModelBlobPart;
 import uno.anahata.ai.model.core.ModelTextPart;
+import uno.anahata.ai.model.core.ThoughtSignature;
 import uno.anahata.ai.model.tool.AbstractToolCall;
 import uno.anahata.ai.model.web.GroundingMetadata;
 
@@ -97,18 +99,25 @@ public class GeminiModelMessage extends AbstractModelMessage<GeminiResponse, Gem
      * @return The corresponding Anahata AbstractPart, or null if unsupported.
      */
     private AbstractPart toAnahataPart(Part googlePart) {
+        byte[] thoughtSignature = googlePart.thoughtSignature().orElse(null);
+
         if (googlePart.text().isPresent()) {
             String text = googlePart.text().get();
             
             // As requested, all model text parts should be ModelTextPart.
             // Extract optional thought metadata.
             boolean thought = googlePart.thought().orElse(false);
-            byte[] thoughtSignature = googlePart.thoughtSignature().orElse(null);
             
             return new ModelTextPart(this, text, thoughtSignature, thought);
         }
         if (googlePart.functionCall().isPresent()) {
-            return toAnahataToolCall(googlePart.functionCall().get());
+            AbstractToolCall toolCall = toAnahataToolCall(googlePart.functionCall().get());
+            toolCall.setThoughtSignature(thoughtSignature); // Directly set, no cast needed
+            return toolCall;
+        }
+        if (googlePart.inlineData().isPresent()) {
+            com.google.genai.types.Blob googleBlob = googlePart.inlineData().get();
+            return new ModelBlobPart(this, googleBlob.mimeType().orElse("application/octet-stream"), googleBlob.data().orElse(new byte[0]), thoughtSignature);
         }
         log.warn("Unsupported Gemini Part type for Anahata conversion, skipping: {}", googlePart);
         return null;

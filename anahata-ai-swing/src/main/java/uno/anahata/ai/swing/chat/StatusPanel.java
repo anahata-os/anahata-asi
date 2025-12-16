@@ -63,7 +63,8 @@ public class StatusPanel extends JPanel {
     private ContextUsageBar contextUsageBar;
     private JPanel apiErrorsPanel; // Renamed from detailsPanel
     private JLabel tokenDetailsLabel; // For Section 3
-    private JXHyperlink rawJsonLink; // For Section 5 (now Section 3)
+    private JXHyperlink rawJsonRequestConfigLink; // New: For Section 3
+    private JXHyperlink rawJsonResponseLink; // For Section 5 (now Section 3)
     private JToggleButton soundToggle;
     private final AudioPlaybackPanel audioPlaybackPanel; // For Section 4
     private JLabel blockReasonLabel; // For Section 5 (now Section 3/Row 3)
@@ -126,15 +127,28 @@ public class StatusPanel extends JPanel {
         row2Panel.setAlignmentX(LEFT_ALIGNMENT);
         row2Panel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0)); // Padding between rows
 
-        // Section 3: Second line aligned to the left (tokenUsage and rawJsonLink)
+        // Section 3: Second line aligned to the left (rawJsonRequestConfigLink, rawJsonResponseLink, tokenUsage)
         JPanel tokenAndJsonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0)); // New panel
-        tokenDetailsLabel = new JLabel();
-        tokenAndJsonPanel.add(tokenDetailsLabel);
         
-        rawJsonLink = new JXHyperlink();
-        rawJsonLink.setText("Json");
-        rawJsonLink.setToolTipText("View raw JSON response");
-        rawJsonLink.addMouseListener(new MouseAdapter() {
+        rawJsonRequestConfigLink = new JXHyperlink(); // Initialize new hyperlink
+        rawJsonRequestConfigLink.setText("Request Config");
+        rawJsonRequestConfigLink.setToolTipText("View raw JSON request configuration");
+        rawJsonRequestConfigLink.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (chat.getLastResponse().isPresent()) {
+                    String rawJson = chat.getLastResponse().get().getRawRequestConfigJson();
+                    String prettyPrintedJson = JacksonUtils.prettyPrintJsonString(rawJson);
+                    new CodeBlockSegmentRenderer(chatPanel, prettyPrintedJson, "json").showInPopup("Raw JSON Request Config");
+                }
+            }
+        });
+        tokenAndJsonPanel.add(rawJsonRequestConfigLink); // Add new hyperlink first
+
+        rawJsonResponseLink = new JXHyperlink();
+        rawJsonResponseLink.setText("Response");
+        rawJsonResponseLink.setToolTipText("View raw JSON response");
+        rawJsonResponseLink.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (chat.getLastResponse().isPresent()) {
@@ -144,7 +158,11 @@ public class StatusPanel extends JPanel {
                 }
             }
         });
-        tokenAndJsonPanel.add(rawJsonLink);
+        tokenAndJsonPanel.add(rawJsonResponseLink); // Add response link second
+
+        tokenDetailsLabel = new JLabel();
+        tokenAndJsonPanel.add(tokenDetailsLabel); // Add token details last
+
         row2Panel.add(tokenAndJsonPanel, BorderLayout.WEST); // Add the new panel
 
         // Section 4: Second line aligned to the right (AudioPlaybackPanel)
@@ -222,7 +240,8 @@ public class StatusPanel extends JPanel {
         boolean isRetrying = !errors.isEmpty() && (currentStatus == ChatStatus.WAITING_WITH_BACKOFF || currentStatus == ChatStatus.API_CALL_IN_PROGRESS);
 
         // Reset visibility for Section 3/Row 3 labels
-        rawJsonLink.setVisible(false);
+        rawJsonResponseLink.setVisible(false);
+        rawJsonRequestConfigLink.setVisible(false); // New: Reset visibility for request config link
         blockReasonLabel.setVisible(false);
         tokenDetailsLabel.setVisible(false);
 
@@ -258,7 +277,8 @@ public class StatusPanel extends JPanel {
             apiErrorsPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0)); // Reset layout for potential future use
 
             // Section 3/Row 3: Display relevant info
-            rawJsonLink.setVisible(true);
+            rawJsonResponseLink.setVisible(true);
+            rawJsonRequestConfigLink.setVisible(true); // New: Show request config link
             tokenDetailsLabel.setVisible(true);
 
             lastResponse.getPromptFeedback().ifPresent(blockReason -> {

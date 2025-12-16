@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock; // Import ReentrantLock
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
@@ -77,6 +78,11 @@ public class Chat {
      * status panel initialization on deserialization.
      */
     private Response<? extends AbstractModelMessage> lastResponse;
+    
+    /**
+     * A ReentrantLock to synchronize access to shared mutable state (e.g., `running`, `stagedUserMessage`).
+     */
+    private final ReentrantLock runningLock = new ReentrantLock();
 
     @SneakyThrows
     public Chat(@NonNull ChatConfig config) {
@@ -120,18 +126,37 @@ public class Chat {
      * @param message The user's message.
      */
     public void sendMessage(@NonNull UserMessage message) {
-        if (running) {
-            log.info("Chat is busy. Staging message.");
-            this.stagedUserMessage = message;
-            return;
-        }
-
-        running = true;
+        runningLock.lock();
         try {
+            if (running) {
+                log.info("Chat is busy. Staging message.");
+                this.stagedUserMessage = message;
+                return;
+            }
             contextManager.addMessage(message);
-            sendToModel();
+            sendContext(); // Call the new method to send the context
+        } finally {
+            runningLock.unlock();
+        }
+    }
+
+    /**
+     * Sends the current context to the model without adding a new user message.
+     * This is useful for re-triggering the model after an API error or when the input is empty.
+     */
+    public void sendContext() {
+        runningLock.lock();
+        try {
+            if (running) { // Check running flag as requested
+                log.info("Chat is busy. Cannot send context.");
+                return;
+            }
+
+            running = true;
+            sendToModel(); // Call the original sendToModel method
         } finally {
             running = false;
+            runningLock.unlock();
         }
     }
 
@@ -219,7 +244,7 @@ public class Chat {
 
             // Automatically send the results back to the model to continue the conversation.
             log.info("Tool execution complete. Sending results back to the model.");
-            sendToModel();
+            sendContext(); // Call the new method to send the context
         }
     }
 

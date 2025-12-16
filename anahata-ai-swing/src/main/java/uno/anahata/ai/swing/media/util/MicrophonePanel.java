@@ -163,7 +163,9 @@ public final class MicrophonePanel extends JPanel {
     
     
     private void initMicrophoneLineComboBox() {
-        new SwingTask<List<LineInfo>>("Load Microphone Lines",
+        new SwingTask<List<LineInfo>>(
+            this, // Pass 'this' as the owner
+            "Load Microphone Lines",
             () -> SoundUtils.getAvailableRecordingLines(),
             (lines) -> {
                 if (lines != null && !lines.isEmpty()) {
@@ -183,11 +185,10 @@ public final class MicrophonePanel extends JPanel {
                 }
             },
             (error) -> {
-                log.error("Failed to load microphone lines", error);
                 micButton.setEnabled(false);
                 microphoneLineComboBox.setEnabled(false);
-                micButton.setToolTipText("Error loading microphone lines: " + error.getMessage());
-                SwingUtils.showException("Load Microphone Lines", "Failed to load microphone lines", error);
+                microphoneLineComboBox.setToolTipText("Error loading microphone lines: " + ((Exception) error).getMessage());
+                // SwingTask already logs and shows the exception dialog
             }
         ).execute();
     }
@@ -209,6 +210,7 @@ public final class MicrophonePanel extends JPanel {
             microphoneLineComboBox.setVisible(false); // Hide combo box while recording
             levelBar.setVisible(true); // Show progress bar
             new SwingTask<Void> (
+                this, // Pass 'this' as the owner
                 "Start Recording",
                 () -> {
                     startRecording();
@@ -225,6 +227,7 @@ public final class MicrophonePanel extends JPanel {
             microphoneLineComboBox.setVisible(true); // Show combo box after recording stops
             levelBar.setVisible(false); // Hide progress bar
             new SwingTask<Void> (
+                this, // Pass 'this' as the owner
                 "Stop Recording",
                 () -> {
                     File audioFile = stopRecording();
@@ -233,10 +236,9 @@ public final class MicrophonePanel extends JPanel {
                     }
                     return null; // Return Void
                 },
-                (v) -> {
-                    // On Success (UI Thread)
+                (error) -> {
                     parentPanel.getInputMessageRenderer().render(); // Refresh preview
-                    log.info("Recording stopped. Audio attached.");
+                    // SwingTask already logs and shows the exception dialog
                 }
             ).execute();
         }

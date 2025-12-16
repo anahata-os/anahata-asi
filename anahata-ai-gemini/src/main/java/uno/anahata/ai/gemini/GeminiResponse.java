@@ -34,19 +34,22 @@ public class GeminiResponse extends Response<GeminiModelMessage> {
     private final List<GeminiModelMessage> candidates;
     private final ResponseUsageMetadata usageMetadata;
     private final Optional<String> promptFeedback;
-    private final String rawJson;
+    private final String rawRequestConfigJson;
+    private final String rawJson;    
 
     /**
      * Constructs a GeminiResponse, performing the full conversion from the native
      * Google GenAI response to the Anahata domain model.
      *
+     * @param requestConfigJson
      * @param chat          The parent chat session, required for constructing model messages.
      * @param modelId       The ID of the model that generated this response.
      * @param genaiResponse The native response object from the API.
      */
-    public GeminiResponse(Chat chat, String modelId, GenerateContentResponse genaiResponse) {
+    public GeminiResponse(String requestConfigJson, Chat chat, String modelId, GenerateContentResponse genaiResponse) {
         // The superclass is abstract, so no super() call is needed here.
-        this.genaiResponse = genaiResponse;
+        this.rawRequestConfigJson = requestConfigJson;
+        this.genaiResponse = genaiResponse;        
         this.rawJson = genaiResponse.toJson();
         
         // --- 1. Convert Candidates ---

@@ -6,6 +6,8 @@ import com.google.genai.types.FunctionCallingConfigMode;
 import com.google.genai.types.FunctionDeclaration;
 import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.GoogleSearch;
+import com.google.genai.types.ThinkingConfig;
+import com.google.genai.types.ThinkingLevel;
 import com.google.genai.types.Tool;
 import com.google.genai.types.ToolConfig;
 import java.util.List;
@@ -40,6 +42,8 @@ public final class RequestConfigAdapter {
 
         GenerateContentConfig.Builder builder = GenerateContentConfig.builder();
 
+        builder.thinkingConfig(ThinkingConfig.builder().includeThoughts(true)/*.thinkingLevel(ThinkingLevel.Known.HIGH)*/);
+
         Optional.ofNullable(anahataConfig.getTemperature()).ifPresent(builder::temperature);
         Optional.ofNullable(anahataConfig.getMaxOutputTokens()).ifPresent(builder::maxOutputTokens);
 
@@ -48,8 +52,8 @@ public final class RequestConfigAdapter {
         Optional.ofNullable(anahataConfig.getTopK()).map(Integer::floatValue).ifPresent(builder::topK);
         Optional.ofNullable(anahataConfig.getTopP()).ifPresent(builder::topP);
 
-        if (anahataConfig.getTools() != null && !anahataConfig.getTools().isEmpty()) {
-            List<FunctionDeclaration> declarations = anahataConfig.getTools().stream()
+        if (anahataConfig.getLocalTools() != null && !anahataConfig.getLocalTools().isEmpty()) {
+            List<FunctionDeclaration> declarations = anahataConfig.getLocalTools().stream()
                     .map(tool -> new GeminiFunctionDeclarationAdapter(tool).toGoogle())
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
@@ -57,16 +61,15 @@ public final class RequestConfigAdapter {
             if (!declarations.isEmpty()) {
                 Tool tool = Tool.builder().functionDeclarations(declarations).build();
                 builder.tools(tool);
-
-            } else {
-                Tool googleTools = Tool.builder().googleSearch(GoogleSearch.builder().build()).build();
-                builder.tools(googleTools);
+                ToolConfig tc = ToolConfig.builder()
+                        .functionCallingConfig(FunctionCallingConfig.builder()
+                                .mode(FunctionCallingConfigMode.Known.AUTO)).build();
+                builder.toolConfig(tc);
             }
+        } else {
+            Tool googleTools = Tool.builder().googleSearch(GoogleSearch.builder().build()).build();
+            builder.tools(googleTools);
         }
-        ToolConfig tc = ToolConfig.builder()
-                .functionCallingConfig(FunctionCallingConfig.builder()
-                        .mode(FunctionCallingConfigMode.Known.AUTO)).build();
-        builder.toolConfig(tc);
 
         return builder.build();
     }

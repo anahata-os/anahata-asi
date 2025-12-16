@@ -45,4 +45,11 @@ public abstract class Response<T extends AbstractModelMessage> {
      * @return The total token count.
      */
     public abstract String getRawJson();
+    
+    /**
+     * The request config raw json object used for this response.
+     * 
+     * @return The total token count.
+     */
+    public abstract String getRawRequestConfigJson();
 }

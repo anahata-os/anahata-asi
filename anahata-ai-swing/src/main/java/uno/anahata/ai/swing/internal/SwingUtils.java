@@ -7,6 +7,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
+import java.awt.Window;
 import java.awt.image.BufferedImage;
 import javax.swing.SwingUtilities;
 import lombok.experimental.UtilityClass;
@@ -67,19 +68,21 @@ public class SwingUtils {
      * Displays a modal SwingX error dialog with the given task name, description, and throwable.
      * This method assumes it is called on the Event Dispatch Thread (EDT).
      *
+     * @param component the component the dialog will be relative to
      * @param taskName The name of the task that failed.
      * @param description A brief description of the error.
      * @param throwable The Throwable object representing the exception.
      */
-    public static void showException(String taskName, String description, Throwable throwable) {
+    public static void showException(java.awt.Component component, String taskName, String description, Throwable throwable) {
         ErrorInfo errorInfo = new ErrorInfo(
                 taskName,
                 description,
                 throwable.getMessage(),
-                "Error",
+                "Error in " + taskName,
                 throwable,
                 java.util.logging.Level.SEVERE,
                 null);
-        JXErrorPane.showDialog(SwingUtilities.getWindowAncestor(null), errorInfo);
+        Window ancestor = component != null ? SwingUtilities.getWindowAncestor(component) : null;
+        JXErrorPane.showDialog(ancestor, errorInfo);
     }
 }

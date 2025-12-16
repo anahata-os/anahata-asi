@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.ai.gemini.adapter;
 
+import com.google.genai.types.FunctionCall;
 import com.google.genai.types.FunctionResponse;
 import com.google.genai.types.FunctionResponsePart;
 import com.google.genai.types.Part;
@@ -13,8 +14,11 @@ import org.apache.commons.lang3.StringUtils;
 import uno.anahata.ai.internal.JacksonUtils;
 import uno.anahata.ai.model.core.AbstractPart;
 import uno.anahata.ai.model.core.BlobPart;
+import uno.anahata.ai.model.core.ModelBlobPart;
 import uno.anahata.ai.model.core.ModelTextPart;
 import uno.anahata.ai.model.core.TextPart;
+import uno.anahata.ai.model.core.ThoughtSignature;
+import uno.anahata.ai.model.tool.AbstractToolCall;
 import uno.anahata.ai.model.tool.AbstractToolResponse;
 import uno.anahata.ai.model.tool.ToolResponseAttachment;
 
@@ -36,21 +40,37 @@ public class GeminiPartAdapter {
      * @return The corresponding Google GenAI Part, or null if unsupported.
      */
     public Part toGoogle() {
+        Part.Builder partBuilder = Part.builder();
+        byte[] thoughtSignature = null;
+
+        if (anahataPart instanceof ThoughtSignature) {
+            thoughtSignature = ((ThoughtSignature) anahataPart).getThoughtSignature();
+        }
+        if (thoughtSignature != null) {
+            partBuilder.thoughtSignature(thoughtSignature);
+        }
+
         if (anahataPart instanceof ModelTextPart) {
             ModelTextPart modelText = (ModelTextPart) anahataPart;
-            return Part.builder()
-                .text(modelText.getText())
-                .thought(modelText.isThought())
-                .thoughtSignature(modelText.getThoughtSignature())
-                .build();
+            partBuilder.text(modelText.getText());
+            partBuilder.thought(modelText.isThought());
+            // thoughtSignature is already handled above
+            return partBuilder.build();
         }
         if (anahataPart instanceof TextPart) {
             return Part.fromText(((TextPart) anahataPart).getText());
         }
+        if (anahataPart instanceof ModelBlobPart) {
+            ModelBlobPart modelBlob = (ModelBlobPart) anahataPart;
+            partBuilder.inlineData(com.google.genai.types.Blob.builder()
+                .data(modelBlob.getData())
+                .mimeType(modelBlob.getMimeType())
+                .build());
+            // thoughtSignature is already handled above
+            return partBuilder.build();
+        }
         if (anahataPart instanceof BlobPart) {
             BlobPart blob = (BlobPart) anahataPart;
-            // The Gemini API does not have a Part.fromBlob(byte[], mimeType) method.
-            // We must use the builder pattern for inline data.
             return Part.builder()
                 .inlineData(com.google.genai.types.Blob.builder()
                     .data(blob.getData())
@@ -60,6 +80,17 @@ public class GeminiPartAdapter {
         }
         if (anahataPart instanceof AbstractToolResponse) {
             return toGoogleFunctionResponsePart();
+        }
+        if (anahataPart instanceof AbstractToolCall) {
+            AbstractToolCall toolCall = (AbstractToolCall) anahataPart;
+            FunctionCall.Builder fcBuilder = FunctionCall.builder()
+                .name(toolCall.getToolName())
+                .args(toolCall.getArgs())
+                .id(toolCall.getId());
+            
+            
+            // thoughtSignature is already handled above
+            return partBuilder.functionCall(fcBuilder.build()).build();
         }
         
         log.warn("Unsupported Anahata Part type for Google conversion, skipping: {}", anahataPart.getClass().getSimpleName());
@@ -97,6 +128,7 @@ public class GeminiPartAdapter {
             .parts(attachmentParts) // Attachments are nested here
             .build();
         
+        // thoughtSignature for AbstractToolResponse is handled by the outer toGoogle() method
         return Part.builder().functionResponse(fr).build();
     }
     

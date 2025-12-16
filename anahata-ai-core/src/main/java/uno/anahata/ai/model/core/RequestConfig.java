@@ -50,7 +50,7 @@ public class RequestConfig {
      * chat's configuration (local vs. server-side).
      * @return A list of AbstractTools, or null if server-side tools are active.
      */
-    public List<? extends AbstractTool> getTools() {
+    public List<? extends AbstractTool> getLocalTools() {
         if (chat.getConfig().isLocalToolsEnabled()) {
             return chat.getToolManager().getEnabledTools();
         }
