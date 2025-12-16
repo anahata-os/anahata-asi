@@ -1,5 +1,5 @@
 /*
- * Licensed under the Anahata Software License (AS IS) v 108. See the LICENSE file for details. Força Barça!
+ * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
  */
 package uno.anahata.ai.swing.chat;
 
@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.swing.*;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.JXTextField;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
@@ -29,6 +30,7 @@ import uno.anahata.ai.swing.provider.ProviderRegistryViewer;
  * @author pablo
  */
 @Getter
+@Slf4j
 public class HeaderPanel extends JPanel {
     private static final int ICON_SIZE = 24;
 
@@ -43,6 +45,7 @@ public class HeaderPanel extends JPanel {
 
     public HeaderPanel(Chat chat) {
         this.chat = chat;
+        log.info("Header Panel constructor, selected chat model: " + chat.getSelectedModel());        
     }
 
     public void initComponents() {
@@ -94,12 +97,34 @@ public class HeaderPanel extends JPanel {
         searchModelsButton.setToolTipText("Search and view all available models");
         add(searchModelsButton);
         
-        // Populate and set listeners
+        // Populate providers and models first
         populateProviders();
-        addListeners();
 
-        // Set initial selection
-        if (providerComboBox.getItemCount() > 0) {
+        // Select the chat's currently selected model if available
+        AbstractModel selectedChatModel = chat.getSelectedModel();
+        System.out.println("Preselecting " + selectedChatModel);
+        if (selectedChatModel != null) {
+            // First, find and set the provider
+            for (int i = 0; i < providerComboBox.getItemCount(); i++) {
+                AbstractAiProvider provider = providerComboBox.getItemAt(i);
+                if (provider.getProviderId().equals(selectedChatModel.getProviderId())) {
+                    log.info("Preselecting provider " + provider);
+                    providerComboBox.setSelectedItem(provider);
+                    // Explicitly update models for the selected provider after setting the provider
+                    updateModelsForSelectedProvider(); 
+                    break;
+                }
+            }
+            
+            // Then, find and set the model
+            for (int i = 0; i < modelComboBox.getItemCount(); i++) {
+                if (modelComboBox.getItemAt(i).getModelId().equals(selectedChatModel.getModelId())) {
+                    log.info("Preselecting model " + modelComboBox.getItemAt(i));
+                    modelComboBox.setSelectedItem(modelComboBox.getItemAt(i));
+                    break;
+                }
+            }
+        } else if (providerComboBox.getItemCount() > 0) { // Original logic if no model is pre-selected
             providerComboBox.setSelectedIndex(0);
             updateModelsForSelectedProvider();
             if (modelComboBox.getItemCount() > 0) {
@@ -107,6 +132,9 @@ public class HeaderPanel extends JPanel {
                 chat.setSelectedModel((AbstractModel) modelComboBox.getSelectedItem());
             }
         }
+        
+        // Add listeners AFTER initial population and selection
+        addListeners();
     }
 
     private void populateProviders() {

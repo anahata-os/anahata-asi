@@ -1,9 +1,13 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.ai.gemini.adapter;
 
+import com.google.genai.types.FunctionCallingConfig;
+import com.google.genai.types.FunctionCallingConfigMode;
 import com.google.genai.types.FunctionDeclaration;
 import com.google.genai.types.GenerateContentConfig;
+import com.google.genai.types.GoogleSearch;
 import com.google.genai.types.Tool;
+import com.google.genai.types.ToolConfig;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -22,10 +26,12 @@ import uno.anahata.ai.model.core.RequestConfig;
 public final class RequestConfigAdapter {
 
     /**
-     * Converts an Anahata RequestConfig to a Google GenAI GenerateContentConfig.
+     * Converts an Anahata RequestConfig to a Google GenAI
+     * GenerateContentConfig.
      *
      * @param anahataConfig The Anahata config to convert.
-     * @return The corresponding GenerateContentConfig, or null if the input is null.
+     * @return The corresponding GenerateContentConfig, or null if the input is
+     * null.
      */
     public static GenerateContentConfig toGoogle(RequestConfig anahataConfig) {
         if (anahataConfig == null) {
@@ -36,7 +42,7 @@ public final class RequestConfigAdapter {
 
         Optional.ofNullable(anahataConfig.getTemperature()).ifPresent(builder::temperature);
         Optional.ofNullable(anahataConfig.getMaxOutputTokens()).ifPresent(builder::maxOutputTokens);
-        
+
         // Fix: topK and topP are Floats in the Gemini API, but Integer/Float in our core model.
         // We must convert Integer topK to Float for the builder.
         Optional.ofNullable(anahataConfig.getTopK()).map(Integer::floatValue).ifPresent(builder::topK);
@@ -44,15 +50,23 @@ public final class RequestConfigAdapter {
 
         if (anahataConfig.getTools() != null && !anahataConfig.getTools().isEmpty()) {
             List<FunctionDeclaration> declarations = anahataConfig.getTools().stream()
-                .map(tool -> new GeminiFunctionDeclarationAdapter(tool).toGoogle())
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                    .map(tool -> new GeminiFunctionDeclarationAdapter(tool).toGoogle())
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
 
             if (!declarations.isEmpty()) {
                 Tool tool = Tool.builder().functionDeclarations(declarations).build();
                 builder.tools(tool);
+
+            } else {
+                Tool googleTools = Tool.builder().googleSearch(GoogleSearch.builder().build()).build();
+                builder.tools(googleTools);
             }
         }
+        ToolConfig tc = ToolConfig.builder()
+                .functionCallingConfig(FunctionCallingConfig.builder()
+                        .mode(FunctionCallingConfigMode.Known.AUTO)).build();
+        builder.toolConfig(tc);
 
         return builder.build();
     }

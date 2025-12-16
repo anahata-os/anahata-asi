@@ -29,9 +29,9 @@ public class ChatPanel extends JPanel {
     private final StatusPanel statusPanel; // New: StatusPanel
     private final JPanel conversationPanel; // Placeholder for the main chat view
 
-    public ChatPanel(SwingChatConfig chatConfig) { // Changed constructor argument
-        this.chatConfig = chatConfig;
-        this.chat = new Chat(chatConfig); // Instantiate Chat here
+    public ChatPanel(Chat chat) { // Changed constructor argument
+        this.chat = chat; // Initialize Chat here
+        this.chatConfig = (SwingChatConfig) chat.getConfig(); // Derive chatConfig
         
         this.tabbedPane = new JTabbedPane();
         this.toolsPanel = new ToolsPanel(chat);

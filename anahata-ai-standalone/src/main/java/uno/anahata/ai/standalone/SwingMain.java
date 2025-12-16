@@ -35,18 +35,20 @@ public class SwingMain {
         AiConfig appConfig = new AiConfig("AnahataStandalone");
         SwingChatConfig chatConfig = new SwingChatConfig(appConfig);
         chatConfig.getProviderClasses().add(uno.anahata.ai.gemini.GeminiAiProvider.class);
-        Chat chat = new Chat(chatConfig);
+        Chat chat = new Chat(chatConfig); // Create Chat instance here
 
         // Centralized argument parsing
         CommandLineArgs.parse(chat, args);
+        
+        log.info("After passing command line args, selected model: " + chat.getSelectedModel());
 
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Anahata AI Assistant");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setPreferredSize(new Dimension(1200, 900));
 
-            // Create and initialize the main ChatPanel
-            ChatPanel chatPanel = new ChatPanel(chatConfig); // FIX: Pass chatConfig instead of chat
+            // Create and initialize the main ChatPanel, passing the pre-configured chat instance
+            ChatPanel chatPanel = new ChatPanel(chat); // Pass only chat
             chatPanel.initComponents();
             frame.add(chatPanel, BorderLayout.CENTER);
 

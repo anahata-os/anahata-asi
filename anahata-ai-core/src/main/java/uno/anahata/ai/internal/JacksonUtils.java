@@ -21,6 +21,7 @@ import uno.anahata.ai.tool.schema.SchemaProvider;
 public final class JacksonUtils {
 
     private static final ObjectMapper MAPPER = SchemaProvider.OBJECT_MAPPER;
+    private static final ObjectMapper DEFAULT_MAPPER = new ObjectMapper(); // New: Default ObjectMapper
 
     /**
      * Converts an object to a Map<String, Object>, replicating the logic required by the
@@ -83,6 +84,26 @@ public final class JacksonUtils {
         } catch (JsonProcessingException e) {
             log.warn("Failed to pretty print object of type {}", o.getClass().getName(), e);
             return "Error: Could not serialize object to JSON. " + e.getMessage();
+        }
+    }
+
+    /**
+     * Pretty-prints a JSON string.
+     *
+     * @param jsonString The JSON string to pretty-print.
+     * @return A formatted JSON string, or an error message if parsing or serialization fails.
+     */
+    public static String prettyPrintJsonString(String jsonString) {
+        if (jsonString == null || jsonString.trim().isEmpty()) {
+            return jsonString;
+        }
+        try {
+            // Use DEFAULT_MAPPER for parsing to avoid any custom configurations from SchemaProvider
+            JsonNode jsonNode = DEFAULT_MAPPER.readTree(jsonString);
+            return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to pretty print JSON string: {}", jsonString, e);
+            return "Error: Could not parse or pretty-print JSON string. " + e.getMessage();
         }
     }
 }

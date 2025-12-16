@@ -29,8 +29,6 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jdesktop.swingx.JXComboBox;
 import uno.anahata.ai.chat.Chat;
@@ -241,41 +239,6 @@ public final class MicrophonePanel extends JPanel {
                     log.info("Recording stopped. Audio attached.");
                 }
             ).execute();
-        }
-    }
-
-    /**
-     * A simple data class to hold a TargetDataLine and its human-readable display name.
-     */
-    @Getter
-    @AllArgsConstructor
-    public static class LineInfo {
-        private final TargetDataLine targetDataLine;
-        private final Mixer.Info mixerInfo;
-        private final boolean systemDefault;
-
-        @Override
-        public String toString() {
-            return mixerInfo.getName();
-        }
-        
-        public String getDescription() {
-            return mixerInfo.getDescription() + " (" + mixerInfo.getVendor() + ")";
-        }
-    }
-    
-    /**
-     * Custom ListCellRenderer for MicrophonePanel.LineInfo to display human-readable names.
-     */
-    private static class LineInfoRenderer extends DefaultListCellRenderer {
-        @Override
-        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-            if (value instanceof LineInfo) {
-                LineInfo lineInfo = (LineInfo) value;
-                setText(lineInfo.toString());
-            }
-            return this;
         }
     }
 }
