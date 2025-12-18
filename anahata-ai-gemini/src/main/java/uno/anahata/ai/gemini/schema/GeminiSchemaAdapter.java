@@ -103,8 +103,8 @@ public class GeminiSchemaAdapter {
             }
         }
 
-        if (map.containsKey("enum")) {
-            List<?> rawList = (List<?>) map.get("enum");
+        if (map.containsKey("_enum")) {
+            List<?> rawList = (List<?>) map.get("_enum");
             List<String> enumValues = rawList.stream().map(Object::toString).collect(Collectors.toList());
             builder.enum_(enumValues);
         }

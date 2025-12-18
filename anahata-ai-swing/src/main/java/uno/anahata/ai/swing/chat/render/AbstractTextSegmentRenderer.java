@@ -18,12 +18,17 @@ import uno.anahata.ai.swing.chat.SwingChatConfig;
 @Getter
 public abstract class AbstractTextSegmentRenderer {
 
+    /** The parent chat panel. */
     protected final ChatPanel chatPanel;
+    /** The chat configuration. */
     protected final SwingChatConfig chatConfig;
 
-    protected JComponent component; // The actual Swing component being rendered
-    protected String currentContent; // The raw content for this segment
-    protected String lastRenderedContent; // The content that was last rendered into the component
+    /** The actual Swing component being rendered. */
+    protected JComponent component; 
+    /** The raw content for this segment. */
+    protected String currentContent; 
+    /** The content that was last rendered into the component. */
+    protected String lastRenderedContent; 
 
     /**
      * Constructs a new AbstractTextSegmentRenderer.
@@ -43,9 +48,15 @@ public abstract class AbstractTextSegmentRenderer {
      * This method should be called to ensure the component reflects the latest content.
      * It should handle diffing internally to avoid unnecessary re-creation of components.
      *
-     * @return The JComponent representing this segment.
+     * @return True if a visual update occurred, false otherwise.
      */
-    public abstract JComponent render();
+    public abstract boolean render();
+
+    /**
+     * Returns the actual Swing component managed by this renderer.
+     * @return The JComponent.
+     */
+    public abstract JComponent getComponent();
 
     /**
      * Updates the current content of this segment. The next call to {@link #render()}

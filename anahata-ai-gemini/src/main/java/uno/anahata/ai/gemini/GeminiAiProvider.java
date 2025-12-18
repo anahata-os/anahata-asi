@@ -11,9 +11,9 @@ import uno.anahata.ai.model.provider.AbstractAiProvider;
 import uno.anahata.ai.model.provider.AbstractModel;
 
 /**
- * The concrete implementation of the {@code AbstractAiProvider} for the Google Gemini API.
- * This class manages the native {@code Client} instance and handles the discovery
- * and listing of available Gemini models.
+ * The concrete implementation of the {@code AbstractAiProvider} for the Google
+ * Gemini API. This class manages the native {@code Client} instance and handles
+ * the discovery and listing of available Gemini models.
  *
  * @author anahata-gemini-pro-2.5
  */
@@ -24,24 +24,43 @@ public class GeminiAiProvider extends AbstractAiProvider {
 
     public GeminiAiProvider() {
         super("Gemini");
+        /*
         // Fail fast if no API key is configured.
-        if (getApiKey() == null) {
+        if (getClient() == null) {
             throw new IllegalStateException("GEMINI_API_KEY is not set or the api_keys.txt file is missing or empty.");
         }
+        */
     }
 
     /**
      * Gets the native Gemini API client, creating it lazily if necessary.
+     *
      * @return The native {@code Client} instance.
      */
     public synchronized Client getClient() {
         if (client == null) {
-            client = Client.builder()
-                    .apiKey(getApiKey())
-                    .build();
-        }        
+            String nextKey = getNextKey();
+            if (nextKey != null) {
+                client = Client.builder()
+                        .apiKey(nextKey)
+                        .build();
+            } else {
+                throw new IllegalStateException("Could not load an API key for Gemini. Check " + getKeysFilePath());
+            }
+
+        }
         return client;
     }
+
+    /**
+     * Returns the api key being used by the current genai Client
+     * @return the api key in use
+     */
+    @Override
+    public String getCurrentApiKey() {
+        return getClient().apiKey();
+    }
+
     /**
      * Resets the client to null to force a new key on the next call.
      */

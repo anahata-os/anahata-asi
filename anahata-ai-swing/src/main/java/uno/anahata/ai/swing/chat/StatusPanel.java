@@ -219,7 +219,14 @@ public class StatusPanel extends JPanel {
             statusText = String.format("%s (%s)", currentStatus.getDisplayName(), statusManager.getExecutingToolName());
         }
         
-        if (currentStatus != ChatStatus.IDLE) {
+        if (currentStatus == ChatStatus.WAITING_WITH_BACKOFF) {
+            long elapsedSinceBackoffStart = now - statusManager.getStatusChangeTime();
+            long totalBackoffDuration = statusManager.getCurrentBackoffAmount();
+            long remainingBackoff = totalBackoffDuration - elapsedSinceBackoffStart;
+            if (remainingBackoff < 0) remainingBackoff = 0; // Ensure it doesn't go negative
+
+            statusLabel.setText(String.format("%s... (%s remaining)", statusText, TimeUtils.formatMillisConcise(remainingBackoff)));
+        } else if (currentStatus.isActive()) { // Changed to use isActive()
             long duration = now - statusManager.getStatusChangeTime();
             statusLabel.setText(String.format("%s... (%s)", statusText, TimeUtils.formatMillisConcise(duration)));
         } else {
@@ -252,19 +259,21 @@ public class StatusPanel extends JPanel {
 
             ApiErrorRecord lastError = errors.get(errors.size() - 1);
             long totalErrorTime = now - lastError.getTimestamp().toEpochMilli();
-            String headerText = String.format("Retrying... Total Time: %s | Attempt: %d | Next Backoff: %dms",
+            // The header text should use the total backoff amount, not remaining
+            String headerText = String.format("Retrying... Total Time: %s | Attempt: %d | Backoff: %s",
                                               TimeUtils.formatMillisConcise(totalErrorTime),
                                               lastError.getRetryAttempt() + 1,
-                                              lastError.getBackoffAmount());
+                                              TimeUtils.formatMillisConcise(lastError.getBackoffAmount())); // Changed "Next Backoff" to "Backoff"
             apiErrorsPanel.add(new JLabel(headerText));
 
             for (ApiErrorRecord error : errors) {
                 
                 String displayString = StringUtils.abbreviateMiddle(error.getException().toString(), " ... ", 108) ;
                 
+                String apiKeySuffix = StringUtils.right(error.getApiKey(), 4); // Get last 4 chars
                 String errorText = String.format("  • [%s] [..%s] %s",
                                                  TIME_FORMAT.format(error.getTimestamp().toEpochMilli()),
-                                                 error.getApiKey(),
+                                                 apiKeySuffix, // Use the last 4 characters
                                                  displayString);
                 JLabel errorLabel = new JLabel(errorText);
                 errorLabel.setForeground(Color.RED.darker());

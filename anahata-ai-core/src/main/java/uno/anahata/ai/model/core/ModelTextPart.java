@@ -30,4 +30,9 @@ public class ModelTextPart extends TextPart implements ThoughtSignature {
         this.thoughtSignature = thoughtSignature;
         this.thought = thought;
     }
+
+    @Override
+    public boolean isThought() {
+        return thought;
+    }
 }

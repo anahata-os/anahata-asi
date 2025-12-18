@@ -34,45 +34,62 @@ import uno.anahata.ai.swing.media.util.MicrophonePanel;
  * A fully functional and responsive user input component for the V2 chat.
  * <p>
  * This panel manages a "live" {@link InputUserMessage} object that is updated
- * in real-time as the user types. It uses a {@link SwingTask} to send messages
- * asynchronously, ensuring the UI never freezes during API calls.
+ * in real-time as the user types. It leverages the reactive {@link uno.anahata.ai.swing.internal.EdtPropertyChangeListener}
+ * pattern, ensuring the preview panel updates automatically without manual rendering calls.
  *
  * @author pablo
  */
 @Slf4j
 @Getter
-public class InputPanel extends JPanel { // Changed from JXTitledPanel
+public class InputPanel extends JPanel {
 
+    /** The chat session orchestrator. */
     private final Chat chat;
+    /** The parent chat panel. */
     private final ChatPanel chatPanel;
 
-    // UI Components
+    /** The text area for user input. */
     private JXTextArea inputTextArea;
+    /** The button to send the message. */
     private JButton sendButton;
+    /** The button to attach files. */
     private JButton attachButton;
+    /** The button to attach a desktop screenshot. */
     private JButton screenshotButton;
+    /** The button to capture and attach application frames. */
     private JButton captureFramesButton;
+    /** The renderer for the live message preview. */
     private InputMessagePanel inputMessageRenderer;
+    /** The scroll pane for the preview renderer. */
     private JScrollPane previewScrollPane;
-    private JSplitPane splitPane; // Added splitPane field
-    private MicrophonePanel microphonePanel; // Instance of MicrophonePanel
+    /** The split pane separating input and preview. */
+    private JSplitPane splitPane; 
+    /** The panel for voice input. */
+    private MicrophonePanel microphonePanel; 
 
     /**
      * The "live" message being composed by the user. This is the single source
      * of truth for the current input.
      */
-    @Getter
     private InputUserMessage currentMessage;
 
+    /**
+     * Constructs a new InputPanel.
+     *
+     * @param chatPanel The parent chat panel.
+     */
     public InputPanel(ChatPanel chatPanel) {
-        super(new BorderLayout(5, 5)); // Use JPanel constructor
+        super(new BorderLayout(5, 5)); 
         this.chatPanel = chatPanel;
         this.chat = chatPanel.getChat();
         initComponents();
     }
 
+    /**
+     * Initializes the UI components and sets up the real-time model binding.
+     */
     private void initComponents() {
-        setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5)); // Added border back
+        setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5)); 
 
         inputTextArea = new JXTextArea("Type your message here (Ctrl+Enter to send)");
         inputTextArea.setLineWrap(true);
@@ -92,7 +109,6 @@ public class InputPanel extends JPanel { // Changed from JXTitledPanel
         });
 
         JScrollPane inputScrollPane = new JScrollPane(inputTextArea);
-        // Set preferred height for the input area (approx. 4 lines)
         inputScrollPane.setPreferredSize(new Dimension(0, 80));
 
         // --- PREVIEW PANEL INTEGRATION ---
@@ -100,14 +116,13 @@ public class InputPanel extends JPanel { // Changed from JXTitledPanel
         this.inputMessageRenderer = new InputMessagePanel(chatPanel, currentMessage);
 
         previewScrollPane = new JScrollPane(inputMessageRenderer);
-        // Set a fixed preferred and minimum height for the preview scroll pane
-        previewScrollPane.setPreferredSize(new Dimension(0, 150)); // Example: 150 pixels height
-        previewScrollPane.setMinimumSize(new Dimension(0, 100)); // Example: minimum 100 pixels height
+        previewScrollPane.setPreferredSize(new Dimension(0, 150)); 
+        previewScrollPane.setMinimumSize(new Dimension(0, 100)); 
 
         // --- HORIZONTAL SPLIT PANE ---
         splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, inputScrollPane, previewScrollPane);
-        splitPane.setResizeWeight(0.5); // Give equal weight to both sides
-        splitPane.setDividerLocation(0.5); // Initial split at 50% width
+        splitPane.setResizeWeight(0.5); 
+        splitPane.setDividerLocation(0.5); 
 
         add(splitPane, BorderLayout.CENTER);
 
@@ -117,7 +132,6 @@ public class InputPanel extends JPanel { // Changed from JXTitledPanel
         // Panel for action buttons (mic, attach, etc.) on the west
         JPanel actionButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
 
-        // Instantiate MicrophonePanel and add it
         microphonePanel = new MicrophonePanel(this);
         actionButtonPanel.add(microphonePanel);
 
@@ -148,17 +162,25 @@ public class InputPanel extends JPanel { // Changed from JXTitledPanel
 
     /**
      * Updates the underlying {@code currentMessage} model with the current text
-     * from the input area and updates the preview panel.
+     * from the input area. The UI updates automatically via property change listeners.
      */
     private void updateMessageText() {
         currentMessage.setText(inputTextArea.getText());
-        inputMessageRenderer.render();
     }
 
+    /**
+     * Attaches a single file path to the current message.
+     *
+     * @param p The path to attach.
+     * @throws Exception if the attachment fails.
+     */
     void attach(Path p) throws Exception {
         currentMessage.addAttachment(p);
     }
 
+    /**
+     * Opens a file chooser and attaches the selected files to the current message.
+     */
     private void attachFiles() {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setMultiSelectionEnabled(true);
@@ -175,12 +197,14 @@ public class InputPanel extends JPanel { // Changed from JXTitledPanel
                                 .collect(Collectors.toList());
                         currentMessage.addAttachments(paths);
                         return null;
-                    },
-                    (v) -> inputMessageRenderer.render() // Refresh preview
+                    }
             );
         }
     }
 
+    /**
+     * Captures screenshots of all screen devices and attaches them to the current message.
+     */
     private void attachScreenshot() {
         executeTask(
                 "Attach Screenshot",
@@ -188,11 +212,13 @@ public class InputPanel extends JPanel { // Changed from JXTitledPanel
                     List<Path> files = UICapture.screenshotAllScreenDevices();
                     currentMessage.addAttachments(files);
                     return null;
-                },
-                (v) -> inputMessageRenderer.render() // Refresh preview
+                }
         );
     }
 
+    /**
+     * Captures screenshots of all application frames and attaches them to the current message.
+     */
     private void attachWindowCaptures() {
         executeTask(
                 "Attach Application Frames",
@@ -200,8 +226,7 @@ public class InputPanel extends JPanel { // Changed from JXTitledPanel
                     List<Path> files = UICapture.screenshotAllJFrames();
                     currentMessage.addAttachments(files);
                     return null;
-                },
-                (v) -> inputMessageRenderer.render() // Refresh preview
+                }
         );
     }
 
@@ -224,7 +249,7 @@ public class InputPanel extends JPanel { // Changed from JXTitledPanel
         } else if (!currentMessage.isEmpty()) {
             // Send a new message
             taskName = "Send Message";
-            final InputUserMessage messageToSend = this.currentMessage; // Capture for the task
+            final InputUserMessage messageToSend = this.currentMessage; 
             backgroundTask = () -> {
                 chat.sendMessage(messageToSend);
                 return null;
@@ -243,29 +268,39 @@ public class InputPanel extends JPanel { // Changed from JXTitledPanel
                     log.info(taskName + " completed successfully.");
                     setButtonsEnabled(true);
                     inputTextArea.requestFocusInWindow();
-                    resetMessage(); // Clear the input and prepare a new message on success
+                    resetMessage(); 
                 },
                 (error) -> {
                     // On Error (UI Thread)
                     setButtonsEnabled(true);
-                    resetMessage(); // Clear the input area and prepare a new message on error
+                    resetMessage(); 
                 }
         );
     }
 
     /**
      * Helper method to execute a SwingTask with common success/error handling.
+     *
+     * @param <T> The result type of the task.
+     * @param taskName The name of the task.
+     * @param backgroundTask The task to execute.
      */
-    private <T> void executeTask(String taskName, Callable<T> backgroundTask, Consumer<T> onDone) {
-        executeTask(taskName, backgroundTask, onDone, null);
+    private <T> void executeTask(String taskName, Callable<T> backgroundTask) {
+        new SwingTask<>(this, taskName, backgroundTask).execute();
     }
 
     /**
      * Helper method to execute a SwingTask with common success/error handling.
+     *
+     * @param <T> The result type of the task.
+     * @param taskName The name of the task.
+     * @param backgroundTask The task to execute.
+     * @param onDone The consumer for the task result.
+     * @param onError The consumer for any exception.
      */
     private <T> void executeTask(String taskName, Callable<T> backgroundTask, Consumer<T> onDone, Consumer<Exception> onError) {
         new SwingTask<>(
-                this, // Pass 'this' as the owner
+                this, 
                 taskName,
                 backgroundTask,
                 onDone,
@@ -304,6 +339,10 @@ public class InputPanel extends JPanel { // Changed from JXTitledPanel
         previewScrollPane.repaint();
     }
 
+    /**
+     * Enables or disables all input buttons.
+     * @param enabled True to enable, false to disable.
+     */
     private void setButtonsEnabled(boolean enabled) {
         sendButton.setEnabled(enabled);
         attachButton.setEnabled(enabled);

@@ -17,9 +17,7 @@ import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
@@ -33,6 +31,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
+import javax.swing.border.Border;
+import lombok.Getter;
+import lombok.NonNull;
 import uno.anahata.ai.model.core.BlobPart;
 import uno.anahata.ai.internal.TextUtils;
 import uno.anahata.ai.swing.chat.ChatPanel;
@@ -45,9 +46,9 @@ import uno.anahata.ai.swing.media.util.AudioPlaybackPanel;
  *
  * @author anahata
  */
-public class BlobPartRenderer extends AbstractPartRenderer<BlobPart> {
+@Getter
+public class BlobPartPanel extends AbstractPartPanel<BlobPart> {
 
-    private JPanel contentPanel; // Main panel for blob content
     private JLabel mainContentLabel; // Label for image or file name
     private JPanel infoPanel; // Panel for mimeType and size
     private JLabel mimeTypeLabel; // Label for MIME type
@@ -63,36 +64,51 @@ public class BlobPartRenderer extends AbstractPartRenderer<BlobPart> {
     private final AudioPlaybackPanel audioPlaybackPanel;
 
     /**
-     * Constructs a new BlobPartRenderer.
+     * Constructs a new BlobPartPanel.
      *
      * @param chatPanel The chat panel instance.
      * @param part The BlobPart to be rendered.
      */
-    public BlobPartRenderer(ChatPanel chatPanel, BlobPart part) {
+    public BlobPartPanel(@NonNull ChatPanel chatPanel, @NonNull BlobPart part) {
         super(chatPanel, part);
         this.audioPlaybackPanel = chatPanel.getStatusPanel().getAudioPlaybackPanel();
     }
 
+    @Override
+    protected Color getHeaderStartColor() {
+        return chatConfig.getTheme().getToolHeaderBg(); // Example: Use tool header colors for blobs
+    }
+
+    @Override
+    protected Color getHeaderEndColor() {
+        return chatConfig.getTheme().getToolContentBg(); // Example: Use tool content colors for blobs
+    }
+
+    @Override
+    protected Color getHeaderForegroundColor() {
+        return chatConfig.getTheme().getToolHeaderFg(); // Example: Use tool foreground colors for blobs
+    }
+
+    @Override
+    protected Border getPartBorder() {
+        return BorderFactory.createLineBorder(chatConfig.getTheme().getToolBorder(), 1, true); // Example: Use tool border
+    }
+
     /**
-     * Renders the content of the BlobPart into a list of JComponents.
+     * Renders the content of the BlobPart into the contentPanel.
      * This method handles different MIME types (image, audio, other files).
      * It reuses existing components and updates their content only if the blob data or mime type has changed.
-     *
-     * @return A list of JComponents representing the content of the blob part.
      */
     @Override
-    protected List<JComponent> renderContentComponents() {
-        BlobPart blobPart = (BlobPart) part;
+    protected void renderContent() {
+        BlobPart blobPart = part;
         String currentMimeType = blobPart.getMimeType();
         byte[] currentData = blobPart.getData();
 
         boolean contentChanged = !Arrays.equals(currentData, lastRenderedData) || !Objects.equals(currentMimeType, lastRenderedMimeType);
 
-        if (contentPanel == null) {
+        if (mainContentLabel == null) {
             // Initial render: create all components
-            contentPanel = new JPanel(new BorderLayout(10, 10));
-            contentPanel.setOpaque(false);
-
             mainContentLabel = new JLabel();
             mainContentLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
             
@@ -208,10 +224,6 @@ public class BlobPartRenderer extends AbstractPartRenderer<BlobPart> {
             lastRenderedData = currentData;
             lastRenderedMimeType = currentMimeType;
         }
-
-        List<JComponent> components = new ArrayList<>();
-        components.add(contentPanel);
-        return components;
     }
 
     /**

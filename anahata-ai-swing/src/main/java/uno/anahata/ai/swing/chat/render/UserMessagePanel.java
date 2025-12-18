@@ -1,33 +1,30 @@
 /*
- * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
+ * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Fora Bara!
  */
-package uno.anahata.ai.swing.chat;
+package uno.anahata.ai.swing.chat.render;
 
 import java.awt.Color;
 import javax.swing.BorderFactory;
 import javax.swing.border.Border;
 import lombok.NonNull;
-import uno.anahata.ai.model.core.InputUserMessage;
-import uno.anahata.ai.swing.chat.render.AbstractMessagePanel;
+import uno.anahata.ai.model.core.UserMessage;
+import uno.anahata.ai.swing.chat.ChatPanel;
 
 /**
- * A panel that provides a live, read-only preview of the user's input message,
- * including markdown rendering of the text part and a display of any attached
- * blob parts.
- * <p>
- * This component is a standard JPanel that is updated by the parent InputPanel.
+ * A concrete implementation of {@link AbstractMessagePanel} specifically for rendering
+ * {@link UserMessage} instances in the conversation history.
  *
  * @author pablo
  */
-public class InputMessagePanel extends AbstractMessagePanel<InputUserMessage> {
+public class UserMessagePanel extends AbstractMessagePanel<UserMessage> {
 
     /**
-     * Constructs a new InputMessagePanel.
+     * Constructs a new UserMessagePanel.
      *
      * @param chatPanel The parent chat panel.
-     * @param message The mutable message instance.
+     * @param message The user message to render.
      */
-    public InputMessagePanel(@NonNull ChatPanel chatPanel, @NonNull InputUserMessage message) {
+    public UserMessagePanel(@NonNull ChatPanel chatPanel, @NonNull UserMessage message) {
         super(chatPanel, message);
     }
 

@@ -22,6 +22,7 @@ import uno.anahata.ai.model.core.RequestConfig;
 import uno.anahata.ai.model.core.Response;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
 import uno.anahata.ai.model.provider.AbstractModel;
+import uno.anahata.ai.tool.RetryableApiException;
 
 /**
  * Gemini-specific implementation of the {@code AbstractModel}. It wraps the
@@ -169,9 +170,10 @@ public class GeminiModel extends AbstractModel {
             return new GeminiResponse(gcc.toJson(), chat, getModelId(), response);
         } catch (ClientException e) {
             log.error("Exception in generateContent", e);
-            if (e.getMessage().contains("429")) {
-                log.error("429 exception, resetting client", e.getMessage());
+            if (e.toString().contains("429") || e.toString().contains("503") || e.toString().contains("500")) {
+                log.error("429, 503 or 500 exception, resetting client", e.getMessage());
                 provider.resetClient();
+                throw new RetryableApiException(client.apiKey(), e.toString(), e);
             }
             throw e;
         }

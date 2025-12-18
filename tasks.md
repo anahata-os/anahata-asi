@@ -17,6 +17,7 @@ This document consolidates all active and pending tasks for the core framework a
 - [ ] Advanced `InputPanel` Implementation (SwingX, Live Preview, Dynamic `UserMessage`, Stop Button, Send/Queue Logic, Generic SwingWorker)
 - [ ] Live Workspace: Implement the functionality for the "Live Workspace" button
 - [ ] Session Management: Implement the "Save" and "Load Session" buttons
+- [ ] **Report Bug Capability:** Implement a feature to allow users to report bugs directly from the application, including relevant context.
 
 ## Research & Technical Debt
 

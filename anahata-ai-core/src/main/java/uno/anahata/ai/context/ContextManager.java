@@ -3,6 +3,8 @@
  */
 package uno.anahata.ai.context;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -17,6 +19,7 @@ import uno.anahata.ai.context.system.AbstractContextProvider;
 import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.AbstractPart;
+import uno.anahata.ai.model.core.PropertyChangeSource;
 import uno.anahata.ai.model.core.RagMessage;
 import uno.anahata.ai.model.resource.AbstractResource;
 
@@ -30,12 +33,20 @@ import uno.anahata.ai.model.resource.AbstractResource;
  */
 @Slf4j
 @Getter
-public class ContextManager {
+public class ContextManager implements PropertyChangeSource {
 
+    /** Support for firing property change events. */
+    private final PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
+
+    /** The parent chat session. */
     private final Chat chat;
+    /** The canonical conversation history. */
     private final List<AbstractMessage> history = Collections.synchronizedList(new ArrayList<>());
+    /** Counter for assigning sequential IDs to messages. */
     private final AtomicLong messageIdCounter = new AtomicLong(0);
+    /** Counter for assigning sequential IDs to parts. */
     private final AtomicLong partIdCounter = new AtomicLong(0);
+    /** List of registered context providers. */
     private final List<ContextProvider> providers = new ArrayList<>();
 
     /**
@@ -44,10 +55,18 @@ public class ContextManager {
     @Setter
     private int contextWindowSize;
 
+    /**
+     * Constructs a new ContextManager.
+     *
+     * @param chat The parent chat session.
+     */
     public ContextManager(@NonNull Chat chat) {
         this.chat = chat;
     }
 
+    /**
+     * Initializes the manager and registers default providers.
+     */
     public void init() {
         // Register default providers
         //registerProvider(chat.getToolManager());
@@ -56,14 +75,21 @@ public class ContextManager {
     
     /**
      * Clears the entire conversation history and resets all internal counters to zero.
+     * Fires a property change event for the "history" property.
      */
     public void clear() {
         history.clear();
         messageIdCounter.set(0);
         partIdCounter.set(0);
         log.info("ContextManager cleared for session {}", chat.getConfig().getSessionId());
+        propertyChangeSupport.firePropertyChange("history", null, history);
     }
 
+    /**
+     * Registers a new context provider.
+     *
+     * @param provider The provider to register.
+     */
     public void registerProvider(AbstractContextProvider provider) {
         providers.add(provider);
         log.info("Registered context provider: {}", provider.getName());
@@ -146,9 +172,10 @@ public class ContextManager {
     }
 
     /**
-     * adds a message but without hard prunning
+     * adds a message but without hard prunning.
+     * Fires a property change event for the "history" property.
      *
-     * @param message
+     * @param message The message to add.
      */
     private void addMessageInternal(AbstractMessage message) {
         message.setSequentialId(this.messageIdCounter.incrementAndGet());
@@ -156,6 +183,20 @@ public class ContextManager {
             part.setSequentialId(partIdCounter.incrementAndGet());
         }
         history.add(message);
+        propertyChangeSupport.firePropertyChange("history", null, history);
+    }
+    
+    /**
+     * Removes a message from the history.
+     * Fires a property change event for the "history" property.
+     *
+     * @param message The message to remove.
+     */
+    public void removeMessage(AbstractMessage message) {
+        if (history.remove(message)) {
+            log.info("Removed message {} from history.", message.getSequentialId());
+            propertyChangeSupport.firePropertyChange("history", null, history);
+        }
     }
 
     /**
@@ -206,5 +247,27 @@ public class ContextManager {
      */
     public int getTokenThreshold() {
         return chat.getConfig().getTokenThreshold();
+    }
+
+    /**
+     * Adds a PropertyChangeListener to this manager.
+     * @param listener The listener to add.
+     */
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        propertyChangeSupport.addPropertyChangeListener(listener);
+    }
+
+    /**
+     * Removes a PropertyChangeListener from this manager.
+     * @param listener The listener to remove.
+     */
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        propertyChangeSupport.removePropertyChangeListener(listener);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public PropertyChangeSupport getPropertyChangeSupport() {
+        return propertyChangeSupport;
     }
 }

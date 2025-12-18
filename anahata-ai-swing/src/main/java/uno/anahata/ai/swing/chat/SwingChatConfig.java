@@ -53,6 +53,8 @@ public class SwingChatConfig extends ChatConfig {
                 return new Color(255, 0, 0); // RED
             case MAX_RETRIES_REACHED:
                 return new Color(150, 0, 0); // DARK RED
+            case ERROR:
+                return new Color(100, 0, 0); // Even darker red for general error
             case SHUTDOWN:
                 return Color.GRAY; // GRAY
             case IDLE:

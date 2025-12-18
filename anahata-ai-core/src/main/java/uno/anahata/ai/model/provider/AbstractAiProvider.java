@@ -25,6 +25,7 @@ import uno.anahata.ai.AiConfig;
 @Getter
 @Slf4j
 public abstract class AbstractAiProvider {
+    private List<String> keyPool;
     private final String providerId;
     private int round = 0;
     
@@ -99,17 +100,36 @@ public abstract class AbstractAiProvider {
                 .flatMap(model -> model.getSupportedActions().stream())
                 .collect(Collectors.toCollection(HashSet::new));
     }
-
+    
     /**
-     * Gets the API key for the specific provider implementation using a round-robin selection from the loaded key pool.
+     * Gets the current api key this provider is using.
+     * 
+     * @return 
+     */
+    public abstract String getCurrentApiKey();
+    
+    /**
+     * Reloads the keys from the api_keys.txt file
+     */
+    public void reloadKeyPool() {
+        keyPool = readApiKeysFile();
+    }
+    
+    /**
+     * Gets the next API key for the specific provider implementation using a round-robin selection from the loaded key pool.
+     * 
      * The key pool is reloaded from the file system on every call.
      * @return The API key.
      */
-    public String getApiKey() {
-        List<String> keyPool = loadKeyPool();
+    protected String getNextKey() {
+        if (keyPool == null) {
+            keyPool = readApiKeysFile();
+        }
+        
         if (keyPool.isEmpty()) {
             return null;
         }
+        
         // Round-robin key selection
         int nextIdx = round++ % keyPool.size();
         String key = keyPool.get(nextIdx);
@@ -125,18 +145,18 @@ public abstract class AbstractAiProvider {
     public Path getProviderDirectory() {
         return AiConfig.getWorkDirSubDir(providerId);
     }
-
-    private List<String> loadKeyPool() {
+    
+    public Path getKeysFilePath() {
         Path providerDir = getProviderDirectory();
         Path keysFilePath = providerDir.resolve("api_keys.txt");
-        log.info("Looking for: " + keysFilePath);
+        log.info("Keys File Path: " + keysFilePath);
 
         if (!Files.exists(providerDir)) {
             try {
+                log.info("Creating provider directory: {}", providerDir);
                 Files.createDirectories(providerDir);
             } catch (IOException e) {
                 log.error("Failed to create provider directory at: {}", providerDir, e);
-                return Collections.emptyList();
             }
         }
 
@@ -151,9 +171,15 @@ public abstract class AbstractAiProvider {
             } catch (IOException e) {
                 log.error("Failed to create API key template file at: {}", keysFilePath, e);
             }
-            return Collections.emptyList();
+            
         }
+        return keysFilePath;
+    }
 
+    private List<String> readApiKeysFile() {
+        
+        Path keysFilePath = getKeysFilePath();
+        
         try {
             List<String> keys = Files.lines(keysFilePath)
                     .map(String::trim)

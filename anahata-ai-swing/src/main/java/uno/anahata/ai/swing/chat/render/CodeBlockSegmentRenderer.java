@@ -9,7 +9,6 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Window;
 import java.util.Objects;
-import java.util.logging.Level;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JEditorPane;
@@ -35,6 +34,9 @@ import uno.anahata.ai.swing.chat.render.editorkit.EditorKitProvider;
 @Getter
 public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
 
+    /**
+     * The programming language for syntax highlighting.
+     */
     private final String language;
 
     /**
@@ -54,10 +56,12 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
      * It reuses the existing {@link JEditorPane} or {@link JTextArea} if available
      * and updates its content only if the code has changed.
      *
-     * @return The JComponent representing the rendered code block.
+     * @return True if a visual update occurred, false otherwise.
      */
     @Override
-    public JComponent render() {
+    public boolean render() {
+        boolean changed = hasContentChanged();
+
         if (component == null) {
             // Initial render: create the component
             EditorKitProvider editorKitProvider = chatPanel.getChatConfig().getEditorKitProvider();
@@ -78,7 +82,7 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
                     } else {
                         codeEditor.setEditorKit(kit);
                         codeEditor.getDocument().putProperty("mimeType", kit.getContentType());
-                        log.info("codeEditor.getDocument().putProperty(mimeType, {0}); for ''{1}''.", new Object[]{kit.getContentType(), language});
+                        log.info("codeEditor.getDocument().putProperty(mimeType, {}); for '{}'.", kit.getContentType(), language);
                         innerComponent = codeEditor;
                     }
                 } catch (Exception e) {
@@ -91,10 +95,11 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
             scrollPane.setPreferredSize(new java.awt.Dimension(0, 200)); // Default height
             scrollPane.setBorder(javax.swing.BorderFactory.createEmptyBorder());
             this.component = scrollPane;
+            changed = true; // Component was created, so a change occurred
         }
 
         // Update content only if it has changed
-        if (hasContentChanged()) {
+        if (changed) {
             JComponent innerComponent = (JComponent) ((JScrollPane) this.component).getViewport().getView();
             if (innerComponent instanceof JEditorPane) {
                 ((JEditorPane) innerComponent).setText(currentContent);
@@ -103,8 +108,7 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
             }
             contentRendered(); // Mark content as rendered
         }
-
-        return component;
+        return changed;
     }
 
     /**
@@ -126,8 +130,9 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
         dialog.setLayout(new BorderLayout());
         dialog.setPreferredSize(new Dimension(800, 600));
 
-        // Create the component using the existing render logic
-        JComponent contentComponent = render();
+        // CRITICAL: Ensure the component is rendered before adding it to the dialog
+        render();
+        JComponent contentComponent = getComponent();
         
         // The render method already wraps the inner component in a JScrollPane, so we just add it.
         dialog.add(contentComponent, BorderLayout.CENTER);
@@ -165,5 +170,15 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
     @Override
     public boolean matches(TextSegmentDescriptor descriptor) {
         return descriptor.type() == TextSegmentType.CODE && Objects.equals(language, descriptor.language());
+    }
+
+    /**
+     * Returns the JComponent managed by this renderer.
+     *
+     * @return The JComponent.
+     */
+    @Override
+    public JComponent getComponent() {
+        return component;
     }
 }

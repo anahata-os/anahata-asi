@@ -28,6 +28,7 @@ public class StatusManager {
     private String executingToolName;
     private long statusChangeTime = System.currentTimeMillis();
     private long lastOperationDuration;
+    private long currentBackoffAmount; // New field for backoff amount
 
     public StatusManager(@NonNull Chat chat) {
         this.chat = chat;
@@ -90,12 +91,18 @@ public class StatusManager {
     }
 
     /**
-     * Records an API error for display in the status panel.
+     * Records an API error and sets the chat status.
+     * This method is designed to be called from the Chat orchestrator to centralize
+     * error reporting and status updates.
      *
-     * @param errorRecord The error record.
+     * @param errorRecord The ApiErrorRecord to record.
+     * @param status The new chat status to set.
+     * @param detailMessage A detail message for the status change.
      */
-    public void recordApiError(ApiErrorRecord errorRecord) {
+    public void fireApiError(ApiErrorRecord errorRecord, ChatStatus status, String detailMessage) {
         apiErrors.add(errorRecord);
+        this.currentBackoffAmount = errorRecord.getBackoffAmount(); // Store backoff amount
+        fireStatusChanged(status, detailMessage);
     }
 
     /**
@@ -105,6 +112,14 @@ public class StatusManager {
      */
     public List<ApiErrorRecord> getApiErrors() {
         return Collections.unmodifiableList(apiErrors);
+    }
+    
+    /**
+     * Clears all recorded API errors. This should be called upon a successful API response.
+     */
+    public void clearApiErrors() {
+        apiErrors.clear();
+        this.currentBackoffAmount = 0; // Reset backoff amount on clear
     }
 
     /**
@@ -116,5 +131,6 @@ public class StatusManager {
         this.statusChangeTime = System.currentTimeMillis();
         this.lastOperationDuration = 0;
         this.apiErrors.clear();
+        this.currentBackoffAmount = 0; // Reset backoff amount on reset
     }
 }

@@ -7,6 +7,7 @@ import java.awt.BorderLayout;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import lombok.Getter;
+import lombok.NonNull;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.swing.chat.render.editorkit.EditorKitProvider;
 
@@ -19,27 +20,41 @@ import uno.anahata.ai.swing.chat.render.editorkit.EditorKitProvider;
 @Getter
 public class ChatPanel extends JPanel {
 
-    private final Chat chat; // Now instantiated here
-    private final SwingChatConfig chatConfig; // New field for config
+    /** The chat session orchestrator. */
+    private final Chat chat; 
+    /** The chat configuration. */
+    private final SwingChatConfig chatConfig; 
+    /** The tabbed pane for switching between chat and tools. */
     private final JTabbedPane tabbedPane;
+    /** The panel for managing tools. */
     private final ToolsPanel toolsPanel;
+    /** The panel for user input. */
     private final InputPanel inputPanel;
+    /** The header panel. */
     private final HeaderPanel headerPanel;
+    /** The toolbar panel. */
     private final ToolbarPanel toolbarPanel;
-    private final StatusPanel statusPanel; // New: StatusPanel
-    private final JPanel conversationPanel; // Placeholder for the main chat view
+    /** The status panel. */
+    private final StatusPanel statusPanel; 
+    /** The main conversation view. */
+    private final ConversationPanel conversationPanel; 
 
-    public ChatPanel(Chat chat) { // Changed constructor argument
-        this.chat = chat; // Initialize Chat here
-        this.chatConfig = (SwingChatConfig) chat.getConfig(); // Derive chatConfig
+    /**
+     * Constructs a new ChatPanel.
+     *
+     * @param chat The chat session to associate with this panel.
+     */
+    public ChatPanel(@NonNull Chat chat) { 
+        this.chat = chat; 
+        this.chatConfig = (SwingChatConfig) chat.getConfig(); 
         
         this.tabbedPane = new JTabbedPane();
         this.toolsPanel = new ToolsPanel(chat);
-        this.inputPanel = new InputPanel(this); // FIX: Pass 'this' (ChatPanel)
+        this.inputPanel = new InputPanel(this); 
         this.headerPanel = new HeaderPanel(chat);
-        this.toolbarPanel = new ToolbarPanel(this); // FIX: Pass 'this' (ChatPanel)
-        this.statusPanel = new StatusPanel(this); // New: Instantiate StatusPanel
-        this.conversationPanel = new JPanel(); // Simple placeholder
+        this.toolbarPanel = new ToolbarPanel(this); 
+        this.statusPanel = new StatusPanel(this); 
+        this.conversationPanel = new ConversationPanel(this); 
     }
 
     /**
@@ -59,14 +74,14 @@ public class ChatPanel extends JPanel {
 
         // Create a panel to hold both InputPanel and StatusPanel
         JPanel southPanel = new JPanel(new BorderLayout());
-        southPanel.add(inputPanel, BorderLayout.NORTH); // InputPanel at the top of the bottom area
-        southPanel.add(statusPanel, BorderLayout.SOUTH); // StatusPanel below the input
+        southPanel.add(inputPanel, BorderLayout.NORTH); 
+        southPanel.add(statusPanel, BorderLayout.SOUTH); 
 
         // Add components to the main panel
         add(headerPanel, BorderLayout.NORTH);
         add(toolbarPanel, BorderLayout.WEST);
         add(tabbedPane, BorderLayout.CENTER);
-        add(southPanel, BorderLayout.SOUTH); // Add the combined south panel
+        add(southPanel, BorderLayout.SOUTH); 
     }
     
     /**

@@ -1,6 +1,8 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.ai.model.core;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,7 +27,10 @@ import uno.anahata.ai.chat.Chat;
 @Getter
 @Setter
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
-public abstract class AbstractMessage {
+public abstract class AbstractMessage implements PropertyChangeSource {
+
+    /** Support for firing property change events. */
+    private final PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
 
     /**
      * A unique, immutable identifier for this message.
@@ -88,7 +93,6 @@ public abstract class AbstractMessage {
      *
      * @param part The part to add.
      */
-    
     void addPart(@NonNull AbstractPart part) {
         if (parts.contains(part)) {
             throw new IllegalArgumentException("Part ." + part + " is already a part on this messge:" + this);
@@ -96,42 +100,38 @@ public abstract class AbstractMessage {
         if (part.getMessage() != null) {
             throw new IllegalArgumentException("That part already has a message.");
         }
-        //part.setMessage(this);
         this.parts.add(part);
+        propertyChangeSupport.firePropertyChange("parts", null, parts); // Fire generic change
     }
     
+    /**
+     * Removes a part from this message.
+     * @param part The part to remove.
+     */
     void removePart(AbstractPart part) {
         Validate.isTrue(parts.contains(part), "Not a part of this message " + part);
         parts.remove(part);
+        propertyChangeSupport.firePropertyChange("parts", null, parts); // Fire generic change
     }
     
     /**
-     * Safely removes a part from this message, ensuring the bidirectional link
-     * is correctly severed.
-     *
-     * @param part The part to remove.
+     * Removes this message from the chat history.
      */
-    /*
-    public void removePart(@NonNull AbstractPart part) {
-        if (parts.remove(part)) {
-            part.setMessage(null); // Break the link
+    public void remove() {
+        if (chat != null) {
+            chat.getContextManager().removeMessage(this);
         }
     }
-    */
 
     /**
-     * Safely adds a list of parts to this message, ensuring the bidirectional
-     * relationship is correctly established for every part.
-     *
-     * @param parts The list of parts to add.
+     * Sets the pruned state of this message and fires a property change event.
+     * @param pruned The new pruned state.
      */
-    /*
-    public void addAllParts(@NonNull List<? extends AbstractPart> parts) {
-        for (AbstractPart part : parts) {
-            addPart(part);
-        }
+    public void setPruned(Boolean pruned) {
+        Boolean oldPruned = this.pruned;
+        this.pruned = pruned;
+        propertyChangeSupport.firePropertyChange("pruned", oldPruned, pruned);
     }
-    */
 
     /**
      * Calculates the "depth" of this message, defined as its distance from the
@@ -157,11 +157,11 @@ public abstract class AbstractMessage {
      * Convenience method to get the message content as a single string,
      * concatenating the text representation of all its parts.
      *
-     * @param includePrunned wether to include prunned parts
+     * @param includePruned whether to include pruned parts
      * @return The concatenated text content.
      */
-    public String asText(boolean includePrunned) {
-        return getParts(includePrunned).stream()
+    public String asText(boolean includePruned) {
+        return getParts(includePruned).stream()
                 .map(AbstractPart::asText)
                 .collect(Collectors.joining());
     }
@@ -214,7 +214,34 @@ public abstract class AbstractMessage {
 
     }
 
+    /**
+     * Gets an unmodifiable list of all parts in this message.
+     * @return The list of parts.
+     */
     public List<AbstractPart> getParts() {
         return Collections.unmodifiableList(parts);
     }
+    
+    /**
+     * Adds a PropertyChangeListener to this message.
+     * @param listener The listener to add.
+     */
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        propertyChangeSupport.addPropertyChangeListener(listener);
+    }
+
+    /**
+     * Removes a PropertyChangeListener from this message.
+     * @param listener The listener to remove.
+     */
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        propertyChangeSupport.removePropertyChangeListener(listener);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public PropertyChangeSupport getPropertyChangeSupport() {
+        return propertyChangeSupport;
+    }
+
 }

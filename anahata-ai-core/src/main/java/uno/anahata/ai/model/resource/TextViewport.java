@@ -1,5 +1,6 @@
 package uno.anahata.ai.model.resource;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -20,6 +21,7 @@ import org.apache.commons.lang3.Validate;
 @Getter
 @Setter
 @NoArgsConstructor
+@Schema(description = "Represents the view port of a chunk of text")
 public class TextViewport {
 
     //<editor-fold defaultstate="collapsed" desc="View Settings">

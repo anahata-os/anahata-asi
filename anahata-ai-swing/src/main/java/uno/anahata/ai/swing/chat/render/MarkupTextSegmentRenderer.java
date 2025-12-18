@@ -28,8 +28,11 @@ import uno.anahata.ai.swing.internal.SwingUtils;
  */
 public class MarkupTextSegmentRenderer extends AbstractTextSegmentRenderer {
 
+    /** The Flexmark markdown parser. */
     private final Parser markdownParser;
+    /** The Flexmark HTML renderer. */
     private final HtmlRenderer htmlRenderer;
+    /** Whether this segment represents a model thought. */
     private final boolean isThought;
 
     /**
@@ -50,14 +53,14 @@ public class MarkupTextSegmentRenderer extends AbstractTextSegmentRenderer {
     }
 
     /**
-     * Renders or updates the markdown text segment.
+     * {@inheritDoc}
      * It reuses the existing {@link WrappingEditorPane} if available and updates its content
      * only if the markdown text has changed.
-     *
-     * @return The {@link WrappingEditorPane} representing the rendered markdown.
      */
     @Override
-    public JComponent render() {
+    public boolean render() {
+        boolean changed = hasContentChanged();
+
         if (component == null) {
             // Initial render: create the WrappingEditorPane
             WrappingEditorPane editorPane = new WrappingEditorPane();
@@ -76,10 +79,11 @@ public class MarkupTextSegmentRenderer extends AbstractTextSegmentRenderer {
             sheet.addRule("th { background-color: #f2f2f2; }");
 
             this.component = editorPane;
+            changed = true;
         }
 
         // Update content only if it has changed
-        if (hasContentChanged()) {
+        if (changed) {
             WrappingEditorPane editorPane = (WrappingEditorPane) this.component;
             UITheme theme = chatConfig.getTheme();
             Node document = markdownParser.parse(currentContent);
@@ -97,18 +101,23 @@ public class MarkupTextSegmentRenderer extends AbstractTextSegmentRenderer {
             contentRendered(); // Mark content as rendered
         }
 
-        return component;
+        return changed;
     }
 
     /**
-     * Determines if this renderer can handle the given segment descriptor.
+     * {@inheritDoc}
      * A {@code MarkupTextSegmentRenderer} handles {@link TextSegmentType#TEXT} descriptors.
-     *
-     * @param descriptor The {@link TextSegmentDescriptor} to check.
-     * @return True if the descriptor's type is {@link TextSegmentType#TEXT}, false otherwise.
      */
     @Override
     public boolean matches(TextSegmentDescriptor descriptor) {
         return descriptor.type() == TextSegmentType.TEXT;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public JComponent getComponent() {
+        return component;
     }
 }

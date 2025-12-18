@@ -26,8 +26,11 @@ import uno.anahata.ai.model.core.UserMessage;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
 import uno.anahata.ai.model.provider.AbstractModel;
 import uno.anahata.ai.resource.ResourceManager;
+import uno.anahata.ai.status.ApiErrorRecord;
+import uno.anahata.ai.status.ApiErrorRecord.ApiErrorRecordBuilder;
 import uno.anahata.ai.status.ChatStatus;
 import uno.anahata.ai.status.StatusManager;
+import uno.anahata.ai.tool.RetryableApiException;
 import uno.anahata.ai.tool.ToolManager;
 
 /**
@@ -78,9 +81,10 @@ public class Chat {
      * status panel initialization on deserialization.
      */
     private Response<? extends AbstractModelMessage> lastResponse;
-    
+
     /**
-     * A ReentrantLock to synchronize access to shared mutable state (e.g., `running`, `stagedUserMessage`).
+     * A ReentrantLock to synchronize access to shared mutable state (e.g.,
+     * `running`, `stagedUserMessage`).
      */
     private final ReentrantLock runningLock = new ReentrantLock();
 
@@ -89,7 +93,7 @@ public class Chat {
         this.config = config;
         this.executor = AiExecutors.newCachedThreadPoolExecutor(config.getSessionId());
         this.contextManager = new ContextManager(this);
-        this.toolManager = new ToolManager(this);        
+        this.toolManager = new ToolManager(this);
         this.resourceManager = new ResourceManager();
         this.statusManager = new StatusManager(this);
 
@@ -142,7 +146,8 @@ public class Chat {
 
     /**
      * Sends the current context to the model without adding a new user message.
-     * This is useful for re-triggering the model after an API error or when the input is empty.
+     * This is useful for re-triggering the model after an API error or when the
+     * input is empty.
      */
     public void sendContext() {
         runningLock.lock();
@@ -173,7 +178,7 @@ public class Chat {
         int maxRetries = config.getApiMaxRetries();
         long initialDelayMillis = config.getApiInitialDelayMillis();
         long maxDelayMillis = config.getApiMaxDelayMillis();
-
+        String requestApiKey = null;
         for (int attempt = 0; attempt < maxRetries; attempt++) {
             try {
                 // Atomically consume any staged message "just-in-time" before building the history.
@@ -183,17 +188,20 @@ public class Chat {
                     contextManager.addMessage(messageToProcess);
                     log.info("Processing staged message.");
                 }
-                
+
                 // Build config and history *inside* the loop for freshness on retries
                 RequestConfig requestConfig = config.getRequestConfig();
                 List<AbstractMessage> history = contextManager.buildVisibleHistory();
 
                 statusManager.fireStatusChanged(ChatStatus.API_CALL_IN_PROGRESS);
                 log.info("Sending request to model '{}' (attempt {}/{}) with {} messages.",
-                         selectedModel.getModelId(), attempt + 1, maxRetries, history.size());
+                        selectedModel.getModelId(), attempt + 1, maxRetries, history.size());
 
                 Response<?> response = selectedModel.generateContent(this, requestConfig, history);
                 this.lastResponse = response; // Store the last response
+                
+                //API returned something, so time to clear any errors
+                statusManager.clearApiErrors();
 
                 if (response.getCandidates().size() == 1) {
                     chooseCandidate(response.getCandidates().get(0));
@@ -204,26 +212,43 @@ public class Chat {
                 return; // Success, exit the retry loop.
 
             } catch (Exception e) {
-                log.warn("API Error on attempt {}: {}", attempt + 1, e.toString());
+                log.error("Exception in sendToModel", e);
+                ApiErrorRecordBuilder errorRecordBuilder = ApiErrorRecord.builder()
+                        .modelId(selectedModel.getModelId())
+                        .timestamp(java.time.Instant.now())
+                        .retryAttempt(attempt)
+                        .exception(e);
 
-                if (attempt == maxRetries - 1) {
-                    log.error("Max retries reached. Aborting.", e);
-                    statusManager.fireStatusChanged(ChatStatus.MAX_RETRIES_REACHED);
-                    // Re-throw the final exception to be handled by the UI layer
-                    throw new RuntimeException("Failed after " + maxRetries + " attempts.", e);
+                if (e instanceof RetryableApiException rae) {
+                    errorRecordBuilder.apiKey(rae.getApiKey());
+                    if (attempt < maxRetries - 1) {
+                        log.warn("API Error on attempt {}: {}. Retrying...", attempt + 1, e.toString());
+
+                        // Calculate exponential backoff with jitter
+                        long delay = (long) (initialDelayMillis * Math.pow(2, attempt)) + (long) (Math.random() * 500);
+                        long backoffAmount = Math.min(delay, maxDelayMillis);
+                        errorRecordBuilder.backoffAmount(backoffAmount);
+                        
+                        try {
+                            statusManager.fireApiError(errorRecordBuilder.build(), ChatStatus.WAITING_WITH_BACKOFF, "Retrying in " + backoffAmount + "ms");
+                            Thread.sleep(backoffAmount);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            throw new RuntimeException("Chat interrupted during retry delay.", ie);
+                        }
+                    } else {
+                        log.error("Max retries reached. Aborting.", e);
+                        statusManager.fireApiError(errorRecordBuilder.build(), ChatStatus.MAX_RETRIES_REACHED, null);
+                        
+                        // Re-throw the final exception to be handled by the UI layer
+                        throw new RuntimeException("Failed after " + (attempt + 1) + " attempts.", e);
+                    }
+                } else {
+                    statusManager.fireApiError(errorRecordBuilder.build(), ChatStatus.ERROR, null);
+                    // For non-retryable exceptions, we stop immediately.
+                    throw new RuntimeException("Non-retryable API error occurred.", e);
                 }
 
-                // Calculate exponential backoff with jitter
-                long delay = (long) (initialDelayMillis * Math.pow(2, attempt)) + (long) (Math.random() * 500);
-                long backoffAmount = Math.min(delay, maxDelayMillis);
-
-                try {
-                    statusManager.fireStatusChanged(ChatStatus.WAITING_WITH_BACKOFF, "Retrying in " + backoffAmount + "ms");
-                    Thread.sleep(backoffAmount);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException("Chat interrupted during retry delay.", ie);
-                }
             }
         }
     }
@@ -245,6 +270,12 @@ public class Chat {
             // Automatically send the results back to the model to continue the conversation.
             log.info("Tool execution complete. Sending results back to the model.");
             sendContext(); // Call the new method to send the context
+        } else if (!message.getToolMessage().getToolResponses().isEmpty()) {
+            // There are tool calls, but not all are auto-runnable, so prompt the user.
+            statusManager.fireStatusChanged(ChatStatus.TOOL_PROMPT);
+        } else {
+            // No tool calls, so the model is idle.
+            statusManager.fireStatusChanged(ChatStatus.IDLE);
         }
     }
 
@@ -297,17 +328,19 @@ public class Chat {
     /**
      * Gets the last response received from the AI model.
      *
-     * @return An Optional containing the last response, or empty if none exists.
+     * @return An Optional containing the last response, or empty if none
+     * exists.
      */
     public Optional<Response<? extends AbstractModelMessage>> getLastResponse() {
         return Optional.ofNullable(lastResponse);
     }
-    
+
     /**
-     * Gets the total token count from the last response, if available.
-     * This is primarily used by the UI for the context usage bar.
+     * Gets the total token count from the last response, if available. This is
+     * primarily used by the UI for the context usage bar.
      *
-     * @return The total token count of the last response, or 0 if no response is available.
+     * @return The total token count of the last response, or 0 if no response
+     * is available.
      */
     public int getLastTotalTokenCount() {
         return getLastResponse()

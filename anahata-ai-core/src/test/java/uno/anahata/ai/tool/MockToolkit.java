@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License, Version 108 - https://github.com/anahata-os/anahata-ai/blob/main/LICENSE */
 package uno.anahata.ai.tool;
 
+import java.util.List;
 import uno.anahata.ai.model.core.TextPart;
 import uno.anahata.ai.model.tool.MockComplexObject;
 import uno.anahata.ai.model.tool.Tree;
@@ -11,7 +12,7 @@ public class MockToolkit extends JavaToolkitInstance {
     @AiTool("Returns a greeting for the given name.")
     public String sayHello(@AiToolParam("The name to greet.") String name) {
         return "Hello, " + name;
-    }
+    }   
 
     @AiTool("A method that returns a recursive Tree object.")
     public Tree getTree() {
@@ -21,6 +22,12 @@ public class MockToolkit extends JavaToolkitInstance {
     @AiTool("A method with no return value.")
     public void doNothing() {
         // This method does nothing and returns void.
+    }
+    
+    @AiTool("Returns a List<String>")
+    public List<String> getStringList() {
+        return null;
+        // This method does nothing and returns null.
     }
     
     @AiTool("A method that returns a complex object with various field types.")

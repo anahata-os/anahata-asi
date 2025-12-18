@@ -2,6 +2,8 @@
 package uno.anahata.ai.model.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -17,7 +19,12 @@ import uno.anahata.ai.chat.ChatConfig;
  */
 @Getter
 @Setter
-public abstract class AbstractPart {
+public abstract class AbstractPart implements PropertyChangeSource {
+    
+    /** Support for firing property change events. */
+    @JsonIgnore
+    private final PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
+
     /**
      * A unique, sequential identifier assigned to this part when it is added to a chat.
      */
@@ -34,7 +41,7 @@ public abstract class AbstractPart {
     /**
      * A three-state flag for explicit pruning control.
      * - {@code true}: This part is explicitly pruned and will be hidden.
-     * - {@code false}: This part is "pinned" and will never be auto-pruned.
+     * - {@code false}: This part is "pinned" and never be auto-pruned.
      * - {@code null}: (Default) Auto-pruning is active based on {@code turnsToKeep}.
      */
     private Boolean pruned = null;
@@ -47,11 +54,26 @@ public abstract class AbstractPart {
      */
     private Integer turnsToKeep = null;
 
+    /**
+     * Constructs a new AbstractPart and adds it to the parent message.
+     * @param message The parent message.
+     */
     public AbstractPart(@NonNull AbstractMessage message) {
         message.addPart(this);
         this.message = message;
     }
     
+    /**
+     * Sets the pruned state of this part and fires a property change event.
+     * @param pruned The new pruned state.
+     */
+    public void setPruned(Boolean pruned) {
+        Boolean oldPruned = this.pruned;
+        this.pruned = pruned;
+        // Fire a generic property change event without a specific property name
+        propertyChangeSupport.firePropertyChange("pruned", oldPruned, pruned);
+    }
+
     /**
      * Removes this part from its parent message and severs the bidirectional link.
      * This is the primary mechanism for removing attachments from a message.
@@ -61,16 +83,21 @@ public abstract class AbstractPart {
         this.message = null;
     }
     
-    
-    /*
-    void setMessage(AbstractMessage message) {
-        if (this.message == null) {
-            this.message = message;
-            message.addPart(this);
-        } else {
-            
-        }
-    }*/
+    /**
+     * Adds a PropertyChangeListener to this part.
+     * @param listener The listener to add.
+     */
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        propertyChangeSupport.addPropertyChangeListener(listener);
+    }
+
+    /**
+     * Removes a PropertyChangeListener from this part.
+     * @param listener The listener to remove.
+     */
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        propertyChangeSupport.removePropertyChangeListener(listener);
+    }
 
     /**
      * Calculates the EFFECTIVE pruned state of this part, now with "deep pinning" logic.
@@ -142,17 +169,23 @@ public abstract class AbstractPart {
      */
     protected abstract int getDefaultTurnsToKeep();
 
-    //<editor-fold defaultstate="collapsed" desc="Convenience Methods">
+    /**
+     * Gets the parent chat session.
+     * @return The chat session.
+     */
     @JsonIgnore
     public Chat getChat() {
         return getMessage().getChat();
     }
 
+    /**
+     * Gets the chat configuration.
+     * @return The chat configuration.
+     */
     @JsonIgnore
     public ChatConfig getChatConfig() {
         return getChat().getConfig();
     }
-    //</editor-fold>
 
     /**
      * Returns the content of the part as a simple string.
@@ -160,4 +193,10 @@ public abstract class AbstractPart {
      * @return The text representation of the part.
      */
     public abstract String asText();
+
+    /** {@inheritDoc} */
+    @Override
+    public PropertyChangeSupport getPropertyChangeSupport() {
+        return propertyChangeSupport;
+    }
 }

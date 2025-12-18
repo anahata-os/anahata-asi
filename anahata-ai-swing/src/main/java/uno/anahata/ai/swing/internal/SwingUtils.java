@@ -11,6 +11,7 @@ import java.awt.Window;
 import java.awt.image.BufferedImage;
 import javax.swing.SwingUtilities;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.exception.ExceptionUtils; // Added import
 import org.jdesktop.swingx.JXErrorPane;
 import org.jdesktop.swingx.error.ErrorInfo;
 
@@ -77,7 +78,7 @@ public class SwingUtils {
         ErrorInfo errorInfo = new ErrorInfo(
                 taskName,
                 description,
-                throwable.getMessage(),
+                ExceptionUtils.getStackTrace(throwable), // Changed to get full stack trace
                 "Error in " + taskName,
                 throwable,
                 java.util.logging.Level.SEVERE,

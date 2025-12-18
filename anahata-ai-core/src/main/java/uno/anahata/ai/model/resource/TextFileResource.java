@@ -1,5 +1,6 @@
 package uno.anahata.ai.model.resource;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import lombok.Getter;
@@ -16,8 +17,10 @@ import uno.anahata.ai.model.core.TextPart;
  */
 @Getter
 @Setter
+@Schema(description = "A resource representing a text file")
 public class TextFileResource extends AbstractPathResource<String, String> {
 
+    @Schema(description = "The current view port for the text file")
     private TextViewport viewport;
 
     /**

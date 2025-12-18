@@ -41,9 +41,8 @@ public class SchemaGenerationTest {
     @Test
     public void testAllToolSchemasAreCorrectlyWrapped() throws Exception {
         for (AbstractTool<?, ?> tool : toolManager.getAllTools()) {
-            System.out.println("Verifying schema for tool: " + tool.getName());
-            
             String responseSchemaJson = tool.getResponseJsonSchema();
+            System.out.println("Verifying schema for tool: " + tool.getName() + "\n" + responseSchemaJson);
             assertNotNull(responseSchemaJson, "Response schema should not be null for tool: " + tool.getName());
 
             Map<String, Object> responseSchemaMap = SchemaProvider.OBJECT_MAPPER.readValue(responseSchemaJson, MAP_TYPE_REF);

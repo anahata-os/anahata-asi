@@ -24,12 +24,14 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 /**
- * A clean, focused provider for generating OpenAPI/Swagger compliant JSON schemas from Java types.
- * This provider's key feature is its deep, reflection-based analysis to enrich the schema
- * with precise Java type information, embedding the "beautiful" fully qualified type name
- * into the {@code title} field of every object, property, and array item. It correctly handles
- * complex generic types and recursive data structures, and performs inlining to produce
- * a single, self-contained schema object suitable for AI models.
+ * A clean, focused provider for generating OpenAPI/Swagger compliant JSON
+ * schemas from Java types. This provider's key feature is its deep,
+ * reflection-based analysis to enrich the schema with precise Java type
+ * information, embedding the "beautiful" fully qualified type name into the
+ * {@code title} field of every object, property, and array item. It correctly
+ * handles complex generic types and recursive data structures, and performs
+ * inlining to produce a single, self-contained schema object suitable for AI
+ * models.
  *
  * @author anahata-gemini-pro-2.5
  */
@@ -41,16 +43,19 @@ public class SchemaProvider {
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
             .setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
             .setVisibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE);
-    
+
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     /**
-     * Generates a complete, inlined JSON schema for a wrapper type, but with the
-     * schema for a specific 'result' type surgically injected into its 'result' property.
+     * Generates a complete, inlined JSON schema for a wrapper type, but with
+     * the schema for a specific 'result' type surgically injected into its
+     * 'result' property.
      *
-     * @param wrapperType The container type (e.g., JavaMethodToolResponse.class).
+     * @param wrapperType The container type (e.g.,
+     * JavaMethodToolResponse.class).
      * @param attributeName The name of the property in the wrapper to replace.
-     * @param wrappedType The specific type of the result to inject (e.g., Tree.class or void.class).
+     * @param wrappedType The specific type of the result to inject (e.g.,
+     * Tree.class or void.class).
      * @return A complete, final JSON schema string.
      * @throws JsonProcessingException if schema generation fails.
      */
@@ -83,41 +88,43 @@ public class SchemaProvider {
             String wrappedSchemaJson = generateStandardSchema(wrappedType);
             if (wrappedSchemaJson != null && properties.has(attributeName)) {
                 JsonNode wrappedRootNode = OBJECT_MAPPER.readTree(wrappedSchemaJson);
-                
+
                 // Merge the definitions ('components.schemas') from the wrapped schema into the base schema
                 JsonNode wrappedDefinitions = wrappedRootNode.path("components").path("schemas");
                 ObjectNode baseDefinitions = (ObjectNode) mutableRoot.path("components").path("schemas");
-                
+
                 if (wrappedDefinitions.isObject()) {
                     wrappedDefinitions.fields().forEachRemaining(entry -> {
                         baseDefinitions.set(entry.getKey(), entry.getValue());
                     });
                 }
-                
+
                 // Now, inject the main part of the wrapped schema (without its components)
                 ObjectNode wrappedSchemaObject = (ObjectNode) wrappedRootNode.deepCopy();
                 wrappedSchemaObject.remove("components");
                 properties.set(attributeName, wrappedSchemaObject);
             }
         }
-        
+
         // 5. Now, with the schemas combined and definitions merged, perform a single recursive inlining pass.
         JsonNode definitions = mutableRoot.path("components").path("schemas");
         JsonNode inlinedNode = inlineDefinitionsRecursive(mutableRoot, definitions, new HashSet<>());
-        
+
         // 6. Clean up and return the final schema string
         if (inlinedNode instanceof ObjectNode) {
             ((ObjectNode) inlinedNode).remove("components");
         }
         return GSON.toJson(OBJECT_MAPPER.treeToValue(inlinedNode, Map.class));
     }
-    
+
     /**
-     * Generates a complete, inlined JSON schema for a given Java type.
-     * This method is used for generating schemas for tool parameters and simple return types.
+     * Generates a complete, inlined JSON schema for a given Java type. This
+     * method is used for generating schemas for tool parameters and simple
+     * return types.
      *
      * @param type The Java type to generate the schema for.
-     * @return A complete, final JSON schema string, or {@code null} for void types.
+     * @return A complete, final JSON schema string, or {@code null} for void
+     * types.
      * @throws JsonProcessingException if schema generation fails.
      */
     public static String generateInlinedSchemaString(Type type) throws JsonProcessingException {
@@ -138,11 +145,32 @@ public class SchemaProvider {
     }
 
     private static String generateStandardSchema(Type type) throws JsonProcessingException {
+        if (type instanceof ParameterizedType) {
+            ParameterizedType pt = (ParameterizedType) type;
+            Type raw = pt.getRawType();
+            if (raw.equals(List.class) || raw.equals(Collection.class) || raw.equals(Set.class)) {
+                Type[] args = pt.getActualTypeArguments();
+                if (args.length == 1) {
+                    String itemSchemaJson = generateStandardSchema(args[0]);
+                    if (itemSchemaJson != null) {
+                        return buildArraySchema(type, itemSchemaJson);
+                    }
+                }
+            }
+        } else if (type instanceof Class<?> clazz && clazz.isArray()) {
+            // Handle T[] arrays
+            Type componentType = clazz.getComponentType();
+            String itemSchemaJson = generateStandardSchema(componentType);
+            if (itemSchemaJson != null) {
+                return buildArraySchema(type, itemSchemaJson);
+            }
+        }
+
         String simpleSchema = handleSimpleTypeSchema(type);
         if (simpleSchema != null) {
             return simpleSchema;
         }
-        
+
         ModelConverters converters = new ModelConverters();
         converters.addConverter(new ModelResolver(OBJECT_MAPPER));
         Map<String, Schema> swaggerSchemas = converters.readAll(new AnnotatedType(type));
@@ -159,7 +187,7 @@ public class SchemaProvider {
         finalSchemaMap.put("components", components);
         return GSON.toJson(finalSchemaMap);
     }
-    
+
     private static String handleSimpleTypeSchema(Type type) throws JsonProcessingException {
         if (!(type instanceof Class)) {
             return null;
@@ -188,6 +216,28 @@ public class SchemaProvider {
         }
 
         return GSON.toJson(schemaMap);
+    }
+
+    private static String buildArraySchema(Type arrayType, String itemSchemaJson) throws JsonProcessingException {
+        JsonNode itemSchema = OBJECT_MAPPER.readTree(itemSchemaJson);
+
+        Map<String, Object> arraySchema = new LinkedHashMap<>();
+        arraySchema.put("type", "array");
+        arraySchema.put("title", getTypeName(arrayType));  // e.g., "java.lang.String[]" or "java.util.List<java.lang.String>"
+        arraySchema.put("items", OBJECT_MAPPER.treeToValue(itemSchema, Map.class));
+
+        Map<String, Object> finalMap = new LinkedHashMap<>();
+        finalMap.putAll(arraySchema);
+
+        // Carry over components if the item is a complex object
+        JsonNode itemComponents = itemSchema.path("components").path("schemas");
+        if (itemComponents.isObject() && itemComponents.size() > 0) {
+            Map<String, Object> components = new LinkedHashMap<>();
+            components.put("schemas", OBJECT_MAPPER.treeToValue(itemComponents, Map.class));
+            finalMap.put("components", components);
+        }
+
+        return GSON.toJson(finalMap);
     }
 
     private static Schema createRootSchema(Type type, Map<String, Schema> swaggerSchemas) {
@@ -221,7 +271,9 @@ public class SchemaProvider {
     }
 
     private static void findAllTypesRecursive(Type type, Map<String, Type> foundTypes, Set<Type> visited) {
-        if (type == null || !visited.add(type)) return;
+        if (type == null || !visited.add(type)) {
+            return;
+        }
         if (type instanceof Class) {
             Class<?> clazz = (Class<?>) type;
             if (!isJdkClass(clazz)) {
@@ -244,7 +296,9 @@ public class SchemaProvider {
     }
 
     private static void addTitleToSchemaRecursive(Schema schema, Type type, Map<String, Schema> allSchemas, Set<Type> visited) {
-        if (schema == null || type == null || !visited.add(type)) return;
+        if (schema == null || type == null || !visited.add(type)) {
+            return;
+        }
         try {
             if (schema.getTitle() == null) {
                 schema.setTitle(getTypeName(type));
@@ -291,7 +345,7 @@ public class SchemaProvider {
                 ObjectNode mergedNode = objectNode.deepCopy();
                 mergedNode.remove("$ref");
                 if (definition.isObject()) {
-                    ((ObjectNode)definition).fields().forEachRemaining(entry -> {
+                    ((ObjectNode) definition).fields().forEachRemaining(entry -> {
                         if (!mergedNode.has(entry.getKey())) {
                             mergedNode.set(entry.getKey(), entry.getValue());
                         }
@@ -327,8 +381,12 @@ public class SchemaProvider {
 
     private static String findRootSchemaName(Map<String, Schema> schemas, Type type) {
         String preferredName = getRawClass(type) != null ? getRawClass(type).getSimpleName() : type.getTypeName();
-        if (schemas.size() == 1) return schemas.keySet().iterator().next();
-        if (schemas.containsKey(preferredName) && schemas.get(preferredName).get$ref() == null) return preferredName;
+        if (schemas.size() == 1) {
+            return schemas.keySet().iterator().next();
+        }
+        if (schemas.containsKey(preferredName) && schemas.get(preferredName).get$ref() == null) {
+            return preferredName;
+        }
         return schemas.entrySet().stream()
                 .filter(e -> e.getValue().get$ref() == null)
                 .map(Map.Entry::getKey)
@@ -337,7 +395,9 @@ public class SchemaProvider {
     }
 
     private static String getTypeName(Type type) {
-        if (type instanceof Class) return ((Class<?>) type).getCanonicalName();
+        if (type instanceof Class) {
+            return ((Class<?>) type).getCanonicalName();
+        }
         if (type instanceof ParameterizedType) {
             ParameterizedType pt = (ParameterizedType) type;
             String args = Arrays.stream(pt.getActualTypeArguments()).map(SchemaProvider::getTypeName).collect(Collectors.joining(", "));
@@ -350,7 +410,8 @@ public class SchemaProvider {
         for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
             try {
                 return c.getDeclaredField(name);
-            } catch (NoSuchFieldException e) { /* continue */ }
+            } catch (NoSuchFieldException e) {
+                /* continue */ }
         }
         return null;
     }
@@ -364,8 +425,12 @@ public class SchemaProvider {
     }
 
     private static Class<?> getRawClass(Type type) {
-        if (type instanceof Class) return (Class<?>) type;
-        if (type instanceof ParameterizedType) return (Class<?>) ((ParameterizedType) type).getRawType();
+        if (type instanceof Class) {
+            return (Class<?>) type;
+        }
+        if (type instanceof ParameterizedType) {
+            return (Class<?>) ((ParameterizedType) type).getRawType();
+        }
         return null;
     }
 

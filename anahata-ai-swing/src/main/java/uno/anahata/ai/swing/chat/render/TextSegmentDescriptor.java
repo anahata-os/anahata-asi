@@ -6,7 +6,7 @@ package uno.anahata.ai.swing.chat.render;
 import uno.anahata.ai.swing.chat.ChatPanel;
 
 /**
- * A record that describes a segment of text within a {@link TextPartRenderer}.
+ * A record that describes a segment of text within a {@link TextPartPanel}.
  * It includes the segment's type, its content, and optionally the language for code blocks.
  *
  * @param type The {@link TextSegmentType} of the segment (TEXT or CODE).

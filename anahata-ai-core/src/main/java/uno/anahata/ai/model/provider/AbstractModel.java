@@ -61,6 +61,7 @@ public abstract class AbstractModel {
      * The core method for interacting with an AI model. It takes a configuration
      * object and a list of messages and returns a standardized Response.
      *
+     * @param chat the chat for which the content is being generated
      * @param config The configuration for this specific request.
      * @param history The list of messages forming the conversation history.
      * @return A standardized {@link Response} object.

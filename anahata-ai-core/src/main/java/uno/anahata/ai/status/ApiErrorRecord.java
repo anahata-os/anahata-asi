@@ -4,7 +4,9 @@
 package uno.anahata.ai.status;
 
 import java.time.Instant;
-import lombok.Value;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 /**
@@ -12,7 +14,7 @@ import lombok.experimental.SuperBuilder;
  *
  * @author anahata
  */
-@Value
+@Getter
 @SuperBuilder
 public class ApiErrorRecord {
 
@@ -34,6 +36,7 @@ public class ApiErrorRecord {
     /**
      * The backoff amount in milliseconds before the next retry.
      */
+    @Setter
     long backoffAmount;
 
     /**
@@ -44,5 +47,6 @@ public class ApiErrorRecord {
     /**
      * The API key used when the error occurred (abbreviated).
      */
+    @Setter
     String apiKey;
 }
