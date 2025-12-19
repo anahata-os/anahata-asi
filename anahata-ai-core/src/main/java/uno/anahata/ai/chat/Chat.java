@@ -178,7 +178,6 @@ public class Chat {
         int maxRetries = config.getApiMaxRetries();
         long initialDelayMillis = config.getApiInitialDelayMillis();
         long maxDelayMillis = config.getApiMaxDelayMillis();
-        String requestApiKey = null;
         for (int attempt = 0; attempt < maxRetries; attempt++) {
             try {
                 // Atomically consume any staged message "just-in-time" before building the history.
@@ -213,7 +212,7 @@ public class Chat {
 
             } catch (Exception e) {
                 log.error("Exception in sendToModel", e);
-                ApiErrorRecordBuilder errorRecordBuilder = ApiErrorRecord.builder()
+                ApiErrorRecordBuilder<?, ?> errorRecordBuilder = ApiErrorRecord.builder()
                         .modelId(selectedModel.getModelId())
                         .timestamp(java.time.Instant.now())
                         .retryAttempt(attempt)
@@ -221,13 +220,14 @@ public class Chat {
 
                 if (e instanceof RetryableApiException rae) {
                     errorRecordBuilder.apiKey(rae.getApiKey());
+                    
+                    // Calculate exponential backoff with jitter
+                    long delay = (long) (initialDelayMillis * Math.pow(2, attempt)) + (long) (Math.random() * 500);
+                    long backoffAmount = Math.min(delay, maxDelayMillis);
+                    errorRecordBuilder.backoffAmount(backoffAmount);
+
                     if (attempt < maxRetries - 1) {
                         log.warn("API Error on attempt {}: {}. Retrying...", attempt + 1, e.toString());
-
-                        // Calculate exponential backoff with jitter
-                        long delay = (long) (initialDelayMillis * Math.pow(2, attempt)) + (long) (Math.random() * 500);
-                        long backoffAmount = Math.min(delay, maxDelayMillis);
-                        errorRecordBuilder.backoffAmount(backoffAmount);
                         
                         try {
                             statusManager.fireApiError(errorRecordBuilder.build(), ChatStatus.WAITING_WITH_BACKOFF, "Retrying in " + backoffAmount + "ms");
@@ -272,10 +272,10 @@ public class Chat {
             sendContext(); // Call the new method to send the context
         } else if (!message.getToolMessage().getToolResponses().isEmpty()) {
             // There are tool calls, but not all are auto-runnable, so prompt the user.
-            statusManager.fireStatusChanged(ChatStatus.TOOL_PROMPT);
+            // statusManager.fireStatusChanged(ChatStatus.TOOL_PROMPT);
         } else {
             // No tool calls, so the model is idle.
-            statusManager.fireStatusChanged(ChatStatus.IDLE);
+            // statusManager.fireStatusChanged(ChatStatus.IDLE);
         }
     }
 

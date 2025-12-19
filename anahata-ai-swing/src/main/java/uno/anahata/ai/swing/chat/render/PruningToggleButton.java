@@ -4,15 +4,17 @@
 package uno.anahata.ai.swing.chat.render;
 
 import java.awt.event.ActionEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import javax.swing.AbstractAction;
 import javax.swing.JToggleButton;
 import lombok.Getter;
 import lombok.NonNull;
 import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.AbstractPart;
-import uno.anahata.ai.swing.icons.IconUtils;
+import uno.anahata.ai.model.core.PropertyChangeSource;
+import uno.anahata.ai.swing.icons.AutoPruneIcon;
+import uno.anahata.ai.swing.icons.PinnedIcon;
+import uno.anahata.ai.swing.icons.PrunedPartsIcon;
+import uno.anahata.ai.swing.internal.EdtPropertyChangeListener;
 
 /**
  * A three-state toggle button for managing the pruning state of an
@@ -23,7 +25,7 @@ import uno.anahata.ai.swing.icons.IconUtils;
  * @author pablo
  */
 @Getter
-public class PruningToggleButton extends JToggleButton implements PropertyChangeListener {
+public class PruningToggleButton extends JToggleButton {
 
     /** The AbstractPart or AbstractMessage this button is associated with. */
     @NonNull
@@ -48,12 +50,8 @@ public class PruningToggleButton extends JToggleButton implements PropertyChange
         });
         updateVisualState(); // Initial visual state
 
-        // Register as a listener to the model object
-        if (modelObject instanceof AbstractPart part) {
-            part.addPropertyChangeListener(this);
-        } else if (modelObject instanceof AbstractMessage message) {
-            message.addPropertyChangeListener(this);
-        }
+        // Declarative, thread-safe binding to the "pruned" property
+        new EdtPropertyChangeListener(this, (PropertyChangeSource) modelObject, "pruned", evt -> updateVisualState());
     }
 
     /**
@@ -77,7 +75,6 @@ public class PruningToggleButton extends JToggleButton implements PropertyChange
         } else if (modelObject instanceof AbstractMessage message) {
             message.setPruned(newPruned);
         }
-        // The propertyChange method will handle updating the visual state.
     }
 
     /**
@@ -86,11 +83,11 @@ public class PruningToggleButton extends JToggleButton implements PropertyChange
      */
     private Boolean getPrunedStateFromModel() {
         if (modelObject instanceof AbstractPart part) {
-            return part.getPruned(); // Use getPruned()
+            return part.getPruned();
         } else if (modelObject instanceof AbstractMessage message) {
             return message.isPruned();
         }
-        return null; // Should not happen due to constructor check
+        return null;
     }
 
     /**
@@ -100,24 +97,16 @@ public class PruningToggleButton extends JToggleButton implements PropertyChange
         Boolean prunedState = getPrunedStateFromModel();
         if (Boolean.TRUE.equals(prunedState)) {
             // Explicitly Pruned
-            setIcon(IconUtils.getIcon("pruned.png"));
+            setIcon(new PrunedPartsIcon(16));
             setToolTipText("Status: Explicitly Pruned (Click to Pin)");
         } else if (Boolean.FALSE.equals(prunedState)) {
             // Explicitly Pinned
-            setIcon(IconUtils.getIcon("pinned.png"));
+            setIcon(new PinnedIcon(16));
             setToolTipText("Status: Explicitly Pinned (Click for Auto-Prune)");
         } else {
             // Auto-Prune (Default)
-            setIcon(IconUtils.getIcon("auto_prune.png"));
+            setIcon(new AutoPruneIcon(16));
             setToolTipText("Status: Auto-Prune (Click to Prune)");
-        }
-    }
-
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        // We only care about the "pruned" property changing
-        if ("pruned".equals(evt.getPropertyName())) {
-            updateVisualState();
         }
     }
 }

@@ -7,22 +7,26 @@ import java.awt.Dimension;
 import java.awt.Rectangle;
 import javax.swing.JEditorPane;
 import javax.swing.Scrollable;
+import lombok.Setter;
 
 /**
  * A JEditorPane subclass that implements the {@link Scrollable} interface to
  * ensure correct line wrapping and horizontal scrolling behavior when placed
  * inside a JScrollPane.
  * <p>
- * Specifically, it forces {@code getScrollableTracksViewportWidth()} to return
+ * By default, it forces {@code getScrollableTracksViewportWidth()} to return
  * {@code true}, which is the key to making HTML content wrap correctly.
  *
  * @author pablo
  */
 public class WrappingEditorPane extends JEditorPane implements Scrollable {
 
+    @Setter
+    private boolean trackViewportWidth = true;
+
     @Override
     public boolean getScrollableTracksViewportWidth() {
-        return true;
+        return trackViewportWidth;
     }
 
     @Override

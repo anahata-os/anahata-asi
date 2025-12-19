@@ -29,21 +29,24 @@ public class CompressIcon implements Icon {
         Graphics2D g2d = (Graphics2D) g.create();
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2d.setColor(c.isEnabled() ? new Color(128, 0, 128) : Color.GRAY);
-        g2d.setStroke(new BasicStroke(size * 0.1f));
+        g2d.setStroke(new BasicStroke(2.2f));
         
-        int centerX = x + size / 2;
-        int centerY = y + size / 2;
-        int margin = (int)(size * 0.15);
+        int m = 4;
+        int l = 6;
+        // Top Left
+        g2d.drawLine(x+m, y+m, x+m+l, y+m);
+        g2d.drawLine(x+m, y+m, x+m, y+m+l);
+        // Top Right
+        g2d.drawLine(x+size-m, y+m, x+size-m-l, y+m);
+        g2d.drawLine(x+size-m, y+m, x+size-m, y+m+l);
+        // Bottom Left
+        g2d.drawLine(x+m, y+size-m, x+m+l, y+size-m);
+        g2d.drawLine(x+m, y+size-m, x+m, y+size-m-l);
+        // Bottom Right
+        g2d.drawLine(x+size-m, y+size-m, x+size-m-l, y+size-m);
+        g2d.drawLine(x+size-m, y+size-m, x+size-m, y+size-m-l);
         
-        // Top-left arrow
-        g2d.drawLine(x + margin, y + margin, centerX - 2, centerY - 2);
-        // Top-right arrow
-        g2d.drawLine(x + size - margin, y + margin, centerX + 2, centerY - 2);
-        // Bottom-left arrow
-        g2d.drawLine(x + margin, y + size - margin, centerX - 2, centerY + 2);
-        // Bottom-right arrow
-        g2d.drawLine(x + size - margin, y + size - margin, centerX + 2, centerY + 2);
-        
+        g2d.fillOval(x + size/2 - 2, y + size/2 - 2, 4, 4);
         g2d.dispose();
     }
 

@@ -8,6 +8,8 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.Window;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.image.BufferedImage;
 import javax.swing.SwingUtilities;
 import lombok.experimental.UtilityClass;
@@ -85,5 +87,19 @@ public class SwingUtils {
                 null);
         Window ancestor = component != null ? SwingUtilities.getWindowAncestor(component) : null;
         JXErrorPane.showDialog(ancestor, errorInfo);
+    }
+
+    /**
+     * Copies the given text to the system clipboard.
+     *
+     * @param text The text to copy.
+     */
+    public static void copyToClipboard(String text) {
+        if (text == null) {
+            return;
+        }
+        StringSelection selection = new StringSelection(text);
+        Clipboard clipboard = java.awt.Toolkit.getDefaultToolkit().getSystemClipboard();
+        clipboard.setContents(selection, selection);
     }
 }

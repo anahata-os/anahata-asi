@@ -3,35 +3,43 @@
  */
 package uno.anahata.ai.swing.chat.render;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.FlowLayout;
-import java.awt.Graphics2D;
+import java.awt.Font;
+import java.awt.GradientPaint;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.time.Instant;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.jdesktop.swingx.JXPanel;
 import org.jdesktop.swingx.JXTitledPanel;
-import org.jdesktop.swingx.painter.Painter;
+import org.jdesktop.swingx.painter.MattePainter;
 import uno.anahata.ai.internal.TextUtils;
 import uno.anahata.ai.internal.TimeUtils;
 import uno.anahata.ai.model.core.AbstractPart;
 import uno.anahata.ai.model.core.ThoughtSignature;
 import uno.anahata.ai.swing.chat.ChatPanel;
 import uno.anahata.ai.swing.chat.SwingChatConfig;
+import uno.anahata.ai.swing.chat.SwingChatConfig.UITheme;
+import uno.anahata.ai.swing.icons.CopyIcon;
+import uno.anahata.ai.swing.icons.DeleteIcon;
 import uno.anahata.ai.swing.icons.IconUtils;
 import uno.anahata.ai.swing.internal.EdtPropertyChangeListener;
+import uno.anahata.ai.swing.internal.SwingUtils;
 
 /**
- * The abstract base class for rendering {@link AbstractPart} instances in a collapsible,
- * diff-based UI component. It extends {@link JXTitledPanel} to provide a
- * header with part metadata and pruning controls, and a content area that
- * dynamically renders the part's specific content.
+ * The abstract base class for rendering {@link AbstractPart} instances in a 
+ * diff-based UI component. It leverages {@link JXTitledPanel} to provide a
+ * styled header with part metadata and pruning controls, and a content area 
+ * that dynamically renders the part's specific content.
  *
  * @author pablo
  * @param <T> The concrete type of AbstractPart that this panel renders.
@@ -40,36 +48,19 @@ import uno.anahata.ai.swing.internal.EdtPropertyChangeListener;
 @Getter
 public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitledPanel {
 
-    /**
-     * The parent chat panel.
-     */
+    /** The parent chat panel. */
     protected final ChatPanel chatPanel;
-    /**
-     * The part to be rendered.
-     */
+    /** The part to be rendered. */
     protected final T part;
-    /**
-     * The chat configuration.
-     */
+    /** The chat configuration. */
     protected final SwingChatConfig chatConfig;
 
-    /**
-     * Custom header for rich display.
-     */
-    private final GradientHeaderPanel headerPanel;
-    /**
-     * Toggle button for pruning control.
-     */
+    /** Toggle button for pruning control. */
     private final PruningToggleButton pruningToggleButton;
-    /**
-     * Button to remove the part from the message.
-     */
+    /** Button to copy the part content to the clipboard. */
+    private final JButton copyButton;
+    /** Button to remove the part from the message. */
     private final JButton removeButton;
-
-    /**
-     * Content area for the part's specific rendering.
-     */
-    protected final JPanel contentPanel;
 
     /**
      * Constructs a new AbstractPartPanel.
@@ -81,55 +72,77 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
         this.chatPanel = chatPanel;
         this.part = part;
         this.chatConfig = chatPanel.getChatConfig();
+        UITheme theme = chatConfig.getTheme();
 
-        // Configure JXTitledPanel
-        setTitle(part.getClass().getSimpleName());
-        setOpaque(false);
-        setBorder(getPartBorder());
+        // 1. Configure JXTitledPanel Header (Faint and Role-Neutral)
+        setTitleForeground(theme.getPartHeaderFg());
+        setTitleFont(new Font("SansSerif", Font.PLAIN, 11));
 
-        // Custom header for rich display
-        setAlpha(0.9f);
-        setPaintBorderInsets(true);
+        // Background Gradient via MattePainter (Faint)
+        MattePainter mp = new MattePainter(new GradientPaint(0, 0, theme.getPartHeaderBg(), 1, 0, new Color(0,0,0,0)), true);
+        setTitlePainter(mp);
 
-        // Initialize GradientHeaderPanel
-        this.headerPanel = new GradientHeaderPanel(getHeaderStartColor(), getHeaderEndColor(), getHeaderForegroundColor());
+        // 2. Initialize Header Buttons
         this.pruningToggleButton = new PruningToggleButton(part);
+        
+        this.copyButton = new JButton(new CopyIcon(14));
+        this.copyButton.setToolTipText("Copy Part Content");
+        this.copyButton.setMargin(new java.awt.Insets(0, 2, 0, 2));
+        this.copyButton.addActionListener(e -> copyToClipboard());
 
-        // Initialize Remove Button
-        this.removeButton = new JButton(IconUtils.getIcon("delete.png"));
+        this.removeButton = new JButton(new DeleteIcon(14));
         this.removeButton.setToolTipText("Remove Part");
-        this.removeButton.setMargin(new java.awt.Insets(0, 4, 0, 4));
+        this.removeButton.setMargin(new java.awt.Insets(0, 2, 0, 2));
         this.removeButton.addActionListener(e -> part.remove());
 
-        JPanel headerContent = new JPanel(new BorderLayout());
-        headerContent.setOpaque(false);
-        headerContent.add(headerPanel, BorderLayout.CENTER);
+        // Copy button on the left
+        setLeftDecoration(copyButton);
 
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
-        buttonPanel.setOpaque(false);
-        buttonPanel.add(pruningToggleButton);
-        buttonPanel.add(removeButton);
-        headerContent.add(buttonPanel, BorderLayout.EAST);
+        // Pruning and Remove buttons on the right
+        JPanel rightButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
+        rightButtonPanel.setOpaque(false);
+        rightButtonPanel.add(pruningToggleButton);
+        rightButtonPanel.add(removeButton);
+        setRightDecoration(rightButtonPanel);
 
-        // FIX: Use Painter<Object> to avoid ClassCastException from SwingX UI delegate
-        setTitlePainter(new Painter<Object>() {
-            @Override
-            public void paint(Graphics2D g, Object object, int width, int height) {
-                headerContent.setSize(width, height);
-                headerContent.paint(g);
-            }
-        });
+        // 3. Setup Content Container (Using the default JXPanel provided by JXTitledPanel)
+        JXPanel mainContainer = (JXPanel) getContentContainer();
+        mainContainer.setLayout(new BoxLayout(mainContainer, BoxLayout.Y_AXIS));
+        mainContainer.setOpaque(false);
+        mainContainer.setBorder(BorderFactory.createEmptyBorder(2, 8, 5, 8));
 
-        // Initialize the dedicated content panel
-        this.contentPanel = new JPanel();
-        this.contentPanel.setLayout(new BoxLayout(this.contentPanel, BoxLayout.Y_AXIS));
-        this.contentPanel.setOpaque(false);
-        this.contentPanel.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
-        
-        setContentContainer(this.contentPanel);
+        setOpaque(false);
+        setBorder(BorderFactory.createLineBorder(theme.getPartBorder(), 1, true));
+
+        // 4. Expand/Collapse Logic on Header Click
+        if (getComponentCount() > 0) {
+            getComponent(0).addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    toggleExpanded();
+                }
+            });
+        }
 
         // Declarative, thread-safe binding to all part properties
         new EdtPropertyChangeListener(this, part, null, evt -> render());
+    }
+
+    /**
+     * Copies the part's content to the system clipboard.
+     * Subclasses can override this to provide specialized copy behavior.
+     */
+    protected void copyToClipboard() {
+        SwingUtils.copyToClipboard(part.asText());
+    }
+
+    /**
+     * Toggles the visibility of the content container.
+     */
+    private void toggleExpanded() {
+        getContentContainer().setVisible(!getContentContainer().isVisible());
+        revalidate();
+        repaint();
     }
 
     /**
@@ -153,26 +166,26 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
     }
 
     /**
-     * Updates the text displayed in the header's info label.
+     * Updates the text displayed in the header's title.
      */
     protected void updateHeaderInfoText() {
-        String partType = part.getClass().getSimpleName();
         String rawText = part.asText();
         String summary = TextUtils.formatValue(rawText);
+        UITheme theme = chatConfig.getTheme();
 
         StringBuilder sb = new StringBuilder("<html>");
-        sb.append(String.format("<b>%S</b> <span style='color: #AAAAAA;'>%s</span>", partType, summary));
-        
-        sb.append(" <font color='#666666'>- ").append(TimeUtils.formatSmartTimestamp(Instant.ofEpochMilli(part.getMessage().getTimestamp()))).append("</font>");
-        sb.append(String.format(" <font color='#888888'><i>(Turns Left: %d)</i></font>", part.getTurnsLeft()));
+        sb.append(String.format("<b>%s</b> ", part.getClass().getSimpleName()));
+        sb.append(String.format("<span style='color: #888888;'>[%s]</span>", summary));
+        sb.append(" <font color='#999999' size='2'>- ").append(TimeUtils.formatSmartTimestamp(Instant.ofEpochMilli(part.getMessage().getTimestamp()))).append("</font>");
+        sb.append(String.format(" <font color='#AAAAAA' size='2'><i>(Turns Left: %d)</i></font>", part.getTurnsLeft()));
 
         if (part instanceof ThoughtSignature ts && ts.getThoughtSignature() != null) {
-            String sig = TextUtils.formatValue(new String(ts.getThoughtSignature()));
-            sb.append(String.format("<br/><font color='#00AA00'>[Thought: %s]</font>", sig));
+            String sig = TextUtils.formatValue(ts.getThoughtSignature());
+            sb.append(String.format(" <font color='#888888' size='2'>[Thought: %s]</font>", sig));
         }
         
         sb.append("</html>");
-        headerPanel.setInfoText(sb.toString());
+        setTitle(sb.toString());
     }
 
     /**
@@ -181,36 +194,11 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
     protected abstract void renderContent();
 
     /**
-     * Updates the visibility of the content panel based on the part's pruned state.
+     * Updates the visibility of the content container based on the part's pruned state.
      */
     protected void updateContentVisibility() {
         boolean isEffectivelyPruned = part.isEffectivelyPruned();
         boolean shouldShowContent = !isEffectivelyPruned || chatConfig.isShowPrunedParts();
-        contentPanel.setVisible(shouldShowContent);
+        getContentContainer().setVisible(shouldShowContent);
     }
-
-    /**
-     * Gets the start color for the header gradient.
-     *
-     * @return The start color.
-     */
-    protected abstract Color getHeaderStartColor();
-    /**
-     * Gets the end color for the header gradient.
-     *
-     * @return The end color.
-     */
-    protected abstract Color getHeaderEndColor();
-    /**
-     * Gets the foreground color for the header text.
-     *
-     * @return The foreground color.
-     */
-    protected abstract Color getHeaderForegroundColor();
-    /**
-     * Gets the border for the part panel.
-     *
-     * @return The border.
-     */
-    protected abstract Border getPartBorder();
 }

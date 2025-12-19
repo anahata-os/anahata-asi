@@ -19,7 +19,7 @@ import uno.anahata.ai.swing.chat.render.AbstractMessagePanel;
  *
  * @author pablo
  */
-public class InputMessagePanel extends AbstractMessagePanel<InputUserMessage> {
+public class UserInputMessagePanel extends AbstractMessagePanel<InputUserMessage> {
 
     /**
      * Constructs a new InputMessagePanel.
@@ -27,7 +27,7 @@ public class InputMessagePanel extends AbstractMessagePanel<InputUserMessage> {
      * @param chatPanel The parent chat panel.
      * @param message The mutable message instance.
      */
-    public InputMessagePanel(@NonNull ChatPanel chatPanel, @NonNull InputUserMessage message) {
+    public UserInputMessagePanel(@NonNull ChatPanel chatPanel, @NonNull InputUserMessage message) {
         super(chatPanel, message);
     }
 

@@ -5,6 +5,8 @@ package uno.anahata.ai.internal;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
@@ -64,6 +66,9 @@ public class TextUtils {
         if (value == null) {
             return "null";
         }
+        if (value instanceof byte[] bytes) {
+            return formatByteArray(bytes);
+        }
         int maxLength = 64;
         String s = String.valueOf(value).replace("\n", "\\n").replace("\r", "");
         int totalChars = s.length();
@@ -72,6 +77,32 @@ public class TextUtils {
             return StringUtils.abbreviateMiddle(s, tag, maxLength);
         } else {
             return s;
+        }
+    }
+
+    /**
+     * Formats a byte array into a concise string representation, showing the
+     * first and last three bytes in 0-255 format and truncating the middle.
+     *
+     * @param data The byte array to format.
+     * @return A formatted string (e.g., "[12, 34, 56 ... 78, 90, 12]").
+     */
+    public static String formatByteArray(byte[] data) {
+        if (data == null) {
+            return "null";
+        }
+        if (data.length <= 6) {
+            return IntStream.range(0, data.length)
+                    .mapToObj(i -> String.valueOf(data[i] & 0xFF))
+                    .collect(Collectors.joining(", ", "[", "]"));
+        } else {
+            String firstThree = IntStream.range(0, 3)
+                    .mapToObj(i -> String.valueOf(data[i] & 0xFF))
+                    .collect(Collectors.joining(", "));
+            String lastThree = IntStream.range(data.length - 3, data.length)
+                    .mapToObj(i -> String.valueOf(data[i] & 0xFF))
+                    .collect(Collectors.joining(", "));
+            return String.format("[%s ... %s]", firstThree, lastThree);
         }
     }
 }

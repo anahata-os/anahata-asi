@@ -15,9 +15,25 @@ public class IconUtils {
      * @return A scaled ImageIcon, or null if the resource is not found.
      */
     public static ImageIcon getIcon(String name) {
+        return getIcon(name, 24, 24);
+    }
+
+    /**
+     * Loads an icon from the classpath resources and scales it to the specified size.
+     *
+     * @param name The name of the icon file.
+     * @param width The desired width.
+     * @param height The desired height.
+     * @return A scaled ImageIcon, or null if the resource is not found.
+     */
+    public static ImageIcon getIcon(String name, int width, int height) {
         try {
-            ImageIcon originalIcon = new ImageIcon(IconUtils.class.getResource("/icons/" + name));
-            Image scaledImage = originalIcon.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH);
+            java.net.URL resource = IconUtils.class.getResource("/icons/" + name);
+            if (resource == null) {
+                return null;
+            }
+            ImageIcon originalIcon = new ImageIcon(resource);
+            Image scaledImage = originalIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
             return new ImageIcon(scaledImage);
         } catch (Exception e) {
             System.err.println("Could not load icon: " + name);

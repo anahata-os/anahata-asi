@@ -7,6 +7,7 @@ package uno.anahata.ai.toolkit;
 import java.util.Collections;
 import java.util.List;
 import uno.anahata.ai.chat.Chat;
+import uno.anahata.ai.context.ContextProvider;
 import uno.anahata.ai.context.ContextManager;
 import uno.anahata.ai.model.core.RagMessage;
 import uno.anahata.ai.model.resource.AbstractResource;
@@ -40,8 +41,16 @@ public class ContextWindow extends JavaToolkitInstance{
     }
     
     @AiTool(value = "Enables / disables context providers", retention = 0)
-    public void updateContextProviders(boolean enabled, List<String> providerIds) {
-        
+    public void updateContextProviders(
+            @AiToolParam("Whether to enable or disable the providers.") boolean enabled, 
+            @AiToolParam("The IDs of the context providers to update.") List<String> providerIds) {
+        ContextManager cm = getChat().getContextManager();
+        for (ContextProvider cp : cm.getProviders()) {
+            if (providerIds.contains(cp.getId())) {
+                cp.setEnabled(enabled);
+                log((enabled ? "Enabled" : "Disabled") + " provider: " + cp.getName());
+            }
+        }
     }
     
     
@@ -59,7 +68,7 @@ public class ContextWindow extends JavaToolkitInstance{
 
     @Override
     public List<String> getSystemInstructionParts(Chat chat) throws Exception {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
     
 }

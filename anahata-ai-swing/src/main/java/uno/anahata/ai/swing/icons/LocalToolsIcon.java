@@ -37,43 +37,33 @@ public class LocalToolsIcon implements Icon {
         Color baseColor = new Color(0, 123, 255);
         g2d.setColor(c.isEnabled() ? baseColor : Color.GRAY);
 
-        // Center point and radius
-        double centerX = x + size / 2.0;
-        double centerY = y + size / 2.0;
-        double outerRadius = size * 0.45;
-        double innerRadius = size * 0.2;
+        double cx = x + size / 2.0;
+        double cy = y + size / 2.0;
+        double rOut = size * 0.42;
+        double rIn = size * 0.28;
         
-        // Draw the main gear shape
         Path2D gear = new Path2D.Double();
         int teeth = 8;
-        double toothWidth = Math.PI / (teeth * 1.5);
-        
         for (int i = 0; i < teeth; i++) {
-            double angle = i * 2 * Math.PI / teeth;
+            double a = i * 2 * Math.PI / teeth;
+            double x1 = cx + rOut * Math.cos(a - 0.2);
+            double y1 = cy + rOut * Math.sin(a - 0.2);
+            double x2 = cx + rOut * Math.cos(a + 0.2);
+            double y2 = cy + rOut * Math.sin(a + 0.2);
             
-            // Outer point of the tooth
-            double x1 = centerX + outerRadius * Math.cos(angle);
-            double y1 = centerY + outerRadius * Math.sin(angle);
+            if (i == 0) gear.moveTo(x1, y1);
+            else gear.lineTo(x1, y1);
             
-            // Inner point of the tooth
-            double x2 = centerX + outerRadius * Math.cos(angle + toothWidth);
-            double y2 = centerY + outerRadius * Math.sin(angle + toothWidth);
-            
-            if (i == 0) {
-                gear.moveTo(x1, y1);
-            } else {
-                gear.lineTo(x1, y1);
-            }
             gear.lineTo(x2, y2);
+            
+            double mid = a + Math.PI / teeth;
+            gear.lineTo(cx + rIn * Math.cos(mid), cy + rIn * Math.sin(mid));
         }
         gear.closePath();
+        g2d.fill(gear);
         
-        g2d.setStroke(new BasicStroke(size * 0.05f));
-        g2d.draw(gear);
-        
-        // Draw the center hole
         g2d.setColor(c.getBackground());
-        g2d.fill(new Ellipse2D.Double(centerX - innerRadius, centerY - innerRadius, innerRadius * 2, innerRadius * 2));
+        g2d.fill(new Ellipse2D.Double(cx - size*0.12, cy - size*0.12, size*0.24, size*0.24));
         
         g2d.dispose();
     }

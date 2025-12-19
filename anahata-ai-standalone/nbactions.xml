@@ -10,9 +10,9 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:3.5.1:exec</goal>
             </goals>
             <properties>
-                <exec.vmArgs></exec.vmArgs>
+                <exec.vmArgs>-Xms1g</exec.vmArgs>
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
-                <exec.appArgs>Gemini/models/gemini-2.5-flash</exec.appArgs>
+                <exec.appArgs>Gemini/models/gemini-3-flash-preview</exec.appArgs>
                 <exec.mainClass>uno.anahata.ai.standalone.SwingMain</exec.mainClass>
                 <exec.executable>java</exec.executable>
             </properties>
@@ -27,9 +27,9 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:3.5.1:exec</goal>
             </goals>
             <properties>
-                <exec.vmArgs>-agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
+                <exec.vmArgs>-Xms1g -agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
-                <exec.appArgs>Gemini/models/gemini-2.5-flash</exec.appArgs>
+                <exec.appArgs>Gemini/models/gemini-3-flash-preview</exec.appArgs>
                 <exec.mainClass>uno.anahata.ai.standalone.SwingMain</exec.mainClass>
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
@@ -45,11 +45,11 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:3.5.1:exec</goal>
             </goals>
             <properties>
-                <exec.vmArgs></exec.vmArgs>
+                <exec.vmArgs>-Xms1g</exec.vmArgs>
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.mainClass>uno.anahata.ai.standalone.SwingMain</exec.mainClass>
                 <exec.executable>java</exec.executable>
-                <exec.appArgs>Gemini/models/gemini-2.5-flash</exec.appArgs>
+                <exec.appArgs>Gemini/models/gemini-3-flash-preview</exec.appArgs>
             </properties>
         </action>
     </actions>

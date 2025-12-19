@@ -59,7 +59,7 @@ public class InputPanel extends JPanel {
     /** The button to capture and attach application frames. */
     private JButton captureFramesButton;
     /** The renderer for the live message preview. */
-    private InputMessagePanel inputMessageRenderer;
+    private UserInputMessagePanel inputMessageRenderer;
     /** The scroll pane for the preview renderer. */
     private JScrollPane previewScrollPane;
     /** The split pane separating input and preview. */
@@ -113,7 +113,7 @@ public class InputPanel extends JPanel {
 
         // --- PREVIEW PANEL INTEGRATION ---
         this.currentMessage = new InputUserMessage(chat);
-        this.inputMessageRenderer = new InputMessagePanel(chatPanel, currentMessage);
+        this.inputMessageRenderer = new UserInputMessagePanel(chatPanel, currentMessage);
 
         previewScrollPane = new JScrollPane(inputMessageRenderer);
         previewScrollPane.setPreferredSize(new Dimension(0, 150)); 
@@ -325,7 +325,7 @@ public class InputPanel extends JPanel {
      */
     private void replaceRenderer(InputUserMessage newMessage) {
         // 1. Create the new renderer
-        InputMessagePanel newRenderer = new InputMessagePanel(chatPanel, newMessage);
+        UserInputMessagePanel newRenderer = new UserInputMessagePanel(chatPanel, newMessage);
 
         // 2. Replace the viewport view of the existing scroll pane
         previewScrollPane.setViewportView(newRenderer);

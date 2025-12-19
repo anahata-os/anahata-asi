@@ -6,7 +6,10 @@ package uno.anahata.ai.swing.chat.render;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.FlowLayout;
-import java.awt.Graphics2D;
+import java.awt.Font;
+import java.awt.GradientPaint;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -15,15 +18,16 @@ import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.jdesktop.swingx.JXPanel;
 import org.jdesktop.swingx.JXTitledPanel;
-import org.jdesktop.swingx.painter.Painter;
+import org.jdesktop.swingx.painter.MattePainter;
 import uno.anahata.ai.internal.TimeUtils;
 import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.AbstractPart;
@@ -31,14 +35,17 @@ import uno.anahata.ai.model.core.BlobPart;
 import uno.anahata.ai.model.core.TextPart;
 import uno.anahata.ai.swing.chat.ChatPanel;
 import uno.anahata.ai.swing.chat.SwingChatConfig;
+import uno.anahata.ai.swing.icons.CopyIcon;
+import uno.anahata.ai.swing.icons.DeleteIcon;
 import uno.anahata.ai.swing.icons.IconUtils;
 import uno.anahata.ai.swing.internal.EdtPropertyChangeListener;
+import uno.anahata.ai.swing.internal.SwingUtils;
 
 /**
  * A base class for rendering {@link AbstractMessage} instances in a collapsible,
- * diff-based UI component. It extends {@link JXTitledPanel} to provide a
- * header with message metadata and pruning controls, and a content area that
- * dynamically renders {@link AbstractPart}s using a diffing mechanism.
+ * diff-based UI component. It leverages {@link JXTitledPanel} to provide a
+ * styled header with message metadata and pruning controls, and a content area 
+ * that dynamically renders {@link AbstractPart}s using a diffing mechanism.
  *
  * @author pablo
  * @param <T> The concrete type of AbstractMessage that this panel renders.
@@ -47,39 +54,21 @@ import uno.anahata.ai.swing.internal.EdtPropertyChangeListener;
 @Getter
 public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JXTitledPanel {
 
-    /**
-     * The parent chat panel.
-     */
+    /** The parent chat panel. */
     protected final ChatPanel chatPanel;
-    /**
-     * The message to render.
-     */
+    /** The message to render. */
     protected final T message;
-    /**
-     * The chat configuration.
-     */
+    /** The chat configuration. */
     protected final SwingChatConfig chatConfig;
 
-    /**
-     * Custom header for rich display.
-     */
-    private final GradientHeaderPanel headerPanel;
-    /**
-     * Toggle button for pruning control.
-     */
+    /** Toggle button for pruning control. */
     private final PruningToggleButton pruningToggleButton;
-    /**
-     * Button to remove the message from the chat history.
-     */
+    /** Button to copy the entire message content to the clipboard. */
+    private final JButton copyButton;
+    /** Button to remove the message from the chat history. */
     private final JButton removeButton;
 
-    /**
-     * Content area for the message's parts.
-     */
-    private final JPanel contentPartsPanel;
-    /**
-     * Cache of part panels to support incremental updates.
-     */
+    /** Cache of part panels to support incremental updates. */
     private final Map<AbstractPart, AbstractPartPanel> cachedPartPanels = new HashMap<>();
 
     /**
@@ -93,54 +82,71 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
         this.message = message;
         this.chatConfig = chatPanel.getChatConfig();
 
-        // Configure JXTitledPanel
-        setTitle(message.getRole().name());
-        setOpaque(false);
-        setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+        // 1. Configure JXTitledPanel Header
+        setTitleForeground(getHeaderForegroundColor());
+        setTitleFont(new Font("SansSerif", Font.BOLD, 13));
+        
+        // Background Gradient via MattePainter
+        MattePainter mp = new MattePainter(new GradientPaint(0, 0, getHeaderStartColor(), 1, 0, getHeaderEndColor()), true);
+        setTitlePainter(mp);
 
-        // Custom header for rich display
-        setAlpha(0.9f);
-        setPaintBorderInsets(true);
-
-        // Initialize GradientHeaderPanel
-        this.headerPanel = new GradientHeaderPanel(getHeaderStartColor(), getHeaderEndColor(), getHeaderForegroundColor());
+        // 2. Initialize Header Buttons
         this.pruningToggleButton = new PruningToggleButton(message);
         
-        // Initialize Remove Button
-        this.removeButton = new JButton(IconUtils.getIcon("delete.png"));
+        this.copyButton = new JButton(new CopyIcon(16));
+        this.copyButton.setToolTipText("Copy Message Content");
+        this.copyButton.setMargin(new java.awt.Insets(0, 4, 0, 4));
+        this.copyButton.addActionListener(e -> SwingUtils.copyToClipboard(message.asText(false)));
+
+        this.removeButton = new JButton(new DeleteIcon(16));
         this.removeButton.setToolTipText("Remove Message");
         this.removeButton.setMargin(new java.awt.Insets(0, 4, 0, 4));
         this.removeButton.addActionListener(e -> message.remove());
 
-        JPanel headerContent = new JPanel(new BorderLayout());
-        headerContent.setOpaque(false);
-        headerContent.add(headerPanel, BorderLayout.CENTER);
-        
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
-        buttonPanel.setOpaque(false);
-        buttonPanel.add(pruningToggleButton);
-        buttonPanel.add(removeButton);
-        headerContent.add(buttonPanel, BorderLayout.EAST);
+        // Copy button on the left
+        setLeftDecoration(copyButton);
 
-        // FIX: Use Painter<Object> to avoid ClassCastException from SwingX UI delegate
-        setTitlePainter(new Painter<Object>() {
-            @Override
-            public void paint(Graphics2D g, Object object, int width, int height) {
-                headerContent.setSize(width, height);
-                headerContent.paint(g);
-            }
-        });
+        // Pruning and Remove buttons on the right
+        JPanel rightButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+        rightButtonPanel.setOpaque(false);
+        rightButtonPanel.add(pruningToggleButton);
+        rightButtonPanel.add(removeButton);
+        setRightDecoration(rightButtonPanel);
 
-        // Initialize content panel
-        contentPartsPanel = new JPanel();
-        contentPartsPanel.setLayout(new BoxLayout(contentPartsPanel, BoxLayout.Y_AXIS));
-        contentPartsPanel.setOpaque(false);
-        contentPartsPanel.setBorder(BorderFactory.createEmptyBorder(10, 12, 10, 12));
-        add(contentPartsPanel, BorderLayout.CENTER);
+        // 3. Setup Content Container (Using the default JXPanel provided by JXTitledPanel)
+        JXPanel mainContainer = (JXPanel) getContentContainer();
+        mainContainer.setLayout(new BoxLayout(mainContainer, BoxLayout.Y_AXIS));
+        mainContainer.setOpaque(false);
+        mainContainer.setBorder(BorderFactory.createEmptyBorder(5, 12, 10, 12));
+
+        setOpaque(false);
+        setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createEmptyBorder(5, 0, 5, 0),
+                getMessageBorder()
+        ));
+
+        // 4. Expand/Collapse Logic on Header Click
+        if (getComponentCount() > 0) {
+            getComponent(0).addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    toggleExpanded();
+                }
+            });
+        }
 
         // Declarative, thread-safe binding to message properties
         new EdtPropertyChangeListener(this, message, "pruned", evt -> render());
         new EdtPropertyChangeListener(this, message, "parts", evt -> render());
+    }
+
+    /**
+     * Toggles the visibility of the content container.
+     */
+    private void toggleExpanded() {
+        getContentContainer().setVisible(!getContentContainer().isVisible());
+        revalidate();
+        repaint();
     }
 
     /**
@@ -163,15 +169,14 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
     }
 
     /**
-     * Updates the text displayed in the header's info label.
+     * Updates the text displayed in the header's title.
      */
     protected void updateHeaderInfoText() {
-        String headerText = String.format("<html><b>%S</b> [#%d]", message.getRole().name(), message.getSequentialId());
-        headerText += " <font color='#666666'>- " + TimeUtils.formatSmartTimestamp(Instant.ofEpochMilli(message.getTimestamp())) + "</font>";
-        headerText += String.format(" <font color='#888888'><i>(Tokens: %d)</i></font>", message.getTokenCount());
-        headerText += String.format(" <font color='#888888'><i>(Depth: %d)</i></font>", message.getDepth());
-        headerText += "</html>";
-        headerPanel.setInfoText(headerText);
+        String metadataText = String.format("<html><b>%s</b> [#%d]", message.getRole().name(), message.getSequentialId());
+        metadataText += " <font color='#666666' size='3'>- " + TimeUtils.formatSmartTimestamp(Instant.ofEpochMilli(message.getTimestamp())) + "</font>";
+        metadataText += String.format(" <font color='#888888' size='3'><i>(Tokens: %d, Depth: %d)</i></font>", message.getTokenCount(), message.getDepth());
+        metadataText += "</html>";
+        setTitle(metadataText);
     }
 
     /**
@@ -179,6 +184,7 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
      */
     protected void renderContentParts() {
         List<AbstractPart> currentParts = message.getParts();
+        JXPanel mainContainer = (JXPanel) getContentContainer();
 
         // 1. Identify and remove panels for parts no longer present
         List<AbstractPart> toRemove = cachedPartPanels.keySet().stream()
@@ -188,7 +194,7 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
         for (AbstractPart removedPart : toRemove) {
             AbstractPartPanel panel = cachedPartPanels.remove(removedPart);
             if (panel != null) {
-                contentPartsPanel.remove(panel);
+                mainContainer.remove(panel);
             }
         }
 
@@ -207,20 +213,20 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
             if (panel != null) {
                 panel.render();
                 
-                if (i >= contentPartsPanel.getComponentCount() || contentPartsPanel.getComponent(i) != panel) {
-                    contentPartsPanel.add(panel, i);
+                if (i >= mainContainer.getComponentCount() || mainContainer.getComponent(i) != panel) {
+                    mainContainer.add(panel, i);
                 }
             }
         }
 
         // 3. Clean up any trailing components and re-add glue
-        while (contentPartsPanel.getComponentCount() > currentParts.size()) {
-            contentPartsPanel.remove(contentPartsPanel.getComponentCount() - 1);
+        while (mainContainer.getComponentCount() > currentParts.size()) {
+            mainContainer.remove(mainContainer.getComponentCount() - 1);
         }
-        contentPartsPanel.add(Box.createVerticalGlue());
+        mainContainer.add(Box.createVerticalGlue());
         
-        contentPartsPanel.revalidate();
-        contentPartsPanel.repaint();
+        mainContainer.revalidate();
+        mainContainer.repaint();
     }
 
     /**
@@ -241,25 +247,21 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
 
     /**
      * Gets the start color for the header gradient.
-     *
      * @return The start color.
      */
     protected abstract Color getHeaderStartColor();
     /**
      * Gets the end color for the header gradient.
-     *
      * @return The end color.
      */
     protected abstract Color getHeaderEndColor();
     /**
      * Gets the foreground color for the header text.
-     *
      * @return The foreground color.
      */
     protected abstract Color getHeaderForegroundColor();
     /**
      * Gets the border for the message panel.
-     *
      * @return The border.
      */
     protected abstract Border getMessageBorder();

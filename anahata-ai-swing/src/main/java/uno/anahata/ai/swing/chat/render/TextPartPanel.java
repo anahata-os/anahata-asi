@@ -63,9 +63,9 @@ public class TextPartPanel extends AbstractPartPanel<TextPart> {
 
         if (markdownText == null || markdownText.trim().isEmpty()) {
             cachedSegmentRenderers.clear(); 
-            contentPanel.removeAll();
-            contentPanel.revalidate();
-            contentPanel.repaint();
+            getContentContainer().removeAll();
+            getContentContainer().revalidate();
+            getContentContainer().repaint();
             return;
         }
 
@@ -81,22 +81,22 @@ public class TextPartPanel extends AbstractPartPanel<TextPart> {
             JComponent component = segmentRenderer.getComponent(); 
             if (component != null) {
                 component.setAlignmentX(Component.LEFT_ALIGNMENT);
-                if (i >= contentPanel.getComponentCount() || contentPanel.getComponent(i) != component) {
-                    contentPanel.add(component, i);
+                if (i >= getContentContainer().getComponentCount() || getContentContainer().getComponent(i) != component) {
+                    getContentContainer().add(component, i);
                 }
             }
         }
         
         // Remove trailing components (leftovers from previous renders with more segments)
-        while (contentPanel.getComponentCount() > cachedSegmentRenderers.size()) {
-            contentPanel.remove(contentPanel.getComponentCount() - 1);
+        while (getContentContainer().getComponentCount() > cachedSegmentRenderers.size()) {
+            getContentContainer().remove(getContentContainer().getComponentCount() - 1);
         }
         
         // Add vertical glue to push content to the top
-        contentPanel.add(Box.createVerticalGlue());
+        getContentContainer().add(Box.createVerticalGlue());
 
-        contentPanel.revalidate();
-        contentPanel.repaint();
+        getContentContainer().revalidate();
+        getContentContainer().repaint();
     }
 
     /**
@@ -162,7 +162,9 @@ public class TextPartPanel extends AbstractPartPanel<TextPart> {
         if (needsFullRebuild) {
             cachedSegmentRenderers.clear();
             for (TextSegmentDescriptor descriptor : newSegmentDescriptors) {
-                cachedSegmentRenderers.add(descriptor.createRenderer(chatPanel, isThought));
+                AbstractTextSegmentRenderer renderer = descriptor.createRenderer(chatPanel, isThought);
+                renderer.render(); // CRITICAL: Initialize the component
+                cachedSegmentRenderers.add(renderer);
             }
         } else {
             // Sizes and types/languages match, update content of existing renderers
@@ -173,29 +175,5 @@ public class TextPartPanel extends AbstractPartPanel<TextPart> {
                 cachedRenderer.render(); // Call render to update the component if content changed
             }
         }
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    protected Color getHeaderStartColor() {
-        return chatConfig.getTheme().getUserHeaderBg(); 
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    protected Color getHeaderEndColor() {
-        return chatConfig.getTheme().getUserContentBg(); 
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    protected Color getHeaderForegroundColor() {
-        return chatConfig.getTheme().getUserHeaderFg(); 
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    protected Border getPartBorder() {
-        return BorderFactory.createLineBorder(chatConfig.getTheme().getUserBorder(), 1, true); 
     }
 }

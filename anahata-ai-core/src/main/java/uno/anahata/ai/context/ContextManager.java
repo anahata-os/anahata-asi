@@ -22,6 +22,7 @@ import uno.anahata.ai.model.core.AbstractPart;
 import uno.anahata.ai.model.core.PropertyChangeSource;
 import uno.anahata.ai.model.core.RagMessage;
 import uno.anahata.ai.model.resource.AbstractResource;
+import uno.anahata.ai.status.ChatStatusProvider;
 
 /**
  * The definitive manager for a chat session's context in the V2/V3
@@ -68,9 +69,11 @@ public class ContextManager implements PropertyChangeSource {
      * Initializes the manager and registers default providers.
      */
     public void init() {
-        // Register default providers
-        //registerProvider(chat.getToolManager());
-        //registerProvider(new ChatStatusProvider());
+        // Register toolkits as context providers
+        for (ContextProvider cp : chat.getToolManager().getContextProviders()) {
+            registerProvider(cp);
+        }
+        registerProvider(new ChatStatusProvider(chat));
     }
     
     /**
@@ -90,7 +93,7 @@ public class ContextManager implements PropertyChangeSource {
      *
      * @param provider The provider to register.
      */
-    public void registerProvider(AbstractContextProvider provider) {
+    public void registerProvider(ContextProvider provider) {
         providers.add(provider);
         log.info("Registered context provider: {}", provider.getName());
     }

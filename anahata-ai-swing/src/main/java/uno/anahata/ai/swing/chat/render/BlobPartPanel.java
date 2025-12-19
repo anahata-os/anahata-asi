@@ -32,7 +32,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
-import lombok.Getter;
 import lombok.NonNull;
 import uno.anahata.ai.model.core.BlobPart;
 import uno.anahata.ai.internal.TextUtils;
@@ -46,7 +45,6 @@ import uno.anahata.ai.swing.media.util.AudioPlaybackPanel;
  *
  * @author anahata
  */
-@Getter
 public class BlobPartPanel extends AbstractPartPanel<BlobPart> {
 
     private JLabel mainContentLabel; // Label for image or file name
@@ -72,26 +70,6 @@ public class BlobPartPanel extends AbstractPartPanel<BlobPart> {
     public BlobPartPanel(@NonNull ChatPanel chatPanel, @NonNull BlobPart part) {
         super(chatPanel, part);
         this.audioPlaybackPanel = chatPanel.getStatusPanel().getAudioPlaybackPanel();
-    }
-
-    @Override
-    protected Color getHeaderStartColor() {
-        return chatConfig.getTheme().getToolHeaderBg(); // Example: Use tool header colors for blobs
-    }
-
-    @Override
-    protected Color getHeaderEndColor() {
-        return chatConfig.getTheme().getToolContentBg(); // Example: Use tool content colors for blobs
-    }
-
-    @Override
-    protected Color getHeaderForegroundColor() {
-        return chatConfig.getTheme().getToolHeaderFg(); // Example: Use tool foreground colors for blobs
-    }
-
-    @Override
-    protected Border getPartBorder() {
-        return BorderFactory.createLineBorder(chatConfig.getTheme().getToolBorder(), 1, true); // Example: Use tool border
     }
 
     /**
@@ -122,7 +100,7 @@ public class BlobPartPanel extends AbstractPartPanel<BlobPart> {
             centerWrapperPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
             centerWrapperPanel.setOpaque(false);
             centerWrapperPanel.add(imageWrapperPanel);
-            contentPanel.add(centerWrapperPanel, BorderLayout.CENTER); // Add the new wrapper panel
+            getContentContainer().add(centerWrapperPanel, BorderLayout.CENTER); // Add the new wrapper panel
 
             infoPanel = new JPanel();
             infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
@@ -138,7 +116,7 @@ public class BlobPartPanel extends AbstractPartPanel<BlobPart> {
             infoPanel.add(Box.createRigidArea(new Dimension(0, 5)));
             infoPanel.add(sizeLabel);
 
-            contentPanel.add(infoPanel, BorderLayout.SOUTH);
+            getContentContainer().add(infoPanel, BorderLayout.SOUTH);
         }
 
         if (contentChanged) {
@@ -147,7 +125,7 @@ public class BlobPartPanel extends AbstractPartPanel<BlobPart> {
             mainContentLabel.setIcon(null);
             imageWrapperPanel.setVisible(false);
             if (playButton != null) {
-                contentPanel.remove(playButton);
+                getContentContainer().remove(playButton);
                 playButton = null;
             }
             if (currentPlaybackStopper != null) {
@@ -183,7 +161,7 @@ public class BlobPartPanel extends AbstractPartPanel<BlobPart> {
                             playButton.setText("▶ Play Audio");
                         }
                     });
-                    contentPanel.add(playButton, BorderLayout.NORTH); // Add button to the top
+                    getContentContainer().add(playButton, BorderLayout.NORTH); // Add button to the top
                 }
             } else if (currentMimeType.startsWith("image/")) {
                 imageWrapperPanel.setVisible(true); // Show the image wrapper

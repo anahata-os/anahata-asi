@@ -162,7 +162,7 @@ public abstract class JavaToolkitInstance {
      * @throws Exception 
      */
     public List<String> getSystemInstructionParts(Chat chat) throws Exception {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
     
     /**

@@ -30,6 +30,9 @@ public enum ChatStatus {
     /** Local tool (function) execution is in progress. */
     TOOL_EXECUTION_IN_PROGRESS("Tool Execution...", "Executing local Java tools (functions).", true),
 
+    /** An error occurred during local tool execution. */
+    TOOL_EXECUTION_ERROR("Tool Execution Error", "An error occurred during local tool execution.", false),
+
     /** An API error occurred, and the system is in retry mode with exponential backoff. */
     WAITING_WITH_BACKOFF("Waiting with Backoff...", "An API error occurred. Retrying with exponential backoff.", true),
 

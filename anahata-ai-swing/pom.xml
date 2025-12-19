@@ -57,5 +57,11 @@
             <version>0.64.8</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>com.fifesoft</groupId>
+            <artifactId>rsyntaxtextarea</artifactId>
+            <version>3.6.0</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 </project>
