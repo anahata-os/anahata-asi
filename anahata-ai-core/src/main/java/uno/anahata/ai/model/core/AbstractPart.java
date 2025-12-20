@@ -56,35 +56,41 @@ public abstract class AbstractPart implements PropertyChangeSource {
 
     /**
      * Constructs a new AbstractPart and adds it to the parent message.
+     * 
      * @param message The parent message.
      */
     public AbstractPart(@NonNull AbstractMessage message) {
+        // Relationship management is now handled entirely by the parent message.
+        // This ensures the part is fully initialized before any listeners are notified.
         message.addPart(this);
-        this.message = message;
     }
     
     /**
      * Sets the pruned state of this part and fires a property change event.
+     * 
      * @param pruned The new pruned state.
      */
     public void setPruned(Boolean pruned) {
         Boolean oldPruned = this.pruned;
         this.pruned = pruned;
-        // Fire a generic property change event without a specific property name
         propertyChangeSupport.firePropertyChange("pruned", oldPruned, pruned);
     }
 
     /**
      * Removes this part from its parent message and severs the bidirectional link.
-     * This is the primary mechanism for removing attachments from a message.
+     * 
+     * @throws IllegalStateException if the part is not attached to a message.
      */
     public void remove() {
+        if (message == null) {
+            throw new IllegalStateException("Cannot remove a part that is not attached to a message.");
+        }
         message.removePart(this);
-        this.message = null;
     }
     
     /**
      * Adds a PropertyChangeListener to this part.
+     * 
      * @param listener The listener to add.
      */
     public void addPropertyChangeListener(PropertyChangeListener listener) {
@@ -93,6 +99,7 @@ public abstract class AbstractPart implements PropertyChangeSource {
 
     /**
      * Removes a PropertyChangeListener from this part.
+     * 
      * @param listener The listener to remove.
      */
     public void removePropertyChangeListener(PropertyChangeListener listener) {
@@ -114,7 +121,7 @@ public abstract class AbstractPart implements PropertyChangeSource {
             return false; // It's pinned, not pruned.
         }
         // 2. Is the parent message pinned? (Deep Pin)
-        if (Boolean.FALSE.equals(getMessage().isPruned())) {
+        if (message != null && Boolean.FALSE.equals(message.isPruned())) {
             return false; // Inherits pin, not pruned.
         }
 
@@ -124,7 +131,7 @@ public abstract class AbstractPart implements PropertyChangeSource {
             return true;
         }
         // 4. Is the parent message explicitly pruned?
-        if (Boolean.TRUE.equals(getMessage().isPruned())) {
+        if (message != null && Boolean.TRUE.equals(message.isPruned())) {
             return true;
         }
         // 5. Finally, check the time-based auto-pruning logic (only if pruned is null for both).
@@ -137,6 +144,7 @@ public abstract class AbstractPart implements PropertyChangeSource {
 
     /**
      * Calculates the remaining turns before this part is auto-pruned.
+     * 
      * @return The number of turns left, or a large positive number for indefinite retention.
      */
     public int getTurnsLeft() {
@@ -144,7 +152,7 @@ public abstract class AbstractPart implements PropertyChangeSource {
         if (effectiveTurns < 0) {
             return Integer.MAX_VALUE; // Indefinite
         }
-        return effectiveTurns - getMessage().getDepth();
+        return message != null ? effectiveTurns - message.getDepth() : effectiveTurns;
     }
 
     /**
@@ -152,6 +160,7 @@ public abstract class AbstractPart implements PropertyChangeSource {
      * It follows the Template Method pattern, first checking for an explicit
      * instance-level override before falling back to the subclass-specific
      * default.
+     * 
      * @return The effective number of turns to keep this part.
      */
     public final int getEffectiveTurnsToKeep() {
@@ -165,31 +174,36 @@ public abstract class AbstractPart implements PropertyChangeSource {
      * Template method hook for subclasses to provide their specific default
      * retention policy. This is the fallback value used when no explicit
      * {@code turnsToKeep} is set on the instance.
+     * 
      * @return The default number of turns for this part type.
      */
     protected abstract int getDefaultTurnsToKeep();
 
     /**
      * Gets the parent chat session.
-     * @return The chat session.
+     * 
+     * @return The chat session, or null if not attached to a message.
      */
     @JsonIgnore
     public Chat getChat() {
-        return getMessage().getChat();
+        return message != null ? message.getChat() : null;
     }
 
     /**
      * Gets the chat configuration.
-     * @return The chat configuration.
+     * 
+     * @return The chat configuration, or null if not attached to a chat.
      */
     @JsonIgnore
     public ChatConfig getChatConfig() {
-        return getChat().getConfig();
+        Chat chat = getChat();
+        return chat != null ? chat.getConfig() : null;
     }
 
     /**
      * Returns the content of the part as a simple string.
      * This is implemented by subclasses.
+     * 
      * @return The text representation of the part.
      */
     public abstract String asText();

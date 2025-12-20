@@ -88,30 +88,40 @@ public abstract class AbstractMessage implements PropertyChangeSource {
     public abstract Role getRole();
 
     /**
-     * Safely adds a single part to this message, ensuring the bidirectional
-     * relationship is correctly established.
+     * Safely adds a single part to this message, establishing the bidirectional
+     * relationship and ensuring the part is fully initialized before firing
+     * property change events.
      *
      * @param part The part to add.
+     * @throws IllegalArgumentException if the part is already attached to this or another message.
      */
     void addPart(@NonNull AbstractPart part) {
         if (parts.contains(part)) {
-            throw new IllegalArgumentException("Part ." + part + " is already a part on this messge:" + this);
+            throw new IllegalArgumentException("Part " + part + " is already a part of this message: " + this);
         }
-        if (part.getMessage() != null) {
-            throw new IllegalArgumentException("That part already has a message.");
+        if (part.getMessage() != null && part.getMessage() != this) {
+            throw new IllegalArgumentException("Part " + part + " already belongs to another message: " + part.getMessage());
         }
+        
+        // Establish the relationship BEFORE adding to the list and firing the event.
+        // This ensures that UI listeners reacting to the "parts" change have access
+        // to a fully initialized part object (including its parent message reference).
+        part.setMessage(this);
         this.parts.add(part);
-        propertyChangeSupport.firePropertyChange("parts", null, parts); // Fire generic change
+        propertyChangeSupport.firePropertyChange("parts", null, parts);
     }
     
     /**
-     * Removes a part from this message.
+     * Removes a part from this message and severs the bidirectional link.
+     * 
      * @param part The part to remove.
+     * @throws IllegalArgumentException if the part is not attached to this message.
      */
     void removePart(AbstractPart part) {
-        Validate.isTrue(parts.contains(part), "Not a part of this message " + part);
+        Validate.isTrue(parts.contains(part), "Part " + part + " is not a part of this message.");
         parts.remove(part);
-        propertyChangeSupport.firePropertyChange("parts", null, parts); // Fire generic change
+        part.setMessage(null);
+        propertyChangeSupport.firePropertyChange("parts", null, parts);
     }
     
     /**
@@ -125,6 +135,7 @@ public abstract class AbstractMessage implements PropertyChangeSource {
 
     /**
      * Sets the pruned state of this message and fires a property change event.
+     * 
      * @param pruned The new pruned state.
      */
     public void setPruned(Boolean pruned) {
@@ -144,10 +155,9 @@ public abstract class AbstractMessage implements PropertyChangeSource {
         if (chat == null) {
             return -1;
         }
-        // Optimized to fetch the history only once.
         List<AbstractMessage> history = chat.getContextManager().getHistory();
         int index = history.indexOf(this);
-        if (index == -1) {//not added to the huistory, no depth
+        if (index == -1) {
             return -1;
         }
         return history.size() - 1 - index;
@@ -184,20 +194,16 @@ public abstract class AbstractMessage implements PropertyChangeSource {
      * @return {@code true} if the message is effectively pruned.
      */
     public boolean isEffectivelyPruned() {
-        // 1. Check the explicit flag on the message itself.
         if (Boolean.TRUE.equals(this.pruned)) {
             return true;
         }
-        // 2. If not explicitly pruned, it is effectively pruned only if ALL its parts are.
-        // Note: stream().allMatch() correctly returns true for an empty stream.
+        // A message is effectively pruned if it has parts and ALL of them are pruned.
         return getParts(false).isEmpty() && !parts.isEmpty();
     }
 
     /**
      * The definitive, encapsulated method for retrieving the parts of a message
-     * that should be sent to the model, respecting the pruning policy. This
-     * method is designed to be overridden by subclasses like
-     * {@link RagMessage}.
+     * that should be sent to the model, respecting the pruning policy.
      *
      * @param includePruned If true, all parts are returned, bypassing the
      * pruning check.
@@ -216,6 +222,7 @@ public abstract class AbstractMessage implements PropertyChangeSource {
 
     /**
      * Gets an unmodifiable list of all parts in this message.
+     * 
      * @return The list of parts.
      */
     public List<AbstractPart> getParts() {
@@ -224,6 +231,7 @@ public abstract class AbstractMessage implements PropertyChangeSource {
     
     /**
      * Adds a PropertyChangeListener to this message.
+     * 
      * @param listener The listener to add.
      */
     public void addPropertyChangeListener(PropertyChangeListener listener) {
@@ -232,6 +240,7 @@ public abstract class AbstractMessage implements PropertyChangeSource {
 
     /**
      * Removes a PropertyChangeListener from this message.
+     * 
      * @param listener The listener to remove.
      */
     public void removePropertyChangeListener(PropertyChangeListener listener) {
