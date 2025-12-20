@@ -36,6 +36,7 @@ public class GeminiResponse extends Response<GeminiModelMessage> {
     private final Optional<String> promptFeedback;
     private final String rawRequestConfigJson;
     private final String rawJson;    
+    private final String modelVersion;
 
     /**
      * Constructs a GeminiResponse, performing the full conversion from the native
@@ -51,10 +52,11 @@ public class GeminiResponse extends Response<GeminiModelMessage> {
         this.rawRequestConfigJson = requestConfigJson;
         this.genaiResponse = genaiResponse;        
         this.rawJson = genaiResponse.toJson();
+        this.modelVersion = genaiResponse.modelVersion().orElse(modelId);
         
         // --- 1. Convert Candidates ---
         this.candidates = genaiResponse.candidates().get().stream()
-            .map(candidate -> new GeminiModelMessage(chat, modelId, candidate, this))
+            .map(candidate -> new GeminiModelMessage(chat, modelVersion, candidate, this))
             .collect(Collectors.toList());
 
         // --- 2. Convert Usage Metadata ---
@@ -89,27 +91,7 @@ public class GeminiResponse extends Response<GeminiModelMessage> {
     // --- Implementation of Abstract Methods ---
 
     @Override
-    public List<GeminiModelMessage> getCandidates() {
-        return candidates;
-    }
-
-    @Override
-    public ResponseUsageMetadata getUsageMetadata() {
-        return usageMetadata;
-    }
-
-    @Override
-    public Optional<String> getPromptFeedback() {
-        return promptFeedback;
-    }
-
-    @Override
     public int getTotalTokenCount() {
         return usageMetadata.getTotalTokenCount(); // Delegate to usageMetadata
-    }
-
-    @Override
-    public String getRawJson() {
-        return rawJson;
     }
 }

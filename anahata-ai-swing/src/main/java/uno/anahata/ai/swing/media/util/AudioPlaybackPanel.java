@@ -192,7 +192,7 @@ public final class AudioPlaybackPanel extends JPanel {
     }
 
     private void initPlaybackLineComboBox() {
-        new SwingTask<List<LineInfo>>(
+        new SwingTask<>(
             this, // Pass 'this' as the owner
             "Load Playback Lines",
             () -> SoundUtils.getAvailablePlaybackLines(),

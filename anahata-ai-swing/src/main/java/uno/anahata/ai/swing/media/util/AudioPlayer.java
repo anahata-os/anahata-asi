@@ -95,15 +95,12 @@ public final class AudioPlayer {
         Clip clip = AudioSystem.getClip();
         clip.open(ais);
 
-        clip.addLineListener(new LineListener() {
-            @Override
-            public void update(LineEvent event) {
-                if (event.getType() == LineEvent.Type.START) {
-                    onPlaybackStatusChange.accept(true);
-                } else if (event.getType() == LineEvent.Type.STOP) {
-                    onPlaybackStatusChange.accept(false);
-                    clip.close();
-                }
+        clip.addLineListener(event -> {
+            if (event.getType() == LineEvent.Type.START) {
+                onPlaybackStatusChange.accept(true);
+            } else if (event.getType() == LineEvent.Type.STOP) {
+                onPlaybackStatusChange.accept(false);
+                clip.close();
             }
         });
         clip.start(); // Start playback immediately

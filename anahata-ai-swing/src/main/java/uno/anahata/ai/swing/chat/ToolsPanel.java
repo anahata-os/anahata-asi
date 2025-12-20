@@ -10,6 +10,7 @@ import javax.swing.JSplitPane;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.TreePath;
 import lombok.Getter;
+import lombok.NonNull;
 import org.jdesktop.swingx.JXTreeTable;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.swing.chat.tool.ToolDetailPanel;
@@ -25,13 +26,15 @@ import uno.anahata.ai.swing.chat.tool.ToolkitTreeTableModel;
 @Getter
 public class ToolsPanel extends JPanel {
 
-    private final Chat chat;
+    private final ChatPanel chatPanel;
+    private Chat chat;
     private final JXTreeTable treeTable;
-    private final ToolkitTreeTableModel treeTableModel;
+    private ToolkitTreeTableModel treeTableModel;
     private final ToolDetailPanel toolDetailPanel;
 
-    public ToolsPanel(Chat chat) {
-        this.chat = chat;
+    public ToolsPanel(@NonNull ChatPanel chatPanel) {
+        this.chatPanel = chatPanel;
+        this.chat = chatPanel.getChat();
         this.treeTableModel = new ToolkitTreeTableModel(chat.getToolManager());
         this.treeTable = new JXTreeTable(treeTableModel);
         this.toolDetailPanel = new ToolDetailPanel(this);
@@ -59,6 +62,16 @@ public class ToolsPanel extends JPanel {
             toolDetailPanel.setNode(node);
         });
         
+        refresh();
+    }
+
+    /**
+     * Reloads the panel with the new chat state.
+     */
+    public void reload() {
+        this.chat = chatPanel.getChat();
+        this.treeTableModel = new ToolkitTreeTableModel(chat.getToolManager());
+        this.treeTable.setTreeTableModel(treeTableModel);
         refresh();
     }
 

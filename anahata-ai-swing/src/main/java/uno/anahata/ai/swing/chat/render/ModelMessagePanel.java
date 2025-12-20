@@ -4,7 +4,10 @@
 package uno.anahata.ai.swing.chat.render;
 
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.FlowLayout;
 import javax.swing.BorderFactory;
+import javax.swing.JPanel;
 import javax.swing.border.Border;
 import lombok.NonNull;
 import uno.anahata.ai.model.core.AbstractModelMessage;
@@ -12,6 +15,7 @@ import uno.anahata.ai.model.core.AbstractPart;
 import uno.anahata.ai.model.core.ModelBlobPart;
 import uno.anahata.ai.model.core.ModelTextPart;
 import uno.anahata.ai.swing.chat.ChatPanel;
+import uno.anahata.ai.swing.components.CodeHyperlink;
 
 /**
  * A concrete implementation of {@link AbstractMessagePanel} specifically for rendering
@@ -21,6 +25,9 @@ import uno.anahata.ai.swing.chat.ChatPanel;
  */
 public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage> {
 
+    private GroundingMetadataPanel groundingPanel;
+    private JPanel footerActionPanel;
+
     /**
      * Constructs a new ModelMessagePanel.
      *
@@ -29,6 +36,30 @@ public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage
      */
     public ModelMessagePanel(@NonNull ChatPanel chatPanel, @NonNull AbstractModelMessage message) {
         super(chatPanel, message);
+    }
+
+    @Override
+    protected void renderFooter(JPanel footer) {
+        if (message.getGroundingMetadata() != null) {
+            if (groundingPanel == null) {
+                groundingPanel = new GroundingMetadataPanel(chatPanel, message.getGroundingMetadata());
+            }
+            
+            if (!footer.isAncestorOf(groundingPanel)) {
+                footer.add(groundingPanel, 0);
+            }
+        }
+        
+        if (footerActionPanel == null) {
+            footerActionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            footerActionPanel.setOpaque(false);
+            String popupTitle = "ModelMessage #" + message.getSequentialId();
+            footerActionPanel.add(new CodeHyperlink("Json", popupTitle, message.getRawJson(), "json"));
+        }
+        
+        if (!footer.isAncestorOf(footerActionPanel)) {
+            footer.add(footerActionPanel);
+        }
     }
 
     @Override

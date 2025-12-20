@@ -11,8 +11,6 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
 import java.awt.RenderingHints;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -24,21 +22,19 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.Timer;
-import lombok.Getter; // Added Getter for audioPlaybackPanel
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
-import org.jdesktop.swingx.JXHyperlink;
 import uno.anahata.ai.chat.Chat;
-import uno.anahata.ai.internal.JacksonUtils; // Added import
+import uno.anahata.ai.internal.JacksonUtils;
 import uno.anahata.ai.internal.TimeUtils;
-import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.Response;
 import uno.anahata.ai.model.core.ResponseUsageMetadata;
 import uno.anahata.ai.status.ApiErrorRecord;
 import uno.anahata.ai.status.ChatStatus;
 import uno.anahata.ai.status.StatusManager;
-import uno.anahata.ai.swing.chat.render.CodeBlockSegmentRenderer;
+import uno.anahata.ai.swing.components.CodeHyperlink;
 import uno.anahata.ai.swing.icons.IconUtils;
-import uno.anahata.ai.swing.media.util.AudioPlaybackPanel; // Added import
+import uno.anahata.ai.swing.media.util.AudioPlaybackPanel;
 
 /**
  * A panel that displays the real-time status of the chat session, including
@@ -46,64 +42,94 @@ import uno.anahata.ai.swing.media.util.AudioPlaybackPanel; // Added import
  *
  * @author anahata
  */
-@Getter // Added Getter for audioPlaybackPanel
+@Getter
 public class StatusPanel extends JPanel {
+    /** Formatter for timestamps in error logs. */
     private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm:ss");
+    /** Formatter for token counts. */
     private static final NumberFormat NUMBER_FORMAT = NumberFormat.getInstance();
 
+    /** The parent chat panel. */
     private final ChatPanel chatPanel;
-    private final Chat chat;
-    private final SwingChatConfig chatConfig;
+    /** The active chat session. */
+    private Chat chat;
+    /** The chat configuration. */
+    private SwingChatConfig chatConfig;
+    /** Timer for periodic UI refreshes. */
     private final Timer refreshTimer;
+    /** The last known status, used to detect changes for audio feedback. */
     private ChatStatus lastStatus = null;
 
-    // UI Components
+    /** Visual indicator for the current status. */
     private StatusIndicator statusIndicator;
+    /** Label displaying the status text. */
     private JLabel statusLabel;
+    /** Progress bar showing context window usage. */
     private ContextUsageBar contextUsageBar;
-    private JPanel apiErrorsPanel; // Renamed from detailsPanel
-    private JLabel tokenDetailsLabel; // For Section 3
-    private JXHyperlink rawJsonRequestConfigLink; // New: For Section 3
-    private JXHyperlink rawJsonResponseLink; // For Section 5 (now Section 3)
+    /** Panel for displaying API error and retry details. */
+    private JPanel apiErrorsPanel; 
+    /** Label for detailed token usage information. */
+    private JLabel tokenDetailsLabel; 
+    /** Hyperlink to view the raw JSON request configuration. */
+    private CodeHyperlink rawJsonRequestConfigLink; 
+    /** Hyperlink to view the raw JSON response. */
+    private CodeHyperlink rawJsonResponseLink; 
+    /** Toggle button for sound notifications. */
     private JToggleButton soundToggle;
-    private final AudioPlaybackPanel audioPlaybackPanel; // For Section 4
-    private JLabel blockReasonLabel; // For Section 5 (now Section 3/Row 3)
+    /** Panel for managing audio playback feedback. */
+    private final AudioPlaybackPanel audioPlaybackPanel; 
+    /** Label for displaying prompt blocking reasons. */
+    private JLabel blockReasonLabel; 
 
-    public StatusPanel(ChatPanel chatPanel) { // Modified constructor
+    /**
+     * Constructs a new StatusPanel.
+     * 
+     * @param chatPanel The parent chat panel.
+     */
+    public StatusPanel(ChatPanel chatPanel) {
         super(new BorderLayout(10, 2));
         this.chatPanel = chatPanel;
         this.chat = chatPanel.getChat();
         this.chatConfig = chatPanel.getChatConfig();
-        this.audioPlaybackPanel = new AudioPlaybackPanel(chatPanel); // Initialize here
+        this.audioPlaybackPanel = new AudioPlaybackPanel(chatPanel);
         initComponents();
         
         this.refreshTimer = new Timer(1000, e -> refresh());
     }
 
+    /**
+     * {@inheritDoc}
+     * Starts the refresh timer when the panel is added to the UI.
+     */
     @Override
     public void addNotify() {
         super.addNotify();
         refreshTimer.start();
     }
 
+    /**
+     * {@inheritDoc}
+     * Stops the refresh timer when the panel is removed from the UI.
+     */
     @Override
     public void removeNotify() {
         refreshTimer.stop();
         super.removeNotify();
     }
 
+    /**
+     * Initializes the UI components and layout.
+     */
     private void initComponents() {
         setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
 
-        // Use BoxLayout (Y_AXIS) for the main StatusPanel to stack the rows vertically
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
         // --- Row 1 (Top) --- 
         JPanel row1Panel = new JPanel(new BorderLayout(10, 0));
         row1Panel.setAlignmentX(LEFT_ALIGNMENT);
         
-        // Section 1: Top Left (soundToggle, statusIndicator, statusLabel)
-        JPanel chatStatusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0)); // Renamed
+        JPanel chatStatusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         statusIndicator = new StatusIndicator();
         statusLabel = new JLabel("Initializing...");
         soundToggle = new JToggleButton(IconUtils.getIcon("bell.png"));
@@ -116,83 +142,67 @@ public class StatusPanel extends JPanel {
         chatStatusPanel.add(statusLabel);
         row1Panel.add(chatStatusPanel, BorderLayout.WEST);
         
-        // Section 2: Top Right (contextUsageBar)
         contextUsageBar = new ContextUsageBar(chatPanel); 
-        row1Panel.add(contextUsageBar, BorderLayout.EAST); // Directly add contextUsageBar
+        row1Panel.add(contextUsageBar, BorderLayout.EAST);
         
         add(row1Panel);
 
         // --- Row 2 (Middle) --- 
         JPanel row2Panel = new JPanel(new BorderLayout(10, 0));
         row2Panel.setAlignmentX(LEFT_ALIGNMENT);
-        row2Panel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0)); // Padding between rows
+        row2Panel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
 
-        // Section 3: Second line aligned to the left (rawJsonRequestConfigLink, rawJsonResponseLink, tokenUsage)
-        JPanel tokenAndJsonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0)); // New panel
+        JPanel tokenAndJsonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         
-        rawJsonRequestConfigLink = new JXHyperlink(); // Initialize new hyperlink
-        rawJsonRequestConfigLink.setText("Request Config");
-        rawJsonRequestConfigLink.setToolTipText("View raw JSON request configuration");
-        rawJsonRequestConfigLink.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (chat.getLastResponse().isPresent()) {
-                    String rawJson = chat.getLastResponse().get().getRawRequestConfigJson();
-                    String prettyPrintedJson = JacksonUtils.prettyPrintJsonString(rawJson);
-                    new CodeBlockSegmentRenderer(chatPanel, prettyPrintedJson, "json").showInPopup("Raw JSON Request Config");
-                }
-            }
-        });
-        tokenAndJsonPanel.add(rawJsonRequestConfigLink); // Add new hyperlink first
+        rawJsonRequestConfigLink = new CodeHyperlink("Request Config", "Raw JSON Request Config", "", "json");
+        tokenAndJsonPanel.add(rawJsonRequestConfigLink);
 
-        rawJsonResponseLink = new JXHyperlink();
-        rawJsonResponseLink.setText("Response");
-        rawJsonResponseLink.setToolTipText("View raw JSON response");
-        rawJsonResponseLink.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (chat.getLastResponse().isPresent()) {
-                    String rawJson = chat.getLastResponse().get().getRawJson();
-                    String prettyPrintedJson = JacksonUtils.prettyPrintJsonString(rawJson); // Use JacksonUtils.prettyPrintJsonString
-                    new CodeBlockSegmentRenderer(chatPanel, prettyPrintedJson, "json").showInPopup("Raw JSON Response");
-                }
-            }
-        });
-        tokenAndJsonPanel.add(rawJsonResponseLink); // Add response link second
+        rawJsonResponseLink = new CodeHyperlink("Response", "Raw JSON Response", "", "json");
+        tokenAndJsonPanel.add(rawJsonResponseLink);
 
         tokenDetailsLabel = new JLabel();
-        tokenAndJsonPanel.add(tokenDetailsLabel); // Add token details last
+        tokenAndJsonPanel.add(tokenDetailsLabel);
 
-        row2Panel.add(tokenAndJsonPanel, BorderLayout.WEST); // Add the new panel
+        row2Panel.add(tokenAndJsonPanel, BorderLayout.WEST);
 
-        // Section 4: Second line aligned to the right (AudioPlaybackPanel)
-        row2Panel.add(audioPlaybackPanel, BorderLayout.EAST); // Directly add audioPlaybackPanel
+        row2Panel.add(audioPlaybackPanel, BorderLayout.EAST);
         
         add(row2Panel);
 
         // --- Row 3 (Bottom-Middle) --- 
-        // Section 5 (now Row 3): block reason ALL in one long horizontal box layout
-        JPanel responseDetailsPanel = new JPanel(); // Renamed
+        JPanel responseDetailsPanel = new JPanel();
         responseDetailsPanel.setLayout(new BoxLayout(responseDetailsPanel, BoxLayout.X_AXIS));
         responseDetailsPanel.setAlignmentX(LEFT_ALIGNMENT);
-        responseDetailsPanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0)); // Padding
+        responseDetailsPanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
 
-        blockReasonLabel = new JLabel(); // New label for block reason
+        blockReasonLabel = new JLabel();
         blockReasonLabel.setForeground(Color.RED.darker());
         responseDetailsPanel.add(blockReasonLabel);
-        responseDetailsPanel.add(Box.createHorizontalGlue()); // Push everything to the left
+        responseDetailsPanel.add(Box.createHorizontalGlue());
 
         add(responseDetailsPanel);
 
-        // Section 6 (Fourth row, uses all available horizontal space)
-        // API error/retry information (multiple lines, GridLayout). displays only if there are api errors
-        apiErrorsPanel = new JPanel(); // Renamed
+        apiErrorsPanel = new JPanel();
         apiErrorsPanel.setAlignmentX(LEFT_ALIGNMENT);
-        apiErrorsPanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0)); // Top padding
+        apiErrorsPanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
         apiErrorsPanel.setVisible(false);
         add(apiErrorsPanel);
     }
 
+    /**
+     * Reloads the panel with the state of the current chat session.
+     */
+    public void reload() {
+        this.chat = chatPanel.getChat();
+        this.chatConfig = chatPanel.getChatConfig();
+        this.lastStatus = null;
+        contextUsageBar.reload();
+        refresh();
+    }
+
+    /**
+     * Refreshes the UI components with the latest data from the chat session.
+     */
     public void refresh() {
         if (chat.isShutdown()) {
             if (refreshTimer.isRunning()) refreshTimer.stop();
@@ -209,7 +219,6 @@ public class StatusPanel extends JPanel {
         }
         this.lastStatus = currentStatus;
 
-        // 1. Update Status Indicator and Label
         statusIndicator.setColor(statusColor);
         statusLabel.setForeground(statusColor);
         statusLabel.setToolTipText(currentStatus.getDescription());
@@ -223,10 +232,10 @@ public class StatusPanel extends JPanel {
             long elapsedSinceBackoffStart = now - statusManager.getStatusChangeTime();
             long totalBackoffDuration = statusManager.getCurrentBackoffAmount();
             long remainingBackoff = totalBackoffDuration - elapsedSinceBackoffStart;
-            if (remainingBackoff < 0) remainingBackoff = 0; // Ensure it doesn't go negative
+            if (remainingBackoff < 0) remainingBackoff = 0;
 
             statusLabel.setText(String.format("%s... (%s remaining)", statusText, TimeUtils.formatMillisConcise(remainingBackoff)));
-        } else if (currentStatus.isActive()) { // Changed to use isActive()
+        } else if (currentStatus.isActive()) {
             long duration = now - statusManager.getStatusChangeTime();
             statusLabel.setText(String.format("%s... (%s)", statusText, TimeUtils.formatMillisConcise(duration)));
         } else {
@@ -238,42 +247,36 @@ public class StatusPanel extends JPanel {
             }
         }
 
-        // 2. Refresh Context Usage Bar
         contextUsageBar.refresh();
 
-        // 3. Update Details Panel (Section 6) and Section 5 labels
         List<ApiErrorRecord> errors = statusManager.getApiErrors();
-        Response lastResponse = chat.getLastResponse().orElse(null);
+        Response<?> lastResponse = chat.getLastResponse().orElse(null);
         boolean isRetrying = !errors.isEmpty() && (currentStatus == ChatStatus.WAITING_WITH_BACKOFF || currentStatus == ChatStatus.API_CALL_IN_PROGRESS);
 
-        // Reset visibility for Section 3/Row 3 labels
         rawJsonResponseLink.setVisible(false);
-        rawJsonRequestConfigLink.setVisible(false); // New: Reset visibility for request config link
+        rawJsonRequestConfigLink.setVisible(false);
         blockReasonLabel.setVisible(false);
         tokenDetailsLabel.setVisible(false);
 
         if (isRetrying) {
             apiErrorsPanel.setVisible(true);
-            apiErrorsPanel.removeAll(); // Clear previous content
-            apiErrorsPanel.setLayout(new GridLayout(0, 1)); // Layout for errors
+            apiErrorsPanel.removeAll();
+            apiErrorsPanel.setLayout(new GridLayout(0, 1));
 
             ApiErrorRecord lastError = errors.get(errors.size() - 1);
             long totalErrorTime = now - lastError.getTimestamp().toEpochMilli();
-            // The header text should use the total backoff amount, not remaining
             String headerText = String.format("Retrying... Total Time: %s | Attempt: %d | Backoff: %s",
                                               TimeUtils.formatMillisConcise(totalErrorTime),
                                               lastError.getRetryAttempt() + 1,
-                                              TimeUtils.formatMillisConcise(lastError.getBackoffAmount())); // Changed "Next Backoff" to "Backoff"
+                                              TimeUtils.formatMillisConcise(lastError.getBackoffAmount()));
             apiErrorsPanel.add(new JLabel(headerText));
 
             for (ApiErrorRecord error : errors) {
-                
                 String displayString = StringUtils.abbreviateMiddle(error.getException().toString(), " ... ", 108) ;
-                
-                String apiKeySuffix = StringUtils.right(error.getApiKey(), 4); // Get last 4 chars
+                String apiKeySuffix = StringUtils.right(error.getApiKey(), 4);
                 String errorText = String.format("  • [%s] [..%s] %s",
                                                  TIME_FORMAT.format(error.getTimestamp().toEpochMilli()),
-                                                 apiKeySuffix, // Use the last 4 characters
+                                                 apiKeySuffix,
                                                  displayString);
                 JLabel errorLabel = new JLabel(errorText);
                 errorLabel.setForeground(Color.RED.darker());
@@ -281,13 +284,16 @@ public class StatusPanel extends JPanel {
             }
             
         } else if (lastResponse != null) {
-            apiErrorsPanel.setVisible(false); // Hide error panel if no errors
-            apiErrorsPanel.removeAll(); // Clear any previous error messages
-            apiErrorsPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0)); // Reset layout for potential future use
+            apiErrorsPanel.setVisible(false);
+            apiErrorsPanel.removeAll();
+            apiErrorsPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 
-            // Section 3/Row 3: Display relevant info
             rawJsonResponseLink.setVisible(true);
-            rawJsonRequestConfigLink.setVisible(true); // New: Show request config link
+            rawJsonResponseLink.setContent(JacksonUtils.prettyPrintJsonString(lastResponse.getRawJson()));
+            
+            rawJsonRequestConfigLink.setVisible(true);
+            rawJsonRequestConfigLink.setContent(JacksonUtils.prettyPrintJsonString(lastResponse.getRawRequestConfigJson()));
+            
             tokenDetailsLabel.setVisible(true);
 
             lastResponse.getPromptFeedback().ifPresent(blockReason -> {
@@ -295,7 +301,6 @@ public class StatusPanel extends JPanel {
                 blockReasonLabel.setVisible(true);
             });
             
-            // Display Token Usage (Section 3)
             ResponseUsageMetadata usage = lastResponse.getUsageMetadata();
             if (usage != null) {
                 String prompt = "Prompt: " + NUMBER_FORMAT.format(usage.getPromptTokenCount());
@@ -318,26 +323,42 @@ public class StatusPanel extends JPanel {
         repaint();
     }
     
+    /**
+     * Plays a sound notification based on the new status.
+     * 
+     * @param newStatus The new status.
+     */
     private void handleStatusSound(ChatStatus newStatus) {
         String soundFileName = newStatus.name().toLowerCase() + ".wav";
         audioPlaybackPanel.playSound(soundFileName);
     }
     
     /**
-     * A simple component that paints a colored circle.
+     * A simple component that paints a colored circle to indicate status.
      */
     private static class StatusIndicator extends JComponent {
+        /** The color of the indicator. */
         private Color color = Color.GRAY;
 
+        /**
+         * Constructs a new StatusIndicator.
+         */
         public StatusIndicator() {
             setPreferredSize(new Dimension(16, 16));
         }
 
+        /**
+         * Sets the color of the indicator and triggers a repaint.
+         * @param color The new color.
+         */
         public void setColor(Color color) {
             this.color = color;
             repaint();
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);

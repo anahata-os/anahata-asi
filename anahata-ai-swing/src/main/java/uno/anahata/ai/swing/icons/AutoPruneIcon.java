@@ -14,7 +14,8 @@ import javax.swing.Icon;
 
 /**
  * A programmatically drawn icon representing "Auto-Prune".
- * It combines a leaf with a circular arrow using Anahata brand colors.
+ * Stylized as a banana peel—the universal symbol for "slipping" things out of context.
+ * Uses Barça Yellow for the peel.
  *
  * @author anahata
  */
@@ -31,22 +32,40 @@ public class AutoPruneIcon implements Icon {
         Graphics2D g2d = (Graphics2D) g.create();
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         
-        Color anahataGreen = new Color(40, 167, 69);
-        Color anahataBlue = new Color(0, 123, 255);
+        Color barcaYellow = new Color(255, 205, 0);
+        Color peelShadow = new Color(200, 160, 0);
 
-        // Leaf part (Green)
-        g2d.setColor(c.isEnabled() ? anahataGreen : Color.GRAY);
-        Path2D leaf = new Path2D.Double();
-        leaf.moveTo(x + size * 0.6, y + size * 0.8);
-        leaf.curveTo(x + size * 0.95, y + size * 0.4, x + size * 0.6, y + size * 0.1, x + size * 0.6, y + size * 0.1);
-        leaf.curveTo(x + size * 0.25, y + size * 0.4, x + size * 0.6, y + size * 0.8, x + size * 0.6, y + size * 0.8);
-        g2d.fill(leaf);
+        if (c.isEnabled()) {
+            // The Banana Peel
+            g2d.setColor(barcaYellow);
+            
+            // Center hub
+            double cx = x + size / 2.0;
+            double cy = y + size / 2.0;
+            
+            // Three prongs of the peel
+            for (int i = 0; i < 3; i++) {
+                g2d.rotate(Math.toRadians(120), cx, cy);
+                Path2D prong = new Path2D.Double();
+                prong.moveTo(cx, cy);
+                prong.curveTo(cx - size * 0.2, cy + size * 0.1, cx - size * 0.4, cy + size * 0.4, cx - size * 0.1, cy + size * 0.45);
+                prong.curveTo(cx + size * 0.1, cy + size * 0.3, cx + size * 0.1, cy + size * 0.1, cx, cy);
+                g2d.fill(prong);
+                
+                g2d.setColor(peelShadow);
+                g2d.setStroke(new BasicStroke((float) (size * 0.02)));
+                g2d.draw(prong);
+                g2d.setColor(barcaYellow);
+            }
+            
+            // The "stem" bit at the top
+            g2d.setColor(new Color(101, 67, 33)); // Brown stem
+            g2d.fillOval((int)(cx - size*0.05), (int)(cy - size*0.05), (int)(size*0.1), (int)(size*0.1));
 
-        // Circular arrow part (Blue)
-        g2d.setColor(c.isEnabled() ? anahataBlue : Color.GRAY);
-        g2d.setStroke(new BasicStroke(size / 10f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        int r = size - 4;
-        g2d.drawArc(x + 2, y + 2, r, r, 0, 270);
+        } else {
+            g2d.setColor(Color.GRAY);
+            g2d.drawOval(x + 2, y + 2, size - 4, size - 4);
+        }
 
         g2d.dispose();
     }

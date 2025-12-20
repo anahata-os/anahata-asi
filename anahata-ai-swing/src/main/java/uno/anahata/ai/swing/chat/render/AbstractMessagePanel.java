@@ -68,6 +68,11 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
     /** Button to remove the message from the chat history. */
     private final JButton removeButton;
 
+    /** Container for message parts. */
+    private final JXPanel partsContainer;
+    /** Container for message-level metadata and actions. */
+    protected final JPanel footerContainer;
+
     /** Cache of part panels to support incremental updates. */
     private final Map<AbstractPart, AbstractPartPanel> cachedPartPanels = new HashMap<>();
 
@@ -113,12 +118,22 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
         rightButtonPanel.add(removeButton);
         setRightDecoration(rightButtonPanel);
 
-        // 3. Setup Content Container (Using the default JXPanel provided by JXTitledPanel)
-        JXPanel mainContainer = (JXPanel) getContentContainer();
-        mainContainer.setLayout(new BoxLayout(mainContainer, BoxLayout.Y_AXIS));
-        mainContainer.setOpaque(false);
-        mainContainer.setBorder(BorderFactory.createEmptyBorder(5, 12, 10, 12));
+        // 3. Setup Content Layout
+        JXPanel mainContent = (JXPanel) getContentContainer();
+        mainContent.setLayout(new BorderLayout());
+        mainContent.setOpaque(false);
+        mainContent.setBorder(BorderFactory.createEmptyBorder(5, 12, 10, 12));
 
+        partsContainer = new JXPanel();
+        partsContainer.setLayout(new BoxLayout(partsContainer, BoxLayout.Y_AXIS));
+        partsContainer.setOpaque(false);
+        mainContent.add(partsContainer, BorderLayout.CENTER);
+
+        footerContainer = new JPanel();
+        footerContainer.setLayout(new BoxLayout(footerContainer, BoxLayout.Y_AXIS));
+        footerContainer.setOpaque(false);
+        mainContent.add(footerContainer, BorderLayout.SOUTH);
+        
         setOpaque(false);
         setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createEmptyBorder(5, 0, 5, 0),
@@ -159,11 +174,12 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
     }
 
     /**
-     * Renders or updates the entire message panel, including its header and content parts.
+     * Renders or updates the entire message panel, including its header, content parts, and footer.
      */
     public final void render() {
         updateHeaderInfoText();
         renderContentParts();
+        renderFooterInternal();
         revalidate();
         repaint();
     }
@@ -184,7 +200,6 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
      */
     protected void renderContentParts() {
         List<AbstractPart> currentParts = message.getParts();
-        JXPanel mainContainer = (JXPanel) getContentContainer();
 
         // 1. Identify and remove panels for parts no longer present
         List<AbstractPart> toRemove = cachedPartPanels.keySet().stream()
@@ -194,7 +209,7 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
         for (AbstractPart removedPart : toRemove) {
             AbstractPartPanel panel = cachedPartPanels.remove(removedPart);
             if (panel != null) {
-                mainContainer.remove(panel);
+                partsContainer.remove(panel);
             }
         }
 
@@ -213,20 +228,29 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
             if (panel != null) {
                 panel.render();
                 
-                if (i >= mainContainer.getComponentCount() || mainContainer.getComponent(i) != panel) {
-                    mainContainer.add(panel, i);
+                if (i >= partsContainer.getComponentCount() || partsContainer.getComponent(i) != panel) {
+                    partsContainer.add(panel, i);
                 }
             }
         }
 
-        // 3. Clean up any trailing components and re-add glue
-        while (mainContainer.getComponentCount() > currentParts.size()) {
-            mainContainer.remove(mainContainer.getComponentCount() - 1);
+        // 3. Clean up any trailing components
+        while (partsContainer.getComponentCount() > currentParts.size()) {
+            partsContainer.remove(partsContainer.getComponentCount() - 1);
         }
-        mainContainer.add(Box.createVerticalGlue());
-        
-        mainContainer.revalidate();
-        mainContainer.repaint();
+    }
+
+    private void renderFooterInternal() {
+        // Call subclass implementation
+        renderFooter(footerContainer);
+    }
+
+    /**
+     * Template method for subclasses to add components to the message footer.
+     * @param footer The footer container.
+     */
+    protected void renderFooter(JPanel footer) {
+        // Default implementation does nothing
     }
 
     /**

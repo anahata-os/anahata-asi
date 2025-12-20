@@ -96,6 +96,9 @@ public class MarkupTextSegmentRenderer extends AbstractTextSegmentRenderer {
             scrollPane.setOpaque(false);
             scrollPane.getViewport().setOpaque(false);
             
+            // Redispatch mouse wheel events to the parent scroll pane
+            scrollPane.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(scrollPane, e));
+            
             this.component = scrollPane;
             changed = true;
         }

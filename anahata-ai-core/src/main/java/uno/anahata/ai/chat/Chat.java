@@ -113,6 +113,8 @@ public class Chat {
                 log.error("Failed to instantiate provider class: {}", providerClass.getName(), e);
             }
         }
+        
+        ChatRegistry.register(this);
     }
 
     /**
@@ -348,9 +350,43 @@ public class Chat {
                 .orElse(0);
     }
 
+    /**
+     * Gets the current context window usage as a percentage (0.0 to 1.0).
+     * 
+     * @return The context window usage percentage.
+     */
+    public double getContextWindowUsage() {
+        int totalTokens = getLastTotalTokenCount();
+        int threshold = config.getTokenThreshold();
+        if (threshold <= 0) {
+            return 0.0;
+        }
+        return (double) totalTokens / threshold;
+    }
+
+    /**
+     * Gets a human-readable nickname for the session.
+     * 
+     * @return The session nickname or short ID.
+     */
+    public String getNickname() {
+        return config.getName() != null ? config.getName() : getShortId();
+    }
+
+    /**
+     * Gets a short version of the session ID.
+     * 
+     * @return The short session ID.
+     */
+    public String getShortId() {
+        String id = config.getSessionId();
+        return id.length() > 7 ? id.substring(0, 7) : id;
+    }
+
     public void shutdown() {
         shutdown.set(true);
         log.info("Shutting down Chat for session {}", config.getSessionId());
+        ChatRegistry.unregister(this);
         if (executor != null && !executor.isShutdown()) {
             executor.shutdown();
         }

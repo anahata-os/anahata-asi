@@ -24,14 +24,12 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
-import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
-import javax.swing.border.Border;
 import lombok.NonNull;
 import uno.anahata.ai.model.core.BlobPart;
 import uno.anahata.ai.internal.TextUtils;
@@ -47,18 +45,29 @@ import uno.anahata.ai.swing.media.util.AudioPlaybackPanel;
  */
 public class BlobPartPanel extends AbstractPartPanel<BlobPart> {
 
-    private JLabel mainContentLabel; // Label for image or file name
-    private JPanel infoPanel; // Panel for mimeType and size
-    private JLabel mimeTypeLabel; // Label for MIME type
-    private JLabel sizeLabel; // Label for size
-    private JPanel imageWrapperPanel; // Panel to hold image icon with border
-    private JPanel centerWrapperPanel; // New: Wrapper panel for imageWrapperPanel
+    /** Label for displaying image thumbnails or file names. */
+    private JLabel mainContentLabel; 
+    /** Panel for displaying MIME type and size metadata. */
+    private JPanel infoPanel; 
+    /** Label for the MIME type string. */
+    private JLabel mimeTypeLabel; 
+    /** Label for the formatted file size. */
+    private JLabel sizeLabel; 
+    /** Panel that wraps the image label with a border. */
+    private JPanel imageWrapperPanel; 
+    /** Outer wrapper panel to prevent the image from stretching. */
+    private JPanel centerWrapperPanel; 
 
-    private byte[] lastRenderedData; // To track changes in blob data
-    private String lastRenderedMimeType; // To track changes in mime type
+    /** Tracks the last rendered data to avoid redundant updates. */
+    private byte[] lastRenderedData; 
+    /** Tracks the last rendered MIME type. */
+    private String lastRenderedMimeType; 
+    /** Toggle button for audio playback. */
     private JToggleButton playButton;
-    private Runnable currentPlaybackStopper; // Handle to stop specific playback
+    /** Handle to stop the current audio playback. */
+    private Runnable currentPlaybackStopper; 
 
+    /** Reference to the global audio playback panel. */
     private final AudioPlaybackPanel audioPlaybackPanel;
 
     /**
@@ -73,9 +82,9 @@ public class BlobPartPanel extends AbstractPartPanel<BlobPart> {
     }
 
     /**
-     * Renders the content of the BlobPart into the contentPanel.
-     * This method handles different MIME types (image, audio, other files).
-     * It reuses existing components and updates their content only if the blob data or mime type has changed.
+     * {@inheritDoc}
+     * Renders the content of the BlobPart based on its MIME type.
+     * Reuses existing components and updates them incrementally.
      */
     @Override
     protected void renderContent() {
@@ -96,11 +105,10 @@ public class BlobPartPanel extends AbstractPartPanel<BlobPart> {
             imageWrapperPanel.setBorder(BorderFactory.createLineBorder(Color.GRAY)); 
             imageWrapperPanel.setVisible(false); // Initially hidden
             
-            // New: Wrap imageWrapperPanel in another FlowLayout panel to prevent stretching
             centerWrapperPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
             centerWrapperPanel.setOpaque(false);
             centerWrapperPanel.add(imageWrapperPanel);
-            getContentContainer().add(centerWrapperPanel, BorderLayout.CENTER); // Add the new wrapper panel
+            getContentContainer().add(centerWrapperPanel, BorderLayout.CENTER);
 
             infoPanel = new JPanel();
             infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
@@ -137,7 +145,7 @@ public class BlobPartPanel extends AbstractPartPanel<BlobPart> {
             if (currentData == null || currentData.length == 0) {
                 mainContentLabel.setText("Error: Blob data is empty.");
             } else if (currentMimeType.startsWith("audio/")) {
-                if (playButton == null) { // Create button only if it doesn't exist
+                if (playButton == null) {
                     playButton = new JToggleButton("▶ Play Audio");
                     playButton.addItemListener(e -> {
                         if (e.getStateChange() == ItemEvent.SELECTED) {
@@ -145,7 +153,7 @@ public class BlobPartPanel extends AbstractPartPanel<BlobPart> {
                             currentPlaybackStopper = audioPlaybackPanel.playToggleable(currentData, isPlaying -> {
                                 SwingUtilities.invokeLater(() -> {
                                     if (!isPlaying) {
-                                        playButton.setSelected(false); // Deselect button when playback ends
+                                        playButton.setSelected(false);
                                         playButton.setText("▶ Play Audio");
                                         currentPlaybackStopper = null;
                                     }
@@ -161,10 +169,10 @@ public class BlobPartPanel extends AbstractPartPanel<BlobPart> {
                             playButton.setText("▶ Play Audio");
                         }
                     });
-                    getContentContainer().add(playButton, BorderLayout.NORTH); // Add button to the top
+                    getContentContainer().add(playButton, BorderLayout.NORTH);
                 }
             } else if (currentMimeType.startsWith("image/")) {
-                imageWrapperPanel.setVisible(true); // Show the image wrapper
+                imageWrapperPanel.setVisible(true);
                 try {
                     BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(currentData));
                     if (originalImage != null) {
@@ -206,6 +214,7 @@ public class BlobPartPanel extends AbstractPartPanel<BlobPart> {
 
     /**
      * Displays the full-size image in a non-modal popup dialog.
+     * 
      * @param image The full-size BufferedImage to display.
      */
     private void showFullSizeImagePopup(BufferedImage image) {
@@ -214,7 +223,7 @@ public class BlobPartPanel extends AbstractPartPanel<BlobPart> {
         
         JLabel imageLabel = new JLabel(new ImageIcon(image));
         JScrollPane scrollPane = new JScrollPane(imageLabel);
-        scrollPane.setPreferredSize(new Dimension(Math.min(image.getWidth(), 800), Math.min(image.getHeight(), 600))); // Limit initial size
+        scrollPane.setPreferredSize(new Dimension(Math.min(image.getWidth(), 800), Math.min(image.getHeight(), 600)));
         
         dialog.add(scrollPane, BorderLayout.CENTER);
         dialog.pack();

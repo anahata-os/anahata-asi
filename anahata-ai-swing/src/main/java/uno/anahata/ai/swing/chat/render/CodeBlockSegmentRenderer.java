@@ -24,6 +24,7 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import uno.anahata.ai.swing.chat.ChatPanel;
 import uno.anahata.ai.swing.chat.render.editorkit.EditorKitProvider;
+import uno.anahata.ai.swing.internal.SwingUtils;
 
 /**
  * Renders a code block segment into a syntax-highlighted {@link JEditorPane}
@@ -101,6 +102,9 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
             scrollPane.setOpaque(false);
             scrollPane.getViewport().setOpaque(false);
             
+            // Redispatch mouse wheel events to the parent scroll pane
+            scrollPane.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(scrollPane, e));
+            
             this.component = scrollPane;
             changed = true; 
         }
@@ -115,40 +119,6 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
             contentRendered(); // Mark content as rendered
         }
         return changed;
-    }
-
-    /**
-     * Displays the content of this code block renderer in a non-modal popup dialog.
-     *
-     * @param title The title of the dialog.
-     */
-    public void showInPopup(String title) {
-        Window ancestorWindow = SwingUtilities.getWindowAncestor(chatPanel);
-        JDialog dialog;
-        if (ancestorWindow instanceof JDialog) {
-            dialog = new JDialog((JDialog) ancestorWindow, title, Dialog.ModalityType.MODELESS);
-        } else if (ancestorWindow instanceof JFrame) {
-            dialog = new JDialog((JFrame) ancestorWindow, title, Dialog.ModalityType.MODELESS);
-        } else {
-            dialog = new JDialog((JFrame) null, title, Dialog.ModalityType.MODELESS); // Fallback to null parent
-        }
-        
-        dialog.setLayout(new BorderLayout());
-        dialog.setPreferredSize(new Dimension(800, 600));
-
-        // CRITICAL: Ensure the component is rendered before adding it to the dialog
-        render();
-        
-        // For the popup, we want both scrollbars, so we wrap the INNER component
-        JScrollPane popupScrollPane = new JScrollPane(innerComponent);
-        popupScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        popupScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        
-        dialog.add(popupScrollPane, BorderLayout.CENTER);
-
-        dialog.pack();
-        dialog.setLocationRelativeTo(chatPanel);
-        dialog.setVisible(true);
     }
 
     /**

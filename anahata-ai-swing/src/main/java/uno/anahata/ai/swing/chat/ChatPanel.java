@@ -5,7 +5,9 @@ package uno.anahata.ai.swing.chat;
 
 import java.awt.BorderLayout;
 import javax.swing.JPanel;
+import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
+import javax.swing.SwingUtilities;
 import lombok.Getter;
 import lombok.NonNull;
 import uno.anahata.ai.chat.Chat;
@@ -21,9 +23,9 @@ import uno.anahata.ai.swing.chat.render.editorkit.EditorKitProvider;
 public class ChatPanel extends JPanel {
 
     /** The chat session orchestrator. */
-    private final Chat chat; 
+    private Chat chat; 
     /** The chat configuration. */
-    private final SwingChatConfig chatConfig; 
+    private SwingChatConfig chatConfig; 
     /** The tabbed pane for switching between chat and tools. */
     private final JTabbedPane tabbedPane;
     /** The panel for managing tools. */
@@ -49,9 +51,9 @@ public class ChatPanel extends JPanel {
         this.chatConfig = (SwingChatConfig) chat.getConfig(); 
         
         this.tabbedPane = new JTabbedPane();
-        this.toolsPanel = new ToolsPanel(chat);
+        this.toolsPanel = new ToolsPanel(this);
         this.inputPanel = new InputPanel(this); 
-        this.headerPanel = new HeaderPanel(chat);
+        this.headerPanel = new HeaderPanel(this);
         this.toolbarPanel = new ToolbarPanel(this); 
         this.statusPanel = new StatusPanel(this); 
         this.conversationPanel = new ConversationPanel(this); 
@@ -77,13 +79,41 @@ public class ChatPanel extends JPanel {
         southPanel.add(inputPanel, BorderLayout.NORTH); 
         southPanel.add(statusPanel, BorderLayout.SOUTH); 
 
+        // Use a SplitPane for the main content and the input area
+        JSplitPane mainSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, tabbedPane, southPanel);
+        mainSplitPane.setResizeWeight(1.0); // Give all extra space to the tabbed pane
+        mainSplitPane.setDividerLocation(0.7); // Initial balance
+
         // Add components to the main panel
         add(headerPanel, BorderLayout.NORTH);
         add(toolbarPanel, BorderLayout.WEST);
-        add(tabbedPane, BorderLayout.CENTER);
-        add(southPanel, BorderLayout.SOUTH); 
+        add(mainSplitPane, BorderLayout.CENTER);
     }
     
+    /**
+     * Reloads the entire UI with a new Chat instance.
+     * This is used when loading a saved session.
+     * 
+     * @param newChat The new chat session to load.
+     */
+    public void reload(@NonNull Chat newChat) {
+        SwingUtilities.invokeLater(() -> {
+            this.chat = newChat;
+            this.chatConfig = (SwingChatConfig) newChat.getConfig();
+            
+            // Update child components
+            headerPanel.reload();
+            conversationPanel.reload();
+            toolsPanel.reload();
+            statusPanel.reload();
+            inputPanel.reload();
+            toolbarPanel.reload();
+            
+            revalidate();
+            repaint();
+        });
+    }
+
     /**
      * Convenience method to get the EditorKitProvider from the chat configuration.
      * @return The EditorKitProvider.

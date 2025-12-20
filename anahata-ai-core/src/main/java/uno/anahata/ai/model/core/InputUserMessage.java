@@ -27,40 +27,50 @@ public class InputUserMessage extends UserMessage {
      * The primary, editable text part of this message.
      */
     @Getter
-    private final TextPart editableTextPart;
+    private TextPart editableTextPart;
 
     public InputUserMessage(Chat chat) {
         super(chat);
-        this.editableTextPart = new TextPart(this, "");
     }
 
     /**
      * Gets the text content of the primary editable part.
      *
-     * @return The text content.
+     * @return The text content, or an empty string if no text part exists.
      */
     public String getText() {
-        return editableTextPart.getText();
+        return editableTextPart != null ? editableTextPart.getText() : "";
     }
 
     /**
      * Sets the text content of the primary editable part.
+     * If the text is empty, the text part is automatically removed from the message.
      *
      * @param text The new text content.
      */
     public void setText(String text) {
-        editableTextPart.setText(text);
+        if (text == null || text.trim().isEmpty()) {
+            if (editableTextPart != null) {
+                editableTextPart.remove();
+                editableTextPart = null;
+            }
+        } else {
+            if (editableTextPart == null) {
+                editableTextPart = new TextPart(this, text);
+            } else {
+                editableTextPart.setText(text);
+            }
+        }
     }
 
     /**
      * Checks if the message is empty. A message is considered empty if it
-     * contains no parts other than the initial, empty editable text part.
+     * contains no parts.
      *
      * @return {@code true} if the message is empty, {@code false} otherwise.
      */
     public boolean isEmpty() {
-        // It's empty if it only contains our editable text part AND that part is empty.
-        return getParts().size() == 1 && editableTextPart.getText().isEmpty();
+        return getParts().isEmpty();
     }
     
     /**

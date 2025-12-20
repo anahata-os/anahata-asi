@@ -8,6 +8,7 @@ import java.awt.Rectangle;
 import javax.swing.JEditorPane;
 import javax.swing.Scrollable;
 import lombok.Setter;
+import uno.anahata.ai.swing.internal.SwingUtils;
 
 /**
  * A JEditorPane subclass that implements the {@link Scrollable} interface to
@@ -24,6 +25,12 @@ public class WrappingEditorPane extends JEditorPane implements Scrollable {
     @Setter
     private boolean trackViewportWidth = true;
 
+    public WrappingEditorPane() {
+        // Redispatch mouse wheel events to the parent scroll pane to ensure
+        // vertical scrolling works even when the mouse is over this component.
+        addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(this, e));
+    }
+
     @Override
     public boolean getScrollableTracksViewportWidth() {
         return trackViewportWidth;
@@ -36,7 +43,7 @@ public class WrappingEditorPane extends JEditorPane implements Scrollable {
 
     @Override
     public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
-        return 16;
+        return 24;
     }
 
     @Override

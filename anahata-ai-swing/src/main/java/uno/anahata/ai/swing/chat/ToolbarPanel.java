@@ -33,8 +33,8 @@ public class ToolbarPanel extends JPanel {
     private static final int ICON_SIZE = 24;
 
     private final ChatPanel chatPanel; // Reference to the parent ChatPanel
-    private final Chat chat;
-    private final SwingChatConfig config;
+    private Chat chat;
+    private SwingChatConfig config;
     
     private JToggleButton toggleLocalToolsButton;
     private JToggleButton toggleServerToolsButton;
@@ -90,6 +90,18 @@ public class ToolbarPanel extends JPanel {
         add(toggleAutoreplyButton);
         
         // Initial state sync
+        updateToolToggles(config.isLocalToolsEnabled());
+    }
+
+    /**
+     * Reloads the panel with the new chat state.
+     */
+    public void reload() {
+        this.chat = chatPanel.getChat();
+        this.config = chatPanel.getChatConfig();
+        
+        togglePrunedPartsButton.setSelected(config.isShowPrunedParts());
+        toggleAutoreplyButton.setSelected(config.isAutoReplyTools());
         updateToolToggles(config.isLocalToolsEnabled());
     }
 

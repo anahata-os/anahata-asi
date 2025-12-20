@@ -163,7 +163,7 @@ public final class MicrophonePanel extends JPanel {
     
     
     private void initMicrophoneLineComboBox() {
-        new SwingTask<List<LineInfo>>(
+        new SwingTask<>(
             this, // Pass 'this' as the owner
             "Load Microphone Lines",
             () -> SoundUtils.getAvailableRecordingLines(),
@@ -237,7 +237,7 @@ public final class MicrophonePanel extends JPanel {
                     return null; // Return Void
                 },
                 (error) -> {
-                    parentPanel.getInputMessageRenderer().render(); // Refresh preview
+                    parentPanel.getInputMessagePreview().render(); // Refresh preview
                     // SwingTask already logs and shows the exception dialog
                 }
             ).execute();

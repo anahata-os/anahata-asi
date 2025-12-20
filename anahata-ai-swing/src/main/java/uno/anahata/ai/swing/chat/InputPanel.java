@@ -43,10 +43,10 @@ import uno.anahata.ai.swing.media.util.MicrophonePanel;
 @Getter
 public class InputPanel extends JPanel {
 
-    /** The chat session orchestrator. */
-    private final Chat chat;
     /** The parent chat panel. */
     private final ChatPanel chatPanel;
+    /** The chat session orchestrator. */
+    private Chat chat;
 
     /** The text area for user input. */
     private JXTextArea inputTextArea;
@@ -59,7 +59,7 @@ public class InputPanel extends JPanel {
     /** The button to capture and attach application frames. */
     private JButton captureFramesButton;
     /** The renderer for the live message preview. */
-    private UserInputMessagePanel inputMessageRenderer;
+    private UserInputMessagePanel inputMessagePreview;
     /** The scroll pane for the preview renderer. */
     private JScrollPane previewScrollPane;
     /** The split pane separating input and preview. */
@@ -113,9 +113,9 @@ public class InputPanel extends JPanel {
 
         // --- PREVIEW PANEL INTEGRATION ---
         this.currentMessage = new InputUserMessage(chat);
-        this.inputMessageRenderer = new UserInputMessagePanel(chatPanel, currentMessage);
+        this.inputMessagePreview = new UserInputMessagePanel(chatPanel, currentMessage);
 
-        previewScrollPane = new JScrollPane(inputMessageRenderer);
+        previewScrollPane = new JScrollPane(inputMessagePreview);
         previewScrollPane.setPreferredSize(new Dimension(0, 150)); 
         previewScrollPane.setMinimumSize(new Dimension(0, 100)); 
 
@@ -158,6 +158,14 @@ public class InputPanel extends JPanel {
         southButtonPanel.add(sendButton, BorderLayout.EAST);
 
         add(southButtonPanel, BorderLayout.SOUTH);
+    }
+
+    /**
+     * Reloads the panel with the new chat state.
+     */
+    public void reload() {
+        this.chat = chatPanel.getChat();
+        resetMessage();
     }
 
     /**
@@ -313,30 +321,18 @@ public class InputPanel extends JPanel {
      * for the next turn.
      */
     private void resetMessage() {
+        // CRITICAL FIX: Swap the currentMessage object BEFORE clearing the text area.
+        // This prevents the DocumentListener from clearing the text of the message
+        // that was just sent and added to the history.
+        this.currentMessage = new InputUserMessage(chat);
         inputTextArea.setText("");
-        replaceRenderer(new InputUserMessage(chat));
-    }
-
-    /**
-     * Replaces the current InputMessageRenderer with a new one, updating the
-     * JScrollPane.
-     *
-     * @param newMessage The new message model to use.
-     */
-    private void replaceRenderer(InputUserMessage newMessage) {
-        // 1. Create the new renderer
-        UserInputMessagePanel newRenderer = new UserInputMessagePanel(chatPanel, newMessage);
-
-        // 2. Replace the viewport view of the existing scroll pane
+        
+        // Recreate the renderer for the new message.
+        // The old renderer's EdtPropertyChangeListener will unbind automatically
+        // when it is removed from the scroll pane's viewport.
+        UserInputMessagePanel newRenderer = new UserInputMessagePanel(chatPanel, this.currentMessage);
         previewScrollPane.setViewportView(newRenderer);
-
-        // 3. Update internal fields
-        this.currentMessage = newMessage;
-        this.inputMessageRenderer = newRenderer;
-
-        // 4. Revalidate and repaint the scroll pane
-        previewScrollPane.revalidate();
-        previewScrollPane.repaint();
+        this.inputMessagePreview = newRenderer;
     }
 
     /**

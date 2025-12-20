@@ -10,7 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.AiConfig;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.cli.CommandLineArgs;
-import uno.anahata.ai.swing.chat.ChatPanel;
+import uno.anahata.ai.swing.chat.MainPanel;
 import uno.anahata.ai.swing.chat.SwingChatConfig;
 
 /**
@@ -35,7 +35,9 @@ public class SwingMain {
         AiConfig appConfig = new AiConfig("AnahataStandalone");
         SwingChatConfig chatConfig = new SwingChatConfig(appConfig);
         chatConfig.getProviderClasses().add(uno.anahata.ai.gemini.GeminiAiProvider.class);
-        Chat chat = new Chat(chatConfig); // Create Chat instance here
+        
+        // Create the initial chat session
+        Chat chat = new Chat(chatConfig); 
 
         // Centralized argument parsing
         CommandLineArgs.parse(chat, args);
@@ -47,10 +49,14 @@ public class SwingMain {
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setPreferredSize(new Dimension(1200, 900));
 
-            // Create and initialize the main ChatPanel, passing the pre-configured chat instance
-            ChatPanel chatPanel = new ChatPanel(chat); // Pass only chat
-            chatPanel.initComponents();
-            frame.add(chatPanel, BorderLayout.CENTER);
+            // Create the MainPanel which manages multiple sessions
+            MainPanel mainPanel = new MainPanel(chatConfig);
+            mainPanel.start();
+            
+            // Focus the initial chat session
+            mainPanel.focus(chat);
+            
+            frame.add(mainPanel, BorderLayout.CENTER);
 
             frame.pack();
             frame.setLocationRelativeTo(null);

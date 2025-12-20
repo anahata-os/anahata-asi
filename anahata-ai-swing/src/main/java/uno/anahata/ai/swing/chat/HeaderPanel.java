@@ -7,6 +7,8 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.io.File;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.swing.*;
@@ -16,11 +18,13 @@ import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.JXTextField;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 import uno.anahata.ai.chat.Chat;
+import uno.anahata.ai.internal.kryo.KryoUtils;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
 import uno.anahata.ai.model.provider.AbstractModel;
 import uno.anahata.ai.swing.icons.LoadSessionIcon;
 import uno.anahata.ai.swing.icons.SaveSessionIcon;
 import uno.anahata.ai.swing.icons.SearchIcon;
+import uno.anahata.ai.swing.internal.SwingTask;
 import uno.anahata.ai.swing.provider.ProviderRegistryViewer;
 
 /**
@@ -34,7 +38,8 @@ import uno.anahata.ai.swing.provider.ProviderRegistryViewer;
 public class HeaderPanel extends JPanel {
     private static final int ICON_SIZE = 24;
 
-    private final Chat chat;
+    private final ChatPanel chatPanel;
+    private Chat chat;
 
     private JXTextField nicknameField;
     private JButton saveSessionButton;
@@ -43,8 +48,9 @@ public class HeaderPanel extends JPanel {
     private JComboBox<AbstractModel> modelComboBox;
     private JButton searchModelsButton;
 
-    public HeaderPanel(Chat chat) {
-        this.chat = chat;
+    public HeaderPanel(ChatPanel chatPanel) {
+        this.chatPanel = chatPanel;
+        this.chat = chatPanel.getChat();
         log.info("Header Panel constructor, selected chat model: " + chat.getSelectedModel());        
     }
 
@@ -67,16 +73,12 @@ public class HeaderPanel extends JPanel {
         // Session Buttons
         saveSessionButton = new JButton(new SaveSessionIcon(ICON_SIZE));
         saveSessionButton.setToolTipText("Save Session");
-        saveSessionButton.addActionListener(e -> {
-            // TODO: Implement save session logic
-        });
+        saveSessionButton.addActionListener(e -> saveSession());
         add(saveSessionButton);
 
         loadSessionButton = new JButton(new LoadSessionIcon(ICON_SIZE));
         loadSessionButton.setToolTipText("Load Session");
-        loadSessionButton.addActionListener(e -> {
-            // TODO: Implement load session logic
-        });
+        loadSessionButton.addActionListener(e -> loadSession());
         add(loadSessionButton);
 
         // Provider ComboBox (Right-aligned, skipping the push column)
@@ -137,6 +139,17 @@ public class HeaderPanel extends JPanel {
         addListeners();
     }
 
+    /**
+     * Reloads the panel with the new chat state.
+     */
+    public void reload() {
+        this.chat = chatPanel.getChat();
+        removeAll();
+        initComponents();
+        revalidate();
+        repaint();
+    }
+
     private void populateProviders() {
         List<AbstractAiProvider> providers = chat.getProviders();
         for (AbstractAiProvider provider : providers) {
@@ -186,6 +199,33 @@ public class HeaderPanel extends JPanel {
             for (AbstractModel model : models) {
                 modelComboBox.addItem(model);
             }
+        }
+    }
+
+    private void saveSession() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Save Chat Session");
+        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            new SwingTask<>(this, "Save Session", () -> {
+                byte[] data = KryoUtils.serialize(chat);
+                Files.write(file.toPath(), data);
+                return null;
+            }).execute();
+        }
+    }
+
+    private void loadSession() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Load Chat Session");
+        if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            new SwingTask<>(this, "Load Session", () -> {
+                byte[] data = Files.readAllBytes(file.toPath());
+                return KryoUtils.deserialize(data, Chat.class);
+            }, loadedChat -> {
+                chatPanel.reload(loadedChat);
+            }).execute();
         }
     }
 

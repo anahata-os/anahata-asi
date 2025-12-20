@@ -3,19 +3,31 @@
  */
 package uno.anahata.ai.swing.internal;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dialog;
+import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
+import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
+import java.awt.event.MouseWheelEvent;
 import java.awt.image.BufferedImage;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import lombok.experimental.UtilityClass;
-import org.apache.commons.lang3.exception.ExceptionUtils; // Added import
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jdesktop.swingx.JXErrorPane;
 import org.jdesktop.swingx.error.ErrorInfo;
+import uno.anahata.ai.swing.chat.ChatPanel;
+import uno.anahata.ai.swing.chat.render.CodeBlockSegmentRenderer;
 
 /**
  * A collection of general-purpose Swing utility methods, primarily for image
@@ -23,9 +35,11 @@ import org.jdesktop.swingx.error.ErrorInfo;
  *
  * @author anahata
  */
+@Slf4j
 @UtilityClass
 public class SwingUtils {
 
+    /** The maximum dimension for generated thumbnails. */
     private static final int THUMBNAIL_MAX_SIZE = 250;
 
     /**
@@ -50,7 +64,12 @@ public class SwingUtils {
 
         BufferedImage resized = new BufferedImage(newWidth, newHeight, original.getType() == 0 ? BufferedImage.TYPE_INT_ARGB : original.getType());
         Graphics2D g = resized.createGraphics();
-        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        
+        // Apply high-quality rendering hints
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        
         g.drawImage(original, 0, 0, newWidth, newHeight, null);
         g.dispose();
 
@@ -80,7 +99,7 @@ public class SwingUtils {
         ErrorInfo errorInfo = new ErrorInfo(
                 taskName,
                 description,
-                ExceptionUtils.getStackTrace(throwable), // Changed to get full stack trace
+                ExceptionUtils.getStackTrace(throwable),
                 "Error in " + taskName,
                 throwable,
                 java.util.logging.Level.SEVERE,
@@ -99,7 +118,75 @@ public class SwingUtils {
             return;
         }
         StringSelection selection = new StringSelection(text);
-        Clipboard clipboard = java.awt.Toolkit.getDefaultToolkit().getSystemClipboard();
+        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(selection, selection);
+    }
+
+    /**
+     * Redispatches a {@link MouseWheelEvent} to the parent {@link JScrollPane} of a component.
+     * This is useful for nested scrollable components where the inner component should not
+     * consume vertical scroll events.
+     * 
+     * @param component The component receiving the event.
+     * @param e The mouse wheel event.
+     */
+    public static void redispatchMouseWheelEvent(Component component, MouseWheelEvent e) {
+        JScrollPane parentScrollPane = (JScrollPane) SwingUtilities.getAncestorOfClass(JScrollPane.class, component);
+        if (parentScrollPane != null) {
+            parentScrollPane.dispatchEvent(SwingUtilities.convertMouseEvent(component, e, parentScrollPane));
+        }
+    }
+
+    /**
+     * Displays a modal dialog with a syntax-highlighted code block.
+     * 
+     * @param parent The parent component.
+     * @param title The dialog title.
+     * @param text The text to display.
+     * @param language The language for syntax highlighting.
+     */
+    public static void showCodeBlockDialog(Component parent, String title, String text, String language) {
+        ChatPanel chatPanel = (ChatPanel) SwingUtilities.getAncestorOfClass(ChatPanel.class, parent);
+        if (chatPanel == null) {
+            log.warn("Could not find ChatPanel ancestor for showCodeBlockDialog.");
+            return;
+        }
+
+        Window ancestorWindow = SwingUtilities.getWindowAncestor(parent);
+        JDialog dialog;
+        if (ancestorWindow instanceof JDialog) {
+            dialog = new JDialog((JDialog) ancestorWindow, title, Dialog.ModalityType.MODELESS);
+        } else if (ancestorWindow instanceof JFrame) {
+            dialog = new JDialog((JFrame) ancestorWindow, title, Dialog.ModalityType.MODELESS);
+        } else {
+            dialog = new JDialog((JFrame) null, title, Dialog.ModalityType.MODELESS);
+        }
+
+        dialog.setLayout(new BorderLayout());
+        dialog.setPreferredSize(new Dimension(1000, 800));
+
+        CodeBlockSegmentRenderer renderer = new CodeBlockSegmentRenderer(chatPanel, text, language);
+        renderer.render();
+
+        // For the popup, we want both scrollbars, so we wrap the INNER component
+        JScrollPane popupScrollPane = new JScrollPane(renderer.getInnerComponent());
+        popupScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        popupScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+        dialog.add(popupScrollPane, BorderLayout.CENTER);
+        dialog.pack();
+        dialog.setLocationRelativeTo(parent);
+        dialog.setVisible(true);
+    }
+
+    /**
+     * Displays a modal dialog with a syntax-highlighted JSON block.
+     * 
+     * @param parent The parent component.
+     * @param title The dialog title.
+     * @param json The JSON string to display.
+     */
+    public static void showJsonDialog(Component parent, String title, String json) {
+        showCodeBlockDialog(parent, title, json, "json");
     }
 }

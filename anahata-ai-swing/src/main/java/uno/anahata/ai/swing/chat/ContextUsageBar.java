@@ -54,6 +54,14 @@ public class ContextUsageBar extends JPanel {
     }
 
     /**
+     * Reloads the bar with the new chat state.
+     */
+    public void reload() {
+        this.maxTokens = chatPanel.getChat().getContextManager().getTokenThreshold();
+        refresh();
+    }
+
+    /**
      * Refreshes the bar's state by querying the chat's status and context managers.
      */
     public void refresh() {

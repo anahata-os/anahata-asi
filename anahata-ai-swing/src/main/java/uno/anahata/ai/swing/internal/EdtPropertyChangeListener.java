@@ -106,6 +106,18 @@ public class EdtPropertyChangeListener implements PropertyChangeListener, Hierar
     }
 
     /**
+     * Explicitly unbinds the listener from both the component and the source.
+     */
+    public void unbind() {
+        component.removeHierarchyListener(this);
+        if (propertyName != null) {
+            source.getPropertyChangeSupport().removePropertyChangeListener(propertyName, this);
+        } else {
+            source.getPropertyChangeSupport().removePropertyChangeListener(this);
+        }
+    }
+
+    /**
      * Adds or removes this listener from the model source based on the component's displayability.
      */
     private void updateSubscription() {

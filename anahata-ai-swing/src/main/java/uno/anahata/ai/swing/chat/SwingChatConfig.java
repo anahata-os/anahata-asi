@@ -123,6 +123,16 @@ public class SwingChatConfig extends ChatConfig {
         private final Color functionResponseFg = new Color(0, 255, 0);
         private final Color functionErrorBg = new Color(51, 28, 28);
         private final Color functionErrorFg = new Color(255, 80, 80);
+        
+        // Grounding Metadata
+        private final Color groundingHeaderBg = new Color(240, 248, 255);
+        private final Color groundingContentBg = new Color(250, 252, 255);
+        private final Color groundingDetailsHeaderBg = new Color(230, 240, 250);
+        private final Color groundingDetailsHeaderColor = new Color(0, 50, 100);
+        private final Color groundingDetailsContentBg = Color.WHITE;
+        private final Color chipBackground = new Color(235, 245, 255);
+        private final Color chipText = new Color(0, 100, 200);
+        private final Color chipBorder = new Color(180, 210, 240);
 
         public Color getHeaderStartColor(Role role) {
             return switch (role) {

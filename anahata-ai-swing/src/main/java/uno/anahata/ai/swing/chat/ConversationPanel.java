@@ -40,13 +40,15 @@ public class ConversationPanel extends JPanel {
     /** The parent chat panel. */
     private final ChatPanel chatPanel;
     /** The chat session. */
-    private final Chat chat;
+    private Chat chat;
     /** The panel containing the message components. */
     private final ScrollablePanel messagesPanel;
     /** The scroll pane for the conversation. */
     private final JScrollPane scrollPane;
     /** Cache of message panels to support incremental updates. */
     private final Map<AbstractMessage, AbstractMessagePanel> cachedMessagePanels = new HashMap<>();
+    /** The listener for history changes. */
+    private EdtPropertyChangeListener historyListener;
 
     /**
      * Constructs a new ConversationPanel.
@@ -68,7 +70,26 @@ public class ConversationPanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
 
         // Declarative, thread-safe binding to the history property
-        new EdtPropertyChangeListener(this, chat.getContextManager(), "history", evt -> render());
+        this.historyListener = new EdtPropertyChangeListener(this, chat.getContextManager(), "history", evt -> render());
+    }
+
+    /**
+     * Reloads the panel with the new chat state.
+     */
+    public void reload() {
+        this.chat = chatPanel.getChat();
+        
+        // Re-bind the listener to the new context manager
+        if (historyListener != null) {
+            historyListener.unbind();
+        }
+        this.historyListener = new EdtPropertyChangeListener(this, chat.getContextManager(), "history", evt -> render());
+        
+        // Clear cache and UI
+        cachedMessagePanels.clear();
+        messagesPanel.removeAll();
+        
+        render();
     }
 
     /**
