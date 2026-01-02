@@ -1,6 +1,9 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.ai.gemini.adapter;
 
+import com.google.genai.types.ComputerUse;
+import com.google.genai.types.EnterpriseWebSearch;
+import com.google.genai.types.FileSearch;
 import com.google.genai.types.FunctionCallingConfig;
 import com.google.genai.types.FunctionCallingConfigMode;
 import com.google.genai.types.FunctionDeclaration;
@@ -77,8 +80,9 @@ public final class RequestConfigAdapter {
                 Tool tool = Tool.builder().functionDeclarations(declarations).build();
                 builder.tools(tool);
                 ToolConfig tc = ToolConfig.builder()
+                        /*
                         .functionCallingConfig(FunctionCallingConfig.builder()
-                                .mode(FunctionCallingConfigMode.Known.AUTO)).build();
+                                .mode(FunctionCallingConfigMode.Known.AUTO))*/.build();
                 builder.toolConfig(tc);
             }
         } else if (anahataConfig.isServerToolsEnabled()) {
@@ -96,6 +100,12 @@ public final class RequestConfigAdapter {
                         toolBuilder.codeExecution(ToolCodeExecution.builder().build());
                     } else if (id == GoogleMaps.class) {
                         toolBuilder.googleMaps(GoogleMaps.builder().build());
+                    } else if (id == EnterpriseWebSearch.class) {
+                        toolBuilder.enterpriseWebSearch(EnterpriseWebSearch.builder().build());
+                    } else if (id == FileSearch.class) {
+                        toolBuilder.fileSearch(FileSearch.builder().build());
+                    } else if (id == ComputerUse.class) {
+                        toolBuilder.computerUse(ComputerUse.builder().build());
                     }
                 }
                 builder.tools(toolBuilder.build());

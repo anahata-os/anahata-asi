@@ -209,7 +209,7 @@ public class RequestConfigPanel extends JPanel implements PropertyChangeListener
                 .map(ServerTool::getId)
                 .collect(Collectors.toList());
 
-        for (ServerTool tool : model.getSupportedServerTools()) {
+        for (ServerTool tool : model.getAvailableServerTools()) {
             JCheckBox cb = new JCheckBox(tool.getDisplayName());
             cb.setAlignmentX(Component.LEFT_ALIGNMENT);
             cb.setToolTipText(tool.getDescription());
