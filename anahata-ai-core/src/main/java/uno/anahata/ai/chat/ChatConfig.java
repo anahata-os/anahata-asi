@@ -73,6 +73,9 @@ public class ChatConfig {
 
     /** If true, the chat loop will automatically re-prompt the model after executing tools. */
     private boolean autoReplyTools = false;
+
+    /** If true, token streaming is enabled for model responses. */
+    private boolean streaming = true;
     
     /** The maximum number of times to retry an API call on failure. */
     private int apiMaxRetries = 5;

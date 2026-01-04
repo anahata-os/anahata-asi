@@ -41,6 +41,18 @@ public class GeminiModelMessage extends AbstractModelMessage<GeminiResponse, Gem
     private final transient Candidate geminiCandidate;
     
     /**
+     * Constructs a GeminiModelMessage for streaming, without an initial candidate.
+     * 
+     * @param chat The parent chat session.
+     * @param modelId The ID of the model.
+     */
+    public GeminiModelMessage(Chat chat, String modelId) {
+        super(chat, modelId);
+        this.geminiCandidate = null;
+        setStreaming(true);
+    }
+
+    /**
      * Constructs a GeminiModelMessage, encapsulating the conversion logic.
      *
      * @param chat          The parent chat session.
@@ -98,7 +110,7 @@ public class GeminiModelMessage extends AbstractModelMessage<GeminiResponse, Gem
      * @param googlePart The Google part to convert.
      * @return The corresponding Anahata AbstractPart, or null if unsupported.
      */
-    private AbstractPart toAnahataPart(Part googlePart) {
+    public AbstractPart toAnahataPart(Part googlePart) {
         byte[] thoughtSignature = googlePart.thoughtSignature().orElse(null);
 
         if (googlePart.text().isPresent()) {

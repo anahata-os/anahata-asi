@@ -6,8 +6,10 @@ package uno.anahata.ai.model.provider;
 import java.util.List;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.model.core.AbstractMessage;
+import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.RequestConfig;
 import uno.anahata.ai.model.core.Response;
+import uno.anahata.ai.model.core.StreamObserver;
 
 /**
  * The abstract base class for a specific AI model (e.g., "gemini-1.5-pro-latest").
@@ -65,11 +67,11 @@ public abstract class AbstractModel {
     public abstract List<String> getSupportedResponseModalities();
 
     /**
-     * Gets the list of server-side tools supported by this model.
+     * Gets the list of server-side tools available for this model.
      * 
-     * @return A list of supported server tools.
+     * @return A list of available server tools.
      */
-    public abstract List<ServerTool> getSupportedServerTools();
+    public abstract List<ServerTool> getAvailableServerTools();
 
     /**
      * Gets the default temperature for this model.
@@ -102,4 +104,14 @@ public abstract class AbstractModel {
      * @return A standardized {@link Response} object.
      */
     public abstract Response generateContent(Chat chat, RequestConfig config, List<AbstractMessage> history);
+
+    /**
+     * Generates content asynchronously using token streaming.
+     *
+     * @param chat The chat for which the content is being generated.
+     * @param config The configuration for this specific request.
+     * @param history The list of messages forming the conversation history.
+     * @param observer The observer that will receive the streaming response chunks.
+     */
+    public abstract void generateContentStream(Chat chat, RequestConfig config, List<AbstractMessage> history, StreamObserver<Response<? extends AbstractModelMessage>, ? extends AbstractModelMessage> observer);
 }

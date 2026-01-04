@@ -13,10 +13,12 @@ import java.util.stream.Collectors;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.AbstractModelMessage;
@@ -35,6 +37,7 @@ import uno.anahata.ai.swing.internal.EdtPropertyChangeListener;
  * @author pablo
  */
 @Getter
+@Slf4j
 public class ConversationPanel extends JPanel {
 
     /** The parent chat panel. */
@@ -49,7 +52,7 @@ public class ConversationPanel extends JPanel {
     private final Map<AbstractMessage, AbstractMessagePanel> cachedMessagePanels = new HashMap<>();
     /** The listener for history changes. */
     private EdtPropertyChangeListener historyListener;
-
+    
     /**
      * Constructs a new ConversationPanel.
      *
@@ -79,11 +82,13 @@ public class ConversationPanel extends JPanel {
     public void reload() {
         this.chat = chatPanel.getChat();
         
-        // Re-bind the listener to the new context manager
+        // Re-bind the listeners to the new chat/context manager
         if (historyListener != null) {
             historyListener.unbind();
         }
+        
         this.historyListener = new EdtPropertyChangeListener(this, chat.getContextManager(), "history", evt -> render());
+        //this.chatStateListener = new EdtPropertyChangeListener(this, chat, "running", evt -> render());
         
         // Clear cache and UI
         cachedMessagePanels.clear();
@@ -96,32 +101,42 @@ public class ConversationPanel extends JPanel {
      * Renders the conversation view by incrementally updating the message panels.
      * It identifies new, removed, or changed messages and updates the UI accordingly.
      */
-    public void render() {
+    public void render() {        
         List<AbstractMessage> history = chat.getContextManager().getHistory();
+        log.info("Rendering history begins: " + history.size() + " messages: " + history);
 
         // 1. Remove panels for messages no longer in history
         List<AbstractMessage> toRemove = cachedMessagePanels.keySet().stream()
                 .filter(msg -> !history.contains(msg))
                 .collect(Collectors.toList());
+        
+        log.info("Rendering history will remove : " + toRemove.size() + " messages. Before remove: " + history.size() + " messages");
 
         for (AbstractMessage msg : toRemove) {
             AbstractMessagePanel panel = cachedMessagePanels.remove(msg);
             if (panel != null) {
+                log.info("Removing panel for" + panel);
                 messagesPanel.remove(panel);
             }
         }
 
+        
         // 2. Add or update panels for current history
+        log.info("Entering history loop, history size: " + history.size() );
         boolean added = false;
         for (int i = 0; i < history.size(); i++) {
-            AbstractMessage msg = history.get(i);
+            
+            AbstractMessage msg = history.get(i);            
             AbstractMessagePanel panel = cachedMessagePanels.get(msg);
+            log.info(i + " / " + history.size() + " Processing message: " + msg + " panel " + panel);
 
             if (panel == null) {
                 panel = createMessagePanel(msg);
+                log.info("Created Message Panel for " + msg);
                 if (panel != null) {
                     cachedMessagePanels.put(msg, panel);
                     added = true;
+                    log.info("Created Message Panel");
                 }
             }
 
@@ -145,6 +160,8 @@ public class ConversationPanel extends JPanel {
 
         revalidate();
         repaint();
+        
+        log.info("Rendering history ends: " + history.size() + " elements");
     }
 
     /**
@@ -163,9 +180,22 @@ public class ConversationPanel extends JPanel {
     }
 
     /**
+     * Checks if the scroll pane is currently at the bottom.
+     * 
+     * @return true if at the bottom.
+     */
+    public boolean isAtBottom() {
+        JScrollBar verticalBar = scrollPane.getVerticalScrollBar();
+        int extent = verticalBar.getModel().getExtent();
+        int maximum = verticalBar.getModel().getMaximum();
+        int value = verticalBar.getModel().getValue();
+        return (value + extent) >= (maximum - 10); // 10 pixel threshold
+    }
+
+    /**
      * Scrolls the conversation view to the bottom.
      */
-    private void scrollToBottom() {
+    public void scrollToBottom() {
         SwingUtilities.invokeLater(() -> {
             scrollPane.getVerticalScrollBar().setValue(scrollPane.getVerticalScrollBar().getMaximum());
         });

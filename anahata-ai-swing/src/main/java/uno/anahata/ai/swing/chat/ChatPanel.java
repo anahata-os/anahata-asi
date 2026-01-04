@@ -11,6 +11,7 @@ import javax.swing.SwingUtilities;
 import lombok.Getter;
 import lombok.NonNull;
 import uno.anahata.ai.chat.Chat;
+import uno.anahata.ai.swing.chat.render.CandidateSelectionPanel;
 
 /**
  * The main, top-level panel for the Anahata AI Swing UI.
@@ -41,6 +42,8 @@ public class ChatPanel extends JPanel {
     private final StatusPanel statusPanel; 
     /** The main conversation view. */
     private final ConversationPanel conversationPanel; 
+    /** The panel for displaying and selecting response candidates. */
+    private final CandidateSelectionPanel candidateSelectionPanel;
 
     /**
      * Constructs a new ChatPanel.
@@ -59,6 +62,7 @@ public class ChatPanel extends JPanel {
         this.toolbarPanel = new ToolbarPanel(this); 
         this.statusPanel = new StatusPanel(this); 
         this.conversationPanel = new ConversationPanel(this); 
+        this.candidateSelectionPanel = new CandidateSelectionPanel(this);
     }
 
     /**
@@ -77,8 +81,10 @@ public class ChatPanel extends JPanel {
         tabbedPane.addTab("Config", configPanel);
         tabbedPane.addTab("Tools", toolsPanel);
 
-        // Create a panel to hold both InputPanel and StatusPanel
+        // Create a panel to hold CandidateSelectionPanel, InputPanel and StatusPanel
         JPanel southPanel = new JPanel(new BorderLayout());
+        // CandidateSelectionPanel sits between conversation and input.
+        southPanel.add(candidateSelectionPanel, BorderLayout.NORTH);
         // Use CENTER for inputPanel so it grows vertically when the split pane is resized.
         southPanel.add(inputPanel, BorderLayout.CENTER); 
         southPanel.add(statusPanel, BorderLayout.SOUTH); 

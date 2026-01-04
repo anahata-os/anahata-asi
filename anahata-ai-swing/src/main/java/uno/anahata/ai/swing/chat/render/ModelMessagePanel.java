@@ -17,6 +17,7 @@ import uno.anahata.ai.model.core.ModelBlobPart;
 import uno.anahata.ai.model.core.ModelTextPart;
 import uno.anahata.ai.swing.chat.ChatPanel;
 import uno.anahata.ai.swing.components.CodeHyperlink;
+import uno.anahata.ai.swing.internal.EdtPropertyChangeListener;
 
 /**
  * A concrete implementation of {@link AbstractMessagePanel} specifically for rendering
@@ -37,6 +38,16 @@ public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage
      */
     public ModelMessagePanel(@NonNull ChatPanel chatPanel, @NonNull AbstractModelMessage message) {
         super(chatPanel, message);
+        
+        // Listen for rawJson changes to show the "Json" link when streaming completes.
+        new EdtPropertyChangeListener(this, message, "rawJson", evt -> render());
+        // Listen for tokenCount changes to update the header in real-time during streaming.
+        new EdtPropertyChangeListener(this, message, "tokenCount", evt -> updateHeaderInfoText());
+    }
+
+    @Override
+    protected String getHeaderSuffix() {
+        return String.format(" <font color='#888888' size='3'><i>(Tokens: %d, Depth: %d)</i></font>", message.getTokenCount(), message.getDepth());
     }
 
     @Override
@@ -51,16 +62,21 @@ public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage
             }
         }
         
-        if (actionPanel == null) {
-            actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-            actionPanel.setOpaque(false);
-            String popupTitle = "Model Message #" + message.getSequentialId();
-            String prettyJson = JacksonUtils.prettyPrintJsonString(message.getRawJson());
-            actionPanel.add(new CodeHyperlink("Json", popupTitle, prettyJson, "json"));
-        }
-        
-        if (!footerContainer.isAncestorOf(actionPanel)) {
-            footerContainer.add(actionPanel);
+        if (message.getRawJson() != null) {
+            if (actionPanel == null) {
+                actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+                actionPanel.setOpaque(false);
+                String popupTitle = "Model Message #" + message.getSequentialId();
+                String prettyJson = JacksonUtils.prettyPrintJsonString(message.getRawJson());
+                actionPanel.add(new CodeHyperlink("Json", popupTitle, prettyJson, "json"));
+            }
+            
+            if (!footerContainer.isAncestorOf(actionPanel)) {
+                footerContainer.add(actionPanel);
+            }
+        } else if (actionPanel != null) {
+            footerContainer.remove(actionPanel);
+            actionPanel = null;
         }
     }
 

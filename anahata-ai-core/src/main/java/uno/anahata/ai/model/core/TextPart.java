@@ -37,6 +37,20 @@ public class TextPart extends AbstractPart {
         getPropertyChangeSupport().firePropertyChange("text", oldText, text);
     }
 
+    /**
+     * Appends text to the existing content and fires a property change event.
+     * 
+     * @param delta The text to append.
+     */
+    public void appendText(String delta) {
+        if (delta == null || delta.isEmpty()) {
+            return;
+        }
+        String oldText = this.text;
+        this.text = (this.text == null ? "" : this.text) + delta;
+        getPropertyChangeSupport().firePropertyChange("text", oldText, this.text);
+    }
+
     /** {@inheritDoc} */
     @Override
     public String asText() {

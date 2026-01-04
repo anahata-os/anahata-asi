@@ -25,7 +25,6 @@ import uno.anahata.ai.chat.Chat;
  * @author anahata-gemini-pro-2.5
  */
 @Getter
-@Setter
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class AbstractMessage implements PropertyChangeSource {
 
@@ -47,14 +46,8 @@ public abstract class AbstractMessage implements PropertyChangeSource {
      * A monotonically increasing number assigned to the message when it is
      * added to a chat, representing its order in the conversation.
      */
+    @Setter
     private long sequentialId;
-
-    /**
-     * The number of tokens in this specific message, as reported by the
-     * provider. This is crucial for granular cost analysis and context
-     * management.
-     */
-    private int tokenCount;
 
     /**
      * The list of parts that make up the message content. Made private to
@@ -86,6 +79,13 @@ public abstract class AbstractMessage implements PropertyChangeSource {
      * @return The role of the message creator.
      */
     public abstract Role getRole();
+
+    /**
+     * Gets the identity of the sender of this message.
+     * 
+     * @return The sender's identity (e.g., user name or model ID).
+     */
+    public abstract String getFrom();
 
     /**
      * Safely adds a single part to this message, establishing the bidirectional
@@ -199,6 +199,16 @@ public abstract class AbstractMessage implements PropertyChangeSource {
         }
         // A message is effectively pruned if it has parts and ALL of them are pruned.
         return getParts(false).isEmpty() && !parts.isEmpty();
+    }
+
+    /**
+     * Determines if this message is eligible for "hard pruning" (permanent removal from history).
+     * A message is generally considered garbage if it has no parts and is not explicitly pinned.
+     * 
+     * @return {@code true} if the message can be safely removed from history.
+     */
+    public boolean isGarbageCollectable() {
+        return getParts(true).isEmpty() && !Boolean.FALSE.equals(pruned);
     }
 
     /**

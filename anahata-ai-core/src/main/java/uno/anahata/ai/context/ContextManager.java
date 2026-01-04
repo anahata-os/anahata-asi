@@ -186,7 +186,8 @@ public class ContextManager implements PropertyChangeSource {
             part.setSequentialId(partIdCounter.incrementAndGet());
         }
         history.add(message);
-        propertyChangeSupport.firePropertyChange("history", null, history);
+        log.info("Added message {} to history size: {} firing event", message, history.size());
+        propertyChangeSupport.firePropertyChange("history", null, history);        
     }
     
     /**
@@ -220,8 +221,8 @@ public class ContextManager implements PropertyChangeSource {
                     }
                 }
             }
-            // Remove empty messages, but NEVER remove an explicitly pinned message (pruned=false)
-            history.removeIf(msg -> msg.getParts(true).isEmpty() && !Boolean.FALSE.equals(msg.isPruned()));
+            // The 'Garbage Collector': Remove messages that are eligible for permanent deletion.
+            history.removeIf(AbstractMessage::isGarbageCollectable);
         }
     }
 

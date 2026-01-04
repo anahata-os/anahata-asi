@@ -38,6 +38,11 @@ public abstract class AbstractToolMessage<T extends AbstractModelMessage> extend
         return Role.TOOL;
     }
 
+    @Override
+    public String getFrom() {
+        return System.getProperty("user.name");
+    }
+
     /**
      * Filters and returns only the tool response parts from this message.
      * @return A list of {@link AbstractToolResponse} parts, or an empty list if none exist.

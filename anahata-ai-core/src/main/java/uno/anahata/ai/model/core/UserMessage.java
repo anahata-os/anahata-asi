@@ -19,4 +19,9 @@ public class UserMessage extends AbstractMessage {
     public Role getRole() {
         return Role.USER;
     }
+
+    @Override
+    public String getFrom() {
+        return System.getProperty("user.name");
+    }
 }

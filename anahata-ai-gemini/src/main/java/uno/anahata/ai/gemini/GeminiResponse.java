@@ -7,6 +7,7 @@ import com.google.genai.types.Candidate;
 import com.google.genai.types.GenerateContentResponse;
 import com.google.genai.types.GenerateContentResponsePromptFeedback;
 import com.google.genai.types.GenerateContentResponseUsageMetadata;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -42,20 +43,20 @@ public class GeminiResponse extends Response<GeminiModelMessage> {
      * Constructs a GeminiResponse, performing the full conversion from the native
      * Google GenAI response to the Anahata domain model.
      *
-     * @param requestConfigJson
+     * @param requestConfigJson The raw JSON of the request configuration.
      * @param chat          The parent chat session, required for constructing model messages.
      * @param modelId       The ID of the model that generated this response.
      * @param genaiResponse The native response object from the API.
      */
     public GeminiResponse(String requestConfigJson, Chat chat, String modelId, GenerateContentResponse genaiResponse) {
-        // The superclass is abstract, so no super() call is needed here.
         this.rawRequestConfigJson = requestConfigJson;
         this.genaiResponse = genaiResponse;        
         this.rawJson = genaiResponse.toJson();
         this.modelVersion = genaiResponse.modelVersion().orElse(modelId);
         
         // --- 1. Convert Candidates ---
-        this.candidates = genaiResponse.candidates().get().stream()
+        // Use orElse(Collections.emptyList()) to safely handle streaming chunks that might not have candidates.
+        this.candidates = genaiResponse.candidates().orElse(Collections.emptyList()).stream()
             .map(candidate -> new GeminiModelMessage(chat, modelVersion, candidate, this))
             .collect(Collectors.toList());
 
@@ -84,14 +85,12 @@ public class GeminiResponse extends Response<GeminiModelMessage> {
             .thoughtsTokenCount(genaiUsage.thoughtsTokenCount().orElse(0))
             .toolUsePromptTokenCount(genaiUsage.toolUsePromptTokenCount().orElse(0))
             .totalTokenCount(genaiUsage.totalTokenCount().orElse(0))
-            .rawJson(genaiUsage.toJson()) // Added rawJson population
+            .rawJson(genaiUsage.toJson())
             .build();
     }
 
-    // --- Implementation of Abstract Methods ---
-
     @Override
     public int getTotalTokenCount() {
-        return usageMetadata.getTotalTokenCount(); // Delegate to usageMetadata
+        return usageMetadata.getTotalTokenCount();
     }
 }

@@ -22,7 +22,6 @@ import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jdesktop.swingx.JXPanel;
@@ -51,7 +50,6 @@ import uno.anahata.ai.swing.internal.SwingUtils;
  * @param <T> The concrete type of AbstractMessage that this panel renders.
  */
 @Slf4j
-@Getter
 public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JXTitledPanel {
 
     /** The parent chat panel. */
@@ -177,6 +175,7 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
      * Renders or updates the entire message panel, including its header, content parts, and footer.
      */
     public final void render() {
+        log.info("render() message #{}", message.getSequentialId());
         updateHeaderInfoText();
         renderContentParts();
         renderFooterInternal();
@@ -186,16 +185,55 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
 
     /**
      * Updates the text displayed in the header's title.
+     * This method uses a template pattern, delegating to smaller methods for specific parts of the header.
      */
     protected void updateHeaderInfoText() {
         StringBuilder sb = new StringBuilder("<html>");
-        if (message.getChat() != null && message.getSequentialId() > 0) {
-            sb.append("<b>#").append(message.getSequentialId()).append("</b> ");
-        }
-        sb.append("<font color='#666666' size='3'>- ").append(TimeUtils.formatSmartTimestamp(Instant.ofEpochMilli(message.getTimestamp()))).append("</font>");
-        sb.append(String.format(" <font color='#888888' size='3'><i>(Tokens: %d, Depth: %d)</i></font>", message.getTokenCount(), message.getDepth()));
+        sb.append(getHeaderPrefix());
+        sb.append(getHeaderSender());
+        sb.append(getHeaderTimestamp());
+        sb.append(getHeaderSuffix());
         sb.append("</html>");
-        setTitle(sb.toString());
+        
+        String newTitle = sb.toString();
+        if (!newTitle.equals(getTitle())) {
+            setTitle(newTitle);
+        }
+    }
+
+    /**
+     * Gets the prefix for the header, typically the sequential ID.
+     * @return The header prefix HTML.
+     */
+    protected String getHeaderPrefix() {
+        if (message.getChat() != null && message.getSequentialId() > 0) {
+            return "<b>#" + message.getSequentialId() + "</b> ";
+        }
+        return "";
+    }
+
+    /**
+     * Gets the sender information for the header.
+     * @return The sender HTML.
+     */
+    protected String getHeaderSender() {
+        return "<font color='#444444'><b>" + message.getFrom() + "</b></font> ";
+    }
+
+    /**
+     * Gets the timestamp information for the header.
+     * @return The timestamp HTML.
+     */
+    protected String getHeaderTimestamp() {
+        return "<font color='#666666' size='3'>- " + TimeUtils.formatSmartTimestamp(Instant.ofEpochMilli(message.getTimestamp())) + "</font>";
+    }
+
+    /**
+     * Gets the suffix for the header, typically metadata like depth.
+     * @return The header suffix HTML.
+     */
+    protected String getHeaderSuffix() {
+        return String.format(" <font color='#888888' size='3'><i>(Depth: %d)</i></font>", message.getDepth());
     }
 
     /**

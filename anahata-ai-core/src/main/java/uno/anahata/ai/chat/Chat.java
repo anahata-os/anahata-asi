@@ -6,12 +6,13 @@ package uno.anahata.ai.chat;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReentrantLock; // Import ReentrantLock
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -23,9 +24,14 @@ import uno.anahata.ai.AiExecutors;
 import uno.anahata.ai.context.ContextManager;
 import uno.anahata.ai.model.core.AbstractMessage;
 import uno.anahata.ai.model.core.AbstractModelMessage;
+import uno.anahata.ai.model.core.AbstractPart;
+import uno.anahata.ai.model.core.ModelBlobPart;
+import uno.anahata.ai.model.core.ModelTextPart;
 import uno.anahata.ai.model.core.PropertyChangeSource;
 import uno.anahata.ai.model.core.RequestConfig;
 import uno.anahata.ai.model.core.Response;
+import uno.anahata.ai.model.core.StreamObserver;
+import uno.anahata.ai.model.core.TextPart;
 import uno.anahata.ai.model.core.UserMessage;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
 import uno.anahata.ai.model.provider.AbstractModel;
@@ -89,6 +95,12 @@ public class Chat implements PropertyChangeSource {
     private Response<? extends AbstractModelMessage> lastResponse;
 
     /**
+     * The list of candidate messages currently being generated or waiting for selection.
+     * These are NOT yet part of the context history.
+     */
+    private final List<AbstractModelMessage> activeCandidates = new ArrayList<>();
+
+    /**
      * A ReentrantLock to synchronize access to shared mutable state (e.g.,
      * `running`, `stagedUserMessage`).
      */
@@ -135,6 +147,17 @@ public class Chat implements PropertyChangeSource {
     }
 
     /**
+     * Sets the running state and fires a property change event.
+     * 
+     * @param running The new running state.
+     */
+    private void setRunning(boolean running) {
+        boolean oldRunning = this.running;
+        this.running = running;
+        propertyChangeSupport.firePropertyChange("running", oldRunning, running);
+    }
+
+    /**
      * The primary entry point for the UI to send a message. This method is
      * designed to be called from a background thread (e.g., a SwingWorker).
      * <ul>
@@ -157,7 +180,12 @@ public class Chat implements PropertyChangeSource {
                 return;
             }
             contextManager.addMessage(message);
-            sendContext(); // Call the new method to send the context
+            
+            if (config.isStreaming()) {
+                sendContextStreaming();
+            } else {
+                sendContext();
+            }
         } finally {
             runningLock.unlock();
         }
@@ -171,17 +199,41 @@ public class Chat implements PropertyChangeSource {
     public void sendContext() {
         runningLock.lock();
         try {
-            if (running) { // Check running flag as requested
+            if (running) {
                 log.info("Chat is busy. Cannot send context.");
                 return;
             }
 
-            running = true;
-            sendToModel(); // Call the original sendToModel method
+            setRunning(true);
+            sendToModel();
         } finally {
-            running = false;
+            setRunning(false);
             runningLock.unlock();
         }
+    }
+
+    /**
+     * Prepares the request by consuming any staged messages and building the history.
+     * 
+     * @return A RequestContext containing the config and history.
+     * @throws IllegalStateException if no model is selected.
+     */
+    private RequestContext prepareRequest() {
+        if (selectedModel == null) {
+            throw new IllegalStateException("A model must be selected before sending a message.");
+        }
+
+        // Atomically consume any staged message "just-in-time" before building the history.
+        UserMessage messageToProcess = this.stagedUserMessage;
+        if (messageToProcess != null) {
+            this.stagedUserMessage = null; // Consume it
+            contextManager.addMessage(messageToProcess);
+            log.info("Processing staged message.");
+        }
+
+        RequestConfig requestConfig = config.getRequestConfig();
+        List<AbstractMessage> history = contextManager.buildVisibleHistory();
+        return new RequestContext(requestConfig, history);
     }
 
     /**
@@ -190,44 +242,33 @@ public class Chat implements PropertyChangeSource {
      * multiple candidates.
      */
     private void sendToModel() {
-        if (selectedModel == null) {
-            throw new IllegalStateException("A model must be selected before sending a message.");
-        }
-
         int maxRetries = config.getApiMaxRetries();
         long initialDelayMillis = config.getApiInitialDelayMillis();
         long maxDelayMillis = config.getApiMaxDelayMillis();
+        
         for (int attempt = 0; attempt < maxRetries; attempt++) {
             try {
-                // Atomically consume any staged message "just-in-time" before building the history.
-                UserMessage messageToProcess = this.stagedUserMessage;
-                if (messageToProcess != null) {
-                    this.stagedUserMessage = null; // Consume it
-                    contextManager.addMessage(messageToProcess);
-                    log.info("Processing staged message.");
-                }
-
-                // Build config and history *inside* the loop for freshness on retries
-                RequestConfig requestConfig = config.getRequestConfig();
-                List<AbstractMessage> history = contextManager.buildVisibleHistory();
+                RequestContext rc = prepareRequest();
 
                 statusManager.fireStatusChanged(ChatStatus.API_CALL_IN_PROGRESS);
                 log.info("Sending request to model '{}' (attempt {}/{}) with {} messages.",
-                        selectedModel.getModelId(), attempt + 1, maxRetries, history.size());
+                        selectedModel.getModelId(), attempt + 1, maxRetries, rc.history().size());
 
-                Response<?> response = selectedModel.generateContent(this, requestConfig, history);
-                this.lastResponse = response; // Store the last response
+                Response<?> response = selectedModel.generateContent(this, rc.config(), rc.history());
+                this.lastResponse = response;
                 
-                //API returned something, so time to clear any errors
                 statusManager.clearApiErrors();
 
                 if (response.getCandidates().size() == 1) {
-                    chooseCandidate(response.getCandidates().get(0));
+                    chooseCandidate((AbstractModelMessage) response.getCandidates().get(0));
                 } else {
                     log.info("Model returned multiple candidates. Pausing for user selection.");
+                    setActiveCandidates(response.getCandidates().stream()
+                            .map(c -> (AbstractModelMessage) c)
+                            .collect(Collectors.toList()));
                     statusManager.fireStatusChanged(ChatStatus.CANDIDATE_CHOICE_PROMPT);
                 }
-                return; // Success, exit the retry loop.
+                return;
 
             } catch (Exception e) {
                 log.error("Exception in sendToModel", e);
@@ -239,15 +280,12 @@ public class Chat implements PropertyChangeSource {
 
                 if (e instanceof RetryableApiException rae) {
                     errorRecordBuilder.apiKey(rae.getApiKey());
-                    
-                    // Calculate exponential backoff with jitter
                     long delay = (long) (initialDelayMillis * Math.pow(2, attempt)) + (long) (Math.random() * 500);
                     long backoffAmount = Math.min(delay, maxDelayMillis);
                     errorRecordBuilder.backoffAmount(backoffAmount);
 
                     if (attempt < maxRetries - 1) {
                         log.warn("API Error on attempt {}: {}. Retrying...", attempt + 1, e.toString());
-                        
                         try {
                             statusManager.fireApiError(errorRecordBuilder.build(), ChatStatus.WAITING_WITH_BACKOFF, "Retrying in " + backoffAmount + "ms");
                             Thread.sleep(backoffAmount);
@@ -258,18 +296,125 @@ public class Chat implements PropertyChangeSource {
                     } else {
                         log.error("Max retries reached. Aborting.", e);
                         statusManager.fireApiError(errorRecordBuilder.build(), ChatStatus.MAX_RETRIES_REACHED, null);
-                        
-                        // Re-throw the final exception to be handled by the UI layer
                         throw new RuntimeException("Failed after " + (attempt + 1) + " attempts.", e);
                     }
                 } else {
                     statusManager.fireApiError(errorRecordBuilder.build(), ChatStatus.ERROR, null);
-                    // For non-retryable exceptions, we stop immediately.
                     throw new RuntimeException("Non-retryable API error occurred.", e);
                 }
-
             }
         }
+    }
+
+    /**
+     * Sends a message and processes the response using token streaming.
+     * 
+     * @param message The user's message.
+     */
+    public void sendMessageStreaming(@NonNull UserMessage message) {
+        runningLock.lock();
+        try {
+            if (running) {
+                log.info("Chat is busy. Staging message for streaming.");
+                this.stagedUserMessage = message;
+                return;
+            }
+            contextManager.addMessage(message);
+            sendContextStreaming();
+        } finally {
+            runningLock.unlock();
+        }
+    }
+
+    /**
+     * Sends the current context to the model using token streaming.
+     */
+    public void sendContextStreaming() {
+        runningLock.lock();
+        try {
+            if (running) {
+                log.info("Chat is busy. Cannot send context for streaming.");
+                return;
+            }
+            setRunning(true);
+            sendToModelStreaming();
+        } finally {
+            runningLock.unlock();
+        }
+    }
+
+    /**
+     * Orchestrates the asynchronous streaming interaction with the model.
+     */
+    private void sendToModelStreaming() {
+        RequestContext rc = prepareRequest();
+
+        statusManager.fireStatusChanged(ChatStatus.API_CALL_IN_PROGRESS);
+        log.info("Starting streaming request to model '{}' with {} messages.",
+                selectedModel.getModelId(), rc.history().size());
+
+        selectedModel.generateContentStream(this, rc.config(), rc.history(), new StreamObserver<Response<? extends AbstractModelMessage>, AbstractModelMessage>() {
+            /** 
+             * Tracks the candidates received from the stream. 
+             * This is used in onComplete to finalize the turn.
+             */
+            private List<AbstractModelMessage> candidatesFromStream;
+
+            @Override
+            public void onStart(List<AbstractModelMessage> candidates) {
+                this.candidatesFromStream = candidates;
+                
+                if (candidates.size() == 1) {
+                    // OPTIMIZATION: If there's only one candidate, we add it to the history 
+                    // immediately. This allows the ConversationPanel to render it as it 
+                    // streams, providing a more natural experience.
+                    AbstractModelMessage candidate = candidates.get(0);
+                    log.info("On Start adding message to the context manager before: " + contextManager.getHistory().size());
+                    contextManager.addMessage(candidate);
+                    log.info("On Start added message to the context manager after: " + contextManager.getHistory().size());
+                    
+                    // We keep activeCandidates empty so the selection panel stays hidden.
+                    setActiveCandidates(Collections.emptyList());
+                } else {
+                    // If there are multiple candidates, we don't add them to history yet.
+                    // They are held in the activeCandidates list for the selection panel.
+                    setActiveCandidates(candidates);
+                }
+            }
+
+            @Override
+            public void onNext(Response<? extends AbstractModelMessage> response) {
+                lastResponse = response;
+            }
+
+            @Override
+            public void onComplete() {
+                setRunning(false);
+                statusManager.clearApiErrors();
+                log.info("Streaming complete. {} candidates received.", candidatesFromStream != null ? candidatesFromStream.size() : 0);
+                
+                if (candidatesFromStream != null) {
+                    candidatesFromStream.forEach(c -> c.setStreaming(false));
+                    if (candidatesFromStream.size() == 1) {
+                        // Finalize the single candidate (e.g., trigger tool execution).
+                        chooseCandidate(candidatesFromStream.get(0));
+                    } else if (candidatesFromStream.size() > 1) {
+                        // Prompt the user to choose between multiple candidates.
+                        statusManager.fireStatusChanged(ChatStatus.CANDIDATE_CHOICE_PROMPT);
+                    }
+                }
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                setRunning(false);
+                log.error("Error in streaming response", t);
+                if (candidatesFromStream != null) {
+                    candidatesFromStream.forEach(c -> c.setStreaming(false));
+                }
+                statusManager.fireStatusChanged(ChatStatus.ERROR);
+            }
+        });
     }
 
     /**
@@ -279,47 +424,59 @@ public class Chat implements PropertyChangeSource {
      * @param message The model message to add.
      */
     public void chooseCandidate(@NonNull AbstractModelMessage message) {
-
-        contextManager.addMessage(message);
+        // Clear active candidates and add the chosen one to the history.
+        setActiveCandidates(Collections.emptyList());
+        
+        if (!contextManager.getHistory().contains(message)) {
+            contextManager.addMessage(message);
+        }
 
         if (message.getToolMessage().isAutoRunnable()) {
             log.info("Auto-running {} tool calls.", message.getToolMessage().getToolResponses().size());
             message.getToolMessage().executeAllPending();
-
-            // Automatically send the results back to the model to continue the conversation.
             log.info("Tool execution complete. Sending results back to the model.");
-            sendContext(); // Call the new method to send the context
-        } else if (!message.getToolMessage().getToolResponses().isEmpty()) {
-            // There are tool calls, but not all are auto-runnable, so prompt the user.
-            // statusManager.fireStatusChanged(ChatStatus.TOOL_PROMPT);
-        } else {
-            // No tool calls, so the model is idle.
-            // statusManager.fireStatusChanged(ChatStatus.IDLE);
+            
+            if (config.isStreaming()) {
+                sendContextStreaming();
+            } else {
+                sendContext();
+            }
         }
     }
 
     /**
-     * Resets the entire chat session to a clean slate, ready for a new
-     * conversation. This clears all history, resources, and resets the session
-     * ID and all counters.
+     * Sets the active candidates and fires a property change event.
+     * 
+     * @param candidates The new list of active candidates.
+     */
+    private void setActiveCandidates(List<AbstractModelMessage> candidates) {
+        List<AbstractModelMessage> oldCandidates = new ArrayList<>(this.activeCandidates);
+        this.activeCandidates.clear();
+        this.activeCandidates.addAll(candidates);
+        propertyChangeSupport.firePropertyChange("activeCandidates", oldCandidates, this.activeCandidates);
+    }
+
+    /**
+     * Gets an unmodifiable view of the active candidates.
+     * 
+     * @return The list of active candidates.
+     */
+    public List<AbstractModelMessage> getActiveCandidates() {
+        return Collections.unmodifiableList(activeCandidates);
+    }
+
+    /**
+     * Resets the entire chat session to a clean slate.
      */
     public void clear() {
         log.info("Clearing chat session {}", config.getSessionId());
-
-        // 1. Clear history and all context-related counters.
         contextManager.clear();
-
-        // 2. Reset status
         statusManager.reset();
-
-        // 3. Reset tool call counters
         toolManager.reset();
-
-        // 4. Start a new session by updating the ID and name
+        setActiveCandidates(Collections.emptyList());
         String newSessionId = UUID.randomUUID().toString();
         config.setSessionId(newSessionId);
-        config.setName(null); // Clear the name, let it default or be set by user
-
+        config.setName(null);
         log.info("Chat session cleared. New session ID: {}", newSessionId);
     }
 
@@ -355,8 +512,7 @@ public class Chat implements PropertyChangeSource {
     }
 
     /**
-     * Gets the total token count from the last response, if available. This is
-     * primarily used by the UI for the context usage bar.
+     * Gets the total token count from the last response, if available.
      *
      * @return The total token count of the last response, or 0 if no response
      * is available.
@@ -432,4 +588,9 @@ public class Chat implements PropertyChangeSource {
     public PropertyChangeSupport getPropertyChangeSupport() {
         return propertyChangeSupport;
     }
+
+    /**
+     * Internal record to hold the context for a request.
+     */
+    private record RequestContext(RequestConfig config, List<AbstractMessage> history) {}
 }

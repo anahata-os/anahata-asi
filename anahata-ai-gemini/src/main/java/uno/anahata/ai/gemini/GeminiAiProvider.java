@@ -24,12 +24,6 @@ public class GeminiAiProvider extends AbstractAiProvider {
 
     public GeminiAiProvider() {
         super("Gemini");
-        /*
-        // Fail fast if no API key is configured.
-        if (getClient() == null) {
-            throw new IllegalStateException("GEMINI_API_KEY is not set or the api_keys.txt file is missing or empty.");
-        }
-        */
     }
 
     /**
@@ -72,7 +66,7 @@ public class GeminiAiProvider extends AbstractAiProvider {
     public List<? extends AbstractModel> listModels() {
         var pager = getClient().models.list(ListModelsConfig.builder().build());
         return StreamSupport.stream(pager.spliterator(), false)
-                .map(model -> new GeminiModel(this, model))
+                .map(model -> (AbstractModel) new GeminiModel(this, model))
                 .collect(Collectors.toList());
     }
 }

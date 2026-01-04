@@ -44,6 +44,7 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
     private int tokenCount;
     
     /** The raw JSON response from the model. */
+    @Setter(AccessLevel.NONE)
     private String rawJson;
     
     /** The citation metadata for the response, summarized as a string. */
@@ -51,6 +52,9 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
     
     /** The response that returned this message. */
     private R response;
+    
+    /** Whether the model is currently streaming content for this message. */
+    private boolean streaming = false;
     
     public AbstractModelMessage(@NonNull Chat chat, @NonNull String modelId) {
         super(chat);
@@ -62,6 +66,11 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
         return Role.MODEL;
     }
 
+    @Override
+    public String getFrom() {
+        return modelId;
+    }
+
     public T getToolMessage() {
         if (toolMessage == null) {
             createToolMessage();
@@ -69,6 +78,34 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
         return toolMessage;
     }
     
+    /**
+     * Sets the raw JSON representation of the model's response and fires a property change event.
+     * @param rawJson The raw JSON string.
+     */
+    public void setRawJson(String rawJson) {
+        String oldJson = this.rawJson;
+        this.rawJson = rawJson;
+        getPropertyChangeSupport().firePropertyChange("rawJson", oldJson, rawJson);
+    }
+
+    /**
+     * Sets the token count and fires a property change event.
+     * @param tokenCount The new token count.
+     */
+    public void setTokenCount(int tokenCount) {
+        int oldTokenCount = this.tokenCount;
+        this.tokenCount = tokenCount;
+        getPropertyChangeSupport().firePropertyChange("tokenCount", oldTokenCount, tokenCount);
+    }
+
+    /**
+     * {@inheritDoc}
+     * A model message is not garbage collectable if it is currently streaming.
+     */
+    @Override
+    public boolean isGarbageCollectable() {
+        return super.isGarbageCollectable() && !streaming;
+    }
     
     /**
      * Filters and returns only the tool call parts from this message.

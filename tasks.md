@@ -4,9 +4,7 @@ This document consolidates all active and pending tasks for the core framework a
 
 ## High Priority / Core Framework
 
-- [ ] **UI Fix:** `JXErrorPane` stack trace still not indented (wrong component font changed).
-- [ ] **Response Modalities and Server Tools Design:** Implement `AbstractModel.getSupportedResponseModalities()` `AbstractModel.getAvailableServerTools()` and `GeminiModel` implementation. `RquestConfig` should have `List<String> getResponseModalities()` `List<ServerTool> getEnabledServerTools()`. 
-- [ ] add support for token streaming so the tokens are rendered as they arrive
+- [ ] token streaming doesnt render the model message until the stream finishes
 - [ ] add tool execution panels (tool calls and responses) needs extensive discussion before starting
 - [ ] Session Management: Implement the "Save" and "Load Session" buttons
 
