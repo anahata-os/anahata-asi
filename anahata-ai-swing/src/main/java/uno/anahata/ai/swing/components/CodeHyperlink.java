@@ -7,6 +7,7 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.function.Supplier;
 import javax.swing.JLabel;
 import lombok.Getter;
 import lombok.NonNull;
@@ -22,10 +23,10 @@ import uno.anahata.ai.swing.internal.SwingUtils;
 @Getter @Setter
 public class CodeHyperlink extends JLabel {
 
-    /** The title of the popup dialog. */
-    private String title;
-    /** The content to display in the popup dialog. */
-    private String content;
+    /** A supplier for the title of the popup dialog. */
+    private Supplier<String> titleSupplier;
+    /** A supplier for the content to display, allowing for lazy loading/formatting. */
+    private Supplier<String> contentSupplier;
     /** The language for syntax highlighting in the popup dialog. */
     private String language;
 
@@ -33,36 +34,39 @@ public class CodeHyperlink extends JLabel {
      * Constructs a new CodeHyperlink with default text language.
      * 
      * @param labelText The text to display for the hyperlink.
-     * @param title The title of the popup dialog.
-     * @param content The initial content to display.
+     * @param titleSupplier The supplier for the dialog title.
+     * @param contentSupplier The supplier for the content.
      */
-    public CodeHyperlink(@NonNull String labelText, @NonNull String title, @NonNull String content) {
-        this(labelText, title, content, "text");
+    public CodeHyperlink(@NonNull String labelText, @NonNull Supplier<String> titleSupplier, @NonNull Supplier<String> contentSupplier) {
+        this(labelText, titleSupplier, contentSupplier, "text");
     }
 
     /**
      * Constructs a new CodeHyperlink with a specific language for syntax highlighting.
      * 
      * @param labelText The text to display for the hyperlink.
-     * @param title The title of the popup dialog.
-     * @param content The initial content to display.
+     * @param titleSupplier The supplier for the dialog title.
+     * @param contentSupplier The supplier for the content.
      * @param language The language for syntax highlighting (e.g., "json", "java").
      */
-    public CodeHyperlink(@NonNull String labelText, @NonNull String title, @NonNull String content, String language) {
+    public CodeHyperlink(@NonNull String labelText, @NonNull Supplier<String> titleSupplier, @NonNull Supplier<String> contentSupplier, String language) {
         super("<html><u>" + labelText + "</u></html>");
-        this.title = title;
-        this.content = content;
+        this.titleSupplier = titleSupplier;
+        this.contentSupplier = contentSupplier;
         this.language = language;
         
         setForeground(Color.BLUE);
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        setToolTipText("Click to view " + title);
         
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (CodeHyperlink.this.content != null && !CodeHyperlink.this.content.isEmpty()) {
-                    SwingUtils.showCodeBlockDialog(CodeHyperlink.this, CodeHyperlink.this.title, CodeHyperlink.this.content, CodeHyperlink.this.language);
+                if (CodeHyperlink.this.contentSupplier != null) {
+                    String content = CodeHyperlink.this.contentSupplier.get();
+                    String title = CodeHyperlink.this.titleSupplier != null ? CodeHyperlink.this.titleSupplier.get() : "Content";
+                    if (content != null && !content.isEmpty()) {
+                        SwingUtils.showCodeBlockDialog(CodeHyperlink.this, title, content, CodeHyperlink.this.language);
+                    }
                 }
             }
         });

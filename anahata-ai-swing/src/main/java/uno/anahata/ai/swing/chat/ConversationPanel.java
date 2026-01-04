@@ -4,10 +4,8 @@
 package uno.anahata.ai.swing.chat;
 
 import java.awt.BorderLayout;
-import java.awt.event.HierarchyBoundsAdapter;
-import java.awt.event.HierarchyEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,29 +78,55 @@ public class ConversationPanel extends JPanel {
         this.scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         add(scrollPane, BorderLayout.CENTER);
 
-        // --- Smart Scroll Logic ---
-        // 1. Listen for manual scroll adjustments to enable/disable auto-scroll.
-        this.scrollPane.getVerticalScrollBar().addAdjustmentListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                autoScroll = isAtBottom();
-            }
-        });
-
-        // 2. Listen for size changes in the messages panel (e.g., during streaming).
-        // We use a HierarchyBoundsListener to detect when the panel's bounds change.
-        this.messagesPanel.addHierarchyBoundsListener(new HierarchyBoundsAdapter() {
-            @Override
-            public void ancestorResized(HierarchyEvent e) {
+        // --- Smart Scroll Logic (Opt-Out) ---
+        
+        // 1. MouseWheel: Explicitly detect user intent to scroll up or down.
+        this.scrollPane.addMouseWheelListener(e -> {
+            if (e.getWheelRotation() < 0) {
                 if (autoScroll) {
-                    scrollToBottom();
+                    log.info("[Scroll] User scrolled UP with wheel, disabling autoScroll");
+                    autoScroll = false;
+                }
+            } else {
+                if (isAtBottom() && !autoScroll) {
+                    log.info("[Scroll] User scrolled to BOTTOM with wheel, re-enabling autoScroll");
+                    autoScroll = true;
                 }
             }
         });
-        
-        // Also listen for preferredSize changes as a fallback.
-        this.messagesPanel.addPropertyChangeListener("preferredSize", evt -> {
-            if (autoScroll) {
-                scrollToBottom();
+
+        // 2. AdjustmentListener: Handle scrollbar dragging and track clicks.
+        this.scrollPane.getVerticalScrollBar().addAdjustmentListener(e -> {
+            boolean atBottom = isAtBottom();
+            
+            if (e.getValueIsAdjusting()) {
+                // User is actively dragging the scrollbar.
+                if (autoScroll && !atBottom) {
+                    log.info("[Scroll] User dragged scrollbar UP, disabling autoScroll");
+                    autoScroll = false;
+                } else if (!autoScroll && atBottom) {
+                    log.info("[Scroll] User dragged scrollbar to BOTTOM, re-enabling autoScroll");
+                    autoScroll = true;
+                }
+            } else {
+                // Programmatic change or track click.
+                // We ONLY re-enable autoScroll if we land at the bottom.
+                // We NEVER disable it here to avoid false positives during layout shifts.
+                if (atBottom && !autoScroll) {
+                    log.info("[Scroll] Adjustment landed at BOTTOM, re-enabling autoScroll");
+                    autoScroll = true;
+                }
+            }
+        });
+
+        // 3. ComponentListener: Trigger the actual scroll when content size changes.
+        // This is the correct way to detect when the messagesPanel grows.
+        this.messagesPanel.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                if (autoScroll) {
+                    scrollToBottom();
+                }
             }
         });
 
@@ -116,15 +140,12 @@ public class ConversationPanel extends JPanel {
     public void reload() {
         this.chat = chatPanel.getChat();
         
-        // Re-bind the listeners to the new chat/context manager
         if (historyListener != null) {
             historyListener.unbind();
         }
         
         this.historyListener = new EdtPropertyChangeListener(this, chat.getContextManager(), "history", evt -> render());
-        //this.chatStateListener = new EdtPropertyChangeListener(this, chat, "running", evt -> render());
         
-        // Clear cache and UI
         cachedMessagePanels.clear();
         messagesPanel.removeAll();
         
@@ -133,44 +154,32 @@ public class ConversationPanel extends JPanel {
 
     /**
      * Renders the conversation view by incrementally updating the message panels.
-     * It identifies new, removed, or changed messages and updates the UI accordingly.
      */
     public void render() {        
         List<AbstractMessage> history = chat.getContextManager().getHistory();
-        log.info("Rendering history begins: " + history.size() + " messages: " + history);
+        log.info("Rendering history begins: " + history.size() + " messages");
 
-        // 1. Remove panels for messages no longer in history
         List<AbstractMessage> toRemove = cachedMessagePanels.keySet().stream()
                 .filter(msg -> !history.contains(msg))
                 .collect(Collectors.toList());
         
-        log.info("Rendering history will remove : " + toRemove.size() + " messages. Before remove: " + history.size() + " messages");
-
         for (AbstractMessage msg : toRemove) {
             AbstractMessagePanel panel = cachedMessagePanels.remove(msg);
             if (panel != null) {
-                log.info("Removing panel for" + panel);
                 messagesPanel.remove(panel);
             }
         }
 
-        
-        // 2. Add or update panels for current history
-        log.info("Entering history loop, history size: " + history.size() );
         boolean added = false;
         for (int i = 0; i < history.size(); i++) {
-            
             AbstractMessage msg = history.get(i);            
             AbstractMessagePanel panel = cachedMessagePanels.get(msg);
-            log.info(i + " / " + history.size() + " Processing message: " + msg + " panel " + panel);
 
             if (panel == null) {
                 panel = createMessagePanel(msg);
-                log.info("Created Message Panel for " + msg);
                 if (panel != null) {
                     cachedMessagePanels.put(msg, panel);
                     added = true;
-                    log.info("Created Message Panel");
                 }
             }
 
@@ -182,29 +191,21 @@ public class ConversationPanel extends JPanel {
             }
         }
 
-        // 3. Clean up trailing components and add glue
         while (messagesPanel.getComponentCount() > history.size()) {
             messagesPanel.remove(messagesPanel.getComponentCount() - 1);
         }
         messagesPanel.add(Box.createVerticalGlue());
 
         if (added) {
-            autoScroll = true; // Force auto-scroll when a new message is added
+            log.info("New message added, forcing autoScroll to true.");
+            autoScroll = true; 
             scrollToBottom();
         }
 
         revalidate();
         repaint();
-        
-        log.info("Rendering history ends: " + history.size() + " elements");
     }
 
-    /**
-     * Factory method to create a specific message panel for a given message.
-     *
-     * @param message The message to create a panel for.
-     * @return The created message panel, or null if no panel is available for the message type.
-     */
     private AbstractMessagePanel createMessagePanel(AbstractMessage message) {
         if (message instanceof UserMessage userMessage) {
             return new UserMessagePanel(chatPanel, userMessage);
@@ -214,25 +215,29 @@ public class ConversationPanel extends JPanel {
         return null;
     }
 
-    /**
-     * Checks if the scroll pane is currently at the bottom.
-     * 
-     * @return true if at the bottom.
-     */
     public boolean isAtBottom() {
         JScrollBar verticalBar = scrollPane.getVerticalScrollBar();
         int extent = verticalBar.getModel().getExtent();
         int maximum = verticalBar.getModel().getMaximum();
         int value = verticalBar.getModel().getValue();
-        return (value + extent) >= (maximum - 20); // 20 pixel threshold for better detection
+        
+        if (maximum <= extent) {
+            return true; 
+        }
+        
+        // Use a slightly larger threshold (40px) to account for layout jitter during streaming.
+        boolean atBottom = (value + extent) >= (maximum - 40);
+        log.info("[Scroll] isAtBottom: value={}, extent={}, maximum={}, result={}", value, extent, maximum, atBottom);
+        return atBottom;
     }
 
-    /**
-     * Scrolls the conversation view to the bottom.
-     */
     public void scrollToBottom() {
+        log.info("[Scroll] scrollToBottom() triggered");
         SwingUtilities.invokeLater(() -> {
-            scrollPane.getVerticalScrollBar().setValue(scrollPane.getVerticalScrollBar().getMaximum());
+            JScrollBar verticalBar = scrollPane.getVerticalScrollBar();
+            int max = verticalBar.getMaximum();
+            log.info("[Scroll] Setting scrollbar value to {}", max);
+            verticalBar.setValue(max);
         });
     }
 }

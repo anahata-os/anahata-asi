@@ -157,10 +157,16 @@ public class StatusPanel extends JPanel {
 
         JPanel tokenAndJsonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         
-        rawJsonRequestConfigLink = new CodeHyperlink("Request Config", "Raw JSON Request Config", "", "json");
+        rawJsonRequestConfigLink = new CodeHyperlink("Request", 
+                () -> "Raw JSON Request", 
+                () -> chat.getLastResponse().map(Response::getRawRequestConfigJson).orElse(""), 
+                "json");
         tokenAndJsonPanel.add(rawJsonRequestConfigLink);
 
-        rawJsonResponseLink = new CodeHyperlink("Response", "Raw JSON Response", "", "json");
+        rawJsonResponseLink = new CodeHyperlink("Response", 
+                () -> "Raw JSON Response", 
+                () -> chat.getLastResponse().map(r -> JacksonUtils.prettyPrintJsonString(r.getRawJson())).orElse(""), 
+                "json");
         tokenAndJsonPanel.add(rawJsonResponseLink);
 
         tokenDetailsLabel = new JLabel();
@@ -296,10 +302,7 @@ public class StatusPanel extends JPanel {
             apiErrorsPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 
             rawJsonResponseLink.setVisible(true);
-            rawJsonResponseLink.setContent(JacksonUtils.prettyPrintJsonString(lastResponse.getRawJson()));
-            
             rawJsonRequestConfigLink.setVisible(true);
-            rawJsonRequestConfigLink.setContent(JacksonUtils.prettyPrintJsonString(lastResponse.getRawRequestConfigJson()));
             
             tokenDetailsLabel.setVisible(true);
 
@@ -314,8 +317,8 @@ public class StatusPanel extends JPanel {
                 String candidates = "Candidates: " + NUMBER_FORMAT.format(usage.getCandidatesTokenCount());
                 String cached = "Cached: " + NUMBER_FORMAT.format(usage.getCachedContentTokenCount());
                 String thoughts = "Thoughts: " + NUMBER_FORMAT.format(usage.getThoughtsTokenCount());
-                String toolPrompt = "Tool Prompt: " + NUMBER_FORMAT.format(usage.getToolUsePromptTokenCount());
-                String total = "Total: " + NUMBER_FORMAT.format(usage.getTotalTokenCount());
+                String toolPrompt = "Tools: " + NUMBER_FORMAT.format(usage.getToolUsePromptTokenCount());
+                String total = "Billed Tokens: " + NUMBER_FORMAT.format(usage.getTotalTokenCount());
 
                 tokenDetailsLabel.setText(String.join(" | ", prompt, candidates, cached, thoughts, toolPrompt, total));
             } else {
