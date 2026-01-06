@@ -12,6 +12,7 @@ import javax.swing.JLabel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
+import uno.anahata.ai.internal.JacksonUtils;
 import uno.anahata.ai.swing.internal.SwingUtils;
 
 /**
@@ -64,7 +65,12 @@ public class CodeHyperlink extends JLabel {
                 if (CodeHyperlink.this.contentSupplier != null) {
                     String content = CodeHyperlink.this.contentSupplier.get();
                     String title = CodeHyperlink.this.titleSupplier != null ? CodeHyperlink.this.titleSupplier.get() : "Content";
+                    
                     if (content != null && !content.isEmpty()) {
+                        // Automatically pretty-print if it's JSON
+                        if ("json".equalsIgnoreCase(CodeHyperlink.this.language)) {
+                            content = JacksonUtils.prettyPrintJsonString(content);
+                        }
                         SwingUtils.showCodeBlockDialog(CodeHyperlink.this, title, content, CodeHyperlink.this.language);
                     }
                 }
