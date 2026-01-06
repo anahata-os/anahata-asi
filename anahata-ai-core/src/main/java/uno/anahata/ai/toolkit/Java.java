@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package uno.anahata.ai.toolkit;
 
 import java.io.ByteArrayOutputStream;
@@ -80,10 +76,10 @@ public class Java extends JavaToolkitInstance {
 
     @AiTool("Compiles the source code of a java class with the default compiler classpath")
     public Class compile(
-            @AiToolParam("The source code") String sourceCode,
+            @AiToolParam(value = "The source code", rendererId = "java") String sourceCode,
             @AiToolParam("The class name") String className,
-            @AiToolParam("Additional classpath entries (if required)") String extraClassPath,
-            @AiToolParam("Additional compiler options (if required)") String[] compilerOptions)
+            @AiToolParam(value = "Additional classpath entries", required = false) String extraClassPath,
+            @AiToolParam(value = "Additional compiler options", required = false) String[] compilerOptions)
             throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
@@ -241,18 +237,18 @@ public class Java extends JavaToolkitInstance {
     }
 
     @AiTool(
-            value = "Compiles the source code of a java class that implements Calllable and executes it on the JVM running the application (not in a sandboxed environment).\n"
-            + "The compiler and classloader will use the 'defaultClasspath' plus any extra classpath explicitely passed as an argument(if any).\n"
-            + "Once the source code has been compiled and the class instantiated, the call() method will be invoked and this tool will return whatever the call() method returned.",
+            value = "Compiles the source code of a java class that implements java.util.Calllable and executes it on the JVM running the application (not in a separate process nor a sandboxed environment).\n"
+            + "The compiler and classloader will use the 'defaultClasspath' ok this toolkit plus any extra classpath explicitely passed as an argument(if any).\n"
+            + "Once the source code has been compiled and the class instantiated, the call() method will be invoked and this tool will return whatever the call() method of the instantiated java class returned.",
             requiresApproval = true
     )
     public Object compileAndExecute(
-            @AiToolParam("Source code of a java class called 'Anahata' that:\n  "
+            @AiToolParam(value = "Source code of a java class called 'Anahata' that:\n  "
                     + "a) is **public**\n"
                     + "b) has **no package declaration**\n"
-                    + "c) **implements java.util.concurrent.Callable**") String sourceCode,
-            @AiToolParam("Compiler's additional classpath entries separated with File.pathSeparator. ") String extraClassPath,
-            @AiToolParam("Compiler's additional options.") String[] compilerOptions) throws Exception {
+                    + "c) **implements java.util.concurrent.Callable**", rendererId = "java") String sourceCode,
+            @AiToolParam(value = "Compiler's additional classpath entries separated with File.pathSeparator. ", required = false) String extraClassPath,
+            @AiToolParam(value = "Compiler's options.", required = false) String[] compilerOptions) throws Exception {
 
         log.info("executeJavaCode: \nsource={}", sourceCode);
         log.info("executeJavaCode: \nextraCompilerClassPath={}", extraClassPath);
