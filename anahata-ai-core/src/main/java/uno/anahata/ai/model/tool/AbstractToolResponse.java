@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
+import uno.anahata.ai.internal.TextUtils;
 import uno.anahata.ai.model.core.AbstractPart;
 
 /**
@@ -16,21 +17,19 @@ import uno.anahata.ai.model.core.AbstractPart;
  * @param <C> The specific type of the Call this response is for.
  */
 @Getter
-public abstract class AbstractToolResponse<C extends AbstractToolCall> extends AbstractPart {
+@Setter
+public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> extends AbstractPart {
     /** The final status of the invocation after execution. */
-    @Setter
+    @Setter(lombok.AccessLevel.NONE)
     private ToolExecutionStatus status;
 
     /** The result of the invocation if it succeeded, otherwise {@code null}. */
-    @Setter
     private Object result;
 
     /** A descriptive error message if the tool failed or was rejected. */
-    @Setter
     private String error;
 
     /** The time taken to execute the method, in milliseconds. */
-    @Setter
     private long executionTimeMillis;
     
     /** A list of log messages captured during the tool's execution. */
@@ -40,11 +39,21 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall> extends A
     private final List<ToolResponseAttachment> attachments = new ArrayList<>();
     
     /** Optional feedback from the user if the tool execution was prompted. */
-    @Setter
     private String userFeedback;
 
-    public AbstractToolResponse(AbstractToolCall call) {
+    public AbstractToolResponse(AbstractToolCall<?, ?> call) {
         super(call.getMessage().getToolMessage());
+    }
+    
+    /**
+     * Sets the status of the tool execution and fires a property change event.
+     * 
+     * @param status The new status.
+     */
+    public void setStatus(ToolExecutionStatus status) {
+        ToolExecutionStatus oldStatus = this.status;
+        this.status = status;
+        getPropertyChangeSupport().firePropertyChange("status", oldStatus, status);
     }
     
     /**
@@ -82,6 +91,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall> extends A
      */
     public void addLog(String message) {
         this.logs.add(message);
+        getPropertyChangeSupport().firePropertyChange("logs", null, logs);
     }
     
     /**
@@ -94,6 +104,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall> extends A
         } else {
             this.error = "\n" + error;
         }
+        getPropertyChangeSupport().firePropertyChange("error", null, this.error);
     }
     
     /**
@@ -103,6 +114,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall> extends A
      */
     public void addAttachment(byte[] data, String mimeType) {
         this.attachments.add(new ToolResponseAttachment(data, mimeType));
+        getPropertyChangeSupport().firePropertyChange("attachments", null, attachments);
     }
     
     /**
@@ -118,6 +130,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall> extends A
      */
     public void clearLogs() {
         this.logs.clear();
+        getPropertyChangeSupport().firePropertyChange("logs", null, logs);
     }
     
     @Override
@@ -127,6 +140,6 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall> extends A
     
     @Override
     public String asText() {
-        return "[Tool Response: " + getStatus() + ", Result: " + getResult() + "] " + attachments.size() + " attachments";
+        return String.format("[%s] %s", status, result != null ? TextUtils.formatValue(result) : (error != null ? error : ""));
     }
 }
