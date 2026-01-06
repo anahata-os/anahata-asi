@@ -10,6 +10,7 @@ import lombok.Setter;
 import uno.anahata.ai.AiConfig;
 import uno.anahata.ai.chat.ChatConfig;
 import uno.anahata.ai.model.core.Role;
+import uno.anahata.ai.model.tool.ToolExecutionStatus;
 import uno.anahata.ai.status.ChatStatus;
 import uno.anahata.ai.swing.chat.render.editorkit.DefaultEditorKitProvider;
 import uno.anahata.ai.swing.chat.render.editorkit.EditorKitProvider;
@@ -66,6 +67,16 @@ public class SwingChatConfig extends ChatConfig {
                 return Color.BLACK;
         }
     }
+    
+    public static String getColor(ToolExecutionStatus status) {
+        if (status == null) return "#888888";
+        return switch (status) {
+            case EXECUTED -> "#28a745"; // Green
+            case FAILED -> "#dc3545";   // Red
+            case PENDING -> "#800080";  // Purple
+            default -> "#6c757d";       // Gray
+        };
+    }
 
     public static Color getColorForContextUsage(double percentage) {
         if (percentage > 1.0) {
@@ -91,12 +102,12 @@ public class SwingChatConfig extends ChatConfig {
 
         // Role-specific colors (for Message Headers)
         private final Color userHeaderBg = new Color(212, 237, 218);
-        private final Color userContentBg = new Color(233, 247, 239);
+        private final Color userContentBg = new Color(235, 250, 235); // More green, still faint
         private final Color userHeaderFg = new Color(21, 87, 36);
         private final Color userBorder = new Color(144, 198, 149);
 
         private final Color modelHeaderBg = new Color(221, 234, 248);
-        private final Color modelContentBg = Color.WHITE;
+        private final Color modelContentBg = new Color(250, 252, 255); // Nearly white with minimal blue tint
         private final Color modelHeaderFg = new Color(0, 123, 255);
         private final Color modelBorder = new Color(160, 195, 232);
 
@@ -104,6 +115,12 @@ public class SwingChatConfig extends ChatConfig {
         private final Color toolContentBg = new Color(250, 248, 252);
         private final Color toolHeaderFg = new Color(80, 60, 100);
         private final Color toolBorder = new Color(200, 180, 220);
+        
+        private final Color toolOutputFg = new Color(0, 128, 0);
+        private final Color toolErrorFg = Color.RED.darker();
+        private final Color toolErrorBg = new Color(255, 235, 235);
+        private final Color toolLogsFg = Color.GRAY;
+        private final Color toolLogsBg = new Color(245, 245, 245);
 
         // Part-specific colors (Faint and Role-Neutral)
         private final Color partHeaderBg = new Color(240, 240, 240, 100); // Faint gray
