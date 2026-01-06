@@ -31,6 +31,11 @@ public class GroundingMetadata {
      * A list of web sources (citations) used for grounding.
      */
     List<GroundingSource> sources;
+    
+    /**
+     * The rendered HTML for the Google Search entry point (the "Google Search" button/chip).
+     */
+    String searchEntryPointHtml;
 
     /**
      * The raw JSON representation of the native grounding metadata object.
