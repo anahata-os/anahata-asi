@@ -68,6 +68,10 @@ public final class RequestConfigAdapter {
         // We must convert Integer topK to Float for the builder.
         Optional.ofNullable(anahataConfig.getTopK()).map(Integer::floatValue).ifPresent(builder::topK);
         Optional.ofNullable(anahataConfig.getTopP()).ifPresent(builder::topP);
+        
+        if (anahataConfig.getCandidateCount() != null) {
+            builder.candidateCount(anahataConfig.getCandidateCount());
+        }
 
         if (anahataConfig.getLocalTools() != null && !anahataConfig.getLocalTools().isEmpty()) {
             log.info("Local tools enabled, adding " + anahataConfig.getLocalTools().size() + " tools");
