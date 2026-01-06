@@ -21,15 +21,22 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.model.web.GroundingMetadata;
 import uno.anahata.ai.model.web.GroundingSource;
 import uno.anahata.ai.swing.chat.ChatPanel;
 import uno.anahata.ai.swing.chat.SwingChatConfig.UITheme;
+import uno.anahata.ai.swing.components.CodeHyperlink;
+import uno.anahata.ai.swing.components.WrappingEditorPane;
+import uno.anahata.ai.swing.icons.CopyIcon;
 import uno.anahata.ai.swing.icons.IconUtils;
+import uno.anahata.ai.swing.icons.SearchIcon;
+import uno.anahata.ai.swing.internal.SwingUtils;
 import uno.anahata.ai.swing.internal.WrapLayout;
 
 /**
@@ -40,13 +47,16 @@ import uno.anahata.ai.swing.internal.WrapLayout;
  * @author gemini-3-flash-preview
  */
 @Slf4j
+@Getter
 public class GroundingMetadataPanel extends JPanel {
     private static final int V_GAP = 10;
     private final ChatPanel chatPanel;
     private final UITheme theme;
+    private final GroundingMetadata metadata;
 
     public GroundingMetadataPanel(ChatPanel chatPanel, GroundingMetadata metadata) {
         this.chatPanel = chatPanel;
+        this.metadata = metadata;
         this.theme = chatPanel.getChatConfig().getTheme();
         setLayout(new BorderLayout());
         setOpaque(false);
@@ -78,7 +88,7 @@ public class GroundingMetadataPanel extends JPanel {
             contentPanel.add(Box.createVerticalStrut(V_GAP));
         }
 
-        // Search Suggestions
+        // Search Suggestions (Fallback/Additional)
         if (metadata.getWebSearchQueries() != null && !metadata.getWebSearchQueries().isEmpty()) {
             contentPanel.add(renderSearchSuggestions(metadata.getWebSearchQueries()));
         }
@@ -97,7 +107,6 @@ public class GroundingMetadataPanel extends JPanel {
         titleLabel.setForeground(theme.getFontColor());
         
         try {
-            // Explicitly use 24x24 icon as requested
             titleLabel.setIcon(IconUtils.getIcon("anahata.png", 24, 24));
             titleLabel.setIconTextGap(8);
         } catch (Exception e) {
@@ -105,6 +114,14 @@ public class GroundingMetadataPanel extends JPanel {
         }
         
         headerPanel.add(titleLabel, BorderLayout.WEST);
+        
+        // Add a JSON link for debugging
+        CodeHyperlink jsonLink = new CodeHyperlink("Json", 
+                () -> "Grounding Metadata", 
+                () -> metadata.getRawJson(), 
+                "json");
+        headerPanel.add(jsonLink, BorderLayout.EAST);
+        
         return headerPanel;
     }
 
