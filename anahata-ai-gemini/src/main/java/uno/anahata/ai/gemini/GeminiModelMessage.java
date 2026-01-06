@@ -25,6 +25,7 @@ import uno.anahata.ai.model.core.ModelTextPart;
 import uno.anahata.ai.model.core.ThoughtSignature;
 import uno.anahata.ai.model.tool.AbstractToolCall;
 import uno.anahata.ai.model.web.GroundingMetadata;
+import uno.anahata.ai.model.web.GroundingSource;
 
 /**
  * An object-oriented representation of a ModelMessage derived from the Gemini provider.
@@ -66,19 +67,8 @@ public class GeminiModelMessage extends AbstractModelMessage<GeminiResponse, Gem
         setResponse(response);
         
         // Populate new fields from Candidate
-        candidate.groundingMetadata().ifPresent(gm -> {
-            List<String> webSearchQueries = gm.webSearchQueries().orElse(List.of());
-            List<String> supportingTexts = gm.groundingSupports().orElse(List.of()).stream()
-                .filter(gs -> gs.segment().isPresent() && gs.segment().get().text().isPresent())
-                .map(gs -> gs.segment().get().text().get())
-                .collect(Collectors.toList());
-
-            setGroundingMetadata(new GroundingMetadata(
-                webSearchQueries,
-                supportingTexts,
-                null, // sources are not directly mapped here, need to be converted if required
-                gm.toJson()));
-        });
+        candidate.groundingMetadata().ifPresent(gm -> setGroundingMetadata(toAnahataGroundingMetadata(gm)));
+        
         candidate.finishMessage().ifPresent(this::setFinishMessage);
         candidate.safetyRatings().ifPresent(sr -> setSafetyRatings(sr.stream()
             .map(s -> s.category().map(c -> c.knownEnum().name()).orElse("") + ":" + s.probability().map(p -> p.knownEnum().name()).orElse(""))
@@ -155,5 +145,41 @@ public class GeminiModelMessage extends AbstractModelMessage<GeminiResponse, Gem
         return new GeminiToolMessage(this);
     }
     
-    
+    /**
+     * Converts Google's GroundingMetadata to Anahata's domain model.
+     * 
+     * @param gm The Google GroundingMetadata object.
+     * @return The Anahata GroundingMetadata object.
+     */
+    public static GroundingMetadata toAnahataGroundingMetadata(com.google.genai.types.GroundingMetadata gm) {
+        List<String> webSearchQueries = gm.webSearchQueries().orElse(List.of());
+        List<String> supportingTexts = gm.groundingSupports().orElse(List.of()).stream()
+            .filter(gs -> gs.segment().isPresent() && gs.segment().get().text().isPresent())
+            .map(gs -> gs.segment().get().text().get())
+            .collect(Collectors.toList());
+
+        List<GroundingSource> sources = gm.groundingChunks().orElse(List.of()).stream()
+            .map(gc -> {
+                if (gc.web().isPresent()) {
+                    return GroundingSource.builder()
+                        .title(gc.web().get().title().orElse("Unknown"))
+                        .uri(gc.web().get().uri().orElse(""))
+                        .build();
+                }
+                return null;
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+        
+        String searchEntryPointHtml = gm.searchEntryPoint()
+                .flatMap(sep -> sep.renderedContent())
+                .orElse(null);
+
+        return new GroundingMetadata(
+            webSearchQueries,
+            supportingTexts,
+            sources,
+            searchEntryPointHtml,
+            gm.toJson());
+    }
 }
