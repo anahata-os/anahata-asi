@@ -28,8 +28,11 @@ import javax.swing.BorderFactory;
 @Getter
 public class TextPartPanel extends AbstractPartPanel<TextPart> {
 
-    /** Regex pattern for identifying code blocks in markdown. */
-    private static final Pattern CODE_BLOCK_PATTERN = Pattern.compile("```(\\w*)\\r?\\n([\\s\\S]*?)\\r?\\n```");
+    /** 
+     * Regex pattern for identifying code blocks in markdown. 
+     * Updated to support unclosed blocks for better streaming experience.
+     */
+    private static final Pattern CODE_BLOCK_PATTERN = Pattern.compile("```(\\w*)\\r?\\n([\\s\\S]*?)(?:\\r?\\n```|\\z)");
 
     /** Cache of segment renderers to support incremental updates. */
     private final List<AbstractTextSegmentRenderer> cachedSegmentRenderers = new ArrayList<>();
