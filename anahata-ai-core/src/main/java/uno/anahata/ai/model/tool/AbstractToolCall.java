@@ -21,7 +21,7 @@ import uno.anahata.ai.model.core.ThoughtSignature;
  */
 @Getter
 @Setter // Added @Setter for thoughtSignature
-public abstract class AbstractToolCall<T extends AbstractTool, R extends AbstractToolResponse> extends AbstractPart implements ThoughtSignature {
+public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends AbstractToolResponse<?>> extends AbstractPart implements ThoughtSignature {
 
     /**
      * A unique, immutable identifier for this specific invocation request.
@@ -58,7 +58,7 @@ public abstract class AbstractToolCall<T extends AbstractTool, R extends Abstrac
         this.id = id;
         this.tool = tool;
         this.args = args;
-        this.response = createResponse(message.getToolMessage());
+        this.response = createResponse(message.getToolMessage());        
     }
 
     /**
