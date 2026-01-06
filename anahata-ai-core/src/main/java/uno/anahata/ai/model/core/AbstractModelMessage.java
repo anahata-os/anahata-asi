@@ -29,18 +29,21 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
     private T toolMessage;
     
     /** The reason why the model stopped generating content for this candidate. */
+    @Setter(AccessLevel.NONE)
     private String finishReason; 
     
     /** The message explaining why the model stopped generating content for this candidate. */
     private String finishMessage;
     
     /** The grounding metadata for the response. */
+    @Setter(AccessLevel.NONE)
     private GroundingMetadata groundingMetadata;
     
     /** The safety ratings for the response, summarized as a string. */
     private String safetyRatings;
     
     /** The number of tokens for this candidate. */
+    @Setter(AccessLevel.NONE)
     private int tokenCount;
     
     /** The raw JSON response from the model. */
@@ -129,6 +132,26 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
         int oldTokenCount = this.tokenCount;
         this.tokenCount = tokenCount;
         getPropertyChangeSupport().firePropertyChange("tokenCount", oldTokenCount, tokenCount);
+    }
+
+    /**
+     * Sets the finish reason and fires a property change event.
+     * @param finishReason The new finish reason.
+     */
+    public void setFinishReason(String finishReason) {
+        String oldReason = this.finishReason;
+        this.finishReason = finishReason;
+        getPropertyChangeSupport().firePropertyChange("finishReason", oldReason, finishReason);
+    }
+
+    /**
+     * Sets the grounding metadata and fires a property change event.
+     * @param groundingMetadata The new grounding metadata.
+     */
+    public void setGroundingMetadata(GroundingMetadata groundingMetadata) {
+        GroundingMetadata oldMetadata = this.groundingMetadata;
+        this.groundingMetadata = groundingMetadata;
+        getPropertyChangeSupport().firePropertyChange("groundingMetadata", oldMetadata, groundingMetadata);
     }
 
     /**
