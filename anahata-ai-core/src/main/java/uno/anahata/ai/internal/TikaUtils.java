@@ -45,4 +45,26 @@ public final class TikaUtils {
             return handler.toString();
         }
     }
+
+    /**
+     * Infers a file extension from a MIME type.
+     * 
+     * @param mimeType The MIME type (e.g., "image/png").
+     * @return The extension including the dot (e.g., ".png"), or ".bin" if unknown.
+     */
+    public static String getExtension(String mimeType) {
+        if (mimeType == null) return ".bin";
+        return switch (mimeType.toLowerCase()) {
+            case "image/png" -> ".png";
+            case "image/jpeg", "image/jpg" -> ".jpg";
+            case "image/gif" -> ".gif";
+            case "audio/wav", "audio/x-wav" -> ".wav";
+            case "audio/mpeg", "audio/mp3" -> ".mp3";
+            case "application/pdf" -> ".pdf";
+            case "text/plain" -> ".txt";
+            case "text/html" -> ".html";
+            case "application/json" -> ".json";
+            default -> ".bin";
+        };
+    }
 }

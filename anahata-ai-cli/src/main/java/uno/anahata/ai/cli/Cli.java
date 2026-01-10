@@ -5,6 +5,7 @@ import java.util.Scanner;
 import lombok.RequiredArgsConstructor;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.model.core.AbstractModelMessage;
+import uno.anahata.ai.model.core.InputUserMessage;
 import uno.anahata.ai.model.core.Response;
 import uno.anahata.ai.model.core.TextPart;
 import uno.anahata.ai.model.core.UserMessage;
@@ -111,8 +112,8 @@ public class Cli {
                 break; // Exit the chat loop to return to the main menu
             }
 
-            UserMessage userMessage = new UserMessage(chat);
-            new TextPart(userMessage, userInput);
+            InputUserMessage userMessage = new InputUserMessage(chat);
+            userMessage.setText(userInput);
 
             System.out.println("Model: ...");
             chat.sendMessage(userMessage);

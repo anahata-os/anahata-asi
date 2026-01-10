@@ -8,6 +8,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.context.AbstractContextProvider;
+import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.RagMessage;
 
 /**
@@ -30,7 +31,14 @@ public class ChatStatusProvider extends AbstractContextProvider {
         sb.append("## Chat Status\n");
         sb.append("- Session ID: ").append(chat.getConfig().getSessionId()).append("\n");
         sb.append("- Model ID: ").append(chat.getSelectedModel() != null ? chat.getSelectedModel().getModelId() : "None").append("\n");
+        sb.append("- Status: ").append(chat.getStatusManager().getCurrentStatus()).append("\n");
         sb.append("- Running: ").append(chat.isRunning()).append("\n");
+        
+        AbstractModelMessage toolPromptMessage = chat.getToolPromptMessage();
+        if (toolPromptMessage != null) {
+            sb.append("- Tool Prompt Message ID: ").append(toolPromptMessage.getSequentialId()).append("\n");
+        }
+        
         return Collections.singletonList(sb.toString());
     }
 

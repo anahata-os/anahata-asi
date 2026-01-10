@@ -20,33 +20,13 @@ import uno.anahata.ai.resource.ResourceManager;
  * context-aware API for tool execution, similar to a Servlet or EJB.
  * <p>
  * By extending this class, your tool methods can gain access to the current
- * execution context via a {@link ThreadLocal}, allowing them to log messages,
- * attach files, and access the entire application state without needing any
- * parameters in their method signatures.
+ * execution context via a {@link ThreadLocal} managed by {@link JavaMethodToolResponse}, 
+ * allowing them to log messages, attach files, and access the entire application 
+ * state without needing any parameters in their method signatures.
  *
  * @author anahata-gemini-pro-2.5
  */
 public abstract class JavaToolkitInstance {
-
-    private static final ThreadLocal<JavaMethodToolResponse> context = new ThreadLocal<>();
-
-    /**
-     * Sets the context for the current thread. Called by the framework just
-     * before a tool method is invoked.
-     *
-     * @param response The current tool response.
-     */
-    public void setContext(JavaMethodToolResponse response) {
-        context.set(response);
-    }
-
-    /**
-     * Clears the context for the current thread. Called by the framework in a
-     * finally block after the tool method completes.
-     */
-    public void clearContext() {
-        context.remove();
-    }
 
     /**
      * Gets the current tool response from the thread-local context.
@@ -55,7 +35,7 @@ public abstract class JavaToolkitInstance {
      * @throws IllegalStateException if called outside the scope of a tool execution.
      */
     protected JavaMethodToolResponse getResponse() {
-        JavaMethodToolResponse response = context.get();
+        JavaMethodToolResponse response = JavaMethodToolResponse.getCurrent();
         if (response == null) {
             throw new IllegalStateException("Cannot access ToolContext outside of a tool execution thread.");
         }

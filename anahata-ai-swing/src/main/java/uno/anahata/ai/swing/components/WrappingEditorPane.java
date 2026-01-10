@@ -3,6 +3,7 @@
  */
 package uno.anahata.ai.swing.components;
 
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
@@ -11,7 +12,9 @@ import javax.swing.JEditorPane;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.Scrollable;
+import javax.swing.event.HyperlinkEvent;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import uno.anahata.ai.swing.icons.CopyIcon;
 import uno.anahata.ai.swing.internal.SwingUtils;
 
@@ -25,6 +28,7 @@ import uno.anahata.ai.swing.internal.SwingUtils;
  *
  * @author pablo
  */
+@Slf4j
 public class WrappingEditorPane extends JEditorPane implements Scrollable {
 
     @Setter
@@ -35,6 +39,17 @@ public class WrappingEditorPane extends JEditorPane implements Scrollable {
         // vertical scrolling works even when the mouse is over this component.
         addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(this, e));
         
+        // Enable hyperlink activation
+        addHyperlinkListener(e -> {
+            if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                try {
+                    Desktop.getDesktop().browse(e.getURL().toURI());
+                } catch (Exception ex) {
+                    log.error("Failed to open link: {}", e.getURL(), ex);
+                }
+            }
+        });
+
         // Add context menu for copying selected text
         addMouseListener(new MouseAdapter() {
             @Override

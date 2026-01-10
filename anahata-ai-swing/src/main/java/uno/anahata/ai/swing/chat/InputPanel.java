@@ -4,9 +4,11 @@
 package uno.anahata.ai.swing.chat;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
@@ -28,12 +30,17 @@ import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.AbstractToolMessage;
 import uno.anahata.ai.model.core.InputUserMessage;
 import uno.anahata.ai.model.core.TextPart;
+import uno.anahata.ai.model.tool.AbstractToolResponse;
+import uno.anahata.ai.model.tool.ToolExecutionStatus;
 import uno.anahata.ai.status.ChatStatus;
 import uno.anahata.ai.status.StatusListener;
 import uno.anahata.ai.swing.icons.AutoReplyIcon;
+import uno.anahata.ai.swing.icons.DeleteIcon;
 import uno.anahata.ai.swing.icons.IconUtils;
+import uno.anahata.ai.swing.icons.RestartIcon;
 import uno.anahata.ai.swing.icons.RunAndSendIcon;
 import uno.anahata.ai.swing.internal.AnyChangeDocumentListener;
+import uno.anahata.ai.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.ai.swing.internal.SwingTask;
 import uno.anahata.ai.swing.internal.UICapture;
 import uno.anahata.ai.swing.media.util.MicrophonePanel;
@@ -60,8 +67,6 @@ public class InputPanel extends JPanel {
     private JXTextArea inputTextArea;
     /** The button to send the message. */
     private JButton sendButton;
-    /** The button to run all pending tool calls for the current turn. */
-    private JButton runAllButton;
     /** The button to attach files. */
     private JButton attachButton;
     /** The button to attach a desktop screenshot. */
@@ -76,6 +81,14 @@ public class InputPanel extends JPanel {
     private JSplitPane splitPane; 
     /** The panel for voice input. */
     private MicrophonePanel microphonePanel; 
+    
+    /** Panel to display the staged message. */
+    private JPanel stagedMessagePanel;
+    private JLabel stagedMessageLabel;
+    private JButton revertStagedButton;
+    private JButton deleteStagedButton;
+    
+    private EdtPropertyChangeListener stagedListener;
 
     /**
      * The "live" message being composed by the user. This is the single source
@@ -94,8 +107,7 @@ public class InputPanel extends JPanel {
         this.chat = chatPanel.getChat();
         initComponents();
         
-        // Listen for status changes to show/hide the Run All button
-        chat.getStatusManager().addListener(event -> SwingUtilities.invokeLater(this::updateRunAllButtonVisibility));
+        this.stagedListener = new EdtPropertyChangeListener(this, chat, "stagedUserMessage", evt -> updateStagedMessageUI());
     }
 
     /**
@@ -139,7 +151,40 @@ public class InputPanel extends JPanel {
         splitPane.setDividerLocation(0.5); 
         splitPane.setOneTouchExpandable(true);
 
-        add(splitPane, BorderLayout.CENTER);
+        // --- STAGED MESSAGE PANEL ---
+        stagedMessagePanel = new JPanel(new BorderLayout(5, 0));
+        stagedMessagePanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(1, 0, 1, 0, Color.LIGHT_GRAY),
+                BorderFactory.createEmptyBorder(2, 5, 2, 5)
+        ));
+        stagedMessagePanel.setBackground(new Color(240, 248, 255)); // Light blue background
+        stagedMessagePanel.setVisible(false);
+
+        stagedMessageLabel = new JLabel("Staged Message: ");
+        stagedMessageLabel.setFont(stagedMessageLabel.getFont().deriveFont(Font.ITALIC));
+        
+        JPanel stagedButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        stagedButtons.setOpaque(false);
+        
+        revertStagedButton = new JButton("Edit", new RestartIcon(16));
+        revertStagedButton.setToolTipText("Move staged message back to input for editing");
+        revertStagedButton.addActionListener(e -> revertStagedMessage());
+        
+        deleteStagedButton = new JButton(new DeleteIcon(16));
+        deleteStagedButton.setToolTipText("Delete staged message");
+        deleteStagedButton.addActionListener(e -> deleteStagedMessage());
+        
+        stagedButtons.add(revertStagedButton);
+        stagedButtons.add(deleteStagedButton);
+        
+        stagedMessagePanel.add(stagedMessageLabel, BorderLayout.CENTER);
+        stagedMessagePanel.add(stagedButtons, BorderLayout.EAST);
+
+        JPanel centerPanel = new JPanel(new BorderLayout());
+        centerPanel.add(splitPane, BorderLayout.CENTER);
+        centerPanel.add(stagedMessagePanel, BorderLayout.SOUTH);
+        
+        add(centerPanel, BorderLayout.CENTER);
 
         // Panel for buttons on the south side
         JPanel southButtonPanel = new JPanel(new BorderLayout(5, 0));
@@ -169,12 +214,6 @@ public class InputPanel extends JPanel {
         // Panel for send and run all buttons on the east
         JPanel eastButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         
-        runAllButton = new JButton("Run + Send", new RunAndSendIcon(16));
-        runAllButton.setToolTipText("Execute all pending tool calls for the current turn and send results back to the model.");
-        runAllButton.setVisible(false); // Initially hidden
-        runAllButton.addActionListener(e -> runAllPendingTools());
-        eastButtonPanel.add(runAllButton);
-
         sendButton = new JButton("Send");
         sendButton.addActionListener(e -> sendMessage());
         eastButtonPanel.add(sendButton);
@@ -183,6 +222,8 @@ public class InputPanel extends JPanel {
         southButtonPanel.add(eastButtonPanel, BorderLayout.EAST);
 
         add(southButtonPanel, BorderLayout.SOUTH);
+        
+        updateStagedMessageUI();
     }
 
     /**
@@ -190,8 +231,14 @@ public class InputPanel extends JPanel {
      */
     public void reload() {
         this.chat = chatPanel.getChat();
+        
+        if (stagedListener != null) {
+            stagedListener.unbind();
+        }
+        this.stagedListener = new EdtPropertyChangeListener(this, chat, "stagedUserMessage", evt -> updateStagedMessageUI());
+        
         resetMessage();
-        updateRunAllButtonVisibility();
+        updateStagedMessageUI();
     }
 
     /**
@@ -315,36 +362,40 @@ public class InputPanel extends JPanel {
         );
     }
 
-    /**
-     * Executes all pending tool calls for the current turn and sends the results back to the model.
-     */
-    private void runAllPendingTools() {
-        setButtonsEnabled(false);
-        executeTask(
-                "Run All + Send",
-                () -> {
-                    List<AbstractMessage> history = chat.getContextManager().getHistory();
-                    if (!history.isEmpty()) {
-                        AbstractMessage last = history.get(history.size() - 1);
-                        if (last instanceof AbstractModelMessage amm) {
-                            amm.getToolMessage().executeAllPending();
-                            chat.sendContext();
-                        }
-                    }
-                    return null;
-                },
-                (result) -> {
-                    setButtonsEnabled(true);
-                },
-                (error) -> {
-                    setButtonsEnabled(true);
-                }
-        );
+    private void updateStagedMessageUI() {
+        InputUserMessage staged = chat.getStagedUserMessage();
+        if (staged != null) {
+            String text = staged.getText();
+            if (text.length() > 50) {
+                text = text.substring(0, 47) + "...";
+            }
+            stagedMessageLabel.setText("Staged Message: " + text);
+            stagedMessagePanel.setVisible(true);
+        } else {
+            stagedMessagePanel.setVisible(false);
+        }
+        revalidate();
+        repaint();
+        chatPanel.revalidate();
+        chatPanel.repaint();
     }
 
-    private void updateRunAllButtonVisibility() {
-        boolean isToolPrompt = chat.getStatusManager().getCurrentStatus() == ChatStatus.TOOL_PROMPT;
-        runAllButton.setVisible(isToolPrompt);
+    private void revertStagedMessage() {
+        InputUserMessage staged = chat.getStagedUserMessage();
+        if (staged != null) {
+            chat.setStagedUserMessage(null);
+            this.currentMessage = staged;
+            inputTextArea.setText(staged.getText());
+            
+            // Re-render preview
+            UserInputMessagePanel newRenderer = new UserInputMessagePanel(chatPanel, this.currentMessage);
+            previewScrollPane.setViewportView(newRenderer);
+            this.inputMessagePreview = newRenderer;
+        }
+    }
+
+    private void deleteStagedMessage() {
+        chat.setStagedUserMessage(null);
     }
 
     /**
@@ -402,7 +453,6 @@ public class InputPanel extends JPanel {
      */
     private void setButtonsEnabled(boolean enabled) {
         sendButton.setEnabled(enabled);
-        runAllButton.setEnabled(enabled);
         attachButton.setEnabled(enabled);
         screenshotButton.setEnabled(enabled);
         captureFramesButton.setEnabled(enabled);

@@ -4,17 +4,28 @@
 package uno.anahata.ai.swing.chat.render;
 
 import java.awt.BorderLayout;
+import java.awt.Desktop;
+import java.awt.FlowLayout;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import net.miginfocom.swing.MigLayout;
 import uno.anahata.ai.internal.TextUtils;
+import uno.anahata.ai.internal.TikaUtils;
+import uno.anahata.ai.model.tool.AbstractToolResponse;
 import uno.anahata.ai.model.tool.ToolResponseAttachment;
 import uno.anahata.ai.swing.chat.ChatPanel;
+import uno.anahata.ai.swing.icons.DeleteIcon;
+import uno.anahata.ai.swing.icons.SearchIcon;
 import uno.anahata.ai.swing.media.util.AudioPlaybackPanel;
 
 /**
@@ -23,25 +34,30 @@ import uno.anahata.ai.swing.media.util.AudioPlaybackPanel;
  * 
  * @author anahata-ai
  */
+@Slf4j
 public class ToolResponseAttachmentsPanel extends JPanel {
 
     private final ChatPanel chatPanel;
+    private AbstractToolResponse<?> response;
     private final Map<ToolResponseAttachment, JPanel> cachedPanels = new HashMap<>();
     /** Map to track playback stoppers for audio attachments. */
     private final Map<ToolResponseAttachment, Runnable> playbackStoppers = new HashMap<>();
 
     public ToolResponseAttachmentsPanel(@NonNull ChatPanel chatPanel) {
         this.chatPanel = chatPanel;
-        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        setLayout(new MigLayout("fillx, insets 0, gap 0", "[grow]", "[]"));
         setOpaque(false);
     }
 
     /**
      * Updates the panel with the given list of attachments.
      * 
-     * @param attachments The list of attachments to render.
+     * @param response The tool response containing the attachments.
      */
-    public void render(List<ToolResponseAttachment> attachments) {
+    public void render(AbstractToolResponse<?> response) {
+        this.response = response;
+        List<ToolResponseAttachment> attachments = response.getAttachments();
+        
         // 1. Remove panels for attachments no longer present
         cachedPanels.keySet().removeIf(attachment -> {
             if (!attachments.contains(attachment)) {
@@ -66,7 +82,7 @@ public class ToolResponseAttachmentsPanel extends JPanel {
             }
             
             if (i >= getComponentCount() || getComponent(i) != panel) {
-                add(panel, i);
+                add(panel, "growx, wrap", i);
             }
         }
 
@@ -80,15 +96,38 @@ public class ToolResponseAttachmentsPanel extends JPanel {
     }
 
     private JPanel createAttachmentPanel(ToolResponseAttachment attachment) {
-        JPanel itemPanel = new JPanel(new BorderLayout(5, 5));
+        JPanel itemPanel = new JPanel(new MigLayout("fillx, insets 5", "[grow][]", "[]0[]"));
         itemPanel.setOpaque(false);
-        itemPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        itemPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, java.awt.Color.LIGHT_GRAY));
 
         String mimeType = attachment.getMimeType();
         byte[] data = attachment.getData();
 
+        // Label and Info
+        JLabel infoLabel = new JLabel("Attachment (" + mimeType + "): " + TextUtils.formatSize(data.length));
+        itemPanel.add(infoLabel, "aligny top");
+
+        // Action buttons on the same row
+        JPanel actionsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
+        actionsPanel.setOpaque(false);
+
+        JButton viewButton = new JButton(new SearchIcon(14));
+        viewButton.setToolTipText("View Attachment");
+        viewButton.setMargin(new java.awt.Insets(2, 2, 2, 2));
+        viewButton.addActionListener(e -> viewAttachment(attachment));
+
+        JButton deleteButton = new JButton(new DeleteIcon(14));
+        deleteButton.setToolTipText("Remove Attachment");
+        deleteButton.setMargin(new java.awt.Insets(2, 2, 2, 2));
+        deleteButton.addActionListener(e -> response.removeAttachment(attachment));
+
+        actionsPanel.add(viewButton);
+        actionsPanel.add(deleteButton);
+        itemPanel.add(actionsPanel, "aligny top, wrap");
+
+        // Media Content (Image/Audio) below the label
         if (mimeType.startsWith("image/")) {
-            itemPanel.add(MediaRenderer.createImageComponent(data, this), BorderLayout.CENTER);
+            itemPanel.add(MediaRenderer.createImageComponent(data, this), "span 2, alignx left, wrap");
         } else if (mimeType.startsWith("audio/")) {
             AudioPlaybackPanel audioPanel = chatPanel.getStatusPanel().getAudioPlaybackPanel();
             itemPanel.add(MediaRenderer.createAudioComponent(data, audioPanel, stopper -> {
@@ -98,11 +137,24 @@ public class ToolResponseAttachmentsPanel extends JPanel {
                 } else {
                     playbackStoppers.put(attachment, stopper);
                 }
-            }), BorderLayout.CENTER);
-        } else {
-            itemPanel.add(new JLabel("Attachment (" + mimeType + "): " + TextUtils.formatSize(data.length)), BorderLayout.CENTER);
+            }), "span 2, alignx left, wrap");
         }
+
         return itemPanel;
+    }
+
+    private void viewAttachment(ToolResponseAttachment attachment) {
+        try {
+            String extension = TikaUtils.getExtension(attachment.getMimeType());
+            File tempFile = File.createTempFile("attachment-", extension);
+            tempFile.deleteOnExit();
+            try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+                fos.write(attachment.getData());
+            }
+            Desktop.getDesktop().open(tempFile);
+        } catch (Exception e) {
+            log.error("Failed to view attachment", e);
+        }
     }
 
     @Override

@@ -27,6 +27,7 @@ import uno.anahata.ai.model.core.AbstractModelMessage;
 import uno.anahata.ai.model.core.AbstractPart;
 import uno.anahata.ai.model.core.AbstractToolMessage;
 import uno.anahata.ai.model.core.GenerationRequest;
+import uno.anahata.ai.model.core.InputUserMessage;
 import uno.anahata.ai.model.core.ModelBlobPart;
 import uno.anahata.ai.model.core.ModelTextPart;
 import uno.anahata.ai.model.core.PropertyChangeSource;
@@ -79,11 +80,12 @@ public class Chat implements PropertyChangeSource {
     private volatile boolean running = false;
 
     /**
-     * A message that has been submitted via {@link #sendMessage(UserMessage)}
+     * A message that has been submitted via {@link #sendMessage(InputUserMessage)}
      * while the chat was busy. It will be picked up and processed as soon as
      * the current conversation turn is complete.
      */
-    private volatile UserMessage stagedUserMessage;
+    @Getter
+    private InputUserMessage stagedUserMessage;
 
     /**
      * A thread-safe flag indicating if the chat session has been shut down.
@@ -101,6 +103,12 @@ public class Chat implements PropertyChangeSource {
      * These are NOT yet part of the context history.
      */
     private final List<AbstractModelMessage> activeCandidates = new ArrayList<>();
+
+    /**
+     * The model message that initiated the tool calls currently awaiting user approval.
+     * This is only non-null when the status is {@link ChatStatus#TOOL_PROMPT}.
+     */
+    private AbstractModelMessage toolPromptMessage;
 
     /**
      * A ReentrantLock to synchronize access to shared mutable state (e.g.,
@@ -160,6 +168,17 @@ public class Chat implements PropertyChangeSource {
     }
 
     /**
+     * Sets the staged user message and fires a property change event.
+     * 
+     * @param stagedUserMessage The new staged message.
+     */
+    public void setStagedUserMessage(InputUserMessage stagedUserMessage) {
+        InputUserMessage oldMessage = this.stagedUserMessage;
+        this.stagedUserMessage = stagedUserMessage;
+        propertyChangeSupport.firePropertyChange("stagedUserMessage", oldMessage, stagedUserMessage);
+    }
+
+    /**
      * The primary entry point for the UI to send a message. This method is
      * designed to be called from a background thread (e.g., a SwingWorker).
      * <ul>
@@ -173,14 +192,15 @@ public class Chat implements PropertyChangeSource {
      *
      * @param message The user's message.
      */
-    public void sendMessage(@NonNull UserMessage message) {
+    public void sendMessage(@NonNull InputUserMessage message) {
         runningLock.lock();
         try {
             if (running) {
                 log.info("Chat is busy. Staging message.");
-                this.stagedUserMessage = message;
+                setStagedUserMessage(message);
                 return;
             }
+            rollPendingToolsToNotExecuted();
             contextManager.addMessage(message);
             executeTurn();
         } finally {
@@ -200,6 +220,7 @@ public class Chat implements PropertyChangeSource {
                 log.info("Chat is busy. Cannot send context.");
                 return;
             }
+            rollPendingToolsToNotExecuted();
             executeTurn();
         } finally {
             runningLock.unlock();
@@ -218,9 +239,9 @@ public class Chat implements PropertyChangeSource {
         }
 
         // Atomically consume any staged message "just-in-time" before building the history.
-        UserMessage messageToProcess = this.stagedUserMessage;
+        InputUserMessage messageToProcess = this.stagedUserMessage;
         if (messageToProcess != null) {
-            this.stagedUserMessage = null; // Consume it
+            setStagedUserMessage(null); // Consume it
             contextManager.addMessage(messageToProcess);
             log.info("Processing staged message.");
         }
@@ -244,9 +265,9 @@ public class Chat implements PropertyChangeSource {
         } finally {
             setRunning(false);
             // Atomically check and process any staged message that arrived while we were busy.
-            UserMessage staged = stagedUserMessage;
+            InputUserMessage staged = stagedUserMessage;
             if (staged != null) {
-                stagedUserMessage = null;
+                setStagedUserMessage(null);
                 sendMessage(staged);
             }
         }
@@ -440,8 +461,10 @@ public class Chat implements PropertyChangeSource {
 
         // The turn has ended. Determine the final status based on whether there are pending tool calls.
         if (!message.getToolCalls().isEmpty()) {
+            setToolPromptMessage(message);
             statusManager.fireStatusChanged(ChatStatus.TOOL_PROMPT);
         } else {
+            setToolPromptMessage(null);
             statusManager.fireStatusChanged(ChatStatus.IDLE);
         }
         return true;
@@ -457,6 +480,26 @@ public class Chat implements PropertyChangeSource {
         this.activeCandidates.clear();
         this.activeCandidates.addAll(candidates);
         propertyChangeSupport.firePropertyChange("activeCandidates", oldCandidates, this.activeCandidates);
+    }
+
+    /**
+     * Sets the tool prompt message and fires a property change event.
+     * 
+     * @param toolPromptMessage The new tool prompt message.
+     */
+    private void setToolPromptMessage(AbstractModelMessage toolPromptMessage) {
+        AbstractModelMessage oldMessage = this.toolPromptMessage;
+        this.toolPromptMessage = toolPromptMessage;
+        propertyChangeSupport.firePropertyChange("toolPromptMessage", oldMessage, toolPromptMessage);
+    }
+
+    /**
+     * Rolls any pending tool calls in the current tool prompt message to NOT_EXECUTED.
+     */
+    public void rollPendingToolsToNotExecuted() {
+        if (statusManager.getCurrentStatus() == ChatStatus.TOOL_PROMPT && toolPromptMessage != null) {
+            toolPromptMessage.rollPendingToolsToNotExecuted();
+        }
     }
 
     /**
@@ -477,6 +520,7 @@ public class Chat implements PropertyChangeSource {
         statusManager.reset();
         toolManager.reset();
         setActiveCandidates(Collections.emptyList());
+        setToolPromptMessage(null);
         String newSessionId = UUID.randomUUID().toString();
         config.setSessionId(newSessionId);
         config.setName(null);

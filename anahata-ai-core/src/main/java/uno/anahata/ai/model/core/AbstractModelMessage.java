@@ -9,6 +9,8 @@ import lombok.NonNull;
 import lombok.Setter;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.model.tool.AbstractToolCall;
+import uno.anahata.ai.model.tool.AbstractToolResponse;
+import uno.anahata.ai.model.tool.ToolExecutionStatus;
 import uno.anahata.ai.model.web.GroundingMetadata;
 
 /**
@@ -172,6 +174,22 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
                 .filter(AbstractToolCall.class::isInstance)
                 .map(AbstractToolCall.class::cast)
                 .collect(Collectors.toList());
+    }
+    
+    /**
+     * Iterates through all tool responses associated with this message and rolls
+     * any that are in a PENDING state to NOT_EXECUTED.
+     */
+    public void rollPendingToolsToNotExecuted() {
+        T tm = getToolMessage();
+        if (tm != null) {
+            List<AbstractToolResponse<?>> responses = tm.getToolResponses();
+            for (AbstractToolResponse<?> response : responses) {
+                if (response.getStatus() == ToolExecutionStatus.PENDING) {
+                    response.setStatus(ToolExecutionStatus.NOT_EXECUTED);
+                }
+            }
+        }
     }
     
     protected abstract T createToolMessage();

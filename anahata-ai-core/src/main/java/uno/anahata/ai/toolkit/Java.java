@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -26,13 +28,16 @@ import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.internal.ClasspathPrinter;
 import uno.anahata.ai.model.core.RagMessage;
 import uno.anahata.ai.model.core.TextPart;
+import uno.anahata.ai.model.tool.java.JavaMethodToolResponse;
 import uno.anahata.ai.tool.AiTool;
 import uno.anahata.ai.tool.AiToolException;
 import uno.anahata.ai.tool.AiToolParam;
 import uno.anahata.ai.tool.AiToolkit;
+import uno.anahata.ai.tool.AnahataTool;
 import uno.anahata.ai.tool.JavaToolkitInstance;
 
 /**
@@ -71,7 +76,57 @@ public class Java extends JavaToolkitInstance {
         new TextPart(ragMessage, ragText);
     }
     
-    
+    @Override
+    public List<String> getSystemInstructionParts(Chat chat) throws Exception {
+        StringBuilder sb = new StringBuilder();
+        sb.append("### Java Toolkit: AnahataTool API\n");
+        sb.append("When using `compileAndExecute`, your class should extend `uno.anahata.ai.tool.AnahataTool`. ");
+        sb.append("This provides the following helper methods for a rich, context-aware execution:\n\n");
+        
+        sb.append("#### Available Methods (inherited from AnahataTool):\n");
+        appendMethods(sb, AnahataTool.class);
+        
+        sb.append("\n#### JavaMethodToolResponse API (available via getResponse()):\n");
+        appendMethods(sb, JavaMethodToolResponse.class);
+
+        sb.append("\n#### Example:\n");
+        sb.append("```java\n");
+        sb.append("import uno.anahata.ai.tool.AnahataTool;\n");
+        sb.append("\n");
+        sb.append("public class Anahata extends AnahataTool {\n");
+        sb.append("    @Override\n");
+        sb.append("    public Object call() throws Exception {\n");
+        sb.append("        log(\"Starting script execution...\");\n");
+        sb.append("        \n");
+        sb.append("        // Perform logic\n");
+        sb.append("        String result = \"Hello from AnahataTool!\";\n");
+        sb.append("        log(\"Result: \" + result);\n");
+        sb.append("        \n");
+        sb.append("        // You can also add errors or attachments\n");
+        sb.append("        // error(\"Something went wrong\");\n");
+        sb.append("        // addAttachment(data, \"image/png\");\n");
+        sb.append("        \n");
+        sb.append("        return result;\n");
+        sb.append("    }\n");
+        sb.append("}\n");
+        sb.append("```\n");
+        return Collections.singletonList(sb.toString());
+    }
+
+    private void appendMethods(StringBuilder sb, Class<?> clazz) {
+        for (Method m : clazz.getMethods()) {
+            // Filter out Object methods and internal framework methods if necessary
+            if (m.getDeclaringClass() == Object.class) continue;
+            
+            sb.append("- `").append(m.getReturnType().getSimpleName()).append(" ").append(m.getName()).append("(");
+            Parameter[] params = m.getParameters();
+            for (int i = 0; i < params.length; i++) {
+                sb.append(params[i].getType().getSimpleName()).append(" ").append(params[i].getName());
+                if (i < params.length - 1) sb.append(", ");
+            }
+            sb.append(")`\n");
+        }
+    }
 
     @AiTool("Compiles the source code of a java class with the default compiler classpath")
     public Class compile(
@@ -236,16 +291,13 @@ public class Java extends JavaToolkitInstance {
     }
 
     @AiTool(
-            value = "Compiles the source code of a java class that implements java.util.Calllable and executes it on the JVM running the application (not in a separate process nor a sandboxed environment).\n"
-            + "The compiler and classloader will use the 'defaultClasspath' ok this toolkit plus any extra classpath explicitely passed as an argument(if any).\n"
-            + "Once the source code has been compiled and the class instantiated, the call() method will be invoked and this tool will return whatever the call() method of the instantiated java class returned.",
+            value = "Compiles and executes a Java class named 'Anahata' on the application's JVM.\n"
+            + "The class should extend AnahataTool and implement the call() method for the most elegant experience.\n"
+            + "Alternatively, it can implement java.util.concurrent.Callable.",
             requiresApproval = true
     )
     public Object compileAndExecute(
-            @AiToolParam(value = "Source code of a java class called 'Anahata' that:\n  "
-                    + "a) is **public**\n"
-                    + "b) has **no package declaration**\n"
-                    + "c) **implements java.util.concurrent.Callable**", rendererId = "java") String sourceCode,
+            @AiToolParam(value = "Source code of a public class called 'Anahata' with no package declaration.", rendererId = "java") String sourceCode,
             @AiToolParam(value = "Compiler's additional classpath entries separated with File.pathSeparator. ", required = false) String extraClassPath,
             @AiToolParam(value = "Compiler's options.", required = false) String[] compilerOptions) throws Exception {
 
@@ -255,43 +307,11 @@ public class Java extends JavaToolkitInstance {
         Class c = compile(sourceCode, "Anahata", extraClassPath, compilerOptions);
         Object o = c.getDeclaredConstructor().newInstance();
 
-        if (o instanceof Callable) {
-            log.info("Calling call() method");
-            Callable trueAnahataInstance = (Callable) o;
-            Object ret = trueAnahataInstance.call();
-            //Object ret = ensureJsonSerializable(trueAnahataInstance.call());
-            log.info("call() method returned {}", ret);
-            return ret;
+        if (o instanceof Callable callable) {
+            log.info("Calling call() method on Callable (or AnahataTool)");
+            return callable.call();
         } else {
-            throw new AiToolException("Source file should implement java.util.Callable");
+            throw new AiToolException("Source file should extend AnahataTool or implement java.util.Callable");
         }
-
     }
-/*
-    @SuppressWarnings("unchecked")
-    private Object ensureJsonSerializable(Object value) {
-        if (value == null) {
-            return null;
-        }
-
-        if (value instanceof String
-                || value instanceof Number
-                || value instanceof Boolean) {
-            return value;
-        } else if (value instanceof Map) {
-            Map<Object, Object> map = (Map<Object, Object>) value;
-            for (Map.Entry<Object, Object> e : map.entrySet()) {
-                ensureJsonSerializable(e.getKey());
-                ensureJsonSerializable(e.getValue());
-            }
-        } else if (value instanceof Iterable) {
-            Iterable<?> iterable = (Iterable<?>) value;
-            for (Object o : iterable) {
-                ensureJsonSerializable(o);
-            }
-        }
-
-        return value.toString();
-    }
-*/
 }

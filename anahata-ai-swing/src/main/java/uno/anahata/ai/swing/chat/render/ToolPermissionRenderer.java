@@ -20,11 +20,20 @@ public class ToolPermissionRenderer extends DefaultListCellRenderer {
 
     @Override
     public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-        super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+        // For the JComboBox button (index == -1), we don't want the selection background
+        boolean isComboBoxButton = index == -1;
+        Component c = super.getListCellRendererComponent(list, value, index, isSelected && !isComboBoxButton, cellHasFocus);
+        
         if (value instanceof ToolPermission tp) {
             setText(tp.getDisplayValue());
             setForeground(Color.decode(SwingChatConfig.getColor(tp)));
         }
-        return this;
+        
+        if (isComboBoxButton) {
+            setOpaque(false);
+            setBackground(new Color(0,0,0,0));
+        }
+        
+        return c;
     }
 }

@@ -6,29 +6,50 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.ai.chat.Chat;
-import uno.anahata.ai.model.core.RagMessage;
 import uno.anahata.ai.model.tool.AbstractToolResponse;
 import uno.anahata.ai.model.tool.ToolExecutionStatus;
 import uno.anahata.ai.tool.AiToolException;
-import uno.anahata.ai.tool.JavaToolkitInstance;
 
 /**
  * A rich POJO that captures the complete and final outcome of a single tool
  * call. This class now follows a deferred execution model and manages the
- * thread-local context for {@link JavaToolkitInstance} instances.
+ * thread-local context for Java tool execution.
  *
  * @author anahata-gemini-pro-2.5
  */
 @Getter
 @Slf4j
 public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolCall> {
+
+    /** 
+     * A thread-local storage for the currently executing Java tool response.
+     * This allows tool logic to access its own context without explicit parameter passing.
+     */
+    private static final ThreadLocal<JavaMethodToolResponse> current = new ThreadLocal<>();
+
+    /**
+     * Gets the tool response associated with the current thread.
+     * @return The active tool response, or {@code null} if none is active.
+     */
+    public static JavaMethodToolResponse getCurrent() {
+        return current.get();
+    }
+
+    /**
+     * Sets the tool response for the current thread.
+     * @param response The response to set, or {@code null} to clear the context.
+     */
+    public static void setCurrent(JavaMethodToolResponse response) {
+        if (response == null) {
+            current.remove();
+        } else {
+            current.set(response);
+        }
+    }
 
     /**
      * The original invocation request that this result corresponds to.
@@ -59,14 +80,11 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
     @Override
     public void execute() {
         long startTime = System.currentTimeMillis();
-        JavaMethodTool tool = getCall().getTool();
-        Object toolInstance = tool.getToolInstance();
-        JavaToolkitInstance contextAwareTool = (toolInstance instanceof JavaToolkitInstance) ? (JavaToolkitInstance) toolInstance : null;
-
+        setCurrent(this); // Establish the thread-local context
+        
         try {
-            if (contextAwareTool != null) {
-                contextAwareTool.setContext(this);
-            }
+            JavaMethodTool tool = getCall().getTool();
+            Object toolInstance = tool.getToolInstance();
 
             var method = tool.getMethod();
             Parameter[] methodParameters = method.getParameters();
@@ -98,9 +116,7 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
             setStatus(ToolExecutionStatus.FAILED);
 
         } finally {
-            if (contextAwareTool != null) {
-                contextAwareTool.clearContext();
-            }
+            setCurrent(null); // Clear the context
             setExecutionTimeMillis(System.currentTimeMillis() - startTime);
         }
     }

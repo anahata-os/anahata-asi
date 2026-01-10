@@ -28,6 +28,7 @@ import uno.anahata.ai.model.tool.ToolPermission;
 import uno.anahata.ai.swing.chat.ChatPanel;
 import uno.anahata.ai.swing.chat.SwingChatConfig;
 import uno.anahata.ai.swing.components.CodeHyperlink;
+import uno.anahata.ai.swing.icons.DeleteIcon;
 import uno.anahata.ai.swing.icons.RunIcon;
 import uno.anahata.ai.swing.internal.AnyChangeDocumentListener;
 import uno.anahata.ai.swing.internal.EdtPropertyChangeListener;
@@ -47,6 +48,10 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
     private JPanel argsPanel;
     
     private JTabbedPane resultsTabbedPane;
+    private JScrollPane outputScrollPane;
+    private JScrollPane errorScrollPane;
+    private JScrollPane logsScrollPane;
+    
     private JTextArea outputArea;
     private JTextArea errorArea;
     private JTextArea logsArea;
@@ -58,6 +63,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
     private JComboBox<ToolPermission> permissionCombo;
     private JComboBox<ToolExecutionStatus> statusCombo;
     private JButton runButton;
+    private JButton revertButton;
 
     public ToolCallPanel(@NonNull ChatPanel chatPanel, @NonNull AbstractToolCall<?, ?> part) {
         super(chatPanel, part);
@@ -90,16 +96,10 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
     private void initComponents() {
         getCentralContainer().setLayout(new MigLayout("fill, insets 0", "[grow]", "[grow][]"));
 
-        // --- Split Pane ---
+        // --- Arguments Panel (Left) ---
         argsPanel = new JPanel(new MigLayout("fillx, insets 5", "[][grow]"));
         argsPanel.setOpaque(false);
         
-        JScrollPane argsScrollPane = new JScrollPane(argsPanel);
-        argsScrollPane.setBorder(null);
-        argsScrollPane.setOpaque(false);
-        argsScrollPane.getViewport().setOpaque(false);
-        argsScrollPane.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(argsScrollPane, e));
-
         resultsTabbedPane = new JTabbedPane();
         
         outputArea = createTextArea(chatConfig.getTheme().getToolOutputFg(), chatConfig.getTheme().getToolOutputBg());
@@ -107,20 +107,17 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         logsArea = createTextArea(chatConfig.getTheme().getToolLogsFg(), chatConfig.getTheme().getToolLogsBg());
         attachmentsPanel = new ToolResponseAttachmentsPanel(chatPanel);
 
-        JScrollPane outputScrollPane = new JScrollPane(outputArea);
+        outputScrollPane = new JScrollPane(outputArea);
         outputScrollPane.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(outputScrollPane, e));
-        resultsTabbedPane.addTab("Output", outputScrollPane);
 
-        JScrollPane errorScrollPane = new JScrollPane(errorArea);
+        errorScrollPane = new JScrollPane(errorArea);
         errorScrollPane.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(errorScrollPane, e));
-        resultsTabbedPane.addTab("Error", errorScrollPane);
 
-        JScrollPane logsScrollPane = new JScrollPane(logsArea);
+        logsScrollPane = new JScrollPane(logsArea);
         logsScrollPane.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(logsScrollPane, e));
-        resultsTabbedPane.addTab("Logs", logsScrollPane);
 
         // Horizontal split for integrated rendering
-        splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, argsScrollPane, resultsTabbedPane);
+        splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, argsPanel, resultsTabbedPane);
         splitPane.setResizeWeight(0.4); 
         splitPane.setOpaque(false);
         splitPane.setBorder(null);
@@ -129,7 +126,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         getCentralContainer().add(splitPane, "grow, wrap");
 
         // --- Bottom Control Bar ---
-        JPanel controlBar = new JPanel(new MigLayout("fillx, insets 5", "[][grow]", "[][]"));
+        JPanel controlBar = new JPanel(new MigLayout("fillx, insets 5", "[][grow][]", "[][]"));
         controlBar.setOpaque(false);
         controlBar.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.LIGHT_GRAY));
 
@@ -151,7 +148,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
 
         controlBar.add(new JLabel("Permission:"), "split 2");
         controlBar.add(permissionCombo);
-        controlBar.add(feedbackField, "growx, pushx, right, wrap");
+        controlBar.add(feedbackField, "growx, pushx, span 2, wrap");
 
         // Row 2: Status and Run (Right)
         statusCombo = new JComboBox<>(ToolExecutionStatus.values());
@@ -159,6 +156,10 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         statusCombo.addActionListener(e -> {
             getPart().getResponse().setStatus((ToolExecutionStatus) statusCombo.getSelectedItem());
         });
+
+        revertButton = new JButton("Revert", new DeleteIcon(16));
+        revertButton.setToolTipText("Clear execution results and restore status to NOT_EXECUTED");
+        revertButton.addActionListener(e -> getPart().getResponse().reset());
 
         runButton = new JButton("Run", new RunIcon(16));
         runButton.addActionListener(e -> getPart().getResponse().execute());
@@ -168,10 +169,11 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
                 () -> JacksonUtils.prettyPrint(getPart().getResponse()), 
                 "json");
 
-        controlBar.add(new JLabel("Status:"), "split 4, skip 1, right");
+        controlBar.add(new JLabel("Status:"), "split 2");
         controlBar.add(statusCombo);
-        controlBar.add(runButton);
-        controlBar.add(jsonLink, "newline, right");
+        controlBar.add(revertButton, "right, skip 1, split 2");
+        controlBar.add(runButton, "right, wrap");
+        controlBar.add(jsonLink, "cell 2 1, right");
 
         getCentralContainer().add(controlBar, "growx");
     }
@@ -226,46 +228,56 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
 
     private void renderResults(AbstractToolResponse<?> response) {
         // 1. Output
-        if (response.getStatus() == ToolExecutionStatus.EXECUTED) {
-            outputArea.setText(response.getResult() != null ? response.getResult().toString() : "null");
-            resultsTabbedPane.setSelectedIndex(0);
-        } else {
-            outputArea.setText(response.getStatus() == ToolExecutionStatus.PENDING ? "Pending execution..." : "Not executed.");
-        }
+        String output = response.getResult() != null ? response.getResult().toString() : "";
+        updateTab(outputScrollPane, "Output", !output.isEmpty());
+        outputArea.setText(output);
 
         // 2. Error
-        errorArea.setText(response.getError() != null ? response.getError() : "");
+        String error = response.getError() != null ? response.getError() : "";
+        updateTab(errorScrollPane, "Error", !error.isEmpty());
+        errorArea.setText(error);
         
         // 3. Logs
         StringBuilder logsBuilder = new StringBuilder();
         for (String log : response.getLogs()) {
             logsBuilder.append("• ").append(log).append("\n");
         }
-        logsArea.setText(logsBuilder.toString());
+        String logs = logsBuilder.toString();
+        updateTab(logsScrollPane, "Logs", !logs.isEmpty());
+        logsArea.setText(logs);
         
         // 4. Attachments
+        updateTab(attachmentsPanel, "Attachments", !response.getAttachments().isEmpty());
         if (!response.getAttachments().isEmpty()) {
-            if (resultsTabbedPane.indexOfComponent(attachmentsPanel) == -1) {
-                resultsTabbedPane.addTab("Attachments", attachmentsPanel);
-            }
-            attachmentsPanel.render(response.getAttachments());
-        } else {
-            if (resultsTabbedPane.indexOfComponent(attachmentsPanel) != -1) {
-                resultsTabbedPane.remove(attachmentsPanel);
-            }
+            attachmentsPanel.render(response);
         }
         
-        // Reactive Tab Selection
-        if (response.getStatus() == ToolExecutionStatus.FAILED) {
-            resultsTabbedPane.setSelectedIndex(1); 
-        } else if (response.getStatus() == ToolExecutionStatus.EXECUTED) {
-            if (!response.getAttachments().isEmpty()) {
-                resultsTabbedPane.setSelectedIndex(resultsTabbedPane.indexOfComponent(attachmentsPanel));
-            } else if (!logsArea.getText().isEmpty()) {
-                resultsTabbedPane.setSelectedIndex(2);
-            } else {
+        // Reactive Tab Selection (only if the selected tab was removed or if we just executed)
+        if (resultsTabbedPane.getTabCount() > 0) {
+            if (resultsTabbedPane.getSelectedIndex() == -1) {
                 resultsTabbedPane.setSelectedIndex(0);
             }
+            
+            if (response.getStatus() == ToolExecutionStatus.FAILED && !error.isEmpty()) {
+                resultsTabbedPane.setSelectedComponent(errorScrollPane);
+            } else if (response.getStatus() == ToolExecutionStatus.EXECUTED) {
+                if (!response.getAttachments().isEmpty()) {
+                    resultsTabbedPane.setSelectedComponent(attachmentsPanel);
+                } else if (!logs.isEmpty()) {
+                    resultsTabbedPane.setSelectedComponent(logsScrollPane);
+                } else if (!output.isEmpty()) {
+                    resultsTabbedPane.setSelectedComponent(outputScrollPane);
+                }
+            }
+        }
+    }
+    
+    private void updateTab(java.awt.Component component, String title, boolean shouldBeVisible) {
+        int index = resultsTabbedPane.indexOfComponent(component);
+        if (shouldBeVisible && index == -1) {
+            resultsTabbedPane.addTab(title, component);
+        } else if (!shouldBeVisible && index != -1) {
+            resultsTabbedPane.removeTabAt(index);
         }
     }
 
@@ -280,15 +292,19 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         if (response.getStatus() == ToolExecutionStatus.EXECUTED) {
             runButton.setText("Run Again");
             runButton.setEnabled(true);
+            revertButton.setVisible(true);
         } else if (response.getStatus() == ToolExecutionStatus.PENDING || response.getStatus() == ToolExecutionStatus.NOT_EXECUTED) {
             runButton.setText("Run");
             runButton.setEnabled(true);
+            revertButton.setVisible(false);
         } else if (response.getStatus() == ToolExecutionStatus.FAILED) {
             runButton.setText("Retry");
             runButton.setEnabled(true);
+            revertButton.setVisible(true);
         } else {
             runButton.setText("Executed");
             runButton.setEnabled(false);
+            revertButton.setVisible(false);
         }
     }
 

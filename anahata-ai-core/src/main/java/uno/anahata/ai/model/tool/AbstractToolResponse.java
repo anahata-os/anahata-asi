@@ -87,6 +87,19 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     }
 
     /**
+     * Resets the response to its initial state, clearing results, errors, logs, and attachments.
+     */
+    public void reset() {
+        setStatus(ToolExecutionStatus.NOT_EXECUTED);
+        setResult(null);
+        setError(null);
+        setExecutionTimeMillis(0);
+        clearLogs();
+        this.attachments.clear();
+        getPropertyChangeSupport().firePropertyChange("attachments", null, attachments);
+    }
+
+    /**
      * Adds a log message to this response, which can be displayed to the user.
      * @param message The log message.
      */
@@ -128,6 +141,16 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     public void addAttachment(byte[] data, String mimeType) {
         this.attachments.add(new ToolResponseAttachment(data, mimeType));
         getPropertyChangeSupport().firePropertyChange("attachments", null, attachments);
+    }
+
+    /**
+     * Removes an attachment from this response.
+     * @param attachment The attachment to remove.
+     */
+    public void removeAttachment(ToolResponseAttachment attachment) {
+        if (this.attachments.remove(attachment)) {
+            getPropertyChangeSupport().firePropertyChange("attachments", null, attachments);
+        }
     }
     
     /**
