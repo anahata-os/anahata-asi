@@ -56,37 +56,27 @@ public class SwingChatConfig extends ChatConfig {
     }
 
     public static Color getColor(ChatStatus status) {
-        switch (status) {
-            case API_CALL_IN_PROGRESS:
-                return new Color(0, 123, 255); // BLUE
-            case TOOL_PROMPT:
-                return new Color(255, 193, 7); // AMBER
-            case CANDIDATE_CHOICE_PROMPT:
-                return new Color(23, 162, 184); // CYAN
-            case TOOL_EXECUTION_IN_PROGRESS:
-                return new Color(128, 0, 128); // PURPLE
-            case TOOL_EXECUTION_ERROR:
-                return Color.ORANGE; // ORANGE
-            case WAITING_WITH_BACKOFF:
-                return new Color(255, 0, 0); // RED
-            case MAX_RETRIES_REACHED:
-                return new Color(150, 0, 0); // DARK RED
-            case ERROR:
-                return new Color(100, 0, 0); // Even darker red for general error
-            case SHUTDOWN:
-                return Color.GRAY; // GRAY
-            case IDLE:
-                return new Color(0, 128, 0); // GREEN
-            default:
-                return Color.BLACK;
-        }
+        return switch (status) {
+            case API_CALL_IN_PROGRESS -> new Color(0, 123, 255); // BLUE
+            case TOOL_PROMPT -> new Color(255, 193, 7); // AMBER
+            case CANDIDATE_CHOICE_PROMPT -> new Color(23, 162, 184); // CYAN
+            case AUTO_EXECUTING_TOOLS -> new Color(128, 0, 128); // PURPLE
+            case TOOL_EXECUTION_ERROR -> Color.ORANGE; // ORANGE
+            case WAITING_WITH_BACKOFF -> new Color(255, 0, 0); // RED
+            case MAX_RETRIES_REACHED -> new Color(150, 0, 0); // DARK RED
+            case ERROR -> new Color(100, 0, 0); // Even darker red for general error
+            case SHUTDOWN -> Color.GRAY; // GRAY
+            case IDLE -> new Color(0, 128, 0); // GREEN
+        };
     }
     
     public static Color getColor(ToolExecutionStatus status) {
         if (status == null) return Color.GRAY;
         return switch (status) {
             case EXECUTED -> new Color(40, 167, 69); // Green
+            case EXECUTING -> new Color(20, 157, 49); // Green
             case FAILED -> new Color(220, 53, 69);   // Red
+            case INTERRUPTED -> new Color(255, 193, 7); // Amber
             case PENDING -> new Color(128, 0, 128);  // Purple
             case NOT_FOUND -> new Color(253, 126, 20); // Orange
             case NOT_EXECUTED -> new Color(108, 117, 125); // Gray
