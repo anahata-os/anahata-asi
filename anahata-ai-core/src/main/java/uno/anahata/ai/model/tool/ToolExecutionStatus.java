@@ -13,10 +13,16 @@ public enum ToolExecutionStatus {
 
     /** The tool was executed successfully. */
     EXECUTED,
+    
+    /** The tool is current executing. */
+    EXECUTING,
 
     /** The tool execution was attempted but failed due to an exception. */
     FAILED,
     
+    /** The tool execution was interrupted by the user. */
+    INTERRUPTED,
+
     /** The tool was not executed because it was not found in the list of enabled tools. */
     NOT_FOUND,
 
