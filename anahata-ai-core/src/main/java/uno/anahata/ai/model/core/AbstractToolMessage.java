@@ -10,6 +10,7 @@ import uno.anahata.ai.model.tool.AbstractTool;
 import uno.anahata.ai.model.tool.AbstractToolResponse;
 import uno.anahata.ai.model.tool.ToolExecutionStatus;
 import uno.anahata.ai.model.tool.ToolPermission;
+import uno.anahata.ai.status.ChatStatus;
 
 /**
  * Represents a message containing the results of tool executions.
@@ -61,6 +62,10 @@ public abstract class AbstractToolMessage<T extends AbstractModelMessage> extend
      */
     public boolean isAutoRunnable() {
         // Condition 1: Check global configuration settings.
+        if (getModelMessage().isStreaming()) {
+            return false;
+        }
+        
         if (!getChat().getConfig().isLocalToolsEnabled()) {
             return false;
         }
@@ -83,11 +88,42 @@ public abstract class AbstractToolMessage<T extends AbstractModelMessage> extend
     }
     
     /**
+     * Checks if there are any tool responses in a PENDING state that have the APPROVE_ALWAYS permission.
+     * @return {@code true} if at least one approved tool is pending.
+     */
+    public boolean hasApprovedPendingTools() {
+        return getToolResponses().stream()
+                .anyMatch(r -> r.getStatus() == ToolExecutionStatus.PENDING && 
+                               r.getCall().getTool().getPermission() == ToolPermission.APPROVE_ALWAYS);
+    }
+    
+    /**
      * Executes all tool responses in this message that are currently in a PENDING state.
      */
     public void executeAllPending() {
         getToolResponses().stream()
             .filter(response -> response.getStatus() == ToolExecutionStatus.PENDING)
             .forEach(response -> response.execute());
+    }
+
+    /**
+     * Processes all tool responses in this message that are currently in a PENDING state.
+     * Tools with APPROVE_ALWAYS permission are executed, while others are rolled to NOT_EXECUTED.
+     * This method also updates the chat status if any tools are executed.
+     */
+    public void processPendingTools() {
+        if (hasApprovedPendingTools()) {
+            getChat().getStatusManager().fireStatusChanged(ChatStatus.AUTO_EXECUTING_TOOLS);
+        }
+        
+        for (AbstractToolResponse<?> response : getToolResponses()) {
+            if (response.getStatus() == ToolExecutionStatus.PENDING) {
+                if (response.getCall().getTool().getPermission() == ToolPermission.APPROVE_ALWAYS) {
+                    response.execute();
+                } else {
+                    response.setStatus(ToolExecutionStatus.NOT_EXECUTED);
+                }
+            }
+        }
     }
 }
