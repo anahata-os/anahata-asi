@@ -17,6 +17,7 @@ import uno.anahata.ai.toolkit.Session;
 import uno.anahata.ai.toolkit.Files;
 import uno.anahata.ai.toolkit.Java;
 import uno.anahata.ai.toolkit.Resources;
+import uno.anahata.ai.toolkit.shell.Shell;
 
 /**
  * A model-agnostic, intelligent configuration object for a single chat session.
@@ -60,6 +61,7 @@ public class ChatConfig {
         toolClasses.add(Java.class);
         toolClasses.add(Session.class);
         toolClasses.add(Resources.class);
+        toolClasses.add(Shell.class);
     }
 
     /**
