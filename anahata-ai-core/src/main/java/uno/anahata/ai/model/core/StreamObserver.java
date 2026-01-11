@@ -8,24 +8,23 @@ import java.util.List;
  * asynchronous token streaming from an AI model.
  *
  * @author anahata-gemini-pro-2.5
- * @param <T> The type of values in the stream.
- * @param <M> The type of model messages being streamed.
+ * @param <R> The type of Response in the stream.
  */
-public interface StreamObserver<T, M extends AbstractModelMessage> {
+public interface StreamObserver<R extends Response<?>> {
 
     /**
      * Called when the stream starts, providing the initial candidate messages.
      * 
      * @param candidates The list of candidate messages that will be updated.
      */
-    void onStart(List<M> candidates);
+    void onStart(List<? extends AbstractModelMessage> candidates);
 
     /**
      * Called when a new value is available in the stream.
      *
      * @param value The next value.
      */
-    void onNext(T value);
+    void onNext(R value);
 
     /**
      * Called when the stream has completed successfully.
