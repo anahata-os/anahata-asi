@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.ai.AiConfig;
+import uno.anahata.ai.AsiConfig;
 
 /**
  * The abstract base class for all AI model providers, now with model caching.
@@ -144,7 +144,7 @@ public abstract class AbstractAiProvider {
      * @return The path to the provider's directory.
      */
     public Path getProviderDirectory() {
-        return AiConfig.getWorkDirSubDir(providerId);
+        return AsiConfig.getWorkDirSubDir(providerId);
     }
     
     public Path getKeysFilePath() {

@@ -67,16 +67,11 @@ public class Java extends AnahataToolkit {
     public String defaultCompilerClasspath;
 
     /**
-     * 
+     * Taraaa
      */
     public Java() {
         defaultCompilerClasspath = System.getProperty("java.class.path");
         log.info("Java toolkit instantiated:");
-        try {
-            log.info(getSystemInstructionParts(null).toString());       
-        } catch (Exception e) {
-        }
-        
     }
 
     @AiTool("The full default classpath for compiling java code and for class loading")
@@ -89,15 +84,26 @@ public class Java extends AnahataToolkit {
         this.defaultCompilerClasspath = defaultCompilerClasspath;
     }
 
+    /**
+     * Super beautiful version of the classpath that uses way less tokens than the full one.
+     * ç
+     * @return 
+     */
     public String getPrettyPrintedDefaultClasspath() {
         return ClasspathPrinter.prettyPrint(defaultCompilerClasspath);
     }
 
+    /**
+     * Throws the session and application map keys and the pretty printed classpath on the rag message.
+     * 
+     * @param ragMessage - the ragMessage to be injected with content.
+     * @throws Exception 
+     */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
         String ragText = "\nSession map keys: " + sessionMap.keySet()
                 + "\nApplication map keys: " + applicationMap.keySet()
-                + "\nDefault Compiler / ClassLoader Classpath (abbreviated):\n" + getPrettyPrintedDefaultClasspath();
+                + "\nDefault Compiler and ClassLoader Classpath (abbreviated):\n" + getPrettyPrintedDefaultClasspath();
         new TextPart(ragMessage, ragText);
     }
     

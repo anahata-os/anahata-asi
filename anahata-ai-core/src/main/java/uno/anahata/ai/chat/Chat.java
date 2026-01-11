@@ -594,6 +594,17 @@ public class Chat implements PropertyChangeSource {
     }
 
     /**
+     * Sets the nickname for the session and fires a property change event.
+     * 
+     * @param nickname The new nickname.
+     */
+    public void setNickname(String nickname) {
+        String old = config.getName();
+        config.setName(nickname);
+        propertyChangeSupport.firePropertyChange("nickname", old, nickname);
+    }
+
+    /**
      * Gets a short version of the session ID.
      * 
      * @return The short session ID.

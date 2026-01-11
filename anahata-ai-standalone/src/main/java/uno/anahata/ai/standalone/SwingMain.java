@@ -7,7 +7,7 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.ai.AiConfig;
+import uno.anahata.ai.AsiConfig;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.cli.CommandLineArgs;
 import uno.anahata.ai.swing.chat.MainPanel;
@@ -33,7 +33,7 @@ public class SwingMain {
         }
 
         // Core application setup
-        AiConfig appConfig = new AiConfig("AnahataStandalone");
+        AsiConfig appConfig = new AsiConfig("AnahataStandalone");
         SwingChatConfig chatConfig = new SwingChatConfig(appConfig);
         chatConfig.getProviderClasses().add(uno.anahata.ai.gemini.GeminiAiProvider.class);
         

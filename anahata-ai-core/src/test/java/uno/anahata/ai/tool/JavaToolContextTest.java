@@ -6,7 +6,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import uno.anahata.ai.AiConfig;
+import uno.anahata.ai.AsiConfig;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.chat.ChatConfig;
 import uno.anahata.ai.model.core.AbstractModelMessage;
@@ -28,7 +28,7 @@ public class JavaToolContextTest {
 
     @BeforeEach
     public void setUp() {
-        AiConfig aiConfig = new AiConfig("test-app");
+        AsiConfig aiConfig = new AsiConfig("test-app");
         ChatConfig chatConfig = new ChatConfig(aiConfig, "test-session");
         chatConfig.getToolClasses().add(MockToolkit.class);
         chat = new Chat(chatConfig);

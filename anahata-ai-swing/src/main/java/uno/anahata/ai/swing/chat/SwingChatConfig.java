@@ -7,7 +7,7 @@ import java.awt.Color;
 import java.awt.Font;
 import lombok.Getter;
 import lombok.Setter;
-import uno.anahata.ai.AiConfig;
+import uno.anahata.ai.AsiConfig;
 import uno.anahata.ai.chat.ChatConfig;
 import uno.anahata.ai.model.core.Role;
 import uno.anahata.ai.model.tool.ToolExecutionStatus;
@@ -36,8 +36,23 @@ public class SwingChatConfig extends ChatConfig {
      */
     private boolean audioFeedbackEnabled = true; 
 
-    public SwingChatConfig(AiConfig aiConfig) {
-        super(aiConfig, "standalone");
+    /**
+     * Constructs a new SwingChatConfig with a randomly generated session ID.
+     * 
+     * @param aiConfig The global AI configuration.
+     */
+    public SwingChatConfig(AsiConfig aiConfig) {
+        super(aiConfig);
+    }
+
+    /**
+     * Constructs a new SwingChatConfig with a specific session ID.
+     * 
+     * @param aiConfig The global AI configuration.
+     * @param sessionId The unique session ID.
+     */
+    public SwingChatConfig(AsiConfig aiConfig, String sessionId) {
+        super(aiConfig, sessionId);
     }
 
     public static Color getColor(ChatStatus status) {

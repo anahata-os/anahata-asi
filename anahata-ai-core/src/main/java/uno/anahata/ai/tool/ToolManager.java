@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.ai.AiConfig;
+import uno.anahata.ai.AsiConfig;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.context.ContextProvider;
 import uno.anahata.ai.model.core.AbstractModelMessage;
@@ -53,7 +53,7 @@ public class ToolManager {
     private static final AtomicInteger callIdGenerator = new AtomicInteger(0);
 
     private final Chat chat;
-    private final AiConfig config;
+    private final AsiConfig config;
     private final Map<String, AbstractToolkit<?>> toolkits = new HashMap<>();
 
     /**
@@ -80,7 +80,7 @@ public class ToolManager {
      *
      * @param config The global AI configuration.
      */
-    public ToolManager(@NonNull AiConfig config) {
+    public ToolManager(@NonNull AsiConfig config) {
         this.chat = null; // No parent chat in this context
         this.config = config;
     }

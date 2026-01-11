@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Getter
 @Slf4j
-public class AiConfig {
+public class AsiConfig {
     private final String hostApplicationId;
     private final Preferences preferences;
 
@@ -32,7 +32,7 @@ public class AiConfig {
      *
      * @param hostApplicationId A unique identifier for the host application (e.g., "netbeans").
      */
-    public AiConfig(String hostApplicationId) {
+    public AsiConfig(String hostApplicationId) {
         this.hostApplicationId = hostApplicationId;
         this.preferences = Preferences.load(this);
     }

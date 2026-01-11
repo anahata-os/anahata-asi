@@ -1,21 +1,25 @@
 /*
- * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Fora Bara!
+ * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
  */
 package uno.anahata.ai.swing.chat;
 
 import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.Component;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.text.DecimalFormat;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.ListSelectionModel;
 import javax.swing.Timer;
@@ -26,9 +30,11 @@ import lombok.NonNull;
 import lombok.Setter;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.status.ChatStatus;
-import uno.anahata.ai.swing.chat.SwingChatConfig;
+import uno.anahata.ai.swing.icons.CardsIcon;
 import uno.anahata.ai.swing.icons.DeleteIcon;
 import uno.anahata.ai.swing.icons.RestartIcon;
+import uno.anahata.ai.swing.icons.TableIcon;
+import uno.anahata.ai.swing.internal.WrapLayout;
 
 /**
  * A reusable Swing panel for managing active AI chat sessions.
@@ -37,7 +43,7 @@ import uno.anahata.ai.swing.icons.RestartIcon;
  * 
  * @author anahata-gemini-pro-2.5
  */
-public class LiveSessionsPanel extends JPanel {
+public class SessionsPanel extends JPanel {
 
     private final JTable table;
     private final LiveSessionsTableModel model;
@@ -45,11 +51,34 @@ public class LiveSessionsPanel extends JPanel {
     private final JButton closeButton;
     private final JButton disposeButton;
     
+    private final JPanel cardContainer;
+    private final JPanel mainView;
+    private final CardLayout viewLayout;
+    
+    private final Map<Chat, SessionCard> cachedCards = new HashMap<>();
+    
     @Setter
     private SessionController controller;
 
-    public LiveSessionsPanel() {
+    public SessionsPanel() {
+        // 1. Initialize Final Fields First
+        this.model = new LiveSessionsTableModel();
+        this.table = new JTable(model);
+        this.cardContainer = new JPanel(new WrapLayout(WrapLayout.LEFT, 10, 10));
+        this.viewLayout = new CardLayout();
+        this.mainView = new JPanel(viewLayout);
+        
+        this.closeButton = new JButton("Close");
+        this.disposeButton = new JButton("Dispose", new DeleteIcon(16));
+        
+        this.refreshTimer = new Timer(1000, e -> {
+            model.refresh();
+            refreshCards();
+        });
+
+        // 2. Setup Layout and Components
         setLayout(new BorderLayout());
+        cardContainer.setOpaque(false);
 
         // Toolbar for Actions
         JToolBar toolBar = new JToolBar();
@@ -62,7 +91,6 @@ public class LiveSessionsPanel extends JPanel {
         });
         toolBar.add(newButton);
 
-        closeButton = new JButton("Close");
         closeButton.setToolTipText("Close the selected AI session window");
         closeButton.addActionListener(e -> {
             Chat chat = getSelectedChat();
@@ -73,7 +101,19 @@ public class LiveSessionsPanel extends JPanel {
         
         toolBar.add(Box.createHorizontalGlue());
 
-        disposeButton = new JButton("Dispose", new DeleteIcon(16));
+        JToggleButton viewToggle = new JToggleButton("Cards", new CardsIcon(16));
+        viewToggle.setToolTipText("Toggle between Table and Sticky Notes view");
+        viewToggle.addActionListener(e -> {
+            boolean isCards = viewToggle.isSelected();
+            viewLayout.show(mainView, isCards ? "cards" : "table");
+            viewToggle.setText(isCards ? "Table" : "Cards");
+            viewToggle.setIcon(isCards ? new TableIcon(16) : new CardsIcon(16));
+            if (isCards) {
+                refreshCards();
+            }
+        });
+        toolBar.add(viewToggle);
+
         disposeButton.setToolTipText("Permanently dispose of the selected session");
         disposeButton.addActionListener(e -> {
             Chat chat = getSelectedChat();
@@ -84,8 +124,6 @@ public class LiveSessionsPanel extends JPanel {
 
         add(toolBar, BorderLayout.NORTH);
 
-        model = new LiveSessionsTableModel();
-        table = new JTable(model);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
         
@@ -117,9 +155,10 @@ public class LiveSessionsPanel extends JPanel {
             }
         });
 
-        add(new JScrollPane(table), BorderLayout.CENTER);
-
-        refreshTimer = new Timer(1000, e -> model.refresh());
+        mainView.add(new JScrollPane(table), "table");
+        mainView.add(new JScrollPane(cardContainer), "cards");
+        
+        add(mainView, BorderLayout.CENTER);
         
         setColumnWidths();
     }
@@ -160,6 +199,46 @@ public class LiveSessionsPanel extends JPanel {
         boolean isSelected = selected != null;
         disposeButton.setEnabled(isSelected);
         closeButton.setEnabled(isSelected);
+    }
+
+    private void refreshCards() {
+        // 1. Remove cards for sessions no longer present
+        cachedCards.keySet().removeIf(chat -> {
+            boolean exists = false;
+            for (int i = 0; i < model.getRowCount(); i++) {
+                if (model.getChatAt(i) == chat) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                cardContainer.remove(cachedCards.get(chat));
+                return true;
+            }
+            return false;
+        });
+
+        // 2. Add or update cards for current sessions
+        for (int i = 0; i < model.getRowCount(); i++) {
+            Chat chat = model.getChatAt(i);
+            SessionCard card = cachedCards.get(chat);
+            if (card == null) {
+                card = new SessionCard(chat, controller);
+                cachedCards.put(chat, card);
+            }
+            
+            if (i >= cardContainer.getComponentCount() || cardContainer.getComponent(i) != card) {
+                cardContainer.add(card, i);
+            }
+        }
+
+        // 3. Clean up trailing components
+        while (cardContainer.getComponentCount() > model.getRowCount()) {
+            cardContainer.remove(cardContainer.getComponentCount() - 1);
+        }
+
+        cardContainer.revalidate();
+        cardContainer.repaint();
     }
 
     /**

@@ -5,12 +5,12 @@ package uno.anahata.ai.chat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import uno.anahata.ai.AiConfig;
+import uno.anahata.ai.AsiConfig;
 import uno.anahata.ai.model.core.RequestConfig;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
 import uno.anahata.ai.toolkit.Files;
@@ -22,12 +22,11 @@ import uno.anahata.ai.toolkit.Java;
  */
 @Getter
 @Setter
-@RequiredArgsConstructor
 public class ChatConfig {
 
     /** A reference to the global, application-wide configuration. */
     @NonNull
-    private final AiConfig aiConfig;
+    private final AsiConfig aiConfig;
 
     /** The unique identifier for this specific chat session. */
     @NonNull
@@ -57,6 +56,26 @@ public class ChatConfig {
         // Pre-populate with core, essential tools.
         toolClasses.add(Files.class);
         toolClasses.add(Java.class);
+    }
+
+    /**
+     * Constructs a new ChatConfig with a randomly generated session ID.
+     * 
+     * @param aiConfig The global AI configuration.
+     */
+    public ChatConfig(@NonNull AsiConfig aiConfig) {
+        this(aiConfig, UUID.randomUUID().toString());
+    }
+
+    /**
+     * Constructs a new ChatConfig with a specific session ID.
+     * 
+     * @param aiConfig The global AI configuration.
+     * @param sessionId The unique session ID.
+     */
+    public ChatConfig(@NonNull AsiConfig aiConfig, @NonNull String sessionId) {
+        this.aiConfig = aiConfig;
+        this.sessionId = sessionId;
     }
 
     /** The default request configuration for this chat session. Lazily initialized. */
@@ -155,7 +174,7 @@ public class ChatConfig {
     }
     
     /**
-     * Convenience method to get the host application ID from the parent AiConfig.
+     * Convenience method to get the host application ID from the parent AsiConfig.
      * @return The host application ID.
      */
     public String getHostApplicationId() {

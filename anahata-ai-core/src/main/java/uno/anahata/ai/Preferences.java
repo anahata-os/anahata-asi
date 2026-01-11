@@ -13,7 +13,7 @@ import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.ai.AiConfig;
+import uno.anahata.ai.AsiConfig;
 import uno.anahata.ai.internal.kryo.KryoUtils;
 import uno.anahata.ai.model.tool.ToolPermission;
 
@@ -43,7 +43,7 @@ public class Preferences {
      *
      * @param config The application-wide configuration, used to determine the correct storage location.
      */
-    public synchronized void save(AiConfig config) {
+    public synchronized void save(AsiConfig config) {
         Path preferencesFile = getPreferencesFile(config);
         try {
             Files.createDirectories(preferencesFile.getParent());
@@ -63,7 +63,7 @@ public class Preferences {
      * @param config The application-wide configuration.
      * @return The loaded Preferences object, or a new empty one if not found or on error.
      */
-    public static synchronized Preferences load(AiConfig config) {
+    public static synchronized Preferences load(AsiConfig config) {
         Path preferencesFile = getPreferencesFile(config);
         if (Files.exists(preferencesFile)) {
             log.info("Loading preferences from {}", preferencesFile);
@@ -79,7 +79,7 @@ public class Preferences {
         return new Preferences();
     }
 
-    private static Path getPreferencesFile(AiConfig config) {
+    private static Path getPreferencesFile(AsiConfig config) {
         Path appWorkDir = config.getAppDir();
         return appWorkDir.resolve(PREFERENCES_FILE_NAME);
     }

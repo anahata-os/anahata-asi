@@ -22,7 +22,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import uno.anahata.ai.AiConfig;
+import uno.anahata.ai.AsiConfig;
 import uno.anahata.ai.model.tool.java.JavaMethodTool;
 import uno.anahata.ai.model.tool.java.JavaMethodToolParameter;
 import uno.anahata.ai.tool.schema.SchemaProvider;
@@ -38,7 +38,7 @@ public class JavaMethodToolTest {
 
     @BeforeAll
     public static void setUp() {
-        AiConfig config = new AiConfig("test-app");
+        AsiConfig config = new AsiConfig("test-app");
         toolManager = new ToolManager(config);
         toolManager.registerClasses(MockToolkit.class);
     }
