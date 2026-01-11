@@ -246,11 +246,14 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
             .collect(Collectors.toList());
         
         for (AbstractPart removedPart : toRemove) {
-            AbstractMessagePanel.this.cachedPartPanels.remove(removedPart);
-            partsContainer.remove(cachedPartPanels.get(removedPart));
+            AbstractPartPanel panel = cachedPartPanels.remove(removedPart);
+            if (panel != null) {
+                partsContainer.remove(panel);
+            }
         }
 
         // 2. Ensure all parts have panels and are in the correct order
+        int componentIndex = 0;
         for (int i = 0; i < currentParts.size(); i++) {
             AbstractPart part = currentParts.get(i);
             AbstractPartPanel panel = cachedPartPanels.get(part);
@@ -265,14 +268,15 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
             if (panel != null) {
                 panel.render();
                 
-                if (i >= partsContainer.getComponentCount() || partsContainer.getComponent(i) != panel) {
-                    partsContainer.add(panel, i);
+                if (componentIndex >= partsContainer.getComponentCount() || partsContainer.getComponent(componentIndex) != panel) {
+                    partsContainer.add(panel, componentIndex);
                 }
+                componentIndex++;
             }
         }
 
         // 3. Clean up any trailing components
-        while (partsContainer.getComponentCount() > currentParts.size()) {
+        while (partsContainer.getComponentCount() > componentIndex) {
             partsContainer.remove(partsContainer.getComponentCount() - 1);
         }
     }
