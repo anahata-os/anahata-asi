@@ -18,6 +18,7 @@ import com.google.genai.types.GoogleSearchRetrieval;
 import com.google.genai.types.Model;
 import com.google.genai.types.Part;
 import com.google.genai.types.ToolCodeExecution;
+import java.io.InterruptedIOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -42,6 +43,7 @@ import uno.anahata.ai.model.core.StreamObserver;
 import uno.anahata.ai.model.core.TextPart;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
 import uno.anahata.ai.model.provider.AbstractModel;
+import uno.anahata.ai.model.provider.ApiCallInterruptedException;
 import uno.anahata.ai.model.provider.ServerTool;
 import uno.anahata.ai.tool.RetryableApiException;
 
@@ -238,6 +240,9 @@ public class GeminiModel extends AbstractModel {
             return new GeminiResponse(prepared.config().toJson(), prepared.historyJson(), chat, getModelId(), response);
         } catch (ClientException e) {
             log.error("Exception in generateContent", e);
+            if (isInterruption(e)) {
+                throw new ApiCallInterruptedException(e);
+            }
             if (e.toString().contains("429") || e.toString().contains("503") || e.toString().contains("500")) {
                 provider.resetClient();
                 throw new RetryableApiException(client.apiKey(), e.toString(), e);
@@ -248,7 +253,7 @@ public class GeminiModel extends AbstractModel {
     }
 
     @Override
-    public void generateContentStream(GenerationRequest request, StreamObserver<Response<? extends AbstractModelMessage>, ? extends AbstractModelMessage> observer) {
+    public void generateContentStream(GenerationRequest request, StreamObserver<Response<? extends AbstractModelMessage>> observer) {
         Client client = provider.getClient();
         GeminiGenerateContentParameters prepared = prepareGenerateContentParameters(request);
         Chat chat = request.config().getChat();
@@ -293,13 +298,32 @@ public class GeminiModel extends AbstractModel {
             observer.onComplete();
         } catch (Exception e) {
             log.error("Exception in generateContentStream", e);
-            if (e.toString().contains("429") || e.toString().contains("503") || e.toString().contains("500")) {
+            if (isInterruption(e)) {
+                observer.onError(new ApiCallInterruptedException(e));
+            } else if (e.toString().contains("429") || e.toString().contains("503") || e.toString().contains("500")) {
                 provider.resetClient();
                 observer.onError(new RetryableApiException(client.apiKey(), e.toString(), e));
             } else {
                 observer.onError(e);
             }
         }
+    }
+
+    /**
+     * Checks if the given exception or any of its causes is an interruption.
+     * 
+     * @param e The exception to check.
+     * @return true if it's an interruption, false otherwise.
+     */
+    private boolean isInterruption(Throwable e) {
+        Throwable t = e;
+        while (t != null) {
+            if (t instanceof InterruptedException || t instanceof InterruptedIOException) {
+                return true;
+            }
+            t = t.getCause();
+        }
+        return false;
     }
 
     /**
