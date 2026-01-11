@@ -51,9 +51,8 @@ public class InputUserMessage extends UserMessage {
     public void setText(String text) {
         if (text == null || text.trim().isEmpty()) {            
             if (editableTextPart != null) {
-                //causing a npe
-                //editableTextPart.remove();
-                //editableTextPart = null;
+                editableTextPart.remove();
+                editableTextPart = null;
             }
         } else {
             if (editableTextPart == null) {
