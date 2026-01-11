@@ -19,10 +19,12 @@ package uno.anahata.ai.tool;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -32,6 +34,7 @@ import uno.anahata.ai.AsiConfig;
 import uno.anahata.ai.chat.Chat;
 import uno.anahata.ai.context.ContextProvider;
 import uno.anahata.ai.model.core.AbstractModelMessage;
+import uno.anahata.ai.model.core.BasicPropertyChangeSource;
 import uno.anahata.ai.model.tool.AbstractTool;
 import uno.anahata.ai.model.tool.AbstractToolCall;
 import uno.anahata.ai.model.tool.bad.BadTool;
@@ -48,13 +51,16 @@ import uno.anahata.ai.model.tool.java.JavaObjectToolkit;
  */
 @Slf4j
 @Getter
-public class ToolManager {
+public class ToolManager extends BasicPropertyChangeSource {
 
     private static final AtomicInteger callIdGenerator = new AtomicInteger(0);
 
     private final Chat chat;
     private final AsiConfig config;
     private final Map<String, AbstractToolkit<?>> toolkits = new HashMap<>();
+    
+    /** A thread-safe list of currently executing tool calls. */
+    private final List<AbstractToolCall<?, ?>> executingCalls = new CopyOnWriteArrayList<>();
 
     /**
      * Primary constructor for use in a live chat session.
@@ -119,6 +125,7 @@ public class ToolManager {
      * provider-specific data. This method orchestrates the creation and
      * pre-rejection logic.
      *
+     * @param amm The model message that initiated the call.
      * @param id The unique ID of the tool call (can be null).
      * @param name The name of the tool to call.
      * @param jsonArgs The raw arguments from the model.
@@ -219,5 +226,36 @@ public class ToolManager {
             }
         }
         return ret;
+    }
+    
+    /**
+     * Registers a tool call as currently executing and fires a property change event.
+     * 
+     * @param call The tool call to register.
+     */
+    public void registerExecutingCall(AbstractToolCall<?, ?> call) {
+        List<AbstractToolCall<?, ?>> oldCalls = new ArrayList<>(executingCalls);
+        executingCalls.add(call);
+        getPropertyChangeSupport().firePropertyChange("executingCalls", oldCalls, executingCalls);
+    }
+
+    /**
+     * Unregisters a tool call from the executing list and fires a property change event.
+     * 
+     * @param call The tool call to unregister.
+     */
+    public void unregisterExecutingCall(AbstractToolCall<?, ?> call) {
+        List<AbstractToolCall<?, ?>> oldCalls = new ArrayList<>(executingCalls);
+        executingCalls.remove(call);
+        getPropertyChangeSupport().firePropertyChange("executingCalls", oldCalls, executingCalls);
+    }
+
+    /**
+     * Gets an unmodifiable view of the currently executing tool calls.
+     * 
+     * @return The list of executing calls.
+     */
+    public List<AbstractToolCall<?, ?>> getExecutingCalls() {
+        return Collections.unmodifiableList(executingCalls);
     }
 }
