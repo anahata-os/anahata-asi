@@ -177,18 +177,13 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
     }
     
     /**
-     * Iterates through all tool responses associated with this message and rolls
-     * any that are in a PENDING state to NOT_EXECUTED.
+     * Processes all tool responses associated with this message that are in a PENDING state.
+     * Tools with APPROVE_ALWAYS permission are executed, while others are rolled to NOT_EXECUTED.
      */
-    public void rollPendingToolsToNotExecuted() {
+    public void processPendingTools() {
         T tm = getToolMessage();
         if (tm != null) {
-            List<AbstractToolResponse<?>> responses = tm.getToolResponses();
-            for (AbstractToolResponse<?> response : responses) {
-                if (response.getStatus() == ToolExecutionStatus.PENDING) {
-                    response.setStatus(ToolExecutionStatus.NOT_EXECUTED);
-                }
-            }
+            tm.processPendingTools();
         }
     }
     
