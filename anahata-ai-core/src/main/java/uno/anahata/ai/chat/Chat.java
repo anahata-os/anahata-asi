@@ -3,6 +3,7 @@
  */
 package uno.anahata.ai.chat;
 
+import java.io.InterruptedIOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -36,6 +37,7 @@ import uno.anahata.ai.model.core.TextPart;
 import uno.anahata.ai.model.core.UserMessage;
 import uno.anahata.ai.model.provider.AbstractAiProvider;
 import uno.anahata.ai.model.provider.AbstractModel;
+import uno.anahata.ai.model.provider.ApiCallInterruptedException;
 import uno.anahata.ai.resource.ResourceManager;
 import uno.anahata.ai.status.ApiErrorRecord;
 import uno.anahata.ai.status.ApiErrorRecord.ApiErrorRecordBuilder;
@@ -73,6 +75,11 @@ public class Chat extends BasicPropertyChangeSource {
      * A thread-safe flag indicating if the main chat loop is currently active.
      */
     private volatile boolean running = false;
+
+    /**
+     * The thread currently executing the chat turn. Used for interruption.
+     */
+    private volatile Thread currentExecutionThread;
 
     /**
      * A message that has been submitted via {@link #sendMessage(InputUserMessage)}
@@ -190,45 +197,78 @@ public class Chat extends BasicPropertyChangeSource {
      * staged message when its current turn is complete.</li>
      * </ul>
      *
-     * @param message The user's message.
+     * @param message The user's message. Can be null or empty to trigger a context resend.
      */
-    public void sendMessage(@NonNull InputUserMessage message) {
+    public void sendMessage(InputUserMessage message) {
         runningLock.lock();
         try {
             if (running) {
-                log.info("Chat is busy. Staging message.");
-                setStagedUserMessage(message);
+                if (message != null && !message.isEmpty()) {
+                    log.info("Chat is busy. Staging message.");
+                    setStagedUserMessage(message);
+                } else {
+                    log.info("Chat is busy. Ignoring empty message/resend request.");
+                }
                 return;
             }
-            rollPendingToolsToNotExecuted();
-            contextManager.addMessage(message);
-            executeTurn();
+            
+            // If both are empty, we have nothing to do.
+            if ((message == null || message.isEmpty()) && contextManager.buildVisibleHistory().isEmpty()) {
+                log.warn("Attempted to send empty message with empty history. Ignoring.");
+                return;
+            }
+
+            setRunning(true);
         } finally {
             runningLock.unlock();
+        }
+
+        try {
+            processPendingTools();
+            if (message != null && !message.isEmpty()) {
+                contextManager.addMessage(message);
+            }
+            executeTurnLoop();
+        } finally {
+            setRunning(false);
+            processStagedMessage();
         }
     }
 
     /**
-     * Sends the current context to the model without adding a new user message.
-     * This is useful for re-triggering the model after an API error or when the
-     * input is empty.
+     * Processes any staged message that arrived while the chat was busy.
      */
-    public void sendContext() {
+    private void processStagedMessage() {
+        InputUserMessage staged;
         runningLock.lock();
         try {
-            if (running) {
-                log.info("Chat is busy. Cannot send context.");
-                return;
+            staged = stagedUserMessage;
+            if (staged != null) {
+                setStagedUserMessage(null);
             }
-            rollPendingToolsToNotExecuted();
-            executeTurn();
         } finally {
             runningLock.unlock();
+        }
+
+        if (staged != null) {
+            log.info("Processing staged message.");
+            sendMessage(staged);
         }
     }
 
     /**
-     * Prepares the request by consuming any staged messages and building the history.
+     * Stops the current chat execution by interrupting the execution thread.
+     */
+    public void stop() {
+        Thread thread = currentExecutionThread;
+        if (thread != null && thread.isAlive()) {
+            log.info("Stopping chat execution by interrupting thread: {}", thread.getName());
+            thread.interrupt();
+        }
+    }
+
+    /**
+     * Prepares the request by building the history from the context manager.
      * 
      * @return A GenerationRequest containing the config and history.
      * @throws IllegalStateException if no model is selected.
@@ -238,38 +278,24 @@ public class Chat extends BasicPropertyChangeSource {
             throw new IllegalStateException("A model must be selected before sending a message.");
         }
 
-        // Atomically consume any staged message "just-in-time" before building the history.
-        InputUserMessage messageToProcess = this.stagedUserMessage;
-        if (messageToProcess != null) {
-            setStagedUserMessage(null); // Consume it
-            contextManager.addMessage(messageToProcess);
-            log.info("Processing staged message.");
-        }
-
         RequestConfig requestConfig = config.getRequestConfig();
         List<AbstractMessage> history = contextManager.buildVisibleHistory();
         return new GenerationRequest(requestConfig, history);
     }
 
     /**
-     * Orchestrates a single conversation turn, handling both synchronous and
+     * Orchestrates the conversation turn loop, handling both synchronous and
      * streaming modes, retries, and candidate selection.
      */
-    private void executeTurn() {
-        setRunning(true);
+    private void executeTurnLoop() {
+        this.currentExecutionThread = Thread.currentThread();
         try {
             boolean turnComplete = false;
             while (!turnComplete) {
                 turnComplete = performSingleTurn();
             }
         } finally {
-            setRunning(false);
-            // Atomically check and process any staged message that arrived while we were busy.
-            InputUserMessage staged = stagedUserMessage;
-            if (staged != null) {
-                setStagedUserMessage(null);
-                sendMessage(staged);
-            }
+            this.currentExecutionThread = null;
         }
     }
 
@@ -285,6 +311,20 @@ public class Chat extends BasicPropertyChangeSource {
 
         for (int attempt = 0; attempt < maxRetries; attempt++) {
             try {
+                // Just-in-time staged message consumption
+                InputUserMessage staged;
+                runningLock.lock();
+                try {
+                    staged = stagedUserMessage;
+                    setStagedUserMessage(null);
+                } finally {
+                    runningLock.unlock();
+                }
+                if (staged != null && !staged.isEmpty()) {
+                    log.info("Picking up staged message before API call.");
+                    contextManager.addMessage(staged);
+                }
+
                 GenerationRequest request = prepareRequest();
                 statusManager.fireStatusChanged(ChatStatus.API_CALL_IN_PROGRESS);
                 log.info("Sending request to model '{}' (attempt {}/{}) with {} messages.",
@@ -300,6 +340,11 @@ public class Chat extends BasicPropertyChangeSource {
                 return handleTurnResult(candidates);
 
             } catch (Exception e) {
+                if (e instanceof ApiCallInterruptedException || e instanceof InterruptedException || e instanceof InterruptedIOException) {
+                    log.info("API call interrupted.");
+                    statusManager.fireStatusChanged(ChatStatus.IDLE);
+                    return true;
+                }
                 log.error("Exception in performSingleTurn", e);
                 ApiErrorRecordBuilder<?, ?> errorRecordBuilder = ApiErrorRecord.builder()
                         .modelId(selectedModel.getModelId())
@@ -320,7 +365,8 @@ public class Chat extends BasicPropertyChangeSource {
                             Thread.sleep(backoffAmount);
                         } catch (InterruptedException ie) {
                             Thread.currentThread().interrupt();
-                            throw new RuntimeException("Chat interrupted during retry delay.", ie);
+                            statusManager.fireStatusChanged(ChatStatus.IDLE);
+                            return true;
                         }
                     } else {
                         log.error("Max retries reached. Aborting.", e);
@@ -357,10 +403,10 @@ public class Chat extends BasicPropertyChangeSource {
      */
     private List<? extends AbstractModelMessage> performStreamingTurn(GenerationRequest request) {
         final List<AbstractModelMessage> result = new ArrayList<>();
-        selectedModel.generateContentStream(request, new StreamObserver<Response<? extends AbstractModelMessage>, AbstractModelMessage>() {
+        selectedModel.generateContentStream(request, new StreamObserver<>() {
             @Override
-            public void onStart(List<AbstractModelMessage> candidates) {
-                result.addAll(candidates);
+            public void onStart(List<? extends AbstractModelMessage> candidates) {
+                result.addAll((List)candidates);
                 handleCandidatesStart(candidates);
             }
 
@@ -405,7 +451,7 @@ public class Chat extends BasicPropertyChangeSource {
         } else {
             // If there are multiple candidates, we don't add them to history yet.
             // They are held in the activeCandidates list for the selection panel.
-            setActiveCandidates((List)candidates);
+            setActiveCandidates(new ArrayList<>(candidates));
         }
     }
 
@@ -451,6 +497,7 @@ public class Chat extends BasicPropertyChangeSource {
 
         if (toolMessage.isAutoRunnable()) {
             log.info("Auto-executing {} tool calls.", toolMessage.getToolResponses().size());
+            statusManager.fireStatusChanged(ChatStatus.AUTO_EXECUTING_TOOLS);
             toolMessage.executeAllPending();
             
             if (config.isAutoReplyTools()) {
@@ -494,11 +541,12 @@ public class Chat extends BasicPropertyChangeSource {
     }
 
     /**
-     * Rolls any pending tool calls in the current tool prompt message to NOT_EXECUTED.
+     * Processes all tool responses associated with the current tool prompt message.
+     * Tools with APPROVE_ALWAYS permission are executed, while others are rolled to NOT_EXECUTED.
      */
-    public void rollPendingToolsToNotExecuted() {
+    public void processPendingTools() {
         if (statusManager.getCurrentStatus() == ChatStatus.TOOL_PROMPT && toolPromptMessage != null) {
-            toolPromptMessage.rollPendingToolsToNotExecuted();
+            toolPromptMessage.processPendingTools();
         }
     }
 
@@ -521,6 +569,7 @@ public class Chat extends BasicPropertyChangeSource {
         toolManager.reset();
         setActiveCandidates(Collections.emptyList());
         setToolPromptMessage(null);
+        setStagedUserMessage(null);
         String newSessionId = UUID.randomUUID().toString();
         config.setSessionId(newSessionId);
         config.setName(null);
