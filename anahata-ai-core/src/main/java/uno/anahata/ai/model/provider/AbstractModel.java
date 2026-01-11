@@ -110,5 +110,5 @@ public abstract class AbstractModel {
      * @param request The generation request containing config and history.
      * @param observer The observer that will receive the streaming response chunks.
      */
-    public abstract void generateContentStream(GenerationRequest request, StreamObserver<Response<? extends AbstractModelMessage>, ? extends AbstractModelMessage> observer);
+    public abstract void generateContentStream(GenerationRequest request, StreamObserver<Response<? extends AbstractModelMessage>> observer);
 }
