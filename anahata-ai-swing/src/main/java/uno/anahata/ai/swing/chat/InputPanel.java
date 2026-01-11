@@ -33,7 +33,6 @@ import uno.anahata.ai.model.core.TextPart;
 import uno.anahata.ai.model.tool.AbstractToolResponse;
 import uno.anahata.ai.model.tool.ToolExecutionStatus;
 import uno.anahata.ai.status.ChatStatus;
-import uno.anahata.ai.status.StatusListener;
 import uno.anahata.ai.swing.components.ScrollablePanel;
 import uno.anahata.ai.swing.icons.AutoReplyIcon;
 import uno.anahata.ai.swing.icons.DeleteIcon;
@@ -68,6 +67,8 @@ public class InputPanel extends JPanel {
     private JXTextArea inputTextArea;
     /** The button to send the message. */
     private JButton sendButton;
+    /** The button to stop the current API call. */
+    private JButton stopButton;
     /** The button to attach files. */
     private JButton attachButton;
     /** The button to attach a desktop screenshot. */
@@ -90,6 +91,7 @@ public class InputPanel extends JPanel {
     private JButton deleteStagedButton;
     
     private EdtPropertyChangeListener stagedListener;
+    private EdtPropertyChangeListener statusListener;
 
     /**
      * The "live" message being composed by the user. This is the single source
@@ -109,6 +111,7 @@ public class InputPanel extends JPanel {
         initComponents();
         
         this.stagedListener = new EdtPropertyChangeListener(this, chat, "stagedUserMessage", evt -> updateStagedMessageUI());
+        this.statusListener = new EdtPropertyChangeListener(this, chat.getStatusManager(), "currentStatus", evt -> updateSendButtonState());
     }
 
     /**
@@ -131,7 +134,11 @@ public class InputPanel extends JPanel {
         inputTextArea.getActionMap().put("sendMessage", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                sendMessage();
+                if (sendButton.isEnabled()) {
+                    sendMessage();
+                } else if (stopButton.isVisible() && stopButton.isEnabled()) {
+                    chat.stop();
+                }
             }
         });
 
@@ -222,7 +229,13 @@ public class InputPanel extends JPanel {
         
         sendButton = new JButton("Send");
         sendButton.addActionListener(e -> sendMessage());
+        
+        stopButton = new JButton("Stop", IconUtils.getIcon("delete.png", 16, 16));
+        stopButton.addActionListener(e -> chat.stop());
+        stopButton.setVisible(false);
+
         eastButtonPanel.add(sendButton);
+        eastButtonPanel.add(stopButton);
 
         southButtonPanel.add(actionButtonPanel, BorderLayout.WEST);
         southButtonPanel.add(eastButtonPanel, BorderLayout.EAST);
@@ -232,6 +245,7 @@ public class InputPanel extends JPanel {
         add(southContainer, BorderLayout.SOUTH);
         
         updateStagedMessageUI();
+        updateSendButtonState();
     }
 
     /**
@@ -245,8 +259,14 @@ public class InputPanel extends JPanel {
         }
         this.stagedListener = new EdtPropertyChangeListener(this, chat, "stagedUserMessage", evt -> updateStagedMessageUI());
         
+        if (statusListener != null) {
+            statusListener.unbind();
+        }
+        this.statusListener = new EdtPropertyChangeListener(this, chat.getStatusManager(), "currentStatus", evt -> updateSendButtonState());
+
         resetMessage();
         updateStagedMessageUI();
+        updateSendButtonState();
     }
 
     /**
@@ -255,6 +275,7 @@ public class InputPanel extends JPanel {
      */
     private void updateMessageText() {
         currentMessage.setText(inputTextArea.getText());
+        updateSendButtonState();
     }
 
     /**
@@ -265,6 +286,7 @@ public class InputPanel extends JPanel {
      */
     void attach(Path p) throws Exception {
         currentMessage.addAttachment(p);
+        updateSendButtonState();
     }
 
     /**
@@ -320,52 +342,30 @@ public class InputPanel extends JPanel {
     }
 
     /**
-     * Sends the {@code currentMessage} to the chat asynchronously, or resends the context if the input is empty.
+     * Sends the {@code currentMessage} to the chat asynchronously.
      */
     private void sendMessage() {
         setButtonsEnabled(false);
 
-        Callable<Void> backgroundTask;
-        String taskName;
-
-        if (currentMessage.isEmpty() && !chat.getContextManager().getHistory().isEmpty()) {
-            // Resend context (API call without a new user message)
-            taskName = "Resend Context";
-            backgroundTask = () -> {
-                chat.sendContext();
-                return null;
-            };
-        } else if (!currentMessage.isEmpty()) {
-            // Send a new message
-            taskName = "Send Message";
-            final InputUserMessage messageToSend = this.currentMessage; 
-            
-            // IMMEDIATE CLEAR
-            resetMessage();
-            
-            backgroundTask = () -> {
-                chat.sendMessage(messageToSend);
-                return null;
-            };
-        } else {
-            // Input is empty and no history, do nothing.
-            setButtonsEnabled(true);
-            return;
-        }
-
+        final InputUserMessage messageToSend = this.currentMessage; 
+        
+        // IMMEDIATE CLEAR
+        resetMessage();
+        
         executeTask(
-                taskName,
-                backgroundTask,
+                "Send Message",
+                () -> {
+                    chat.sendMessage(messageToSend);
+                    return null;
+                },
                 (result) -> {
                     // On Success (UI Thread)
-                    log.info(taskName + " completed successfully.");
                     setButtonsEnabled(true);
-                    inputTextArea.requestFocusInWindow();
+                    SwingUtilities.invokeLater(() -> inputTextArea.requestFocusInWindow());
                 },
                 (error) -> {
                     // On Error (UI Thread)
                     setButtonsEnabled(true);
-                    // TODO: Restore message or show error?
                 }
         );
     }
@@ -388,10 +388,29 @@ public class InputPanel extends JPanel {
         chatPanel.repaint();
     }
 
+    private void updateSendButtonState() {
+        ChatStatus status = chat.getStatusManager().getCurrentStatus();
+        boolean isApiActive = status == ChatStatus.API_CALL_IN_PROGRESS || status == ChatStatus.WAITING_WITH_BACKOFF;
+        
+        stopButton.setVisible(isApiActive);
+        stopButton.setEnabled(isApiActive);
+        
+        // Send button is enabled unless we are waiting for a candidate choice.
+        boolean canSend = status != ChatStatus.CANDIDATE_CHOICE_PROMPT;
+        
+        // If visible history is empty and current message is empty, we can't send anything.
+        if (currentMessage.isEmpty() && chat.getContextManager().buildVisibleHistory().isEmpty()) {
+            canSend = false;
+        }
+        
+        sendButton.setEnabled(canSend);
+    }
+
     private void revertStagedMessage() {
         InputUserMessage staged = chat.getStagedUserMessage();
         if (staged != null) {
             chat.setStagedUserMessage(null);
+            
             this.currentMessage = staged;
             inputTextArea.setText(staged.getText());
             
@@ -399,6 +418,8 @@ public class InputPanel extends JPanel {
             UserInputMessagePanel newRenderer = new UserInputMessagePanel(chatPanel, this.currentMessage);
             previewScrollPane.setViewportView(newRenderer);
             this.inputMessagePreview = newRenderer;
+            updateSendButtonState();
+            SwingUtilities.invokeLater(() -> inputTextArea.requestFocusInWindow());
         }
     }
 
@@ -445,6 +466,7 @@ public class InputPanel extends JPanel {
         // This prevents the DocumentListener from clearing the text of the message
         // that was just sent and added to the history.
         this.currentMessage = new InputUserMessage(chat);
+        
         inputTextArea.setText("");
         
         // Recreate the renderer for the new message.
@@ -453,6 +475,7 @@ public class InputPanel extends JPanel {
         UserInputMessagePanel newRenderer = new UserInputMessagePanel(chatPanel, this.currentMessage);
         previewScrollPane.setViewportView(newRenderer);
         this.inputMessagePreview = newRenderer;
+        updateSendButtonState();
     }
 
     /**
@@ -460,7 +483,7 @@ public class InputPanel extends JPanel {
      * @param enabled True to enable, false to disable.
      */
     private void setButtonsEnabled(boolean enabled) {
-        sendButton.setEnabled(enabled);
+        // sendButton is now managed by updateSendButtonState
         attachButton.setEnabled(enabled);
         screenshotButton.setEnabled(enabled);
         captureFramesButton.setEnabled(enabled);
