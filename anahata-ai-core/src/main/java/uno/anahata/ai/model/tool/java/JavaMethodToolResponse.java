@@ -2,14 +2,14 @@
 package uno.anahata.ai.model.tool.java;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import uno.anahata.ai.model.tool.AbstractToolResponse;
 import uno.anahata.ai.model.tool.ToolExecutionStatus;
 import uno.anahata.ai.tool.AiToolException;
@@ -65,6 +65,9 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
      */
     @JsonIgnore
     private Throwable exception;
+    
+    /** Guard to ensure only one thread can execute this response at a time. */
+    private final AtomicBoolean executing = new AtomicBoolean(false);
 
     public JavaMethodToolResponse(@NonNull JavaMethodToolCall call) {
         super(call);
@@ -79,8 +82,15 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
 
     @Override
     public void execute() {
+        if (!executing.compareAndSet(false, true)) {
+            throw new IllegalStateException("Tool execution is already in progress for this call.");
+        }
+        
         long startTime = System.currentTimeMillis();
         setCurrent(this); // Establish the thread-local context
+        setStatus(ToolExecutionStatus.EXECUTING);
+        setThread(Thread.currentThread());
+        getChat().getToolManager().registerExecutingCall(getCall());
         
         try {
             JavaMethodTool tool = getCall().getTool();
@@ -106,26 +116,39 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
             Throwable cause = (e instanceof InvocationTargetException && e.getCause() != null) ? e.getCause() : e;
             this.exception = cause;
 
-            log.error("Tool execution failed for: {}", getCall().getToolName(), cause);
-
-            if (cause instanceof AiToolException) {
-                addError(cause.getMessage());
+            if (cause instanceof InterruptedException) {
+                log.info("Tool execution interrupted: {}", getCall().getToolName());
+                addError("Execution interrupted by user.");
+                setStatus(ToolExecutionStatus.INTERRUPTED);
+                Thread.currentThread().interrupt();
             } else {
-                addError(getStackTraceAsString(cause));
+                log.error("Tool execution failed for: {}", getCall().getToolName(), cause);
+
+                if (cause instanceof AiToolException) {
+                    addError(cause.getMessage());
+                } else {
+                    addError(ExceptionUtils.getStackTrace(cause));
+                }
+                setStatus(ToolExecutionStatus.FAILED);
             }
-            setStatus(ToolExecutionStatus.FAILED);
 
         } finally {
+            getChat().getToolManager().unregisterExecutingCall(getCall());
             setCurrent(null); // Clear the context
+            setThread(null);
             setExecutionTimeMillis(System.currentTimeMillis() - startTime);
+            executing.set(false);
         }
     }
 
-    private String getStackTraceAsString(Throwable throwable) {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        throwable.printStackTrace(pw);
-        return sw.toString();
+    @Override
+    public void stop() {
+        Thread t = getThread();
+        if (t == null || !t.isAlive()) {
+            throw new IllegalStateException("Tool is not currently executing.");
+        }
+        log.info("Stopping tool execution thread: {}", t.getName());
+        t.interrupt();
     }
 
     @Override
