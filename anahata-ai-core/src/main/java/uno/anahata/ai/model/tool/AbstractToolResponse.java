@@ -1,6 +1,8 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.ai.model.tool;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -32,6 +34,12 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
 
     /** The time taken to execute the method, in milliseconds. */
     private long executionTimeMillis;
+    
+    @Schema(description = "the name of thread that executed this tool")
+    private String threadName;
+    
+    @JsonIgnore
+    private transient Thread thread;
     
     /** A list of log messages captured during the tool's execution. */
     private final List<String> logs = new ArrayList<>();
@@ -78,6 +86,11 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     public abstract void execute();
 
     /**
+     * Stops the tool execution if it is currently running.
+     */
+    public abstract void stop();
+
+    /**
      * Rejects the tool call before execution, setting the status to NOT_EXECUTED.
      * @param reason The reason for the rejection.
      */
@@ -85,7 +98,23 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
         setStatus(ToolExecutionStatus.NOT_EXECUTED);
         setError(reason);
     }
-
+    
+    /**
+     * Sets the running thread and updates the thread name.
+     * 
+     * @param thread the executing thread.
+     */
+    public void setThread(Thread thread) {
+        if (thread != null) {
+            this.threadName = thread.getName();
+            getPropertyChangeSupport().firePropertyChange("threadName", null, threadName);
+        } else {
+            this.threadName = null;
+        }
+        this.thread = thread;
+        getPropertyChangeSupport().firePropertyChange("thread", null, thread);
+    }
+    
     /**
      * Resets the response to its initial state, clearing results, errors, logs, and attachments.
      */
@@ -93,6 +122,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
         setStatus(ToolExecutionStatus.NOT_EXECUTED);
         setResult(null);
         setError(null);
+        setThread(null);
         setExecutionTimeMillis(0);
         clearLogs();
         this.attachments.clear();
