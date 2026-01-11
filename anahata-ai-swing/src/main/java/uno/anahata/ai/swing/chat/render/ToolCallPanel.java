@@ -5,12 +5,14 @@ package uno.anahata.ai.swing.chat.render;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.event.ActionListener;
 import java.util.Map;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
@@ -31,6 +33,7 @@ import uno.anahata.ai.swing.chat.ChatPanel;
 import uno.anahata.ai.swing.chat.SwingChatConfig;
 import uno.anahata.ai.swing.components.CodeHyperlink;
 import uno.anahata.ai.swing.icons.DeleteIcon;
+import uno.anahata.ai.swing.icons.IconUtils;
 import uno.anahata.ai.swing.icons.RunIcon;
 import uno.anahata.ai.swing.internal.AnyChangeDocumentListener;
 import uno.anahata.ai.swing.internal.EdtPropertyChangeListener;
@@ -66,6 +69,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
     private JComboBox<ToolExecutionStatus> statusCombo;
     private JButton runButton;
     private JButton revertButton;
+    private JProgressBar toolProgressBar;
 
     public ToolCallPanel(@NonNull ChatPanel chatPanel, @NonNull AbstractToolCall<?, ?> part) {
         super(chatPanel, part);
@@ -168,7 +172,11 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         revertButton.addActionListener(e -> getPart().getResponse().reset());
 
         runButton = new JButton("Run", new RunIcon(16));
-        runButton.addActionListener(e -> getPart().getResponse().execute());
+        
+        toolProgressBar = new JProgressBar();
+        toolProgressBar.setIndeterminate(true);
+        toolProgressBar.setPreferredSize(new Dimension(100, 16));
+        toolProgressBar.setVisible(false);
 
         jsonLink = new CodeHyperlink("json", 
                 () -> "Tool Response: " + getPart().getToolName(), 
@@ -177,6 +185,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
 
         controlBar.add(new JLabel("Status:"), "split 2");
         controlBar.add(statusCombo);
+        controlBar.add(toolProgressBar, "gapleft 10");
         controlBar.add(revertButton, "right, skip 1, split 2");
         controlBar.add(runButton, "right, wrap");
         controlBar.add(jsonLink, "cell 2 1, right");
@@ -313,20 +322,40 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
             feedbackField.setText(response.getUserFeedback());
         }
         
-        if (response.getStatus() == ToolExecutionStatus.EXECUTED) {
+        // Remove all action listeners before adding new ones
+        for (ActionListener al : runButton.getActionListeners()) {
+            runButton.removeActionListener(al);
+        }
+
+        toolProgressBar.setVisible(response.getStatus() == ToolExecutionStatus.EXECUTING);
+
+        if (response.getStatus() == ToolExecutionStatus.EXECUTING) {
+            runButton.setText("Stop");
+            runButton.setIcon(IconUtils.getIcon("delete.png", 16, 16));
+            runButton.addActionListener(e -> response.stop());
+            runButton.setEnabled(true);
+            revertButton.setVisible(false);
+        } else if (response.getStatus() == ToolExecutionStatus.EXECUTED) {
             runButton.setText("Run Again");
+            runButton.setIcon(new RunIcon(16));
+            runButton.addActionListener(e -> response.execute());
             runButton.setEnabled(true);
             revertButton.setVisible(true);
         } else if (response.getStatus() == ToolExecutionStatus.PENDING || response.getStatus() == ToolExecutionStatus.NOT_EXECUTED) {
             runButton.setText("Run");
+            runButton.setIcon(new RunIcon(16));
+            runButton.addActionListener(e -> response.execute());
             runButton.setEnabled(true);
             revertButton.setVisible(false);
         } else if (response.getStatus() == ToolExecutionStatus.FAILED) {
             runButton.setText("Retry");
+            runButton.setIcon(new RunIcon(16));
+            runButton.addActionListener(e -> response.execute());
             runButton.setEnabled(true);
             revertButton.setVisible(true);
         } else {
             runButton.setText("Executed");
+            runButton.setIcon(new RunIcon(16));
             runButton.setEnabled(false);
             revertButton.setVisible(false);
         }
