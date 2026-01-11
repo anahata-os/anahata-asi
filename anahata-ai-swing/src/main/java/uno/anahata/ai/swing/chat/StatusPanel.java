@@ -14,6 +14,7 @@ import java.awt.RenderingHints;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -31,13 +32,16 @@ import uno.anahata.ai.internal.JacksonUtils;
 import uno.anahata.ai.internal.TimeUtils;
 import uno.anahata.ai.model.core.Response;
 import uno.anahata.ai.model.core.ResponseUsageMetadata;
+import uno.anahata.ai.model.tool.AbstractToolCall;
 import uno.anahata.ai.status.ApiErrorRecord;
 import uno.anahata.ai.status.ChatStatus;
 import uno.anahata.ai.status.StatusManager;
 import uno.anahata.ai.swing.components.CodeHyperlink;
 import uno.anahata.ai.swing.icons.IconUtils;
+import uno.anahata.ai.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.ai.swing.internal.SwingUtils;
 import uno.anahata.ai.swing.media.util.AudioPlaybackPanel;
+import uno.anahata.ai.tool.ToolManager;
 
 /**
  * A panel that displays the real-time status of the chat session, including
@@ -67,6 +71,8 @@ public class StatusPanel extends JPanel {
     private StatusIndicator statusIndicator;
     /** Label displaying the status text. */
     private JLabel statusLabel;
+    /** Label displaying currently executing tools. */
+    private JLabel executingToolsLabel;
     /** Progress bar showing context window usage. */
     private ContextUsageBar contextUsageBar;
     /** Panel for displaying API error and retry details. */
@@ -85,6 +91,8 @@ public class StatusPanel extends JPanel {
     private final AudioPlaybackPanel audioPlaybackPanel; 
     /** Label for displaying prompt blocking reasons. */
     private JLabel blockReasonLabel; 
+    
+    private EdtPropertyChangeListener executingCallsListener;
 
     /**
      * Constructs a new StatusPanel.
@@ -100,6 +108,7 @@ public class StatusPanel extends JPanel {
         initComponents();
         
         this.refreshTimer = new Timer(1000, e -> refresh());
+        this.executingCallsListener = new EdtPropertyChangeListener(this, chat.getToolManager(), "executingCalls", evt -> refresh());
     }
 
     /**
@@ -145,6 +154,12 @@ public class StatusPanel extends JPanel {
         chatStatusPanel.add(soundToggle);
         chatStatusPanel.add(statusIndicator);
         chatStatusPanel.add(statusLabel);
+        
+        executingToolsLabel = new JLabel();
+        executingToolsLabel.setForeground(new Color(128, 0, 128)); // Purple
+        executingToolsLabel.setFont(executingToolsLabel.getFont().deriveFont(java.awt.Font.BOLD));
+        chatStatusPanel.add(executingToolsLabel);
+        
         row1Panel.add(chatStatusPanel, BorderLayout.WEST);
         
         contextUsageBar = new ContextUsageBar(chatPanel); 
@@ -216,6 +231,12 @@ public class StatusPanel extends JPanel {
         this.chat = chatPanel.getChat();
         this.chatConfig = chatPanel.getChatConfig();
         this.lastStatus = null;
+        
+        if (executingCallsListener != null) {
+            executingCallsListener.unbind();
+        }
+        this.executingCallsListener = new EdtPropertyChangeListener(this, chat.getToolManager(), "executingCalls", evt -> refresh());
+        
         contextUsageBar.reload();
         refresh();
     }
@@ -244,9 +265,6 @@ public class StatusPanel extends JPanel {
         statusLabel.setToolTipText(currentStatus.getDescription());
         
         String statusText = currentStatus.getDisplayName();
-        if (currentStatus == ChatStatus.TOOL_EXECUTION_IN_PROGRESS && StringUtils.isNotBlank(statusManager.getExecutingToolName())) {
-            statusText = String.format("%s (%s)", currentStatus.getDisplayName(), statusManager.getExecutingToolName());
-        }
         
         if (currentStatus == ChatStatus.WAITING_WITH_BACKOFF) {
             long elapsedSinceBackoffStart = now - statusManager.getStatusChangeTime();
@@ -265,6 +283,19 @@ public class StatusPanel extends JPanel {
             } else {
                 statusLabel.setText(currentStatus.getDisplayName());
             }
+        }
+        
+        // Update Executing Tools Label
+        ToolManager toolManager = chat.getToolManager();
+        List<AbstractToolCall<?, ?>> executingCalls = toolManager.getExecutingCalls();
+        if (!executingCalls.isEmpty()) {
+            String tools = executingCalls.stream()
+                    .map(AbstractToolCall::getToolName)
+                    .collect(Collectors.joining(", "));
+            executingToolsLabel.setText(" | Executing: " + tools);
+            executingToolsLabel.setVisible(true);
+        } else {
+            executingToolsLabel.setVisible(false);
         }
 
         contextUsageBar.refresh();
