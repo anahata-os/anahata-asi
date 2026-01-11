@@ -34,6 +34,11 @@ public class BadToolResponse extends AbstractToolResponse<BadToolCall> {
     public void execute() {
         // No-op, as the tool was never found.
     }
+
+    @Override
+    public void stop() {
+        // No-op for bad tools.
+    }
     
     @Override
     protected int getDefaultTurnsToKeep() {
