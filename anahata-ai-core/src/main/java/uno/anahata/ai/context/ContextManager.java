@@ -22,9 +22,6 @@ import uno.anahata.ai.model.core.AbstractPart;
 import uno.anahata.ai.model.core.PropertyChangeSource;
 import uno.anahata.ai.model.core.RagMessage;
 import uno.anahata.ai.model.core.TextPart;
-import uno.anahata.ai.model.provider.AbstractModel;
-import uno.anahata.ai.model.resource.AbstractResource;
-import uno.anahata.ai.status.ChatStatusProvider;
 
 /**
  * The definitive manager for a chat session's context in the V2
@@ -73,7 +70,6 @@ public class ContextManager implements PropertyChangeSource {
     public void init() {
         
         registerContextProvider(new CoreContextProvider());
-        registerContextProvider(new ChatStatusProvider(chat));
         // Register toolkits as context providers
         for (ContextProvider cp : chat.getToolManager().getContextProviderTools()) {
             registerContextProvider(cp);
@@ -263,7 +259,7 @@ public class ContextManager implements PropertyChangeSource {
      * @return A synchronized, unmodifiable list of all messages.
      */
     public List<AbstractMessage> getHistory() {
-        return new ArrayList(history);
+        return new ArrayList<>(history);
     }
 
     /**
