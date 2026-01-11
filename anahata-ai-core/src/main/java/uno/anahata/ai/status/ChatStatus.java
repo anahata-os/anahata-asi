@@ -27,8 +27,8 @@ public enum ChatStatus {
     /** The model has returned multiple candidates and is waiting for the user to choose one. */
     CANDIDATE_CHOICE_PROMPT("Candidate Choice", "Waiting for user to select a response candidate.", true),
 
-    /** Local tool (function) execution is in progress. */
-    TOOL_EXECUTION_IN_PROGRESS("Tool Execution...", "Executing local Java tools (functions).", true),
+    /** Local tools are being automatically executed as part of the chat loop. */
+    AUTO_EXECUTING_TOOLS("Auto-Executing Tools...", "Executing local Java tools (functions) automatically.", true),
 
     /** An error occurred during local tool execution. */
     TOOL_EXECUTION_ERROR("Tool Execution Error", "An error occurred during local tool execution.", false),
