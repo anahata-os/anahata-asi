@@ -17,7 +17,7 @@ import uno.anahata.ai.swing.icons.IconUtils;
 /**
  * The main entry point for the Anahata AI standalone Swing application.
  *
- * @author pablo
+ * @author anahata
  */
 @Slf4j
 public class SwingMain {

@@ -16,7 +16,7 @@ import uno.anahata.ai.model.core.RagMessage;
  * The base class for all context providers, defining the contract for injecting
  * just-in-time context into an AI request. This is a direct port of the proven V1 design.
  * 
- * @author pablo
+ * @author anahata
  */
 @Getter
 @RequiredArgsConstructor

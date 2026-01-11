@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
  * A centralized utility class for token counting, powered by the jtokkit library.
  * This provides a single, efficient, and reusable tokenizer instance for the entire application.
  *
- * @author pablo
+ * @author anahata
  */
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)

@@ -10,7 +10,7 @@ import uno.anahata.ai.model.tool.AbstractToolResponse;
 /**
  * An event fired after a tool has finished executing.
  * 
- * @author pablo
+ * @author anahata
  */
 @Getter
 public class ToolExecutionEndEvent extends ChatStatusEvent {

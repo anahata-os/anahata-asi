@@ -14,7 +14,7 @@ import uno.anahata.ai.swing.chat.ChatPanel;
  * A concrete implementation of {@link AbstractMessagePanel} specifically for rendering
  * {@link UserMessage} instances in the conversation history.
  *
- * @author pablo
+ * @author anahata
  */
 public class UserMessagePanel extends AbstractMessagePanel<UserMessage> {
 

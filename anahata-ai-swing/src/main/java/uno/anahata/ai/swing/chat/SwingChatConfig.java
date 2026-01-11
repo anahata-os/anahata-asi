@@ -19,7 +19,7 @@ import uno.anahata.ai.swing.chat.render.editorkit.EditorKitProvider;
 /**
  * A concrete ChatConfig for standalone Swing applications, providing UI-specific settings like themes and colors.
  *
- * @author pablo
+ * @author anahata
  */
 @Getter @Setter
 public class SwingChatConfig extends ChatConfig {

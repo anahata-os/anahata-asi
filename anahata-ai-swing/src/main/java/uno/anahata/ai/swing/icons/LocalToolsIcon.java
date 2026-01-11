@@ -17,7 +17,7 @@ import javax.swing.Icon;
  * A programmatically drawn Icon representing the local tool execution feature (Functions).
  * It is stylized as a gear.
  *
- * @author pablo
+ * @author anahata
  */
 public class LocalToolsIcon implements Icon {
 

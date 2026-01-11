@@ -27,7 +27,7 @@ import uno.anahata.ai.swing.internal.EdtPropertyChangeListener;
  * A concrete implementation of {@link AbstractMessagePanel} specifically for rendering
  * {@link AbstractModelMessage} instances.
  *
- * @author pablo
+ * @author anahata
  */
 public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage> {
 

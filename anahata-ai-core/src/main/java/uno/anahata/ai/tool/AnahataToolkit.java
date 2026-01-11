@@ -26,7 +26,7 @@ import uno.anahata.ai.resource.ResourceManager;
  *
  * @author anahata-gemini-pro-2.5
  */
-public abstract class AnahataToolkit extends AnahataTool {
+public abstract class AnahataToolkit extends HandyToolStuff {
 
     
     /**

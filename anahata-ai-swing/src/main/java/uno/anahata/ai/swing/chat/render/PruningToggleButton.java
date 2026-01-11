@@ -22,7 +22,7 @@ import uno.anahata.ai.swing.internal.EdtPropertyChangeListener;
  * "Prune", and "Pin" states, updating the associated model object and its own
  * visual representation.
  *
- * @author pablo
+ * @author anahata
  */
 @Getter
 public class PruningToggleButton extends JToggleButton {

@@ -31,7 +31,7 @@ import uno.anahata.ai.swing.provider.ProviderRegistryViewer;
  * The header panel for the chat UI, containing the chat nickname, session controls,
  * and provider/model selection components.
  *
- * @author pablo
+ * @author anahata
  */
 @Getter
 @Slf4j

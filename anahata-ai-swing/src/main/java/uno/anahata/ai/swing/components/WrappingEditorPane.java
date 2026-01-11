@@ -26,7 +26,7 @@ import uno.anahata.ai.swing.internal.SwingUtils;
  * By default, it forces {@code getScrollableTracksViewportWidth()} to return
  * {@code true}, which is the key to making HTML content wrap correctly.
  *
- * @author pablo
+ * @author anahata
  */
 @Slf4j
 public class WrappingEditorPane extends JEditorPane implements Scrollable {

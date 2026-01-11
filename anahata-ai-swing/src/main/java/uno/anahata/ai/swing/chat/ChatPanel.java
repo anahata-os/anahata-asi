@@ -17,7 +17,7 @@ import uno.anahata.ai.swing.chat.render.CandidateSelectionPanel;
  * The main, top-level panel for the Anahata AI Swing UI.
  * This class acts as an aggregator for all other UI components (e.g., input panel, conversation view, status bar).
  *
- * @author pablo
+ * @author anahata
  */
 @Getter
 public class ChatPanel extends JPanel {

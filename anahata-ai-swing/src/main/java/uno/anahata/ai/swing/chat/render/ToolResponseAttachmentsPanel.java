@@ -107,7 +107,7 @@ public class ToolResponseAttachmentsPanel extends JPanel {
         JLabel infoLabel = new JLabel("Attachment (" + mimeType + "): " + TextUtils.formatSize(data.length));
         itemPanel.add(infoLabel, "aligny top");
 
-        // Action buttons on the same row, immediately after the label
+        // Action buttons on the same row, immediately after the label, no gaps
         JButton viewButton = new JButton(new SearchIcon(14));
         viewButton.setToolTipText("View Attachment");
         viewButton.setMargin(new java.awt.Insets(2, 2, 2, 2));
@@ -118,8 +118,8 @@ public class ToolResponseAttachmentsPanel extends JPanel {
         deleteButton.setMargin(new java.awt.Insets(2, 2, 2, 2));
         deleteButton.addActionListener(e -> response.removeAttachment(attachment));
 
-        itemPanel.add(viewButton, "aligny top, gapleft 5");
-        itemPanel.add(deleteButton, "aligny top, gapleft 2, wrap");
+        itemPanel.add(viewButton, "aligny top, gapleft 0");
+        itemPanel.add(deleteButton, "aligny top, gapleft 0, wrap");
 
         // Media Content (Image/Audio) below the label
         if (mimeType.startsWith("image/")) {

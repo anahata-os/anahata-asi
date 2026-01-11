@@ -11,7 +11,7 @@ import uno.anahata.ai.chat.Chat;
  * The base event object for all chat status changes.
  * It extends PropertyChangeEvent for compatibility with standard Java beans components.
  * 
- * @author pablo
+ * @author anahata
  */
 @Getter
 public class ChatStatusEvent extends PropertyChangeEvent {

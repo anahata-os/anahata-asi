@@ -15,7 +15,7 @@ import javax.swing.Icon;
  * A programmatically drawn Icon representing a context compression action.
  * It is stylized as four arrows pointing inwards.
  *
- * @author pablo
+ * @author anahata
  */
 public class CompressIcon implements Icon {
     private final int size;

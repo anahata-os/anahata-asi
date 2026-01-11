@@ -25,7 +25,7 @@ import uno.anahata.ai.swing.icons.ServerToolsIcon;
 /**
  * The vertical toolbar panel for the chat UI, containing primary action toggles.
  *
- * @author pablo
+ * @author anahata
  */
 @Slf4j
 @Getter

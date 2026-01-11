@@ -45,7 +45,7 @@ import uno.anahata.ai.swing.internal.SwingUtils;
  * This includes a microphone button, a dropdown for selecting input lines,
  * and a progress bar to show audio levels.
  *
- * @author pablo
+ * @author anahata
  */
 @Slf4j
 public final class MicrophonePanel extends JPanel {

@@ -27,7 +27,7 @@ import uno.anahata.ai.AiConfig;
  * Utility class for capturing screenshots of the host system's display devices
  * and visible application windows.
  *
- * @author pablo
+ * @author anahata
  */
 @Slf4j
 public class UICapture {

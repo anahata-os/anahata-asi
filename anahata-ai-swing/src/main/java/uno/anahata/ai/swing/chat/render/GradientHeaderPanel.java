@@ -19,7 +19,7 @@ import lombok.NonNull;
  * A custom JPanel that renders a gradient background and holds a JLabel for the header text.
  * This component is designed to be used as the header for JXTitledPanels in the chat UI.
  *
- * @author pablo
+ * @author anahata
  */
 @Getter
 public class GradientHeaderPanel extends JPanel {

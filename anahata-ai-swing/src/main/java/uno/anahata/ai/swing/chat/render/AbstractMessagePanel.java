@@ -46,7 +46,7 @@ import uno.anahata.ai.swing.internal.SwingUtils;
  * styled header with message metadata and pruning controls, and a content area 
  * that dynamically renders {@link AbstractPart}s using a diffing mechanism.
  *
- * @author pablo
+ * @author anahata
  * @param <T> The concrete type of AbstractMessage that this panel renders.
  */
 @Slf4j

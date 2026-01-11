@@ -16,7 +16,7 @@ import javax.swing.Icon;
  * A programmatically drawn Icon representing the "Load Session" action.
  * It is stylized as a folder with an arrow pointing out, using the full Barça palette.
  *
- * @author pablo
+ * @author anahata
  */
 public class LoadSessionIcon implements Icon {
 

@@ -15,7 +15,7 @@ import uno.anahata.ai.model.core.AbstractToolMessage;
 
 /**
  *
- * @author pablo
+ * @author anahata
  */
 public class GeminiToolMessage extends AbstractToolMessage {
 

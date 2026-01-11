@@ -11,7 +11,7 @@ import javax.swing.text.rtf.RTFEditorKit;
  * A default implementation of EditorKitProvider that provides the standard
  * kits available in a vanilla Swing environment.
  *
- * @author pablo
+ * @author anahata
  */
 public class DefaultEditorKitProvider implements EditorKitProvider {
 

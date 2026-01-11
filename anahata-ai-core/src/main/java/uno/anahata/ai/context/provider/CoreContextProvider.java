@@ -13,7 +13,7 @@ import uno.anahata.ai.model.core.RagMessage;
 
 /**
  *
- * @author pablo
+ * @author anahata
  */
 public class CoreContextProvider extends AbstractContextProvider{
 

@@ -21,7 +21,7 @@ import uno.anahata.ai.swing.chat.ToolsPanel;
 /**
  * A panel that displays the details and controls for a selected AbstractToolkit or AbstractTool.
  *
- * @author pablo
+ * @author anahata
  */
 public class ToolDetailPanel extends JPanel {
 

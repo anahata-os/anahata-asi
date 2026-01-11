@@ -3,7 +3,7 @@ package uno.anahata.ai.status;
 /**
  * A listener for receiving chat status updates.
  *
- * @author pablo
+ * @author anahata
  */
 public interface StatusListener {
 

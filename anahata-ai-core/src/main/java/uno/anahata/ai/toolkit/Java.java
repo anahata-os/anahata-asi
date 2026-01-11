@@ -38,17 +38,25 @@ import uno.anahata.ai.tool.AiToolException;
 import uno.anahata.ai.tool.AiToolParam;
 import uno.anahata.ai.tool.AiToolkit;
 import uno.anahata.ai.tool.AnahataTool;
+import uno.anahata.ai.tool.HandyToolStuff;
 import uno.anahata.ai.tool.AnahataToolkit;
 
 /**
  *
- * @author pablo
+ * @author anahata
  */
 @Slf4j
 @AiToolkit("Toolkit for compiling and executing java code, has a 'temp' HashMap for storing java objects across turns / tool calls and uses a child first classloader if additional classpath entries are provided")
 public class Java extends AnahataToolkit {
 
-    public Map temp = Collections.synchronizedMap(new HashMap());
+    /**
+     * A toolkit lived 
+     */
+    public Map sessionMapKey = Collections.synchronizedMap(new HashMap());
+    
+    /**
+     * The base compiler and classloader classpath (extra can be provided at execution time)
+     */
     public String defaultCompilerClasspath;
 
     public Java() {
@@ -71,7 +79,7 @@ public class Java extends AnahataToolkit {
 
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
-        String ragText = "\nTemp map keys: " + temp.keySet()
+        String ragText = "\nSession map keys: " + sessionMapKey.keySet()
                 + "\nDefault Compiler / ClassLoader Classpath (abbreviated):\n" + getPrettyPrintedDefaultClasspath();
         new TextPart(ragMessage, ragText);
     }
@@ -79,16 +87,13 @@ public class Java extends AnahataToolkit {
     @Override
     public List<String> getSystemInstructionParts(Chat chat) throws Exception {
         StringBuilder sb = new StringBuilder();
-        sb.append("### Java Toolkit: AnahataTool API\n");
-        sb.append("When using `compileAndExecute`, your class should extend `uno.anahata.ai.tool.AnahataTool`. ");
+        sb.append("### Java Toolkit Instructions: \n");
+        sb.append("When using `compileAndExecute`, your class should extend `uno.anahata.ai.tool.AnahataTool`, have no package declaration and implement the call method of Callable<Object>. ");
         sb.append("This provides the following helper methods for a rich, context-aware execution:\n\n");
         
-        sb.append("#### Available Methods (inherited from AnahataTool):\n");
+        sb.append("#### Available Methods inherited from AnahataTool:\n");
         appendMethods(sb, AnahataTool.class);
         
-        sb.append("\n#### JavaMethodToolResponse API (available via getResponse()):\n");
-        appendMethods(sb, JavaMethodToolResponse.class);
-
         sb.append("\n#### Example:\n");
         sb.append("```java\n");
         sb.append("import uno.anahata.ai.tool.AnahataTool;\n");
@@ -295,7 +300,7 @@ public class Java extends AnahataToolkit {
             + "The class should:\n"
                     + "- have no package declaration, \n"
                     + "- extend uno.anahata.ai.tool.AnahataTool and \n"
-                    + "- implement java.util.concurrent.Callable<Object>.\n",
+                    + "- implement the call method of java.util.concurrent.Callable<Object>.\n",
             requiresApproval = true
     )
     public Object compileAndExecute(

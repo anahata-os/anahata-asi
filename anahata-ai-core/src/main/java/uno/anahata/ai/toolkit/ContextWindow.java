@@ -20,7 +20,7 @@ import uno.anahata.ai.tool.AnahataToolkit;
 
 /**
  *
- * @author pablo
+ * @author anahata
  */
 @AiToolkit("Tools for managing the context window: ")
 public class ContextWindow extends AnahataToolkit{

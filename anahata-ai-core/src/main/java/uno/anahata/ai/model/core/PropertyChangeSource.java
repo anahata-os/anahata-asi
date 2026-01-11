@@ -9,7 +9,7 @@ import java.beans.PropertyChangeSupport;
  * A standard interface for objects that provide {@link PropertyChangeSupport}.
  * This allows UI components to generically bind to model objects for reactive updates.
  *
- * @author pablo
+ * @author anahata
  */
 public interface PropertyChangeSource {
 

@@ -17,7 +17,7 @@ import uno.anahata.ai.swing.chat.render.AbstractMessagePanel;
  * <p>
  * This component is a standard JPanel that is updated by the parent InputPanel.
  *
- * @author pablo
+ * @author anahata
  */
 public class UserInputMessagePanel extends AbstractMessagePanel<InputUserMessage> {
 

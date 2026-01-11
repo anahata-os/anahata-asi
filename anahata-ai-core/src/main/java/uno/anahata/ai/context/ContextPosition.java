@@ -7,7 +7,7 @@ package uno.anahata.ai.context;
  * Defines the position where a ContextProvider's content should be injected into the request.
  * This is a direct port of the proven V1 enum.
  * 
- * @author pablo
+ * @author anahata
  */
 public enum ContextPosition {
     /**

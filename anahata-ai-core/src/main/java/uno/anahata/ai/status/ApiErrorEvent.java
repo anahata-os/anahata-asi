@@ -9,7 +9,7 @@ import uno.anahata.ai.chat.Chat;
 /**
  * An event fired when an API call fails.
  * 
- * @author pablo
+ * @author anahata
  */
 @Getter
 public class ApiErrorEvent extends ChatStatusEvent {

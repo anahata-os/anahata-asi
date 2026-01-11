@@ -35,7 +35,7 @@ import uno.anahata.ai.swing.internal.EdtPropertyChangeListener;
  * a list of {@link AbstractMessagePanel} instances. It handles incremental
  * updates by listening to the {@link uno.anahata.ai.context.ContextManager} for history changes.
  *
- * @author pablo
+ * @author anahata
  */
 @Getter
 @Slf4j

@@ -14,7 +14,7 @@ import uno.anahata.ai.swing.internal.SwingUtils;
  * A panel that encapsulates all playback line-related UI components and logic.
  * This includes a dropdown for selecting output lines.
  *
- * @author pablo
+ * @author anahata
  */
 @Slf4j
 @Getter

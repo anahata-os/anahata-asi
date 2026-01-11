@@ -120,7 +120,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
 
         // Horizontal split for integrated rendering
         splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, argsPanel, resultsTabbedPane);
-        splitPane.setResizeWeight(1.0); // Prioritize arguments panel when resizing
+        splitPane.setResizeWeight(0.5); // Share space equally when resizing
         splitPane.setOpaque(false);
         splitPane.setBorder(null);
         splitPane.setOneTouchExpandable(true); 
@@ -265,7 +265,8 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
                 int totalWidth = splitPane.getWidth();
                 if (totalWidth > 0) {
                     Dimension prefSize = resultsTabbedPane.getPreferredSize();
-                    int targetWidth = Math.min(prefSize.width + 20, totalWidth / 2);
+                    // Ensure the results side gets at least 40% if it has content, but cap at 50%
+                    int targetWidth = Math.max(totalWidth * 4 / 10, Math.min(prefSize.width + 20, totalWidth / 2));
                     splitPane.setDividerLocation(totalWidth - targetWidth);
                 }
             });

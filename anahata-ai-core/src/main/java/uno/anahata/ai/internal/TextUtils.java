@@ -14,7 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * A collection of general-purpose text and formatting utility methods.
  *
- * @author pablo
+ * @author anahata
  */
 @UtilityClass
 public class TextUtils {

@@ -9,7 +9,7 @@ import javax.swing.text.EditorKit;
  * An interface for providing an EditorKit for a given programming language.
  * This allows the generic UI to be configured with IDE-specific editor kits.
  *
- * @author pablo
+ * @author anahata
  */
 public interface EditorKitProvider {
 

@@ -16,7 +16,7 @@ import javax.swing.Icon;
  * A programmatically drawn Icon representing a restart or clear action.
  * Stylized as a clean circular arrow using Anahata brand colors.
  *
- * @author pablo
+ * @author anahata
  */
 public class RestartIcon implements Icon {
     private final int size;

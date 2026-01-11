@@ -27,7 +27,7 @@ import com.vladsch.flexmark.util.misc.Extension; // Corrected import for Extensi
  * Utility class for rendering Markdown to HTML and creating the corresponding
  * Swing JEditorPane components.
  *
- * @author pablo
+ * @author anahata
  */
 @UtilityClass
 public class HtmlRendererUtils {

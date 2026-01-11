@@ -34,6 +34,7 @@ import uno.anahata.ai.model.tool.AbstractToolResponse;
 import uno.anahata.ai.model.tool.ToolExecutionStatus;
 import uno.anahata.ai.status.ChatStatus;
 import uno.anahata.ai.status.StatusListener;
+import uno.anahata.ai.swing.components.ScrollablePanel;
 import uno.anahata.ai.swing.icons.AutoReplyIcon;
 import uno.anahata.ai.swing.icons.DeleteIcon;
 import uno.anahata.ai.swing.icons.IconUtils;
@@ -52,7 +53,7 @@ import uno.anahata.ai.swing.media.util.MicrophonePanel;
  * in real-time as the user types. It leverages the reactive {@link uno.anahata.ai.swing.internal.EdtPropertyChangeListener}
  * pattern, ensuring the preview panel updates automatically without manual rendering calls.
  *
- * @author pablo
+ * @author anahata
  */
 @Slf4j
 @Getter
@@ -141,7 +142,14 @@ public class InputPanel extends JPanel {
         this.currentMessage = new InputUserMessage(chat);
         this.inputMessagePreview = new UserInputMessagePanel(chatPanel, currentMessage);
 
-        previewScrollPane = new JScrollPane(inputMessagePreview);
+        // Wrap the preview in a ScrollablePanel to ensure correct scrolling behavior
+        ScrollablePanel previewWrapper = new ScrollablePanel();
+        previewWrapper.setLayout(new BorderLayout());
+        previewWrapper.setOpaque(false);
+        previewWrapper.add(inputMessagePreview, BorderLayout.CENTER);
+
+        previewScrollPane = new JScrollPane(previewWrapper);
+        previewScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         previewScrollPane.setPreferredSize(new Dimension(0, 150)); 
         previewScrollPane.setMinimumSize(new Dimension(0, 100)); 
 
@@ -157,7 +165,7 @@ public class InputPanel extends JPanel {
                 BorderFactory.createMatteBorder(1, 0, 1, 0, Color.LIGHT_GRAY),
                 BorderFactory.createEmptyBorder(2, 5, 2, 5)
         ));
-        stagedMessagePanel.setBackground(new Color(240, 248, 255)); // Light blue background
+        stagedMessagePanel.setBackground(new Color(220, 235, 255)); // Slightly darker blue for visibility
         stagedMessagePanel.setVisible(false);
 
         stagedMessageLabel = new JLabel("Staged Message: ");
@@ -180,17 +188,20 @@ public class InputPanel extends JPanel {
         stagedMessagePanel.add(stagedMessageLabel, BorderLayout.CENTER);
         stagedMessagePanel.add(stagedButtons, BorderLayout.EAST);
 
-        JPanel centerPanel = new JPanel(new BorderLayout());
-        centerPanel.add(splitPane, BorderLayout.CENTER);
-        centerPanel.add(stagedMessagePanel, BorderLayout.SOUTH);
-        
-        add(centerPanel, BorderLayout.CENTER);
+        add(splitPane, BorderLayout.CENTER);
 
-        // Panel for buttons on the south side
+        // Panel for buttons and staged message on the south side
+        JPanel southContainer = new JPanel(new BorderLayout(0, 5));
+        southContainer.setOpaque(false);
+        
+        southContainer.add(stagedMessagePanel, BorderLayout.NORTH);
+
         JPanel southButtonPanel = new JPanel(new BorderLayout(5, 0));
+        southButtonPanel.setOpaque(false);
 
         // Panel for action buttons (mic, attach, etc.) on the west
         JPanel actionButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        actionButtonPanel.setOpaque(false);
 
         microphonePanel = new MicrophonePanel(this);
         actionButtonPanel.add(microphonePanel);
@@ -213,6 +224,7 @@ public class InputPanel extends JPanel {
 
         // Panel for send and run all buttons on the east
         JPanel eastButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        eastButtonPanel.setOpaque(false);
         
         sendButton = new JButton("Send");
         sendButton.addActionListener(e -> sendMessage());
@@ -221,7 +233,9 @@ public class InputPanel extends JPanel {
         southButtonPanel.add(actionButtonPanel, BorderLayout.WEST);
         southButtonPanel.add(eastButtonPanel, BorderLayout.EAST);
 
-        add(southButtonPanel, BorderLayout.SOUTH);
+        southContainer.add(southButtonPanel, BorderLayout.CENTER);
+        
+        add(southContainer, BorderLayout.SOUTH);
         
         updateStagedMessageUI();
     }
@@ -389,7 +403,11 @@ public class InputPanel extends JPanel {
             
             // Re-render preview
             UserInputMessagePanel newRenderer = new UserInputMessagePanel(chatPanel, this.currentMessage);
-            previewScrollPane.setViewportView(newRenderer);
+            ScrollablePanel previewWrapper = new ScrollablePanel();
+            previewWrapper.setLayout(new BorderLayout());
+            previewWrapper.setOpaque(false);
+            previewWrapper.add(newRenderer, BorderLayout.CENTER);
+            previewScrollPane.setViewportView(previewWrapper);
             this.inputMessagePreview = newRenderer;
         }
     }
@@ -443,7 +461,11 @@ public class InputPanel extends JPanel {
         // The old renderer's EdtPropertyChangeListener will unbind automatically
         // when it is removed from the scroll pane's viewport.
         UserInputMessagePanel newRenderer = new UserInputMessagePanel(chatPanel, this.currentMessage);
-        previewScrollPane.setViewportView(newRenderer);
+        ScrollablePanel previewWrapper = new ScrollablePanel();
+        previewWrapper.setLayout(new BorderLayout());
+        previewWrapper.setOpaque(false);
+        previewWrapper.add(newRenderer, BorderLayout.CENTER);
+        previewScrollPane.setViewportView(previewWrapper);
         this.inputMessagePreview = newRenderer;
     }
 

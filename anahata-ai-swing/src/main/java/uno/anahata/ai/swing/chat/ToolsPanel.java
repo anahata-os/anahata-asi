@@ -21,7 +21,7 @@ import uno.anahata.ai.swing.chat.tool.ToolkitTreeTableModel;
  * using a hierarchical JXTreeTable. This panel acts as a container, delegating
  * the detail view to the specialized ToolDetailPanel.
  *
- * @author pablo
+ * @author anahata
  */
 @Getter
 public class ToolsPanel extends JPanel {

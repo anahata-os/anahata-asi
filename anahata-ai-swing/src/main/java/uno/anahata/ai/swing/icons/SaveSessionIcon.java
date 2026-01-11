@@ -16,7 +16,7 @@ import javax.swing.Icon;
  * A programmatically drawn Icon representing the "Save Session" action.
  * It is stylized as a classic floppy disk using the full Barça palette.
  *
- * @author pablo
+ * @author anahata
  */
 public class SaveSessionIcon implements Icon {
 

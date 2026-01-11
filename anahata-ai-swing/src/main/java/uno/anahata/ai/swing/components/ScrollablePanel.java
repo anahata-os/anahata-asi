@@ -14,7 +14,7 @@ import javax.swing.SwingConstants;
  * configurable scrolling behavior. This is useful for panels placed in a
  * JScrollPane.
  *
- * @author pablo
+ * @author anahata
  */
 public class ScrollablePanel extends JPanel implements Scrollable {
 

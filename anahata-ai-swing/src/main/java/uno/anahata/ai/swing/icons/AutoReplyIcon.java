@@ -15,7 +15,7 @@ import javax.swing.Icon;
  * A programmatically drawn Icon representing the auto-reply feature.
  * It is stylized as a "fast forward" symbol using Anahata brand colors.
  *
- * @author pablo
+ * @author anahata
  */
 public class AutoReplyIcon implements Icon {
 

@@ -23,7 +23,7 @@ import uno.anahata.ai.model.core.PropertyChangeSource;
  * and prevents memory leaks by unregistering itself when the component is
  * removed from the UI hierarchy.
  *
- * @author pablo
+ * @author anahata
  */
 public class EdtPropertyChangeListener implements PropertyChangeListener, HierarchyListener {
 

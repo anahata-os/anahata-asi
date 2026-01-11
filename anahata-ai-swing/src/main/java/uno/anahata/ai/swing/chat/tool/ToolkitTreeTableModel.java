@@ -16,7 +16,7 @@ import uno.anahata.ai.tool.ToolManager;
  * A TreeTableModel that provides a hierarchical view of Toolkits and their Tools,
  * including a calculated token count for each tool's schema.
  *
- * @author pablo
+ * @author anahata
  */
 public class ToolkitTreeTableModel extends AbstractTreeTableModel {
     private final ToolManager toolManager;

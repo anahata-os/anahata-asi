@@ -17,7 +17,7 @@ import javax.swing.Icon;
  * A programmatically drawn Icon representing server-side tool execution.
  * Stylized as a dark rack server with multi-colored status LEDs.
  *
- * @author pablo
+ * @author anahata
  */
 public class ServerToolsIcon implements Icon {
 

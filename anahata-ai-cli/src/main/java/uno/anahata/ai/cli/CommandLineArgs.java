@@ -11,7 +11,7 @@ import uno.anahata.ai.chat.Chat;
 /**
  * A centralized utility for parsing command-line arguments for any Anahata AI launcher.
  *
- * @author pablo
+ * @author anahata
  */
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)

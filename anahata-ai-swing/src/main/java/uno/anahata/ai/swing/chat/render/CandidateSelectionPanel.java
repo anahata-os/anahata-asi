@@ -24,7 +24,7 @@ import uno.anahata.ai.swing.internal.EdtPropertyChangeListener;
  * It is positioned between the conversation history and the input area.
  * It reactively updates when the chat's active candidates change.
  *
- * @author pablo
+ * @author anahata
  */
 public class CandidateSelectionPanel extends JPanel {
 

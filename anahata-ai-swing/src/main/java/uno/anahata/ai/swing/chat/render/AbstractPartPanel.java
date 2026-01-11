@@ -41,7 +41,7 @@ import uno.anahata.ai.swing.internal.SwingUtils;
  * styled header with part metadata and pruning controls, and a content area 
  * that dynamically renders the part's specific content.
  *
- * @author pablo
+ * @author anahata
  * @param <T> The concrete type of AbstractPart that this panel renders.
  */
 @Slf4j
