@@ -16,6 +16,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 import lombok.Getter;
 import lombok.NonNull;
@@ -138,7 +139,6 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
         this.footerContainer.setOpaque(false);
         mainContainer.add(this.footerContainer, BorderLayout.SOUTH);
 
-        setOpaque(false);
         setBorder(BorderFactory.createLineBorder(theme.getPartBorder(), 1, true));
 
         // 4. Expand/Collapse Logic on Header Click
@@ -186,11 +186,30 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
      */
     public final void render() {
         updateHeaderInfoText();
+        updateHeaderButtons();
         renderContent();
         renderFooterInternal();
         updateContentVisibility();
         revalidate();
         repaint();
+    }
+
+    /**
+     * Updates the visibility of header buttons based on the parent message panel's flags.
+     */
+    protected void updateHeaderButtons() {
+        boolean prune = true;
+        boolean remove = true;
+        
+        AbstractMessagePanel parentMessagePanel = (AbstractMessagePanel) SwingUtilities.getAncestorOfClass(AbstractMessagePanel.class, this);
+        if (parentMessagePanel != null) {
+            prune = parentMessagePanel.isRenderPruneButtons();
+            remove = parentMessagePanel.isRenderRemoveButtons();
+        }
+
+        pruningToggleButton.setVisible(prune);
+        removeButton.setVisible(remove);
+        turnsLeftLabel.setVisible(prune);
     }
 
     /**

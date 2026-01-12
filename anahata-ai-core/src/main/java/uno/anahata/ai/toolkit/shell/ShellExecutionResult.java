@@ -13,7 +13,7 @@ import lombok.ToString;
  *
  * @author pablo
  */
-@Schema(description = "Contains process and thread details")
+@Schema(description = "Contains process details and exit code")
 @Setter
 @Getter
 @ToString

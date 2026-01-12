@@ -13,15 +13,18 @@
         <module>anahata-ai-swing</module>
         <module>anahata-ai-cli</module>
         <module>anahata-ai-standalone</module>
+        <module>anahata-asi</module>
+        <module>anahata-ai-web</module>
     </modules>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>17</maven.compiler.release>
+        <netbeans.version>RELEASE280</netbeans.version>
         <!-- Dependency Group Versions -->
         <lombok.version>1.18.42</lombok.version>
         <swagger.version>2.2.22</swagger.version>
         <jackson.version>2.17.1</jackson.version>
-        <slf4j.version>2.17.1</slf4j.version>
+        <slf4j.version>2.0.17</slf4j.version>
         <junit.version>5.10.3</junit.version>
         <flatlaf.version>3.4.1</flatlaf.version>
         <jtokkit.version>1.1.0</jtokkit.version>
@@ -29,6 +32,7 @@
         <!-- Plugin Versions -->
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.3.1</maven-surefire-plugin.version>
+        <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -69,12 +73,17 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>2.0.17</version>
+                <version>${slf4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-simple</artifactId>
-                <version>2.0.17</version>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-jdk14</artifactId>
+                <version>${slf4j.version}</version>
             </dependency>
             <!-- Boilerplate Reduction -->
             <dependency>
@@ -117,7 +126,7 @@
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
-                <version>2.10.1</version>
+                <version>2.13.1</version>
             </dependency>
             <!-- Framework Serialization (Kryo) -->
             <dependency>
@@ -145,6 +154,11 @@
                 <groupId>org.apache.tika</groupId>
                 <artifactId>tika-core</artifactId>
                 <version>3.2.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>1.15.4</version>
             </dependency>
             <!-- Google Gemini API Client -->
             <dependency>
@@ -180,6 +194,7 @@
                             <arg>-parameters</arg>
                         </compilerArgs>
                         <annotationProcessorPaths>
+                            <!-- NetBeans Processors (Required for @TopComponent, @ServiceProvider, etc.) -->
                             <path>
                                 <groupId>org.projectlombok</groupId>
                                 <artifactId>lombok</artifactId>
@@ -193,6 +208,47 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven-surefire-plugin.version}</version>
+                </plugin>
+                <!-- Javadoc plugin -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>${maven-javadoc-plugin.version}</version>
+                    <configuration>
+                        <doclint>none</doclint>
+                        <failOnError>false</failOnError>
+                        <addStylesheets>
+                            <addStylesheet>anahata-barca-theme.css</addStylesheet>
+                        </addStylesheets>
+                        <docfilessubdirs>true</docfilessubdirs>
+                        <detectJavaApiLink>false</detectJavaApiLink>
+                        <top>
+                            <![CDATA[
+        <div class="anahata-footer">
+            <img src="https://www.anahata.uno/assets/logo-transparent.png" alt="Anahata Logo" class="anahata-logo">
+            <a href="https://github.com/sponsors/anahata-os" target="_blank" class="donate-link">
+                Please Donate ❤️
+            </a>
+            <div class="barca-wrapper">
+                <span class="forca-text">Força <span class="barca-red">Barça!</span></span>
+                <img src="https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg" alt="Barça Crest">
+            </div>
+        </div>
+    ]]>
+                        </top>
+                        <bottom><![CDATA[
+        <div class="anahata-footer">
+            <img src="https://www.anahata.uno/assets/logo-transparent.png" alt="Anahata Logo" class="anahata-logo">
+            <a href="https://github.com/sponsors/anahata-os" target="_blank" class="donate-link">
+                Please Donate ❤️
+            </a>
+            <div class="barca-wrapper">
+                <span class="forca-text">Força <span class="barca-red">Barça!</span></span>
+                <img src="https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg" alt="Barça Crest">
+            </div>
+        </div>
+    ]]></bottom>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>

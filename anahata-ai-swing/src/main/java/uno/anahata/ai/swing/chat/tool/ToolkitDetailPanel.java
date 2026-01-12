@@ -23,7 +23,7 @@ import uno.anahata.ai.model.core.TextPart;
 import uno.anahata.ai.model.core.UserMessage;
 import uno.anahata.ai.model.tool.AbstractToolkit;
 import uno.anahata.ai.swing.chat.ToolsPanel;
-import uno.anahata.ai.swing.chat.render.UserMessagePanel;
+import uno.anahata.ai.swing.chat.render.OtherMessagePanel;
 
 /**
  * A panel that displays the details and context previews for a specific {@link AbstractToolkit}.
@@ -140,7 +140,6 @@ public class ToolkitDetailPanel extends JPanel {
         
         // 1. System Instructions Preview
         UserMessage sysMsg = new UserMessage(chat);
-        //sysMsg.setFrom(cp.getName());
         new TextPart(sysMsg, cp.getHeader());
         try {
             for (String part : cp.getSystemInstructions(chat)) {
@@ -151,10 +150,10 @@ public class ToolkitDetailPanel extends JPanel {
             log.error("Error generating system instructions preview", e);
         }
         
-        UserMessagePanel sysPanel = new UserMessagePanel(parentPanel.getChatPanel(), sysMsg);
+        OtherMessagePanel sysPanel = new OtherMessagePanel(parentPanel.getChatPanel(), sysMsg, false, false);
         sysPanel.render();
         sysTab.removeAll();
-        sysTab.add(new JScrollPane(sysPanel), BorderLayout.CENTER);
+        sysTab.add(sysPanel, BorderLayout.CENTER);
 
         // 2. RAG Content Preview
         RagMessage ragMsg = new RagMessage(chat);
@@ -171,9 +170,14 @@ public class ToolkitDetailPanel extends JPanel {
              new TextPart(ragMsg, "*No RAG content contributed.*");
         }
 
-        UserMessagePanel ragPanel = new UserMessagePanel(parentPanel.getChatPanel(), ragMsg);
+        OtherMessagePanel ragPanel = new OtherMessagePanel(parentPanel.getChatPanel(), ragMsg, false, false);
         ragPanel.render();
         ragTab.removeAll();
-        ragTab.add(new JScrollPane(ragPanel), BorderLayout.CENTER);
+        ragTab.add(ragPanel, BorderLayout.CENTER);
+        
+        sysTab.revalidate();
+        sysTab.repaint();
+        ragTab.revalidate();
+        ragTab.repaint();
     }
 }

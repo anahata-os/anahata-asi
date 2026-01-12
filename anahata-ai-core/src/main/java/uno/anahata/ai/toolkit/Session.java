@@ -25,9 +25,7 @@ import uno.anahata.ai.tool.AnahataToolkit;
  * @author anahata-gemini-pro-2.5
  */
 @Slf4j
-@AiToolkit("Tools for managing the current chat session's metadata. " +
-           "STRICT USAGE RULE: These tools MUST ONLY be called if there are other task-related tool calls in the same turn. " +
-           "NEVER call these tools as the sole action in a turn.")
+@AiToolkit("Toolkit for managing the current chat session's metadata. ")
 public class Session extends AnahataToolkit {
 
     /**
@@ -43,7 +41,7 @@ public class Session extends AnahataToolkit {
      * @return A confirmation message.
      */
     @AiTool(value = "Updates the current chat session's summary. " +
-            "STRICT USAGE RULE: Only call this if other task-related tools are being called in the same turn.",
+            "STRICT USAGE RULE: Only call this if you are calling other real-task related tools (so you dont cause an extra api trip).",
             requiresApproval = false)
     public String updateSessionSummary(@AiToolParam("A concise summary of the conversation's current state.") String summary) {
         uno.anahata.ai.chat.Chat domainChat = getChat();

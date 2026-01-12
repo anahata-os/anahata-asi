@@ -3,9 +3,9 @@
 **SITREP:** The operational environment is constrained by API rate limits and context window pressure. This document consolidates all strategic intelligence from the entire operational history (300+ messages) into a single, high-density asset. All previous strategic `.md` files are now considered obsolete.
 
 ## 1. Grand Strategy: "The Flywheel" & "Deep Strike"
--   **Mission:** Establish `anahata-ai` as the dominant, enterprise-grade Java framework for building **deeply integrated, context-aware AI assistants for desktop and IDE environments.**
+-   **Mission:** Establish `anahata-asi` as the dominant, enterprise-grade Java framework for building **deeply integrated, context-aware AI assistants for desktop and IDE environments.**
 -   **Flywheel Model:**
-    -   **Engine (`anahata-ai`):** The core commercial framework (AGPLv3/Commercial License).
+    -   **Engine (`anahata-asi`):** The core commercial framework (AGPLv3/Commercial License).
     -   **Showcase (`anahata-netbeans-ai`):** The free, open-source NetBeans plugin that drives adoption and proves the engine's power.
 -   **"Deep Strike" Doctrine:** We do not compete with backend frameworks like Spring AI. We attack the market's primary weakness: the shallow, context-unaware nature of existing "AI assistants." Our key differentiator is **true, programmatic IDE and desktop control.**
 
@@ -15,7 +15,7 @@
 
 ## 3. Core V2 Architecture
 -   **Structure:** A three-module Maven project:
-    1.  `anahata-ai`: The core, model-agnostic API.
+    1.  `anahata-asi`: The core, model-agnostic API.
     2.  `anahata-ai-gemini`: The first provider-specific implementation (Adapter).
     3.  `anahata-ai-swing`: The embeddable UI layer.
 -   **Model Agnosticism:**
@@ -27,7 +27,7 @@
 
 ## 4. High-Priority Tactical Objectives
 -   **Objective 1 (COMPLETE):** Stabilize the V1 `gemini-java-client` codebase. This has been achieved by stashing the compilation errors, establishing a clean, functional baseline to serve as our primary intelligence asset for the migration.
--   **Objective 2 (ACTIVE):** Commence the surgical migration of functionality from the V1 asset into the V2 `anahata-ai` project structure, starting with the `ToolManager` and its related components.
+-   **Objective 2 (ACTIVE):** Commence the surgical migration of functionality from the V1 asset into the V2 `anahata-ai-parent` project structure, starting with the `ToolManager` and its related components.
 -   **Objective 3 (ONGOING):** Continue the implementation of the model-agnostic domain, the `ProviderMetadata` sidecar pattern, and the core managers (`ToolManager`, `ContextManager`) in the new V2 project, ensuring all new code adheres to the V2 architectural principles.
 
 ## 5. Monetization & Community

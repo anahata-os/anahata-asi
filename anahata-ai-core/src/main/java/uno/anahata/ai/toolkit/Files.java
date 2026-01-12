@@ -113,4 +113,65 @@ public class Files extends AnahataToolkit {
                 .filter(r -> r.getPath().equals(path))
                 .findFirst();
     }
+
+    @AiTool(value = "Creates a new file or overwrites an existing one with the provided content.", retention = 0)
+    public void writeTextFile(
+            @AiToolParam("The absolute path to the file.") String path,
+            @AiToolParam("The text content to write.") String content) throws Exception {
+        java.nio.file.Path filePath = Paths.get(path);
+        if (filePath.getParent() != null) {
+            java.nio.file.Files.createDirectories(filePath.getParent());
+        }
+        java.nio.file.Files.writeString(filePath, content);
+        log("Successfully wrote to file: " + path);
+
+        findByPath(path).ifPresent(r -> {
+            try {
+                r.reload();
+            } catch (Exception ex) {
+                log("Error reloading resource after write: " + ex.getMessage());
+            }
+        });
+    }
+
+    @AiTool(value = "Replaces a specific string with another in a file. Ideal for surgical code edits.", retention = 0)
+    public void replaceInFile(
+            @AiToolParam("The absolute path to the file.") String path,
+            @AiToolParam("The exact string to be replaced.") String target,
+            @AiToolParam("The replacement string.") String replacement) throws Exception {
+        java.nio.file.Path filePath = Paths.get(path);
+        String content = java.nio.file.Files.readString(filePath);
+
+        if (!content.contains(target)) {
+            throw new AiToolException("Target string not found in file: " + path);
+        }
+
+        String newContent = content.replace(target, replacement);
+        java.nio.file.Files.writeString(filePath, newContent);
+        log("Successfully updated file: " + path);
+
+        findByPath(path).ifPresent(r -> {
+            try {
+                r.reload();
+            } catch (Exception ex) {
+                log("Error reloading resource after replacement: " + ex.getMessage());
+            }
+        });
+    }
+
+    @AiTool(value = "Appends text to the end of an existing file.", retention = 0)
+    public void appendTextToFile(
+            @AiToolParam("The absolute path to the file.") String path,
+            @AiToolParam("The text content to append.") String content) throws Exception {
+        java.nio.file.Files.writeString(Paths.get(path), content, java.nio.file.StandardOpenOption.APPEND);
+        log("Successfully appended to file: " + path);
+
+        findByPath(path).ifPresent(r -> {
+            try {
+                r.reload();
+            } catch (Exception ex) {
+                log("Error reloading resource after append: " + ex.getMessage());
+            }
+        });
+    }
 }

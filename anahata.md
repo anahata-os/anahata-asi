@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-# Anahata AI Multi-Module Project
+# Anahata ASI Maven Multi-Module Project
 
 This document provides the high-level strategic overview for the entire `anahata-ai-parent` project.
 
@@ -13,7 +13,7 @@ This document provides the high-level strategic overview for the entire `anahata
 
 The project's strategy is based on the "Flywheel" model, designed to build a powerful ecosystem around a core commercial engine.
 
--   **Engine (`anahata-ai-core`):** This is the core commercial framework, containing the model-agnostic logic, a rich domain model, and the powerful V2 tool framework. It is licensed under a dual AGPLv3 / Commercial License model.
+-   **Engine (`anahata-asi`):** This is the core commercial framework, containing the model-agnostic logic, a rich domain model, and the powerful V2 tool framework. It is licensed under a dual AGPLv3 / Commercial License model.
 -   **Showcase (`anahata-netbeans-ai`):** This is the free, open-source NetBeans plugin that serves as the primary showcase for the engine's capabilities. It drives community adoption, provides real-world validation, and demonstrates the power of deep IDE integration.
 
 ## 2. Core Modules
@@ -39,6 +39,10 @@ This project uses a set of key documents to guide development. For detailed info
 4.  **Domain Driven Architecture (DDA):** We strictly adhere to DDA principles. Business logic and state transitions **must** reside within the domain model (`anahata-ai-core`). UI components (`anahata-ai-swing`) are responsible for rendering and user interaction only. **Never** implement business logic (e.g., tool state management, conversation flow) within UI classes.
     - **Domain Model Getters & Logic**: Prefer adding specialized methods (getters or actions) to the domain model over implementing complex logic (e.g. stream/filter/collect) in orchestrators or UI components. This ensures semantically clear domain concepts and promotes business logic reuse.
 5.  **Reactive UI Updates:** Use `PropertyChangeSource` and `EdtPropertyChangeListener` for all UI-to-Domain bindings. This ensures that UI updates are always performed on the Event Dispatch Thread (EDT) while keeping the domain model thread-safe and decoupled from Swing. Classes that need to fire events should extend `BasicPropertyChangeSource`.
+6.  **Minimalistic Diff-Based UI Rendering:** To support massive conversations (1000+ messages) and multi-million token context windows, UI components must use a strict diff-based rendering approach. 
+    - **Component Reuse**: Never clear and rebuild a container on every update. Use caches to map domain objects to UI components.
+    - **Incremental Updates**: Only add, remove, or reorder components that have actually changed in the domain model.
+    - **Disciplined Layout Invalidation**: Only call `revalidate()` and `repaint()` when structural changes occur or when a child's preferred size changes. Avoid redundant render cycles at all costs.
 
 ## 5. V2 Context Management (Deep Pinning)
 

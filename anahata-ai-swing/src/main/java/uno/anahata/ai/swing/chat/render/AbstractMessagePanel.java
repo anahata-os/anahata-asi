@@ -22,7 +22,9 @@ import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.jdesktop.swingx.JXPanel;
 import org.jdesktop.swingx.JXTitledPanel;
@@ -73,6 +75,13 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
     
     /** Cache of part panels to support incremental updates. */
     private final Map<AbstractPart, AbstractPartPanel> cachedPartPanels = new HashMap<>();
+    
+    /** If true, the pruning toggle button is rendered in the header. */
+    @Getter @Setter
+    private boolean renderPruneButtons = true;
+    /** If true, the remove button is rendered in the header. */
+    @Getter @Setter
+    private boolean renderRemoveButtons = true;
 
     /**
      * Constructs a new AbstractMessagePanel.
@@ -178,10 +187,19 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
     public final void render() {
         log.info("render() message #{}", message.getSequentialId());
         updateHeaderInfoText();
+        updateHeaderButtons();
         renderContentParts();
         renderFooterInternal();
         revalidate();
         repaint();
+    }
+
+    /**
+     * Updates the visibility of header buttons based on the render flags.
+     */
+    protected void updateHeaderButtons() {
+        pruningToggleButton.setVisible(renderPruneButtons);
+        removeButton.setVisible(renderRemoveButtons);
     }
 
     /**

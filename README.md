@@ -1,6 +1,6 @@
 # Anahata AI: Enterprise-Grade AI Framework for Java (V2)
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/anahata-anahata/anahata-ai-parent/actions) 
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/anahata-os/anahata-asi/actions) 
 [![License](https://img.shields.io/badge/license-Anahata%20(ASL%20V108)-blueviolet)](LICENSE)
 
 **Anahata AI** is a pure-Java, enterprise-grade framework for building sophisticated, multi-provider, orchestrated, agentic workflows. It is designed to be the "Tomcat" for AI—a robust container for managing, executing, and developing AI tools.
