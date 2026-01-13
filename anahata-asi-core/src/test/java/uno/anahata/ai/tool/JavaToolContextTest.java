@@ -1,21 +1,22 @@
 /* Licensed under the Anahata Software License, Version 108 - https://github.com/anahata-os/anahata-ai/blob/main/LICENSE */
 package uno.anahata.ai.tool;
 
+import uno.anahata.asi.tool.ToolManager;
 import java.util.Collections;
 import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import uno.anahata.ai.AsiConfig;
-import uno.anahata.ai.chat.Chat;
-import uno.anahata.ai.chat.ChatConfig;
-import uno.anahata.ai.model.core.AbstractModelMessage;
-import uno.anahata.ai.model.core.AbstractToolMessage;
-import uno.anahata.ai.model.core.TextPart;
-import uno.anahata.ai.model.tool.AbstractTool;
-import uno.anahata.ai.model.tool.ToolExecutionStatus;
-import uno.anahata.ai.model.tool.java.JavaMethodToolCall;
-import uno.anahata.ai.model.tool.java.JavaMethodToolResponse;
+import uno.anahata.asi.AsiConfig;
+import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.chat.ChatConfig;
+import uno.anahata.asi.model.core.AbstractModelMessage;
+import uno.anahata.asi.model.core.AbstractToolMessage;
+import uno.anahata.asi.model.core.TextPart;
+import uno.anahata.asi.model.tool.AbstractTool;
+import uno.anahata.asi.model.tool.ToolExecutionStatus;
+import uno.anahata.asi.model.tool.java.JavaMethodToolCall;
+import uno.anahata.asi.model.tool.java.JavaMethodToolResponse;
 
 /**
  * Unit test for the JavaTool context injection mechanism.

@@ -17,6 +17,7 @@
  */
 package uno.anahata.ai.tool.schema;
 
+import uno.anahata.asi.tool.schema.SchemaProvider;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
@@ -24,7 +25,7 @@ import org.junit.jupiter.api.Test;
 import uno.anahata.ai.model.tool.MockComplexObject;
 import uno.anahata.ai.model.tool.Tree;
 import uno.anahata.ai.model.tool.TreeNode;
-import uno.anahata.ai.model.tool.java.JavaMethodToolResponse;
+import uno.anahata.asi.model.tool.java.JavaMethodToolResponse;
 
 /**
  * A robust, modern test suite for the SchemaProvider, built from verified outputs.

@@ -13,7 +13,7 @@
                 <exec.vmArgs>-Xms1g</exec.vmArgs>
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.appArgs>Gemini/models/gemini-3-flash-preview</exec.appArgs>
-                <exec.mainClass>uno.anahata.ai.standalone.SwingMain</exec.mainClass>
+                <exec.mainClass>uno.anahata.asi.standalone.SwingMain</exec.mainClass>
                 <exec.executable>java</exec.executable>
             </properties>
         </action>
@@ -30,7 +30,7 @@
                 <exec.vmArgs>-Xms1g -agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.appArgs>Gemini/models/gemini-3-flash-preview</exec.appArgs>
-                <exec.mainClass>uno.anahata.ai.standalone.SwingMain</exec.mainClass>
+                <exec.mainClass>uno.anahata.asi.standalone.SwingMain</exec.mainClass>
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
             </properties>
@@ -47,7 +47,7 @@
             <properties>
                 <exec.vmArgs>-Xms1g</exec.vmArgs>
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
-                <exec.mainClass>uno.anahata.ai.standalone.SwingMain</exec.mainClass>
+                <exec.mainClass>uno.anahata.asi.standalone.SwingMain</exec.mainClass>
                 <exec.executable>java</exec.executable>
                 <exec.appArgs>Gemini/models/gemini-3-flash-preview</exec.appArgs>
             </properties>

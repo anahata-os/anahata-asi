@@ -1,8 +1,12 @@
 /* Licensed under the Anahata Software License, Version 108 - https://github.com/anahata-os/anahata-ai/blob/main/LICENSE */
 package uno.anahata.ai.tool;
 
+import uno.anahata.asi.tool.AiToolParam;
+import uno.anahata.asi.tool.AnahataToolkit;
+import uno.anahata.asi.tool.AiTool;
+import uno.anahata.asi.tool.AiToolkit;
 import java.util.List;
-import uno.anahata.ai.model.core.TextPart;
+import uno.anahata.asi.model.core.TextPart;
 import uno.anahata.ai.model.tool.MockComplexObject;
 import uno.anahata.ai.model.tool.Tree;
 

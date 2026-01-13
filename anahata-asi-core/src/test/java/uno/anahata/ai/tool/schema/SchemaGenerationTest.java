@@ -17,15 +17,16 @@
  */
 package uno.anahata.ai.tool.schema;
 
+import uno.anahata.asi.tool.schema.SchemaProvider;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import uno.anahata.ai.AsiConfig;
-import uno.anahata.ai.model.tool.AbstractTool;
+import uno.anahata.asi.AsiConfig;
+import uno.anahata.asi.model.tool.AbstractTool;
 import uno.anahata.ai.tool.MockToolkit;
-import uno.anahata.ai.tool.ToolManager;
+import uno.anahata.asi.tool.ToolManager;
 
 public class SchemaGenerationTest {
     private static final TypeReference<Map<String, Object>> MAP_TYPE_REF = new TypeReference<>() {};

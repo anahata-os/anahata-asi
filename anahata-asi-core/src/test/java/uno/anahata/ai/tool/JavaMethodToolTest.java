@@ -17,15 +17,16 @@
  */
 package uno.anahata.ai.tool;
 
+import uno.anahata.asi.tool.ToolManager;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import uno.anahata.ai.AsiConfig;
-import uno.anahata.ai.model.tool.java.JavaMethodTool;
-import uno.anahata.ai.model.tool.java.JavaMethodToolParameter;
-import uno.anahata.ai.tool.schema.SchemaProvider;
+import uno.anahata.asi.AsiConfig;
+import uno.anahata.asi.model.tool.java.JavaMethodTool;
+import uno.anahata.asi.model.tool.java.JavaMethodToolParameter;
+import uno.anahata.asi.tool.schema.SchemaProvider;
 
 /**
  * Unit tests for the JavaMethodTool class, verifying correct parsing of annotations.
