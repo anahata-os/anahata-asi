@@ -33,13 +33,12 @@ public class Shell extends AnahataToolkit{
      * @return the exit code
      * @throws Exception if the command fails to start or execution is interrupted.
      */
-    @AiTool("Runs a shell command with bash -c: <command> and forwards the stdout to the tools logs and the stderr to the tool's error log)")
+    @AiTool("Runs a shell command with bash -c: <command> and forwards the stdout to the tool's output and the stderr to the tool's error log)")
     public ShellExecutionResult runAndWait(@AiToolParam("The command to run") String command) throws Exception {
         ShellExecutionResult result = new ShellExecutionResult();
         
         ProcessBuilder pb = new ProcessBuilder("bash", "-c", command);
         pb.redirectErrorStream(false);
-
         
         Process process = pb.start();
         log("Process started" + process);
@@ -71,6 +70,8 @@ public class Shell extends AnahataToolkit{
         result.setProcessToString(process.toString());
         result.setProcessId(pid);
         result.setExitCode(exitCode);
+        result.setStdOut(output);
+        //result.setStdErr(error);
         
         return result;
     }
@@ -95,7 +96,7 @@ public class Shell extends AnahataToolkit{
                     if (error) {
                         response.addError(line);
                     } else {
-                        response.addLog(line);
+                        //response.addLog(line);
                     }
                     sb.append(line);
                 }

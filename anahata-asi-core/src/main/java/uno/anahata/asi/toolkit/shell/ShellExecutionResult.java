@@ -21,4 +21,6 @@ public class ShellExecutionResult {
     private String processToString;
     private String processId;
     private int exitCode;
+    private String stdOut;
+    //private String stdErr;
 }

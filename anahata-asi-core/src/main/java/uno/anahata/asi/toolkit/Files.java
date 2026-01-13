@@ -85,7 +85,7 @@ public class Files extends AnahataToolkit {
      */
     private TextFileResource loadTextFile(String path) throws Exception {
 
-        if (findByPath(path).isPresent()) {
+        if (getResourceManager().findByPath(path).isPresent()) {
             throw new AiToolException("Resource already loaded for path: " + path);
         }
 
@@ -99,21 +99,6 @@ public class Files extends AnahataToolkit {
         return resource;
     }
 
-    /**
-     * Finds a managed resource by its absolute file path. This is a private
-     * helper method that encapsulates the logic specific to this toolkit.
-     *
-     * @param path The path to search for.
-     * @return An Optional containing the resource if found, otherwise empty.
-     */
-    private Optional<AbstractPathResource> findByPath(String path) {
-        return getResourceManager().getResources().stream()
-                .filter(r -> r instanceof AbstractPathResource)
-                .map(r -> (AbstractPathResource) r)
-                .filter(r -> r.getPath().equals(path))
-                .findFirst();
-    }
-
     @AiTool(value = "Creates a new file or overwrites an existing one with the provided content.", retention = 0)
     public void writeTextFile(
             @AiToolParam("The absolute path to the file.") String path,
@@ -124,14 +109,6 @@ public class Files extends AnahataToolkit {
         }
         java.nio.file.Files.writeString(filePath, content);
         log("Successfully wrote to file: " + path);
-
-        findByPath(path).ifPresent(r -> {
-            try {
-                r.reload();
-            } catch (Exception ex) {
-                log("Error reloading resource after write: " + ex.getMessage());
-            }
-        });
     }
 
     @AiTool(value = "Replaces a specific string with another in a file. Ideal for surgical code edits.", retention = 0)
@@ -150,13 +127,6 @@ public class Files extends AnahataToolkit {
         java.nio.file.Files.writeString(filePath, newContent);
         log("Successfully updated file: " + path);
 
-        findByPath(path).ifPresent(r -> {
-            try {
-                r.reload();
-            } catch (Exception ex) {
-                log("Error reloading resource after replacement: " + ex.getMessage());
-            }
-        });
     }
 
     @AiTool(value = "Appends text to the end of an existing file.", retention = 0)
@@ -165,13 +135,5 @@ public class Files extends AnahataToolkit {
             @AiToolParam("The text content to append.") String content) throws Exception {
         java.nio.file.Files.writeString(Paths.get(path), content, java.nio.file.StandardOpenOption.APPEND);
         log("Successfully appended to file: " + path);
-
-        findByPath(path).ifPresent(r -> {
-            try {
-                r.reload();
-            } catch (Exception ex) {
-                log("Error reloading resource after append: " + ex.getMessage());
-            }
-        });
     }
 }

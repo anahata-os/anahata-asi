@@ -3,30 +3,28 @@
  */
 package uno.anahata.asi.swing.chat.render;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Rectangle;
 import javax.swing.BorderFactory;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.Scrollable;
 import javax.swing.border.Border;
 import lombok.NonNull;
 import uno.anahata.asi.model.core.AbstractMessage;
-import uno.anahata.asi.model.core.Role;
 import uno.anahata.asi.swing.chat.ChatPanel;
 
 /**
- * A specialized panel for rendering any {@link AbstractMessage} with built-in
- * scrolling and optional header controls. This is useful for displaying
- * messages in secondary UI locations like toolkit details or system instruction
- * previews.
+ * A specialized scroll pane for rendering any {@link AbstractMessage}. 
+ * This is useful for displaying messages in secondary UI locations 
+ * like toolkit details or system instruction previews.
  *
  * @author anahata
  */
-public class OtherMessagePanel extends JPanel {
+public class OtherMessagePanel extends JScrollPane {
 
     private final ChatPanel chatPanel;
     private final AbstractMessage message;
-    private final JScrollPane scrollPane;
     private final AbstractMessagePanel<AbstractMessage> messagePanel;
 
     /**
@@ -39,7 +37,6 @@ public class OtherMessagePanel extends JPanel {
      */
     public OtherMessagePanel(@NonNull ChatPanel chatPanel, @NonNull AbstractMessage message, 
                              boolean renderPruneButtons, boolean renderRemoveButtons) {
-        super(new BorderLayout());
         this.chatPanel = chatPanel;
         this.message = message;
 
@@ -47,19 +44,46 @@ public class OtherMessagePanel extends JPanel {
         this.messagePanel.setRenderPruneButtons(renderPruneButtons);
         this.messagePanel.setRenderRemoveButtons(renderRemoveButtons);
 
-        this.scrollPane = new JScrollPane(messagePanel);
-        this.scrollPane.setBorder(null);
-        this.scrollPane.setOpaque(false);
-        this.scrollPane.getViewport().setOpaque(false);
-        this.scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        this.scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        
-        add(scrollPane, BorderLayout.CENTER);
+        setViewportView(messagePanel);
+        setBorder(null);
         setOpaque(false);
+        getViewport().setOpaque(false);
+        setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        getVerticalScrollBar().setUnitIncrement(16);
     }
 
     private AbstractMessagePanel<AbstractMessage> createMessagePanel(AbstractMessage message) {
-        return new AbstractMessagePanel<>(chatPanel, message) {
+        class ScrollableMessagePanel extends AbstractMessagePanel<AbstractMessage> implements Scrollable {
+            public ScrollableMessagePanel(ChatPanel chatPanel, AbstractMessage message) {
+                super(chatPanel, message);
+            }
+
+            @Override
+            public Dimension getPreferredScrollableViewportSize() {
+                return getPreferredSize();
+            }
+
+            @Override
+            public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+                return 16;
+            }
+
+            @Override
+            public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+                return 16;
+            }
+
+            @Override
+            public boolean getScrollableTracksViewportWidth() {
+                return true;
+            }
+
+            @Override
+            public boolean getScrollableTracksViewportHeight() {
+                return false;
+            }
+
             @Override
             protected Color getHeaderStartColor() {
                 return chatConfig.getTheme().getHeaderStartColor(message.getRole());
@@ -79,7 +103,8 @@ public class OtherMessagePanel extends JPanel {
             protected Border getMessageBorder() {
                 return BorderFactory.createLineBorder(chatConfig.getTheme().getBorderColor(message.getRole()), 1, true);
             }
-        };
+        }
+        return new ScrollableMessagePanel(chatPanel, message);
     }
     
     /**

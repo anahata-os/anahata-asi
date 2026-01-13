@@ -17,6 +17,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
@@ -30,6 +32,7 @@ import javax.tools.ToolProvider;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.internal.ClasspathPrinter;
+import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.model.core.TextPart;
 import uno.anahata.asi.model.tool.java.JavaMethodTool;
@@ -111,7 +114,7 @@ public class Java extends AnahataToolkit {
     public List<String> getSystemInstructionParts(Chat chat) throws Exception {
         StringBuilder sb = new StringBuilder();
         sb.append("### Java Toolkit Instructions: \n");
-        sb.append("When using `compileAndExecute`, your class should extend `uno.anahata.ai.tool.AnahataTool`, have no package declaration and implement the call method of Callable<Object>. ");
+        sb.append("When using `compileAndExecute`, your class should extend `" + AnahataTool.class.getName()+ "`, have no package declaration and implement the call method of Callable<Object>. ");
         sb.append("This provides the following helper methods for a rich, context-aware execution:\n\n");
         
         sb.append("#### Available Methods that you can use within the code you write (inherited from AnahataTool):\n");
@@ -123,7 +126,7 @@ public class Java extends AnahataToolkit {
         
         sb.append("\n#### Example:\n");
         sb.append("```java\n");
-        sb.append("import uno.anahata.ai.tool.AnahataTool;\n");
+        sb.append("import " + AnahataTool.class.getName()+ ";\n");
         sb.append("\n");
         sb.append("public class Anahata extends AnahataTool {\n");
         sb.append("    @Override\n");
@@ -142,6 +145,10 @@ public class Java extends AnahataToolkit {
         sb.append("    }\n");
         sb.append("}\n");
         sb.append("```\n");
+        sb.append("\n");
+        sb.append("\n");
+        sb.append("**JVM System Properties**:\n");
+        sb.append(getSystemProperties());
         
         
         return Collections.singletonList(sb.toString());
@@ -345,4 +352,91 @@ public class Java extends AnahataToolkit {
             throw new AiToolException("Source file should extend AnahataTool or implement java.util.Callable");
         }
     }
+    
+
+    /**
+     * A node of system properties for system props.
+     */
+    private static class SystemPropertyNode {
+        String segment;
+        String fullPath;
+        Object value;
+        Map<String, SystemPropertyNode> children = new TreeMap<>();
+
+        SystemPropertyNode(String segment, String fullPath) {
+            this.segment = segment;
+            this.fullPath = fullPath;
+        }
+
+        boolean isLeaf() {
+            return children.isEmpty();
+        }
+    }
+
+    /**
+     * Beautiful system props.
+     * 
+     * @return most beautiful system properties you have ever seen.
+     * @throws Exception - wont happen
+     */
+    public String getSystemProperties() throws Exception {
+        Properties props = System.getProperties();
+        SystemPropertyNode root = new SystemPropertyNode("", "");
+
+        for (Object keyObj : props.keySet()) {
+            String key = (String) keyObj;
+            if (key.startsWith("java.class.path")) continue;
+
+            String[] parts = key.split("\\.");
+            SystemPropertyNode current = root;
+            StringBuilder pathAcc = new StringBuilder();
+            for (String part : parts) {
+                if (pathAcc.length() > 0) pathAcc.append(".");
+                pathAcc.append(part);
+                current = current.children.computeIfAbsent(part, k -> new SystemPropertyNode(k, pathAcc.toString()));
+            }
+            current.value = props.get(key);
+        }
+
+        StringBuilder sb = new StringBuilder();
+        // Process top-level groups
+        for (SystemPropertyNode child : root.children.values()) {
+            renderSysProp(sb, child, 0);
+        }
+        return sb.toString();
+    }
+
+    private void renderSysProp(StringBuilder sb, SystemPropertyNode node, int indent) {
+        String tabs = "  ".repeat(indent);
+        
+        // Collapse logic: if a node has exactly one child and no value, merge with child
+        SystemPropertyNode current = node;
+        String displayLabel = current.segment;
+        while (current.children.size() == 1 && current.value == null) {
+            SystemPropertyNode next = current.children.values().iterator().next();
+            displayLabel += "." + next.segment;
+            current = next;
+        }
+
+        if (current.isLeaf()) {
+            // It's a single property or a fully collapsed path
+            sb.append(tabs).append("- `").append(displayLabel).append("`: ")
+              .append(TextUtils.formatValue(current.value)).append("\n");
+        } else {
+            // It's a group
+            // User requested full prefix in the header
+            sb.append(tabs).append("**").append(current.fullPath).append("**:\n");
+            
+            if (current.value != null) {
+                // If the prefix node itself has a value (e.g. java.vendor)
+                sb.append(tabs).append("  - `value`: ").append(TextUtils.formatValue(current.value)).append("\n");
+            }
+            
+            for (SystemPropertyNode child : current.children.values()) {
+                renderSysProp(sb, child, indent + 1);
+            }
+        }
+    }
 }
+
+

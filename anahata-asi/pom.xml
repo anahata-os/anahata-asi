@@ -43,7 +43,12 @@
         <dependency>
             <groupId>uno.anahata</groupId>
             <artifactId>anahata-asi-swing</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>uno.anahata</groupId>
+            <artifactId>anahata-asi-gemini</artifactId>
+            <version>${project.version}</version>
         </dependency>
         
         <!-- NetBeans APIs -->
