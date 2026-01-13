@@ -4,21 +4,21 @@
     
     <parent>
         <groupId>uno.anahata</groupId>
-        <artifactId>anahata-ai-parent</artifactId>
+        <artifactId>anahata-asi-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     
-    <artifactId>anahata-ai-gemini</artifactId>
+    <artifactId>anahata-asi-gemini</artifactId>
     <packaging>jar</packaging>
     
-    <name>Anahata AI Gemini Provider</name>
-    <description>The Gemini-specific implementation of the Anahata AI core APIs.</description>
+    <name>Anahata ASI Gemini Provider</name>
+    <description>The Gemini-specific implementation of the Anahata ASI core APIs.</description>
     
     <dependencies>
-        <!-- Core Anahata AI API -->
+        <!-- Core Anahata ASI API -->
         <dependency>
             <groupId>uno.anahata</groupId>
-            <artifactId>anahata-ai-core</artifactId>
+            <artifactId>anahata-asi-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         

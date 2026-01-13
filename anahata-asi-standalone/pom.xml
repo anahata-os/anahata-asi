@@ -3,11 +3,11 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>uno.anahata</groupId>
-        <artifactId>anahata-ai-parent</artifactId>
+        <artifactId>anahata-asi-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
-    <artifactId>anahata-ai-standalone</artifactId>
-    <name>Anahata AI Standalone Launcher</name>
+    <artifactId>anahata-asi-standalone</artifactId>
+    <name>Anahata ASI Standalone Launcher</name>
     <packaging>jar</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -16,19 +16,19 @@
         <!-- Core UI Module -->
         <dependency>
             <groupId>uno.anahata</groupId>
-            <artifactId>anahata-ai-swing</artifactId>
+            <artifactId>anahata-asi-swing</artifactId>
             <version>${project.version}</version>
         </dependency>
         
         <!-- Existing Dependencies -->
         <dependency>
             <groupId>uno.anahata</groupId>
-            <artifactId>anahata-ai-cli</artifactId>
+            <artifactId>anahata-asi-cli</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>uno.anahata</groupId>
-            <artifactId>anahata-ai-gemini</artifactId>
+            <artifactId>anahata-asi-gemini</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

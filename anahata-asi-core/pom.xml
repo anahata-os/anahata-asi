@@ -4,15 +4,15 @@
     
     <parent>
         <groupId>uno.anahata</groupId>
-        <artifactId>anahata-ai-parent</artifactId>
+        <artifactId>anahata-asi-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     
-    <artifactId>anahata-ai-core</artifactId>
+    <artifactId>anahata-asi-core</artifactId>
     <packaging>jar</packaging>
     
-    <name>Anahata AI Core</name>
-    <description>Core, model-agnostic AI framework components.</description>
+    <name>Anahata ASI Core</name>
+    <description>Core, model-agnostic ASI framework components.</description>
     
     <dependencies>
         <!-- LLM Tokenizer -->

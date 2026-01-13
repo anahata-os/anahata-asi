@@ -3,12 +3,12 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>uno.anahata</groupId>
-        <artifactId>anahata-ai-parent</artifactId>
+        <artifactId>anahata-asi-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
-    <artifactId>anahata-ai-yam</artifactId>
+    <artifactId>anahata-asi-yam</artifactId>
     <packaging>jar</packaging>
-    <name>Anahata AI Yam</name>
+    <name>Anahata ASI Yam</name>
     <description>Tools for Entertainment</description>
     
     <dependencies>

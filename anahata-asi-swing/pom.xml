@@ -3,18 +3,18 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>uno.anahata</groupId>
-        <artifactId>anahata-ai-parent</artifactId>
+        <artifactId>anahata-asi-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
-    <artifactId>anahata-ai-swing</artifactId>
-    <name>Anahata AI Swing UI</name>
-    <description>Provides Swing components for building AI-powered user interfaces.</description>
+    <artifactId>anahata-asi-swing</artifactId>
+    <name>Anahata ASI Swing UI</name>
+    <description>Provides Swing components for building ASI-powered user interfaces.</description>
     <packaging>jar</packaging>
     <dependencies>
-        <!-- Core Anahata AI API -->
+        <!-- Core Anahata ASI API -->
         <dependency>
             <groupId>uno.anahata</groupId>
-            <artifactId>anahata-ai-core</artifactId>
+            <artifactId>anahata-asi-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         

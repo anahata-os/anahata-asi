@@ -2,19 +2,19 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>uno.anahata</groupId>
-    <artifactId>anahata-ai-parent</artifactId>
+    <artifactId>anahata-asi-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>Anahata AI Parent</name>
-    <description>Parent POM for the Anahata AI multi-module project.</description>
+    <name>Anahata ASI Parent</name>
+    <description>Parent POM for the Anahata ASI multi-module project.</description>
     <modules>
-        <module>anahata-ai-core</module>
-        <module>anahata-ai-gemini</module>
-        <module>anahata-ai-swing</module>
-        <module>anahata-ai-cli</module>
-        <module>anahata-ai-standalone</module>
+        <module>anahata-asi-core</module>
+        <module>anahata-asi-gemini</module>
+        <module>anahata-asi-swing</module>
+        <module>anahata-asi-cli</module>
+        <module>anahata-asi-standalone</module>
         <module>anahata-asi</module>
-        <module>anahata-ai-web</module>
+        <module>anahata-asi-web</module>
     </modules>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

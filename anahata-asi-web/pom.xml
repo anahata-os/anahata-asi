@@ -3,13 +3,13 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>uno.anahata</groupId>
-        <artifactId>anahata-ai-parent</artifactId>
+        <artifactId>anahata-asi-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
-    <artifactId>anahata-ai-web</artifactId>
+    <artifactId>anahata-asi-web</artifactId>
     <packaging>jar</packaging>
     <name>Anahata ASI Website</name>
-    <description>The official website and documentation for Anahata AI V2.</description>
+    <description>The official website and documentation for Anahata ASI V2.</description>
     
     <build>
         <resources>
