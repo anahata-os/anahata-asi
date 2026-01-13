@@ -47,7 +47,7 @@ import uno.anahata.asi.swing.internal.WrapLayout;
 public class SessionsPanel extends JPanel {
 
     private final JTable table;
-    private final LiveSessionsTableModel model;
+    private final SessionsTableModel model;
     private final Timer refreshTimer;
     private final JButton closeButton;
     private final JButton disposeButton;
@@ -65,7 +65,7 @@ public class SessionsPanel extends JPanel {
     public SessionsPanel(@NonNull AsiConfig asiConfig) {
         this.asiConfig = asiConfig;
         // 1. Initialize Final Fields First
-        this.model = new LiveSessionsTableModel(asiConfig);
+        this.model = new SessionsTableModel(asiConfig);
         this.table = new JTable(model);
         this.cardContainer = new JPanel(new WrapLayout(WrapLayout.LEFT, 10, 10));
         this.viewLayout = new CardLayout();
@@ -138,13 +138,13 @@ public class SessionsPanel extends JPanel {
 
         // Custom Renderers
         table.setDefaultRenderer(ChatStatus.class, new StatusCellRenderer());
-        table.getColumnModel().getColumn(LiveSessionsTableModel.CONTEXT_COL).setCellRenderer(new ContextUsageCellRenderer());
+        table.getColumnModel().getColumn(SessionsTableModel.CONTEXT_COL).setCellRenderer(new ContextUsageCellRenderer());
 
         // Sorting
-        TableRowSorter<LiveSessionsTableModel> sorter = new TableRowSorter<>(model);
+        TableRowSorter<SessionsTableModel> sorter = new TableRowSorter<>(model);
         table.setRowSorter(sorter);
-        sorter.setComparator(LiveSessionsTableModel.CONTEXT_COL, Comparator.comparingDouble(d -> (Double) d));
-        sorter.setSortKeys(List.of(new javax.swing.RowSorter.SortKey(LiveSessionsTableModel.SESSION_COL, javax.swing.SortOrder.ASCENDING)));
+        sorter.setComparator(SessionsTableModel.CONTEXT_COL, Comparator.comparingDouble(d -> (Double) d));
+        sorter.setSortKeys(List.of(new javax.swing.RowSorter.SortKey(SessionsTableModel.SESSION_COL, javax.swing.SortOrder.ASCENDING)));
 
         table.addMouseListener(new MouseAdapter() {
             @Override
@@ -167,15 +167,15 @@ public class SessionsPanel extends JPanel {
     }
 
     private void setColumnWidths() {
-        TableColumn statusColumn = table.getColumnModel().getColumn(LiveSessionsTableModel.STATUS_COL);
+        TableColumn statusColumn = table.getColumnModel().getColumn(SessionsTableModel.STATUS_COL);
         statusColumn.setMinWidth(120);
         statusColumn.setMaxWidth(150);
 
-        TableColumn msgColumn = table.getColumnModel().getColumn(LiveSessionsTableModel.MESSAGES_COL);
+        TableColumn msgColumn = table.getColumnModel().getColumn(SessionsTableModel.MESSAGES_COL);
         msgColumn.setMinWidth(60);
         msgColumn.setMaxWidth(80);
 
-        TableColumn ctxColumn = table.getColumnModel().getColumn(LiveSessionsTableModel.CONTEXT_COL);
+        TableColumn ctxColumn = table.getColumnModel().getColumn(SessionsTableModel.CONTEXT_COL);
         ctxColumn.setMinWidth(80);
         ctxColumn.setMaxWidth(100);
     }

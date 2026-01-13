@@ -1,7 +1,7 @@
 /*
  * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
  */
-package uno.anahata.asi.swing.chat;
+package uno.anahata.asi.standalone.swing;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -17,6 +17,9 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.model.provider.AbstractAiProvider;
+import uno.anahata.asi.swing.chat.ChatPanel;
+import uno.anahata.asi.swing.chat.SessionsPanel;
+import uno.anahata.asi.swing.chat.SwingChatConfig;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 
 /**

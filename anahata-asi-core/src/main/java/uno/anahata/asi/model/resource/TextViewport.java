@@ -12,11 +12,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 /**
- * A powerful, self-contained engine that manages the view of a text-based resource.
- * It holds both the viewport settings (pagination, filtering) and the results
- * of the last processing operation, serving as the definitive source for the
- * current view of a resource. This version uses a character-first pagination model.
- *
+ * A powerful engine that manages the view of a text resource.
+ * Holds process results and a nested settings object.
+ * 
  * @author anahata-ai
  */
 @Getter
@@ -25,28 +23,16 @@ import org.apache.commons.lang3.Validate;
 @Schema(description = "Represents the view port of a chunk of text")
 public class TextViewport {
 
-    //<editor-fold defaultstate="collapsed" desc="View Settings">
-    private long startChar = 0;
-    private int pageSizeInChars = 16 * 1024; // 16KB default page size
-    private int columnWidth = 256;
-    private String grepPattern;
-    private boolean includeLineNumbers = false;
-    //</editor-fold>
+    @Schema(description = "Adjustable viewport configuration")
+    private TextViewportSettings settings = new TextViewportSettings();
 
-    //<editor-fold defaultstate="collapsed" desc="Cached Process Results">
     @JsonIgnore
     private String processedText;
     private long totalChars;
     private int totalLines;
     private Integer matchingLineCount;
     private int truncatedLinesCount;
-    //</editor-fold>
 
-    /**
-     * Processes a block of text according to the viewport's settings, caching the results.
-     *
-     * @param fullText The full text content to process.
-     */
     public void process(String fullText) {
         Validate.notNull(fullText, "fullText cannot be null");
         this.totalChars = fullText.length();
@@ -59,63 +45,50 @@ public class TextViewport {
             return;
         }
 
-        // Step 1: Apply grep pattern if it exists
-        String contentToPaginate;
-        if (grepPattern != null && !grepPattern.trim().isEmpty()) {
-            Pattern pattern = Pattern.compile(grepPattern);
+        String contentToPaginate = fullText;
+        if (settings.getGrepPattern() != null && !settings.getGrepPattern().trim().isEmpty()) {
+            Pattern pattern = Pattern.compile(settings.getGrepPattern());
             contentToPaginate = fullText.lines()
                     .filter(line -> pattern.matcher(line).matches())
                     .collect(Collectors.joining("\n"));
             this.matchingLineCount = (int) contentToPaginate.lines().count();
         } else {
-            contentToPaginate = fullText;
-            this.matchingLineCount = null; // Not applicable
+            this.matchingLineCount = null;
         }
 
-        // Step 2: Paginate by character offsets
-        long effectiveStart = Math.max(0, startChar);
-        long effectiveEnd = Math.min(contentToPaginate.length(), effectiveStart + pageSizeInChars);
+        long start = Math.max(0, settings.getStartChar());
+        long end = Math.min(contentToPaginate.length(), start + settings.getPageSizeInChars());
         
-        if (effectiveStart >= contentToPaginate.length()) {
+        if (start >= contentToPaginate.length()) {
             this.processedText = "";
             return;
         }
 
-        String pageText = contentToPaginate.substring((int)effectiveStart, (int)effectiveEnd);
-        
-        // Step 3: Handle partial lines at boundaries
+        String pageText = contentToPaginate.substring((int)start, (int)end);
         StringBuilder sb = new StringBuilder();
         
-        // Check if the start of our slice is not the start of a line
-        if (effectiveStart > 0 && contentToPaginate.charAt((int)effectiveStart - 1) != '\n') {
-            int prevNewline = contentToPaginate.lastIndexOf('\n', (int)effectiveStart - 1);
-            long precedingChars = effectiveStart - (prevNewline + 1);
-            sb.append("[..." + precedingChars + " preceding chars] ");
+        if (start > 0 && contentToPaginate.charAt((int)start - 1) != '\n') {
+            int prevNewline = contentToPaginate.lastIndexOf('\n', (int)start - 1);
+            sb.append("[..." + (start - (prevNewline + 1)) + " preceding chars] ");
         }
         
         sb.append(pageText);
         
-        // Check if the end of our slice is not the end of a line
-        if (effectiveEnd < contentToPaginate.length() && contentToPaginate.charAt((int)effectiveEnd) != '\n') {
-            int nextNewline = contentToPaginate.indexOf('\n', (int)effectiveEnd);
-            if (nextNewline != -1) {
-                long moreChars = nextNewline - effectiveEnd;
-                sb.append(" [" + moreChars + " more chars...]");
-            }
+        if (end < contentToPaginate.length() && contentToPaginate.charAt((int)end) != '\n') {
+            int nextNewline = contentToPaginate.indexOf('\n', (int)end);
+            if (nextNewline != -1) sb.append(" [" + (nextNewline - end) + " more chars...]");
         }
         
-        // Step 4: Truncate long lines and optionally add line numbers
         List<String> pageLines = sb.toString().lines().collect(Collectors.toList());
         this.truncatedLinesCount = (int) pageLines.stream()
-                .filter(line -> line.length() > columnWidth)
+                .filter(line -> line.length() > settings.getColumnWidth())
                 .count();
 
-        if (includeLineNumbers) {
-            // Line numbers are tricky with char offsets, so we find the starting line number
-            int startLineNum = (int) fullText.substring(0, (int)effectiveStart).lines().count();
-            final int[] lineNumber = {startLineNum};
+        if (settings.isShowLineNumbers()) {
+            int startLineNum = (int) fullText.substring(0, (int)start).lines().count();
+            final int[] ln = {startLineNum + 1};
             this.processedText = pageLines.stream()
-                .map(line -> String.format("[%d]: %s", lineNumber[0]++, truncateLine(line)))
+                .map(line -> String.format("[%d]: %s", ln[0]++, truncateLine(line)))
                 .collect(Collectors.joining("\n"));
         } else {
             this.processedText = pageLines.stream()
@@ -125,11 +98,19 @@ public class TextViewport {
     }
 
     private String truncateLine(String line) {
-        if (columnWidth > 0 && line.length() > columnWidth) {
-            int originalLength = line.length();
-            String tag = " ... [truncated " + (originalLength - columnWidth) + " chars] ... ";
-            return StringUtils.abbreviateMiddle(line, tag, columnWidth);
+        int width = settings.getColumnWidth();
+        if (width > 0 && line.length() > width) {
+            String tag = " ... [truncated " + (line.length() - width) + " chars] ... ";
+            return StringUtils.abbreviateMiddle(line, tag, width);
         }
         return line;
+    }
+    
+    @Override
+    public String toString() {
+        return String.format("Viewport[start=%d, size=%d, lines=%d/%d, truncated=%d, lineNumbers=%b]", 
+            settings.getStartChar(), settings.getPageSizeInChars(), 
+            matchingLineCount != null ? matchingLineCount : totalLines, 
+            totalLines, truncatedLinesCount, settings.isShowLineNumbers());
     }
 }

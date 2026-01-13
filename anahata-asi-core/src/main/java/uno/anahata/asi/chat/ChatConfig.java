@@ -14,7 +14,7 @@ import uno.anahata.asi.AsiConfig;
 import uno.anahata.asi.model.core.RequestConfig;
 import uno.anahata.asi.model.provider.AbstractAiProvider;
 import uno.anahata.asi.toolkit.Session;
-import uno.anahata.asi.toolkit.Files;
+import uno.anahata.asi.toolkit.files.Files;
 import uno.anahata.asi.toolkit.Java;
 import uno.anahata.asi.toolkit.Resources;
 import uno.anahata.asi.toolkit.shell.Shell;

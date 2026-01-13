@@ -1,4 +1,4 @@
-package uno.anahata.asi.toolkit;
+package uno.anahata.asi.toolkit.files;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -10,6 +10,7 @@ import uno.anahata.asi.model.resource.AbstractPathResource;
 import uno.anahata.asi.model.resource.AbstractResource;
 import uno.anahata.asi.model.resource.TextFileResource;
 import uno.anahata.asi.model.resource.TextViewport;
+import uno.anahata.asi.model.resource.TextViewportSettings;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolException;
 import uno.anahata.asi.tool.AiToolkit;
@@ -26,11 +27,11 @@ import uno.anahata.asi.tool.AiToolParam;
 public class Files extends AnahataToolkit {
 
     @AiTool(value = "Updates the viewport of a TextFileResource ", retention = 0)
-    public void updateTextFileViewport(
+    public void updateTextViewportSettings(
             @AiToolParam("The absolute paths to the text files.") String resourceId, 
-            @AiToolParam("The new view port for the text file") TextViewport newViewPort) throws Exception {
+            @AiToolParam("The new viewport settings for the text file") TextViewportSettings newSettings) throws Exception {
         TextFileResource tfr = getResourceManager().getResource(resourceId);
-        tfr.setViewport(newViewPort);
+        tfr.getViewport().setSettings(newSettings);
         tfr.reload();
     }
 

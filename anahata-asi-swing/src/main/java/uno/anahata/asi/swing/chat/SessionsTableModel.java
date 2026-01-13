@@ -20,7 +20,7 @@ import uno.anahata.asi.status.ChatStatus;
  * 
  * @author gemini-3-flash-preview
  */
-public class LiveSessionsTableModel extends AbstractTableModel {
+public class SessionsTableModel extends AbstractTableModel {
 
     private final List<Chat> sessions = new ArrayList<>();
     private final String[] columnNames = {"Nickname", "ID", "Status", "Msgs", "Context %"};
@@ -33,7 +33,7 @@ public class LiveSessionsTableModel extends AbstractTableModel {
     public static final int MESSAGES_COL = 3;
     public static final int CONTEXT_COL = 4;
 
-    public LiveSessionsTableModel(@NonNull AsiConfig asiConfig) {
+    public SessionsTableModel(@NonNull AsiConfig asiConfig) {
         this.asiConfig = asiConfig;
         refresh();
         asiConfig.addPropertyChangeListener(asiListener);

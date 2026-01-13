@@ -1,5 +1,6 @@
 package uno.anahata.asi.standalone;
 
+import uno.anahata.asi.standalone.swing.MainPanel;
 import com.formdev.flatlaf.FlatLightLaf;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -10,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AsiConfig;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.cli.CommandLineArgs;
-import uno.anahata.asi.swing.chat.MainPanel;
 import uno.anahata.asi.swing.chat.SwingChatConfig;
 import uno.anahata.asi.swing.icons.IconUtils;
 
