@@ -22,7 +22,7 @@ import uno.anahata.asi.swing.chat.render.AbstractMessagePanel;
  * This component implements {@link Scrollable} to ensure it behaves correctly
  * within a JScrollPane, stretching to fill the viewport height if necessary.
  *
- * @author pablo
+ * @author anahata
  */
 public class UserInputMessagePanel extends AbstractMessagePanel<InputUserMessage> implements Scrollable {
 
