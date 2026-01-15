@@ -11,7 +11,7 @@ import lombok.ToString;
 
 /**
  *
- * @author pablo
+ * @author anahata
  */
 @Schema(description = "Contains process details and exit code")
 @Setter
