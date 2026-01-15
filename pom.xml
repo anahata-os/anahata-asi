@@ -261,6 +261,7 @@
                         <detectJavaApiLink>true</detectJavaApiLink>
                         <detectOfflineLinks>true</detectOfflineLinks>
                         <javadocDirectory>${maven.multiModuleProjectDirectory}/src/main/javadoc</javadocDirectory>
+                        <outputDirectory>${maven.multiModuleProjectDirectory}/docs</outputDirectory>
                         <addStylesheets>
                             <addStylesheet>anahata-barca-theme.css</addStylesheet>
                         </addStylesheets>
@@ -333,10 +334,6 @@
                         </goals>
                         <phase>site</phase>
                         <inherited>false</inherited>
-                        <configuration>
-                            <reportOutputDirectory>${maven.multiModuleProjectDirectory}/docs/apidocs</reportOutputDirectory>
-                            <destDir>${project.version}</destDir>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
