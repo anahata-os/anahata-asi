@@ -15,6 +15,9 @@
     --barca-garnet: #a50044;
     --barca-yellow: #ffed00;
     
+    /* Anahata Palette */
+    --anahata-green: #2c7a7b;
+    
     --table-header-color: var(--barca-blue) !important;
     --navbar-background-color: #161b22 !important;
     --subnav-background-color: #0d1117 !important;
@@ -125,10 +128,15 @@ footer p.legal-copy, footer small {
 .anahata-footer .anahata-logo { height: 60px; width: auto; }
 .anahata-footer .barca-wrapper { display: flex; align-items: center; gap: 15px; }
 .anahata-footer .forca-text { 
-    font-size: 2em; 
+    font-size: 2.2em; 
     font-weight: 900; 
     color: var(--barca-blue) !important; 
-    text-shadow: 1px 1px 3px var(--barca-yellow) !important; /* Gentler shadow */
+    text-transform: uppercase;
+    letter-spacing: -1px;
+    text-shadow: 
+        0 0 20px rgba(44, 122, 123, 0.7), /* Anahata Green Aura Glow */
+        0 0 10px rgba(44, 122, 123, 0.4),
+        2px 2px 4px rgba(0, 0, 0, 0.9) !important; /* Sharp Core Shadow */
 }
 .anahata-footer .barca-red { color: var(--barca-garnet) !important; }
 .anahata-footer .barca-wrapper img { height: 70px; width: auto; }

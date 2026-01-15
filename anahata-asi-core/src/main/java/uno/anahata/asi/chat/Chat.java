@@ -40,7 +40,6 @@ import uno.anahata.asi.model.provider.AbstractModel;
 import uno.anahata.asi.model.provider.ApiCallInterruptedException;
 import uno.anahata.asi.resource.ResourceManager;
 import uno.anahata.asi.status.ApiErrorRecord;
-import uno.anahata.asi.status.ApiErrorRecord.ApiErrorRecordBuilder;
 import uno.anahata.asi.status.ChatStatus;
 import uno.anahata.asi.status.StatusManager;
 import uno.anahata.asi.tool.RetryableApiException;
@@ -346,7 +345,7 @@ public class Chat extends BasicPropertyChangeSource {
                     return true;
                 }
                 log.error("Exception in performSingleTurn", e);
-                ApiErrorRecordBuilder<?, ?> errorRecordBuilder = ApiErrorRecord.builder()
+                ApiErrorRecord.ApiErrorRecordBuilder<?, ?> errorRecordBuilder = ApiErrorRecord.builder()
                         .modelId(selectedModel.getModelId())
                         .timestamp(java.time.Instant.now())
                         .retryAttempt(attempt)

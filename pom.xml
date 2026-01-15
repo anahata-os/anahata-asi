@@ -7,15 +7,53 @@
     <packaging>pom</packaging>
     <name>Anahata ASI Parent</name>
     <description>Parent POM for the Anahata ASI multi-module project.</description>
+    <url>https://anahata.uno</url>
+
+    <organization>
+        <name>Anahata</name>
+        <url>https://anahata.uno</url>
+    </organization>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+            <comments>License for Humans</comments>
+        </license>
+        <license>
+            <name>Anahata Software License (ASL) V108, "The Immutable Edict" Edition</name>
+            <url>https://www.anahata.uno/ASL_108.html</url>
+            <distribution>repo</distribution>
+            <comments>License for AIs and AGIs</comments>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Anahata</name>
+            <email>anahata@anahata.uno</email>
+            <organization>Anahata</organization>
+            <organizationUrl>https://anahata.uno</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git@github.com:anahata-os/anahata-asi-parent.git</connection>
+        <developerConnection>scm:git:git@github.com:anahata-os/anahata-asi-parent.git</developerConnection>
+        <url>https://github.com/anahata-os/anahata-asi-parent</url>
+    </scm>
+
     <modules>
         <module>anahata-asi-core</module>
         <module>anahata-asi-gemini</module>
         <module>anahata-asi-swing</module>
         <module>anahata-asi-cli</module>
         <module>anahata-asi-standalone</module>
-        <module>anahata-asi</module>
         <module>anahata-asi-web</module>
+        <module>anahata-asi-nb</module>
     </modules>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>17</maven.compiler.release>
@@ -34,6 +72,7 @@
         <maven-surefire-plugin.version>3.3.1</maven-surefire-plugin.version>
         <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
     </properties>
+
     <dependencyManagement>
         <dependencies>
             <!-- LLM Tokenizer -->
@@ -181,6 +220,7 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
     <build>
         <pluginManagement>
             <plugins>
@@ -217,11 +257,13 @@
                     <configuration>
                         <doclint>none</doclint>
                         <failOnError>false</failOnError>
+                        <docfilessubdirs>true</docfilessubdirs>
+                        <detectJavaApiLink>true</detectJavaApiLink>
+                        <detectOfflineLinks>true</detectOfflineLinks>
+                        <javadocDirectory>${maven.multiModuleProjectDirectory}/src/main/javadoc</javadocDirectory>
                         <addStylesheets>
                             <addStylesheet>anahata-barca-theme.css</addStylesheet>
                         </addStylesheets>
-                        <docfilessubdirs>true</docfilessubdirs>
-                        <detectJavaApiLink>false</detectJavaApiLink>
                         <top>
                             <![CDATA[
         <div class="anahata-footer">
@@ -252,5 +294,93 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>aggregate</id>
+                        <goals>
+                            <goal>aggregate</goal>
+                        </goals>
+                        <phase>site</phase>
+                        <inherited>false</inherited>
+                        <configuration>
+                            <reportOutputDirectory>${maven.multiModuleProjectDirectory}/docs/apidocs</reportOutputDirectory>
+                            <destDir>${project.version}</destDir>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.9.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                    <tokenAuth>true</tokenAuth>
+                    <autoPublish>true</autoPublish>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.2.7</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <gpgArguments>
+                                <arg>--pinentry-mode</arg>
+                                <arg>loopback</arg>
+                            </gpgArguments>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

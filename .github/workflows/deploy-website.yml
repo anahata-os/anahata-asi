@@ -1,0 +1,48 @@
+name: Deploy Website & Javadoc
+
+on:
+  push:
+    branches: [ "master", "main" ]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build and Generate Javadoc
+        # We run javadoc:aggregate to ensure the versioned docs are created in docs/apidocs/${version}
+        run: mvn clean install javadoc:aggregate -DskipTests
+
+      - name: Prepare Deployment Folder
+        run: |
+          mkdir -p _site
+          # 1. Copy the static website source
+          cp -r anahata-asi-web/src/main/resources/web/* _site/
+          
+          # 2. Copy the fresh versioned Javadocs
+          # The parent pom puts them in docs/apidocs/${project.version}
+          mkdir -p _site/apidocs
+          cp -r docs/apidocs/* _site/apidocs/
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: _site
+          # 'clean: false' is critical for Persistent Versioning.
+          # It ensures that apidocs for older versions already on gh-pages are NOT deleted.
+          clean: false

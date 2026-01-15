@@ -42,6 +42,9 @@ buildNumber.properties
 .mvn/timing.properties
 .mvn/wrapper/maven-wrapper.jar
 
+# Javadoc
+**/apidocs/
+
 # Eclipse
 .settings/
 .classpath
