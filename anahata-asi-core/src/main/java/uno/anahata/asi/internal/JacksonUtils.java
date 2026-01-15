@@ -24,10 +24,10 @@ public final class JacksonUtils {
     private static final ObjectMapper DEFAULT_MAPPER = new ObjectMapper(); // New: Default ObjectMapper
 
     /**
-     * Converts an object to a Map<String, Object>, replicating the logic required by the
+     * Converts an object to a {@code Map<String, Object>}, replicating the logic required by the
      * FunctionResponse type.
      * - If the object naturally serializes to a JSON Object (e.g., a POJO or a Map), it is
-     *   converted into a Map<String, Object>.
+     *   converted into a {@code Map<String, Object>}.
      * - If the object serializes to any other JSON type (e.g., an array, a string, a number),
      *   it is wrapped in a Map under the given field name.
      *
@@ -55,7 +55,7 @@ public final class JacksonUtils {
     }
     
     /**
-     * Deserializes a Map<String, Object> back into a specific POJO type.
+     * Deserializes a {@code Map<String, Object>} back into a specific POJO type.
      *
      * @param <T>   The target type.
      * @param map   The map to convert.

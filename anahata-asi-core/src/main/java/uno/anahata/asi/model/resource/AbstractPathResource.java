@@ -28,7 +28,7 @@ import uno.anahata.asi.model.core.RagMessage;
 @Slf4j
 @Getter
 @Setter
-public abstract class AbstractPathResource<R, C> extends AbstractResource<Path> {
+public abstract class AbstractPathResource<R, P> extends AbstractResource<Path> {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
         .withZone(ZoneId.systemDefault());
     
@@ -41,7 +41,7 @@ public abstract class AbstractPathResource<R, C> extends AbstractResource<Path> 
     
     /** The cached, rendered Part representing the current viewport of the resource. Ignored during serialization. */
     @JsonIgnore
-    protected C cache;
+    protected P cache;
     //</editor-fold>
 
     /**
@@ -49,7 +49,7 @@ public abstract class AbstractPathResource<R, C> extends AbstractResource<Path> 
      * for the RAG provider. It acts as an orchestrator, checking for existence and
      * staleness, and triggering a reload only when the refresh policy requires it.
      *
-     * @return The current, up-to-date AbstractPart, or {@code null} if the file does not exist.
+     * @param ragMessage The message to populate with the resource's content.
      * @throws Exception if the reload operation fails.
      */
     @Override

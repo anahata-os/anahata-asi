@@ -26,6 +26,13 @@ import uno.anahata.asi.tool.AiToolParam;
 @Slf4j
 public class Files extends AnahataToolkit {
 
+    /**
+     * Updates the viewport settings for a TextFileResource.
+     * 
+     * @param resourceId The absolute path to the text file.
+     * @param newSettings The new viewport settings for the text file.
+     * @throws Exception if the resource is not found or reload fails.
+     */
     @AiTool(value = "Updates the viewport of a TextFileResource ", retention = 0)
     public void updateTextViewportSettings(
             @AiToolParam("The absolute paths to the text files.") String resourceId, 
@@ -40,7 +47,7 @@ public class Files extends AnahataToolkit {
      * response is ephemeral and will be pruned from the context on the next
      * turn.
      *
-     * @param path The absolute path to the text file.
+     * @param resourcePaths The absolute paths to the text files.
      * @return The newly created TextFileResource.
      * @throws Exception if the file does not exist, is already loaded, or an
      * I/O error occurs.

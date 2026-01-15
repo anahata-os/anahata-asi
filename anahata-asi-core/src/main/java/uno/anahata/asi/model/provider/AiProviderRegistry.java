@@ -10,7 +10,7 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Manages available {@link AiProvider} implementations via programmatic registration.
+ * Manages available {@link AbstractAiProvider} implementations via programmatic registration.
  * <p>
  * This class allows the application to explicitly control which AI providers are active.
  * It is the central point for the core framework to find and interact with all registered
@@ -39,7 +39,7 @@ public class AiProviderRegistry {
     /**
      * Gets a list of all programmatically registered AI providers.
      *
-     * @return A list of all unique {@link AiProvider} instances.
+     * @return A list of all unique {@link AbstractAiProvider} instances.
      */
     public synchronized List<AbstractAiProvider> getProviders() {
         if (registeredProviders.isEmpty()) {

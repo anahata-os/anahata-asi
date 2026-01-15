@@ -139,20 +139,16 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     }
     
     /**
-     * Adds a log message to this response, which can be displayed to the user.
-     * @param message The log message.
-     */
-    /**
      * Converts a exception to a string and adds it to the error field.
      * 
-     * @param t 
+     * @param t The exception to add.
      */
     public void addError(Throwable t) {
         addError(ExceptionUtils.getStackTrace(t));
     }
     /**
      * Adds a log message to this response, which can be displayed to the user.
-     * @param message The log message.
+     * @param error The error message to add.
      */
     public void addError(String error) {
         if (this.error == null) {

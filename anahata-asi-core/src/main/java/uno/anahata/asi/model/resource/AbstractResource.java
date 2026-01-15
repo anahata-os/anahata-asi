@@ -19,7 +19,6 @@ import uno.anahata.asi.model.core.RagMessage;
  *
  * @author anahata-ai
  * @param <R> The type of the underlying raw Java resource (e.g., String, byte[], Process).
- * @param <P> The type of the AbstractPart this resource renders its viewport to.
  */
 @Getter
 @Setter
@@ -53,7 +52,7 @@ public abstract class AbstractResource<R> {
      * return a TextPart with a specific page of content, while a ScreenshotResource
      * would return a BlobPart.
      *
-     * @return The AbstractPart representing the resource's current view.
+     * @param message The message to populate with the resource's content.
      * @throws java.lang.Exception
      */
     public abstract void populate(RagMessage message) throws Exception;

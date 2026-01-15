@@ -35,7 +35,7 @@ public @interface AiTool {
 
     /**
      * Determines the default approval behavior for this tool.
-     * If {@code true} (the default), the tool's initial permission will be {@link ToolPermission#APPROVE},
+     * If {@code true} (the default), the tool's initial permission will be {@link ToolPermission#PROMPT},
      * requiring user confirmation for each call.
      * If {@code false}, the initial permission will be {@link ToolPermission#APPROVE_ALWAYS}, allowing
      * the tool to run without prompting unless overridden by user preferences.

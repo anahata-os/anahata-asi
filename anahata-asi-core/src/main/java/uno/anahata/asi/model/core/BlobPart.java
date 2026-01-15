@@ -34,6 +34,7 @@ public class BlobPart extends AbstractPart {
      * Constructs a BlobPart from raw byte data and a specified MIME type.
      * The source path will be null.
      *
+     * @param message The message this part belongs to.
      * @param mimeType The MIME type.
      * @param data The binary data.
      */
@@ -53,6 +54,7 @@ public class BlobPart extends AbstractPart {
      * It automatically reads the file's bytes, detects its MIME type using Tika,
      * and stores a reference to the source path.
      *
+     * @param message The message this part belongs to.
      * @param path The path to the file.
      * @return A new BlobPart instance.
      * @throws IOException if there's an error reading the file.
@@ -66,7 +68,11 @@ public class BlobPart extends AbstractPart {
     
     /**
      * A convenience factory method to create a BlobPart from a legacy {@link File} object.
-     * @see #from(Path) 
+     * @param message The message this part belongs to.
+     * @param file The file to read.
+     * @return A new BlobPart instance.
+     * @throws Exception if there's an error reading the file or detecting the MIME type.
+     * @see #from(AbstractMessage, Path) 
      */
     public static BlobPart from(@NonNull AbstractMessage message, @NonNull File file) throws Exception {
         return from(message, file.toPath());
