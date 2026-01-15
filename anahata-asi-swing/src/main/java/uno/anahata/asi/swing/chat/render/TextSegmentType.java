@@ -4,7 +4,7 @@
 package uno.anahata.asi.swing.chat.render;
 
 /**
- * Defines the type of a text segment within a {@link TextPartRenderer}.
+ * Defines the type of a text segment within a {@link AbstractTextSegmentRenderer}.
  * This helps in determining which specific segment renderer to use.
  *
  * @author anahata

@@ -3,8 +3,10 @@
  */
 package uno.anahata.asi.model.context;
 
+import uno.anahata.asi.model.resource.AbstractResource;
+
 /**
- * Defines the refresh policy for a {@link StatefulResource} when its content
+ * Defines the refresh policy for a {@link AbstractResource} when its content
  * is provided to the model via the Augmented Workspace.
  *
  * @author anahata-gemini-pro-2.5
