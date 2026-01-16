@@ -3,6 +3,7 @@ package uno.anahata.asi.model.core;
 
 import lombok.Getter;
 import lombok.Setter;
+import uno.anahata.asi.internal.TokenizerUtils;
 
 /**
  * A concrete {@link AbstractPart} implementation for simple text content.
@@ -29,16 +30,19 @@ public class TextPart extends AbstractPart {
     
     /**
      * Sets the text content and fires a property change event for the "text" property.
+     * Also updates the token count.
      * @param text The new text content.
      */
     public void setText(String text) {
         String oldText = this.text;
         this.text = text;
+        setTokenCount(TokenizerUtils.countTokens(text));
         getPropertyChangeSupport().firePropertyChange("text", oldText, text);
     }
 
     /**
      * Appends text to the existing content and fires a property change event.
+     * Also updates the token count using an incremental estimate.
      * 
      * @param delta The text to append.
      */
@@ -48,6 +52,8 @@ public class TextPart extends AbstractPart {
         }
         String oldText = this.text;
         this.text = (this.text == null ? "" : this.text) + delta;
+        // Incremental estimation to avoid full recalculation on every chunk
+        setTokenCount(getTokenCount() + TokenizerUtils.countTokens(delta));
         getPropertyChangeSupport().firePropertyChange("text", oldText, this.text);
     }
 

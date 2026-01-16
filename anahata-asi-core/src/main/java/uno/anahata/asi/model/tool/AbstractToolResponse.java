@@ -6,10 +6,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.internal.TextUtils;
+import uno.anahata.asi.internal.TokenizerUtils;
 import uno.anahata.asi.model.core.AbstractPart;
 
 /**
@@ -56,15 +59,42 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     
     /**
      * Sets the status of the tool execution and fires a property change event.
+     * Also updates the token count.
      * 
      * @param status The new status.
      */
     public void setStatus(ToolExecutionStatus status) {
         ToolExecutionStatus oldStatus = this.status;
         this.status = status;
+        updateTokenCount();
         getPropertyChangeSupport().firePropertyChange("status", oldStatus, status);
     }
     
+    /**
+     * Sets the result of the tool execution and updates the token count.
+     * @param result The result object.
+     */
+    public void setResult(Object result) {
+        this.result = result;
+        updateTokenCount();
+    }
+
+    /**
+     * Sets the error message and updates the token count.
+     * @param error The error message.
+     */
+    public void setError(String error) {
+        this.error = error;
+        updateTokenCount();
+    }
+
+    /**
+     * Updates the estimated token count based on the current state of the response.
+     */
+    private void updateTokenCount() {
+        setTokenCount(TokenizerUtils.countTokens(JacksonUtils.prettyPrint(this)));
+    }
+
     /**
      * Gets the name of the tool that was invoked.
      * @return The tool's name.
@@ -156,6 +186,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
         } else {
             this.error = "\n" + error;
         }
+        updateTokenCount();
         getPropertyChangeSupport().firePropertyChange("error", null, this.error);
     }
     
@@ -166,6 +197,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
      */
     public void addAttachment(byte[] data, String mimeType) {
         this.attachments.add(new ToolResponseAttachment(data, mimeType));
+        updateTokenCount();
         getPropertyChangeSupport().firePropertyChange("attachments", null, attachments);
     }
 
@@ -175,6 +207,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
      */
     public void removeAttachment(ToolResponseAttachment attachment) {
         if (this.attachments.remove(attachment)) {
+            updateTokenCount();
             getPropertyChangeSupport().firePropertyChange("attachments", null, attachments);
         }
     }
@@ -192,6 +225,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
      */
     public void clearLogs() {
         this.logs.clear();
+        updateTokenCount();
         getPropertyChangeSupport().firePropertyChange("logs", null, logs);
     }
     

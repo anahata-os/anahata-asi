@@ -17,14 +17,27 @@ import uno.anahata.asi.tool.ToolManager;
  */
 @Getter
 public abstract class AbstractToolkit<T extends AbstractTool> {
+    /** The parent ToolManager that manages this toolkit. */
     @NonNull
     protected final ToolManager toolManager;
     
+    /** The name of the toolkit. */
     protected String name;
+    
+    /** A description of the toolkit's purpose. */
     protected String description;
+    
+    /** The default retention policy for tools in this toolkit. */
     protected int defaultRetention;
+    
+    /** Whether the toolkit is currently enabled. */
     private boolean enabled = true;
 
+    /**
+     * Constructs a new AbstractToolkit.
+     * 
+     * @param toolManager The parent ToolManager.
+     */
     protected AbstractToolkit(@NonNull ToolManager toolManager) {
         this.toolManager = toolManager;
     }
@@ -65,6 +78,11 @@ public abstract class AbstractToolkit<T extends AbstractTool> {
         return totalTokens;
     }
 
+    /**
+     * Sets whether the toolkit is enabled.
+     * 
+     * @param enabled true to enable the toolkit.
+     */
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }

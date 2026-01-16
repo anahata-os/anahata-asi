@@ -62,7 +62,7 @@ public class GeminiModelMessage extends AbstractModelMessage<GeminiResponse, Gem
      * @param response The GeminiResponse that returned this message.
      */
     public GeminiModelMessage(Chat chat, String modelId, Candidate candidate, GeminiResponse response) {
-        super(chat, modelId);
+        super(chat, response.getModelVersion() != null ? response.getModelVersion() : modelId);
         this.geminiCandidate = candidate;
         setResponse(response);
         
@@ -73,7 +73,14 @@ public class GeminiModelMessage extends AbstractModelMessage<GeminiResponse, Gem
         candidate.safetyRatings().ifPresent(sr -> setSafetyRatings(sr.stream()
             .map(s -> s.category().map(c -> c.knownEnum().name()).orElse("") + ":" + s.probability().map(p -> p.knownEnum().name()).orElse(""))
             .collect(Collectors.joining(", "))));
-        setTokenCount(candidate.tokenCount().orElse(0));
+        
+        // Set billed tokens from candidate if available, otherwise fallback to usage metadata
+        int billedTokens = candidate.tokenCount().orElse(0);
+        if (billedTokens <= 0 && response.getUsageMetadata() != null) {
+            billedTokens = response.getUsageMetadata().getCandidatesTokenCount();
+        }
+        setBilledTokenCount(billedTokens);
+        
         setRawJson(candidate.toJson());
         setCitationMetadata(candidate.citationMetadata()
             .map(cm -> cm.citations().orElse(List.of()).stream()

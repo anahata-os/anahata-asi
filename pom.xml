@@ -260,6 +260,14 @@
                         <docfilessubdirs>true</docfilessubdirs>
                         <detectJavaApiLink>true</detectJavaApiLink>
                         <detectOfflineLinks>true</detectOfflineLinks>
+                        <show>private</show>
+                        <links>
+                            <link>https://javadoc.io/doc/com.fasterxml.jackson.core/jackson-databind/${jackson.version}/</link>
+                            <link>https://javadoc.io/doc/io.swagger.core.v3/swagger-annotations/${swagger.version}/</link>
+                            <link>https://javadoc.io/doc/io.swagger.core.v3/swagger-models/${swagger.version}/</link>
+                            <link>https://javadoc.io/doc/org.slf4j/slf4j-api/${slf4j.version}/</link>
+                            <link>https://javadoc.io/doc/com.google.genai/google-genai/1.32.0/</link>
+                        </links>
                         <javadocDirectory>${maven.multiModuleProjectDirectory}/src/main/javadoc</javadocDirectory>
                         <addStylesheets>
                             <addStylesheet>anahata-barca-theme.css</addStylesheet>

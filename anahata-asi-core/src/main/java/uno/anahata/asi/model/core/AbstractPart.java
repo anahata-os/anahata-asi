@@ -4,11 +4,14 @@ package uno.anahata.asi.model.core;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.chat.ChatConfig;
+import uno.anahata.asi.internal.TextUtils;
 
 /**
  * The abstract base class for all components of a {@link AbstractMessage}.
@@ -45,6 +48,11 @@ public abstract class AbstractPart implements PropertyChangeSource {
      * - {@code null}: (Default) Auto-pruning is active based on {@code turnsToKeep}.
      */
     private Boolean pruned = null;
+    
+    /**
+     * An optional reason for why this part was pruned.
+     */
+    private String prunedReason;
 
     /**
      * An explicit, instance-level override for the number of user turns this
@@ -53,6 +61,12 @@ public abstract class AbstractPart implements PropertyChangeSource {
      * {@link #getDefaultTurnsToKeep()} template method.
      */
     private Integer turnsToKeep = null;
+
+    /**
+     * The number of tokens this part consumes in the context window.
+     * This value is typically set by the AI provider or estimated during part creation.
+     */
+    private int tokenCount;
 
     /**
      * Constructs a new AbstractPart and adds it to the parent message.
@@ -74,6 +88,17 @@ public abstract class AbstractPart implements PropertyChangeSource {
         Boolean oldPruned = this.pruned;
         this.pruned = pruned;
         propertyChangeSupport.firePropertyChange("pruned", oldPruned, pruned);
+    }
+
+    /**
+     * Sets the token count and fires a property change event.
+     * 
+     * @param tokenCount The new token count.
+     */
+    public void setTokenCount(int tokenCount) {
+        int oldTokenCount = this.tokenCount;
+        this.tokenCount = tokenCount;
+        propertyChangeSupport.firePropertyChange("tokenCount", oldTokenCount, tokenCount);
     }
 
     /**
@@ -207,6 +232,61 @@ public abstract class AbstractPart implements PropertyChangeSource {
      * @return The text representation of the part.
      */
     public abstract String asText();
+
+    /**
+     * Creates a standardized text header containing metadata for this part.
+     * This is used for in-band metadata injection to improve model self-awareness.
+     * If the part is effectively pruned, it includes a descriptive hint to maintain
+     * semantic context.
+     * 
+     * @return A formatted metadata header string.
+     */
+    public String createMetadataHeader() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("[Part ID: %d | Type: %s | Tokens: %d | Turns Left: %d",
+            getSequentialId(),
+            getClass().getSimpleName(),
+            getTokenCount(),
+            getTurnsLeft()
+        ));
+
+        if (Boolean.TRUE.equals(pruned)) {
+            sb.append(" | [PRUNED]");
+        } else if (Boolean.FALSE.equals(pruned)) {
+            sb.append(" | [PINNED]");
+        }
+        
+        if (isEffectivelyPruned()) {
+            if (prunedReason != null) {
+                sb.append(" | Reason: ").append(prunedReason);
+            }
+            sb.append(" | Hint: ").append(TextUtils.formatValue(asText()));
+        }
+        
+        sb.append("]");
+        return sb.toString();
+    }
+
+    /**
+     * Returns a map of metadata for this part, suitable for JSON injection.
+     * 
+     * @return A map containing part metadata.
+     */
+    @JsonIgnore
+    public Map<String, Object> getMetadataMap() {
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("partId", getSequentialId());
+        metadata.put("type", getClass().getSimpleName());
+        metadata.put("tokens", getTokenCount());
+        metadata.put("turnsLeft", getTurnsLeft());
+        if (pruned != null) {
+            metadata.put("pruned", pruned);
+        }
+        if (prunedReason != null) {
+            metadata.put("prunedReason", prunedReason);
+        }
+        return metadata;
+    }
 
     /** {@inheritDoc} */
     @Override

@@ -6,6 +6,8 @@ import java.util.Map;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
+import uno.anahata.asi.internal.JacksonUtils;
+import uno.anahata.asi.internal.TokenizerUtils;
 import uno.anahata.asi.model.core.AbstractPart;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.AbstractToolMessage;
@@ -53,6 +55,14 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
     /** The signature of the thought process as a byte array. */
     private byte[] thoughtSignature;
 
+    /**
+     * Constructs a new AbstractToolCall.
+     * 
+     * @param message The model message that initiated the call.
+     * @param id The unique call ID.
+     * @param tool The tool definition.
+     * @param args The arguments for the tool.
+     */
     public AbstractToolCall(AbstractModelMessage message, @NonNull String id, @NonNull T tool, @NonNull Map<String, Object> args) {
         super(message);
         this.id = id;
@@ -60,6 +70,9 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
         this.args = args;
         this.response = createResponse(message.getToolMessage());
         getChat().getContextManager().ensureToolMessageFolllowsModelMessage(getMessage());
+        
+        // Estimate tokens based on the JSON representation of the call.
+        setTokenCount(TokenizerUtils.countTokens(JacksonUtils.prettyPrint(this)));
     }
 
     /**
@@ -70,6 +83,12 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
         return tool.getName();
     }
     
+    /**
+     * Gets the model message that initiated this tool call.
+     * 
+     * @return The parent model message.
+     */
+    @Override
     public AbstractModelMessage getMessage() {
         return (AbstractModelMessage) super.getMessage();
     }
@@ -77,33 +96,39 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
     /**
      * Creates the corresponding response object for this tool call.
      * This acts as a factory method and is called once by the constructor.
+     * @param toolMessage The tool message that will contain the response.
      * @return A new, un-executed tool response.
      */
     protected abstract R createResponse(AbstractToolMessage toolMessage);
     
     //<editor-fold defaultstate="collapsed" desc="V2 Context Management Delegation">
+    /** {@inheritDoc} */
     @Override
     protected int getDefaultTurnsToKeep() {
         // A tool call's lifecycle is always identical to its response.
         return getResponse().getDefaultTurnsToKeep();
     }
     
+    /** {@inheritDoc} */
     @Override
     public boolean isEffectivelyPruned() {
         return getResponse().isEffectivelyPruned();
     }
     
+    /** {@inheritDoc} */
     @Override
     public int getTurnsLeft() {
         return getResponse().getTurnsLeft();
     }
     
+    /** {@inheritDoc} */
     @Override
     public void setPruned(Boolean pruned) {
         super.setPruned(pruned);
         getResponse().setPruned(pruned);
     }
     
+    /** {@inheritDoc} */
     @Override
     public void setTurnsToKeep(Integer turnsToKeep) {
         super.setTurnsToKeep(turnsToKeep);
@@ -111,6 +136,7 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
     }
     //</editor-fold>
     
+    /** {@inheritDoc} */
     @Override
     public String asText() {
         return "[Tool Call: " + getToolName() + " with args: " + getArgs().toString() + "]";

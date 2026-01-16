@@ -28,7 +28,8 @@ import uno.anahata.asi.model.resource.AbstractResource;
 public class ResourceManager {
 
     /**
-     * A map of all tracked resources by resource id.
+     * A map of all tracked resources, keyed by their unique resource ID.
+     * Uses a synchronized LinkedHashMap to preserve registration order and ensure thread safety.
      */
     private final Map<String, AbstractResource> resources = Collections.synchronizedMap(new LinkedHashMap<>());
 

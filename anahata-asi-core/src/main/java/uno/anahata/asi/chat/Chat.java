@@ -122,6 +122,11 @@ public class Chat extends BasicPropertyChangeSource {
      */
     private String summary;
 
+    /**
+     * Constructs a new Chat session with the provided configuration.
+     * 
+     * @param config The chat configuration.
+     */
     @SneakyThrows
     public Chat(@NonNull ChatConfig config) {
         this.config = config;
@@ -673,6 +678,9 @@ public class Chat extends BasicPropertyChangeSource {
         return id.length() > 7 ? id.substring(id.length() - 7) : id;
     }
 
+    /**
+     * Shuts down the chat session, releasing resources and unregistering from global config.
+     */
     public void shutdown() {
         shutdown.set(true);
         log.info("Shutting down Chat for session {}", config.getSessionId());

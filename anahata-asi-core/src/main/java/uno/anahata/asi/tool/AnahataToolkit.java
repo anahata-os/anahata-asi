@@ -1,19 +1,11 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.tool;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import uno.anahata.asi.chat.Chat;
-import uno.anahata.asi.internal.TikaUtils;
 import uno.anahata.asi.model.core.RagMessage;
-import uno.anahata.asi.model.tool.java.JavaMethodTool;
-import uno.anahata.asi.model.tool.java.JavaMethodToolCall;
 import uno.anahata.asi.model.tool.java.JavaMethodToolResponse;
-import uno.anahata.asi.resource.ResourceManager;
 
 /**
  * An optional, abstract base class for toolkits that provides a rich,
@@ -28,23 +20,26 @@ import uno.anahata.asi.resource.ResourceManager;
  */
 public abstract class AnahataToolkit extends HandyToolStuff {
 
-    
     /**
-     * Overridable method to provide additional context in the system instructions
+     * Overridable method to provide additional context in the system instructions.
+     * This allows a toolkit to inject static or dynamic rules and facts directly
+     * into the model's core persona.
      * 
-     * @param chat the chat for which the system instruction parts are being provided
-     * @return the system instruction parts
-     * @throws Exception 
+     * @param chat The chat session for which the instructions are being generated.
+     * @return A list of system instruction strings.
+     * @throws Exception if instruction generation fails.
      */
     public List<String> getSystemInstructionParts(Chat chat) throws Exception {
         return Collections.emptyList();
-}
+    }
     
     /**
-     * Overridable method to add additional context to the rag message.
+     * Overridable method to add additional context to the RAG (Augmented Workspace) message.
+     * This is called just-in-time before a prompt is sent, allowing the toolkit to
+     * inject relevant stateful information.
      * 
-     * @param ragMessage the rag message
-     * @throws Exception 
+     * @param ragMessage The RAG message to populate.
+     * @throws Exception if population fails.
      */
     public void populateMessage(RagMessage ragMessage) throws Exception {
         

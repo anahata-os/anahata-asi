@@ -24,7 +24,7 @@ import uno.anahata.asi.model.web.GroundingMetadata;
 public abstract class AbstractModelMessage<R extends Response, T extends AbstractToolMessage> extends AbstractMessage {
     
     /** The ID of the model that generated this message. */
-    private final String modelId;
+    private String modelId;
     
     /** A paired message containing the responses to any tool calls in this message. */
     @Getter(AccessLevel.NONE)
@@ -44,9 +44,8 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
     /** The safety ratings for the response, summarized as a string. */
     private String safetyRatings;
     
-    /** The number of tokens for this candidate. */
-    @Setter(AccessLevel.NONE)
-    private int tokenCount;
+    /** The number of billed tokens for this candidate, as reported by the API. */
+    private int billedTokenCount;
     
     /** The raw JSON response from the model. */
     @Setter(AccessLevel.NONE)
@@ -127,13 +126,13 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
     }
 
     /**
-     * Sets the token count and fires a property change event.
-     * @param tokenCount The new token count.
+     * Sets the billed token count and fires a property change event.
+     * @param billedTokenCount The new billed token count.
      */
-    public void setTokenCount(int tokenCount) {
-        int oldTokenCount = this.tokenCount;
-        this.tokenCount = tokenCount;
-        getPropertyChangeSupport().firePropertyChange("tokenCount", oldTokenCount, tokenCount);
+    public void setBilledTokenCount(int billedTokenCount) {
+        int oldBilledTokenCount = this.billedTokenCount;
+        this.billedTokenCount = billedTokenCount;
+        getPropertyChangeSupport().firePropertyChange("billedTokenCount", oldBilledTokenCount, billedTokenCount);
     }
 
     /**
@@ -188,6 +187,17 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
     }
     
     protected abstract T createToolMessage();
-    
-    
+
+    /** {@inheritDoc} */
+    @Override
+    protected void appendMetadata(StringBuilder sb) {
+        if (billedTokenCount > 0) {
+            sb.append(" | Billed Tokens: ").append(billedTokenCount);
+        }
+
+        T tm = getToolMessage();
+        if (tm != null && tm.getSequentialId() != 0) {
+            sb.append(" | Tool Message ID: ").append(tm.getSequentialId());
+        }
+    }
 }

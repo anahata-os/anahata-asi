@@ -82,6 +82,12 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         }
     }
     
+    /**
+     * Builds a human-readable string representation of a Java method's signature.
+     * 
+     * @param m The method to inspect.
+     * @return The formatted method signature string.
+     */
     public static String buildMethodSignature(Method m) {
         String signature = Modifier.toString(m.getModifiers())
             + " " + m.getGenericReturnType().getTypeName()

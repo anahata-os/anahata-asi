@@ -22,6 +22,9 @@ import uno.anahata.asi.tool.AiToolkit;
 import uno.anahata.asi.tool.AnahataToolkit;
 
 /**
+ * A toolkit for managing local resources within the AI's context.
+ * It provides tools for unregistering resources and implements the
+ * {@link AnahataToolkit} lifecycle to populate the RAG message.
  *
  * @author anahata
  */
@@ -29,6 +32,12 @@ import uno.anahata.asi.tool.AnahataToolkit;
 @Slf4j
 public class Resources extends AnahataToolkit {
 
+    /**
+     * Removes the provided managed resources from the active workspace (RAG message).
+     * 
+     * @param resourceIds The absolute paths to the resources to unload.
+     * @throws Exception if an error occurs during unregistration.
+     */
     @AiTool(value = "Removes the provided managed resources from the active workspace (RAG message).", retention = 0)
     public void unregisterResource(
             @AiToolParam("The absolute paths to the resources to unload.") List<String> resourceIds) throws Exception {
@@ -44,7 +53,13 @@ public class Resources extends AnahataToolkit {
         }
     }
 
-    
+    /**
+     * Populates the RAG message with the content of all managed resources
+     * that are configured for prompt augmentation.
+     * 
+     * @param ragMessage The RAG message to populate.
+     * @throws Exception if population fails.
+     */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
         for (AbstractResource resource : ragMessage.getChat().getResourceManager().getResources()) {

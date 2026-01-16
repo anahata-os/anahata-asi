@@ -43,7 +43,7 @@ public abstract class AbstractModel {
     /**
      * Delegate method to get the id of this models provider.
      * 
-     * @return the provider id.
+     * @return The unique ID of the provider.
      */
     public final String getProviderId() {
         return getProvider().getProviderId();

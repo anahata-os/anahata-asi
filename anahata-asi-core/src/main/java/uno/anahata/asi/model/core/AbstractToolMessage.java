@@ -126,4 +126,10 @@ public abstract class AbstractToolMessage<T extends AbstractModelMessage> extend
             }
         }
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean shouldCreateMetadata() {
+        return false;
+    }
 }

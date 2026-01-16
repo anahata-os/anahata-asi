@@ -105,7 +105,7 @@ public abstract class AbstractAiProvider {
     /**
      * Gets the current api key this provider is using.
      * 
-     * @return 
+     * @return The current API key.
      */
     public abstract String getCurrentApiKey();
     
@@ -177,6 +177,11 @@ public abstract class AbstractAiProvider {
         return keysFilePath;
     }
 
+    /**
+     * Reads the API keys from the provider-specific 'api_keys.txt' file.
+     * 
+     * @return A list of API keys, or an empty list if the file is missing or empty.
+     */
     private List<String> readApiKeysFile() {
         
         Path keysFilePath = getKeysFilePath();

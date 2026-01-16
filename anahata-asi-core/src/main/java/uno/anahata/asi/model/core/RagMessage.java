@@ -1,3 +1,4 @@
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.model.core;
 
 import java.util.ArrayList;
@@ -17,7 +18,10 @@ public class RagMessage extends UserMessage {
 
     public RagMessage(Chat chat) {
         super(chat);
-        new TextPart(this, "**RAG Message (Live Workspace)**\n\n This message is dynamically generated at runtime (not written by the user) and populated by all enabled context providers after tool execution");
+        new TextPart(this, "--- Augmented Workspace Context ---\n"
+                + "The following is high-salience, just-in-time context provided by the host environment for this turn. "
+                + "It is dynamically generated and populated by enabled context providers. "
+                + "This is NOT direct input from the user.");
     }
     
     /**
@@ -55,10 +59,15 @@ public class RagMessage extends UserMessage {
         return getParts();
     }
 
+    /** {@inheritDoc} */
     @Override
     public String getFrom() {
         return "Java workspace";
     }
-    
-    
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean shouldCreateMetadata() {
+        return false;
+    }
 }

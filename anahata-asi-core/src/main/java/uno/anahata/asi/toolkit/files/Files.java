@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import uno.anahata.asi.model.context.RefreshPolicy;
 import uno.anahata.asi.model.resource.AbstractPathResource;
 import uno.anahata.asi.model.resource.AbstractResource;
 import uno.anahata.asi.model.resource.TextFileResource;
@@ -82,9 +83,8 @@ public class Files extends AnahataToolkit {
     }
 
     /**
-     * Loads a text file into the context as a managed resource. The tool's
-     * response is ephemeral and will be pruned from the context on the next
-     * turn.
+     * Loads a text file into the context as a managed resource with a LIVE refresh policy.
+     * The tool's response is ephemeral and will be pruned from the context on the next turn.
      *
      * @param path The absolute path to the text file.
      * @return The newly created TextFileResource.
@@ -102,6 +102,7 @@ public class Files extends AnahataToolkit {
         }
 
         TextFileResource resource = new TextFileResource(Paths.get(path));
+        resource.setRefreshPolicy(RefreshPolicy.LIVE);
         getResourceManager().register(resource);
         log("Successfully loaded and registered text file: " + path);
         return resource;

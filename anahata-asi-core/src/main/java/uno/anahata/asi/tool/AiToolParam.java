@@ -8,7 +8,8 @@ import java.lang.annotation.Target;
 
 /**
  * Provides a description for a parameter of a method marked with {@link AiTool}.
- * This is essential for the model to understand how to use the tool correctly.
+ * This is essential for the model to understand how to use the tool correctly,
+ * as it is used to generate the JSON schema for the tool's arguments.
  *
  * @author anahata-gemini-pro-2.5
  */
@@ -16,20 +17,24 @@ import java.lang.annotation.Target;
 @Target(ElementType.PARAMETER)
 public @interface AiToolParam {
     /**
-     * A clear and concise description of the parameter's purpose.
-     * @return The description of this parameter
+     * A clear and concise description of the parameter's purpose and expected format.
+     * 
+     * @return The description of this parameter.
      */
     String value();
     
     /**
-     * Whether this parameter is required.
-     * @return 
+     * Determines whether this parameter is mandatory for the tool call.
+     * 
+     * @return {@code true} if the parameter is required, {@code false} otherwise.
      */
     boolean required() default true;
 
     /**
-     * Id of the renderer that will render the value of this parameter (e.g. 'code','path'...).
-     * @return 
+     * The ID of a specialized renderer that should be used to display the value 
+     * of this parameter in the UI (e.g., 'code', 'path', 'markdown').
+     * 
+     * @return The renderer ID, or an empty string for default rendering.
      */
     String rendererId() default "";
 }

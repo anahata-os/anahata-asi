@@ -37,6 +37,7 @@ import com.google.gson.GsonBuilder;
  */
 public class SchemaProvider {
 
+    /** The centrally configured Jackson ObjectMapper for JSON operations. */
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new ParameterNamesModule())
             .registerModule(new MrBeanModule())
@@ -44,6 +45,7 @@ public class SchemaProvider {
             .setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
             .setVisibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE);
 
+    /** The centrally configured Gson instance for pretty-printing JSON. */
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     /**
@@ -144,6 +146,13 @@ public class SchemaProvider {
         return GSON.toJson(OBJECT_MAPPER.treeToValue(inlinedNode, Map.class));
     }
 
+    /**
+     * Generates a standard, non-inlined JSON schema for a given Java type.
+     * 
+     * @param type The Java type.
+     * @return The JSON schema string.
+     * @throws JsonProcessingException if generation fails.
+     */
     private static String generateStandardSchema(Type type) throws JsonProcessingException {
         if (type instanceof ParameterizedType) {
             ParameterizedType pt = (ParameterizedType) type;
@@ -188,6 +197,13 @@ public class SchemaProvider {
         return GSON.toJson(finalSchemaMap);
     }
 
+    /**
+     * Handles schema generation for simple Java types (String, Number, Boolean, Enum).
+     * 
+     * @param type The Java type.
+     * @return The JSON schema string, or null if not a simple type.
+     * @throws JsonProcessingException if generation fails.
+     */
     private static String handleSimpleTypeSchema(Type type) throws JsonProcessingException {
         if (!(type instanceof Class)) {
             return null;
@@ -218,6 +234,14 @@ public class SchemaProvider {
         return GSON.toJson(schemaMap);
     }
 
+    /**
+     * Builds a JSON schema for an array or collection type.
+     * 
+     * @param arrayType The array or collection type.
+     * @param itemSchemaJson The JSON schema for the items.
+     * @return The JSON schema string for the array.
+     * @throws JsonProcessingException if generation fails.
+     */
     private static String buildArraySchema(Type arrayType, String itemSchemaJson) throws JsonProcessingException {
         JsonNode itemSchema = OBJECT_MAPPER.readTree(itemSchemaJson);
 
@@ -240,6 +264,13 @@ public class SchemaProvider {
         return GSON.toJson(finalMap);
     }
 
+    /**
+     * Creates the root schema object for a given type.
+     * 
+     * @param type The Java type.
+     * @param swaggerSchemas The map of generated schemas.
+     * @return The root Schema object.
+     */
     private static Schema createRootSchema(Type type, Map<String, Schema> swaggerSchemas) {
         if (type instanceof ParameterizedType && ((ParameterizedType) type).getRawType().equals(List.class)) {
             Schema listSchema = new Schema().type("array");
@@ -257,6 +288,12 @@ public class SchemaProvider {
         }
     }
 
+    /**
+     * Post-processes and enriches the generated schemas with type information.
+     * 
+     * @param rootType The root Java type.
+     * @param allSchemas The map of all generated schemas.
+     */
     private static void postProcessAndEnrichSchemas(Type rootType, Map<String, Schema> allSchemas) {
         Map<String, Type> discoveredTypes = new HashMap<>();
         findAllTypesRecursive(rootType, discoveredTypes, new HashSet<>());
@@ -270,6 +307,13 @@ public class SchemaProvider {
         }
     }
 
+    /**
+     * Recursively finds all types reachable from a given type.
+     * 
+     * @param type The starting type.
+     * @param foundTypes The map to store found types.
+     * @param visited The set of visited types.
+     */
     private static void findAllTypesRecursive(Type type, Map<String, Type> foundTypes, Set<Type> visited) {
         if (type == null || !visited.add(type)) {
             return;
@@ -295,6 +339,14 @@ public class SchemaProvider {
         }
     }
 
+    /**
+     * Recursively adds titles (FQN) to schemas and their properties.
+     * 
+     * @param schema The schema to enrich.
+     * @param type The corresponding Java type.
+     * @param allSchemas The map of all schemas.
+     * @param visited The set of visited types.
+     */
     private static void addTitleToSchemaRecursive(Schema schema, Type type, Map<String, Schema> allSchemas, Set<Type> visited) {
         if (schema == null || type == null || !visited.add(type)) {
             return;
@@ -331,6 +383,14 @@ public class SchemaProvider {
         }
     }
 
+    /**
+     * Recursively inlines definitions into the schema.
+     * 
+     * @param currentNode The current node in the schema tree.
+     * @param definitions The map of definitions.
+     * @param visitedRefs The set of visited references.
+     * @return The inlined JsonNode.
+     */
     private static JsonNode inlineDefinitionsRecursive(JsonNode currentNode, JsonNode definitions, Set<String> visitedRefs) {
         if (currentNode.isObject()) {
             ObjectNode objectNode = (ObjectNode) currentNode.deepCopy();
@@ -366,6 +426,13 @@ public class SchemaProvider {
         return currentNode;
     }
 
+    /**
+     * Creates a node representing a recursive reference.
+     * 
+     * @param refPath The reference path.
+     * @param definitions The map of definitions.
+     * @return The recursive reference ObjectNode.
+     */
     private static ObjectNode createRecursiveReferenceNode(String refPath, JsonNode definitions) {
         String refName = refPath.substring(refPath.lastIndexOf('/') + 1);
         JsonNode definition = definitions.path(refName);
@@ -379,6 +446,13 @@ public class SchemaProvider {
         return recursiveNode;
     }
 
+    /**
+     * Finds the name of the root schema for a given type.
+     * 
+     * @param schemas The map of generated schemas.
+     * @param type The Java type.
+     * @return The name of the root schema.
+     */
     private static String findRootSchemaName(Map<String, Schema> schemas, Type type) {
         String preferredName = getRawClass(type) != null ? getRawClass(type).getSimpleName() : type.getTypeName();
         if (schemas.size() == 1) {
@@ -394,6 +468,12 @@ public class SchemaProvider {
                 .orElse(preferredName);
     }
 
+    /**
+     * Gets the fully qualified name of a Java type.
+     * 
+     * @param type The Java type.
+     * @return The FQN string.
+     */
     private static String getTypeName(Type type) {
         if (type instanceof Class) {
             return ((Class<?>) type).getCanonicalName();
@@ -406,6 +486,13 @@ public class SchemaProvider {
         return type.getTypeName();
     }
 
+    /**
+     * Finds a field in a class or its superclasses.
+     * 
+     * @param clazz The class to search.
+     * @param name The name of the field.
+     * @return The Field object, or null if not found.
+     */
     private static Field findField(Class<?> clazz, String name) {
         for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
             try {
@@ -416,6 +503,12 @@ public class SchemaProvider {
         return null;
     }
 
+    /**
+     * Gets all fields of a class, including those from superclasses.
+     * 
+     * @param clazz The class to inspect.
+     * @return A list of all fields.
+     */
     private static List<Field> getAllFields(Class<?> clazz) {
         List<Field> fields = new ArrayList<>();
         for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
@@ -424,6 +517,12 @@ public class SchemaProvider {
         return fields;
     }
 
+    /**
+     * Gets the raw Class object for a given Type.
+     * 
+     * @param type The Java type.
+     * @return The raw Class object, or null if not applicable.
+     */
     private static Class<?> getRawClass(Type type) {
         if (type instanceof Class) {
             return (Class<?>) type;
@@ -434,6 +533,12 @@ public class SchemaProvider {
         return null;
     }
 
+    /**
+     * Checks if a class belongs to the JDK (java.* package or primitive).
+     * 
+     * @param clazz The class to check.
+     * @return true if it's a JDK class.
+     */
     private static boolean isJdkClass(Class<?> clazz) {
         return clazz != null && (clazz.isPrimitive() || (clazz.getPackage() != null && clazz.getPackage().getName().startsWith("java.")));
     }

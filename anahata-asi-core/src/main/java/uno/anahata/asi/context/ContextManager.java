@@ -40,12 +40,16 @@ public class ContextManager implements PropertyChangeSource {
 
     /** The parent chat session. */
     private final Chat chat;
-    /** The canonical conversation history. */
+    
+    /** The canonical conversation history, stored as a thread-safe list. */
     private final List<AbstractMessage> history = Collections.synchronizedList(new ArrayList<>());
-    /** Counter for assigning sequential IDs to messages. */
+    
+    /** Counter for assigning unique, sequential IDs to messages. */
     private final AtomicLong messageIdCounter = new AtomicLong(0);
-    /** Counter for assigning sequential IDs to parts. */
+    
+    /** Counter for assigning unique, sequential IDs to parts. */
     private final AtomicLong partIdCounter = new AtomicLong(0);
+    
     /** List of registered context providers. */
     private final List<ContextProvider> providers = new ArrayList<>();
 
@@ -138,13 +142,27 @@ public class ContextManager implements PropertyChangeSource {
     public List<AbstractMessage> buildVisibleHistory() {
         boolean includePruned = chat.getConfig().getRequestConfig().isIncludePruned();
 
-        // 1. Get the filtered main history
-        List<AbstractMessage> visibleHistory = history.stream()
-                .filter(msg -> includePruned || !msg.isEffectivelyPruned())
-                .collect(Collectors.toList());
-
+        List<AbstractMessage> visibleHistory = new ArrayList<>();
         RagMessage augmentedMessage = new RagMessage(chat);
-        
+
+        synchronized (history) {
+            // 1. Get the filtered main history
+            history.stream()
+                    .filter(msg -> includePruned || !msg.isEffectivelyPruned())
+                    .forEach(visibleHistory::add);
+
+            // 2. Inject pruned message ranges summary if not including pruned messages.
+            if (!includePruned) {
+                List<String> prunedRanges = findPrunedMessageRanges();
+                if (!prunedRanges.isEmpty()) {
+                    new TextPart(augmentedMessage, "--- PRUNED MESSAGE RANGES ---");
+                    for (String range : prunedRanges) {
+                        new TextPart(augmentedMessage, range);
+                    }
+                }
+            }
+        }
+
         for (ContextProvider provider : providers) {            
             if (provider.isEnabled()) {                                
                 try {                  
@@ -158,10 +176,48 @@ public class ContextManager implements PropertyChangeSource {
         }
         visibleHistory.add(augmentedMessage);
 
-        // Process managed resources for prompt augmentation
-        
-
         return visibleHistory;
+    }
+
+    /**
+     * Identifies contiguous ranges of effectively pruned messages in the history.
+     * This method assumes it is called within a synchronized block on 'history'.
+     * 
+     * @return A list of strings describing the pruned ranges.
+     */
+    private List<String> findPrunedMessageRanges() {
+        List<String> ranges = new ArrayList<>();
+        int start = -1;
+        for (int i = 0; i < history.size(); i++) {
+            AbstractMessage msg = history.get(i);
+            if (msg.isEffectivelyPruned()) {
+                if (start == -1) {
+                    start = i;
+                }
+            } else {
+                if (start != -1) {
+                    ranges.add(formatRange(start, i - 1));
+                    start = -1;
+                }
+            }
+        }
+        if (start != -1) {
+            ranges.add(formatRange(start, history.size() - 1));
+        }
+        return ranges;
+    }
+
+    /**
+     * Formats a range of message indices into a human-readable string.
+     */
+    private String formatRange(int startIdx, int endIdx) {
+        long startId = history.get(startIdx).getSequentialId();
+        long endId = history.get(endIdx).getSequentialId();
+        if (startId == endId) {
+            return String.format("- Message ID: %d is PRUNED", startId);
+        } else {
+            return String.format("- Messages ID: %d to %d are PRUNED", startId, endId);
+        }
     }
 
     /**
@@ -196,7 +252,8 @@ public class ContextManager implements PropertyChangeSource {
     }
 
     /**
-     * adds a message but without hard prunning.
+     * Adds a message to the history without triggering hard pruning.
+     * Assigns sequential IDs to the message and all its parts.
      * Fires a property change event for the "history" property.
      *
      * @param message The message to add.

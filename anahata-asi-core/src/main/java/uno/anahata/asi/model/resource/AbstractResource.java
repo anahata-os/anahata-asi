@@ -40,7 +40,7 @@ public abstract class AbstractResource<R> {
     
     //<editor-fold defaultstate="collapsed" desc="Policy">
     /** The policy that determines when this resource's content should be refreshed. */
-    private RefreshPolicy refreshPolicy = RefreshPolicy.SNAPSHOT;
+    private RefreshPolicy refreshPolicy = RefreshPolicy.LIVE;
 
     /** The position where this resource's content should be injected into the prompt. */
     private ContextPosition contextPosition = ContextPosition.PROMPT_AUGMENTATION;
@@ -53,7 +53,7 @@ public abstract class AbstractResource<R> {
      * would return a BlobPart.
      *
      * @param message The message to populate with the resource's content.
-     * @throws java.lang.Exception
+     * @throws java.lang.Exception if the population fails.
      */
     public abstract void populate(RagMessage message) throws Exception;
     

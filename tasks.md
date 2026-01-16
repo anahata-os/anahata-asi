@@ -11,6 +11,7 @@ This board tracks the high-priority tactical goals for the V2 architecture migra
 - [x] **Live Sessions UI**: Change live sessions to show sessions in a tabbed pane (rather than in a stack pane).
 
 ### 🔴 Backlog
+- [ ] **Tool Call/Response Atomic Pruning**: Bind the pruning state of `AbstractToolCall` to its corresponding `AbstractToolResponse`. Currently, their "turns left" diverge because they reside in messages at different depths. The response should be the master.
 - [ ] **In-Band Metadata Injection**: Inject message and part IDs/metadata into the prompt (Text headers for User/Model, JSON metadata for Tools) to improve model self-awareness.
 - [ ] **Billed Tokens Display**: Test if billed tokens are correctly shown in the model message headers.
 - [ ] **GLM 4.7 Provider**: Implement the V2 adapter for Zhipu AI's GLM 4.7.

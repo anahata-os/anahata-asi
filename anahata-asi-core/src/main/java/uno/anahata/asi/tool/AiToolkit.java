@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 
 /**
  * Marks a class as an AI-callable toolkit and provides essential metadata.
- * All public static methods within a class annotated with {@code @AiToolkit}
+ * All public methods within a class annotated with {@code @AiToolkit}
  * are automatically registered as individual tools, provided they are also
  * annotated with {@code @AiTool}.
  *
@@ -19,16 +19,21 @@ import java.lang.annotation.Target;
 public @interface AiToolkit {
 
     /**
-     * A detailed description of what the tools on this toolkit do, including its purpose,
-     * usage notes, etc.
+     * A detailed description of what the tools in this toolkit do, including its purpose,
+     * usage notes, and any general constraints. This is provided to the model to help
+     * it understand the toolkit's capabilities.
+     * 
+     * @return The toolkit description.
      */
     String value();
 
     /**
-     * The default retention policy for ALL of this toolkit's tools in number of user turns. 
-     * This serves as a default for any tools in this toolkit that do 
-     * not specify a retention policy.
+     * The default retention policy for ALL of this toolkit's tools, in number of user turns. 
+     * This serves as a fallback for any tools in this toolkit that do 
+     * not specify an explicit retention policy in their {@code @AiTool} annotation.
      * A value of -1 indicates that the value should be inherited from the system default.
+     * 
+     * @return The default retention turns.
      */
     int retention() default -1; // Inherit from system default
 }

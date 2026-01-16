@@ -97,6 +97,12 @@ public class TextViewport {
         }
     }
 
+    /**
+     * Truncates a single line of text if it exceeds the configured column width.
+     * 
+     * @param line The line to truncate.
+     * @return The truncated line.
+     */
     private String truncateLine(String line) {
         int width = settings.getColumnWidth();
         if (width > 0 && line.length() > width) {
@@ -106,6 +112,11 @@ public class TextViewport {
         return line;
     }
     
+    /**
+     * Returns a human-readable string representation of the viewport's state.
+     * 
+     * @return The formatted string.
+     */
     @Override
     public String toString() {
         return String.format("Viewport[start=%d, size=%d, lines=%d/%d, truncated=%d, lineNumbers=%b]", 

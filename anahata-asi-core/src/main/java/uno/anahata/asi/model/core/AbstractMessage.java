@@ -3,6 +3,7 @@ package uno.anahata.asi.model.core;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.apache.commons.lang3.Validate;
 import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.internal.TimeUtils;
 
 /**
  * The abstract base class for all messages in a conversation, providing common
@@ -88,9 +90,11 @@ public abstract class AbstractMessage implements PropertyChangeSource {
     public abstract String getFrom();
     
     /**
-     * Whether this message is prunnable 
+     * Checks if this message is eligible for pruning or removal.
+     * A message is prunnable if it is attached to a chat and has been assigned
+     * a sequential ID (i.e., it's not the system message or a transient message).
      * 
-     * @return 
+     * @return {@code true} if the message is prunnable.
      */
     public boolean isPrunnableOrRemovable() {
         return getChat() != null && getSequentialId() != 0;
@@ -221,6 +225,19 @@ public abstract class AbstractMessage implements PropertyChangeSource {
     }
 
     /**
+     * Calculates the total number of tokens in this message, summing the
+     * token counts of its visible parts.
+     * 
+     * @param includePruned whether to include pruned parts
+     * @return The total token count.
+     */
+    public int getTokenCount(boolean includePruned) {
+        return getParts(includePruned).stream()
+                .mapToInt(AbstractPart::getTokenCount)
+                .sum();
+    }
+
+    /**
      * The definitive, encapsulated method for retrieving the parts of a message
      * that should be sent to the model, respecting the pruning policy.
      *
@@ -248,6 +265,52 @@ public abstract class AbstractMessage implements PropertyChangeSource {
         return Collections.unmodifiableList(parts);
     }
     
+    /**
+     * Creates a standardized text header containing metadata for this message.
+     * This is used for in-band metadata injection to improve model self-awareness.
+     * 
+     * @return A formatted metadata header string.
+     */
+    public String createMetadataHeader() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("--- Message ID: %d | Role: %s | From: %s | Time: %s | Tokens: %d",
+            getSequentialId(),
+            getRole(),
+            getFrom(),
+            TimeUtils.formatSmartTimestamp(Instant.ofEpochMilli(getTimestamp())),
+            getTokenCount(false)
+        ));
+        
+        appendMetadata(sb);
+        
+        if (Boolean.TRUE.equals(pruned)) {
+            sb.append(" | [PRUNED]");
+        } else if (Boolean.FALSE.equals(pruned)) {
+            sb.append(" | [PINNED]");
+        }
+        
+        sb.append(" ---");
+        return sb.toString();
+    }
+
+    /**
+     * Hook for subclasses to inject specialized metadata into the message header.
+     * 
+     * @param sb The StringBuilder building the header.
+     */
+    protected void appendMetadata(StringBuilder sb) {
+        // Default implementation does nothing.
+    }
+
+    /**
+     * Hook for subclasses to declare if they should generate in-band metadata headers.
+     * 
+     * @return {@code true} if metadata headers should be generated.
+     */
+    public boolean shouldCreateMetadata() {
+        return true;
+    }
+
     /**
      * Adds a PropertyChangeListener to this message.
      * 

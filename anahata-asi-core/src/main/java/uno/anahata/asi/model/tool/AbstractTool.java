@@ -51,6 +51,11 @@ public abstract class AbstractTool<P extends AbstractToolParameter, C extends Ab
     @Getter
     protected String responseJsonSchema;
 
+    /**
+     * Constructs a new AbstractTool with the given name.
+     * 
+     * @param name The tool's name.
+     */
     protected AbstractTool(@NonNull String name) {
         this.name = name;
     }

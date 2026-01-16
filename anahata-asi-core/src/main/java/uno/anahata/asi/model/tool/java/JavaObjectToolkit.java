@@ -39,7 +39,7 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
      * Constructs a new JavaObjectToolkit by parsing the given class.
      * @param toolManager The parent ToolManager.
      * @param toolClass The class to parse.
-     * @throws IllegalArgumentException if the class is not a valid toolkit.
+     * @throws Exception if the class is not a valid toolkit or instantiation fails.
      */
     public JavaObjectToolkit(ToolManager toolManager, Class<?> toolClass) throws Exception {
         super(toolManager);

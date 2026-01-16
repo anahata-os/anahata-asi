@@ -72,7 +72,7 @@ public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage
         
         // 2. Setup reactive listeners for specific property updates
         new EdtPropertyChangeListener(this, message, "rawJson", evt -> updateRawJsonVisibility());
-        new EdtPropertyChangeListener(this, message, "tokenCount", evt -> updateHeaderInfoText());
+        new EdtPropertyChangeListener(this, message, "billedTokenCount", evt -> updateHeaderInfoText());
         new EdtPropertyChangeListener(this, message, "finishReason", evt -> updateFinishReason());
         new EdtPropertyChangeListener(this, message, "groundingMetadata", evt -> render());
         
@@ -107,7 +107,7 @@ public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage
 
     @Override
     protected String getHeaderSuffix() {
-        return String.format(" <font color='#888888' size='3'><i>(Billed Tokens: %d, Depth: %d)</i></font>", message.getTokenCount(), message.getDepth());
+        return String.format(" <font color='#888888' size='3'><i>(Billed Tokens: %d, Depth: %d)</i></font>", message.getBilledTokenCount(), message.getDepth());
     }
 
     @Override

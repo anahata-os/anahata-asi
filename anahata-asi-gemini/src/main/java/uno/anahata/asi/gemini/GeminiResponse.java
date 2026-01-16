@@ -69,8 +69,8 @@ public class GeminiResponse extends Response<GeminiModelMessage> {
                 GeminiModelMessage msg = new GeminiModelMessage(chat, modelVersion, candidate, this);
                 // Fallback: If candidate doesn't have its own token count and there's only one candidate,
                 // use the total candidatesTokenCount from usageMetadata.
-                if (msg.getTokenCount() <= 0 && googleCandidates.size() == 1) {
-                    msg.setTokenCount(usageMetadata.getCandidatesTokenCount());
+                if (msg.getTokenCount(false) <= 0 && googleCandidates.size() == 1) {
+                    msg.setBilledTokenCount(usageMetadata.getCandidatesTokenCount());
                 }
                 return msg;
             })

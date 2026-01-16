@@ -53,10 +53,16 @@ import uno.anahata.asi.model.tool.java.JavaObjectToolkit;
 @Getter
 public class ToolManager extends BasicPropertyChangeSource {
 
+    /** A static counter for generating unique, sequential tool call IDs. */
     private static final AtomicInteger callIdGenerator = new AtomicInteger(0);
 
+    /** The parent chat session. Can be null in test environments. */
     private final Chat chat;
+    
+    /** The global AI configuration. */
     private final AsiConfig config;
+    
+    /** A map of registered toolkits, keyed by their simple name. */
     private final Map<String, AbstractToolkit<?>> toolkits = new HashMap<>();
     
     /** A thread-safe list of currently executing tool calls. */
@@ -163,18 +169,34 @@ public class ToolManager extends BasicPropertyChangeSource {
         return call;
     }
 
+    /**
+     * Finds a tool by its fully qualified name.
+     * 
+     * @param name The tool name.
+     * @return An Optional containing the tool if found.
+     */
     private Optional<? extends AbstractTool> findToolByName(String name) {
         return getAllTools().stream()
                 .filter(t -> t.getName().equals(name))
                 .findFirst();
     }
 
+    /**
+     * Gets a list of all toolkits that are currently enabled.
+     * 
+     * @return The list of enabled toolkits.
+     */
     public List<AbstractToolkit<?>> getEnabledToolkits() {
         return toolkits.values().stream()
                 .filter(AbstractToolkit::isEnabled)
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Gets a list of all toolkits that are currently disabled.
+     * 
+     * @return The list of disabled toolkits.
+     */
     public List<AbstractToolkit<?>> getDisabledToolkits() {
         return toolkits.values().stream()
                 .filter(tk -> !tk.isEnabled())
@@ -207,6 +229,9 @@ public class ToolManager extends BasicPropertyChangeSource {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Applies application-wide tool preferences to all registered tools.
+     */
     private void applyPreferences() {
         log.info("Applying application-wide tool preferences...");
         // TODO: Implement logic to apply preferences from config.getPreferences()
@@ -214,9 +239,9 @@ public class ToolManager extends BasicPropertyChangeSource {
     }
     
     /**
-     * Returns all 'enabled' toolkits that implement ContextProvider
+     * Returns all 'enabled' toolkits that implement ContextProvider.
      * 
-     * @return enabled toolkits that implement ContextProvider
+     * @return enabled toolkits that implement ContextProvider.
      */
     public List<ContextProvider> getContextProviderTools() {
         List<ContextProvider> ret = new ArrayList<>();

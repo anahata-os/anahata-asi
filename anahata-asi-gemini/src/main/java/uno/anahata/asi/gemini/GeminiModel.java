@@ -12,6 +12,7 @@ import com.google.genai.types.EnterpriseWebSearch;
 import com.google.genai.types.FileSearch;
 import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.GenerateContentResponse;
+import com.google.genai.types.GenerateContentResponseUsageMetadata;
 import com.google.genai.types.GoogleMaps;
 import com.google.genai.types.GoogleSearch;
 import com.google.genai.types.GoogleSearchRetrieval;
@@ -265,6 +266,9 @@ public class GeminiModel extends AbstractModel {
             List<GeminiModelMessage> targets = new ArrayList<>();
             boolean started = false;
             GeminiResponse lastGeminiResponse = null;
+            
+            // Accumulators for usage metadata
+            int totalCandidatesTokens = 0;
 
             for (GenerateContentResponse chunk : stream) {
                 String chunkJson = chunk.toJson();
@@ -285,6 +289,17 @@ public class GeminiModel extends AbstractModel {
 
                 handleChunk(chunk, targets);
                 
+                // Accumulate billed tokens if present in the chunk
+                Optional<GenerateContentResponseUsageMetadata> usage = chunk.usageMetadata();
+                if (usage.isPresent()) {
+                    GenerateContentResponseUsageMetadata um = usage.get();
+                    // Gemini usually sends the total accumulated so far in each chunk.
+                    totalCandidatesTokens = Math.max(totalCandidatesTokens, um.candidatesTokenCount().orElse(0));
+                    for (GeminiModelMessage target : targets) {
+                        target.setBilledTokenCount(totalCandidatesTokens);
+                    }
+                }
+                
                 lastGeminiResponse = new GeminiResponse(prepared.config().toJson(), prepared.historyJson(), chat, getModelId(), chunk);
                 observer.onNext(lastGeminiResponse);
             }
@@ -292,6 +307,8 @@ public class GeminiModel extends AbstractModel {
             if (lastGeminiResponse != null) {
                 for (GeminiModelMessage target : targets) {
                     target.setResponse(lastGeminiResponse);
+                    // Ensure the final model version is set
+                    target.setModelId(lastGeminiResponse.getModelVersion());
                 }
             }
             
@@ -385,7 +402,7 @@ public class GeminiModel extends AbstractModel {
     }
 
     /**
-     * Unified handler for response metadata (finish reason, token counts, grounding).
+     * Unified handler for response metadata (finish reason, grounding).
      * 
      * @param c The candidate object.
      * @param response The full response or chunk.
@@ -397,18 +414,7 @@ public class GeminiModel extends AbstractModel {
         c.finishReason().ifPresent(fr -> target.setFinishReason(fr.knownEnum().name()));
         c.finishMessage().ifPresent(target::setFinishMessage);
         
-        // 2. Token Counts
-        // Candidate-level count (preferred)
-        c.tokenCount().ifPresent(target::setTokenCount);
-        
-        // Response-level fallback (if only one candidate)
-        response.usageMetadata().ifPresent(um -> {
-            if (candidateCount == 1 && target.getTokenCount() <= 0) {
-                target.setTokenCount(um.candidatesTokenCount().orElse(0));
-            }
-        });
-
-        // 3. Citations
+        // 2. Citations
         c.citationMetadata().ifPresent(cm -> {
             String citations = cm.citations().orElse(List.of()).stream()
                 .map(Citation::uri)
@@ -418,7 +424,7 @@ public class GeminiModel extends AbstractModel {
             target.setCitationMetadata(citations);
         });
         
-        // 4. Grounding
+        // 3. Grounding
         c.groundingMetadata().ifPresent(gm -> {
             target.setGroundingMetadata(GeminiModelMessage.toAnahataGroundingMetadata(gm));
         });
