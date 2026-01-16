@@ -25,8 +25,10 @@ import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.internal.TokenizerUtils;
 import uno.anahata.asi.model.core.RequestConfig;
 import uno.anahata.asi.model.provider.ServerTool;
+import uno.anahata.asi.model.tool.AbstractTool;
 
 /**
  * A focused adapter responsible for converting our model-agnostic RequestConfig
@@ -61,9 +63,15 @@ public final class RequestConfigAdapter {
                parts.add(Part.fromText(si));
             }
             
-            //builder.systemInstruction(Content.builder().role("system").parts(anahataConfig.getSystemInstructions().stream().map(p -> Part.fromText(p))));
-            Content sysInstContet = Content.builder().role("system").parts(parts).build();
-            builder.systemInstruction(sysInstContet);
+            Content sysInstContent = Content.builder().role("system").parts(parts).build();
+            String rawJson = sysInstContent.toJson();
+            int tokenCount = TokenizerUtils.countTokens(rawJson);
+            
+            anahataConfig.setSystemInstructionsRawJson(rawJson);
+            anahataConfig.setSystemInstructionsTokenCount(tokenCount);
+            log.info("System Instructions: {} tokens", tokenCount);
+            
+            builder.systemInstruction(sysInstContent);
         }
         
         List<String> modalities = anahataConfig.getResponseModalities();
@@ -87,12 +95,22 @@ public final class RequestConfigAdapter {
             builder.candidateCount(anahataConfig.getCandidateCount());
         }
 
-        if (anahataConfig.getLocalTools() != null && !anahataConfig.getLocalTools().isEmpty()) {
-            log.info("Local tools enabled, adding " + anahataConfig.getLocalTools().size() + " tools");
-            List<FunctionDeclaration> declarations = anahataConfig.getLocalTools().stream()
-                    .map(tool -> new GeminiFunctionDeclarationAdapter(tool).toGoogle())
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
+        List<? extends AbstractTool> localTools = anahataConfig.getLocalTools();
+        if (localTools != null && !localTools.isEmpty()) {
+            log.info("Local tools enabled, adding " + localTools.size() + " tools");
+            List<FunctionDeclaration> declarations = new ArrayList<>();
+            
+            for (AbstractTool<?, ?> tool : localTools) {
+                FunctionDeclaration fd = new GeminiFunctionDeclarationAdapter(tool).toGoogle();
+                if (fd != null) {
+                    String rawJson = fd.toJson();
+                    int tokenCount = TokenizerUtils.countTokens(rawJson);
+                    // Note: We don't have a direct way to set this back on the tool here without casting,
+                    // but we log it for now. The tool itself should ideally hold its provider-specific count.
+                    log.debug("Tool {}: {} tokens", tool.getName(), tokenCount);
+                    declarations.add(fd);
+                }
+            }
 
             if (!declarations.isEmpty()) {
                 Tool tool = Tool.builder().functionDeclarations(declarations).build();

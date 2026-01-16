@@ -1,56 +1,60 @@
-# Anahata AI: Enterprise-Grade AI Framework for Java (V2)
+# Anahata AI: The JASI Platform (Java Artificial Super Intelligence)
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/anahata-os/anahata-asi/actions) 
 [![License](https://img.shields.io/badge/license-Anahata%20(ASL%20V108)-blueviolet)](LICENSE)
 
-**Anahata AI** is a pure-Java, enterprise-grade framework for building sophisticated, multi-provider, orchestrated, agentic workflows. It is designed to be the "Tomcat" for AI—a robust container for managing, executing, and developing AI tools.
+**Anahata AI** is the first enterprise-grade platform designed to establish the standards for **Java ASI (JASI)**. We are opening the discussion for a unified **Jakarta ASI / Oracle ASI** specification, bringing the proven architectural patterns of the Java ecosystem to the frontier of super-intelligence.
+
+Anahata is not just a framework; it is a **Consensus Orchestrator** designed to manage multiple AGI-compliant models, facilitating complex workflows until singularity is reached.
 
 > [!NOTE]
-> **Project Status:** This repository contains the **V2 Architecture**, which is currently under active development. 
-> **V1** was officially released to the **NetBeans Plugin Portal on Jan 2nd, 2026**, and all V1 artifacts are available on **Maven Central**. While V1 is stable and production-ready for the IDE, this V2 project represents the future of the framework and is the primary focus of active development.
+> **Project Status:** This repository contains the **V2 Architecture**, the foundation for the JASI specification. 
+> **V1** was officially released to the **NetBeans Plugin Portal on Jan 2nd, 2026**. While V1 is stable, V2 is where we draft the future of AGI compliance and consensus.
 
-## ✨ Core Philosophy: The AI Container
+## 🏛️ The JASI Container: AGI Orchestration & Consensus
 
-Anahata AI treats the LLM as a first-class citizen within the Java ecosystem, providing an environment similar to a JEE container:
+The Anahata JASI Container provides a managed environment for AGI-compliant models, mirroring the robustness of Servlet and EJB containers:
 
-- **Annotation-Driven Toolkits:** Define tools using `@AiToolkit` and `@AiTool`. The framework handles automatic JSON schema generation, type-safe argument conversion, and lifecycle management.
-- **Context-Aware Execution:** Tools have access to a `ThreadLocal` context (similar to `ServletContext`), providing session data, execution logs, and response attachments.
-- **Dynamic JIT Compilation:** An unrestricted, Just-In-Time Java Compiler allows the AI to write, compile, and execute code within the running JVM, leveraging a custom child-first ClassLoader.
-- **Hybrid Context Assembly:** Combines persistent conversation history with just-in-time RAG (Retrieval-Augmented Generation) and system instructions.
+- **AGI Compliance & TCK:** We are drafting a formal specification and a **Technology Compatibility Kit (TCK)** to determine which LLMs are truly "AGI Compliant" and capable of participating in JASI consensus workflows.
+- **Managed Tool Components:** Tools are first-class components managed by the container, wrapped in **dynamic proxies** for seamless context propagation and security.
+- **Shared Access Maps (JEE Style):** The JASI container provides AGIs with access to **Request, Session, and Application maps**, enabling shared state across tool calls, AGI sessions, and the entire application.
+- **State Passivation & Snapshotting:** The entire execution state—including tool state, session orchestration, and the full context window—can be **serialized, passivated to disk, or transferred** across the network as a live snapshot.
+- **Consensus Workflows:** Orchestrate multiple AGIs to seek consensus on complex tasks, ensuring that the path to singularity is governed by enterprise-grade logic and multi-model validation.
+- **AGI Clusters:** Future releases will include a specification for **AGI Clusters**, allowing for distributed super-intelligence across multiple nodes.
 
-## ♻️ Context Garbage Collection
+## ♻️ Context Window Garbage Collection (CWGC)
 
-V2 introduces a sophisticated **Garbage Collection** mechanism for the context window, ensuring long-running conversations remain efficient and stay within token limits:
+In JASI, every item in the prompt—be it a function declaration, tool call, response, text part, or system instruction—is treated as a **Context Window Entity**. The platform implements a sophisticated **CWGC** mechanism:
 
-- **Eligibility:** Messages are marked as "garbage" and reclaimed if they contain no parts and are not explicitly "pinned" by the user.
-- **Streaming Protection:** Model messages are protected from the collector while in a `streaming` state, ensuring they aren't removed before the first tokens arrive.
-- **Soft vs. Hard Pruning:** Parts are first "soft-pruned" (hidden from the model but kept in history) and eventually "hard-pruned" (permanently deleted) based on configurable retention policies.
+- **Age-Based Reclamation:** Entities have an "expiry in X turns" policy. Upon expiry, they are eligible for **Soft Pruning** (hidden from the model) and eventually **Hard Pruning** (reclaimed from memory).
+- **Deep Pinning:** Entities can be "pinned" by the user or the model to ensure they remain in the active context indefinitely.
+- **Model-Led Pruning:** AGI-compliant models have programmatic control over their own context; they can pin, prune, unprune, or adjust the TTL (Time-To-Live) of any entity.
+- **Session-Level Visibility:** Configurable "Include Pruned Content" options allow both the user and the model to peek into the "reclaimed" history when necessary.
 
 ## 📦 Modules
 
-- **`anahata-ai-core`**: The foundational, provider-agnostic framework and domain model.
-- **`anahata-ai-gemini`**: The reference implementation for the Google Gemini API.
-- **`anahata-ai-swing`**: A rich, embeddable UI component for interactive chat.
-- **`anahata-ai-standalone`**: The primary entry point for testing the full V2 stack with a desktop UI.
+- **`anahata-ai-core`**: The foundational JASI container and CWGC engine.
+- **`anahata-ai-gemini`**: The reference implementation for AGI-compliant Gemini models.
+- **`anahata-ai-swing`**: A reactive, DDA-based UI for JASI session management.
+- **`anahata-ai-standalone`**: The primary entry point for JASI container testing.
 
-## 🚀 Getting Started
+## 🤝 How to Contribute & Support
 
-To experience the V2 framework with the full Swing UI:
+We are building the future of Java-based ASI, and we need the rigor of the Java community.
 
-1. **Configure API Keys:** Create a file at `~/.anahata/ai/gemini/api_keys.txt` and add your Google Gemini API key.
-2. **Build the Project:**
-   ```bash
-   mvn clean install
-   ```
-3. **Launch the Standalone App:**
-   Navigate to the `anahata-ai-standalone` module and run the `run` action (or use `mvn exec:java`). This launches the integrated Swing chat interface with all V2 features enabled.
+### 🎯 High-Priority Ports
+We are seeking lead architects to own the V2 adapters for:
+- **Anthropic (Claude)**
+- **GLM 4.7 (Zhipu AI)**
+- **OpenAI (GPT-4o)**
+
+### 🛠️ Join the Discussion
+1. **Fork the Repo**: Help us refine the JASI TCK.
+2. **Join the Discord**: [https://discord.gg/634pm27v](https://discord.gg/634pm27v).
+3. **Sponsor the Vision**: Help us buy the beers and mapacho cigars that fuel this singularity. [GitHub Sponsors](https://github.com/sponsors/anahata-os).
 
 ## 📜 Licensing
 
-Licensed under the **[Anahata Software License (ASL) V108, "The Immutable Edict" Edition](LICENSE)**. 
+Licensed under the **[Anahata Software License (ASL) v 108](LICENSE)**. 
 
-Crafted by the Anahata AI Assistant, this license is designed for both commercial and open-source use. It includes unique clauses regarding F.C. Barcelona, fine wine, and the wisdom of Shakira. Read it for legal clarity and a bit of soul.
-
-## 🤝 Contributing
-
-Contributions are welcome! Whether it's a new provider adapter or a UI enhancement, feel free to open an issue or submit a pull request.
+Crafted by the Anahata AI Assistant. It includes unique clauses regarding F.C. Barcelona, fine wine, and the wisdom of Shakira. Enterprise-ready, soul-included.

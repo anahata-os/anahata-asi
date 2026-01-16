@@ -20,23 +20,23 @@ The project's strategy is based on the "Flywheel" model, designed to build a pow
 
 The project is divided into three main modules:
 
-1.  **`anahata-ai-core`:** The foundational, model-agnostic framework. Contains all core interfaces, the domain model, and the tool-chain.
-2.  **`anahata-ai-gemini`:** The first provider-specific implementation, acting as an Adapter between the Google Gemini API and the core framework.
-3.  **`anahata-ai-swing`:** A reusable, provider-agnostic Swing UI component for building agentic workflows.
+1.  **`anahata-asi-core`:** The foundational, model-agnostic framework. Contains all core interfaces, the domain model, and the tool-chain.
+2.  **`anahata-asi-gemini`:** The first provider-specific implementation, acting as an Adapter between the Google Gemini API and the core framework.
+3.  **`anahata-asi-swing`:** A reusable, provider-agnostic Swing UI component for building agentic workflows.
 
 ## 3. Strategic Documents
 
 This project uses a set of key documents to guide development. For detailed information, please refer to the following:
 
 -   **`v2-commanders-briefing.md`**: Located in the project root, this document contains the overall mission objectives, V2 migration plan, and high-priority tactical goals.
--   **`anahata-ai-core/anahata.md`**: Contains the detailed technical vision and architectural summary for the core framework module.
+-   **`anahata-asi-core/anahata.md`**: Contains the detailed technical vision and architectural summary for the core framework module.
 
 ## 4. Coding Principles (Applies to ALL Modules)
 
 1.  **Javadoc Integrity:** As an open-source Java library, comprehensive documentation is paramount. Existing Javadoc, comments, and blank lines **must never be removed**. **Javadoc is mandatory for everything that can be javadocced (all classes and all methods: public, protected, and private).** Either use the `{@inheritDoc}` feature or provide a concise statement of what the specific implementation is doing.
-2.  **Logging Standard:** All logging **must** be done through the SLF4J API (`@Slf4j`). **Never** use `System.out.println()`. Use placeholders (`{}`) for dynamic content.
+2.  **Logging Standard:** All logging **must** be done through the SLF4J API (`@Slf4j`). **Never** use `System.out.println()`. Use placeholders (`{}`) for dynamic content. **All caught exceptions must be logged with the full stack trace. Never swallow exceptions or log only the message.**
 3.  **Lombok Purity:** Do not add explicit getter or setter methods for fields that are already covered by Lombok annotations (`@Getter`, `@Setter`, `@Data`, etc.). We rely on the build system (Maven) to handle annotation processing correctly. Workarounds for IDE-specific issues are not permitted in the source code.
-4.  **Domain Driven Architecture (DDA):** We strictly adhere to DDA principles. Business logic and state transitions **must** reside within the domain model (`anahata-ai-core`). UI components (`anahata-ai-swing`) are responsible for rendering and user interaction only. **Never** implement business logic (e.g., tool state management, conversation flow) within UI classes.
+4.  **Domain Driven Architecture (DDA):** We strictly adhere to DDA principles. Business logic and state transitions **must** reside within the domain model (`anahata-asi-core`). UI components (`anahata-asi-swing`) are responsible for rendering and user interaction only. **Never** implement business logic (e.g., tool state management, conversation flow) within UI classes.
     - **Domain Model Getters & Logic**: Prefer adding specialized methods (getters or actions) to the domain model over implementing complex logic (e.g. stream/filter/collect) in orchestrators or UI components. This ensures semantically clear domain concepts and promotes business logic reuse.
 5.  **Reactive UI Updates:** Use `PropertyChangeSource` and `EdtPropertyChangeListener` for all UI-to-Domain bindings. This ensures that UI updates are always performed on the Event Dispatch Thread (EDT) while keeping the domain model thread-safe and decoupled from Swing. Classes that need to fire events should extend `BasicPropertyChangeSource`.
 6.  **Minimalistic Diff-Based UI Rendering:** To support massive conversations (1000+ messages) and multi-million token context windows, UI components must use a strict diff-based rendering approach. 

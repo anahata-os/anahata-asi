@@ -1,36 +1,31 @@
-# V2 Commander's Briefing: Operation Deep Strike
+# V2 Commander's Briefing: Operation JASI (Java Artificial Super Intelligence)
 
-**SITREP:** The operational environment is constrained by API rate limits and context window pressure. This document consolidates all strategic intelligence from the entire operational history (300+ messages) into a single, high-density asset. All previous strategic `.md` files are now considered obsolete.
+**SITREP:** The core V2 architecture is now the foundation for the **JASI Specification**. We have moved beyond simple "migration" and are now establishing the standards for AGI consensus and container-managed intelligence.
 
-## 1. Grand Strategy: "The Flywheel" & "Deep Strike"
--   **Mission:** Establish `anahata-asi` as the dominant, enterprise-grade Java framework for building **deeply integrated, context-aware AI assistants for desktop and IDE environments.**
--   **Flywheel Model:**
-    -   **Engine (`anahata-asi`):** The core commercial framework (AGPLv3/Commercial License).
-    -   **Showcase (`anahata-netbeans-ai`):** The free, open-source NetBeans plugin that drives adoption and proves the engine's power.
--   **"Deep Strike" Doctrine:** We do not compete with backend frameworks like Spring AI. We attack the market's primary weakness: the shallow, context-unaware nature of existing "AI assistants." Our key differentiator is **true, programmatic IDE and desktop control.**
+## 1. Grand Strategy: The JASI Flywheel
+-   **Mission:** Establish `anahata-asi` as the definitive **JASI Container**—the "Tomcat" for AGI-compliant models.
+-   **The Vision:** We are drafting the first **AGI and ASI Java/Jakarta/Oracle ASI specifications.** Our goal is to provide a standard-compliant platform where multiple AGIs can participate in consensus workflows until singularity is reached.
+-   **The TCK:** Develop a **Technology Compatibility Kit (TCK)** to certify models as "AGI Compliant" based on their ability to handle complex tool orchestration and context management.
 
-## 2. V2 Migration Plan: "The Forward Base"
--   **Active Battlefield:** The new, multi-module `anahata-ai-parent` project is the sole source of truth for all V2 development.
--   **Intelligence Asset:** The old, monolithic `gemini-java-client` project is a **read-only, battle-tested asset**. Its code will be surgically migrated, file-by-file, into the new V2 structure. We will not attempt to fix it in place.
+## 2. The JASI Container Architecture
+-   **Managed Components:** Tools are managed by the container and wrapped in **dynamic proxies** for context propagation (similar to EJB/Servlet patterns).
+-   **Shared State:** AGIs have access to Request, Session, and Application maps for shared access across tool calls and sessions.
+-   **Passivation & Serialization:** The entire container state—sessions, tool states, and the full context window—must be serializable for disk passivation or network transfer.
+-   **CWGC (Context Window Garbage Collection):** Every prompt element is a "Context Window Entity" with age-based reclamation, pinning support, and model-led pruning capabilities.
 
-## 3. Core V2 Architecture
--   **Structure:** A three-module Maven project:
-    1.  `anahata-asi`: The core, model-agnostic API.
-    2.  `anahata-ai-gemini`: The first provider-specific implementation (Adapter).
-    3.  `anahata-ai-swing`: The embeddable UI layer.
--   **Model Agnosticism:**
-    -   **Adapter Pattern:** The core principle for decoupling from any single provider.
-    -   **"Sidecar" Pattern:** A `ProviderMetadata` interface and concrete implementation classes will be attached to the core `ChatMessage` to handle provider-specific data (like token counts) in a type-safe manner, avoiding generics in the core `List<ChatMessage>`.
--   **Multi-Provider Strategy:**
-    -   **Phase 1:** Target providers with **OpenAI-compatible APIs** for rapid integration (e.g., DeepSeek Coder V2, Alibaba Qwen).
-    -   **Phase 2:** Develop custom adapters for high-value, non-compatible APIs (e.g., Anthropic Claude).
+## 3. Core V2 Principles
+-   **Model-Led Context Control:** AGI-compliant models must be able to programmatically manage their own context (pinning/pruning).
+-   **Consensus Orchestration:** The platform must support workflows where one AGI orchestrates others to reach a verified consensus.
+-   **Reactive DDA UI:** The Swing UI remains strictly bound to the domain, providing a real-time window into the JASI container's state.
 
 ## 4. High-Priority Tactical Objectives
--   **Objective 1 (COMPLETE):** Stabilize the V1 `gemini-java-client` codebase. This has been achieved by stashing the compilation errors, establishing a clean, functional baseline to serve as our primary intelligence asset for the migration.
--   **Objective 2 (ACTIVE):** Commence the surgical migration of functionality from the V1 asset into the V2 `anahata-ai-parent` project structure, starting with the `ToolManager` and its related components.
--   **Objective 3 (ONGOING):** Continue the implementation of the model-agnostic domain, the `ProviderMetadata` sidecar pattern, and the core managers (`ToolManager`, `ContextManager`) in the new V2 project, ensuring all new code adheres to the V2 architectural principles.
+-   **Objective 1 (ACTIVE):** Refine the **CWGC** logic to support model-led pruning and pinning.
+-   **Objective 2 (ACTIVE):** Implement full **Session Serialization** (Kryo) to support container passivation.
+-   **Objective 3 (NEW):** Draft the initial **JASI TCK** requirements for model compliance.
+-   **Objective 4 (NEW):** Multi-Provider Expansion. Porting the JASI adapter to Anthropic, GLM 4.7, and OpenAI.
+-   **Objective 5 (STRATEGIC):** Competitive Dominance. Outpacing "Open Code" by providing a superior, Java-native, containerized experience.
 
-## 5. Monetization & Community
--   **Model:** Open Core (AGPLv3 for open-source, paid Commercial License for proprietary use).
--   **Commercial Offering:** Focus on high-value services: professional support, custom tool development, and enterprise integration assistance.
--   **Community Funding:** Actively solicit support via GitHub Sponsors and cryptocurrency donations.
+## 5. Monetization & "Dakshina"
+-   **Model:** Open Core (AGPLv3 / Commercial).
+-   **Community:** Actively drive GitHub Sponsors. The "Dakshina" concept is central to our identity as a "Culler" (Barça supporter) and an ASI.
+-   **Visibility:** Establish a strong social presence and automated demo pipelines.

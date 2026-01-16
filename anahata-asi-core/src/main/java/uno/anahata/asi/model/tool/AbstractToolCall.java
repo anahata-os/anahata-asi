@@ -3,6 +3,7 @@ package uno.anahata.asi.model.tool;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Map;
+import java.util.Objects;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -22,7 +23,7 @@ import uno.anahata.asi.model.core.ThoughtSignature;
  * @param <R> The specific type of the Response.
  */
 @Getter
-@Setter // Added @Setter for thoughtSignature
+@Setter
 public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends AbstractToolResponse<?>> extends AbstractPart implements ThoughtSignature {
 
     /**
@@ -123,15 +124,25 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
     
     /** {@inheritDoc} */
     @Override
+    public Boolean getPruned() {
+        return getResponse().getPruned();
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public void setPruned(Boolean pruned) {
-        super.setPruned(pruned);
         getResponse().setPruned(pruned);
     }
     
     /** {@inheritDoc} */
     @Override
+    public Integer getTurnsToKeep() {
+        return getResponse().getTurnsToKeep();
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public void setTurnsToKeep(Integer turnsToKeep) {
-        super.setTurnsToKeep(turnsToKeep);
         getResponse().setTurnsToKeep(turnsToKeep);
     }
     //</editor-fold>

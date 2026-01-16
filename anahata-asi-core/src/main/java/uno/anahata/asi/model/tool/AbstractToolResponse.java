@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -107,6 +108,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
      * Gets the original invocation request that this result corresponds to.
      * @return The originating tool call.
      */
+    @JsonIgnore
     public abstract C getCall();
     
     /**
@@ -165,6 +167,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
      */
     public void addLog(String message) {
         this.logs.add(message);
+        updateTokenCount();
         getPropertyChangeSupport().firePropertyChange("logs", null, logs);
     }
     
@@ -234,6 +237,24 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
         return getChatConfig().getDefaultToolTurnsToKeep();
     }
     
+    /** {@inheritDoc} */
+    @Override
+    public void setPruned(Boolean pruned) {
+        if (Objects.equals(this.getPruned(), pruned)) {
+            return;
+        }
+        super.setPruned(pruned);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void setTurnsToKeep(Integer turnsToKeep) {
+        if (Objects.equals(this.getTurnsToKeep(), turnsToKeep)) {
+            return;
+        }
+        super.setTurnsToKeep(turnsToKeep);
+    }
+
     @Override
     public String asText() {
         return String.format("[%s] %s", status, result != null ? TextUtils.formatValue(result) : (error != null ? error : ""));

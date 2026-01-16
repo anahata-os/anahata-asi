@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import uno.anahata.asi.internal.TokenizerUtils;
 import uno.anahata.asi.model.core.AbstractMessage;
 import uno.anahata.asi.model.core.AbstractPart;
 import uno.anahata.asi.model.core.Role;
@@ -57,6 +58,8 @@ public class GeminiContentAdapter {
 
             Part googlePart = new GeminiPartAdapter(part).toGoogle();
             if (googlePart != null) {
+                // Update the part's token count using the actual JSON that will be sent.
+                part.setTokenCount(TokenizerUtils.countTokens(googlePart.toJson()));
                 googleParts.add(googlePart);
             }
         }

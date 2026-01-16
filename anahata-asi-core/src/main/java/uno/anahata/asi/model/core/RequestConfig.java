@@ -50,6 +50,12 @@ public class RequestConfig {
     /** If true, the adapter should include pruned messages and parts in the API request. For debugging. */
     private boolean includePruned = false;
 
+    //== Provider-Accurate Metadata (Set by Adapters) ==//
+    /** The total token count of the system instructions as reported by the provider. */
+    private int systemInstructionsTokenCount;
+    /** The raw JSON representation of the system instructions. */
+    private String systemInstructionsRawJson;
+
     //== Live Data Getters ==//
     /**
      * Gets the system instructions for this request, assembled just-in-time
