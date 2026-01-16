@@ -85,6 +85,7 @@ public class AsiConfig extends BasicPropertyChangeSource {
     public void register(Chat chat) {
         List<Chat> old = new ArrayList<>(activeChats);
         activeChats.add(chat);
+        onChatCreated(chat);
         propertyChangeSupport.firePropertyChange("activeChats", old, Collections.unmodifiableList(activeChats));
         log.info("Registered chat session: {}", chat.getConfig().getSessionId());
     }
@@ -109,6 +110,15 @@ public class AsiConfig extends BasicPropertyChangeSource {
      */
     public List<Chat> getActiveChats() {
         return Collections.unmodifiableList(activeChats);
+    }
+    
+    /**
+     * Overridable hook for host-specific initialization when a new chat is created.
+     * 
+     * @param chat The newly created chat session.
+     */
+    public void onChatCreated(Chat chat) {
+        // Default implementation does nothing.
     }
 
     // --- STATIC METHODS FOR GLOBAL ACCESS ---

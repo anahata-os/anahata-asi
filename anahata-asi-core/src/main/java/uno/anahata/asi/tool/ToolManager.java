@@ -283,4 +283,22 @@ public class ToolManager extends BasicPropertyChangeSource {
     public List<AbstractToolCall<?, ?>> getExecutingCalls() {
         return Collections.unmodifiableList(executingCalls);
     }
+
+    /**
+     * Retrieves the singleton instance of a registered toolkit class.
+     * 
+     * @param <T> The type of the toolkit.
+     * @param toolkitClass The class of the toolkit to find.
+     * @return An Optional containing the toolkit instance if found.
+     */
+    public <T> Optional<T> getToolkitInstance(Class<T> toolkitClass) {
+        for (AbstractToolkit<?> toolkit : toolkits.values()) {
+            if (toolkit instanceof JavaObjectToolkit jot) {
+                if (toolkitClass.isInstance(jot.getToolInstance())) {
+                    return Optional.of(toolkitClass.cast(jot.getToolInstance()));
+                }
+            }
+        }
+        return Optional.empty();
+    }
 }

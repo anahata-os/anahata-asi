@@ -29,7 +29,7 @@ public class AnahataInstaller extends ModuleInstall {
 
     public static synchronized AsiConfig getAsiConfig() {
         if (asiConfig == null) {
-            asiConfig = new AsiConfig("netbeans");
+            asiConfig = new NetBeansAsiConfig();
         }
         return asiConfig;
     }
@@ -44,7 +44,7 @@ public class AnahataInstaller extends ModuleInstall {
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(handoffFile))) {
                 List<String> sessionIds = (List<String>) ois.readObject();
                 for (String id : sessionIds) {
-                    ChatTopComponent tc = new ChatTopComponent();
+                    AgiTopComponent tc = new AgiTopComponent();
                     tc.setSessionIdForHandoff(id);
                     tc.open();
                     tc.requestActive();
@@ -65,8 +65,8 @@ public class AnahataInstaller extends ModuleInstall {
         Set<TopComponent> openTcs = WindowManager.getDefault().getRegistry().getOpened();
 
         for (TopComponent tc : openTcs) {
-            if (tc instanceof ChatTopComponent) {
-                ChatTopComponent atc = (ChatTopComponent) tc;
+            if (tc instanceof AgiTopComponent) {
+                AgiTopComponent atc = (AgiTopComponent) tc;
                 if (atc.getChat() != null) {
                     sessionIds.add(atc.getChat().getConfig().getSessionId());
                 }
@@ -84,7 +84,7 @@ public class AnahataInstaller extends ModuleInstall {
         
         // Close components to allow clean reload
         for (TopComponent tc : openTcs) {
-            if (tc instanceof ChatTopComponent || tc instanceof SessionsTopComponent) {
+            if (tc instanceof AgiTopComponent || tc instanceof AsiTopComponent) {
                 tc.close();
             }
         }

@@ -689,4 +689,15 @@ public class Chat extends BasicPropertyChangeSource {
             executor.shutdown();
         }
     }
+    
+    public void setProviderAndModel(String providerId, String modelId) {
+        getProviders().stream()
+            .filter(p -> p.getProviderId().equals(providerId))
+            .findFirst()
+            .flatMap(provider -> provider.findModel(modelId))
+            .ifPresentOrElse(
+                this::setSelectedModel,
+                () -> log.error("Model not for: " + providerId + " " + modelId)
+            );
+    }
 }

@@ -19,24 +19,24 @@ import uno.anahata.asi.swing.chat.SwingChatConfig;
 /**
  * The main TopComponent for Anahata ASI V2.
  */
-@ActionID(category = "Window", id = "uno.anahata.asi.OpenAnahataChatAction")
+@ActionID(category = "Window", id = "uno.anahata.asi.OpenAgiTopComponent")
 @ActionReference(path = "Menu/Window", position = 334)
 @TopComponent.Description(
-        preferredID = "asi",
+        preferredID = "agi",
         iconBase = "icons/anahata_16.png",
         persistenceType = TopComponent.PERSISTENCE_ONLY_OPENED)
 @TopComponent.Registration(mode = "output", openAtStartup = false, position = 0)
-@TopComponent.OpenActionRegistration(displayName = "Anahata ASI")
+@TopComponent.OpenActionRegistration(displayName = "AGI")
 @Slf4j
-public final class ChatTopComponent extends TopComponent implements Externalizable {
+public final class AgiTopComponent extends TopComponent implements Externalizable {
 
     private transient ChatPanel chatPanel;
     private transient boolean isInitialized = false;
     private String sessionId;
 
-    public ChatTopComponent() {
-        setName("Anahata ASI");
-        setDisplayName("Anahata ASI");
+    public AgiTopComponent() {
+        setName("AGI");
+        setDisplayName("Anahata AGI");
     }
 
     @Override

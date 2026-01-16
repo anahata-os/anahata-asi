@@ -7,7 +7,7 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     
-    <artifactId>anahata-asi</artifactId>
+    <artifactId>anahata-asi-nb</artifactId>
     <packaging>nbm</packaging>
     
     <name>Anahata ASI NetBeans</name>
@@ -44,6 +44,12 @@
             <groupId>uno.anahata</groupId>
             <artifactId>anahata-asi-swing</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.formdev</groupId>
+                    <artifactId>flatlaf</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>uno.anahata</groupId>
@@ -453,7 +459,9 @@
                     <homePageUrl>https://anahata.uno</homePageUrl>
                     <codeNameBase>uno.anahata.asi</codeNameBase>
                     <brandingToken>anahata</brandingToken>
+                    <!--
                     <moduleIcon>src/main/resources/icons/anahata_32.png</moduleIcon>
+                                        -->
                     <includeRuntimeModuleLibraries>true</includeRuntimeModuleLibraries>
                     <moduleDependencies>
                         <dependency>
@@ -524,35 +532,6 @@
                         <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
                 </configuration>
-            </plugin>
-            
-            <!-- Source plugin -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>3.3.1</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            
-            <!-- Javadoc plugin (inherited from parent) -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
