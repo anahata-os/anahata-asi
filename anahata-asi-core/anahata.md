@@ -1,3 +1,4 @@
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 # Anahata AI Core Framework
 
 This document outlines the vision and architecture of the `anahata-ai-core` project, which serves as the core, model-agnostic AI framework.

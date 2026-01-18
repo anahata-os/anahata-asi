@@ -27,7 +27,7 @@ import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.swing.chat.ChatPanel;
-import uno.anahata.asi.swing.chat.render.CodeBlockSegmentRenderer;
+import uno.anahata.asi.swing.chat.render.AbstractCodeBlockSegmentRenderer;
 
 /**
  * A collection of general-purpose Swing utility methods, primarily for image
@@ -179,7 +179,7 @@ public class SwingUtils {
         dialog.setLayout(new BorderLayout());
         dialog.setPreferredSize(new Dimension(1000, 800));
 
-        CodeBlockSegmentRenderer renderer = new CodeBlockSegmentRenderer(chatPanel, text, language);
+        AbstractCodeBlockSegmentRenderer renderer = AbstractCodeBlockSegmentRenderer.create(chatPanel, text, language);
         renderer.render();
 
         // For the popup, we want both scrollbars, so we wrap the INNER component

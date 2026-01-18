@@ -222,7 +222,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
             }
 
             if (rendererId != null && !rendererId.isEmpty()) {
-                CodeBlockSegmentRenderer renderer = new CodeBlockSegmentRenderer(chatPanel, valStr, rendererId);
+                AbstractCodeBlockSegmentRenderer renderer = AbstractCodeBlockSegmentRenderer.create(chatPanel, valStr, rendererId);
                 renderer.render();
                 argsPanel.add(renderer.getComponent(), "cell 1 " + row + ", growx, hmin 40, wrap"); 
             } else if (valStr.length() > 100 || valStr.contains("\n")) {

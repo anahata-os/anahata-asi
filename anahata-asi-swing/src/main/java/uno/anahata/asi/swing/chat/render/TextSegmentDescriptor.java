@@ -3,7 +3,10 @@
  */
 package uno.anahata.asi.swing.chat.render;
 
+import javax.swing.text.EditorKit;
+import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.swing.chat.ChatPanel;
+import uno.anahata.asi.swing.chat.render.editorkit.EditorKitProvider;
 
 /**
  * A record that describes a segment of text within a {@link TextPartPanel}.
@@ -15,6 +18,7 @@ import uno.anahata.asi.swing.chat.ChatPanel;
  *
  * @author anahata
  */
+@Slf4j
 public record TextSegmentDescriptor(TextSegmentType type, String content, String language) {
 
     /**
@@ -27,7 +31,22 @@ public record TextSegmentDescriptor(TextSegmentType type, String content, String
     public AbstractTextSegmentRenderer createRenderer(ChatPanel chatPanel, boolean isThought) {
         return switch (type) {
             case TEXT -> new MarkupTextSegmentRenderer(chatPanel, content, isThought);
-            case CODE -> new CodeBlockSegmentRenderer(chatPanel, content, language);
+            case CODE -> createCodeBlockRenderer(chatPanel);
         };
+    }
+
+    private AbstractTextSegmentRenderer createCodeBlockRenderer(ChatPanel chatPanel) {
+        EditorKitProvider editorKitProvider = chatPanel.getChatConfig().getEditorKitProvider();
+        if (editorKitProvider != null) {
+            try {
+                EditorKit kit = editorKitProvider.getEditorKitForLanguage(language);
+                if (kit != null) {
+                    return new JEditorPaneCodeBlockSegmentRenderer(chatPanel, content, language, kit);
+                }
+            } catch (Exception e) {
+                log.error("Failed to obtain EditorKit for language: {}", language, e);
+            }
+        }
+        return new RSyntaxTextAreaCodeBlockSegmentRenderer(chatPanel, content, language);
     }
 }
