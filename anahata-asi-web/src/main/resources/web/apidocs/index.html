@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anahata JASI | API Reference</title>
+    <link rel="icon" type="image/png" href="https://www.anahata.uno/icons/anahata_16.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --barca-blue: #004d98;
+            --barca-red: #a50044;
+            --barca-gold: #edbb00;
+            --jasi-dark: #05050a;
+            --jasi-card: #0f0f1a;
+            --text-main: #e0e0e0;
+        }
+
+        body {
+            background-color: var(--jasi-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+
+        .container {
+            background: var(--jasi-card);
+            padding: 4rem;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        h1 { color: var(--barca-gold); text-transform: uppercase; letter-spacing: 4px; }
+        
+        .version-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 2rem;
+        }
+
+        .version-item {
+            margin: 1rem 0;
+        }
+
+        .version-link {
+            color: #fff;
+            text-decoration: none;
+            font-size: 1.2rem;
+            padding: 0.8rem 2rem;
+            border: 1px solid var(--barca-blue);
+            border-radius: 50px;
+            display: inline-block;
+            transition: all 0.3s;
+            min-width: 200px;
+        }
+
+        .version-link:hover {
+            background: var(--barca-blue);
+            transform: translateY(-3px);
+        }
+
+        .badge {
+            font-size: 0.7rem;
+            background: var(--barca-red);
+            padding: 2px 8px;
+            border-radius: 4px;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+
+        .back-link {
+            margin-top: 3rem;
+            color: var(--barca-gold);
+            text-decoration: none;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <img src="https://www.anahata.uno/assets/logo-transparent.png" alt="Anahata Logo" style="height: 50px; margin-bottom: 2rem;">
+        <h1>JASI API Reference</h1>
+        <p>Select a version to view the technical documentation.</p>
+
+        <ul class="version-list">
+            <li class="version-item">
+                <a href="1.0.0-SNAPSHOT/apidocs/index.html" class="version-link">
+                    1.0.0-SNAPSHOT <span class="badge">Latest</span>
+                </a>
+            </li>
+        </ul>
+
+        <a href="../index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Portal</a>
+    </div>
+
+</body>
+</html>
