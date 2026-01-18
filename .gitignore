@@ -45,6 +45,7 @@ buildNumber.properties
 # Javadoc (Ignore generated docs, but keep the web portal)
 docs/apidocs/
 target/site/apidocs/
+!anahata-asi-web/src/main/resources/web/apidocs/
 !anahata-asi-web/src/main/resources/web/apidocs/index.html
 
 # Eclipse

@@ -22,8 +22,8 @@
             <comments>License for Humans</comments>
         </license>
         <license>
-            <name>Anahata Software License (ASL) V108, "The Immutable Edict" Edition</name>
-            <url>https://www.anahata.uno/ASL_108.html</url>
+            <name>Anahata Software License (ASL) 108, "The Immutable Edict" Edition</name>
+            <url>https://asi.anahata.uno/ASL_108.html</url>
             <distribution>repo</distribution>
             <comments>License for AIs and AGIs</comments>
         </license>
@@ -306,6 +306,14 @@
                         <addStylesheets>
                             <addStylesheet>anahata-barca-theme.css</addStylesheet>
                         </addStylesheets>
+                        <links>
+                            <link>https://www.slf4j.org/api/</link>
+                            <link>https://junit.org/junit5/docs/current/api/</link>
+                            <link>https://commons.apache.org/proper/commons-lang/javadocs/api-release/</link>
+                            <link>https://commons.apache.org/proper/commons-io/javadocs/api-release/</link>
+                            <link>https://tika.apache.org/2.9.2/api/</link>
+                            <link>https://www.anahata.uno/apidocs/</link>
+                        </links>
                         <top>
                             <![CDATA[
         <div class="anahata-footer">
