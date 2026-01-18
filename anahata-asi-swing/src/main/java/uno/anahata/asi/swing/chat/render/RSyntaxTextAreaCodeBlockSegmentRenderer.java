@@ -17,10 +17,20 @@ import uno.anahata.asi.swing.chat.ChatPanel;
  */
 public class RSyntaxTextAreaCodeBlockSegmentRenderer extends AbstractCodeBlockSegmentRenderer {
 
+    /**
+     * Constructs a new RSyntaxTextAreaCodeBlockSegmentRenderer.
+     *
+     * @param chatPanel The chat panel instance.
+     * @param initialContent The initial code content.
+     * @param language The programming language.
+     */
     public RSyntaxTextAreaCodeBlockSegmentRenderer(ChatPanel chatPanel, String initialContent, String language) {
         super(chatPanel, initialContent, language);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected JComponent createInnerComponent() {
         RSyntaxTextArea textArea = new RSyntaxTextArea(currentContent);
@@ -39,21 +49,36 @@ public class RSyntaxTextAreaCodeBlockSegmentRenderer extends AbstractCodeBlockSe
         return textArea;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void updateComponentContent(String content) {
         ((RSyntaxTextArea) innerComponent).setText(content);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected String getCurrentContentFromComponent() {
         return ((RSyntaxTextArea) innerComponent).getText();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void setComponentEditable(boolean editable) {
         ((RSyntaxTextArea) innerComponent).setEditable(editable);
     }
 
+    /**
+     * Maps a language string to an RSyntaxTextArea syntax style constant.
+     * 
+     * @param language The language string.
+     * @return The corresponding syntax style constant.
+     */
     private String mapLanguageToSyntaxStyle(String language) {
         if (language == null) return SyntaxConstants.SYNTAX_STYLE_NONE;
         return switch (language.toLowerCase()) {

@@ -8,6 +8,7 @@ import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.util.Objects;
+import java.util.function.Consumer;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -16,6 +17,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.text.EditorKit;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.swing.chat.ChatPanel;
 import uno.anahata.asi.swing.chat.render.editorkit.EditorKitProvider;
@@ -29,14 +31,34 @@ import uno.anahata.asi.swing.internal.SwingUtils;
  * @author anahata
  */
 @Slf4j
-@Getter
 public abstract class AbstractCodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
 
+    /** The programming language of the code block. */
+    @Getter
     protected final String language;
+    
+    /** The inner component that actually displays/edits the code. */
+    @Getter
     protected JComponent innerComponent;
+    
+    /** Whether the code block is currently in edit mode. */
+    @Getter
     protected boolean editable = false;
+    
+    /** The button used to toggle between edit and view modes. */
     protected JButton editButton;
+    
+    /** Callback triggered when the user clicks 'Save' after editing. */
+    @Setter
+    private Consumer<String> onSave;
 
+    /**
+     * Constructs a new AbstractCodeBlockSegmentRenderer.
+     *
+     * @param chatPanel The chat panel instance.
+     * @param initialContent The initial code content.
+     * @param language The programming language.
+     */
     public AbstractCodeBlockSegmentRenderer(ChatPanel chatPanel, String initialContent, String language) {
         super(chatPanel, initialContent);
         this.language = language;
@@ -66,6 +88,11 @@ public abstract class AbstractCodeBlockSegmentRenderer extends AbstractTextSegme
         return new RSyntaxTextAreaCodeBlockSegmentRenderer(chatPanel, content, language);
     }
 
+    /**
+     * {@inheritDoc}
+     * Renders the code block with a header containing the language, a copy button,
+     * and an edit toggle.
+     */
     @Override
     public boolean render() {
         boolean changed = hasContentChanged();
@@ -135,19 +162,37 @@ public abstract class AbstractCodeBlockSegmentRenderer extends AbstractTextSegme
         return changed;
     }
 
-    @Override
-    public JComponent getComponent() {
-        return component;
-    }
-
+    /**
+     * Creates the inner component that will display or edit the code.
+     * 
+     * @return The inner JComponent.
+     */
     protected abstract JComponent createInnerComponent();
     
+    /**
+     * Updates the content of the inner component.
+     * 
+     * @param content The new code content.
+     */
     protected abstract void updateComponentContent(String content);
     
+    /**
+     * Retrieves the current content from the inner component.
+     * 
+     * @return The current code content.
+     */
     protected abstract String getCurrentContentFromComponent();
     
+    /**
+     * Sets the editability of the inner component.
+     * 
+     * @param editable True to enable editing, false to disable.
+     */
     protected abstract void setComponentEditable(boolean editable);
 
+    /**
+     * Toggles the edit mode of the renderer.
+     */
     protected void toggleEdit() {
         editable = !editable;
         setComponentEditable(editable);
@@ -155,12 +200,18 @@ public abstract class AbstractCodeBlockSegmentRenderer extends AbstractTextSegme
         
         if (!editable) {
             currentContent = getCurrentContentFromComponent();
+            if (onSave != null) {
+                onSave.accept(currentContent);
+            }
         }
         
         component.revalidate();
         component.repaint();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean matches(TextSegmentDescriptor descriptor) {
         return descriptor.type() == TextSegmentType.CODE && Objects.equals(language, descriptor.language());

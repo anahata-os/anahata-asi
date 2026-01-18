@@ -53,12 +53,6 @@ public abstract class AbstractTextSegmentRenderer {
     public abstract boolean render();
 
     /**
-     * Returns the actual Swing component managed by this renderer.
-     * @return The JComponent.
-     */
-    public abstract JComponent getComponent();
-
-    /**
      * Updates the current content of this segment. The next call to {@link #render()}
      * will reflect this new content.
      *

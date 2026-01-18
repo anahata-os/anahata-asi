@@ -13,7 +13,7 @@ This document provides the high-level strategic overview for the entire `anahata
 
 The project's strategy is based on the "Flywheel" model, designed to build a powerful ecosystem around a core commercial engine.
 
--   **Engine (`anahata-asi`):** This is the core commercial framework, containing the model-agnostic logic, a rich domain model, and the powerful V2 tool framework. It is licensed under a dual AGPLv3 / Commercial License model.
+-   **Engine (`anahata-asi`):** This is the core commercial framework, containing the model-agnostic logic, a rich domain model, and the powerful V2 tool framework. It is **dual-licensed** under the AGPLv3 (for open-source use) and the Anahata Software License (ASL) v108 (for commercial/private use).
 -   **Showcase (`anahata-netbeans-ai`):** This is the free, open-source NetBeans plugin that serves as the primary showcase for the engine's capabilities. It drives community adoption, provides real-world validation, and demonstrates the power of deep IDE integration.
 
 ## 2. Log of the Singularity (Recent Milestones)

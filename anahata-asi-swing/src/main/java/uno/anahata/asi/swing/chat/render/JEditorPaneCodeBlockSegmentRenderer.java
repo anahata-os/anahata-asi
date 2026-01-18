@@ -21,13 +21,27 @@ import uno.anahata.asi.swing.chat.ChatPanel;
 @Slf4j
 public class JEditorPaneCodeBlockSegmentRenderer extends AbstractCodeBlockSegmentRenderer {
 
+    /** The EditorKit used for syntax highlighting. */
     private final EditorKit kit;
 
+    /**
+     * Constructs a new JEditorPaneCodeBlockSegmentRenderer.
+     *
+     * @param chatPanel The chat panel instance.
+     * @param initialContent The initial code content.
+     * @param language The programming language.
+     * @param kit The EditorKit to use.
+     */
     public JEditorPaneCodeBlockSegmentRenderer(ChatPanel chatPanel, String initialContent, String language, EditorKit kit) {
         super(chatPanel, initialContent, language);
         this.kit = kit;
     }
 
+    /**
+     * {@inheritDoc}
+     * Creates a JEditorPane configured with the provided EditorKit and custom
+     * preferred size calculation to handle height correctly.
+     */
     @Override
     protected JComponent createInnerComponent() {
         JEditorPane codeEditor = new JEditorPane() {
@@ -46,10 +60,12 @@ public class JEditorPaneCodeBlockSegmentRenderer extends AbstractCodeBlockSegmen
                         if (v != null) {
                             // Use a large width to avoid wrapping during height calculation
                             v.setSize(3000, Integer.MAX_VALUE); 
-                            int lastOffset = getDocument().getLength();
-                            if (lastOffset > 0) {
-                                // modelToView is the most reliable way to find the actual bottom of the text
-                                Rectangle r = modelToView(lastOffset);
+                            
+                            int length = getDocument().getLength();
+                            if (length > 0) {
+                                // modelToView is the most reliable way to find the actual bottom of the text.
+                                // We use the position of the last character.
+                                Rectangle r = modelToView(length - 1);
                                 if (r != null) {
                                     d.height = r.y + r.height + 2; // Minimal padding
                                     return d;
@@ -59,7 +75,7 @@ public class JEditorPaneCodeBlockSegmentRenderer extends AbstractCodeBlockSegmen
                             d.height = (int) v.getPreferredSpan(View.Y_AXIS);
                         }
                     } catch (Exception e) {
-                        // Fallback to super.getPreferredSize()
+                        log.error("Failed to calculate preferred size for JEditorPane", e);
                     }
                 }
                 return d;
@@ -75,16 +91,29 @@ public class JEditorPaneCodeBlockSegmentRenderer extends AbstractCodeBlockSegmen
         return codeEditor;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void updateComponentContent(String content) {
-        ((JEditorPane) innerComponent).setText(content);
+        try {
+            ((JEditorPane) innerComponent).setText(content);
+        } catch (Exception e) {
+            log.error("Failed to update JEditorPane content", e);
+        }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected String getCurrentContentFromComponent() {
         return ((JEditorPane) innerComponent).getText();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void setComponentEditable(boolean editable) {
         ((JEditorPane) innerComponent).setEditable(editable);

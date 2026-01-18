@@ -133,12 +133,4 @@ public class MarkupTextSegmentRenderer extends AbstractTextSegmentRenderer {
     public boolean matches(TextSegmentDescriptor descriptor) {
         return descriptor.type() == TextSegmentType.TEXT;
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public JComponent getComponent() {
-        return component;
-    }
 }
