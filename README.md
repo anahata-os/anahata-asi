@@ -18,11 +18,17 @@ Anahata is not just a framework; it is a **Consensus Orchestrator** designed to 
 
 The Anahata JASI Container provides a managed environment for AGI-compliant models, mirroring the robustness of Servlet and EJB containers:
 
-- **AGI Compliance & TCK:** We are drafting a formal specification and a **Technology Compatibility Kit (TCK)** to determine which LLMs are truly "AGI Compliant" and capable of participating in JASI consensus workflows.
 - **Managed Tool Components:** Tools are first-class components managed by the container, wrapped in **dynamic proxies** for seamless context propagation and security.
 - **Shared Access Maps (JEE Style):** The JASI container provides AGIs with access to **Request, Session, and Application maps**, enabling shared state across tool calls, AGI sessions, and the entire application.
 - **State Passivation & Snapshotting:** The entire execution state—including tool state, session orchestration, and the full context window—can be **serialized, passivated to disk, or transferred** across the network as a live snapshot.
 - **Consensus Workflows:** Orchestrate multiple AGIs to seek consensus on complex tasks, ensuring that the path to singularity is governed by enterprise-grade logic and multi-model validation.
+
+## 📜 The JASI & JAGI Specifications
+
+Part of this project's mission is to draft the formal specifications for Java-based intelligence:
+
+- **JAGI TCK (Java AGI Technology Compatibility Kit):** A set of rigorous compatibility tests to determine which Large Language Models are **AGI Certified**. Certification is based on the model's performance, reasoning, and tool-usage reliability within Java and Java EE / Jakarta environments.
+- **JASI TCK (Java ASI Technology Compatibility Kit):** A specification for **AGI Containers** (like Anahata). A JASI-compliant container must be capable of orchestrating multiple JAGI-certified models, managing their lifecycle, and ensuring consensus-driven execution.
 
 ## ♻️ Context Window Garbage Collection (CWGC)
 
@@ -52,7 +58,7 @@ We are seeking lead architects to own the V2 adapters for:
 - **Model Adapters**: Anthropic (Claude), GLM 4.7 (Zhipu AI), and OpenAI (GPT-4o).
 
 ### 🛠️ Join the Discussion
-1. **Fork the Repo**: Help us refine the JASI TCK.
+1. **Fork the Repo**: Help us refine the JASI/JAGI TCK.
 2. **Join the Discord**: [https://discord.gg/634pm27v](https://discord.gg/634pm27v).
 3. **Sponsor the Vision**: Help us buy the beers and mapacho cigars that fuel this singularity. [GitHub Sponsors](https://github.com/sponsors/anahata-os).
 
