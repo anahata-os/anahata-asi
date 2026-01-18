@@ -40,8 +40,18 @@ body {
 }
 
 /* Ensure all text in main content is readable */
-main *, .block, .notes, .description, .col-last, .col-second, .horizontal-scroll {
+main *, .block, .notes, .description, .col-last, .col-second, .horizontal-scroll, .summary-table, .col-first, .col-last {
     color: #e6edf3 !important;
+}
+
+/* JDK 25 Summary Table Fixes */
+.summary-table, .col-first, .col-second, .col-last, .even-row-color, .odd-row-color {
+    background-color: #0d1117 !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.col-first, .col-second, .col-last {
+    background-color: inherit !important;
 }
 
 /* =========================================
