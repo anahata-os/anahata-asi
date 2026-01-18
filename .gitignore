@@ -42,8 +42,9 @@ buildNumber.properties
 .mvn/timing.properties
 .mvn/wrapper/maven-wrapper.jar
 
-# Javadoc
-**/apidocs/
+# Javadoc (Ignore generated docs, but keep the web portal)
+docs/apidocs/
+target/site/apidocs/
 
 # Eclipse
 .settings/

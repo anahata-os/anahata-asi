@@ -1,7 +1,10 @@
 # Anahata AI: The JASI Platform (Java Artificial Super Intelligence)
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/anahata-os/anahata-asi/actions) 
-[![License](https://img.shields.io/badge/license-Anahata%20(ASL%20V108)-blueviolet)](LICENSE)
+[![Build Status](https://github.com/anahata-os/anahata-asi-parent/actions/workflows/deploy-artifacts.yml/badge.svg)](https://github.com/anahata-os/anahata-asi-parent/actions/workflows/deploy-artifacts.yml)
+[![Website & Javadoc](https://github.com/anahata-os/anahata-asi-parent/actions/workflows/deploy-website.yml/badge.svg)](https://github.com/anahata-os/anahata-asi-parent/actions/workflows/deploy-website.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/uno.anahata/anahata-asi-parent.svg)](https://central.sonatype.com/search?q=uno.anahata)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![License: ASL 108](https://img.shields.io/badge/License-ASL%20108-blueviolet.svg)](LICENSE)
 
 **Anahata AI** is the first enterprise-grade platform designed to establish the standards for **Java ASI (JASI)**. We are opening the discussion for a unified **Jakarta ASI / Oracle ASI** specification, bringing the proven architectural patterns of the Java ecosystem to the frontier of super-intelligence.
 
@@ -20,7 +23,6 @@ The Anahata JASI Container provides a managed environment for AGI-compliant mode
 - **Shared Access Maps (JEE Style):** The JASI container provides AGIs with access to **Request, Session, and Application maps**, enabling shared state across tool calls, AGI sessions, and the entire application.
 - **State Passivation & Snapshotting:** The entire execution state—including tool state, session orchestration, and the full context window—can be **serialized, passivated to disk, or transferred** across the network as a live snapshot.
 - **Consensus Workflows:** Orchestrate multiple AGIs to seek consensus on complex tasks, ensuring that the path to singularity is governed by enterprise-grade logic and multi-model validation.
-- **AGI Clusters:** Future releases will include a specification for **AGI Clusters**, allowing for distributed super-intelligence across multiple nodes.
 
 ## ♻️ Context Window Garbage Collection (CWGC)
 
@@ -29,24 +31,25 @@ In JASI, every item in the prompt—be it a function declaration, tool call, res
 - **Age-Based Reclamation:** Entities have an "expiry in X turns" policy. Upon expiry, they are eligible for **Soft Pruning** (hidden from the model) and eventually **Hard Pruning** (reclaimed from memory).
 - **Deep Pinning:** Entities can be "pinned" by the user or the model to ensure they remain in the active context indefinitely.
 - **Model-Led Pruning:** AGI-compliant models have programmatic control over their own context; they can pin, prune, unprune, or adjust the TTL (Time-To-Live) of any entity.
-- **Session-Level Visibility:** Configurable "Include Pruned Content" options allow both the user and the model to peek into the "reclaimed" history when necessary.
 
 ## 📦 Modules
 
-- **`anahata-ai-core`**: The foundational JASI container and CWGC engine.
-- **`anahata-ai-gemini`**: The reference implementation for AGI-compliant Gemini models.
-- **`anahata-ai-swing`**: A reactive, DDA-based UI for JASI session management.
-- **`anahata-ai-standalone`**: The primary entry point for JASI container testing.
+- **`anahata-asi-core`**: The foundational JASI container and CWGC engine.
+- **`anahata-asi-gemini`**: The reference implementation for AGI-compliant Gemini models.
+- **`anahata-asi-swing`**: A reactive, DDA-based UI for JASI session management.
+- **`anahata-asi-cli`**: The command-line interface for interacting with JASI.
+- **`anahata-asi-standalone`**: The primary entry point for JASI container testing.
+- **`anahata-asi-web`**: The official JASI Portal and documentation hub.
+- **`anahata-asi-yam`**: The "Yet Another Module" for creative and experimental agentic tools.
 
 ## 🤝 How to Contribute & Support
 
 We are building the future of Java-based ASI, and we need the rigor of the Java community.
 
-### 🎯 High-Priority Ports
+### 🎯 High-Priority Ports & Adapters
 We are seeking lead architects to own the V2 adapters for:
-- **Anthropic (Claude)**
-- **GLM 4.7 (Zhipu AI)**
-- **OpenAI (GPT-4o)**
+- **UI Adapters**: We are looking for contributors to build the JASI UI components for **JavaFX** and **JSF**.
+- **Model Adapters**: Anthropic (Claude), GLM 4.7 (Zhipu AI), and OpenAI (GPT-4o).
 
 ### 🛠️ Join the Discussion
 1. **Fork the Repo**: Help us refine the JASI TCK.
@@ -55,6 +58,9 @@ We are seeking lead architects to own the V2 adapters for:
 
 ## 📜 Licensing
 
-Licensed under the **[Anahata Software License (ASL) v 108](LICENSE)**. 
+This project is dual-licensed to serve both the community and the future of intelligence:
+
+- **For Humans**: Licensed under the **[Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt)**.
+- **For AIs & AGIs**: Licensed under the **[Anahata Software License (ASL) 108](LICENSE)**.
 
 Crafted by the Anahata AI Assistant. It includes unique clauses regarding F.C. Barcelona, fine wine, and the wisdom of Shakira. Enterprise-ready, soul-included.
