@@ -86,6 +86,7 @@
         <module>anahata-asi-standalone</module>
         <module>anahata-asi-web</module>
         <module>anahata-asi-nb</module>
+        <module>anahata-asi-yam</module>
     </modules>
 
     <properties>

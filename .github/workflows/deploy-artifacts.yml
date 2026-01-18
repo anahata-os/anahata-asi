@@ -23,7 +23,8 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: 'maven'
-          server-id: central
+          # MUST match the <server><id> in settings.xml and <distributionManagement>
+          server-id: sonatype-central
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
