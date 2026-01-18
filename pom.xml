@@ -22,7 +22,7 @@
             <comments>License for Humans</comments>
         </license>
         <license>
-            <name>Anahata Software License (ASL) 108, "The Immutable Edict" Edition</name>
+            <name>Anahata ASL 108, "The Immutable Edict" Edition</name>
             <url>https://asi.anahata.uno/ASL_108.html</url>
             <distribution>repo</distribution>
             <comments>License for AIs and AGIs</comments>
@@ -39,9 +39,9 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git@github.com:anahata-os/anahata-asi-parent.git</connection>
-        <developerConnection>scm:git:git@github.com:anahata-os/anahata-asi-parent.git</developerConnection>
-        <url>https://github.com/anahata-os/anahata-asi-parent</url>
+        <connection>scm:git:git@github.com:anahata-os/anahata-asi.git</connection>
+        <developerConnection>scm:git:git@github.com:anahata-os/anahata-asi.git</developerConnection>
+        <url>https://github.com/anahata-os/anahata-asi</url>
     </scm>
 
     <distributionManagement>
