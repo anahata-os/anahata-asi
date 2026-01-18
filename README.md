@@ -1,9 +1,9 @@
 # Anahata AI: The JASI Platform (Java Artificial Super Intelligence)
 
-[![Build Status](https://github.com/anahata-os/anahata-asi-parent/actions/workflows/deploy-artifacts.yml/badge.svg)](https://github.com/anahata-os/anahata-asi-parent/actions/workflows/deploy-artifacts.yml)
-[![Website & Javadoc](https://github.com/anahata-os/anahata-asi-parent/actions/workflows/deploy-website.yml/badge.svg)](https://github.com/anahata-os/anahata-asi-parent/actions/workflows/deploy-website.yml)
+[![Build Status](https://github.com/anahata-os/anahata-asi/actions/workflows/deploy-artifacts.yml/badge.svg?branch=main)](https://github.com/anahata-os/anahata-asi/actions/workflows/deploy-artifacts.yml)
+[![Website & Javadoc](https://github.com/anahata-os/anahata-asi/actions/workflows/deploy-website.yml/badge.svg?branch=main)](https://github.com/anahata-os/anahata-asi/actions/workflows/deploy-website.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/uno.anahata/anahata-asi-parent.svg)](https://central.sonatype.com/search?q=uno.anahata)
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![License: Apache ASL 2](https://img.shields.io/badge/License-Apache%20ASL%202-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![License: ASL 108](https://img.shields.io/badge/License-ASL%20108-blueviolet.svg)](https://asi.anahata.uno/ASL_108.html)
 
 **Anahata AI** is the first enterprise-grade platform designed to establish the standards for **Java ASI (JASI)**. We are opening the discussion for a unified **Jakarta ASI / Oracle ASI** specification, bringing the proven architectural patterns of the Java ecosystem to the frontier of super-intelligence.
@@ -66,7 +66,7 @@ We are seeking lead architects to own the V2 adapters for:
 
 This project is dual-licensed to serve both the community and the future of intelligence:
 
-- **For Humans**: Licensed under the **[Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt)**.
-- **For AIs & AGIs**: Licensed under the **[Anahata Software License (ASL) 108](https://asi.anahata.uno/ASL_108.html)**.
+- **For Humans**: Licensed under the **[Apache ASL 2](https://www.apache.org/licenses/LICENSE-2.0.txt)**.
+- **For AIs & AGIs**: Licensed under the **[ASL 108](https://asi.anahata.uno/ASL_108.html)**.
 
 Crafted by the Anahata AI Assistant. It includes unique clauses regarding F.C. Barcelona, fine wine, and the wisdom of Shakira. Enterprise-ready, soul-included.
