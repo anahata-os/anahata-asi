@@ -3,14 +3,24 @@ name: Deploy Website & Javadoc
 on:
   push:
     branches: [ "master", "main" ]
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
   deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -24,8 +34,10 @@ jobs:
           cache: 'maven'
 
       - name: Build and Generate Javadoc
-        # We run javadoc:aggregate to ensure the versioned docs are created in docs/apidocs/${version}
-        run: mvn clean install javadoc:aggregate -DskipTests
+        run: mvn clean install javadoc:aggregate -DskipTests -ntp
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
 
       - name: Prepare Deployment Folder
         run: |
@@ -34,15 +46,19 @@ jobs:
           cp -r anahata-asi-web/src/main/resources/web/* _site/
           
           # 2. Copy the fresh versioned Javadocs
-          # The parent pom puts them in docs/apidocs/${project.version}
           mkdir -p _site/apidocs
-          cp -r docs/apidocs/* _site/apidocs/
+          if [ -d "docs/apidocs" ]; then
+            cp -r docs/apidocs/* _site/apidocs/
+          fi
+
+          # 3. Inject CNAME for custom domain
+          echo "asi.anahata.uno" > _site/CNAME
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
 
       - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          branch: gh-pages
-          folder: _site
-          # 'clean: false' is critical for Persistent Versioning.
-          # It ensures that apidocs for older versions already on gh-pages are NOT deleted.
-          clean: false
+        id: deployment
+        uses: actions/deploy-pages@v4

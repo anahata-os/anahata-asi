@@ -6,7 +6,7 @@ package uno.anahata.asi;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.toolkit.Java;
-import uno.anahata.asi.util.NetBeansModuleUtils;
+import uno.anahata.asi.nb.module.NetBeansModuleUtils;
 
 /**
  * NetBeans-specific configuration for the Anahata ASI.

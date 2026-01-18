@@ -12,7 +12,7 @@ import org.openide.awt.ActionRegistration;
 import org.openide.windows.IOProvider;
 import org.openide.windows.InputOutput;
 import org.openide.windows.OutputWriter;
-import uno.anahata.asi.util.NetBeansModuleUtils;
+import uno.anahata.asi.nb.module.NetBeansModuleUtils;
 
 /**
  * Action to display the Anahata ASI V2 classpath in a NetBeans output tab.

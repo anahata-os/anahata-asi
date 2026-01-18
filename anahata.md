@@ -30,6 +30,7 @@ This project uses a set of key documents to guide development. For detailed info
 
 -   **`v2-commanders-briefing.md`**: Located in the project root, this document contains the overall mission objectives, V2 migration plan, and high-priority tactical goals.
 -   **`anahata-asi-core/anahata.md`**: Contains the detailed technical vision and architectural summary for the core framework module.
+-   **`ci.md`**: Contains the CI/CD strategy, website deployment details, and Javadoc configuration notes.
 
 ## 4. Coding Principles (Applies to ALL Modules)
 
@@ -54,3 +55,10 @@ The V2 architecture implements a "Deep Pinning" logic in `AbstractPart.isEffecti
 
 -   **High-Quality Scaling:** All image scaling (thumbnails and icons) must use `RenderingHints.VALUE_INTERPOLATION_BICUBIC` and `RenderingHints.VALUE_ANTIALIAS_ON`.
 -   **`IconUtils`:** Use the `BufferedImage`-based scaling in `IconUtils.getIcon` to ensure sharp, professional-grade icons across the entire Swing UI.
+
+## 7. Dependency Isolation (NBM vs. Standalone)
+
+-   **`commons-io`**: While `tika-core` pulls this in automatically in standalone mode, it must be explicitly bundled in the NetBeans Module (NBM) to avoid `NoClassDefFoundError`. 
+-   **Classloader Behavior**: If not declared explicitly in the NBM's POM, the NetBeans isolating classloader appears to "think" the module is attempting to access the `commons-io` version bundled with the `maven-embedder` module, which is not exported. 
+-   **NetBeans 280 Context**: We haven't verified if NetBeans RELEASE280 provides its own `commons-io` library module. This behavior is a change from V1, where this explicit declaration wasn't required, and the exact root cause remains under investigation.
+-   **Maven Embedder**: The IDE's Maven Embedder uses its own internal `commons-io`. Our bundled version is isolated and does not interfere with IDE operations.

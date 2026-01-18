@@ -13,6 +13,7 @@ import org.openide.awt.ActionReference;
 import org.openide.windows.TopComponent;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.gemini.GeminiAiProvider;
+import uno.anahata.asi.nb.mine.NetBeansEditorKitProvider;
 import uno.anahata.asi.swing.chat.ChatPanel;
 import uno.anahata.asi.swing.chat.SwingChatConfig;
 
@@ -49,6 +50,7 @@ public final class AgiTopComponent extends TopComponent implements Externalizabl
             // V2 Initialization logic using shared AsiConfig
             AsiConfig asiConfig = AnahataInstaller.getAsiConfig();
             SwingChatConfig chatConfig = new SwingChatConfig(asiConfig, sessionId);
+            chatConfig.setEditorKitProvider(new NetBeansEditorKitProvider());
             chatConfig.getProviderClasses().add(GeminiAiProvider.class);
             
             Chat chat = new Chat(chatConfig);

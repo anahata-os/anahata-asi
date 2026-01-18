@@ -74,7 +74,6 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
         if (component == null) {
             // Initial render: create the inner component
             EditorKitProvider editorKitProvider = chatPanel.getChatConfig().getEditorKitProvider();
-
             if (editorKitProvider != null) {
                 try {
                     EditorKit kit = editorKitProvider.getEditorKitForLanguage(language);

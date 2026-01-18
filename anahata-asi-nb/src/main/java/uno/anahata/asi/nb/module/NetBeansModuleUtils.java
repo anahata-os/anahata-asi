@@ -1,7 +1,7 @@
 /*
  * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
  */
-package uno.anahata.asi.util;
+package uno.anahata.asi.nb.module;
 
 import java.io.File;
 import java.lang.reflect.Method;
@@ -105,7 +105,7 @@ public final class NetBeansModuleUtils {
         return null;
     }
 
-    private static List<File> getAllModuleJarsUsingReflection(ModuleInfo thisModule) {
+    public static List<File> getAllModuleJarsUsingReflection(ModuleInfo thisModule) {
         try {
             Method getAllJarsMethod = thisModule.getClass().getMethod("getAllJars");
             getAllJarsMethod.setAccessible(true);
