@@ -24,15 +24,12 @@ public class NetBeansChatConfig extends SwingChatConfig{
 
     public NetBeansChatConfig(AsiContainer asiConfig, String sessionId) {
         super(asiConfig, sessionId);
-        addExtraToolClassess();
+        getToolClasses().add(Maven.class);
+        getToolClasses().add(Projects.class);
+        getToolClasses().add(CodeModel.class);
         setEditorKitProvider(new NetBeansEditorKitProvider());
         getProviderClasses().add(GeminiAiProvider.class);
     }
     
-    private void addExtraToolClassess() {
-        getToolClasses().add(Maven.class);
-        getToolClasses().add(Projects.class);
-        getToolClasses().add(CodeModel.class);
-    }
     
 }

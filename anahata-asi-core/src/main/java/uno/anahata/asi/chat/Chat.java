@@ -20,6 +20,7 @@ import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AiExecutors;
+import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.context.ContextManager;
 import uno.anahata.asi.model.core.AbstractMessage;
 import uno.anahata.asi.model.core.AbstractModelMessage;
@@ -61,7 +62,7 @@ public class Chat extends BasicPropertyChangeSource {
     private final ToolManager toolManager;
     private final ContextManager contextManager;
     private final ResourceManager resourceManager;
-    private final ExecutorService executor;
+    private transient ExecutorService executor;
     private final StatusManager statusManager;
     private final List<AbstractAiProvider> providers = new ArrayList<>();
 
@@ -73,12 +74,12 @@ public class Chat extends BasicPropertyChangeSource {
     /**
      * A thread-safe flag indicating if the main chat loop is currently active.
      */
-    private volatile boolean running = false;
+    private transient volatile boolean running = false;
 
     /**
      * The thread currently executing the chat turn. Used for interruption.
      */
-    private volatile Thread currentExecutionThread;
+    private transient volatile Thread currentExecutionThread;
 
     /**
      * A message that has been submitted via {@link #sendMessage(InputUserMessage)}
@@ -115,7 +116,7 @@ public class Chat extends BasicPropertyChangeSource {
      * A ReentrantLock to synchronize access to shared mutable state (e.g.,
      * `running`, `stagedUserMessage`).
      */
-    private final ReentrantLock runningLock = new ReentrantLock();
+    private transient ReentrantLock runningLock = new ReentrantLock();
 
     /**
      * A high-level summary of the conversation's current state or topic.
@@ -154,6 +155,29 @@ public class Chat extends BasicPropertyChangeSource {
         }
         
         config.getAsiConfig().register(this);
+    }
+
+    /**
+     * Re-binds this chat session to an AsiContainer after deserialization.
+     * This method re-initializes transient fields and propagates the container
+     * reference to the ChatConfig.
+     * 
+     * @param container The AsiContainer to bind to.
+     */
+    public void rebind(@NonNull AsiContainer container) {
+        log.info("Rebinding chat session {} to container {}", config.getSessionId(), container.getHostApplicationId());
+        this.config.rebind(container);
+        this.executor = AiExecutors.newCachedThreadPoolExecutor(config.getSessionId());
+        this.runningLock = new ReentrantLock();
+        this.running = false;
+        this.currentExecutionThread = null;
+    }
+
+    /**
+     * Saves this chat session to the application's session directory.
+     */
+    public void save() {
+        config.getAsiConfig().saveSession(this);
     }
 
     /**

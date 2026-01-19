@@ -31,7 +31,7 @@ import uno.anahata.asi.swing.icons.SearchIcon;
  * 
  * @author anahata-gemini-pro-2.5
  */
-public class SessionCard extends JPanel {
+public class ChatCard extends JPanel {
 
     private final Chat chat;
     private final AsiContainerPanel.SessionController controller;
@@ -39,7 +39,7 @@ public class SessionCard extends JPanel {
     private final JLabel summaryLabel;
     private final PropertyChangeListener chatListener = this::handleChatChange;
 
-    public SessionCard(@NonNull Chat chat, @NonNull AsiContainerPanel.SessionController controller) {
+    public ChatCard(@NonNull Chat chat, @NonNull AsiContainerPanel.SessionController controller) {
         this.chat = chat;
         this.controller = controller;
 

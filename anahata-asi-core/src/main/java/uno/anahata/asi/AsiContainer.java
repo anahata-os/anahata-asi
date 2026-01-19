@@ -10,9 +10,11 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.internal.kryo.KryoUtils;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 
 /**
@@ -29,7 +31,7 @@ import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 @Slf4j
 public class AsiContainer extends BasicPropertyChangeSource {
     private final String hostApplicationId;
-    private final Preferences preferences;
+    private final AsiContainerPreferences preferences;
     private final List<Chat> activeChats = new ArrayList<>();
 
     /**
@@ -40,7 +42,7 @@ public class AsiContainer extends BasicPropertyChangeSource {
      */
     public AsiContainer(String hostApplicationId) {
         this.hostApplicationId = hostApplicationId;
-        this.preferences = Preferences.load(this);
+        this.preferences = AsiContainerPreferences.load(this);
     }
 
     /**
@@ -119,6 +121,81 @@ public class AsiContainer extends BasicPropertyChangeSource {
      */
     public void onChatCreated(Chat chat) {
         // Default implementation does nothing.
+    }
+
+    // --- SESSION PERSISTENCE ---
+
+    /**
+     * Gets the directory where chat sessions are stored for this application.
+     * 
+     * @return The sessions directory.
+     */
+    public Path getSessionsDir() {
+        return getAppDirSubDir("sessions");
+    }
+
+    /**
+     * Gets the directory where disposed chat sessions are moved.
+     * 
+     * @return The disposed sessions directory.
+     */
+    public Path getDisposedSessionsDir() {
+        Path dir = getSessionsDir().resolve("disposed");
+        try {
+            Files.createDirectories(dir);
+        } catch (IOException e) {
+            log.error("Could not create disposed sessions directory: {}", dir, e);
+        }
+        return dir;
+    }
+
+    /**
+     * Serializes and saves a chat session to the sessions directory.
+     * 
+     * @param chat The chat session to save.
+     */
+    public void saveSession(Chat chat) {
+        Path file = getSessionsDir().resolve(chat.getConfig().getSessionId() + ".kryo");
+        try {
+            log.info("Saving session {} to {}", chat.getConfig().getSessionId(), file);
+            byte[] data = KryoUtils.serialize(chat);
+            Files.write(file, data);
+        } catch (IOException e) {
+            log.error("Failed to save session: {}", chat.getConfig().getSessionId(), e);
+        }
+    }
+
+    /**
+     * Scans the sessions directory and loads all serialized chat sessions.
+     * This is typically called during application startup.
+     */
+    public void loadSessions() {
+        Path sessionsDir = getSessionsDir();
+        if (!Files.exists(sessionsDir)) return;
+
+        try (Stream<Path> stream = Files.list(sessionsDir)) {
+            stream.filter(p -> p.toString().endsWith(".kryo"))
+                  .forEach(this::loadSession);
+        } catch (IOException e) {
+            log.error("Failed to list sessions in {}", sessionsDir, e);
+        }
+    }
+
+    /**
+     * Loads a single chat session from a file and registers it.
+     * 
+     * @param path The path to the serialized session file.
+     */
+    private void loadSession(Path path) {
+        try {
+            log.info("Loading session from {}", path);
+            byte[] data = Files.readAllBytes(path);
+            Chat chat = KryoUtils.deserialize(data, Chat.class);
+            chat.rebind(this);
+            register(chat);
+        } catch (Exception e) {
+            log.error("Failed to load session from {}", path, e);
+        }
     }
 
     // --- STATIC METHODS FOR GLOBAL ACCESS ---

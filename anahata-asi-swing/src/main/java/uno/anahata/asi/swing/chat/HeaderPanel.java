@@ -203,26 +203,23 @@ public class HeaderPanel extends JPanel {
     }
 
     private void saveSession() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Save Chat Session");
-        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
-            File file = fileChooser.getSelectedFile();
-            new SwingTask<>(this, "Save Session", () -> {
-                byte[] data = KryoUtils.serialize(chat);
-                Files.write(file.toPath(), data);
-                return null;
-            }).execute();
-        }
+        new SwingTask<>(this, "Save Session", () -> {
+            chat.save();
+            return null;
+        }).execute();
     }
 
     private void loadSession() {
-        JFileChooser fileChooser = new JFileChooser();
+        JFileChooser fileChooser = new JFileChooser(chat.getConfig().getAsiConfig().getSessionsDir().toFile());
         fileChooser.setDialogTitle("Load Chat Session");
         if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             File file = fileChooser.getSelectedFile();
             new SwingTask<>(this, "Load Session", () -> {
                 byte[] data = Files.readAllBytes(file.toPath());
-                return KryoUtils.deserialize(data, Chat.class);
+                Chat loadedChat = KryoUtils.deserialize(data, Chat.class);
+                loadedChat.rebind(chat.getConfig().getAsiConfig());
+                chat.getConfig().getAsiConfig().register(loadedChat);
+                return loadedChat;
             }, loadedChat -> {
                 chatPanel.reload(loadedChat);
             }).execute();

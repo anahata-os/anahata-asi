@@ -26,6 +26,7 @@ import javax.swing.Timer;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import uno.anahata.asi.AsiContainer;
@@ -47,7 +48,7 @@ import uno.anahata.asi.swing.internal.WrapLayout;
 public class AsiContainerPanel extends JPanel {
 
     private final JTable table;
-    private final SessionsTableModel model;
+    private final ChatsTableModel model;
     private final Timer refreshTimer;
     private final JButton closeButton;
     private final JButton disposeButton;
@@ -55,17 +56,18 @@ public class AsiContainerPanel extends JPanel {
     private final JPanel cardContainer;
     private final JPanel mainView;
     private final CardLayout viewLayout;
-    private final AsiContainer asiConfig;
+    @Getter
+    private final AsiContainer asiContainer;
     
-    private final Map<Chat, SessionCard> cachedCards = new HashMap<>();
+    private final Map<Chat, ChatCard> cachedCards = new HashMap<>();
     
     @Setter
     private SessionController controller;
 
-    public AsiContainerPanel(@NonNull AsiContainer asiConfig) {
-        this.asiConfig = asiConfig;
+    public AsiContainerPanel(@NonNull AsiContainer container) {
+        this.asiContainer = container;
         // 1. Initialize Final Fields First
-        this.model = new SessionsTableModel(asiConfig);
+        this.model = new ChatsTableModel(container);
         this.table = new JTable(model);
         this.cardContainer = new JPanel(new WrapLayout(WrapLayout.LEFT, 10, 10));
         this.viewLayout = new CardLayout();
@@ -138,13 +140,13 @@ public class AsiContainerPanel extends JPanel {
 
         // Custom Renderers
         table.setDefaultRenderer(ChatStatus.class, new StatusCellRenderer());
-        table.getColumnModel().getColumn(SessionsTableModel.CONTEXT_COL).setCellRenderer(new ContextUsageCellRenderer());
+        table.getColumnModel().getColumn(ChatsTableModel.CONTEXT_COL).setCellRenderer(new ContextUsageCellRenderer());
 
         // Sorting
-        TableRowSorter<SessionsTableModel> sorter = new TableRowSorter<>(model);
+        TableRowSorter<ChatsTableModel> sorter = new TableRowSorter<>(model);
         table.setRowSorter(sorter);
-        sorter.setComparator(SessionsTableModel.CONTEXT_COL, Comparator.comparingDouble(d -> (Double) d));
-        sorter.setSortKeys(List.of(new javax.swing.RowSorter.SortKey(SessionsTableModel.SESSION_COL, javax.swing.SortOrder.ASCENDING)));
+        sorter.setComparator(ChatsTableModel.CONTEXT_COL, Comparator.comparingDouble(d -> (Double) d));
+        sorter.setSortKeys(List.of(new javax.swing.RowSorter.SortKey(ChatsTableModel.SESSION_COL, javax.swing.SortOrder.ASCENDING)));
 
         table.addMouseListener(new MouseAdapter() {
             @Override
@@ -167,15 +169,15 @@ public class AsiContainerPanel extends JPanel {
     }
 
     private void setColumnWidths() {
-        TableColumn statusColumn = table.getColumnModel().getColumn(SessionsTableModel.STATUS_COL);
+        TableColumn statusColumn = table.getColumnModel().getColumn(ChatsTableModel.STATUS_COL);
         statusColumn.setMinWidth(120);
         statusColumn.setMaxWidth(150);
 
-        TableColumn msgColumn = table.getColumnModel().getColumn(SessionsTableModel.MESSAGES_COL);
+        TableColumn msgColumn = table.getColumnModel().getColumn(ChatsTableModel.MESSAGES_COL);
         msgColumn.setMinWidth(60);
         msgColumn.setMaxWidth(80);
 
-        TableColumn ctxColumn = table.getColumnModel().getColumn(SessionsTableModel.CONTEXT_COL);
+        TableColumn ctxColumn = table.getColumnModel().getColumn(ChatsTableModel.CONTEXT_COL);
         ctxColumn.setMinWidth(80);
         ctxColumn.setMaxWidth(100);
     }
@@ -205,11 +207,11 @@ public class AsiContainerPanel extends JPanel {
     }
 
     private void refreshCards() {
-        List<Chat> activeChats = asiConfig.getActiveChats();
+        List<Chat> activeChats = asiContainer.getActiveChats();
         // 1. Remove cards for sessions no longer present
         cachedCards.keySet().removeIf(chat -> {
             if (!activeChats.contains(chat)) {
-                SessionCard card = cachedCards.get(chat);
+                ChatCard card = cachedCards.get(chat);
                 card.cleanup();
                 cardContainer.remove(card);
                 return true;
@@ -220,9 +222,9 @@ public class AsiContainerPanel extends JPanel {
         // 2. Add or update cards for current sessions
         for (int i = 0; i < activeChats.size(); i++) {
             Chat chat = activeChats.get(i);
-            SessionCard card = cachedCards.get(chat);
+            ChatCard card = cachedCards.get(chat);
             if (card == null) {
-                card = new SessionCard(chat, controller);
+                card = new ChatCard(chat, controller);
                 cachedCards.put(chat, card);
             }
             

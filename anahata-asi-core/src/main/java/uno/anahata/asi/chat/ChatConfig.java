@@ -29,7 +29,7 @@ public class ChatConfig {
 
     /** A reference to the global, application-wide configuration. */
     @NonNull
-    private transient final AsiContainer asiConfig;
+    private transient AsiContainer asiConfig;
 
     /** The unique identifier for this specific chat session. */
     @NonNull
@@ -82,6 +82,15 @@ public class ChatConfig {
     public ChatConfig(@NonNull AsiContainer asiConfig, @NonNull String sessionId) {
         this.asiConfig = asiConfig;
         this.sessionId = sessionId;
+    }
+
+    /**
+     * Re-binds this configuration to an AsiContainer after deserialization.
+     * 
+     * @param container The AsiContainer to bind to.
+     */
+    public void rebind(@NonNull AsiContainer container) {
+        this.asiConfig = container;
     }
 
     /** The default request configuration for this chat session. Lazily initialized. */

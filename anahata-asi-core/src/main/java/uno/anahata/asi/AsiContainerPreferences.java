@@ -24,7 +24,7 @@ import uno.anahata.asi.model.tool.ToolPermission;
 @Getter
 @Setter
 @Slf4j
-public class Preferences {
+public class AsiContainerPreferences {
     private static final String PREFERENCES_FILE_NAME = "preferences.kryo";
 
     /**
@@ -61,22 +61,22 @@ public class Preferences {
      * Loads the preferences for a given host application from disk.
      *
      * @param config The application-wide configuration.
-     * @return The loaded Preferences object, or a new empty one if not found or on error.
+     * @return The loaded AsiContainerPreferences object, or a new empty one if not found or on error.
      */
-    public static synchronized Preferences load(AsiContainer config) {
+    public static synchronized AsiContainerPreferences load(AsiContainer config) {
         Path preferencesFile = getPreferencesFile(config);
         if (Files.exists(preferencesFile)) {
             log.info("Loading preferences from {}", preferencesFile);
             try (InputStream is = Files.newInputStream(preferencesFile)) {
                 byte[] bytes = is.readAllBytes();
-                return KryoUtils.deserialize(bytes, Preferences.class);
+                return KryoUtils.deserialize(bytes, AsiContainerPreferences.class);
             } catch (Exception e) {
                 log.error("Error loading preferences from {}", preferencesFile, e);
             }
         } else {
             log.info("Preferences file not found at {}, creating new preferences.", preferencesFile);
         }
-        return new Preferences();
+        return new AsiContainerPreferences();
     }
 
     private static Path getPreferencesFile(AsiContainer config) {

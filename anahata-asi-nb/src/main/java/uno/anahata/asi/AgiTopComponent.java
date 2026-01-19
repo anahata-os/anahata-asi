@@ -49,12 +49,8 @@ public final class AgiTopComponent extends TopComponent implements Externalizabl
             
             // V2 Initialization logic using shared AsiContainer
             AsiContainer asiConfig = AnahataInstaller.getAsiConfig();
-            NetBeansChatConfig chatConfig = new NetBeansChatConfig(asiConfig, sessionId);
-            
-            
-            
-            Chat chat = new Chat(chatConfig);
-            chatPanel = new ChatPanel(chat);
+            NetBeansChatConfig nbChatConfig = new NetBeansChatConfig(asiConfig, sessionId);
+            chatPanel = new ChatPanel(nbChatConfig);
             chatPanel.initComponents();
             
             setLayout(new BorderLayout());

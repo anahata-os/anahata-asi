@@ -29,7 +29,7 @@ public class AnahataInstaller extends ModuleInstall {
 
     public static synchronized AsiContainer getAsiConfig() {
         if (asiConfig == null) {
-            asiConfig = new NetBeansAsiConfig();
+            asiConfig = new NetBeansAsiContainer();
         }
         return asiConfig;
     }

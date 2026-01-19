@@ -19,9 +19,9 @@ import uno.anahata.asi.nb.tools.project.Projects;
  * @author anahata
  */
 @Slf4j
-public class NetBeansAsiConfig extends AsiContainer {
+public class NetBeansAsiContainer extends AsiContainer {
 
-    public NetBeansAsiConfig() {
+    public NetBeansAsiContainer() {
         super("netbeans");
     }
 

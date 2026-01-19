@@ -40,9 +40,11 @@ import uno.anahata.asi.nb.tools.maven.DependencyScope;
 import uno.anahata.asi.nb.tools.maven.Maven;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolParam;
+import uno.anahata.asi.tool.AiToolkit;
 import uno.anahata.asi.tool.AnahataToolkit;
 
 @Slf4j
+@AiToolkit("A toolkit for using netbeans project apis.")
 public class Projects extends AnahataToolkit{
 
     @Override

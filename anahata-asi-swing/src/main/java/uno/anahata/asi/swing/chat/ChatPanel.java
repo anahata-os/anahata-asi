@@ -46,13 +46,22 @@ public class ChatPanel extends JPanel {
     private final CandidateSelectionPanel candidateSelectionPanel;
 
     /**
-     * Constructs a new ChatPanel.
+     * Constructs a new ChatPanel by creating a new Chat session with the provided configuration.
      *
-     * @param chat The chat session to associate with this panel.
+     * @param config The chat configuration.
      */
-    public ChatPanel(@NonNull Chat chat) { 
-        this.chat = chat; 
-        this.chatConfig = (SwingChatConfig) chat.getConfig(); 
+    public ChatPanel(@NonNull SwingChatConfig config) { 
+        this(new Chat(config));
+    }
+
+    /**
+     * Constructs a new ChatPanel for an existing Chat session.
+     * 
+     * @param chat The existing chat session.
+     */
+    public ChatPanel(@NonNull Chat chat) {
+        this.chat = chat;
+        this.chatConfig = (SwingChatConfig) chat.getConfig();
         
         this.tabbedPane = new JTabbedPane();
         this.configPanel = new RequestConfigPanel(this);

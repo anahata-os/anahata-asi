@@ -1,6 +1,6 @@
 package uno.anahata.asi.standalone;
 
-import uno.anahata.asi.standalone.swing.MainPanel;
+import uno.anahata.asi.standalone.swing.StandaloneMainPanel;
 import com.formdev.flatlaf.FlatLightLaf;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.cli.CommandLineArgs;
+import uno.anahata.asi.standalone.swing.StandaloneAsiContainer;
+import uno.anahata.asi.standalone.swing.StandaloneChatConfig;
 import uno.anahata.asi.swing.chat.SwingChatConfig;
 import uno.anahata.asi.swing.icons.IconUtils;
 
@@ -33,12 +35,10 @@ public class SwingMain {
         }
 
         // Core application setup
-        AsiContainer appConfig = new AsiContainer("AnahataStandalone");
-        SwingChatConfig chatConfig = new SwingChatConfig(appConfig);
-        chatConfig.getProviderClasses().add(uno.anahata.asi.gemini.GeminiAiProvider.class);
+        StandaloneAsiContainer container = new StandaloneAsiContainer();
         
         // Create the initial chat session
-        Chat chat = new Chat(chatConfig); 
+        Chat chat = new Chat(new StandaloneChatConfig(container)); 
 
         // Centralized argument parsing
         CommandLineArgs.parse(chat, args);
@@ -57,8 +57,8 @@ public class SwingMain {
                 log.warn("Could not load frame icons", e);
             }
 
-            // Create the MainPanel which manages multiple sessions
-            MainPanel mainPanel = new MainPanel(chatConfig);
+            // Create the StandaloneMainPanel which manages multiple sessions
+            StandaloneMainPanel mainPanel = new StandaloneMainPanel(container);
             mainPanel.start();
             
             // Focus the initial chat session

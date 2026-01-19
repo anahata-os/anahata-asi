@@ -18,6 +18,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
 import org.apache.maven.artifact.resolver.ArtifactResolutionException;
@@ -49,6 +50,7 @@ import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolParam;
+import uno.anahata.asi.tool.AiToolkit;
 import uno.anahata.asi.tool.AnahataToolkit;
 import uno.anahata.asi.util.TeeInputOutput;
 
@@ -59,6 +61,8 @@ import uno.anahata.asi.util.TeeInputOutput;
  * 
  * @author anahata
  */
+@AiToolkit("A toolkit for using netbeans maven tools.")
+@Slf4j
 public class Maven extends AnahataToolkit {
     private static final Logger LOG = Logger.getLogger(Maven.class.getName());
     private static final int MAX_OUTPUT_LINES = 100;

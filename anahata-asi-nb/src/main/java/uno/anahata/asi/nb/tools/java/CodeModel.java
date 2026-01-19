@@ -28,11 +28,13 @@ import uno.anahata.asi.model.resource.TextFileResource;
 import uno.anahata.asi.nb.tools.Page;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolParam;
+import uno.anahata.asi.tool.AiToolkit;
 
 /**
  * Provides tools for interacting with the Java code model in NetBeans.
  * This includes finding types, getting members, and retrieving source code.
  */
+@AiToolkit("A toolkit for browwsing types, members, sources and javadocs.")
 public class CodeModel {
 
     /**
