@@ -5,6 +5,7 @@ package uno.anahata.asi.swing.chat.render;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GradientPaint;
@@ -69,6 +70,8 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
     private final JXPanel centralContainer;
     /** Container for part-level metadata and actions. */
     protected final JPanel footerContainer;
+    /** Container for header actions on the right. */
+    protected final JPanel rightButtonPanel;
     
     /** Label for the thought signature, if present. */
     private JLabel thoughtSignatureLabel;
@@ -116,11 +119,11 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
         setLeftDecoration(copyButton);
 
         // Actions panel on the right
-        JPanel rightButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
-        rightButtonPanel.setOpaque(false);
-        rightButtonPanel.add(turnsLeftLabel);
-        rightButtonPanel.add(pruningToggleButton);
-        rightButtonPanel.add(removeButton);
+        this.rightButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+        this.rightButtonPanel.setOpaque(false);
+        this.rightButtonPanel.add(turnsLeftLabel);
+        this.rightButtonPanel.add(pruningToggleButton);
+        this.rightButtonPanel.add(removeButton);
         setRightDecoration(rightButtonPanel);
 
         // 3. Setup Content Layout
