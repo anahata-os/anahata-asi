@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.model.provider.AbstractAiProvider;
 import uno.anahata.asi.swing.chat.ChatPanel;
-import uno.anahata.asi.swing.chat.SessionsPanel;
+import uno.anahata.asi.swing.chat.AsiContainerPanel;
 import uno.anahata.asi.swing.chat.SwingChatConfig;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 
@@ -29,9 +29,9 @@ import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
  * @author gemini-3-flash-preview
  */
 @Slf4j
-public class MainPanel extends JPanel implements SessionsPanel.SessionController {
+public class MainPanel extends JPanel implements AsiContainerPanel.SessionController {
 
-    private final SessionsPanel sessionsPanel;
+    private final AsiContainerPanel sessionsPanel;
     private final JTabbedPane tabbedPane;
     private final SwingChatConfig baseConfig;
     private final List<Class<? extends AbstractAiProvider>> defaultProviders = new ArrayList<>();
@@ -49,7 +49,7 @@ public class MainPanel extends JPanel implements SessionsPanel.SessionController
         
         setLayout(new BorderLayout());
 
-        sessionsPanel = new SessionsPanel(baseConfig.getAsiConfig());
+        sessionsPanel = new AsiContainerPanel(baseConfig.getAsiConfig());
         sessionsPanel.setController(this);
 
         tabbedPane = new JTabbedPane();
@@ -140,7 +140,7 @@ public class MainPanel extends JPanel implements SessionsPanel.SessionController
         SwingChatConfig newConfig = new SwingChatConfig(baseConfig.getAsiConfig());
         newConfig.getProviderClasses().addAll(defaultProviders);
         Chat newChat = new Chat(newConfig);
-        // Chat constructor registers itself in AsiConfig, which triggers property change
+        // Chat constructor registers itself in AsiContainer, which triggers property change
         focus(newChat);
     }
 

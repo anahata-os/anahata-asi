@@ -47,11 +47,11 @@ public final class AgiTopComponent extends TopComponent implements Externalizabl
                 sessionId = UUID.randomUUID().toString();
             }
             
-            // V2 Initialization logic using shared AsiConfig
-            AsiConfig asiConfig = AnahataInstaller.getAsiConfig();
-            SwingChatConfig chatConfig = new SwingChatConfig(asiConfig, sessionId);
-            chatConfig.setEditorKitProvider(new NetBeansEditorKitProvider());
-            chatConfig.getProviderClasses().add(GeminiAiProvider.class);
+            // V2 Initialization logic using shared AsiContainer
+            AsiContainer asiConfig = AnahataInstaller.getAsiConfig();
+            NetBeansChatConfig chatConfig = new NetBeansChatConfig(asiConfig, sessionId);
+            
+            
             
             Chat chat = new Chat(chatConfig);
             chatPanel = new ChatPanel(chat);

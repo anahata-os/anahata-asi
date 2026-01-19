@@ -1,0 +1,339 @@
+/* Licensed under the Apache License, Version 2.0 */
+package uno.anahata.asi.nb.tools.project;
+
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.io.File;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
+import java.util.stream.Collectors;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.netbeans.api.java.project.JavaProjectConstants;
+import org.netbeans.api.java.queries.SourceLevelQuery;
+import org.netbeans.api.project.Project;
+import org.netbeans.api.project.ProjectInformation;
+import org.netbeans.api.project.ProjectManager;
+import org.netbeans.api.project.ProjectUtils;
+import org.netbeans.api.project.SourceGroup;
+import org.netbeans.api.project.Sources;
+import org.netbeans.api.project.ui.OpenProjects;
+import org.netbeans.modules.maven.api.NbMavenProject;
+import org.netbeans.spi.project.ActionProvider;
+import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileStateInvalidException;
+import org.openide.filesystems.FileUtil;
+import org.openide.util.Lookup;
+import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.context.ContextManager;
+import uno.anahata.asi.model.core.RagMessage;
+import uno.anahata.asi.model.core.TextPart;
+import uno.anahata.asi.nb.tools.maven.DependencyScope;
+import uno.anahata.asi.nb.tools.maven.Maven;
+import uno.anahata.asi.tool.AiTool;
+import uno.anahata.asi.tool.AiToolParam;
+import uno.anahata.asi.tool.AnahataToolkit;
+
+@Slf4j
+public class Projects extends AnahataToolkit{
+
+    @Override
+    public void populateMessage(RagMessage ragMessage) throws Exception {
+        super.populateMessage(ragMessage); 
+        new TextPart(ragMessage, "Currently open Projects: " + getOpenProjects());
+    }
+    
+    /**
+     * Convenient entry point for other tools. 
+     * 
+     * @param projectDirectoryPath the project directory path
+     * @return
+     * @throws Exception 
+     */
+    public static Project findOpenProject(String projectDirectoryPath) throws Exception {
+        FileObject dir = FileUtil.toFileObject(new File(projectDirectoryPath));
+        if (dir == null) {
+            throw new Exception("Project directory not found: " + projectDirectoryPath);
+        }
+        for (Project p : OpenProjects.getDefault().getOpenProjects()) {
+            if (p.getProjectDirectory().equals(dir)) {
+                return p;
+            }
+        }
+        throw new Exception("Project not found or is not open: " + projectDirectoryPath);
+    }
+
+    @AiTool("Returns a List of project IDs (folder names) for all currently open projects.")
+    public List<String> getOpenProjects() {
+        List<String> projectIds = new ArrayList<>();
+        for (Project project : OpenProjects.getDefault().getOpenProjects()) {
+            FileObject root = project.getProjectDirectory();
+            projectIds.add(root.getPath()); // project ID = folder name
+        }
+        return projectIds;
+    }
+
+    @AiTool("Opens a project in the IDE, waiting for the asynchronous open operation to complete. The projectId can be either the folder name (relative to NetBeansProjects) or an absolute path.")
+    public String openProject(@AiToolParam("The project id (folder name) or absolute path to open.") String projectId) throws Exception {
+        File projectDir;
+        if (new File(projectId).isAbsolute()) {
+            projectDir = new File(projectId);
+        } else {
+            String projectsFolderPath = System.getProperty("user.home") + File.separator + "NetBeansProjects";
+            projectDir = new File(projectsFolderPath, projectId);
+        }
+
+        if (!projectDir.exists() || !projectDir.isDirectory()) {
+            return "Error: Project directory not found at " + projectDir.getAbsolutePath();
+        }
+
+        FileObject projectFob = FileUtil.toFileObject(FileUtil.normalizeFile(projectDir));
+        if (projectFob == null) {
+            return "Error: Could not find project directory: " + projectDir.getAbsolutePath();
+        }
+
+        for (Project p : OpenProjects.getDefault().getOpenProjects()) {
+            if (p.getProjectDirectory().equals(projectFob)) {
+                return "Success: Project '" + projectId + "' is already open.";
+            }
+        }
+
+        Project projectToOpen = ProjectManager.getDefault().findProject(projectFob);
+        if (projectToOpen == null) {
+            return "Error: Could not find a project in the specified directory: " + projectDir.getAbsolutePath();
+        }
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        final PropertyChangeListener listener = (PropertyChangeEvent evt) -> {
+            if (OpenProjects.PROPERTY_OPEN_PROJECTS.equals(evt.getPropertyName())) {
+                for (Project p : OpenProjects.getDefault().getOpenProjects()) {
+                    if (p.equals(projectToOpen)) {
+                        latch.countDown();
+                        break;
+                    }
+                }
+            }
+        };
+
+        OpenProjects.getDefault().addPropertyChangeListener(listener);
+
+        try {
+            OpenProjects.getDefault().open(new Project[]{projectToOpen}, false, true);
+            if (latch.await(30, TimeUnit.SECONDS)) {
+                return "Success: Project '" + projectId + "' opened successfully.";
+            } else {
+                return "Error: Timed out after 30 seconds waiting for project '" + projectId + "' to open.";
+            }
+        } finally {
+            OpenProjects.getDefault().removePropertyChangeListener(listener);
+        }
+    }
+
+    @AiTool("Gets a list of the supported NetBeans Actions (as in the ActionProvider api) for a given Project.")
+    public static String[] getSupportedActions(@AiToolParam("The project id (not the 'display name')") String projectId) throws Exception {
+        Project p = Projects.findOpenProject(projectId);
+        return p.getLookup().lookup(ActionProvider.class).getSupportedActions();
+    }
+
+    @AiTool("Gets a structured, context-aware overview of a project, including root files, source tree, the in-context status of each file and a list of supported NetBeans Actions.")
+    @SneakyThrows
+    public ProjectOverview getOverview(@AiToolParam("The project id (not the 'display name')") String projectId) {
+        return getOverview(projectId, getChat());
+    }
+
+    @SneakyThrows
+    public ProjectOverview getOverview(String projectId, Chat chat) {
+        Project target = findOpenProject(projectId);
+
+        
+        ProjectInformation info = ProjectUtils.getInformation(target);
+        FileObject root = target.getProjectDirectory();
+        List<String> actions = Collections.emptyList();
+        ActionProvider ap = target.getLookup().lookup(ActionProvider.class);
+        if (ap != null) {
+            actions = Arrays.asList(ap.getSupportedActions());
+        }
+
+        List<ProjectFile> rootFiles = new ArrayList<>();
+        List<String> rootFolderNames = new ArrayList<>();
+        List<SourceFolder> sourceFolders = new ArrayList<>();
+        String anahataMdContent = null;
+        Long anahataMdLastModified = null;
+
+        for (FileObject child : root.getChildren()) {
+            if (child.isFolder()) {
+                rootFolderNames.add(child.getNameExt());
+            } else {
+                ProjectFile pf = createProjectFile(child);
+                rootFiles.add(pf);
+                if (pf.getName().equals("anahata.md")) {
+                    anahataMdContent = Files.readString(FileUtil.toFile(child).toPath());
+                    anahataMdLastModified = pf.getLastModified();
+                }
+            }
+        }
+
+        Sources sources = ProjectUtils.getSources(target);
+        List<SourceGroup> allSourceGroups = new ArrayList<>();
+        allSourceGroups.addAll(Arrays.asList(sources.getSourceGroups(JavaProjectConstants.SOURCES_TYPE_JAVA)));
+        allSourceGroups.addAll(Arrays.asList(sources.getSourceGroups(JavaProjectConstants.SOURCES_TYPE_RESOURCES)));
+
+        for (SourceGroup group : allSourceGroups) {
+            FileObject srcRoot = group.getRootFolder();
+            sourceFolders.add(buildSourceFolderTree(srcRoot, group.getDisplayName()));
+        }
+        
+        // Project-agnostic properties
+        String javaSourceLevel = SourceLevelQuery.getSourceLevel(target.getProjectDirectory());
+
+        // Maven-specific properties
+        List<DependencyScope> mavenDeclaredDependencies = null;
+        String javaTargetLevel = null;
+        String sourceEncoding = null;
+        String packaging = null;
+        
+        NbMavenProject nbMavenProject = target.getLookup().lookup(NbMavenProject.class);
+        if (nbMavenProject != null) {
+            // Get declared dependencies
+            List<DependencyScope> temp = Maven.getDeclaredDependencies(projectId);
+            if (temp != null && !temp.isEmpty()) {
+                mavenDeclaredDependencies = temp;
+            }
+
+            // Get compiler properties from the Maven model
+            org.apache.maven.project.MavenProject rawMvnProject = nbMavenProject.getMavenProject();
+            packaging = rawMvnProject.getPackaging();
+            String mavenSource = rawMvnProject.getProperties().getProperty("maven.compiler.source");
+            if (javaSourceLevel == null && mavenSource != null) {
+                javaSourceLevel = mavenSource;
+            }
+            javaTargetLevel = rawMvnProject.getProperties().getProperty("maven.compiler.target");
+            sourceEncoding = rawMvnProject.getProperties().getProperty("project.build.sourceEncoding");
+        }
+
+        return new ProjectOverview(
+                root.getNameExt(),
+                info.getDisplayName(),                
+                root.getPath(),
+                packaging,
+                anahataMdContent,
+                anahataMdLastModified,
+                rootFiles,
+                rootFolderNames,
+                sourceFolders,
+                actions,
+                mavenDeclaredDependencies,
+                javaSourceLevel,
+                javaTargetLevel,
+                sourceEncoding
+        );
+    }
+
+    private SourceFolder buildSourceFolderTree(FileObject folder, String displayName) throws FileStateInvalidException {
+        if (!folder.isFolder()) {
+            throw new IllegalArgumentException("FileObject must be a folder: " + folder.getPath());
+        }
+
+        List<ProjectFile> files = new ArrayList<>();
+        List<SourceFolder> subfolders = new ArrayList<>();
+
+        for (FileObject child : folder.getChildren()) {
+            if (child.isFolder()) {
+                subfolders.add(buildSourceFolderTree(child, child.getNameExt()));
+            } else {
+                files.add(createProjectFile(child));
+            }
+        }
+
+        long recursiveSize = files.stream().mapToLong(ProjectFile::getSize).sum()
+                + subfolders.stream().mapToLong(SourceFolder::getRecursiveSize).sum();
+        
+        String folderName = folder.getNameExt();
+        String finalDisplayName = folderName.equals(displayName) ? null : displayName;
+
+        return new SourceFolder(finalDisplayName, folder.getPath(), recursiveSize, files.isEmpty() ? null : files, subfolders.isEmpty() ? null: subfolders);
+    }
+
+    private static ProjectFile createProjectFile(FileObject fo) throws FileStateInvalidException {
+        String path = fo.getPath();
+        
+        return new ProjectFile(
+                fo.getNameExt(),
+                fo.getSize(),
+                fo.lastModified().getTime(),
+                
+                path
+        );
+    }
+
+    @AiTool("Invokes ('Fires and forgets') a NetBeans Project supported Action (like 'run' or 'build')  on a given open Project (via ActionProvider).\n"
+            + "\n\nThis method is always asynchronous by design. (regardless of whether you specify the asynchronous parameter or not)"
+            + "as this tool does not return any values nor you can ensure that the action finished when this tool returns."
+            + "\nUse Maven.runGoals or JVM tools or any other synchronous tools if you need to ensure the action succeeded or the action you require produces an output you need")
+    public void invokeAction(
+            @AiToolParam("The netbeans project name (not the display name)") String projectId,
+            @AiToolParam("The action to invoke") String action) throws Exception {
+        Project project = findOpenProject(projectId);
+        ActionProvider ap = project.getLookup().lookup(ActionProvider.class);
+        if (ap == null) {
+            throw new IllegalArgumentException(project + " does not have ActionProvider");
+        }
+
+        Lookup context = project.getLookup();
+
+        if (ap.isActionEnabled(action, context)) {
+            ap.invokeAction(action, context);
+            return;
+        } else {
+            String[] supportedActions = ap.getSupportedActions();
+            boolean isSupported = Arrays.asList(supportedActions).contains(action);
+            if (isSupported) {
+                throw new IllegalArgumentException("The '" + action + "' action is supported but not currently enabled for project '" + project + "'.");
+            } else {
+                throw new IllegalArgumentException("The '" + action + "' action is not supported by project '" + project + "'. Supported actions are: " + String.join(", ", supportedActions));
+            }
+        }
+    }
+
+    
+    
+
+    public static String listAllKnownPreferences(String projectId) throws Exception {
+        Project project = findOpenProject(projectId);
+        if (project == null) {
+            return "Project not found: " + projectId;
+        }
+        StringBuilder sb = new StringBuilder();
+        Class<?>[] contextClasses = new Class<?>[]{
+            org.netbeans.api.project.ProjectUtils.class,};
+
+        for (Class<?> ctx : contextClasses) {
+            sb.append("Preferences for context: ").append(ctx.getName()).append("\n");
+            Preferences prefs = ProjectUtils.getPreferences(project, ctx, true);
+            try {
+                String[] keys = prefs.keys();
+                if (keys.length == 0) {
+                    sb.append("  (no preferences)\n");
+                } else {
+                    for (String key : keys) {
+                        sb.append("  ").append(key)
+                                .append(" = ").append(prefs.get(key, "<no value>")).append("\n");
+                    }
+                }
+            } catch (BackingStoreException e) {
+                sb.append("  Failed to read preferences: ").append(e.getMessage()).append("\n");
+            }
+            sb.append("\n");
+        }
+
+        return sb.toString();
+    }
+}

@@ -10,7 +10,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
-import uno.anahata.asi.AsiConfig;
+import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.model.core.RequestConfig;
 import uno.anahata.asi.model.provider.AbstractAiProvider;
 import uno.anahata.asi.toolkit.Session;
@@ -29,7 +29,7 @@ public class ChatConfig {
 
     /** A reference to the global, application-wide configuration. */
     @NonNull
-    private final AsiConfig asiConfig;
+    private transient final AsiContainer asiConfig;
 
     /** The unique identifier for this specific chat session. */
     @NonNull
@@ -69,7 +69,7 @@ public class ChatConfig {
      * 
      * @param asiConfig The global AI configuration.
      */
-    public ChatConfig(@NonNull AsiConfig asiConfig) {
+    public ChatConfig(@NonNull AsiContainer asiConfig) {
         this(asiConfig, UUID.randomUUID().toString());
     }
 
@@ -79,7 +79,7 @@ public class ChatConfig {
      * @param asiConfig The global AI configuration.
      * @param sessionId The unique session ID.
      */
-    public ChatConfig(@NonNull AsiConfig asiConfig, @NonNull String sessionId) {
+    public ChatConfig(@NonNull AsiContainer asiConfig, @NonNull String sessionId) {
         this.asiConfig = asiConfig;
         this.sessionId = sessionId;
     }
@@ -180,7 +180,7 @@ public class ChatConfig {
     }
     
     /**
-     * Convenience method to get the host application ID from the parent AsiConfig.
+     * Convenience method to get the host application ID from the parent AsiContainer.
      * @return The host application ID.
      */
     public String getHostApplicationId() {

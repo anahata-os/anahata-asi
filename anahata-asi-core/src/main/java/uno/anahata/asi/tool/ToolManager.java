@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.AsiConfig;
+import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.core.AbstractModelMessage;
@@ -60,7 +60,7 @@ public class ToolManager extends BasicPropertyChangeSource {
     private final Chat chat;
     
     /** The global AI configuration. */
-    private final AsiConfig config;
+    private final AsiContainer config;
     
     /** A map of registered toolkits, keyed by their simple name. */
     private final Map<String, AbstractToolkit<?>> toolkits = new HashMap<>();
@@ -92,7 +92,7 @@ public class ToolManager extends BasicPropertyChangeSource {
      *
      * @param config The global AI configuration.
      */
-    public ToolManager(@NonNull AsiConfig config) {
+    public ToolManager(@NonNull AsiContainer config) {
         this.chat = null; // No parent chat in this context
         this.config = config;
     }

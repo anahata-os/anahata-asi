@@ -21,7 +21,7 @@ import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.AsiConfig;
+import uno.anahata.asi.AsiContainer;
 
 /**
  * Utility class for capturing screenshots of the host system's display devices
@@ -34,8 +34,8 @@ public class UICapture {
 
     public static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyyMMdd-HHmmss");
     
-    // FIX: Use the correct V2 AsiConfig to get the working folder as a Path
-    public static final Path SCREENSHOTS_DIR = AsiConfig.getWorkDirSubDir("screenshots");
+    // FIX: Use the correct V2 AsiContainer to get the working folder as a Path
+    public static final Path SCREENSHOTS_DIR = AsiContainer.getWorkDirSubDir("screenshots");
     
     /**
      * Takes a screenshot of all connected graphics devices.

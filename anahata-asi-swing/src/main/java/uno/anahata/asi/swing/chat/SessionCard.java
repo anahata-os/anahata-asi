@@ -34,12 +34,12 @@ import uno.anahata.asi.swing.icons.SearchIcon;
 public class SessionCard extends JPanel {
 
     private final Chat chat;
-    private final SessionsPanel.SessionController controller;
+    private final AsiContainerPanel.SessionController controller;
     private final JLabel nameLabel;
     private final JLabel summaryLabel;
     private final PropertyChangeListener chatListener = this::handleChatChange;
 
-    public SessionCard(@NonNull Chat chat, @NonNull SessionsPanel.SessionController controller) {
+    public SessionCard(@NonNull Chat chat, @NonNull AsiContainerPanel.SessionController controller) {
         this.chat = chat;
         this.controller = controller;
 

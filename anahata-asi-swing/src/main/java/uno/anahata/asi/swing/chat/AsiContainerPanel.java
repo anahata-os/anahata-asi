@@ -28,7 +28,7 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 import lombok.NonNull;
 import lombok.Setter;
-import uno.anahata.asi.AsiConfig;
+import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.status.ChatStatus;
 import uno.anahata.asi.swing.icons.CardsIcon;
@@ -44,7 +44,7 @@ import uno.anahata.asi.swing.internal.WrapLayout;
  * 
  * @author anahata-gemini-pro-2.5
  */
-public class SessionsPanel extends JPanel {
+public class AsiContainerPanel extends JPanel {
 
     private final JTable table;
     private final SessionsTableModel model;
@@ -55,14 +55,14 @@ public class SessionsPanel extends JPanel {
     private final JPanel cardContainer;
     private final JPanel mainView;
     private final CardLayout viewLayout;
-    private final AsiConfig asiConfig;
+    private final AsiContainer asiConfig;
     
     private final Map<Chat, SessionCard> cachedCards = new HashMap<>();
     
     @Setter
     private SessionController controller;
 
-    public SessionsPanel(@NonNull AsiConfig asiConfig) {
+    public AsiContainerPanel(@NonNull AsiContainer asiConfig) {
         this.asiConfig = asiConfig;
         // 1. Initialize Final Fields First
         this.model = new SessionsTableModel(asiConfig);

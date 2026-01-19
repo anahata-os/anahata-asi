@@ -2,13 +2,12 @@
 package uno.anahata.asi.model.tool;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
-import uno.anahata.asi.internal.JacksonUtils;
-import uno.anahata.asi.internal.TokenizerUtils;
 import uno.anahata.asi.model.core.AbstractPart;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.AbstractToolMessage;
@@ -34,17 +33,25 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
 
     /**
      * The tool definition that this call corresponds to.
+     * Ignored during serialization to avoid issues with non-serializable members (e.g. Method).
      */
     @NonNull
+    @JsonIgnore
     private final T tool;
 
     /**
      * The arguments for the method, provided as a map of parameter names to
-     * values.
+     * values. This map represents the original request from the model.
      */
     @NonNull
     private final Map<String, Object> args;
     
+    /** 
+     * Map of arguments that were modified by the user in the UI. 
+     * This represents the "draft" state of the arguments.
+     */
+    private final Map<String, Object> modifiedArgs = new HashMap<>();
+
     /**
      * The single, final response object associated with this call.
      * This is ignored during schema generation to prevent a circular reference.
@@ -68,12 +75,9 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
         super(message);
         this.id = id;
         this.tool = tool;
-        this.args = args;
+        this.args = args; 
         this.response = createResponse(message.getToolMessage());
         getChat().getContextManager().ensureToolMessageFolllowsModelMessage(getMessage());
-        
-        // Estimate tokens based on the JSON representation of the call.
-        setTokenCount(TokenizerUtils.countTokens(JacksonUtils.prettyPrint(this)));
     }
 
     /**
@@ -102,6 +106,33 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
      */
     protected abstract R createResponse(AbstractToolMessage toolMessage);
     
+    /**
+     * Updates a modified argument in the draft state and fires a property change event.
+     * 
+     * @param name The name of the argument.
+     * @param value The new value.
+     */
+    public void setModifiedArgument(String name, Object value) {
+        Object original = args.get(name);
+        if (Objects.equals(original, value)) {
+            modifiedArgs.remove(name);
+        } else {
+            modifiedArgs.put(name, value);
+        }
+        getPropertyChangeSupport().firePropertyChange("modifiedArgs", null, modifiedArgs);
+    }
+
+    /**
+     * Gets the effective arguments for the UI (original + draft modifications).
+     * 
+     * @return A map of effective arguments.
+     */
+    public Map<String, Object> getEffectiveArgs() {
+        Map<String, Object> effective = new HashMap<>(args);
+        effective.putAll(modifiedArgs);
+        return effective;
+    }
+
     //<editor-fold defaultstate="collapsed" desc="V2 Context Management Delegation">
     /** {@inheritDoc} */
     @Override

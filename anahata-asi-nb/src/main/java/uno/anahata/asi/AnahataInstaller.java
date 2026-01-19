@@ -25,9 +25,9 @@ public class AnahataInstaller extends ModuleInstall {
     private static final Logger log = Logger.getLogger(AnahataInstaller.class.getName());
     private static final String HANDOFF_FILE_NAME = "asi-reload-handoff.dat";
     
-    private static AsiConfig asiConfig;
+    private static AsiContainer asiConfig;
 
-    public static synchronized AsiConfig getAsiConfig() {
+    public static synchronized AsiContainer getAsiConfig() {
         if (asiConfig == null) {
             asiConfig = new NetBeansAsiConfig();
         }

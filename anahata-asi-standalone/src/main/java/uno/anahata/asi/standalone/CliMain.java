@@ -1,6 +1,6 @@
 package uno.anahata.asi.standalone;
 
-import uno.anahata.asi.AsiConfig;
+import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.cli.Cli;
 import uno.anahata.asi.gemini.GeminiCliChatConfig;
@@ -16,7 +16,7 @@ public class CliMain {
         System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "info");
         System.out.println("Starting Anahata AI Standalone...");
 
-        AsiConfig appConfig = new AsiConfig("AnahataStandalone");
+        AsiContainer appConfig = new AsiContainer("AnahataStandalone");
         GeminiCliChatConfig chatConfig = new GeminiCliChatConfig(appConfig);
         
         // The ChatConfig now needs the provider to be explicitly added.

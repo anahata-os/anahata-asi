@@ -69,7 +69,11 @@ public class CodeHyperlink extends JLabel {
                     if (content != null && !content.isEmpty()) {
                         // Automatically pretty-print if it's JSON
                         if ("json".equalsIgnoreCase(CodeHyperlink.this.language)) {
-                            content = JacksonUtils.prettyPrintJsonString(content);
+                            String pretty = JacksonUtils.prettyPrintJsonString(content);
+                            // Fallback to original content if pretty-printing fails (e.g. it's already an error message)
+                            if (!pretty.startsWith("Error:")) {
+                                content = pretty;
+                            }
                         }
                         SwingUtils.showCodeBlockDialog(CodeHyperlink.this, title, content, CodeHyperlink.this.language);
                     }

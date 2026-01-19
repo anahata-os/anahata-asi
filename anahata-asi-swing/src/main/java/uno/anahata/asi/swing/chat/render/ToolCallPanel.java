@@ -3,14 +3,23 @@
  */
 package uno.anahata.asi.swing.chat.render;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
@@ -18,11 +27,13 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import lombok.NonNull;
 import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.JXTitledPanel;
 import org.jdesktop.swingx.prompt.PromptSupport;
 import uno.anahata.asi.internal.JacksonUtils;
+import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.model.tool.AbstractTool;
 import uno.anahata.asi.model.tool.AbstractToolCall;
 import uno.anahata.asi.model.tool.AbstractToolParameter;
@@ -43,13 +54,17 @@ import uno.anahata.asi.swing.internal.SwingUtils;
 /**
  * A specialized panel for rendering an {@link AbstractToolCall} and its associated
  * {@link AbstractToolResponse} within a model message. It provides a vertical
- * layout where arguments are followed by a titled response area.
+ * layout where arguments are presented in tabs (one for each parameter), 
+ * followed by a titled, expandable response area.
  * 
  * @author anahata
  */
 public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
 
-    private JPanel argsPanel;
+    private JPanel argsContainer;
+    private JTabbedPane argsTabbedPane;
+    /** Cache of renderers for arguments to support incremental updates and editing. */
+    private final Map<String, AbstractTextSegmentRenderer> argRenderers = new HashMap<>();
     
     private JXTitledPanel responseTitledPanel;
     private JTabbedPane resultsTabbedPane;
@@ -80,7 +95,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
 
     @Override
     protected void renderContent() {
-        if (argsPanel == null) {
+        if (argsContainer == null) {
             initComponents();
         }
         
@@ -88,7 +103,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         AbstractToolResponse<?> response = call.getResponse();
 
         // 1. Update Arguments
-        renderArguments(call);
+        renderArguments(call, response);
 
         // 2. Update Results/Logs/Errors
         renderResults(response);
@@ -103,9 +118,9 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         getCentralContainer().setLayout(new MigLayout("fillx, insets 0", "[grow]", "[]0[]0[]"));
 
         // --- Arguments Panel (Top) ---
-        argsPanel = new JPanel(new MigLayout("fillx, insets 5", "[][grow]"));
-        argsPanel.setOpaque(false);
-        getCentralContainer().add(argsPanel, "growx, wrap");
+        argsContainer = new JPanel(new BorderLayout());
+        argsContainer.setOpaque(false);
+        getCentralContainer().add(argsContainer, "growx, wrap");
         
         // --- Response Panel (Middle) ---
         resultsTabbedPane = new JTabbedPane();
@@ -131,6 +146,18 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         responseTitledPanel.setContentContainer(resultsTabbedPane);
         responseTitledPanel.setOpaque(false);
         responseTitledPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.LIGHT_GRAY));
+        
+        // Add expand/collapse logic to the response titled panel header
+        if (responseTitledPanel.getComponentCount() > 0) {
+            responseTitledPanel.getComponent(0).addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    resultsTabbedPane.setVisible(!resultsTabbedPane.isVisible());
+                    responseTitledPanel.revalidate();
+                    responseTitledPanel.repaint();
+                }
+            });
+        }
         
         // Cap the response area at 500px height
         getCentralContainer().add(responseTitledPanel, "growx, hmax 500, wrap");
@@ -192,99 +219,115 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         controlBar.add(toolProgressBar, "gapleft 10");
         controlBar.add(revertButton, "right, skip 1, split 2");
         controlBar.add(runButton, "right, wrap");
-        controlBar.add(jsonLink, "cell 2 1, right");
+        
+        JPanel jsonLinksPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        jsonLinksPanel.setOpaque(false);
+        jsonLinksPanel.add(jsonLink);
+        controlBar.add(jsonLinksPanel, "cell 2 1, right");
 
         getCentralContainer().add(controlBar, "growx");
     }
 
-    private void renderArguments(AbstractToolCall<?, ?> call) {
-        argsPanel.removeAll();
+    private void renderArguments(AbstractToolCall<?, ?> call, AbstractToolResponse<?> response) {
+        Map<String, Object> effectiveArgs = call.getEffectiveArgs();
         AbstractTool<?, ?> tool = call.getTool();
-        Map<String, Object> args = call.getArgs();
-        
-        int row = 0; 
-        for (Map.Entry<String, Object> entry : args.entrySet()) {
-            String paramName = entry.getKey();
-            Object value = entry.getValue();
-            
-            String rendererId = tool.getParameters().stream()
-                    .filter(p -> p.getName().equals(paramName))
-                    .map(AbstractToolParameter::getRendererId)
-                    .findFirst()
-                    .orElse("");
+        List parameters = tool.getParameters();
 
-            String valStr = (value instanceof String s) ? s : JacksonUtils.prettyPrint(value);
-
-            boolean isLargeArgument = (rendererId != null && !rendererId.isEmpty()) || 
-                                      (valStr.length() > 100 || valStr.contains("\n"));
-
-            if (isLargeArgument) {
-                argsPanel.add(new JLabel("<html><b>" + paramName + ":</b></html>"), "cell 0 " + row + ", span 2, wrap");
-                row++; 
-            } else {
-                argsPanel.add(new JLabel("<html><b>" + paramName + ":</b></html>"), "cell 0 " + row); 
-            }
-
-            if (rendererId != null && !rendererId.isEmpty()) {
-                AbstractCodeBlockSegmentRenderer renderer = AbstractCodeBlockSegmentRenderer.create(chatPanel, valStr, rendererId);
-                renderer.render();
-                argsPanel.add(renderer.getComponent(), "cell 1 " + row + ", growx, hmin 40, wrap"); 
-            } else if (valStr.length() > 100 || valStr.contains("\n")) {
-                JTextArea area = new JTextArea();
-                area.setEditable(false);
-                area.setLineWrap(true);
-                area.setWrapStyleWord(true);
-                area.setText(valStr);
-                argsPanel.add(new JScrollPane(area), "cell 1 " + row + ", growx, hmin 40, wrap");
-            } else {
-                argsPanel.add(new JLabel(valStr), "cell 1 " + row + ", wrap"); 
-            }
-            row++; 
+        if (argsTabbedPane == null) {
+            argsTabbedPane = new JTabbedPane();
+            argsContainer.removeAll();
+            argsContainer.add(argsTabbedPane, BorderLayout.CENTER);
         }
-        argsPanel.revalidate();
-        argsPanel.repaint(); 
+
+        // 1. Update/Create Renderers for all parameters
+        for (Object pObj : parameters) {
+            AbstractToolParameter<?> param = (AbstractToolParameter<?>) pObj;
+            String paramName = param.getName();
+            Object value = effectiveArgs.get(paramName);
+            
+            AbstractTextSegmentRenderer renderer = argRenderers.get(paramName);
+            String valStr = (value == null) ? "null" : (value instanceof String s) ? s : JacksonUtils.prettyPrint(value);
+
+            if (renderer == null) {
+                String rendererId = param.getRendererId();
+                if (rendererId != null && !rendererId.isEmpty()) {
+                    AbstractCodeBlockSegmentRenderer codeRenderer = AbstractCodeBlockSegmentRenderer.create(chatPanel, valStr, rendererId);
+                    codeRenderer.setOnSave(newContent -> call.setModifiedArgument(paramName, newContent));
+                    renderer = codeRenderer;
+                } else {
+                    renderer = new MarkupTextSegmentRenderer(chatPanel, valStr, false);
+                }
+                argRenderers.put(paramName, renderer);
+                renderer.render();
+            } else {
+                renderer.updateContent(valStr);
+                renderer.render();
+            }
+
+            // 2. Sync Tab
+            JComponent comp = renderer.getComponent();
+            int tabIndex = argsTabbedPane.indexOfComponent(comp);
+            if (tabIndex == -1) {
+                argsTabbedPane.addTab(paramName, comp);
+                tabIndex = argsTabbedPane.indexOfComponent(comp);
+            }
+            
+            // Visual feedback for modified arguments
+            if (call.getModifiedArgs().containsKey(paramName)) {
+                argsTabbedPane.setForegroundAt(tabIndex, Color.BLUE);
+                argsTabbedPane.setTitleAt(tabIndex, paramName + "*");
+            } else if (value == null) {
+                argsTabbedPane.setForegroundAt(tabIndex, Color.LIGHT_GRAY);
+                argsTabbedPane.setTitleAt(tabIndex, paramName);
+            } else {
+                argsTabbedPane.setForegroundAt(tabIndex, null);
+                argsTabbedPane.setTitleAt(tabIndex, paramName);
+            }
+        }
+        
+        argsContainer.setVisible(!parameters.isEmpty());
     }
 
     private void renderResults(AbstractToolResponse<?> response) {
-        // 1. Output
+        // 1. Prepare content
         String output = response.getResult() != null ? response.getResult().toString() : "";
-        updateTab(outputScrollPane, "Output", !output.isEmpty());
-        outputArea.setText(output);
+        boolean hasOutput = !output.isEmpty();
+        if (hasOutput) outputArea.setText(output);
 
-        // 2. Error
-        String error = response.getError() != null ? response.getError() : "";
-        updateTab(errorScrollPane, "Error", !error.isEmpty());
-        errorArea.setText(error);
+        boolean hasAttachments = !response.getAttachments().isEmpty();
+        if (hasAttachments) attachmentsPanel.render(response);
         
-        // 3. Logs
         StringBuilder logsBuilder = new StringBuilder();
         for (String log : response.getLogs()) {
             logsBuilder.append("• ").append(log).append("\n");
         }
         String logs = logsBuilder.toString();
-        updateTab(logsScrollPane, "Logs", !logs.isEmpty());
-        logsArea.setText(logs);
+        boolean hasLogs = !logs.isEmpty();
+        if (hasLogs) logsArea.setText(logs);
+
+        String error = response.getError() != null ? response.getError() : "";
+        boolean hasError = !error.isEmpty();
+        if (hasError) errorArea.setText(error);
+
+        // 2. Sync Tabs (Order: Output, Attachments, Logs, Error)
+        syncTab(outputScrollPane, "Output", hasOutput, 0);
+        syncTab(attachmentsPanel, "Attachments", hasAttachments, 1);
+        syncTab(logsScrollPane, "Logs", hasLogs, 2);
+        syncTab(errorScrollPane, "Error", hasError, 3);
         
-        // 4. Attachments
-        updateTab(attachmentsPanel, "Attachments", !response.getAttachments().isEmpty());
-        if (!response.getAttachments().isEmpty()) {
-            attachmentsPanel.render(response);
-        }
-        
-        // Dynamic Visibility
+        // 3. Dynamic Visibility
         boolean hasResults = resultsTabbedPane.getTabCount() > 0;
         responseTitledPanel.setVisible(hasResults);
         
         if (hasResults) {
-            // Tab Selection Logic: Prioritize Error on failure, then Attachments, then Output, then Logs.
-            if (response.getStatus() == ToolExecutionStatus.FAILED && !error.isEmpty()) {
+            if (response.getStatus() == ToolExecutionStatus.FAILED && hasError) {
                 resultsTabbedPane.setSelectedComponent(errorScrollPane);
             } else if (response.getStatus() == ToolExecutionStatus.EXECUTED) {
-                if (!response.getAttachments().isEmpty()) {
+                if (hasAttachments) {
                     resultsTabbedPane.setSelectedComponent(attachmentsPanel);
-                } else if (!output.isEmpty()) {
+                } else if (hasOutput) {
                     resultsTabbedPane.setSelectedComponent(outputScrollPane);
-                } else if (!logs.isEmpty()) {
+                } else if (hasLogs) {
                     resultsTabbedPane.setSelectedComponent(logsScrollPane);
                 }
             }
@@ -295,13 +338,39 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         }
     }
     
-    private void updateTab(java.awt.Component component, String title, boolean shouldBeVisible) {
-        int index = resultsTabbedPane.indexOfComponent(component);
-        if (shouldBeVisible && index == -1) {
-            resultsTabbedPane.addTab(title, component);
-        } else if (!shouldBeVisible && index != -1) {
-            resultsTabbedPane.removeTabAt(index);
+    /**
+     * Synchronizes a tab's presence and position within the resultsTabbedPane.
+     */
+    private void syncTab(Component comp, String title, boolean visible, int rank) {
+        int currentIndex = resultsTabbedPane.indexOfComponent(comp);
+        if (visible) {
+            if (currentIndex == -1) {
+                // Calculate insertion index based on rank of existing tabs
+                int insertAt = 0;
+                for (int i = 0; i < resultsTabbedPane.getTabCount(); i++) {
+                    Component existing = resultsTabbedPane.getComponentAt(i);
+                    int existingRank = getRank(existing);
+                    if (rank > existingRank) {
+                        insertAt = i + 1;
+                    } else {
+                        break;
+                    }
+                }
+                resultsTabbedPane.insertTab(title, null, comp, null, insertAt);
+            }
+        } else {
+            if (currentIndex != -1) {
+                resultsTabbedPane.removeTabAt(currentIndex);
+            }
         }
+    }
+
+    private int getRank(Component comp) {
+        if (comp == outputScrollPane) return 0;
+        if (comp == attachmentsPanel) return 1;
+        if (comp == logsScrollPane) return 2;
+        if (comp == errorScrollPane) return 3;
+        return 99;
     }
 
     private void updateControls(AbstractToolCall<?, ?> call, AbstractToolResponse<?> response) {
@@ -375,9 +444,25 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
     protected void updateHeaderInfoText() {
         AbstractToolCall<?, ?> call = getPart();
         AbstractToolResponse<?> response = call.getResponse();
+        Map<String, Object> effectiveArgs = call.getEffectiveArgs();
         
         StringBuilder sb = new StringBuilder("<html>");
-        sb.append("<b>Tool: </b>").append(call.getToolName());
+        
+        // Java-like signature: toolName(val1, val2, null, val4)
+        sb.append("<font color='#444444'><b>").append(call.getToolName()).append("</b></font>(");
+        
+        String argsStr = call.getTool().getParameters().stream()
+                .map(p -> {
+                    Object val = effectiveArgs.get(p.getName());
+                    String valStr = val == null ? "null" : TextUtils.formatValue(val.toString());
+                    if (call.getModifiedArgs().containsKey(p.getName())) {
+                        return "<font color='blue'>" + valStr + "</font>";
+                    }
+                    return valStr;
+                })
+                .collect(Collectors.joining(", "));
+        
+        sb.append(argsStr).append(")");
         
         String statusText = response.getStatus() != null ? response.getStatus().name() : "";
         String color = SwingUtils.toHtmlColor(SwingChatConfig.getColor(response.getStatus()));

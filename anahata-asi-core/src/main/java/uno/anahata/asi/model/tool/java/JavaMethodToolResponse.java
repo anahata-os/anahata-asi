@@ -67,6 +67,7 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
     private Throwable exception;
     
     /** Guard to ensure only one thread can execute this response at a time. */
+    @JsonIgnore
     private final AtomicBoolean executing = new AtomicBoolean(false);
 
     public JavaMethodToolResponse(@NonNull JavaMethodToolCall call) {
@@ -92,6 +93,10 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
         setThread(Thread.currentThread());
         getChat().getToolManager().registerExecutingCall(getCall());
         
+        // Capture a snapshot of the modified arguments at the time of execution
+        getModifiedArgs().clear();
+        getModifiedArgs().putAll(getCall().getModifiedArgs());
+        
         try {
             JavaMethodTool tool = getCall().getTool();
             Object toolInstance = tool.getToolInstance();
@@ -99,12 +104,12 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
             var method = tool.getMethod();
             Parameter[] methodParameters = method.getParameters();
             Object[] argsToInvoke = new Object[methodParameters.length];
-            Map<String, Object> argsFromModel = getCall().getArgs();
+            Map<String, Object> effectiveArgs = getEffectiveArgs();
 
             for (int i = 0; i < methodParameters.length; i++) {
                 Parameter p = methodParameters[i];
                 String paramName = p.getName();
-                argsToInvoke[i] = argsFromModel.get(paramName);
+                argsToInvoke[i] = effectiveArgs.get(paramName);
             }
 
             Object result = method.invoke(toolInstance, argsToInvoke);

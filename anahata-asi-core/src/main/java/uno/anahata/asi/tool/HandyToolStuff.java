@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.internal.TikaUtils;
 import uno.anahata.asi.model.tool.java.JavaMethodTool;
@@ -73,6 +74,14 @@ public abstract class HandyToolStuff {
      */
     protected Chat getChat() {
         return getToolManager().getChat();
+    }
+    
+    /**
+     * Convenience method to get the chat's ExecutorService .
+     * @return The ExecutorService for this session..
+     */
+    protected ExecutorService getExecutorService() {
+        return getChat().getExecutor();
     }
 
     /**

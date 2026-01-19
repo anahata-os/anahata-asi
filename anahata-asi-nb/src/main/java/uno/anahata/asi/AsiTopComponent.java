@@ -10,7 +10,7 @@ import org.openide.awt.ActionReference;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 import uno.anahata.asi.chat.Chat;
-import uno.anahata.asi.swing.chat.SessionsPanel;
+import uno.anahata.asi.swing.chat.AsiContainerPanel;
 
 /**
  * A TopComponent that displays a list of all active Anahata ASI sessions.
@@ -27,17 +27,17 @@ import uno.anahata.asi.swing.chat.SessionsPanel;
         preferredID = "SessionsTopComponent"
 )
 @Slf4j
-public class AsiTopComponent extends TopComponent implements SessionsPanel.SessionController {
+public class AsiTopComponent extends TopComponent implements AsiContainerPanel.SessionController {
 
-    private final SessionsPanel sessionsPanel;
+    private final AsiContainerPanel sessionsPanel;
 
     public AsiTopComponent() {
         setName("ASI");
         setToolTipText("Manage active AGI sessions");
         setLayout(new BorderLayout());
 
-        // Use the shared AsiConfig from the installer
-        sessionsPanel = new SessionsPanel(AnahataInstaller.getAsiConfig());
+        // Use the shared AsiContainer from the installer
+        sessionsPanel = new AsiContainerPanel(AnahataInstaller.getAsiConfig());
         sessionsPanel.setController(this);
         add(sessionsPanel, BorderLayout.CENTER);
     }

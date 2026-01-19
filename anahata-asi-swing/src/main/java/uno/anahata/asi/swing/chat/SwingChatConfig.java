@@ -7,7 +7,7 @@ import java.awt.Color;
 import java.awt.Font;
 import lombok.Getter;
 import lombok.Setter;
-import uno.anahata.asi.AsiConfig;
+import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.chat.ChatConfig;
 import uno.anahata.asi.model.core.Role;
 import uno.anahata.asi.model.tool.ToolExecutionStatus;
@@ -41,7 +41,7 @@ public class SwingChatConfig extends ChatConfig {
      * 
      * @param aiConfig The global AI configuration.
      */
-    public SwingChatConfig(AsiConfig aiConfig) {
+    public SwingChatConfig(AsiContainer aiConfig) {
         super(aiConfig);
     }
 
@@ -51,7 +51,7 @@ public class SwingChatConfig extends ChatConfig {
      * @param aiConfig The global AI configuration.
      * @param sessionId The unique session ID.
      */
-    public SwingChatConfig(AsiConfig aiConfig, String sessionId) {
+    public SwingChatConfig(AsiContainer aiConfig, String sessionId) {
         super(aiConfig, sessionId);
     }
 

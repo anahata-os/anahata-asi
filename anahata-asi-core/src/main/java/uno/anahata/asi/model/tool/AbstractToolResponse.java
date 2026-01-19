@@ -2,9 +2,11 @@
 package uno.anahata.asi.model.tool;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -53,6 +55,14 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     
     /** Optional feedback from the user if the tool execution was prompted. */
     private String userFeedback;
+
+    /** 
+     * Map of arguments that were modified by the user before execution. 
+     * This is a snapshot of the modifications at the time of execution.
+     */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(description = "these are the modified arguments and values, arguments not contained on this map did not get modified")
+    private final Map<String, Object> modifiedArgs = new HashMap<>();
 
     public AbstractToolResponse(AbstractToolCall<?, ?> call) {
         super(call.getMessage().getToolMessage());
@@ -232,6 +242,18 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
         getPropertyChangeSupport().firePropertyChange("logs", null, logs);
     }
     
+    /**
+     * Gets the effective arguments that were used for execution.
+     * 
+     * @return A map of effective arguments.
+     */
+    @JsonIgnore
+    public Map<String, Object> getEffectiveArgs() {
+        Map<String, Object> effective = new HashMap<>(getCall().getArgs());
+        effective.putAll(modifiedArgs);
+        return effective;
+    }
+
     @Override
     protected int getDefaultTurnsToKeep() {
         return getChatConfig().getDefaultToolTurnsToKeep();
@@ -257,6 +279,6 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
 
     @Override
     public String asText() {
-        return String.format("[%s] %s", status, result != null ? TextUtils.formatValue(result) : (error != null ? error : ""));
+        return String.format("[%s] %s", status, result != null ? TextUtils.formatValue(result.toString()) : (error != null ? error : ""));
     }
 }

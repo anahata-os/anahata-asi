@@ -7,6 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.toolkit.Java;
 import uno.anahata.asi.nb.module.NetBeansModuleUtils;
+import uno.anahata.asi.nb.tools.java.CodeModel;
+import uno.anahata.asi.nb.tools.maven.Maven;
+import uno.anahata.asi.nb.tools.project.Projects;
 
 /**
  * NetBeans-specific configuration for the Anahata ASI.
@@ -16,7 +19,7 @@ import uno.anahata.asi.nb.module.NetBeansModuleUtils;
  * @author anahata
  */
 @Slf4j
-public class NetBeansAsiConfig extends AsiConfig {
+public class NetBeansAsiConfig extends AsiContainer {
 
     public NetBeansAsiConfig() {
         super("netbeans");
@@ -33,8 +36,5 @@ public class NetBeansAsiConfig extends AsiConfig {
             java.setDefaultClasspath(nbClasspath);
         });
         
-        // 2. TODO: Port and register NetBeans-specific tools and providers
-        // chat.getToolManager().registerClasses(...);
-        // chat.getContextManager().registerContextProvider(...);
     }
 }

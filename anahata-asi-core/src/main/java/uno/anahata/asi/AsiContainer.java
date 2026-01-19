@@ -27,7 +27,7 @@ import uno.anahata.asi.model.core.BasicPropertyChangeSource;
  */
 @Getter
 @Slf4j
-public class AsiConfig extends BasicPropertyChangeSource {
+public class AsiContainer extends BasicPropertyChangeSource {
     private final String hostApplicationId;
     private final Preferences preferences;
     private final List<Chat> activeChats = new ArrayList<>();
@@ -38,7 +38,7 @@ public class AsiConfig extends BasicPropertyChangeSource {
      *
      * @param hostApplicationId A unique identifier for the host application (e.g., "netbeans").
      */
-    public AsiConfig(String hostApplicationId) {
+    public AsiContainer(String hostApplicationId) {
         this.hostApplicationId = hostApplicationId;
         this.preferences = Preferences.load(this);
     }
