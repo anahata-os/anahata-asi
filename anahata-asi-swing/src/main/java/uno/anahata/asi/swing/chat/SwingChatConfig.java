@@ -132,10 +132,10 @@ public class SwingChatConfig extends ChatConfig {
         
         private final Color toolOutputFg = Color.GREEN;
         private final Color toolOutputBg = Color.BLACK;
-        private final Color toolErrorFg = Color.RED.darker();
-        private final Color toolErrorBg = new Color(255, 235, 235);
-        private final Color toolLogsFg = Color.GRAY;
-        private final Color toolLogsBg = new Color(245, 245, 245);
+        private final Color toolErrorFg = new Color(255, 80, 80); // Brighter Red (V1 style)
+        private final Color toolErrorBg = new Color(51, 28, 28);  // Deep Burgundy (V1 style)
+        private final Color toolLogsFg = Color.WHITE;
+        private final Color toolLogsBg = Color.BLACK;
 
         // Part-specific colors (Faint and Role-Neutral)
         private final Color partHeaderBg = new Color(240, 240, 240, 100); // Faint gray

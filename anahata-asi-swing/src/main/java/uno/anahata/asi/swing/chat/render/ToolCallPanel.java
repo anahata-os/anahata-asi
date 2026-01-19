@@ -5,6 +5,7 @@ package uno.anahata.asi.swing.chat.render;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.event.ActionListener;
 import java.util.Map;
 import javax.swing.BorderFactory;
@@ -14,13 +15,12 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
 import lombok.NonNull;
 import net.miginfocom.swing.MigLayout;
+import org.jdesktop.swingx.JXTitledPanel;
 import org.jdesktop.swingx.prompt.PromptSupport;
 import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.model.tool.AbstractTool;
@@ -31,6 +31,7 @@ import uno.anahata.asi.model.tool.ToolExecutionStatus;
 import uno.anahata.asi.model.tool.ToolPermission;
 import uno.anahata.asi.swing.chat.ChatPanel;
 import uno.anahata.asi.swing.chat.SwingChatConfig;
+import uno.anahata.asi.swing.chat.SwingChatConfig.UITheme;
 import uno.anahata.asi.swing.components.CodeHyperlink;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.IconUtils;
@@ -41,17 +42,16 @@ import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
  * A specialized panel for rendering an {@link AbstractToolCall} and its associated
- * {@link AbstractToolResponse} within a model message. It provides a split-pane
- * view for arguments and results, along with interactive controls for managing
- * permissions, execution status, and user feedback.
+ * {@link AbstractToolResponse} within a model message. It provides a vertical
+ * layout where arguments are followed by a titled response area.
  * 
  * @author anahata
  */
 public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
 
-    private JSplitPane splitPane;
     private JPanel argsPanel;
     
+    private JXTitledPanel responseTitledPanel;
     private JTabbedPane resultsTabbedPane;
     private JScrollPane outputScrollPane;
     private JScrollPane errorScrollPane;
@@ -80,37 +80,40 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
 
     @Override
     protected void renderContent() {
-        if (splitPane == null) {
+        if (argsPanel == null) {
             initComponents();
         }
         
         AbstractToolCall<?, ?> call = getPart();
         AbstractToolResponse<?> response = call.getResponse();
 
-        // 1. Update Arguments (Left)
+        // 1. Update Arguments
         renderArguments(call);
 
-        // 2. Update Results/Logs/Errors (Right)
+        // 2. Update Results/Logs/Errors
         renderResults(response);
 
-        // 3. Update Controls (Bottom)
+        // 3. Update Controls (Bottom Bar)
         updateControls(call, response);
         
         updateHeaderInfoText();
     }
 
     private void initComponents() {
-        getCentralContainer().setLayout(new MigLayout("fill, insets 0", "[grow]", "[grow][]"));
+        getCentralContainer().setLayout(new MigLayout("fillx, insets 0", "[grow]", "[]0[]0[]"));
 
-        // --- Arguments Panel (Left) ---
+        // --- Arguments Panel (Top) ---
         argsPanel = new JPanel(new MigLayout("fillx, insets 5", "[][grow]"));
         argsPanel.setOpaque(false);
+        getCentralContainer().add(argsPanel, "growx, wrap");
         
+        // --- Response Panel (Middle) ---
         resultsTabbedPane = new JTabbedPane();
         
-        outputArea = createTextArea(chatConfig.getTheme().getToolOutputFg(), chatConfig.getTheme().getToolOutputBg());
-        errorArea = createTextArea(chatConfig.getTheme().getToolErrorFg(), chatConfig.getTheme().getToolErrorBg());
-        logsArea = createTextArea(chatConfig.getTheme().getToolLogsFg(), chatConfig.getTheme().getToolLogsBg());
+        UITheme theme = chatConfig.getTheme();
+        outputArea = createTextArea(theme.getToolOutputFg(), theme.getToolOutputBg());
+        errorArea = createTextArea(theme.getToolErrorFg(), theme.getToolErrorBg());
+        logsArea = createTextArea(theme.getToolLogsFg(), theme.getToolLogsBg());
         attachmentsPanel = new ToolResponseAttachmentsPanel(chatPanel);
 
         outputScrollPane = new JScrollPane(outputArea);
@@ -122,14 +125,15 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         logsScrollPane = new JScrollPane(logsArea);
         logsScrollPane.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(logsScrollPane, e));
 
-        // Horizontal split for integrated rendering
-        splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, argsPanel, resultsTabbedPane);
-        splitPane.setResizeWeight(0.5); // Share space equally when resizing
-        splitPane.setOpaque(false);
-        splitPane.setBorder(null);
-        splitPane.setOneTouchExpandable(true); 
+        responseTitledPanel = new JXTitledPanel("Response");
+        responseTitledPanel.setTitleFont(new Font("SansSerif", Font.BOLD, 11));
+        responseTitledPanel.setTitleForeground(new Color(100, 100, 100));
+        responseTitledPanel.setContentContainer(resultsTabbedPane);
+        responseTitledPanel.setOpaque(false);
+        responseTitledPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.LIGHT_GRAY));
         
-        getCentralContainer().add(splitPane, "grow, wrap");
+        // Cap the response area at 500px height
+        getCentralContainer().add(responseTitledPanel, "growx, hmax 500, wrap");
 
         // --- Bottom Control Bar ---
         JPanel controlBar = new JPanel(new MigLayout("fillx, insets 5", "[][grow][]", "[][]"));
@@ -267,37 +271,27 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
             attachmentsPanel.render(response);
         }
         
-        // Dynamic Visibility: Hide the results side if it has no tabs
+        // Dynamic Visibility
         boolean hasResults = resultsTabbedPane.getTabCount() > 0;
+        responseTitledPanel.setVisible(hasResults);
         
         if (hasResults) {
-            splitPane.setRightComponent(resultsTabbedPane);
-            
-            // Smart Divider Logic: Ensure the results side gets at least 50% of the space
-            SwingUtilities.invokeLater(() -> {
-                int totalWidth = splitPane.getWidth();
-                if (totalWidth > 0) {
-                    splitPane.setDividerLocation(totalWidth / 2);
-                }
-            });
-
-            if (resultsTabbedPane.getSelectedIndex() == -1) {
-                resultsTabbedPane.setSelectedIndex(0);
-            }
-            
+            // Tab Selection Logic: Prioritize Error on failure, then Attachments, then Output, then Logs.
             if (response.getStatus() == ToolExecutionStatus.FAILED && !error.isEmpty()) {
                 resultsTabbedPane.setSelectedComponent(errorScrollPane);
             } else if (response.getStatus() == ToolExecutionStatus.EXECUTED) {
                 if (!response.getAttachments().isEmpty()) {
                     resultsTabbedPane.setSelectedComponent(attachmentsPanel);
-                } else if (!logs.isEmpty()) {
-                    resultsTabbedPane.setSelectedComponent(logsScrollPane);
                 } else if (!output.isEmpty()) {
                     resultsTabbedPane.setSelectedComponent(outputScrollPane);
+                } else if (!logs.isEmpty()) {
+                    resultsTabbedPane.setSelectedComponent(logsScrollPane);
                 }
             }
-        } else {
-            splitPane.setRightComponent(null);
+            
+            if (resultsTabbedPane.getSelectedIndex() == -1) {
+                resultsTabbedPane.setSelectedIndex(0);
+            }
         }
     }
     
