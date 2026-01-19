@@ -41,7 +41,7 @@ public final class CommandLineArgs {
         String providerId = providerAndModelId.substring(0, slashIndex);
         String modelId = providerAndModelId.substring(slashIndex + 1);
         
-        log.info("Attempting to select model from arguments: {} {}", providerId, modelId);
+        log.info("Attempting to select model from arguments: {} {}, chat providers: ", providerId, modelId, chat.getProviders());
 
         chat.getProviders().stream()
             .filter(p -> p.getProviderId().equals(providerId))

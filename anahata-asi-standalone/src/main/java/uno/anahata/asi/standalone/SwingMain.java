@@ -35,15 +35,15 @@ public class SwingMain {
         }
 
         // Core application setup
-        StandaloneAsiContainer container = new StandaloneAsiContainer();
+        StandaloneAsiContainer container = new StandaloneAsiContainer(args);
         
         // Create the initial chat session
-        Chat chat = new Chat(new StandaloneChatConfig(container)); 
+        //Chat chat = new Chat(new StandaloneChatConfig(container)); 
 
         // Centralized argument parsing
-        CommandLineArgs.parse(chat, args);
+        //CommandLineArgs.parse(chat, args);
         
-        log.info("After passing command line args, selected model: " + chat.getSelectedModel());
+        //log.info("After passing command line args, selected model: " + chat.getSelectedModel());
 
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Anahata ASI");
@@ -62,7 +62,7 @@ public class SwingMain {
             mainPanel.start();
             
             // Focus the initial chat session
-            mainPanel.focus(chat);
+            //mainPanel.focus(chat);
             
             frame.add(mainPanel, BorderLayout.CENTER);
 

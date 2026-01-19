@@ -82,6 +82,7 @@ public class StandaloneMainPanel extends JPanel implements AsiContainerPanel.Ses
         for (Chat chat : new ArrayList<>(asiContainer.getActiveChats())) {
             focus(chat);
         }
+        
     }
 
     @Override

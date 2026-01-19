@@ -131,6 +131,7 @@ public class Chat extends BasicPropertyChangeSource {
     @SneakyThrows
     public Chat(@NonNull ChatConfig config) {
         this.config = config;
+        log.info("Constructing chat with config: " + config);
         this.executor = AiExecutors.newCachedThreadPoolExecutor(config.getSessionId());
         this.contextManager = new ContextManager(this);
         this.toolManager = new ToolManager(this);
@@ -143,6 +144,7 @@ public class Chat extends BasicPropertyChangeSource {
         contextManager.init();
 
         // Discover and instantiate providers
+        log.info("Attempting to instantiate AI providers: " + config.getProviderClasses());
         for (Class<? extends AbstractAiProvider> providerClass : config.getProviderClasses()) {
             try {
                 // Instantiate the provider, passing this ToolManager instance.

@@ -75,7 +75,7 @@ public class ContextManager implements PropertyChangeSource {
         
         registerContextProvider(new CoreContextProvider());
         // Register toolkits as context providers
-        for (ContextProvider cp : chat.getToolManager().getContextProviderTools()) {
+        for (ContextProvider cp : chat.getToolManager().getContextProviderToolkits()) {
             registerContextProvider(cp);
         }
         

@@ -41,6 +41,7 @@ public class KryoUtils {
         // Use Objenesis for classes that lack a no-arg constructor.
         kryo.setInstantiatorStrategy(new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
         kryo.setRegistrationRequired(false); // Keep it simple for the core module
+        kryo.setReferences(true); // Enable circular references support for complex object graphs
 
         // Register common JDK types
         kryo.register(ArrayList.class);

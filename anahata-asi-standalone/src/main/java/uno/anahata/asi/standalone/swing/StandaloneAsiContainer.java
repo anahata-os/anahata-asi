@@ -5,13 +5,26 @@
 package uno.anahata.asi.standalone.swing;
 
 import uno.anahata.asi.AsiContainer;
+import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.cli.CommandLineArgs;
 
 /**
  *
- * @author pablo
+ * @author anahata
  */
 public class StandaloneAsiContainer extends AsiContainer{
-    public StandaloneAsiContainer() {
+    private String[] cmdLineArgs;
+    
+    public StandaloneAsiContainer(String[] cmdLineArgs) {
         super("swing-standalone");
+        this.cmdLineArgs = cmdLineArgs;
     }
+
+    @Override
+    public void onChatCreated(Chat chat) {
+        super.onChatCreated(chat); 
+        CommandLineArgs.parse(chat, cmdLineArgs);
+    }
+    
+    
 }

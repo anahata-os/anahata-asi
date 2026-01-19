@@ -243,7 +243,7 @@ public class ToolManager extends BasicPropertyChangeSource {
      * 
      * @return enabled toolkits that implement ContextProvider.
      */
-    public List<ContextProvider> getContextProviderTools() {
+    public List<ContextProvider> getContextProviderToolkits() {
         List<ContextProvider> ret = new ArrayList<>();
         for (AbstractToolkit at: getEnabledToolkits()) {
             if (at instanceof ContextProvider cp) {

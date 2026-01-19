@@ -14,21 +14,24 @@ import uno.anahata.asi.swing.chat.SwingChatConfig;
 
 /**
  *
- * @author pablo
+ * @author anahata
  */
 public class NetBeansChatConfig extends SwingChatConfig{
 
+    {
+        getToolClasses().add(Maven.class);
+        getToolClasses().add(Projects.class);
+        getToolClasses().add(CodeModel.class);
+        setEditorKitProvider(new NetBeansEditorKitProvider());
+        getProviderClasses().add(GeminiAiProvider.class);
+    }
+    
     public NetBeansChatConfig(AsiContainer asiConfig) {
         super(asiConfig);
     }
 
     public NetBeansChatConfig(AsiContainer asiConfig, String sessionId) {
         super(asiConfig, sessionId);
-        getToolClasses().add(Maven.class);
-        getToolClasses().add(Projects.class);
-        getToolClasses().add(CodeModel.class);
-        setEditorKitProvider(new NetBeansEditorKitProvider());
-        getProviderClasses().add(GeminiAiProvider.class);
     }
     
     
