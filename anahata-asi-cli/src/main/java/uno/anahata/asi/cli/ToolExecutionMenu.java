@@ -171,11 +171,11 @@ public class ToolExecutionMenu {
             response.getCall().getTool().setPermission(newPermission);
             
             // 2. Update the persistent preferences map
-            chat.getConfig().getAsiConfig().getPreferences().getToolPermissions()
+            chat.getConfig().getContainer().getPreferences().getToolPermissions()
                 .put(response.getCall().getToolName(), newPermission);
             
             // 3. Save the preferences to disk
-            chat.getConfig().getAsiConfig().savePreferences();
+            chat.getConfig().getContainer().savePreferences();
             
             System.out.println("Preference set to: " + newPermission.name());
         } else {

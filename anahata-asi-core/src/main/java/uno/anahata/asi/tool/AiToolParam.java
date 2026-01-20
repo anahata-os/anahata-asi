@@ -18,6 +18,7 @@ import java.lang.annotation.Target;
 public @interface AiToolParam {
     /**
      * A clear and concise description of the parameter's purpose and expected format.
+     * This is injected into the tool's JSON schema as the property description.
      * 
      * @return The description of this parameter.
      */
@@ -32,7 +33,7 @@ public @interface AiToolParam {
 
     /**
      * The ID of a specialized renderer that should be used to display the value 
-     * of this parameter in the UI (e.g., 'code', 'path', 'markdown').
+     * of this parameter in the UI (e.g., 'java', 'path', 'markdown').
      * 
      * @return The renderer ID, or an empty string for default rendering.
      */

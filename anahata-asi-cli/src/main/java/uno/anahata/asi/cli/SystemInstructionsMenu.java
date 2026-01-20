@@ -6,7 +6,6 @@ import java.util.Scanner;
 import lombok.RequiredArgsConstructor;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.context.ContextProvider;
-import uno.anahata.asi.context.AbstractContextProvider;
 
 /**
  * Handles the CLI menu for managing System Instructions Providers.
@@ -26,7 +25,7 @@ public class SystemInstructionsMenu {
             System.out.println("\n===== System Instructions Providers =====");
             for (int i = 0; i < providers.size(); i++) {
                 ContextProvider p = providers.get(i);
-                String status = p.isEnabled() ? "ENABLED" : "DISABLED";
+                String status = p.isProviding() ? "ENABLED" : "DISABLED";
                 System.out.printf("%d: [%s] %s - %s\n", i + 1, status, p.getName(), p.getDescription());
             }
             System.out.println("T: Toggle Enable/Disable");
@@ -43,8 +42,8 @@ public class SystemInstructionsMenu {
                     int providerIndex = Integer.parseInt(scanner.nextLine()) - 1;
                     if (providerIndex >= 0 && providerIndex < providers.size()) {
                         ContextProvider p = providers.get(providerIndex);
-                        p.setEnabled(!p.isEnabled());
-                        System.out.printf("Provider '%s' is now %s.\n", p.getName(), p.isEnabled() ? "ENABLED" : "DISABLED");
+                        p.setProviding(!p.isProviding());
+                        System.out.printf("Provider '%s' is now %s.\n", p.getName(), p.isProviding() ? "ENABLED" : "DISABLED");
                     } else {
                         System.out.println("Invalid provider number.");
                     }

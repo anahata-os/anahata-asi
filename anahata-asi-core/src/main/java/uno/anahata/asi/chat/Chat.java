@@ -58,12 +58,25 @@ import uno.anahata.asi.tool.ToolManager;
 @Getter
 public class Chat extends BasicPropertyChangeSource {
 
+    /** The configuration for this chat session. */
     private final ChatConfig config;
+    
+    /** The manager for all AI tools available in this session. */
     private final ToolManager toolManager;
+    
+    /** The manager for the conversation history and context assembly. */
     private final ContextManager contextManager;
+    
+    /** The manager for stateful resources (e.g., files) in the context. */
     private final ResourceManager resourceManager;
+    
+    /** The executor service for background tasks and API calls. */
     private transient ExecutorService executor;
+    
+    /** The manager for the chat's operational status and error reporting. */
     private final StatusManager statusManager;
+    
+    /** The list of registered AI providers (e.g., Gemini, OpenAI). */
     private final List<AbstractAiProvider> providers = new ArrayList<>();
 
     /**
@@ -131,15 +144,15 @@ public class Chat extends BasicPropertyChangeSource {
     @SneakyThrows
     public Chat(@NonNull ChatConfig config) {
         this.config = config;
+        // Crucially, set the back-reference *before* initializing managers
+        this.config.setChat(this);
+        
         log.info("Constructing chat with config: " + config);
         this.executor = AiExecutors.newCachedThreadPoolExecutor(config.getSessionId());
         this.contextManager = new ContextManager(this);
         this.toolManager = new ToolManager(this);
         this.resourceManager = new ResourceManager();
         this.statusManager = new StatusManager(this);
-
-        // Crucially, set the back-reference *before* initializing managers
-        this.config.setChat(this);
 
         contextManager.init();
 
@@ -156,7 +169,7 @@ public class Chat extends BasicPropertyChangeSource {
             }
         }
         
-        config.getAsiConfig().register(this);
+        config.getContainer().register(this);
     }
 
     /**
@@ -179,7 +192,7 @@ public class Chat extends BasicPropertyChangeSource {
      * Saves this chat session to the application's session directory.
      */
     public void save() {
-        config.getAsiConfig().saveSession(this);
+        config.getContainer().saveSession(this);
     }
 
     /**
@@ -710,12 +723,18 @@ public class Chat extends BasicPropertyChangeSource {
     public void shutdown() {
         shutdown.set(true);
         log.info("Shutting down Chat for session {}", config.getSessionId());
-        config.getAsiConfig().unregister(this);
+        config.getContainer().unregister(this);
         if (executor != null && !executor.isShutdown()) {
             executor.shutdown();
         }
     }
     
+    /**
+     * Sets the active provider and model for the session.
+     * 
+     * @param providerId The ID of the provider.
+     * @param modelId The ID of the model.
+     */
     public void setProviderAndModel(String providerId, String modelId) {
         getProviders().stream()
             .filter(p -> p.getProviderId().equals(providerId))

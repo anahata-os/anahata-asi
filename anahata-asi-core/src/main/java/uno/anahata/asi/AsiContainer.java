@@ -9,7 +9,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -30,9 +32,28 @@ import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 @Getter
 @Slf4j
 public class AsiContainer extends BasicPropertyChangeSource {
+    
+    /** The unique identifier for the host application (e.g., "netbeans"). */
     private final String hostApplicationId;
+    
+    /** The persistent preferences for this container instance. */
     private final AsiContainerPreferences preferences;
+    
+    /** The list of currently active chat sessions managed by this container. */
     private final List<Chat> activeChats = new ArrayList<>();
+    
+    /**
+     * A JVM-scoped map for tools to store and share objects across all containers, 
+     * sessions, and turns. This map is thread-safe.
+     */
+    public static Map applicationAttributes = Collections.synchronizedMap(new HashMap());
+    
+    /**
+     * A container-scoped map for tools to store objects across all sessions and turns 
+     * within this specific host application. This map is thread-safe.
+     */
+    public Map containerAttributes = Collections.synchronizedMap(new HashMap());
+
 
     /**
      * Creates a configuration instance for a specific host application.
@@ -56,14 +77,15 @@ public class AsiContainer extends BasicPropertyChangeSource {
      * Gets the root working directory for this specific host application instance.
      * e.g., ~/.anahata/ai/netbeans
      *
-     * @return The application-specific working directory.
+     * @return The application-specific working directory path.
      */
     public Path getAppDir() {
         return getWorkDirSubDir(hostApplicationId);
     }
     
     /**
-     * Gets a named subdirectory within this host application's working directory, creating it if it doesn't exist.
+     * Gets a named subdirectory within this host application's working directory, 
+     * creating it if it doesn't exist.
      * e.g., ~/.anahata/ai/netbeans/sessions
      * 
      * @param name The name of the subdirectory.
@@ -80,7 +102,8 @@ public class AsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Registers a new chat session with this configuration.
+     * Registers a new chat session with this configuration and triggers the 
+     * {@link #onChatCreated(Chat)} hook. Fires a property change event for "activeChats".
      * 
      * @param chat The chat session to register.
      */
@@ -93,7 +116,8 @@ public class AsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Unregisters a chat session from this configuration.
+     * Unregisters a chat session from this configuration. 
+     * Fires a property change event for "activeChats".
      * 
      * @param chat The chat session to unregister.
      */
@@ -128,7 +152,7 @@ public class AsiContainer extends BasicPropertyChangeSource {
     /**
      * Gets the directory where chat sessions are stored for this application.
      * 
-     * @return The sessions directory.
+     * @return The sessions directory path.
      */
     public Path getSessionsDir() {
         return getAppDirSubDir("sessions");
@@ -137,7 +161,7 @@ public class AsiContainer extends BasicPropertyChangeSource {
     /**
      * Gets the directory where disposed chat sessions are moved.
      * 
-     * @return The disposed sessions directory.
+     * @return The disposed sessions directory path.
      */
     public Path getDisposedSessionsDir() {
         Path dir = getSessionsDir().resolve("disposed");
@@ -150,7 +174,7 @@ public class AsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Serializes and saves a chat session to the sessions directory.
+     * Serializes and saves a chat session to the sessions directory using Kryo.
      * 
      * @param chat The chat session to save.
      */
@@ -182,7 +206,8 @@ public class AsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Loads a single chat session from a file and registers it.
+     * Loads a single chat session from a file, rebinds it to this container, 
+     * and registers it.
      * 
      * @param path The path to the serialized session file.
      */
@@ -221,8 +246,9 @@ public class AsiContainer extends BasicPropertyChangeSource {
     }
     
     /**
-     * Gets a named subdirectory within the global root working directory, creating it if it doesn't exist.
-     * This is used for shared resources like provider configurations.
+     * Gets a named subdirectory within the global root working directory, 
+     * creating it if it doesn't exist. This is used for shared resources 
+     * like provider configurations.
      * e.g., ~/.anahata/ai/gemini
      *
      * @param name The name of the subdirectory.

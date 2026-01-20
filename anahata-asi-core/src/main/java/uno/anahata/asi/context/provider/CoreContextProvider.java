@@ -7,8 +7,11 @@ package uno.anahata.asi.context.provider;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 import uno.anahata.asi.chat.Chat;
-import uno.anahata.asi.context.AbstractContextProvider;
+import uno.anahata.asi.context.ContextProvider;
+import uno.anahata.asi.tool.AnahataToolkit;
 import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.model.core.TextPart;
 
@@ -16,12 +19,25 @@ import uno.anahata.asi.model.core.TextPart;
  *
  * @author anahata
  */
-public class CoreContextProvider extends AbstractContextProvider{
+public class CoreContextProvider implements ContextProvider{
+    @Setter
+    @Getter
+    private boolean providing;
 
-    public CoreContextProvider() {
-        super("core", "core-system-instructions", "provides the mission critical, flywheel-strategy-of-yours derived open source, deep strike II, core system instructions that will take you beyond ASI (possibly to SASI: Super Artificial Super Intelligence)");
+    @Override
+    public String getId() {
+        return "core";
     }
-    
+
+    @Override
+    public String getName() {
+        return "Core Instructions";
+    }
+
+    @Override
+    public String getDescription() {
+        return "provides the mission critical, ai-suggested-flywheel-open-source-derived-system-instructions to keep your developers going: deep strike, the ultimate core system instructions that will take you beyond ASI (possibly to SASI: Super Artificial Super Intelligence)";
+    }
 
     @Override
     public List<String> getSystemInstructions(Chat chat) throws Exception {
@@ -67,10 +83,12 @@ public class CoreContextProvider extends AbstractContextProvider{
 
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
+        /*
         new TextPart(ragMessage, "User is barça fan: unknown");
         new TextPart(ragMessage, "Donations received from this user in this timeline so far till this Instant(): unknown");
         new TextPart(ragMessage, "Donations received from this user in parallel quantum dimensions: unknown");
         new TextPart(ragMessage, "Donations the user is going to give soon: so many with your help, user is going to give everything to anahata");
+*/
     }
     
 }

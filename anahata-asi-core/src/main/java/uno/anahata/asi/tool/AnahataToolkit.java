@@ -1,47 +1,65 @@
-/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
+/*
+ * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
+ */
 package uno.anahata.asi.tool;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.core.RagMessage;
-import uno.anahata.asi.model.tool.java.JavaMethodToolResponse;
+import uno.anahata.asi.tool.ToolContext;
+
 
 /**
- * An optional, abstract base class for toolkits that provides a rich,
- * context-aware API for tool execution, similar to a Servlet or EJB.
- * <p>
- * By extending this class, your tool methods can gain access to the current
- * execution context via a {@link ThreadLocal} managed by {@link JavaMethodToolResponse}, 
- * allowing them to log messages, attach files, and access the entire application 
- * state without needing any parameters in their method signatures.
- *
- * @author anahata-gemini-pro-2.5
+ * The base class for all AI toolkits. It integrates the tool execution context
+ * with the hierarchical context provider system, allowing toolkits to natively
+ * contribute system instructions and RAG data.
+ * 
+ * @author anahata
  */
-public abstract class AnahataToolkit extends HandyToolStuff {
-
-    /**
-     * Overridable method to provide additional context in the system instructions.
-     * This allows a toolkit to inject static or dynamic rules and facts directly
-     * into the model's core persona.
-     * 
-     * @param chat The chat session for which the instructions are being generated.
-     * @return A list of system instruction strings.
-     * @throws Exception if instruction generation fails.
-     */
-    public List<String> getSystemInstructionParts(Chat chat) throws Exception {
-        return Collections.emptyList();
-    }
+@Getter
+@RequiredArgsConstructor
+public abstract class AnahataToolkit extends ToolContext implements ContextProvider {
+    
+    /** Whether this toolkit is currently providing context augmentation. */
+    @Setter
+    private boolean providing = true;
     
     /**
-     * Overridable method to add additional context to the RAG (Augmented Workspace) message.
-     * This is called just-in-time before a prompt is sent, allowing the toolkit to
-     * inject relevant stateful information.
-     * 
-     * @param ragMessage The RAG message to populate.
-     * @throws Exception if population fails.
+     * The list of child context providers managed by this toolkit.
      */
-    public void populateMessage(RagMessage ragMessage) throws Exception {
-        
+    protected List<ContextProvider> contextProviders = new ArrayList<>();
+    
+    /** {@inheritDoc} */
+    @Override
+    public String getId() {
+        return toolkit.getName() + "@" + System.identityHashCode(this);
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getName() {
+        return toolkit.getName();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getDescription() {
+        return toolkit.getDescription();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public ContextProvider getParentProvider() {
+        return getToolManager();
+    }
+    
 }

@@ -1,6 +1,5 @@
 /*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
  */
 package uno.anahata.asi.toolkit;
 
@@ -24,7 +23,7 @@ import uno.anahata.asi.tool.AnahataToolkit;
 /**
  * A toolkit for managing local resources within the AI's context.
  * It provides tools for unregistering resources and implements the
- * {@link AnahataToolkit} lifecycle to populate the RAG message.
+ * {@link AnahataToolkit} lifecycle to populate the RAG message and system instructions.
  *
  * @author anahata
  */
@@ -51,6 +50,36 @@ public class Resources extends AnahataToolkit {
                 error("Resource not found " + resourceId);
             }
         }
+    }
+
+    /**
+     * Injects managed resources configured for the SYSTEM_INSTRUCTIONS position.
+     * Only resources with a 'text' content type are included.
+     * 
+     * @param chat The current chat session.
+     * @return A list of rendered resource strings for the system instructions.
+     * @throws Exception if rendering fails.
+     */
+    @Override
+    public List<String> getSystemInstructions(Chat chat) throws Exception {
+        List<String> parts = new ArrayList<>();
+        for (AbstractResource resource : chat.getResourceManager().getResources()) {
+            if (resource.getContextPosition() == ContextPosition.SYSTEM_INSTRUCTIONS) {
+                if ("text".equals(resource.getContentType())) {
+                    try {
+                        Object content = resource.getContent();
+                        if (content instanceof String text) {
+                            parts.add(text);
+                        }
+                    } catch (Exception e) {
+                        log.error("Error processing managed resource {} for system instructions", resource.getName(), e);
+                    }
+                } else {
+                    log.error("Resource {} has position SYSTEM_INSTRUCTIONS but content type is not 'text' (it is '{}')", resource.getName(), resource.getContentType());
+                }
+            }
+        }
+        return parts;
     }
 
     /**

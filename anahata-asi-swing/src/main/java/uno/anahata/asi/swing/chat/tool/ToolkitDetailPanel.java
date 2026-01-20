@@ -16,6 +16,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.core.RagMessage;
@@ -119,9 +120,9 @@ public class ToolkitDetailPanel extends JPanel {
             setToolkit(toolkit); // Refresh previews
         });
 
-        if (toolkit instanceof ContextProvider cp) {
+        if (toolkit.getContextProvider() != null) {
             contentLayout.show(contentPanel, "tabs");
-            updatePreviews(cp);
+            updatePreviews(toolkit.getContextProvider());
         } else {
             contentLayout.show(contentPanel, "empty");
         }
@@ -137,7 +138,7 @@ public class ToolkitDetailPanel extends JPanel {
      */
     private void updatePreviews(ContextProvider cp) {
         Chat chat = parentPanel.getChat();
-        
+        cp.getFlattenedHierarchy(true);
         // 1. System Instructions Preview
         UserMessage sysMsg = new UserMessage(chat);
         new TextPart(sysMsg, cp.getHeader());
@@ -162,7 +163,7 @@ public class ToolkitDetailPanel extends JPanel {
         try {
             cp.populateMessage(ragMsg);
         } catch (Exception e) {
-            new TextPart(ragMsg, "**Error populating RAG message:**\n" + e.getMessage());
+            new TextPart(ragMsg, "**Error populating RAG message:**\n" + ExceptionUtils.getStackTrace(e));
             log.error("Error generating RAG content preview", e);
         }
         

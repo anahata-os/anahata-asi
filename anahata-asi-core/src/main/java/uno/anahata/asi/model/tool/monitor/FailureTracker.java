@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.tool;
+package uno.anahata.asi.model.tool.monitor;
 
 import java.time.Instant;
 import java.util.Map;

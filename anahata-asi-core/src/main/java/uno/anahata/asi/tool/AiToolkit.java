@@ -31,7 +31,9 @@ public @interface AiToolkit {
      * The default retention policy for ALL of this toolkit's tools, in number of user turns. 
      * This serves as a fallback for any tools in this toolkit that do 
      * not specify an explicit retention policy in their {@code @AiTool} annotation.
-     * A value of -1 indicates that the value should be inherited from the system default.
+     * <p>
+     * A value of -1 indicates that the value should be inherited from the system default 
+     * defined in {@code ChatConfig}.
      * 
      * @return The default retention turns.
      */

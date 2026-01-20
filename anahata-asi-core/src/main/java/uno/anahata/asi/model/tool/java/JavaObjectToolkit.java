@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.context.ContextProvider;
@@ -14,6 +15,7 @@ import uno.anahata.asi.model.tool.AbstractToolkit;
 import uno.anahata.asi.tool.AnahataToolkit;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolkit;
+import uno.anahata.asi.tool.ToolContext;
 import uno.anahata.asi.tool.ToolManager;
 
 /**
@@ -27,7 +29,7 @@ import uno.anahata.asi.tool.ToolManager;
  */
 @Slf4j
 @Getter
-public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implements ContextProvider{
+public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> {
 
     /** The singleton instance of the tool class. */
     private final Object toolInstance;
@@ -56,8 +58,11 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
         
         try {
             this.toolInstance = toolClass.getDeclaredConstructor().newInstance();
+            if (toolInstance instanceof ToolContext tc) {
+                tc.setToolkit(this);
+            }
         } catch (Exception e) {
-            throw new IllegalArgumentException("Could not instantiate tool class: " + toolClass.getName() + ". It must be public and have a public no-arg constructor.", e);
+            throw new IllegalArgumentException("Could not instantiate toolkit class: " + toolClass.getName() + ". It must be public and have a public no-arg constructor.", e);
         }
 
         this.tools = new ArrayList<>();
@@ -75,24 +80,13 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
     }
 
     @Override
-    public String getId() {
-        return toolInstance.getClass().getSimpleName();
+    public ContextProvider getContextProvider() {
+         if (toolInstance instanceof ContextProvider cp) {
+            return cp;
+         } else {
+             return null;
+         }
     }
 
-    @Override
-    public List<String> getSystemInstructions(Chat chat) throws Exception {
-        if (toolInstance instanceof AnahataToolkit ajt) {
-            return ajt.getSystemInstructionParts(chat);
-        } else {
-            return Collections.EMPTY_LIST;
-        }
-    }
-
-    @Override
-    public void populateMessage(RagMessage ragMessage) throws Exception {
-        if (toolInstance instanceof AnahataToolkit ajt) {
-            ajt.populateMessage(ragMessage);
-        }
-    }
     
 }

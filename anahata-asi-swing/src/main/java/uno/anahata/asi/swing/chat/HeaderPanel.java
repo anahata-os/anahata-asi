@@ -210,15 +210,15 @@ public class HeaderPanel extends JPanel {
     }
 
     private void loadSession() {
-        JFileChooser fileChooser = new JFileChooser(chat.getConfig().getAsiConfig().getSessionsDir().toFile());
+        JFileChooser fileChooser = new JFileChooser(chat.getConfig().getContainer().getSessionsDir().toFile());
         fileChooser.setDialogTitle("Load Chat Session");
         if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             File file = fileChooser.getSelectedFile();
             new SwingTask<>(this, "Load Session", () -> {
                 byte[] data = Files.readAllBytes(file.toPath());
                 Chat loadedChat = KryoUtils.deserialize(data, Chat.class);
-                loadedChat.rebind(chat.getConfig().getAsiConfig());
-                chat.getConfig().getAsiConfig().register(loadedChat);
+                loadedChat.rebind(chat.getConfig().getContainer());
+                chat.getConfig().getContainer().register(loadedChat);
                 return loadedChat;
             }, loadedChat -> {
                 chatPanel.reload(loadedChat);

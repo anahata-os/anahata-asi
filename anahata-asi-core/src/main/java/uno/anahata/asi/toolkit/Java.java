@@ -42,76 +42,78 @@ import uno.anahata.asi.tool.AiToolException;
 import uno.anahata.asi.tool.AiToolParam;
 import uno.anahata.asi.tool.AiToolkit;
 import uno.anahata.asi.tool.AnahataTool;
-import uno.anahata.asi.tool.HandyToolStuff;
+import uno.anahata.asi.tool.ToolContext;
 import uno.anahata.asi.tool.AnahataToolkit;
 
 /**
- *
+ * A powerful toolkit for compiling and executing Java code dynamically within 
+ * the application's JVM. It provides a "hot-reload" capability by using a 
+ * child-first classloader and supports context-aware execution through the 
+ * {@link AnahataTool} base class.
+ * 
  * @author anahata
  */
 @Slf4j
 @AiToolkit("Toolkit for compiling and executing java code, has a 'temp' HashMap for storing java objects across turns / tool calls and uses a child first classloader if additional classpath entries are provided")
 public class Java extends AnahataToolkit {
     
-
     /**
-     * A session scoped map
-     */
-    public Map sessionMap = Collections.synchronizedMap(new HashMap());
-    
-    /**
-     * An application scoped map
-     */
-    public static Map applicationMap = Collections.synchronizedMap(new HashMap());
-    
-    /**
-     * The base compiler and classloader classpath (extra can be provided at execution time)
+     * The base compiler and classloader classpath. Extra entries can be 
+     * provided at execution time.
      */
     public String defaultCompilerClasspath;
 
     /**
-     * Taraaa
+     * Default constructor. Initializes the default classpath from the 
+     * system's "java.class.path" property.
      */
     public Java() {
         defaultCompilerClasspath = System.getProperty("java.class.path");
         log.info("Java toolkit instantiated:");
     }
 
+    /**
+     * Gets the current default classpath used for compilation and class loading.
+     * 
+     * @return The full default classpath string.
+     */
     @AiTool("The full default classpath for compiling java code and for class loading")
     public String getDefaultClasspath() {
         return defaultCompilerClasspath;
     }
 
+    /**
+     * Sets the default classpath for the compiler and classloader.
+     * 
+     * @param defaultCompilerClasspath The new default classpath string.
+     */
     @AiTool("Sets the default classpath for the compiler and classloader")
     public void setDefaultClasspath(@AiToolParam("The default classpath for all code compiled by the Java toolkit") String defaultCompilerClasspath) {
         this.defaultCompilerClasspath = defaultCompilerClasspath;
     }
 
     /**
-     * Super beautiful version of the classpath that uses way less tokens than the full one.
-     * ç
-     * @return 
+     * Returns a token-efficient, pretty-printed version of the default classpath.
+     * 
+     * @return The pretty-printed classpath string.
      */
     public String getPrettyPrintedDefaultClasspath() {
         return ClasspathPrinter.prettyPrint(defaultCompilerClasspath);
     }
 
-    /**
-     * Throws the session and application map keys and the pretty printed classpath on the rag message.
-     * 
-     * @param ragMessage - the ragMessage to be injected with content.
-     * @throws Exception 
-     */
+    /** {@inheritDoc} */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
-        String ragText = "\nSession map keys: " + sessionMap.keySet()
-                + "\nApplication map keys: " + applicationMap.keySet()
+        String ragText = "\nSession map keys (shared across turns): " + getSessionMap().keySet()
+                + "\nASI Container map keys (shared across sessions): " + getContainerMap().keySet()
+                + "\nApplication map keys (shared across containers): " + getApplicationMap().keySet()
                 + "\nDefault Compiler and ClassLoader Classpath (abbreviated):\n" + getPrettyPrintedDefaultClasspath();
         new TextPart(ragMessage, ragText);
     }
     
+    /** {@inheritDoc} */
     @Override
-    public List<String> getSystemInstructionParts(Chat chat) throws Exception {
+    public List<String> getSystemInstructions(Chat chat) throws Exception {
         StringBuilder sb = new StringBuilder();
         sb.append("### Java Toolkit Instructions: \n");
         sb.append("When using `compileAndExecute`, your class should extend `" + AnahataTool.class.getName()+ "`, have no package declaration and implement the call method of Callable<Object>. ");
@@ -119,9 +121,9 @@ public class Java extends AnahataToolkit {
         
         sb.append("#### Available Methods that you can use within the code you write (inherited from AnahataTool):\n");
         appendMethods(sb, AnahataTool.class);
-        appendMethods(sb, HandyToolStuff.class);
+        appendMethods(sb, ToolContext.class);
         
-        sb.append("\nAbout the maps: the session map is for you only (chat scoped) and the application map to be shared all other instances of you (jvm scoped)\n");
+        sb.append("\nAbout the maps: the Session Map is for this session only (chat scoped), the ASI Container map is shared across sessions (chats) and the application map is a static field so shared across any all sessions of all containers running in this jvm\n");
         sb.append("\nAbout the attachments: at the time of this release (only tested with gemini-3-flash) only pdf, text and image attachments are supported\n");
         
         sb.append("\n#### Example:\n");
@@ -154,6 +156,12 @@ public class Java extends AnahataToolkit {
         return Collections.singletonList(sb.toString());
     }
 
+    /**
+     * Appends the signatures of all declared methods of a class to a StringBuilder.
+     * 
+     * @param sb The StringBuilder to append to.
+     * @param clazz The class to inspect.
+     */
     private void appendMethods(StringBuilder sb, Class<?> clazz) {
         
         for (Method m : clazz.getDeclaredMethods()) {
@@ -164,6 +172,19 @@ public class Java extends AnahataToolkit {
         }
     }
 
+    /**
+     * Compiles Java source code into a Class object using the system's Java compiler.
+     * 
+     * @param sourceCode The Java source code to compile.
+     * @param className The fully qualified name of the class.
+     * @param extraClassPath Additional classpath entries to include.
+     * @param compilerOptions Additional options for the Java compiler.
+     * @return The compiled Class object.
+     * @throws ClassNotFoundException if the class cannot be found after compilation.
+     * @throws NoSuchMethodException if a required method is missing.
+     * @throws IllegalAccessException if access to a member is denied.
+     * @throws InvocationTargetException if a method invocation fails.
+     */
     @AiTool("Compiles the source code of a java class with the default compiler classpath")
     public Class compile(
             @AiToolParam(value = "The source code", rendererId = "java") String sourceCode,
@@ -326,6 +347,16 @@ public class Java extends AnahataToolkit {
         return reloadingClassLoader.loadClass(className);
     }
 
+    /**
+     * Compiles and executes a Java class named 'Anahata' on the application's JVM.
+     * The class must extend {@link AnahataTool} and implement {@link Callable}.
+     * 
+     * @param sourceCode The Java source code to compile and execute.
+     * @param extraClassPath Additional classpath entries.
+     * @param compilerOptions Additional compiler options.
+     * @return The result of the execution.
+     * @throws Exception if compilation or execution fails.
+     */
     @AiTool(
             value = "Compiles and executes a Java class named 'Anahata' on the application's JVM.\n"
             + "The class should:\n"
@@ -355,29 +386,45 @@ public class Java extends AnahataToolkit {
     
 
     /**
-     * A node of system properties for system props.
+     * Represents a node in the hierarchical tree of system properties.
      */
     private static class SystemPropertyNode {
+        /** The segment name of this node (e.g., "java"). */
         String segment;
+        /** The full dot-separated path to this node (e.g., "java.vendor"). */
         String fullPath;
+        /** The value of the property, if this is a leaf node. */
         Object value;
+        /** The children of this node, keyed by their segment name. */
         Map<String, SystemPropertyNode> children = new TreeMap<>();
 
+        /**
+         * Constructs a new node.
+         * 
+         * @param segment The segment name.
+         * @param fullPath The full path.
+         */
         SystemPropertyNode(String segment, String fullPath) {
             this.segment = segment;
             this.fullPath = fullPath;
         }
 
+        /**
+         * Checks if this node is a leaf (has no children).
+         * 
+         * @return true if it's a leaf.
+         */
         boolean isLeaf() {
             return children.isEmpty();
         }
     }
 
     /**
-     * Beautiful system props.
+     * Generates a token-efficient, hierarchical representation of all JVM 
+     * system properties (excluding the classpath).
      * 
-     * @return most beautiful system properties you have ever seen.
-     * @throws Exception - wont happen
+     * @return A formatted string of system properties.
+     * @throws Exception if an error occurs.
      */
     public String getSystemProperties() throws Exception {
         Properties props = System.getProperties();
@@ -406,6 +453,14 @@ public class Java extends AnahataToolkit {
         return sb.toString();
     }
 
+    /**
+     * Recursively renders a system property node and its children into a 
+     * formatted string.
+     * 
+     * @param sb The StringBuilder to append to.
+     * @param node The node to render.
+     * @param indent The current indentation level.
+     */
     private void renderSysProp(StringBuilder sb, SystemPropertyNode node, int indent) {
         String tabs = "  ".repeat(indent);
         
@@ -438,5 +493,3 @@ public class Java extends AnahataToolkit {
         }
     }
 }
-
-

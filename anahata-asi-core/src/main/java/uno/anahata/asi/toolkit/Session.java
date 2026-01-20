@@ -52,14 +52,14 @@ public class Session extends AnahataToolkit {
         return "Session summary updated successfully.";
     }
     
-    @AiTool(value = "Enables / disables context providers", retention = 0)
+    @AiTool(value = "Enables / disables context providers")
     public void updateContextProviders(
             @AiToolParam("Whether to enable or disable the providers.") boolean enabled, 
             @AiToolParam("The IDs of the context providers to update.") List<String> providerIds) {
         ContextManager cm = getChat().getContextManager();
         for (ContextProvider cp : cm.getProviders()) {
-            if (providerIds.contains(cp.getId())) {
-                cp.setEnabled(enabled);
+            if (providerIds.contains(cp.getFullyQualifiedId())) {
+                cp.setProviding(enabled);
                 log((enabled ? "Enabled" : "Disabled") + " provider: " + cp.getName());
             }
         }
@@ -83,7 +83,8 @@ public class Session extends AnahataToolkit {
                     stoppedCount++;
                     logBuilder.append("Stopped tool: ").append(call.getToolName()).append(" (ID: ").append(id).append(")\n");
                 } else {
-                    logBuilder.append("Did not stop tool: ").append(call.getToolName()).append(" (ID: ").append(id).append(") because its status is ").append(call.getResponse().getStatus()).append("\n");
+                    logBuilder.append("Did not stop tool: ").append(call.getToolName()).append(" (ID: ").append(id)
+                            .append(") because its status is ").append(call.getResponse().getStatus()).append("\n");
                 }
             } else {
                 logBuilder.append("Tool call ID not found in executing list: ").append(id).append("\n");

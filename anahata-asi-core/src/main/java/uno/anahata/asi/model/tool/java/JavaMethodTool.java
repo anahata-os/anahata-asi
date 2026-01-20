@@ -64,22 +64,28 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         this.toolInstance = toolInstance;
         this.javaMethodSignature = buildMethodSignature(method);
         
+        // Set retention using the clean inheritance model
+        setRetentionTurns(toolAnnotation.retention());
+        
         // Build description
         StringBuilder descriptionBuilder = new StringBuilder(toolAnnotation.value());
-        descriptionBuilder.append("\n\njava method signature: ").append(this.javaMethodSignature);
+        descriptionBuilder.append("\n\nToolkit: ").append(this.toolkit.getName());        
+        descriptionBuilder.append("\nMethod:\n").append(this.javaMethodSignature);
         this.description = descriptionBuilder.toString();
-
-        // Set retention using the clean inheritance model
-        int retention = toolAnnotation.retention();
-        if (retention == -1 && toolkit != null) { // Sentinel for inherit
-            retention = toolkit.getDefaultRetention();
-        }
-        setRetentionTurns(retention);
 
         // A tool creates its own parameters.
         for (java.lang.reflect.Parameter p : method.getParameters()) {
             getParameters().add(JavaMethodToolParameter.of(this, p));
         }
+    }
+    
+    @Override
+    public String getDescription() {
+        StringBuilder descriptionBuilder = new StringBuilder(super.description);
+        descriptionBuilder.append("\nPermission:").append(this.permission);
+        descriptionBuilder.append("\nRetention Turns:").append(getRetentionTurns());
+        descriptionBuilder.append("\nEffective Turns:").append(getEffectiveRetentionTurns());
+        return descriptionBuilder.toString();
     }
     
     /**

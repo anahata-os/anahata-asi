@@ -29,12 +29,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
+import uno.anahata.asi.model.core.RagMessage;
+import uno.anahata.asi.model.core.TextPart;
 import uno.anahata.asi.model.tool.AbstractTool;
 import uno.anahata.asi.model.tool.AbstractToolCall;
 import uno.anahata.asi.model.tool.bad.BadTool;
@@ -46,40 +49,53 @@ import uno.anahata.asi.model.tool.java.JavaObjectToolkit;
  * Manages the lifecycle of all AI tools, including registration, configuration,
  * and lookup. It stores toolkits and generates the full list of tools on
  * demand.
+ * <p>
+ * This class also implements {@link ContextProvider}, acting as the root
+ * provider for all toolkits and injecting metadata about available tools into
+ * the AI's context.
  *
  * @author anahata-gemini-pro-2.5
  */
 @Slf4j
 @Getter
-public class ToolManager extends BasicPropertyChangeSource {
+public class ToolManager extends BasicPropertyChangeSource implements ContextProvider {
 
     /** A static counter for generating unique, sequential tool call IDs. */
     private static final AtomicInteger callIdGenerator = new AtomicInteger(0);
 
+    /** Whether this manager is currently providing context augmentation. */
+    private boolean providing = true;
+
     /** The parent chat session. Can be null in test environments. */
     private final Chat chat;
     
-    /** The global AI configuration. */
-    private final AsiContainer config;
+    /** The global container configuration. */
+    private final AsiContainer container;
     
     /** A map of registered toolkits, keyed by their simple name. */
     private final Map<String, AbstractToolkit<?>> toolkits = new HashMap<>();
     
     /** A thread-safe list of currently executing tool calls. */
     private final List<AbstractToolCall<?, ?>> executingCalls = new CopyOnWriteArrayList<>();
+    
+    /**
+     * A session-scoped map for tools to store state across turns.
+     */
+    public final Map<Object, Object> sessionAttributes = Collections.synchronizedMap(new HashMap<>());
+    
 
     /**
      * Primary constructor for use in a live chat session.
-     * This constructor is now self-initializing, registering all tools
+     * This constructor is self-initializing, registering all tools
      * defined in the ChatConfig.
      *
      * @param chat The parent chat orchestrator.
      */
     public ToolManager(@NonNull Chat chat) {
         this.chat = chat;
-        this.config = chat.getConfig().getAsiConfig();
+        this.container = chat.getConfig().getContainer();
         
-        // Self-initialize by registering tools from the config.
+        // Self-initialize by registering tools from the container.
         List<Class<?>> toolClasses = chat.getConfig().getToolClasses();
         if (toolClasses != null) {
             registerClasses(toolClasses.toArray(new Class[0]));
@@ -90,11 +106,11 @@ public class ToolManager extends BasicPropertyChangeSource {
      * Secondary constructor for lightweight instantiation, primarily for unit
      * tests.
      *
-     * @param config The global AI configuration.
+     * @param container The global AI configuration.
      */
-    public ToolManager(@NonNull AsiContainer config) {
+    public ToolManager(@NonNull AsiContainer container) {
         this.chat = null; // No parent chat in this context
-        this.config = config;
+        this.container = container;
     }
     
     /**
@@ -234,20 +250,37 @@ public class ToolManager extends BasicPropertyChangeSource {
      */
     private void applyPreferences() {
         log.info("Applying application-wide tool preferences...");
-        // TODO: Implement logic to apply preferences from config.getPreferences()
+        // TODO: Implement logic to apply preferences from container.getPreferences()
         // to each tool in getAllTools().
     }
     
     /**
-     * Returns all 'enabled' toolkits that implement ContextProvider.
+     * Returns all context providers from enabled toolkits.
      * 
-     * @return enabled toolkits that implement ContextProvider.
+     * @return A list of context providers.
      */
-    public List<ContextProvider> getContextProviderToolkits() {
+    public List<ContextProvider> getAllContextProviders() {
         List<ContextProvider> ret = new ArrayList<>();
         for (AbstractToolkit at: getEnabledToolkits()) {
-            if (at instanceof ContextProvider cp) {
-                ret.add(cp);
+            if (at.getContextProvider() != null) {
+                ret.add(at.getContextProvider());
+            }
+        }
+        return ret;
+    }
+    
+    /**
+     * Returns all context providers from enabled toolkits that are currently disabled.
+     * 
+     * @return A list of disabled context providers.
+     */
+    public List<ContextProvider> getDisabledContextProviders() {
+        List<ContextProvider> ret = new ArrayList<>();
+        for (AbstractToolkit at: getEnabledToolkits()) {
+            if (at.getContextProvider() != null) {
+                if (!at.getContextProvider().isProviding()) {
+                    ret.add(at.getContextProvider());
+                }
             }
         }
         return ret;
@@ -300,5 +333,71 @@ public class ToolManager extends BasicPropertyChangeSource {
             }
         }
         return Optional.empty();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getId() {
+        return "core-tool-manager";
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getName() {
+        return "Tool Manager";
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getDescription() {
+        return "Root context provider for all toolkits.";
+    }
+    
+    /** {@inheritDoc} */
+    @Override
+    public boolean isProviding() {
+        return providing;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void setProviding(boolean enabled) {
+        this.providing = enabled;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public List<String> getSystemInstructions(Chat chat) throws Exception {
+        return Collections.singletonList("The ToolManager contains a list of all installed toolkits. Each Toolkit "
+                + "contains a list of tools (java methods).");
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void populateMessage(RagMessage ragMessage) throws Exception {
+        StringBuilder sb = new StringBuilder("**Enabled Toolkits**");
+        for (AbstractToolkit at: getEnabledToolkits()) {
+            sb.append("\n\n**").append(at.getName()).append("**");
+            sb.append(" \nDescription:").append(at.getDescription());
+            sb.append("\nDisabled Tools (permission never): ").append(at.getDisabledTools().size());
+        }
+        
+        sb.append("\n\n**Disabled Toolkits**: You can suggest the user to enable them\n");
+        for (AbstractToolkit<?> at: getDisabledToolkits()) {
+            sb.append("\n\n**").append(at.getName()).append("**");
+            sb.append(" \nDescription:").append(at.getDescription());
+            sb.append("\nTotal Tools : ").append(at.getAllTools().size());
+            for (AbstractTool t: at.getAllTools()) {
+                sb.append("\n**").append(t.getName()).append("**");
+                sb.append("\n").append(t.getDescription());
+            }
+        }
+        new TextPart(ragMessage, sb.toString());
+    }
+    
+    /** {@inheritDoc} */
+    @Override
+    public List<ContextProvider> getChildrenProviders() {
+        return getAllContextProviders();
     }
 }

@@ -42,7 +42,7 @@ public abstract class AbstractTool<P extends AbstractToolParameter, C extends Ab
 
     /** The number of turns this tool call should be retained in the context. */
     @Setter
-    private int retentionTurns;
+    private int retentionTurns = -1;//inherit
 
     /** A rich, ordered list of the tool's parameters. */
     private final List<P> parameters = new ArrayList<>();
@@ -58,6 +58,22 @@ public abstract class AbstractTool<P extends AbstractToolParameter, C extends Ab
      */
     protected AbstractTool(@NonNull String name) {
         this.name = name;
+    }
+    
+    /**
+     * The effective retention turns. 
+     * 
+     * @return 
+     */
+    public int getEffectiveRetentionTurns() {
+        int ret = retentionTurns;
+        if (ret == -1) {
+            ret = toolkit.getDefaultRetention();
+        }
+        if (ret == -1) {
+            ret = toolkit.getToolManager().getChat().getConfig().getDefaultToolTurnsToKeep();
+        }
+        return ret;
     }
     
     /**

@@ -21,7 +21,10 @@ import uno.anahata.asi.toolkit.shell.Shell;
 
 /**
  * A model-agnostic, intelligent configuration object for a single chat session.
- * It defines the blueprint for a chat, including which AI providers and tools are available.
+ * It defines the blueprint for a chat, including which AI providers and tools are available,
+ * as well as the default context management policies.
+ * 
+ * @author anahata
  */
 @Getter
 @Setter
@@ -29,7 +32,7 @@ public class ChatConfig {
 
     /** A reference to the global, application-wide configuration. */
     @NonNull
-    private transient AsiContainer asiConfig;
+    private transient AsiContainer container;
 
     /** The unique identifier for this specific chat session. */
     @NonNull
@@ -80,7 +83,7 @@ public class ChatConfig {
      * @param sessionId The unique session ID.
      */
     public ChatConfig(@NonNull AsiContainer asiConfig, @NonNull String sessionId) {
-        this.asiConfig = asiConfig;
+        this.container = asiConfig;
         this.sessionId = sessionId;
     }
 
@@ -90,7 +93,7 @@ public class ChatConfig {
      * @param container The AsiContainer to bind to.
      */
     public void rebind(@NonNull AsiContainer container) {
-        this.asiConfig = container;
+        this.container = container;
     }
 
     /** The default request configuration for this chat session. Lazily initialized. */
@@ -193,6 +196,6 @@ public class ChatConfig {
      * @return The host application ID.
      */
     public String getHostApplicationId() {
-        return asiConfig.getHostApplicationId();
+        return container.getHostApplicationId();
     }
 }

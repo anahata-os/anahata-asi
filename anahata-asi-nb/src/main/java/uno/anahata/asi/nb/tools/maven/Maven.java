@@ -74,7 +74,7 @@ public class Maven extends AnahataToolkit {
     }
 
     @Override
-    public List<String> getSystemInstructionParts(Chat chat) throws Exception {
+    public List<String> getSystemInstructions(Chat chat) throws Exception {
         return Collections.singletonList("Maven Command Line: " + getNbCommandLineMavenPath());
     }
     

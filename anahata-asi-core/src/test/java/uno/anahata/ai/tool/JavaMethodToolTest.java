@@ -70,6 +70,6 @@ public class JavaMethodToolTest {
 
         assertNotNull(doNothingTool, "Could not find the doNothing tool.");
         // MockToolkit has a retention of 10, which should be inherited.
-        assertEquals(10, doNothingTool.getRetentionTurns());
+        assertEquals(10, doNothingTool.getEffectiveRetentionTurns());
     }
 }

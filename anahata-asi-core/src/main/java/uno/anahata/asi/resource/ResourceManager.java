@@ -9,7 +9,7 @@ import java.util.Optional;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.chat.Chat;
-import uno.anahata.asi.context.AbstractContextProvider;
+import uno.anahata.asi.tool.AnahataToolkit;
 import uno.anahata.asi.context.ContextPosition;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.core.RagMessage;

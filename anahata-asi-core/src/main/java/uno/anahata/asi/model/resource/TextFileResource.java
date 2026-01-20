@@ -70,7 +70,10 @@ public class TextFileResource extends AbstractPathResource<String, String> {
         new TextPart(rm, cache);
     }
     
-    
+    @Override
+    public String getContentType() {
+        return "text";
+    }
 
     @Override
     public Integer getTurnsRemaining() {

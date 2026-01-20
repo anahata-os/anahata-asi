@@ -74,10 +74,7 @@ public class ContextManager implements PropertyChangeSource {
     public void init() {
         
         registerContextProvider(new CoreContextProvider());
-        // Register toolkits as context providers
-        for (ContextProvider cp : chat.getToolManager().getContextProviderToolkits()) {
-            registerContextProvider(cp);
-        }
+        registerContextProvider(chat.getToolManager());
         
     }
     
@@ -112,22 +109,25 @@ public class ContextManager implements PropertyChangeSource {
     public List<String> getSystemInstructions() {
         List<String> allSystemInstructions = new ArrayList<>();
 
-        // 1. Process providers
-        for (ContextProvider provider : providers) {
-            String providerChunk = provider.getHeader();
-            if (provider.isEnabled()) {                                
-                try {                  
-                    List<String> systemInstructions = provider.getSystemInstructions(chat);
-                    for (String string : systemInstructions) {
-                        providerChunk+= "\n" + string;
+        // 1. Process providers and their children
+        for (ContextProvider rootProvider : providers) {
+            for (ContextProvider provider : rootProvider.getFlattenedHierarchy(true)) {
+                if (provider.isProviding()) {                                
+                    try {                  
+                        List<String> systemInstructions = provider.getSystemInstructions(chat);
+                        if (!systemInstructions.isEmpty()) {
+                            String providerHeader = provider.getHeader();
+                            for (String string : systemInstructions) {
+                                providerHeader+= "\n\n" + string;
+                            }
+                            allSystemInstructions.add(providerHeader);
+                        }
+                    } catch (Exception e) {
+                        log.error("Error executing system instruction provider: {}", provider.getName(), e);
                     }
-                } catch (Exception e) {
-                    log.error("Error executing system instruction provider: {}", provider.getName(), e);
                 }
             }
-            allSystemInstructions.add(providerChunk);
         }
-        
         
         return allSystemInstructions;
     }
@@ -163,14 +163,16 @@ public class ContextManager implements PropertyChangeSource {
             }
         }
 
-        for (ContextProvider provider : providers) {            
-            if (provider.isEnabled()) {                                
-                try {                  
-                    String providerChunk = provider.getHeader();
-                    new TextPart(augmentedMessage, providerChunk);
-                    provider.populateMessage(augmentedMessage);
-                } catch (Exception e) {
-                    log.error("Error populating rag message for provider: {}", provider.getName(), e);
+        for (ContextProvider rootProvider : providers) {            
+            for (ContextProvider provider : rootProvider.getFlattenedHierarchy(true)) {
+                if (provider.isProviding()) {                                
+                    try {                  
+                        String header = provider.getHeader();
+                        new TextPart(augmentedMessage, header);
+                        provider.populateMessage(augmentedMessage);
+                    } catch (Exception e) {
+                        log.error("Error populating rag message for provider: {}", provider.getName(), e);
+                    }
                 }
             }
         }
@@ -209,6 +211,10 @@ public class ContextManager implements PropertyChangeSource {
 
     /**
      * Formats a range of message indices into a human-readable string.
+     * 
+     * @param startIdx The starting index.
+     * @param endIdx The ending index.
+     * @return A formatted range string.
      */
     private String formatRange(int startIdx, int endIdx) {
         long startId = history.get(startIdx).getSequentialId();
@@ -358,4 +364,6 @@ public class ContextManager implements PropertyChangeSource {
     public PropertyChangeSupport getPropertyChangeSupport() {
         return propertyChangeSupport;
     }
+    
+    
 }

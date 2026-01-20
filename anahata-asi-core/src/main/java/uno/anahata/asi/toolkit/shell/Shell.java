@@ -25,12 +25,15 @@ import uno.anahata.asi.tool.AnahataToolkit;
  * This tool is powerful and should be used with caution. It captures standard
  * output, standard error, and execution metadata.
  * </p>
+ * 
+ * @author anahata
  */
 @AiToolkit("A toolkit for running shell commands")
 public class Shell extends AnahataToolkit {
 
+    /** {@inheritDoc} */
     @Override
-    public List<String> getSystemInstructionParts(Chat chat) throws Exception {
+    public List<String> getSystemInstructions(Chat chat) throws Exception {
         StringBuilder sb = new StringBuilder();
         sb.append("### Host Environment Variables\n");
         Map<String, String> sortedEnv = new TreeMap<>(System.getenv());
@@ -42,7 +45,7 @@ public class Shell extends AnahataToolkit {
      * Executes a shell command using {@code bash -c}.
      *
      * @param command The shell command to execute.
-     * @return the exit code
+     * @return A {@link ShellExecutionResult} containing the exit code and output.
      * @throws Exception if the command fails to start or execution is interrupted.
      */
     @AiTool("Runs a shell command with bash -c: <command> and forwards the stdout to the tool's output and the stderr to the tool's error log)")
@@ -88,15 +91,20 @@ public class Shell extends AnahataToolkit {
     }
 
     /**
-     * Grabs the given stream logging to the tool logs
+     * A background task that consumes an InputStream and forwards its content 
+     * to the tool's log or error stream.
      */
     @AllArgsConstructor
     private class StreamGobbler implements Callable<String> {
 
+        /** The tool response to which logs will be added. */
         private JavaMethodToolResponse response;
+        /** The input stream to consume. */
         private final InputStream is;
+        /** Whether this stream represents standard error. */
         private boolean error;
 
+        /** {@inheritDoc} */
         @Override
         public String call() throws IOException {
             StringBuilder sb = new StringBuilder();

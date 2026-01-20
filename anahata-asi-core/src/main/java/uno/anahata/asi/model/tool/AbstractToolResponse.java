@@ -256,7 +256,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
 
     @Override
     protected int getDefaultTurnsToKeep() {
-        return getChatConfig().getDefaultToolTurnsToKeep();
+        return getCall().getTool().getEffectiveRetentionTurns();
     }
     
     /** {@inheritDoc} */

@@ -14,8 +14,8 @@ The entire process, from a simple Java method to a model-callable function, is h
 
 Tools are defined in standard Java classes using a set of intuitive annotations:
 
--   **`@AiToolkit`**: Marks a class as a container for related tools. It provides a high-level description for the entire toolkit.
--   **`@AiTool`**: Marks a public method within a toolkit class as an AI-callable tool. It contains the detailed description that the model will use to understand the tool's purpose and a `retention` policy.
+-   **`@AiToolkit`**: Marks a class as a container for related tools. It provides a high-level description for the entire toolkit and can define a default `retention` policy.
+-   **`@AiTool`**: Marks a public method within a toolkit class as an AI-callable tool. It contains the detailed description that the model will use to understand the tool's purpose and an optional `retention` policy.
 -   **`@AIToolParam`**: Describes a parameter of a tool method, providing the model with essential information about what to pass as an argument.
 
 ### 2.2. Registration and Parsing
@@ -44,7 +44,7 @@ This is the cornerstone of the framework's intelligence. Once the tool is parsed
 When the model requests a tool call, the framework follows a robust, multi-step process:
 
 1.  **Call Creation**: The `ToolManager` creates a `JavaMethodToolCall` object, which represents the model's request.
-2.  **Argument Conversion**: The `JavaMethodTool` uses the rich `JavaMethodToolParameter` models to perform a **type-safe conversion** of the model's JSON arguments into the precise Java types required by the method signature. It uses `Gson` and the stored generic `Type` for each parameter to handle complex types like `List<String>` correctly.
+2.  **Argument Conversion**: The `JavaMethodTool` uses the rich `JavaMethodToolParameter` models to perform a **type-safe conversion** of the model's JSON arguments into the precise Java types required by the method signature. It uses `Jackson` and the stored generic `Type` for each parameter to handle complex types like `List<String>` correctly.
 3.  **Deferred Execution**: The call is not executed immediately. Instead, a `JavaMethodToolResponse` object is created and paired with the call.
 4.  **Invocation**: The `JavaMethodToolResponse.execute()` method is called. This method uses the stored `java.lang.reflect.Method` and the converted arguments to invoke the actual Java tool method.
 5.  **Result Capturing**: The result, or any exception, is captured in the `JavaMethodToolResponse` object, which is then sent back to the model.
@@ -53,8 +53,13 @@ When the model requests a tool call, the framework follows a robust, multi-step 
 
 The V2 architecture allows tools to be aware of and interact with the chat context.
 
--   **Context-Aware API**: Toolkits can extend the `AbstractJavaTool` base class. This gives any tool method access to the current execution context via a `ThreadLocal`. This allows tools to call methods like `log(String message)` or `getChat()` to interact with the session without needing extra parameters in their method signature.
--   **Tool-Driven Retention:** A tool's retention policy is defined in its `@AiTool(retention = ...)` annotation, providing a default number of turns for its call/response pair to remain in the context.
+-   **`ToolContext`**: Toolkits can extend the `AnahataToolkit` base class, which in turn extends `ToolContext`. This gives any tool method access to the current execution context via a `ThreadLocal`. This allows tools to call methods like `log(String message)`, `addAttachment(...)`, or `getChat()` to interact with the session without needing extra parameters in their method signature.
+-   **Toolkits as Context Providers**: `AnahataToolkit` implements `ContextProvider`. This means any toolkit can natively contribute system instructions or RAG data to the prompt assembly process.
+-   **Intelligent Retention Inheritance**: A tool's retention policy (how many turns its result stays in context) follows a clean inheritance model:
+    1.  **Method Level**: `@AiTool(retention = N)`
+    2.  **Toolkit Level**: `@AiToolkit(retention = N)`
+    3.  **System Level**: `ChatConfig.defaultToolTurnsToKeep` (defaulting to 5).
+-   **Dynamic Retention Control**: Tools can programmatically adjust their own retention during execution using `AnahataTool.setTurnsToKeep(int)`.
 
 ## 4. Planned Enhancements
 

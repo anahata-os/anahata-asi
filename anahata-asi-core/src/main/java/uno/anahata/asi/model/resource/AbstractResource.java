@@ -18,11 +18,12 @@ import uno.anahata.asi.model.core.RagMessage;
  * over its own lifecycle, refresh policy, and position in the prompt.
  *
  * @author anahata-ai
- * @param <R> The type of the underlying raw Java resource (e.g., String, byte[], Process).
+ * @param <R> The type of the underlying raw Java resource handle (e.g., Path, Process).
+ * @param <C> The type of the rendered content (e.g., String, byte[]).
  */
 @Getter
 @Setter
-public abstract class AbstractResource<R> {
+public abstract class AbstractResource<R, C> {
 
     //<editor-fold defaultstate="collapsed" desc="Identity">
     /** A unique, immutable identifier for this resource instance. */
@@ -56,6 +57,23 @@ public abstract class AbstractResource<R> {
      * @throws java.lang.Exception if the population fails.
      */
     public abstract void populate(RagMessage message) throws Exception;
+    
+    /**
+     * Gets the machine-readable content type of this resource (e.g., "text", "image").
+     * This is used to determine if a resource is suitable for certain context positions.
+     * 
+     * @return The content type string.
+     */
+    public abstract String getContentType();
+
+    /**
+     * Gets the latest rendered content of this resource, respecting its refresh policy.
+     * For a TextFileResource, this would return a String; for an ImageResource, a byte[].
+     * 
+     * @return The rendered content object.
+     * @throws Exception if rendering or reloading fails.
+     */
+    public abstract C getContent() throws Exception;
     
     /**
      * Gets the number of turns remaining before this resource is pruned.

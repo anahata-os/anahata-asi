@@ -23,12 +23,12 @@ import uno.anahata.asi.model.core.RagMessage;
  * 
  * @author anahata-ai
  * @param <R> The type of the underlying raw Java resource (e.g., String, byte[]).
- * @param <P> The type of the AbstractPart this resource renders its viewport to.
+ * @param <C> The type of the rendered content (e.g., String, byte[]).
  */
 @Slf4j
 @Getter
 @Setter
-public abstract class AbstractPathResource<R, P> extends AbstractResource<Path> {
+public abstract class AbstractPathResource<R, C> extends AbstractResource<Path, C> {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
         .withZone(ZoneId.systemDefault());
     
@@ -39,9 +39,9 @@ public abstract class AbstractPathResource<R, P> extends AbstractResource<Path> 
     /** The last modified timestamp of the file on disk at the time of loading. */
     private long loadLastModified;
     
-    /** The cached, rendered Part representing the current viewport of the resource. Ignored during serialization. */
+    /** The cached, rendered content representing the current viewport of the resource. Ignored during serialization. */
     @JsonIgnore
-    protected P cache;
+    protected C cache;
     //</editor-fold>
 
     /**
@@ -54,17 +54,35 @@ public abstract class AbstractPathResource<R, P> extends AbstractResource<Path> 
      */
     @Override
     public void populate(RagMessage ragMessage) throws Exception {
+        reloadIfNeeded();
+        
+        if (cache != null) {
+            populateFromCache(ragMessage);
+        }
+    }
+    
+    @Override
+    public C getContent() throws Exception {
+        reloadIfNeeded();
+        return cache;
+    }
+
+    /**
+     * Checks if the resource needs to be reloaded from disk based on its existence,
+     * staleness, and refresh policy.
+     * 
+     * @throws Exception if an error occurs during the reload process.
+     */
+    private void reloadIfNeeded() throws Exception {
         if (!exists()) {
             log.warn("Resource file does not exist: {}", path);
-            this.cache = null; // Invalidate cache
-            
+            // We don't invalidate the cache here to support RefreshPolicy.SNAPSHOT
+            return;
         }
         
         if (cache == null || (isStale() && getRefreshPolicy() == RefreshPolicy.LIVE)) {
             reload();
         }
-        
-        populateFromCache(ragMessage);
     }
     
     protected abstract void populateFromCache(RagMessage rm);
@@ -98,7 +116,7 @@ public abstract class AbstractPathResource<R, P> extends AbstractResource<Path> 
     
     /**
      * Atomically reloads the resource's content from disk, processes it through the
-     * viewport, and updates the cached Part. This method must be implemented by
+     * viewport, and updates the cached content. This method must be implemented by
      * concrete subclasses.
      *
      * @throws Exception if any error occurs during the reload process.

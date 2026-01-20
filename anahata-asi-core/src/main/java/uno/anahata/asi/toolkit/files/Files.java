@@ -20,6 +20,7 @@ import uno.anahata.asi.tool.AiToolParam;
 
 /**
  * The definitive V2 toolkit for interacting with file-based resources.
+ * It provides tools for loading, writing, and surgically editing text files.
  *
  * @author anahata-ai
  */
@@ -108,6 +109,13 @@ public class Files extends AnahataToolkit {
         return resource;
     }
 
+    /**
+     * Creates a new file or overwrites an existing one with the provided content.
+     * 
+     * @param path The absolute path to the file.
+     * @param content The text content to write.
+     * @throws Exception if an I/O error occurs.
+     */
     @AiTool(value = "Creates a new file or overwrites an existing one with the provided content.", retention = 0)
     public void writeTextFile(
             @AiToolParam("The absolute path to the file.") String path,
@@ -120,6 +128,14 @@ public class Files extends AnahataToolkit {
         log("Successfully wrote to file: " + path);
     }
 
+    /**
+     * Replaces a specific string with another in a file. Ideal for surgical code edits.
+     * 
+     * @param path The absolute path to the file.
+     * @param target The exact string to be replaced.
+     * @param replacement The replacement string.
+     * @throws Exception if the target string is not found or an I/O error occurs.
+     */
     @AiTool(value = "Replaces a specific string with another in a file. Ideal for surgical code edits.", retention = 0)
     public void replaceInFile(
             @AiToolParam("The absolute path to the file.") String path,
@@ -138,6 +154,13 @@ public class Files extends AnahataToolkit {
 
     }
 
+    /**
+     * Appends text to the end of an existing file.
+     * 
+     * @param path The absolute path to the file.
+     * @param content The text content to append.
+     * @throws Exception if an I/O error occurs.
+     */
     @AiTool(value = "Appends text to the end of an existing file.", retention = 0)
     public void appendTextToFile(
             @AiToolParam("The absolute path to the file.") String path,
