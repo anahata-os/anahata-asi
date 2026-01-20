@@ -28,7 +28,7 @@ import uno.anahata.asi.tool.AnahataToolkit;
  *
  * @author anahata
  */
-@AiToolkit("Tools for loading and managing local resources")
+@AiToolkit("Tools for loading and managing local resources. Note: Resources with a LIVE refresh policy (the default) are automatically refreshed from disk right before the API call (when generating the RAG message), so there is no need to re-load them if they are already in the context.")
 @Slf4j
 public class Resources extends AnahataToolkit {
 

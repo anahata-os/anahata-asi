@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
+import java.util.Set;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.java.project.JavaProjectConstants;
@@ -28,6 +29,7 @@ import org.netbeans.api.project.Sources;
 import org.netbeans.api.project.ui.OpenProjects;
 import org.netbeans.modules.maven.api.NbMavenProject;
 import org.netbeans.spi.project.ActionProvider;
+import org.netbeans.spi.project.SubprojectProvider;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileStateInvalidException;
 import org.openide.filesystems.FileUtil;
@@ -73,24 +75,44 @@ public class Projects extends AnahataToolkit{
         throw new Exception("Project not found or is not open: " + projectDirectoryPath);
     }
 
-    @AiTool("Returns a List of project IDs (folder names) for all currently open projects.")
+    @AiTool("Returns a List of absolute paths for all currently open projects.")
     public List<String> getOpenProjects() {
-        List<String> projectIds = new ArrayList<>();
+        List<String> projectPaths = new ArrayList<>();
         for (Project project : OpenProjects.getDefault().getOpenProjects()) {
-            FileObject root = project.getProjectDirectory();
-            projectIds.add(root.getPath()); // project ID = folder name
+            projectPaths.add(project.getProjectDirectory().getPath());
         }
-        return projectIds;
+        return projectPaths;
     }
 
-    @AiTool("Opens a project in the IDE, waiting for the asynchronous open operation to complete. The projectId can be either the folder name (relative to NetBeansProjects) or an absolute path.")
-    public String openProject(@AiToolParam("The project id (folder name) or absolute path to open.") String projectId) throws Exception {
+    @AiTool("Returns the absolute path of the current 'Main Project' in the IDE, or null if none is set.")
+    public String getMainProject() {
+        Project p = OpenProjects.getDefault().getMainProject();
+        return p != null ? p.getProjectDirectory().getPath() : null;
+    }
+
+    @AiTool("Sets a specific open project as the 'Main Project'.")
+    public void setMainProject(@AiToolParam("The absolute path of the project to set as main.") String projectPath) throws Exception {
+        Project p = findOpenProject(projectPath);
+        OpenProjects.getDefault().setMainProject(p);
+    }
+
+    @AiTool("Closes one or more open projects.")
+    public void closeProjects(@AiToolParam("A list of absolute paths of the projects to close.") List<String> projectPaths) throws Exception {
+        List<Project> toClose = new ArrayList<>();
+        for (String path : projectPaths) {
+            toClose.add(findOpenProject(path));
+        }
+        OpenProjects.getDefault().close(toClose.toArray(new Project[0]));
+    }
+
+    @AiTool("Opens a project in the IDE, waiting for the asynchronous open operation to complete. This tool prefers the full absolute path as the project path.")
+    public String openProject(@AiToolParam("The absolute path to the project (recommended) or the folder name relative to NetBeansProjects.") String projectPath) throws Exception {
         File projectDir;
-        if (new File(projectId).isAbsolute()) {
-            projectDir = new File(projectId);
+        if (new File(projectPath).isAbsolute()) {
+            projectDir = new File(projectPath);
         } else {
             String projectsFolderPath = System.getProperty("user.home") + File.separator + "NetBeansProjects";
-            projectDir = new File(projectsFolderPath, projectId);
+            projectDir = new File(projectsFolderPath, projectPath);
         }
 
         if (!projectDir.exists() || !projectDir.isDirectory()) {
@@ -104,7 +126,7 @@ public class Projects extends AnahataToolkit{
 
         for (Project p : OpenProjects.getDefault().getOpenProjects()) {
             if (p.getProjectDirectory().equals(projectFob)) {
-                return "Success: Project '" + projectId + "' is already open.";
+                return "Success: Project '" + projectPath + "' is already open.";
             }
         }
 
@@ -130,30 +152,42 @@ public class Projects extends AnahataToolkit{
         try {
             OpenProjects.getDefault().open(new Project[]{projectToOpen}, false, true);
             if (latch.await(30, TimeUnit.SECONDS)) {
-                return "Success: Project '" + projectId + "' opened successfully.";
+                return "Success: Project '" + projectPath + "' opened successfully.";
             } else {
-                return "Error: Timed out after 30 seconds waiting for project '" + projectId + "' to open.";
+                return "Error: Timed out after 30 seconds waiting for project '" + projectPath + "' to open.";
             }
         } finally {
             OpenProjects.getDefault().removePropertyChangeListener(listener);
         }
     }
 
+    @AiTool("Opens all subprojects of a given project.")
+    public void openSubprojects(@AiToolParam("The absolute path of the parent project.") String projectPath) throws Exception {
+        Project parent = findOpenProject(projectPath);
+        SubprojectProvider spp = parent.getLookup().lookup(SubprojectProvider.class);
+        if (spp != null) {
+            Set<? extends Project> subprojects = spp.getSubprojects();
+            if (!subprojects.isEmpty()) {
+                OpenProjects.getDefault().open(subprojects.toArray(new Project[0]), false, true);
+            }
+        }
+    }
+
     @AiTool("Gets a list of the supported NetBeans Actions (as in the ActionProvider api) for a given Project.")
-    public static String[] getSupportedActions(@AiToolParam("The project id (not the 'display name')") String projectId) throws Exception {
-        Project p = Projects.findOpenProject(projectId);
+    public static String[] getSupportedActions(@AiToolParam("The absolute path of the project.") String projectPath) throws Exception {
+        Project p = Projects.findOpenProject(projectPath);
         return p.getLookup().lookup(ActionProvider.class).getSupportedActions();
     }
 
     @AiTool("Gets a structured, context-aware overview of a project, including root files, source tree, the in-context status of each file and a list of supported NetBeans Actions.")
     @SneakyThrows
-    public ProjectOverview getOverview(@AiToolParam("The project id (not the 'display name')") String projectId) {
-        return getOverview(projectId, getChat());
+    public ProjectOverview getOverview(@AiToolParam("The absolute path of the project.") String projectPath) {
+        return getOverview(projectPath, getChat());
     }
 
     @SneakyThrows
-    public ProjectOverview getOverview(String projectId, Chat chat) {
-        Project target = findOpenProject(projectId);
+    public ProjectOverview getOverview(String projectPath, Chat chat) {
+        Project target = findOpenProject(projectPath);
 
         
         ProjectInformation info = ProjectUtils.getInformation(target);
@@ -205,7 +239,7 @@ public class Projects extends AnahataToolkit{
         NbMavenProject nbMavenProject = target.getLookup().lookup(NbMavenProject.class);
         if (nbMavenProject != null) {
             // Get declared dependencies
-            List<DependencyScope> temp = Maven.getDeclaredDependencies(projectId);
+            List<DependencyScope> temp = Maven.getDeclaredDependencies(projectPath);
             if (temp != null && !temp.isEmpty()) {
                 mavenDeclaredDependencies = temp;
             }
@@ -281,9 +315,9 @@ public class Projects extends AnahataToolkit{
             + "as this tool does not return any values nor you can ensure that the action finished when this tool returns."
             + "\nUse Maven.runGoals or JVM tools or any other synchronous tools if you need to ensure the action succeeded or the action you require produces an output you need")
     public void invokeAction(
-            @AiToolParam("The netbeans project name (not the display name)") String projectId,
+            @AiToolParam("The absolute path of the project.") String projectPath,
             @AiToolParam("The action to invoke") String action) throws Exception {
-        Project project = findOpenProject(projectId);
+        Project project = findOpenProject(projectPath);
         ActionProvider ap = project.getLookup().lookup(ActionProvider.class);
         if (ap == null) {
             throw new IllegalArgumentException(project + " does not have ActionProvider");

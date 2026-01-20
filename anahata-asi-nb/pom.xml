@@ -358,8 +358,30 @@
             <artifactId>org-openide-windows</artifactId>
             <version>${netbeans.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-modules-masterfs-ui</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
         
         <!-- NetBeans Modules -->
+        <dependency>
+            <groupId>org.netbeans.modules</groupId>
+            <artifactId>org-netbeans-modules-masterfs</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        
+        
+        <dependency>
+            <groupId>org.netbeans.modules</groupId>
+            <artifactId>org-netbeans-modules-versioning-core</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.modules</groupId>
+            <artifactId>org-netbeans-modules-versioning-masterfs</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.netbeans.modules</groupId>
             <artifactId>org-netbeans-modules-code-analysis</artifactId>
@@ -460,17 +482,13 @@
                     <codeNameBase>uno.anahata.asi</codeNameBase>
                     <brandingToken>anahata</brandingToken>
                     <!--
-                    <moduleIcon>src/main/resources/icons/anahata_32.png</moduleIcon>
-                                        -->
+<moduleIcon>src/main/resources/icons/anahata_32.png</moduleIcon>
+                    -->
                     <includeRuntimeModuleLibraries>true</includeRuntimeModuleLibraries>
                     <moduleDependencies>
                         <dependency>
                             <type>spec</type>
                             <id>org.netbeans.api:org-netbeans-modules-versioning</id>
-                        </dependency>
-                        <dependency>
-                            <type>impl</type>
-                            <id>org.netbeans.modules:org-netbeans-modules-versioning-core</id>
                         </dependency>
                         <dependency>
                             <type>spec</type>
@@ -504,6 +522,22 @@
                             <type>impl</type>
                             <id>org.netbeans.api:org-netbeans-modules-jumpto</id>
                         </dependency>
+                        <dependency>
+                            <id>org.netbeans.modules:org-netbeans-modules-masterfs</id>
+                            <type>impl</type>
+                        </dependency>
+                        <dependency>
+                            <id>org.netbeans.modules:org-netbeans-modules-masterfs</id>
+                            <type>impl</type>
+                        </dependency>
+                        <dependency>
+                            <id>org.netbeans.modules:org-netbeans-modules-versioning-masterfs</id>
+                            <type>impl</type>
+                        </dependency>
+                        <dependency>
+                            <type>impl</type>
+                            <id>org.netbeans.modules:org-netbeans-modules-versioning-core</id>
+                        </dependency>                        
                         <dependency>
                             <type>impl</type>
                             <id>org.netbeans.modules:org-netbeans-modules-code-analysis</id>

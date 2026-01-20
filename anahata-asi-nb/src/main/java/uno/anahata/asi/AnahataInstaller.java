@@ -15,6 +15,8 @@ import java.util.logging.Logger;
 import org.openide.modules.ModuleInstall;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
+import uno.anahata.asi.nb.util.ElementHandleModule;
+import uno.anahata.asi.tool.schema.SchemaProvider;
 
 /**
  * Installer for the Anahata ASI V2 module.
@@ -37,6 +39,9 @@ public class AnahataInstaller extends ModuleInstall {
     @Override
     public void restored() {
         log.info("Anahata ASI V2 Module Restored");
+        
+        // Register the ElementHandle module for global JSON support in the IDE
+        SchemaProvider.OBJECT_MAPPER.registerModule(new ElementHandleModule());
         
         File handoffFile = getHandoffFile();
         if (handoffFile.exists()) {

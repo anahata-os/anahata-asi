@@ -53,7 +53,7 @@ public class Files extends AnahataToolkit {
      * @throws Exception if the file does not exist, is already loaded, or an
      * I/O error occurs.
      */
-    @AiTool(value = "Loads a text file into the context as a managed resource.", retention = 0)
+    @AiTool(value = "Loads a text file into the context as a managed resource. By default, files are loaded with a LIVE refresh policy, which means they are automatically refreshed from disk right before the API call starts. You do not need to re-load a file if it is already present in the context.", retention = 0)
     public List<TextFileResource> loadTextFile(
             @AiToolParam("The absolute paths to the text files.") List<String> resourcePaths) throws Exception {
 

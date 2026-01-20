@@ -165,6 +165,14 @@ public class SchemaProvider {
                         return buildArraySchema(type, itemSchemaJson);
                     }
                 }
+            } else if (raw.equals(Map.class)) {
+                Type[] args = pt.getActualTypeArguments();
+                if (args.length == 2 && args[0].equals(String.class)) {
+                    String valueSchemaJson = generateStandardSchema(args[1]);
+                    if (valueSchemaJson != null) {
+                        return buildMapSchema(type, valueSchemaJson);
+                    }
+                }
             }
         } else if (type instanceof Class<?> clazz && clazz.isArray()) {
             // Handle T[] arrays
@@ -258,6 +266,36 @@ public class SchemaProvider {
         if (itemComponents.isObject() && itemComponents.size() > 0) {
             Map<String, Object> components = new LinkedHashMap<>();
             components.put("schemas", OBJECT_MAPPER.treeToValue(itemComponents, Map.class));
+            finalMap.put("components", components);
+        }
+
+        return GSON.toJson(finalMap);
+    }
+
+    /**
+     * Builds a JSON schema for a Map<String, T> type.
+     * 
+     * @param mapType The map type.
+     * @param valueSchemaJson The JSON schema for the values.
+     * @return The JSON schema string for the map.
+     * @throws JsonProcessingException if generation fails.
+     */
+    private static String buildMapSchema(Type mapType, String valueSchemaJson) throws JsonProcessingException {
+        JsonNode valueSchema = OBJECT_MAPPER.readTree(valueSchemaJson);
+
+        Map<String, Object> mapSchema = new LinkedHashMap<>();
+        mapSchema.put("type", "object");
+        mapSchema.put("title", getTypeName(mapType));
+        mapSchema.put("additionalProperties", OBJECT_MAPPER.treeToValue(valueSchema, Map.class));
+
+        Map<String, Object> finalMap = new LinkedHashMap<>();
+        finalMap.putAll(mapSchema);
+
+        // Carry over components if the value is a complex object
+        JsonNode valueComponents = valueSchema.path("components").path("schemas");
+        if (valueComponents.isObject() && valueComponents.size() > 0) {
+            Map<String, Object> components = new LinkedHashMap<>();
+            components.put("schemas", OBJECT_MAPPER.treeToValue(valueComponents, Map.class));
             finalMap.put("components", components);
         }
 

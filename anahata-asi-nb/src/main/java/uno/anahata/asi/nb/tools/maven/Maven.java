@@ -190,7 +190,7 @@ public class Maven extends AnahataToolkit {
      */
     @AiTool("The definitive 'super-tool' for adding a Maven dependency. It follows a safe, multi-phase process and returns a structured result object. The model is responsible for interpreting the result.")
     public AddDependencyResult addDependency(
-            @AiToolParam("The ID of the project to modify.") String projectId,
+            @AiToolParam("The absolute path of the project to modify.") String projectPath,
             @AiToolParam("The groupId of the dependency.") String groupId,
             @AiToolParam("The artifactId of the dependency.") String artifactId,
             @AiToolParam("The version of the dependency.") String version,
@@ -204,7 +204,7 @@ public class Maven extends AnahataToolkit {
         try {
             // Phase 1: Pre-flight Check
             summary.append("Phase 1: Pre-flight check...\n");
-            boolean preflightSuccess = downloadDependencyArtifact(projectId, groupId, artifactId, version, classifier, type);
+            boolean preflightSuccess = downloadDependencyArtifact(projectPath, groupId, artifactId, version, classifier, type);
             resultBuilder.preflightCheckSuccess(preflightSuccess);
 
             if (!preflightSuccess) {
@@ -215,7 +215,7 @@ public class Maven extends AnahataToolkit {
 
             // Phase 2: POM Modification
             summary.append("Phase 2: Modifying pom.xml...\n");
-            Project project = Projects.findOpenProject(projectId);
+            Project project = Projects.findOpenProject(projectPath);
             FileObject pom = project.getProjectDirectory().getFileObject("pom.xml");
             if (pom == null) {
                 summary.append("Result: FAILED. Could not find pom.xml.");
@@ -234,7 +234,7 @@ public class Maven extends AnahataToolkit {
             // Phase 3: Transitive Dependencies
             summary.append("Phase 3: Resolving transitive dependencies...\n");
             
-            MavenBuildResult resolveResult = runGoals(projectId, Collections.singletonList("dependency:resolve"), null, null, null, null);
+            MavenBuildResult resolveResult = runGoals(projectPath, Collections.singletonList("dependency:resolve"), null, null, null, null);
             //resultBuilder.dependencyResolveResult(resolveResult);
             summary.append("Result: 'dependency:resolve' goal executed. See MavenBuildResult for details.\n\n");
 
@@ -242,7 +242,7 @@ public class Maven extends AnahataToolkit {
             summary.append("Phase 4: Triggering async download of sources and javadocs...\n");
             getExecutorService().submit(() -> {
                 try {
-                    downloadProjectDependencies(projectId, Arrays.asList("sources", "javadoc"));
+                    downloadProjectDependencies(projectPath, Arrays.asList("sources", "javadoc"));
                 } catch (Exception e) {
                     LOG.log(Level.WARNING, "Error during async source/javadoc download", e);
                 }
@@ -271,9 +271,9 @@ public class Maven extends AnahataToolkit {
      */
     @AiTool("Gets the list of dependencies directly declared in the pom.xml, grouped by scope and groupId for maximum token efficiency.")
     public static List<DependencyScope> getDeclaredDependencies(
-            @AiToolParam("The ID of the project to analyze.") String projectId) throws Exception {
+            @AiToolParam("The absolute path of the project to analyze.") String projectPath) throws Exception {
         
-        Project project = Projects.findOpenProject(projectId);
+        Project project = Projects.findOpenProject(projectPath);
         NbMavenProject nbMavenProject = project.getLookup().lookup(NbMavenProject.class);
         List<Dependency> dependencies = nbMavenProject.getMavenProject().getDependencies();
         return groupDeclaredDependencies(dependencies);
@@ -287,9 +287,9 @@ public class Maven extends AnahataToolkit {
      */
     @AiTool("Gets the final, fully resolved list of transitive dependencies for the project, representing the actual runtime classpath. The output is in an ultra-compact format (List<ResolvedDependencyScope>) for maximum token efficiency.")
     public List<ResolvedDependencyScope> getResolvedDependencies(
-            @AiToolParam("The ID of the project to analyze.") String projectId) throws Exception {
+            @AiToolParam("The absolute path of the project to analyze.") String projectPath) throws Exception {
 
-        Project project = Projects.findOpenProject(projectId);
+        Project project = Projects.findOpenProject(projectPath);
         NbMavenProject nbMavenProject = project.getLookup().lookup(NbMavenProject.class);
         Collection<Artifact> artifacts = nbMavenProject.getMavenProject().getArtifacts();
         return groupResolvedArtifacts(artifacts);
@@ -395,7 +395,7 @@ public class Maven extends AnahataToolkit {
      * @throws Exception if an error occurs.
      */
     @AiTool(value = "Executes a list of Maven goals on a Project synchronously (waits for the build to finish), capturing the last " + MAX_OUTPUT_LINES + " lines of the output.")
-    public static MavenBuildResult runGoals(
+    public MavenBuildResult runGoals(
             @AiToolParam("The ID of the project to run the goals on.") String projectId,
             @AiToolParam("A list of Maven goals to execute (e.g., ['clean', 'install']).") List<String> goals,
             @AiToolParam("A list of profiles to activate.") List<String> profiles,

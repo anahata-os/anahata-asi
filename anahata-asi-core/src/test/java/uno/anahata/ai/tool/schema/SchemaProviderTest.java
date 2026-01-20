@@ -19,6 +19,7 @@ package uno.anahata.ai.tool.schema;
 
 import uno.anahata.asi.tool.schema.SchemaProvider;
 import com.fasterxml.jackson.core.type.TypeReference;
+import java.lang.reflect.Type;
 import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
@@ -43,6 +44,20 @@ public class SchemaProviderTest {
         Map<String, Object> schema = SchemaProvider.OBJECT_MAPPER.readValue(schemaJson, MAP_TYPE_REF);
         assertEquals(String.class.getName(), schema.get("title"));
         assertEquals("string", schema.get("type"));
+    }
+
+    @Test
+    public void testMapSchema() throws Exception {
+        Type mapType = new TypeReference<Map<String, String>>() {}.getType();
+        String schemaJson = SchemaProvider.generateInlinedSchemaString(mapType);
+        assertNotNull(schemaJson);
+        Map<String, Object> schema = SchemaProvider.OBJECT_MAPPER.readValue(schemaJson, MAP_TYPE_REF);
+        assertEquals("java.util.Map<java.lang.String, java.lang.String>", schema.get("title"));
+        assertEquals("object", schema.get("type"));
+        Map<String, Object> additionalProperties = (Map<String, Object>) schema.get("additionalProperties");
+        assertNotNull(additionalProperties);
+        assertEquals("string", additionalProperties.get("type"));
+        assertEquals("java.lang.String", additionalProperties.get("title"));
     }
 
     @Test

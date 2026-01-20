@@ -38,12 +38,6 @@ import uno.anahata.asi.tool.AiToolkit;
 public class CodeModel {
 
     /**
-     * Private constructor to prevent instantiation of this utility class.
-     */
-    private CodeModel() {
-    }
-
-    /**
      * Finds multiple Java types matching a query and returns a paginated result of minimalist, machine-readable keys.
      * @param query The search query for the types (e.g., simple name, FQN, wildcards).
      * @param caseSensitive Whether the search should be case-sensitive.
