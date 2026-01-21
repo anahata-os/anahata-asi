@@ -163,11 +163,13 @@ public class ContextManager implements PropertyChangeSource {
         // 2. Add the synthetic RAG message for prompt augmentation.
         RagMessage augmentedMessage = new RagMessage(chat);
         for (ContextProvider rootProvider : providers) {            
+            log.info("Augmenting context with Root provider {}" + rootProvider);
             for (ContextProvider provider : rootProvider.getFlattenedHierarchy(true)) {
+                log.info("\n\t- {}" + provider + " providing:" + provider.isProviding());
                 if (provider.isProviding()) {                                
                     try {                  
                         String header = provider.getHeader();
-                        new TextPart(augmentedMessage, header);
+                        augmentedMessage.addPart(header);
                         provider.populateMessage(augmentedMessage);
                     } catch (Exception e) {
                         log.error("Error populating rag message for provider: {}", provider.getName(), e);
