@@ -5,13 +5,11 @@ import com.google.genai.types.Content;
 import com.google.genai.types.Part;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import uno.anahata.asi.internal.TokenizerUtils;
 import uno.anahata.asi.model.core.AbstractMessage;
 import uno.anahata.asi.model.core.AbstractPart;
-import uno.anahata.asi.model.core.Role;
+import uno.anahata.asi.model.core.ThoughtSignature;
 
 /**
  * An object-oriented adapter that converts a single Anahata AbstractMessage into a
@@ -36,24 +34,35 @@ public class GeminiContentAdapter {
 
         List<Part> googleParts = new ArrayList<>();
 
-        // 1. Inject message-level metadata header if enabled for this message type.
+        // 1. Inject message-level metadata header if enabled.
         boolean shouldCreateMetadata = anahataMessage.shouldCreateMetadata();
         if (shouldCreateMetadata) {
             googleParts.add(Part.fromText(anahataMessage.createMetadataHeader()));
         }
 
-        // 2. Process and convert each part, injecting part-level headers where appropriate.
+        // 2. Process and convert each part.
         // We iterate over ALL parts (true) to handle pruned placeholders.
         for (AbstractPart part : anahataMessage.getParts(true)) {
             boolean isEffectivelyPruned = part.isEffectivelyPruned();
             
-            if (shouldCreateMetadata) {
-                googleParts.add(Part.fromText(part.createMetadataHeader()));
+            if (isEffectivelyPruned && !includePruned) {
+                // ROLE-PRESERVING PLACEHOLDER:
+                // We send the metadata header as text, and if it's a model part, 
+                // we attach the preserved thought signature to the SAME part.
+                Part.Builder placeholderBuilder = Part.builder()
+                    .text(part.createMetadataHeader());
+                
+                if (part instanceof ThoughtSignature ts && ts.getThoughtSignature() != null) {
+                    placeholderBuilder.thoughtSignature(ts.getThoughtSignature());
+                }
+                
+                googleParts.add(placeholderBuilder.build());
+                continue;
             }
 
-            if (isEffectivelyPruned && !includePruned) {
-                // If pruned and not including, the header above serves as the placeholder.
-                continue;
+            // If not pruned, inject the part-level header before the actual content.
+            if (shouldCreateMetadata) {
+                googleParts.add(Part.fromText(part.createMetadataHeader()));
             }
 
             Part googlePart = new GeminiPartAdapter(part).toGoogle();
@@ -65,7 +74,7 @@ public class GeminiContentAdapter {
         }
 
         if (googleParts.isEmpty()) {
-            return null; // Don't create a Content object if there are no visible parts
+            return null;
         }
 
         builder.parts(googleParts);

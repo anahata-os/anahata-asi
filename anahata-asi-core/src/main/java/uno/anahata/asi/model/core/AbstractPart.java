@@ -250,6 +250,8 @@ public abstract class AbstractPart implements PropertyChangeSource {
             getTurnsLeft()
         ));
 
+        appendMetadata(sb);
+
         if (Boolean.TRUE.equals(pruned)) {
             sb.append(" | [PRUNED]");
         } else if (Boolean.FALSE.equals(pruned)) {
@@ -265,6 +267,15 @@ public abstract class AbstractPart implements PropertyChangeSource {
         
         sb.append("]");
         return sb.toString();
+    }
+
+    /**
+     * Hook for subclasses to inject specialized metadata into the part header.
+     * 
+     * @param sb The StringBuilder building the header.
+     */
+    protected void appendMetadata(StringBuilder sb) {
+        // Default implementation does nothing.
     }
 
     /**

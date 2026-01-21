@@ -4,17 +4,16 @@ package uno.anahata.asi.nb.tools.project;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
-import java.nio.file.Files;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
-import java.util.stream.Collectors;
 import java.util.Set;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -34,33 +33,47 @@ import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileStateInvalidException;
 import org.openide.filesystems.FileUtil;
 import org.openide.util.Lookup;
-import uno.anahata.asi.chat.Chat;
-import uno.anahata.asi.context.ContextManager;
-import uno.anahata.asi.model.core.RagMessage;
-import uno.anahata.asi.model.core.TextPart;
+import uno.anahata.asi.context.ContextProvider;
+import uno.anahata.asi.nb.tools.project.context.ProjectContextProvider;
 import uno.anahata.asi.nb.tools.maven.DependencyScope;
 import uno.anahata.asi.nb.tools.maven.Maven;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolParam;
 import uno.anahata.asi.tool.AiToolkit;
 import uno.anahata.asi.tool.AnahataToolkit;
+import uno.anahata.asi.model.resource.AbstractPathResource;
+import uno.anahata.asi.nb.tools.project.actions.AnahataProjectAnnotator;
 
+/**
+ * A toolkit for interacting with the NetBeans Project APIs.
+ * It provides tools for managing open projects, retrieving project overviews,
+ * and invoking project-level actions.
+ * <p>
+ * This toolkit also acts as a {@link ContextProvider}, managing a hierarchy of
+ * {@link ProjectContextProvider}s for all open projects in the IDE.
+ * 
+ * @author anahata
+ */
 @Slf4j
 @AiToolkit("A toolkit for using netbeans project apis.")
-public class Projects extends AnahataToolkit{
+public class Projects extends AnahataToolkit implements PropertyChangeListener {
 
-    @Override
-    public void populateMessage(RagMessage ragMessage) throws Exception {
-        super.populateMessage(ragMessage); 
-        new TextPart(ragMessage, "Currently open Projects: " + getOpenProjects());
-    }
-    
+    /** 
+     * A flag to track if the toolkit is already listening to global project changes.
+     * This is used for lazy initialization of the {@link OpenProjects} listener.
+     * It is distinct from the 'providing' flag, which controls context injection.
+     */
+    private transient boolean listening = false;
+
+
+    // --- PUBLIC STATIC UTILITIES ---
+
     /**
-     * Convenient entry point for other tools. 
+     * Convenient entry point for other tools to find an open project by its directory path.
      * 
-     * @param projectDirectoryPath the project directory path
-     * @return
-     * @throws Exception 
+     * @param projectDirectoryPath The absolute path to the project directory.
+     * @return The {@link Project} instance.
+     * @throws Exception if the project is not found or not open.
      */
     public static Project findOpenProject(String projectDirectoryPath) throws Exception {
         FileObject dir = FileUtil.toFileObject(new File(projectDirectoryPath));
@@ -75,6 +88,26 @@ public class Projects extends AnahataToolkit{
         throw new Exception("Project not found or is not open: " + projectDirectoryPath);
     }
 
+    /**
+     * Gets a list of supported NetBeans Actions for a given project.
+     * 
+     * @param projectPath The absolute path of the project.
+     * @return An array of action names.
+     * @throws Exception if the project is not found.
+     */
+    public static String[] getSupportedActions(String projectPath) throws Exception {
+        Project p = Projects.findOpenProject(projectPath);
+        ActionProvider ap = p.getLookup().lookup(ActionProvider.class);
+        return ap != null ? ap.getSupportedActions() : new String[0];
+    }
+
+    // --- AI TOOL METHODS ---
+
+    /**
+     * Returns a list of absolute paths for all currently open projects in the IDE.
+     * 
+     * @return A list of project paths.
+     */
     @AiTool("Returns a List of absolute paths for all currently open projects.")
     public List<String> getOpenProjects() {
         List<String> projectPaths = new ArrayList<>();
@@ -84,18 +117,35 @@ public class Projects extends AnahataToolkit{
         return projectPaths;
     }
 
+    /**
+     * Returns the absolute path of the current 'Main Project' in the IDE.
+     * 
+     * @return The main project path, or null if none is set.
+     */
     @AiTool("Returns the absolute path of the current 'Main Project' in the IDE, or null if none is set.")
     public String getMainProject() {
         Project p = OpenProjects.getDefault().getMainProject();
         return p != null ? p.getProjectDirectory().getPath() : null;
     }
 
+    /**
+     * Sets a specific open project as the 'Main Project' in the IDE.
+     * 
+     * @param projectPath The absolute path of the project to set as main.
+     * @throws Exception if the project is not found.
+     */
     @AiTool("Sets a specific open project as the 'Main Project'.")
     public void setMainProject(@AiToolParam("The absolute path of the project to set as main.") String projectPath) throws Exception {
         Project p = findOpenProject(projectPath);
         OpenProjects.getDefault().setMainProject(p);
     }
 
+    /**
+     * Closes one or more open projects in the IDE.
+     * 
+     * @param projectPaths A list of absolute paths of the projects to close.
+     * @throws Exception if any project is not found.
+     */
     @AiTool("Closes one or more open projects.")
     public void closeProjects(@AiToolParam("A list of absolute paths of the projects to close.") List<String> projectPaths) throws Exception {
         List<Project> toClose = new ArrayList<>();
@@ -105,6 +155,13 @@ public class Projects extends AnahataToolkit{
         OpenProjects.getDefault().close(toClose.toArray(new Project[0]));
     }
 
+    /**
+     * Opens a project in the IDE and waits for the operation to complete.
+     * 
+     * @param projectPath The absolute path or relative folder name.
+     * @return A success or error message.
+     * @throws Exception if an error occurs during opening.
+     */
     @AiTool("Opens a project in the IDE, waiting for the asynchronous open operation to complete. This tool prefers the full absolute path as the project path.")
     public String openProject(@AiToolParam("The absolute path to the project (recommended) or the folder name relative to NetBeansProjects.") String projectPath) throws Exception {
         File projectDir;
@@ -161,6 +218,12 @@ public class Projects extends AnahataToolkit{
         }
     }
 
+    /**
+     * Opens all subprojects of a given project.
+     * 
+     * @param projectPath The absolute path of the parent project.
+     * @throws Exception if the project is not found.
+     */
     @AiTool("Opens all subprojects of a given project.")
     public void openSubprojects(@AiToolParam("The absolute path of the parent project.") String projectPath) throws Exception {
         Project parent = findOpenProject(projectPath);
@@ -173,23 +236,17 @@ public class Projects extends AnahataToolkit{
         }
     }
 
-    @AiTool("Gets a list of the supported NetBeans Actions (as in the ActionProvider api) for a given Project.")
-    public static String[] getSupportedActions(@AiToolParam("The absolute path of the project.") String projectPath) throws Exception {
-        Project p = Projects.findOpenProject(projectPath);
-        return p.getLookup().lookup(ActionProvider.class).getSupportedActions();
-    }
-
+    /**
+     * Gets a structured, context-aware overview of a project, including its source tree and metadata.
+     * 
+     * @param projectPath The absolute path of the project.
+     * @return A {@link ProjectOverview} object containing the project's structure and status.
+     */
     @AiTool("Gets a structured, context-aware overview of a project, including root files, source tree, the in-context status of each file and a list of supported NetBeans Actions.")
     @SneakyThrows
     public ProjectOverview getOverview(@AiToolParam("The absolute path of the project.") String projectPath) {
-        return getOverview(projectPath, getChat());
-    }
-
-    @SneakyThrows
-    public ProjectOverview getOverview(String projectPath, Chat chat) {
         Project target = findOpenProject(projectPath);
 
-        
         ProjectInformation info = ProjectUtils.getInformation(target);
         FileObject root = target.getProjectDirectory();
         List<String> actions = Collections.emptyList();
@@ -201,8 +258,6 @@ public class Projects extends AnahataToolkit{
         List<ProjectFile> rootFiles = new ArrayList<>();
         List<String> rootFolderNames = new ArrayList<>();
         List<SourceFolder> sourceFolders = new ArrayList<>();
-        String anahataMdContent = null;
-        Long anahataMdLastModified = null;
 
         for (FileObject child : root.getChildren()) {
             if (child.isFolder()) {
@@ -210,10 +265,6 @@ public class Projects extends AnahataToolkit{
             } else {
                 ProjectFile pf = createProjectFile(child);
                 rootFiles.add(pf);
-                if (pf.getName().equals("anahata.md")) {
-                    anahataMdContent = Files.readString(FileUtil.toFile(child).toPath());
-                    anahataMdLastModified = pf.getLastModified();
-                }
             }
         }
 
@@ -247,10 +298,12 @@ public class Projects extends AnahataToolkit{
             // Get compiler properties from the Maven model
             org.apache.maven.project.MavenProject rawMvnProject = nbMavenProject.getMavenProject();
             packaging = rawMvnProject.getPackaging();
-            String mavenSource = rawMvnProject.getProperties().getProperty("maven.compiler.source");
-            if (javaSourceLevel == null && mavenSource != null) {
-                javaSourceLevel = mavenSource;
+            
+            javaSourceLevel = rawMvnProject.getProperties().getProperty("maven.compiler.release");
+            if (javaSourceLevel == null) {
+                javaSourceLevel = rawMvnProject.getProperties().getProperty("maven.compiler.source");
             }
+            
             javaTargetLevel = rawMvnProject.getProperties().getProperty("maven.compiler.target");
             sourceEncoding = rawMvnProject.getProperties().getProperty("project.build.sourceEncoding");
         }
@@ -260,8 +313,6 @@ public class Projects extends AnahataToolkit{
                 info.getDisplayName(),                
                 root.getPath(),
                 packaging,
-                anahataMdContent,
-                anahataMdLastModified,
                 rootFiles,
                 rootFolderNames,
                 sourceFolders,
@@ -273,43 +324,30 @@ public class Projects extends AnahataToolkit{
         );
     }
 
-    private SourceFolder buildSourceFolderTree(FileObject folder, String displayName) throws FileStateInvalidException {
-        if (!folder.isFolder()) {
-            throw new IllegalArgumentException("FileObject must be a folder: " + folder.getPath());
-        }
-
-        List<ProjectFile> files = new ArrayList<>();
-        List<SourceFolder> subfolders = new ArrayList<>();
-
-        for (FileObject child : folder.getChildren()) {
-            if (child.isFolder()) {
-                subfolders.add(buildSourceFolderTree(child, child.getNameExt()));
-            } else {
-                files.add(createProjectFile(child));
-            }
-        }
-
-        long recursiveSize = files.stream().mapToLong(ProjectFile::getSize).sum()
-                + subfolders.stream().mapToLong(SourceFolder::getRecursiveSize).sum();
-        
-        String folderName = folder.getNameExt();
-        String finalDisplayName = folderName.equals(displayName) ? null : displayName;
-
-        return new SourceFolder(finalDisplayName, folder.getPath(), recursiveSize, files.isEmpty() ? null : files, subfolders.isEmpty() ? null: subfolders);
+    /**
+     * Enables or disables the project context provider (overview and anahata.md) for a specific project.
+     * 
+     * @param projectPath The absolute path of the project.
+     * @param enabled {@code true} to enable, {@code false} to disable.
+     */
+    @AiTool("Enables or disables the project context provider (overview and anahata.md) for a specific project.")
+    public void setProjectProviderEnabled(
+            @AiToolParam("The absolute path of the project.") String projectPath, 
+            @AiToolParam("Whether to enable the context provider.") boolean enabled) {
+        getProjectProvider(projectPath).ifPresent(pcp -> {
+            pcp.setProviding(enabled);
+            log.info("Project context for {} set to: {}", projectPath, enabled);
+            AnahataProjectAnnotator.fireRefresh();
+        });
     }
 
-    private static ProjectFile createProjectFile(FileObject fo) throws FileStateInvalidException {
-        String path = fo.getPath();
-        
-        return new ProjectFile(
-                fo.getNameExt(),
-                fo.getSize(),
-                fo.lastModified().getTime(),
-                
-                path
-        );
-    }
-
+    /**
+     * Invokes a NetBeans project action asynchronously.
+     * 
+     * @param projectPath The absolute path of the project.
+     * @param action The action name (e.g., 'build', 'run').
+     * @throws Exception if the action is not supported or enabled.
+     */
     @AiTool("Invokes ('Fires and forgets') a NetBeans Project supported Action (like 'run' or 'build')  on a given open Project (via ActionProvider).\n"
             + "\n\nThis method is always asynchronous by design. (regardless of whether you specify the asynchronous parameter or not)"
             + "as this tool does not return any values nor you can ensure that the action finished when this tool returns."
@@ -327,7 +365,6 @@ public class Projects extends AnahataToolkit{
 
         if (ap.isActionEnabled(action, context)) {
             ap.invokeAction(action, context);
-            return;
         } else {
             String[] supportedActions = ap.getSupportedActions();
             boolean isSupported = Arrays.asList(supportedActions).contains(action);
@@ -339,13 +376,18 @@ public class Projects extends AnahataToolkit{
         }
     }
 
-    
-    
-
-    public static String listAllKnownPreferences(String projectId) throws Exception {
-        Project project = findOpenProject(projectId);
+    /**
+     * Lists all known preferences for a given project.
+     * 
+     * @param projectPath The project absolute path.
+     * @return A string containing the preferences.
+     * @throws Exception if the project is not found.
+     */
+    @AiTool("Lists all known preferences for a given project.")
+    public String listAllKnownPreferences(@AiToolParam("The absolute path of the project.") String projectPath) throws Exception {
+        Project project = findOpenProject(projectPath);
         if (project == null) {
-            return "Project not found: " + projectId;
+            return "Project not found: " + projectPath;
         }
         StringBuilder sb = new StringBuilder();
         Class<?>[] contextClasses = new Class<?>[]{
@@ -371,5 +413,157 @@ public class Projects extends AnahataToolkit{
         }
 
         return sb.toString();
+    }
+
+    // --- CONTEXT PROVIDER LOGIC ---
+
+    /**
+     * {@inheritDoc}
+     * Overridden to lazily initialize the project change listener and sync the provider hierarchy.
+     * 
+     * @return The list of child context providers (one per open project).
+     */
+    @Override
+    public List<ContextProvider> getChildrenProviders() {
+        if (!listening) {
+            OpenProjects.getDefault().addPropertyChangeListener(this);
+            syncProjects();
+            listening = true;
+        }
+        return contextProviders;
+    }
+
+    /**
+     * Synchronizes the list of {@link ProjectContextProvider}s with the currently open projects in the IDE.
+     * This method is called whenever the set of open projects changes.
+     */
+    private synchronized void syncProjects() {
+        Project[] openProjects = OpenProjects.getDefault().getOpenProjects();
+        List<String> currentPaths = new ArrayList<>();
+        
+        for (Project p : openProjects) {
+            String path = p.getProjectDirectory().getPath();
+            currentPaths.add(path);
+            
+            if (getProjectProvider(path).isEmpty()) {
+                ProjectContextProvider pcp = new ProjectContextProvider(this, p);
+                contextProviders.add(pcp);
+                log.info("Added ProjectContextProvider for: {}", pcp.getName());
+            }
+        }
+        
+        // Remove providers for closed projects
+        contextProviders.removeIf(cp -> {
+            if (cp instanceof ProjectContextProvider pcp) {
+                if (!currentPaths.contains(pcp.getProjectPath())) {
+                    log.info("Removing ProjectContextProvider for closed project at: {}", pcp.getProjectPath());
+                    // Ensure resources are cleaned up
+                    pcp.getFlattenedHierarchy(false).forEach(child -> child.setProviding(false));
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
+    /**
+     * Finds a {@link ProjectContextProvider} for a specific project path.
+     * 
+     * @param projectPath The absolute path of the project.
+     * @return An Optional containing the provider if found.
+     */
+    public Optional<ProjectContextProvider> getProjectProvider(String projectPath) {
+        return contextProviders.stream()
+                .filter(cp -> cp instanceof ProjectContextProvider)
+                .map(cp -> (ProjectContextProvider) cp)
+                .filter(pcp -> pcp.getProjectPath().equals(projectPath))
+                .findFirst();
+    }
+
+    /**
+     * {@inheritDoc}
+     * Listens for changes in the set of open projects and triggers a sync.
+     * 
+     * @param evt The property change event from {@link OpenProjects}.
+     */
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        if (OpenProjects.PROPERTY_OPEN_PROJECTS.equals(evt.getPropertyName())) {
+            syncProjects();
+        }
+    }
+
+    // --- PRIVATE HELPERS ---
+
+    /**
+     * Recursively builds a tree structure of source folders and files.
+     * 
+     * @param folder The root folder to start from.
+     * @param displayName The display name for the root folder.
+     * @return A {@link SourceFolder} representing the tree.
+     * @throws FileStateInvalidException if the file state is invalid.
+     */
+    private SourceFolder buildSourceFolderTree(FileObject folder, String displayName) throws FileStateInvalidException {
+        if (!folder.isFolder()) {
+            throw new IllegalArgumentException("FileObject must be a folder: " + folder.getPath());
+        }
+
+        List<ProjectFile> files = new ArrayList<>();
+        List<SourceFolder> subfolders = new ArrayList<>();
+
+        for (FileObject child : folder.getChildren()) {
+            if (child.isFolder()) {
+                subfolders.add(buildSourceFolderTree(child, child.getNameExt()));
+            } else {
+                files.add(createProjectFile(child));
+            }
+        }
+
+        long recursiveSize = files.stream().mapToLong(ProjectFile::getSize).sum()
+                + subfolders.stream().mapToLong(SourceFolder::getRecursiveSize).sum();
+        
+        String folderName = folder.getNameExt();
+        String finalDisplayName = folderName.equals(displayName) ? null : displayName;
+
+        return new SourceFolder(finalDisplayName, folder.getPath(), recursiveSize, files.isEmpty() ? null : files, subfolders.isEmpty() ? null: subfolders);
+    }
+
+    /**
+     * Creates a {@link ProjectFile} metadata object for a given {@link FileObject}.
+     * It checks the AI context to determine the file's current status (e.g., [IC], [STALE]).
+     * 
+     * @param fo The file object.
+     * @return The project file metadata.
+     * @throws FileStateInvalidException if the file state is invalid.
+     */
+    private ProjectFile createProjectFile(FileObject fo) throws FileStateInvalidException {
+        String path = fo.getPath();
+        String status = null;
+        Optional<AbstractPathResource> resOpt = getResourceManager().findByPath(path);
+        if (resOpt.isPresent()) {
+            AbstractPathResource res = resOpt.get();
+            if (!res.exists()) {
+                status = "[DELETED]";
+            } else {
+                try {
+                    if (res.isStale()) {
+                        status = "[STALE]";
+                    } else {
+                        status = "[IC]";
+                    }
+                } catch (IOException e) {
+                    log.error("Error checking staleness for: " + path, e);
+                    status = "[IC]";
+                }
+            }
+        }
+        
+        return new ProjectFile(
+                fo.getNameExt(),
+                fo.getSize(),
+                fo.lastModified().getTime(),
+                status,
+                path
+        );
     }
 }

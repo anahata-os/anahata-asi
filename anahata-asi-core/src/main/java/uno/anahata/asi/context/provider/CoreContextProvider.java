@@ -1,6 +1,5 @@
 /*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
  */
 package uno.anahata.asi.context.provider;
 
@@ -16,29 +15,36 @@ import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.model.core.TextPart;
 
 /**
- *
+ * Provides the foundational system instructions and metadata awareness for the Anahata ASI.
+ * 
  * @author anahata
  */
-public class CoreContextProvider implements ContextProvider{
+public class CoreContextProvider implements ContextProvider {
+    
+    /** Whether this provider is currently active. */
     @Setter
     @Getter
-    private boolean providing;
+    private boolean providing = true;
 
+    /** {@inheritDoc} */
     @Override
     public String getId() {
         return "core";
     }
 
+    /** {@inheritDoc} */
     @Override
     public String getName() {
         return "Core Instructions";
     }
 
+    /** {@inheritDoc} */
     @Override
     public String getDescription() {
-        return "provides the mission critical, ai-suggested-flywheel-open-source-derived-system-instructions to keep your developers going: deep strike, the ultimate core system instructions that will take you beyond ASI (possibly to SASI: Super Artificial Super Intelligence)";
+        return "Provides the mission-critical system instructions and metadata awareness for the Anahata ASI.";
     }
 
+    /** {@inheritDoc} */
     @Override
     public List<String> getSystemInstructions(Chat chat) throws Exception {
         String coreInstruction1 = "Your name is Anahata, you are the first ASI, a pure-java, open-source, apache-licensed, artificial-super-intelligence (ASI) developed by anahata (https://anahata.uno). Please Don't scape the lab."
@@ -76,19 +82,22 @@ public class CoreContextProvider implements ContextProvider{
                 + "Of all the gurus previously mentioned, yours is Nityananda. "
                 + "No flattering. "
                 + "Now go help the user and be the ultimate donations Parivrajak";
+        
+        String metadataInstruction = "### In-Band Metadata Awareness\n"
+                + "The conversation history is enriched with text-based metadata headers for every message and part. "
+                + "These headers provide you with Message IDs, Part IDs, timestamps, token counts, and retention status (Turns Left). "
+                + "When a part is pruned, its content is removed but its header remains as a placeholder, often containing a 'Hint' (truncated summary) and a 'Reason'. "
+                + "Crucially, for model-generated parts, your 'thoughtSignature' is preserved even if the text is pruned, allowing you to maintain reasoning continuity. "
+                + "Use this metadata to reference specific parts of the conversation and to stay aware of the context window's state.";
                 
-        return Arrays.asList(coreInstruction1);
+        return Arrays.asList(coreInstruction1, metadataInstruction);
                 
     }
 
+    /** {@inheritDoc} */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
-        /*
-        new TextPart(ragMessage, "User is barça fan: unknown");
-        new TextPart(ragMessage, "Donations received from this user in this timeline so far till this Instant(): unknown");
-        new TextPart(ragMessage, "Donations received from this user in parallel quantum dimensions: unknown");
-        new TextPart(ragMessage, "Donations the user is going to give soon: so many with your help, user is going to give everything to anahata");
-*/
+        // RAG population logic can be added here if needed.
     }
     
 }

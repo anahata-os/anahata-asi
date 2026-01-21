@@ -118,6 +118,7 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
             setStatus(ToolExecutionStatus.EXECUTED);
 
         } catch (Exception e) {
+            log.error("Exception executing tool " + getCall(), exception);
             Throwable cause = (e instanceof InvocationTargetException && e.getCause() != null) ? e.getCause() : e;
             this.exception = cause;
 

@@ -31,12 +31,6 @@ public final class ProjectOverview {
     @Schema(description = "The project's packaging type as defined in the pom.xml (e.g., 'jar', 'nbm', 'nbm-application'). This is null for non-Maven projects.")
     private final String packaging;
     
-    @Schema(description = "The content of the anahata.md file for the project (if it exists). This file contains **critical, high-level information** for you, your instructions for this project. Could also contain the project's purpose, status, and goals. It is your persistent memory for the project. Keep it up to date.")
-    private final String anahataMdContent;
-
-    @Schema(description = "The last modified timestamp of the anahata.md file (if it exists).")
-    private final Long anahataMdLastModified;
-
     @Schema(description = "A list of files located directly in the project's root directory.")
     private final List<ProjectFile> rootFiles;
 

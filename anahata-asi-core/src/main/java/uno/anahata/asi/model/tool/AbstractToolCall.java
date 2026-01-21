@@ -183,4 +183,10 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
     public String asText() {
         return "[Tool Call: " + getToolName() + " with args: " + getArgs().toString() + "]";
     }
+
+    /** {@inheritDoc} */
+    @Override
+    protected void appendMetadata(StringBuilder sb) {
+        sb.append(" | Response: ").append(getResponse().createMetadataHeader());
+    }
 }

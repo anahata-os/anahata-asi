@@ -7,7 +7,9 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -19,9 +21,13 @@ import uno.anahata.asi.context.provider.CoreContextProvider;
 import uno.anahata.asi.model.core.AbstractMessage;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.AbstractPart;
+import uno.anahata.asi.model.core.ModelTextPart;
 import uno.anahata.asi.model.core.PropertyChangeSource;
 import uno.anahata.asi.model.core.RagMessage;
+import uno.anahata.asi.model.core.Role;
 import uno.anahata.asi.model.core.TextPart;
+import uno.anahata.asi.model.core.ThoughtSignature;
+import uno.anahata.asi.model.core.UserMessage;
 
 /**
  * The definitive manager for a chat session's context in the V2
@@ -134,35 +140,28 @@ public class ContextManager implements PropertyChangeSource {
 
     /**
      * Builds the final, filtered list of messages to be sent to the API. This
-     * includes the main conversation history and any just-in-time context from
-     * PROMPT_AUGMENTATION providers and resources.
+     * includes the main conversation history. The adapter is responsible for
+     * handling pruned content via placeholders.
      *
      * @return The filtered list of messages.
      */
     public List<AbstractMessage> buildVisibleHistory() {
-        boolean includePruned = chat.getConfig().getRequestConfig().isIncludePruned();
-
         List<AbstractMessage> visibleHistory = new ArrayList<>();
-        RagMessage augmentedMessage = new RagMessage(chat);
-
+        
+        // 1. Add all messages from history. 
+        // OPTIMIZATION: Skip TOOL messages that are effectively pruned, 
+        // as their corresponding MODEL message will have converted the ToolCall into a text placeholder.
         synchronized (history) {
-            // 1. Get the filtered main history
-            history.stream()
-                    .filter(msg -> includePruned || !msg.isEffectivelyPruned())
-                    .forEach(visibleHistory::add);
-
-            // 2. Inject pruned message ranges summary if not including pruned messages.
-            if (!includePruned) {
-                List<String> prunedRanges = findPrunedMessageRanges();
-                if (!prunedRanges.isEmpty()) {
-                    new TextPart(augmentedMessage, "--- PRUNED MESSAGE RANGES ---");
-                    for (String range : prunedRanges) {
-                        new TextPart(augmentedMessage, range);
-                    }
+            for (AbstractMessage msg : history) {
+                if (msg.getRole() == Role.TOOL && msg.isEffectivelyPruned()) {
+                    continue;
                 }
+                visibleHistory.add(msg);
             }
         }
 
+        // 2. Add the synthetic RAG message for prompt augmentation.
+        RagMessage augmentedMessage = new RagMessage(chat);
         for (ContextProvider rootProvider : providers) {            
             for (ContextProvider provider : rootProvider.getFlattenedHierarchy(true)) {
                 if (provider.isProviding()) {                                
@@ -179,51 +178,6 @@ public class ContextManager implements PropertyChangeSource {
         visibleHistory.add(augmentedMessage);
 
         return visibleHistory;
-    }
-
-    /**
-     * Identifies contiguous ranges of effectively pruned messages in the history.
-     * This method assumes it is called within a synchronized block on 'history'.
-     * 
-     * @return A list of strings describing the pruned ranges.
-     */
-    private List<String> findPrunedMessageRanges() {
-        List<String> ranges = new ArrayList<>();
-        int start = -1;
-        for (int i = 0; i < history.size(); i++) {
-            AbstractMessage msg = history.get(i);
-            if (msg.isEffectivelyPruned()) {
-                if (start == -1) {
-                    start = i;
-                }
-            } else {
-                if (start != -1) {
-                    ranges.add(formatRange(start, i - 1));
-                    start = -1;
-                }
-            }
-        }
-        if (start != -1) {
-            ranges.add(formatRange(start, history.size() - 1));
-        }
-        return ranges;
-    }
-
-    /**
-     * Formats a range of message indices into a human-readable string.
-     * 
-     * @param startIdx The starting index.
-     * @param endIdx The ending index.
-     * @return A formatted range string.
-     */
-    private String formatRange(int startIdx, int endIdx) {
-        long startId = history.get(startIdx).getSequentialId();
-        long endId = history.get(endIdx).getSequentialId();
-        if (startId == endId) {
-            return String.format("- Message ID: %d is PRUNED", startId);
-        } else {
-            return String.format("- Messages ID: %d to %d are PRUNED", startId, endId);
-        }
     }
 
     /**

@@ -116,7 +116,7 @@ public class Java extends AnahataToolkit {
     public List<String> getSystemInstructions(Chat chat) throws Exception {
         StringBuilder sb = new StringBuilder();
         sb.append("### Java Toolkit Instructions: \n");
-        sb.append("When using `compileAndExecute`, your class should extend `" + AnahataTool.class.getName()+ "`, have no package declaration and implement the call method of Callable<Object>. ");
+        sb.append("When using `compileAndExecute`, your class should be **public**, named **Anahata**, extend `" + AnahataTool.class.getName()+ "`, have no package declaration and implement the call method of Callable<Object>. ");
         sb.append("This provides the following helper methods for a rich, context-aware execution:\n\n");
         
         sb.append("#### Available Methods that you can use within the code you write (inherited from AnahataTool):\n");
@@ -360,6 +360,7 @@ public class Java extends AnahataToolkit {
     @AiTool(
             value = "Compiles and executes a Java class named 'Anahata' on the application's JVM.\n"
             + "The class should:\n"
+                    + "- be public, \n"
                     + "- have no package declaration, \n"
                     + "- extend uno.anahata.ai.tool.AnahataTool and \n"
                     + "- implement the call method of java.util.concurrent.Callable<Object>.\n",
@@ -374,7 +375,11 @@ public class Java extends AnahataToolkit {
         log.info("executeJavaCode: \nextraCompilerClassPath={}", extraClassPath);
 
         Class c = compile(sourceCode, "Anahata", extraClassPath, compilerOptions);
-        Object o = c.getDeclaredConstructor().newInstance();
+        
+        // CRITICAL FIX: Use setAccessible(true) to allow instantiation even if the class/constructor is not public.
+        var constructor = c.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        Object o = constructor.newInstance();
 
         if (o instanceof Callable callable) {
             log.info("Calling call() method on Callable (or AnahataTool)");
