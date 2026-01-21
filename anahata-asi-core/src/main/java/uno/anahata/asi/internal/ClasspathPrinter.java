@@ -1,4 +1,5 @@
-package uno.anahata.asi.internal;
+/* Licensed under the Apache License, Version 2.0 */
+package uno.anahata.ai.tools.spi;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -7,7 +8,12 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * A helper class to print classpaths in a readable, grouped format.
+ * A utility class for formatting complex Java classpaths into a readable,
+ * hierarchical tree structure.
+ * <p>
+ * This is especially useful for debugging "hot-reload" issues or inspecting
+ * the environment of a running JVM.
+ * </p>
  */
 public class ClasspathPrinter {
 
@@ -47,7 +53,7 @@ public class ClasspathPrinter {
         for (String entry : entries) {
             File file = new File(entry);
             if (file.exists() && file.isFile() && entry.endsWith(".jar")) {
-                String[] pathParts = file.getParent().split(File.separator);
+                String[] pathParts = file.getParent().split(java.util.regex.Pattern.quote(File.separator));
                 TreeNode currentNode = root;
                 for (String part : pathParts) {
                     if (part.isEmpty()) continue;
@@ -55,7 +61,7 @@ public class ClasspathPrinter {
                 }
                 currentNode.jars.add(file.getName());
             } else if (file.exists() && file.isDirectory()) {
-                 String[] pathParts = file.getAbsolutePath().split(File.separator);
+                 String[] pathParts = file.getAbsolutePath().split(java.util.regex.Pattern.quote(File.separator));
                 TreeNode currentNode = root;
                 for (String part : pathParts) {
                     if (part.isEmpty()) continue;
