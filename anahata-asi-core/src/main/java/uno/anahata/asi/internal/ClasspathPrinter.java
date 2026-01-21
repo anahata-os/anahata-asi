@@ -1,5 +1,5 @@
 /* Licensed under the Apache License, Version 2.0 */
-package uno.anahata.ai.tools.spi;
+package uno.anahata.asi.internal;
 
 import java.io.File;
 import java.util.ArrayList;
