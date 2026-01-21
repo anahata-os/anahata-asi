@@ -135,12 +135,11 @@ public interface ContextProvider {
      * @return A formatted header string.
      */
     public default String getHeader() {
-        String header =
-                "### Context Provider Id:**" + getFullyQualifiedId() + "**\n"                
-                + "Name:" + getName()+ "\n"
-                + "Description:" + getDescription()+ "\n"                
-                + "Children:" + getChildrenProviders().size() + "\n"
-                + "Providing:" + isProviding() + "\n";
-                return header;
+        return "### Context Provider Id:**" + getFullyQualifiedId() + "**\n"
+                + "Name: " + getName() + "\n"
+                + "Description: " + getDescription() + "\n"
+                + "Parent: " + (getParentProvider() != null ? getParentProvider().getFullyQualifiedId() : "<no parent provider>") + "\n"
+                + "Children: " + getChildrenProviders().size() + "\n"
+                + "Providing: " + isProviding() + "\n";
     }
 }

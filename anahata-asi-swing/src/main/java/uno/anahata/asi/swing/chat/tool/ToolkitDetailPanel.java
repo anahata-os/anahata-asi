@@ -8,11 +8,11 @@ import java.awt.CardLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 import lombok.extern.slf4j.Slf4j;
@@ -45,8 +45,10 @@ public class ToolkitDetailPanel extends JPanel {
     private final JPanel contentPanel;
     private final CardLayout contentLayout;
     private final JTabbedPane tabbedPane;
-    private final JPanel sysTab;
-    private final JPanel ragTab;
+    private final JPanel thisSysTab;
+    private final JPanel childrenSysTab;
+    private final JPanel thisRagTab;
+    private final JPanel childrenRagTab;
 
     /**
      * Constructs a new ToolkitDetailPanel.
@@ -89,10 +91,15 @@ public class ToolkitDetailPanel extends JPanel {
         contentPanel = new JPanel(contentLayout);
         
         tabbedPane = new JTabbedPane();
-        sysTab = new JPanel(new BorderLayout());
-        ragTab = new JPanel(new BorderLayout());
-        tabbedPane.addTab("System Instructions", sysTab);
-        tabbedPane.addTab("RAG Content (Live Workspace)", ragTab);
+        thisSysTab = new JPanel(new BorderLayout());
+        childrenSysTab = new JPanel(new BorderLayout());
+        thisRagTab = new JPanel(new BorderLayout());
+        childrenRagTab = new JPanel(new BorderLayout());
+        
+        tabbedPane.addTab("System: This Provider", thisSysTab);
+        tabbedPane.addTab("System: Children (Aggregated)", childrenSysTab);
+        tabbedPane.addTab("RAG: This Provider", thisRagTab);
+        tabbedPane.addTab("RAG: Children (Aggregated)", childrenRagTab);
         
         contentPanel.add(tabbedPane, "tabs");
         contentPanel.add(new JLabel("This toolkit does not provide additional context.", SwingConstants.CENTER), "empty");
@@ -120,9 +127,15 @@ public class ToolkitDetailPanel extends JPanel {
             setToolkit(toolkit); // Refresh previews
         });
 
-        if (toolkit.getContextProvider() != null) {
+        ContextProvider cp = toolkit.getContextProvider();
+        if (cp == null) {
+            // Fallback to ToolManager if the toolkit itself doesn't provide context
+            cp = toolkit.getToolManager();
+        }
+
+        if (cp != null) {
             contentLayout.show(contentPanel, "tabs");
-            updatePreviews(toolkit.getContextProvider());
+            updatePreviews(cp);
         } else {
             contentLayout.show(contentPanel, "empty");
         }
@@ -138,47 +151,108 @@ public class ToolkitDetailPanel extends JPanel {
      */
     private void updatePreviews(ContextProvider cp) {
         Chat chat = parentPanel.getChat();
-        cp.getFlattenedHierarchy(true);
-        // 1. System Instructions Preview
-        UserMessage sysMsg = new UserMessage(chat);
-        new TextPart(sysMsg, cp.getHeader());
+        
+        // 1. System: This Provider
+        UserMessage thisSysMsg = new UserMessage(chat);
         try {
-            for (String part : cp.getSystemInstructions(chat)) {
-                new TextPart(sysMsg, part);
+            List<String> instructions = cp.getSystemInstructions(chat);
+            if (!instructions.isEmpty()) {
+                new TextPart(thisSysMsg, cp.getHeader());
+                for (String part : instructions) {
+                    new TextPart(thisSysMsg, part);
+                }
             }
         } catch (Exception e) {
-            new TextPart(sysMsg, "**Error generating system instructions:**\n" + e.getMessage());
-            log.error("Error generating system instructions preview", e);
+            new TextPart(thisSysMsg, "**Error generating system instructions for " + cp.getName() + ":**\n" + ExceptionUtils.getStackTrace(e));
+            log.error("Error generating system instructions preview for {}", cp.getName(), e);
         }
         
-        OtherMessagePanel sysPanel = new OtherMessagePanel(parentPanel.getChatPanel(), sysMsg, false, false);
-        sysPanel.render();
-        sysTab.removeAll();
-        sysTab.add(sysPanel, BorderLayout.CENTER);
-
-        // 2. RAG Content Preview
-        RagMessage ragMsg = new RagMessage(chat);
-        ragMsg.getParts().get(0).remove();
+        if (thisSysMsg.getParts().isEmpty()) {
+            new TextPart(thisSysMsg, "*No system instructions contributed by this provider.*");
+        }
         
+        OtherMessagePanel thisSysPanel = new OtherMessagePanel(parentPanel.getChatPanel(), thisSysMsg, false, false);
+        thisSysPanel.render();
+        thisSysTab.removeAll();
+        thisSysTab.add(thisSysPanel, BorderLayout.CENTER);
+
+        // 2. System: Children (Aggregated)
+        UserMessage childrenSysMsg = new UserMessage(chat);
+        for (ContextProvider child : cp.getChildrenProviders()) {
+            for (ContextProvider p : child.getFlattenedHierarchy(true)) {
+                try {
+                    List<String> instructions = p.getSystemInstructions(chat);
+                    if (!instructions.isEmpty()) {
+                        new TextPart(childrenSysMsg, p.getHeader());
+                        for (String part : instructions) {
+                            new TextPart(childrenSysMsg, part);
+                        }
+                    }
+                } catch (Exception e) {
+                    new TextPart(childrenSysMsg, "**Error generating system instructions for " + p.getName() + ":**\n" + ExceptionUtils.getStackTrace(e));
+                    log.error("Error generating system instructions preview for child {}", p.getName(), e);
+                }
+            }
+        }
+        
+        if (childrenSysMsg.getParts().isEmpty()) {
+            new TextPart(childrenSysMsg, "*No system instructions contributed by children.*");
+        }
+        
+        OtherMessagePanel childrenSysPanel = new OtherMessagePanel(parentPanel.getChatPanel(), childrenSysMsg, false, false);
+        childrenSysPanel.render();
+        childrenSysTab.removeAll();
+        childrenSysTab.add(childrenSysPanel, BorderLayout.CENTER);
+
+        // 3. RAG: This Provider
+        RagMessage thisRagMsg = new RagMessage(chat, false);
         try {
-            cp.populateMessage(ragMsg);
+            thisRagMsg.addPart(cp.getHeader());
+            cp.populateMessage(thisRagMsg);
         } catch (Exception e) {
-            new TextPart(ragMsg, "**Error populating RAG message:**\n" + ExceptionUtils.getStackTrace(e));
-            log.error("Error generating RAG content preview", e);
+            new TextPart(thisRagMsg, "**Error populating RAG message for " + cp.getName() + ":**\n" + ExceptionUtils.getStackTrace(e));
+            log.error("Error generating RAG content preview for {}", cp.getName(), e);
         }
         
-        if (ragMsg.getParts().size() <= 1) { // Only the header
-             new TextPart(ragMsg, "*No RAG content contributed.*");
+        if (thisRagMsg.getParts().isEmpty()) {
+             new TextPart(thisRagMsg, "*No RAG content contributed by this provider.*");
         }
 
-        OtherMessagePanel ragPanel = new OtherMessagePanel(parentPanel.getChatPanel(), ragMsg, false, false);
-        ragPanel.render();
-        ragTab.removeAll();
-        ragTab.add(ragPanel, BorderLayout.CENTER);
+        OtherMessagePanel thisRagPanel = new OtherMessagePanel(parentPanel.getChatPanel(), thisRagMsg, false, false);
+        thisRagPanel.render();
+        thisRagTab.removeAll();
+        thisRagTab.add(thisRagPanel, BorderLayout.CENTER);
+
+        // 4. RAG: Children (Aggregated)
+        RagMessage childrenRagMsg = new RagMessage(chat, false);
+        for (ContextProvider child : cp.getChildrenProviders()) {
+            for (ContextProvider p : child.getFlattenedHierarchy(true)) {
+                try {
+                    childrenRagMsg.addPart(p.getHeader());
+                    p.populateMessage(childrenRagMsg);
+                } catch (Exception e) {
+                    new TextPart(childrenRagMsg, "**Error populating RAG message for " + p.getName() + ":**\n" + ExceptionUtils.getStackTrace(e));
+                    log.error("Error generating RAG content preview for child {}", p.getName(), e);
+                }
+            }
+        }
         
-        sysTab.revalidate();
-        sysTab.repaint();
-        ragTab.revalidate();
-        ragTab.repaint();
+        if (childrenRagMsg.getParts().isEmpty()) {
+             new TextPart(childrenRagMsg, "*No RAG content contributed by children.*");
+        }
+
+        OtherMessagePanel childrenRagPanel = new OtherMessagePanel(parentPanel.getChatPanel(), childrenRagMsg, false, false);
+        childrenRagPanel.render();
+        childrenRagTab.removeAll();
+        childrenRagTab.add(childrenRagPanel, BorderLayout.CENTER);
+        
+        thisSysTab.revalidate();
+        thisSysTab.repaint();
+        childrenSysTab.revalidate();
+        childrenSysTab.repaint();
+        thisRagTab.revalidate();
+        thisRagTab.repaint();
+        childrenRagTab.revalidate();
+        childrenRagTab.repaint();
     }
 }

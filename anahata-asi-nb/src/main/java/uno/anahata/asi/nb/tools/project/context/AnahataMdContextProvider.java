@@ -36,7 +36,7 @@ public class AnahataMdContextProvider extends BasicContextProvider {
      * @param projectPath The absolute path to the project.
      */
     public AnahataMdContextProvider(Projects projectsToolkit, String projectPath) {
-        super("anahata-md", "Anahata.md", "Project-specific system instructions from anahata.md");
+        super("anahata-md", "anahata.md", "Project-specific system instructions from anahata.md");
         this.projectsToolkit = projectsToolkit;
         this.projectPath = projectPath;
         syncResource();
@@ -66,6 +66,7 @@ public class AnahataMdContextProvider extends BasicContextProvider {
                     TextFileResource resource = new TextFileResource(path);
                     // Force the position to SYSTEM_INSTRUCTIONS
                     resource.setContextPosition(ContextPosition.SYSTEM_INSTRUCTIONS);
+                    resource.reload();
                     projectsToolkit.getResourceManager().register(resource);
                     this.registeredResourceId = resource.getId();
                     log.info("Registered anahata.md as SYSTEM_INSTRUCTIONS resource for project: {}", projectPath);

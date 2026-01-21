@@ -25,18 +25,19 @@ import uno.anahata.asi.tool.ToolContext;
  * 
  * @author anahata
  */
-@Getter
+//@Getter
 @RequiredArgsConstructor
 public abstract class AnahataToolkit extends ToolContext implements ContextProvider {
     
     /** Whether this toolkit is currently providing context augmentation. */
     @Setter
+    @Getter
     private boolean providing = true;
     
     /**
      * The list of child context providers managed by this toolkit.
      */
-    protected List<ContextProvider> contextProviders = new ArrayList<>();
+    protected List<ContextProvider> childrenProviders = new ArrayList<>();
     
     /** {@inheritDoc} */
     @Override
@@ -60,6 +61,11 @@ public abstract class AnahataToolkit extends ToolContext implements ContextProvi
     @Override
     public ContextProvider getParentProvider() {
         return getToolManager();
+    }
+
+    @Override
+    public List<ContextProvider> getChildrenProviders() {
+        return childrenProviders;
     }
     
 }

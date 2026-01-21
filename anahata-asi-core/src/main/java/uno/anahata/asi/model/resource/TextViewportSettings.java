@@ -23,9 +23,9 @@ public class TextViewportSettings {
     @Builder.Default
     private long startChar = 0;
     @Builder.Default
-    private int pageSizeInChars = 16 * 1024;
+    private int pageSizeInChars = 64 * 1024;
     @Builder.Default
-    private int columnWidth = 256;
+    private int columnWidth = 1024;
     private String grepPattern;
     @Builder.Default
     private boolean showLineNumbers = false;

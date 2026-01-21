@@ -430,7 +430,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
             syncProjects();
             listening = true;
         }
-        return contextProviders;
+        return childrenProviders;
     }
 
     /**
@@ -447,13 +447,13 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
             
             if (getProjectProvider(path).isEmpty()) {
                 ProjectContextProvider pcp = new ProjectContextProvider(this, p);
-                contextProviders.add(pcp);
+                childrenProviders.add(pcp);
                 log.info("Added ProjectContextProvider for: {}", pcp.getName());
             }
         }
         
         // Remove providers for closed projects
-        contextProviders.removeIf(cp -> {
+        childrenProviders.removeIf(cp -> {
             if (cp instanceof ProjectContextProvider pcp) {
                 if (!currentPaths.contains(pcp.getProjectPath())) {
                     log.info("Removing ProjectContextProvider for closed project at: {}", pcp.getProjectPath());
@@ -473,7 +473,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
      * @return An Optional containing the provider if found.
      */
     public Optional<ProjectContextProvider> getProjectProvider(String projectPath) {
-        return contextProviders.stream()
+        return childrenProviders.stream()
                 .filter(cp -> cp instanceof ProjectContextProvider)
                 .map(cp -> (ProjectContextProvider) cp)
                 .filter(pcp -> pcp.getProjectPath().equals(projectPath))

@@ -37,7 +37,7 @@ public class Files extends AnahataToolkit {
      */
     @AiTool(value = "Updates the viewport of a TextFileResource ", retention = 0)
     public void updateTextViewportSettings(
-            @AiToolParam("The absolute paths to the text files.") String resourceId, 
+            @AiToolParam("The resourceId (not the path).") String resourceId, 
             @AiToolParam("The new viewport settings for the text file") TextViewportSettings newSettings) throws Exception {
         TextFileResource tfr = getResourceManager().getResource(resourceId);
         tfr.getViewport().setSettings(newSettings);

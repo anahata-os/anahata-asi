@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
@@ -26,7 +27,7 @@ public class TextViewport {
     @Schema(description = "Adjustable viewport configuration")
     private TextViewportSettings settings = new TextViewportSettings();
 
-    @JsonIgnore
+    @JsonIgnore    
     private String processedText;
     private long totalChars;
     private int totalLines;
@@ -111,17 +112,9 @@ public class TextViewport {
         }
         return line;
     }
-    
-    /**
-     * Returns a human-readable string representation of the viewport's state.
-     * 
-     * @return The formatted string.
-     */
+
     @Override
     public String toString() {
-        return String.format("Viewport[start=%d, size=%d, lines=%d/%d, truncated=%d, lineNumbers=%b]", 
-            settings.getStartChar(), settings.getPageSizeInChars(), 
-            matchingLineCount != null ? matchingLineCount : totalLines, 
-            totalLines, truncatedLinesCount, settings.isShowLineNumbers());
+        return "TextViewport{" + "settings=" + settings + ", totalChars=" + totalChars + ", totalLines=" + totalLines + ", matchingLineCount=" + matchingLineCount + ", truncatedLinesCount=" + truncatedLinesCount + '}';
     }
 }

@@ -17,11 +17,17 @@ import uno.anahata.asi.chat.Chat;
 public class RagMessage extends UserMessage {
 
     public RagMessage(Chat chat) {
+        this(chat, true);
+    }
+
+    public RagMessage(Chat chat, boolean includeHeader) {
         super(chat);
-        new TextPart(this, "--- Augmented Workspace Context ---\n"
-                + "The following is high-salience, just-in-time context provided by the host environment for this turn. "
-                + "It is dynamically generated and populated by enabled context providers. "
-                + "This is NOT direct input from the user.");
+        if (includeHeader) {
+            new TextPart(this, "--- Augmented Workspace Context ---\n"
+                    + "The following is high-salience, just-in-time context provided by the host environment for this turn. "
+                    + "It is dynamically generated and populated by enabled context providers. "
+                    + "This is NOT direct input from the user.");
+        }
     }
     
     /**
