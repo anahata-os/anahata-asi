@@ -137,8 +137,8 @@ public class ToolExecutionMenu {
         System.out.println("\nResult:");
         if (response.getResult() != null) {
             System.out.println(ObjectSummarizer.formatValue(response.getResult(), 1024, true));
-        } else if (response.getError() != null) {
-            System.out.println("Error: " + response.getError());
+        } else if (response.getErrors() != null) {
+            System.out.println("Errors: " + response.getErrors());
         } else {
             System.out.println("(Not yet executed)");
         }
