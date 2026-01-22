@@ -1,9 +1,9 @@
 package uno.anahata.asi.internal;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.Map;
 import lombok.AccessLevel;
@@ -21,54 +21,42 @@ import uno.anahata.asi.tool.schema.SchemaProvider;
 public final class JacksonUtils {
 
     private static final ObjectMapper MAPPER = SchemaProvider.OBJECT_MAPPER;
-    private static final ObjectMapper DEFAULT_MAPPER = new ObjectMapper(); // New: Default ObjectMapper
+    private static final ObjectMapper DEFAULT_MAPPER = new ObjectMapper();
 
     /**
-     * Converts an object to a {@code Map<String, Object>}, replicating the logic required by the
-     * FunctionResponse type.
-     * - If the object naturally serializes to a JSON Object (e.g., a POJO or a Map), it is
-     *   converted into a {@code Map<String, Object>}.
-     * - If the object serializes to any other JSON type (e.g., an array, a string, a number),
-     *   it is wrapped in a Map under the given field name.
-     *
-     * @param primitiveFieldName The key to use when wrapping a non-POJO type.
-     * @param o The object to convert.
-     * @return A Map representation of the object, ready for use in a FunctionResponse.
+     * Converts any Java object (POJO, Map, List, Primitive) into a "pure" JSON-safe 
+     * structure containing only standard Java types (Map, List, String, Number, Boolean, null).
+     * <p>
+     * This is the "Final Gate" used to ensure that external libraries with "greedy" 
+     * reflection-based serializers (like the Google GenAI library) never encounter 
+     * a complex POJO that might trigger forbidden API calls or recursion.
+     * </p>
+     * 
+     * @param o The object to purify.
+     * @return A pure JSON-safe representation of the object.
      */
-    public static Map<String, Object> convertObjectToMap(String primitiveFieldName, Object o) {
-        if (o == null) {
-            return Collections.emptyMap();
-        }
-
-        // Use Jackson's tree model to inspect the JSON structure without full serialization.
+    public static Object toJsonPrimitives(Object o) {
+        if (o == null) return null;
+        // 1. Use OUR configured mapper to turn the object into a JSON tree.
+        // This handles ElementHandle and @JsonIgnore correctly.
         JsonNode node = MAPPER.valueToTree(o);
+        // 2. Convert that tree back into a plain Java Object (Maps/Lists/Primitives).
+        return MAPPER.convertValue(node, Object.class);
+    }
 
-        if (node.isObject()) {
-            // It's a POJO or a Map, convert it to the required Map type.
-            //return MAPPER.convertValue(o, new TypeReference<Map<String, Object>>() {});
-            return MAPPER.convertValue(o, new TypeReference<>() {});
-        } else {
-            // It's a primitive, String, array, or collection. Wrap the original object.
-            // The final serialization of the FunctionResponse will correctly handle this structure.
-            return Collections.singletonMap(primitiveFieldName, o);
-        }
-    }
-    
     /**
-     * Deserializes a {@code Map<String, Object>} back into a specific POJO type.
-     *
-     * @param <T>   The target type.
-     * @param map   The map to convert.
-     * @param clazz The class of the target type.
-     * @return An instance of the target type, or null if the input map is null or empty.
+     * Converts a "pure" JSON-safe structure (Map, List, etc.) into a rich Java POJO.
+     * 
+     * @param <T> The target type.
+     * @param o The source object (usually a Map or List from the API).
+     * @param type The target reflection Type.
+     * @return The enriched POJO.
      */
-    public static <T> T convertMapToObject(Map<String, Object> map, Class<T> clazz) {
-        if (map == null || map.isEmpty()) {
-            return null;
-        }
-        return MAPPER.convertValue(map, clazz);
+    public static <T> T toPojo(Object o, Type type) {
+        if (o == null) return null;
+        return MAPPER.convertValue(o, MAPPER.constructType(type));
     }
-    
+
     /**
      * Serializes an object to a pretty-printed JSON string.
      *
