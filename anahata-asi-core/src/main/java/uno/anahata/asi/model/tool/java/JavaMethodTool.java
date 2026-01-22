@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.tool.AbstractTool;
 import uno.anahata.asi.model.tool.ToolPermission;
@@ -26,6 +27,7 @@ import uno.anahata.asi.tool.schema.SchemaProvider;
  * @author anahata-gemini-pro-2.5
  */
 @Getter
+@Slf4j
 public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMethodToolCall> {
     
     /** The full Java method signature. */
@@ -122,7 +124,8 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         }
         if (!missingParams.isEmpty()) {
             String reason = "Tool call rejected: Missing required parameters: " + String.join(", ", missingParams);
-            JavaMethodToolCall call = new JavaMethodToolCall(modelMessage, id, this, jsonArgs);
+            //should we map it to a bad tool call or let the user try to reject it?
+            JavaMethodToolCall call = new JavaMethodToolCall(modelMessage, id, this, jsonArgs, jsonArgs);
             call.getResponse().reject(reason);
             return call;
         }
@@ -140,14 +143,16 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
                 }
             }
         } catch (IllegalArgumentException e) {
+            log.error("Failed to convert arguments", e);
+            //question for the asi: should we do a "BadToolCall instead"??
             String reason = "Tool call rejected: Failed to convert arguments. Error: " + e.getMessage();
-            JavaMethodToolCall call = new JavaMethodToolCall(modelMessage, id, this, jsonArgs);
+            JavaMethodToolCall call = new JavaMethodToolCall(modelMessage, id, this, jsonArgs, jsonArgs);
             call.getResponse().reject(reason);
             return call;
         }
 
         // 3. Create the final call object
-        return new JavaMethodToolCall(modelMessage, id, this, convertedArgs);
+        return new JavaMethodToolCall(modelMessage, id, this, jsonArgs, convertedArgs);
     }
 
     @Override
