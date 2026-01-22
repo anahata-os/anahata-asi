@@ -407,8 +407,14 @@ public class SchemaProvider {
                         addTitleToSchemaRecursive(allSchemas.get(refName), fieldType, allSchemas, visited);
                     } else if ("array".equals(propSchema.getType()) && propSchema.getItems() != null) {
                         propSchema.setTitle(getTypeName(fieldType));
+                        Type itemType = null;
                         if (fieldType instanceof ParameterizedType) {
-                            Type itemType = ((ParameterizedType) fieldType).getActualTypeArguments()[0];
+                            itemType = ((ParameterizedType) fieldType).getActualTypeArguments()[0];
+                        } else if (fieldType instanceof Class && ((Class<?>) fieldType).isArray()) {
+                            itemType = ((Class<?>) fieldType).getComponentType();
+                        }
+                        
+                        if (itemType != null) {
                             addTitleToSchemaRecursive(propSchema.getItems(), itemType, allSchemas, visited);
                         }
                     } else {
@@ -578,6 +584,6 @@ public class SchemaProvider {
      * @return true if it's a JDK class.
      */
     private static boolean isJdkClass(Class<?> clazz) {
-        return clazz != null && (clazz.isPrimitive() || (clazz.getPackage() != null && clazz.getPackage().getName().startsWith("java.")));
+        return clazz != null && (clazz.isPrimitive() || (clazz.getPackage() != null && clazz.getPackage().getName().startsWith("java.")) || clazz.getName().startsWith("java."));
     }
 }
