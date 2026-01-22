@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Scanner;
 import lombok.RequiredArgsConstructor;
 import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.model.core.AbstractMessage;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.InputUserMessage;
 import uno.anahata.asi.model.core.Response;
@@ -52,7 +53,7 @@ public class Cli {
         while (true) {
             System.out.println("\n===== Main Menu =====");
             System.out.println("1. Chat with a Model");
-            System.out.println("2. Configure Chat"); // New option
+            System.out.println("2. Configure Chat");
             System.out.println("3. Exit");
             System.out.print("Enter your choice: ");
 
@@ -115,49 +116,28 @@ public class Cli {
             InputUserMessage userMessage = new InputUserMessage(chat);
             userMessage.setText(userInput);
 
+            // Track history size before sending to identify new messages
+            int historySizeBefore = chat.getContextManager().getHistory().size();
+            
             System.out.println("Model: ...");
             chat.sendMessage(userMessage);
             
-            /*
-
-            List<? extends AbstractModelMessage> candidates = response.getCandidates();
-
-            if (candidates.isEmpty()) {
-                System.out.println("The model did not provide any response.");
-            } else if (candidates.size() > 1) {
-                System.out.println("The model provided multiple candidates. Please choose one:");
-                for (int i = 0; i < candidates.size(); i++) {
-                    System.out.println("\n--- Candidate " + (i + 1) + " ---");
-                    System.out.println(candidates.get(i).asText(true));
+            // Display all new messages added during the turn (Model and Tool responses)
+            List<AbstractMessage> history = chat.getContextManager().getHistory();
+            for (int i = historySizeBefore; i < history.size(); i++) {
+                AbstractMessage msg = history.get(i);
+                if (msg instanceof UserMessage && !(msg instanceof InputUserMessage)) {
+                    // Skip internal UserMessages (like RAG) to keep CLI clean
+                    continue;
                 }
-
-                int choice = -1;
-                while (choice < 1 || choice > candidates.size()) {
-                    System.out.print("Enter your choice (1-" + candidates.size() + "): ");
-                    try {
-                        choice = Integer.parseInt(scanner.nextLine());
-                        if (choice < 1 || choice > candidates.size()) {
-                            System.out.println("Invalid choice. Please try again.");
-                        }
-                    } catch (NumberFormatException e) {
-                        System.out.println("Invalid input. Please enter a number.");
-                    }
-                }
-                chat.chooseCandidate(candidates.get(choice - 1));
-            } else {
-                // Single candidate case: it was auto-selected by Chat.sendMessage().
-                // We just need to display its content.
-                System.out.println(candidates.get(0).asText(true));
+                System.out.println("\n--- " + msg.getRole() + " (" + msg.getFrom() + ") ---");
+                System.out.println(msg.asText(true));
             }
 
-
-            
-            // The chosen candidate (either auto-selected or user-selected) is now in the history.
-            // The final output is handled by the Chat.chooseCandidate logic, which may trigger
-            // tool execution and a subsequent model call. The CLI only needs to display the final status.
-
-            System.out.println("[Finish Reason: " + response.getFinishReason() + ", Total Tokens: " + response.getTotalTokenCount() + "]");
-*/
+            chat.getLastResponse().ifPresent(response -> {
+                System.out.println("\n[Finish Reason: " + response.getCandidates().get(0).getFinishReason() 
+                        + ", Total Tokens: " + response.getTotalTokenCount() + "]");
+            });
         }
     }
 }
