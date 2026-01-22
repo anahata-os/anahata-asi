@@ -31,8 +31,8 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
     private static final Image BADGE;
 
     static {
-        LOG.info("AnahataFileAnnotator static init");
-        Image original = ImageUtilities.loadImage("uno/anahata/mavenproject9/anahata.png");
+        LOG.info("AnahataAnnotationProvider static init");
+        Image original = ImageUtilities.loadImage("icons/anahata.png");
         if (original != null) {
             BADGE = original.getScaledInstance(8, 8, Image.SCALE_SMOOTH);
         } else {
@@ -42,7 +42,7 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
 
     @Override
     public Image annotateIcon(Image icon, int type, Set<? extends FileObject> files) {
-        LOG.log(Level.INFO, "AnahataFileAnnotator.annotateIcon called for files size: {0}", files.size());
+        LOG.log(Level.INFO, "AnahataAnnotationProvider.annotateIcon called for files size: {0}", files.size());
         
         // Start with the original icon, allowing other providers to annotate first
         icon = VersioningAnnotationProvider.getDefault().annotateIcon(icon, type, files);
@@ -150,7 +150,7 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
         private Set<? extends FileObject> files;
 
         public AnahataSubmenuAction(Set<? extends FileObject> files) {
-            super("AnahataSubmenuAction", new ImageIcon("uno/anahata/mavenproject9/anahata.png"));
+            super("AnahataSubmenuAction", new ImageIcon("icons/anahata.png"));
             this.files = files;
         }
 
@@ -160,7 +160,7 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
         @Override
         public JMenuItem getPopupPresenter() {
             JMenu submenu = new JMenu("Anahata");
-            submenu.setIcon(new ImageIcon("uno/anahata/mavenproject9/anahata.png"));
+            submenu.setIcon(new ImageIcon("icons/anahata.png"));
             
             submenu.add(new JMenuItem(new AbstractAction("Add To Context", submenu.getIcon()) {
                 @Override
