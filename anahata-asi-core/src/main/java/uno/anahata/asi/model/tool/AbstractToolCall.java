@@ -40,8 +40,15 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
     private final T tool;
 
     /**
-     * The arguments for the method, provided as a map of parameter names to
-     * values. This map represents the original request from the model.
+     * The original, raw arguments received from the AI provider (e.g., Gemini).
+     * These are stored as a plain JSON-style Map for debugging and "Final Gate" safety.
+     */
+    @NonNull
+    private final Map<String, Object> rawArgs;
+
+    /**
+     * The enriched arguments for the tool, which may contain rich POJOs (like JavaType).
+     * This map is used for tool execution and application logic.
      */
     @NonNull
     private final Map<String, Object> args;
@@ -69,12 +76,14 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
      * @param message The model message that initiated the call.
      * @param id The unique call ID.
      * @param tool The tool definition.
-     * @param args The arguments for the tool.
+     * @param rawArgs The original JSON arguments from the provider.
+     * @param args The enriched arguments (POJOs).
      */
-    public AbstractToolCall(AbstractModelMessage message, @NonNull String id, @NonNull T tool, @NonNull Map<String, Object> args) {
+    public AbstractToolCall(AbstractModelMessage message, @NonNull String id, @NonNull T tool, @NonNull Map<String, Object> rawArgs, @NonNull Map<String, Object> args) {
         super(message);
         this.id = id;
         this.tool = tool;
+        this.rawArgs = rawArgs;
         this.args = args; 
         this.response = createResponse(message.getToolMessage());
         getChat().getContextManager().ensureToolMessageFolllowsModelMessage(getMessage());
