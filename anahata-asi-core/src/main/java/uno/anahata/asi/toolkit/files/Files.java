@@ -59,25 +59,19 @@ public class Files extends AnahataToolkit {
             @AiToolParam("The absolute paths to the text files.") List<String> resourcePaths) throws Exception {
 
         List<TextFileResource> ret = new ArrayList<>(resourcePaths.size());
-        List<String> errors = new ArrayList<>();
         for (String path : resourcePaths) {
             try {
                 log("Loading " + path + "...");
                 ret.add(Files.this.loadTextFile(path));
                 log("Loaded OK " + path);
             } catch (Exception e) {
-                log.error("Exception loading text file resource", e);
-                log(ExceptionUtils.getStackTrace(e));
-                errors.add(e.getMessage());
-                getResponse().addError(ExceptionUtils.getStackTrace(e));
+                log.error("Exception loading text file resource: {}", path, e);
+                error("Failed to load " + path + ": " + e.getMessage());
             }
-        }
-        if (!errors.isEmpty()) {
-            super.getResponse().setError(errors.toString());
         }
 
         if (ret.isEmpty()) {
-            throw new AiToolException("Nothing got loaded");
+            throw new AiToolException("No files were successfully loaded.");
         }
 
         return ret;
