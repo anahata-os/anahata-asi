@@ -128,11 +128,7 @@ public class ToolkitDetailPanel extends JPanel {
         });
 
         ContextProvider cp = toolkit.getContextProvider();
-        if (cp == null) {
-            // Fallback to ToolManager if the toolkit itself doesn't provide context
-            cp = toolkit.getToolManager();
-        }
-
+        // NO FALLBACK: If the toolkit doesn't have a provider, show the empty state.
         if (cp != null) {
             contentLayout.show(contentPanel, "tabs");
             updatePreviews(cp);
