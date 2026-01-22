@@ -36,7 +36,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     private Object result;
 
     /** A descriptive error message if the tool failed or was rejected. */
-    private String error;
+    private String errors;
 
     /** The time taken to execute the method, in milliseconds. */
     private long executionTimeMillis;
@@ -92,10 +92,10 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
 
     /**
      * Sets the error message and updates the token count.
-     * @param error The error message.
+     * @param errors The error message.
      */
-    public void setError(String error) {
-        this.error = error;
+    public void setErrors(String errors) {
+        this.errors = errors;
         updateTokenCount();
     }
 
@@ -123,7 +123,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     
     /**
      * Executes the tool logic. This method is responsible for populating
-     * the status, result, error, and executionTimeMillis fields.
+     * the status, result, errors, and executionTimeMillis fields.
      */
     public abstract void execute();
 
@@ -138,7 +138,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
      */
     public void reject(String reason) {
         setStatus(ToolExecutionStatus.NOT_EXECUTED);
-        setError(reason);
+        setErrors(reason);
     }
     
     /**
@@ -163,7 +163,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     public void reset() {
         setStatus(ToolExecutionStatus.NOT_EXECUTED);
         setResult(null);
-        setError(null);
+        setErrors(null);
         setThread(null);
         setExecutionTimeMillis(0);
         clearLogs();
@@ -182,7 +182,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     }
     
     /**
-     * Converts a exception to a string and adds it to the error field.
+     * Converts a exception to a string and adds it to the errors field.
      * 
      * @param t The exception to add.
      */
@@ -194,13 +194,13 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
      * @param error The error message to add.
      */
     public void addError(String error) {
-        if (this.error == null) {
-            this.error = error;
+        if (this.errors == null) {
+            this.errors = error;
         } else {
-            this.error = "\n" + error;
+            this.errors = "\n" + error;
         }
         updateTokenCount();
-        getPropertyChangeSupport().firePropertyChange("error", null, this.error);
+        getPropertyChangeSupport().firePropertyChange("errors", null, this.errors);
     }
     
     /**
@@ -279,6 +279,6 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
 
     @Override
     public String asText() {
-        return String.format("[%s] %s", status, result != null ? TextUtils.formatValue(result.toString()) : (error != null ? error : ""));
+        return String.format("[%s] %s", status, result != null ? TextUtils.formatValue(result.toString()) : (errors != null ? errors : ""));
     }
 }
