@@ -1,12 +1,15 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.model.tool;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /**
  * Represents the lifecycle status of a single tool's execution.
  * This provides a more granular view than a simple success/failure flag.
  *
  * @author anahata-gemini-pro-2.5
  */
+@Schema(description = "Execution status of a tool call")
 public enum ToolExecutionStatus {
     /** The tool call has been created but not yet processed or executed. */
     PENDING,
