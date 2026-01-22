@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.model.core.AbstractPart;
 import uno.anahata.asi.model.core.BlobPart;
@@ -54,7 +53,6 @@ public class GeminiPartAdapter {
             ModelTextPart modelText = (ModelTextPart) anahataPart;
             partBuilder.text(modelText.getText());
             partBuilder.thought(modelText.isThought());
-            // thoughtSignature is already handled above
             return partBuilder.build();
         }
         if (anahataPart instanceof TextPart) {
@@ -66,7 +64,6 @@ public class GeminiPartAdapter {
                 .data(modelBlob.getData())
                 .mimeType(modelBlob.getMimeType())
                 .build());
-            // thoughtSignature is already handled above
             return partBuilder.build();
         }
         if (anahataPart instanceof BlobPart) {
@@ -83,13 +80,15 @@ public class GeminiPartAdapter {
         }
         if (anahataPart instanceof AbstractToolCall) {
             AbstractToolCall toolCall = (AbstractToolCall) anahataPart;
+            
+            // FINAL GATE: Purify effective arguments into plain JSON primitives
+            Map<String, Object> safeArgs = (Map<String, Object>) JacksonUtils.toJsonPrimitives(toolCall.getEffectiveArgs());
+            
             FunctionCall.Builder fcBuilder = FunctionCall.builder()
                 .name(toolCall.getToolName())
-                .args(toolCall.getArgs())
+                .args(safeArgs)
                 .id(toolCall.getId());
             
-            
-            // thoughtSignature is already handled above
             return partBuilder.functionCall(fcBuilder.build()).build();
         }
         
@@ -104,26 +103,11 @@ public class GeminiPartAdapter {
      */
     private Part toGoogleFunctionResponsePart() {
         AbstractToolResponse<?> anahataResponse = (AbstractToolResponse) anahataPart;
-        Map<String, Object> responseMap;
         
-        /*
-        // 1. Determine the JSON payload (output or error)
-        if (StringUtils.isNotBlank(anahataResponse.getError())) {
-            // If there's an error, the response map must contain the "error" key.
-            responseMap = JacksonUtils.convertObjectToMap("error", anahataResponse.getError());
-        } else {
-            // Otherwise, it was successful, and the map must contain the "output" key.
-            responseMap = JacksonUtils.convertObjectToMap("output", anahataResponse.getResult());
-        }
-        */
-        responseMap = JacksonUtils.convertObjectToMap(null, anahataResponse);
-        //log.info("responseMap " + responseMap);
-        Map resultMap = JacksonUtils.convertObjectToMap("result", anahataResponse.getResult());
-        //log.info("resultMap" + resultMap);
-        
-        responseMap.putAll(resultMap);
-        
-        //responseMap.put("result", );
+        // FINAL GATE: We send the ENTIRE rich response object (status, result, errors, etc.) 
+        // as the JSON response. This gives the model full visibility into the execution.
+        // We use toJsonPrimitives directly as the response is already a POJO (Map-like).
+        Map<String, Object> responseMap = (Map<String, Object>) JacksonUtils.toJsonPrimitives(anahataResponse);
         
         // 2. Convert attachments to FunctionResponsePart
         List<FunctionResponsePart> attachmentParts = new ArrayList<>();
@@ -136,18 +120,12 @@ public class GeminiPartAdapter {
             .name(anahataResponse.getCall().getToolName())
             .id(anahataResponse.getCall().getId())
             .response(responseMap)
-            .parts(attachmentParts) // Attachments are nested here
+            .parts(attachmentParts)
             .build();
         
-        // thoughtSignature for AbstractToolResponse is handled by the outer toGoogle() method
         return Part.builder().functionResponse(fr).build();
     }
     
-    /**
-     * Converts a ToolResponseAttachment into a Google FunctionResponsePart.
-     * @param attachment The attachment to convert.
-     * @return The corresponding Google FunctionResponsePart.
-     */
     private static FunctionResponsePart toGoogleAttachmentPart(ToolResponseAttachment attachment) {
         return FunctionResponsePart.fromBytes(attachment.getData(), attachment.getMimeType());
     }
