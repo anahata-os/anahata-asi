@@ -305,7 +305,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         boolean hasLogs = !logs.isEmpty();
         if (hasLogs) logsArea.setText(logs);
 
-        String error = response.getError() != null ? response.getError() : "";
+        String error = response.getErrors() != null ? response.getErrors() : "";
         boolean hasError = !error.isEmpty();
         if (hasError) errorArea.setText(error);
 
