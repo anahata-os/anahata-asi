@@ -22,7 +22,7 @@ public class BadToolResponse extends AbstractToolResponse<BadToolCall> {
         super(call);
         this.call = call;
         setStatus(ToolExecutionStatus.NOT_EXECUTED);
-        setError("Tool call rejected: The tool '" + call.getToolName() + "' was not found.");
+        setErrors("Tool call rejected: The tool '" + call.getToolName() + "' was not found.");
     }
 
     @Override
