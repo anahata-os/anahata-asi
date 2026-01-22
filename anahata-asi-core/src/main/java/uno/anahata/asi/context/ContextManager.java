@@ -165,7 +165,7 @@ public class ContextManager implements PropertyChangeSource {
         for (ContextProvider rootProvider : providers) {            
             log.info("Augmenting context with Root provider {}" + rootProvider);
             for (ContextProvider provider : rootProvider.getFlattenedHierarchy(true)) {
-                log.info("\n\t- {}" + provider + " providing:" + provider.isProviding());
+                log.info("fqid:" + provider.getFullyQualifiedId() + ", providing:" + provider.isProviding());
                 if (provider.isProviding()) {                                
                     try {                  
                         String header = provider.getHeader();
