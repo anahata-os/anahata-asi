@@ -18,8 +18,8 @@ import uno.anahata.asi.model.tool.AbstractToolCall;
 @Getter
 public class JavaMethodToolCall extends AbstractToolCall<JavaMethodTool, JavaMethodToolResponse> {
     
-    public JavaMethodToolCall(AbstractModelMessage modelMessage, @NonNull String id, @NonNull JavaMethodTool tool, @NonNull Map<String, Object> args) {
-        super(modelMessage, id, tool, args);
+    public JavaMethodToolCall(AbstractModelMessage modelMessage, @NonNull String id, @NonNull JavaMethodTool tool, @NonNull Map<String, Object> rawArgs, @NonNull Map<String, Object> args) {
+        super(modelMessage, id, tool, rawArgs, args);
     }
 
     @Override
