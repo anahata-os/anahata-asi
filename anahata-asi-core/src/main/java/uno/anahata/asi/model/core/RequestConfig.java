@@ -49,6 +49,13 @@ public class RequestConfig {
 
     /** If true, the adapter should include pruned messages and parts in the API request. For debugging. */
     private boolean includePruned = false;
+    
+    /** 
+     * Whether to use the native provider Schema objects for tool parameters
+     * and responses, or to use our custom, purified JSON schemas.
+     * Defaults to false (using custom schemas).
+     */
+    private boolean useNativeSchemas = false;
 
     //== Provider-Accurate Metadata (Set by Adapters) ==//
     /** The total token count of the system instructions as reported by the provider. */

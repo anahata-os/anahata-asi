@@ -134,7 +134,7 @@ public class Chat extends BasicPropertyChangeSource {
     /**
      * A high-level summary of the conversation's current state or topic.
      */
-    private String summary;
+    private String conversationSummary;
 
     /**
      * Constructs a new Chat session with the provided configuration.
@@ -615,7 +615,7 @@ public class Chat extends BasicPropertyChangeSource {
         setStagedUserMessage(null);
         String newSessionId = UUID.randomUUID().toString();
         config.setSessionId(newSessionId);
-        config.setName(null);
+        config.setNickname(null);
         log.info("Chat session cleared. New session ID: {}", newSessionId);
     }
 
@@ -682,7 +682,7 @@ public class Chat extends BasicPropertyChangeSource {
      * @return The session nickname or short ID.
      */
     public String getNickname() {
-        return config.getName() != null ? config.getName() : getShortId();
+        return config.getNickname() != null ? config.getNickname() : getShortId();
     }
 
     /**
@@ -691,8 +691,9 @@ public class Chat extends BasicPropertyChangeSource {
      * @param nickname The new nickname.
      */
     public void setNickname(String nickname) {
-        String old = config.getName();
-        config.setName(nickname);
+        String old = getNickname();
+        log.info("Setting nickname for session {}: {} -> {}", config.getSessionId(), old, nickname);
+        config.setNickname(nickname);
         propertyChangeSupport.firePropertyChange("nickname", old, nickname);
     }
 
@@ -702,8 +703,9 @@ public class Chat extends BasicPropertyChangeSource {
      * @param summary The new summary.
      */
     public void setSummary(String summary) {
-        String old = this.summary;
-        this.summary = summary;
+        String old = this.conversationSummary;
+        log.info("Setting summary for session {}: {} -> {}", config.getSessionId(), old, summary);
+        this.conversationSummary = summary;
         propertyChangeSupport.firePropertyChange("summary", old, summary);
     }
 

@@ -7,7 +7,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.internal.TokenizerUtils;
 import uno.anahata.asi.model.core.RagMessage;
+import uno.anahata.asi.model.core.TextPart;
 
 /**
  * Defines the contract for providers that inject just-in-time context into an AI request.
@@ -141,5 +143,46 @@ public interface ContextProvider {
                 + "Parent: " + (getParentProvider() != null ? getParentProvider().getFullyQualifiedId() : "<no parent provider>") + "\n"
                 + "Children: " + getChildrenProviders().size() + "\n"
                 + "Providing: " + isProviding() + "\n";
+    }
+
+    /**
+     * Calculates the token count for the system instructions provided by this instance.
+     * 
+     * @param chat The active chat session.
+     * @return The estimated token count.
+     */
+    default int getInstructionsTokenCount(Chat chat) {
+        try {
+            List<String> instructions = getSystemInstructions(chat);
+            if (instructions.isEmpty()) return 0;
+            int count = TokenizerUtils.countTokens(getHeader());
+            for (String s : instructions) {
+                count += TokenizerUtils.countTokens(s);
+            }
+            return count;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Calculates the token count for the RAG content provided by this instance.
+     * 
+     * @param chat The active chat session.
+     * @return The estimated token count.
+     */
+    default int getRagTokenCount(Chat chat) {
+        try {
+            RagMessage temp = new RagMessage(chat);
+            populateMessage(temp);
+            if (temp.getParts().isEmpty()) return 0;
+            int count = TokenizerUtils.countTokens(getHeader());
+            for (uno.anahata.asi.model.core.AbstractPart p : temp.getParts()) {
+                count += TokenizerUtils.countTokens(p.toString());
+            }
+            return count;
+        } catch (Exception e) {
+            return 0;
+        }
     }
 }

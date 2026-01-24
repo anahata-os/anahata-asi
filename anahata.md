@@ -1,6 +1,10 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 # Anahata ASI Maven Multi-Module Project
 
+> [!DANGER]
+> **CRITICAL CODING PRINCIPLE**
+> **NEVER** attempt to write or refactor code without first loading the relevant Java types (classes, interfaces, etc.) into your context. Coding "blind" leads to hallucinations, compilation errors, and architectural drift. Always use `LocalFiles.readFile` or `JavaSources.getSource` to ensure you have the ground truth before proposing changes.
+
 This document provides the high-level strategic overview for the entire `anahata-ai-parent` project.
 
 > [!IMPORTANT]

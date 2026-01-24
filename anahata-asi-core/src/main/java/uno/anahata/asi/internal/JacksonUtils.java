@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.lang.reflect.Type;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Map;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -55,6 +56,62 @@ public final class JacksonUtils {
     public static <T> T toPojo(Object o, Type type) {
         if (o == null) return null;
         return MAPPER.convertValue(o, MAPPER.constructType(type));
+    }
+
+    /**
+     * Parses a JSON string into a Java object of the specified type.
+     * 
+     * @param <T> The target type.
+     * @param json The JSON string to parse.
+     * @param type The target reflection Type.
+     * @return The parsed object.
+     * @throws IllegalArgumentException if parsing fails.
+     */
+    public static <T> T parse(String json, Type type) {
+        if (json == null || json.trim().isEmpty()) return null;
+        try {
+            return MAPPER.readValue(json, MAPPER.constructType(type));
+        } catch (JsonProcessingException e) {
+            log.error("Failed to parse JSON string to type {}: {}", type.getTypeName(), json, e);
+            throw new IllegalArgumentException("Failed to parse JSON", e);
+        }
+    }
+
+    /**
+     * Parses a JSON string into a Java object of the specified class.
+     * 
+     * @param <T> The target type.
+     * @param json The JSON string to parse.
+     * @param clazz The target class.
+     * @return The parsed object.
+     */
+    public static <T> T parse(String json, Class<T> clazz) {
+        return parse(json, (Type) clazz);
+    }
+
+    /**
+     * Recursively removes redundant and token-heavy fields from a JSON schema Map.
+     * Strips: 'exampleSetFlag' and 'types'.
+     * 
+     * @param schema The schema Map to purify.
+     */
+    public static void purifySchema(Map<String, Object> schema) {
+        if (schema == null) return;
+        
+        schema.remove("exampleSetFlag");
+        schema.remove("types");
+        
+        for (Object value : schema.values()) {
+            if (value instanceof Map) {
+                purifySchema((Map<String, Object>) value);
+            } else if (value instanceof Iterable) {
+                for (Object item : (Iterable<?>) value) {
+                    if (item instanceof Map) {
+                        purifySchema((Map<String, Object>) item);
+                    }
+                }
+            }
+        }
     }
 
     /**

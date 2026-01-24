@@ -16,6 +16,7 @@ This board tracks the high-priority tactical goals for the JASI Platform (Java A
 - [x] **Provider-Level Token Accuracy**: Update token counts using the `toJson()` of the underlying provider when building final API elements.
 
 ### 🔴 Backlog
+- [ ] **Review bad parameter handling in JavaMethodTool**: Investigate if in the cases of bad json to java parameter serialization or missing requried params should translate to a "BadToolCall", rather than a JavaMethodToolCall with identical rawArgs and convertedArgs.
 - [ ] **V2 Serialization Investigation**: Investigate why V2 tool response serialization (including logs and attachments) works standalone but fails with `GenAiIOException`/`InterruptedIOException` in NetBeans. Explore if payload size, circular references, or environment-specific timeouts are the cause.
 - [ ] **Editable Tool Parameters**: Support editing tool call parameters that are easy to edit (like strings) before execution.
 - [ ] **Vertical Tool Layout**: Explore wrapping tool calls and responses in `JXTitledPanels` and laying them vertically rather than left-to-right.

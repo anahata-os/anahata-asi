@@ -11,23 +11,18 @@ import uno.anahata.asi.chat.Chat;
  * <p>
  * This message and its parts are not part of the persistent conversation history
  * and are exempt from all pruning logic.
+ * </p>
  *
  * @author Anahata
  */
 public class RagMessage extends UserMessage {
 
+    /**
+     * Constructs a new RagMessage.
+     * @param chat The parent chat session.
+     */
     public RagMessage(Chat chat) {
-        this(chat, true);
-    }
-
-    public RagMessage(Chat chat, boolean includeHeader) {
         super(chat);
-        if (includeHeader) {
-            new TextPart(this, "--- Augmented Workspace Context ---\n"
-                    + "The following is high-salience, just-in-time context provided by the host environment for this turn. "
-                    + "It is dynamically generated and populated by enabled context providers. "
-                    + "This is NOT direct input from the user.");
-        }
     }
     
     /**

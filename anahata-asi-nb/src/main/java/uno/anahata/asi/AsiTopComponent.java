@@ -10,10 +10,12 @@ import org.openide.awt.ActionReference;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 import uno.anahata.asi.chat.Chat;
-import uno.anahata.asi.swing.chat.AsiContainerPanel;
+import uno.anahata.asi.swing.chat.AsiSwitcherContainerPanel;
+import uno.anahata.asi.swing.chat.SessionController;
 
 /**
  * A TopComponent that displays a list of all active Anahata ASI sessions.
+ * It uses the switcher view which defaults to Sticky Notes (Cards).
  */
 @TopComponent.Description(
         preferredID = "AsiTopComponent",
@@ -27,9 +29,9 @@ import uno.anahata.asi.swing.chat.AsiContainerPanel;
         preferredID = "SessionsTopComponent"
 )
 @Slf4j
-public class AsiTopComponent extends TopComponent implements AsiContainerPanel.SessionController {
+public class AsiTopComponent extends TopComponent implements SessionController {
 
-    private final AsiContainerPanel sessionsPanel;
+    private final AsiSwitcherContainerPanel sessionsPanel;
 
     public AsiTopComponent() {
         setName("ASI");
@@ -37,7 +39,7 @@ public class AsiTopComponent extends TopComponent implements AsiContainerPanel.S
         setLayout(new BorderLayout());
 
         // Use the shared AsiContainer from the installer
-        sessionsPanel = new AsiContainerPanel(AnahataInstaller.getAsiConfig());
+        sessionsPanel = new AsiSwitcherContainerPanel(AnahataInstaller.getAsiConfig());
         sessionsPanel.setController(this);
         add(sessionsPanel, BorderLayout.CENTER);
     }

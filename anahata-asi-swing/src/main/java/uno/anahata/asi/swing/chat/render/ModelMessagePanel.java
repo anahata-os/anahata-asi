@@ -133,18 +133,6 @@ public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage
     }
 
     @Override
-    protected AbstractPartPanel createPartPanel(AbstractPart part) {
-        if (part instanceof ModelTextPart modelTextPart) {
-            return new TextPartPanel(chatPanel, modelTextPart);
-        } else if (part instanceof ModelBlobPart modelBlobPart) {
-            return new BlobPartPanel(chatPanel, modelBlobPart);
-        } else if (part instanceof AbstractToolCall toolCall) {
-            return new ToolCallPanel(chatPanel, toolCall);
-        }
-        return super.createPartPanel(part);
-    }
-
-    @Override
     protected Color getHeaderStartColor() {
         return chatConfig.getTheme().getModelHeaderBg();
     }

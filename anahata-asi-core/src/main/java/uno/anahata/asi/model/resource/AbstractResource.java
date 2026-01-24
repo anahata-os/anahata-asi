@@ -7,6 +7,7 @@ import lombok.Setter;
 import uno.anahata.asi.context.ContextPosition;
 import uno.anahata.asi.model.context.RefreshPolicy;
 import uno.anahata.asi.model.core.AbstractPart;
+import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 import uno.anahata.asi.model.core.RagMessage;
 
 /**
@@ -16,6 +17,11 @@ import uno.anahata.asi.model.core.RagMessage;
  * stateful entity within the AI's context. It unifies the concepts of a
  * stateful resource and a context provider, giving each resource control
  * over its own lifecycle, refresh policy, and position in the prompt.
+ * <p>
+ * This class extends {@link BasicPropertyChangeSource} to provide reactive 
+ * capabilities while ensuring that UI listeners are not persisted during 
+ * serialization.
+ * </p>
  *
  * @author anahata-ai
  * @param <R> The type of the underlying raw Java resource handle (e.g., Path, Process).
@@ -23,7 +29,7 @@ import uno.anahata.asi.model.core.RagMessage;
  */
 @Getter
 @Setter
-public abstract class AbstractResource<R, C> {
+public abstract class AbstractResource<R, C> extends BasicPropertyChangeSource {
 
     //<editor-fold defaultstate="collapsed" desc="Identity">
     /** A unique, immutable identifier for this resource instance. */
@@ -34,7 +40,7 @@ public abstract class AbstractResource<R, C> {
     //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Resource">
-    /** The underlying, raw Java resource object. Ignored during serialization. */
+    /** The underlying, raw Java resource object. Ignored during JSON serialization. */
     @JsonIgnore
     protected R resource;
     //</editor-fold>
@@ -82,6 +88,18 @@ public abstract class AbstractResource<R, C> {
      * @return The number of turns left, or {@code null} if the resource is permanent/stateful.
      */
     public abstract Integer getTurnsRemaining();
+
+    /**
+     * Gets a user-friendly description of the resource.
+     * @return The description string.
+     */
+    public String getDescription() {
+        String type = getContentType();
+        if ("text".equalsIgnoreCase(type)) {
+            return name;
+        }
+        return name + " (" + type + ")";
+    }
 
     /**
      * Builds the base header string for this resource, including all core metadata.

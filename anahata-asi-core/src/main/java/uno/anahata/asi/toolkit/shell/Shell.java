@@ -20,7 +20,7 @@ import uno.anahata.asi.tool.AnahataToolkit;
 
 /**
  * A tool provider that allows the AI model to execute commands in the local
- * bash shell.
+ * shell (bash on Unix, cmd.exe on Windows).
  * <p>
  * This tool is powerful and should be used with caution. It captures standard
  * output, standard error, and execution metadata.
@@ -42,41 +42,48 @@ public class Shell extends AnahataToolkit {
     }
 
     /**
-     * Executes a shell command using {@code bash -c}.
+     * Executes a shell command using the appropriate system shell.
      *
      * @param command The shell command to execute.
      * @return A {@link ShellExecutionResult} containing the exit code and output.
      * @throws Exception if the command fails to start or execution is interrupted.
      */
-    @AiTool("Runs a shell command with bash -c: <command> and forwards the stdout to the tool's output and the stderr to the tool's error log)")
+    @AiTool("Runs a shell command using the system's default shell (cmd.exe on Windows, bash on Unix) and forwards the stdout to the tool's output and the stderr to the tool's error log")
     public ShellExecutionResult runAndWait(@AiToolParam("The command to run") String command) throws Exception {
         ShellExecutionResult result = new ShellExecutionResult();
 
-        ProcessBuilder pb = new ProcessBuilder("bash", "-c", command);
+        String os = System.getProperty("os.name").toLowerCase();
+        ProcessBuilder pb;
+        if (os.contains("win")) {
+            pb = new ProcessBuilder("cmd.exe", "/c", command);
+        } else {
+            pb = new ProcessBuilder("bash", "-c", command);
+        }
+        
         pb.redirectErrorStream(false);
 
         Process process = pb.start();
-        log("Process started" + process);
+        log("Process started: " + process);
 
         String pid = "unknown";
         try {
             pid = "" + process.pid();
         } catch (UnsupportedOperationException e) {
-            log("Coulld not get process id: " + e);
+            log("Could not get process id: " + e);
             // PID not available on some JVMs
         }
 
         ExecutorService executor = getChat().getExecutor();
-        log("Using executor service " + executor);
+        log("Using executor service: " + executor);
         JavaMethodToolResponse response = getResponse();
         Future<String> stdoutFuture = executor.submit(new StreamGobbler(response, process.getInputStream(), false));
-        log("Submitted output gobbler to executor service " + stdoutFuture);
+        log("Submitted output gobbler to executor service: " + stdoutFuture);
         Future<String> stderrFuture = executor.submit(new StreamGobbler(response, process.getErrorStream(), true));
-        log("Submitted error gobbler to executor service " + stdoutFuture);
+        log("Submitted error gobbler to executor service: " + stderrFuture);
 
         log("Calling process.waitFor()");
         int exitCode = process.waitFor();
-        log("process exited with exitCode " + exitCode);
+        log("Process exited with exitCode: " + exitCode);
 
         String output = stdoutFuture.get();
         String error = stderrFuture.get();

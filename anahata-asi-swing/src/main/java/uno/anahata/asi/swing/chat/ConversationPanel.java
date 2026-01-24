@@ -25,6 +25,7 @@ import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.AbstractToolMessage;
 import uno.anahata.asi.model.core.UserMessage;
 import uno.anahata.asi.swing.chat.render.AbstractMessagePanel;
+import uno.anahata.asi.swing.chat.render.MessagePanelFactory;
 import uno.anahata.asi.swing.chat.render.ModelMessagePanel;
 import uno.anahata.asi.swing.chat.render.UserMessagePanel;
 import uno.anahata.asi.swing.components.ScrollablePanel;
@@ -212,12 +213,7 @@ public class ConversationPanel extends JPanel {
     }
 
     private AbstractMessagePanel createMessagePanel(AbstractMessage message) {
-        if (message instanceof UserMessage userMessage) {
-            return new UserMessagePanel(chatPanel, userMessage);
-        } else if (message instanceof AbstractModelMessage modelMessage) {
-            return new ModelMessagePanel(chatPanel, modelMessage);
-        }
-        return null;
+        return MessagePanelFactory.createMessagePanel(chatPanel, message);
     }
 
     public boolean isAtBottom() {

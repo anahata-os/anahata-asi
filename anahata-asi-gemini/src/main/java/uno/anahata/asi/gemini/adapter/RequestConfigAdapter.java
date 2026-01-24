@@ -100,8 +100,9 @@ public final class RequestConfigAdapter {
             log.info("Local tools enabled, adding " + localTools.size() + " tools");
             List<FunctionDeclaration> declarations = new ArrayList<>();
             
+            boolean useNativeSchemas = anahataConfig.isUseNativeSchemas();
             for (AbstractTool<?, ?> tool : localTools) {
-                FunctionDeclaration fd = new GeminiFunctionDeclarationAdapter(tool).toGoogle();
+                FunctionDeclaration fd = new GeminiFunctionDeclarationAdapter(tool, useNativeSchemas).toGoogle();
                 if (fd != null) {
                     String rawJson = fd.toJson();
                     int tokenCount = TokenizerUtils.countTokens(rawJson);

@@ -162,6 +162,11 @@ public class ContextManager implements PropertyChangeSource {
 
         // 2. Add the synthetic RAG message for prompt augmentation.
         RagMessage augmentedMessage = new RagMessage(chat);
+        augmentedMessage.addPart("--- Augmented Workspace Context ---\n"
+                    + "The following is high-salience, just-in-time context provided by the host environment for this turn. "
+                    + "It is dynamically generated and populated by enabled context providers. "
+                    + "This is NOT direct input from the user.");
+                    
         for (ContextProvider rootProvider : providers) {            
             log.info("Augmenting context with Root provider {}" + rootProvider);
             for (ContextProvider provider : rootProvider.getFlattenedHierarchy(true)) {

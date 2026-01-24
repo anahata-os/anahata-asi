@@ -18,7 +18,8 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.swing.chat.ChatPanel;
-import uno.anahata.asi.swing.chat.AsiContainerPanel;
+import uno.anahata.asi.swing.chat.AsiSwitcherContainerPanel;
+import uno.anahata.asi.swing.chat.SessionController;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 
 /**
@@ -28,12 +29,18 @@ import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
  * @author gemini-3-flash-preview
  */
 @Slf4j
-public class StandaloneMainPanel extends JPanel implements AsiContainerPanel.SessionController {
+public class StandaloneMainPanel extends JPanel implements SessionController {
 
+    /** The parent ASI container managing the global state. */
     private final StandaloneAsiContainer asiContainer;
-    private final AsiContainerPanel asiContainerPanel;
+    
+    /** The sidebar panel for switching between active sessions. */
+    private final AsiSwitcherContainerPanel asiContainerPanel;
+    
+    /** The central tabbed pane for displaying active chat conversations. */
     private final JTabbedPane tabbedPane;
     
+    /** The listener for changes in the container's active chats list. */
     private final EdtPropertyChangeListener asiListener;
 
     /**
@@ -46,7 +53,7 @@ public class StandaloneMainPanel extends JPanel implements AsiContainerPanel.Ses
         
         setLayout(new BorderLayout());
 
-        asiContainerPanel = new AsiContainerPanel(container);
+        asiContainerPanel = new AsiSwitcherContainerPanel(container);
         asiContainerPanel.setController(this);
 
         tabbedPane = new JTabbedPane();
@@ -71,6 +78,7 @@ public class StandaloneMainPanel extends JPanel implements AsiContainerPanel.Ses
 
     /**
      * Starts the background refresh of the session list and loads persisted sessions.
+     * If no sessions are loaded, a new empty chat is created.
      */
     public void start() {
         asiContainerPanel.startRefresh();
@@ -78,13 +86,25 @@ public class StandaloneMainPanel extends JPanel implements AsiContainerPanel.Ses
         // Load persisted sessions from disk
         asiContainer.loadSessions();
         
-        // Sync existing chats - use a copy to avoid ConcurrentModificationException
-        for (Chat chat : new ArrayList<>(asiContainer.getActiveChats())) {
-            focus(chat);
+        List<Chat> activeChats = asiContainer.getActiveChats();
+        if (activeChats.isEmpty()) {
+            log.info("No active sessions found. Creating a new empty chat.");
+            createNew();
+        } else {
+            // Sync existing chats - use a copy to avoid ConcurrentModificationException
+            for (Chat chat : new ArrayList<>(activeChats)) {
+                focus(chat);
+            }
         }
-        
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Ensures the chat has a corresponding tab and selects it.
+     * 
+     * @param chat The chat session to focus.
+     */
     @Override
     public void focus(@NonNull Chat chat) {
         String id = chat.getConfig().getSessionId();
@@ -117,6 +137,13 @@ public class StandaloneMainPanel extends JPanel implements AsiContainerPanel.Ses
         tabbedPane.setSelectedIndex(tabIndex);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Removes the tab associated with the chat session.
+     * 
+     * @param chat The chat session to close.
+     */
     @Override
     public void close(@NonNull Chat chat) {
         String id = chat.getConfig().getSessionId();
@@ -130,6 +157,13 @@ public class StandaloneMainPanel extends JPanel implements AsiContainerPanel.Ses
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Closes the tab, shuts down the chat, and moves the session file to the disposed directory.
+     * 
+     * @param chat The chat session to dispose.
+     */
     @Override
     public void dispose(@NonNull Chat chat) {
         String sessionId = chat.getConfig().getSessionId();
@@ -150,13 +184,24 @@ public class StandaloneMainPanel extends JPanel implements AsiContainerPanel.Ses
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Creates a new {@link Chat} with a {@link StandaloneChatConfig} and focuses it.
+     */
     @Override
     public void createNew() {
         log.info("Creating new session...");
         // Chat constructor registers itself in AsiContainer, which triggers property change
-        new Chat(new StandaloneChatConfig(asiContainer));
+        Chat chat = new Chat(new StandaloneChatConfig(asiContainer));
+        focus(chat);
     }
 
+    /**
+     * Handles updates to a chat's nickname by updating the corresponding tab title.
+     * 
+     * @param evt The property change event for "nickname".
+     */
     private void handleNicknameChange(PropertyChangeEvent evt) {
         Chat chat = (Chat) evt.getSource();
         String id = chat.getConfig().getSessionId();
@@ -170,6 +215,11 @@ public class StandaloneMainPanel extends JPanel implements AsiContainerPanel.Ses
         }
     }
 
+    /**
+     * Handles changes to the container's active chats list, syncing the UI tabs.
+     * 
+     * @param evt The property change event for "activeChats".
+     */
     private void handleAsiChange(PropertyChangeEvent evt) {
         List<Chat> oldList = (List<Chat>) evt.getOldValue();
         List<Chat> newList = (List<Chat>) evt.getNewValue();

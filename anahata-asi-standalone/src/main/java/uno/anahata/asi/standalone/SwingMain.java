@@ -8,12 +8,7 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.AsiContainer;
-import uno.anahata.asi.chat.Chat;
-import uno.anahata.asi.cli.CommandLineArgs;
 import uno.anahata.asi.standalone.swing.StandaloneAsiContainer;
-import uno.anahata.asi.standalone.swing.StandaloneChatConfig;
-import uno.anahata.asi.swing.chat.SwingChatConfig;
 import uno.anahata.asi.swing.icons.IconUtils;
 
 /**
@@ -37,14 +32,6 @@ public class SwingMain {
         // Core application setup
         StandaloneAsiContainer container = new StandaloneAsiContainer(args);
         
-        // Create the initial chat session
-        //Chat chat = new Chat(new StandaloneChatConfig(container)); 
-
-        // Centralized argument parsing
-        //CommandLineArgs.parse(chat, args);
-        
-        //log.info("After passing command line args, selected model: " + chat.getSelectedModel());
-
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Anahata ASI");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -59,16 +46,14 @@ public class SwingMain {
 
             // Create the StandaloneMainPanel which manages multiple sessions
             StandaloneMainPanel mainPanel = new StandaloneMainPanel(container);
-            mainPanel.start();
-            
-            // Focus the initial chat session
-            //mainPanel.focus(chat);
-            
             frame.add(mainPanel, BorderLayout.CENTER);
 
             frame.pack();
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
+            
+            // Start the panel after the frame is visible to ensure listeners are active
+            mainPanel.start();
         });
 
         Thread.setDefaultUncaughtExceptionHandler((thread, thrwbl) -> {

@@ -12,7 +12,6 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.swing.*;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.JXTextField;
@@ -33,7 +32,6 @@ import uno.anahata.asi.swing.provider.ProviderRegistryViewer;
  *
  * @author anahata
  */
-@Getter
 @Slf4j
 public class HeaderPanel extends JPanel {
     private static final int ICON_SIZE = 24;
@@ -61,11 +59,11 @@ public class HeaderPanel extends JPanel {
 
         // Nickname Field
         nicknameField = new JXTextField("Nickname");
-        nicknameField.setText(chat.getConfig().getName());
+        nicknameField.setText(chat.getNickname());
         nicknameField.addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
-                chat.getConfig().setName(nicknameField.getText());
+                chat.setNickname(nicknameField.getText());
             }
         });
         add(nicknameField, "w 150!");

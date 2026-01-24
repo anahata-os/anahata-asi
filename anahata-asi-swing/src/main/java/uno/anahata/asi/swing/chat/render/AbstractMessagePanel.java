@@ -318,13 +318,7 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
      * @return The created part panel, or null if no panel is available for the part type.
      */
     protected AbstractPartPanel createPartPanel(AbstractPart part) {
-        if (part instanceof TextPart textPart) {
-            return new TextPartPanel(chatPanel, textPart);
-        } else if (part instanceof BlobPart blobPart) {
-            return new BlobPartPanel(chatPanel, blobPart);
-        }
-        log.warn("No panel found for part type: {}", part.getClass().getName());
-        return null;
+        return PartPanelFactory.createPartPanel(chatPanel, part);
     }
 
     /**

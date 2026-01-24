@@ -104,7 +104,7 @@ public class Session extends AnahataToolkit {
         sb.append("- **Session ID**: ").append(domainChat.getConfig().getSessionId()).append("\n");
         sb.append("- **Nickname**: ").append(domainChat.getNickname()).append("\n");
         sb.append("- **Selected Model**: ").append(domainChat.getSelectedModel() != null ? domainChat.getSelectedModel().getModelId() : "None").append("\n");
-        sb.append("- **Summary**: ").append(domainChat.getSummary() != null ? domainChat.getSummary() : "N/A").append("\n");
+        sb.append("- **Summary**: ").append(domainChat.getConversationSummary() != null ? domainChat.getConversationSummary() : "N/A").append("\n");
         sb.append("- **Total Messages**: ").append(domainChat.getContextManager().getHistory().size()).append("\n");
         sb.append("- **Context Usage**: ").append(String.format("%.1f%%", domainChat.getContextWindowUsage() * 100))
           .append(" (").append(domainChat.getLastTotalTokenCount()).append(" / ").append(domainChat.getConfig().getTokenThreshold()).append(" tokens)\n");

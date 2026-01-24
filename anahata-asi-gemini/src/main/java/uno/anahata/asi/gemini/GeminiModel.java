@@ -10,6 +10,7 @@ import com.google.genai.types.ComputerUse;
 import com.google.genai.types.Content;
 import com.google.genai.types.EnterpriseWebSearch;
 import com.google.genai.types.FileSearch;
+import com.google.genai.types.FunctionDeclaration;
 import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.GenerateContentResponse;
 import com.google.genai.types.GenerateContentResponseUsageMetadata;
@@ -30,6 +31,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.gemini.adapter.GeminiContentAdapter;
+import uno.anahata.asi.gemini.adapter.GeminiFunctionDeclarationAdapter;
 import uno.anahata.asi.gemini.adapter.RequestConfigAdapter;
 import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.model.core.AbstractMessage;
@@ -46,6 +48,7 @@ import uno.anahata.asi.model.provider.AbstractAiProvider;
 import uno.anahata.asi.model.provider.AbstractModel;
 import uno.anahata.asi.model.provider.ApiCallInterruptedException;
 import uno.anahata.asi.model.provider.ServerTool;
+import uno.anahata.asi.model.tool.AbstractTool;
 import uno.anahata.asi.tool.RetryableApiException;
 
 /**
@@ -428,6 +431,12 @@ public class GeminiModel extends AbstractModel {
         c.groundingMetadata().ifPresent(gm -> {
             target.setGroundingMetadata(GeminiModelMessage.toAnahataGroundingMetadata(gm));
         });
+    }
+
+    @Override
+    public String getToolDeclarationJson(AbstractTool<?, ?> tool, RequestConfig config) {
+        FunctionDeclaration fd = new GeminiFunctionDeclarationAdapter(tool, config.isUseNativeSchemas()).toGoogle();
+        return fd != null ? fd.toJson() : "{}";
     }
 
     @Override

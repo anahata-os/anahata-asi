@@ -11,6 +11,7 @@ import uno.anahata.asi.model.core.GenerationRequest;
 import uno.anahata.asi.model.core.RequestConfig;
 import uno.anahata.asi.model.core.Response;
 import uno.anahata.asi.model.core.StreamObserver;
+import uno.anahata.asi.model.tool.AbstractTool;
 
 /**
  * The abstract base class for a specific AI model (e.g., "gemini-1.5-pro-latest").
@@ -22,22 +23,59 @@ import uno.anahata.asi.model.core.StreamObserver;
  */
 public abstract class AbstractModel {
 
+    /**
+     * Gets the provider that owns this model.
+     * @return The parent AI provider.
+     */
     public abstract AbstractAiProvider getProvider();
 
+    /**
+     * Gets the unique identifier for this model (e.g., "models/gemini-1.5-pro").
+     * @return The model ID.
+     */
     public abstract String getModelId();
 
+    /**
+     * Gets the human-readable display name for this model.
+     * @return The display name.
+     */
     public abstract String getDisplayName();
 
+    /**
+     * Gets a detailed description of the model's capabilities and limitations.
+     * @return The model description.
+     */
     public abstract String getDescription();
 
+    /**
+     * Gets the version string for this model.
+     * @return The version.
+     */
     public abstract String getVersion();
 
+    /**
+     * Gets the maximum number of input tokens supported by this model.
+     * @return The input token limit.
+     */
     public abstract int getMaxInputTokens();
 
+    /**
+     * Gets the maximum number of output tokens this model can generate in a single turn.
+     * @return The output token limit.
+     */
     public abstract int getMaxOutputTokens();
 
+    /**
+     * Gets the list of supported API actions for this model (e.g., "generateContent").
+     * @return A list of supported actions.
+     */
     public abstract List<String> getSupportedActions();
 
+    /**
+     * Gets a rich, potentially HTML-formatted description of the model, 
+     * including all its metadata.
+     * @return The raw description string.
+     */
     public abstract String getRawDescription();
 
     /**
@@ -50,14 +88,34 @@ public abstract class AbstractModel {
     }
     
     // --- Abstract Capability Methods ---
+    /**
+     * Checks if this model supports native function calling (tools).
+     * @return true if supported.
+     */
     public abstract boolean isSupportsFunctionCalling();
 
+    /**
+     * Checks if this model supports content generation.
+     * @return true if supported.
+     */
     public abstract boolean isSupportsContentGeneration();
 
+    /**
+     * Checks if this model supports batch embedding generation.
+     * @return true if supported.
+     */
     public abstract boolean isSupportsBatchEmbeddings();
 
+    /**
+     * Checks if this model supports single content embedding generation.
+     * @return true if supported.
+     */
     public abstract boolean isSupportsEmbeddings();
 
+    /**
+     * Checks if this model supports content caching.
+     * @return true if supported.
+     */
     public abstract boolean isSupportsCachedContent();
 
     /**
@@ -111,4 +169,14 @@ public abstract class AbstractModel {
      * @param observer The observer that will receive the streaming response chunks.
      */
     public abstract void generateContentStream(GenerationRequest request, StreamObserver<Response<? extends AbstractModelMessage>> observer);
+
+    /**
+     * Gets the provider-specific JSON representation of a tool's declaration.
+     * This is used by the UI to show exactly what is being sent to the model.
+     * 
+     * @param tool The tool to inspect.
+     * @param config The request configuration (e.g. to check useNativeSchemas).
+     * @return The JSON string representing the tool declaration.
+     */
+    public abstract String getToolDeclarationJson(AbstractTool<?, ?> tool, RequestConfig config);
 }

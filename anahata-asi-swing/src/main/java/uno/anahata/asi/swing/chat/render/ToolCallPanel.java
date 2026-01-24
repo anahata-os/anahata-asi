@@ -252,6 +252,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
                 String rendererId = param.getRendererId();
                 if (rendererId != null && !rendererId.isEmpty()) {
                     AbstractCodeBlockSegmentRenderer codeRenderer = AbstractCodeBlockSegmentRenderer.create(chatPanel, valStr, rendererId);
+                    codeRenderer.setEditable(true);
                     codeRenderer.setOnSave(newContent -> call.setModifiedArgument(paramName, newContent));
                     renderer = codeRenderer;
                 } else {

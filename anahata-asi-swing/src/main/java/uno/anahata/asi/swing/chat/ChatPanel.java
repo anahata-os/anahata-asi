@@ -26,12 +26,12 @@ public class ChatPanel extends JPanel {
     private Chat chat; 
     /** The chat configuration. */
     private SwingChatConfig chatConfig; 
-    /** The tabbed pane for switching between chat and tools. */
+    /** The tabbed pane for switching between chat, config, and context. */
     private final JTabbedPane tabbedPane;
     /** The panel for editing request configuration. */
     private final RequestConfigPanel configPanel;
-    /** The panel for managing tools. */
-    private final ToolsPanel toolsPanel;
+    /** The panel for managing the AI context (history, tools, resources). */
+    private final ContextPanel contextPanel;
     /** The panel for user input. */
     private final InputPanel inputPanel;
     /** The header panel. */
@@ -65,7 +65,7 @@ public class ChatPanel extends JPanel {
         
         this.tabbedPane = new JTabbedPane();
         this.configPanel = new RequestConfigPanel(this);
-        this.toolsPanel = new ToolsPanel(this);
+        this.contextPanel = new ContextPanel(this);
         this.inputPanel = new InputPanel(this); 
         this.headerPanel = new HeaderPanel(this);
         this.toolbarPanel = new ToolbarPanel(this); 
@@ -81,14 +81,14 @@ public class ChatPanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
 
         // Initialize child components first
-        toolsPanel.initComponents();
+        contextPanel.initComponents();
         headerPanel.initComponents();
         toolbarPanel.initComponents();
 
         // Configure Tabbed Pane
         tabbedPane.addTab("Chat", conversationPanel);
         tabbedPane.addTab("Config", configPanel);
-        tabbedPane.addTab("Tools", toolsPanel);
+        tabbedPane.addTab("Context", contextPanel);
 
         // Create a panel to hold CandidateSelectionPanel, InputPanel and StatusPanel
         JPanel southPanel = new JPanel(new BorderLayout());
@@ -125,7 +125,7 @@ public class ChatPanel extends JPanel {
             headerPanel.reload();
             conversationPanel.reload();
             // Note: RequestConfigPanel doesn't have a reload() yet, but it's initialized with chat
-            toolsPanel.reload();
+            contextPanel.reload();
             statusPanel.reload();
             inputPanel.reload();
             toolbarPanel.reload();

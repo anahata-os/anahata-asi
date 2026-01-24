@@ -43,6 +43,10 @@ public abstract class AbstractCodeBlockSegmentRenderer extends AbstractTextSegme
     
     /** Whether the code block is currently in edit mode. */
     @Getter
+    protected boolean editing = false;
+
+    /** Whether this code block is allowed to be edited. Defaults to false. */
+    @Getter @Setter
     protected boolean editable = false;
     
     /** The button used to toggle between edit and view modes. */
@@ -129,13 +133,15 @@ public abstract class AbstractCodeBlockSegmentRenderer extends AbstractTextSegme
             copyButton.addActionListener(e -> SwingUtils.copyToClipboard(getCurrentContentFromComponent()));
             leftHeaderPanel.add(copyButton);
             
-            editButton = new JButton("Edit");
-            editButton.setToolTipText("Toggle Edit Mode");
-            editButton.setFont(new Font("SansSerif", Font.PLAIN, 11));
-            editButton.setMargin(new java.awt.Insets(1, 5, 1, 5));
-            editButton.setFocusPainted(false);
-            editButton.addActionListener(e -> toggleEdit());
-            leftHeaderPanel.add(editButton);
+            if (editable) {
+                editButton = new JButton("Edit");
+                editButton.setToolTipText("Toggle Edit Mode");
+                editButton.setFont(new Font("SansSerif", Font.PLAIN, 11));
+                editButton.setMargin(new java.awt.Insets(1, 5, 1, 5));
+                editButton.setFocusPainted(false);
+                editButton.addActionListener(e -> toggleEdit());
+                leftHeaderPanel.add(editButton);
+            }
             
             headerPanel.add(leftHeaderPanel, BorderLayout.WEST);
             container.add(headerPanel, BorderLayout.NORTH);
@@ -194,11 +200,11 @@ public abstract class AbstractCodeBlockSegmentRenderer extends AbstractTextSegme
      * Toggles the edit mode of the renderer.
      */
     protected void toggleEdit() {
-        editable = !editable;
-        setComponentEditable(editable);
-        editButton.setText(editable ? "Save" : "Edit");
+        editing = !editing;
+        setComponentEditable(editing);
+        editButton.setText(editing ? "Save" : "Edit");
         
-        if (!editable) {
+        if (!editing) {
             currentContent = getCurrentContentFromComponent();
             if (onSave != null) {
                 onSave.accept(currentContent);

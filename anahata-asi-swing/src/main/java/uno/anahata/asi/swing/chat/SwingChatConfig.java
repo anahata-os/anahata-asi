@@ -166,6 +166,13 @@ public class SwingChatConfig extends ChatConfig {
         private final Color chipText = new Color(0, 100, 200);
         private final Color chipBorder = new Color(180, 210, 240);
 
+        // Chat Card Colors
+        private final Color cardNormalBg = new Color(255, 253, 208);
+        private final Color cardHoverBg = new Color(255, 255, 225);
+        private final Color cardSelectedBg = new Color(255, 245, 180);
+        private final Color cardBorder = new Color(220, 220, 180);
+        private final Color cardSelectedBorder = new Color(180, 160, 50);
+
         public Color getHeaderStartColor(Role role) {
             return switch (role) {
                 case USER -> userHeaderBg;
