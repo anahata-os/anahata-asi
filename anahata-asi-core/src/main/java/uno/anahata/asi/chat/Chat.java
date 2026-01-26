@@ -88,6 +88,11 @@ public class Chat extends BasicPropertyChangeSource {
     private AbstractModel selectedModel;
 
     /**
+     * The request configuration for this chat session.
+     */
+    private final RequestConfig requestConfig;
+
+    /**
      * A thread-safe flag indicating if the main chat loop is currently active.
      */
     private transient volatile boolean running = false;
@@ -156,6 +161,8 @@ public class Chat extends BasicPropertyChangeSource {
         this.toolManager = new ToolManager(this);
         this.resourceManager = new ResourceManager();
         this.statusManager = new StatusManager(this);
+        this.requestConfig = new RequestConfig(this);
+        this.requestConfig.setResponseModalities(new ArrayList<>(config.getDefaultResponseModalities()));
 
         contextManager.init();
 
@@ -190,13 +197,24 @@ public class Chat extends BasicPropertyChangeSource {
         this.runningLock = new ReentrantLock();
         this.running = false;
         this.currentExecutionThread = null;
+        
+        log.info("Triggering rebind cascade for chat session {}", config.getSessionId());
+        contextManager.rebind();
+        toolManager.rebind();
     }
 
     /**
-     * Saves this chat session to the application's session directory.
+     * Performs an automatic backup of the session to the active sessions directory.
+     */
+    public void autoSave() {
+        config.getContainer().autoSaveSession(this);
+    }
+
+    /**
+     * Manually saves the session to the 'saved' directory.
      */
     public void save() {
-        config.getContainer().saveSession(this);
+        config.getContainer().manualSaveSession(this);
     }
 
     /**
@@ -274,6 +292,7 @@ public class Chat extends BasicPropertyChangeSource {
             processPendingTools();
             if (message != null && !message.isEmpty()) {
                 contextManager.addMessage(message);
+                autoSave();
             }
             executeTurnLoop();
         } finally {
@@ -325,7 +344,6 @@ public class Chat extends BasicPropertyChangeSource {
             throw new IllegalStateException("A model must be selected before sending a message.");
         }
 
-        RequestConfig requestConfig = config.getRequestConfig();
         List<AbstractMessage> history = contextManager.buildVisibleHistory();
         return new GenerationRequest(requestConfig, history);
     }
@@ -341,6 +359,8 @@ public class Chat extends BasicPropertyChangeSource {
             while (!turnComplete) {
                 turnComplete = performSingleTurn();
             }
+            // Auto-save after turn loop completes
+            autoSave();
         } finally {
             this.currentExecutionThread = null;
         }
@@ -370,6 +390,7 @@ public class Chat extends BasicPropertyChangeSource {
                 if (staged != null && !staged.isEmpty()) {
                     log.info("Picking up staged message before API call.");
                     contextManager.addMessage(staged);
+                    autoSave();
                 }
 
                 GenerationRequest request = prepareRequest();
@@ -538,6 +559,7 @@ public class Chat extends BasicPropertyChangeSource {
         if (!contextManager.getHistory().contains(message)) {
             contextManager.addMessage(message);
         }
+        autoSave();
 
         // Ensure the tool message is initialized and populated with responses for all calls.
         AbstractToolMessage toolMessage = message.getToolMessage();

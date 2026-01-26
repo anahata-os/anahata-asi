@@ -7,11 +7,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -160,12 +162,23 @@ public class AsiContainer extends BasicPropertyChangeSource {
     // --- SESSION PERSISTENCE ---
 
     /**
-     * Gets the directory where chat sessions are stored for this application.
+     * Gets the directory where active chat sessions are stored.
      * 
      * @return The sessions directory path.
      */
     public Path getSessionsDir() {
         return getAppDirSubDir("sessions");
+    }
+
+    /**
+     * Gets the directory where manually saved chat sessions are stored.
+     * 
+     * @return The saved sessions directory path.
+     */
+    public Path getSavedSessionsDir() {
+        Path dir = getSessionsDir().resolve("saved");
+        ensureDirectory(dir);
+        return dir;
     }
 
     /**
@@ -175,32 +188,114 @@ public class AsiContainer extends BasicPropertyChangeSource {
      */
     public Path getDisposedSessionsDir() {
         Path dir = getSessionsDir().resolve("disposed");
-        try {
-            Files.createDirectories(dir);
-        } catch (IOException e) {
-            log.error("Could not create disposed sessions directory: {}", dir, e);
-        }
+        ensureDirectory(dir);
         return dir;
     }
 
-    /**
-     * Serializes and saves a chat session to the sessions directory using Kryo.
-     * 
-     * @param chat The chat session to save.
-     */
-    public void saveSession(Chat chat) {
-        Path file = getSessionsDir().resolve(chat.getConfig().getSessionId() + ".kryo");
+    private void ensureDirectory(Path dir) {
         try {
-            log.info("Saving session {} to {}", chat.getConfig().getSessionId(), file);
-            byte[] data = KryoUtils.serialize(chat);
-            Files.write(file, data);
+            if (!Files.exists(dir)) {
+                Files.createDirectories(dir);
+            }
         } catch (IOException e) {
-            log.error("Failed to save session: {}", chat.getConfig().getSessionId(), e);
+            log.error("Could not create directory: {}", dir, e);
         }
     }
 
     /**
-     * Scans the sessions directory and loads all serialized chat sessions.
+     * Performs an automatic backup of the session to the active sessions directory.
+     * 
+     * @param chat The chat session to save.
+     */
+    public void autoSaveSession(Chat chat) {
+        saveSessionTo(chat, getSessionsDir());
+    }
+
+    /**
+     * Manually saves the session to the 'saved' directory.
+     * 
+     * @param chat The chat session to save.
+     */
+    public void manualSaveSession(Chat chat) {
+        saveSessionTo(chat, getSavedSessionsDir());
+    }
+
+    /**
+     * Serializes and saves a chat session to a specific directory using Kryo.
+     * This method is synchronized on the chat instance to prevent concurrent write issues.
+     * 
+     * @param chat The chat session to save.
+     * @param dir The destination directory.
+     */
+    private void saveSessionTo(Chat chat, Path dir) {
+        synchronized (chat) {
+            Path file = dir.resolve(chat.getConfig().getSessionId() + ".kryo");
+            try {
+                log.info("Saving session {} to {}", chat.getConfig().getSessionId(), file);
+                byte[] data = KryoUtils.serialize(chat);
+                Files.write(file, data);
+            } catch (IOException e) {
+                log.error("Failed to save session: {}", chat.getConfig().getSessionId(), e);
+            }
+        }
+    }
+
+    /**
+     * Permanently disposes of a chat session, shutting it down and moving its 
+     * serialized file to the 'disposed' directory.
+     * 
+     * @param chat The chat session to dispose.
+     */
+    public void dispose(Chat chat) {
+        String sessionId = chat.getConfig().getSessionId();
+        log.info("Disposing session: {}", sessionId);
+        
+        // 1. Shutdown the chat (stops executors, etc.)
+        chat.shutdown();
+        
+        // 2. Move the session file from active to disposed
+        Path activeFile = getSessionsDir().resolve(sessionId + ".kryo");
+        if (Files.exists(activeFile)) {
+            try {
+                Path disposedFile = getDisposedSessionsDir().resolve(sessionId + ".kryo");
+                Files.move(activeFile, disposedFile, StandardCopyOption.REPLACE_EXISTING);
+                log.info("Moved session file to disposed directory: {}", disposedFile);
+            } catch (IOException e) {
+                log.error("Failed to move session file to disposed directory", e);
+            }
+        }
+        
+        // 3. Unregister from active list (fires property change)
+        unregister(chat);
+    }
+
+    /**
+     * Imports a chat session from an external file. The session is assigned a 
+     * new ID to avoid collisions and registered as a new active chat.
+     * 
+     * @param path The path to the serialized session file.
+     * @return The imported Chat session, or null if import failed.
+     */
+    public Chat importSession(Path path) {
+        try {
+            log.info("Importing session from {}", path);
+            byte[] data = Files.readAllBytes(path);
+            Chat chat = KryoUtils.deserialize(data, Chat.class);
+            
+            // Always generate a new session ID for imported sessions to avoid collisions
+            chat.getConfig().setSessionId(UUID.randomUUID().toString());
+            
+            chat.rebind(this);
+            register(chat);
+            return chat;
+        } catch (Exception e) {
+            log.error("Failed to import session from {}", path, e);
+            return null;
+        }
+    }
+
+    /**
+     * Scan the sessions directory and loads all serialized chat sessions.
      * This is typically called during application startup.
      */
     public void loadSessions() {
@@ -208,7 +303,8 @@ public class AsiContainer extends BasicPropertyChangeSource {
         if (!Files.exists(sessionsDir)) return;
 
         try (Stream<Path> stream = Files.list(sessionsDir)) {
-            stream.filter(p -> p.toString().endsWith(".kryo"))
+            stream.filter(p -> !Files.isDirectory(p)) // Only load files from the root (active sessions)
+                  .filter(p -> p.toString().endsWith(".kryo"))
                   .forEach(this::loadSession);
         } catch (IOException e) {
             log.error("Failed to list sessions in {}", sessionsDir, e);

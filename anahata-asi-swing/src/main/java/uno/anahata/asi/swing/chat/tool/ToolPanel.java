@@ -131,7 +131,7 @@ public class ToolPanel extends JPanel {
         responseSchemaRenderer.render();
 
         // Update Native Declaration
-        RequestConfig config = parentPanel.getChat().getConfig().getRequestConfig();
+        RequestConfig config = parentPanel.getChat().getRequestConfig();
         String nativeJson = parentPanel.getChat().getSelectedModel().getToolDeclarationJson(tool, config);
         nativeDeclarationRenderer.updateContent(JacksonUtils.prettyPrintJsonString(nativeJson));
         nativeDeclarationRenderer.render();

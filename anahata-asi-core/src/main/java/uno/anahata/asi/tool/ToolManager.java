@@ -37,6 +37,7 @@ import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 import uno.anahata.asi.model.core.RagMessage;
+import uno.anahata.asi.model.core.Rebindable;
 import uno.anahata.asi.model.core.TextPart;
 import uno.anahata.asi.model.tool.AbstractTool;
 import uno.anahata.asi.model.tool.AbstractToolCall;
@@ -58,7 +59,7 @@ import uno.anahata.asi.model.tool.java.JavaObjectToolkit;
  */
 @Slf4j
 @Getter
-public class ToolManager extends BasicPropertyChangeSource implements ContextProvider {
+public class ToolManager extends BasicPropertyChangeSource implements ContextProvider, Rebindable {
 
     /** A static counter for generating unique, sequential tool call IDs. */
     private static final AtomicInteger callIdGenerator = new AtomicInteger(0);
@@ -333,6 +334,16 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
             }
         }
         return Optional.empty();
+    }
+
+    @Override
+    public void rebind() {
+        log.info("Rebinding ToolManager...");
+        for (AbstractToolkit<?> toolkit : toolkits.values()) {
+            if (toolkit instanceof Rebindable rebindable) {
+                rebindable.rebind();
+            }
+        }
     }
 
     /** {@inheritDoc} */

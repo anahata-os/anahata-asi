@@ -63,7 +63,7 @@ public class RequestConfigPanel extends JPanel implements PropertyChangeListener
     public RequestConfigPanel(ChatPanel chatPanel) {
         this.chatPanel = chatPanel;
         this.chat = chatPanel.getChat();
-        this.config = chat.getConfig().getRequestConfig();
+        this.config = chat.getRequestConfig();
         initComponents();
         loadConfig();
         

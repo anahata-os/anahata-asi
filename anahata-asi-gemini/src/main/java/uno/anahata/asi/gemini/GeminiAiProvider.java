@@ -20,7 +20,7 @@ import uno.anahata.asi.model.provider.AbstractModel;
 @Getter
 public class GeminiAiProvider extends AbstractAiProvider {
 
-    private Client client;
+    private transient Client client;
 
     public GeminiAiProvider() {
         super("Gemini");

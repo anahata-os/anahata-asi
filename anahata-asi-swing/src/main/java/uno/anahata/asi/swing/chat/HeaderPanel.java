@@ -75,7 +75,7 @@ public class HeaderPanel extends JPanel {
         add(saveSessionButton);
 
         loadSessionButton = new JButton(new LoadSessionIcon(ICON_SIZE));
-        loadSessionButton.setToolTipText("Load Session");
+        loadSessionButton.setToolTipText("Import Session");
         loadSessionButton.addActionListener(e -> loadSession());
         add(loadSessionButton);
 
@@ -208,18 +208,14 @@ public class HeaderPanel extends JPanel {
     }
 
     private void loadSession() {
-        JFileChooser fileChooser = new JFileChooser(chat.getConfig().getContainer().getSessionsDir().toFile());
-        fileChooser.setDialogTitle("Load Chat Session");
+        JFileChooser fileChooser = new JFileChooser(chat.getConfig().getContainer().getSavedSessionsDir().toFile());
+        fileChooser.setDialogTitle("Import Chat Session");
         if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             File file = fileChooser.getSelectedFile();
-            new SwingTask<>(this, "Load Session", () -> {
-                byte[] data = Files.readAllBytes(file.toPath());
-                Chat loadedChat = KryoUtils.deserialize(data, Chat.class);
-                loadedChat.rebind(chat.getConfig().getContainer());
-                chat.getConfig().getContainer().register(loadedChat);
-                return loadedChat;
+            new SwingTask<>(this, "Import Session", () -> {
+                return chat.getConfig().getContainer().importSession(file.toPath());
             }, loadedChat -> {
-                chatPanel.reload(loadedChat);
+                // The container already registered it, and the MainPanel listener will focus it.
             }).execute();
         }
     }

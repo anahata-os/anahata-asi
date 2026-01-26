@@ -160,28 +160,15 @@ public class StandaloneMainPanel extends JPanel implements SessionController {
     /**
      * {@inheritDoc}
      * <p>
-     * Closes the tab, shuts down the chat, and moves the session file to the disposed directory.
+     * Closes the tab and delegates the permanent disposal of the session to the container.
      * 
      * @param chat The chat session to dispose.
      */
     @Override
     public void dispose(@NonNull Chat chat) {
-        String sessionId = chat.getConfig().getSessionId();
-        log.info("Disposing session: {}", sessionId);
+        log.info("Disposing session: {}", chat.getConfig().getSessionId());
         close(chat);
-        chat.shutdown();
-        
-        // Move the session file to the disposed directory
-        Path sessionFile = asiContainer.getSessionsDir().resolve(sessionId + ".kryo");
-        if (Files.exists(sessionFile)) {
-            try {
-                Path disposedFile = asiContainer.getDisposedSessionsDir().resolve(sessionId + ".kryo");
-                Files.move(sessionFile, disposedFile);
-                log.info("Moved session file to disposed directory: {}", disposedFile);
-            } catch (Exception e) {
-                log.error("Failed to move session file to disposed directory", e);
-            }
-        }
+        asiContainer.dispose(chat);
     }
 
     /**

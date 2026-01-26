@@ -93,9 +93,6 @@ public class ChatConfig {
         this.container = container;
     }
 
-    /** The default request configuration for this chat session. Lazily initialized. */
-    private RequestConfig requestConfig;
-    
     //<editor-fold defaultstate="collapsed" desc="Session Loop">
     /** If true, local Java tools are enabled. */
     @Setter(AccessLevel.NONE)
@@ -137,21 +134,9 @@ public class ChatConfig {
     /** The number of turns a part must be soft-pruned before it is eligible for hard-pruning (permanent deletion). */
     private int hardPruneDelay = 108;
     //</editor-fold>
-    
-    /**
-     * Gets the request configuration, initializing it with a reference to the chat
-     * on first access.
-     * @return The request configuration.
-     */
-    public RequestConfig getRequestConfig() {
-        if (requestConfig == null) {
-            if (chat == null) {
-                throw new IllegalStateException("Chat reference has not been set in ChatConfig");
-            }
-            requestConfig = new RequestConfig(chat);
-        }
-        return requestConfig;
-    }
+
+    /** The default response modalities for this chat session. */
+    private List<String> defaultResponseModalities = new ArrayList<>(List.of("TEXT"));
     
     /**
      * Sets whether local tools are enabled. Enabling local tools automatically

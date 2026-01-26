@@ -42,7 +42,7 @@ public class RequestConfig {
     private Integer candidateCount = 1;
 
     /** The list of response modalities requested for this specific request. */
-    private List<String> responseModalities = new ArrayList<>();
+    private List<String> responseModalities = new ArrayList<>(List.of("TEXT"));
 
     /** The list of server-side tools enabled for this specific request. */
     private List<ServerTool> enabledServerTools = new ArrayList<>();

@@ -17,6 +17,7 @@ import com.google.genai.types.GenerateContentResponseUsageMetadata;
 import com.google.genai.types.GoogleMaps;
 import com.google.genai.types.GoogleSearch;
 import com.google.genai.types.GoogleSearchRetrieval;
+import com.google.genai.types.ListModelsConfig;
 import com.google.genai.types.Model;
 import com.google.genai.types.Part;
 import com.google.genai.types.ToolCodeExecution;
@@ -27,23 +28,20 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
+import java.util.stream.StreamSupport;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.gemini.adapter.GeminiContentAdapter;
 import uno.anahata.asi.gemini.adapter.GeminiFunctionDeclarationAdapter;
 import uno.anahata.asi.gemini.adapter.RequestConfigAdapter;
-import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.model.core.AbstractMessage;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.AbstractPart;
 import uno.anahata.asi.model.core.GenerationRequest;
-import uno.anahata.asi.model.core.ModelBlobPart;
 import uno.anahata.asi.model.core.ModelTextPart;
 import uno.anahata.asi.model.core.RequestConfig;
 import uno.anahata.asi.model.core.Response;
 import uno.anahata.asi.model.core.StreamObserver;
-import uno.anahata.asi.model.core.TextPart;
 import uno.anahata.asi.model.provider.AbstractAiProvider;
 import uno.anahata.asi.model.provider.AbstractModel;
 import uno.anahata.asi.model.provider.ApiCallInterruptedException;
@@ -58,12 +56,30 @@ import uno.anahata.asi.tool.RetryableApiException;
  *
  * @author anahata-gemini-pro-2.5
  */
-@RequiredArgsConstructor
 @Slf4j
 public class GeminiModel extends AbstractModel {
 
     private final GeminiAiProvider provider;
-    private final Model genaiModel;
+    private final String modelId;
+    private transient Model genaiModel;
+
+    public GeminiModel(GeminiAiProvider provider, Model genaiModel) {
+        this.provider = provider;
+        this.genaiModel = genaiModel;
+        this.modelId = genaiModel.name().orElseThrow(() -> new IllegalArgumentException("Model name is required"));
+    }
+
+    private synchronized Model getGenaiModel() {
+        if (genaiModel == null) {
+            log.info("Restoring transient Gemini model: {}", modelId);
+            var pager = provider.getClient().models.list(ListModelsConfig.builder().build());
+            genaiModel = StreamSupport.stream(pager.spliterator(), false)
+                    .filter(m -> modelId.equals(m.name().orElse(null)))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Could not restore Gemini model: " + modelId));
+        }
+        return genaiModel;
+    }
 
     @Override
     public AbstractAiProvider getProvider() {
@@ -72,17 +88,17 @@ public class GeminiModel extends AbstractModel {
 
     @Override
     public String getModelId() {
-        return genaiModel.name().orElse("");
+        return modelId;
     }
 
     @Override
     public String getDisplayName() {
-        return genaiModel.displayName().orElse("");
+        return getGenaiModel().displayName().orElse("");
     }
 
     @Override
     public String getDescription() {
-        String desc = genaiModel.description().orElse("");
+        String desc = getGenaiModel().description().orElse("");
         String displayName = getDisplayName();
         if (desc.isEmpty() || desc.equalsIgnoreCase(displayName)) {
             return "";
@@ -92,28 +108,29 @@ public class GeminiModel extends AbstractModel {
 
     @Override
     public String getVersion() {
-        return genaiModel.version().orElse("");
+        return getGenaiModel().version().orElse("");
     }
 
     @Override
     public int getMaxInputTokens() {
-        return genaiModel.inputTokenLimit().orElse(0);
+        return getGenaiModel().inputTokenLimit().orElse(0);
     }
 
     @Override
     public int getMaxOutputTokens() {
-        return genaiModel.outputTokenLimit().orElse(0);
+        return getGenaiModel().outputTokenLimit().orElse(0);
     }
 
     @Override
     public List<String> getSupportedActions() {
-        return genaiModel.supportedActions().orElse(Collections.emptyList());
+        return getGenaiModel().supportedActions().orElse(Collections.emptyList());
     }
 
     @Override
     public String getRawDescription() {
-        String json = genaiModel.toJson();
-        String toString = genaiModel.toString();
+        Model m = getGenaiModel();
+        String json = m.toJson();
+        String toString = m.toString();
 
         // Return only the inner content. WrappingHtmlPane will add the <html><body> tags.
         return "<html><b>ID: </b>" + escapeHtml(getModelId()) + "<br>"
@@ -121,8 +138,8 @@ public class GeminiModel extends AbstractModel {
                 + "<b>Version: </b>" + escapeHtml(getVersion()) + "<br>"
                 + "<b>Description: </b>" + escapeHtml(getDescription()) + "<br>"
                 + "<b>Supported Actions: </b>" + getSupportedActions() + "<br>"
-                + "<b>Labels: </b>" + genaiModel.labels().orElse(Collections.EMPTY_MAP) + "<br>"
-                + "<b>TunedModelInfo: </b>" + genaiModel.tunedModelInfo().orElse(null) + "<br>"
+                + "<b>Labels: </b>" + m.labels().orElse(Collections.EMPTY_MAP) + "<br>"
+                + "<b>TunedModelInfo: </b>" + m.tunedModelInfo().orElse(null) + "<br>"
                 + "<hr>"
                 + "<b>toString():</b><pre style='white-space: pre-wrap; word-wrap: break-word;'></pre>"
                 + "<div style='width: 300px;'>"
@@ -190,17 +207,17 @@ public class GeminiModel extends AbstractModel {
 
     @Override
     public Float getDefaultTemperature() {
-        return genaiModel.temperature().orElse(null);
+        return getGenaiModel().temperature().orElse(null);
     }
 
     @Override
     public Integer getDefaultTopK() {
-        return genaiModel.topK().orElse(null);
+        return getGenaiModel().topK().orElse(null);
     }
 
     @Override
     public Float getDefaultTopP() {
-        return genaiModel.topP().orElse(null);
+        return getGenaiModel().topP().orElse(null);
     }
 
     private record GeminiGenerateContentParameters(List<Content> history, String historyJson, GenerateContentConfig config) {}
@@ -441,8 +458,7 @@ public class GeminiModel extends AbstractModel {
 
     @Override
     public String toString() {
-        return genaiModel.displayName().orElse(genaiModel.name().orElse("??"));
-
+        return getDisplayName().isEmpty() ? modelId : getDisplayName();
     }
 
 }

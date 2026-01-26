@@ -15,14 +15,18 @@ import uno.anahata.asi.tool.AiToolParam;
  *
  * @author anahata-gemini-pro-2.5
  */
-@Getter
 public class JavaMethodToolParameter extends AbstractToolParameter<JavaMethodTool> {
 
     /**
      * The full Java reflection Type, preserving generics.
      */
-    @NonNull
-    private final Type javaType;
+    private transient Type javaType;
+
+    /**
+     * The index of this parameter in the method's parameter list.
+     */
+    @Getter
+    private final int index;
 
     private JavaMethodToolParameter(
             @NonNull JavaMethodTool tool,
@@ -31,9 +35,22 @@ public class JavaMethodToolParameter extends AbstractToolParameter<JavaMethodToo
             @NonNull String jsonSchema,
             boolean required,
             String rendererId,
-            @NonNull Type javaType) {
+            @NonNull Type javaType,
+            int index) {
         super(tool, name, description, jsonSchema, required, rendererId);
         this.javaType = javaType;
+        this.index = index;
+    }
+
+    /**
+     * Returns the full Java reflection Type, restoring it lazily if necessary.
+     * @return The parameter's Java type.
+     */
+    public Type getJavaType() {
+        if (javaType == null) {
+            javaType = getTool().getMethod().getGenericParameterTypes()[index];
+        }
+        return javaType;
     }
 
     /**
@@ -43,10 +60,11 @@ public class JavaMethodToolParameter extends AbstractToolParameter<JavaMethodToo
      *
      * @param tool The parent JavaMethodTool.
      * @param p The reflection Parameter to parse.
+     * @param index The index of the parameter.
      * @return A new, fully configured JavaMethodToolParameter.
      * @throws Exception if schema generation fails.
      */
-    public static JavaMethodToolParameter of(JavaMethodTool tool, Parameter p) throws Exception {
+    public static JavaMethodToolParameter of(JavaMethodTool tool, Parameter p, int index) throws Exception {
         AiToolParam paramAnnotation = p.getAnnotation(AiToolParam.class);
 
         String description;
@@ -76,7 +94,8 @@ public class JavaMethodToolParameter extends AbstractToolParameter<JavaMethodToo
             jsonSchema,
             required,
             rendererId,
-            p.getParameterizedType()
+            p.getParameterizedType(),
+            index
         );
     }
 }

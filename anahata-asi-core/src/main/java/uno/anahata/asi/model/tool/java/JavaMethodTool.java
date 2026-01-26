@@ -35,8 +35,7 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
     private final String javaMethodSignature;
 
     /** The underlying Java method that this tool represents. */
-    @NonNull
-    private final Method method;
+    private transient Method method;
 
     /** The singleton instance of the toolkit class, used for invoking non-static methods. */
     private final Object toolInstance;
@@ -76,9 +75,30 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         this.description = descriptionBuilder.toString();
 
         // A tool creates its own parameters.
-        for (java.lang.reflect.Parameter p : method.getParameters()) {
-            getParameters().add(JavaMethodToolParameter.of(this, p));
+        java.lang.reflect.Parameter[] params = method.getParameters();
+        for (int i = 0; i < params.length; i++) {
+            getParameters().add(JavaMethodToolParameter.of(this, params[i], i));
         }
+    }
+
+    /**
+     * Returns the underlying Java Method, restoring it lazily if necessary.
+     * @return The reflection Method object.
+     */
+    public synchronized Method getMethod() {
+        if (method == null) {
+            log.info("Lazily restoring Method for tool: {} using signature lookup", getName());
+            for (Method m : toolInstance.getClass().getDeclaredMethods()) {
+                if (javaMethodSignature.equals(buildMethodSignature(m))) {
+                    this.method = m;
+                    break;
+                }
+            }
+            if (method == null) {
+                throw new RuntimeException("Failed to restore method via signature lookup: " + javaMethodSignature + " in " + toolInstance.getClass().getName());
+            }
+        }
+        return method;
     }
     
     @Override
