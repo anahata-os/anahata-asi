@@ -66,7 +66,7 @@ public class StatusManager extends BasicPropertyChangeSource {
         }
 
         // Notify PropertyChangeListeners (Reactive UI)
-        getPropertyChangeSupport().firePropertyChange("currentStatus", oldStatus, newStatus);
+        propertyChangeSupport.firePropertyChange("currentStatus", oldStatus, newStatus);
     }
 
     /**

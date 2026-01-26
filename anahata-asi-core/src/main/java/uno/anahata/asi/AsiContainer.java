@@ -146,6 +146,16 @@ public class AsiContainer extends BasicPropertyChangeSource {
     public void onChatCreated(Chat chat) {
         // Default implementation does nothing.
     }
+    
+    /**
+     * Creates a new chat session with a default configuration.
+     * This method should be overridden by host-specific containers.
+     * 
+     * @return The newly created chat session.
+     */
+    public Chat createNewChat() {
+        throw new UnsupportedOperationException("createNewChat() not implemented for this container.");
+    }
 
     // --- SESSION PERSISTENCE ---
 

@@ -38,9 +38,6 @@ public class ChatConfig {
     @NonNull
     private String sessionId;
     
-    /** The user-defined nickname for this chat session. Defaults to the session ID. */
-    private String nickname;
-    
     /** A late-binding reference to the parent Chat. Set during Chat construction. */
     @Setter
     private Chat chat;

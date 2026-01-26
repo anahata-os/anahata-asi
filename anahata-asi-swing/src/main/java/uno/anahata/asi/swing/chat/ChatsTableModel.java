@@ -77,7 +77,7 @@ public class ChatsTableModel extends AbstractTableModel {
 
         switch (columnIndex) {
             case SESSION_COL:
-                return chat.getNickname();
+                return chat.getDisplayName();
             case ID_COL:
                 return chat.getShortId();
             case STATUS_COL:

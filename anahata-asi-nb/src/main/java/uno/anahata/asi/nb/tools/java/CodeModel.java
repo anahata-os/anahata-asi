@@ -25,7 +25,7 @@ import org.netbeans.modules.web.common.spi.ImportantFilesImplementation.FileInfo
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import uno.anahata.asi.model.resource.TextFileResource;
-import uno.anahata.asi.nb.tools.Page;
+import uno.anahata.asi.model.Page;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolParam;
 import uno.anahata.asi.tool.AiToolkit;

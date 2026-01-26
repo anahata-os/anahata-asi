@@ -8,15 +8,32 @@ import java.beans.PropertyChangeSupport;
 import lombok.Getter;
 
 /**
- * A base class providing a standard implementation of {@link PropertyChangeSource}.
+ * An abstract base class providing a standard implementation of {@link PropertyChangeSource}.
  * This reduces boilerplate for domain objects that need to support reactive UI updates.
+ * <p>
+ * The {@link PropertyChangeSupport} field is marked as {@code transient} to prevent
+ * the serialization of UI listeners, which are typically not serializable and 
+ * should not be persisted between sessions.
+ * </p>
  * 
  * @author anahata
  */
-public class BasicPropertyChangeSource implements PropertyChangeSource {
+public abstract class BasicPropertyChangeSource implements PropertyChangeSource, Rebindable {
 
+    /** 
+     * Support for firing property change events. 
+     * Marked transient to avoid serializing listeners.
+     */
     @Getter
-    protected final PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
+    protected transient PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
+
+    /**
+     * Re-initializes the transient {@link PropertyChangeSupport} after deserialization.
+     */
+    @Override
+    public void rebind() {
+        this.propertyChangeSupport = new PropertyChangeSupport(this);
+    }
 
     /**
      * Adds a property change listener.

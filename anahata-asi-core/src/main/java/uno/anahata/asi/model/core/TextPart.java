@@ -37,7 +37,7 @@ public class TextPart extends AbstractPart {
         String oldText = this.text;
         this.text = text;
         setTokenCount(TokenizerUtils.countTokens(text));
-        getPropertyChangeSupport().firePropertyChange("text", oldText, text);
+        propertyChangeSupport.firePropertyChange("text", oldText, text);
     }
 
     /**
@@ -54,7 +54,7 @@ public class TextPart extends AbstractPart {
         this.text = (this.text == null ? "" : this.text) + delta;
         // Incremental estimation to avoid full recalculation on every chunk
         setTokenCount(getTokenCount() + TokenizerUtils.countTokens(delta));
-        getPropertyChangeSupport().firePropertyChange("text", oldText, this.text);
+        propertyChangeSupport.firePropertyChange("text", oldText, this.text);
     }
 
     /** {@inheritDoc} */

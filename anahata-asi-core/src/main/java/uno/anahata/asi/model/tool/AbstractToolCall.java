@@ -128,7 +128,7 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
         } else {
             modifiedArgs.put(name, value);
         }
-        getPropertyChangeSupport().firePropertyChange("modifiedArgs", null, modifiedArgs);
+        propertyChangeSupport.firePropertyChange("modifiedArgs", null, modifiedArgs);
     }
 
     /**

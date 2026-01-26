@@ -28,10 +28,7 @@ import uno.anahata.asi.internal.TimeUtils;
  */
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
-public abstract class AbstractMessage implements PropertyChangeSource {
-
-    /** Support for firing property change events. */
-    private final PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
+public abstract class AbstractMessage extends BasicPropertyChangeSource {
 
     /**
      * A unique, immutable identifier for this message.
@@ -310,29 +307,4 @@ public abstract class AbstractMessage implements PropertyChangeSource {
     public boolean shouldCreateMetadata() {
         return true;
     }
-
-    /**
-     * Adds a PropertyChangeListener to this message.
-     * 
-     * @param listener The listener to add.
-     */
-    public void addPropertyChangeListener(PropertyChangeListener listener) {
-        propertyChangeSupport.addPropertyChangeListener(listener);
-    }
-
-    /**
-     * Removes a PropertyChangeListener from this message.
-     * 
-     * @param listener The listener to remove.
-     */
-    public void removePropertyChangeListener(PropertyChangeListener listener) {
-        propertyChangeSupport.removePropertyChangeListener(listener);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public PropertyChangeSupport getPropertyChangeSupport() {
-        return propertyChangeSupport;
-    }
-
 }

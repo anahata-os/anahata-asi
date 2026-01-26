@@ -370,11 +370,19 @@
             <artifactId>org-netbeans-modules-masterfs</artifactId>
             <version>${netbeans.version}</version>
         </dependency>
-        
-        
         <dependency>
             <groupId>org.netbeans.modules</groupId>
             <artifactId>org-netbeans-modules-versioning-core</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.modules</groupId>
+            <artifactId>org-netbeans-modules-versioning-ui</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.modules</groupId>
+            <artifactId>org-netbeans-modules-versioning-util</artifactId>
             <version>${netbeans.version}</version>
         </dependency>
         <dependency>
@@ -531,13 +539,21 @@
                             <type>impl</type>
                         </dependency>
                         <dependency>
-                            <id>org.netbeans.modules:org-netbeans-modules-versioning-masterfs</id>
-                            <type>impl</type>
-                        </dependency>
-                        <dependency>
                             <type>impl</type>
                             <id>org.netbeans.modules:org-netbeans-modules-versioning-core</id>
                         </dependency>                        
+                        <dependency>
+                            <type>impl</type>
+                            <id>org.netbeans.modules:org-netbeans-modules-versioning-ui</id>
+                        </dependency>                        
+                        <dependency>
+                            <type>impl</type>
+                            <id>org.netbeans.modules:org-netbeans-modules-versioning-util</id>
+                        </dependency>                        
+                        <dependency>
+                            <id>org.netbeans.modules:org-netbeans-modules-versioning-masterfs</id>
+                            <type>impl</type>
+                        </dependency>
                         <dependency>
                             <type>impl</type>
                             <id>org.netbeans.modules:org-netbeans-modules-code-analysis</id>

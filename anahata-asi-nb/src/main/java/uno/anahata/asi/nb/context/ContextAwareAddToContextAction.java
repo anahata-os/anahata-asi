@@ -87,7 +87,7 @@ public final class ContextAwareAddToContextAction extends AbstractAction impleme
     @Override
     public JMenuItem getPopupPresenter() {
         JMenu main = new JMenu("Add to AI Context");
-        List<Chat> activeChats = AnahataInstaller.getAsiConfig().getActiveChats();
+        List<Chat> activeChats = AnahataInstaller.getContainer().getActiveChats();
         
         if (activeChats.isEmpty()) {
             JMenuItem item = new JMenuItem("No active chats");

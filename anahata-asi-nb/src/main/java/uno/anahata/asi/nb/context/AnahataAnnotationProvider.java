@@ -12,9 +12,12 @@ import javax.swing.Action;
 import javax.swing.ImageIcon;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import org.netbeans.modules.masterfs.filebasedfs.FileBasedFileSystem;
 import org.netbeans.modules.masterfs.providers.AnnotationProvider;
 import org.netbeans.modules.masterfs.providers.InterceptionListener;
 import org.netbeans.modules.versioning.core.VersioningAnnotationProvider;
+import org.netbeans.modules.versioning.core.VersioningManager;
+import org.netbeans.modules.versioning.core.util.VCSSystemProvider;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileStatusEvent;
 import org.openide.filesystems.FileSystem;
@@ -40,15 +43,23 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
         }
     }
 
+    public AnahataAnnotationProvider() {
+        LOG.info("AnahataAnnotationProvider constructor " + this);
+    }
+    
+    
+
     @Override
     public Image annotateIcon(Image icon, int type, Set<? extends FileObject> files) {
         LOG.log(Level.INFO, "AnahataAnnotationProvider.annotateIcon called for files size: {0}", files.size());
-        
+        //FileBasedFileSystem fbds = org.netbeans.modules.masterfs.filebasedfs.FileBasedFileSystem.getInstance();
         // Start with the original icon, allowing other providers to annotate first
-        icon = VersioningAnnotationProvider.getDefault().annotateIcon(icon, type, files);
+        
+        //to get a local history
+        //VCSSystemProvider.VersioningSystem localHistory = VersioningManager.getInstance().getLocalHistory(file, !fo.isFolder());
         
         // Add our badge if needed
-        for (FileObject fo : files) {
+        for (FileObject fo : files) {            
             /*
             if (FakeContext.contains(FileUtil.toFile(fo))) {
                 LOG.log(Level.INFO, "AnahataFileAnnotator: Annotating icon for: {0}", fo.getName());
@@ -162,7 +173,7 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
             JMenu submenu = new JMenu("Anahata");
             submenu.setIcon(new ImageIcon("icons/anahata.png"));
             
-            submenu.add(new JMenuItem(new AbstractAction("Add To Context", submenu.getIcon()) {
+            submenu.add(new JMenuItem(new AbstractAction("Add To AGI Context", submenu.getIcon()) {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     LOG.info("Adding: " + files);
@@ -178,7 +189,7 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
                 }
             }));
 
-            submenu.add(new JMenuItem(new AbstractAction("Remove From Context") {
+            submenu.add(new JMenuItem(new AbstractAction("Remove From AGI Context") {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     // TODO: Implement removal

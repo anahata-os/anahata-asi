@@ -84,7 +84,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
         ToolExecutionStatus oldStatus = this.status;
         this.status = status;
         updateTokenCount();
-        getPropertyChangeSupport().firePropertyChange("status", oldStatus, status);
+        propertyChangeSupport.firePropertyChange("status", oldStatus, status);
     }
     
     /**
@@ -155,12 +155,12 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     public void setThread(Thread thread) {
         if (thread != null) {
             this.threadName = thread.getName();
-            getPropertyChangeSupport().firePropertyChange("threadName", null, threadName);
+            propertyChangeSupport.firePropertyChange("threadName", null, threadName);
         } else {
             this.threadName = null;
         }
         this.thread = thread;
-        getPropertyChangeSupport().firePropertyChange("thread", null, thread);
+        propertyChangeSupport.firePropertyChange("thread", null, thread);
     }
     
     /**
@@ -174,7 +174,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
         setExecutionTimeMillis(0);
         clearLogs();
         this.attachments.clear();
-        getPropertyChangeSupport().firePropertyChange("attachments", null, attachments);
+        propertyChangeSupport.firePropertyChange("attachments", null, attachments);
     }
 
     /**
@@ -184,7 +184,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     public void addLog(String message) {
         this.logs.add(message);
         updateTokenCount();
-        getPropertyChangeSupport().firePropertyChange("logs", null, logs);
+        propertyChangeSupport.firePropertyChange("logs", null, logs);
     }
     
     /**
@@ -206,7 +206,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
             this.errors = "\n" + error;
         }
         updateTokenCount();
-        getPropertyChangeSupport().firePropertyChange("errors", null, this.errors);
+        propertyChangeSupport.firePropertyChange("errors", null, this.errors);
     }
     
     /**
@@ -217,7 +217,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     public void addAttachment(byte[] data, String mimeType) {
         this.attachments.add(new ToolResponseAttachment(data, mimeType));
         updateTokenCount();
-        getPropertyChangeSupport().firePropertyChange("attachments", null, attachments);
+        propertyChangeSupport.firePropertyChange("attachments", null, attachments);
     }
 
     /**
@@ -227,7 +227,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     public void removeAttachment(ToolResponseAttachment attachment) {
         if (this.attachments.remove(attachment)) {
             updateTokenCount();
-            getPropertyChangeSupport().firePropertyChange("attachments", null, attachments);
+            propertyChangeSupport.firePropertyChange("attachments", null, attachments);
         }
     }
     
@@ -245,7 +245,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     public void clearLogs() {
         this.logs.clear();
         updateTokenCount();
-        getPropertyChangeSupport().firePropertyChange("logs", null, logs);
+        propertyChangeSupport.firePropertyChange("logs", null, logs);
     }
     
     /**

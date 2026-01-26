@@ -91,7 +91,7 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
     public void setRawJson(String rawJson) {
         String oldJson = this.rawJson;
         this.rawJson = rawJson;
-        getPropertyChangeSupport().firePropertyChange("rawJson", oldJson, rawJson);
+        propertyChangeSupport.firePropertyChange("rawJson", oldJson, rawJson);
     }
 
     /**
@@ -122,7 +122,7 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
                 }
             }
         }
-        getPropertyChangeSupport().firePropertyChange("rawJson", oldJson, this.rawJson);
+        propertyChangeSupport.firePropertyChange("rawJson", oldJson, this.rawJson);
     }
 
     /**
@@ -132,7 +132,7 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
     public void setBilledTokenCount(int billedTokenCount) {
         int oldBilledTokenCount = this.billedTokenCount;
         this.billedTokenCount = billedTokenCount;
-        getPropertyChangeSupport().firePropertyChange("billedTokenCount", oldBilledTokenCount, billedTokenCount);
+        propertyChangeSupport.firePropertyChange("billedTokenCount", oldBilledTokenCount, billedTokenCount);
     }
 
     /**
@@ -142,7 +142,7 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
     public void setFinishReason(String finishReason) {
         String oldReason = this.finishReason;
         this.finishReason = finishReason;
-        getPropertyChangeSupport().firePropertyChange("finishReason", oldReason, finishReason);
+        propertyChangeSupport.firePropertyChange("finishReason", oldReason, finishReason);
     }
 
     /**
@@ -152,7 +152,7 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
     public void setGroundingMetadata(GroundingMetadata groundingMetadata) {
         GroundingMetadata oldMetadata = this.groundingMetadata;
         this.groundingMetadata = groundingMetadata;
-        getPropertyChangeSupport().firePropertyChange("groundingMetadata", oldMetadata, groundingMetadata);
+        propertyChangeSupport.firePropertyChange("groundingMetadata", oldMetadata, groundingMetadata);
     }
 
     /**

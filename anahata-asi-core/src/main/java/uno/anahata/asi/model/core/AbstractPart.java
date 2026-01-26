@@ -22,12 +22,8 @@ import uno.anahata.asi.internal.TextUtils;
  */
 @Getter
 @Setter
-public abstract class AbstractPart implements PropertyChangeSource {
+public abstract class AbstractPart extends BasicPropertyChangeSource {
     
-    /** Support for firing property change events. */
-    @JsonIgnore
-    private final PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
-
     /**
      * A unique, sequential identifier assigned to this part when it is added to a chat.
      */
@@ -113,24 +109,6 @@ public abstract class AbstractPart implements PropertyChangeSource {
         message.removePart(this);
     }
     
-    /**
-     * Adds a PropertyChangeListener to this part.
-     * 
-     * @param listener The listener to add.
-     */
-    public void addPropertyChangeListener(PropertyChangeListener listener) {
-        propertyChangeSupport.addPropertyChangeListener(listener);
-    }
-
-    /**
-     * Removes a PropertyChangeListener from this part.
-     * 
-     * @param listener The listener to remove.
-     */
-    public void removePropertyChangeListener(PropertyChangeListener listener) {
-        propertyChangeSupport.removePropertyChangeListener(listener);
-    }
-
     /**
      * Calculates the EFFECTIVE pruned state of this part, now with "deep pinning" logic.
      * A part is effectively pruned if it was explicitly pruned, if its PARENT MESSAGE
@@ -297,11 +275,5 @@ public abstract class AbstractPart implements PropertyChangeSource {
             metadata.put("prunedReason", prunedReason);
         }
         return metadata;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public PropertyChangeSupport getPropertyChangeSupport() {
-        return propertyChangeSupport;
     }
 }

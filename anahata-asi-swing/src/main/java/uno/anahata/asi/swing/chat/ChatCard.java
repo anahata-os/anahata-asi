@@ -76,7 +76,7 @@ public class ChatCard extends JPanel {
         JPanel header = new JPanel(new MigLayout("fillx, insets 0", "[grow][]", "[]"));
         header.setOpaque(false);
         
-        nameLabel = new JLabel(chat.getNickname());
+        nameLabel = new JLabel(chat.getDisplayName());
         nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD, 14f));
         header.add(nameLabel, "growx");
 
@@ -198,7 +198,7 @@ public class ChatCard extends JPanel {
         String prop = evt.getPropertyName();
         if ("nickname".equals(prop)) {
             SwingUtilities.invokeLater(() -> {
-                nameLabel.setText((String) evt.getNewValue());
+                nameLabel.setText(chat.getDisplayName());
                 revalidate();
                 repaint();
             });

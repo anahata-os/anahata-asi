@@ -42,7 +42,7 @@ import uno.anahata.asi.tool.AiToolParam;
 import uno.anahata.asi.tool.AiToolkit;
 import uno.anahata.asi.tool.AnahataToolkit;
 import uno.anahata.asi.model.resource.AbstractPathResource;
-import uno.anahata.asi.nb.tools.project.actions.AnahataProjectAnnotator;
+import uno.anahata.asi.nb.tools.project.nb.AnahataProjectAnnotator;
 
 /**
  * A toolkit for interacting with the NetBeans Project APIs.

@@ -39,7 +39,7 @@ public class AsiTopComponent extends TopComponent implements SessionController {
         setLayout(new BorderLayout());
 
         // Use the shared AsiContainer from the installer
-        sessionsPanel = new AsiSwitcherContainerPanel(AnahataInstaller.getAsiConfig());
+        sessionsPanel = new AsiSwitcherContainerPanel(AnahataInstaller.getContainer());
         sessionsPanel.setController(this);
         add(sessionsPanel, BorderLayout.CENTER);
     }

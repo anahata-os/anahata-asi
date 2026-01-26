@@ -127,7 +127,7 @@ public class StandaloneMainPanel extends JPanel implements SessionController {
             panel.setName(id);
             panel.initComponents();
             
-            tabbedPane.addTab(chat.getNickname(), panel);
+            tabbedPane.addTab(chat.getDisplayName(), panel);
             tabIndex = tabbedPane.getTabCount() - 1;
             
             // Listen for nickname changes to update the tab title
@@ -205,11 +205,11 @@ public class StandaloneMainPanel extends JPanel implements SessionController {
     private void handleNicknameChange(PropertyChangeEvent evt) {
         Chat chat = (Chat) evt.getSource();
         String id = chat.getConfig().getSessionId();
-        String newNickname = (String) evt.getNewValue();
+        String newDisplayName = chat.getDisplayName();
         
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
             if (id.equals(tabbedPane.getComponentAt(i).getName())) {
-                tabbedPane.setTitleAt(i, newNickname);
+                tabbedPane.setTitleAt(i, newDisplayName);
                 break;
             }
         }

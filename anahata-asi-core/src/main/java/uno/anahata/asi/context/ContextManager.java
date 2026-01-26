@@ -21,6 +21,7 @@ import uno.anahata.asi.context.provider.CoreContextProvider;
 import uno.anahata.asi.model.core.AbstractMessage;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.AbstractPart;
+import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 import uno.anahata.asi.model.core.ModelTextPart;
 import uno.anahata.asi.model.core.PropertyChangeSource;
 import uno.anahata.asi.model.core.RagMessage;
@@ -39,10 +40,7 @@ import uno.anahata.asi.model.core.UserMessage;
  */
 @Slf4j
 @Getter
-public class ContextManager implements PropertyChangeSource {
-
-    /** Support for firing property change events. */
-    private final PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
+public class ContextManager extends BasicPropertyChangeSource {
 
     /** The parent chat session. */
     private final Chat chat;
@@ -303,28 +301,4 @@ public class ContextManager implements PropertyChangeSource {
     public int getTokenThreshold() {
         return chat.getConfig().getTokenThreshold();
     }
-
-    /**
-     * Adds a PropertyChangeListener to this manager.
-     * @param listener The listener to add.
-     */
-    public void addPropertyChangeListener(PropertyChangeListener listener) {
-        propertyChangeSupport.addPropertyChangeListener(listener);
-    }
-
-    /**
-     * Removes a PropertyChangeListener from this manager.
-     * @param listener The listener to remove.
-     */
-    public void removePropertyChangeListener(PropertyChangeListener listener) {
-        propertyChangeSupport.removePropertyChangeListener(listener);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public PropertyChangeSupport getPropertyChangeSupport() {
-        return propertyChangeSupport;
-    }
-    
-    
 }

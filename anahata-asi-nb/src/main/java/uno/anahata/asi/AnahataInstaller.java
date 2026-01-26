@@ -27,13 +27,13 @@ public class AnahataInstaller extends ModuleInstall {
     private static final Logger log = Logger.getLogger(AnahataInstaller.class.getName());
     private static final String HANDOFF_FILE_NAME = "asi-reload-handoff.dat";
     
-    private static AsiContainer asiConfig;
+    private static AsiContainer container;
 
-    public static synchronized AsiContainer getAsiConfig() {
-        if (asiConfig == null) {
-            asiConfig = new NetBeansAsiContainer();
+    public static synchronized AsiContainer getContainer() {
+        if (container == null) {
+            container = new NetBeansAsiContainer();
         }
-        return asiConfig;
+        return container;
     }
 
     @Override
@@ -97,6 +97,6 @@ public class AnahataInstaller extends ModuleInstall {
 
     private File getHandoffFile() {
         
-        return new File(getAsiConfig().getAppDir().toFile(), HANDOFF_FILE_NAME);
+        return new File(getContainer().getAppDir().toFile(), HANDOFF_FILE_NAME);
     }
 }

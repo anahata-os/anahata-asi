@@ -1,8 +1,9 @@
 /* Licensed under the Apache License, Version 2.0 */
-package uno.anahata.asi.nb.tools.project.actions;
+package uno.anahata.asi.nb.tools.project.nb;
 
 import java.awt.Image;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -33,6 +34,7 @@ public class AnahataProjectAnnotator implements ProjectIconAnnotator, ChangeList
     private static final Image BADGE;
     
     static {
+        LOG.info("AnahataProjectAnnotator class loaded.");
         Image img = ImageUtilities.loadImage("icons/anahata.png");
         if (img != null) {
             BADGE = img.getScaledInstance(8, 8, Image.SCALE_SMOOTH);
@@ -48,8 +50,9 @@ public class AnahataProjectAnnotator implements ProjectIconAnnotator, ChangeList
      * Default constructor for the annotator.
      */
     public AnahataProjectAnnotator() {
+        LOG.log(Level.INFO, "AnahataProjectAnnotator instance created: {0}", System.identityHashCode(this));
     }
-
+    
     /**
      * {@inheritDoc}
      * Annotates the project icon with a badge if the project is in an active AI context.
@@ -72,7 +75,7 @@ public class AnahataProjectAnnotator implements ProjectIconAnnotator, ChangeList
      */
     private boolean isProjectInContext(Project p) {
         String path = p.getProjectDirectory().getPath();
-        for (Chat chat : AnahataInstaller.getAsiConfig().getActiveChats()) {
+        for (Chat chat : AnahataInstaller.getContainer().getActiveChats()) {
             Optional<Projects> projectsTool = chat.getToolManager().getToolkitInstance(Projects.class);
             if (projectsTool.isPresent()) {
                 boolean providing = projectsTool.get().getChildrenProviders().stream()
@@ -80,7 +83,10 @@ public class AnahataProjectAnnotator implements ProjectIconAnnotator, ChangeList
                     .map(cp -> (ProjectContextProvider) cp)
                     .filter(pcp -> pcp.getProjectPath().equals(path))
                     .anyMatch(pcp -> pcp.isProviding());
-                if (providing) return true;
+                if (providing) {
+                    LOG.log(Level.FINE, "Project {0} is active in chat: {1}", new Object[]{path, chat.getDisplayName()});
+                    return true;
+                }
             }
         }
         return false;
@@ -121,6 +127,7 @@ public class AnahataProjectAnnotator implements ProjectIconAnnotator, ChangeList
      * {@link AnahataProjectAnnotator} instances.
      */
     public static void fireRefresh() {
+        LOG.info("Firing global project icon refresh.");
         for (ProjectIconAnnotator pia : Lookup.getDefault().lookupAll(ProjectIconAnnotator.class)) {
             if (pia instanceof AnahataProjectAnnotator apa) {
                 apa.stateChanged(new ChangeEvent(apa));

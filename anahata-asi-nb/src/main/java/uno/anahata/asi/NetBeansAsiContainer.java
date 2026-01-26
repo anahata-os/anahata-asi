@@ -37,4 +37,9 @@ public class NetBeansAsiContainer extends AsiContainer {
         });
         
     }
+
+    @Override
+    public Chat createNewChat() {
+        return new Chat(new NetBeansChatConfig(this));
+    }
 }

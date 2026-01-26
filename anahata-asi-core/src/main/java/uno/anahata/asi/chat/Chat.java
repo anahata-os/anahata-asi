@@ -61,6 +61,9 @@ public class Chat extends BasicPropertyChangeSource {
     /** The configuration for this chat session. */
     private final ChatConfig config;
     
+    /** The user-defined nickname for this chat session. */
+    private String nickname;
+    
     /** The manager for all AI tools available in this session. */
     private final ToolManager toolManager;
     
@@ -181,6 +184,7 @@ public class Chat extends BasicPropertyChangeSource {
      */
     public void rebind(@NonNull AsiContainer container) {
         log.info("Rebinding chat session {} to container {}", config.getSessionId(), container.getHostApplicationId());
+        // Re-initialize transient fields that require external context (like the container)
         this.config.rebind(container);
         this.executor = AiExecutors.newCachedThreadPoolExecutor(config.getSessionId());
         this.runningLock = new ReentrantLock();
@@ -615,7 +619,7 @@ public class Chat extends BasicPropertyChangeSource {
         setStagedUserMessage(null);
         String newSessionId = UUID.randomUUID().toString();
         config.setSessionId(newSessionId);
-        config.setNickname(null);
+        this.nickname = null;
         log.info("Chat session cleared. New session ID: {}", newSessionId);
     }
 
@@ -677,12 +681,12 @@ public class Chat extends BasicPropertyChangeSource {
     }
 
     /**
-     * Gets a human-readable nickname for the session.
+     * Gets a human-readable display name for the session.
      * 
-     * @return The session nickname or short ID.
+     * @return The session display name (nickname or short ID).
      */
-    public String getNickname() {
-        return config.getNickname() != null ? config.getNickname() : getShortId();
+    public String getDisplayName() {
+        return nickname != null ? nickname : getShortId();
     }
 
     /**
@@ -691,9 +695,9 @@ public class Chat extends BasicPropertyChangeSource {
      * @param nickname The new nickname.
      */
     public void setNickname(String nickname) {
-        String old = getNickname();
+        String old = this.nickname;
         log.info("Setting nickname for session {}: {} -> {}", config.getSessionId(), old, nickname);
-        config.setNickname(nickname);
+        this.nickname = nickname;
         propertyChangeSupport.firePropertyChange("nickname", old, nickname);
     }
 

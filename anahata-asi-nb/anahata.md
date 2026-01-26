@@ -19,3 +19,6 @@ This is the V2 NetBeans integration module for the Anahata ASI framework.
 
 ## 4. Very Important Notes
 - **Note on Dependency Warnings**: You may see a warning about `aopalliance:asm:jar:9.8` being missing from the local repository. This is a known issue in the current NetBeans release and is fixed in the next version. You can safely ignore this warning.
+
+#Local history
+VCSSystemProvider.VersioningSystem localHistory = VersioningManager.getInstance().getLocalHistory(file, !fo.isFolder());

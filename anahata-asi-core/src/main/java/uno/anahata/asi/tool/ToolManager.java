@@ -294,7 +294,7 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
     public void registerExecutingCall(AbstractToolCall<?, ?> call) {
         List<AbstractToolCall<?, ?>> oldCalls = new ArrayList<>(executingCalls);
         executingCalls.add(call);
-        getPropertyChangeSupport().firePropertyChange("executingCalls", oldCalls, executingCalls);
+        propertyChangeSupport.firePropertyChange("executingCalls", oldCalls, executingCalls);
     }
 
     /**
@@ -305,7 +305,7 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
     public void unregisterExecutingCall(AbstractToolCall<?, ?> call) {
         List<AbstractToolCall<?, ?>> oldCalls = new ArrayList<>(executingCalls);
         executingCalls.remove(call);
-        getPropertyChangeSupport().firePropertyChange("executingCalls", oldCalls, executingCalls);
+        propertyChangeSupport.firePropertyChange("executingCalls", oldCalls, executingCalls);
     }
 
     /**

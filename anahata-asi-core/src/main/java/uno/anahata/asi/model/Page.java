@@ -1,5 +1,5 @@
 /* Licensed under the Apache License, Version 2.0 */
-package uno.anahata.asi.nb.tools;
+package uno.anahata.asi.model;
 
 import java.util.List;
 import java.util.stream.Collectors;

@@ -12,6 +12,9 @@ import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.slf4j.Slf4j;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
@@ -21,14 +24,7 @@ import org.objenesis.strategy.StdInstantiatorStrategy;
  * This class uses a {@link ThreadLocal} to manage Kryo instances. This is the standard,
  * enterprise-grade pattern for using Kryo in a multi-threaded environment because Kryo
  * instances are **not thread-safe**.
- * <p>
- * Using a {@code ThreadLocal} provides two key benefits:
- * <ul>
- *     <li><b>Thread Safety:</b> Each thread gets its own isolated Kryo instance, preventing
- *         race conditions and data corruption.</li>
- *     <li><b>Performance:</b> Each thread reuses its own instance, avoiding the significant
- *         performance overhead of creating a new Kryo object for every operation.</li>
- * </ul>
+ * </p>
  */
 @Slf4j
 public class KryoUtils {
@@ -40,13 +36,21 @@ public class KryoUtils {
         Kryo kryo = new Kryo();
         // Use Objenesis for classes that lack a no-arg constructor.
         kryo.setInstantiatorStrategy(new DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
-        kryo.setRegistrationRequired(false); // Keep it simple for the core module
-        kryo.setReferences(true); // Enable circular references support for complex object graphs
+        kryo.setRegistrationRequired(false); 
+        kryo.setReferences(true); 
 
         // Register common JDK types
         kryo.register(ArrayList.class);
         kryo.register(HashMap.class);
-        kryo.register(Optional.class, new OptionalSerializer()); // Use custom serializer for Optional
+        kryo.register(Optional.class, new OptionalSerializer()); 
+
+        // Register Atomic types with custom serializers to avoid JPMS access issues in java.base
+        kryo.register(AtomicBoolean.class, new AtomicBooleanSerializer());
+        kryo.register(AtomicInteger.class, new AtomicIntegerSerializer());
+        kryo.register(AtomicLong.class, new AtomicLongSerializer());
+
+        // Set the global factory for automated Rebindable support
+        kryo.setDefaultSerializer(new RebindableSerializerFactory());
 
         return kryo;
     });
@@ -61,7 +65,7 @@ public class KryoUtils {
     }
 
     /**
-     * Serializes an object into a byte array using the current thread's Kryo instance.
+     * Serializes an object into a byte array.
      *
      * @param object The object to serialize.
      * @return A byte array representing the serialized object.
@@ -80,7 +84,7 @@ public class KryoUtils {
     }
 
     /**
-     * Deserializes a byte array into an object of the specified class using the current thread's Kryo instance.
+     * Deserializes a byte array into an object.
      *
      * @param <T>   The type of the object to deserialize.
      * @param bytes The byte array to deserialize.
