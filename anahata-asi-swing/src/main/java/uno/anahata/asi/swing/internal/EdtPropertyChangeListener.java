@@ -1,5 +1,5 @@
 /*
- * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Fora Bara!
+ * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
  */
 package uno.anahata.asi.swing.internal;
 
@@ -40,6 +40,10 @@ public class EdtPropertyChangeListener implements PropertyChangeListener, Hierar
     private final String propertyName;
     private final Consumer<PropertyChangeEvent> action;
     private final Mode mode;
+    private final boolean triggerImmediately;
+    
+    /** Tracks the current subscription state to prevent duplicate listeners. */
+    private boolean subscribed = false;
 
     /**
      * Constructs a new EdtPropertyChangeListener and binds it to the component's lifecycle.
@@ -50,24 +54,26 @@ public class EdtPropertyChangeListener implements PropertyChangeListener, Hierar
      * @param action The action to perform on the EDT when the property changes.
      */
     public EdtPropertyChangeListener(@NonNull JComponent component, @NonNull PropertyChangeSource source, String propertyName, @NonNull Consumer<PropertyChangeEvent> action) {
-        this(component, source, propertyName, action, Mode.INVOKE_LATER);
+        this(component, source, propertyName, action, Mode.INVOKE_LATER, false);
     }
 
     /**
-     * Constructs a new EdtPropertyChangeListener with a specific execution mode.
-     *
+     * Constructs a new EdtPropertyChangeListener with full control over its behavior.
+     * 
      * @param component The UI component whose lifecycle determines the subscription.
      * @param source The model object providing property change events.
      * @param propertyName The name of the property to listen for, or null for all properties.
      * @param action The action to perform on the EDT when the property changes.
      * @param mode The thread switching mode.
+     * @param triggerImmediately If true, the action will be triggered immediately upon subscription.
      */
-    public EdtPropertyChangeListener(@NonNull JComponent component, @NonNull PropertyChangeSource source, String propertyName, @NonNull Consumer<PropertyChangeEvent> action, @NonNull Mode mode) {
+    public EdtPropertyChangeListener(@NonNull JComponent component, @NonNull PropertyChangeSource source, String propertyName, @NonNull Consumer<PropertyChangeEvent> action, @NonNull Mode mode, boolean triggerImmediately) {
         this.component = component;
         this.source = source;
         this.propertyName = propertyName;
         this.action = action;
         this.mode = mode;
+        this.triggerImmediately = triggerImmediately;
 
         component.addHierarchyListener(this);
         updateSubscription(); // Initial check in case component is already displayable
@@ -110,10 +116,13 @@ public class EdtPropertyChangeListener implements PropertyChangeListener, Hierar
      */
     public void unbind() {
         component.removeHierarchyListener(this);
-        if (propertyName != null) {
-            source.getPropertyChangeSupport().removePropertyChangeListener(propertyName, this);
-        } else {
-            source.getPropertyChangeSupport().removePropertyChangeListener(this);
+        if (subscribed) {
+            if (propertyName != null) {
+                source.getPropertyChangeSupport().removePropertyChangeListener(propertyName, this);
+            } else {
+                source.getPropertyChangeSupport().removePropertyChangeListener(this);
+            }
+            subscribed = false;
         }
     }
 
@@ -122,16 +131,27 @@ public class EdtPropertyChangeListener implements PropertyChangeListener, Hierar
      */
     private void updateSubscription() {
         if (component.isDisplayable()) {
-            if (propertyName != null) {
-                source.getPropertyChangeSupport().addPropertyChangeListener(propertyName, this);
-            } else {
-                source.getPropertyChangeSupport().addPropertyChangeListener(this);
+            if (!subscribed) {
+                if (propertyName != null) {
+                    source.getPropertyChangeSupport().addPropertyChangeListener(propertyName, this);
+                } else {
+                    source.getPropertyChangeSupport().addPropertyChangeListener(this);
+                }
+                subscribed = true;
+                
+                if (triggerImmediately) {
+                    // Trigger the action with a dummy event to reflect the current model state
+                    propertyChange(new PropertyChangeEvent(source, propertyName, null, null));
+                }
             }
         } else {
-            if (propertyName != null) {
-                source.getPropertyChangeSupport().removePropertyChangeListener(propertyName, this);
-            } else {
-                source.getPropertyChangeSupport().removePropertyChangeListener(this);
+            if (subscribed) {
+                if (propertyName != null) {
+                    source.getPropertyChangeSupport().removePropertyChangeListener(propertyName, this);
+                } else {
+                    source.getPropertyChangeSupport().removePropertyChangeListener(this);
+                }
+                subscribed = false;
             }
         }
     }

@@ -12,22 +12,18 @@ import javax.swing.Action;
 import javax.swing.ImageIcon;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
-import org.netbeans.modules.masterfs.filebasedfs.FileBasedFileSystem;
 import org.netbeans.modules.masterfs.providers.AnnotationProvider;
 import org.netbeans.modules.masterfs.providers.InterceptionListener;
 import org.netbeans.modules.versioning.core.VersioningAnnotationProvider;
-import org.netbeans.modules.versioning.core.VersioningManager;
-import org.netbeans.modules.versioning.core.util.VCSSystemProvider;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileStatusEvent;
 import org.openide.filesystems.FileSystem;
-import org.openide.filesystems.FileUtil;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.actions.Presenter;
 import org.openide.util.lookup.ServiceProvider;
 
-@ServiceProvider(service = AnnotationProvider.class, position = 0) 
+//@ServiceProvider(service = AnnotationProvider.class, position = 0) 
 public class AnahataAnnotationProvider extends AnnotationProvider {
 
     private static final Logger LOG = Logger.getLogger(AnahataAnnotationProvider.class.getName());
@@ -51,7 +47,7 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
 
     @Override
     public Image annotateIcon(Image icon, int type, Set<? extends FileObject> files) {
-        LOG.log(Level.INFO, "AnahataAnnotationProvider.annotateIcon called for files size: {0}", files.size());
+        //LOG.log(Level.INFO, "AnahataAnnotationProvider.annotateIcon called for files size: {0}", files.size());
         //FileBasedFileSystem fbds = org.netbeans.modules.masterfs.filebasedfs.FileBasedFileSystem.getInstance();
         // Start with the original icon, allowing other providers to annotate first
         

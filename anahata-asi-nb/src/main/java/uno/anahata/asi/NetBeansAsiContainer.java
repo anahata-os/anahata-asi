@@ -28,8 +28,14 @@ public class NetBeansAsiContainer extends AsiContainer {
     @Override
     public void onChatCreated(Chat chat) {
         log.info("Initializing NetBeans environment for chat session: {}", chat.getConfig().getSessionId());
-        chat.setProviderAndModel("Gemini", "models/gemini-3-flash-preview");
+        
+        // Only set default model if not already set (e.g. during restoration)
+        if (chat.getSelectedModel() == null) {
+            chat.setProviderAndModel("Gemini", "models/gemini-3-flash-preview");
+        }
+
         // 1. Initialize Java toolkit classpath for this specific chat instance
+        // This is transient and must be re-initialized even for restored sessions.
         chat.getToolManager().getToolkitInstance(Java.class).ifPresent(java -> {
             String nbClasspath = NetBeansModuleUtils.getNetBeansClasspath();
             log.info("Setting NetBeans classpath on Java toolkit instance.");

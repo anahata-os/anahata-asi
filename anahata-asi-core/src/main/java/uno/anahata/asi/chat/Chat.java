@@ -183,6 +183,16 @@ public class Chat extends BasicPropertyChangeSource {
     }
 
     /**
+     * Re-initializes the transient {@link PropertyChangeSupport} after deserialization.
+     * This method is called automatically by the Kryo RebindableWrapperSerializer.
+     */
+    @Override
+    public void rebind() {
+        super.rebind();
+        log.info("Kryo rebind hook called for Chat session {}", config.getSessionId());
+    }
+
+    /**
      * Re-binds this chat session to an AsiContainer after deserialization.
      * This method re-initializes transient fields and propagates the container
      * reference to the ChatConfig.
@@ -201,6 +211,7 @@ public class Chat extends BasicPropertyChangeSource {
         log.info("Triggering rebind cascade for chat session {}", config.getSessionId());
         contextManager.rebind();
         toolManager.rebind();
+        resourceManager.rebind();
     }
 
     /**
@@ -226,6 +237,7 @@ public class Chat extends BasicPropertyChangeSource {
         AbstractModel oldModel = this.selectedModel;
         this.selectedModel = selectedModel;
         propertyChangeSupport.firePropertyChange("selectedModel", oldModel, selectedModel);
+        autoSave();
     }
 
     /**
@@ -721,6 +733,7 @@ public class Chat extends BasicPropertyChangeSource {
         log.info("Setting nickname for session {}: {} -> {}", config.getSessionId(), old, nickname);
         this.nickname = nickname;
         propertyChangeSupport.firePropertyChange("nickname", old, nickname);
+        autoSave();
     }
 
     /**
@@ -733,6 +746,7 @@ public class Chat extends BasicPropertyChangeSource {
         log.info("Setting summary for session {}: {} -> {}", config.getSessionId(), old, summary);
         this.conversationSummary = summary;
         propertyChangeSupport.firePropertyChange("summary", old, summary);
+        autoSave();
     }
 
     /**

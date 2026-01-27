@@ -25,6 +25,7 @@ import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 import uno.anahata.asi.model.core.ModelTextPart;
 import uno.anahata.asi.model.core.PropertyChangeSource;
 import uno.anahata.asi.model.core.RagMessage;
+import uno.anahata.asi.model.core.Rebindable;
 import uno.anahata.asi.model.core.Role;
 import uno.anahata.asi.model.core.TextPart;
 import uno.anahata.asi.model.core.ThoughtSignature;
@@ -40,13 +41,16 @@ import uno.anahata.asi.model.core.UserMessage;
  */
 @Slf4j
 @Getter
-public class ContextManager extends BasicPropertyChangeSource {
+public class ContextManager extends BasicPropertyChangeSource implements Rebindable {
 
     /** The parent chat session. */
     private final Chat chat;
     
-    /** The canonical conversation history, stored as a thread-safe list. */
-    private final List<AbstractMessage> history = Collections.synchronizedList(new ArrayList<>());
+    /** 
+     * The canonical conversation history. 
+     * Access is manually synchronized to avoid Kryo serialization issues with JDK synchronized wrappers.
+     */
+    private final List<AbstractMessage> history = new ArrayList<>();
     
     /** Counter for assigning unique, sequential IDs to messages. */
     private final AtomicLong messageIdCounter = new AtomicLong(0);
@@ -87,9 +91,11 @@ public class ContextManager extends BasicPropertyChangeSource {
      * Fires a property change event for the "history" property.
      */
     public void clear() {
-        history.clear();
-        messageIdCounter.set(0);
-        partIdCounter.set(0);
+        synchronized (history) {
+            history.clear();
+            messageIdCounter.set(0);
+            partIdCounter.set(0);
+        }
         log.info("ContextManager cleared for session {}", chat.getConfig().getSessionId());
         propertyChangeSupport.firePropertyChange("history", null, history);
     }
@@ -192,7 +198,7 @@ public class ContextManager extends BasicPropertyChangeSource {
      *
      * @param message The message to add.
      */
-    public synchronized void addMessage(AbstractMessage message) {
+    public void addMessage(AbstractMessage message) {
 
         addMessageInternal(message);
         
@@ -205,15 +211,17 @@ public class ContextManager extends BasicPropertyChangeSource {
      * @param modelMessage - the model message
      * @throws IllegalStateException if the model message doesnt have an associated tool message.
      */
-    public synchronized void ensureToolMessageFolllowsModelMessage(AbstractModelMessage modelMessage) {
+    public void ensureToolMessageFolllowsModelMessage(AbstractModelMessage modelMessage) {
         if (modelMessage.getToolMessage() == null) {
             throw new IllegalStateException("Model message does not contain a tool message");
         }
         
-        if (history.contains(modelMessage) && !history.contains(modelMessage.getToolMessage())) {
-            //insert it exactly after the model message
-            history.add(history.indexOf(modelMessage) + 1, modelMessage.getToolMessage());
-        } 
+        synchronized (history) {
+            if (history.contains(modelMessage) && !history.contains(modelMessage.getToolMessage())) {
+                //insert it exactly after the model message
+                history.add(history.indexOf(modelMessage) + 1, modelMessage.getToolMessage());
+            } 
+        }
     }
 
     /**
@@ -228,10 +236,13 @@ public class ContextManager extends BasicPropertyChangeSource {
         for (AbstractPart part : message.getParts()) {
             part.setSequentialId(partIdCounter.incrementAndGet());
         }
-        history.add(message);
-        if (message instanceof AbstractModelMessage amm) {
-            if (amm.getToolMessage() != null) {//its got tool calls
-                ensureToolMessageFolllowsModelMessage(amm);
+        
+        synchronized (history) {
+            history.add(message);
+            if (message instanceof AbstractModelMessage amm) {
+                if (amm.getToolMessage() != null) {//its got tool calls
+                    ensureToolMessageFolllowsModelMessage(amm);
+                }
             }
         }
         
@@ -246,7 +257,11 @@ public class ContextManager extends BasicPropertyChangeSource {
      * @param message The message to remove.
      */
     public void removeMessage(AbstractMessage message) {
-        if (history.remove(message)) {
+        boolean removed;
+        synchronized (history) {
+            removed = history.remove(message);
+        }
+        if (removed) {
             log.info("Removed message {} from history.", message.getSequentialId());
             propertyChangeSupport.firePropertyChange("history", null, history);
         }
@@ -281,7 +296,9 @@ public class ContextManager extends BasicPropertyChangeSource {
      * @return A synchronized, unmodifiable list of all messages.
      */
     public List<AbstractMessage> getHistory() {
-        return new ArrayList<>(history);
+        synchronized (history) {
+            return new ArrayList<>(history);
+        }
     }
 
     /**
@@ -300,5 +317,13 @@ public class ContextManager extends BasicPropertyChangeSource {
      */
     public int getTokenThreshold() {
         return chat.getConfig().getTokenThreshold();
+    }
+
+    @Override
+    public void rebind() {
+        super.rebind();
+        log.info("Rebinding ContextManager for session: {}", chat.getConfig().getSessionId());
+        // History and providers are already restored by Kryo.
+        // We just need to ensure any transient state is reset if necessary.
     }
 }

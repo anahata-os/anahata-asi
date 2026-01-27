@@ -424,7 +424,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
      * @return The list of child context providers (one per open project).
      */
     @Override
-    public List<ContextProvider> getChildrenProviders() {
+    public synchronized List<ContextProvider> getChildrenProviders() {
         if (!listening) {
             OpenProjects.getDefault().addPropertyChangeListener(this);
             syncProjects();

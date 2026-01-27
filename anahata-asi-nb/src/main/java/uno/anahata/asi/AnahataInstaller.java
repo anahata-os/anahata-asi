@@ -43,6 +43,9 @@ public class AnahataInstaller extends ModuleInstall {
         // Register the ElementHandle module for global JSON support in the IDE
         SchemaProvider.OBJECT_MAPPER.registerModule(new ElementHandleModule());
         
+        // Load active sessions from disk
+        getContainer().loadSessions();
+        
         File handoffFile = getHandoffFile();
         if (handoffFile.exists()) {
             log.info("Handoff file found. Restoring sessions.");

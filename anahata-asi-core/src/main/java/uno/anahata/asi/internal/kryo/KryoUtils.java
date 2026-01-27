@@ -9,9 +9,13 @@ import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -42,12 +46,18 @@ public class KryoUtils {
         // Register common JDK types
         kryo.register(ArrayList.class);
         kryo.register(HashMap.class);
+        kryo.register(LinkedHashMap.class);
+        kryo.register(ConcurrentHashMap.class);
+        kryo.register(CopyOnWriteArrayList.class);
         kryo.register(Optional.class, new OptionalSerializer()); 
 
         // Register Atomic types with custom serializers to avoid JPMS access issues in java.base
         kryo.register(AtomicBoolean.class, new AtomicBooleanSerializer());
         kryo.register(AtomicInteger.class, new AtomicIntegerSerializer());
         kryo.register(AtomicLong.class, new AtomicLongSerializer());
+
+        // Register Path serializer to avoid JPMS issues with UnixPath/WindowsPath
+        kryo.addDefaultSerializer(Path.class, new PathSerializer());
 
         // Set the global factory for automated Rebindable support
         kryo.setDefaultSerializer(new RebindableSerializerFactory());

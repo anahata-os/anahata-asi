@@ -67,11 +67,8 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
     /** Whether this manager is currently providing context augmentation. */
     private boolean providing = true;
 
-    /** The parent chat session. Can be null in test environments. */
+    /** The parent chat session. */
     private final Chat chat;
-    
-    /** The global container configuration. */
-    private final AsiContainer container;
     
     /** A map of registered toolkits, keyed by their simple name. */
     private final Map<String, AbstractToolkit<?>> toolkits = new HashMap<>();
@@ -81,8 +78,9 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
     
     /**
      * A session-scoped map for tools to store state across turns.
+     * Access is manually synchronized to avoid Kryo serialization issues with JDK synchronized wrappers.
      */
-    public final Map<Object, Object> sessionAttributes = Collections.synchronizedMap(new HashMap<>());
+    public final Map<Object, Object> sessionAttributes = new HashMap<>();
     
 
     /**
@@ -94,7 +92,6 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
      */
     public ToolManager(@NonNull Chat chat) {
         this.chat = chat;
-        this.container = chat.getConfig().getContainer();
         
         // Self-initialize by registering tools from the container.
         List<Class<?>> toolClasses = chat.getConfig().getToolClasses();
@@ -103,17 +100,6 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
         }
     }
 
-    /**
-     * Secondary constructor for lightweight instantiation, primarily for unit
-     * tests.
-     *
-     * @param container The global AI configuration.
-     */
-    public ToolManager(@NonNull AsiContainer container) {
-        this.chat = null; // No parent chat in this context
-        this.container = container;
-    }
-    
     /**
      * Resets the static tool call ID counter to zero.
      */
@@ -338,7 +324,9 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
 
     @Override
     public void rebind() {
+        super.rebind();
         log.info("Rebinding ToolManager...");
+        
         for (AbstractToolkit<?> toolkit : toolkits.values()) {
             if (toolkit instanceof Rebindable rebindable) {
                 rebindable.rebind();

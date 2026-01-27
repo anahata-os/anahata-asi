@@ -90,7 +90,7 @@ public class AsiTopComponent extends TopComponent implements SessionController {
     @Override
     public void dispose(@NonNull Chat chat) {
         close(chat);
-        chat.shutdown();
+        AnahataInstaller.getContainer().dispose(chat);
     }
 
     @Override

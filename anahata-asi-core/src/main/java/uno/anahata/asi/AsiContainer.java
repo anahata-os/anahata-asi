@@ -14,8 +14,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.internal.kryo.KryoUtils;
@@ -48,13 +50,13 @@ public class AsiContainer extends BasicPropertyChangeSource {
      * A JVM-scoped map for tools to store and share objects across all containers, 
      * sessions, and turns. This map is thread-safe.
      */
-    public static Map applicationAttributes = Collections.synchronizedMap(new HashMap());
+    public static Map applicationAttributes = new ConcurrentHashMap();
     
     /**
      * A container-scoped map for tools to store objects across all sessions and turns 
      * within this specific host application. This map is thread-safe.
      */
-    public Map containerAttributes = Collections.synchronizedMap(new HashMap());
+    public Map containerAttributes = new ConcurrentHashMap();
 
 
     /**
@@ -110,11 +112,20 @@ public class AsiContainer extends BasicPropertyChangeSource {
      * @param chat The chat session to register.
      */
     public void register(Chat chat) {
-        List<Chat> old = new ArrayList<>(activeChats);
-        activeChats.add(chat);
-        onChatCreated(chat);
-        propertyChangeSupport.firePropertyChange("activeChats", old, Collections.unmodifiableList(activeChats));
-        log.info("Registered chat session: {}", chat.getConfig().getSessionId());
+        synchronized (activeChats) {
+            for (Chat existing : activeChats) {
+                if (existing.getConfig().getSessionId().equals(chat.getConfig().getSessionId())) {
+                    log.warn("Chat session {} already registered. Skipping.", chat.getConfig().getSessionId());
+                    return;
+                }
+            }
+            List<Chat> old = new ArrayList<>(activeChats);
+            activeChats.add(chat);
+            onChatCreated(chat);
+            autoSaveSession(chat); // Ensure the session is persisted in the active directory
+            propertyChangeSupport.firePropertyChange("activeChats", old, Collections.unmodifiableList(activeChats));
+            log.info("Registered chat session: {}", chat.getConfig().getSessionId());
+        }
     }
 
     /**
@@ -124,10 +135,12 @@ public class AsiContainer extends BasicPropertyChangeSource {
      * @param chat The chat session to unregister.
      */
     public void unregister(Chat chat) {
-        List<Chat> old = new ArrayList<>(activeChats);
-        if (activeChats.remove(chat)) {
-            propertyChangeSupport.firePropertyChange("activeChats", old, Collections.unmodifiableList(activeChats));
-            log.info("Unregistered chat session: {}", chat.getConfig().getSessionId());
+        synchronized (activeChats) {
+            List<Chat> old = new ArrayList<>(activeChats);
+            if (activeChats.remove(chat)) {
+                propertyChangeSupport.firePropertyChange("activeChats", old, Collections.unmodifiableList(activeChats));
+                log.info("Unregistered chat session: {}", chat.getConfig().getSessionId());
+            }
         }
     }
 
@@ -137,7 +150,9 @@ public class AsiContainer extends BasicPropertyChangeSource {
      * @return The list of active chats.
      */
     public List<Chat> getActiveChats() {
-        return Collections.unmodifiableList(activeChats);
+        synchronized (activeChats) {
+            return Collections.unmodifiableList(new ArrayList<>(activeChats));
+        }
     }
     
     /**

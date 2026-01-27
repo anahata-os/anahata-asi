@@ -10,6 +10,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import lombok.Getter;
 import lombok.Setter;
+import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.internal.TikaUtils;
 import uno.anahata.asi.model.tool.AbstractToolkit;
@@ -173,7 +174,7 @@ public class ToolContext {
      * @return The container-scoped attributes map.
      */
     public Map getContainerMap() {
-        return getToolManager().getChat().getConfig().getContainer().getContainerAttributes();
+        return getChat().getConfig().getContainer().getContainerAttributes();
     }
     
     /**
@@ -183,7 +184,7 @@ public class ToolContext {
      * @return The application-scoped attributes map.
      */
     public Map getApplicationMap() {
-        return getToolManager().getChat().getConfig().getContainer().applicationAttributes;
+        return AsiContainer.applicationAttributes;
     }
 
 }

@@ -8,13 +8,16 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.core.RagMessage;
+import uno.anahata.asi.model.core.Rebindable;
 import uno.anahata.asi.tool.ToolContext;
 
 
@@ -25,9 +28,9 @@ import uno.anahata.asi.tool.ToolContext;
  * 
  * @author anahata
  */
-//@Getter
+@Slf4j
 @RequiredArgsConstructor
-public abstract class AnahataToolkit extends ToolContext implements ContextProvider {
+public abstract class AnahataToolkit extends ToolContext implements ContextProvider, Rebindable {
     
     /** Whether this toolkit is currently providing context augmentation. */
     @Setter
@@ -36,8 +39,9 @@ public abstract class AnahataToolkit extends ToolContext implements ContextProvi
     
     /**
      * The list of child context providers managed by this toolkit.
+     * Uses CopyOnWriteArrayList for thread-safe concurrent access during IDE events.
      */
-    protected List<ContextProvider> childrenProviders = new ArrayList<>();
+    protected List<ContextProvider> childrenProviders = new CopyOnWriteArrayList<>();
     
     /** {@inheritDoc} */
     @Override
@@ -66,6 +70,12 @@ public abstract class AnahataToolkit extends ToolContext implements ContextProvi
     @Override
     public List<ContextProvider> getChildrenProviders() {
         return childrenProviders;
+    }
+
+    @Override
+    public void rebind() {
+        log.info("Rebinding toolkit: {}", getName());
+        // Toolkits can override this to restore transient state
     }
     
 }

@@ -1,5 +1,6 @@
 package uno.anahata.asi.resource;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -13,6 +14,7 @@ import uno.anahata.asi.tool.AnahataToolkit;
 import uno.anahata.asi.context.ContextPosition;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.core.RagMessage;
+import uno.anahata.asi.model.core.Rebindable;
 import uno.anahata.asi.model.core.TextPart;
 import uno.anahata.asi.model.resource.AbstractPathResource;
 import uno.anahata.asi.model.resource.AbstractResource;
@@ -25,13 +27,14 @@ import uno.anahata.asi.model.resource.AbstractResource;
  * @author anahata-ai
  */
 @Slf4j
-public class ResourceManager {
+public class ResourceManager implements Rebindable {
 
     /**
      * A map of all tracked resources, keyed by their unique resource ID.
-     * Uses a synchronized LinkedHashMap to preserve registration order and ensure thread safety.
+     * Uses a LinkedHashMap to preserve registration order. 
+     * Access is manually synchronized to avoid Kryo serialization issues with JDK synchronized wrappers.
      */
-    private final Map<String, AbstractResource> resources = Collections.synchronizedMap(new LinkedHashMap<>());
+    private final Map<String, AbstractResource> resources = new LinkedHashMap<>();
 
     /**
      * Registers a new resource, making it managed by the framework.
@@ -39,7 +42,9 @@ public class ResourceManager {
      * @param resource The resource to register.
      */
     public void register(@NonNull AbstractResource resource) {
-        resources.put(resource.getId(), resource);
+        synchronized (resources) {
+            resources.put(resource.getId(), resource);
+        }
     }
 
     /**
@@ -52,10 +57,12 @@ public class ResourceManager {
      * registered.
      */
     public <T extends AbstractResource> T getResource(String id) throws IllegalArgumentException {
-        if (!resources.containsKey(id)) {
-            throw new IllegalArgumentException("Resource not registered: " + id);
+        synchronized (resources) {
+            if (!resources.containsKey(id)) {
+                throw new IllegalArgumentException("Resource not registered: " + id);
+            }
+            return (T) resources.get(id);
         }
-        return (T) resources.get(id);
     }
 
     /**
@@ -65,7 +72,9 @@ public class ResourceManager {
      * @return The unregistered resource, or null if it was not found.
      */
     public AbstractResource unregister(@NonNull String resourceId) {
-        return resources.remove(resourceId);
+        synchronized (resources) {
+            return resources.remove(resourceId);
+        }
     }
 
     /**
@@ -75,7 +84,9 @@ public class ResourceManager {
      * @return A collection of all managed resources.
      */
     public Collection<AbstractResource> getResources() {
-        return Collections.unmodifiableCollection(resources.values());
+        synchronized (resources) {
+            return new ArrayList<>(resources.values());
+        }
     }
 
     /**
@@ -91,6 +102,13 @@ public class ResourceManager {
                 .map(r -> (AbstractPathResource) r)
                 .filter(r -> r.getPath().equals(path))
                 .findFirst();
+    }
+
+    @Override
+    public void rebind() {
+        log.info("Rebinding ResourceManager. Managed resources: {}", resources.size());
+        // Resources themselves might need rebinding if they implement Rebindable,
+        // but Kryo's RebindableWrapperSerializer handles the object graph recursively.
     }
 
 }
