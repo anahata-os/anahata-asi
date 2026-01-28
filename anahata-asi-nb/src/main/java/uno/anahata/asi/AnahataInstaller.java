@@ -17,6 +17,7 @@ import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 import uno.anahata.asi.nb.util.ElementHandleModule;
 import uno.anahata.asi.tool.schema.SchemaProvider;
+import uno.anahata.asi.nb.tools.project.nb.AnahataProjectAnnotator;
 
 /**
  * Installer for the Anahata ASI V2 module.
@@ -63,6 +64,9 @@ public class AnahataInstaller extends ModuleInstall {
                 handoffFile.delete();
             }
         }
+        
+        // Trigger initial refresh of project icons
+        AnahataProjectAnnotator.fireRefresh(null);
     }
 
     @Override

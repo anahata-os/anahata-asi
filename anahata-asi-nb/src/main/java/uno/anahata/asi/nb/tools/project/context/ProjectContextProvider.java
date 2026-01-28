@@ -1,19 +1,23 @@
 /* Licensed under the Apache License, Version 2.0 */
 package uno.anahata.asi.nb.tools.project.context;
 
+import javax.swing.Icon;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectUtils;
 import uno.anahata.asi.context.BasicContextProvider;
 import uno.anahata.asi.nb.tools.project.Projects;
+import uno.anahata.asi.swing.icons.IconUtils;
 
 /**
  * A hierarchical context provider for a specific NetBeans project.
  * It aggregates the {@link ProjectOverviewContextProvider} and the 
  * {@link AnahataMdContextProvider} into a single project-scoped node.
  * <p>
- * The project name is fetched dynamically to ensure it remains current.
+ * The project name and icon are fetched dynamically from the NetBeans Project API.
+ * The icon is registered in the global {@link IconUtils} registry.
+ * </p>
  * 
  * @author anahata
  */
@@ -26,6 +30,9 @@ public class ProjectContextProvider extends BasicContextProvider {
     /** The absolute path to the project directory. */
     @Getter
     private final String projectPath;
+    
+    /** The unique icon ID for this project. */
+    private final String iconId;
 
     /**
      * Constructs a new project context provider.
@@ -40,6 +47,11 @@ public class ProjectContextProvider extends BasicContextProvider {
         this.parent = projectsToolkit;
         this.project = project;
         this.projectPath = project.getProjectDirectory().getPath();
+        this.iconId = "nb.project." + projectPath;
+        
+        // Register the authentic project icon in the global registry
+        Icon icon = ProjectUtils.getInformation(project).getIcon();
+        IconUtils.registerIcon(iconId, icon);
         
         // Register with parent
         this.setParent(projectsToolkit);
@@ -78,5 +90,11 @@ public class ProjectContextProvider extends BasicContextProvider {
     public String getName() {
         Project p = getProject();
         return p != null ? ProjectUtils.getInformation(p).getDisplayName() : super.getName();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getIconId() {
+        return iconId;
     }
 }

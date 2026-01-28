@@ -159,11 +159,14 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
      * Opens a project in the IDE and waits for the operation to complete.
      * 
      * @param projectPath The absolute path or relative folder name.
+     * @param openSubprojects Whether to automatically open all subprojects (modules).
      * @return A success or error message.
      * @throws Exception if an error occurs during opening.
      */
     @AiTool("Opens a project in the IDE, waiting for the asynchronous open operation to complete. This tool prefers the full absolute path as the project path.")
-    public String openProject(@AiToolParam("The absolute path to the project (recommended) or the folder name relative to NetBeansProjects.") String projectPath) throws Exception {
+    public String openProject(
+            @AiToolParam("The absolute path to the project (recommended) or the folder name relative to NetBeansProjects.") String projectPath,
+            @AiToolParam("Whether to automatically open all subprojects (e.g. child modules in a Maven parent).") boolean openSubprojects) throws Exception {
         File projectDir;
         if (new File(projectPath).isAbsolute()) {
             projectDir = new File(projectPath);
@@ -181,41 +184,50 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
             return "Error: Could not find project directory: " + projectDir.getAbsolutePath();
         }
 
-        for (Project p : OpenProjects.getDefault().getOpenProjects()) {
-            if (p.getProjectDirectory().equals(projectFob)) {
-                return "Success: Project '" + projectPath + "' is already open.";
-            }
-        }
-
         Project projectToOpen = ProjectManager.getDefault().findProject(projectFob);
         if (projectToOpen == null) {
             return "Error: Could not find a project in the specified directory: " + projectDir.getAbsolutePath();
         }
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        final PropertyChangeListener listener = (PropertyChangeEvent evt) -> {
-            if (OpenProjects.PROPERTY_OPEN_PROJECTS.equals(evt.getPropertyName())) {
-                for (Project p : OpenProjects.getDefault().getOpenProjects()) {
-                    if (p.equals(projectToOpen)) {
-                        latch.countDown();
-                        break;
+        boolean alreadyOpen = false;
+        for (Project p : OpenProjects.getDefault().getOpenProjects()) {
+            if (p.getProjectDirectory().equals(projectFob)) {
+                alreadyOpen = true;
+                break;
+            }
+        }
+
+        if (!alreadyOpen) {
+            final CountDownLatch latch = new CountDownLatch(1);
+            final PropertyChangeListener listener = (PropertyChangeEvent evt) -> {
+                if (OpenProjects.PROPERTY_OPEN_PROJECTS.equals(evt.getPropertyName())) {
+                    for (Project p : OpenProjects.getDefault().getOpenProjects()) {
+                        if (p.equals(projectToOpen)) {
+                            latch.countDown();
+                            break;
+                        }
                     }
                 }
-            }
-        };
+            };
 
-        OpenProjects.getDefault().addPropertyChangeListener(listener);
+            OpenProjects.getDefault().addPropertyChangeListener(listener);
 
-        try {
-            OpenProjects.getDefault().open(new Project[]{projectToOpen}, false, true);
-            if (latch.await(30, TimeUnit.SECONDS)) {
-                return "Success: Project '" + projectPath + "' opened successfully.";
-            } else {
-                return "Error: Timed out after 30 seconds waiting for project '" + projectPath + "' to open.";
+            try {
+                OpenProjects.getDefault().open(new Project[]{projectToOpen}, false, true);
+                if (!latch.await(30, TimeUnit.SECONDS)) {
+                    return "Error: Timed out after 30 seconds waiting for project '" + projectPath + "' to open.";
+                }
+            } finally {
+                OpenProjects.getDefault().removePropertyChangeListener(listener);
             }
-        } finally {
-            OpenProjects.getDefault().removePropertyChangeListener(listener);
         }
+
+        if (openSubprojects) {
+            openSubprojects(projectPath);
+            return "Success: Project '" + projectPath + "' and its subprojects opened successfully.";
+        }
+
+        return "Success: Project '" + projectPath + "' opened successfully.";
     }
 
     /**
@@ -337,7 +349,13 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         getProjectProvider(projectPath).ifPresent(pcp -> {
             pcp.setProviding(enabled);
             log.info("Project context for {} set to: {}", projectPath, enabled);
-            AnahataProjectAnnotator.fireRefresh();
+            try {
+                Project p = findOpenProject(projectPath);
+                AnahataProjectAnnotator.fireRefresh(p);
+            } catch (Exception ex) {
+                log.warn("Failed to find project for refresh: " + projectPath, ex);
+                AnahataProjectAnnotator.fireRefresh(null);
+            }
         });
     }
 
@@ -539,9 +557,9 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     private ProjectFile createProjectFile(FileObject fo) throws FileStateInvalidException {
         String path = fo.getPath();
         String status = null;
-        Optional<AbstractPathResource> resOpt = getResourceManager().findByPath(path);
+        Optional<? extends AbstractPathResource<?, ?>> resOpt = getResourceManager().findByPath(path);
         if (resOpt.isPresent()) {
-            AbstractPathResource res = resOpt.get();
+            AbstractPathResource<?, ?> res = resOpt.get();
             if (!res.exists()) {
                 status = "[DELETED]";
             } else {

@@ -4,6 +4,7 @@ package uno.anahata.asi.nb.tools.maven;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -22,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
 import org.apache.maven.artifact.resolver.ArtifactResolutionException;
+import org.apache.maven.execution.ExecutionEvent;
 import org.apache.maven.model.Dependency;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectInformation;
@@ -33,6 +35,8 @@ import org.netbeans.modules.maven.api.execute.RunUtils;
 import org.netbeans.modules.maven.embedder.EmbedderFactory;
 import org.netbeans.modules.maven.embedder.MavenEmbedder;
 import org.netbeans.modules.maven.execute.MavenCommandLineExecutor;
+import org.netbeans.modules.maven.execute.cmd.ExecMojo;
+import org.netbeans.modules.maven.execute.cmd.ExecutionEventObject;
 import org.netbeans.modules.maven.indexer.api.NBVersionInfo;
 import org.netbeans.modules.maven.indexer.api.QueryField;
 import org.netbeans.modules.maven.indexer.api.RepositoryPreferences;
@@ -73,8 +77,9 @@ public class Maven extends AnahataToolkit {
         
     }
 
+    /** {@inheritDoc} */
     @Override
-    public List<String> getSystemInstructions(Chat chat) throws Exception {
+    public List<String> getSystemInstructions() throws Exception {
         return Collections.singletonList("Maven Command Line: " + getNbCommandLineMavenPath());
     }
     
@@ -213,7 +218,7 @@ public class Maven extends AnahataToolkit {
             }
             summary.append("Result: SUCCESS. Main artifact found.\n\n");
 
-            // Phase 2: POM Modification
+            // Phase 2: Modifying pom.xml...
             summary.append("Phase 2: Modifying pom.xml...\n");
             Project project = Projects.findOpenProject(projectPath);
             FileObject pom = project.getProjectDirectory().getFileObject("pom.xml");
@@ -235,7 +240,7 @@ public class Maven extends AnahataToolkit {
             summary.append("Phase 3: Resolving transitive dependencies...\n");
             
             MavenBuildResult resolveResult = runGoals(projectPath, Collections.singletonList("dependency:resolve"), null, null, null, null);
-            //resultBuilder.dependencyResolveResult(resolveResult);
+            resultBuilder.dependencyResolveResult(resolveResult);
             summary.append("Result: 'dependency:resolve' goal executed. See MavenBuildResult for details.\n\n");
 
             // Phase 4: Asynchronous Source/Javadoc Download
@@ -494,12 +499,72 @@ public class Maven extends AnahataToolkit {
         int totalLines = (int) capturedOutput.lines().count();
         int startIndex = Math.max(0, totalLines - MAX_OUTPUT_LINES);
         
-        //TextChunk stdoutChunk = TextUtils.processText(capturedOutput, startIndex, MAX_OUTPUT_LINES, null, MAX_LINE_LENGTH);
-        //TextChunk stderrChunk = TextUtils.processText(capturedError, 0, null, null, MAX_LINE_LENGTH); // Show all of stderr, but truncate long lines
+        // Ported from V1: Detailed build summary
+        List<MavenBuildResult.BuildPhase> phases = extractBuildPhases(executor);
 
-        //temp hack
-        return null;
-        //return new MavenBuildResult(status, exitCode, /*stdoutChunk*/, /*stderrChunk*/, logFilePath);
+        return new MavenBuildResult(status, exitCode, capturedOutput, capturedError, logFilePath, phases);
+    }
+
+    /**
+     * Extracts the build phases and their outcomes from the Maven executor using reflection.
+     * 
+     * @param executor The Maven executor.
+     * @return A list of build phases.
+     */
+    private static List<MavenBuildResult.BuildPhase> extractBuildPhases(MavenCommandLineExecutor executor) {
+        List<MavenBuildResult.BuildPhase> phases = new ArrayList<>();
+        try {
+            // Path: executor -> tabContext -> overview -> root
+            Field tabContextField = executor.getClass().getSuperclass().getDeclaredField("tabContext");
+            tabContextField.setAccessible(true);
+            Object tabContext = tabContextField.get(executor);
+            if (tabContext == null) return phases;
+
+            Field overviewField = tabContext.getClass().getDeclaredField("overview");
+            overviewField.setAccessible(true);
+            Object overview = overviewField.get(tabContext);
+            if (overview == null) return phases;
+
+            Field rootField = overview.getClass().getDeclaredField("root");
+            rootField.setAccessible(true);
+            ExecutionEventObject.Tree tree = (ExecutionEventObject.Tree) rootField.get(overview);
+            
+            if (tree != null) {
+                collectPhases(tree, phases);
+            }
+        } catch (Exception e) {
+            LOG.log(Level.FINE, "Could not extract build phases via reflection", e);
+        }
+        return phases;
+    }
+
+    /**
+     * Recursively collects build phases from the execution event tree.
+     * 
+     * @param node The current node in the tree.
+     * @param phases The list to populate.
+     */
+    private static void collectPhases(ExecutionEventObject.Tree node, List<MavenBuildResult.BuildPhase> phases) {
+        ExecutionEventObject start = node.getStartEvent();
+        ExecutionEventObject end = node.getEndEvent();
+
+        if (start instanceof ExecMojo) {
+            ExecMojo mojo = (ExecMojo) start;
+            boolean success = false;
+            if (end != null) {
+                success = ExecutionEvent.Type.MojoSucceeded.equals(end.type);
+            }
+            phases.add(new MavenBuildResult.BuildPhase(
+                mojo.phase, 
+                mojo.plugin.getId() + ":" + mojo.goal, 
+                success, 
+                0 // Duration calculation would require timestamps from events
+            ));
+        }
+
+        for (ExecutionEventObject.Tree child : node.getChildrenNodes()) {
+            collectPhases(child, phases);
+        }
     }
     
     /**

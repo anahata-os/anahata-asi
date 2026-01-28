@@ -18,10 +18,6 @@
     <dependencies>
         <!-- External Libraries -->
         <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
             <version>4.5.14</version>
@@ -364,6 +360,18 @@
             <version>${netbeans.version}</version>
         </dependency>
         
+        <!-- NetBeans APIs -->
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-libs-asm</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-libs-javacapi</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        
         <!-- NetBeans Modules -->
         <dependency>
             <groupId>org.netbeans.modules</groupId>
@@ -415,18 +423,6 @@
                     <artifactId>asm</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        
-        <!-- NetBeans libs -->
-        <dependency>
-            <groupId>org.netbeans.api</groupId>
-            <artifactId>org-netbeans-libs-asm</artifactId>
-            <version>${netbeans.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.netbeans.api</groupId>
-            <artifactId>org-netbeans-libs-javacapi</artifactId>
-            <version>${netbeans.version}</version>
         </dependency>
         
         <dependency>

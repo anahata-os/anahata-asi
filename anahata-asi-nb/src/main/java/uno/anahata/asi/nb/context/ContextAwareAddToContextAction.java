@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.ImageIcon;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import org.openide.awt.ActionID;
@@ -33,7 +34,7 @@ import uno.anahata.asi.chat.Chat;
 )
 @ActionRegistration(
         displayName = "Add to AI Context",
-        lazy = true
+        lazy = false
 )
 @ActionReferences({
     @ActionReference(path = "Loaders/folder/any/Actions", position = 1350),
@@ -87,6 +88,8 @@ public final class ContextAwareAddToContextAction extends AbstractAction impleme
     @Override
     public JMenuItem getPopupPresenter() {
         JMenu main = new JMenu("Add to AI Context");
+        main.setIcon(new ImageIcon(org.openide.util.ImageUtilities.loadImage("icons/anahata_16.png")));
+        
         List<Chat> activeChats = AnahataInstaller.getContainer().getActiveChats();
         
         if (activeChats.isEmpty()) {

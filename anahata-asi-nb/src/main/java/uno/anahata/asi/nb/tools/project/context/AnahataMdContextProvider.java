@@ -63,7 +63,7 @@ public class AnahataMdContextProvider extends BasicContextProvider {
         if (isProviding() && Files.exists(path)) {
             if (registeredResourceId == null) {
                 try {
-                    TextFileResource resource = new TextFileResource(path);
+                    TextFileResource resource = new TextFileResource(projectsToolkit.getResourceManager(), path);
                     // Force the position to SYSTEM_INSTRUCTIONS
                     resource.setContextPosition(ContextPosition.SYSTEM_INSTRUCTIONS);
                     resource.reload();

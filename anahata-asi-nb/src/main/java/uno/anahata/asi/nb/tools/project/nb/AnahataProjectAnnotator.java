@@ -61,6 +61,8 @@ public class AnahataProjectAnnotator implements ProjectIconAnnotator, ChangeList
     public Image annotateIcon(Project p, Image icon, boolean opened) {
         if (isProjectInContext(p)) {
             if (BADGE != null) {
+                // Use offset 16 to place the badge to the right of the 16x16 icon.
+                // This avoids clashing with 'project problems' and other decorations.
                 return ImageUtilities.mergeImages(icon, BADGE, 16, 0);
             }
         }
@@ -125,9 +127,15 @@ public class AnahataProjectAnnotator implements ProjectIconAnnotator, ChangeList
     /**
      * Triggers a global refresh of all project icons by notifying all 
      * {@link AnahataProjectAnnotator} instances.
+     * 
+     * @param project The project to refresh (currently unused, but kept for API compatibility).
      */
-    public static void fireRefresh() {
+    public static void fireRefresh(Project project) {
         LOG.info("Firing global project icon refresh.");
+        
+        // Note: We don't fire FileStatusEvent here because fireFileStatusChanged is protected 
+        // in FileSystem. Instead, we rely on the ChangeListeners registered with the annotators.
+        
         for (ProjectIconAnnotator pia : Lookup.getDefault().lookupAll(ProjectIconAnnotator.class)) {
             if (pia instanceof AnahataProjectAnnotator apa) {
                 apa.stateChanged(new ChangeEvent(apa));

@@ -2,13 +2,16 @@
 package uno.anahata.asi.nb.tools.maven;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import uno.anahata.asi.model.resource.TextFileResource;
 
 /**
- * Represents the detailed result of a Maven build execution, including status, exit code, and captured output.
+ * Represents the detailed result of a Maven build execution, including status, 
+ * exit code, captured output, and a breakdown of build phases.
+ * 
+ * @author anahata
  */
 @Data
 @NoArgsConstructor
@@ -29,19 +32,49 @@ public class MavenBuildResult {
         INTERRUPTED
     }
 
+    /**
+     * Represents a single phase or goal within a Maven build.
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(description = "Represents a single phase or goal within a Maven build.")
+    public static class BuildPhase {
+        /** The name of the Maven phase (e.g., 'compile', 'test'). */
+        @Schema(description = "The name of the phase")
+        private String name;
+        /** The plugin and goal associated with this phase. */
+        @Schema(description = "The plugin and goal")
+        private String plugin;
+        /** Whether this phase succeeded or failed. */
+        @Schema(description = "Whether this phase succeeded")
+        private boolean success;
+        /** The duration of this phase in milliseconds. */
+        @Schema(description = "The duration in milliseconds")
+        private long durationMs;
+    }
+
+    /** The final status of the Maven process. */
     @Schema(description = "The final status of the Maven process.")
     private ProcessStatus status;
 
+    /** The exit code of the Maven process. */
     @Schema(description = "The exit code of the Maven process. Note: This can be unreliable in some execution environments; always check the stdout for 'BUILD SUCCESS'.")
     private Integer exitCode;
     
-/*
-    @Schema(description = "A chunk of the standard output stream, typically the tail end of the log.")
-    private TextChunk stdOutput;
+    /** The captured standard output stream (last 100 lines). */
+    @Schema(description = "The captured standard output stream (last 100 lines).")
+    private String stdOutput;
 
-    @Schema(description = "A chunk of the standard error stream.")
-    private TextChunk stdError;
-*/
+    /** The captured standard error stream (last 100 lines). */
+    @Schema(description = "The captured standard error stream (last 100 lines).")
+    private String stdError;
+
+    /** The absolute path to the full, untruncated log file saved on disk. */
     @Schema(description = "The absolute path to the full, untruncated log file saved on disk.")
-    private TextFileResource logFile;
+    private String logFile;
+    
+    /** A list of build phases executed during the Maven run, with their individual outcomes. */
+    @Schema(description = "A list of build phases executed during the Maven run")
+    private List<BuildPhase> phases;
 }
