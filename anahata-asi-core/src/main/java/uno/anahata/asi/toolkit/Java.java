@@ -113,7 +113,7 @@ public class Java extends AnahataToolkit {
     
     /** {@inheritDoc} */
     @Override
-    public List<String> getSystemInstructions(Chat chat) throws Exception {
+    public List<String> getSystemInstructions() throws Exception {
         StringBuilder sb = new StringBuilder();
         sb.append("### Java Toolkit Instructions: \n");
         sb.append("When using `compileAndExecute`, your class should be **public**, named **Anahata**, extend `" + AnahataTool.class.getName()+ "`, have no package declaration and implement the call method of Callable<Object>. ");
@@ -139,9 +139,9 @@ public class Java extends AnahataToolkit {
         sb.append("        String result = \"Hello from AnahataTool!\";\n");
         sb.append("        log(\"Result: \" + result);\n");
         sb.append("        \n");
-        sb.append("        // You can also add errors or attachments\n");
-        sb.append("        // error(\"Something went wrong\");\n");
-        sb.append("        // addAttachment(data, \"image/png\");\n");
+        // You can also add errors or attachments
+        // error("Something went wrong");
+        // addAttachment(data, "image/png");
         sb.append("        \n");
         sb.append("        return result;\n");
         sb.append("    }\n");
@@ -185,7 +185,7 @@ public class Java extends AnahataToolkit {
      * @throws IllegalAccessException if access to a member is denied.
      * @throws InvocationTargetException if a method invocation fails.
      */
-    @AiTool("Compiles the source code of a java class with the default compiler classpath")
+    //@AiTool("Compiles the source code of a java class with the default compiler classpath")
     public Class compile(
             @AiToolParam(value = "The source code", rendererId = "java") String sourceCode,
             @AiToolParam("The class name") String className,

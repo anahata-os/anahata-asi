@@ -1,16 +1,12 @@
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.toolkit.files;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import uno.anahata.asi.model.context.RefreshPolicy;
-import uno.anahata.asi.model.resource.AbstractPathResource;
-import uno.anahata.asi.model.resource.AbstractResource;
 import uno.anahata.asi.model.resource.TextFileResource;
-import uno.anahata.asi.model.resource.TextViewport;
 import uno.anahata.asi.model.resource.TextViewportSettings;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolException;
@@ -96,7 +92,7 @@ public class Files extends AnahataToolkit {
             throw new AiToolException("File not found: " + path);
         }
 
-        TextFileResource resource = new TextFileResource(Paths.get(path));
+        TextFileResource resource = new TextFileResource(getResourceManager(), Paths.get(path));
         resource.setRefreshPolicy(RefreshPolicy.LIVE);
         getResourceManager().register(resource);
         log("Successfully loaded and registered text file: " + path);

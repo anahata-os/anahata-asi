@@ -1,14 +1,22 @@
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.model.resource;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.context.ContextPosition;
 import uno.anahata.asi.model.context.RefreshPolicy;
-import uno.anahata.asi.model.core.AbstractPart;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 import uno.anahata.asi.model.core.RagMessage;
+import uno.anahata.asi.resource.ResourceManager;
 
 /**
  * The abstract base class for all managed resources in the V2 framework.
@@ -18,9 +26,8 @@ import uno.anahata.asi.model.core.RagMessage;
  * stateful resource and a context provider, giving each resource control
  * over its own lifecycle, refresh policy, and position in the prompt.
  * <p>
- * This class extends {@link BasicPropertyChangeSource} to provide reactive 
- * capabilities while ensuring that UI listeners are not persisted during 
- * serialization.
+ * By implementing {@link ContextProvider}, resources can be plugged directly 
+ * into the {@link uno.anahata.asi.context.ContextManager}'s injection pipeline.
  * </p>
  *
  * @author anahata-ai
@@ -29,41 +36,49 @@ import uno.anahata.asi.model.core.RagMessage;
  */
 @Getter
 @Setter
-public abstract class AbstractResource<R, C> extends BasicPropertyChangeSource {
+@Slf4j
+@RequiredArgsConstructor
+public abstract class AbstractResource<R, C> extends BasicPropertyChangeSource implements ContextProvider {
 
-    //<editor-fold defaultstate="collapsed" desc="Identity">
     /** A unique, immutable identifier for this resource instance. */
     private final String id = UUID.randomUUID().toString();
 
+    /** 
+     * The manager that owns this resource. 
+     * Every resource must be associated with a manager to access the chat context.
+     */
+    @NonNull
+    @JsonIgnore
+    private final ResourceManager resourceManager;
+
     /** A user-friendly name for the resource (e.g., a filename or a process name). */
     private String name;
-    //</editor-fold>
 
-    //<editor-fold defaultstate="collapsed" desc="Resource">
     /** The underlying, raw Java resource object. Ignored during JSON serialization. */
     @JsonIgnore
     protected R resource;
-    //</editor-fold>
     
-    //<editor-fold defaultstate="collapsed" desc="Policy">
     /** The policy that determines when this resource's content should be refreshed. */
     private RefreshPolicy refreshPolicy = RefreshPolicy.LIVE;
 
     /** The position where this resource's content should be injected into the prompt. */
     private ContextPosition contextPosition = ContextPosition.PROMPT_AUGMENTATION;
-    //</editor-fold>
     
-    /**
-     * Renders the current state or viewport of this resource into a model-consumable Part.
-     * This is the core of the self-rendering resource model. A TextFileResource might
-     * return a TextPart with a specific page of content, while a ScreenshotResource
-     * would return a BlobPart.
-     *
-     * @param message The message to populate with the resource's content.
-     * @throws java.lang.Exception if the population fails.
+    /** 
+     * An optional icon identifier for this resource, used by the UI to look up 
+     * a specialized icon.
      */
-    public abstract void populate(RagMessage message) throws Exception;
-    
+    private String iconId;
+
+    /**
+     * Gets the parent chat session for this resource.
+     * @return The chat session.
+     */
+    @JsonIgnore
+    public Chat getChat() {
+        return resourceManager.getChat();
+    }
+
     /**
      * Gets the machine-readable content type of this resource (e.g., "text", "image").
      * This is used to determine if a resource is suitable for certain context positions.
@@ -93,6 +108,7 @@ public abstract class AbstractResource<R, C> extends BasicPropertyChangeSource {
      * Gets a user-friendly description of the resource.
      * @return The description string.
      */
+    @Override
     public String getDescription() {
         String type = getContentType();
         if ("text".equalsIgnoreCase(type)) {
@@ -102,11 +118,19 @@ public abstract class AbstractResource<R, C> extends BasicPropertyChangeSource {
     }
 
     /**
+     * Calculates the estimated token count for this resource.
+     * 
+     * @return The estimated token count.
+     */
+    public abstract int getTokenCount();
+
+    /**
      * Builds the base header string for this resource, including all core metadata.
      * Subclasses should override this to add more specific details, calling super() first.
      * @return The comprehensive base header string.
      */
-    protected String buildHeader() {
+    @Override
+    public String getHeader() {
         Integer turns = getTurnsRemaining();
         String turnsStr = (turns == null) ? "Permanent" : turns.toString();
         
@@ -123,4 +147,65 @@ public abstract class AbstractResource<R, C> extends BasicPropertyChangeSource {
             turnsStr
         );
     }
+
+    // --- ContextProvider Implementation ---
+
+    /** {@inheritDoc} */
+    @Override
+    public String getId() {
+        return id;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean isProviding() {
+        return true; // Resources are active as long as they are registered
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public List<String> getSystemInstructions() throws Exception {
+        if (contextPosition == ContextPosition.SYSTEM_INSTRUCTIONS) {
+            // For system instructions, we include the full text representation (Header + Content)
+            C content = getContent();
+            String text = getHeader() + "\n" + (content != null ? content.toString() : "");
+            return Collections.singletonList(text);
+        }
+        return Collections.emptyList();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void populateMessage(RagMessage ragMessage) throws Exception {
+        if (contextPosition == ContextPosition.PROMPT_AUGMENTATION) {
+            // The header is added by the ContextManager, we just add the content
+            populateContent(ragMessage);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public int getInstructionsTokenCount() {
+        if (contextPosition == ContextPosition.SYSTEM_INSTRUCTIONS) {
+            return getTokenCount();
+        }
+        return 0;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public int getRagTokenCount() {
+        if (contextPosition == ContextPosition.PROMPT_AUGMENTATION) {
+            return getTokenCount();
+        }
+        return 0;
+    }
+
+    /**
+     * Renders the current state or viewport of this resource into a model-consumable Part.
+     *
+     * @param message The message to populate with the resource's content.
+     * @throws java.lang.Exception if the population fails.
+     */
+    protected abstract void populateContent(RagMessage message) throws Exception;
 }

@@ -3,6 +3,8 @@
  */
 package uno.anahata.asi.model.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import lombok.Getter;
@@ -25,6 +27,8 @@ public abstract class BasicPropertyChangeSource implements PropertyChangeSource,
      * Marked transient to avoid serializing listeners.
      */
     @Getter
+    @JsonIgnore
+    @Schema(hidden = true)
     protected transient PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
 
     /**

@@ -17,12 +17,17 @@ import uno.anahata.asi.resource.ResourceManager;
 @RequiredArgsConstructor
 public class ResourcesMenu {
 
+    /** The parent chat session. */
     private final Chat chat;
+    /** The scanner for user input. */
     private final Scanner scanner;
 
+    /**
+     * Runs the interactive CLI menu for resource management.
+     */
     public void runMenu() {
         ResourceManager resourceManager = chat.getResourceManager();
-        List<AbstractResource> resources = resourceManager.getResources().stream().toList();
+        List<AbstractResource<?, ?>> resources = resourceManager.getResources().stream().toList();
 
         while (true) {
             System.out.println("\n===== Managed Resources =====");
@@ -30,7 +35,7 @@ public class ResourcesMenu {
                 System.out.println("(No resources currently managed in context.)");
             } else {
                 for (int i = 0; i < resources.size(); i++) {
-                    AbstractResource r = resources.get(i);
+                    AbstractResource<?, ?> r = resources.get(i);
                     String type = r.getClass().getSimpleName();
                     String name = r.getName();
                     String turns = r.getTurnsRemaining() == null ? "Permanent" : r.getTurnsRemaining().toString();
@@ -64,29 +69,22 @@ public class ResourcesMenu {
         }
     }
 
-    private void displayResourceDetails(AbstractResource resource) {
+    /**
+     * Displays the full details (header and content) of a specific resource.
+     * @param resource The resource to display.
+     */
+    private void displayResourceDetails(AbstractResource<?, ?> resource) {
         System.out.println("\n===== Resource Details: " + resource.getName() + " =====");
         
-        // The TextFileResource's cache contains the full formatted output (header + content)
-        // which is the easiest way to satisfy the user's request for "both headers and content".
-        if (resource instanceof TextFileResource) {
-            TextFileResource textResource = (TextFileResource) resource;
-            try {
-                // Force a reload to ensure the header is up-to-date before displaying
-                textResource.reload(); 
-                System.out.println(textResource.getCache());
-            } catch (Exception e) {
-                System.out.println("Error reloading resource: " + e.getMessage());
+        System.out.println(resource.getHeader());
+        try {
+            Object content = resource.getContent();
+            if (content != null) {
+                System.out.println("\nContent:");
+                System.out.println(content.toString());
             }
-        } else {
-            // For other resource types, just print the basic info and toString
-            System.out.println("Resource Type: " + resource.getClass().getSimpleName());
-            System.out.println("ID: " + resource.getId());
-            System.out.println("Refresh Policy: " + resource.getRefreshPolicy());
-            System.out.println("Context Position: " + resource.getContextPosition());
-            System.out.println("Turns Remaining: " + (resource.getTurnsRemaining() == null ? "Permanent" : resource.getTurnsRemaining()));
-            System.out.println("\n--- Raw Object Details ---");
-            System.out.println(resource.toString());
+        } catch (Exception e) {
+            System.err.println("Error retrieving resource content: " + e.getMessage());
         }
         
         System.out.println("\nPress ENTER to continue...");

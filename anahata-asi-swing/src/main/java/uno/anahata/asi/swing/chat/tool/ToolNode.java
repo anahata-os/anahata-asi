@@ -5,7 +5,6 @@ package uno.anahata.asi.swing.chat.tool;
 
 import java.util.Collections;
 import java.util.List;
-import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.model.tool.AbstractTool;
 
 /**
@@ -28,10 +27,15 @@ public class ToolNode extends AbstractContextNode<AbstractTool<?, ?>> {
         super(userObject);
     }
 
-    /** {@inheritDoc} */
+    /** 
+     * {@inheritDoc} 
+     * Returns the simple name of the tool, removing any toolkit prefix.
+     */
     @Override
     public String getName() {
-        return userObject.getName();
+        String fullName = userObject.getName();
+        int lastDot = fullName.lastIndexOf('.');
+        return lastDot != -1 ? fullName.substring(lastDot + 1) : fullName;
     }
 
     /** {@inheritDoc} */
@@ -51,30 +55,11 @@ public class ToolNode extends AbstractContextNode<AbstractTool<?, ?>> {
 
     /** {@inheritDoc} */
     @Override
-    public int getInstructionsTokens(Chat chat) {
-        return 0;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public int getDeclarationsTokens() {
-        return userObject.getTokenCount();
-    }
-
-    @Override
-    public int getHistoryTokens(Chat chat) {
-        return 0;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public int getRagTokens(Chat chat) {
-        return 0;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public String getStatus() {
-        return userObject.getPermission().name();
+    public void refreshTokens() {
+        this.instructionsTokens = 0;
+        this.declarationsTokens = userObject.getTokenCount();
+        this.historyTokens = 0;
+        this.ragTokens = 0;
+        this.status = userObject.getPermission().name();
     }
 }

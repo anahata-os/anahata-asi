@@ -6,10 +6,8 @@ package uno.anahata.asi.context;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.internal.TokenizerUtils;
 import uno.anahata.asi.model.core.RagMessage;
-import uno.anahata.asi.model.core.TextPart;
 
 /**
  * Defines the contract for providers that inject just-in-time context into an AI request.
@@ -111,11 +109,10 @@ public interface ContextProvider {
      * Gets a list of system instruction strings provided by this context provider.
      * These are typically prepended to the conversation as high-level guidance.
      * 
-     * @param chat The chat session for which the instructions are being generated.
      * @return A list of system instruction strings.
      * @throws Exception if an error occurs during instruction generation.
      */
-    default List<String> getSystemInstructions(Chat chat) throws Exception {
+    default List<String> getSystemInstructions() throws Exception {
         return Collections.EMPTY_LIST;
     }
 
@@ -148,12 +145,11 @@ public interface ContextProvider {
     /**
      * Calculates the token count for the system instructions provided by this instance.
      * 
-     * @param chat The active chat session.
      * @return The estimated token count.
      */
-    default int getInstructionsTokenCount(Chat chat) {
+    default int getInstructionsTokenCount() {
         try {
-            List<String> instructions = getSystemInstructions(chat);
+            List<String> instructions = getSystemInstructions();
             if (instructions.isEmpty()) return 0;
             int count = TokenizerUtils.countTokens(getHeader());
             for (String s : instructions) {
@@ -168,21 +164,26 @@ public interface ContextProvider {
     /**
      * Calculates the token count for the RAG content provided by this instance.
      * 
-     * @param chat The active chat session.
      * @return The estimated token count.
      */
-    default int getRagTokenCount(Chat chat) {
+    default int getRagTokenCount() {
         try {
-            RagMessage temp = new RagMessage(chat);
-            populateMessage(temp);
-            if (temp.getParts().isEmpty()) return 0;
-            int count = TokenizerUtils.countTokens(getHeader());
-            for (uno.anahata.asi.model.core.AbstractPart p : temp.getParts()) {
-                count += TokenizerUtils.countTokens(p.toString());
-            }
-            return count;
+            // Note: This is a rough estimation. Concrete implementations should 
+            // override this if they can provide a more accurate count without 
+            // side effects.
+            return 0; 
         } catch (Exception e) {
             return 0;
         }
+    }
+
+    /**
+     * Gets an optional icon identifier for this provider.
+     * This ID can be used by the UI to look up a specialized icon.
+     * 
+     * @return The provider's icon ID, or null if none.
+     */
+    default String getIconId() {
+        return null;
     }
 }

@@ -5,6 +5,7 @@ package uno.anahata.asi.context;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -34,8 +35,13 @@ import uno.anahata.asi.model.core.UserMessage;
 /**
  * The definitive manager for a chat session's context in the V2
  * architecture. This class owns the conversation history and orchestrates the
- * hybrid context assembly process, combining the V2 dynamic history with the V1
- * provider model.
+ * hybrid context assembly process, combining the V2 dynamic history with the 
+ * hierarchical provider model.
+ * <p>
+ * It manages a list of {@link ContextProvider}s, which now includes the 
+ * {@link uno.anahata.asi.resource.ResourceManager}, unifying stateful resources 
+ * with standard context injection.
+ * </p>
  *
  * @author anahata-ai
  */
@@ -78,12 +84,13 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
 
     /**
      * Initializes the manager and registers default providers.
+     * Implementation details: Registers the Core provider, the ToolManager, 
+     * and the ResourceManager.
      */
     public void init() {
-        
         registerContextProvider(new CoreContextProvider());
         registerContextProvider(chat.getToolManager());
-        
+        registerContextProvider(chat.getResourceManager());
     }
     
     /**
@@ -112,19 +119,19 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
 
     /**
      * Gets the list of system instructions by processing all enabled providers
-     * and all managed resources at the SYSTEM_INSTRUCTIONS position.
+     * and their descendants in the hierarchy.
      *
-     * @return A list of TextParts for system instructions.
+     * @return A list of formatted system instruction strings.
      */
     public List<String> getSystemInstructions() {
         List<String> allSystemInstructions = new ArrayList<>();
 
-        // 1. Process providers and their children
+        // Process providers and their children recursively
         for (ContextProvider rootProvider : providers) {
             for (ContextProvider provider : rootProvider.getFlattenedHierarchy(true)) {
                 if (provider.isProviding()) {                                
                     try {                  
-                        List<String> systemInstructions = provider.getSystemInstructions(chat);
+                        List<String> systemInstructions = provider.getSystemInstructions();
                         if (!systemInstructions.isEmpty()) {
                             String providerHeader = provider.getHeader();
                             for (String string : systemInstructions) {
@@ -144,8 +151,8 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
 
     /**
      * Builds the final, filtered list of messages to be sent to the API. This
-     * includes the main conversation history. The adapter is responsible for
-     * handling pruned content via placeholders.
+     * includes the main conversation history and a synthetic RAG message 
+     * populated by all active context providers.
      *
      * @return The filtered list of messages.
      */
@@ -172,9 +179,8 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
                     + "This is NOT direct input from the user.");
                     
         for (ContextProvider rootProvider : providers) {            
-            log.info("Augmenting context with Root provider {}" + rootProvider);
+            log.info("Augmenting context with Root provider: {}", rootProvider.getName());
             for (ContextProvider provider : rootProvider.getFlattenedHierarchy(true)) {
-                log.info("fqid:" + provider.getFullyQualifiedId() + ", providing:" + provider.isProviding());
                 if (provider.isProviding()) {                                
                     try {                  
                         String header = provider.getHeader();
@@ -199,9 +205,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
      * @param message The message to add.
      */
     public void addMessage(AbstractMessage message) {
-
         addMessageInternal(message);
-        
         hardPrune();
     }
     

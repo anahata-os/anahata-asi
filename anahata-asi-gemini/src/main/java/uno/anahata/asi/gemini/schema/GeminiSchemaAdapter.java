@@ -3,13 +3,12 @@ package uno.anahata.asi.gemini.schema;
 
 import com.google.genai.types.Schema;
 import com.google.genai.types.Type;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.tool.schema.SchemaProvider;
 
 /**
@@ -21,7 +20,6 @@ import uno.anahata.asi.tool.schema.SchemaProvider;
 @Slf4j
 public class GeminiSchemaAdapter {
 
-    private static final Gson GSON = new Gson();
     private static final Map<Class<?>, Type.Known> PRIMITIVE_MAP = new HashMap<>();
     private static final Schema VOID_SCHEMA = Schema.builder().build();
 
@@ -56,7 +54,7 @@ public class GeminiSchemaAdapter {
         if (jsonSchema == null || jsonSchema.trim().isEmpty() || jsonSchema.trim().equals("{}")) {
             return null; // Return null for void/empty schemas
         }
-        Map<String, Object> schemaMap = GSON.fromJson(jsonSchema, new TypeToken<Map<String, Object>>() {}.getType());
+        Map<String, Object> schemaMap = JacksonUtils.parse(jsonSchema, Map.class);
         return buildSchemaFromMap(schemaMap);
     }
     
@@ -92,8 +90,8 @@ public class GeminiSchemaAdapter {
             }
         }
 
-        if (map.containsKey("_enum")) {
-            List<?> rawList = (List<?>) map.get("_enum");
+        if (map.containsKey("enum")) {
+            List<?> rawList = (List<?>) map.get("enum");
             List<String> enumValues = rawList.stream().map(Object::toString).collect(Collectors.toList());
             builder.enum_(enumValues);
         }

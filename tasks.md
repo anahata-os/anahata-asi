@@ -1,52 +1,48 @@
-# Anahata AI V2 Mission Board
+# Anahata ASI Project Tasks
 
-This board tracks the high-priority tactical goals for the JASI Platform (Java Artificial Super Intelligence) migration and refinement.
+This file tracks the actionable tasks and tactical goals for the Anahata ASI (V2) project.
 
-## 🎯 Active Mission: JASI Container & CWGC Refinement
+## 1. High Priority (Active Development)
 
-### ✅ Completed
-- [x] **Integrated Tool Execution Rendering**: Implement a left-to-right layout where tool responses are displayed next to their corresponding tool calls within the model message.
-- [x] **Elegant Java Context**: Move the tool execution context (ThreadLocal) to `JavaMethodToolResponse` and support a base class (`AnahataTool`) for model-compiled code.
-- [x] **Staged Message Visibility**: Fix the bug where staged messages were not visible in the UI.
-- [x] **Live Sessions UI**: Change live sessions to show sessions in a tabbed pane.
-- [x] **In-Band Metadata Injection**: Inject message and part IDs/metadata into the prompt (Text headers for User/Model, JSON metadata for Tools).
-- [x] **Billed Tokens Display**: Implemented reactive display of billed tokens in model message headers.
-- [x] **Token Estimation & Streaming Optimization**: Implemented robust token estimation for all parts and incremental counting for streaming text parts.
-- [x] **Tool Call/Response Atomic Pruning**: Implemented 'Response is Master' architecture where tool calls delegate their context state to the response.
-- [x] **Provider-Level Token Accuracy**: Update token counts using the `toJson()` of the underlying provider when building final API elements.
+- [ ] **NetBeans File System Integration**: Replace direct disk I/O in `anahata-asi-nb` with NetBeans FileSystem APIs.
+    - [ ] Create `NbTextFileResource` extending `TextFileResource` to wrap `FileObject`.
+    - [ ] Implement `FileChangeListener` in `NbTextFileResource` to keep context in sync with IDE changes (moves, deletes).
+    - [ ] Create `NbFiles` toolkit to replace/complement core `Files` toolkit, using `DataObject` and `EditorCookie` for writes.
+    - [ ] Ensure all file modifications trigger NetBeans' local history and respect IDE file locks.
+- [ ] **Enhanced IDE Visual Cues**: Improve the visibility of AI-managed resources within the NetBeans UI.
+    - [ ] Implement file-level badges (Anahata logo) for files currently in an active AI context.
+    - [ ] Investigate and refine `AnahataAnnotationProvider` for consistent resource decoration across different explorer views.
+    - [ ] **Git Integration**: Mark line numbers in resources with Git changes (diff status) and include Git status in the project overview file tree.
+- [ ] **Advanced Context Targeting**: Refine the "Add to Context" / "Remove from Context" workflow.
+    - [ ] **Recursive Folder Support**: Update context actions to recursively add/remove all files within selected packages or folders.
+    - [ ] **Remove from Context**: Implement the counterpart action to remove files/folders from a specific chat or all chats.
+    - [ ] **Multi-Chat Targeting**: Add "Add to all active chats" and "Add to new chat..." options to the context menu.
+- [ ] **Surgical Edits with Cherry-Picking**: Implement a V2 version of the `suggestChange` diff dialog.
+    - [ ] Create a `DiffDialog` utility in `anahata-asi-nb` that wraps `org.netbeans.api.diff.DiffView`.
+    - [ ] Integrate this dialog into `replaceInFile` and `writeTextFile` (optional) to allow users to "cherry-pick" changes.
+    - [ ] Ensure the dialog supports manual edits in the "Proposed" pane before saving.
+- [ ] **High-Performance Project Alerts**: Re-implement project alerts (Javac errors, project problems) in V2.
+    - [ ] Explore the NetBeans `ErrorProvider` APIs for a more efficient, background-driven approach to avoid UI freezes.
+- [x] **Unified Context Provider Architecture**: Refactor `AbstractResource` and `ResourceManager` to implement `ContextProvider`.
+- [x] **Hierarchical Context Tree**: Implement a JNDI-style tree view in the Swing UI for managing the entire AI context.
+- [x] **Authentic IDE Icons**: Integrate NetBeans project and file icons into the Swing context tree using a decoupled icon registry.
+- [ ] **Context Window Optimization**: Implement proactive pruning strategies to keep the context window usage below 80%.
 
-### 🔴 Backlog
-- [ ] **Review bad parameter handling in JavaMethodTool**: Investigate if in the cases of bad json to java parameter serialization or missing requried params should translate to a "BadToolCall", rather than a JavaMethodToolCall with identical rawArgs and convertedArgs.
-- [ ] **V2 Serialization Investigation**: Investigate why V2 tool response serialization (including logs and attachments) works standalone but fails with `GenAiIOException`/`InterruptedIOException` in NetBeans. Explore if payload size, circular references, or environment-specific timeouts are the cause.
-- [ ] **Editable Tool Parameters**: Support editing tool call parameters that are easy to edit (like strings) before execution.
-- [ ] **Vertical Tool Layout**: Explore wrapping tool calls and responses in `JXTitledPanels` and laying them vertically rather than left-to-right.
-- [ ] **V1 Tool Migration**: Move V1 tools (`Maven`, `NetBeansProjectJVM`, `CodeModel`, `Coding`, etc.) to V2.
-- [ ] **NetBeans Files Integration**: Explore ways to integrate the `Files` tool into NetBeans (subclassing or common interface) for locking on write and local history integration.
-- [ ] **Context Annotators**: Integrate "in-context" icons, project/file annotators, and "add to actions" from `mavenproject9` proof of concept.
-- [ ] **Serialization**: Implement full session serialization (Kryo) to support JASI container passivation.
-- [ ] **Global Preferences**: Implement a global preferences panel in the Swing UI for tool settings, etc.
-- [ ] **Bug: Nickname Sync**: Fix bug where live sessions card view doesn't update when the chat nickname changes.
-- [ ] **V2 Website & Javadocs**: Create the v2 website with the aggregated javadocs and support versioned documentation (e.g., 1.0.0-SNAPSHOT).
-- [ ] **Commander Check**: Review and update the Commander's Briefing.
-- [ ] **Bug: Toolkit Panel Vanishing**: Fix bug where the toolkit details panel vanishes when updating permissions or clicking the enabled button.
-- [ ] **Plugin Update Center**: Explore having a NetBeans plugin update center and a plugin "just" to install the "Anahata Plugin Update Center".
-- [ ] **Resources Heatmap**: Add a resources panel to the chat UI to quickly view all resources in context, similar to the V1 heatmap.
-- [ ] **ScreenCapture Migration**: Move the `ScreenCapture` tool from V1.
-- [ ] **Media Tool Migration**: Move `RadioTool` and `DjTool` from V1 into `anahata-asi-yam`.
-- [ ] **RadioTool Awareness**: In the V2 `RadioTool`, let the model know what station is playing.
-- [ ] **Projects Tool Migration**: Move the NetBeans `Projects` tool from V1.
-- [ ] **Semantic Code Overview**: Explore `CodeModel` ways of providing a "java components/elements" based view of open projects (hierarchies, package info, class javadocs).
-- [ ] **Social Presence**: Create an Anahata Twitter account.
-- [ ] **Demo Automation**: Explore uploading YouTube demo videos straight from NetBeans.
-- [ ] **Competitive Analysis**: Explore how to "beat" Open Code.
-- [ ] **Diff Screenshots**: Enable the user to attach screenshots of a diff.
-- [ ] **GLM 4.7 Provider**: Implement the V2 adapter for Zhipu AI's GLM 4.7.
-- [ ] **OpenAI Provider**: Implement the V2 adapter for OpenAI.
-- [ ] **Anthropic Provider**: Implement the V2 adapter for Anthropic.
+## 2. Medium Priority
 
-### 🧊 Hanging in Limbo (API Limitations)
-- [ ] **Multi-Candidate Selection**: Refine the `CandidateSelectionPanel` to handle grounding metadata and token counts per candidate.
-- [ ] **Test Multi-Candidate Selection**: Verify the UI and logic for handling multiple model responses.
+- [ ] **Next-Gen Project Overview**:
+    - [ ] Explore "Java Type-Based" overviews (listing classes/interfaces/inner classes) vs. traditional "FileSystem-Based" trees.
+    - [ ] Implement configurable overview depth: `includeTypes`, `includeMembers`, etc.
+    - [ ] Add a context provider that generates a UML-like string representation of the entire project structure.
+- [ ] **PowerShell Object-Oriented Tool**:
+    - [ ] Explore creating a specialized `PowerShell` toolkit for Windows.
+    - [ ] Leverage `ConvertTo-Json` to provide structured data to the AI, avoiding text scraping.
+- [ ] **Provider-Specific Grounding**: Enhance the `GroundingMetadata` model to support provider-specific grounding sources (e.g., Google Search results).
+- [ ] **Streaming UI Enhancements**: Improve the responsiveness of the `ConversationPanel` during high-throughput streaming.
+- [ ] **CLI Module Revitalization**: Fix the `anahata-asi-cli` module to support the new V2 domain model and tool execution flow.
 
----
-*Last Updated: Thu Jan 15 23:30:00 CET 2026*
+## 3. Low Priority / Future Ideas
+
+- [ ] **Multi-Model Orchestration**: Explore strategies for using multiple models within a single chat session (e.g., a fast model for summarization, a powerful model for coding).
+- [ ] **Voice Integration**: Improve the `MicrophonePanel` and integrate with high-quality STT/TTS providers.
+- [ ] **Agentic Workflows**: Define a standard for multi-turn agentic workflows that can be shared across different host applications.

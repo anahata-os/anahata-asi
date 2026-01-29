@@ -2,11 +2,12 @@
 package uno.anahata.asi.tool.schema;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.module.mrbean.MrBeanModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
@@ -20,8 +21,7 @@ import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.*;
 import java.util.stream.Collectors;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import uno.anahata.asi.internal.JacksonUtils;
 
 /**
  * A clean, focused provider for generating OpenAPI/Swagger compliant JSON
@@ -41,12 +41,17 @@ public class SchemaProvider {
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new ParameterNamesModule())
             .registerModule(new MrBeanModule())
+            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
             .setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
             .setVisibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE);
 
-    /** The centrally configured Gson instance for pretty-printing JSON. */
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    /** 
+     * A secondary mapper that respects getters, used specifically for 
+     * converting Swagger's internal Schema objects which are not standard POJOs.
+     */
+    private static final ObjectMapper INTERNAL_MAPPER = new ObjectMapper()
+            .setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
     /**
      * Generates a complete, inlined JSON schema for a wrapper type, but with
@@ -67,56 +72,52 @@ public class SchemaProvider {
         }
 
         // 1. Generate the standard, non-inlined schema for the wrapper
-        String baseSchemaJson = generateStandardSchema(wrapperType);
-        if (baseSchemaJson == null) {
+        ObjectNode mutableRoot = generateStandardSchemaNode(wrapperType);
+        if (mutableRoot == null) {
             return null;
         }
 
-        // 2. Parse the base schema into a mutable JsonNode
-        JsonNode rootNode = OBJECT_MAPPER.readTree(baseSchemaJson);
-        ObjectNode mutableRoot = (ObjectNode) rootNode;
-
-        // 3. Get the properties node from the base schema
-        JsonNode propertiesNode = mutableRoot.path("properties");
-        if (!propertiesNode.isObject()) {
-            return GSON.toJson(OBJECT_MAPPER.treeToValue(mutableRoot, Map.class));
-        }
-        ObjectNode properties = (ObjectNode) propertiesNode;
-
-        // 4. Handle the wrappedType
+        // 2. Handle the wrappedType (the result)
         if (wrappedType == null || wrappedType.equals(void.class) || wrappedType.equals(Void.class)) {
-            properties.remove(attributeName);
-        } else {
-            String wrappedSchemaJson = generateStandardSchema(wrappedType);
-            if (wrappedSchemaJson != null && properties.has(attributeName)) {
-                JsonNode wrappedRootNode = OBJECT_MAPPER.readTree(wrappedSchemaJson);
-
-                // Merge the definitions ('components.schemas') from the wrapped schema into the base schema
-                JsonNode wrappedDefinitions = wrappedRootNode.path("components").path("schemas");
-                ObjectNode baseDefinitions = (ObjectNode) mutableRoot.path("components").path("schemas");
-
-                if (wrappedDefinitions.isObject()) {
-                    wrappedDefinitions.fields().forEachRemaining(entry -> {
-                        baseDefinitions.set(entry.getKey(), entry.getValue());
-                    });
-                }
-
-                // Now, inject the main part of the wrapped schema (without its components)
-                ObjectNode wrappedSchemaObject = (ObjectNode) wrappedRootNode.deepCopy();
-                wrappedSchemaObject.remove("components");
-                properties.set(attributeName, wrappedSchemaObject);
+            ObjectNode properties = (ObjectNode) mutableRoot.get("properties");
+            if (properties != null) {
+                properties.remove(attributeName);
             }
+            removeRequired(mutableRoot, attributeName);
+        } else {
+            // 3. Generate the standard schema for the wrapped type
+            ObjectNode wrappedRootNode = generateStandardSchemaNode(wrappedType);
+
+            // 4. Merge the definitions ('components.schemas') from the wrapped schema into the base schema
+            mergeComponents(mutableRoot, wrappedRootNode);
+
+            // 5. Inject the wrapped schema into the 'properties' of the base schema
+            ObjectNode properties = (ObjectNode) mutableRoot.get("properties");
+            if (properties == null) {
+                properties = mutableRoot.putObject("properties");
+            }
+            
+            ObjectNode wrappedSchemaObject = (ObjectNode) wrappedRootNode.deepCopy();
+            wrappedSchemaObject.remove("components");
+            properties.set(attributeName, wrappedSchemaObject);
+            
+            // 6. Ensure the attribute is in the 'required' list for the AI model
+            addRequired(mutableRoot, attributeName);
         }
 
-        // 5. Now, with the schemas combined and definitions merged, perform a single recursive inlining pass.
+        // 7. Perform a single recursive inlining pass on the combined structure
         JsonNode definitions = mutableRoot.path("components").path("schemas");
         JsonNode inlinedNode = inlineDefinitionsRecursive(mutableRoot, definitions, new HashSet<>());
 
-        // 6. Clean up and return the final schema string
-        if (inlinedNode instanceof ObjectNode) {
-            ((ObjectNode) inlinedNode).remove("components");
+        // 8. Clean up and return the final schema string
+        if (inlinedNode instanceof ObjectNode objectNode) {
+            objectNode.remove("components");
         }
-        return GSON.toJson(OBJECT_MAPPER.treeToValue(inlinedNode, Map.class));
+        
+        // 9. Final Purification: Remove all framework metadata and Swagger-internal fields
+        JacksonUtils.purifySchema(inlinedNode);
+        
+        return OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(inlinedNode);
     }
 
     /**
@@ -133,17 +134,92 @@ public class SchemaProvider {
         if (type == null || type.equals(void.class) || type.equals(Void.class)) {
             return null;
         }
-        String standardSchemaJson = generateStandardSchema(type);
-        if (standardSchemaJson == null) {
-            return null;
+        ObjectNode rootNode = generateStandardSchemaNode(type);
+        if (rootNode == null) {
+            // Fallback for types that Swagger might completely ignore (like Class.class)
+            rootNode = OBJECT_MAPPER.createObjectNode();
+            rootNode.put("type", "object");
+            rootNode.put("title", getTypeName(type));
         }
-        JsonNode rootNode = OBJECT_MAPPER.readTree(standardSchemaJson);
+        
         JsonNode definitions = rootNode.path("components").path("schemas");
         JsonNode inlinedNode = inlineDefinitionsRecursive(rootNode, definitions, new HashSet<>());
-        if (inlinedNode instanceof ObjectNode) {
-            ((ObjectNode) inlinedNode).remove("components");
+        
+        if (inlinedNode instanceof ObjectNode objectNode) {
+            objectNode.remove("components");
         }
-        return GSON.toJson(OBJECT_MAPPER.treeToValue(inlinedNode, Map.class));
+        
+        // Final Purification: Remove all framework metadata and Swagger-internal fields
+        JacksonUtils.purifySchema(inlinedNode);
+        
+        return OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(inlinedNode);
+    }
+
+    private static ObjectNode generateStandardSchemaNode(Type type) throws JsonProcessingException {
+        String json = generateStandardSchema(type);
+        return json == null ? null : (ObjectNode) OBJECT_MAPPER.readTree(json);
+    }
+
+    private static void mergeComponents(ObjectNode target, ObjectNode source) {
+        JsonNode sourceDefinitions = source.path("components").path("schemas");
+        if (sourceDefinitions.isObject()) {
+            ObjectNode components = (ObjectNode) target.path("components");
+            if (components.isMissingNode()) {
+                components = target.putObject("components");
+            }
+            ObjectNode targetDefinitions = (ObjectNode) components.path("schemas");
+            if (targetDefinitions.isMissingNode()) {
+                targetDefinitions = components.putObject("schemas");
+            }
+            
+            ObjectNode finalTargetDefinitions = targetDefinitions;
+            sourceDefinitions.fields().forEachRemaining(entry -> {
+                finalTargetDefinitions.set(entry.getKey(), entry.getValue());
+            });
+        }
+    }
+
+    /**
+     * Adds a property name to the 'required' array of a schema node.
+     */
+    private static void addRequired(ObjectNode node, String propertyName) {
+        JsonNode requiredNode = node.get("required");
+        ArrayNode required;
+        if (requiredNode == null || !requiredNode.isArray()) {
+            required = node.putArray("required");
+        } else {
+            required = (ArrayNode) requiredNode;
+        }
+        
+        boolean exists = false;
+        for (JsonNode item : required) {
+            if (item.asText().equals(propertyName)) {
+                exists = true;
+                break;
+            }
+        }
+        if (!exists) {
+            required.add(propertyName);
+        }
+    }
+
+    /**
+     * Removes a property name from the 'required' array of a schema node.
+     */
+    private static void removeRequired(ObjectNode node, String propertyName) {
+        JsonNode requiredNode = node.get("required");
+        if (requiredNode != null && requiredNode.isArray()) {
+            ArrayNode required = (ArrayNode) requiredNode;
+            for (int i = 0; i < required.size(); i++) {
+                if (required.get(i).asText().equals(propertyName)) {
+                    required.remove(i);
+                    break;
+                }
+            }
+            if (required.isEmpty()) {
+                node.remove("required");
+            }
+        }
     }
 
     /**
@@ -189,6 +265,7 @@ public class SchemaProvider {
         }
 
         ModelConverters converters = new ModelConverters();
+        // CRITICAL: Use OBJECT_MAPPER (getters disabled) for type discovery.
         converters.addConverter(new ModelResolver(OBJECT_MAPPER));
         Map<String, Schema> swaggerSchemas = converters.readAll(new AnnotatedType(type));
         if (swaggerSchemas.isEmpty()) {
@@ -196,13 +273,17 @@ public class SchemaProvider {
         }
         postProcessAndEnrichSchemas(type, swaggerSchemas);
         Schema rootSchema = createRootSchema(type, swaggerSchemas);
-        Map<String, Object> finalSchemaMap = new LinkedHashMap<>(OBJECT_MAPPER.convertValue(rootSchema, Map.class));
+        
+        // CRITICAL: Use INTERNAL_MAPPER to convert Swagger objects to Map, 
+        // as they rely on getters which are disabled in OBJECT_MAPPER.
+        Map<String, Object> finalSchemaMap = new LinkedHashMap<>(INTERNAL_MAPPER.convertValue(rootSchema, Map.class));
         Map<String, Object> components = new LinkedHashMap<>();
         Map<String, Object> componentSchemas = new LinkedHashMap<>();
-        swaggerSchemas.forEach((key, schema) -> componentSchemas.put(key, OBJECT_MAPPER.convertValue(schema, Map.class)));
+        swaggerSchemas.forEach((key, schema) -> componentSchemas.put(key, INTERNAL_MAPPER.convertValue(schema, Map.class)));
         components.put("schemas", componentSchemas);
         finalSchemaMap.put("components", components);
-        return GSON.toJson(finalSchemaMap);
+        
+        return INTERNAL_MAPPER.writeValueAsString(finalSchemaMap);
     }
 
     /**
@@ -225,7 +306,7 @@ public class SchemaProvider {
             schemaMap.put("description", schemaAnnotation.description());
         }
 
-        if (clazz.equals(String.class)) {
+        if (clazz.equals(String.class) || clazz.equals(Class.class)) {
             schemaMap.put("type", "string");
         } else if (Number.class.isAssignableFrom(clazz) || clazz.isPrimitive() && (clazz.equals(int.class) || clazz.equals(long.class) || clazz.equals(float.class) || clazz.equals(double.class))) {
             schemaMap.put("type", "number");
@@ -239,7 +320,7 @@ public class SchemaProvider {
             return null;
         }
 
-        return GSON.toJson(schemaMap);
+        return INTERNAL_MAPPER.writeValueAsString(schemaMap);
     }
 
     /**
@@ -256,7 +337,7 @@ public class SchemaProvider {
         Map<String, Object> arraySchema = new LinkedHashMap<>();
         arraySchema.put("type", "array");
         arraySchema.put("title", getTypeName(arrayType));  // e.g., "java.lang.String[]" or "java.util.List<java.lang.String>"
-        arraySchema.put("items", OBJECT_MAPPER.treeToValue(itemSchema, Map.class));
+        arraySchema.put("items", INTERNAL_MAPPER.treeToValue(itemSchema, Map.class));
 
         Map<String, Object> finalMap = new LinkedHashMap<>();
         finalMap.putAll(arraySchema);
@@ -265,11 +346,11 @@ public class SchemaProvider {
         JsonNode itemComponents = itemSchema.path("components").path("schemas");
         if (itemComponents.isObject() && itemComponents.size() > 0) {
             Map<String, Object> components = new LinkedHashMap<>();
-            components.put("schemas", OBJECT_MAPPER.treeToValue(itemComponents, Map.class));
+            components.put("schemas", INTERNAL_MAPPER.treeToValue(itemComponents, Map.class));
             finalMap.put("components", components);
         }
 
-        return GSON.toJson(finalMap);
+        return INTERNAL_MAPPER.writeValueAsString(finalMap);
     }
 
     /**
@@ -286,7 +367,7 @@ public class SchemaProvider {
         Map<String, Object> mapSchema = new LinkedHashMap<>();
         mapSchema.put("type", "object");
         mapSchema.put("title", getTypeName(mapType));
-        mapSchema.put("additionalProperties", OBJECT_MAPPER.treeToValue(valueSchema, Map.class));
+        mapSchema.put("additionalProperties", INTERNAL_MAPPER.treeToValue(valueSchema, Map.class));
 
         Map<String, Object> finalMap = new LinkedHashMap<>();
         finalMap.putAll(mapSchema);
@@ -295,11 +376,11 @@ public class SchemaProvider {
         JsonNode valueComponents = valueSchema.path("components").path("schemas");
         if (valueComponents.isObject() && valueComponents.size() > 0) {
             Map<String, Object> components = new LinkedHashMap<>();
-            components.put("schemas", OBJECT_MAPPER.treeToValue(valueComponents, Map.class));
+            components.put("schemas", INTERNAL_MAPPER.treeToValue(valueComponents, Map.class));
             finalMap.put("components", components);
         }
 
-        return GSON.toJson(finalMap);
+        return INTERNAL_MAPPER.writeValueAsString(finalMap);
     }
 
     /**
@@ -438,7 +519,7 @@ public class SchemaProvider {
     private static JsonNode inlineDefinitionsRecursive(JsonNode currentNode, JsonNode definitions, Set<String> visitedRefs) {
         if (currentNode.isObject()) {
             ObjectNode objectNode = (ObjectNode) currentNode.deepCopy();
-            if (objectNode.has("$ref")) {
+            if (objectNode.hasNonNull("$ref")) {
                 String refPath = objectNode.get("$ref").asText();
                 if (visitedRefs.contains(refPath)) {
                     return createRecursiveReferenceNode(refPath, definitions);

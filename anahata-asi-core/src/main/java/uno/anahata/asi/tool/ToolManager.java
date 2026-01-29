@@ -366,7 +366,7 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
 
     /** {@inheritDoc} */
     @Override
-    public List<String> getSystemInstructions(Chat chat) throws Exception {
+    public List<String> getSystemInstructions() throws Exception {
         return Collections.singletonList("The ToolManager contains a list of all installed toolkits. Each Toolkit "
                 + "contains a list of tools (java methods).");
     }

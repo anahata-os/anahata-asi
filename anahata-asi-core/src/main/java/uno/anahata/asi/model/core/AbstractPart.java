@@ -2,6 +2,7 @@
 package uno.anahata.asi.model.core;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.LinkedHashMap;
@@ -27,6 +28,7 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
     /**
      * A unique, sequential identifier assigned to this part when it is added to a chat.
      */
+    @Schema(hidden = true)
     private long sequentialId;
 
     /**
@@ -35,6 +37,7 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      * to keep the public contract clean.
      */
     @JsonIgnore
+    @Schema(hidden = true)
     private AbstractMessage message;
 
     /**
@@ -43,11 +46,13 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      * - {@code false}: This part is "pinned" and never be auto-pruned.
      * - {@code null}: (Default) Auto-pruning is active based on {@code turnsToKeep}.
      */
+    @Schema(hidden = true)
     private Boolean pruned = null;
     
     /**
      * An optional reason for why this part was pruned.
      */
+    @Schema(hidden = true)
     private String prunedReason;
 
     /**
@@ -56,12 +61,14 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      * value is determined by the part type's default, resolved via the
      * {@link #getDefaultTurnsToKeep()} template method.
      */
+    @Schema(hidden = true)
     private Integer turnsToKeep = null;
 
     /**
      * The number of tokens this part consumes in the context window.
      * This value is typically set by the AI provider or estimated during part creation.
      */
+    @Schema(hidden = true)
     private int tokenCount;
 
     /**
@@ -117,6 +124,8 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      *
      * @return {@code true} if the part is effectively pruned, {@code false} otherwise.
      */
+    @JsonIgnore
+    @Schema(hidden = true)
     public boolean isEffectivelyPruned() {
         // --- PINNING LOGIC (takes precedence) ---
         // 1. Is the part itself explicitly pinned?
@@ -150,6 +159,8 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      * 
      * @return The number of turns left, or a large positive number for indefinite retention.
      */
+    @JsonIgnore
+    @Schema(hidden = true)
     public int getTurnsLeft() {
         int effectiveTurns = getEffectiveTurnsToKeep();
         if (effectiveTurns < 0) {
@@ -166,6 +177,8 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      * 
      * @return The effective number of turns to keep this part.
      */
+    @JsonIgnore
+    @Schema(hidden = true)
     public final int getEffectiveTurnsToKeep() {
         if (turnsToKeep != null) {
             return turnsToKeep;
@@ -188,6 +201,7 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      * @return The chat session, or null if not attached to a message.
      */
     @JsonIgnore
+    @Schema(hidden = true)
     public Chat getChat() {
         return message != null ? message.getChat() : null;
     }
@@ -198,6 +212,7 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      * @return The chat configuration, or null if not attached to a chat.
      */
     @JsonIgnore
+    @Schema(hidden = true)
     public ChatConfig getChatConfig() {
         Chat chat = getChat();
         return chat != null ? chat.getConfig() : null;
@@ -262,6 +277,7 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      * @return A map containing part metadata.
      */
     @JsonIgnore
+    @Schema(hidden = true)
     public Map<String, Object> getMetadataMap() {
         Map<String, Object> metadata = new LinkedHashMap<>();
         metadata.put("partId", getSequentialId());

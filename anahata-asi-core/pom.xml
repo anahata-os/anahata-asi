@@ -57,13 +57,6 @@
             <artifactId>jackson-datatype-jdk8</artifactId>
         </dependency>
         
-        <!--JUST USED in SchemaProvider, will be removed-->
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-        </dependency>
-        
-        
         <!-- Framework Serialization (Kryo) -->
         <dependency>
             <groupId>com.esotericsoftware</groupId>

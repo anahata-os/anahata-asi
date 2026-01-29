@@ -116,7 +116,7 @@ public class ContextProviderPanel extends JPanel {
         // 1. System: This Provider
         UserMessage thisSysMsg = new UserMessage(chat);
         try {
-            List<String> instructions = cp.getSystemInstructions(chat);
+            List<String> instructions = cp.getSystemInstructions();
             if (!instructions.isEmpty()) {
                 new TextPart(thisSysMsg, cp.getHeader());
                 for (String part : instructions) {
@@ -133,7 +133,7 @@ public class ContextProviderPanel extends JPanel {
         for (ContextProvider child : cp.getChildrenProviders()) {
             for (ContextProvider p : child.getFlattenedHierarchy(true)) {
                 try {
-                    List<String> instructions = p.getSystemInstructions(chat);
+                    List<String> instructions = p.getSystemInstructions();
                     if (!instructions.isEmpty()) {
                         new TextPart(childrenSysMsg, p.getHeader());
                         for (String part : instructions) {

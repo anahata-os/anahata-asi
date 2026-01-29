@@ -5,7 +5,6 @@ package uno.anahata.asi.swing.chat.tool;
 
 import java.util.Collections;
 import java.util.List;
-import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.model.core.AbstractPart;
 
 /**
@@ -15,50 +14,44 @@ import uno.anahata.asi.model.core.AbstractPart;
  */
 public class PartNode extends AbstractContextNode<AbstractPart> {
 
+    /**
+     * Constructs a new PartNode.
+     * @param userObject The part to wrap.
+     */
     public PartNode(AbstractPart userObject) {
         super(userObject);
     }
 
+    /** {@inheritDoc} */
     @Override
     public String getName() {
         return userObject.getClass().getSimpleName() + " #" + userObject.getSequentialId();
     }
 
+    /** {@inheritDoc} */
     @Override
     public String getDescription() {
         return "A " + userObject.getClass().getSimpleName() + " part.";
     }
 
+    /** {@inheritDoc} */
     @Override
     public List<AbstractContextNode<?>> getChildren() {
         return Collections.emptyList();
     }
 
+    /** {@inheritDoc} */
     @Override
-    public int getInstructionsTokens(Chat chat) {
-        return 0;
-    }
-
-    @Override
-    public int getDeclarationsTokens() {
-        return 0;
-    }
-
-    @Override
-    public int getHistoryTokens(Chat chat) {
-        return userObject.getTokenCount();
-    }
-
-    @Override
-    public int getRagTokens(Chat chat) {
-        return 0;
-    }
-
-    @Override
-    public String getStatus() {
+    public void refreshTokens() {
+        this.instructionsTokens = 0;
+        this.declarationsTokens = 0;
+        this.historyTokens = userObject.getTokenCount();
+        this.ragTokens = 0;
+        
         if (userObject.isEffectivelyPruned()) {
-            return "Pruned (" + userObject.getTurnsLeft() + " turns left)";
+            this.status = "Pruned (" + userObject.getTurnsLeft() + " turns left)";
+        } else {
+            this.status = "Active";
         }
-        return "Active";
     }
 }

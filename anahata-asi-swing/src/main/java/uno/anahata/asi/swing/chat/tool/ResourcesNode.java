@@ -5,7 +5,6 @@ package uno.anahata.asi.swing.chat.tool;
 
 import java.util.ArrayList;
 import java.util.List;
-import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.model.resource.AbstractResource;
 import uno.anahata.asi.resource.ResourceManager;
 
@@ -16,51 +15,52 @@ import uno.anahata.asi.resource.ResourceManager;
  */
 public class ResourcesNode extends AbstractContextNode<ResourceManager> {
 
+    /** The cached list of children. */
+    private List<AbstractContextNode<?>> children;
+
+    /**
+     * Constructs a new ResourcesNode.
+     * @param userObject The resource manager to wrap.
+     */
     public ResourcesNode(ResourceManager userObject) {
         super(userObject);
     }
 
+    /** {@inheritDoc} */
     @Override
     public String getName() {
         return "Resources";
     }
 
+    /** {@inheritDoc} */
     @Override
     public String getDescription() {
         return "Managed resources (files, etc.) that can be injected into the context.";
     }
 
+    /** {@inheritDoc} */
     @Override
     public List<AbstractContextNode<?>> getChildren() {
-        List<AbstractContextNode<?>> children = new ArrayList<>();
-        for (AbstractResource res : userObject.getResources()) {
-            children.add(new ResourceNode(res));
+        if (children == null) {
+            children = new ArrayList<>();
+            for (AbstractResource res : userObject.getResources()) {
+                children.add(new ResourceNode(res));
+            }
         }
         return children;
     }
 
+    /** {@inheritDoc} */
     @Override
-    public int getInstructionsTokens(Chat chat) {
-        return 0;
-    }
-
-    @Override
-    public int getDeclarationsTokens() {
-        return 0;
-    }
-
-    @Override
-    public int getHistoryTokens(Chat chat) {
-        return 0;
-    }
-
-    @Override
-    public int getRagTokens(Chat chat) {
-        return 0;
-    }
-
-    @Override
-    public String getStatus() {
-        return userObject.getResources().size() + " resources";
+    public void refreshTokens() {
+        this.instructionsTokens = 0;
+        this.declarationsTokens = 0;
+        this.historyTokens = 0;
+        this.ragTokens = 0;
+        this.status = userObject.getResources().size() + " resources";
+        
+        for (AbstractContextNode<?> child : getChildren()) {
+            child.refreshTokens();
+        }
     }
 }

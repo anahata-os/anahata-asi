@@ -5,7 +5,6 @@ package uno.anahata.asi.swing.chat.tool;
 
 import java.util.ArrayList;
 import java.util.List;
-import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.model.core.AbstractMessage;
 import uno.anahata.asi.model.core.AbstractPart;
 
@@ -16,51 +15,52 @@ import uno.anahata.asi.model.core.AbstractPart;
  */
 public class MessageNode extends AbstractContextNode<AbstractMessage> {
 
+    /** The cached list of children. */
+    private List<AbstractContextNode<?>> children;
+
+    /**
+     * Constructs a new MessageNode.
+     * @param userObject The message to wrap.
+     */
     public MessageNode(AbstractMessage userObject) {
         super(userObject);
     }
 
+    /** {@inheritDoc} */
     @Override
     public String getName() {
         return userObject.getRole() + " #" + userObject.getSequentialId();
     }
 
+    /** {@inheritDoc} */
     @Override
     public String getDescription() {
         return "Message from " + userObject.getRole() + " at " + userObject.getTimestamp();
     }
 
+    /** {@inheritDoc} */
     @Override
     public List<AbstractContextNode<?>> getChildren() {
-        List<AbstractContextNode<?>> children = new ArrayList<>();
-        for (AbstractPart part : userObject.getParts(true)) {
-            children.add(new PartNode(part));
+        if (children == null) {
+            children = new ArrayList<>();
+            for (AbstractPart part : userObject.getParts(true)) {
+                children.add(new PartNode(part));
+            }
         }
         return children;
     }
 
+    /** {@inheritDoc} */
     @Override
-    public int getInstructionsTokens(Chat chat) {
-        return 0;
-    }
-
-    @Override
-    public int getDeclarationsTokens() {
-        return 0;
-    }
-
-    @Override
-    public int getHistoryTokens(Chat chat) {
-        return userObject.getTokenCount(false);
-    }
-
-    @Override
-    public int getRagTokens(Chat chat) {
-        return 0;
-    }
-
-    @Override
-    public String getStatus() {
-        return userObject.isPruned() ? "Pruned" : "Active";
+    public void refreshTokens() {
+        this.instructionsTokens = 0;
+        this.declarationsTokens = 0;
+        this.historyTokens = userObject.getTokenCount(false);
+        this.ragTokens = 0;
+        this.status = userObject.isPruned() ? "Pruned" : "Active";
+        
+        for (AbstractContextNode<?> child : getChildren()) {
+            child.refreshTokens();
+        }
     }
 }

@@ -1,3 +1,4 @@
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.model.resource;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -13,8 +14,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.model.context.RefreshPolicy;
-import uno.anahata.asi.model.core.AbstractPart;
 import uno.anahata.asi.model.core.RagMessage;
+import uno.anahata.asi.resource.ResourceManager;
 
 /**
  * An abstract base class for all resources that represent a file on the local filesystem.
@@ -29,31 +30,38 @@ import uno.anahata.asi.model.core.RagMessage;
 @Getter
 @Setter
 public abstract class AbstractPathResource<R, C> extends AbstractResource<Path, C> {
+    /** Formatter for displaying timestamps in the resource header. */
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
         .withZone(ZoneId.systemDefault());
     
-    //<editor-fold defaultstate="collapsed" desc="File Metadata">
     /** The absolute path to the file on the local filesystem. */
     private String path;
     
     /** The last modified timestamp of the file on disk at the time of loading. */
     private long loadLastModified;
     
-    /** The cached, rendered content representing the current viewport of the resource. Ignored during serialization. */
+    /** 
+     * The cached, rendered content representing the current viewport of the resource. 
+     * This cache only contains the content, not the metadata header.
+     */
     @JsonIgnore
     protected C cache;
-    //</editor-fold>
 
     /**
-     * The smart accessor for the resource's view. This is the single point of entry
-     * for the RAG provider. It acts as an orchestrator, checking for existence and
-     * staleness, and triggering a reload only when the refresh policy requires it.
-     *
-     * @param ragMessage The message to populate with the resource's content.
-     * @throws Exception if the reload operation fails.
+     * Constructs a new path-based resource.
+     * @param manager The parent resource manager.
+     */
+    public AbstractPathResource(ResourceManager manager) {
+        super(manager);
+    }
+
+    /**
+     * {@inheritDoc}
+     * Implementation details: Orchestrates the reload logic based on the refresh policy 
+     * and then populates the message from the cache.
      */
     @Override
-    public void populate(RagMessage ragMessage) throws Exception {
+    protected void populateContent(RagMessage ragMessage) throws Exception {
         reloadIfNeeded();
         
         if (cache != null) {
@@ -61,6 +69,7 @@ public abstract class AbstractPathResource<R, C> extends AbstractResource<Path, 
         }
     }
     
+    /** {@inheritDoc} */
     @Override
     public C getContent() throws Exception {
         reloadIfNeeded();
@@ -76,7 +85,6 @@ public abstract class AbstractPathResource<R, C> extends AbstractResource<Path, 
     private void reloadIfNeeded() throws Exception {
         if (!exists()) {
             log.warn("Resource file does not exist: {}", path);
-            // We don't invalidate the cache here to support RefreshPolicy.SNAPSHOT
             return;
         }
         
@@ -85,8 +93,13 @@ public abstract class AbstractPathResource<R, C> extends AbstractResource<Path, 
         }
     }
     
+    /**
+     * Template method for subclasses to perform the actual population of the 
+     * RagMessage using the cached content.
+     * 
+     * @param rm The message to populate.
+     */
     protected abstract void populateFromCache(RagMessage rm);
-    
     
     /**
      * Checks if the underlying file for this resource exists on the filesystem.
@@ -97,7 +110,7 @@ public abstract class AbstractPathResource<R, C> extends AbstractResource<Path, 
     }
     
     /**
-     * Checks if the file on disk has been modified since it was first loaded into context.
+     * Checks if the file on disk has been modified since it was last loaded.
      * @return {@code true} if the file is stale, {@code false} otherwise.
      * @throws IOException if an I/O error occurs.
      */
@@ -115,17 +128,15 @@ public abstract class AbstractPathResource<R, C> extends AbstractResource<Path, 
     }
     
     /**
-     * Atomically reloads the resource's content from disk, processes it through the
-     * viewport, and updates the cached content. This method must be implemented by
-     * concrete subclasses.
-     *
+     * Atomically reloads the resource's content from disk and updates the cache.
      * @throws Exception if any error occurs during the reload process.
      */
     public abstract void reload() throws Exception;
 
+    /** {@inheritDoc} */
     @Override
-    protected String buildHeader() {
-        StringBuilder sb = new StringBuilder(super.buildHeader());
+    public String getHeader() {
+        StringBuilder sb = new StringBuilder(super.getHeader());
         sb.append(String.format("Path: %s\n", getPath()));
         sb.append(String.format("Exists: %s\n", exists()));
         
@@ -144,6 +155,7 @@ public abstract class AbstractPathResource<R, C> extends AbstractResource<Path, 
             sb.append(String.format("Status: %s\n", isStale ? "**STALE**" : "VALID"));
 
         } catch (IOException e) {
+            log.error("Error reading file attributes for header: " + path, e);
             sb.append(String.format("Status: Error reading attributes: %s\n", e.getMessage()));
         }
         return sb.toString();

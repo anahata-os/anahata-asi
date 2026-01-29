@@ -9,12 +9,19 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * A utility class for loading and scaling icons with high-quality rendering.
+ * A utility class for loading, scaling, and managing a global registry of icons.
+ * <p>
+ * This class provides high-quality rendering hints for icon scaling and 
+ * supports a decoupled icon lookup mechanism using string-based IDs.
+ * </p>
  * 
  * @author anahata
  */
@@ -22,14 +29,36 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 public class IconUtils {
 
+    /** A global registry for mapping icon IDs to actual Icon objects. */
+    private static final Map<String, Icon> ICON_REGISTRY = new ConcurrentHashMap<>();
+
     /**
-     * Loads an icon from the classpath resources and scales it to a default 24x24 size.
-     *
-     * @param name The name of the icon file (e.g., "attach.png").
-     * @return A scaled ImageIcon, or null if the resource is not found.
+     * Registers an icon in the global registry.
+     * @param id The unique identifier for the icon.
+     * @param icon The icon object.
      */
-    public static ImageIcon getIcon(String name) {
-        return getIcon(name, 24, 24);
+    public static void registerIcon(String id, Icon icon) {
+        if (id != null && icon != null) {
+            ICON_REGISTRY.put(id, icon);
+            log.debug("Registered icon with ID: {}", id);
+        }
+    }
+
+    /**
+     * Retrieves an icon from the global registry or loads it from the classpath.
+     * 
+     * @param idOrName The icon ID or the resource name (e.g., "attach.png").
+     * @return The Icon, or null if not found.
+     */
+    public static Icon getIcon(String idOrName) {
+        if (idOrName == null) return null;
+        
+        // 1. Check registry
+        Icon registered = ICON_REGISTRY.get(idOrName);
+        if (registered != null) return registered;
+        
+        // 2. Fallback to classpath loading (default size 24x24)
+        return getIcon(idOrName, 24, 24);
     }
 
     /**

@@ -10,6 +10,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import uno.anahata.asi.gemini.schema.GeminiSchemaAdapter;
 import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.model.tool.AbstractTool;
 import uno.anahata.asi.model.tool.AbstractToolParameter;
@@ -52,13 +53,13 @@ public class GeminiFunctionDeclarationAdapter {
 
     private FunctionDeclaration toGoogleNative(FunctionDeclaration.Builder builder) {
         Schema.Builder paramsBuilder = Schema.builder()
-            .type("object");
+            .type(com.google.genai.types.Type.Known.OBJECT);
 
         Map<String, Schema> properties = new LinkedHashMap<>();
         List<String> required = new ArrayList<>();
 
         for (AbstractToolParameter p : anahataTool.getParameters()) {
-            Schema paramSchema = JacksonUtils.parse(p.getJsonSchema(), Schema.class);
+            Schema paramSchema = GeminiSchemaAdapter.getGeminiSchema(p.getJsonSchema());
             properties.put(p.getName(), paramSchema);
             if (p.isRequired()) {
                 required.add(p.getName());
@@ -72,7 +73,7 @@ public class GeminiFunctionDeclarationAdapter {
         }
 
         if (anahataTool.getResponseJsonSchema() != null) {
-            builder.response(JacksonUtils.parse(anahataTool.getResponseJsonSchema(), Schema.class));
+            builder.response(GeminiSchemaAdapter.getGeminiSchema(anahataTool.getResponseJsonSchema()));
         }
 
         return builder.build();
@@ -90,8 +91,8 @@ public class GeminiFunctionDeclarationAdapter {
             // Parse our core JSON schema string into a Map
             Map<String, Object> paramSchema = JacksonUtils.parse(p.getJsonSchema(), Map.class);
             
-            // PURIFY: Strip redundant fields to save tokens
-            JacksonUtils.purifySchema(paramSchema);
+            // Note: No need to call JacksonUtils.purifySchema(paramSchema) here 
+            // as the schema string is already purified by SchemaProvider.
 
             String paramDescription = p.getDescription();
             String schemaDescription = (String) paramSchema.get("description");
@@ -119,7 +120,8 @@ public class GeminiFunctionDeclarationAdapter {
         // 2. Build the response JSON Schema object
         if (anahataTool.getResponseJsonSchema() != null) {
             Map<String, Object> responseSchema = JacksonUtils.parse(anahataTool.getResponseJsonSchema(), Map.class);
-            JacksonUtils.purifySchema(responseSchema);
+            // Note: No need to call JacksonUtils.purifySchema(responseSchema) here 
+            // as the schema string is already purified by SchemaProvider.
             builder.responseJsonSchema(responseSchema);
         }
 

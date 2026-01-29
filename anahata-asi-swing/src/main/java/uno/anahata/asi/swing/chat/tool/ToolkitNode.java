@@ -5,7 +5,6 @@ package uno.anahata.asi.swing.chat.tool;
 
 import java.util.ArrayList;
 import java.util.List;
-import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.tool.AbstractTool;
 import uno.anahata.asi.model.tool.AbstractToolkit;
@@ -21,6 +20,9 @@ import uno.anahata.asi.model.tool.AbstractToolkit;
  * @author anahata
  */
 public class ToolkitNode extends AbstractContextNode<AbstractToolkit<?>> {
+
+    /** The cached list of children. */
+    private List<AbstractContextNode<?>> children;
 
     /**
      * Constructs a new ToolkitNode.
@@ -45,54 +47,48 @@ public class ToolkitNode extends AbstractContextNode<AbstractToolkit<?>> {
     /**
      * {@inheritDoc}
      * Implementation details:
-     * 1. It first adds the toolkit's context provider implementation (if any) 
-     *    as a child ProviderNode.
-     * 2. It then adds all tools in the toolkit as child ToolNodes.
+     * 1. If the toolkit has a context provider with the same name, it merges 
+     *    the provider's children directly to avoid redundant nesting.
+     * 2. Otherwise, it adds the provider as a child ProviderNode.
+     * 3. Finally, it adds all tools in the toolkit as child ToolNodes.
      */
     @Override
     public List<AbstractContextNode<?>> getChildren() {
-        List<AbstractContextNode<?>> children = new ArrayList<>();
-        
-        // 1. The toolkit's context provider implementation (if any)
-        ContextProvider cp = userObject.getContextProvider();
-        if (cp != null) {
-            children.add(new ProviderNode(cp));
+        if (children == null) {
+            children = new ArrayList<>();
+            
+            // 1. The toolkit's context provider implementation (if any)
+            ContextProvider cp = userObject.getContextProvider();
+            if (cp != null) {
+                if (cp.getName().equals(userObject.getName())) {
+                    // Merge children if names match
+                    for (ContextProvider childCp : cp.getChildrenProviders()) {
+                        children.add(new ProviderNode(childCp));
+                    }
+                } else {
+                    children.add(new ProviderNode(cp));
+                }
+            }
+            
+            // 2. The tools
+            for (AbstractTool<?, ?> tool : userObject.getAllTools()) {
+                children.add(new ToolNode(tool));
+            }
         }
-        
-        // 2. The tools
-        for (AbstractTool<?, ?> tool : userObject.getAllTools()) {
-            children.add(new ToolNode(tool));
-        }
-        
         return children;
     }
 
     /** {@inheritDoc} */
     @Override
-    public int getInstructionsTokens(Chat chat) {
-        return 0;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public int getDeclarationsTokens() {
-        return userObject.getTokenCount();
-    }
-
-    @Override
-    public int getHistoryTokens(Chat chat) {
-        return 0;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public int getRagTokens(Chat chat) {
-        return 0;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public String getStatus() {
-        return userObject.isEnabled() ? "Enabled" : "Disabled";
+    public void refreshTokens() {
+        this.instructionsTokens = 0;
+        this.declarationsTokens = userObject.getTokenCount();
+        this.historyTokens = 0;
+        this.ragTokens = 0;
+        this.status = userObject.isEnabled() ? "Enabled" : "Disabled";
+        
+        for (AbstractContextNode<?> child : getChildren()) {
+            child.refreshTokens();
+        }
     }
 }

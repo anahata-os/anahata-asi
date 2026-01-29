@@ -43,32 +43,21 @@ public class BasicContextProvider implements ContextProvider {
     /** The list of immediate child providers. */
     protected final List<ContextProvider> children = new ArrayList<>();
 
+    /** {@inheritDoc} */
     @Override
     public List<ContextProvider> getChildrenProviders() {
         return children;
     }
 
+    /** {@inheritDoc} */
     @Override
     public ContextProvider getParentProvider() {
         return parent;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setParentProvider(ContextProvider parent) {
         this.parent = parent;
     }
-    
-
-    /**
-     * Primary constructor for creating a basic context provider.
-     * 
-     * @param id The unique ID.
-     * @param name The display name.
-     * @param description The detailed description.
-     */
-    // Lombok's @RequiredArgsConstructor handles this.
-    
-    
-    
-    
 }

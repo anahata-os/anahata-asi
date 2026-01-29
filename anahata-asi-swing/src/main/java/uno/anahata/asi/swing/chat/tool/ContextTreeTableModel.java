@@ -5,6 +5,7 @@ package uno.anahata.asi.swing.chat.tool;
 
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.SwingUtilities;
 import javax.swing.tree.TreePath;
 import lombok.extern.slf4j.Slf4j;
 import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
@@ -14,6 +15,11 @@ import uno.anahata.asi.context.ContextProvider;
 /**
  * A TreeTableModel that provides a hierarchical, JNDI-style view of the entire 
  * AI context using unified AbstractContextNodes.
+ * <p>
+ * This model is designed for high performance by using cached token counts 
+ * and status fields in the nodes, ensuring that the {@code getValueAt} 
+ * method remains O(1).
+ * </p>
  *
  * @author anahata
  */
@@ -45,27 +51,39 @@ public class ContextTreeTableModel extends AbstractTreeTableModel {
     /**
      * Refreshes the model's data from the ContextManager and notifies the view of the change.
      * Implementation details: It rebuilds the root node list from the ContextManager's 
-     * top-level providers, history, and resources.
+     * top-level providers and history. Resources are now included as providers.
      */
     public final void refresh() {
         log.info("Rebuilding context tree root nodes for chat: {}", chat.getShortId());
         this.rootNodes = new ArrayList<>();
         
-        // 1. History
-        rootNodes.add(new HistoryNode(chat.getContextManager()));
-        
-        // 2. Providers
+        // 1. Providers (Includes ResourceManager)
         List<ContextProvider> providers = chat.getContextManager().getProviders();
         log.info("Found {} top-level providers in ContextManager", providers.size());
         for (ContextProvider cp : providers) {
             rootNodes.add(new ProviderNode(cp));
         }
         
-        // 3. Resources
-        rootNodes.add(new ResourcesNode(chat.getResourceManager()));
+        // 2. History (Always last)
+        rootNodes.add(new HistoryNode(chat.getContextManager()));
         
         log.info("Context tree rebuilt with {} root nodes.", rootNodes.size());
         modelSupport.fireTreeStructureChanged(new TreePath(getRoot()));
+    }
+    
+    /**
+     * Triggers an explicit recalculation of token counts for all nodes in the tree.
+     * This method performs the calculation on the calling thread and then 
+     * schedules a UI refresh on the Event Dispatch Thread.
+     */
+    public void refreshTokens() {
+        log.info("Refreshing token counts for all nodes in the context tree.");
+        for (AbstractContextNode<?> node : rootNodes) {
+            node.refreshTokens();
+        }
+        SwingUtilities.invokeLater(() -> {
+            modelSupport.fireTreeStructureChanged(new TreePath(getRoot()));
+        });
     }
 
     /** {@inheritDoc} */
@@ -80,6 +98,7 @@ public class ContextTreeTableModel extends AbstractTreeTableModel {
         return columnNames[column];
     }
 
+    /** {@inheritDoc} */
     @Override
     public Class<?> getColumnClass(int column) {
         return switch (column) {
@@ -98,10 +117,10 @@ public class ContextTreeTableModel extends AbstractTreeTableModel {
         if (node instanceof AbstractContextNode<?> cn) {
             return switch (column) {
                 case 0 -> cn.getName();
-                case 1 -> cn.getInstructionsTokens(chat);
+                case 1 -> cn.getInstructionsTokens();
                 case 2 -> cn.getDeclarationsTokens();
-                case 3 -> cn.getHistoryTokens(chat);
-                case 4 -> cn.getRagTokens(chat);
+                case 3 -> cn.getHistoryTokens();
+                case 4 -> cn.getRagTokens();
                 case 5 -> cn.getStatus();
                 default -> null;
             };

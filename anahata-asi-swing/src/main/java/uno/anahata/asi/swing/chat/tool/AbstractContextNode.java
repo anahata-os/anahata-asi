@@ -4,9 +4,9 @@
 package uno.anahata.asi.swing.chat.tool;
 
 import java.util.List;
+import javax.swing.Icon;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import uno.anahata.asi.chat.Chat;
 
 /**
  * The base class for all nodes in the hierarchical context tree.
@@ -14,6 +14,11 @@ import uno.anahata.asi.chat.Chat;
  * This class provides a unified interface for the {@link ContextTreeTableModel} 
  * to interact with different types of domain objects (Providers, Toolkits, Tools) 
  * while maintaining a consistent JNDI-style view.
+ * </p>
+ * <p>
+ * <b>Performance Note:</b> Token counts and status are cached as fields to ensure 
+ * that the {@code getValueAt} method in the TreeTableModel remains O(1) and 
+ * does not trigger expensive tokenization during UI rendering.
  * </p>
  *
  * @author anahata
@@ -28,6 +33,17 @@ public abstract class AbstractContextNode<T> {
      * @return the wrapped domain object.
      */
     protected final T userObject;
+
+    /** Cached instruction token count. */
+    protected int instructionsTokens;
+    /** Cached declaration token count. */
+    protected int declarationsTokens;
+    /** Cached history token count. */
+    protected int historyTokens;
+    /** Cached RAG token count. */
+    protected int ragTokens;
+    /** Cached status string. */
+    protected String status;
 
     /**
      * Gets the human-readable display name for this node.
@@ -50,47 +66,22 @@ public abstract class AbstractContextNode<T> {
     public abstract List<AbstractContextNode<?>> getChildren();
 
     /**
-     * Calculates the total token count for the system instructions 
-     * contributed by this node and its descendants.
-     * 
-     * @param chat The active chat session.
-     * @return The estimated instruction token count.
+     * Recalculates and caches the token counts and status for this node 
+     * and all its descendants.
+     * <p>
+     * This method should be called explicitly (e.g., via a refresh button) 
+     * to update the "snapshot" of the context's token usage.
+     * </p>
      */
-    public abstract int getInstructionsTokens(Chat chat);
-
+    public abstract void refreshTokens();
+    
     /**
-     * Calculates the total token count for the tool declarations 
-     * associated with this node.
-     * 
-     * @return The estimated declaration token count.
+     * Gets an optional icon for this node.
+     * @return The icon, or null if no specialized icon is available.
      */
-    public abstract int getDeclarationsTokens();
-
-    /**
-     * Calculates the total token count for the conversation history 
-     * contributed by this node and its descendants.
-     * 
-     * @param chat The active chat session.
-     * @return The estimated history token count.
-     */
-    public abstract int getHistoryTokens(Chat chat);
-
-    /**
-     * Calculates the total token count for the RAG (Retrieval-Augmented Generation) 
-     * content contributed by this node and its descendants.
-     * 
-     * @param chat The active chat session.
-     * @return The estimated RAG token count.
-     */
-    public abstract int getRagTokens(Chat chat);
-
-    /**
-     * Gets a string representation of the node's current operational status 
-     * (e.g., "Active", "Enabled", "PROMPT").
-     * 
-     * @return The status string.
-     */
-    public abstract String getStatus();
+    public Icon getIcon() {
+        return null;
+    }
 
     /**
      * {@inheritDoc}

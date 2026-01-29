@@ -159,7 +159,7 @@ public class Chat extends BasicPropertyChangeSource {
         this.executor = AiExecutors.newCachedThreadPoolExecutor(config.getSessionId());
         this.contextManager = new ContextManager(this);
         this.toolManager = new ToolManager(this);
-        this.resourceManager = new ResourceManager();
+        this.resourceManager = new ResourceManager(this);
         this.statusManager = new StatusManager(this);
         this.requestConfig = new RequestConfig(this);
         this.requestConfig.setResponseModalities(new ArrayList<>(config.getDefaultResponseModalities()));

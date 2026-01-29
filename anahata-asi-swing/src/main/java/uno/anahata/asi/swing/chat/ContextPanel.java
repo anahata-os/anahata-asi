@@ -5,9 +5,11 @@ package uno.anahata.asi.swing.chat;
 
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
+import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
+import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.TreePath;
@@ -27,8 +29,10 @@ import uno.anahata.asi.swing.chat.tool.MessageNode;
 import uno.anahata.asi.swing.chat.tool.PartNode;
 import uno.anahata.asi.swing.chat.tool.ResourceNode;
 import uno.anahata.asi.swing.chat.tool.ResourcePanel;
+import uno.anahata.asi.swing.chat.tool.ContextTreeCellRenderer;
 import uno.anahata.asi.swing.chat.render.MessagePanelFactory;
 import uno.anahata.asi.swing.chat.render.PartPanelFactory;
+import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 
 /**
@@ -125,12 +129,27 @@ public class ContextPanel extends JPanel {
      * Initializes the components and layout of the panel.
      */
     public void initComponents() {
+        // Configure Toolbar
+        JToolBar toolBar = new JToolBar();
+        toolBar.setFloatable(false);
+        
+        JButton refreshButton = new JButton("Refresh Tokens", new RestartIcon(16));
+        refreshButton.setToolTipText("Recalculate token counts for all context items (Snapshot)");
+        refreshButton.addActionListener(e -> refreshTokens());
+        toolBar.add(refreshButton);
+        
+        add(toolBar, BorderLayout.NORTH);
+
         // Configure TreeTable
         treeTable.setTreeTableModel(treeTableModel);
         treeTable.setColumnControlVisible(true);
         treeTable.setEditable(false);
         treeTable.setRootVisible(false);
         treeTable.setShowsRootHandles(true);
+        treeTable.setTreeCellRenderer(new ContextTreeCellRenderer());
+        
+        // Set preferred width for the first column
+        treeTable.getColumnModel().getColumn(0).setPreferredWidth(300);
 
         // Configure Split Pane
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, new JScrollPane(treeTable), detailContainer);
@@ -214,6 +233,25 @@ public class ContextPanel extends JPanel {
             treeTable.expandAll();
             treeTable.revalidate();
             treeTable.repaint();
+            
+            // Note: We no longer trigger refreshTokens() automatically here 
+            // to prevent UI freezes during frequent history updates.
+        });
+    }
+    
+    /**
+     * Triggers a background recalculation of token counts.
+     */
+    public void refreshTokens() {
+        chat.getExecutor().execute(() -> {
+            try {
+                treeTableModel.refreshTokens();
+                SwingUtilities.invokeLater(() -> {
+                    treeTable.repaint();
+                });
+            } catch (Exception e) {
+                log.error("Error refreshing context tokens", e);
+            }
         });
     }
 }

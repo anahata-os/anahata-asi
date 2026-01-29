@@ -5,7 +5,6 @@ package uno.anahata.asi.swing.chat.tool;
 
 import java.util.ArrayList;
 import java.util.List;
-import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.context.ContextManager;
 import uno.anahata.asi.model.core.AbstractMessage;
 
@@ -16,62 +15,63 @@ import uno.anahata.asi.model.core.AbstractMessage;
  */
 public class HistoryNode extends AbstractContextNode<ContextManager> {
 
+    /** The cached list of children. */
+    private List<AbstractContextNode<?>> children;
+
+    /**
+     * Constructs a new HistoryNode.
+     * @param userObject The context manager to wrap.
+     */
     public HistoryNode(ContextManager userObject) {
         super(userObject);
     }
 
+    /** {@inheritDoc} */
     @Override
     public String getName() {
         return "History";
     }
 
+    /** {@inheritDoc} */
     @Override
     public String getDescription() {
         return "The persistent conversation history, including user messages, model responses, and tool calls.";
     }
 
+    /** {@inheritDoc} */
     @Override
     public List<AbstractContextNode<?>> getChildren() {
-        List<AbstractContextNode<?>> children = new ArrayList<>();
-        List<AbstractMessage> history = userObject.getHistory();
-        if (history != null) {
-            for (AbstractMessage msg : history) {
-                children.add(new MessageNode(msg));
+        if (children == null) {
+            children = new ArrayList<>();
+            List<AbstractMessage> history = userObject.getHistory();
+            if (history != null) {
+                for (AbstractMessage msg : history) {
+                    children.add(new MessageNode(msg));
+                }
             }
         }
         return children;
     }
 
+    /** {@inheritDoc} */
     @Override
-    public int getInstructionsTokens(Chat chat) {
-        return 0;
-    }
-
-    @Override
-    public int getDeclarationsTokens() {
-        return 0;
-    }
-
-    @Override
-    public int getHistoryTokens(Chat chat) {
-        int total = 0;
+    public void refreshTokens() {
+        this.instructionsTokens = 0;
+        this.declarationsTokens = 0;
+        this.historyTokens = 0;
+        this.ragTokens = 0;
+        
         List<AbstractMessage> history = userObject.getHistory();
         if (history != null) {
             for (AbstractMessage msg : history) {
-                total += msg.getTokenCount(false);
+                this.historyTokens += msg.getTokenCount(false);
             }
         }
-        return total;
-    }
-
-    @Override
-    public int getRagTokens(Chat chat) {
-        return 0;
-    }
-
-    @Override
-    public String getStatus() {
-        List<AbstractMessage> history = userObject.getHistory();
-        return (history != null ? history.size() : 0) + " messages";
+        
+        this.status = (history != null ? history.size() : 0) + " messages";
+        
+        for (AbstractContextNode<?> child : getChildren()) {
+            child.refreshTokens();
+        }
     }
 }

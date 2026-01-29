@@ -197,11 +197,6 @@
                 <artifactId>jackson-datatype-jdk8</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
-            <dependency>
-                <groupId>com.google.code.gson</groupId>
-                <artifactId>gson</artifactId>
-                <version>2.13.1</version>
-            </dependency>
             <!-- Framework Serialization (Kryo) -->
             <dependency>
                 <groupId>com.esotericsoftware</groupId>

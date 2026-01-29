@@ -5,9 +5,10 @@ package uno.anahata.asi.swing.chat.tool;
 
 import java.util.ArrayList;
 import java.util.List;
-import uno.anahata.asi.chat.Chat;
+import javax.swing.Icon;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.tool.AbstractToolkit;
+import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.tool.ToolManager;
 
 /**
@@ -21,6 +22,9 @@ import uno.anahata.asi.tool.ToolManager;
  * @author anahata
  */
 public class ProviderNode extends AbstractContextNode<ContextProvider> {
+
+    /** The cached list of children. */
+    private List<AbstractContextNode<?>> children;
 
     /**
      * Constructs a new ProviderNode.
@@ -51,20 +55,22 @@ public class ProviderNode extends AbstractContextNode<ContextProvider> {
      */
     @Override
     public List<AbstractContextNode<?>> getChildren() {
-        List<AbstractContextNode<?>> children = new ArrayList<>();
-        
-        if (userObject instanceof ToolManager tm) {
-            // ToolManager is special: it shows toolkits
-            for (AbstractToolkit<?> tk : tm.getToolkits().values()) {
-                children.add(new ToolkitNode(tk));
+        if (children == null) {
+            children = new ArrayList<>();
+            
+            if (userObject instanceof ToolManager tm) {
+                // ToolManager is special: it shows toolkits
+                for (AbstractToolkit<?> tk : tm.getToolkits().values()) {
+                    children.add(new ToolkitNode(tk));
+                }
             }
-        }
-        
-        // Standard children providers
-        for (ContextProvider child : userObject.getChildrenProviders()) {
-            // Avoid double-counting toolkits if they are also providers
-            if (!(child instanceof AbstractToolkit)) {
-                children.add(new ProviderNode(child));
+            
+            // Standard children providers
+            for (ContextProvider child : userObject.getChildrenProviders()) {
+                // Avoid double-counting toolkits if they are also providers
+                if (!(child instanceof AbstractToolkit)) {
+                    children.add(new ProviderNode(child));
+                }
             }
         }
         return children;
@@ -72,30 +78,21 @@ public class ProviderNode extends AbstractContextNode<ContextProvider> {
 
     /** {@inheritDoc} */
     @Override
-    public int getInstructionsTokens(Chat chat) {
-        return userObject.getInstructionsTokenCount(chat);
+    public void refreshTokens() {
+        this.instructionsTokens = userObject.getInstructionsTokenCount();
+        this.declarationsTokens = 0;
+        this.historyTokens = 0;
+        this.ragTokens = userObject.getRagTokenCount();
+        this.status = userObject.isProviding() ? "Active" : "Inactive";
+        
+        for (AbstractContextNode<?> child : getChildren()) {
+            child.refreshTokens();
+        }
     }
 
     /** {@inheritDoc} */
     @Override
-    public int getDeclarationsTokens() {
-        return 0;
-    }
-
-    @Override
-    public int getHistoryTokens(Chat chat) {
-        return 0;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public int getRagTokens(Chat chat) {
-        return userObject.getRagTokenCount(chat);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public String getStatus() {
-        return userObject.isProviding() ? "Active" : "Inactive";
+    public Icon getIcon() {
+        return IconUtils.getIcon(userObject.getIconId());
     }
 }

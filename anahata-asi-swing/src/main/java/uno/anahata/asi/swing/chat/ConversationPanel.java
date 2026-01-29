@@ -133,12 +133,10 @@ public class ConversationPanel extends JPanel {
         });
 
         // Declarative, thread-safe binding to the history property.
-        // We use triggerImmediately=true to ensure the initial history is rendered.
+        // We use triggerImmediately=true to ensure the initial history is rendered 
+        // as soon as the component becomes displayable.
         this.historyListener = new EdtPropertyChangeListener(this, chat.getContextManager(), "history", 
                 evt -> render(), EdtPropertyChangeListener.Mode.INVOKE_LATER, true);
-        
-        // Initial render to populate the view even before it becomes displayable.
-        render();
     }
 
     /**
@@ -157,7 +155,8 @@ public class ConversationPanel extends JPanel {
         cachedMessagePanels.clear();
         messagesPanel.removeAll();
         
-        render();
+        // Note: No manual render() call needed here as the listener will trigger it 
+        // immediately upon subscription if the component is displayable.
     }
 
     /**
@@ -169,8 +168,8 @@ public class ConversationPanel extends JPanel {
                 .filter(msg -> !(msg instanceof AbstractToolMessage))
                 .collect(Collectors.toList());
         
-        log.info("Rendering history begins: {} messages (total history: {})", 
-                history.size(), chat.getContextManager().getHistory().size());
+        log.info("Rendering history for session {}: {} messages (total history: {})", 
+                chat.getConfig().getSessionId(), history.size(), chat.getContextManager().getHistory().size());
 
         List<AbstractMessage> toRemove = cachedMessagePanels.keySet().stream()
                 .filter(msg -> !history.contains(msg))

@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.Setter;
@@ -46,6 +47,12 @@ public class AsiContainer extends BasicPropertyChangeSource {
     /** The list of currently active chat sessions managed by this container. */
     private final List<Chat> activeChats = new ArrayList<>();
     
+    /** 
+     * A shared executor for container-level background tasks. 
+     * @return the container executor service.
+     */
+    private final ExecutorService executor;
+
     /**
      * A JVM-scoped map for tools to store and share objects across all containers, 
      * sessions, and turns. This map is thread-safe.
@@ -68,6 +75,7 @@ public class AsiContainer extends BasicPropertyChangeSource {
     public AsiContainer(String hostApplicationId) {
         this.hostApplicationId = hostApplicationId;
         this.preferences = AsiContainerPreferences.load(this);
+        this.executor = AiExecutors.newCachedThreadPoolExecutor(hostApplicationId);
     }
 
     /**
@@ -342,6 +350,14 @@ public class AsiContainer extends BasicPropertyChangeSource {
         } catch (Exception e) {
             log.error("Failed to load session from {}", path, e);
         }
+    }
+
+    /**
+     * Shuts down the container and its shared executor.
+     */
+    public void shutdown() {
+        log.info("Shutting down AsiContainer: {}", hostApplicationId);
+        executor.shutdown();
     }
 
     // --- STATIC METHODS FOR GLOBAL ACCESS ---

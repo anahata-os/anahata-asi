@@ -3,10 +3,8 @@ package uno.anahata.asi.internal;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.lang.reflect.Type;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -90,27 +88,20 @@ public final class JacksonUtils {
     }
 
     /**
-     * Recursively removes redundant and token-heavy fields from a JSON schema Map.
+     * Recursively removes redundant and token-heavy fields from a JsonNode.
      * Strips: 'exampleSetFlag' and 'types'.
      * 
-     * @param schema The schema Map to purify.
+     * @param node The JsonNode to purify.
      */
-    public static void purifySchema(Map<String, Object> schema) {
-        if (schema == null) return;
-        
-        schema.remove("exampleSetFlag");
-        schema.remove("types");
-        
-        for (Object value : schema.values()) {
-            if (value instanceof Map) {
-                purifySchema((Map<String, Object>) value);
-            } else if (value instanceof Iterable) {
-                for (Object item : (Iterable<?>) value) {
-                    if (item instanceof Map) {
-                        purifySchema((Map<String, Object>) item);
-                    }
-                }
-            }
+    public static void purifySchema(JsonNode node) {
+        if (node == null) return;
+        if (node.isObject()) {
+            ObjectNode objectNode = (ObjectNode) node;
+            objectNode.remove("exampleSetFlag");
+            objectNode.remove("types");
+            objectNode.fields().forEachRemaining(entry -> purifySchema(entry.getValue()));
+        } else if (node.isArray()) {
+            node.forEach(JacksonUtils::purifySchema);
         }
     }
 
