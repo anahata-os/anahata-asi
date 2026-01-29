@@ -2,7 +2,6 @@
 package uno.anahata.asi.nb.tools.project.nb;
 
 import java.awt.Image;
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.event.ChangeEvent;
@@ -14,15 +13,16 @@ import org.openide.util.Lookup;
 import org.openide.util.lookup.ServiceProvider;
 import uno.anahata.asi.AnahataInstaller;
 import uno.anahata.asi.chat.Chat;
-import uno.anahata.asi.nb.tools.project.Projects;
-import uno.anahata.asi.nb.tools.project.context.ProjectContextProvider;
+import uno.anahata.asi.nb.tools.files.nb.ContextActionLogic;
 
 /**
  * Annotates project icons in the NetBeans Projects tab with an Anahata badge
  * if the project is currently active in any AI chat context.
  * <p>
  * This class implements {@link ProjectIconAnnotator} to provide visual feedback
- * in the IDE's project explorer.
+ * in the IDE's project explorer. It delegates context status checks to 
+ * {@link ContextActionLogic}.
+ * </p>
  * 
  * @author anahata
  */
@@ -50,7 +50,7 @@ public class AnahataProjectAnnotator implements ProjectIconAnnotator, ChangeList
      * Default constructor for the annotator.
      */
     public AnahataProjectAnnotator() {
-        LOG.log(Level.INFO, "AnahataProjectAnnotator instance created: {0}", System.identityHashCode(this));
+        LOG.log(Level.INFO, "AnahataProjectAnnotator instance created.");
     }
     
     /**
@@ -59,7 +59,7 @@ public class AnahataProjectAnnotator implements ProjectIconAnnotator, ChangeList
      */
     @Override
     public Image annotateIcon(Project p, Image icon, boolean opened) {
-        if (isProjectInContext(p)) {
+        if (isProjectInAnyContext(p)) {
             if (BADGE != null) {
                 // Use offset 16 to place the badge to the right of the 16x16 icon.
                 // This avoids clashing with 'project problems' and other decorations.
@@ -75,20 +75,10 @@ public class AnahataProjectAnnotator implements ProjectIconAnnotator, ChangeList
      * @param p The project to check.
      * @return {@code true} if the project is in context, {@code false} otherwise.
      */
-    private boolean isProjectInContext(Project p) {
-        String path = p.getProjectDirectory().getPath();
+    private boolean isProjectInAnyContext(Project p) {
         for (Chat chat : AnahataInstaller.getContainer().getActiveChats()) {
-            Optional<Projects> projectsTool = chat.getToolManager().getToolkitInstance(Projects.class);
-            if (projectsTool.isPresent()) {
-                boolean providing = projectsTool.get().getChildrenProviders().stream()
-                    .filter(cp -> cp instanceof ProjectContextProvider)
-                    .map(cp -> (ProjectContextProvider) cp)
-                    .filter(pcp -> pcp.getProjectPath().equals(path))
-                    .anyMatch(pcp -> pcp.isProviding());
-                if (providing) {
-                    LOG.log(Level.FINE, "Project {0} is active in chat: {1}", new Object[]{path, chat.getDisplayName()});
-                    return true;
-                }
+            if (ContextActionLogic.isProjectInContext(p, chat)) {
+                return true;
             }
         }
         return false;
@@ -132,9 +122,6 @@ public class AnahataProjectAnnotator implements ProjectIconAnnotator, ChangeList
      */
     public static void fireRefresh(Project project) {
         LOG.info("Firing global project icon refresh.");
-        
-        // Note: We don't fire FileStatusEvent here because fireFileStatusChanged is protected 
-        // in FileSystem. Instead, we rely on the ChangeListeners registered with the annotators.
         
         for (ProjectIconAnnotator pia : Lookup.getDefault().lookupAll(ProjectIconAnnotator.class)) {
             if (pia instanceof AnahataProjectAnnotator apa) {
