@@ -6,11 +6,10 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.Action;
+import org.netbeans.api.project.FileOwnerQuery;
 import org.netbeans.api.project.Project;
-import org.netbeans.api.project.ProjectManager;
 import org.netbeans.modules.masterfs.providers.AnnotationProvider;
 import org.netbeans.modules.masterfs.providers.InterceptionListener;
-import org.netbeans.modules.versioning.core.VersioningAnnotationProvider;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileStatusEvent;
 import org.openide.filesystems.FileSystem;
@@ -24,22 +23,21 @@ import uno.anahata.asi.nb.tools.project.nb.ProjectsContextActionLogic;
  * It adds a badge and a chat count label [n] to files and folders that are 
  * currently in one or more active AI contexts.
  * <p>
- * This provider delegates context status checks to {@link FilesContextActionLogic} 
- * and {@link ProjectsContextActionLogic}.
+ * This provider implements a delegation pattern to ensure it doesn't clobber 
+ * other annotations (like Git branch names or status badges) in the 
+ * MasterFileSystem pipeline.
  * </p>
  * 
  * @author anahata
  */
-@ServiceProvider(service = AnnotationProvider.class, position = 0) 
+@ServiceProvider(service = AnnotationProvider.class, position = 10000) 
 public class FileAnnotationProvider extends AnnotationProvider {
 
     private static final Logger LOG = Logger.getLogger(FileAnnotationProvider.class.getName());
     
-    /** The badge image to overlay on icons. */
     private static final Image BADGE;
 
     static {
-        LOG.info("FileAnnotationProvider static init");
         Image original = ImageUtilities.loadImage("icons/anahata.png");
         if (original != null) {
             BADGE = original.getScaledInstance(8, 8, Image.SCALE_SMOOTH);
@@ -48,110 +46,131 @@ public class FileAnnotationProvider extends AnnotationProvider {
         }
     }
 
-    /**
-     * Default constructor.
-     */
     public FileAnnotationProvider() {
         LOG.info("FileAnnotationProvider instance created.");
     }
 
-    /**
-     * {@inheritDoc}
-     * Annotates the icon with an Anahata badge if the file or project is in any active context.
-     */
     @Override
     public Image annotateIcon(Image icon, int type, Set<? extends FileObject> files) {
+        // 1. Delegate to the rest of the chain first to get Git/Error badges
+        Image baseIcon = delegateIcon(icon, type, files);
+        
         for (FileObject fo : files) {            
-            // Skip project roots to avoid duplication with AnahataProjectAnnotator
-            // AnahataProjectAnnotator is the preferred way to badge project icons.
+            // Skip project roots for badging (handled by AnahataProjectAnnotator)
             if (isProjectRoot(fo)) {
-                continue;
+                return baseIcon;
             }
             
-            if (getChatCount(fo) > 0) {
-                if (BADGE != null) {
-                    // Use top-right (8, 0) to avoid clashing with Git's bottom-right badges
-                    return ImageUtilities.mergeImages(icon, BADGE, 8, 0);
-                }
+            int count = getChatCount(fo);
+            if (count > 0 && BADGE != null) {
+                // Merge our badge onto the already-annotated baseIcon at 8,0 (Top Right)
+                Image badged = ImageUtilities.mergeImages(baseIcon, BADGE, 8, 0);
+                String tip = "In AI Context (" + count + " sessions)";
+                return mergeTooltip(badged, tip);
             }
         }
-        return icon; 
+        return baseIcon; 
     }
 
     /**
-     * {@inheritDoc}
-     * Appends a chat count suffix [n] to the file or folder name if it is in any active context.
+     * We return null here to avoid clobbering other name annotations (like Git branch names).
+     * NetBeans will then fall back to annotateNameHtml or the default name.
      */
     @Override
     public String annotateName(String name, Set<? extends FileObject> files) {
-        for (FileObject fo : files) {
-            int count = getChatCount(fo);
-            if (count > 0) {
-                return name + " [" + count + "]";
-            }
-        }
-        return name;
+        return null;
     }
 
     /**
-     * {@inheritDoc}
-     * Provides HTML-formatted name annotations, preserving existing versioning annotations.
+     * This is the preferred way to add status labels. By delegating first, we preserve
+     * any previous annotations (like Git's [main]) and then append our label.
      */
     @Override
     public String annotateNameHtml(String name, Set<? extends FileObject> files) {
-        // Start with the original name, allowing other providers to annotate first
-        String annotated = VersioningAnnotationProvider.getDefault().annotateNameHtml(name, files);
-        
+        // 1. Delegate to get Git branch names etc.
+        String delegatedName = delegateNameHtml(name, files);
+        String currentName = delegatedName != null ? delegatedName : name;
+
         for (FileObject fo : files) {
             int count = getChatCount(fo);
             if (count > 0) {
                 String label = " <font color='#707070'>[" + count + "]</font>";
-                if (annotated.toLowerCase().contains("<html>")) {
-                    if (annotated.toLowerCase().endsWith("</html>")) {
-                        return annotated.substring(0, annotated.length() - 7) + label + "</html>";
-                    }
-                    return annotated + label;
+                
+                // If the name is already HTML, inject our label before the closing tag
+                if (currentName.toLowerCase().contains("<html>")) {
+                    return currentName.replaceFirst("(?i)</html>", label + "</html>");
                 }
-                return "<html>" + annotated + label + "</html>";
+                // Otherwise, wrap the whole thing
+                return "<html>" + currentName + label + "</html>";
             }
         }
-        return annotated;
+        return delegatedName; 
     }
 
     /**
-     * Checks if the given FileObject is a project root.
-     * 
-     * @param fo The file object to check.
-     * @return True if it is a project root, false otherwise.
+     * Manually continues the AnnotationProvider chain for icons.
      */
-    private boolean isProjectRoot(FileObject fo) {
-        try {
-            Project p = ProjectManager.getDefault().findProject(fo);
-            return p != null && p.getProjectDirectory().equals(fo);
-        } catch (Exception e) {
-            return false;
+    private Image delegateIcon(Image icon, int type, Set<? extends FileObject> files) {
+        boolean foundSelf = false;
+        for (AnnotationProvider ap : Lookup.getDefault().lookupAll(AnnotationProvider.class)) {
+            if (!foundSelf) {
+                if (ap == this) foundSelf = true;
+                continue;
+            }
+            Image result = ap.annotateIcon(icon, type, files);
+            if (result != null) return result;
         }
+        return icon;
     }
 
     /**
-     * Calculates the number of active chat sessions that have the given file, 
-     * folder, or project in context.
-     * 
-     * @param fo The file object.
-     * @return The chat count.
+     * Manually continues the AnnotationProvider chain for HTML names.
      */
+    private String delegateNameHtml(String name, Set<? extends FileObject> files) {
+        boolean foundSelf = false;
+        for (AnnotationProvider ap : Lookup.getDefault().lookupAll(AnnotationProvider.class)) {
+            if (!foundSelf) {
+                if (ap == this) foundSelf = true;
+                continue;
+            }
+            String result = ap.annotateNameHtml(name, files);
+            if (result != null) return result;
+        }
+        return null;
+    }
+
+    /**
+     * Merges a tooltip segment with existing image tooltips.
+     */
+    private Image mergeTooltip(Image icon, String segment) {
+        String existing = ImageUtilities.getImageToolTip(icon);
+        if (existing == null || existing.isEmpty()) {
+            return ImageUtilities.addToolTipToImage(icon, segment);
+        }
+        if (existing.contains(segment)) return icon;
+        return ImageUtilities.addToolTipToImage(icon, existing + " | " + segment);
+    }
+
+    private boolean isProjectRoot(FileObject fo) {
+        if (fo == null || !fo.isFolder()) return false;
+        Project p = FileOwnerQuery.getOwner(fo);
+        if (p == null) return false;
+        
+        FileObject root = p.getProjectDirectory();
+        return fo.equals(root) || fo.getPath().equals(root.getPath());
+    }
+
     private int getChatCount(FileObject fo) {
         if (isProjectRoot(fo)) {
             try {
-                Project p = ProjectManager.getDefault().findProject(fo);
+                Project p = FileOwnerQuery.getOwner(fo);
                 return ProjectsContextActionLogic.countChatsProjectInContext(p);
             } catch (Exception e) {
-                // Ignore
+                return 0;
             }
         }
         
         if (fo.isFolder()) {
-            // For folders/packages, we sum the chat counts of all children
             int total = 0;
             for (FileObject child : fo.getChildren()) {
                 total += getChatCount(child);
@@ -162,33 +181,18 @@ public class FileAnnotationProvider extends AnnotationProvider {
         return FilesContextActionLogic.countChatsInContext(fo);
     }
 
-    /** {@inheritDoc} */
     @Override
     public Action[] actions(Set<? extends FileObject> files) {
         return new Action[0];
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public Lookup findExtrasFor(Set<? extends FileObject> files) {
-        return super.findExtrasFor(files);
-    }
-
-    /** {@inheritDoc} */
     @Override
     public InterceptionListener getInterceptionListener() {
         return null;
     }
     
-    /**
-     * Triggers a refresh of the file annotations by firing a FileStatusEvent.
-     * 
-     * @param files The set of files to refresh.
-     */
     public static void fireRefresh(Set<FileObject> files) {
-        if (files == null || files.isEmpty()) {
-            return;
-        }
+        if (files == null || files.isEmpty()) return;
         try {
             FileSystem fs = files.iterator().next().getFileSystem();
             for (AnnotationProvider ap : Lookup.getDefault().lookupAll(AnnotationProvider.class)) {
@@ -197,7 +201,7 @@ public class FileAnnotationProvider extends AnnotationProvider {
                 }
             }
         } catch (Exception ex) {
-            LOG.log(Level.WARNING, "Failed to fire file status change for refresh", ex);
+            LOG.log(Level.WARNING, "Failed to fire refresh", ex);
         }
     }
 }

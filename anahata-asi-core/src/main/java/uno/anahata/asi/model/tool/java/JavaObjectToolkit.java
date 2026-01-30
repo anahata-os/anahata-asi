@@ -3,6 +3,7 @@ package uno.anahata.asi.model.tool.java;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,7 @@ import uno.anahata.asi.tool.ToolManager;
  * <p>
  * This class is the cornerstone of the V2's decoupled tool architecture,
  * separating the parsing of tool metadata from the management and execution of tools.
+ * </p>
  * 
  * @author anahata-gemini-pro-2.5
  */
@@ -32,8 +34,11 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
     /** The singleton instance of the tool class. */
     private final Object toolInstance;
 
-    /** A list of all declared methods (tools) for this toolkit. */
-    private final List<JavaMethodTool> tools;
+    /** 
+     * A list of all declared methods (tools) for this toolkit. 
+     * Non-final to support robust deserialization and hot-reloading.
+     */
+    private List<JavaMethodTool> tools;
 
     /**
      * Constructs a new JavaObjectToolkit by parsing the given class.
@@ -72,8 +77,16 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * Implementation details: Includes a null guard to handle circular dependencies 
+     * during Kryo deserialization.
+     */
     @Override
     public List<JavaMethodTool> getAllTools() {
+        if (tools == null) {
+            return Collections.emptyList();
+        }
         return tools;
     }
 
@@ -91,6 +104,10 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
         log.info("Rebinding JavaObjectToolkit: {}", name);
         if (toolInstance instanceof ToolContext tc) {
             tc.setToolkit(this);
+        }
+
+        if (this.tools == null) {
+            this.tools = new ArrayList<>();
         }
 
         // Hot-reload logic: Sync the tools list with the current class definition

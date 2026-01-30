@@ -3,18 +3,20 @@
  */
 package uno.anahata.asi;
 
+import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
+import org.netbeans.api.project.Project;
+import org.netbeans.api.project.ui.OpenProjects;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.toolkit.Java;
 import uno.anahata.asi.nb.module.NetBeansModuleUtils;
-import uno.anahata.asi.nb.tools.java.CodeModel;
-import uno.anahata.asi.nb.tools.maven.Maven;
-import uno.anahata.asi.nb.tools.project.Projects;
+import uno.anahata.asi.nb.tools.project.nb.AnahataProjectAnnotator;
+import uno.anahata.asi.nb.tools.files.nb.FileAnnotationProvider;
 
 /**
  * NetBeans-specific configuration for the Anahata ASI.
  * Handles IDE-specific initialization, such as building the comprehensive
- * module classpath for the Java toolkit.
+ * module classpath for the Java toolkit and managing global UI synchronization.
  * 
  * @author anahata
  */
@@ -23,6 +25,17 @@ public class NetBeansAsiContainer extends AsiContainer {
 
     public NetBeansAsiContainer() {
         super("netbeans");
+        
+        // Setup global listener for active chat changes to refresh annotations
+        this.addPropertyChangeListener("activeChats", evt -> {
+            log.info("Active chats changed, triggering global annotation refresh.");
+            AnahataProjectAnnotator.fireRefresh(null);
+            
+            // Refresh file annotations for all open project roots to update [n] suffix
+            for (Project p : OpenProjects.getDefault().getOpenProjects()) {
+                FileAnnotationProvider.fireRefresh(Collections.singleton(p.getProjectDirectory()));
+            }
+        });
     }
 
     @Override

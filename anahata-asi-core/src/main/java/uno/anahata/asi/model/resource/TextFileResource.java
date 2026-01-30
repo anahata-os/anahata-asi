@@ -53,7 +53,8 @@ public class TextFileResource extends AbstractPathResource<String, String> {
         this.setPath(path.toAbsolutePath().toString());
         this.setName(path.getFileName().toString());
         this.viewport = viewport;
-        reload(); 
+        // reload() removed from constructor to avoid race conditions in subclasses.
+        // Callers or subclasses must ensure reload() is called before use.
     }
     
     /** {@inheritDoc} */

@@ -96,6 +96,7 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
         }
         if (removed != null) {
             log.info("Unregistered resource: {}", resourceId);
+            removed.dispose();
             propertyChangeSupport.firePropertyChange("resources", null, getResources());
         }
         return removed;
@@ -127,10 +128,12 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
                 .findFirst();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void rebind() {
+        super.rebind();
         log.info("Rebinding ResourceManager. Managed resources: {}", resources.size());
-        // Resources already hold a final reference to the manager, so no need to re-set it.
+        // Automated rebind propagation is handled by RebindableWrapperSerializer.
     }
 
     // --- ContextProvider Implementation ---

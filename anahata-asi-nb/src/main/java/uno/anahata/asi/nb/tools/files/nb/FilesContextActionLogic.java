@@ -25,12 +25,13 @@ public class FilesContextActionLogic {
     private static final Logger LOG = Logger.getLogger(FilesContextActionLogic.class.getName());
 
     /**
-     * Recursively adds a file or folder's contents to the specified chat context.
+     * Adds a file or folder's contents to the specified chat context.
      * 
      * @param fo The file object to add.
      * @param targetChat The target chat session.
+     * @param recursive Whether to add subfolders recursively.
      */
-    public static void addRecursively(FileObject fo, Chat targetChat) {
+    public static void addRecursively(FileObject fo, Chat targetChat, boolean recursive) {
         if (fo.isData()) {
             try {
                 File file = FileUtil.toFile(fo);
@@ -53,40 +54,41 @@ public class FilesContextActionLogic {
                         }
                         
                         targetChat.getResourceManager().register(resource);
-                        LOG.info("Added file to context of chat '" + targetChat.getNickname() + "': " + path);
+                        LOG.info("Added file to context of session '" + targetChat.getDisplayName() + "': " + path);
                         FileAnnotationProvider.fireRefresh(Collections.singleton(fo));
                     }
                 }
             } catch (Exception ex) {
                 LOG.log(java.util.logging.Level.SEVERE, "Error adding file to context", ex);
             }
-        } else if (fo.isFolder()) {
+        } else if (fo.isFolder() && recursive) {
             for (FileObject child : fo.getChildren()) {
-                addRecursively(child, targetChat);
+                addRecursively(child, targetChat, true);
             }
         }
     }
 
     /**
-     * Recursively removes a file or folder's contents from the specified chat context.
+     * Removes a file or folder's contents from the specified chat context.
      * 
      * @param fo The file object to remove.
      * @param targetChat The target chat session.
+     * @param recursive Whether to remove subfolders recursively.
      */
-    public static void removeRecursively(FileObject fo, Chat targetChat) {
+    public static void removeRecursively(FileObject fo, Chat targetChat, boolean recursive) {
         if (fo.isData()) {
             File file = FileUtil.toFile(fo);
             if (file != null) {
                 String path = file.getAbsolutePath();
                 targetChat.getResourceManager().findByPath(path).ifPresent(res -> {
                     targetChat.getResourceManager().unregister(res.getId());
-                    LOG.info("Removed file from context of chat '" + targetChat.getNickname() + "': " + path);
+                    LOG.info("Removed file from context of session '" + targetChat.getDisplayName() + "': " + path);
                     FileAnnotationProvider.fireRefresh(Collections.singleton(fo));
                 });
             }
-        } else if (fo.isFolder()) {
+        } else if (fo.isFolder() && recursive) {
             for (FileObject child : fo.getChildren()) {
-                removeRecursively(child, targetChat);
+                removeRecursively(child, targetChat, true);
             }
         }
     }

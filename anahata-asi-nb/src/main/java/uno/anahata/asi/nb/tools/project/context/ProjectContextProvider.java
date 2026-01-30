@@ -1,14 +1,17 @@
 /* Licensed under the Apache License, Version 2.0 */
 package uno.anahata.asi.nb.tools.project.context;
 
+import java.util.Collections;
 import javax.swing.Icon;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectUtils;
+import org.openide.filesystems.FileObject;
 import uno.anahata.asi.context.BasicContextProvider;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.nb.tools.project.nb.AnahataProjectAnnotator;
+import uno.anahata.asi.nb.tools.files.nb.FileAnnotationProvider;
 import uno.anahata.asi.swing.icons.IconUtils;
 
 /**
@@ -108,7 +111,11 @@ public class ProjectContextProvider extends BasicContextProvider {
         boolean old = isProviding();
         super.setProviding(enabled);
         if (old != enabled) {
-            AnahataProjectAnnotator.fireRefresh(getProject());
+            Project p = getProject();
+            AnahataProjectAnnotator.fireRefresh(p);
+            if (p != null) {
+                FileAnnotationProvider.fireRefresh(Collections.singleton(p.getProjectDirectory()));
+            }
         }
     }
 }

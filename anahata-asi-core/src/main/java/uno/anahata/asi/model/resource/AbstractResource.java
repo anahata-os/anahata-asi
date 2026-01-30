@@ -16,6 +16,7 @@ import uno.anahata.asi.context.ContextPosition;
 import uno.anahata.asi.model.context.RefreshPolicy;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 import uno.anahata.asi.model.core.RagMessage;
+import uno.anahata.asi.model.core.Rebindable;
 import uno.anahata.asi.resource.ResourceManager;
 
 /**
@@ -38,7 +39,7 @@ import uno.anahata.asi.resource.ResourceManager;
 @Setter
 @Slf4j
 @RequiredArgsConstructor
-public abstract class AbstractResource<R, C> extends BasicPropertyChangeSource implements ContextProvider {
+public abstract class AbstractResource<R, C> extends BasicPropertyChangeSource implements ContextProvider, Rebindable {
 
     /** A unique, immutable identifier for this resource instance. */
     private final String id = UUID.randomUUID().toString();
@@ -146,6 +147,21 @@ public abstract class AbstractResource<R, C> extends BasicPropertyChangeSource i
             getContextPosition(),
             turnsStr
         );
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void rebind() {
+        super.rebind();
+        log.info("Rebinding resource: {} ({})", getName(), getId());
+    }
+
+    /**
+     * Performs any necessary cleanup when the resource is removed from the manager.
+     * Subclasses should override this to release listeners or system resources.
+     */
+    public void dispose() {
+        log.info("Disposing resource: {} ({})", getName(), getId());
     }
 
     // --- ContextProvider Implementation ---

@@ -38,11 +38,8 @@ public class AnahataProjectAnnotator implements ProjectIconAnnotator, ChangeList
     /** The badge image to overlay on project icons. */
     private static final Image BADGE;
     
-    /** 
-     * The list of change listeners for icon refresh. 
-     * Shared across all instances to ensure global synchronization with the IDE.
-     */
-    private static final javax.swing.event.EventListenerList LISTENERS = new javax.swing.event.EventListenerList();
+    /** The list of change listeners for icon refresh. */
+    private final javax.swing.event.EventListenerList listeners = new javax.swing.event.EventListenerList();
 
     static {
         LOG.info("AnahataProjectAnnotator class loaded.");
@@ -92,13 +89,13 @@ public class AnahataProjectAnnotator implements ProjectIconAnnotator, ChangeList
             });
         }
 
-        // Build the HTML tooltip
-        StringBuilder sb = new StringBuilder("<html>");
-        // Use a smaller icon (12x12) in the tooltip
+        // Build the Anahata-specific tooltip segment
+        StringBuilder sb = new StringBuilder();
+        sb.append("<hr>"); // Separator from existing tooltip content
         sb.append("<img src=\"").append(getClass().getResource("/icons/anahata_16.png")).append("\" width=\"12\" height=\"12\"> ");
         
         if (!tooltipLines.isEmpty()) {
-            sb.append("In Context in:<br>");
+            sb.append("<b>In Context in:</b><br>");
             for (String line : tooltipLines) {
                 sb.append("&nbsp;&nbsp;&bull;&nbsp;").append(line).append("<br>");
             }
@@ -107,15 +104,36 @@ public class AnahataProjectAnnotator implements ProjectIconAnnotator, ChangeList
                 // Offset 16 is the right place because other badges (like the warning icon) 
                 // show at (8,0). This places our badge to the right of the main 16x16 icon.
                 Image badgedIcon = ImageUtilities.mergeImages(icon, BADGE, 16, 0);
-                return ImageUtilities.addToolTipToImage(badgedIcon, sb.toString());
+                return mergeTooltip(badgedIcon, sb.toString());
             }
         } else {
             sb.append("Not in context in any session");
-            // No badge, but still add the "Not in context" tooltip to the original icon
-            return ImageUtilities.addToolTipToImage(icon, sb.toString());
+            return mergeTooltip(icon, sb.toString());
         }
 
         return icon;
+    }
+
+    /**
+     * Merges our custom HTML tooltip segment with any existing tooltip on the image.
+     * 
+     * @param icon The image to annotate.
+     * @param segment The HTML segment to append.
+     * @return The image with the combined tooltip.
+     */
+    private Image mergeTooltip(Image icon, String segment) {
+        String existing = ImageUtilities.getImageToolTip(icon);
+        if (existing == null || existing.isEmpty()) {
+            return ImageUtilities.addToolTipToImage(icon, "<html>" + segment + "</html>");
+        }
+        
+        // If it's already HTML, inject before the closing tag
+        if (existing.toLowerCase().contains("<html>")) {
+            return ImageUtilities.addToolTipToImage(icon, existing.replaceFirst("(?i)</html>", segment + "</html>"));
+        }
+        
+        // Otherwise, wrap both in HTML
+        return ImageUtilities.addToolTipToImage(icon, "<html>" + existing + segment + "</html>");
     }
 
     /**
@@ -123,7 +141,7 @@ public class AnahataProjectAnnotator implements ProjectIconAnnotator, ChangeList
      */
     @Override
     public void addChangeListener(ChangeListener cl) {
-        LISTENERS.add(ChangeListener.class, cl);
+        listeners.add(ChangeListener.class, cl);
     }
 
     /**
@@ -131,7 +149,7 @@ public class AnahataProjectAnnotator implements ProjectIconAnnotator, ChangeList
      */
     @Override
     public void removeChangeListener(ChangeListener cl) {
-        LISTENERS.remove(ChangeListener.class, cl);
+        listeners.remove(ChangeListener.class, cl);
     }
 
     /**
@@ -140,7 +158,7 @@ public class AnahataProjectAnnotator implements ProjectIconAnnotator, ChangeList
      */
     @Override
     public void stateChanged(ChangeEvent e) {
-        Object[] l = LISTENERS.getListenerList();
+        Object[] l = listeners.getListenerList();
         for (int i = l.length - 2; i >= 0; i -= 2) {
             if (l[i] == ChangeListener.class) {
                 ((ChangeListener) l[i + 1]).stateChanged(e);

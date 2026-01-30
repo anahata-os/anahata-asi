@@ -18,7 +18,6 @@ import org.openide.windows.WindowManager;
 import uno.anahata.asi.nb.util.ElementHandleModule;
 import uno.anahata.asi.tool.schema.SchemaProvider;
 import uno.anahata.asi.nb.tools.project.nb.AnahataProjectAnnotator;
-import uno.anahata.asi.nb.tools.files.nb.FileAnnotationProvider;
 
 /**
  * Installer for the Anahata ASI V2 module.
@@ -57,14 +56,6 @@ public class AnahataInstaller extends ModuleInstall {
         
         // Register the ElementHandle module for global JSON support in the IDE
         SchemaProvider.OBJECT_MAPPER.registerModule(new ElementHandleModule());
-        
-        // Setup global listener for active chat changes to refresh annotations
-        getContainer().addPropertyChangeListener("activeChats", evt -> {
-            log.info("Active chats changed, triggering global annotation refresh.");
-            AnahataProjectAnnotator.fireRefresh(null);
-            // Note: FileAnnotationProvider refresh is more expensive, 
-            // but necessary for consistency.
-        });
         
         // Load active sessions from disk
         getContainer().loadSessions();

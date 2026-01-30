@@ -44,6 +44,8 @@ import uno.anahata.asi.chat.Chat;
 @ActionReferences({
     @ActionReference(path = "Loaders/folder/any/Actions", position = 1350),
     @ActionReference(path = "Loaders/content/unknown/Actions", position = 1350),
+    @ActionReference(path = "Loaders/text/x-java/Actions", position = 1350),
+    @ActionReference(path = "Loaders/text/x-maven-pom+xml/Actions", position = 1350),
     @ActionReference(path = "Loaders/any/Actions", position = 1350),
 })
 public final class AddFilesToContextAction extends AbstractAction implements ContextAwareAction, Presenter.Popup {
@@ -98,8 +100,8 @@ public final class AddFilesToContextAction extends AbstractAction implements Con
         List<Chat> activeChats = AnahataInstaller.getContainer().getActiveChats();
         Collection<? extends FileObject> files = context.lookupAll(FileObject.class);
 
-        // 1. Option to create a new chat
-        JMenuItem newChatItem = new JMenuItem("Create new chat...");
+        // 1. Option to create a new session
+        JMenuItem newChatItem = new JMenuItem("Create new session...");
         newChatItem.addActionListener(e -> {
             Chat newChat = AnahataInstaller.getContainer().createNewChat();
             
@@ -109,25 +111,26 @@ public final class AddFilesToContextAction extends AbstractAction implements Con
             tc.requestActive();
             
             for (FileObject fo : files) {
-                FilesContextActionLogic.addRecursively(fo, newChat);
+                // Non-recursive by default from the menu to avoid confusion
+                FilesContextActionLogic.addRecursively(fo, newChat, false);
             }
-            LOG.info("Created new chat and added resources.");
+            LOG.info("Created new session and added resources.");
         });
         main.add(newChatItem);
         main.addSeparator();
 
         if (activeChats.isEmpty()) {
-            JMenuItem item = new JMenuItem("No active chats");
+            JMenuItem item = new JMenuItem("No active sessions");
             item.setEnabled(false);
             main.add(item);
         } else {
-            // 2. Add to all chats option
+            // 2. Add to all sessions option
             if (activeChats.size() > 1) {
-                JMenuItem allItem = new JMenuItem("Add to all active chats");
+                JMenuItem allItem = new JMenuItem("Add to all active sessions");
                 allItem.addActionListener(e -> {
                     for (Chat chat : activeChats) {
                         for (FileObject fo : files) {
-                            FilesContextActionLogic.addRecursively(fo, chat);
+                            FilesContextActionLogic.addRecursively(fo, chat, false);
                         }
                     }
                 });
@@ -135,12 +138,12 @@ public final class AddFilesToContextAction extends AbstractAction implements Con
                 main.addSeparator();
             }
 
-            // 3. List individual chats
+            // 3. List individual sessions
             for (Chat chat : activeChats) {
-                JMenuItem item = new JMenuItem(chat.getNickname() + " (" + chat.getShortId() + ")");
+                JMenuItem item = new JMenuItem(chat.getDisplayName());
                 item.addActionListener(e -> {
                     for (FileObject fo : files) {
-                        FilesContextActionLogic.addRecursively(fo, chat);
+                        FilesContextActionLogic.addRecursively(fo, chat, false);
                     }
                 });
                 main.add(item);

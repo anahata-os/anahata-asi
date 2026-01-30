@@ -57,7 +57,7 @@ public class MessageNode extends AbstractContextNode<AbstractMessage> {
         this.declarationsTokens = 0;
         this.historyTokens = userObject.getTokenCount(false);
         this.ragTokens = 0;
-        this.status = userObject.isPruned() ? "Pruned" : "Active";
+        this.status = userObject.isEffectivelyPruned() ? "Pruned" : "Active";
         
         for (AbstractContextNode<?> child : getChildren()) {
             child.refreshTokens();

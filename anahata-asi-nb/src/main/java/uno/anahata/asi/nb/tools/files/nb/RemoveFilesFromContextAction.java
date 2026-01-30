@@ -103,17 +103,18 @@ public final class RemoveFilesFromContextAction extends AbstractAction implement
         Collection<? extends FileObject> files = context.lookupAll(FileObject.class);
         
         if (activeChats.isEmpty()) {
-            JMenuItem item = new JMenuItem("No active chats");
+            JMenuItem item = new JMenuItem("No active sessions");
             item.setEnabled(false);
             main.add(item);
         } else {
-            // 1. Remove from all chats option
+            // 1. Remove from all sessions option
             if (activeChats.size() > 1) {
-                JMenuItem allItem = new JMenuItem("Remove from all active chats");
+                JMenuItem allItem = new JMenuItem("Remove from all active sessions");
                 allItem.addActionListener(e -> {
                     for (Chat chat : activeChats) {
                         for (FileObject fo : files) {
-                            FilesContextActionLogic.removeRecursively(fo, chat);
+                            // Non-recursive by default from the menu
+                            FilesContextActionLogic.removeRecursively(fo, chat, false);
                         }
                     }
                 });
@@ -121,12 +122,13 @@ public final class RemoveFilesFromContextAction extends AbstractAction implement
                 main.addSeparator();
             }
 
-            // 2. List individual chats
+            // 2. List individual sessions
             for (Chat chat : activeChats) {
-                JMenuItem item = new JMenuItem(chat.getNickname() + " (" + chat.getShortId() + ")");
+                JMenuItem item = new JMenuItem(chat.getDisplayName());
                 item.addActionListener(e -> {
                     for (FileObject fo : files) {
-                        FilesContextActionLogic.removeRecursively(fo, chat);
+                        // Non-recursive by default from the menu
+                        FilesContextActionLogic.removeRecursively(fo, chat, false);
                     }
                 });
                 main.add(item);
