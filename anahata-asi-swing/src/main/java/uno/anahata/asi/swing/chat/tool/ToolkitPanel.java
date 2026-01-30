@@ -4,6 +4,7 @@
 package uno.anahata.asi.swing.chat.tool;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -34,6 +35,9 @@ public class ToolkitPanel extends JPanel {
         this.parentPanel = parentPanel;
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+        
+        // Ensure the panel can be resized small enough to not squeeze the tree
+        setMinimumSize(new Dimension(0, 0));
 
         JPanel mainPanel = new JPanel(new GridBagLayout());
         mainPanel.setBorder(BorderFactory.createTitledBorder("Toolkit Model Details"));

@@ -28,7 +28,7 @@ import uno.anahata.asi.chat.Chat;
  * or folders from the context of an active AI chat session.
  * <p>
  * This action implements {@link Presenter.Popup} to generate a list of active
- * chat sessions as sub-menu items. It uses {@link ContextActionLogic} for the 
+ * chat sessions as sub-menu items. It uses {@link FilesContextActionLogic} for the 
  * actual resource management.
  * </p>
  * 
@@ -44,7 +44,8 @@ import uno.anahata.asi.chat.Chat;
 )
 @ActionReferences({
     @ActionReference(path = "Loaders/folder/any/Actions", position = 1360),
-    @ActionReference(path = "Loaders/text/any/Actions", position = 1360),
+    @ActionReference(path = "Loaders/content/unknown/Actions", position = 1360),
+    @ActionReference(path = "Loaders/any/Actions", position = 1360),
 })
 public final class RemoveFilesFromContextAction extends AbstractAction implements ContextAwareAction, Presenter.Popup {
     private static final Logger LOG = Logger.getLogger(RemoveFilesFromContextAction.class.getName());
@@ -112,7 +113,7 @@ public final class RemoveFilesFromContextAction extends AbstractAction implement
                 allItem.addActionListener(e -> {
                     for (Chat chat : activeChats) {
                         for (FileObject fo : files) {
-                            ContextActionLogic.removeRecursively(fo, chat);
+                            FilesContextActionLogic.removeRecursively(fo, chat);
                         }
                     }
                 });
@@ -125,7 +126,7 @@ public final class RemoveFilesFromContextAction extends AbstractAction implement
                 JMenuItem item = new JMenuItem(chat.getNickname() + " (" + chat.getShortId() + ")");
                 item.addActionListener(e -> {
                     for (FileObject fo : files) {
-                        ContextActionLogic.removeRecursively(fo, chat);
+                        FilesContextActionLogic.removeRecursively(fo, chat);
                     }
                 });
                 main.add(item);

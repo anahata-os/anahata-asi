@@ -8,6 +8,7 @@ import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectUtils;
 import uno.anahata.asi.context.BasicContextProvider;
 import uno.anahata.asi.nb.tools.project.Projects;
+import uno.anahata.asi.nb.tools.project.nb.AnahataProjectAnnotator;
 import uno.anahata.asi.swing.icons.IconUtils;
 
 /**
@@ -96,5 +97,18 @@ public class ProjectContextProvider extends BasicContextProvider {
     @Override
     public String getIconId() {
         return iconId;
+    }
+
+    /**
+     * {@inheritDoc}
+     * Overridden to trigger a global project icon refresh in the IDE.
+     */
+    @Override
+    public void setProviding(boolean enabled) {
+        boolean old = isProviding();
+        super.setProviding(enabled);
+        if (old != enabled) {
+            AnahataProjectAnnotator.fireRefresh(getProject());
+        }
     }
 }

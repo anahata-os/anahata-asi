@@ -18,18 +18,27 @@ import org.openide.windows.WindowManager;
 import uno.anahata.asi.nb.util.ElementHandleModule;
 import uno.anahata.asi.tool.schema.SchemaProvider;
 import uno.anahata.asi.nb.tools.project.nb.AnahataProjectAnnotator;
+import uno.anahata.asi.nb.tools.files.nb.FileAnnotationProvider;
 
 /**
  * Installer for the Anahata ASI V2 module.
- * Handles lifecycle management and session handoff during reloads.
+ * Handles lifecycle management, session handoff during reloads, and 
+ * global UI synchronization.
+ * 
+ * @author anahata
  */
 public class AnahataInstaller extends ModuleInstall {
 
     private static final Logger log = Logger.getLogger(AnahataInstaller.class.getName());
     private static final String HANDOFF_FILE_NAME = "asi-reload-handoff.dat";
     
+    /** The singleton container instance. */
     private static AsiContainer container;
 
+    /**
+     * Gets the global ASI container for NetBeans.
+     * @return The container instance.
+     */
     public static synchronized AsiContainer getContainer() {
         if (container == null) {
             container = new NetBeansAsiContainer();
@@ -37,12 +46,25 @@ public class AnahataInstaller extends ModuleInstall {
         return container;
     }
 
+    /**
+     * {@inheritDoc}
+     * Performs module initialization, restores sessions, and sets up 
+     * global listeners for UI updates.
+     */
     @Override
     public void restored() {
         log.info("Anahata ASI V2 Module Restored");
         
         // Register the ElementHandle module for global JSON support in the IDE
         SchemaProvider.OBJECT_MAPPER.registerModule(new ElementHandleModule());
+        
+        // Setup global listener for active chat changes to refresh annotations
+        getContainer().addPropertyChangeListener("activeChats", evt -> {
+            log.info("Active chats changed, triggering global annotation refresh.");
+            AnahataProjectAnnotator.fireRefresh(null);
+            // Note: FileAnnotationProvider refresh is more expensive, 
+            // but necessary for consistency.
+        });
         
         // Load active sessions from disk
         getContainer().loadSessions();
@@ -69,6 +91,10 @@ public class AnahataInstaller extends ModuleInstall {
         AnahataProjectAnnotator.fireRefresh(null);
     }
 
+    /**
+     * {@inheritDoc}
+     * Saves session IDs for handoff and closes components.
+     */
     @Override
     public void uninstalled() {
         log.info("Anahata ASI V2 Module Uninstalled");
@@ -102,8 +128,11 @@ public class AnahataInstaller extends ModuleInstall {
         }
     }
 
+    /**
+     * Gets the handoff file location.
+     * @return The handoff file.
+     */
     private File getHandoffFile() {
-        
         return new File(getContainer().getAppDir().toFile(), HANDOFF_FILE_NAME);
     }
 }

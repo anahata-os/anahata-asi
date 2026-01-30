@@ -5,6 +5,10 @@ package uno.anahata.asi.swing.chat;
 
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
+import java.awt.Dimension;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -29,6 +33,7 @@ import uno.anahata.asi.swing.chat.tool.MessageNode;
 import uno.anahata.asi.swing.chat.tool.PartNode;
 import uno.anahata.asi.swing.chat.tool.ResourceNode;
 import uno.anahata.asi.swing.chat.tool.ResourcePanel;
+import uno.anahata.asi.swing.chat.tool.ResourcesNode;
 import uno.anahata.asi.swing.chat.tool.ContextTreeCellRenderer;
 import uno.anahata.asi.swing.chat.render.MessagePanelFactory;
 import uno.anahata.asi.swing.chat.render.PartPanelFactory;
@@ -148,8 +153,10 @@ public class ContextPanel extends JPanel {
         treeTable.setShowsRootHandles(true);
         treeTable.setTreeCellRenderer(new ContextTreeCellRenderer());
         
-        // Set preferred width for the first column
-        treeTable.getColumnModel().getColumn(0).setPreferredWidth(300);
+        // Disable auto-resize to respect preferred widths
+        treeTable.setAutoResizeMode(JXTreeTable.AUTO_RESIZE_OFF);
+        
+        applyColumnWidths();
 
         // Configure Split Pane
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, new JScrollPane(treeTable), detailContainer);
@@ -191,7 +198,17 @@ public class ContextPanel extends JPanel {
         SwingUtilities.invokeLater(() -> {
             splitPane.setDividerLocation(0.3);
             refresh();
+            refreshTokens(); // Initial token refresh
         });
+    }
+
+    /**
+     * Applies the standard column widths to the tree table.
+     */
+    private void applyColumnWidths() {
+        // Set preferred width for the first column (Name) - Increased to 500
+        treeTable.getColumnModel().getColumn(0).setPreferredWidth(500);
+        treeTable.getColumnModel().getColumn(0).setMinWidth(200);
     }
 
     /**
@@ -221,22 +238,58 @@ public class ContextPanel extends JPanel {
         this.treeTableModel = new ContextTreeTableModel(chat);
         this.treeTable.setTreeTableModel(treeTableModel);
         refresh();
+        refreshTokens();
     }
 
     /**
-     * Refreshes the data in the tree table.
+     * Refreshes the data in the tree table while preserving expansion state.
      */
     public final void refresh() {
         SwingUtilities.invokeLater(() -> {
             log.info("Refreshing ContextPanel tree for chat: {}", chat.getShortId());
+            
+            // Save expansion state
+            Set<TreePath> expandedPaths = getExpandedPaths();
+
             treeTableModel.refresh();
-            treeTable.expandAll();
+            
+            // Restore expansion state
+            restoreExpandedPaths(expandedPaths);
+            
+            applyColumnWidths();
+            
+            // Select the first node if nothing is selected
+            if (treeTable.getSelectedRow() == -1 && treeTable.getRowCount() > 0) {
+                treeTable.setRowSelectionInterval(0, 0);
+            }
+            
             treeTable.revalidate();
             treeTable.repaint();
-            
-            // Note: We no longer trigger refreshTokens() automatically here 
-            // to prevent UI freezes during frequent history updates.
         });
+    }
+
+    /**
+     * Captures the current expansion state of the tree.
+     * @return A set of expanded TreePaths.
+     */
+    private Set<TreePath> getExpandedPaths() {
+        Set<TreePath> expandedPaths = new HashSet<>();
+        for (int i = 0; i < treeTable.getRowCount(); i++) {
+            if (treeTable.isExpanded(i)) {
+                expandedPaths.add(treeTable.getPathForRow(i));
+            }
+        }
+        return expandedPaths;
+    }
+
+    /**
+     * Restores the expansion state of the tree.
+     * @param expandedPaths The set of paths to expand.
+     */
+    private void restoreExpandedPaths(Set<TreePath> expandedPaths) {
+        for (TreePath path : expandedPaths) {
+            treeTable.expandPath(path);
+        }
     }
     
     /**
@@ -245,13 +298,32 @@ public class ContextPanel extends JPanel {
     public void refreshTokens() {
         chat.getExecutor().execute(() -> {
             try {
+                // Save expansion state on EDT
+                final Set<TreePath> expandedPaths = new HashSet<>();
+                SwingUtilities.invokeAndWait(() -> expandedPaths.addAll(getExpandedPaths()));
+
                 treeTableModel.refreshTokens();
+                
                 SwingUtilities.invokeLater(() -> {
+                    // Restore expansion state
+                    restoreExpandedPaths(expandedPaths);
+                    
+                    applyColumnWidths();
                     treeTable.repaint();
                 });
             } catch (Exception e) {
                 log.error("Error refreshing context tokens", e);
             }
         });
+    }
+
+    /**
+     * {@inheritDoc}
+     * Triggers an initial refresh when the component is added to the UI.
+     */
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        refresh();
     }
 }

@@ -4,6 +4,7 @@
 package uno.anahata.asi.swing.chat.tool;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -24,6 +25,9 @@ public class ResourcePanel extends JPanel {
         this.parentPanel = parentPanel;
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+        
+        // Ensure the panel can be resized small enough to not squeeze the tree
+        setMinimumSize(new Dimension(0, 0));
 
         infoLabel = new JLabel();
         infoLabel.setBorder(BorderFactory.createTitledBorder("Resource Details"));

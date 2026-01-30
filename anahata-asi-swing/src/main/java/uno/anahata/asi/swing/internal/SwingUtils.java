@@ -204,4 +204,18 @@ public class SwingUtils {
         String prettyJson = JacksonUtils.prettyPrintJsonString(json);
         showCodeBlockDialog(parent, title, prettyJson, "json");
     }
+
+    /**
+     * Executes the given runnable on the Event Dispatch Thread (EDT).
+     * If the current thread is already the EDT, it is executed immediately.
+     * 
+     * @param runnable The code to execute.
+     */
+    public static void runInEDT(Runnable runnable) {
+        if (SwingUtilities.isEventDispatchThread()) {
+            runnable.run();
+        } else {
+            SwingUtilities.invokeLater(runnable);
+        }
+    }
 }

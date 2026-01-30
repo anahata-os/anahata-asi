@@ -82,6 +82,9 @@ public class ContextTreeTableModel extends AbstractTreeTableModel {
             node.refreshTokens();
         }
         SwingUtilities.invokeLater(() -> {
+            // Notify that the structure changed to refresh all values.
+            // Using fireTreeStructureChanged ensures the entire tree is updated.
+            // The ContextPanel is responsible for preserving expansion state.
             modelSupport.fireTreeStructureChanged(new TreePath(getRoot()));
         });
     }

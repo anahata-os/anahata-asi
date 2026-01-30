@@ -28,7 +28,7 @@ import uno.anahata.asi.chat.Chat;
  * <p>
  * This action implements {@link Presenter.Popup} to generate a list of active
  * chat sessions as sub-menu items, along with options for multi-chat targeting.
- * It uses {@link ContextActionLogic} for the actual resource management.
+ * It uses {@link FilesContextActionLogic} for the actual resource management.
  * </p>
  * 
  * @author anahata
@@ -43,7 +43,8 @@ import uno.anahata.asi.chat.Chat;
 )
 @ActionReferences({
     @ActionReference(path = "Loaders/folder/any/Actions", position = 1350),
-    @ActionReference(path = "Loaders/text/any/Actions", position = 1350),
+    @ActionReference(path = "Loaders/content/unknown/Actions", position = 1350),
+    @ActionReference(path = "Loaders/any/Actions", position = 1350),
 })
 public final class AddFilesToContextAction extends AbstractAction implements ContextAwareAction, Presenter.Popup {
     private static final Logger LOG = Logger.getLogger(AddFilesToContextAction.class.getName());
@@ -108,7 +109,7 @@ public final class AddFilesToContextAction extends AbstractAction implements Con
             tc.requestActive();
             
             for (FileObject fo : files) {
-                ContextActionLogic.addRecursively(fo, newChat);
+                FilesContextActionLogic.addRecursively(fo, newChat);
             }
             LOG.info("Created new chat and added resources.");
         });
@@ -126,7 +127,7 @@ public final class AddFilesToContextAction extends AbstractAction implements Con
                 allItem.addActionListener(e -> {
                     for (Chat chat : activeChats) {
                         for (FileObject fo : files) {
-                            ContextActionLogic.addRecursively(fo, chat);
+                            FilesContextActionLogic.addRecursively(fo, chat);
                         }
                     }
                 });
@@ -139,7 +140,7 @@ public final class AddFilesToContextAction extends AbstractAction implements Con
                 JMenuItem item = new JMenuItem(chat.getNickname() + " (" + chat.getShortId() + ")");
                 item.addActionListener(e -> {
                     for (FileObject fo : files) {
-                        ContextActionLogic.addRecursively(fo, chat);
+                        FilesContextActionLogic.addRecursively(fo, chat);
                     }
                 });
                 main.add(item);

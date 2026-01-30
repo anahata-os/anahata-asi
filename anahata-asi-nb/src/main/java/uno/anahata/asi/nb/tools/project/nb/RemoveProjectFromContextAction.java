@@ -1,7 +1,6 @@
 /* Licensed under the Apache License, Version 2.0 */
 package uno.anahata.asi.nb.tools.project.nb;
 
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,13 +8,12 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
-import javax.swing.ImageIcon;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import org.netbeans.api.project.Project;
 import org.openide.awt.ActionID;
-import org.openide.awt.ActionReference;
 import org.openide.awt.ActionRegistration;
+import org.openide.awt.ActionReference;
 import org.openide.util.ContextAwareAction;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
@@ -24,6 +22,7 @@ import org.openide.util.actions.Presenter;
 import uno.anahata.asi.AnahataInstaller;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.nb.tools.project.Projects;
+import uno.anahata.asi.swing.icons.IconUtils;
 
 /**
  * Action to remove one or more projects from the AI context.
@@ -98,11 +97,7 @@ public final class RemoveProjectFromContextAction extends AbstractAction impleme
         
         String label = count > 1 ? "Remove " + count + " projects from AI context" : "Remove project from AI context";
         JMenu main = new JMenu(label);
-        
-        Image img = org.openide.util.ImageUtilities.loadImage("icons/delete.png");
-        if (img != null) {
-            main.setIcon(new ImageIcon(img.getScaledInstance(16, 16, Image.SCALE_SMOOTH)));
-        }
+        main.setIcon(IconUtils.getRemoveIcon());
         
         List<Chat> activeChats = AnahataInstaller.getContainer().getActiveChats();
         final List<Project> finalProjects = projects;
@@ -112,13 +107,13 @@ public final class RemoveProjectFromContextAction extends AbstractAction impleme
                 .collect(Collectors.toList());
         
         if (eligibleChats.isEmpty()) {
-            JMenuItem item = new JMenuItem(activeChats.isEmpty() ? "No active chats" : "No projects in context");
+            JMenuItem item = new JMenuItem(activeChats.isEmpty() ? "No active sessions" : "No projects in context");
             item.setEnabled(false);
             main.add(item);
         } else {
-            // Remove from all chats option
+            // Remove from all sessions option
             if (eligibleChats.size() > 1) {
-                JMenuItem allItem = new JMenuItem("Remove from all active chats");
+                JMenuItem allItem = new JMenuItem("Remove from all active sessions");
                 allItem.addActionListener(e -> {
                     for (Chat chat : eligibleChats) {
                         removeProjectsFromChat(chat, finalProjects);
@@ -146,21 +141,7 @@ public final class RemoveProjectFromContextAction extends AbstractAction impleme
      * @return {@code true} if at least one project is in context.
      */
     private boolean anyProjectInContext(Chat chat, List<Project> projects) {
-        return projects.stream().anyMatch(p -> isProjectInContext(chat, p));
-    }
-
-    /**
-     * Checks if a specific project is in the context of the given chat.
-     * 
-     * @param chat The chat session to check.
-     * @param project The project to check.
-     * @return {@code true} if the project is in context.
-     */
-    private boolean isProjectInContext(Chat chat, Project project) {
-        return chat.getToolManager().getToolkitInstance(Projects.class)
-                .flatMap(pt -> pt.getProjectProvider(project.getProjectDirectory().getPath()))
-                .map(pcp -> pcp.isProviding())
-                .orElse(false);
+        return projects.stream().anyMatch(p -> ProjectsContextActionLogic.isProjectInContext(p, chat));
     }
 
     /**
@@ -174,7 +155,7 @@ public final class RemoveProjectFromContextAction extends AbstractAction impleme
             for (Project p : projects) {
                 String path = p.getProjectDirectory().getPath();
                 projectsTool.setProjectProviderEnabled(path, false);
-                LOG.info("Disabled project context for: " + path + " in chat: " + chat.getDisplayName());
+                LOG.info("Disabled project context for: " + path + " in session: " + chat.getDisplayName());
             }
         });
     }

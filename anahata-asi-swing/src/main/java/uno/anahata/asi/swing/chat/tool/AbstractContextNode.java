@@ -102,4 +102,13 @@ public abstract class AbstractContextNode<T> {
     public int hashCode() {
         return userObject.hashCode();
     }
+
+    /**
+     * {@inheritDoc}
+     * Returns the display name of the node.
+     */
+    @Override
+    public String toString() {
+        return getName();
+    }
 }

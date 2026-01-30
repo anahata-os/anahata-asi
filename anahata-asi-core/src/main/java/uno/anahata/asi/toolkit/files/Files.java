@@ -27,7 +27,7 @@ public class Files extends AnahataToolkit {
     /**
      * Updates the viewport settings for a TextFileResource.
      * 
-     * @param resourceId The absolute path to the text file.
+     * @param resourceId The resource identifier.
      * @param newSettings The new viewport settings for the text file.
      * @throws Exception if the resource is not found or reload fails.
      */
@@ -41,14 +41,11 @@ public class Files extends AnahataToolkit {
     }
 
     /**
-     * Loads a text file into the context as a managed resource. The tool's
-     * response is ephemeral and will be pruned from the context on the next
-     * turn.
+     * Loads one or more text files into the context as managed resources.
      *
      * @param resourcePaths The absolute paths to the text files.
-     * @return The newly created TextFileResource.
-     * @throws Exception if the file does not exist, is already loaded, or an
-     * I/O error occurs.
+     * @return The list of newly created TextFileResources.
+     * @throws Exception if no files were successfully loaded.
      */
     @AiTool(value = "Loads a text file into the context as a managed resource. By default, files are loaded with a LIVE refresh policy, which means they are automatically refreshed from disk right before the API call starts. You do not need to re-load a file if it is already present in the context.", retention = 0)
     public List<TextFileResource> loadTextFile(
@@ -58,7 +55,7 @@ public class Files extends AnahataToolkit {
         for (String path : resourcePaths) {
             try {
                 log("Loading " + path + "...");
-                ret.add(Files.this.loadTextFile(path));
+                ret.add(loadTextFile(path));
                 log("Loaded OK " + path);
             } catch (Exception e) {
                 log.error("Exception loading text file resource: {}", path, e);
@@ -74,15 +71,13 @@ public class Files extends AnahataToolkit {
     }
 
     /**
-     * Loads a text file into the context as a managed resource with a LIVE refresh policy.
-     * The tool's response is ephemeral and will be pruned from the context on the next turn.
-     *
-     * @param path The absolute path to the text file.
-     * @return The newly created TextFileResource.
-     * @throws Exception if the file does not exist, is already loaded, or an
-     * I/O error occurs.
+     * Loads a single text file into the context.
+     * 
+     * @param path The absolute path to the file.
+     * @return The created resource.
+     * @throws Exception if the file is missing or already loaded.
      */
-    private TextFileResource loadTextFile(String path) throws Exception {
+    protected TextFileResource loadTextFile(String path) throws Exception {
 
         if (getResourceManager().findByPath(path).isPresent()) {
             throw new AiToolException("Resource already loaded for path: " + path);
@@ -101,37 +96,61 @@ public class Files extends AnahataToolkit {
 
     /**
      * Creates a new file or overwrites an existing one with the provided content.
+     * Implements optimistic locking to prevent overwriting concurrent changes.
      * 
      * @param path The absolute path to the file.
      * @param content The text content to write.
-     * @throws Exception if an I/O error occurs.
+     * @param lastModified The expected last modified timestamp (0 for new files).
+     * @param message A message describing the change.
+     * @throws Exception if an I/O error occurs or locking fails.
      */
     @AiTool(value = "Creates a new file or overwrites an existing one with the provided content.", retention = 0)
     public void writeTextFile(
             @AiToolParam("The absolute path to the file.") String path,
-            @AiToolParam("The text content to write.") String content) throws Exception {
+            @AiToolParam("The text content to write.") String content,
+            @AiToolParam("Optimistic locking: the expected last modified timestamp of the file on disk. Use 0 for new files.") long lastModified,
+            @AiToolParam("A message describing the change.") String message) throws Exception {
         java.nio.file.Path filePath = Paths.get(path);
+        
+        if (java.nio.file.Files.exists(filePath)) {
+            long current = java.nio.file.Files.getLastModifiedTime(filePath).toMillis();
+            if (lastModified != 0 && current != lastModified) {
+                throw new AiToolException("Optimistic locking failure: File has been modified on disk. Expected: " + lastModified + ", Actual: " + current);
+            }
+        }
+        
         if (filePath.getParent() != null) {
             java.nio.file.Files.createDirectories(filePath.getParent());
         }
         java.nio.file.Files.writeString(filePath, content);
-        log("Successfully wrote to file: " + path);
+        log("Successfully wrote to file: " + path + " (" + message + ")");
     }
 
     /**
      * Replaces a specific string with another in a file. Ideal for surgical code edits.
+     * Implements optimistic locking.
      * 
      * @param path The absolute path to the file.
      * @param target The exact string to be replaced.
      * @param replacement The replacement string.
-     * @throws Exception if the target string is not found or an I/O error occurs.
+     * @param lastModified The expected last modified timestamp.
+     * @param message A message describing the change.
+     * @throws Exception if the target string is not found, I/O error occurs, or locking fails.
      */
     @AiTool(value = "Replaces a specific string with another in a file. Ideal for surgical code edits.", retention = 0)
     public void replaceInFile(
             @AiToolParam("The absolute path to the file.") String path,
             @AiToolParam("The exact string to be replaced.") String target,
-            @AiToolParam("The replacement string.") String replacement) throws Exception {
+            @AiToolParam("The replacement string.") String replacement,
+            @AiToolParam("Optimistic locking: the expected last modified timestamp of the file on disk.") long lastModified,
+            @AiToolParam("A message describing the change.") String message) throws Exception {
         java.nio.file.Path filePath = Paths.get(path);
+        
+        long current = java.nio.file.Files.getLastModifiedTime(filePath).toMillis();
+        if (lastModified != 0 && current != lastModified) {
+            throw new AiToolException("Optimistic locking failure: File has been modified on disk. Expected: " + lastModified + ", Actual: " + current);
+        }
+        
         String content = java.nio.file.Files.readString(filePath);
 
         if (!content.contains(target)) {
@@ -140,7 +159,7 @@ public class Files extends AnahataToolkit {
 
         String newContent = content.replace(target, replacement);
         java.nio.file.Files.writeString(filePath, newContent);
-        log("Successfully updated file: " + path);
+        log("Successfully updated file: " + path + " (" + message + ")");
 
     }
 

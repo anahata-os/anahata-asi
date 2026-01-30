@@ -12,8 +12,8 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import org.netbeans.api.project.Project;
 import org.openide.awt.ActionID;
-import org.openide.awt.ActionReference;
 import org.openide.awt.ActionRegistration;
+import org.openide.awt.ActionReference;
 import org.openide.util.ContextAwareAction;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
@@ -23,6 +23,7 @@ import uno.anahata.asi.AgiTopComponent;
 import uno.anahata.asi.AnahataInstaller;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.nb.tools.project.Projects;
+import uno.anahata.asi.swing.icons.IconUtils;
 
 /**
  * Action to add one or more projects to the AI context.
@@ -98,13 +99,13 @@ public final class AddProjectToContextAction extends AbstractAction implements C
         
         String label = count > 1 ? "Add " + count + " projects to AI context" : "Add project to AI context";
         JMenu main = new JMenu(label);
-        main.setIcon(new javax.swing.ImageIcon(org.openide.util.ImageUtilities.loadImage("icons/anahata_16.png")));
+        main.setIcon(IconUtils.getAddIcon());
         
         List<Chat> activeChats = AnahataInstaller.getContainer().getActiveChats();
         final List<Project> finalProjects = projects;
 
-        // 1. Option to create a new chat
-        JMenuItem newChatItem = new JMenuItem("Create new chat...");
+        // 1. Option to create a new session
+        JMenuItem newChatItem = new JMenuItem("Create new session...");
         newChatItem.addActionListener(e -> {
             Chat newChat = AnahataInstaller.getContainer().createNewChat();
             
@@ -114,24 +115,24 @@ public final class AddProjectToContextAction extends AbstractAction implements C
             tc.requestActive();
             
             addProjectsToChat(newChat, finalProjects);
-            LOG.info("Created new chat and added projects.");
+            LOG.info("Created new session and added projects.");
         });
         main.add(newChatItem);
         main.addSeparator();
 
-        // 2. List active chats (filtered)
+        // 2. List active sessions (filtered)
         List<Chat> eligibleChats = activeChats.stream()
                 .filter(chat -> !allProjectsInContext(chat, finalProjects))
                 .collect(Collectors.toList());
 
         if (eligibleChats.isEmpty()) {
-            JMenuItem item = new JMenuItem(activeChats.isEmpty() ? "No active chats" : "All projects already in context");
+            JMenuItem item = new JMenuItem(activeChats.isEmpty() ? "No active sessions" : "All projects already in context");
             item.setEnabled(false);
             main.add(item);
         } else {
-            // Add to all chats option
+            // Add to all sessions option
             if (eligibleChats.size() > 1) {
-                JMenuItem allItem = new JMenuItem("Add to all active chats");
+                JMenuItem allItem = new JMenuItem("Add to all active sessions");
                 allItem.addActionListener(e -> {
                     for (Chat chat : eligibleChats) {
                         addProjectsToChat(chat, finalProjects);
@@ -159,21 +160,7 @@ public final class AddProjectToContextAction extends AbstractAction implements C
      * @return {@code true} if all projects are in context.
      */
     private boolean allProjectsInContext(Chat chat, List<Project> projects) {
-        return projects.stream().allMatch(p -> isProjectInContext(chat, p));
-    }
-
-    /**
-     * Checks if a specific project is in the context of the given chat.
-     * 
-     * @param chat The chat session to check.
-     * @param project The project to check.
-     * @return {@code true} if the project is in context.
-     */
-    private boolean isProjectInContext(Chat chat, Project project) {
-        return chat.getToolManager().getToolkitInstance(Projects.class)
-                .flatMap(pt -> pt.getProjectProvider(project.getProjectDirectory().getPath()))
-                .map(pcp -> pcp.isProviding())
-                .orElse(false);
+        return projects.stream().allMatch(p -> ProjectsContextActionLogic.isProjectInContext(p, chat));
     }
 
     /**
@@ -187,7 +174,7 @@ public final class AddProjectToContextAction extends AbstractAction implements C
             for (Project p : projects) {
                 String path = p.getProjectDirectory().getPath();
                 projectsTool.setProjectProviderEnabled(path, true);
-                LOG.info("Enabled project context for: " + path + " in chat: " + chat.getDisplayName());
+                LOG.info("Enabled project context for: " + path + " in session: " + chat.getDisplayName());
             }
         });
     }

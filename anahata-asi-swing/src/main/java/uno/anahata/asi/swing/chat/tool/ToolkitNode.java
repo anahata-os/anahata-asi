@@ -5,16 +5,18 @@ package uno.anahata.asi.swing.chat.tool;
 
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.Icon;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.tool.AbstractTool;
 import uno.anahata.asi.model.tool.AbstractToolkit;
+import uno.anahata.asi.swing.icons.IconUtils;
 
 /**
  * A context tree node representing an {@link AbstractToolkit}.
  * <p>
  * This node acts as a bridge in the hierarchy. It exposes the toolkit's 
- * internal {@link ContextProvider} (the actual tool instance) as a child, 
- * followed by all the individual tools defined within the toolkit.
+ * internal {@link ContextProvider} (the actual tool instance) as a child 
+ * named "Context", followed by all the individual tools defined within the toolkit.
  * </p>
  *
  * @author anahata
@@ -47,10 +49,9 @@ public class ToolkitNode extends AbstractContextNode<AbstractToolkit<?>> {
     /**
      * {@inheritDoc}
      * Implementation details:
-     * 1. If the toolkit has a context provider with the same name, it merges 
-     *    the provider's children directly to avoid redundant nesting.
-     * 2. Otherwise, it adds the provider as a child ProviderNode.
-     * 3. Finally, it adds all tools in the toolkit as child ToolNodes.
+     * 1. If the toolkit has a context provider, it adds it as a child 
+     *    ProviderNode with the display name "Context".
+     * 2. It then adds all tools in the toolkit as child ToolNodes.
      */
     @Override
     public List<AbstractContextNode<?>> getChildren() {
@@ -60,14 +61,12 @@ public class ToolkitNode extends AbstractContextNode<AbstractToolkit<?>> {
             // 1. The toolkit's context provider implementation (if any)
             ContextProvider cp = userObject.getContextProvider();
             if (cp != null) {
-                if (cp.getName().equals(userObject.getName())) {
-                    // Merge children if names match
-                    for (ContextProvider childCp : cp.getChildrenProviders()) {
-                        children.add(new ProviderNode(childCp));
+                children.add(new ProviderNode(cp) {
+                    @Override
+                    public String getName() {
+                        return "Context";
                     }
-                } else {
-                    children.add(new ProviderNode(cp));
-                }
+                });
             }
             
             // 2. The tools
@@ -90,5 +89,11 @@ public class ToolkitNode extends AbstractContextNode<AbstractToolkit<?>> {
         for (AbstractContextNode<?> child : getChildren()) {
             child.refreshTokens();
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Icon getIcon() {
+        return IconUtils.getIcon("java.png", 16, 16);
     }
 }

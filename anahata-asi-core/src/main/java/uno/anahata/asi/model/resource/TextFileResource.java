@@ -67,7 +67,9 @@ public class TextFileResource extends AbstractPathResource<String, String> {
         this.viewport.process(content);
         
         // Cache only the processed text. The header is generated dynamically.
+        String oldCache = this.cache;
         this.cache = viewport.getProcessedText();
+        propertyChangeSupport.firePropertyChange("cache", oldCache, cache);
     }
 
     /** {@inheritDoc} */

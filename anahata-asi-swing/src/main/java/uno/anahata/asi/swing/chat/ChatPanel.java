@@ -32,6 +32,8 @@ public class ChatPanel extends JPanel {
     private final RequestConfigPanel configPanel;
     /** The panel for managing the AI context (history, tools, resources). */
     private final ContextPanel contextPanel;
+    /** The panel providing support links and community resources. */
+    private final SupportPanel supportPanel;
     /** The panel for user input. */
     private final InputPanel inputPanel;
     /** The header panel. */
@@ -66,6 +68,7 @@ public class ChatPanel extends JPanel {
         this.tabbedPane = new JTabbedPane();
         this.configPanel = new RequestConfigPanel(this);
         this.contextPanel = new ContextPanel(this);
+        this.supportPanel = new SupportPanel();
         this.inputPanel = new InputPanel(this); 
         this.headerPanel = new HeaderPanel(this);
         this.toolbarPanel = new ToolbarPanel(this); 
@@ -89,6 +92,7 @@ public class ChatPanel extends JPanel {
         tabbedPane.addTab("Chat", conversationPanel);
         tabbedPane.addTab("Config", configPanel);
         tabbedPane.addTab("Context", contextPanel);
+        tabbedPane.addTab("Support", supportPanel);
 
         // Create a panel to hold CandidateSelectionPanel, InputPanel and StatusPanel
         JPanel southPanel = new JPanel(new BorderLayout());

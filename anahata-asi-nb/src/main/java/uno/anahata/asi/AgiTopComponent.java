@@ -2,6 +2,7 @@
 package uno.anahata.asi;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.beans.PropertyChangeEvent;
 import java.io.Externalizable;
 import java.io.IOException;
@@ -14,8 +15,11 @@ import org.openide.awt.ActionReference;
 import org.openide.windows.TopComponent;
 import org.openide.util.ImageUtilities;
 import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.status.ChatStatus;
 import uno.anahata.asi.swing.chat.ChatPanel;
+import uno.anahata.asi.swing.chat.SwingChatConfig;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
+import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
  * The main TopComponent for Anahata ASI V2.
@@ -65,7 +69,7 @@ public final class AgiTopComponent extends TopComponent implements Externalizabl
     public AgiTopComponent(String sessionId) {
         this.sessionId = sessionId;
         setIcon(ImageUtilities.loadImage("icons/anahata_16.png"));
-        updateTitles(null);
+        updateTitles();
     }
 
     /**
@@ -80,22 +84,32 @@ public final class AgiTopComponent extends TopComponent implements Externalizabl
         setLayout(new BorderLayout());
         add(chatPanel, BorderLayout.CENTER);
         
-        updateTitles(chat);
+        updateTitles();
         
         // Listen for nickname changes to update the TopComponent title
         new EdtPropertyChangeListener(this, chat, "nickname", this::handleNicknameChange);
+        
+        // Listen for status changes to update the tab color
+        new EdtPropertyChangeListener(this, chat.getStatusManager(), "currentStatus", evt -> updateTitles());
     }
 
     /**
-     * Updates the TopComponent's name, display name, and tooltip based on the chat session.
-     * 
-     * @param chat The chat session, or null if not yet initialized.
+     * Updates the TopComponent's name, display name, and tooltip based on the current chat session.
      */
-    private void updateTitles(Chat chat) {
+    private void updateTitles() {
+        Chat chat = getChat();
         String displayName = chat != null ? chat.getDisplayName() : "Anahata AGI";
+        ChatStatus status = chat != null ? chat.getStatusManager().getCurrentStatus() : ChatStatus.IDLE;
+        
+        Color color = SwingChatConfig.getColor(status);
+        String hexColor = SwingUtils.toHtmlColor(color);
+        
         setName(displayName);
         setDisplayName(displayName);
-        setToolTipText(chat != null ? "Anahata Session: " + chat.getConfig().getSessionId() : "Anahata AGI");
+        setHtmlDisplayName("<html><font color='" + hexColor + "'>" + displayName + "</font></html>");
+        
+        String tooltip = chat != null ? "Anahata Session: " + chat.getConfig().getSessionId() + " [" + status.getDisplayName() + "]" : "Anahata AGI";
+        setToolTipText(tooltip);
     }
 
     /**
@@ -104,7 +118,7 @@ public final class AgiTopComponent extends TopComponent implements Externalizabl
      * @param evt The property change event.
      */
     private void handleNicknameChange(PropertyChangeEvent evt) {
-        updateTitles((Chat) evt.getSource());
+        updateTitles();
     }
 
     /**
@@ -141,6 +155,7 @@ public final class AgiTopComponent extends TopComponent implements Externalizabl
 
     /**
      * Sets the session ID for handoff during initialization.
+     * This is used during nbmreload to bind the new TopComponent to the correct session.
      * 
      * @param sessionId The session ID.
      */
