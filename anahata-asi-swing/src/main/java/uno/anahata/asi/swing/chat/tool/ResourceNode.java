@@ -3,30 +3,33 @@
  */
 package uno.anahata.asi.swing.chat.tool;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import javax.swing.Icon;
+import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.context.ContextPosition;
 import uno.anahata.asi.model.resource.AbstractResource;
-import uno.anahata.asi.swing.icons.IconUtils;
+import uno.anahata.asi.swing.chat.ChatPanel;
 
 /**
  * A context tree node representing a single managed resource.
  * <p>
- * This node displays the resource's name, its position in the prompt 
- * (System Instructions or Prompt Augmentation), and its refresh policy.
+ * This node displays the resource's name, its position in the prompt, 
+ * and its current status (e.g., refresh policy, staleness, or deletion).
  * </p>
  *
  * @author anahata
  */
+@Slf4j
 public class ResourceNode extends AbstractContextNode<AbstractResource<?, ?>> {
 
     /**
      * Constructs a new ResourceNode.
+     * @param chatPanel The parent chat panel.
      * @param userObject The resource to wrap.
      */
-    public ResourceNode(AbstractResource<?, ?> userObject) {
-        super(userObject);
+    public ResourceNode(ChatPanel chatPanel, AbstractResource<?, ?> userObject) {
+        super(chatPanel, userObject);
     }
 
     /** {@inheritDoc} */
@@ -52,20 +55,32 @@ public class ResourceNode extends AbstractContextNode<AbstractResource<?, ?>> {
 
     /** {@inheritDoc} */
     @Override
-    public void refreshTokens() {
+    protected void calculateLocalTokens() {
         int tokens = userObject.getTokenCount();
-        
-        this.instructionsTokens = userObject.getContextPosition() == ContextPosition.SYSTEM_INSTRUCTIONS ? tokens : 0;
-        this.declarationsTokens = 0;
-        this.historyTokens = 0;
-        this.ragTokens = userObject.getContextPosition() == ContextPosition.PROMPT_AUGMENTATION ? tokens : 0;
-        
-        this.status = userObject.getContextPosition().name() + " | " + userObject.getRefreshPolicy().name();
+        if (userObject.getContextPosition() == ContextPosition.SYSTEM_INSTRUCTIONS) {
+            this.instructionsTokens = tokens;
+        } else {
+            this.ragTokens = tokens;
+        }
     }
 
     /** {@inheritDoc} */
     @Override
-    public Icon getIcon() {
-        return IconUtils.getIcon(userObject.getIconId());
+    protected void updateStatus() {
+        // Determine status string: DELETED/STALE take priority, otherwise show lowercase policy
+        if (!userObject.exists()) {
+            this.status = "DELETED";
+        } else {
+            try {
+                if (userObject.isStale()) {
+                    this.status = "STALE";
+                } else {
+                    this.status = userObject.getRefreshPolicy().name().toLowerCase();
+                }
+            } catch (IOException e) {
+                log.error("Error checking resource status", e);
+                this.status = "ERROR";
+            }
+        }
     }
 }

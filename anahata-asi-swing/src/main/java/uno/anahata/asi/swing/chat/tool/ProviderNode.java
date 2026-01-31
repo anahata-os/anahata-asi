@@ -5,10 +5,9 @@ package uno.anahata.asi.swing.chat.tool;
 
 import java.util.ArrayList;
 import java.util.List;
-import javax.swing.Icon;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.tool.AbstractToolkit;
-import uno.anahata.asi.swing.icons.IconUtils;
+import uno.anahata.asi.swing.chat.ChatPanel;
 import uno.anahata.asi.tool.ToolManager;
 
 /**
@@ -28,10 +27,11 @@ public class ProviderNode extends AbstractContextNode<ContextProvider> {
 
     /**
      * Constructs a new ProviderNode.
+     * @param chatPanel The parent chat panel.
      * @param userObject The context provider to wrap.
      */
-    public ProviderNode(ContextProvider userObject) {
-        super(userObject);
+    public ProviderNode(ChatPanel chatPanel, ContextProvider userObject) {
+        super(chatPanel, userObject);
     }
 
     /** {@inheritDoc} */
@@ -50,8 +50,8 @@ public class ProviderNode extends AbstractContextNode<ContextProvider> {
      * {@inheritDoc}
      * Implementation details:
      * 1. If the provider is a ToolManager, it adds all its toolkits as children.
-     * 2. It then adds all standard child providers, filtering out those that 
-     *    are already represented as toolkits to avoid duplication.
+     * 2. For other providers, it adds all standard child providers, filtering 
+     *    out those that are already represented as toolkits to avoid duplication.
      */
     @Override
     public List<AbstractContextNode<?>> getChildren() {
@@ -59,17 +59,17 @@ public class ProviderNode extends AbstractContextNode<ContextProvider> {
             children = new ArrayList<>();
             
             if (userObject instanceof ToolManager tm) {
-                // ToolManager is special: it shows toolkits
+                // ToolManager is special: it shows toolkits. 
                 for (AbstractToolkit<?> tk : tm.getToolkits().values()) {
-                    children.add(new ToolkitNode(tk));
+                    children.add(new ToolkitNode(chatPanel, tk));
                 }
-            }
-            
-            // Standard children providers
-            for (ContextProvider child : userObject.getChildrenProviders()) {
-                // Avoid double-counting toolkits if they are also providers
-                if (!(child instanceof AbstractToolkit)) {
-                    children.add(new ProviderNode(child));
+            } else {
+                // Standard children providers
+                for (ContextProvider child : userObject.getChildrenProviders()) {
+                    // Avoid double-counting toolkits if they are also providers
+                    if (!(child instanceof AbstractToolkit)) {
+                        children.add(new ProviderNode(chatPanel, child));
+                    }
                 }
             }
         }
@@ -78,21 +78,14 @@ public class ProviderNode extends AbstractContextNode<ContextProvider> {
 
     /** {@inheritDoc} */
     @Override
-    public void refreshTokens() {
+    protected void calculateLocalTokens() {
         this.instructionsTokens = userObject.getInstructionsTokenCount();
-        this.declarationsTokens = 0;
-        this.historyTokens = 0;
         this.ragTokens = userObject.getRagTokenCount();
-        this.status = userObject.isProviding() ? "Active" : "Inactive";
-        
-        for (AbstractContextNode<?> child : getChildren()) {
-            child.refreshTokens();
-        }
     }
 
     /** {@inheritDoc} */
     @Override
-    public Icon getIcon() {
-        return IconUtils.getIcon(userObject.getIconId());
+    protected void updateStatus() {
+        this.status = userObject.isProviding() ? "Providing" : "Disabled";
     }
 }

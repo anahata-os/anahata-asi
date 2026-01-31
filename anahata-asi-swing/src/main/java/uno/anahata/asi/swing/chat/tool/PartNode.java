@@ -6,6 +6,7 @@ package uno.anahata.asi.swing.chat.tool;
 import java.util.Collections;
 import java.util.List;
 import uno.anahata.asi.model.core.AbstractPart;
+import uno.anahata.asi.swing.chat.ChatPanel;
 
 /**
  * A context tree node representing a single part of a message.
@@ -16,10 +17,11 @@ public class PartNode extends AbstractContextNode<AbstractPart> {
 
     /**
      * Constructs a new PartNode.
+     * @param chatPanel The parent chat panel.
      * @param userObject The part to wrap.
      */
-    public PartNode(AbstractPart userObject) {
-        super(userObject);
+    public PartNode(ChatPanel chatPanel, AbstractPart userObject) {
+        super(chatPanel, userObject);
     }
 
     /** {@inheritDoc} */
@@ -42,12 +44,13 @@ public class PartNode extends AbstractContextNode<AbstractPart> {
 
     /** {@inheritDoc} */
     @Override
-    public void refreshTokens() {
-        this.instructionsTokens = 0;
-        this.declarationsTokens = 0;
+    protected void calculateLocalTokens() {
         this.historyTokens = userObject.getTokenCount();
-        this.ragTokens = 0;
-        
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected void updateStatus() {
         if (userObject.isEffectivelyPruned()) {
             this.status = "Pruned (" + userObject.getTurnsLeft() + " turns left)";
         } else {

@@ -6,6 +6,7 @@ package uno.anahata.asi.swing.chat.tool;
 import java.util.Collections;
 import java.util.List;
 import uno.anahata.asi.model.tool.AbstractTool;
+import uno.anahata.asi.swing.chat.ChatPanel;
 
 /**
  * A context tree node representing an {@link AbstractTool}.
@@ -21,10 +22,11 @@ public class ToolNode extends AbstractContextNode<AbstractTool<?, ?>> {
 
     /**
      * Constructs a new ToolNode.
+     * @param chatPanel The parent chat panel.
      * @param userObject The tool to wrap.
      */
-    public ToolNode(AbstractTool<?, ?> userObject) {
-        super(userObject);
+    public ToolNode(ChatPanel chatPanel, AbstractTool<?, ?> userObject) {
+        super(chatPanel, userObject);
     }
 
     /** 
@@ -55,11 +57,13 @@ public class ToolNode extends AbstractContextNode<AbstractTool<?, ?>> {
 
     /** {@inheritDoc} */
     @Override
-    public void refreshTokens() {
-        this.instructionsTokens = 0;
+    protected void calculateLocalTokens() {
         this.declarationsTokens = userObject.getTokenCount();
-        this.historyTokens = 0;
-        this.ragTokens = 0;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected void updateStatus() {
         this.status = userObject.getPermission().name();
     }
 }

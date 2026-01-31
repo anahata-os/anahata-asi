@@ -4,6 +4,7 @@ package uno.anahata.asi;
 import uno.anahata.asi.chat.ChatConfig;
 import uno.anahata.asi.gemini.GeminiAiProvider;
 import uno.anahata.asi.nb.mine.NetBeansEditorKitProvider;
+import uno.anahata.asi.nb.mine.NetBeansIconProvider;
 import uno.anahata.asi.nb.tools.files.nb.NbFiles;
 import uno.anahata.asi.nb.tools.java.CodeModel;
 import uno.anahata.asi.nb.tools.maven.Maven;
@@ -15,6 +16,10 @@ import uno.anahata.asi.toolkit.files.Files;
  * NetBeans-specific chat configuration.
  * It replaces the core {@link Files} toolkit with the IDE-integrated {@link NbFiles}
  * and adds NetBeans-specific toolkits like {@link Maven}, {@link Projects}, and {@link CodeModel}.
+ * <p>
+ * It also configures the {@link NetBeansIconProvider} to display authentic IDE icons 
+ * in the context hierarchy.
+ * </p>
  * 
  * @author anahata
  */
@@ -30,6 +35,7 @@ public class NetBeansChatConfig extends SwingChatConfig {
         getToolClasses().add(CodeModel.class);
         
         setEditorKitProvider(new NetBeansEditorKitProvider());
+        setIconProvider(new NetBeansIconProvider());
         getProviderClasses().add(GeminiAiProvider.class);
     }
     

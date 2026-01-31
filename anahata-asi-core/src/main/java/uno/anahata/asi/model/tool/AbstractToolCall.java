@@ -86,7 +86,7 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
         this.rawArgs = rawArgs;
         this.args = args; 
         this.response = createResponse(message.getToolMessage());
-        getChat().getContextManager().ensureToolMessageFolllowsModelMessage(getMessage());
+        getChat().getContextManager().ensureToolMessageFollowsModelMessage(getMessage());
     }
 
     /**

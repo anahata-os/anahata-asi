@@ -31,6 +31,8 @@ import uno.anahata.asi.model.core.Role;
 import uno.anahata.asi.model.core.TextPart;
 import uno.anahata.asi.model.core.ThoughtSignature;
 import uno.anahata.asi.model.core.UserMessage;
+import uno.anahata.asi.resource.ResourceManager;
+import uno.anahata.asi.tool.ToolManager;
 
 /**
  * The definitive manager for a chat session's context in the V2
@@ -215,7 +217,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
      * @param modelMessage - the model message
      * @throws IllegalStateException if the model message doesnt have an associated tool message.
      */
-    public void ensureToolMessageFolllowsModelMessage(AbstractModelMessage modelMessage) {
+    public void ensureToolMessageFollowsModelMessage(AbstractModelMessage modelMessage) {
         if (modelMessage.getToolMessage() == null) {
             throw new IllegalStateException("Model message does not contain a tool message");
         }
@@ -245,7 +247,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
             history.add(message);
             if (message instanceof AbstractModelMessage amm) {
                 if (amm.getToolMessage() != null) {//its got tool calls
-                    ensureToolMessageFolllowsModelMessage(amm);
+                    ensureToolMessageFollowsModelMessage(amm);
                 }
             }
         }
@@ -323,11 +325,28 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
         return chat.getConfig().getTokenThreshold();
     }
 
+    /**
+     * {@inheritDoc}
+     * Restores the standard context providers after deserialization.
+     */
     @Override
     public void rebind() {
         super.rebind();
         log.info("Rebinding ContextManager for session: {}", chat.getConfig().getSessionId());
-        // History and providers are already restored by Kryo.
-        // We just need to ensure any transient state is reset if necessary.
+        
+        // Ensure standard providers are registered (they might be missing if session was saved in an older version)
+        boolean hasCore = false;
+        boolean hasTools = false;
+        boolean hasResources = false;
+        
+        for (ContextProvider p : providers) {
+            if (p instanceof CoreContextProvider) hasCore = true;
+            if (p instanceof ToolManager) hasTools = true;
+            if (p instanceof ResourceManager) hasResources = true;
+        }
+        
+        if (!hasCore) registerContextProvider(new CoreContextProvider());
+        if (!hasTools) registerContextProvider(chat.getToolManager());
+        if (!hasResources) registerContextProvider(chat.getResourceManager());
     }
 }

@@ -14,6 +14,7 @@ import uno.anahata.asi.model.tool.ToolExecutionStatus;
 import uno.anahata.asi.model.tool.ToolPermission;
 import uno.anahata.asi.status.ChatStatus;
 import uno.anahata.asi.swing.chat.render.editorkit.EditorKitProvider;
+import uno.anahata.asi.swing.icons.IconProvider;
 
 /**
  * A concrete ChatConfig for standalone Swing applications, providing UI-specific settings like themes and colors.
@@ -24,6 +25,9 @@ import uno.anahata.asi.swing.chat.render.editorkit.EditorKitProvider;
 public class SwingChatConfig extends ChatConfig {
     
     private EditorKitProvider editorKitProvider;
+    
+    /** The provider for context-related icons. */
+    private IconProvider iconProvider;
     
     /**
      * If true, parts that are effectively pruned will still be rendered in the UI

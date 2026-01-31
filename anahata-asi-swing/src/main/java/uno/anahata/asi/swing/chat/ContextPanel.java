@@ -6,7 +6,6 @@ package uno.anahata.asi.swing.chat;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Dimension;
-import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.JButton;
@@ -16,6 +15,7 @@ import javax.swing.JSplitPane;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 import javax.swing.event.TreeSelectionEvent;
+import javax.swing.table.TableColumn;
 import javax.swing.tree.TreePath;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +34,7 @@ import uno.anahata.asi.swing.chat.tool.PartNode;
 import uno.anahata.asi.swing.chat.tool.ResourceNode;
 import uno.anahata.asi.swing.chat.tool.ResourcePanel;
 import uno.anahata.asi.swing.chat.tool.ResourcesNode;
+import uno.anahata.asi.swing.chat.tool.ToolsNode;
 import uno.anahata.asi.swing.chat.tool.ContextTreeCellRenderer;
 import uno.anahata.asi.swing.chat.render.MessagePanelFactory;
 import uno.anahata.asi.swing.chat.render.PartPanelFactory;
@@ -81,6 +82,9 @@ public class ContextPanel extends JPanel {
     
     /** Listener for history changes to trigger tree refreshes. */
     private EdtPropertyChangeListener historyListener;
+    
+    /** Listener for resource changes to trigger tree refreshes. */
+    private EdtPropertyChangeListener resourcesListener;
 
     /**
      * Constructs a new ContextPanel.
@@ -89,7 +93,7 @@ public class ContextPanel extends JPanel {
     public ContextPanel(@NonNull ChatPanel chatPanel) {
         this.chatPanel = chatPanel;
         this.chat = chatPanel.getChat();
-        this.treeTableModel = new ContextTreeTableModel(chat);
+        this.treeTableModel = new ContextTreeTableModel(chatPanel);
         this.treeTable = new JXTreeTable();
         
         this.detailLayout = new CardLayout();
@@ -110,8 +114,18 @@ public class ContextPanel extends JPanel {
         
         setLayout(new BorderLayout());
         
-        // Automatically refresh the tree when the history changes
-        this.historyListener = new EdtPropertyChangeListener(this, chat.getContextManager(), "history", evt -> refresh());
+        setupListeners();
+    }
+
+    /**
+     * Sets up property change listeners for the current chat session.
+     */
+    private void setupListeners() {
+        if (historyListener != null) historyListener.unbind();
+        if (resourcesListener != null) resourcesListener.unbind();
+        
+        this.historyListener = new EdtPropertyChangeListener(this, chat.getContextManager(), "history", evt -> refresh(false));
+        this.resourcesListener = new EdtPropertyChangeListener(this, chat.getResourceManager(), "resources", evt -> refresh(false));
     }
 
     /**
@@ -160,7 +174,7 @@ public class ContextPanel extends JPanel {
 
         // Configure Split Pane
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, new JScrollPane(treeTable), detailContainer);
-        splitPane.setResizeWeight(0.3);
+        splitPane.setResizeWeight(0.5);
         add(splitPane, BorderLayout.CENTER);
 
         // Add a TreeSelectionListener to update the detailPanel
@@ -175,6 +189,9 @@ public class ContextPanel extends JPanel {
                 } else if (cn instanceof ToolkitNode tkn) {
                     toolkitPanel.setToolkit(tkn.getUserObject());
                     detailLayout.show(detailContainer, "toolkit");
+                } else if (cn instanceof ToolsNode tsn) {
+                    toolkitPanel.setToolkit(tsn.getUserObject());
+                    detailLayout.show(detailContainer, "toolkit");
                 } else if (cn instanceof ProviderNode pn) {
                     providerPanel.setContextProvider(pn.getUserObject());
                     detailLayout.show(detailContainer, "provider");
@@ -187,6 +204,9 @@ public class ContextPanel extends JPanel {
                 } else if (cn instanceof ResourceNode rn) {
                     resourcePanel.setResource(rn.getUserObject());
                     detailLayout.show(detailContainer, "resource");
+                } else if (cn instanceof ResourcesNode rsn) {
+                    providerPanel.setContextProvider(rsn.getUserObject());
+                    detailLayout.show(detailContainer, "provider");
                 } else {
                     detailLayout.show(detailContainer, "empty");
                 }
@@ -196,19 +216,36 @@ public class ContextPanel extends JPanel {
         });
         
         SwingUtilities.invokeLater(() -> {
-            splitPane.setDividerLocation(0.3);
-            refresh();
-            refreshTokens(); // Initial token refresh
+            splitPane.setDividerLocation(0.5);
+            refresh(true);
         });
     }
 
     /**
-     * Applies the standard column widths to the tree table.
+     * Authoritatively applies the standard column widths to the tree table.
+     * This method ensures the 'Name' column maintains its 400px width and 
+     * token columns are correctly sized.
      */
     private void applyColumnWidths() {
-        // Set preferred width for the first column (Name) - Increased to 500
-        treeTable.getColumnModel().getColumn(0).setPreferredWidth(500);
-        treeTable.getColumnModel().getColumn(0).setMinWidth(200);
+        if (treeTable.getColumnCount() == 0) return;
+        
+        // 1. Name Column (Authoritative 400px)
+        TableColumn nameCol = treeTable.getColumnModel().getColumn(0);
+        nameCol.setPreferredWidth(400);
+        nameCol.setMinWidth(200);
+        nameCol.setWidth(400);
+        
+        // 2. Token Columns (Instructions, Declarations, History, RAG)
+        for (int i = 1; i <= 4; i++) {
+            TableColumn col = treeTable.getColumnModel().getColumn(i);
+            col.setPreferredWidth(80);
+            col.setMinWidth(50);
+        }
+        
+        // 3. Status Column
+        TableColumn statusCol = treeTable.getColumnModel().getColumn(5);
+        statusCol.setPreferredWidth(120);
+        statusCol.setMinWidth(80);
     }
 
     /**
@@ -229,34 +266,33 @@ public class ContextPanel extends JPanel {
      */
     public void reload() {
         this.chat = chatPanel.getChat();
-        
-        if (historyListener != null) {
-            historyListener.unbind();
-        }
-        this.historyListener = new EdtPropertyChangeListener(this, chat.getContextManager(), "history", evt -> refresh());
-
-        this.treeTableModel = new ContextTreeTableModel(chat);
-        this.treeTable.setTreeTableModel(treeTableModel);
-        refresh();
-        refreshTokens();
+        setupListeners();
+        refresh(true);
     }
 
     /**
      * Refreshes the data in the tree table while preserving expansion state.
+     * 
+     * @param structural If true, the underlying model is rebuilt (e.g. on session switch).
      */
-    public final void refresh() {
+    public final void refresh(boolean structural) {
         SwingUtilities.invokeLater(() -> {
-            log.info("Refreshing ContextPanel tree for chat: {}", chat.getShortId());
+            log.info("Refreshing ContextPanel tree (structural={}) for chat: {}", structural, chat.getShortId());
             
             // Save expansion state
             Set<TreePath> expandedPaths = getExpandedPaths();
 
-            treeTableModel.refresh();
+            if (structural) {
+                this.treeTableModel = new ContextTreeTableModel(chatPanel);
+                treeTable.setTreeTableModel(treeTableModel);
+            } else {
+                treeTableModel.refresh();
+            }
+            
+            applyColumnWidths();
             
             // Restore expansion state
             restoreExpandedPaths(expandedPaths);
-            
-            applyColumnWidths();
             
             // Select the first node if nothing is selected
             if (treeTable.getSelectedRow() == -1 && treeTable.getRowCount() > 0) {
@@ -265,6 +301,9 @@ public class ContextPanel extends JPanel {
             
             treeTable.revalidate();
             treeTable.repaint();
+            
+            // Automatically trigger token refresh to ensure counts are current
+            refreshTokens();
         });
     }
 
@@ -298,17 +337,8 @@ public class ContextPanel extends JPanel {
     public void refreshTokens() {
         chat.getExecutor().execute(() -> {
             try {
-                // Save expansion state on EDT
-                final Set<TreePath> expandedPaths = new HashSet<>();
-                SwingUtilities.invokeAndWait(() -> expandedPaths.addAll(getExpandedPaths()));
-
                 treeTableModel.refreshTokens();
-                
                 SwingUtilities.invokeLater(() -> {
-                    // Restore expansion state
-                    restoreExpandedPaths(expandedPaths);
-                    
-                    applyColumnWidths();
                     treeTable.repaint();
                 });
             } catch (Exception e) {
@@ -324,6 +354,6 @@ public class ContextPanel extends JPanel {
     @Override
     public void addNotify() {
         super.addNotify();
-        refresh();
+        refresh(true);
     }
 }

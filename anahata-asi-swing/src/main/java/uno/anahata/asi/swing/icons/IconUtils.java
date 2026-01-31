@@ -4,6 +4,7 @@
 package uno.anahata.asi.swing.icons;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.swing.GrayFilter;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import lombok.experimental.UtilityClass;
@@ -20,8 +22,9 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * A utility class for loading, scaling, and managing a global registry of icons.
  * <p>
- * This class provides high-quality rendering hints for icon scaling and 
- * supports a decoupled icon lookup mechanism using string-based IDs.
+ * This class provides high-quality icon scaling by leveraging the legacy 
+ * {@link Image#SCALE_SMOOTH} algorithm, which has proven to produce superior 
+ * results for small UI icons compared to single-step Graphics2D scaling.
  * </p>
  * 
  * @author anahata
@@ -73,8 +76,12 @@ public class IconUtils {
     }
 
     /**
-     * Loads an icon from the classpath resources and scales it to the specified size
-     * using high-quality rendering hints.
+     * Loads an icon from the classpath resources and scales it to the specified size.
+     * <p>
+     * Implementation details: Uses {@link Image#getScaledInstance(int, int, int)} 
+     * with {@link Image#SCALE_SMOOTH} to ensure the best possible quality for 
+     * small icons, matching the visual fidelity of the V1 architecture.
+     * </p>
      *
      * @param name The name of the icon file.
      * @param width The desired width.
@@ -88,28 +95,55 @@ public class IconUtils {
                 log.warn("Icon resource not found: /icons/{}", name);
                 return null;
             }
+            
             ImageIcon originalIcon = new ImageIcon(resource);
-            Image img = originalIcon.getImage();
+            if (originalIcon.getImageLoadStatus() == java.awt.MediaTracker.ERRORED) {
+                log.error("Failed to load original icon: {}", name);
+                return null;
+            }
+
+            // If the size matches, return as is
+            if (originalIcon.getIconWidth() == width && originalIcon.getIconHeight() == height) {
+                return originalIcon;
+            }
             
-            // Create a high-quality scaled image
-            BufferedImage scaledImg = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2 = scaledImg.createGraphics();
+            // Scale the image
+            Image scaledImage = originalIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
             
-            // Use maximum quality hints for resizing
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-            g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-            g2.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
-            g2.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
+            // Wrap in a new ImageIcon to trigger and wait for the scaling process
+            ImageIcon scaledIcon = new ImageIcon(scaledImage);
+            if (scaledIcon.getImageLoadStatus() == java.awt.MediaTracker.ERRORED) {
+                log.error("Failed to scale icon: {}", name);
+                return null;
+            }
             
-            g2.drawImage(img, 0, 0, width, height, null);
-            g2.dispose();
-            
-            return new ImageIcon(scaledImg);
+            return scaledIcon;
         } catch (Exception e) {
             log.error("Error loading icon: {}", name, e);
             return null;
         }
+    }
+
+    /**
+     * Creates a disabled (grayed out and semi-transparent) version of the given icon.
+     * 
+     * @param icon The original icon.
+     * @return The disabled icon.
+     */
+    public static Icon getDisabledIcon(Icon icon) {
+        if (icon == null) return null;
+        
+        int w = icon.getIconWidth();
+        int h = icon.getIconHeight();
+        if (w <= 0 || h <= 0) return icon;
+        
+        BufferedImage image = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = image.createGraphics();
+        icon.paintIcon(new Component() {}, g, 0, 0);
+        g.dispose();
+        
+        Image grayImage = GrayFilter.createDisabledImage(image);
+        return new ImageIcon(grayImage);
     }
 
     /**

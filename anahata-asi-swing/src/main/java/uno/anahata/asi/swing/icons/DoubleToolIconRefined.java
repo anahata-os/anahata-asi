@@ -12,31 +12,31 @@ import java.awt.RenderingHints;
 import javax.swing.Icon;
 
 /**
- * A programmatic Swing icon for Java toolkits.
- * It draws a bold, stylized coffee cup that scales well at small sizes.
+ * A refined programmatic Swing icon for tool containers (ToolsNode).
+ * It draws a "fast-forward" symbol (two triangles) without a border.
  * 
  * @author anahata
  */
-public class JavaIcon implements Icon {
+public class DoubleToolIconRefined implements Icon {
     /** The size of the icon in pixels. */
     private final int size;
     /** The primary color of the icon. */
     private final Color color;
 
     /**
-     * Constructs a new JavaIcon with the default size and color.
+     * Constructs a new DoubleToolIconRefined with the default size and color.
      * @param size The size in pixels.
      */
-    public JavaIcon(int size) {
-        this(size, new Color(165, 0, 68)); // Official FCB Red
+    public DoubleToolIconRefined(int size) {
+        this(size, new Color(0, 77, 152)); // Official FCB Blue
     }
 
     /**
-     * Constructs a new JavaIcon with a specific size and color.
+     * Constructs a new DoubleToolIconRefined with a specific size and color.
      * @param size The size in pixels.
      * @param color The color to use.
      */
-    public JavaIcon(int size, Color color) {
+    public DoubleToolIconRefined(int size, Color color) {
         this.size = size;
         this.color = color;
     }
@@ -46,26 +46,20 @@ public class JavaIcon implements Icon {
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
         g2.setColor(color);
         
-        // Bold Cup Body (Trapezoid)
-        int topW = (int)(size * 0.65);
-        int botW = (int)(size * 0.45);
-        int h = (int)(size * 0.45);
-        int cx = x + (size - topW) / 2 - (int)(size * 0.05);
-        int cy = y + (size - h) - (int)(size * 0.05);
+        int tw = size / 3;
+        int th = (int)(size * 0.6);
+        int ty = y + (size - th) / 2;
+        int tx = x + (size - (int)(tw * 1.8)) / 2;
         
-        int[] px = {cx, cx + topW, cx + (topW + botW)/2, cx + (topW - botW)/2};
-        int[] py = {cy, cy, cy + h, cy + h};
-        g2.fillPolygon(px, py, 4);
+        int[] x1 = {tx, tx + tw, tx};
+        int[] y1 = {ty, ty + th/2, ty + th};
+        g2.fillPolygon(x1, y1, 3);
         
-        // Bold Handle
-        g2.setStroke(new BasicStroke(size/8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        g2.drawArc(cx + topW - size/6, cy + size/12, size/3, size/3, -90, 180);
-        
-        // Bold Steam (Single bold swirl)
-        g2.setStroke(new BasicStroke(size/10f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        g2.drawArc(cx + size/6, y + size/12, size/2, size/3, 0, 180);
+        int[] x2 = {tx + (int)(tw * 0.8), tx + (int)(tw * 1.8), tx + (int)(tw * 0.8)};
+        g2.fillPolygon(x2, y1, 3);
         
         g2.dispose();
     }
@@ -80,5 +74,14 @@ public class JavaIcon implements Icon {
     @Override
     public int getIconHeight() {
         return size;
+    }
+
+    /**
+     * Creates a new instance of this icon with a different size.
+     * @param s The new size.
+     * @return The derived icon.
+     */
+    public Icon derive(int s) {
+        return new DoubleToolIconRefined(s, color);
     }
 }

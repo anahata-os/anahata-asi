@@ -12,31 +12,31 @@ import java.awt.RenderingHints;
 import javax.swing.Icon;
 
 /**
- * A programmatic Swing icon for Java toolkits.
- * It draws a bold, stylized coffee cup that scales well at small sizes.
+ * A programmatic Swing icon for tool containers (ToolsNode).
+ * It draws a "fast-forward" symbol (two triangles) inside a circular border.
  * 
  * @author anahata
  */
-public class JavaIcon implements Icon {
+public class DoubleToolIcon implements Icon {
     /** The size of the icon in pixels. */
     private final int size;
     /** The primary color of the icon. */
     private final Color color;
 
     /**
-     * Constructs a new JavaIcon with the default size and color.
+     * Constructs a new DoubleToolIcon with the default size and color.
      * @param size The size in pixels.
      */
-    public JavaIcon(int size) {
-        this(size, new Color(165, 0, 68)); // Official FCB Red
+    public DoubleToolIcon(int size) {
+        this(size, new Color(0, 77, 152)); // Official FCB Blue
     }
 
     /**
-     * Constructs a new JavaIcon with a specific size and color.
+     * Constructs a new DoubleToolIcon with a specific size and color.
      * @param size The size in pixels.
      * @param color The color to use.
      */
-    public JavaIcon(int size, Color color) {
+    public DoubleToolIcon(int size, Color color) {
         this.size = size;
         this.color = color;
     }
@@ -48,24 +48,27 @@ public class JavaIcon implements Icon {
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setColor(color);
         
-        // Bold Cup Body (Trapezoid)
-        int topW = (int)(size * 0.65);
-        int botW = (int)(size * 0.45);
-        int h = (int)(size * 0.45);
-        int cx = x + (size - topW) / 2 - (int)(size * 0.05);
-        int cy = y + (size - h) - (int)(size * 0.05);
+        float strokeWidth = Math.max(1.0f, size / 16f);
+        int padding = Math.max(1, size / 8);
+        int innerSize = size - 2 * padding;
         
-        int[] px = {cx, cx + topW, cx + (topW + botW)/2, cx + (topW - botW)/2};
-        int[] py = {cy, cy, cy + h, cy + h};
-        g2.fillPolygon(px, py, 4);
+        // Draw circular border
+        g2.setStroke(new BasicStroke(strokeWidth));
+        g2.drawOval(x + padding, y + padding, innerSize, innerSize);
         
-        // Bold Handle
-        g2.setStroke(new BasicStroke(size/8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        g2.drawArc(cx + topW - size/6, cy + size/12, size/3, size/3, -90, 180);
+        // Draw two "play" triangles (Fast Forward)
+        int tw = innerSize / 3;
+        int th = innerSize / 2;
+        int tx1 = x + padding + (innerSize - (int)(tw * 1.8)) / 2;
+        int tx2 = tx1 + (int)(tw * 0.8);
+        int ty = y + padding + (innerSize - th) / 2;
         
-        // Bold Steam (Single bold swirl)
-        g2.setStroke(new BasicStroke(size/10f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        g2.drawArc(cx + size/6, y + size/12, size/2, size/3, 0, 180);
+        int[] px1 = {tx1, tx1 + tw, tx1};
+        int[] py1 = {ty, ty + th / 2, ty + th};
+        g2.fillPolygon(px1, py1, 3);
+        
+        int[] px2 = {tx2, tx2 + tw, tx2};
+        g2.fillPolygon(px2, py1, 3);
         
         g2.dispose();
     }

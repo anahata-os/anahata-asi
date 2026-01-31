@@ -43,6 +43,18 @@ public interface ContextProvider {
     boolean isProviding();
 
     /**
+     * Checks if this provider is effectively providing context, meaning it is 
+     * enabled AND all its ancestors in the hierarchy are also enabled.
+     * 
+     * @return {@code true} if effectively providing, {@code false} otherwise.
+     */
+    default boolean isEffectivelyProviding() {
+        if (!isProviding()) return false;
+        ContextProvider parent = getParentProvider();
+        return parent == null || parent.isEffectivelyProviding();
+    }
+
+    /**
      * Sets whether this context provider is enabled.
      * 
      * @param enabled {@code true} to enable, {@code false} to disable.

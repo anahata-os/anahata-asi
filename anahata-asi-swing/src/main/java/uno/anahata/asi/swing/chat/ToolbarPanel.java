@@ -17,7 +17,7 @@ import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.chat.ChatConfig;
 import uno.anahata.asi.swing.icons.AutoReplyIcon;
 import uno.anahata.asi.swing.icons.CompressIcon;
-import uno.anahata.asi.swing.icons.LocalToolsIcon;
+import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.icons.PrunedPartsIcon;
 import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.icons.ServerToolsIcon;
@@ -93,7 +93,8 @@ public class ToolbarPanel extends JPanel {
         add(togglePrunedPartsButton);
 
         // 4. Toggle Local Tools Button (Middle)
-        toggleLocalToolsButton = createIconToggleButton(new LocalToolsIcon(ICON_SIZE), "Enable/Disable local tool execution (Functions).", config.isLocalToolsEnabled());
+        // Use the authentic Java icon for local tools
+        toggleLocalToolsButton = createIconToggleButton(IconUtils.getIcon("java.png", ICON_SIZE), "Enable/Disable local tool execution (Functions).", config.isLocalToolsEnabled());
         toggleLocalToolsButton.addActionListener(this::toggleLocalTools);
         add(toggleLocalToolsButton);
 

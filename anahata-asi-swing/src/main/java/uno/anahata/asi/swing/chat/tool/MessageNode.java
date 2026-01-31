@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import uno.anahata.asi.model.core.AbstractMessage;
 import uno.anahata.asi.model.core.AbstractPart;
+import uno.anahata.asi.swing.chat.ChatPanel;
 
 /**
  * A context tree node representing a single message in the conversation.
@@ -20,10 +21,11 @@ public class MessageNode extends AbstractContextNode<AbstractMessage> {
 
     /**
      * Constructs a new MessageNode.
+     * @param chatPanel The parent chat panel.
      * @param userObject The message to wrap.
      */
-    public MessageNode(AbstractMessage userObject) {
-        super(userObject);
+    public MessageNode(ChatPanel chatPanel, AbstractMessage userObject) {
+        super(chatPanel, userObject);
     }
 
     /** {@inheritDoc} */
@@ -44,7 +46,7 @@ public class MessageNode extends AbstractContextNode<AbstractMessage> {
         if (children == null) {
             children = new ArrayList<>();
             for (AbstractPart part : userObject.getParts(true)) {
-                children.add(new PartNode(part));
+                children.add(new PartNode(chatPanel, part));
             }
         }
         return children;
@@ -52,15 +54,13 @@ public class MessageNode extends AbstractContextNode<AbstractMessage> {
 
     /** {@inheritDoc} */
     @Override
-    public void refreshTokens() {
-        this.instructionsTokens = 0;
-        this.declarationsTokens = 0;
-        this.historyTokens = userObject.getTokenCount(false);
-        this.ragTokens = 0;
+    protected void calculateLocalTokens() {
+        // Message tokens are aggregated from PartNodes
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected void updateStatus() {
         this.status = userObject.isEffectivelyPruned() ? "Pruned" : "Active";
-        
-        for (AbstractContextNode<?> child : getChildren()) {
-            child.refreshTokens();
-        }
     }
 }

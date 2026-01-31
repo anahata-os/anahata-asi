@@ -223,9 +223,9 @@ public class ToolPanel extends JPanel {
             default: promptButton.setSelected(true); break;
         }
 
-        promptButton.addActionListener(e -> { tool.setPermission(ToolPermission.PROMPT); parentPanel.refresh(); });
-        alwaysButton.addActionListener(e -> { tool.setPermission(ToolPermission.APPROVE_ALWAYS); parentPanel.refresh(); });
-        neverButton.addActionListener(e -> { tool.setPermission(ToolPermission.DENY_NEVER); parentPanel.refresh(); });
+        promptButton.addActionListener(e -> { tool.setPermission(ToolPermission.PROMPT); parentPanel.refresh(false); });
+        alwaysButton.addActionListener(e -> { tool.setPermission(ToolPermission.APPROVE_ALWAYS); parentPanel.refresh(false); });
+        neverButton.addActionListener(e -> { tool.setPermission(ToolPermission.DENY_NEVER); parentPanel.refresh(false); });
 
         return buttonPanel;
     }

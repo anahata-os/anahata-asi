@@ -3,14 +3,10 @@
  */
 package uno.anahata.asi.swing.chat.tool;
 
-import java.util.ArrayList;
-import java.util.List;
-import javax.swing.SwingUtilities;
 import javax.swing.tree.TreePath;
 import lombok.extern.slf4j.Slf4j;
 import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
-import uno.anahata.asi.chat.Chat;
-import uno.anahata.asi.context.ContextProvider;
+import uno.anahata.asi.swing.chat.ChatPanel;
 
 /**
  * A TreeTableModel that provides a hierarchical, JNDI-style view of the entire 
@@ -20,85 +16,64 @@ import uno.anahata.asi.context.ContextProvider;
  * and status fields in the nodes, ensuring that the {@code getValueAt} 
  * method remains O(1).
  * </p>
+ * <p>
+ * It uses a single {@link ContextManagerNode} as the root of the hierarchy.
+ * </p>
  *
  * @author anahata
  */
 @Slf4j
 public class ContextTreeTableModel extends AbstractTreeTableModel {
-    /** The active chat session. */
-    private final Chat chat;
-    /** The list of root nodes. */
-    private List<AbstractContextNode<?>> rootNodes;
-    
-    /** A stable, unique object to represent the invisible root. */
-    private final Object rootObject = new Object();
-
-    /** The names of the columns in the tree table. */
-    private final String[] columnNames = {"Name", "Instructions", "Declarations", "History", "RAG", "Status"};
+    /** The parent chat panel. */
+    private final ChatPanel chatPanel;
 
     /**
      * Constructs a new ContextTreeTableModel.
-     * @param chat The active chat session.
+     * @param chatPanel The parent chat panel.
      */
-    public ContextTreeTableModel(Chat chat) {
-        super(new Object()); // Temporary root, will be replaced by rootObject
-        this.root = rootObject;
-        this.chat = chat;
-        this.rootNodes = new ArrayList<>();
+    public ContextTreeTableModel(ChatPanel chatPanel) {
+        super(null); 
+        this.chatPanel = chatPanel;
         refresh();
     }
 
     /**
      * Refreshes the model's data from the ContextManager and notifies the view of the change.
-     * Implementation details: It rebuilds the root node list from the ContextManager's 
-     * top-level providers and history. Resources are now included as providers.
+     * Implementation details: It rebuilds the root node as a single ContextManagerNode.
      */
     public final void refresh() {
-        log.info("Rebuilding context tree root nodes for chat: {}", chat.getShortId());
-        this.rootNodes = new ArrayList<>();
-        
-        // 1. Providers (Includes ResourceManager)
-        List<ContextProvider> providers = chat.getContextManager().getProviders();
-        log.info("Found {} top-level providers in ContextManager", providers.size());
-        for (ContextProvider cp : providers) {
-            rootNodes.add(new ProviderNode(cp));
-        }
-        
-        // 2. History (Always last)
-        rootNodes.add(new HistoryNode(chat.getContextManager()));
-        
-        log.info("Context tree rebuilt with {} root nodes.", rootNodes.size());
-        modelSupport.fireTreeStructureChanged(new TreePath(getRoot()));
+        log.info("Rebuilding context tree root for chat: {}", chatPanel.getChat().getShortId());
+        this.root = new ContextManagerNode(chatPanel, chatPanel.getChat().getContextManager());
+        modelSupport.fireTreeStructureChanged(new TreePath(root));
     }
     
     /**
      * Triggers an explicit recalculation of token counts for all nodes in the tree.
-     * This method performs the calculation on the calling thread and then 
-     * schedules a UI refresh on the Event Dispatch Thread.
      */
     public void refreshTokens() {
-        log.info("Refreshing token counts for all nodes in the context tree.");
-        for (AbstractContextNode<?> node : rootNodes) {
+        if (root instanceof AbstractContextNode<?> node) {
             node.refreshTokens();
         }
-        SwingUtilities.invokeLater(() -> {
-            // Notify that the structure changed to refresh all values.
-            // Using fireTreeStructureChanged ensures the entire tree is updated.
-            // The ContextPanel is responsible for preserving expansion state.
-            modelSupport.fireTreeStructureChanged(new TreePath(getRoot()));
-        });
     }
 
     /** {@inheritDoc} */
     @Override
     public int getColumnCount() {
-        return columnNames.length;
+        return 6; // Name, Instructions, Declarations, History, RAG, Status
     }
 
     /** {@inheritDoc} */
     @Override
     public String getColumnName(int column) {
-        return columnNames[column];
+        return switch (column) {
+            case 0 -> "Name";
+            case 1 -> "Instructions";
+            case 2 -> "Declarations";
+            case 3 -> "History";
+            case 4 -> "RAG";
+            case 5 -> "Status";
+            default -> "";
+        };
     }
 
     /** {@inheritDoc} */
@@ -133,15 +108,11 @@ public class ContextTreeTableModel extends AbstractTreeTableModel {
 
     /**
      * {@inheritDoc}
-     * Implementation details: Handles the invisible root node by returning from 
-     * rootNodes, otherwise delegates to the parent node's getChildren() method.
+     * Implementation details: Delegates to the parent node's getChildren() method.
      */
     @Override
     public Object getChild(Object parent, int index) {
-        log.debug("getChild: parent={}, index={}", parent, index);
-        if (parent == getRoot()) {
-            return rootNodes.get(index);
-        } else if (parent instanceof AbstractContextNode<?> cn) {
+        if (parent instanceof AbstractContextNode<?> cn) {
             return cn.getChildren().get(index);
         }
         return null;
@@ -149,15 +120,11 @@ public class ContextTreeTableModel extends AbstractTreeTableModel {
 
     /**
      * {@inheritDoc}
-     * Implementation details: Returns the size of rootNodes for the root, 
-     * otherwise delegates to the parent node's getChildren().size().
+     * Implementation details: Delegates to the parent node's getChildren().size().
      */
     @Override
     public int getChildCount(Object parent) {
-        log.debug("getChildCount: parent={}", parent);
-        if (parent == getRoot()) {
-            return rootNodes.size();
-        } else if (parent instanceof AbstractContextNode<?> cn) {
+        if (parent instanceof AbstractContextNode<?> cn) {
             return cn.getChildren().size();
         }
         return 0;
@@ -165,14 +132,11 @@ public class ContextTreeTableModel extends AbstractTreeTableModel {
 
     /**
      * {@inheritDoc}
-     * Implementation details: Performs a standard indexOf search in the 
-     * appropriate child list.
+     * Implementation details: Performs a standard indexOf search in the child list.
      */
     @Override
     public int getIndexOfChild(Object parent, Object child) {
-        if (parent == getRoot()) {
-            return rootNodes.indexOf(child);
-        } else if (parent instanceof AbstractContextNode<?> cn) {
+        if (parent instanceof AbstractContextNode<?> cn) {
             return cn.getChildren().indexOf(child);
         }
         return -1;
@@ -184,9 +148,6 @@ public class ContextTreeTableModel extends AbstractTreeTableModel {
      */
     @Override
     public boolean isLeaf(Object node) {
-        if (node == getRoot()) {
-            return rootNodes.isEmpty();
-        }
         if (node instanceof AbstractContextNode<?> cn) {
             return cn.getChildren().isEmpty();
         }

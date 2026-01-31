@@ -84,7 +84,7 @@ public class ToolkitPanel extends JPanel {
         enabledCheckbox.setSelected(tk.isEnabled());
         enabledCheckbox.addActionListener(e -> {
             tk.setEnabled(enabledCheckbox.isSelected());
-            parentPanel.refresh();
+            parentPanel.refresh(false);
         });
 
         retentionSpinner.setValue(tk.getDefaultRetention());

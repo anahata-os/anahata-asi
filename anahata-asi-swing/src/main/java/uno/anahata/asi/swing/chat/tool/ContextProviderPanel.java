@@ -27,6 +27,10 @@ import uno.anahata.asi.swing.chat.render.OtherMessagePanel;
 
 /**
  * A panel that displays the details and context previews for a {@link ContextProvider}.
+ * <p>
+ * It dynamically manages its tabs, hiding those that have no content to show 
+ * (e.g., if a provider doesn't contribute system instructions or RAG content).
+ * </p>
  *
  * @author anahata
  */
@@ -37,7 +41,8 @@ public class ContextProviderPanel extends JPanel {
     
     private final JLabel nameLabel;
     private final JLabel descLabel;
-    private final JCheckBox enabledCheckbox;
+    private final JCheckBox providingCheckbox;
+    private final JLabel effectivelyProvidingLabel;
     
     private final JTabbedPane tabbedPane;
     private final JPanel thisSysTab;
@@ -45,6 +50,10 @@ public class ContextProviderPanel extends JPanel {
     private final JPanel thisRagTab;
     private final JPanel childrenRagTab;
 
+    /**
+     * Constructs a new ContextProviderPanel.
+     * @param parentPanel The parent context panel.
+     */
     public ContextProviderPanel(ContextPanel parentPanel) {
         this.parentPanel = parentPanel;
         setLayout(new BorderLayout());
@@ -73,10 +82,15 @@ public class ContextProviderPanel extends JPanel {
         headerPanel.add(descLabel, gbc);
         gbc.gridy++;
 
-        enabledCheckbox = new JCheckBox("Providing Context");
+        providingCheckbox = new JCheckBox("Providing Context");
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.WEST;
-        headerPanel.add(enabledCheckbox, gbc);
+        headerPanel.add(providingCheckbox, gbc);
+        gbc.gridy++;
+        
+        effectivelyProvidingLabel = new JLabel();
+        effectivelyProvidingLabel.setFont(effectivelyProvidingLabel.getFont().deriveFont(java.awt.Font.ITALIC));
+        headerPanel.add(effectivelyProvidingLabel, gbc);
 
         add(headerPanel, BorderLayout.NORTH);
 
@@ -86,36 +100,54 @@ public class ContextProviderPanel extends JPanel {
         thisRagTab = new JPanel(new BorderLayout());
         childrenRagTab = new JPanel(new BorderLayout());
         
-        tabbedPane.addTab("System: This Provider", thisSysTab);
-        tabbedPane.addTab("System: Children (Aggregated)", childrenSysTab);
-        tabbedPane.addTab("RAG: This Provider", thisRagTab);
-        tabbedPane.addTab("RAG: Children (Aggregated)", childrenRagTab);
-        
         add(tabbedPane, BorderLayout.CENTER);
     }
 
+    /**
+     * Sets the context provider to display and updates the UI.
+     * @param cp The context provider.
+     */
     public void setContextProvider(ContextProvider cp) {
         nameLabel.setText("Provider: " + cp.getName());
         descLabel.setText("<html>" + cp.getDescription().replace("\n", "<br>") + "</html>");
         
-        for (java.awt.event.ActionListener al : enabledCheckbox.getActionListeners()) {
-            enabledCheckbox.removeActionListener(al);
+        for (java.awt.event.ActionListener al : providingCheckbox.getActionListeners()) {
+            providingCheckbox.removeActionListener(al);
         }
         
-        enabledCheckbox.setSelected(cp.isProviding());
-        enabledCheckbox.addActionListener(e -> {
-            cp.setProviding(enabledCheckbox.isSelected());
-            parentPanel.refresh();
+        providingCheckbox.setSelected(cp.isProviding());
+        providingCheckbox.addActionListener(e -> {
+            cp.setProviding(providingCheckbox.isSelected());
+            // Use non-structural refresh to preserve selection and expansion
+            parentPanel.refresh(false);
             updatePreviews(cp);
+            updateEffectivelyProviding(cp);
         });
 
+        updateEffectivelyProviding(cp);
         updatePreviews(cp);
         revalidate();
         repaint();
     }
+    
+    /**
+     * Updates the 'Effectively Providing' label based on the provider's hierarchy.
+     */
+    private void updateEffectivelyProviding(ContextProvider cp) {
+        if (cp.getParentProvider() != null) {
+            effectivelyProvidingLabel.setVisible(true);
+            effectivelyProvidingLabel.setText("Effectively Providing: " + (cp.isEffectivelyProviding() ? "Yes" : "No"));
+        } else {
+            effectivelyProvidingLabel.setVisible(false);
+        }
+    }
 
+    /**
+     * Updates the content previews and manages tab visibility.
+     */
     private void updatePreviews(ContextProvider cp) {
         Chat chat = parentPanel.getChat();
+        tabbedPane.removeAll();
         
         // 1. System: This Provider
         UserMessage thisSysMsg = new UserMessage(chat);
@@ -130,7 +162,10 @@ public class ContextProviderPanel extends JPanel {
         } catch (Exception e) {
             new TextPart(thisSysMsg, "**Error generating system instructions:**\n" + ExceptionUtils.getStackTrace(e));
         }
-        renderPreview(thisSysMsg, thisSysTab, "*No system instructions contributed by this provider.*");
+        if (!thisSysMsg.getParts().isEmpty()) {
+            renderPreview(thisSysMsg, thisSysTab, "");
+            tabbedPane.addTab("System: This Provider", thisSysTab);
+        }
 
         // 2. System: Children (Aggregated)
         UserMessage childrenSysMsg = new UserMessage(chat);
@@ -149,35 +184,48 @@ public class ContextProviderPanel extends JPanel {
                 }
             }
         }
-        renderPreview(childrenSysMsg, childrenSysTab, "*No system instructions contributed by children.*");
+        if (!childrenSysMsg.getParts().isEmpty()) {
+            renderPreview(childrenSysMsg, childrenSysTab, "");
+            tabbedPane.addTab("System: Children (Aggregated)", childrenSysTab);
+        }
 
         // 3. RAG: This Provider
         RagMessage thisRagMsg = new RagMessage(chat);
         try {
-            thisRagMsg.addPart(cp.getHeader());
             cp.populateMessage(thisRagMsg);
         } catch (Exception e) {
             new TextPart(thisRagMsg, "**Error populating RAG message:**\n" + ExceptionUtils.getStackTrace(e));
         }
-        renderPreview(thisRagMsg, thisRagTab, "*No RAG content contributed by this provider.*");
+        if (!thisRagMsg.getParts().isEmpty()) {
+            renderPreview(thisRagMsg, thisRagTab, "");
+            tabbedPane.addTab("RAG: This Provider", thisRagTab);
+        }
 
         // 4. RAG: Children (Aggregated)
         RagMessage childrenRagMsg = new RagMessage(chat);
         for (ContextProvider child : cp.getChildrenProviders()) {
             for (ContextProvider p : child.getFlattenedHierarchy(true)) {
                 try {
-                    childrenRagMsg.addPart(p.getHeader());
                     p.populateMessage(childrenRagMsg);
                 } catch (Exception e) {
                     new TextPart(childrenRagMsg, "**Error populating RAG message for child:**\n" + ExceptionUtils.getStackTrace(e));
                 }
             }
         }
-        renderPreview(childrenRagMsg, childrenRagTab, "*No RAG content contributed by children.*");
+        if (!childrenRagMsg.getParts().isEmpty()) {
+            renderPreview(childrenRagMsg, childrenRagTab, "");
+            tabbedPane.addTab("RAG: Children (Aggregated)", childrenRagTab);
+        }
+        
+        if (tabbedPane.getTabCount() == 0) {
+            JPanel emptyPanel = new JPanel(new BorderLayout());
+            emptyPanel.add(new JLabel("No context content contributed by this provider.", SwingConstants.CENTER));
+            tabbedPane.addTab("No Content", emptyPanel);
+        }
     }
 
     private void renderPreview(UserMessage msg, JPanel tab, String emptyText) {
-        if (msg.getParts().isEmpty()) {
+        if (msg.getParts().isEmpty() && !emptyText.isEmpty()) {
             new TextPart(msg, emptyText);
         }
         OtherMessagePanel panel = new OtherMessagePanel(parentPanel.getChatPanel(), msg, false, false);

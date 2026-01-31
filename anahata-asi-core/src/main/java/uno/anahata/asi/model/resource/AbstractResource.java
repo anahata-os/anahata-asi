@@ -2,6 +2,7 @@
 package uno.anahata.asi.model.resource;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -14,6 +15,7 @@ import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.context.ContextPosition;
 import uno.anahata.asi.model.context.RefreshPolicy;
+import uno.anahata.asi.model.core.AbstractPart;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.model.core.Rebindable;
@@ -98,6 +100,28 @@ public abstract class AbstractResource<R, C> extends BasicPropertyChangeSource i
     public abstract C getContent() throws Exception;
     
     /**
+     * Reloads the resource's content from its source.
+     * 
+     * @throws Exception if the reload fails.
+     */
+    public abstract void reload() throws Exception;
+
+    /**
+     * Checks if the resource still exists at its source.
+     * 
+     * @return true if the resource exists.
+     */
+    public abstract boolean exists();
+
+    /**
+     * Checks if the resource's content has changed since the last load.
+     * 
+     * @return true if the resource is stale.
+     * @throws IOException if the check fails.
+     */
+    public abstract boolean isStale() throws IOException;
+
+    /**
      * Gets the number of turns remaining before this resource is pruned.
      * The implementation of this method defines the resource's lifecycle policy.
      *
@@ -175,7 +199,21 @@ public abstract class AbstractResource<R, C> extends BasicPropertyChangeSource i
     /** {@inheritDoc} */
     @Override
     public boolean isProviding() {
-        return true; // Resources are active as long as they are registered
+        // A resource is providing if it is currently managed by the ResourceManager
+        return resourceManager.getResources().contains(this);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * <b>Note:</b> For resources, this method is a no-op. Resource lifecycle 
+     * (adding/removing from context) is managed exclusively by the 
+     * {@link ResourceManager} via its register/unregister methods.
+     * </p>
+     */
+    @Override
+    public void setProviding(boolean enabled) {
+        // No-op as per user instructions.
     }
 
     /** {@inheritDoc} */
@@ -197,6 +235,12 @@ public abstract class AbstractResource<R, C> extends BasicPropertyChangeSource i
             // The header is added by the ContextManager, we just add the content
             populateContent(ragMessage);
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public List<ContextProvider> getChildrenProviders() {
+        return Collections.emptyList();
     }
 
     /** {@inheritDoc} */

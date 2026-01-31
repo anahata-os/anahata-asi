@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import uno.anahata.asi.model.resource.AbstractResource;
 import uno.anahata.asi.resource.ResourceManager;
+import uno.anahata.asi.swing.chat.ChatPanel;
 
 /**
  * A context tree node representing the managed resources.
@@ -20,10 +21,11 @@ public class ResourcesNode extends AbstractContextNode<ResourceManager> {
 
     /**
      * Constructs a new ResourcesNode.
+     * @param chatPanel The parent chat panel.
      * @param userObject The resource manager to wrap.
      */
-    public ResourcesNode(ResourceManager userObject) {
-        super(userObject);
+    public ResourcesNode(ChatPanel chatPanel, ResourceManager userObject) {
+        super(chatPanel, userObject);
     }
 
     /** {@inheritDoc} */
@@ -44,7 +46,7 @@ public class ResourcesNode extends AbstractContextNode<ResourceManager> {
         if (children == null) {
             children = new ArrayList<>();
             for (AbstractResource res : userObject.getResources()) {
-                children.add(new ResourceNode(res));
+                children.add(new ResourceNode(chatPanel, res));
             }
         }
         return children;
@@ -52,15 +54,13 @@ public class ResourcesNode extends AbstractContextNode<ResourceManager> {
 
     /** {@inheritDoc} */
     @Override
-    public void refreshTokens() {
-        this.instructionsTokens = 0;
-        this.declarationsTokens = 0;
-        this.historyTokens = 0;
-        this.ragTokens = 0;
+    protected void calculateLocalTokens() {
+        // Resources tokens are aggregated from ResourceNodes
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected void updateStatus() {
         this.status = userObject.getResources().size() + " resources";
-        
-        for (AbstractContextNode<?> child : getChildren()) {
-            child.refreshTokens();
-        }
     }
 }

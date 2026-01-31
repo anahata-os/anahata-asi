@@ -7,6 +7,18 @@ import java.util.List;
 import javax.swing.Icon;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.context.ContextProvider;
+import uno.anahata.asi.model.core.AbstractMessage;
+import uno.anahata.asi.model.core.AbstractPart;
+import uno.anahata.asi.model.resource.AbstractResource;
+import uno.anahata.asi.model.tool.AbstractTool;
+import uno.anahata.asi.model.tool.AbstractToolkit;
+import uno.anahata.asi.model.tool.ToolPermission;
+import uno.anahata.asi.swing.chat.ChatPanel;
+import uno.anahata.asi.swing.chat.SwingChatConfig;
+import uno.anahata.asi.swing.icons.IconProvider;
+import uno.anahata.asi.swing.icons.IconUtils;
 
 /**
  * The base class for all nodes in the hierarchical context tree.
@@ -16,9 +28,8 @@ import lombok.RequiredArgsConstructor;
  * while maintaining a consistent JNDI-style view.
  * </p>
  * <p>
- * <b>Performance Note:</b> Token counts and status are cached as fields to ensure 
- * that the {@code getValueAt} method in the TreeTableModel remains O(1) and 
- * does not trigger expensive tokenization during UI rendering.
+ * It implements a hierarchical token aggregation system, where each node 
+ * calculates its own tokens and sums up the tokens of its children.
  * </p>
  *
  * @author anahata
@@ -28,22 +39,33 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public abstract class AbstractContextNode<T> {
 
+    /** The parent chat panel. */
+    protected final ChatPanel chatPanel;
+
     /** 
      * The underlying domain object. 
      * @return the wrapped domain object.
      */
     protected final T userObject;
 
-    /** Cached instruction token count. */
+    /** Cached instruction token count (including children). */
     protected int instructionsTokens;
-    /** Cached declaration token count. */
+    /** Cached declaration token count (including children). */
     protected int declarationsTokens;
-    /** Cached history token count. */
+    /** Cached history token count (including children). */
     protected int historyTokens;
-    /** Cached RAG token count. */
+    /** Cached RAG token count (including children). */
     protected int ragTokens;
     /** Cached status string. */
     protected String status;
+
+    /**
+     * Gets the parent chat session.
+     * @return The chat session.
+     */
+    public Chat getChat() {
+        return chatPanel.getChat();
+    }
 
     /**
      * Gets the human-readable display name for this node.
@@ -68,19 +90,87 @@ public abstract class AbstractContextNode<T> {
     /**
      * Recalculates and caches the token counts and status for this node 
      * and all its descendants.
-     * <p>
-     * This method should be called explicitly (e.g., via a refresh button) 
-     * to update the "snapshot" of the context's token usage.
-     * </p>
+     * Implementation details: It resets counts, calls {@link #calculateLocalTokens()}, 
+     * then recursively calls refreshTokens on children and aggregates their counts.
      */
-    public abstract void refreshTokens();
+    public final void refreshTokens() {
+        this.instructionsTokens = 0;
+        this.declarationsTokens = 0;
+        this.historyTokens = 0;
+        this.ragTokens = 0;
+        
+        calculateLocalTokens();
+        
+        for (AbstractContextNode<?> child : getChildren()) {
+            child.refreshTokens();
+            this.instructionsTokens += child.getInstructionsTokens();
+            this.declarationsTokens += child.getDeclarationsTokens();
+            this.historyTokens += child.getHistoryTokens();
+            this.ragTokens += child.getRagTokens();
+        }
+        
+        updateStatus();
+    }
     
     /**
-     * Gets an optional icon for this node.
+     * Calculates the token counts for this node's own content (excluding children).
+     */
+    protected abstract void calculateLocalTokens();
+    
+    /**
+     * Updates the status string for this node.
+     */
+    protected abstract void updateStatus();
+    
+    /**
+     * Gets an optional icon for this node by delegating to the 
+     * {@link IconProvider} configured in the chat session.
+     * 
      * @return The icon, or null if no specialized icon is available.
      */
     public Icon getIcon() {
+        if (getChat().getConfig() instanceof SwingChatConfig scc) {
+            IconProvider provider = scc.getIconProvider();
+            if (provider != null) {
+                // Check for more specific types first to avoid clobbering by ContextProvider check
+                if (userObject instanceof AbstractTool<?, ?> tool) {
+                    return provider.getIconFor(tool);
+                } else if (userObject instanceof AbstractToolkit<?> tk) {
+                    return provider.getIconFor(tk);
+                } else if (userObject instanceof ContextProvider cp) {
+                    return provider.getIconFor(cp);
+                }
+            }
+        }
         return null;
+    }
+
+    /**
+     * Checks if the underlying domain object is currently "active" in the context.
+     * <p>
+     * An object is inactive if it is a disabled toolkit, a provider not effectively 
+     * providing (including parent state), a deleted resource, or a pruned message/part.
+     * </p>
+     * 
+     * @return {@code true} if active, {@code false} otherwise.
+     */
+    public boolean isActive() {
+        if (userObject instanceof ContextProvider cp) {
+            boolean active = cp.isEffectivelyProviding();
+            if (cp instanceof AbstractResource<?, ?> res) {
+                active = active && res.exists();
+            }
+            return active;
+        } else if (userObject instanceof AbstractToolkit<?> tk) {
+            return tk.isEnabled();
+        } else if (userObject instanceof AbstractTool<?, ?> tool) {
+            return tool.getPermission() != ToolPermission.DENY_NEVER;
+        } else if (userObject instanceof AbstractMessage msg) {
+            return !msg.isEffectivelyPruned();
+        } else if (userObject instanceof AbstractPart part) {
+            return !part.isEffectivelyPruned();
+        }
+        return true;
     }
 
     /**
