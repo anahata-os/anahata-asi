@@ -4,6 +4,10 @@ package uno.anahata.asi.nb.tools.files.nb;
 import java.awt.Image;
 import java.io.File;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 import javax.swing.Icon;
 import org.openide.filesystems.FileObject;
@@ -55,7 +59,7 @@ public class FilesContextActionLogic {
                         
                         targetChat.getResourceManager().register(resource);
                         LOG.info("Added file to context of session '" + targetChat.getDisplayName() + "': " + path);
-                        FileAnnotationProvider.fireRefresh(Collections.singleton(fo));
+                        fireRefreshRecursive(fo);
                     }
                 }
             } catch (Exception ex) {
@@ -83,7 +87,7 @@ public class FilesContextActionLogic {
                 targetChat.getResourceManager().findByPath(path).ifPresent(res -> {
                     targetChat.getResourceManager().unregister(res.getId());
                     LOG.info("Removed file from context of session '" + targetChat.getDisplayName() + "': " + path);
-                    FileAnnotationProvider.fireRefresh(Collections.singleton(fo));
+                    fireRefreshRecursive(fo);
                 });
             }
         } else if (fo.isFolder() && recursive) {
@@ -122,5 +126,50 @@ public class FilesContextActionLogic {
             }
         }
         return count;
+    }
+
+    /**
+     * Returns a map of chat sessions and the number of files they have in context 
+     * within the given folder (or 1 if it's a single file).
+     * 
+     * @param fo The file or folder to check.
+     * @return A map of Chat to file count.
+     */
+    public static Map<Chat, Integer> getSessionFileCounts(FileObject fo) {
+        Map<Chat, Integer> counts = new HashMap<>();
+        for (Chat chat : AnahataInstaller.getContainer().getActiveChats()) {
+            int count = countFilesInContext(fo, chat);
+            if (count > 0) {
+                counts.put(chat, count);
+            }
+        }
+        return counts;
+    }
+
+    private static int countFilesInContext(FileObject fo, Chat chat) {
+        if (fo.isData()) {
+            return isInContext(fo, chat) ? 1 : 0;
+        }
+        int total = 0;
+        for (FileObject child : fo.getChildren()) {
+            total += countFilesInContext(child, chat);
+        }
+        return total;
+    }
+
+    /**
+     * Fires a refresh event for the given file and all its parent folders.
+     * This ensures that badges and name annotations propagate up the tree.
+     * 
+     * @param fo The file object to refresh.
+     */
+    public static void fireRefreshRecursive(FileObject fo) {
+        Set<FileObject> toRefresh = new HashSet<>();
+        FileObject current = fo;
+        while (current != null) {
+            toRefresh.add(current);
+            current = current.getParent();
+        }
+        FileAnnotationProvider.fireRefresh(toRefresh);
     }
 }

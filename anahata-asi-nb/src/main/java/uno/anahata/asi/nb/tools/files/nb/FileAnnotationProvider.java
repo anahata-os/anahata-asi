@@ -2,6 +2,7 @@
 package uno.anahata.asi.nb.tools.files.nb;
 
 import java.awt.Image;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -16,7 +17,7 @@ import org.openide.filesystems.FileSystem;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.ServiceProvider;
-import uno.anahata.asi.nb.tools.project.nb.ProjectsContextActionLogic;
+import uno.anahata.asi.chat.Chat;
 
 /**
  * Provides file-level annotations (icons and names) in the NetBeans Projects tab.
@@ -61,12 +62,23 @@ public class FileAnnotationProvider extends AnnotationProvider {
                 return baseIcon;
             }
             
-            int count = getChatCount(fo);
-            if (count > 0 && BADGE != null) {
+            Map<Chat, Integer> sessionCounts = FilesContextActionLogic.getSessionFileCounts(fo);
+            if (!sessionCounts.isEmpty() && BADGE != null) {
                 // Merge our badge onto the already-annotated baseIcon at 8,0 (Top Right)
                 Image badged = ImageUtilities.mergeImages(baseIcon, BADGE, 8, 0);
-                String tip = "In AI Context (" + count + " sessions)";
-                return mergeTooltip(badged, tip);
+                
+                // Build rich HTML tooltip
+                StringBuilder sb = new StringBuilder();
+                sb.append("<b>In AI Context:</b><br>");
+                for (Map.Entry<Chat, Integer> entry : sessionCounts.entrySet()) {
+                    sb.append("&nbsp;&nbsp;&bull;&nbsp;<b>").append(entry.getKey().getDisplayName()).append("</b>");
+                    if (fo.isFolder()) {
+                        sb.append(": ").append(entry.getValue()).append(" files");
+                    }
+                    sb.append("<br>");
+                }
+                
+                return mergeTooltip(badged, sb.toString());
             }
         }
         return baseIcon; 
@@ -92,9 +104,32 @@ public class FileAnnotationProvider extends AnnotationProvider {
         String currentName = delegatedName != null ? delegatedName : name;
 
         for (FileObject fo : files) {
-            int count = getChatCount(fo);
-            if (count > 0) {
-                String label = " <font color='#707070'>[" + count + "]</font>";
+            // Skip project roots (handled by AnahataProjectAnnotator)
+            if (isProjectRoot(fo)) {
+                return delegatedName;
+            }
+
+            Map<Chat, Integer> sessionCounts = FilesContextActionLogic.getSessionFileCounts(fo);
+            if (!sessionCounts.isEmpty()) {
+                StringBuilder labelBuilder = new StringBuilder();
+                labelBuilder.append(" <font color='#707070'>");
+                
+                if (fo.isData()) {
+                    // For files: [SessionName] if 1 session, [n] if multiple
+                    if (sessionCounts.size() == 1) {
+                        labelBuilder.append("[").append(sessionCounts.keySet().iterator().next().getDisplayName()).append("]");
+                    } else {
+                        labelBuilder.append("[").append(sessionCounts.size()).append("]");
+                    }
+                } else {
+                    // For folders: [n][m] (one bracket per session with file count)
+                    for (Integer count : sessionCounts.values()) {
+                        labelBuilder.append("[").append(count).append("]");
+                    }
+                }
+                labelBuilder.append("</font>");
+                
+                String label = labelBuilder.toString();
                 
                 // If the name is already HTML, inject our label before the closing tag
                 if (currentName.toLowerCase().contains("<html>")) {
@@ -145,10 +180,16 @@ public class FileAnnotationProvider extends AnnotationProvider {
     private Image mergeTooltip(Image icon, String segment) {
         String existing = ImageUtilities.getImageToolTip(icon);
         if (existing == null || existing.isEmpty()) {
-            return ImageUtilities.addToolTipToImage(icon, segment);
+            return ImageUtilities.addToolTipToImage(icon, "<html>" + segment + "</html>");
         }
-        if (existing.contains(segment)) return icon;
-        return ImageUtilities.addToolTipToImage(icon, existing + " | " + segment);
+        
+        // If it's already HTML, inject before the closing tag
+        if (existing.toLowerCase().contains("<html>")) {
+            return ImageUtilities.addToolTipToImage(icon, existing.replaceFirst("(?i)</html>", segment + "</html>"));
+        }
+        
+        // Otherwise, wrap both in HTML
+        return ImageUtilities.addToolTipToImage(icon, "<html>" + existing + segment + "</html>");
     }
 
     private boolean isProjectRoot(FileObject fo) {
@@ -158,27 +199,6 @@ public class FileAnnotationProvider extends AnnotationProvider {
         
         FileObject root = p.getProjectDirectory();
         return fo.equals(root) || fo.getPath().equals(root.getPath());
-    }
-
-    private int getChatCount(FileObject fo) {
-        if (isProjectRoot(fo)) {
-            try {
-                Project p = FileOwnerQuery.getOwner(fo);
-                return ProjectsContextActionLogic.countChatsProjectInContext(p);
-            } catch (Exception e) {
-                return 0;
-            }
-        }
-        
-        if (fo.isFolder()) {
-            int total = 0;
-            for (FileObject child : fo.getChildren()) {
-                total += getChatCount(child);
-            }
-            return total;
-        }
-        
-        return FilesContextActionLogic.countChatsInContext(fo);
     }
 
     @Override
