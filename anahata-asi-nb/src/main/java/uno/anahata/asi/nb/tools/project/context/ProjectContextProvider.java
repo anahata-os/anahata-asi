@@ -1,17 +1,14 @@
 /* Licensed under the Apache License, Version 2.0 */
 package uno.anahata.asi.nb.tools.project.context;
 
-import java.util.Collections;
 import javax.swing.Icon;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectUtils;
-import org.openide.filesystems.FileObject;
 import uno.anahata.asi.context.BasicContextProvider;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.nb.tools.project.nb.AnahataProjectAnnotator;
-import uno.anahata.asi.nb.tools.files.nb.FileAnnotationProvider;
 import uno.anahata.asi.swing.icons.IconUtils;
 
 /**
@@ -73,14 +70,15 @@ public class ProjectContextProvider extends BasicContextProvider {
     /**
      * Gets the NetBeans project instance, restoring it from the path if necessary.
      * 
-     * @return The project instance, or null if it cannot be found.
+     * @return The project instance, or null if it cannot be found or is closed.
      */
     public Project getProject() {
         if (project == null) {
             try {
                 project = Projects.findOpenProject(projectPath);
             } catch (Exception e) {
-                log.error("Failed to restore project reference for path: {}", projectPath, e);
+                // Silent if project is simply closed
+                log.debug("Project not open at path: {}", projectPath);
             }
         }
         return project;
@@ -104,18 +102,14 @@ public class ProjectContextProvider extends BasicContextProvider {
 
     /**
      * {@inheritDoc}
-     * Overridden to trigger a global project icon refresh in the IDE.
+     * Overridden to trigger a comprehensive project refresh in the IDE.
      */
     @Override
     public void setProviding(boolean enabled) {
         boolean old = isProviding();
         super.setProviding(enabled);
         if (old != enabled) {
-            Project p = getProject();
-            AnahataProjectAnnotator.fireRefresh(p);
-            if (p != null) {
-                FileAnnotationProvider.fireRefresh(Collections.singleton(p.getProjectDirectory()));
-            }
+            AnahataProjectAnnotator.fireRefreshAll(getProject());
         }
     }
 }

@@ -351,10 +351,10 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
             log.info("Project context for {} set to: {}", projectPath, enabled);
             try {
                 Project p = findOpenProject(projectPath);
-                AnahataProjectAnnotator.fireRefresh(p);
+                AnahataProjectAnnotator.fireRefreshAll(p);
             } catch (Exception ex) {
                 log.warn("Failed to find project for refresh: " + projectPath, ex);
-                AnahataProjectAnnotator.fireRefresh(null);
+                AnahataProjectAnnotator.fireRefreshAll(null);
             }
         });
     }
@@ -475,7 +475,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
             if (cp instanceof ProjectContextProvider pcp) {
                 if (!currentPaths.contains(pcp.getProjectPath())) {
                     log.info("Removing ProjectContextProvider for closed project at: {}", pcp.getProjectPath());
-                    // Ensure resources are cleaned up
+                    // Ensure resources are cleaned up and badges are removed
                     pcp.getFlattenedHierarchy(false).forEach(child -> child.setProviding(false));
                     return true;
                 }

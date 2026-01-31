@@ -9,11 +9,15 @@ import uno.anahata.asi.context.BasicContextProvider;
 import uno.anahata.asi.context.ContextPosition;
 import uno.anahata.asi.model.resource.TextFileResource;
 import uno.anahata.asi.nb.tools.project.Projects;
+import uno.anahata.asi.nb.tools.project.nb.AnahataProjectAnnotator;
 
 /**
  * Provides project-specific system instructions from the anahata.md file.
  * It manages a stateful {@link TextFileResource} that is injected into the 
  * {@link ContextPosition#SYSTEM_INSTRUCTIONS} position.
+ * <p>
+ * Toggling this provider also triggers a refresh of the project's IDE annotations.
+ * </p>
  * 
  * @author anahata
  */
@@ -44,12 +48,16 @@ public class AnahataMdContextProvider extends BasicContextProvider {
 
     /**
      * {@inheritDoc}
-     * Overridden to trigger a resource sync when the provider is enabled or disabled.
+     * Overridden to trigger a resource sync and project UI refresh when toggled.
      */
     @Override
     public void setProviding(boolean enabled) {
+        boolean old = isProviding();
         super.setProviding(enabled);
         syncResource();
+        if (old != enabled && parent instanceof ProjectContextProvider pcp) {
+            AnahataProjectAnnotator.fireRefreshAll(pcp.getProject());
+        }
     }
 
     /**

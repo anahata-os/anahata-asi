@@ -4,12 +4,12 @@ package uno.anahata.asi.nb.tools.files.nb;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import org.openide.filesystems.FileObject;
-import uno.anahata.asi.model.resource.TextFileResource;
+import uno.anahata.asi.model.resource.BinaryFileResource;
 import uno.anahata.asi.resource.ResourceManager;
 
 /**
- * A NetBeans-specific implementation of {@link TextFileResource} that wraps a 
- * {@link FileObject} and listens for filesystem changes.
+ * A NetBeans-specific implementation of {@link BinaryFileResource} for handling 
+ * multimodal content (images, videos, etc.).
  * <p>
  * It uses {@link NbFileObjectResourceHelper} to manage the underlying FileObject 
  * and its listeners. It uses the default LIVE refresh policy to ensure the 
@@ -19,27 +19,26 @@ import uno.anahata.asi.resource.ResourceManager;
  * @author anahata
  */
 @Slf4j
-public class NbTextFileResource extends TextFileResource {
+public class NbBinaryFileResource extends BinaryFileResource {
 
     /** The helper for FileObject management. */
     private final NbFileObjectResourceHelper helper;
 
     /**
-     * Constructs a new NbTextFileResource.
+     * Constructs a new NbBinaryFileResource.
      * 
      * @param manager The parent resource manager.
      * @param fo The NetBeans FileObject to wrap.
      * @throws Exception if the initial setup fails.
      */
-    public NbTextFileResource(ResourceManager manager, FileObject fo) throws Exception {
+    public NbBinaryFileResource(ResourceManager manager, FileObject fo) throws Exception {
         super(manager, org.openide.filesystems.FileUtil.toFile(fo).toPath());
         this.helper = new NbFileObjectResourceHelper(this, fo);
     }
 
     /**
      * {@inheritDoc}
-     * Implementation details: Uses {@link FileObject#asText()} for efficient 
-     * reading and updates the load timestamp from the FileObject metadata.
+     * Loads the file content as a byte array using the NetBeans FileObject API.
      */
     @Override
     public void reload() throws Exception {
@@ -48,15 +47,10 @@ public class NbTextFileResource extends TextFileResource {
             throw new IOException("FileObject not available for: " + getPath());
         }
         
-        log.info("Reloading NbTextFileResource: {}", getPath());
-        String content = fo.asText();
+        log.info("Reloading NbBinaryFileResource: {}", getPath());
+        byte[] data = fo.asBytes();
         this.setLoadLastModified(fo.lastModified().getTime());
-        
-        this.getViewport().process(content);
-        
-        String oldCache = this.cache;
-        this.cache = getViewport().getProcessedText();
-        propertyChangeSupport.firePropertyChange("cache", oldCache, cache);
+        this.setCache(data);
     }
 
     /** {@inheritDoc} */

@@ -43,12 +43,14 @@ import uno.anahata.asi.chat.Chat;
         lazy = false
 )
 @ActionReferences({
-    @ActionReference(path = "Loaders/folder/any/Actions", position = 1360),
-    @ActionReference(path = "Loaders/content/unknown/Actions", position = 1360),
-    @ActionReference(path = "Loaders/text/any/Actions", position = 1360),
-    @ActionReference(path = "Loaders/text/x-java/Actions", position = 1360),
-    @ActionReference(path = "Loaders/text/x-maven-pom+xml/Actions", position = 1360),
-    @ActionReference(path = "Loaders/any/Actions", position = 1360),
+    @ActionReference(path = "Loaders/any/Actions", position = 1341),
+    @ActionReference(path = "Loaders/folder/any/Actions", position = 1341),
+    @ActionReference(path = "Loaders/text/any/Actions", position = 1341),
+    @ActionReference(path = "Loaders/text/x-java/Actions", position = 1341),
+    @ActionReference(path = "Loaders/text/x-maven-pom+xml/Actions", position = 1341),
+    @ActionReference(path = "Loaders/text/x-markdown/Actions", position = 1341),
+    @ActionReference(path = "Loaders/image/any/Actions", position = 1341),
+    @ActionReference(path = "Loaders/video/any/Actions", position = 1341)
 })
 public final class RemoveFilesFromContextAction extends AbstractAction implements ContextAwareAction, Presenter.Popup {
     private static final Logger LOG = Logger.getLogger(RemoveFilesFromContextAction.class.getName());

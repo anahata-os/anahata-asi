@@ -3,6 +3,11 @@ package uno.anahata.asi.nb.tools.project.context;
 
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.netbeans.api.project.Project;
+import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
+import org.openide.loaders.DataObject;
+import org.openide.nodes.Node;
 import uno.anahata.asi.context.BasicContextProvider;
 import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.model.core.TextPart;
@@ -13,11 +18,16 @@ import uno.anahata.asi.nb.tools.project.ProjectFile;
 import uno.anahata.asi.nb.tools.project.ProjectOverview;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.nb.tools.project.SourceFolder;
+import uno.anahata.asi.nb.tools.project.nb.AnahataProjectAnnotator;
 
 /**
  * Provides a compact, real-time overview of a project's structure and metadata.
  * This provider injects a Markdown-formatted summary of the project into the
  * AI's prompt augmentation (RAG) message.
+ * <p>
+ * It also attempts to extract IDE-level annotations (like Git status) for each file
+ * by querying the Node delegate.
+ * </p>
  * 
  * @author anahata
  */
@@ -50,6 +60,19 @@ public class ProjectOverviewContextProvider extends BasicContextProvider {
     public void populateMessage(RagMessage ragMessage) throws Exception {
         ProjectOverview overview = projectsToolkit.getOverview(projectPath);
         new TextPart(ragMessage, generateMarkdown(overview));
+    }
+
+    /**
+     * {@inheritDoc}
+     * Overridden to trigger a project UI refresh when the overview is toggled.
+     */
+    @Override
+    public void setProviding(boolean enabled) {
+        boolean old = isProviding();
+        super.setProviding(enabled);
+        if (old != enabled && parent instanceof ProjectContextProvider pcp) {
+            AnahataProjectAnnotator.fireRefreshAll(pcp.getProject());
+        }
     }
 
     /**
@@ -118,15 +141,49 @@ public class ProjectOverviewContextProvider extends BasicContextProvider {
     }
 
     /**
-     * Formats a project file into a Markdown list item, including its context status.
+     * Formats a project file into a Markdown list item, including its context status
+     * and any IDE-level annotations (like Git status).
      * 
      * @param file The project file to format.
      * @param indent The current indentation string.
      * @return A Markdown-formatted string for the file.
      */
     private String formatProjectFile(ProjectFile file, String indent) {
-        String status = file.getContextStatus() != null ? " " + file.getContextStatus() : "";
-        return String.format("%s- 📄 %s%s\n", indent, file.getName(), status);
+        StringBuilder statusBuilder = new StringBuilder();
+        
+        // 1. Add AI Context status
+        if (file.getContextStatus() != null) {
+            statusBuilder.append(" ").append(file.getContextStatus());
+        }
+        
+        // 2. Attempt to extract IDE annotations (e.g. Git status) via Node delegate
+        try {
+            FileObject fo = FileUtil.toFileObject(new java.io.File(file.getPath()));
+            if (fo != null) {
+                DataObject dobj = DataObject.find(fo);
+                Node node = dobj.getNodeDelegate();
+                
+                // Prefer HTML display name as it contains branch info and colors
+                String annotated = node.getHtmlDisplayName();
+                if (annotated == null) {
+                    annotated = node.getDisplayName();
+                }
+                
+                if (annotated != null && !annotated.equals(fo.getNameExt())) {
+                    // Extract the annotation part (usually in brackets or colored)
+                    String extra = annotated.replace(fo.getNameExt(), "").trim();
+                    // Clean up HTML tags if present
+                    extra = extra.replaceAll("<[^>]*>", "");
+                    if (!extra.isEmpty()) {
+                        statusBuilder.append(" ").append(extra);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to extract IDE annotations for: {}", file.getPath(), e);
+        }
+        
+        return String.format("%s- 📄 %s%s\n", indent, file.getName(), statusBuilder.toString());
     }
 
     /**

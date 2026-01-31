@@ -2,11 +2,21 @@
 package uno.anahata.asi.nb.tools.files.nb;
 
 import java.awt.Image;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.swing.Action;
+import javax.swing.SwingUtilities;
 import org.netbeans.api.project.FileOwnerQuery;
 import org.netbeans.api.project.Project;
 import org.netbeans.modules.masterfs.providers.AnnotationProvider;
@@ -17,6 +27,7 @@ import org.openide.filesystems.FileSystem;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.ServiceProvider;
+import uno.anahata.asi.AnahataInstaller;
 import uno.anahata.asi.chat.Chat;
 
 /**
@@ -36,7 +47,11 @@ public class FileAnnotationProvider extends AnnotationProvider {
 
     private static final Logger LOG = Logger.getLogger(FileAnnotationProvider.class.getName());
     
+    /** The badge image to overlay on file icons. */
     private static final Image BADGE;
+    
+    /** Diagnostic counter to limit stack trace logging. */
+    private static final AtomicInteger TRACE_COUNT = new AtomicInteger(0);
 
     static {
         Image original = ImageUtilities.loadImage("icons/anahata.png");
@@ -47,10 +62,17 @@ public class FileAnnotationProvider extends AnnotationProvider {
         }
     }
 
+    /**
+     * Default constructor for the provider.
+     */
     public FileAnnotationProvider() {
         LOG.info("FileAnnotationProvider instance created.");
     }
 
+    /**
+     * {@inheritDoc}
+     * Annotates the icon with an Anahata badge at offset 14,0.
+     */
     @Override
     public Image annotateIcon(Image icon, int type, Set<? extends FileObject> files) {
         // 1. Delegate to the rest of the chain first to get Git/Error badges
@@ -62,20 +84,46 @@ public class FileAnnotationProvider extends AnnotationProvider {
                 return baseIcon;
             }
             
-            Map<Chat, Integer> sessionCounts = FilesContextActionLogic.getSessionFileCounts(fo);
+            // Surgical Badging: Non-recursive for Logical View (Projects tab), 
+            // recursive for Physical View (Files tab).
+            boolean logical = isLogicalView();
+            
+            // Diagnostic: Log stack trace for the first few calls to identify the view
+            if (TRACE_COUNT.getAndIncrement() < 10) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("Annotation call for: ").append(fo.getPath()).append(" (Logical: ").append(logical).append(")\n");
+                for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
+                    sb.append("  at ").append(ste.getClassName()).append(".").append(ste.getMethodName()).append("\n");
+                }
+                LOG.info(sb.toString());
+            }
+
+            boolean recursive = !logical;
+            Map<Chat, Integer> sessionCounts = FilesContextActionLogic.getSessionFileCounts(fo, recursive);
+            
             if (!sessionCounts.isEmpty() && BADGE != null) {
-                // Merge our badge onto the already-annotated baseIcon at 8,0 (Top Right)
-                Image badged = ImageUtilities.mergeImages(baseIcon, BADGE, 8, 0);
+                // Merge our badge onto the already-annotated baseIcon at 14,0 (Top Right)
+                Image badged = ImageUtilities.mergeImages(baseIcon, BADGE, 14, 0);
                 
                 // Build rich HTML tooltip
                 StringBuilder sb = new StringBuilder();
-                sb.append("<b>In AI Context:</b><br>");
-                for (Map.Entry<Chat, Integer> entry : sessionCounts.entrySet()) {
-                    sb.append("&nbsp;&nbsp;&bull;&nbsp;<b>").append(entry.getKey().getDisplayName()).append("</b>");
-                    if (fo.isFolder()) {
-                        sb.append(": ").append(entry.getValue()).append(" files");
+                sb.append("<img src=\"").append(getClass().getResource("/icons/anahata_16.png")).append("\" width=\"12\" height=\"12\"> ");
+                sb.append("<b>In Context In:</b><br>");
+                
+                // Sort sessions by name for consistent tooltip order
+                List<Chat> sortedSessions = new ArrayList<>(sessionCounts.keySet());
+                sortedSessions.sort(Comparator.comparing(Chat::getDisplayName));
+                
+                if (fo.isData()) {
+                    // For files: show session names on one line
+                    sb.append("&nbsp;&nbsp;&bull;&nbsp;");
+                    sb.append(sortedSessions.stream().map(Chat::getDisplayName).collect(Collectors.joining(", ")));
+                } else {
+                    // For folders: show per-session file counts
+                    for (Chat chat : sortedSessions) {
+                        sb.append("&nbsp;&nbsp;&bull;&nbsp;").append(chat.getDisplayName())
+                          .append(": ").append(sessionCounts.get(chat)).append(" files<br>");
                     }
-                    sb.append("<br>");
                 }
                 
                 return mergeTooltip(badged, sb.toString());
@@ -85,6 +133,7 @@ public class FileAnnotationProvider extends AnnotationProvider {
     }
 
     /**
+     * {@inheritDoc}
      * We return null here to avoid clobbering other name annotations (like Git branch names).
      * NetBeans will then fall back to annotateNameHtml or the default name.
      */
@@ -94,8 +143,8 @@ public class FileAnnotationProvider extends AnnotationProvider {
     }
 
     /**
-     * This is the preferred way to add status labels. By delegating first, we preserve
-     * any previous annotations (like Git's [main]) and then append our label.
+     * {@inheritDoc}
+     * Adds session names or counts to the file/folder name using HTML.
      */
     @Override
     public String annotateNameHtml(String name, Set<? extends FileObject> files) {
@@ -109,27 +158,41 @@ public class FileAnnotationProvider extends AnnotationProvider {
                 return delegatedName;
             }
 
-            Map<Chat, Integer> sessionCounts = FilesContextActionLogic.getSessionFileCounts(fo);
+            // Surgical Badging: Non-recursive for Logical View (Projects tab)
+            boolean recursive = !isLogicalView();
+            Map<Chat, Integer> sessionCounts = FilesContextActionLogic.getSessionFileCounts(fo, recursive);
+            
             if (!sessionCounts.isEmpty()) {
                 StringBuilder labelBuilder = new StringBuilder();
                 labelBuilder.append(" <font color='#707070'>");
                 
+                int totalActiveSessions = AnahataInstaller.getContainer().getActiveChats().size();
+                
                 if (fo.isData()) {
-                    // For files: [SessionName] if 1 session, [n] if multiple
-                    if (sessionCounts.size() == 1) {
-                        labelBuilder.append("[").append(sessionCounts.keySet().iterator().next().getDisplayName()).append("]");
-                    } else {
-                        labelBuilder.append("[").append(sessionCounts.size()).append("]");
+                    // For files: only show label if there's more than one session active in the IDE
+                    if (totalActiveSessions > 1) {
+                        if (sessionCounts.size() == 1) {
+                            labelBuilder.append("[").append(sessionCounts.keySet().iterator().next().getDisplayName()).append("]");
+                        } else {
+                            labelBuilder.append("[").append(sessionCounts.size()).append("]");
+                        }
                     }
                 } else {
-                    // For folders: [n][m] (one bracket per session with file count)
-                    for (Integer count : sessionCounts.values()) {
+                    // For folders: [n][m] (one bracket per session with file count, sorted by session name)
+                    Map<String, Integer> sortedCounts = new TreeMap<>();
+                    for (Map.Entry<Chat, Integer> entry : sessionCounts.entrySet()) {
+                        sortedCounts.put(entry.getKey().getDisplayName(), entry.getValue());
+                    }
+                    for (Integer count : sortedCounts.values()) {
                         labelBuilder.append("[").append(count).append("]");
                     }
                 }
                 labelBuilder.append("</font>");
                 
                 String label = labelBuilder.toString();
+                if (label.trim().equals("<font color='#707070'></font>")) {
+                    return delegatedName;
+                }
                 
                 // If the name is already HTML, inject our label before the closing tag
                 if (currentName.toLowerCase().contains("<html>")) {
@@ -175,7 +238,13 @@ public class FileAnnotationProvider extends AnnotationProvider {
     }
 
     /**
-     * Merges a tooltip segment with existing image tooltips.
+     * Merges our custom HTML tooltip segment with any existing tooltip on the image.
+     * It performs deduplication to fix the Git double-tooltip issue and ensures 
+     * proper separation with a horizontal rule.
+     * 
+     * @param icon The image to annotate.
+     * @param segment The HTML segment to append.
+     * @return The image with the combined tooltip.
      */
     private Image mergeTooltip(Image icon, String segment) {
         String existing = ImageUtilities.getImageToolTip(icon);
@@ -183,15 +252,56 @@ public class FileAnnotationProvider extends AnnotationProvider {
             return ImageUtilities.addToolTipToImage(icon, "<html>" + segment + "</html>");
         }
         
-        // If it's already HTML, inject before the closing tag
-        if (existing.toLowerCase().contains("<html>")) {
-            return ImageUtilities.addToolTipToImage(icon, existing.replaceFirst("(?i)</html>", segment + "</html>"));
-        }
+        // Deduplicate existing lines to fix the Git double-tooltip issue
+        String cleanExisting = deduplicateTooltip(existing);
         
-        // Otherwise, wrap both in HTML
-        return ImageUtilities.addToolTipToImage(icon, "<html>" + existing + segment + "</html>");
+        // Ensure our segment starts on a new line/separator
+        String separator = "<br><hr>";
+        
+        return ImageUtilities.addToolTipToImage(icon, "<html>" + cleanExisting + separator + segment + "</html>");
     }
 
+    /**
+     * Strips HTML tags and deduplicates lines in a tooltip string.
+     * 
+     * @param tooltip The raw tooltip string.
+     * @return A cleaned, deduplicated string.
+     */
+    private String deduplicateTooltip(String tooltip) {
+        if (tooltip == null) return null;
+        String text = tooltip.replaceAll("(?i)</?html>", "");
+        String[] lines = text.split("(?i)<br/?>|\n|<p/?>");
+        Set<String> seenPlain = new HashSet<>();
+        List<String> resultLines = new ArrayList<>();
+        for (String line : lines) {
+            String plain = line.replaceAll("<[^>]*>", "").trim();
+            if (!plain.isEmpty() && seenPlain.add(plain)) {
+                resultLines.add(line.trim());
+            }
+        }
+        return String.join("<br>", resultLines);
+    }
+
+    /**
+     * Checks if the current call is coming from the Logical View (Projects tab).
+     * 
+     * @return {@code true} if in Logical View.
+     */
+    private boolean isLogicalView() {
+        for (StackTraceElement element : Thread.currentThread().getStackTrace()) {
+            String className = element.getClassName();
+            if (className.contains("LogicalView") ||
+                className.contains("PackageView") ||
+                className.contains("ProjectsRootNode")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if the given FileObject is a project root.
+     */
     private boolean isProjectRoot(FileObject fo) {
         if (fo == null || !fo.isFolder()) return false;
         Project p = FileOwnerQuery.getOwner(fo);
@@ -201,27 +311,37 @@ public class FileAnnotationProvider extends AnnotationProvider {
         return fo.equals(root) || fo.getPath().equals(root.getPath());
     }
 
+    /** {@inheritDoc} */
     @Override
     public Action[] actions(Set<? extends FileObject> files) {
         return new Action[0];
     }
 
+    /** {@inheritDoc} */
     @Override
     public InterceptionListener getInterceptionListener() {
         return null;
     }
     
-    public static void fireRefresh(Set<FileObject> files) {
-        if (files == null || files.isEmpty()) return;
-        try {
-            FileSystem fs = files.iterator().next().getFileSystem();
-            for (AnnotationProvider ap : Lookup.getDefault().lookupAll(AnnotationProvider.class)) {
-                if (ap instanceof FileAnnotationProvider aap) {
-                    aap.fireFileStatusChanged(new FileStatusEvent(fs, files, true, true));
+    /**
+     * Fires a refresh event for the given files on the specified filesystem.
+     * This method ensures the refresh is triggered on the Event Dispatch Thread (EDT).
+     * 
+     * @param fs The filesystem containing the files.
+     * @param files The set of files to refresh.
+     */
+    public static void fireRefresh(FileSystem fs, Set<FileObject> files) {
+        if (files == null || files.isEmpty() || fs == null) return;
+        SwingUtilities.invokeLater(() -> {
+            try {
+                for (AnnotationProvider ap : Lookup.getDefault().lookupAll(AnnotationProvider.class)) {
+                    if (ap instanceof FileAnnotationProvider aap) {
+                        aap.fireFileStatusChanged(new FileStatusEvent(fs, files, true, true));
+                    }
                 }
+            } catch (Exception ex) {
+                LOG.log(Level.WARNING, "Failed to fire refresh", ex);
             }
-        } catch (Exception ex) {
-            LOG.log(Level.WARNING, "Failed to fire refresh", ex);
-        }
+        });
     }
 }
