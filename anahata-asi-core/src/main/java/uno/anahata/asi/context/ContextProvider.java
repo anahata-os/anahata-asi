@@ -151,7 +151,8 @@ public interface ContextProvider {
                 + "Description: " + getDescription() + "\n"
                 + "Parent: " + (getParentProvider() != null ? getParentProvider().getFullyQualifiedId() : "<no parent provider>") + "\n"
                 + "Children: " + getChildrenProviders().size() + "\n"
-                + "Providing: " + isProviding() + "\n";
+                + "Providing: " + isProviding() + "\n"
+                + "Effectively Providing: " + isEffectivelyProviding() + "\n";
     }
 
     /**

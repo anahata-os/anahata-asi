@@ -6,6 +6,8 @@ package uno.anahata.asi.swing.chat.tool;
 import java.util.Collections;
 import java.util.List;
 import uno.anahata.asi.model.tool.AbstractTool;
+import uno.anahata.asi.model.tool.AbstractToolkit;
+import uno.anahata.asi.model.tool.ToolPermission;
 import uno.anahata.asi.swing.chat.ChatPanel;
 
 /**
@@ -64,6 +66,15 @@ public class ToolNode extends AbstractContextNode<AbstractTool<?, ?>> {
     /** {@inheritDoc} */
     @Override
     protected void updateStatus() {
-        this.status = userObject.getPermission().name();
+        if (userObject.getPermission() == ToolPermission.DENY_NEVER) {
+            this.status = "Disabled";
+        } else {
+            AbstractToolkit<?> tk = userObject.getToolkit();
+            if (tk != null && (!tk.isEnabled() || !tk.getToolManager().isEffectivelyProviding())) {
+                this.status = "Disabled (Inherited)";
+            } else {
+                this.status = userObject.getPermission().name();
+            }
+        }
     }
 }

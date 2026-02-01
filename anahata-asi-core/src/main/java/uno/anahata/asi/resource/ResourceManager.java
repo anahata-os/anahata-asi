@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.context.ContextProvider;
@@ -48,6 +49,10 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
      * Access is manually synchronized to avoid Kryo serialization issues with JDK synchronized wrappers.
      */
     private final Map<String, AbstractResource<?, ?>> resources = new LinkedHashMap<>();
+
+    /** Whether this manager is currently providing context augmentation. */
+    @Setter
+    private boolean providing = true;
 
     /**
      * Registers a new resource, making it managed by the framework.
@@ -159,9 +164,7 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
     /** {@inheritDoc} */
     @Override
     public boolean isProviding() {
-        synchronized (resources) {
-            return !resources.isEmpty();
-        }
+        return providing;
     }
 
     /** {@inheritDoc} */

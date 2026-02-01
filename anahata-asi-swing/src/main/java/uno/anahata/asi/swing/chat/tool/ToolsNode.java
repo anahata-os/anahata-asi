@@ -65,7 +65,13 @@ public class ToolsNode extends AbstractContextNode<AbstractToolkit<?>> {
     /** {@inheritDoc} */
     @Override
     protected void updateStatus() {
-        this.status = userObject.getAllTools().size() + " tools";
+        if (!userObject.isEnabled()) {
+            this.status = "Disabled";
+        } else if (!userObject.getToolManager().isEffectivelyProviding()) {
+            this.status = "Disabled (Inherited)";
+        } else {
+            this.status = userObject.getAllTools().size() + " tools";
+        }
     }
 
     /**

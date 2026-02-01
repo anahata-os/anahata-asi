@@ -83,6 +83,12 @@ public class ToolkitNode extends AbstractContextNode<AbstractToolkit<?>> {
     /** {@inheritDoc} */
     @Override
     protected void updateStatus() {
-        this.status = userObject.isEnabled() ? "Enabled" : "Disabled";
+        if (!userObject.isEnabled()) {
+            this.status = "Disabled";
+        } else if (!userObject.getToolManager().isEffectivelyProviding()) {
+            this.status = "Disabled (Inherited)";
+        } else {
+            this.status = "Enabled";
+        }
     }
 }

@@ -67,8 +67,11 @@ public class ResourceNode extends AbstractContextNode<AbstractResource<?, ?>> {
     /** {@inheritDoc} */
     @Override
     protected void updateStatus() {
-        // Determine status string: DELETED/STALE take priority, otherwise show lowercase policy
-        if (!userObject.exists()) {
+        if (!userObject.isProviding()) {
+            this.status = "Disabled";
+        } else if (!userObject.isEffectivelyProviding()) {
+            this.status = "Disabled (Inherited)";
+        } else if (!userObject.exists()) {
             this.status = "DELETED";
         } else {
             try {

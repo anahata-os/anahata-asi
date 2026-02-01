@@ -162,9 +162,11 @@ public abstract class AbstractContextNode<T> {
             }
             return active;
         } else if (userObject instanceof AbstractToolkit<?> tk) {
-            return tk.isEnabled();
+            return tk.isEnabled() && tk.getToolManager().isEffectivelyProviding();
         } else if (userObject instanceof AbstractTool<?, ?> tool) {
-            return tool.getPermission() != ToolPermission.DENY_NEVER;
+            AbstractToolkit<?> tk = tool.getToolkit();
+            return tool.getPermission() != ToolPermission.DENY_NEVER 
+                && (tk == null || (tk.isEnabled() && tk.getToolManager().isEffectivelyProviding()));
         } else if (userObject instanceof AbstractMessage msg) {
             return !msg.isEffectivelyPruned();
         } else if (userObject instanceof AbstractPart part) {

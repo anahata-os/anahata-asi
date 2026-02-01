@@ -3,6 +3,7 @@
  */
 package uno.anahata.asi.swing.chat.tool;
 
+import java.awt.Color;
 import java.awt.Component;
 import javax.swing.Icon;
 import javax.swing.JTree;
@@ -20,8 +21,8 @@ import uno.anahata.asi.swing.icons.ToolIcon;
  * is used instead of its {@code toString()} representation.
  * </p>
  * <p>
- * It also implements automatic icon fading (desaturation) for inactive nodes 
- * (e.g., disabled toolkits or pruned messages).
+ * It also implements automatic icon fading (desaturation) and text graying 
+ * for inactive nodes (e.g., disabled toolkits or pruned messages).
  * </p>
  * 
  * @author anahata
@@ -47,7 +48,7 @@ public class ContextTreeCellRenderer extends DefaultTreeCellRenderer {
      *    a default icon based on the node type.
      * 3. If no specialized or type-specific icon is found, it preserves the 
      *    default JTree folder/file icons.
-     * 4. Fades the icon if the node is inactive.
+     * 4. Fades the icon and grays out the text if the node is inactive.
      */
     @Override
     public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
@@ -84,6 +85,13 @@ public class ContextTreeCellRenderer extends DefaultTreeCellRenderer {
                 if (defaultIcon != null && !node.isActive()) {
                     setIcon(IconUtils.getDisabledIcon(defaultIcon));
                 }
+            }
+            
+            // Gray out text for inactive nodes
+            if (!node.isActive()) {
+                setForeground(Color.GRAY);
+            } else {
+                setForeground(sel ? getTextSelectionColor() : getTextNonSelectionColor());
             }
         }
 

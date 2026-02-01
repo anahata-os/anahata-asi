@@ -61,6 +61,10 @@ public class ResourcesNode extends AbstractContextNode<ResourceManager> {
     /** {@inheritDoc} */
     @Override
     protected void updateStatus() {
-        this.status = userObject.getResources().size() + " resources";
+        if (!userObject.isProviding()) {
+            this.status = "Disabled";
+        } else {
+            this.status = "Providing (" + userObject.getResources().size() + " resources)";
+        }
     }
 }

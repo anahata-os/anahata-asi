@@ -75,6 +75,6 @@ public class ContextManagerNode extends AbstractContextNode<ContextManager> {
     /** {@inheritDoc} */
     @Override
     protected void updateStatus() {
-        this.status = "Active";
+        this.status = "Providing";
     }
 }

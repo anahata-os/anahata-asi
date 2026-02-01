@@ -4,6 +4,7 @@
 package uno.anahata.asi.swing.chat.tool;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -136,7 +137,9 @@ public class ContextProviderPanel extends JPanel {
     private void updateEffectivelyProviding(ContextProvider cp) {
         if (cp.getParentProvider() != null) {
             effectivelyProvidingLabel.setVisible(true);
-            effectivelyProvidingLabel.setText("Effectively Providing: " + (cp.isEffectivelyProviding() ? "Yes" : "No"));
+            boolean effective = cp.isEffectivelyProviding();
+            effectivelyProvidingLabel.setText("Effectively Providing: " + (effective ? "Yes" : "No"));
+            effectivelyProvidingLabel.setForeground(effective ? new Color(0, 128, 0) : Color.RED);
         } else {
             effectivelyProvidingLabel.setVisible(false);
         }

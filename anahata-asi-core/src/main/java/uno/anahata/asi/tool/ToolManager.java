@@ -39,6 +39,7 @@ import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.model.core.Rebindable;
 import uno.anahata.asi.model.core.TextPart;
+import uno.anahata.asi.model.resource.AbstractResource;
 import uno.anahata.asi.model.tool.AbstractTool;
 import uno.anahata.asi.model.tool.AbstractToolCall;
 import uno.anahata.asi.model.tool.bad.BadTool;
@@ -65,6 +66,7 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
     private static final AtomicInteger callIdGenerator = new AtomicInteger(0);
 
     /** Whether this manager is currently providing context augmentation. */
+    @Setter
     private boolean providing = true;
 
     /** The parent chat session. */
@@ -356,12 +358,6 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
     @Override
     public boolean isProviding() {
         return providing;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public void setProviding(boolean enabled) {
-        this.providing = enabled;
     }
 
     /** {@inheritDoc} */

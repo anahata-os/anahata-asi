@@ -86,6 +86,12 @@ public class ProviderNode extends AbstractContextNode<ContextProvider> {
     /** {@inheritDoc} */
     @Override
     protected void updateStatus() {
-        this.status = userObject.isProviding() ? "Providing" : "Disabled";
+        if (!userObject.isProviding()) {
+            this.status = "Disabled";
+        } else if (!userObject.isEffectivelyProviding()) {
+            this.status = "Disabled (Inherited)";
+        } else {
+            this.status = "Providing";
+        }
     }
 }

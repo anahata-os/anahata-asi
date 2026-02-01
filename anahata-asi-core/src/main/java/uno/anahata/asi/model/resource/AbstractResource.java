@@ -73,6 +73,9 @@ public abstract class AbstractResource<R, C> extends BasicPropertyChangeSource i
      */
     private String iconId;
 
+    /** Whether this resource is currently providing context augmentation. */
+    private boolean providing = true;
+
     /**
      * Gets the parent chat session for this resource.
      * @return The chat session.
@@ -199,21 +202,19 @@ public abstract class AbstractResource<R, C> extends BasicPropertyChangeSource i
     /** {@inheritDoc} */
     @Override
     public boolean isProviding() {
-        // A resource is providing if it is currently managed by the ResourceManager
-        return resourceManager.getResources().contains(this);
+        return providing && resourceManager.getResources().contains(this);
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * <b>Note:</b> For resources, this method is a no-op. Resource lifecycle 
-     * (adding/removing from context) is managed exclusively by the 
-     * {@link ResourceManager} via its register/unregister methods.
-     * </p>
-     */
+    /** {@inheritDoc} */
     @Override
     public void setProviding(boolean enabled) {
-        // No-op as per user instructions.
+        this.providing = enabled;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public ContextProvider getParentProvider() {
+        return resourceManager;
     }
 
     /** {@inheritDoc} */
