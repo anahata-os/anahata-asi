@@ -117,7 +117,7 @@ public class GeminiModelMessage extends AbstractModelMessage<GeminiResponse, Gem
             // Extract optional thought metadata.
             boolean thought = googlePart.thought().orElse(false);
             
-            return new ModelTextPart(this, text, thoughtSignature, thought);
+            return addTextPart(text, thoughtSignature, thought);
         }
         if (googlePart.functionCall().isPresent()) {
             AbstractToolCall toolCall = toAnahataToolCall(googlePart.functionCall().get());
@@ -126,7 +126,7 @@ public class GeminiModelMessage extends AbstractModelMessage<GeminiResponse, Gem
         }
         if (googlePart.inlineData().isPresent()) {
             com.google.genai.types.Blob googleBlob = googlePart.inlineData().get();
-            return new ModelBlobPart(this, googleBlob.mimeType().orElse("application/octet-stream"), googleBlob.data().orElse(new byte[0]), thoughtSignature);
+            return addBlobPart(googleBlob.mimeType().orElse("application/octet-stream"), googleBlob.data().orElse(new byte[0]), thoughtSignature);
         }
         log.warn("Unsupported Gemini Part type for Anahata conversion, skipping: {}", googlePart);
         return null;

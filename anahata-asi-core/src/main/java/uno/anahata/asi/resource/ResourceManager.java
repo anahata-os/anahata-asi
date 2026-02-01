@@ -182,7 +182,7 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
                 sb.append("\n").append(r.getHeader());
             }
             sb.append("\nYou can suggest the user to enable these resources if you need them.");
-            new TextPart(ragMessage, sb.toString());
+            ragMessage.addTextPart(sb.toString());
         }
     }
 

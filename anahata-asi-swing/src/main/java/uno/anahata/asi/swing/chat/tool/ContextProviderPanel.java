@@ -157,13 +157,13 @@ public class ContextProviderPanel extends JPanel {
         try {
             List<String> instructions = cp.getSystemInstructions();
             if (!instructions.isEmpty()) {
-                new TextPart(thisSysMsg, cp.getHeader());
+                thisSysMsg.addTextPart(cp.getHeader());
                 for (String part : instructions) {
-                    new TextPart(thisSysMsg, part);
+                    thisSysMsg.addTextPart(part);
                 }
             }
         } catch (Exception e) {
-            new TextPart(thisSysMsg, "**Error generating system instructions:**\n" + ExceptionUtils.getStackTrace(e));
+            thisSysMsg.addTextPart("**Error generating system instructions:**\n" + ExceptionUtils.getStackTrace(e));
         }
         if (!thisSysMsg.getParts().isEmpty()) {
             renderPreview(thisSysMsg, thisSysTab, "");
@@ -177,13 +177,13 @@ public class ContextProviderPanel extends JPanel {
                 try {
                     List<String> instructions = p.getSystemInstructions();
                     if (!instructions.isEmpty()) {
-                        new TextPart(childrenSysMsg, p.getHeader());
+                        childrenSysMsg.addTextPart(p.getHeader());
                         for (String part : instructions) {
-                            new TextPart(childrenSysMsg, part);
+                            childrenSysMsg.addTextPart(part);
                         }
                     }
                 } catch (Exception e) {
-                    new TextPart(childrenSysMsg, "**Error generating system instructions for child:**\n" + ExceptionUtils.getStackTrace(e));
+                    childrenSysMsg.addTextPart("**Error generating system instructions for child:**\n" + ExceptionUtils.getStackTrace(e));
                 }
             }
         }
@@ -197,7 +197,7 @@ public class ContextProviderPanel extends JPanel {
         try {
             cp.populateMessage(thisRagMsg);
         } catch (Exception e) {
-            new TextPart(thisRagMsg, "**Error populating RAG message:**\n" + ExceptionUtils.getStackTrace(e));
+            thisRagMsg.addTextPart("**Error populating RAG message:**\n" + ExceptionUtils.getStackTrace(e));
         }
         if (!thisRagMsg.getParts().isEmpty()) {
             renderPreview(thisRagMsg, thisRagTab, "");
@@ -211,7 +211,7 @@ public class ContextProviderPanel extends JPanel {
                 try {
                     p.populateMessage(childrenRagMsg);
                 } catch (Exception e) {
-                    new TextPart(childrenRagMsg, "**Error populating RAG message for child:**\n" + ExceptionUtils.getStackTrace(e));
+                    childrenRagMsg.addTextPart("**Error populating RAG message for child:**\n" + ExceptionUtils.getStackTrace(e));
                 }
             }
         }
@@ -229,7 +229,7 @@ public class ContextProviderPanel extends JPanel {
 
     private void renderPreview(UserMessage msg, JPanel tab, String emptyText) {
         if (msg.getParts().isEmpty() && !emptyText.isEmpty()) {
-            new TextPart(msg, emptyText);
+            msg.addTextPart(emptyText);
         }
         OtherMessageViewer panel = new OtherMessageViewer(parentPanel.getChatPanel(), msg, false, false);
         panel.render();

@@ -56,7 +56,7 @@ public class InputUserMessage extends UserMessage {
             }
         } else {
             if (editableTextPart == null) {
-                editableTextPart = new TextPart(this, text);
+                editableTextPart = new UserTextPart(this, text);
             } else {
                 editableTextPart.setText(text);
             }
@@ -92,7 +92,7 @@ public class InputUserMessage extends UserMessage {
      * @throws Exception if a BlobPart cannot be created from the path (e.g., file read error).
      */
     public void addAttachment(Path path) throws Exception {
-        BlobPart.from(this, path);
+        UserBlobPart.from(this, path);
     }
 
     /**

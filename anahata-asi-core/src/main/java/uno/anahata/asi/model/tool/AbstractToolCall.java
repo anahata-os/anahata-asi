@@ -87,6 +87,10 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
         this.args = args; 
         this.response = createResponse(message.getToolMessage());
         getChat().getContextManager().ensureToolMessageFollowsModelMessage(getMessage());
+        
+        // Leaf class publication: we add ourselves to the message only after 
+        // the response field is fully initialized.
+        message.addPart(this);
     }
 
     /**

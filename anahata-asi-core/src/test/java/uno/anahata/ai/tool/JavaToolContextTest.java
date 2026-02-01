@@ -1,4 +1,4 @@
-/* Licensed under the Anahata Software License, Version 108 - https://github.com/anahata-os/anahata-ai/blob/main/LICENSE */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.ai.tool;
 
 import uno.anahata.asi.tool.ToolManager;
@@ -12,6 +12,8 @@ import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.chat.ChatConfig;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.AbstractToolMessage;
+import uno.anahata.asi.model.core.BlobPart;
+import uno.anahata.asi.model.core.Response;
 import uno.anahata.asi.model.core.TextPart;
 import uno.anahata.asi.model.tool.AbstractTool;
 import uno.anahata.asi.model.tool.ToolExecutionStatus;
@@ -47,13 +49,7 @@ public class JavaToolContextTest {
             .orElseThrow(() -> new AssertionError("Tool 'MockToolkit.testContext' not found"));
 
         // 3. Create a mock message context for the call
-        AbstractModelMessage mockModelMessage = new AbstractModelMessage(chat, "mock-model") {
-            @Override
-            protected AbstractToolMessage createToolMessage() {
-                // A simple anonymous implementation for the test
-                return new AbstractToolMessage(this) {};
-            }
-        };
+        MockModelMessage mockModelMessage = new MockModelMessage(chat, "mock-model");
 
         // 4. Create a call with the new signature
         String testMessage = "Hello from the test!";
@@ -77,5 +73,28 @@ public class JavaToolContextTest {
         // assertEquals("This is an attachment from inside the tool.", ((TextPart) response.getAttachments().get(0)).getText(), "The attachment content should match.");
         
         System.out.println("JavaTool context test passed successfully.");
+    }
+
+    /**
+     * A mock model message for testing purposes.
+     */
+    private static class MockModelMessage extends AbstractModelMessage<Response, MockToolMessage> {
+        public MockModelMessage(Chat chat, String modelId) {
+            super(chat, modelId);
+        }
+
+        @Override
+        protected MockToolMessage createToolMessage() {
+            return new MockToolMessage(this);
+        }
+    }
+
+    /**
+     * A mock tool message for testing purposes.
+     */
+    private static class MockToolMessage extends AbstractToolMessage<MockModelMessage> {
+        public MockToolMessage(MockModelMessage modelMessage) {
+            super(modelMessage);
+        }
     }
 }

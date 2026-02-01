@@ -1,11 +1,13 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.model.core;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
 import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.model.tool.AbstractTool;
 import uno.anahata.asi.model.tool.AbstractToolResponse;
 import uno.anahata.asi.model.tool.ToolExecutionStatus;
@@ -18,6 +20,7 @@ import uno.anahata.asi.status.ChatStatus;
  * It holds a direct reference to the {@link AbstractModelMessage} that initiated the tool calls.
  *
  * @author anahata-gemini-pro-2.5
+ * @param <T> The type of the model message that initiated the tool calls.
  */
 @Getter
 @Setter
@@ -27,21 +30,30 @@ public abstract class AbstractToolMessage<T extends AbstractModelMessage> extend
      */
     private final T modelMessage;
 
+    /**
+     * Constructs a new AbstractToolMessage.
+     * 
+     * @param modelMessage The model message that initiated the tool calls.
+     */
     public AbstractToolMessage(T modelMessage) {
         super(modelMessage.getChat());
         this.modelMessage = modelMessage;
         modelMessage.setToolMessage(this);
     }
     
-    
+    /** {@inheritDoc} */
     @Override
     public Role getRole() {
         return Role.TOOL;
     }
 
+    /**
+     * {@inheritDoc}
+     * Returns the user's identity in the format 'user@device'.
+     */
     @Override
     public String getFrom() {
-        return System.getProperty("user.name");
+        return System.getProperty("user.name") + "@" + TextUtils.getDeviceId();
     }
 
     /**
@@ -125,6 +137,40 @@ public abstract class AbstractToolMessage<T extends AbstractModelMessage> extend
                 }
             }
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * @param text The text content.
+     * @return The created text part.
+     * @throws UnsupportedOperationException always, as tool messages cannot contain text parts.
+     */
+    @Override
+    public final TextPart addTextPart(String text) {
+        throw new UnsupportedOperationException("Cannot add text parts to a tool message.");
+    }
+
+    /**
+     * {@inheritDoc}
+     * @param mimeType The MIME type.
+     * @param data The binary data.
+     * @return The created blob part.
+     * @throws UnsupportedOperationException always, as tool messages cannot contain blob parts.
+     */
+    @Override
+    public final BlobPart addBlobPart(String mimeType, byte[] data) {
+        throw new UnsupportedOperationException("Cannot add blob parts to a tool message.");
+    }
+
+    /**
+     * {@inheritDoc}
+     * @param path The file path.
+     * @return The created blob part.
+     * @throws UnsupportedOperationException always, as tool messages cannot contain blob parts.
+     */
+    @Override
+    public final BlobPart addBlobPart(Path path) throws Exception {
+        throw new UnsupportedOperationException("Cannot add blob parts to a tool message.");
     }
 
     /** {@inheritDoc} */

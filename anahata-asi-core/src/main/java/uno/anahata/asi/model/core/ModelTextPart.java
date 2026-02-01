@@ -25,10 +25,13 @@ public class ModelTextPart extends TextPart implements ThoughtSignature {
      * @param thoughtSignature The signature of the thought process as a byte array.
      * @param thought Whether this part represents a thought process.
      */
-    public ModelTextPart(AbstractModelMessage message, String text, byte[] thoughtSignature, boolean thought) {
+    ModelTextPart(AbstractModelMessage message, String text, byte[] thoughtSignature, boolean thought) {
         super(message, text);
         this.thoughtSignature = thoughtSignature;
         this.thought = thought;
+        
+        // Leaf class publication
+        message.addPart(this);
     }
 
     @Override

@@ -26,15 +26,6 @@ public class RagMessage extends UserMessage {
     }
     
     /**
-     * Convenience method to add a text part to this RAG message.
-     * 
-     * @param text The text content to add.
-     */
-    public void addPart(String text) {
-        new TextPart(this, text);
-    }
-
-    /**
      * Overrides the default pruning logic to declare that this message is
      * ephemeral and should never be pruned. This is the key to preventing
      * the pruning system from trying to access the (null) Chat context

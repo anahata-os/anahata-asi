@@ -25,8 +25,11 @@ public class ModelBlobPart extends BlobPart implements ThoughtSignature {
      * @param data The binary data.
      * @param thoughtSignature The signature of the thought process as a byte array.
      */
-    public ModelBlobPart(@NonNull AbstractModelMessage message, @NonNull String mimeType, @NonNull byte[] data, byte[] thoughtSignature) {
+    ModelBlobPart(@NonNull AbstractModelMessage message, @NonNull String mimeType, @NonNull byte[] data, byte[] thoughtSignature) {
         super(message, mimeType, data);
         this.thoughtSignature = thoughtSignature;
+        
+        // Leaf class publication
+        message.addPart(this);
     }
 }

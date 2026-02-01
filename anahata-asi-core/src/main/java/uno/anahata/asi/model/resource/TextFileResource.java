@@ -81,7 +81,7 @@ public class TextFileResource extends AbstractPathResource<String, String> {
         sb.append("```\n");
         sb.append(cache);
         sb.append("\n```");
-        new TextPart(rm, sb.toString());
+        rm.addTextPart(sb.toString());
     }
     
     /** {@inheritDoc} */

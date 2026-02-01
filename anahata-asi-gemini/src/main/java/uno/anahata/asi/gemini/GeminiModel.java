@@ -132,7 +132,7 @@ public class GeminiModel extends AbstractModel {
         String json = m.toJson();
         String toString = m.toString();
 
-        // Return only the inner content. WrappingHtmlPane will add the <html><body> tags.
+        // Return only the inner content. WrappingHtmlPane add the <html><body> tags.
         return "<html><b>ID: </b>" + escapeHtml(getModelId()) + "<br>"
                 + "<b>Display Name: </b>" + escapeHtml(getDisplayName()) + "<br>"
                 + "<b>Version: </b>" + escapeHtml(getVersion()) + "<br>"
@@ -399,7 +399,7 @@ public class GeminiModel extends AbstractModel {
                         
                         if (!canAppend) {
                             if (!text.isEmpty() || sig != null) {
-                                new ModelTextPart(target, text, sig, isThought);
+                                target.addTextPart(text, sig, isThought);
                             }
                         }
                     } else if (p.functionCall().isPresent()) {

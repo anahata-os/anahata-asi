@@ -72,14 +72,16 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
     private int tokenCount;
 
     /**
-     * Constructs a new AbstractPart and adds it to the parent message.
+     * Constructs a new AbstractPart.
      * 
      * @param message The parent message.
      */
     public AbstractPart(@NonNull AbstractMessage message) {
-        // Relationship management is now handled entirely by the parent message.
-        // This ensures the part is fully initialized before any listeners are notified.
-        message.addPart(this);
+        // We only assign the message reference here. Concrete leaf classes are 
+        // responsible for calling message.addPart(this) as the very last step 
+        // of their constructors to ensure they are fully initialized before 
+        // being published to UI listeners.
+        this.message = message;
     }
     
     /**

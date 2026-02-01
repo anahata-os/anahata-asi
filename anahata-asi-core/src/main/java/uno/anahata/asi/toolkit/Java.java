@@ -108,7 +108,7 @@ public class Java extends AnahataToolkit {
                 + "\nASI Container map keys (shared across sessions): " + getContainerMap().keySet()
                 + "\nApplication map keys (shared across containers): " + getApplicationMap().keySet()
                 + "\nDefault Compiler and ClassLoader Classpath (abbreviated):\n" + getPrettyPrintedDefaultClasspath();
-        new TextPart(ragMessage, ragText);
+        ragMessage.addTextPart(ragText);
     }
     
     /** {@inheritDoc} */

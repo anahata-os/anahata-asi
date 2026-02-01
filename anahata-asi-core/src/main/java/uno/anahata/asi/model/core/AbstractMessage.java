@@ -105,7 +105,7 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
      * @param part The part to add.
      * @throws IllegalArgumentException if the part is already attached to this or another message.
      */
-    void addPart(@NonNull AbstractPart part) {
+    public void addPart(@NonNull AbstractPart part) {
         if (parts.contains(part)) {
             throw new IllegalArgumentException("Part " + part + " is already a part of this message: " + this);
         }
@@ -127,7 +127,7 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
      * @param part The part to remove.
      * @throws IllegalArgumentException if the part is not attached to this message.
      */
-    void removePart(AbstractPart part) {
+    public void removePart(AbstractPart part) {
         Validate.isTrue(parts.contains(part), "Part " + part + " is not a part of this message.");
         parts.remove(part);
         part.setMessage(null);
@@ -262,6 +262,32 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
         return Collections.unmodifiableList(parts);
     }
     
+    /**
+     * Creates and adds a new text part to this message.
+     * 
+     * @param text The text content.
+     * @return The created text part.
+     */
+    public abstract TextPart addTextPart(String text);
+
+    /**
+     * Creates and adds a new binary data part to this message.
+     * 
+     * @param mimeType The MIME type.
+     * @param data The binary data.
+     * @return The created blob part.
+     */
+    public abstract BlobPart addBlobPart(String mimeType, byte[] data);
+
+    /**
+     * Creates and adds a new binary data part from a local file path.
+     * 
+     * @param path The path to the file.
+     * @return The created blob part.
+     * @throws Exception if the file cannot be read or the MIME type cannot be detected.
+     */
+    public abstract BlobPart addBlobPart(java.nio.file.Path path) throws Exception;
+
     /**
      * Creates a standardized text header containing metadata for this message.
      * This is used for in-band metadata injection to improve model self-awareness.

@@ -1,6 +1,8 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.model.core;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
@@ -8,16 +10,20 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.internal.TikaUtils;
 import uno.anahata.asi.model.tool.AbstractToolCall;
-import uno.anahata.asi.model.tool.AbstractToolResponse;
 import uno.anahata.asi.model.tool.ToolExecutionStatus;
 import uno.anahata.asi.model.web.GroundingMetadata;
 
 /**
  * Represents a message originating from the AI model. It extends {@link AbstractMessage},
  * sets its role to {@code MODEL}, and provides convenience methods for accessing tool calls.
+ * This class is generic over the {@link Response} type and the {@link AbstractToolMessage} type
+ * to support provider-specific implementations.
  *
  * @author anahata-gemini-pro-2.5
+ * @param <R> The type of the model response.
+ * @param <T> The type of the tool message.
  */
 @Getter
 @Setter
@@ -60,21 +66,34 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
     /** Whether the model is currently streaming content for this message. */
     private boolean streaming = false;
     
+    /**
+     * Constructs a new AbstractModelMessage.
+     * 
+     * @param chat The parent chat session.
+     * @param modelId The ID of the model.
+     */
     public AbstractModelMessage(@NonNull Chat chat, @NonNull String modelId) {
         super(chat);
         this.modelId = modelId;
     }
     
+    /** {@inheritDoc} */
     @Override
     public Role getRole() {
         return Role.MODEL;
     }
 
+    /** {@inheritDoc} */
     @Override
     public String getFrom() {
         return modelId;
     }
 
+    /**
+     * Gets the tool message associated with this model message, creating it if necessary.
+     * 
+     * @return The tool message.
+     */
     public T getToolMessage() {
         if (toolMessage == null) {
             createToolMessage();
@@ -186,6 +205,64 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
         }
     }
     
+    /**
+     * {@inheritDoc}
+     * Creates and adds a {@link ModelTextPart} without thought metadata.
+     */
+    @Override
+    public final ModelTextPart addTextPart(String text) {
+        return addTextPart(text, null, false);
+    }
+
+    /**
+     * {@inheritDoc}
+     * Creates and adds a {@link ModelBlobPart} without thought metadata.
+     */
+    @Override
+    public final ModelBlobPart addBlobPart(String mimeType, byte[] data) {
+        return addBlobPart(mimeType, data, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     * Creates and adds a {@link ModelBlobPart} from a file path, without thought metadata.
+     */
+    @Override
+    public final ModelBlobPart addBlobPart(Path path) throws Exception {
+        byte[] data = Files.readAllBytes(path);
+        String mimeType = TikaUtils.detectMimeType(path.toFile());
+        return addBlobPart(mimeType, data, null);
+    }
+
+    /**
+     * Creates and adds a new model text part with thought process metadata.
+     * 
+     * @param text The text content.
+     * @param thoughtSignature The thought signature.
+     * @param thought Whether this is a thought part.
+     * @return The created model text part.
+     */
+    public final ModelTextPart addTextPart(String text, byte[] thoughtSignature, boolean thought) {
+        return new ModelTextPart(this, text, thoughtSignature, thought);
+    }
+
+    /**
+     * Creates and adds a new model blob part with thought process metadata.
+     * 
+     * @param mimeType The MIME type.
+     * @param data The binary data.
+     * @param thoughtSignature The thought signature.
+     * @return The created model blob part.
+     */
+    public final ModelBlobPart addBlobPart(String mimeType, byte[] data, byte[] thoughtSignature) {
+        return new ModelBlobPart(this, mimeType, data, thoughtSignature);
+    }
+
+    /**
+     * Factory method to create the appropriate tool message for this model message.
+     * 
+     * @return The created tool message.
+     */
     protected abstract T createToolMessage();
 
     /** {@inheritDoc} */

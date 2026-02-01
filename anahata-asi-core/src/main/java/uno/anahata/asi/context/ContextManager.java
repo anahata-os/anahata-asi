@@ -175,7 +175,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
 
         // 2. Add the synthetic RAG message for prompt augmentation.
         RagMessage augmentedMessage = new RagMessage(chat);
-        augmentedMessage.addPart("--- Augmented Workspace Context ---\n"
+        augmentedMessage.addTextPart("--- Augmented Workspace Context ---\n"
                     + "The following is high-salience, just-in-time context provided by the host environment for this turn. "
                     + "It is dynamically generated and populated by enabled context providers. "
                     + "This is NOT direct input from the user.");
@@ -186,7 +186,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
                 if (provider.isProviding()) {                                
                     try {                  
                         String header = provider.getHeader();
-                        augmentedMessage.addPart(header);
+                        augmentedMessage.addTextPart(header);
                         provider.populateMessage(augmentedMessage);
                     } catch (Exception e) {
                         log.error("Error populating rag message for provider: {}", provider.getName(), e);

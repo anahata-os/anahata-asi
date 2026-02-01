@@ -387,7 +387,7 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
                 sb.append("\n").append(t.getDescription());
             }
         }
-        new TextPart(ragMessage, sb.toString());
+        ragMessage.addTextPart(sb.toString());
     }
     
     /** {@inheritDoc} */

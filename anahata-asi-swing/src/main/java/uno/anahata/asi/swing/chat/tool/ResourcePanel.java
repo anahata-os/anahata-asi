@@ -112,7 +112,7 @@ public class ResourcePanel extends JPanel {
                 previewMsg = new UserMessage(chat);
                 List<String> instructions = res.getSystemInstructions();
                 for (String inst : instructions) {
-                    new TextPart(previewMsg, inst);
+                    previewMsg.addTextPart(inst);
                 }
             } else {
                 // For prompt augmentation, we use the standard RAG population logic
@@ -121,7 +121,7 @@ public class ResourcePanel extends JPanel {
             }
         } catch (Exception e) {
             previewMsg = new RagMessage(chat);
-            new TextPart(previewMsg, "**Error generating resource preview:**\n" + ExceptionUtils.getStackTrace(e));
+            previewMsg.addTextPart("**Error generating resource preview:**\n" + ExceptionUtils.getStackTrace(e));
         }
         
         OtherMessageViewer panel = new OtherMessageViewer(parentPanel.getChatPanel(), previewMsg, false, false);

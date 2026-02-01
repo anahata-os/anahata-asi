@@ -59,7 +59,7 @@ public class ProjectOverviewContextProvider extends BasicContextProvider {
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
         ProjectOverview overview = projectsToolkit.getOverview(projectPath);
-        new TextPart(ragMessage, generateMarkdown(overview));
+        ragMessage.addTextPart(generateMarkdown(overview));
     }
 
     /**

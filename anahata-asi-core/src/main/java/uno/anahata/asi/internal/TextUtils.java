@@ -3,6 +3,7 @@
  */
 package uno.anahata.asi.internal;
 
+import java.net.InetAddress;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Map;
@@ -121,5 +122,18 @@ public class TextUtils {
         if (data == null) return "null";
         String b64 = Base64.getEncoder().encodeToString(data);
         return formatValue(b64);
+    }
+
+    /**
+     * Gets a unique identifier for the current device (hostname).
+     * 
+     * @return The hostname, or "unknown-device" if it cannot be determined.
+     */
+    public static String getDeviceId() {
+        try {
+            return InetAddress.getLocalHost().getHostName();
+        } catch (Exception e) {
+            return "unknown-device";
+        }
     }
 }

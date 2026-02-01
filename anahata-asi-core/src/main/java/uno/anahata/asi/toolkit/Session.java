@@ -118,6 +118,6 @@ public class Session extends AnahataToolkit {
             sb.append("\n");
         }
         
-        ragMessage.addPart(sb.toString());
+        ragMessage.addTextPart(sb.toString());
     }
 }

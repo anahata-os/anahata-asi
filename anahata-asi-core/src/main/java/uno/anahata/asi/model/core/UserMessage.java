@@ -1,7 +1,9 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.model.core;
 
+import java.nio.file.Path;
 import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.internal.TextUtils;
 
 /**
  * Represents a message originating from the end-user in a conversation.
@@ -11,17 +13,65 @@ import uno.anahata.asi.chat.Chat;
  */
 public class UserMessage extends AbstractMessage {
 
+    /**
+     * Constructs a new UserMessage.
+     * 
+     * @param chat The parent chat session.
+     */
     public UserMessage(Chat chat) {
         super(chat);
     }
     
+    /** {@inheritDoc} */
     @Override
     public Role getRole() {
         return Role.USER;
     }
 
+    /**
+     * {@inheritDoc}
+     * Returns the user's identity in the format 'user@device'.
+     */
     @Override
     public String getFrom() {
-        return System.getProperty("user.name");
+        return System.getProperty("user.name") + "@" + TextUtils.getDeviceId();
+    }
+
+    /**
+     * {@inheritDoc}
+     * Creates and adds a {@link UserTextPart}.
+     * 
+     * @param text The text content.
+     * @return The created text part.
+     */
+    @Override
+    public final TextPart addTextPart(String text) {
+        return new UserTextPart(this, text);
+    }
+
+    /**
+     * {@inheritDoc}
+     * Creates and adds a {@link UserBlobPart}.
+     * 
+     * @param mimeType The MIME type.
+     * @param data The binary data.
+     * @return The created blob part.
+     */
+    @Override
+    public final BlobPart addBlobPart(String mimeType, byte[] data) {
+        return new UserBlobPart(this, mimeType, data);
+    }
+
+    /**
+     * {@inheritDoc}
+     * Creates and adds a {@link UserBlobPart} from a file path.
+     * 
+     * @param path The file path.
+     * @return The created blob part.
+     * @throws Exception if the file cannot be read.
+     */
+    @Override
+    public final BlobPart addBlobPart(Path path) throws Exception {
+        return UserBlobPart.from(this, path);
     }
 }

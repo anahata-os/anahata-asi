@@ -6,13 +6,13 @@ import lombok.Setter;
 import uno.anahata.asi.internal.TokenizerUtils;
 
 /**
- * A concrete {@link AbstractPart} implementation for simple text content.
+ * An abstract base class for text-based message parts.
  * It supports reactive UI updates by firing property change events when the text is modified.
  *
  * @author anahata-gemini-pro-2.5
  */
 @Getter
-public class TextPart extends AbstractPart {
+public abstract class TextPart extends AbstractPart {
     
     /** The text content of this part. */
     private String text;

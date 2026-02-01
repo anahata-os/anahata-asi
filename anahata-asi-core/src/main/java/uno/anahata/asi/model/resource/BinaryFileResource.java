@@ -63,7 +63,7 @@ public class BinaryFileResource extends AbstractPathResource<byte[], byte[]> {
     @Override
     protected void populateFromCache(RagMessage rm) {
         if (cache != null && mimeType != null) {
-            new BlobPart(rm, mimeType, cache);
+            rm.addBlobPart(mimeType, cache);
         }
     }
 
