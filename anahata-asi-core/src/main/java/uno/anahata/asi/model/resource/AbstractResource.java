@@ -167,12 +167,16 @@ public abstract class AbstractResource<R, C> extends BasicPropertyChangeSource i
             "Id: %s\n" +
             "Refresh Policy: %s\n" +
             "Context Position: %s\n" +
-            "Turns Remaining: %s\n",
+            "Turns Remaining: %s\n" +
+            "Providing: %s\n" +
+            "Effectively Providing: %s\n",
             getName(),
             getId(),
             getRefreshPolicy(),
             getContextPosition(),
-            turnsStr
+            turnsStr,
+            isProviding(),
+            isEffectivelyProviding()
         );
     }
 

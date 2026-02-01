@@ -19,7 +19,9 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
+import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.model.core.Rebindable;
+import uno.anahata.asi.model.core.TextPart;
 import uno.anahata.asi.model.resource.AbstractPathResource;
 import uno.anahata.asi.model.resource.AbstractResource;
 
@@ -165,6 +167,23 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
     @Override
     public boolean isProviding() {
         return providing;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void populateMessage(RagMessage ragMessage) throws Exception {
+        List<AbstractResource<?, ?>> disabled = getResources().stream()
+                .filter(r -> !r.isEffectivelyProviding())
+                .collect(Collectors.toList());
+        
+        if (!disabled.isEmpty()) {
+            StringBuilder sb = new StringBuilder("**Disabled Resources** (Registered but not effectively providing context):\n");
+            for (AbstractResource<?, ?> r : disabled) {
+                sb.append("\n").append(r.getHeader());
+            }
+            sb.append("\nYou can suggest the user to enable these resources if you need them.");
+            new TextPart(ragMessage, sb.toString());
+        }
     }
 
     /** {@inheritDoc} */

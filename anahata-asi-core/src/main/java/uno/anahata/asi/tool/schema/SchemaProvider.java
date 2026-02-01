@@ -87,6 +87,12 @@ public class SchemaProvider {
         } else {
             // 3. Generate the standard schema for the wrapped type
             ObjectNode wrappedRootNode = generateStandardSchemaNode(wrappedType);
+            if (wrappedRootNode == null) {
+                // Fallback for types that Swagger might completely ignore (like Object.class)
+                wrappedRootNode = OBJECT_MAPPER.createObjectNode();
+                wrappedRootNode.put("type", "object");
+                wrappedRootNode.put("title", getTypeName(wrappedType));
+            }
 
             // 4. Merge the definitions ('components.schemas') from the wrapped schema into the base schema
             mergeComponents(mutableRoot, wrappedRootNode);
@@ -160,17 +166,25 @@ public class SchemaProvider {
         return json == null ? null : (ObjectNode) OBJECT_MAPPER.readTree(json);
     }
 
+    /**
+     * Merges the 'components.schemas' from the source node into the target node.
+     * This method is null-safe and robust against missing nodes.
+     * 
+     * @param target The target schema node.
+     * @param source The source schema node.
+     */
     private static void mergeComponents(ObjectNode target, ObjectNode source) {
+        if (target == null || source == null) {
+            return;
+        }
+        
         JsonNode sourceDefinitions = source.path("components").path("schemas");
         if (sourceDefinitions.isObject()) {
-            ObjectNode components = (ObjectNode) target.path("components");
-            if (components.isMissingNode()) {
-                components = target.putObject("components");
-            }
-            ObjectNode targetDefinitions = (ObjectNode) components.path("schemas");
-            if (targetDefinitions.isMissingNode()) {
-                targetDefinitions = components.putObject("schemas");
-            }
+            JsonNode componentsNode = target.path("components");
+            ObjectNode components = componentsNode.isObject() ? (ObjectNode) componentsNode : target.putObject("components");
+            
+            JsonNode targetDefsNode = components.path("schemas");
+            ObjectNode targetDefinitions = targetDefsNode.isObject() ? (ObjectNode) targetDefsNode : components.putObject("schemas");
             
             ObjectNode finalTargetDefinitions = targetDefinitions;
             sourceDefinitions.fields().forEachRemaining(entry -> {

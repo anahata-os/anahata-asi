@@ -24,7 +24,7 @@ import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.model.core.TextPart;
 import uno.anahata.asi.model.core.UserMessage;
 import uno.anahata.asi.swing.chat.ContextPanel;
-import uno.anahata.asi.swing.chat.render.OtherMessagePanel;
+import uno.anahata.asi.swing.chat.render.OtherMessageViewer;
 
 /**
  * A panel that displays the details and context previews for a {@link ContextProvider}.
@@ -231,7 +231,7 @@ public class ContextProviderPanel extends JPanel {
         if (msg.getParts().isEmpty() && !emptyText.isEmpty()) {
             new TextPart(msg, emptyText);
         }
-        OtherMessagePanel panel = new OtherMessagePanel(parentPanel.getChatPanel(), msg, false, false);
+        OtherMessageViewer panel = new OtherMessageViewer(parentPanel.getChatPanel(), msg, false, false);
         panel.render();
         tab.removeAll();
         tab.add(panel, BorderLayout.CENTER);

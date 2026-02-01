@@ -24,7 +24,7 @@ The project's strategy is based on the "Flywheel" model, designed to build a pow
 -   **JDK 25 Standardization (Jan 2026):** Standardized the entire ecosystem (V1 and V2) on **JDK 25** for all builds and Javadoc generation, both locally and in GitHub Actions.
 -   **JASI Portal Launch (Jan 2026):** Successfully launched the V2 portal at `asi.anahata.uno`. The site features a "Blaugrana-Noir" aesthetic and introduces the **Sextete of JASI**.
 -   **Modern CI/CD Integration:** Transitioned to a direct GitHub Actions deployment workflow for the website and Javadocs, eliminating the need for a `gh-pages` branch.
--   **Sonatype Central Success:** Configured the project for automated deployment to Sonatype Central Portal. Snapshots and releases are now correctly routed using the `sonatype-central` server ID.
+-   **Sonatype Central Portal Success:** Configured the project for automated deployment to Sonatype Central Portal. Snapshots and releases are now correctly routed using the `sonatype-central` server ID.
 -   **Yam Module Integration:** The `anahata-asi-yam` module is active and serves as the hub for "fun" agentic capabilities like the integrated radio and media tools.
 
 ## 3. Core Modules
@@ -49,6 +49,12 @@ This project uses a set of key documents to guide development. For detailed info
 -   **`ci.md`**: Contains the CI/CD strategy, website deployment details, and Javadoc configuration notes.
 
 ## 5. Coding Principles (Applies to ALL Modules)
+
+> [!CAUTION]
+> **PARAMOUNT PRINCIPLES: SIMPLICITY AND STABILITY**
+> The absolute priority for all development is **Simplicity and Stability** (or Stability through Simplicity). These principles rule above all others. 
+> - **No Dirty Hacks**: Avoid "dirty hacks" or workarounds (e.g., `SwingUtilities.invokeLater` to mask initialization order issues). If a design leads to race conditions or UI glitches, it requires a proper refactoring of the underlying architecture, not a patch for the symptoms.
+> - **Core Discussion**: Any proposed changes to the `anahata-asi-core` module **MUST** be discussed and agreed upon with the user in the conversation before calling `suggestChange`.
 
 1.  **JDK 25 Standard**: All modules are built and documented using **JDK 25**. While the target compatibility remains Java 17 for the core engine, the build environment is standardized on the latest LTS/Current release to leverage modern Javadoc features and performance.
 2.  **Engineering over Patching**: This is a beta project under active development. **There is no requirement for backwards compatibility.** If a design is flawed or leads to race conditions (e.g., initialization order issues in class hierarchies), **redesign and refactor** the code. Do not add "hacky" null checks or workarounds to patch symptoms of poor engineering.

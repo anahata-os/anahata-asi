@@ -3,6 +3,12 @@
 
 This document outlines the vision and architecture of the `anahata-ai-core` project, which serves as the core, model-agnostic AI framework.
 
+> [!CAUTION]
+> **PARAMOUNT PRINCIPLES: SIMPLICITY AND STABILITY**
+> The absolute priority for all development is **Simplicity and Stability** (or Stability through Simplicity). These principles rule above all others. 
+> - **Core Discussion**: Any proposed changes to this module **MUST** be discussed and agreed upon with the user in the conversation before calling `suggestChange`.
+> - **No Dirty Hacks**: Avoid "dirty hacks" or workarounds to mask initialization order issues. If a design leads to race conditions or UI glitches, it requires a proper refactoring of the underlying architecture.
+
 ## 1. Vision & Goal
 
 The primary goal is to create a robust, extensible, and model-agnostic AI framework in Java. This core library defines a standard set of interfaces and a rich domain model for interacting with Large Language Models (LLMs), allowing developers to build AI-powered applications without being locked into a specific provider (e.g., Google Gemini, OpenAI, Anthropic).
@@ -20,7 +26,7 @@ This section provides a high-level summary of the key architectural components a
 -   **`Chat`**: The central orchestrator for a conversation session. It manages the main loop, message sending, and interaction with the selected AI model.
 -   **`ChatConfig`**: A blueprint object that defines the configuration for a `Chat` session, including available AI providers, tool classes, and context management policies (e.g., pruning delays, retention turns).
 
-### 2.2. Model-Agnostic Domain (`uno.anahata.ai.model.*`)
+### 2.2. Model-Agnostic Domain (`uno.anahata.asi.model.*`)
 
 This is the foundation of the framework, ensuring decoupling from any specific AI provider.
 
@@ -43,7 +49,7 @@ A sophisticated system built directly into the domain model.
     2.  **Hard Prune**: A background process permanently deletes parts that have been soft-pruned for a configurable number of turns (`hardPruneDelay` in `ChatConfig`).
 -   **`ContextManager`**: Orchestrates the assembly of the prompt, including injecting system instructions from various providers (`AbstractSystemInstructionsProvider`).
 
-### 2.4. V2 Tool Framework (`uno.anahata.ai.tool.*`)
+### 2.4. V2 Tool Framework (`uno.anahata.asi.tool.*`)
 
 A powerful, reflection-based system for defining and executing local Java tools. For a more detailed breakdown, please see `tools.md`.
 
@@ -52,7 +58,7 @@ A powerful, reflection-based system for defining and executing local Java tools.
 -   **`SchemaProvider`**: Automatically generates detailed OpenAPI 3-compliant JSON schemas from Java types, ensuring the model has a precise understanding of tool signatures.
 -   **`AbstractJavaTool`**: An optional base class for toolkits that provides a context-aware API (via `ThreadLocal`) for tool methods to log messages or access the `Chat` session without requiring it as a method parameter.
 
-### 2.5. Resource & State Management (`uno.anahata.ai.resource.*`)
+### 2.5. Resource & State Management (`uno.anahata.asi.resource.*`)
 
 A robust framework for managing stateful entities within the chat context. For a more detailed breakdown, please see `resources.md`.
 

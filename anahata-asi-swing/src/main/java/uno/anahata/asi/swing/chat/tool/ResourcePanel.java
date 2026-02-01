@@ -23,12 +23,12 @@ import uno.anahata.asi.model.core.TextPart;
 import uno.anahata.asi.model.core.UserMessage;
 import uno.anahata.asi.model.resource.AbstractResource;
 import uno.anahata.asi.swing.chat.ContextPanel;
-import uno.anahata.asi.swing.chat.render.OtherMessagePanel;
+import uno.anahata.asi.swing.chat.render.OtherMessageViewer;
 
 /**
  * A panel that displays the details and a content preview for an {@link AbstractResource}.
  * <p>
- * It uses an {@link OtherMessagePanel} to render the resource's content exactly 
+ * It uses an {@link OtherMessageViewer} to render the resource's content exactly 
  * as it would appear in a RAG message or system instructions, respecting 
  * viewports and binary data handling.
  * </p>
@@ -124,7 +124,7 @@ public class ResourcePanel extends JPanel {
             new TextPart(previewMsg, "**Error generating resource preview:**\n" + ExceptionUtils.getStackTrace(e));
         }
         
-        OtherMessagePanel panel = new OtherMessagePanel(parentPanel.getChatPanel(), previewMsg, false, false);
+        OtherMessageViewer panel = new OtherMessageViewer(parentPanel.getChatPanel(), previewMsg, false, false);
         panel.render();
         
         previewContainer.removeAll();

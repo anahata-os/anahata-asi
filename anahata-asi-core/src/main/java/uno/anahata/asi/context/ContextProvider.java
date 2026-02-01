@@ -99,20 +99,24 @@ public interface ContextProvider {
 
     /**
      * Gets a flattened list of this provider and all its descendants in the hierarchy.
+     * <p>
+     * If {@code providingOnly} is true, the search stops at any provider that is 
+     * not providing, effectively excluding its entire subtree from the result.
+     * </p>
      * 
-     * @param enabledOnly if true, only providers where {@link #isProviding()} is true are included.
+     * @param providingOnly if true, only providers where {@link #isProviding()} is true are included.
      * @return A flat list of the provider hierarchy.
      */
-    default List<ContextProvider> getFlattenedHierarchy(boolean enabledOnly) {
+    default List<ContextProvider> getFlattenedHierarchy(boolean providingOnly) {
         List<ContextProvider> list = new ArrayList<>();
-        if (isProviding() || !enabledOnly) {
-            list.add(this);
-        } 
+        if (providingOnly && !isProviding()) {
+            return list; 
+        }
+        
+        list.add(this);
         
         for (ContextProvider child : getChildrenProviders()) {
-            if (child.isProviding() || !enabledOnly) {
-                list.addAll(child.getFlattenedHierarchy(enabledOnly));
-            }
+            list.addAll(child.getFlattenedHierarchy(providingOnly));
         }
         return list;
     }

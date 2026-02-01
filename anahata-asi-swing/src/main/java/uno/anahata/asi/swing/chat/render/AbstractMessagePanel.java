@@ -75,13 +75,6 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
     
     /** Cache of part panels to support incremental updates. */
     private final Map<AbstractPart, AbstractPartPanel> cachedPartPanels = new HashMap<>();
-    
-    /** If true, the pruning toggle button is rendered in the header. */
-    @Getter @Setter
-    private boolean renderPruneButtons = true;
-    /** If true, the remove button is rendered in the header. */
-    @Getter @Setter
-    private boolean renderRemoveButtons = true;
 
     /**
      * Constructs a new AbstractMessagePanel.
@@ -198,8 +191,8 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
      * Updates the visibility of header buttons based on the render flags.
      */
     protected void updateHeaderButtons() {
-        pruningToggleButton.setVisible(renderPruneButtons);
-        removeButton.setVisible(renderRemoveButtons);
+        pruningToggleButton.setVisible(isRenderPruneButtons());
+        removeButton.setVisible(isRenderRemoveButtons());
     }
 
     /**
@@ -284,11 +277,12 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
             }
 
             if (panel != null) {
-                panel.render();
-                
+                // CRITICAL: Add to container BEFORE rendering so it can find its ancestors
                 if (componentIndex >= partsContainer.getComponentCount() || partsContainer.getComponent(componentIndex) != panel) {
                     partsContainer.add(panel, componentIndex);
                 }
+                
+                panel.render();
                 componentIndex++;
             }
         }
@@ -319,6 +313,22 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
      */
     protected AbstractPartPanel createPartPanel(AbstractPart part) {
         return PartPanelFactory.createPartPanel(chatPanel, part);
+    }
+
+    /**
+     * If true, the pruning toggle button is rendered in the header.
+     * @return true by default.
+     */
+    public boolean isRenderPruneButtons() {
+        return true;
+    }
+
+    /**
+     * If true, the remove button is rendered in the header.
+     * @return true by default.
+     */
+    public boolean isRenderRemoveButtons() {
+        return true;
     }
 
     /**
