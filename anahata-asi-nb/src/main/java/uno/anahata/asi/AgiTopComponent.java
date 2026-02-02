@@ -4,11 +4,7 @@ package uno.anahata.asi;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.beans.PropertyChangeEvent;
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.util.UUID;
+import java.io.Serializable;
 import lombok.extern.slf4j.Slf4j;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
@@ -24,6 +20,11 @@ import uno.anahata.asi.swing.internal.SwingUtils;
 /**
  * The main TopComponent for Anahata ASI V2.
  * It manages a single chat session and its corresponding UI panel.
+ * <p>
+ * This component uses the {@code writeReplace} pattern for robust persistence,
+ * ensuring that only the session ID is saved and the component is correctly
+ * reconstructed after an IDE restart or a module reload.
+ * </p>
  * 
  * @author anahata
  */
@@ -36,7 +37,7 @@ import uno.anahata.asi.swing.internal.SwingUtils;
 @TopComponent.Registration(mode = "output", openAtStartup = false, position = 0)
 @TopComponent.OpenActionRegistration(displayName = "AGI")
 @Slf4j
-public final class AgiTopComponent extends TopComponent implements Externalizable {
+public final class AgiTopComponent extends TopComponent {
 
     /** The UI panel for the chat session. */
     private transient ChatPanel chatPanel;
@@ -45,7 +46,9 @@ public final class AgiTopComponent extends TopComponent implements Externalizabl
     private String sessionId;
 
     /**
-     * Default constructor required for deserialization.
+     * Default constructor required for NetBeans persistence mechanism.
+     * It creates a component without a session ID, which will be populated
+     * during restoration or initialization.
      */
     public AgiTopComponent() {
         this((String)null);
@@ -79,6 +82,7 @@ public final class AgiTopComponent extends TopComponent implements Externalizabl
      */
     private void initPanel(Chat chat) {
         if (chatPanel != null) return;
+        this.sessionId = chat.getConfig().getSessionId();
         chatPanel = new ChatPanel(chat);
         chatPanel.initComponents();
         setLayout(new BorderLayout());
@@ -97,9 +101,21 @@ public final class AgiTopComponent extends TopComponent implements Externalizabl
      * Updates the TopComponent's name, display name, and tooltip based on the current chat session.
      */
     private void updateTitles() {
+        String displayName = "Anahata AGI";
+        ChatStatus status = ChatStatus.IDLE;
+        
         Chat chat = getChat();
-        String displayName = chat != null ? chat.getDisplayName() : "Anahata AGI";
-        ChatStatus status = chat != null ? chat.getStatusManager().getCurrentStatus() : ChatStatus.IDLE;
+        if (chat == null && sessionId != null) {
+            // Try to find the chat in the container even if the panel isn't ready
+            chat = AnahataInstaller.getContainer().getActiveChats().stream()
+                    .filter(c -> c.getConfig().getSessionId().equals(sessionId))
+                    .findFirst().orElse(null);
+        }
+        
+        if (chat != null) {
+            displayName = chat.getDisplayName();
+            status = chat.getStatusManager().getCurrentStatus();
+        }
         
         Color color = SwingChatConfig.getColor(status);
         String hexColor = SwingUtils.toHtmlColor(color);
@@ -108,7 +124,7 @@ public final class AgiTopComponent extends TopComponent implements Externalizabl
         setDisplayName(displayName);
         setHtmlDisplayName("<html><font color='" + hexColor + "'>" + displayName + "</font></html>");
         
-        String tooltip = chat != null ? "Anahata Session: " + chat.getConfig().getSessionId() + " [" + status.getDisplayName() + "]" : "Anahata AGI";
+        String tooltip = sessionId != null ? "Anahata Session: " + sessionId + " [" + status.getDisplayName() + "]" : "Anahata AGI";
         setToolTipText(tooltip);
     }
 
@@ -128,18 +144,8 @@ public final class AgiTopComponent extends TopComponent implements Externalizabl
     @Override
     public void componentOpened() {
         if (chatPanel == null) {
-            if (sessionId == null) {
-                sessionId = UUID.randomUUID().toString();
-            }
-            
-            // Find existing chat or create a new one
-            Chat chat = AnahataInstaller.getContainer().getActiveChats().stream()
-                    .filter(c -> c.getConfig().getSessionId().equals(sessionId))
-                    .findFirst()
-                    .orElseGet(() -> {
-                        NetBeansChatConfig config = new NetBeansChatConfig(AnahataInstaller.getContainer(), sessionId);
-                        return new Chat(config);
-                    });
+            NetBeansAsiContainer container = (NetBeansAsiContainer) AnahataInstaller.getContainer();
+            Chat chat = container.findOrCreateChat(sessionId);
             initPanel(chat);
         }
     }
@@ -154,30 +160,44 @@ public final class AgiTopComponent extends TopComponent implements Externalizabl
     }
 
     /**
-     * Sets the session ID for handoff during initialization.
-     * This is used during nbmreload to bind the new TopComponent to the correct session.
+     * Returns a stable, session-specific ID for the window system.
      * 
-     * @param sessionId The session ID.
+     * @return The preferred ID.
      */
-    public void setSessionIdForHandoff(String sessionId) {
-        this.sessionId = sessionId;
+    @Override
+    protected String preferredID() {
+        return "agi_" + (sessionId != null ? sessionId : "new");
     }
 
     /**
-     * {@inheritDoc}
+     * The standard NetBeans persistence pattern: replace the component with a 
+     * serializable proxy that only holds the essential state (the session ID).
+     * 
+     * @return A serializable Resolvable object.
      */
     @Override
-    public void writeExternal(ObjectOutput out) throws IOException {
-        out.writeObject(sessionId);
-        super.writeExternal(out);
+    protected Object writeReplace() throws java.io.ObjectStreamException {
+        return new Resolvable(sessionId);
     }
 
     /**
-     * {@inheritDoc}
+     * A static inner class used for serializing the state of an AgiTopComponent.
      */
-    @Override
-    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        sessionId = (String) in.readObject();
-        super.readExternal(in);
+    private static final class Resolvable implements Serializable {
+        private static final long serialVersionUID = 1L;
+        private final String sessionId;
+
+        Resolvable(String sessionId) {
+            this.sessionId = sessionId;
+        }
+
+        /**
+         * Reconstructs the AgiTopComponent using the saved session ID.
+         * 
+         * @return A new AgiTopComponent instance.
+         */
+        Object readResolve() throws java.io.ObjectStreamException {
+            return new AgiTopComponent(sessionId);
+        }
     }
 }

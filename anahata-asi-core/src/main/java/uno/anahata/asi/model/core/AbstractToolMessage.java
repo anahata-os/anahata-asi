@@ -49,11 +49,20 @@ public abstract class AbstractToolMessage<T extends AbstractModelMessage> extend
 
     /**
      * {@inheritDoc}
-     * Returns the user's identity in the format 'user@device'.
+     * Returns the JVM ID (pid@hostname) as the logical sender of tool results.
      */
     @Override
     public String getFrom() {
-        return System.getProperty("user.name") + "@" + TextUtils.getDeviceId();
+        return TextUtils.getJvmId();
+    }
+
+    /**
+     * {@inheritDoc}
+     * Returns the hostname of the device where the tools were executed.
+     */
+    @Override
+    public String getDevice() {
+        return TextUtils.getDeviceId();
     }
 
     /**

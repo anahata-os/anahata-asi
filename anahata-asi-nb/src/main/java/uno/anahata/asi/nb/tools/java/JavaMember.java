@@ -1,9 +1,12 @@
 /* Licensed under the Apache License, Version 2.0 */
 package uno.anahata.asi.nb.tools.java;
 
+import java.net.URL;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.netbeans.api.java.source.ElementHandle;
 
@@ -14,8 +17,10 @@ import org.netbeans.api.java.source.ElementHandle;
  *
  * @author anahata
  */
-@Getter
+@Data
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class JavaMember {
 
     /**
@@ -38,20 +43,12 @@ public class JavaMember {
      * A human-readable representation of the member's signature or type.
      */
     private String details;
-
+    
     /**
-     * Constructs a new JavaMember.
-     * @param handle the element handle.
-     * @param name the member name.
-     * @param kind the member kind.
-     * @param details the member details.
+     * The URL of the file containing this member. This is used to promote
+     * inner types to first-class JavaType objects.
      */
-    public JavaMember(ElementHandle<? extends Element> handle, String name, ElementKind kind, String details) {
-        this.handle = handle;
-        this.name = name;
-        this.kind = kind;
-        this.details = details;
-    }
+    private URL url;
 
     @Override
     public String toString() {

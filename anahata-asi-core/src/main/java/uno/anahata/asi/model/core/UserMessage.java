@@ -30,11 +30,18 @@ public class UserMessage extends AbstractMessage {
 
     /**
      * {@inheritDoc}
-     * Returns the user's identity in the format 'user@device'.
+     * Returns the user's identity (nickname or OS user name).
      */
     @Override
     public String getFrom() {
-        return System.getProperty("user.name") + "@" + TextUtils.getDeviceId();
+        String nickname = getChat().getNickname();
+        return nickname != null ? nickname : TextUtils.getUserName();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getDevice() {
+        return TextUtils.getDeviceId();
     }
 
     /**

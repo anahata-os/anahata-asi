@@ -7,9 +7,10 @@ This document outlines the vision and architecture of the `anahata-ai-core` proj
 > **PARAMOUNT PRINCIPLES: SIMPLICITY AND STABILITY**
 > The absolute priority for all development is **Simplicity and Stability** (or Stability through Simplicity). These principles rule above all others. 
 > - **Core Discussion**: Any proposed changes to this module **MUST** be discussed and agreed upon with the user in the conversation before calling `suggestChange`.
-> - **No Dirty Hacks**: Avoid "dirty hacks" or workarounds to mask initialization order issues. If a design leads to race conditions or UI glitches, it requires a proper refactoring of the underlying architecture.
+> - **No Dirty Hacks**: Avoid "dirty hacks" or workarounds (e.g., `SwingUtilities.invokeLater` or `SwingUtilities.updateComponentTreeUI` to mask initialization order issues). If a design leads to race conditions or UI glitches, it requires a proper refactoring of the underlying architecture, not a patch for the symptoms.
 > - **Unified Content API**: Always prefer `message.addTextPart(text)` or `message.addBlobPart(...)` over direct instantiation of `TextPart` or `BlobPart`. This ensures that the message can control the concrete part types and initialization order.
 > - **No Redundant Signatures**: Avoid adding multiple methods with different signatures that perform the same logical operation. Keep the API lean and consistent.
+> - **No Secondary Constructors**: Do not add "secondary" or "convenience" constructors to work around UI glitches or initialization order problems. Address the root cause in the primary constructor or the factory method.
 
 ## 1. Vision & Goal
 

@@ -136,4 +136,22 @@ public class TextUtils {
             return "unknown-device";
         }
     }
+
+    /**
+     * Gets a unique identifier for the current JVM instance, including the PID and hostname.
+     * 
+     * @return The JVM ID in the format "pid@hostname".
+     */
+    public static String getJvmId() {
+        return ProcessHandle.current().pid() + "@" + getDeviceId();
+    }
+
+    /**
+     * Gets the name of the current user.
+     * 
+     * @return The user name.
+     */
+    public static String getUserName() {
+        return System.getProperty("user.name");
+    }
 }

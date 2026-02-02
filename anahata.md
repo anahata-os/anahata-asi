@@ -53,10 +53,12 @@ This project uses a set of key documents to guide development. For detailed info
 > [!CAUTION]
 > **PARAMOUNT PRINCIPLES: SIMPLICITY AND STABILITY**
 > The absolute priority for all development is **Simplicity and Stability** (or Stability through Simplicity). These principles rule above all others. 
-> - **No Dirty Hacks**: Avoid "dirty hacks" or workarounds (e.g., `SwingUtilities.invokeLater` to mask initialization order issues). If a design leads to race conditions or UI glitches, it requires a proper refactoring of the underlying architecture, not a patch for the symptoms.
+> - **No Dirty Hacks**: Avoid "dirty hacks" or workarounds (e.g., `SwingUtilities.invokeLater` or `SwingUtilities.updateComponentTreeUI` to mask initialization order issues). If a design leads to race conditions or UI glitches, it requires a proper refactoring of the underlying architecture, not a patch for the symptoms.
 > - **Core Discussion**: Any proposed changes to the `anahata-asi-core` module **MUST** be discussed and agreed upon with the user in the conversation before calling `suggestChange`.
 > - **Unified Content API**: Always prefer `message.addTextPart(text)` or `message.addBlobPart(...)` over direct instantiation of `TextPart` or `BlobPart`. This ensures that the message can control the concrete part types and initialization order.
 > - **No Redundant Signatures**: Avoid adding multiple methods with different signatures that perform the same logical operation. Keep the API lean and consistent.
+> - **No Secondary Constructors**: Do not add "secondary" or "convenience" constructors to work around UI glitches or initialization order problems. Address the root cause in the primary constructor or the factory method.
+> - **Identity & Distributed Observability**: Message metadata must clearly distinguish between the **Logical Actor** (`getFrom()`) and the **Physical/Virtual Host** (`getDevice()`). For tool executions, the actor is the specific JVM instance (`pid@hostname`) and the device is the hostname. This ensures full traceability in distributed or multi-agent scenarios.
 
 1.  **JDK 25 Standard**: All modules are built and documented using **JDK 25**. While the target compatibility remains Java 17 for the core engine, the build environment is standardized on the latest LTS/Current release to leverage modern Javadoc features and performance.
 2.  **Engineering over Patching**: This is a beta project under active development. **There is no requirement for backwards compatibility.** If a design is flawed or leads to race conditions (e.g., initialization order issues in class hierarchies), **redesign and refactor** the code. Do not add "hacky" null checks or workarounds to patch symptoms of poor engineering.

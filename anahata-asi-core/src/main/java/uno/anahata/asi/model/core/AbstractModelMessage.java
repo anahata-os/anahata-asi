@@ -38,7 +38,7 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
     
     /** The reason why the model stopped generating content for this candidate. */
     @Setter(AccessLevel.NONE)
-    private String finishReason; 
+    private FinishReason finishReason; 
     
     /** The message explaining why the model stopped generating content for this candidate. */
     private String finishMessage;
@@ -87,6 +87,12 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
     @Override
     public String getFrom() {
         return modelId;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getDevice() {
+        return "Cloud";
     }
 
     /**
@@ -158,8 +164,8 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
      * Sets the finish reason and fires a property change event.
      * @param finishReason The new finish reason.
      */
-    public void setFinishReason(String finishReason) {
-        String oldReason = this.finishReason;
+    public void setFinishReason(FinishReason finishReason) {
+        FinishReason oldReason = this.finishReason;
         this.finishReason = finishReason;
         propertyChangeSupport.firePropertyChange("finishReason", oldReason, finishReason);
     }

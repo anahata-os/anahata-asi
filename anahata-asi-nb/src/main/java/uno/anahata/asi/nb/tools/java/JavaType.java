@@ -3,7 +3,9 @@ package uno.anahata.asi.nb.tools.java;
 
 import java.net.URL;
 import java.util.List;
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.netbeans.api.java.source.ElementHandle;
 import org.netbeans.modules.java.source.ui.JavaTypeDescription;
@@ -14,8 +16,10 @@ import org.openide.filesystems.URLMapper;
  * A lightweight, serializable "keychain" DTO that uniquely identifies a Java type.
  * It holds an ElementHandle and a URL to the class file.
  */
-@Getter
+@Data
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class JavaType {
 
     private ElementHandle handle;

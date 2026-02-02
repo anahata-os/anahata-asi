@@ -26,7 +26,7 @@ import uno.anahata.asi.swing.chat.SessionController;
 @ActionReference(path = "Menu/Window", position = 101)
 @TopComponent.OpenActionRegistration(
         displayName = "ASI Sessions",
-        preferredID = "SessionsTopComponent"
+        preferredID = "AsiTopComponent"
 )
 @Slf4j
 public class AsiTopComponent extends TopComponent implements SessionController {
@@ -68,8 +68,7 @@ public class AsiTopComponent extends TopComponent implements SessionController {
         }
         
         // If not found, open a new one for this session
-        AgiTopComponent tc = new AgiTopComponent();
-        tc.setSessionIdForHandoff(chat.getConfig().getSessionId());
+        AgiTopComponent tc = new AgiTopComponent(chat);
         tc.open();
         tc.requestActive();
     }

@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.apache.commons.lang3.Validate;
 import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.internal.TimeUtils;
 
 /**
@@ -81,10 +82,21 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
 
     /**
      * Gets the identity of the sender of this message.
+     * For user messages, this is typically the user's name.
+     * For model messages, it's the model ID.
+     * For tool messages, it's the identity of the execution context.
      * 
-     * @return The sender's identity (e.g., user name or model ID).
+     * @return The sender's identity.
      */
     public abstract String getFrom();
+    
+    /**
+     * Gets the ID of the device where this message was created or processed.
+     * This could be a hostname, a JVM ID, or a cloud identifier.
+     * 
+     * @return The device ID.
+     */
+    public abstract String getDevice();
     
     /**
      * Checks if this message is eligible for pruning or removal.
@@ -296,10 +308,11 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
      */
     public String createMetadataHeader() {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("--- Message ID: %d | Role: %s | From: %s | Time: %s | Tokens: %d",
+        sb.append(String.format("--- Message ID: %d | Role: %s | From: %s | Device: %s | Time: %s | Tokens: %d",
             getSequentialId(),
             getRole(),
             getFrom(),
+            getDevice(),
             TimeUtils.formatSmartTimestamp(Instant.ofEpochMilli(getTimestamp())),
             getTokenCount(false)
         ));

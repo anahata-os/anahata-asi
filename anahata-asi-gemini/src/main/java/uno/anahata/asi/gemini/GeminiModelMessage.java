@@ -20,6 +20,7 @@ import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.AbstractPart;
 import uno.anahata.asi.model.core.AbstractToolMessage;
+import uno.anahata.asi.model.core.FinishReason;
 import uno.anahata.asi.model.core.ModelBlobPart;
 import uno.anahata.asi.model.core.ModelTextPart;
 import uno.anahata.asi.model.core.ThoughtSignature;
@@ -69,6 +70,7 @@ public class GeminiModelMessage extends AbstractModelMessage<GeminiResponse, Gem
         // Populate new fields from Candidate
         candidate.groundingMetadata().ifPresent(gm -> setGroundingMetadata(toAnahataGroundingMetadata(gm)));
         
+        setFinishReason(toAnahataFinishReason(candidate.finishReason().orElse(null)));
         candidate.finishMessage().ifPresent(this::setFinishMessage);
         candidate.safetyRatings().ifPresent(sr -> setSafetyRatings(sr.stream()
             .map(s -> s.category().map(c -> c.knownEnum().name()).orElse("") + ":" + s.probability().map(p -> p.knownEnum().name()).orElse(""))
@@ -188,5 +190,24 @@ public class GeminiModelMessage extends AbstractModelMessage<GeminiResponse, Gem
             sources,
             searchEntryPointHtml,
             gm.toJson());
+    }
+
+    /**
+     * Maps a Google GenAI FinishReason to the Anahata FinishReason enum.
+     * 
+     * @param fr The Google FinishReason object.
+     * @return The corresponding Anahata FinishReason.
+     */
+    public static FinishReason toAnahataFinishReason(com.google.genai.types.FinishReason fr) {
+        if (fr == null) {
+            return FinishReason.GOD_FUCKING_KNOWS;
+        }
+        
+        try {
+            return FinishReason.valueOf(fr.knownEnum().name());
+        } catch (IllegalArgumentException e) {
+            log.warn("Unknown Gemini finish reason: {}. Mapping to GOD_FUCKING_KNOWS.", fr.knownEnum().name());
+            return FinishReason.GOD_FUCKING_KNOWS;
+        }
     }
 }

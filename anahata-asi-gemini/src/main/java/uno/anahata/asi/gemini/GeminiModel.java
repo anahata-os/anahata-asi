@@ -37,6 +37,7 @@ import uno.anahata.asi.gemini.adapter.RequestConfigAdapter;
 import uno.anahata.asi.model.core.AbstractMessage;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.AbstractPart;
+import uno.anahata.asi.model.core.FinishReason;
 import uno.anahata.asi.model.core.GenerationRequest;
 import uno.anahata.asi.model.core.ModelTextPart;
 import uno.anahata.asi.model.core.RequestConfig;
@@ -329,6 +330,11 @@ public class GeminiModel extends AbstractModel {
                     target.setResponse(lastGeminiResponse);
                     // Ensure the final model version is set
                     target.setModelId(lastGeminiResponse.getModelVersion());
+                    
+                    // Ensure the finish reason is set if it's still null after the stream
+                    if (target.getFinishReason() == null) {
+                        target.setFinishReason(FinishReason.UNKNOWN);
+                    }
                 }
             }
             
@@ -431,7 +437,7 @@ public class GeminiModel extends AbstractModel {
      */
     private void handleResponseMetadata(Candidate c, GenerateContentResponse response, GeminiModelMessage target, int candidateCount) {
         // 1. Finish Reason
-        c.finishReason().ifPresent(fr -> target.setFinishReason(fr.knownEnum().name()));
+        c.finishReason().ifPresent(fr -> target.setFinishReason(GeminiModelMessage.toAnahataFinishReason(fr)));
         c.finishMessage().ifPresent(target::setFinishMessage);
         
         // 2. Citations

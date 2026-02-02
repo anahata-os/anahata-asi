@@ -16,6 +16,7 @@ import lombok.NonNull;
 import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.AbstractPart;
+import uno.anahata.asi.model.core.FinishReason;
 import uno.anahata.asi.model.core.ModelBlobPart;
 import uno.anahata.asi.model.core.ModelTextPart;
 import uno.anahata.asi.model.tool.AbstractToolCall;
@@ -96,11 +97,11 @@ public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage
      * Updates the finish reason label and visibility.
      */
     private void updateFinishReason() {
-        String reason = message.getFinishReason();
-        boolean shouldBeVisible = reason != null && !reason.isEmpty();
+        FinishReason reason = message.getFinishReason();
+        boolean shouldBeVisible = reason != null;
         
         if (shouldBeVisible) {
-            finishLabel.setText("Finish Reason: " + reason);
+            finishLabel.setText("Finish Reason: " + reason.name());
         }
         finishLabel.setVisible(shouldBeVisible);
     }

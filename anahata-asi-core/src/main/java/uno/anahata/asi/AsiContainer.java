@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.Setter;
@@ -320,18 +321,26 @@ public class AsiContainer extends BasicPropertyChangeSource {
     /**
      * Scan the sessions directory and loads all serialized chat sessions.
      * This is typically called during application startup.
+     * 
+     * @return The number of sessions that failed to load.
      */
-    public void loadSessions() {
+    public int loadSessions() {
         Path sessionsDir = getSessionsDir();
-        if (!Files.exists(sessionsDir)) return;
+        if (!Files.exists(sessionsDir)) return 0;
 
+        AtomicInteger failedCount = new AtomicInteger(0);
         try (Stream<Path> stream = Files.list(sessionsDir)) {
             stream.filter(p -> !Files.isDirectory(p)) // Only load files from the root (active sessions)
                   .filter(p -> p.toString().endsWith(".kryo"))
-                  .forEach(this::loadSession);
+                  .forEach(p -> {
+                      if (!loadSession(p)) {
+                          failedCount.incrementAndGet();
+                      }
+                  });
         } catch (IOException e) {
             log.error("Failed to list sessions in {}", sessionsDir, e);
         }
+        return failedCount.get();
     }
 
     /**
@@ -339,16 +348,19 @@ public class AsiContainer extends BasicPropertyChangeSource {
      * and registers it.
      * 
      * @param path The path to the serialized session file.
+     * @return true if the session was loaded successfully, false otherwise.
      */
-    private void loadSession(Path path) {
+    private boolean loadSession(Path path) {
         try {
             log.info("Loading session from {}", path);
             byte[] data = Files.readAllBytes(path);
             Chat chat = KryoUtils.deserialize(data, Chat.class);
             chat.rebind(this);
             register(chat);
-        } catch (Exception e) {
-            log.error("Failed to load session from {}", path, e);
+            return true;
+        } catch (Throwable t) {
+            log.error("Failed to load session from {}. This session might be incompatible with the current version.", path, t);
+            return false;
         }
     }
 

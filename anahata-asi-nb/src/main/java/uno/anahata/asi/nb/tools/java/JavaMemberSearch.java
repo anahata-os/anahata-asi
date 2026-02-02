@@ -1,6 +1,7 @@
 /* Licensed under the Apache License, Version 2.0 */
 package uno.anahata.asi.nb.tools.java;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -56,6 +57,8 @@ public class JavaMemberSearch {
         }
 
         final List<JavaMember> foundMembers = new ArrayList<>();
+        final URL typeUrl = javaType.getUrl();
+        
         javaSource.runUserActionTask(controller -> {
             controller.toPhase(JavaSource.Phase.RESOLVED);
             Element resolvedElement = javaType.getHandle().resolve(controller);
@@ -74,7 +77,10 @@ public class JavaMemberSearch {
                 ElementHandle<? extends Element> handle = ElementHandle.create(element);
                 String name = element.getSimpleName().toString();
                 String details = createMemberDetails(element);
-                foundMembers.add(new JavaMember(handle, name, kind, details));
+                
+                // Use the 5-arg constructor to include the URL
+                JavaMember member = new JavaMember(handle, name, kind, details, typeUrl);
+                foundMembers.add(member);
             }
         }, true);
 

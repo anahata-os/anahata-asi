@@ -120,6 +120,24 @@ public class NetBeansAsiContainer extends AsiContainer {
     }
 
     /**
+     * Finds an existing active chat by its session ID, or creates a new one
+     * if the ID is null or not found.
+     * 
+     * @param sessionId The session ID to find.
+     * @return The found or newly created chat session.
+     */
+    public Chat findOrCreateChat(String sessionId) {
+        if (sessionId != null) {
+            for (Chat chat : getActiveChats()) {
+                if (chat.getConfig().getSessionId().equals(sessionId)) {
+                    return chat;
+                }
+            }
+        }
+        return createNewChat();
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
