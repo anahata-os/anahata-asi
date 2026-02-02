@@ -1,30 +1,9 @@
 /* Licensed under the Apache License, Version 2.0 */
 package uno.anahata.asi.nb.tools.java;
 
-
-import java.io.File;
-import java.nio.file.Path;
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
-import javax.lang.model.element.TypeElement;
-import org.netbeans.api.java.project.JavaProjectConstants;
-import org.netbeans.api.java.source.ClassIndex;
-import org.netbeans.api.java.source.ClasspathInfo;
-import org.netbeans.api.java.source.ElementHandle;
-import org.netbeans.api.java.source.SourceUtils;
-import org.netbeans.api.project.Project;
-import org.netbeans.api.project.ProjectUtils;
-import org.netbeans.api.project.SourceGroup;
-import org.netbeans.api.project.Sources;
-import org.netbeans.api.project.ui.OpenProjects;
-import org.netbeans.modules.java.source.ui.JavaTypeDescription;
-import org.netbeans.modules.web.common.spi.ImportantFilesImplementation.FileInfo;
-import org.openide.filesystems.FileObject;
-import org.openide.filesystems.FileUtil;
-import uno.anahata.asi.model.resource.TextFileResource;
+import javax.lang.model.element.ElementKind;
 import uno.anahata.asi.model.Page;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolParam;
@@ -34,7 +13,7 @@ import uno.anahata.asi.tool.AiToolkit;
  * Provides tools for interacting with the Java code model in NetBeans.
  * This includes finding types, getting members, and retrieving source code.
  */
-@AiToolkit("A toolkit for browwsing types, members, sources and javadocs.")
+@AiToolkit("A toolkit for browsing types, members, sources and javadocs.")
 public class CodeModel {
 
     /**
@@ -64,29 +43,80 @@ public class CodeModel {
     }
 
     /**
-     * Gets the source file for a given JavaType. This is the second step in the 'discovery' (Ctrl+O) workflow.
+     * Gets the source file for a given JavaType.
      * @param javaType The minimalist keychain DTO from a findTypes call.
      * @return the content of the source file.
      * @throws Exception if the source cannot be retrieved.
      */
-    @AiTool("Gets the source file for a given JavaType. This is the second step in the 'discovery' (Ctrl+O) workflow.")
-    public static String getSources(
+    @AiTool("Gets the source file for a given JavaType.")
+    public String getTypeSources(
             @AiToolParam("The minimalist keychain DTO from a findTypes call.") JavaType javaType) throws Exception {
         return javaType.getSource().getContent();
     }
     
     /**
-     * Gets a list of all members (fields, constructors, methods) for a given type.
+     * Gets the Javadoc for a given JavaType.
      * @param javaType The keychain DTO for the type to inspect.
-     * @return a list of JavaMember objects.
-     * @throws Exception if the members cannot be retrieved.
+     * @return the Javadoc comment.
+     * @throws Exception if the Javadoc cannot be retrieved.
      */
-    @AiTool("Gets a list of all members (fields, constructors, methods) for a given type.")
-    public static List<JavaMember> getMembers(
+    @AiTool("Gets the Javadoc for a given JavaType.")
+    public String getTypeJavadocs(
             @AiToolParam("The keychain DTO for the type to inspect.") JavaType javaType) throws Exception {
-        return javaType.getMembers();
+        return javaType.getJavadoc().getJavadoc();
     }
 
-    
-    
+    /**
+     * Gets the source code for a specific JavaMember.
+     * @param member The keychain DTO for the member to inspect.
+     * @return the source code of the member.
+     * @throws Exception if the source cannot be retrieved.
+     */
+    @AiTool("Gets the source code for a specific JavaMember.")
+    public String getMemberSources(
+            @AiToolParam("The keychain DTO for the member to inspect.") JavaMember member) throws Exception {
+        return member.getSource().getContent();
+    }
+
+    /**
+     * Gets the Javadoc for a specific JavaMember.
+     * @param member The keychain DTO for the member to inspect.
+     * @return the Javadoc comment.
+     * @throws Exception if the Javadoc cannot be retrieved.
+     */
+    @AiTool("Gets the Javadoc for a specific JavaMember.")
+    public String getMemberJavadocs(
+            @AiToolParam("The keychain DTO for the member to inspect.") JavaMember member) throws Exception {
+        return member.getJavadoc().getJavadoc();
+    }
+
+    /**
+     * Gets a paginated list of all members (fields, constructors, methods) for a given type.
+     * @param javaType The keychain DTO for the type to inspect.
+     * @param startIndex The starting index (0-based) for pagination.
+     * @param pageSize The maximum number of results to return per page.
+     * @param kindFilters Optional list of member kinds to filter by (e.g., ['METHOD', 'FIELD']).
+     * @return a paginated result of JavaMember objects.
+     * @throws Exception if the members cannot be retrieved.
+     */
+    @AiTool("Gets a paginated list of all members (fields, constructors, methods) for a given type.")
+    public Page<JavaMember> getMembers(
+            @AiToolParam("The keychain DTO for the type to inspect.") JavaType javaType,
+            @AiToolParam(value = "The starting index (0-based) for pagination.", required = false) Integer startIndex,
+            @AiToolParam(value = "The maximum number of results to return per page.", required = false) Integer pageSize,
+            @AiToolParam(value = "Optional list of member kinds to filter by.", required = false) List<ElementKind> kindFilters) throws Exception {
+        
+        List<JavaMember> allMembers = javaType.getMembers();
+        
+        if (kindFilters != null && !kindFilters.isEmpty()) {
+            allMembers = allMembers.stream()
+                    .filter(m -> kindFilters.contains(m.getKind()))
+                    .collect(Collectors.toList());
+        }
+
+        int start = startIndex != null ? startIndex : 0;
+        int size = pageSize != null ? pageSize : 100;
+
+        return new Page<>(allMembers, start, size);
+    }
 }

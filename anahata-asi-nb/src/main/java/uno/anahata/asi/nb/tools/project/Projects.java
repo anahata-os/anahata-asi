@@ -5,20 +5,25 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import java.util.Set;
+import javax.tools.Diagnostic;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.java.project.JavaProjectConstants;
 import org.netbeans.api.java.queries.SourceLevelQuery;
+import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectInformation;
 import org.netbeans.api.project.ProjectManager;
@@ -27,11 +32,14 @@ import org.netbeans.api.project.SourceGroup;
 import org.netbeans.api.project.Sources;
 import org.netbeans.api.project.ui.OpenProjects;
 import org.netbeans.modules.maven.api.NbMavenProject;
+import org.netbeans.modules.parsing.spi.indexing.ErrorsCache;
 import org.netbeans.spi.project.ActionProvider;
 import org.netbeans.spi.project.SubprojectProvider;
+import org.netbeans.spi.project.ui.ProjectProblemsProvider;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileStateInvalidException;
 import org.openide.filesystems.FileUtil;
+import org.openide.filesystems.URLMapper;
 import org.openide.util.Lookup;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.nb.tools.project.context.ProjectContextProvider;
@@ -42,6 +50,9 @@ import uno.anahata.asi.tool.AiToolParam;
 import uno.anahata.asi.tool.AiToolkit;
 import uno.anahata.asi.tool.AnahataToolkit;
 import uno.anahata.asi.model.resource.AbstractPathResource;
+import uno.anahata.asi.nb.tools.project.alerts.JavacAlert;
+import uno.anahata.asi.nb.tools.project.alerts.ProjectAlert;
+import uno.anahata.asi.nb.tools.project.alerts.ProjectDiagnostics;
 import uno.anahata.asi.nb.tools.project.nb.AnahataProjectAnnotator;
 
 /**
@@ -249,12 +260,12 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     }
 
     /**
-     * Gets a structured, context-aware overview of a project, including its source tree and metadata.
+     * Gets a structured, context-aware overview of a project, including its metadata and dependencies.
      * 
      * @param projectPath The absolute path of the project.
-     * @return A {@link ProjectOverview} object containing the project's structure and status.
+     * @return A {@link ProjectOverview} object containing the project's metadata.
      */
-    @AiTool("Gets a structured, context-aware overview of a project, including root files, source tree, the in-context status of each file and a list of supported NetBeans Actions.")
+    @AiTool("Gets a structured, context-aware overview of a project, including metadata, supported actions, and declared dependencies.")
     @SneakyThrows
     public ProjectOverview getOverview(@AiToolParam("The absolute path of the project.") String projectPath) {
         Project target = findOpenProject(projectPath);
@@ -267,29 +278,6 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
             actions = Arrays.asList(ap.getSupportedActions());
         }
 
-        List<ProjectFile> rootFiles = new ArrayList<>();
-        List<String> rootFolderNames = new ArrayList<>();
-        List<SourceFolder> sourceFolders = new ArrayList<>();
-
-        for (FileObject child : root.getChildren()) {
-            if (child.isFolder()) {
-                rootFolderNames.add(child.getNameExt());
-            } else {
-                ProjectFile pf = createProjectFile(child);
-                rootFiles.add(pf);
-            }
-        }
-
-        Sources sources = ProjectUtils.getSources(target);
-        List<SourceGroup> allSourceGroups = new ArrayList<>();
-        allSourceGroups.addAll(Arrays.asList(sources.getSourceGroups(JavaProjectConstants.SOURCES_TYPE_JAVA)));
-        allSourceGroups.addAll(Arrays.asList(sources.getSourceGroups(JavaProjectConstants.SOURCES_TYPE_RESOURCES)));
-
-        for (SourceGroup group : allSourceGroups) {
-            FileObject srcRoot = group.getRootFolder();
-            sourceFolders.add(buildSourceFolderTree(srcRoot, group.getDisplayName()));
-        }
-        
         // Project-agnostic properties
         String javaSourceLevel = SourceLevelQuery.getSourceLevel(target.getProjectDirectory());
 
@@ -320,20 +308,159 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
             sourceEncoding = rawMvnProject.getProperties().getProperty("project.build.sourceEncoding");
         }
 
+        // Detect Compile on Save
+        boolean compileOnSave = false;
+        try {
+            Preferences prefs = ProjectUtils.getPreferences(target, org.netbeans.api.project.ProjectUtils.class, true);
+            compileOnSave = prefs.getBoolean("compile.on.save", true);
+        } catch (Exception e) {
+            log.debug("Failed to read compile.on.save preference for project: " + projectPath, e);
+        }
+
         return new ProjectOverview(
                 root.getNameExt(),
                 info.getDisplayName(),                
                 root.getPath(),
                 packaging,
-                rootFiles,
-                rootFolderNames,
-                sourceFolders,
                 actions,
                 mavenDeclaredDependencies,
                 javaSourceLevel,
                 javaTargetLevel,
-                sourceEncoding
+                sourceEncoding,
+                compileOnSave
         );
+    }
+
+    /**
+     * Gets the file and folder structure of a project.
+     * 
+     * @param projectPath The absolute path of the project.
+     * @return A {@link ProjectFiles} object containing the project's structure.
+     * @throws Exception if the project is not found.
+     */
+    @AiTool("Gets the file and folder structure of a project, including root files and a detailed source tree.")
+    public ProjectFiles getProjectFiles(@AiToolParam("The absolute path of the project.") String projectPath) throws Exception {
+        Project target = findOpenProject(projectPath);
+        FileObject root = target.getProjectDirectory();
+
+        List<ProjectFile> rootFiles = new ArrayList<>();
+        List<String> rootFolderNames = new ArrayList<>();
+        List<SourceFolder> sourceFolders = new ArrayList<>();
+
+        for (FileObject child : root.getChildren()) {
+            if (child.isFolder()) {
+                rootFolderNames.add(child.getNameExt());
+            } else {
+                rootFiles.add(createProjectFile(child));
+            }
+        }
+
+        Sources sources = ProjectUtils.getSources(target);
+        List<SourceGroup> allSourceGroups = new ArrayList<>();
+        allSourceGroups.addAll(Arrays.asList(sources.getSourceGroups(JavaProjectConstants.SOURCES_TYPE_JAVA)));
+        allSourceGroups.addAll(Arrays.asList(sources.getSourceGroups(JavaProjectConstants.SOURCES_TYPE_RESOURCES)));
+
+        for (SourceGroup group : allSourceGroups) {
+            FileObject srcRoot = group.getRootFolder();
+            sourceFolders.add(buildSourceFolderTree(srcRoot, group.getDisplayName()));
+        }
+
+        return new ProjectFiles(rootFiles, rootFolderNames, sourceFolders);
+    }
+
+    /**
+     * Performs a live scan of a specific project to find all high-level project problems and Java source file errors/warnings.
+     * @param projectPath The absolute path of the project to scan.
+     * @return a ProjectDiagnostics object containing the found alerts.
+     * @throws Exception if an error occurs.
+     */
+    @AiTool("Performs a live scan of a specific project to find all high-level project problems and Java source file errors/warnings.")
+    public ProjectDiagnostics getProjectAlerts(@AiToolParam("The absolute path of the project to scan.") String projectPath) throws Exception {
+        Project targetProject = findOpenProject(projectPath);
+        ProjectDiagnostics projectDiags = new ProjectDiagnostics(ProjectUtils.getInformation(targetProject).getDisplayName());
+
+        // 1. Surf the IDE's internal ErrorsCache to find files that already have errors
+        List<FileObject> filesInError = findFilesInError(targetProject);
+
+        if (!filesInError.isEmpty()) {
+            log.info("Found {} files in error via ErrorsCache for project {}. Performing targeted scan.", filesInError.size(), projectPath);
+            List<CompletableFuture<Void>> futures = new ArrayList<>();
+            for (FileObject fo : filesInError) {
+                CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                    try {
+                        JavaSource javaSource = JavaSource.forFileObject(fo);
+                        if (javaSource != null) {
+                            javaSource.runUserActionTask(controller -> {
+                                controller.toPhase(JavaSource.Phase.RESOLVED);
+                                List<? extends Diagnostic> diagnostics = controller.getDiagnostics();
+                                for (Diagnostic d : diagnostics) {
+                                    projectDiags.addJavacAlert(new JavacAlert(
+                                            fo.getPath(),
+                                            d.getKind().toString(),
+                                            (int) d.getLineNumber(),
+                                            (int) d.getColumnNumber(),
+                                            d.getMessage(null)
+                                    ));
+                                }
+                            }, true);
+                        }
+                    } catch (IOException e) {
+                        projectDiags.addJavacAlert(new JavacAlert(fo.getPath(), "ERROR", -1, -1, "Error processing file: " + e.getMessage()));
+                    }
+                });
+                futures.add(future);
+            }
+            // Wait for all targeted scans to complete
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        }
+
+        // 2. Scan for Project-level problems
+        ProjectProblemsProvider problemProvider = targetProject.getLookup().lookup(ProjectProblemsProvider.class);
+        if (problemProvider != null) {
+            Collection<? extends ProjectProblemsProvider.ProjectProblem> problems = problemProvider.getProblems();
+            for (ProjectProblemsProvider.ProjectProblem problem : problems) {
+                projectDiags.addProjectAlert(new ProjectAlert(
+                        problem.getDisplayName(),
+                        problem.getDescription(),
+                        "PROJECT",
+                        problem.getSeverity().toString(),
+                        problem.isResolvable()
+                ));
+            }
+        }
+
+        return projectDiags;
+    }
+
+    /**
+     * Identifies files within a project that currently have compilation errors by querying the IDE's internal ErrorsCache.
+     * 
+     * @param project The project to scan.
+     * @return A list of FileObjects representing the files in error.
+     */
+    private static List<FileObject> findFilesInError(Project project) {
+        List<FileObject> results = new ArrayList<>();
+        Sources sources = ProjectUtils.getSources(project);
+        
+        SourceGroup[] groups = sources.getSourceGroups(JavaProjectConstants.SOURCES_TYPE_JAVA);
+        for (SourceGroup sg : groups) {
+            FileObject root = sg.getRootFolder();
+            URL rootUrl = root.toURL();
+            try {
+                Collection<? extends URL> files = ErrorsCache.getAllFilesInError(rootUrl);
+                if (files != null) {
+                    for (URL url : files) {
+                        FileObject fo = URLMapper.findFileObject(url);
+                        if (fo != null && !fo.isFolder() && "text/x-java".equals(fo.getMIMEType())) {
+                            results.add(fo);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Error querying ErrorsCache for root: " + root.getPath(), e);
+            }
+        }
+        return results;
     }
 
     /**

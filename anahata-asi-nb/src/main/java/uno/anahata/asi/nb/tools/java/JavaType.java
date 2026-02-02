@@ -4,9 +4,9 @@ package uno.anahata.asi.nb.tools.java;
 import java.net.URL;
 import java.util.List;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.netbeans.api.java.source.ElementHandle;
 import org.netbeans.modules.java.source.ui.JavaTypeDescription;
 import org.openide.filesystems.FileObject;
@@ -17,7 +17,7 @@ import org.openide.filesystems.URLMapper;
  * It holds an ElementHandle and a URL to the class file.
  */
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 public class JavaType {
@@ -61,6 +61,15 @@ public class JavaType {
      */
     public JavaTypeSource getSource() throws Exception {
         return new JavaTypeSource(this);
+    }
+
+    /**
+     * Gets the Javadoc for this type.
+     * @return a JavaTypeDocs object.
+     * @throws Exception if the Javadoc cannot be retrieved.
+     */
+    public JavaTypeDocs getJavadoc() throws Exception {
+        return new JavaTypeDocs(this);
     }
 
     /**

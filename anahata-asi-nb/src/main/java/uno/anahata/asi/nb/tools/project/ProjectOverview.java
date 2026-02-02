@@ -8,13 +8,13 @@ import lombok.Data;
 import uno.anahata.asi.nb.tools.maven.DependencyScope;
 
 /**
- * Represents a high-level, structured overview of a project, including its root structure
- * and a detailed view of its source folders.
+ * Represents a high-level, structured overview of a project, including its metadata
+ * and declared dependencies.
  * This is a Java 8-compatible, immutable data class.
  *
  * @author Anahata
  */
-@Schema(description = "Represents a high-level, structured overview of a project, including its root files, folder names, and a detailed tree of its source code folders.")
+@Schema(description = "Represents a high-level, structured overview of a project, including its metadata, supported actions, and declared dependencies.")
 @Data
 @AllArgsConstructor
 public final class ProjectOverview {
@@ -30,15 +30,6 @@ public final class ProjectOverview {
     
     @Schema(description = "The project's packaging type as defined in the pom.xml (e.g., 'jar', 'nbm', 'nbm-application'). This is null for non-Maven projects.")
     private final String packaging;
-    
-    @Schema(description = "A list of files located directly in the project's root directory.")
-    private final List<ProjectFile> rootFiles;
-
-    @Schema(description = "A list of the names of all folders located in the project's root directory.")
-    private final List<String> rootFolderNames;
-
-    @Schema(description = "A detailed, recursive tree structure of the project's primary source code folders.")
-    private final List<SourceFolder> sourceFolders;
 
     @Schema(description = "A list of supported high-level NetBeans Project Actions that can be invoked on the Project (e.g., 'build', 'run').")
     private final List<String> actions;
@@ -54,5 +45,8 @@ public final class ProjectOverview {
     
     @Schema(description = "The source file encoding for the project (e.g., 'UTF-8').")
     private final String sourceEncoding;
+
+    @Schema(description = "Whether 'Compile on Save' is enabled for this project.")
+    private final boolean compileOnSave;
     
 }

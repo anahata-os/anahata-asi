@@ -2,32 +2,32 @@
 package uno.anahata.asi.nb.tools.java;
 
 import java.net.URL;
+import java.util.Set;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 import org.netbeans.api.java.source.ElementHandle;
 
 /**
  * A lightweight, serializable "keychain" DTO that uniquely identifies a Java
- * class member (field, method, constructor, etc.). It is designed to be the
- * result of a discovery tool and the input to an action tool.
+ * class member (field, method, constructor, etc.). By extending {@link JavaType},
+ * members that represent types (classes, interfaces, enums) can be used directly
+ * as roots for further exploration.
  *
  * @author anahata
  */
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class JavaMember {
-
-    /**
-     * The serializable handle to the actual code element. This may be null if
-     * the member was discovered via a method that doesn't produce a handle.
-     */
-    private ElementHandle<? extends Element> handle;
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
+public class JavaMember extends JavaType {
 
     /**
      * The simple name of the member (e.g., "myField", "myMethod").
@@ -40,18 +40,42 @@ public class JavaMember {
     private ElementKind kind;
 
     /**
-     * A human-readable representation of the member's signature or type.
+     * The set of modifiers for this member (e.g., "public", "static", "default").
      */
-    private String details;
-    
-    /**
-     * The URL of the file containing this member. This is used to promote
-     * inner types to first-class JavaType objects.
-     */
-    private URL url;
+    private Set<String> modifiers;
 
+    /**
+     * Constructs a new JavaMember.
+     * @param handle the element handle.
+     * @param name the member name.
+     * @param kind the member kind.
+     * @param url the class file URL.
+     * @param modifiers the set of modifiers.
+     */
+    public JavaMember(ElementHandle<? extends Element> handle, String name, ElementKind kind, URL url, Set<String> modifiers) {
+        super(handle, url);
+        this.name = name;
+        this.kind = kind;
+        this.modifiers = modifiers;
+    }
+
+    /**
+     * Gets the source code for this member.
+     * @return a JavaMemberSource object.
+     * @throws Exception if the source cannot be retrieved.
+     */
     @Override
-    public String toString() {
-        return kind + ": " + name + " (" + details + ")";
+    public JavaMemberSource getSource() throws Exception {
+        return new JavaMemberSource(this);
+    }
+
+    /**
+     * Gets the Javadoc for this member.
+     * @return a JavaMemberDocs object.
+     * @throws Exception if the Javadoc cannot be retrieved.
+     */
+    @Override
+    public JavaMemberDocs getJavadoc() throws Exception {
+        return new JavaMemberDocs(this);
     }
 }

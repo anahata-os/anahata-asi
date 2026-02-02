@@ -13,12 +13,9 @@ import uno.anahata.asi.swing.icons.IconUtils;
 
 /**
  * A hierarchical context provider for a specific NetBeans project.
- * It aggregates the {@link ProjectOverviewContextProvider} and the 
- * {@link AnahataMdContextProvider} into a single project-scoped node.
- * <p>
- * The project name and icon are fetched dynamically from the NetBeans Project API.
- * The icon is registered in the global {@link IconUtils} registry.
- * </p>
+ * It aggregates specialized providers like {@link ProjectOverviewContextProvider}, 
+ * {@link AnahataMdContextProvider}, {@link ProjectFilesContextProvider}, and {@link ProjectAlertsContextProvider}
+ * into a single project-scoped node.
  * 
  * @author anahata
  */
@@ -65,6 +62,14 @@ public class ProjectContextProvider extends BasicContextProvider {
         AnahataMdContextProvider anahataMd = new AnahataMdContextProvider(projectsToolkit, projectPath);
         anahataMd.setParent(this);
         children.add(anahataMd);
+
+        ProjectFilesContextProvider files = new ProjectFilesContextProvider(projectsToolkit, projectPath);
+        files.setParent(this);
+        children.add(files);
+
+        ProjectAlertsContextProvider alerts = new ProjectAlertsContextProvider(projectsToolkit, projectPath);
+        alerts.setParent(this);
+        children.add(alerts);
     }
 
     /**
