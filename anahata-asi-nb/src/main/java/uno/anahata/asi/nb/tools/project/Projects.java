@@ -19,7 +19,6 @@ import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import java.util.Set;
 import javax.tools.Diagnostic;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.java.project.JavaProjectConstants;
 import org.netbeans.api.java.queries.SourceLevelQuery;
@@ -264,10 +263,10 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
      * 
      * @param projectPath The absolute path of the project.
      * @return A {@link ProjectOverview} object containing the project's metadata.
+     * @throws Exception if the project is not found or metadata cannot be retrieved.
      */
     @AiTool("Gets a structured, context-aware overview of a project, including metadata, supported actions, and declared dependencies.")
-    @SneakyThrows
-    public ProjectOverview getOverview(@AiToolParam("The absolute path of the project.") String projectPath) {
+    public ProjectOverview getOverview(@AiToolParam("The absolute path of the project.") String projectPath) throws Exception {
         Project target = findOpenProject(projectPath);
 
         ProjectInformation info = ProjectUtils.getInformation(target);
@@ -434,11 +433,12 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
 
     /**
      * Identifies files within a project that currently have compilation errors by querying the IDE's internal ErrorsCache.
+     * This method is used to perform targeted scans of only the files that are known to be in an error state.
      * 
      * @param project The project to scan.
      * @return A list of FileObjects representing the files in error.
      */
-    private static List<FileObject> findFilesInError(Project project) {
+    public static List<FileObject> findFilesInError(Project project) {
         List<FileObject> results = new ArrayList<>();
         Sources sources = ProjectUtils.getSources(project);
         
@@ -447,6 +447,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
             FileObject root = sg.getRootFolder();
             URL rootUrl = root.toURL();
             try {
+                // Use the ErrorsCache API to find files with errors in this source root
                 Collection<? extends URL> files = ErrorsCache.getAllFilesInError(rootUrl);
                 if (files != null) {
                     for (URL url : files) {

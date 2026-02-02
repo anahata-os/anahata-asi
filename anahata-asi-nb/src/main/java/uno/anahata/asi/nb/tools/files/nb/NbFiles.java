@@ -18,6 +18,7 @@ import org.openide.text.NbDocument;
 import org.netbeans.api.queries.FileEncodingQuery;
 import uno.anahata.asi.model.context.RefreshPolicy;
 import uno.anahata.asi.model.resource.TextFileResource;
+import uno.anahata.asi.model.resource.TextViewportSettings;
 import uno.anahata.asi.swing.internal.SwingUtils;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolException;
@@ -54,18 +55,20 @@ public class NbFiles extends Files {
      * the NetBeans {@link FileObject}.
      */
     @Override
-    protected TextFileResource loadTextFile(String path) throws Exception {
+    protected TextFileResource loadTextFile(String path, TextViewportSettings settings) throws Exception {
         if (getResourceManager().findByPath(path).isPresent()) {
             throw new AiToolException("Resource already loaded for path: " + path);
         }
 
         FileObject fo = FileUtil.toFileObject(new File(path));
         if (fo == null) {
-            return super.loadTextFile(path);
+            return super.loadTextFile(path, settings);
         }
 
         NbTextFileResource resource = new NbTextFileResource(getResourceManager(), fo);
+        resource.getViewport().setSettings(settings);
         resource.setRefreshPolicy(RefreshPolicy.LIVE);
+        resource.reload();
         getResourceManager().register(resource);
         log("Successfully loaded and registered NbTextFileResource: " + path);
         return resource;

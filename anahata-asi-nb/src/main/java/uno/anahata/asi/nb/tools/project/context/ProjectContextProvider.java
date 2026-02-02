@@ -8,6 +8,7 @@ import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectUtils;
 import uno.anahata.asi.context.BasicContextProvider;
 import uno.anahata.asi.nb.tools.project.Projects;
+import uno.anahata.asi.nb.tools.project.alerts.ProjectAlertsContextProvider;
 import uno.anahata.asi.nb.tools.project.nb.AnahataProjectAnnotator;
 import uno.anahata.asi.swing.icons.IconUtils;
 

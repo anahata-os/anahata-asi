@@ -26,6 +26,7 @@ This is the V2 NetBeans integration module for the Anahata ASI framework.
 ## 4. Dependency Management
 
 -   **`commons-io` Isolation**: This module explicitly bundles `commons-io` to avoid conflicts with the version used by the NetBeans Maven Embedder.
+-   **Automatic Spec Dependencies**: All artifacts listed in the `<dependencies>` section of the `pom.xml` are automatically included as `spec` dependencies in the module manifest by the `nbm-maven-plugin`. Do not manually add them to the `moduleDependencies` configuration unless they require an `impl` dependency type.
 
 ## 5. Very Important Notes
 - **Do not "clean" the project** to avoid deleting runtime JARs.

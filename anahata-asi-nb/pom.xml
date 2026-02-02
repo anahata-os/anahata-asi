@@ -376,6 +376,16 @@
             <artifactId>org-netbeans-libs-javacapi</artifactId>
             <version>${netbeans.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-modules-parsing-api</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-modules-parsing-indexing</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
         
         <!-- NetBeans Modules -->
         <dependency>
@@ -496,14 +506,6 @@
                     <includeRuntimeModuleLibraries>true</includeRuntimeModuleLibraries>
                     <moduleDependencies>
                         <dependency>
-                            <type>spec</type>
-                            <id>org.netbeans.api:org-netbeans-modules-versioning</id>
-                        </dependency>
-                        <dependency>
-                            <type>spec</type>
-                            <id>org.netbeans.api:org-netbeans-modules-java-platform</id>
-                        </dependency>
-                        <dependency>
                             <type>impl</type>
                             <id>org.netbeans.api:org-netbeans-modules-java-source</id>
                         </dependency>
@@ -530,10 +532,6 @@
                         <dependency>
                             <type>impl</type>
                             <id>org.netbeans.api:org-netbeans-modules-jumpto</id>
-                        </dependency>
-                        <dependency>
-                            <id>org.netbeans.modules:org-netbeans-modules-masterfs</id>
-                            <type>impl</type>
                         </dependency>
                         <dependency>
                             <id>org.netbeans.modules:org-netbeans-modules-masterfs</id>

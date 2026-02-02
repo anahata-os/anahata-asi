@@ -29,4 +29,8 @@ public class TextViewportSettings {
     private String grepPattern;
     @Builder.Default
     private boolean showLineNumbers = false;
+    @Builder.Default
+    private boolean tail = false;
+    @Builder.Default
+    private int tailLines = 100;
 }

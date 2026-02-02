@@ -57,8 +57,17 @@ public class TextViewport {
             this.matchingLineCount = null;
         }
 
-        long start = Math.max(0, settings.getStartChar());
-        long end = Math.min(contentToPaginate.length(), start + settings.getPageSizeInChars());
+        long start;
+        long end;
+
+        if (settings.isTail()) {
+            contentToPaginate = getTail(contentToPaginate, settings.getTailLines());
+            start = 0;
+            end = Math.min(contentToPaginate.length(), settings.getPageSizeInChars());
+        } else {
+            start = Math.max(0, settings.getStartChar());
+            end = Math.min(contentToPaginate.length(), start + settings.getPageSizeInChars());
+        }
         
         if (start >= contentToPaginate.length()) {
             this.processedText = "";
@@ -68,7 +77,7 @@ public class TextViewport {
         String pageText = contentToPaginate.substring((int)start, (int)end);
         StringBuilder sb = new StringBuilder();
         
-        if (start > 0 && contentToPaginate.charAt((int)start - 1) != '\n') {
+        if (!settings.isTail() && start > 0 && contentToPaginate.charAt((int)start - 1) != '\n') {
             int prevNewline = contentToPaginate.lastIndexOf('\n', (int)start - 1);
             sb.append("[..." + (start - (prevNewline + 1)) + " preceding chars] ");
         }
@@ -86,7 +95,18 @@ public class TextViewport {
                 .count();
 
         if (settings.isShowLineNumbers()) {
-            int startLineNum = (int) fullText.substring(0, (int)start).lines().count();
+            int startLineNum;
+            if (settings.isTail()) {
+                // For tail, we need to calculate the line number offset in the original text
+                // This is a bit complex if grep is active, but for now we'll just count lines in fullText
+                // until we reach the start of contentToPaginate.
+                // Simplified: just count lines in fullText before the tail.
+                // But wait, contentToPaginate might be filtered.
+                // Let's just use the line count from the start of the tail in the current contentToPaginate.
+                startLineNum = (int) fullText.substring(0, fullText.indexOf(pageText)).lines().count();
+            } else {
+                startLineNum = (int) fullText.substring(0, (int)start).lines().count();
+            }
             final int[] ln = {startLineNum + 1};
             this.processedText = pageLines.stream()
                 .map(line -> String.format("[%d]: %s", ln[0]++, truncateLine(line)))
@@ -96,6 +116,21 @@ public class TextViewport {
                 .map(this::truncateLine)
                 .collect(Collectors.joining("\n"));
         }
+    }
+
+    private String getTail(String text, int n) {
+        if (n <= 0) return "";
+        int count = 0;
+        int pos = text.length();
+        while (count < n && pos > 0) {
+            pos = text.lastIndexOf('\n', pos - 1);
+            if (pos == -1) {
+                pos = 0;
+                break;
+            }
+            count++;
+        }
+        return (pos > 0) ? text.substring(pos + 1) : text;
     }
 
     /**

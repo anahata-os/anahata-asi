@@ -333,7 +333,7 @@ public class GeminiModel extends AbstractModel {
                     
                     // Ensure the finish reason is set if it's still null after the stream
                     if (target.getFinishReason() == null) {
-                        target.setFinishReason(FinishReason.UNKNOWN);
+                        target.setFinishReason(FinishReason.GOD_FUCKING_KNOWS);
                     }
                 }
             }

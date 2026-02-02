@@ -55,7 +55,7 @@ public class Files extends AnahataToolkit {
         for (String path : resourcePaths) {
             try {
                 log("Loading " + path + "...");
-                ret.add(loadTextFile(path));
+                ret.add(loadTextFile(path, new TextViewportSettings()));
                 log("Loaded OK " + path);
             } catch (Exception e) {
                 log.error("Exception loading text file resource: {}", path, e);
@@ -71,13 +71,29 @@ public class Files extends AnahataToolkit {
     }
 
     /**
+     * Loads a text file into the context with specific viewport settings.
+     *
+     * @param path The absolute path to the file.
+     * @param settings The viewport settings to apply.
+     * @return The newly created TextFileResource.
+     * @throws Exception if the file cannot be loaded.
+     */
+    @AiTool(value = "Loads a text file into the context with specific viewport settings. This is ideal for tailing logs or filtering large files upon loading.", retention = 0)
+    public TextFileResource loadTextFileWithSettings(
+            @AiToolParam("The absolute path to the file.") String path,
+            @AiToolParam("The viewport settings.") TextViewportSettings settings) throws Exception {
+        return loadTextFile(path, settings);
+    }
+
+    /**
      * Loads a single text file into the context.
      * 
      * @param path The absolute path to the file.
+     * @param settings The viewport settings.
      * @return The created resource.
      * @throws Exception if the file is missing or already loaded.
      */
-    protected TextFileResource loadTextFile(String path) throws Exception {
+    protected TextFileResource loadTextFile(String path, TextViewportSettings settings) throws Exception {
 
         if (getResourceManager().findByPath(path).isPresent()) {
             throw new AiToolException("Resource already loaded for path: " + path);
@@ -88,7 +104,9 @@ public class Files extends AnahataToolkit {
         }
 
         TextFileResource resource = new TextFileResource(getResourceManager(), Paths.get(path));
+        resource.getViewport().setSettings(settings);
         resource.setRefreshPolicy(RefreshPolicy.LIVE);
+        resource.reload();
         getResourceManager().register(resource);
         log("Successfully loaded and registered text file: " + path);
         return resource;
