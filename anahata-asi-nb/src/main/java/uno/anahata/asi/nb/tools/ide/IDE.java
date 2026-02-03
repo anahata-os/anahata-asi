@@ -32,6 +32,7 @@ import uno.anahata.asi.model.resource.TextViewport;
 import uno.anahata.asi.model.resource.TextViewportSettings;
 import uno.anahata.asi.nb.tools.ide.context.OpenTopComponentsContextProvider;
 import uno.anahata.asi.nb.tools.ide.context.OutputTabsContextProvider;
+import uno.anahata.asi.swing.internal.SwingUtils;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolParam;
 import uno.anahata.asi.tool.AiToolkit;
@@ -172,7 +173,7 @@ public class IDE extends AnahataToolkit {
     @AiTool("Lists all tabs in the NetBeans Output Window, returning their display names, total lines, and running status.")
     public List<OutputTabInfo> listOutputTabs() throws Exception {
         final List<OutputTabInfo> tabInfos = new ArrayList<>();
-        SwingUtilities.invokeAndWait(() -> {
+        SwingUtils.runInEDTAndWait(() -> {
             TopComponent outputTC = WindowManager.getDefault().findTopComponent("output");
             if (outputTC == null) {
                 log.warn("Output TopComponent not found.");
@@ -202,7 +203,7 @@ public class IDE extends AnahataToolkit {
             @AiToolParam("The maximum length of each line. Lines longer than this will be truncated. Set to 0 for no limit.") int maxLineLength) throws Exception {
 
         final StringBuilder resultBuilder = new StringBuilder();
-        SwingUtilities.invokeAndWait(() -> {
+        SwingUtils.runInEDTAndWait(() -> {
             Optional<JTextComponent> targetComp = findTextComponentById(id);
             if (targetComp.isPresent()) {
                 String text = targetComp.get().getText();
@@ -244,7 +245,7 @@ public class IDE extends AnahataToolkit {
             @AiToolParam("The maximum length of each line. Lines longer than this will be truncated. Set to 0 for no limit.") int maxLineLength) throws Exception {
 
         final StringBuilder resultBuilder = new StringBuilder();
-        SwingUtilities.invokeAndWait(() -> {
+        SwingUtils.runInEDTAndWait(() -> {
             Optional<JTextComponent> targetComp = findTextComponentById(id);
             if (targetComp.isPresent()) {
                 String text = targetComp.get().getText();
