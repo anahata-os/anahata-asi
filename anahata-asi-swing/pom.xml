@@ -18,6 +18,13 @@
             <version>${project.version}</version>
         </dependency>
         
+        <!-- Yam Module (for SpeechTool) -->
+        <dependency>
+            <groupId>uno.anahata</groupId>
+            <artifactId>anahata-asi-yam</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        
         <!-- Look and Feel & UI Components -->
         <dependency>
             <groupId>com.formdev</groupId>
