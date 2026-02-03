@@ -15,6 +15,9 @@ import uno.anahata.asi.model.tool.ToolPermission;
 import uno.anahata.asi.status.ChatStatus;
 import uno.anahata.asi.swing.chat.render.editorkit.EditorKitProvider;
 import uno.anahata.asi.swing.icons.IconProvider;
+import uno.anahata.asi.yam.tools.MarketingTool;
+import uno.anahata.asi.yam.tools.QuotaTool;
+import uno.anahata.asi.yam.tools.SpeechTool;
 
 /**
  * A concrete ChatConfig for standalone Swing applications, providing UI-specific settings like themes and colors.
@@ -39,6 +42,13 @@ public class SwingChatConfig extends ChatConfig {
      * If true, sound notifications will be played on status changes.
      */
     private boolean audioFeedbackEnabled = true; 
+
+    {
+        // Register the Yam tools for all Swing-based configurations
+        getToolClasses().add(SpeechTool.class);
+        getToolClasses().add(QuotaTool.class);
+        getToolClasses().add(MarketingTool.class);
+    }
 
     /**
      * Constructs a new SwingChatConfig with a randomly generated session ID.

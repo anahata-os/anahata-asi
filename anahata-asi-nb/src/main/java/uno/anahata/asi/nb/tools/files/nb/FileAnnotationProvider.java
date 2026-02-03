@@ -49,12 +49,9 @@ public class FileAnnotationProvider extends AnnotationProvider {
     
     /** The badge image to overlay on file icons. */
     private static final Image BADGE;
-    
-    /** Diagnostic counter to limit stack trace logging. */
-    private static final AtomicInteger TRACE_COUNT = new AtomicInteger(0);
 
     static {
-        Image original = ImageUtilities.loadImage("icons/anahata.png");
+        Image original = ImageUtilities.loadImage("icons/anahata_16.png");
         if (original != null) {
             BADGE = original.getScaledInstance(8, 8, Image.SCALE_SMOOTH);
         } else {
@@ -87,18 +84,8 @@ public class FileAnnotationProvider extends AnnotationProvider {
             // Surgical Badging: Non-recursive for Logical View (Projects tab), 
             // recursive for Physical View (Files tab).
             boolean logical = isLogicalView();
-            
-            // Diagnostic: Log stack trace for the first few calls to identify the view
-            if (TRACE_COUNT.getAndIncrement() < 10) {
-                StringBuilder sb = new StringBuilder();
-                sb.append("Annotation call for: ").append(fo.getPath()).append(" (Logical: ").append(logical).append(")\n");
-                for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
-                    sb.append("  at ").append(ste.getClassName()).append(".").append(ste.getMethodName()).append("\n");
-                }
-                LOG.info(sb.toString());
-            }
-
             boolean recursive = !logical;
+            
             Map<Chat, Integer> sessionCounts = FilesContextActionLogic.getSessionFileCounts(fo, recursive);
             
             if (!sessionCounts.isEmpty() && BADGE != null) {

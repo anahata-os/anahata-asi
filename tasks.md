@@ -14,8 +14,8 @@ This file tracks the actionable tasks and tactical goals for the Anahata ASI (V2
 - [ ] **Startup & Session Sync**: Ensure the tree and detail panels refresh correctly upon startup and when switching sessions.
 - [ ] **Token Snapshot**: Refine the "Refresh Tokens" background task to be non-blocking and reactive.
 
-## 2. Pending User Verification (V2 NetBeans Integration)
-*These tasks are implemented but require full verification in the IDE (nbmreload).*
+## 2. NetBeans Integration (V2)
+*These tasks are focused on bringing the deep IDE agency of V1 to the V2 architecture.*
 
 - [ ] **NetBeans File System Integration (Task 1)**:
     - [ ] `NbTextFileResource` with `FileChangeListener` for path/content sync.
@@ -28,6 +28,7 @@ This file tracks the actionable tasks and tactical goals for the Anahata ASI (V2
 - [ ] **Context Menu Improvements (Task 4)**:
     - [ ] File-level support for "Add/Remove from AI Context".
     - [ ] Multi-targeting: "Add to all active chats" and "Create new chat...".
+- [ ] **AgiNodeFactory**: Port the V1 logic to create the virtual "Anahata" folder in the Projects tab and handle root `.md` files.
 
 ## 3. Future Tactical Goals
 

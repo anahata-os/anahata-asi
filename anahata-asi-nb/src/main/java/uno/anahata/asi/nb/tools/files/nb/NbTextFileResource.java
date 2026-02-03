@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.tools.files.nb;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import org.openide.filesystems.FileObject;
@@ -21,7 +22,11 @@ import uno.anahata.asi.resource.ResourceManager;
 @Slf4j
 public class NbTextFileResource extends TextFileResource {
 
-    /** The helper for FileObject management. */
+    /** 
+     * The helper for FileObject management. 
+     * Ignored by Jackson to prevent circular serialization loops with the IDE runtime.
+     */
+    @JsonIgnore
     private final NbFileObjectResourceHelper helper;
 
     /**

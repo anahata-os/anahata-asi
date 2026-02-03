@@ -217,6 +217,7 @@ public abstract class AbstractResource<R, C> extends BasicPropertyChangeSource i
 
     /** {@inheritDoc} */
     @Override
+    @JsonIgnore
     public ContextProvider getParentProvider() {
         return resourceManager;
     }

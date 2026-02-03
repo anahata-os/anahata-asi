@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.tools.files.nb;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.awt.Image;
 import java.io.File;
 import java.util.logging.Level;
@@ -33,7 +34,11 @@ public class NbFileObjectResourceHelper implements FileChangeListener, Rebindabl
 
     private static final Logger LOG = Logger.getLogger(NbFileObjectResourceHelper.class.getName());
 
-    /** The resource that owns this helper. Non-final for Kryo. */
+    /** 
+     * The resource that owns this helper. 
+     * Ignored by Jackson to prevent circular serialization loops.
+     */
+    @JsonIgnore
     private AbstractPathResource<?, ?> owner;
     
     /** The underlying NetBeans FileObject. Transient to support serialization. */
@@ -126,6 +131,7 @@ public class NbFileObjectResourceHelper implements FileChangeListener, Rebindabl
 
     // --- FileChangeListener Implementation ---
 
+    /** {@inheritDoc} */
     @Override public void fileDataCreated(FileEvent fe) {}
     
     /**
@@ -143,6 +149,7 @@ public class NbFileObjectResourceHelper implements FileChangeListener, Rebindabl
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void fileDeleted(FileEvent fe) {
         if (owner != null) {
@@ -150,6 +157,7 @@ public class NbFileObjectResourceHelper implements FileChangeListener, Rebindabl
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void fileRenamed(FileRenameEvent fe) {
         if (owner != null) {
@@ -159,6 +167,8 @@ public class NbFileObjectResourceHelper implements FileChangeListener, Rebindabl
         }
     }
 
+    /** {@inheritDoc} */
     @Override public void fileAttributeChanged(FileAttributeEvent fe) {}
+    /** {@inheritDoc} */
     @Override public void fileFolderCreated(FileEvent fe) {}
 }

@@ -13,9 +13,29 @@
     
     <dependencies>
         <dependency>
+            <groupId>uno.anahata</groupId>
+            <artifactId>anahata-asi-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>com.android.tools.ddms</groupId>
             <artifactId>ddmlib</artifactId>
             <version>25.3.0</version>
+        </dependency>
+        <!-- Modern Fork of FreeTTS for the Singularity's Voice -->
+        <dependency>
+            <groupId>net.sf.sociaal</groupId>
+            <artifactId>freetts</artifactId>
+            <version>1.2.2</version>
         </dependency>
     </dependencies>
     
