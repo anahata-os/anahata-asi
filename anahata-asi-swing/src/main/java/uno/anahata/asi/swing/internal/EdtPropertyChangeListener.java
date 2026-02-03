@@ -9,8 +9,8 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.function.Consumer;
 import javax.swing.JComponent;
-import javax.swing.SwingUtilities;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.model.core.PropertyChangeSource;
 
 /**
@@ -25,13 +25,14 @@ import uno.anahata.asi.model.core.PropertyChangeSource;
  *
  * @author anahata
  */
+@Slf4j
 public class EdtPropertyChangeListener implements PropertyChangeListener, HierarchyListener {
 
     /** The execution mode for thread switching. */
     public enum Mode { 
-        /** Executes the action via {@link SwingUtilities#invokeLater(Runnable)}. */
+        /** Executes the action via {@link SwingUtils#runInEDT(Runnable)}. */
         INVOKE_LATER, 
-        /** Executes the action via {@link SwingUtilities#invokeAndWait(Runnable)}. Use with caution. */
+        /** Executes the action via {@link SwingUtils#runInEDTAndWait(Runnable)}. Use with caution. */
         INVOKE_AND_WAIT 
     }
 
@@ -85,18 +86,14 @@ public class EdtPropertyChangeListener implements PropertyChangeListener, Hierar
      */
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        if (SwingUtilities.isEventDispatchThread()) {
-            action.accept(evt);
-        } else {
-            if (mode == Mode.INVOKE_AND_WAIT) {
-                try {
-                    SwingUtilities.invokeAndWait(() -> action.accept(evt));
-                } catch (Exception e) {
-                    throw new RuntimeException("Error executing UI update via invokeAndWait", e);
-                }
-            } else {
-                SwingUtilities.invokeLater(() -> action.accept(evt));
+        if (mode == Mode.INVOKE_AND_WAIT) {
+            try {
+                SwingUtils.runInEDTAndWait(() -> action.accept(evt));
+            } catch (Exception e) {
+                log.error("Error executing UI update via invokeAndWait", e);
             }
+        } else {
+            SwingUtils.runInEDT(() -> action.accept(evt));
         }
     }
 

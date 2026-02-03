@@ -19,7 +19,6 @@ import java.util.Date;
 import java.util.List;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AsiContainer;
 
@@ -92,7 +91,7 @@ public class UICapture {
         Files.createDirectories(SCREENSHOTS_DIR);
         
         // CRITICAL FIX: The painting operation must run on the EDT.
-        SwingUtilities.invokeAndWait(() -> {
+        SwingUtils.runInEDTAndWait(() -> {
             try {
                 java.awt.Frame[] frames = java.awt.Frame.getFrames();
                 log.debug("Found {} total frames.", frames.length);

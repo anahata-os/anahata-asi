@@ -19,6 +19,7 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.MouseWheelEvent;
 import java.awt.image.BufferedImage;
+import java.lang.reflect.InvocationTargetException;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
@@ -216,6 +217,22 @@ public class SwingUtils {
             runnable.run();
         } else {
             SwingUtilities.invokeLater(runnable);
+        }
+    }
+
+    /**
+     * Executes the given runnable on the Event Dispatch Thread (EDT) and waits for it to complete.
+     * If the current thread is already the EDT, it is executed immediately.
+     * 
+     * @param runnable The code to execute.
+     * @throws InterruptedException if the thread is interrupted while waiting.
+     * @throws InvocationTargetException if an exception occurs during execution.
+     */
+    public static void runInEDTAndWait(Runnable runnable) throws InterruptedException, InvocationTargetException {
+        if (SwingUtilities.isEventDispatchThread()) {
+            runnable.run();
+        } else {
+            SwingUtilities.invokeAndWait(runnable);
         }
     }
 }
