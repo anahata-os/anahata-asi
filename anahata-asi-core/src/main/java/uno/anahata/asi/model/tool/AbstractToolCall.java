@@ -16,7 +16,7 @@ import uno.anahata.asi.model.core.ThoughtSignature;
 /**
  * Represents a request to execute a specific tool. It holds a direct reference
  * to the tool's definition and its corresponding response.
- * 
+ *
  * @author anahata-gemini-pro-2.5
  * @param <T> The specific type of the Tool.
  * @param <R> The specific type of the Response.
@@ -32,8 +32,9 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
     private final String id;
 
     /**
-     * The tool definition that this call corresponds to.
-     * Ignored during serialization to avoid issues with non-serializable members (e.g. Method).
+     * The tool definition that this call corresponds to. Ignored during
+     * serialization to avoid issues with non-serializable members (e.g.
+     * Method).
      */
     @NonNull
     @JsonIgnore
@@ -41,38 +42,41 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
 
     /**
      * The original, raw arguments received from the AI provider (e.g., Gemini).
-     * These are stored as a plain JSON-style Map for debugging and "Final Gate" safety.
+     * These are stored as a plain JSON-style Map for debugging and "Final Gate"
+     * safety.
      */
     @NonNull
     private final Map<String, Object> rawArgs;
 
     /**
-     * The enriched arguments for the tool, which may contain rich POJOs (like JavaType).
-     * This map is used for tool execution and application logic.
+     * The enriched arguments for the tool, which may contain rich POJOs (like
+     * JavaType). This map is used for tool execution and application logic.
      */
     @NonNull
     private final Map<String, Object> args;
-    
-    /** 
-     * Map of arguments that were modified by the user in the UI. 
-     * This represents the "draft" state of the arguments.
+
+    /**
+     * Map of arguments that were modified by the user in the UI. This
+     * represents the "draft" state of the arguments.
      */
     private final Map<String, Object> modifiedArgs = new HashMap<>();
 
     /**
-     * The single, final response object associated with this call.
-     * This is ignored during schema generation to prevent a circular reference.
+     * The single, final response object associated with this call. This is
+     * ignored during schema generation to prevent a circular reference.
      */
     @NonNull
     @JsonIgnore
     private final R response;
-    
-    /** The signature of the thought process as a byte array. */
+
+    /**
+     * The signature of the thought process as a byte array.
+     */
     private byte[] thoughtSignature;
 
     /**
      * Constructs a new AbstractToolCall.
-     * 
+     *
      * @param message The model message that initiated the call.
      * @param id The unique call ID.
      * @param tool The tool definition.
@@ -84,26 +88,27 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
         this.id = id;
         this.tool = tool;
         this.rawArgs = rawArgs;
-        this.args = args; 
-        this.response = createResponse(message.getToolMessage());
-        getChat().getContextManager().ensureToolMessageFollowsModelMessage(getMessage());
-        
+        this.args = args;
         // Leaf class publication: we add ourselves to the message only after 
         // the response field is fully initialized.
         message.addPart(this);
+        this.response = createResponse(message.getToolMessage());
+        getChat().getContextManager().ensureToolMessageFollowsModelMessage(getMessage());
+
     }
 
     /**
      * Gets the name of the tool to be invoked.
+     *
      * @return The tool's name.
      */
     public String getToolName() {
         return tool.getName();
     }
-    
+
     /**
      * Gets the model message that initiated this tool call.
-     * 
+     *
      * @return The parent model message.
      */
     @Override
@@ -112,16 +117,18 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
     }
 
     /**
-     * Creates the corresponding response object for this tool call.
-     * This acts as a factory method and is called once by the constructor.
+     * Creates the corresponding response object for this tool call. This acts
+     * as a factory method and is called once by the constructor.
+     *
      * @param toolMessage The tool message that will contain the response.
      * @return A new, un-executed tool response.
      */
     protected abstract R createResponse(AbstractToolMessage toolMessage);
-    
+
     /**
-     * Updates a modified argument in the draft state and fires a property change event.
-     * 
+     * Updates a modified argument in the draft state and fires a property
+     * change event.
+     *
      * @param name The name of the argument.
      * @param value The new value.
      */
@@ -137,7 +144,7 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
 
     /**
      * Gets the effective arguments for the UI (original + draft modifications).
-     * 
+     *
      * @return A map of effective arguments.
      */
     public Map<String, Object> getEffectiveArgs() {
@@ -147,57 +154,75 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
     }
 
     //<editor-fold defaultstate="collapsed" desc="V2 Context Management Delegation">
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected int getDefaultTurnsToKeep() {
         // A tool call's lifecycle is always identical to its response.
         return getResponse().getDefaultTurnsToKeep();
     }
-    
-    /** {@inheritDoc} */
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isEffectivelyPruned() {
         return getResponse().isEffectivelyPruned();
     }
-    
-    /** {@inheritDoc} */
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getTurnsLeft() {
         return getResponse().getTurnsLeft();
     }
-    
-    /** {@inheritDoc} */
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Boolean getPruned() {
         return getResponse().getPruned();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setPruned(Boolean pruned) {
         getResponse().setPruned(pruned);
     }
-    
-    /** {@inheritDoc} */
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Integer getTurnsToKeep() {
         return getResponse().getTurnsToKeep();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setTurnsToKeep(Integer turnsToKeep) {
         getResponse().setTurnsToKeep(turnsToKeep);
     }
     //</editor-fold>
-    
-    /** {@inheritDoc} */
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String asText() {
         return "[Tool Call: " + getToolName() + " with args: " + getArgs().toString() + "]";
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void appendMetadata(StringBuilder sb) {
         sb.append(" | Response: ").append(getResponse().createMetadataHeader());

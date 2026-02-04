@@ -134,7 +134,7 @@ public abstract class AbstractAiProvider {
         // Round-robin key selection
         int nextIdx = round.getAndIncrement() % keyPool.size();
         String key = keyPool.get(nextIdx);
-        log.debug("Using API key from pool (index {}). Key ends with: {}", nextIdx, key.substring(key.length() - 5));
+        log.info("Hocus Pocus.... Using API key from pool (index {}). Key ends with: {}", nextIdx, key.substring(key.length() - 5));
         return key;
     }
 

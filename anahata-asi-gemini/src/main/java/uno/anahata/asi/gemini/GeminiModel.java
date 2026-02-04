@@ -266,7 +266,7 @@ public class GeminiModel extends AbstractModel {
                 throw new ApiCallInterruptedException(e);
             }
             if (e.toString().contains("429") || e.toString().contains("503") || e.toString().contains("500") || e.toString().contains("499")) {
-                provider.resetClient();
+                provider.hokusPocus();
                 throw new RetryableApiException(client.apiKey(), e.toString(), e);
             }
             throw e;
@@ -344,7 +344,7 @@ public class GeminiModel extends AbstractModel {
             if (isInterruption(e)) {
                 observer.onError(new ApiCallInterruptedException(e));
             } else if (e.toString().contains("429") || e.toString().contains("503") || e.toString().contains("500")) {
-                provider.resetClient();
+                provider.hokusPocus();
                 observer.onError(new RetryableApiException(client.apiKey(), e.toString(), e));
             } else {
                 observer.onError(e);

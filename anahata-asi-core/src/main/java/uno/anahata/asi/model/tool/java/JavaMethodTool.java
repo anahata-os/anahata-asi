@@ -88,12 +88,18 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
     public synchronized Method getMethod() {
         if (method == null) {
             log.info("Lazily restoring Method for tool: {} using signature lookup", getName());
-            for (Method m : toolInstance.getClass().getDeclaredMethods()) {
-                if (javaMethodSignature.equals(buildMethodSignature(m))) {
-                    this.method = m;
-                    break;
+            Class<?> currentClass = toolInstance.getClass();
+            while (currentClass != null && currentClass != Object.class) {
+                for (Method m : currentClass.getDeclaredMethods()) {
+                    if (javaMethodSignature.equals(buildMethodSignature(m))) {
+                        this.method = m;
+                        break;
+                    }
                 }
+                if (method != null) break;
+                currentClass = currentClass.getSuperclass();
             }
+            
             if (method == null) {
                 throw new RuntimeException("Failed to restore method via signature lookup: " + javaMethodSignature + " in " + toolInstance.getClass().getName());
             }

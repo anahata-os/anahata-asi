@@ -58,7 +58,7 @@ public class GeminiAiProvider extends AbstractAiProvider {
     /**
      * Resets the client to null to force a new key on the next call.
      */
-    public synchronized void resetClient() {
+    public synchronized void hokusPocus() {
         client = null;
     }
 

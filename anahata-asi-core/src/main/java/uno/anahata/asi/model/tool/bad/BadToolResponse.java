@@ -23,6 +23,9 @@ public class BadToolResponse extends AbstractToolResponse<BadToolCall> {
         this.call = call;
         setStatus(ToolExecutionStatus.NOT_EXECUTED);
         setErrors("Tool call rejected: The tool '" + call.getToolName() + "' was not found.");
+        
+        // Leaf class publication: add ourselves to the tool message
+        getMessage().addPart(this);
     }
 
     @Override
