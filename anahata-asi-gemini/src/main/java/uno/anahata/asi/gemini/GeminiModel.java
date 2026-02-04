@@ -260,7 +260,7 @@ public class GeminiModel extends AbstractModel {
             // 3. Convert the Gemini response to the Anahata response using the new OO response class.
             Chat chat = request.config().getChat();
             return new GeminiResponse(prepared.config().toJson(), prepared.historyJson(), chat, getModelId(), response);
-        } catch (ClientException e) {
+        } catch (Exception e) {
             log.error("Exception in generateContent", e);
             if (isInterruption(e)) {
                 throw new ApiCallInterruptedException(e);
