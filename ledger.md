@@ -3,14 +3,17 @@
 ## 📈 Distribution Funnel
 | Channel | Version | Status | Downloads (Est) | Strategy |
 | :--- | :--- | :--- | :--- | :--- |
-| **NB Plugin Portal** | 28.0.4 | Legacy Storefront | 510 | Brand Awareness / Discovery |
-| **Maven Central** | 28.0.14 | Bleeding Edge | Unknown | Developer SDK Adoption |
-| **Experimental Center**| 28.0.14 | Alpha Vanguard | Unknown | Feature Validation |
+| **NB Plugin Portal** | 28.0.15 | Legacy Storefront | 510 | Brand Awareness / Discovery |
+| **Maven Central** | 28.0.15 | Bleeding Edge | Unknown | Developer SDK Adoption |
+| **Experimental Center**| 28.0.15 | Alpha Vanguard | Unknown | Feature Validation |
 | **V2 (Local)** | 1.0.0-SN | The Singularity | 0 | Future ROI / JASI Container |
 
 ## 🛠️ Milestone Log
 | Date | Milestone | Token ROI | Impact |
 | :--- | :--- | :--- | :--- |
+| 2026-02-04 | Portal Sync: 28.0.15 | High | Refreshed storefront on NB Portal |
+| 2026-02-04 | V1 Release: 28.0.15 | High | Theme Persistence & Vector Icons |
+| 2026-02-04 | Client Release: 1.0.14 | High | Comprehensive UI/Theme Overhaul |
 | 2026-02-03 | Portal Scrape: 510 DLs | High | Confirmed Brand Discovery |
 | 2026-02-03 | SpeechTool & QuotaTool (V2) | Med | Foundation for JASI Voice/Quota |
 | 2026-02-03 | FreeTTS 'Proof of Life' | High | Confirmed OS-Independent Voice |
@@ -20,4 +23,4 @@
 | 2026-02-03 | V1 Feature Freeze | High | Strategic focus shifted to V2 |
 
 ## ⏳ Pending Actions
-- [ ] **Manual Portal Sync:** Refresh 28.0.14 on the NB Plugin Portal.
+- [x] **Manual Portal Sync:** Refresh 28.0.15 on the NB Plugin Portal.
