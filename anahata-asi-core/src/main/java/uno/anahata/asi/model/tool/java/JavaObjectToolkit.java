@@ -5,8 +5,10 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.context.ContextProvider;
@@ -69,7 +71,7 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
         }
 
         this.tools = new ArrayList<>();
-        for (Method method : toolClass.getDeclaredMethods()) {
+        for (Method method : getAllAnnotatedMethods(toolClass)) {
             AiTool toolAnnotation = method.getAnnotation(AiTool.class);
             if (toolAnnotation != null) {
                 tools.add(new JavaMethodTool(this, toolInstance, method, toolAnnotation));
@@ -112,7 +114,7 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
 
         // Hot-reload logic: Sync the tools list with the current class definition
         Map<String, Method> currentMethods = new HashMap<>();
-        for (Method m : toolInstance.getClass().getDeclaredMethods()) {
+        for (Method m : getAllAnnotatedMethods(toolInstance.getClass())) {
             AiTool toolAnnotation = m.getAnnotation(AiTool.class);
             if (toolAnnotation != null) {
                 currentMethods.put(JavaMethodTool.buildMethodSignature(m), m);
@@ -145,5 +147,30 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
                 log.error("Failed to create new tool during rebind: " + entry.getKey(), e);
             }
         }
+    }
+
+    /**
+     * Recursively finds all methods annotated with {@link AiTool} in the class hierarchy.
+     * 
+     * @param clazz The class to start the search from.
+     * @return A list of annotated methods, with child methods taking precedence over parent methods.
+     */
+    private List<Method> getAllAnnotatedMethods(Class<?> clazz) {
+        List<Method> annotatedMethods = new ArrayList<>();
+        Set<String> signatures = new HashSet<>();
+        Class<?> currentClass = clazz;
+        while (currentClass != null && currentClass != Object.class) {
+            for (Method method : currentClass.getDeclaredMethods()) {
+                AiTool toolAnnotation = method.getAnnotation(AiTool.class);
+                if (toolAnnotation != null) {
+                    String signature = JavaMethodTool.buildMethodSignature(method);
+                    if (signatures.add(signature)) {
+                        annotatedMethods.add(method);
+                    }
+                }
+            }
+            currentClass = currentClass.getSuperclass();
+        }
+        return annotatedMethods;
     }
 }
