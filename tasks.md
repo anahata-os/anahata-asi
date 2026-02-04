@@ -13,6 +13,10 @@ This file tracks the actionable tasks and tactical goals for the Anahata ASI (V2
 - [x] **UI Layout Stability**: Set minimum sizes for detail panels to prevent squeezing the tree view.
 - [ ] **Startup & Session Sync**: Ensure the tree and detail panels refresh correctly upon startup and when switching sessions.
 - [ ] **Token Snapshot**: Refine the "Refresh Tokens" background task to be non-blocking and reactive.
+- [ ] **Vector Icon Port**: Copy the new `ThemedIcon` system and functional icons from `gemini-java-client` 1.0.14 to ensure crisp, theme-aware UI in V2.
+- [ ] **Context Panel Fixes**:
+    - [ ] **Column Sizing**: Fix the 'Name' column in the Context panel being too small on startup.
+    - [ ] **Turns Left Visibility**: Investigate and fix why 'turns left' are not showing for tool calls in the context tree.
 
 ## 2. NetBeans Integration (V2)
 *These tasks are focused on bringing the deep IDE agency of V1 to the V2 architecture.*
@@ -29,9 +33,12 @@ This file tracks the actionable tasks and tactical goals for the Anahata ASI (V2
     - [ ] File-level support for "Add/Remove from AI Context".
     - [ ] Multi-targeting: "Add to all active chats" and "Create new chat...".
 - [ ] **AgiNodeFactory**: Port the V1 logic to create the virtual "Anahata" folder in the Projects tab and handle root `.md` files.
+- [ ] **Project Alerts Refinement**:
+    - [ ] **JavacAlerts Default**: Enable JavacAlerts by default (currently disabled).
 
 ## 3. Future Tactical Goals
 
+- [ ] **Global Preferences Panel**: Create a centralized UI for managing global Anahata settings (API keys, theme, pruning policies).
 - [ ] **Surgical Edits with Cherry-Picking**: Implement a V2 version of the `suggestChange` diff dialog using `org.netbeans.api.diff.DiffView`.
 - [ ] **High-Performance Project Alerts**: Re-implement project alerts using background-driven `ErrorProvider` APIs.
 - [ ] **Next-Gen Project Overview**: Explore Java Type-Based overviews and UML-like structural representations.
