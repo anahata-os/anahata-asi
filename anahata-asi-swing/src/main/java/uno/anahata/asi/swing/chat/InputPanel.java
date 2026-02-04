@@ -404,6 +404,15 @@ public class InputPanel extends JPanel {
         }
         
         sendButton.setEnabled(canSend);
+        
+        // UI Feedback: Change button text to 'Run' if tools are pending
+        if (status == ChatStatus.TOOL_PROMPT) {
+            sendButton.setText("Run & Send");
+            sendButton.setIcon(new RunAndSendIcon(16));
+        } else {
+            sendButton.setText("Send");
+            sendButton.setIcon(null);
+        }
     }
 
     private void revertStagedMessage() {
