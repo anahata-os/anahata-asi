@@ -1,6 +1,7 @@
 package uno.anahata.asi.swing.media.util;
 
 import java.awt.FlowLayout;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -39,7 +40,7 @@ public final class AudioPlaybackPanel extends JPanel {
     private final ExecutorService audioExecutor;
     private SourceDataLine currentPlaybackLine;
     private final AtomicBoolean playing = new AtomicBoolean(false);
-    private Clip currentClip; // For resource sounds
+    private volatile Clip currentClip; // For resource sounds. Made volatile for thread-safety.
 
     public AudioPlaybackPanel(ChatPanel chatPanel) { // Modified constructor
         super(new FlowLayout(FlowLayout.RIGHT, 5, 0)); // Align to the right
@@ -94,12 +95,16 @@ public final class AudioPlaybackPanel extends JPanel {
      */
     public void playSound(final String resourceName) {
         audioExecutor.submit(() -> {
-            try (AudioInputStream inputStream = AudioSystem.getAudioInputStream(
-                    AudioPlaybackPanel.class.getResourceAsStream("/sounds/" + resourceName))) {
-                if (inputStream == null) {
-                    log.warn("Sound resource not found: {}", resourceName);
-                    return;
-                }
+            var resource = AudioPlaybackPanel.class.getResourceAsStream("/sounds/" + resourceName);
+            if (resource == null) {
+                log.warn("Sound resource not found: {}", resourceName);
+                return;
+            }
+            
+            // CRITICAL FIX: Wrap the resource stream in a BufferedInputStream to support mark/reset,
+            // which is required by AudioSystem.getAudioInputStream when running from a JAR (standalone).
+            try (var bis = new BufferedInputStream(resource);
+                 AudioInputStream inputStream = AudioSystem.getAudioInputStream(bis)) {
                 // Use a new Clip for each sound resource to avoid conflicts
                 Clip clip = AudioSystem.getClip();
                 clip.addLineListener(event -> {
@@ -180,9 +185,10 @@ public final class AudioPlaybackPanel extends JPanel {
      * Stops any currently playing audio (both resource Clips and streamed playback).
      */
     public void stop() {
-        if (currentClip != null && currentClip.isRunning()) {
-            currentClip.stop();
-            currentClip.close();
+        Clip clip = currentClip;
+        if (clip != null && clip.isRunning()) {
+            clip.stop();
+            clip.close();
             currentClip = null;
         }
         if (playing.get()) {
