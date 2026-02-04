@@ -303,6 +303,7 @@ public class Chat extends BasicPropertyChangeSource {
         try {
             processPendingTools();
             if (message != null && !message.isEmpty()) {
+                log.info("Adding user message to context  {}", message);
                 contextManager.addMessage(message);
                 autoSave();
             }
@@ -570,6 +571,8 @@ public class Chat extends BasicPropertyChangeSource {
         
         if (!contextManager.getHistory().contains(message)) {
             contextManager.addMessage(message);
+        } else {
+            
         }
         autoSave();
 
@@ -588,7 +591,7 @@ public class Chat extends BasicPropertyChangeSource {
         }
 
         // The turn has ended. Determine the final status based on whether there are pending tool calls.
-        if (!message.getToolCalls().isEmpty()) {
+        if (toolMessage.hasPendingTools()) {
             setToolPromptMessage(message);
             statusManager.fireStatusChanged(ChatStatus.TOOL_PROMPT);
         } else {
@@ -623,7 +626,7 @@ public class Chat extends BasicPropertyChangeSource {
 
     /**
      * Processes all tool responses associated with the current tool prompt message.
-     * Tools with APPROVE_ALWAYS permission are executed, while others are rolled to NOT_EXECUTED.
+     * This method is called when the user clicks 'Run'.
      */
     public void processPendingTools() {
         if (statusManager.getCurrentStatus() == ChatStatus.TOOL_PROMPT && toolPromptMessage != null) {
