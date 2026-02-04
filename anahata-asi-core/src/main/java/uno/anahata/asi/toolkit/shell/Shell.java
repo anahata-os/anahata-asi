@@ -158,7 +158,7 @@ public class Shell extends AnahataToolkit {
         public String call() throws IOException {
             Thread currentThread = Thread.currentThread();
             String streamName = error ? "STDERR" : "STDOUT";
-            log(String.format("[Gobbler-%s] Started on thread: %s (ID: %d)", streamName, currentThread.getName(), currentThread.getId()));
+            response.addLog(String.format("[Gobbler-%s] Started on thread: %s (ID: %d)", streamName, currentThread.getName(), currentThread.getId()));
 
             StringBuilder sb = new StringBuilder();
             try (InputStream in = is) {
@@ -169,12 +169,12 @@ public class Shell extends AnahataToolkit {
                     if (error) {
                         response.addError(line);
                     } else {
-                        response.addLog(line);
+                        //response.addLog(line);
                     }
                     sb.append(line);
                 }
             }
-            log(String.format("[Gobbler-%s] Finished.", streamName));
+            response.addLog(String.format("[Gobbler-%s] Finished.", streamName));
             return sb.toString();
         }
     }
