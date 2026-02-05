@@ -20,7 +20,7 @@ import java.time.format.DateTimeFormatter;
  */
 @Slf4j
 @AiToolkit("A toolkit for managing marketing and distribution strategy.")
-public class MarketingTool extends AnahataToolkit {
+public class MarketingToolkit extends AnahataToolkit {
 
     /**
      * Drafts high-impact release notes and persists them to the project's marketing directory.

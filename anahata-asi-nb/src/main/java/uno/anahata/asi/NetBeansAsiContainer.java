@@ -16,7 +16,7 @@ import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.toolkit.Java;
 import uno.anahata.asi.nb.module.NetBeansModuleUtils;
 import uno.anahata.asi.nb.tools.files.nb.FileAnnotationProvider;
-import uno.anahata.asi.nb.tools.project.nb.AnahataProjectAnnotator;
+import uno.anahata.asi.nb.tools.project.nb.AnahataProjectIconAnnotator;
 import uno.anahata.asi.model.resource.AbstractPathResource;
 
 /**
@@ -84,7 +84,7 @@ public class NetBeansAsiContainer extends AsiContainer {
      */
     private void refreshAllProjectAnnotations() {
         for (Project p : OpenProjects.getDefault().getOpenProjects()) {
-            AnahataProjectAnnotator.fireRefreshAll(p);
+            AnahataProjectIconAnnotator.fireRefreshAll(p);
         }
     }
 

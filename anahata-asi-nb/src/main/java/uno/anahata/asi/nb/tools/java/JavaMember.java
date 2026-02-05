@@ -47,13 +47,14 @@ public class JavaMember extends JavaType {
     /**
      * Constructs a new JavaMember.
      * @param handle the element handle.
+     * @param fqn the fully qualified name of the member.
      * @param name the member name.
      * @param kind the member kind.
      * @param url the class file URL.
      * @param modifiers the set of modifiers.
      */
-    public JavaMember(ElementHandle<? extends Element> handle, String name, ElementKind kind, URL url, Set<String> modifiers) {
-        super(handle, url);
+    public JavaMember(ElementHandle<? extends Element> handle, String fqn, String name, ElementKind kind, URL url, Set<String> modifiers) {
+        super(handle, fqn, url);
         this.name = name;
         this.kind = kind;
         this.modifiers = modifiers;

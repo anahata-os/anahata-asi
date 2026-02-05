@@ -76,7 +76,7 @@ public class FileAnnotationProvider extends AnnotationProvider {
         Image baseIcon = delegateIcon(icon, type, files);
         
         for (FileObject fo : files) {            
-            // Skip project roots for badging (handled by AnahataProjectAnnotator)
+            // Skip project roots for badging (handled by AnahataProjectIconAnnotator)
             if (isProjectRoot(fo)) {
                 return baseIcon;
             }
@@ -90,7 +90,7 @@ public class FileAnnotationProvider extends AnnotationProvider {
             
             if (!sessionCounts.isEmpty() && BADGE != null) {
                 // Merge our badge onto the already-annotated baseIcon at 14,0 (Top Right)
-                Image badged = ImageUtilities.mergeImages(baseIcon, BADGE, 14, 0);
+                Image badged = ImageUtilities.mergeImages(baseIcon, BADGE, 16, 0);
                 
                 // Build rich HTML tooltip
                 StringBuilder sb = new StringBuilder();
@@ -140,7 +140,7 @@ public class FileAnnotationProvider extends AnnotationProvider {
         String currentName = delegatedName != null ? delegatedName : name;
 
         for (FileObject fo : files) {
-            // Skip project roots (handled by AnahataProjectAnnotator)
+            // Skip project roots (handled by AnahataProjectIconAnnotator)
             if (isProjectRoot(fo)) {
                 return delegatedName;
             }

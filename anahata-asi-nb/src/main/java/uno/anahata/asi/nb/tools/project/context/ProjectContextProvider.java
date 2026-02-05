@@ -9,7 +9,7 @@ import org.netbeans.api.project.ProjectUtils;
 import uno.anahata.asi.context.BasicContextProvider;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectAlertsContextProvider;
-import uno.anahata.asi.nb.tools.project.nb.AnahataProjectAnnotator;
+import uno.anahata.asi.nb.tools.project.nb.AnahataProjectIconAnnotator;
 import uno.anahata.asi.swing.icons.IconUtils;
 
 /**
@@ -68,6 +68,10 @@ public class ProjectContextProvider extends BasicContextProvider {
         files.setParent(this);
         children.add(files);
 
+        ProjectComponentsContextProvider components = new ProjectComponentsContextProvider(projectsToolkit, projectPath);
+        components.setParent(this);
+        children.add(components);
+
         ProjectAlertsContextProvider alerts = new ProjectAlertsContextProvider(projectsToolkit, projectPath);
         alerts.setParent(this);
         children.add(alerts);
@@ -115,7 +119,7 @@ public class ProjectContextProvider extends BasicContextProvider {
         boolean old = isProviding();
         super.setProviding(enabled);
         if (old != enabled) {
-            AnahataProjectAnnotator.fireRefreshAll(getProject());
+            AnahataProjectIconAnnotator.fireRefreshAll(getProject());
         }
     }
 }

@@ -17,6 +17,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.context.provider.CoreContextProvider;
 import uno.anahata.asi.model.core.AbstractMessage;
@@ -141,17 +142,23 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
         for (ContextProvider rootProvider : providers) {
             for (ContextProvider provider : rootProvider.getFlattenedHierarchy(true)) {
                 if (provider.isProviding()) {
+                    long start = System.currentTimeMillis();
                     try {
                         List<String> systemInstructions = provider.getSystemInstructions();
+                        long duration = System.currentTimeMillis() - start;
                         if (!systemInstructions.isEmpty()) {
-                            String providerHeader = provider.getHeader();
-                            for (String string : systemInstructions) {
-                                providerHeader += "\n\n" + string;
+                            StringBuilder sb = new StringBuilder();
+                            sb.append(provider.getHeader());
+                            for (String instruction : systemInstructions) {
+                                sb.append("\n\n").append(instruction);
                             }
-                            allSystemInstructions.add(providerHeader);
+                            sb.append("\n\n(Provider ").append(provider.getName()).append(" took: ").append(duration).append("ms)");
+                            allSystemInstructions.add(sb.toString());
                         }
                     } catch (Exception e) {
                         log.error("Error executing system instruction provider: {}", provider.getName(), e);
+                        allSystemInstructions.add("Error executing system instruction provider: " + provider.getName() 
+                                + "\n" + ExceptionUtils.getStackTrace(e));
                     }
                 }
             }
@@ -196,12 +203,17 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
             log.info("Augmenting context with Root provider: {}", rootProvider.getName());
             for (ContextProvider provider : rootProvider.getFlattenedHierarchy(true)) {
                 if (provider.isProviding()) {
+                    long start = System.currentTimeMillis();
                     try {
-                        String header = provider.getHeader();
-                        augmentedMessage.addTextPart(header);
+                        augmentedMessage.addTextPart(provider.getHeader());
                         provider.populateMessage(augmentedMessage);
+                        long duration = System.currentTimeMillis() - start;
+                        augmentedMessage.addTextPart("\n(Provider " + provider.getName() + " took: " + duration + "ms)");
+                        log.info("Provider {} took {}ms", provider.getName(), duration);
                     } catch (Exception e) {
                         log.error("Error populating rag message for provider: {}", provider.getName(), e);
+                        augmentedMessage.addTextPart("\nError populating rag message for provider: " + provider.getName() 
+                                + "\n" + ExceptionUtils.getStackTrace(e));
                     }
                 }
             }
@@ -228,10 +240,11 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
      * the history.
      *
      * @param modelMessage - the model message
+     * @return The ensured tool message.
      * @throws IllegalStateException if the model message doesnt have an
      * associated tool message.
      */
-    public void ensureToolMessageFollowsModelMessage(AbstractModelMessage modelMessage) {
+    public AbstractToolMessage ensureToolMessageFollowsModelMessage(AbstractModelMessage modelMessage) {
         AbstractToolMessage toolMessage = modelMessage.getToolMessage();
         if (toolMessage == null) {
             throw new IllegalStateException("Model message does not contain a tool message");
@@ -251,6 +264,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
                 log.error("cannotEnsure tool message follows model message because model message is not in history: {}", modelMessage);
             }
         }
+        return toolMessage;
     }
 
     /**

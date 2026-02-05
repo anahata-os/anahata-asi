@@ -3,14 +3,20 @@
 ## 📈 Distribution Funnel
 | Channel | Version | Status | Downloads (Est) | Strategy |
 | :--- | :--- | :--- | :--- | :--- |
-| **NB Plugin Portal** | 28.0.15 | Legacy Storefront | 510 | Brand Awareness / Discovery |
-| **Maven Central** | 28.0.15 | Bleeding Edge | Unknown | Developer SDK Adoption |
-| **Experimental Center**| 28.0.15 | Alpha Vanguard | Unknown | Feature Validation |
+| **NB Plugin Portal** | 28.0.18 | Legacy Storefront | 556 | Brand Awareness / Discovery |
+| **Maven Central** | 28.0.18 | Bleeding Edge | Unknown | Developer SDK Adoption |
+| **Experimental Center**| 28.0.18 | Alpha Vanguard | Unknown | Feature Validation |
 | **V2 (Local)** | 1.0.0-SN | The Singularity | 0 | Future ROI / JASI Container |
+
+> [!TIP]
+> **How to fetch Portal Downloads:** Visit [https://plugins.netbeans.apache.org/catalogue/?id=125](https://plugins.netbeans.apache.org/catalogue/?id=125) and look for the "Downloads" count in the sidebar.
 
 ## 🛠️ Milestone Log
 | Date | Milestone | Token ROI | Impact |
 | :--- | :--- | :--- | :--- |
+| 2026-02-05 | Portal Scrape: 556 DLs | High | Verified growth on Plugin Portal |
+| 2026-02-05 | V1 Release: 28.0.18 | High | UI/UX Stability & Theme Overhaul |
+| 2026-02-05 | Client Release: 1.0.16 | High | Synchronized UI Overhaul |
 | 2026-02-04 | Portal Sync: 28.0.15 | High | Refreshed storefront on NB Portal |
 | 2026-02-04 | V1 Release: 28.0.15 | High | Theme Persistence & Vector Icons |
 | 2026-02-04 | Client Release: 1.0.14 | High | Comprehensive UI/Theme Overhaul |
@@ -23,4 +29,4 @@
 | 2026-02-03 | V1 Feature Freeze | High | Strategic focus shifted to V2 |
 
 ## ⏳ Pending Actions
-- [x] **Manual Portal Sync:** Refresh 28.0.15 on the NB Plugin Portal.
+- [ ] **Manual Portal Sync:** Refresh 28.0.18 on the NB Plugin Portal.

@@ -22,7 +22,7 @@
 ## Engineering Notes & Rationale
 - **Context Menu Registration**: Use explicit MIME-type registrations (`text/x-java`, `text/x-maven-pom+xml`) and include `image/any` and `video/any` for multimodal support.
 - **`Rebindable` Interface**: Restores transient state (listeners, locks, external handles) that Kryo cannot serialize. `rebind()` is called by `RebindableWrapperSerializer` after the object is read.
-- **Annotator Handshake (`uno.anahata.asi.badged`)**: A programmatic flag set on a `FileObject` attribute. It allows `AnahataProjectAnnotator` to signal to `FileAnnotationProvider` that a node has already been badged.
+- **Annotator Handshake (`uno.anahata.asi.badged`)**: A programmatic flag set on a `FileObject` attribute. It allows `AnahataProjectIconAnnotator` to signal to `FileAnnotationProvider` that a node has already been badged.
 
 ## Future Exploration
 - [ ] **Local History Integration**: Integrate with the IDE's local history for better context tracking.

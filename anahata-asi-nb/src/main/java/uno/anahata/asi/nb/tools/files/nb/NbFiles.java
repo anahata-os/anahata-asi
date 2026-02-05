@@ -17,9 +17,10 @@ import org.openide.loaders.DataObject;
 import org.openide.text.NbDocument;
 import org.netbeans.api.queries.FileEncodingQuery;
 import uno.anahata.asi.model.context.RefreshPolicy;
+import uno.anahata.asi.model.resource.FileTextReplacements;
 import uno.anahata.asi.model.resource.TextFileResource;
+import uno.anahata.asi.model.resource.TextReplacement;
 import uno.anahata.asi.model.resource.TextViewportSettings;
-import uno.anahata.asi.swing.internal.SwingUtils;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolException;
 import uno.anahata.asi.tool.AiToolkit;
@@ -76,16 +77,48 @@ public class NbFiles extends Files {
 
     /**
      * {@inheritDoc}
+     * Implementation details: Uses {@link FileUtil#createData} to ensure the 
+     * IDE is immediately aware of the new file.
+     */
+    @Override
+    @AiTool(value = "Creates a new file with the provided content.", retention = 0)
+    public void createTextFile(
+            @AiToolParam("The absolute path to the file.") String path,
+            @AiToolParam(value = "The text content to write.", rendererId = "code") String content,
+            @AiToolParam("A message describing the change.") String message) throws Exception {
+        
+        File file = new File(path);
+        if (file.exists()) {
+            throw new AiToolException("File already exists: " + path);
+        }
+
+        File parentFile = file.getParentFile();
+        if (parentFile != null && !parentFile.exists()) {
+            parentFile.mkdirs();
+        }
+
+        FileObject parentFo = FileUtil.toFileObject(parentFile);
+        if (parentFo != null) {
+            FileObject fo = parentFo.createData(file.getName());
+            writeToFileObject(fo, content, message);
+            log("Successfully created file via NetBeans API: " + path + " (" + message + ")");
+        } else {
+            super.createTextFile(path, content, message);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
      * Implementation details: Uses {@link EditorCookie} to write to the document 
      * if the file is open in the editor, otherwise uses {@link FileObject#getOutputStream()} 
      * with a proper {@link FileLock}.
      */
     @Override
-    @AiTool(value = "Creates a new file or overwrites an existing one with the provided content.", retention = 0)
-    public void writeTextFile(
+    @AiTool(value = "Overwrites an existing file with the provided content.", retention = 0)
+    public void updateTextFile(
             @AiToolParam("The absolute path to the file.") String path,
-            @AiToolParam("The text content to write.") String content,
-            @AiToolParam("Optimistic locking: the expected last modified timestamp of the file on disk. Use 0 for new files.") long lastModified,
+            @AiToolParam(value = "The text content to write.", rendererId = "code") String content,
+            @AiToolParam("Optimistic locking: the expected last modified timestamp of the file on disk.") long lastModified,
             @AiToolParam("A message describing the change, used for local history.") String message) throws Exception {
         
         FileObject fo = FileUtil.toFileObject(new File(path));
@@ -96,70 +129,87 @@ public class NbFiles extends Files {
                 throw new AiToolException("Optimistic locking failure: File has been modified in the IDE. Expected: " + lastModified + ", Actual: " + current);
             }
 
-            DataObject dobj = DataObject.find(fo);
-            EditorCookie ec = dobj.getLookup().lookup(EditorCookie.class);
-            
-            if (ec != null && ec.getOpenedPanes() != null && ec.getOpenedPanes().length > 0) {
-                // 2. File is open in editor, use Document API
-                log.info("File is open in editor, using Document API for: {}", path);
-                final StyledDocument doc = ec.openDocument();
-                SwingUtils.runInEDT(() -> {
-                    try {
-                        NbDocument.runAtomicAsUser(doc, () -> {
-                            try {
-                                doc.remove(0, doc.getLength());
-                                doc.insertString(0, content, null);
-                                ec.saveDocument();
-                            } catch (BadLocationException | IOException ex) {
-                                log.error("Error writing to document: " + path, ex);
-                            }
-                        });
-                    } catch (BadLocationException ex) {
-                        log.error("Atomic document operation failed: " + path, ex);
-                    }
-                });
-            } else {
-                // 3. Use FileObject directly with Lock
-                log.info("Using FileObject API with lock for: {}", path);
-                FileLock lock = fo.lock();
-                try (OutputStream os = fo.getOutputStream(lock)) {
-                    Charset encoding = FileEncodingQuery.getEncoding(fo);
-                    os.write(content.getBytes(encoding));
-                } finally {
-                    lock.releaseLock();
-                }
-            }
-            log("Successfully wrote to file via NetBeans API: " + path + " (" + message + ")");
+            writeToFileObject(fo, content, message);
+            log("Successfully updated file via NetBeans API: " + path + " (" + message + ")");
         } else {
-            // Fallback to core NIO implementation
-            super.writeTextFile(path, content, lastModified, message);
+            super.updateTextFile(path, content, lastModified, message);
+        }
+    }
+
+    /**
+     * Helper method to write content to a FileObject, handling both editor 
+     * documents and direct stream access.
+     * 
+     * @param fo The FileObject to write to.
+     * @param content The new content.
+     * @param message The change message.
+     * @throws Exception if the write fails.
+     */
+    private void writeToFileObject(FileObject fo, String content, String message) throws Exception {
+        DataObject dobj = DataObject.find(fo);
+        EditorCookie ec = dobj.getLookup().lookup(EditorCookie.class);
+
+        if (ec != null && ec.getOpenedPanes() != null && ec.getOpenedPanes().length > 0) {
+            // File is open in editor, use Document API
+            log.info("File is open in editor, using Document API for: {}", fo.getPath());
+            final StyledDocument doc = ec.openDocument();
+            NbDocument.runAtomicAsUser(doc, () -> {
+                try {
+                    doc.remove(0, doc.getLength());
+                    doc.insertString(0, content, null);
+                    ec.saveDocument();
+                } catch (BadLocationException | IOException ex) {
+                    log.error("Error writing to document: " + fo.getPath(), ex);
+                }
+            });
+        } else {
+            // Use FileObject directly with Lock
+            log.info("Using FileObject API with lock for: {}", fo.getPath());
+            FileLock lock = fo.lock();
+            try (OutputStream os = fo.getOutputStream(lock)) {
+                Charset encoding = FileEncodingQuery.getEncoding(fo);
+                os.write(content.getBytes(encoding));
+            } finally {
+                lock.releaseLock();
+            }
         }
     }
 
     /**
      * {@inheritDoc}
-     * Implementation details: Delegates to {@link #writeTextFile} after 
-     * performing the string replacement on the current content.
+     * Implementation details: Delegates to {@link #updateTextFile} after 
+     * performing the string replacements on the current content.
      */
     @Override
-    @AiTool(value = "Replaces a specific string with another in a file. Ideal for surgical code edits.", retention = 0)
-    public void replaceInFile(
+    @AiTool(value = "Performs multiple text replacements in a file. Ideal for surgical code edits.", retention = 0)
+    public void replaceInTextFile(
             @AiToolParam("The absolute path to the file.") String path,
-            @AiToolParam("The exact string to be replaced.") String target,
-            @AiToolParam("The replacement string.") String replacement,
+            @AiToolParam("The list of replacements to perform.") List<TextReplacement> replacements, 
             @AiToolParam("Optimistic locking: the expected last modified timestamp of the file on disk.") long lastModified,
             @AiToolParam("A message describing the change, used for local history.") String message) throws Exception {
         
         FileObject fo = FileUtil.toFileObject(new File(path));
         if (fo != null) {
             String content = fo.asText();
-            if (!content.contains(target)) {
-                throw new AiToolException("Target string not found in file: " + path);
-            }
-            String newContent = content.replace(target, replacement);
-            writeTextFile(path, newContent, lastModified, message);
+            String newContent = performReplacements(content, replacements);
+            updateTextFile(path, newContent, lastModified, message);
         } else {
-            super.replaceInFile(path, target, replacement, lastModified, message);
+            super.replaceInTextFile(path, replacements, lastModified, message);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * Implementation details: Overridden to ensure NetBeans-aware replacements 
+     * are used for each file.
+     */
+    @Override
+    @AiTool(value = "Performs multiple text replacements across multiple files in a single tool call.", retention = 0)
+    public void replaceInMultipleTextFiles(
+            @AiToolParam("The list of files and their replacements.") List<FileTextReplacements> fileReplacements,
+            @AiToolParam("A message describing the change.") String message) throws Exception {
+        for (FileTextReplacements fr : fileReplacements) {
+            replaceInTextFile(fr.getPath(), fr.getReplacements(), fr.getLastModified(), message);
         }
     }
 }

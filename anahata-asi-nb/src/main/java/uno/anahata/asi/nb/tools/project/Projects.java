@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -22,6 +23,9 @@ import javax.tools.Diagnostic;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.java.project.JavaProjectConstants;
 import org.netbeans.api.java.queries.SourceLevelQuery;
+import org.netbeans.api.java.source.ClassIndex;
+import org.netbeans.api.java.source.ClasspathInfo;
+import org.netbeans.api.java.source.ElementHandle;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectInformation;
@@ -42,8 +46,8 @@ import org.openide.filesystems.URLMapper;
 import org.openide.util.Lookup;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.nb.tools.project.context.ProjectContextProvider;
-import uno.anahata.asi.nb.tools.maven.DependencyScope;
 import uno.anahata.asi.nb.tools.maven.Maven;
+import uno.anahata.asi.nb.tools.maven.DependencyScope;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolParam;
 import uno.anahata.asi.tool.AiToolkit;
@@ -52,7 +56,7 @@ import uno.anahata.asi.model.resource.AbstractPathResource;
 import uno.anahata.asi.nb.tools.project.alerts.JavacAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectDiagnostics;
-import uno.anahata.asi.nb.tools.project.nb.AnahataProjectAnnotator;
+import uno.anahata.asi.nb.tools.project.nb.AnahataProjectIconAnnotator;
 
 /**
  * A toolkit for interacting with the NetBeans Project APIs.
@@ -368,6 +372,42 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     }
 
     /**
+     * Retrieves all Java types (classes, interfaces, etc.) defined in the project.
+     * 
+     * @param projectPath The absolute path to the project.
+     * @return A list of ProjectComponent DTOs.
+     * @throws Exception if the project is not found.
+     */
+    @AiTool("Retrieves all Java types (classes, interfaces, enums, records) defined in the project.")
+    public List<ProjectComponent> getProjectComponents(@AiToolParam("The absolute path to the project.") String projectPath) throws Exception {
+        Project project = findOpenProject(projectPath);
+        List<ProjectComponent> components = new ArrayList<>();
+        
+        Sources sources = ProjectUtils.getSources(project);
+        SourceGroup[] groups = sources.getSourceGroups(JavaProjectConstants.SOURCES_TYPE_JAVA);
+        
+        for (SourceGroup sg : groups) {
+            ClasspathInfo cpInfo = ClasspathInfo.create(sg.getRootFolder());
+            ClassIndex index = cpInfo.getClassIndex();
+            
+            // CRITICAL FIX: Search only in SOURCE scope to avoid OOM and massive strings.
+            Set<ElementHandle<javax.lang.model.element.TypeElement>> allTypes = index.getDeclaredTypes("", ClassIndex.NameKind.PREFIX, EnumSet.of(ClassIndex.SearchScope.SOURCE));
+            
+            for (ElementHandle<javax.lang.model.element.TypeElement> handle : allTypes) {
+                components.add(ProjectComponent.builder()
+                        .fqn(handle.getQualifiedName())
+                        .kind(handle.getKind())
+                        .build());
+            }
+        }
+        
+        // Sort by FQN for consistent output
+        components.sort((c1, c2) -> c1.getFqn().compareToIgnoreCase(c2.getFqn()));
+        
+        return components;
+    }
+
+    /**
      * Performs a live scan of a specific project to find all high-level project problems and Java source file errors/warnings.
      * @param projectPath The absolute path of the project to scan.
      * @return a ProjectDiagnostics object containing the found alerts.
@@ -479,10 +519,10 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
             log.info("Project context for {} set to: {}", projectPath, enabled);
             try {
                 Project p = findOpenProject(projectPath);
-                AnahataProjectAnnotator.fireRefreshAll(p);
+                AnahataProjectIconAnnotator.fireRefreshAll(p);
             } catch (Exception ex) {
                 log.warn("Failed to find project for refresh: " + projectPath, ex);
-                AnahataProjectAnnotator.fireRefreshAll(null);
+                AnahataProjectIconAnnotator.fireRefreshAll(null);
             }
         });
     }

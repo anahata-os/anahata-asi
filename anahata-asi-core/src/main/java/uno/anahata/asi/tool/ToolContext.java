@@ -6,14 +6,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.internal.TikaUtils;
-import uno.anahata.asi.model.tool.AbstractToolkit;
 import uno.anahata.asi.model.tool.java.JavaMethodTool;
 import uno.anahata.asi.model.tool.java.JavaMethodToolCall;
 import uno.anahata.asi.model.tool.java.JavaMethodToolResponse;
@@ -27,6 +26,7 @@ import uno.anahata.asi.resource.ResourceManager;
  * 
  * @author anahata-gemini-pro-2.5
  */
+@Slf4j
 public class ToolContext {
     
     /** The toolkit instance that owns this context. */
@@ -43,9 +43,19 @@ public class ToolContext {
     public JavaMethodToolResponse getResponse() {
         JavaMethodToolResponse response = JavaMethodToolResponse.getCurrent();
         if (response == null) {
-            throw new IllegalStateException("Cannot access ToolContext outside of a tool execution thread.");
+            throw new IllegalStateException("Cannot access ToolContext outside of a tool execution thread. Capture the context with getToolContext() before entering a subthread.");
         }
         return response;
+    }
+
+    /**
+     * Returns this context instance. Useful for capturing the context in a 
+     * final variable for use in subthreads or the EDT.
+     * 
+     * @return This ToolContext instance.
+     */
+    public ToolContext getToolContext() {
+        return this;
     }
 
     /**
@@ -106,6 +116,7 @@ public class ToolContext {
      * Adds a standard log message to the current tool's response.
      * 
      * @param message The log message to add.
+     * @throws IllegalStateException if called outside a tool execution thread.
      */
     public void log(String message) {
         getResponse().addLog(message);
@@ -115,6 +126,7 @@ public class ToolContext {
      * Adds an error message to the current tool's response.
      * 
      * @param message The error message to add.
+     * @throws IllegalStateException if called outside a tool execution thread.
      */
     public void error(String message) {
         getResponse().addError(message);

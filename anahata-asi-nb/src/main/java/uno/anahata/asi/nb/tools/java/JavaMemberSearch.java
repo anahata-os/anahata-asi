@@ -73,11 +73,12 @@ public class JavaMemberSearch {
                 ElementKind kind = element.getKind();
                 ElementHandle<? extends Element> handle = ElementHandle.create(element);
                 String name = element.getSimpleName().toString();
+                String memberFqn = type.getFqn() + "." + name;
                 Set<String> modifiers = element.getModifiers().stream()
                         .map(m -> m.name().toLowerCase())
                         .collect(Collectors.toSet());
                 
-                foundMembers.add(new JavaMember(handle, name, kind, url, modifiers));
+                foundMembers.add(new JavaMember(handle, memberFqn, name, kind, url, modifiers));
             }
             
             // Anonymous inner classes - Scan the AST of the class
@@ -97,10 +98,11 @@ public class JavaMemberSearch {
                                 ElementHandle<TypeElement> handle = ElementHandle.create(anonTe);
                                 String baseType = node.getIdentifier().toString();
                                 String name = "Anonymous #" + anonCount + " (" + baseType + ")";
+                                String memberFqn = type.getFqn() + "." + name;
                                 Set<String> modifiers = anonTe.getModifiers().stream()
                                         .map(m -> m.name().toLowerCase())
                                         .collect(Collectors.toSet());
-                                foundMembers.add(new JavaMember(handle, name, anonTe.getKind(), url, modifiers));
+                                foundMembers.add(new JavaMember(handle, memberFqn, name, anonTe.getKind(), url, modifiers));
                             }
                         }
                         return super.visitNewClass(node, p);

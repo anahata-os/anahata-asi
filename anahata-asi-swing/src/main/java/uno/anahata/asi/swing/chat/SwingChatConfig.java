@@ -15,9 +15,9 @@ import uno.anahata.asi.model.tool.ToolPermission;
 import uno.anahata.asi.status.ChatStatus;
 import uno.anahata.asi.swing.chat.render.editorkit.EditorKitProvider;
 import uno.anahata.asi.swing.icons.IconProvider;
-import uno.anahata.asi.yam.tools.MarketingTool;
-import uno.anahata.asi.yam.tools.QuotaTool;
-import uno.anahata.asi.yam.tools.SpeechTool;
+import uno.anahata.asi.yam.tools.MarketingToolkit;
+import uno.anahata.asi.yam.tools.Quota;
+import uno.anahata.asi.yam.tools.Speech;
 
 /**
  * A concrete ChatConfig for standalone Swing applications, providing UI-specific settings like themes and colors.
@@ -45,9 +45,9 @@ public class SwingChatConfig extends ChatConfig {
 
     {
         // Register the Yam tools for all Swing-based configurations
-        getToolClasses().add(SpeechTool.class);
-        getToolClasses().add(QuotaTool.class);
-        getToolClasses().add(MarketingTool.class);
+        getToolClasses().add(Speech.class);
+        getToolClasses().add(Quota.class);
+        getToolClasses().add(MarketingToolkit.class);
     }
 
     /**

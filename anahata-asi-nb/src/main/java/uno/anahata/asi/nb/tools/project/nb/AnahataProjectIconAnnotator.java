@@ -38,8 +38,8 @@ import uno.anahata.asi.nb.tools.files.nb.FileAnnotationProvider;
  * @author anahata
  */
 @ServiceProvider(service = ProjectIconAnnotator.class)
-public class AnahataProjectAnnotator implements ProjectIconAnnotator, ChangeListener {
-    private static final Logger LOG = Logger.getLogger(AnahataProjectAnnotator.class.getName());
+public class AnahataProjectIconAnnotator implements ProjectIconAnnotator, ChangeListener {
+    private static final Logger LOG = Logger.getLogger(AnahataProjectIconAnnotator.class.getName());
     
     /** The badge image to overlay on project icons. */
     private static final Image BADGE;
@@ -48,7 +48,7 @@ public class AnahataProjectAnnotator implements ProjectIconAnnotator, ChangeList
     private final javax.swing.event.EventListenerList listeners = new javax.swing.event.EventListenerList();
 
     static {
-        LOG.info("AnahataProjectAnnotator class loaded.");
+        LOG.info("AnahataProjectIconAnnotator class loaded.");
         Image img = ImageUtilities.loadImage("icons/anahata.png");
         if (img != null) {
             BADGE = img.getScaledInstance(8, 8, Image.SCALE_SMOOTH);
@@ -60,8 +60,8 @@ public class AnahataProjectAnnotator implements ProjectIconAnnotator, ChangeList
     /**
      * Default constructor for the annotator.
      */
-    public AnahataProjectAnnotator() {
-        LOG.log(Level.INFO, "AnahataProjectAnnotator instance created.");
+    public AnahataProjectIconAnnotator() {
+        LOG.log(Level.INFO, "AnahataProjectIconAnnotator instance created.");
     }
     
     /**
@@ -200,7 +200,7 @@ public class AnahataProjectAnnotator implements ProjectIconAnnotator, ChangeList
     
     /**
      * Triggers a global refresh of all project icons by notifying all 
-     * {@link AnahataProjectAnnotator} instances.
+     * {@link AnahataProjectIconAnnotator} instances.
      * 
      * @param project The project to refresh. (Currently ignored as we refresh all).
      */
@@ -210,7 +210,7 @@ public class AnahataProjectAnnotator implements ProjectIconAnnotator, ChangeList
         SwingUtilities.invokeLater(() -> {
             // Notify the ProjectIconAnnotator listeners (NetBeans internal)
             for (ProjectIconAnnotator pia : Lookup.getDefault().lookupAll(ProjectIconAnnotator.class)) {
-                if (pia instanceof AnahataProjectAnnotator apa) {
+                if (pia instanceof AnahataProjectIconAnnotator apa) {
                     apa.stateChanged(new ChangeEvent(apa));
                 }
             }

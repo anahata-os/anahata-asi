@@ -119,10 +119,16 @@ public class Java extends AnahataToolkit {
         sb.append("When using `compileAndExecute`, your class should be **public**, named **Anahata**, extend `" + AnahataTool.class.getName()+ "`, have no package declaration and implement the call method of Callable<Object>. ");
         sb.append("This provides the following helper methods for a rich, context-aware execution:\n\n");
         
-        sb.append("#### Available Methods that you can use within the code you write (inherited from AnahataTool):\n");
+        sb.append("#### Available Methods that you can use within the code you write:\n");
+        sb.append("- **Inherited from AnahataTool**:\n");
         appendMethods(sb, AnahataTool.class);
+        sb.append("- **Inherited from ToolContext**:\n");
         appendMethods(sb, ToolContext.class);
         
+        sb.append("\n#### Multi-threading and Thread Safety:\n");
+        sb.append("The `log()`, `error()`, and `addAttachment()` methods rely on a thread-local context and will fail if called from a subthread or the EDT (Event Dispatch Thread).\n");
+        sb.append("- To access the context from another thread, capture it in a final variable: `final ToolContext ctx = getToolContext();` and use `ctx.log(...)`, `ctx.error(...)`, etc.\n");
+
         sb.append("\nAbout the maps: the Session Map is for this session only (chat scoped), the ASI Container map is shared across sessions (chats) and the application map is a static field so shared across any all sessions of all containers running in this jvm\n");
         sb.append("\nAbout the attachments: at the time of this release (only tested with gemini-3-flash) only pdf, text and image attachments are supported\n");
         

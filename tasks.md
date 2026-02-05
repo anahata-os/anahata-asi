@@ -5,6 +5,8 @@ This file tracks the actionable tasks and tactical goals for the Anahata ASI (V2
 ## 1. Active Focus: Context Tree UI Refinement (Task 3)
 *Goal: Ensure the hierarchical context tree is robust, informative, and visually consistent for both IDE and Standalone modes.*
 
+- [] **UI Performance**: Terrible unusable UI performance after 40 messages or so, had to uninstall v2, seems that either everything re-renders fully on every turn or we messed up the SwingUtils.runAndWaitOnEDT, EDT totally irresponsive for up to 20 seconds or more. Consider implementing a slowness detector that reports EDT unavailable for more than 1 second
+
 - [x] **Display Names**: Fixed `toString()` in `AbstractContextNode` to ensure nodes display domain names instead of class names.
 - [x] **Schema Inspection**: Implemented `ToolPanel` tabbed view for JSON schemas (Arguments, Return Type) and Native Declarations. Parameters are now shown in individual sections.
 - [x] **Toolkit Branding**: Restored the V1 `java.png` icon for all toolkits in the tree.
@@ -38,6 +40,13 @@ This file tracks the actionable tasks and tactical goals for the Anahata ASI (V2
 
 ## 3. Future Tactical Goals
 
+- [ ] **CwQL**: Create a Context Window Query Language spec and implementation. So if the model spawans subagents or wants to peek into saved or disposed sessions. A simple query language can be used like 
+        - sessionUUID/history(role=model)/partType=text/thought=false 
+        - sessionUUID/tools/RadioTool/selectedPlaybackDevice (to look up the selectedPlaybackDevice field in the RadioTool) 
+        - sessionUUID/status or sessionUUID/history/size 
+        - disposed/sessionUUID/history/role=model/(matching:'Task completed')
+        - remoteContaier/*(all sessions)/history/role=model/(matching:'Task completed')
+        - or anything that would allow the ASI to surgically check what other agents are doing or what is in the saved or dispossed sessions dir (infinte memory)
 - [ ] **Global Preferences Panel**: Create a centralized UI for managing global Anahata settings (API keys, theme, pruning policies).
 - [ ] **Surgical Edits with Cherry-Picking**: Implement a V2 version of the `suggestChange` diff dialog using `org.netbeans.api.diff.DiffView`.
 - [ ] **High-Performance Project Alerts**: Re-implement project alerts using background-driven `ErrorProvider` APIs.

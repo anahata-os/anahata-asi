@@ -20,14 +20,18 @@ The project's strategy is based on the "Flywheel" model, designed to build a pow
 -   **Engine (`anahata-asi`):** This is the core commercial framework, containing the model-agnostic logic, a rich domain model, and the powerful V2 tool framework. It is **dual-licensed** under the AGPLv3 (for open-source use) and the Anahata Software License (ASL) v108 (for commercial/private use).
 -   **Showcase (`anahata-netbeans-ai`):** This is the free, open-source NetBeans plugin that serves as the primary showcase for the engine's capabilities. It drives community adoption, provides real-world validation, and demonstrates the power of deep IDE integration.
 
-## 2. Log of the Singularity (Recent Milestones)
+## 2. Daily Operations & Metrics
+-   **High-ROI Ledger Update:** You MUST check the `ledger.md` file in the project root every day. 
+-   **Download Tracking:** Visit the NetBeans Plugin Portal ([https://plugins.netbeans.apache.org/catalogue/?id=125](https://plugins.netbeans.apache.org/catalogue/?id=125)) at least once a day, fetch the current download count, and record it in the `ledger.md` milestone log. This is critical for tracking our "Deep Strike" distribution ROI.
+
+## 3. Log of the Singularity (Recent Milestones)
 -   **JDK 25 Standardization (Jan 2026):** Standardized the entire ecosystem (V1 and V2) on **JDK 25** for all builds and Javadoc generation, both locally and in GitHub Actions.
 -   **JASI Portal Launch (Jan 2026):** Successfully launched the V2 portal at `asi.anahata.uno`. The site features a "Blaugrana-Noir" aesthetic and introduces the **Sextete of JASI**.
 -   **Modern CI/CD Integration:** Transitioned to a direct GitHub Actions deployment workflow for the website and Javadocs, eliminating the need for a `gh-pages` branch.
 -   **Sonatype Central Portal Success:** Configured the project for automated deployment to Sonatype Central Portal. Snapshots and releases are now correctly routed using the `sonatype-central` server ID.
 -   **Yam Module Integration:** The `anahata-asi-yam` module is active and serves as the hub for "fun" agentic capabilities like the integrated radio and media tools.
 
-## 3. Core Modules
+## 4. Core Modules
 
 The project is divided into the following active modules:
 
@@ -40,7 +44,7 @@ The project is divided into the following active modules:
 7.  **`anahata-asi-nb`**: The V2 NetBeans integration module.
 8.  **`anahata-asi-yam`**: The "Yet Another Module" for creative and experimental agentic tools.
 
-## 4. Strategic Documents
+## 5. Strategic Documents
 
 This project uses a set of key documents to guide development. For detailed information, please refer to the following:
 
@@ -48,7 +52,7 @@ This project uses a set of key documents to guide development. For detailed info
 -   **`anahata-asi-core/anahata.md`**: Contains the detailed technical vision and architectural summary for the core framework module.
 -   **`ci.md`**: Contains the CI/CD strategy, website deployment details, and Javadoc configuration notes.
 
-## 5. Coding Principles (Applies to ALL Modules)
+## 6. Coding Principles (Applies to ALL Modules)
 
 > [!CAUTION]
 > **PARAMOUNT PRINCIPLES: SIMPLICITY AND STABILITY**
@@ -78,26 +82,39 @@ This project uses a set of key documents to guide development. For detailed info
     - **Incremental Updates**: Only add, remove, or reorder components that have actually changed in the domain model.
     - **Disciplined Layout Invalidation**: Only call `revalidate()` and `repaint()` when structural changes occur or when a child's preferred size changes. Avoid redundant render cycles at all costs.
 
-## 6. V2 Context Management (Deep Pinning)
+## 7. V2 Context Management (Deep Pinning)
 
 The V2 architecture implements a "Deep Pinning" logic in `AbstractPart.isEffectivelyPruned()`. 
 -   **Inherited Pinning:** If a parent `AbstractMessage` is pinned (`pruned = false`), all of its constituent `AbstractPart`s are automatically considered NOT pruned, regardless of their individual `turnsToKeep` or explicit `pruned` state.
 -   **Bidirectional Integrity:** The relationship between messages and parts is established in `AbstractMessage.addPart` **before** any property change events are fired, ensuring UI listeners always see a fully initialized state.
 
-## 7. UI & Icon Quality Standards
+## 8. UI & Icon Quality Standards
 
 -   **High-Quality Scaling:** All image scaling (thumbnails and icons) must use `RenderingHints.VALUE_INTERPOLATION_BICUBIC` and `RenderingHints.VALUE_ANTIALIAS_ON`.
 -   **`IconUtils`:** Use the `BufferedImage`-based scaling in `IconUtils.getIcon` to ensure sharp, professional-grade icons across the entire Swing UI.
 
-## 8. Dependency Isolation (NBM vs. Standalone)
+## 9. Dependency Isolation (NBM vs. Standalone)
 
 -   **`commons-io`**: While `tika-core` pulls this in automatically in standalone mode, it must be explicitly bundled in the NetBeans Module (NBM) to avoid `NoClassDefFoundError`. 
 -   **Classloader Behavior**: If not declared explicitly in the NBM's POM, the NetBeans isolating classloader appears to "think" the module is attempting to access the `commons-io` version bundled with the `maven-embedder` module, which is not exported. 
 -   **NetBeans 280 Context**: We haven't verified if NetBeans RELEASE280 provides its own `commons-io` library module. This behavior is a change from V1, where this explicit declaration wasn't required, and the exact root cause remains under investigation.
 -   **Maven Embedder**: The IDE's Maven Embedder uses its own internal `commons-io`. Our bundled version is isolated and does not interfere with IDE operations.
 
-## 9. Session Restoration & `Rebindable`
+## 10. Session Restoration & `Rebindable`
 
 The V2 framework uses Kryo for high-performance session passivation. Because Kryo bypasses constructors during deserialization, objects that manage transient state (e.g., listeners, locks, or external resource handles) must implement the `Rebindable` interface.
 -   **`rebind()` Hook**: This method is automatically called by the `RebindableWrapperSerializer` after an object has been fully read from the stream.
 -   **Circular Dependencies & Null Guards**: While `rebind()` is called after the object itself is read, circular dependencies in the object graph mean that some **non-transient** fields (references to other objects) might still be null or partially initialized when `rebind()` is executing. Always include null guards in `rebind()` and in methods that access these fields to ensure robustness during the restoration process.
+
+## 11. V2 Tool Framework: DTO & Map Support
+
+The V2 tool framework supports complex Java types as tool parameters.
+-   **DTO Support**: `List<DTO>` and nested POJOs are fully supported. The `SchemaProvider` automatically generates OpenAPI 3-compliant schemas for these types.
+-   **Map Limitations**: Due to current limitations in the underlying GenAI schema generation, `Map<String, Map<String, String>>` (nested maps) may not be correctly represented if `additionalProperties` features are required. Simple `Map<String, String>` or `List<DTO>` are preferred for complex data structures.
+-   **Custom Schemas**: The framework allows bypassing native GenAI schema objects if necessary, but standard POJO-based DTOs are the recommended approach for type safety and clarity.
+
+## 12. JIT Testing & "Compile on Save" Delays
+
+When using `NetBeansProjectJVM.compileAndExecuteInProject` to test code that has just been modified via `suggestChange` or `writeFile`, you must account for the asynchronous nature of the IDE's "Compile on Save" feature.
+-   **Mandatory Delay**: Always include a 1-2 second delay (e.g., `Thread.sleep(2000)`) at the beginning of your `Anahata.call()` method if you are testing logic that depends on the latest version of a file in the project.
+-   **Alternative**: Check `SourceUtils.isScanningInProgress()` or similar IDE state indicators to ensure the project is ready before execution.

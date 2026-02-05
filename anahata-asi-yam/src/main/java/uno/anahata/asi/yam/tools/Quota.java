@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 @AiToolkit("A toolkit for managing API quota and key rotation.")
-public class QuotaTool extends AnahataToolkit {
+public class Quota extends AnahataToolkit {
     
     private final Map<String, Long> keyUsage = new ConcurrentHashMap<>();
 

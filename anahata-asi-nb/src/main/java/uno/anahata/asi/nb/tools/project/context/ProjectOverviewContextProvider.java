@@ -10,7 +10,7 @@ import uno.anahata.asi.nb.tools.maven.DependencyGroup;
 import uno.anahata.asi.nb.tools.maven.DependencyScope;
 import uno.anahata.asi.nb.tools.project.ProjectOverview;
 import uno.anahata.asi.nb.tools.project.Projects;
-import uno.anahata.asi.nb.tools.project.nb.AnahataProjectAnnotator;
+import uno.anahata.asi.nb.tools.project.nb.AnahataProjectIconAnnotator;
 
 /**
  * Provides a compact, real-time overview of a project's metadata and dependencies.
@@ -59,7 +59,7 @@ public class ProjectOverviewContextProvider extends BasicContextProvider {
         boolean old = isProviding();
         super.setProviding(enabled);
         if (old != enabled && parent instanceof ProjectContextProvider pcp) {
-            AnahataProjectAnnotator.fireRefreshAll(pcp.getProject());
+            AnahataProjectIconAnnotator.fireRefreshAll(pcp.getProject());
         }
     }
 

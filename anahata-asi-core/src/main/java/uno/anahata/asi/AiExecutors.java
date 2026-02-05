@@ -5,10 +5,16 @@ package uno.anahata.asi;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 
+/**
+ * Centralized factory for creating named, daemon thread pools used by the Anahata ASI framework.
+ * 
+ * @author anahata
+ */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class AiExecutors {
 
@@ -26,5 +32,21 @@ public final class AiExecutors {
                 .priority(Thread.NORM_PRIORITY)
                 .build();
         return Executors.newCachedThreadPool(factory);
+    }
+
+    /**
+     * Creates a new scheduled thread pool for background monitoring and periodic tasks.
+     *
+     * @param threadPreffix The unique identifier for the task, used in the thread name.
+     * @param corePoolSize The number of threads to keep in the pool.
+     * @return A new scheduled thread pool ExecutorService.
+     */
+    public static ScheduledExecutorService newScheduledThreadPool(String threadPreffix, int corePoolSize) {
+        BasicThreadFactory factory = new BasicThreadFactory.Builder()
+                .namingPattern("anahata-ai-" + threadPreffix + "-scheduled-%d")
+                .daemon(true)
+                .priority(Thread.NORM_PRIORITY)
+                .build();
+        return Executors.newScheduledThreadPool(corePoolSize, factory);
     }
 }

@@ -15,7 +15,7 @@ This is the V2 NetBeans integration module for the Anahata ASI framework.
 
 ## 3. Annotator Strategy
 
-1.  **Project Badges**: Handled exclusively by `AnahataProjectAnnotator`.
+1.  **Project Badges**: Handled exclusively by `AnahataProjectIconAnnotator`.
     -   Position: Offset 16 (to the right of the 16x16 icon).
     -   Condition: Only if at least one active chat has the project provider for that project "providing".
 2.  **File Badges**: Handled by `FileAnnotationProvider`.
@@ -38,7 +38,7 @@ This is the V2 NetBeans integration module for the Anahata ASI framework.
     - **NO RELOAD ON ERRORS**: You MUST NOT call `nbmreload` if your last writes caused compile errors in the project. Always check the `Project Alerts` context provider before reloading.
     - **TURN SEQUENCING**: In turn 3 you can do `suggestChange` or `writeFile` and call `nbmreload` for as long as there were no compile errors in turn 2. You must wait for a turn without errors before you call `nbmreload`.
     - **NO BATCHING WITH WRITES**: `nbmreload` CANNOT be in the same batch as any other write tool calls (e.g., `suggestChange` or `writeFile`).
-- **IMPORTANT (Module Dependencies):** This plugin depends on `anahata-asi-core`, `anahata-asi-swing`, and `anahata-asi-gemini`. An `nbmreload` on this project **does not** automatically build those dependencies. If you modify any of those modules, you **must** run `maven clean install` (or `build-with-dependencies`) on them before reloading the plugin.
+- **IMPORTANT (Module Dependencies):** This plugin depends on `anahata-asi-core`, `anahata-asi-swing`, and `anahata-asi-gemini`. An `nbmreload` on this project **does not** automatically build those dependencies. If you modify any of those modules, you **must** run `maven clean install` on the parent project (or the specific module) before reloading.
 - **IMPORTANT (Asynchronous Actions & Batching):** Invoking NetBeans supported actions (like `build-with-dependencies` or `nbmreload`) via the `Projects.invokeAction` tool is **asynchronous**. The tool returns immediately after firing the action. 
     - **CRITICAL:** Never batch multiple asynchronous actions that depend on each other (e.g., `build-with-dependencies` and `nbmreload`) in a single turn. They will execute concurrently, leading to build failures or inconsistent plugin states. You must trigger the build, wait for completion, and then trigger the reload in a subsequent turn.
 - **Note on Dependency Warnings**: You may see a warning about `aopalliance:asm:jar:9.8` being missing from the local repository. This is a known issue in the current NetBeans release and is fixed in the next version. You can safely ignore this warning.

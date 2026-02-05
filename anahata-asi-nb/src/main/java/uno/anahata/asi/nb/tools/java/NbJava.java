@@ -41,6 +41,22 @@ import uno.anahata.asi.toolkit.Java;
 @AiToolkit("A NetBeans-aware toolkit for compiling and executing Java code.")
 public class NbJava extends Java {
 
+    /** {@inheritDoc} */
+    @Override
+    public List<String> getSystemInstructions() throws Exception {
+        List<String> base = new ArrayList<>(super.getSystemInstructions());
+        String nbTips = "\n### NetBeans Java Toolkit Tips (`compileAndExecuteInProject`):\n"
+                + "- **Asynchronous Compilation**: NetBeans 'Compile on Save' is asynchronous. If you are executing code that depends on a file you just modified (via `suggestChange` or `createTextFile`) in the same turn or the previous one, you **must** add a 1-2 second delay at the start of your `Anahata.call()` method (e.g., `Thread.sleep(2000);`) to ensure the IDE has finished compiling the changes.\n"
+                + "- **Scanning**: You can also use `org.netbeans.api.java.source.SourceUtils.isScanningInProgress()` to wait for the indexer if necessary.\n";
+        
+        if (!base.isEmpty()) {
+            base.set(0, base.get(0) + nbTips);
+        } else {
+            base.add(nbTips);
+        }
+        return base;
+    }
+
     /**
      * Compiles and executes Java source code within the context of a specific NetBeans project.
      * This tool enables a powerful 'hot-reload' workflow by creating a dynamic classpath that 

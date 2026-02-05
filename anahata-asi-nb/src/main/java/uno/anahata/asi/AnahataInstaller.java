@@ -1,12 +1,16 @@
 /* Licensed under the Apache License, Version 2.0 */
 package uno.anahata.asi;
 
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.openide.modules.ModuleInstall;
+import org.openide.windows.TopComponent;
+import org.openide.windows.WindowManager;
 import uno.anahata.asi.nb.util.ElementHandleModule;
 import uno.anahata.asi.tool.schema.SchemaProvider;
-import uno.anahata.asi.nb.tools.project.nb.AnahataProjectAnnotator;
+import uno.anahata.asi.nb.tools.project.nb.AnahataProjectIconAnnotator;
+import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
  * Installer for the Anahata ASI V2 module.
@@ -54,18 +58,36 @@ public class AnahataInstaller extends ModuleInstall {
         }
         
         // Trigger initial refresh of project icons
-        AnahataProjectAnnotator.fireRefresh(null);
+        AnahataProjectIconAnnotator.fireRefresh(null);
     }
 
     /**
      * {@inheritDoc}
-     * Shuts down the container when the module is uninstalled.
+     * Shuts down the container and closes all TopComponents when the module is uninstalled.
+     * This is critical to prevent classloader leaks during nbmreload.
      */
     @Override
     public void uninstalled() {
-        log.info("Anahata ASI V2 Module Uninstalled");
+        log.log(Level.INFO, "Anahata ASI V2 Module Uninstalled - Thread: {0}", Thread.currentThread().getName());
+        
+        try {
+            SwingUtils.runInEDTAndWait(() -> {
+                Set<TopComponent> opened = WindowManager.getDefault().getRegistry().getOpened();
+                for (TopComponent tc : opened) {
+                    String clazz = tc.getClass().getName();
+                    if (clazz.startsWith("uno.anahata.asi")) {
+                        log.log(Level.INFO, "Closing TopComponent to prevent leak: {0}", clazz);
+                        tc.close();
+                    }
+                }
+            });
+        } catch (Exception ex) {
+            log.log(Level.SEVERE, "Failed to close TopComponents during uninstall", ex);
+        }
+
         if (container != null) {
             container.shutdown();
+            log.info("AsiContainer shutdown complete.");
         }
     }
 }

@@ -3,8 +3,13 @@ package uno.anahata.asi;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Font;
 import java.beans.PropertyChangeEvent;
 import java.io.Serializable;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingWorker;
 import lombok.extern.slf4j.Slf4j;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
@@ -72,6 +77,7 @@ public final class AgiTopComponent extends TopComponent {
     public AgiTopComponent(String sessionId) {
         this.sessionId = sessionId;
         setIcon(ImageUtilities.loadImage("icons/anahata_16.png"));
+        setLayout(new BorderLayout());
         updateTitles();
     }
 
@@ -85,8 +91,11 @@ public final class AgiTopComponent extends TopComponent {
         this.sessionId = chat.getConfig().getSessionId();
         chatPanel = new ChatPanel(chat);
         chatPanel.initComponents();
-        setLayout(new BorderLayout());
+        
+        removeAll();
         add(chatPanel, BorderLayout.CENTER);
+        revalidate();
+        repaint();
         
         updateTitles();
         
@@ -101,7 +110,7 @@ public final class AgiTopComponent extends TopComponent {
      * Updates the TopComponent's name, display name, and tooltip based on the current chat session.
      */
     private void updateTitles() {
-        String displayName = "Anahata AGI";
+        String displayName = sessionId != null ? "Session: " + sessionId.substring(0, 7) : "Anahata AGI";
         ChatStatus status = ChatStatus.IDLE;
         
         Chat chat = getChat();
@@ -140,14 +149,55 @@ public final class AgiTopComponent extends TopComponent {
     /**
      * {@inheritDoc}
      * Ensures the chat panel is initialized when the component is opened.
+     * Uses a SwingWorker to avoid blocking the EDT during heavy initialization.
      */
     @Override
     public void componentOpened() {
         if (chatPanel == null) {
-            NetBeansAsiContainer container = (NetBeansAsiContainer) AnahataInstaller.getContainer();
-            Chat chat = container.findOrCreateChat(sessionId);
-            initPanel(chat);
+            showLoading();
+            
+            new SwingWorker<Chat, Void>() {
+                @Override
+                protected Chat doInBackground() throws Exception {
+                    log.info("Initializing session brain in background: {}", sessionId);
+                    NetBeansAsiContainer container = (NetBeansAsiContainer) AnahataInstaller.getContainer();
+                    return container.findOrCreateChat(sessionId);
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        Chat chat = get();
+                        initPanel(chat);
+                        log.info("Session brain initialized OK: {}", chat.getShortId());
+                    } catch (Exception e) {
+                        log.error("Failed to initialize session brain", e);
+                        showError(e.getMessage());
+                    }
+                }
+            }.execute();
         }
+    }
+
+    private void showLoading() {
+        removeAll();
+        JPanel loadingPanel = new JPanel(new BorderLayout());
+        JLabel label = new JLabel("Initializing Blaugrana Brain...", SwingConstants.CENTER);
+        label.setFont(label.getFont().deriveFont(Font.BOLD, 14f));
+        loadingPanel.add(label, BorderLayout.CENTER);
+        add(loadingPanel, BorderLayout.CENTER);
+        revalidate();
+        repaint();
+    }
+
+    private void showError(String message) {
+        removeAll();
+        JPanel errorPanel = new JPanel(new BorderLayout());
+        JLabel label = new JLabel("<html><center>Failed to load session:<br><font color='red'>" + message + "</font></center></html>", SwingConstants.CENTER);
+        errorPanel.add(label, BorderLayout.CENTER);
+        add(errorPanel, BorderLayout.CENTER);
+        revalidate();
+        repaint();
     }
 
     /**

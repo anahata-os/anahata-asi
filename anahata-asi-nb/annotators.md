@@ -1,7 +1,7 @@
 # Annotators Strategy & Failed Attempts
 
 ## Current Strategy
-1.  **Project Badges**: Handled exclusively by `AnahataProjectAnnotator` (v2) in `anahata-asi-nb`.
+1.  **Project Badges**: Handled exclusively by `AnahataProjectIconAnnotator` (v2) in `anahata-asi-nb`.
     -   Position: Offset 16 (to the right of the 16x16 icon).
     -   Condition: Only if at least one active chat has the project provider for that project "providing".
     -   Handshake: Sets the `uno.anahata.asi.badged` attribute on the project root `FileObject` to signal that it has handled the annotation.
@@ -21,7 +21,7 @@
     -   *Result*: Duplicated badges on projects because `ProjectIconAnnotator` was also active.
 -   **Attempt 2**: Using `VersioningSupport.fireFileStatusChanged` to force refreshes.
     -   *Result*: Deemed "dirty and dodgy". Potentially interfered with standard NetBeans error badges and `AnahataNodeFactory`.
--   **Attempt 3**: Using `SwingUtilities.invokeLater` with a static listener list in `AnahataProjectAnnotator`.
+-   **Attempt 3**: Using `SwingUtilities.invokeLater` with a static listener list in `AnahataProjectIconAnnotator`.
     -   *Result*: Still reported as "double icons" after reload.
 -   **Attempt 4**: Changing file badge offset to 16.
     -   *Result*: Cancelled by user. Offset 8 is the correct and desired position for file-level badges.

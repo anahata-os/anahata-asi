@@ -9,7 +9,7 @@ import uno.anahata.asi.context.BasicContextProvider;
 import uno.anahata.asi.context.ContextPosition;
 import uno.anahata.asi.model.resource.TextFileResource;
 import uno.anahata.asi.nb.tools.project.Projects;
-import uno.anahata.asi.nb.tools.project.nb.AnahataProjectAnnotator;
+import uno.anahata.asi.nb.tools.project.nb.AnahataProjectIconAnnotator;
 
 /**
  * Provides project-specific system instructions from the anahata.md file.
@@ -56,7 +56,7 @@ public class AnahataMdContextProvider extends BasicContextProvider {
         super.setProviding(enabled);
         syncResource();
         if (old != enabled && parent instanceof ProjectContextProvider pcp) {
-            AnahataProjectAnnotator.fireRefreshAll(pcp.getProject());
+            AnahataProjectIconAnnotator.fireRefreshAll(pcp.getProject());
         }
     }
 

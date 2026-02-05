@@ -75,8 +75,8 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
         this.call = call;
         setStatus(ToolExecutionStatus.PENDING);
         
-        // Leaf class publication: add ourselves to the tool message
-        getMessage().addPart(this);
+        // Note: Publication to the tool message is now handled atomically 
+        // by the AbstractToolCall constructor to prevent race conditions.
     }
 
     @Override

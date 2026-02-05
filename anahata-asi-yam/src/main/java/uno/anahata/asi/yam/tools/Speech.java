@@ -18,7 +18,7 @@ import uno.anahata.asi.tool.AnahataToolkit;
  */
 @Slf4j
 @AiToolkit("A toolkit for speech synthesis (TTS) and audio alerts.")
-public class SpeechTool extends AnahataToolkit {
+public class Speech extends AnahataToolkit {
 
     /** The default voice to use for synthesis. */
     private static final String DEFAULT_VOICE = "kevin16";

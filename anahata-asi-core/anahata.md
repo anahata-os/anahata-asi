@@ -61,6 +61,19 @@ A powerful, reflection-based system for defining and executing local Java tools.
 -   **`SchemaProvider`**: Automatically generates detailed OpenAPI 3-compliant JSON schemas from Java types, ensuring the model has a precise understanding of tool signatures.
 -   **`AbstractJavaTool`**: An optional base class for toolkits that provides a context-aware API (via `ThreadLocal`) for tool methods to log messages or access the `Chat` session without requiring it as a method parameter.
 
+#### 2.4.1. Thread-Safe Logging ("Magic Pills")
+Tool methods often need to execute code on subthreads or the Event Dispatch Thread (EDT). Since the standard `log()` and `error()` methods rely on a `ThreadLocal` response object, they will fail if called from a different thread.
+To handle this, use the "magic pill" loggers:
+```java
+// 1. Capture the logger on the main tool thread
+Consumer<String> logger = getThreadSafeLogger();
+
+// 2. Use it inside a subthread or EDT block
+SwingUtilities.invokeLater(() -> {
+    logger.accept("This log message is safely routed back to the tool response!");
+});
+```
+
 ### 2.5. Resource & State Management (`uno.anahata.asi.resource.*`)
 
 A robust framework for managing stateful entities within the chat context. For a more detailed breakdown, please see `resources.md`.

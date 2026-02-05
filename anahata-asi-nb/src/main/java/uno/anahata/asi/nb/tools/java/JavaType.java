@@ -14,7 +14,7 @@ import org.openide.filesystems.URLMapper;
 
 /**
  * A lightweight, serializable "keychain" DTO that uniquely identifies a Java type.
- * It holds an ElementHandle and a URL to the class file.
+ * It holds an ElementHandle, the fully qualified name, and a URL to the class file.
  */
 @Data
 @SuperBuilder
@@ -23,6 +23,7 @@ import org.openide.filesystems.URLMapper;
 public class JavaType {
 
     private ElementHandle handle;
+    private String fqn;
     private URL url;
 
     /**
@@ -39,6 +40,10 @@ public class JavaType {
             throw new IllegalStateException("Could not get FileObject from TypeDescriptor");
         }
         this.url = fo.toURL();
+        
+        String outer = descriptor.getOuterName();
+        String simple = descriptor.getSimpleName();
+        this.fqn = (outer != null && !outer.isEmpty()) ? outer + "." + simple : simple;
     }
 
     /**

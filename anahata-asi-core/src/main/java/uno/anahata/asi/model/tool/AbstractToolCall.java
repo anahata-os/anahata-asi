@@ -89,12 +89,18 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
         this.tool = tool;
         this.rawArgs = rawArgs;
         this.args = args;
-        // Leaf class publication: we add ourselves to the message only after 
-        // the response field is fully initialized.
-        message.addPart(this);
+        
+        // 1. Initialize the response object. 
+        // Note: The response constructor MUST NOT add itself to the message.
         this.response = createResponse(message.getToolMessage());
-        getChat().getContextManager().ensureToolMessageFollowsModelMessage(getMessage());
+        
+        // 2. Ensure the tool message exists and is correctly positioned in the context.
+        AbstractToolMessage toolMessage = getChat().getContextManager().ensureToolMessageFollowsModelMessage(getMessage());
 
+        // 3. Atomic Publication: Add BOTH the call and the response to their messages.
+        // This triggers the UI update only when both are fully initialized and linked.
+        message.addPart(this);
+        toolMessage.addPart(response);
     }
 
     /**
