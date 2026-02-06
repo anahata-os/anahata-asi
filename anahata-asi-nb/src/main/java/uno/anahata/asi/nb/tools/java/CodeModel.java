@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.lang.model.element.ElementKind;
+import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.model.Page;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolException;
@@ -16,6 +17,7 @@ import uno.anahata.asi.tool.AnahataToolkit;
  * Provides tools for interacting with the Java code model in NetBeans.
  * This includes finding types, getting members, and retrieving source code.
  */
+@Slf4j
 @AiToolkit("A toolkit for browsing types, members, sources and javadocs.")
 public class CodeModel extends AnahataToolkit {
 
@@ -207,19 +209,35 @@ public class CodeModel extends AnahataToolkit {
      * @throws AiToolException if the type is not found or ambiguous.
      */
     private JavaType resolveUniqueType(String fqn) throws AiToolException {
+        log.info("Resolving unique type for FQN: {}", fqn);
+        
+        // 1. Try exact FQN search
         JavaTypeSearch search = new JavaTypeSearch(fqn, true, true);
         List<JavaType> results = search.getResults().stream()
                 .filter(t -> fqn.equals(t.getFqn()))
                 .collect(Collectors.toList());
 
         if (results.isEmpty()) {
+            log.info("Exact FQN search failed for {}. Falling back to simple name search.", fqn);
+            // 2. Fallback: Search by simple name and filter (TypeProvider is optimized for simple names)
+            String simpleName = fqn.contains(".") ? fqn.substring(fqn.lastIndexOf('.') + 1) : fqn;
+            search = new JavaTypeSearch(simpleName, true, true);
+            results = search.getResults().stream()
+                    .filter(t -> fqn.equals(t.getFqn()))
+                    .collect(Collectors.toList());
+            log.info("Simple name search for '{}' returned {} matches for FQN '{}'.", simpleName, results.size(), fqn);
+        }
+
+        if (results.isEmpty()) {
             throw new AiToolException("Type not found: " + fqn);
         }
 
         if (results.size() > 1) {
+            log.warn("Ambiguous FQN: {}. Found {} matches.", fqn, results.size());
             throw new AiToolException("Multiple types found for FQN: " + fqn + ". Please use findTypes to select the correct one.");
         }
 
+        log.info("Successfully resolved unique type: {} -> {}", fqn, results.get(0).getUrl());
         return results.get(0);
     }
 

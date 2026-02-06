@@ -81,7 +81,13 @@ public final class RequestConfigAdapter {
             builder.responseModalities("TEXT");
         }
         
-        builder.thinkingConfig(ThinkingConfig.builder().includeThoughts(true).build());
+        // Adapt Thinking Config based on session settings
+        if (anahataConfig.getChat() != null) {
+            boolean includeThoughts = anahataConfig.getChat().getConfig().isIncludeThoughts();
+            builder.thinkingConfig(ThinkingConfig.builder()
+                    .includeThoughts(includeThoughts)
+                    .build());
+        }
 
         Optional.ofNullable(anahataConfig.getTemperature()).ifPresent(builder::temperature);
         Optional.ofNullable(anahataConfig.getMaxOutputTokens()).ifPresent(builder::maxOutputTokens);

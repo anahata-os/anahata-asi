@@ -38,8 +38,14 @@ public class PartNode extends AbstractContextNode<AbstractPart> {
 
     /** {@inheritDoc} */
     @Override
-    public List<AbstractContextNode<?>> getChildren() {
+    protected List<?> fetchChildObjects() {
         return Collections.emptyList();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected AbstractContextNode<?> createChildNode(Object obj) {
+        return null;
     }
 
     /** {@inheritDoc} */
@@ -51,10 +57,11 @@ public class PartNode extends AbstractContextNode<AbstractPart> {
     /** {@inheritDoc} */
     @Override
     protected void updateStatus() {
+        int turnsLeft = userObject.getTurnsLeft();
         if (userObject.isEffectivelyPruned()) {
-            this.status = "Pruned (" + userObject.getTurnsLeft() + " turns left)";
+            this.status = "Pruned" + (turnsLeft >= 0 ? " (" + turnsLeft + " turns left)" : "");
         } else {
-            this.status = "Active";
+            this.status = "Active" + (turnsLeft >= 0 ? " (" + turnsLeft + " turns left)" : "");
         }
     }
 }

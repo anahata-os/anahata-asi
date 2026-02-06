@@ -55,11 +55,15 @@ public class IconUtils {
      * @return The Icon, or null if not found.
      */
     public static Icon getIcon(String idOrName) {
-        if (idOrName == null) return null;
+        if (idOrName == null) {
+            return null;
+        }
         
         // 1. Check registry
         Icon registered = ICON_REGISTRY.get(idOrName);
-        if (registered != null) return registered;
+        if (registered != null) {
+            return registered;
+        }
         
         // 2. Fallback to classpath loading (default size 24x24)
         return getIcon(idOrName, 24, 24);
@@ -131,11 +135,15 @@ public class IconUtils {
      * @return The disabled icon.
      */
     public static Icon getDisabledIcon(Icon icon) {
-        if (icon == null) return null;
+        if (icon == null) {
+            return null;
+        }
         
         int w = icon.getIconWidth();
         int h = icon.getIconHeight();
-        if (w <= 0 || h <= 0) return icon;
+        if (w <= 0 || h <= 0) {
+            return icon;
+        }
         
         BufferedImage image = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = image.createGraphics();
@@ -156,7 +164,8 @@ public class IconUtils {
         List<Image> images = new ArrayList<>();
         int[] sizes = {16, 32, 48, 64, 128, 256};
         for (int size : sizes) {
-            ImageIcon icon = getIcon("anahata.png", size, size);
+            // FIXED: Use the v2 path to avoid shadowing
+            ImageIcon icon = getIcon("v2/anahata.png", size, size);
             if (icon != null) {
                 images.add(icon.getImage());
             }
@@ -191,8 +200,11 @@ public class IconUtils {
      * @return The combined icon.
      */
     private static Icon getSymbolBaseIcon(boolean isAdd) {
-        ImageIcon badgeIcon = getIcon("anahata.png", 8, 8);
-        if (badgeIcon == null) return null;
+        // FIXED: Use the v2 path to avoid shadowing
+        ImageIcon badgeIcon = getIcon("v2/anahata.png", 8, 8);
+        if (badgeIcon == null) {
+            return null;
+        }
         
         BufferedImage combined = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = combined.createGraphics();

@@ -5,7 +5,6 @@ package uno.anahata.asi.swing.chat;
 
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
-import java.awt.Dimension;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.JButton;
@@ -46,7 +45,7 @@ import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
  * (history, tools, providers, and resources) using a hierarchical JXTreeTable.
  * <p>
  * This panel provides a JNDI-style view of the entire AI context. It uses 
- * a split-pane layout with a tree table on the left and a dynamic detail 
+ * a split-pane layout with a tree table on the left and a detail 
  * area on the right that switches panels based on the selected node type.
  * </p>
  *
@@ -121,8 +120,12 @@ public class ContextPanel extends JPanel {
      * Sets up property change listeners for the current chat session.
      */
     private void setupListeners() {
-        if (historyListener != null) historyListener.unbind();
-        if (resourcesListener != null) resourcesListener.unbind();
+        if (historyListener != null) {
+            historyListener.unbind();
+        }
+        if (resourcesListener != null) {
+            resourcesListener.unbind();
+        }
         
         this.historyListener = new EdtPropertyChangeListener(this, chat.getContextManager(), "history", evt -> refresh(false));
         this.resourcesListener = new EdtPropertyChangeListener(this, chat.getResourceManager(), "resources", evt -> refresh(false));
@@ -169,6 +172,9 @@ public class ContextPanel extends JPanel {
         
         // Disable auto-resize to respect preferred widths
         treeTable.setAutoResizeMode(JXTreeTable.AUTO_RESIZE_OFF);
+        
+        // Ensure manual resizing is preserved by disabling auto-creation of columns on model changes
+        treeTable.setAutoCreateColumnsFromModel(false);
         
         applyColumnWidths();
 
@@ -225,27 +231,44 @@ public class ContextPanel extends JPanel {
      * Authoritatively applies the standard column widths to the tree table.
      * This method ensures the 'Name' column maintains its 400px width and 
      * token columns are correctly sized.
+     * <p>
+     * It uses model-to-view conversion to ensure the correct columns are 
+     * targeted even if the user has reordered or hidden them.
+     * </p>
      */
     private void applyColumnWidths() {
-        if (treeTable.getColumnCount() == 0) return;
-        
-        // 1. Name Column (Authoritative 400px)
-        TableColumn nameCol = treeTable.getColumnModel().getColumn(0);
-        nameCol.setPreferredWidth(400);
-        nameCol.setMinWidth(200);
-        nameCol.setWidth(400);
-        
-        // 2. Token Columns (Instructions, Declarations, History, RAG)
-        for (int i = 1; i <= 4; i++) {
-            TableColumn col = treeTable.getColumnModel().getColumn(i);
-            col.setPreferredWidth(80);
-            col.setMinWidth(50);
+        if (treeTable.getColumnCount() == 0) {
+            return;
         }
         
-        // 3. Status Column
-        TableColumn statusCol = treeTable.getColumnModel().getColumn(5);
-        statusCol.setPreferredWidth(120);
-        statusCol.setMinWidth(80);
+        // 1. Name Column (400px) - Model Index 0
+        applyColumnWidth(0, 400, 200);
+        
+        // 2. Token Columns (Instructions, Declarations, History, RAG) - Model Indices 1-4
+        for (int i = 1; i <= 4; i++) {
+            applyColumnWidth(i, 80, 50);
+        }
+        
+        // 3. Status Column - Model Index 5
+        applyColumnWidth(5, 120, 80);
+    }
+
+    /**
+     * Helper method to apply width to a specific column identified by its model index.
+     * 
+     * @param modelIndex The index of the column in the model.
+     * @param preferredWidth The desired preferred width.
+     * @param minWidth The minimum width (optional, use 0 to skip).
+     */
+    private void applyColumnWidth(int modelIndex, int preferredWidth, int minWidth) {
+        int viewIndex = treeTable.convertColumnIndexToView(modelIndex);
+        if (viewIndex != -1) {
+            TableColumn col = treeTable.getColumnModel().getColumn(viewIndex);
+            col.setPreferredWidth(preferredWidth);
+            if (minWidth > 0) {
+                col.setMinWidth(minWidth);
+            }
+        }
     }
 
     /**
@@ -271,39 +294,47 @@ public class ContextPanel extends JPanel {
     }
 
     /**
-     * Refreshes the data in the tree table while preserving expansion state.
+     * Refreshes the data in the tree table while preserving expansion state 
+     * and column widths.
      * 
      * @param structural If true, the underlying model is rebuilt (e.g. on session switch).
      */
     public final void refresh(boolean structural) {
         SwingUtilities.invokeLater(() -> {
+            if (!isShowing() && !structural) {
+                return; // Skip background updates if hidden
+            }
+            
             log.info("Refreshing ContextPanel tree (structural={}) for chat: {}", structural, chat.getShortId());
             
-            // Save expansion state
+            // 1. Capture current expansion state
             Set<TreePath> expandedPaths = getExpandedPaths();
 
+            // 2. Update Model
             if (structural) {
                 this.treeTableModel = new ContextTreeTableModel(chatPanel);
                 treeTable.setTreeTableModel(treeTableModel);
+                
+                // CRITICAL: Re-apply column settings after model change
+                treeTable.setAutoCreateColumnsFromModel(false);
+                applyColumnWidths();
             } else {
+                // Non-structural refresh: JXTreeTable preserves columns if autoCreate is false
                 treeTableModel.refresh();
             }
             
-            applyColumnWidths();
-            
-            // Restore expansion state
-            restoreExpandedPaths(expandedPaths);
-            
-            // Select the first node if nothing is selected
-            if (treeTable.getSelectedRow() == -1 && treeTable.getRowCount() > 0) {
-                treeTable.setRowSelectionInterval(0, 0);
-            }
-            
-            treeTable.revalidate();
-            treeTable.repaint();
-            
-            // Automatically trigger token refresh to ensure counts are current
-            refreshTokens();
+            // 3. Restore state (Nested invokeLater to ensure table has processed model event)
+            SwingUtilities.invokeLater(() -> {
+                restoreExpandedPaths(expandedPaths);
+                
+                // Select the first node if nothing is selected
+                if (treeTable.getSelectedRow() == -1 && treeTable.getRowCount() > 0) {
+                    treeTable.setRowSelectionInterval(0, 0);
+                }
+                
+                treeTable.revalidate();
+                treeTable.repaint();
+            });
         });
     }
 

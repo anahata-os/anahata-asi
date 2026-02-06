@@ -110,8 +110,6 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
 
         // 3. Update Controls (Bottom Bar)
         updateControls(call, response);
-        
-        updateHeaderInfoText();
     }
 
     private void initComponents() {

@@ -21,9 +21,6 @@ import uno.anahata.asi.swing.chat.ChatPanel;
  */
 public class ToolkitNode extends AbstractContextNode<AbstractToolkit<?>> {
 
-    /** The cached list of children. */
-    private List<AbstractContextNode<?>> children;
-
     /**
      * Constructs a new ToolkitNode.
      * @param chatPanel The parent chat panel.
@@ -45,33 +42,37 @@ public class ToolkitNode extends AbstractContextNode<AbstractToolkit<?>> {
         return userObject.getDescription();
     }
 
-    /**
-     * {@inheritDoc}
-     * Implementation details:
-     * 1. If the toolkit has a context provider, it adds it as a child 
-     *    ProviderNode with the display name "Context".
-     * 2. It then adds a single ToolsNode container for all tools.
-     */
+    /** {@inheritDoc} */
     @Override
-    public List<AbstractContextNode<?>> getChildren() {
-        if (children == null) {
-            children = new ArrayList<>();
-            
-            // 1. The toolkit's context provider implementation (if any)
-            ContextProvider cp = userObject.getContextProvider();
-            if (cp != null) {
-                children.add(new ProviderNode(chatPanel, cp) {
-                    @Override
-                    public String getName() {
-                        return "Context";
-                    }
-                });
-            }
-            
-            // 2. The tools container
-            children.add(new ToolsNode(chatPanel, userObject));
+    protected List<?> fetchChildObjects() {
+        List<Object> objects = new ArrayList<>();
+        
+        // 1. The toolkit's context provider implementation (if any)
+        ContextProvider cp = userObject.getContextProvider();
+        if (cp != null) {
+            objects.add(cp);
         }
-        return children;
+        
+        // 2. The tools container (The toolkit itself acts as the domain object for tools)
+        objects.add(userObject);
+        
+        return objects;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected AbstractContextNode<?> createChildNode(Object obj) {
+        if (obj instanceof ContextProvider cp) {
+            return new ProviderNode(chatPanel, cp) {
+                @Override
+                public String getName() {
+                    return "Context";
+                }
+            };
+        } else if (obj instanceof AbstractToolkit<?> tk) {
+            return new ToolsNode(chatPanel, tk);
+        }
+        return null;
     }
 
     /** {@inheritDoc} */

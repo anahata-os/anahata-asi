@@ -3,7 +3,6 @@
  */
 package uno.anahata.asi.swing.chat.tool;
 
-import java.util.ArrayList;
 import java.util.List;
 import uno.anahata.asi.context.ContextManager;
 import uno.anahata.asi.model.core.AbstractMessage;
@@ -15,9 +14,6 @@ import uno.anahata.asi.swing.chat.ChatPanel;
  * @author anahata
  */
 public class HistoryNode extends AbstractContextNode<ContextManager> {
-
-    /** The cached list of children. */
-    private List<AbstractContextNode<?>> children;
 
     /**
      * Constructs a new HistoryNode.
@@ -42,17 +38,17 @@ public class HistoryNode extends AbstractContextNode<ContextManager> {
 
     /** {@inheritDoc} */
     @Override
-    public List<AbstractContextNode<?>> getChildren() {
-        if (children == null) {
-            children = new ArrayList<>();
-            List<AbstractMessage> history = userObject.getHistory();
-            if (history != null) {
-                for (AbstractMessage msg : history) {
-                    children.add(new MessageNode(chatPanel, msg));
-                }
-            }
+    protected List<?> fetchChildObjects() {
+        return userObject.getHistory();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected AbstractContextNode<?> createChildNode(Object obj) {
+        if (obj instanceof AbstractMessage msg) {
+            return new MessageNode(chatPanel, msg);
         }
-        return children;
+        return null;
     }
 
     /** {@inheritDoc} */

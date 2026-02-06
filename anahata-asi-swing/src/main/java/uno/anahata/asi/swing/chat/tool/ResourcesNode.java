@@ -16,9 +16,6 @@ import uno.anahata.asi.swing.chat.ChatPanel;
  */
 public class ResourcesNode extends AbstractContextNode<ResourceManager> {
 
-    /** The cached list of children. */
-    private List<AbstractContextNode<?>> children;
-
     /**
      * Constructs a new ResourcesNode.
      * @param chatPanel The parent chat panel.
@@ -42,14 +39,17 @@ public class ResourcesNode extends AbstractContextNode<ResourceManager> {
 
     /** {@inheritDoc} */
     @Override
-    public List<AbstractContextNode<?>> getChildren() {
-        if (children == null) {
-            children = new ArrayList<>();
-            for (AbstractResource res : userObject.getResources()) {
-                children.add(new ResourceNode(chatPanel, res));
-            }
+    protected List<?> fetchChildObjects() {
+        return new ArrayList<>(userObject.getResources());
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected AbstractContextNode<?> createChildNode(Object obj) {
+        if (obj instanceof AbstractResource<?, ?> res) {
+            return new ResourceNode(chatPanel, res);
         }
-        return children;
+        return null;
     }
 
     /** {@inheritDoc} */

@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.project.FileOwnerQuery;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ui.OpenProjects;
@@ -25,6 +26,7 @@ import org.openide.util.Lookup;
  * It encapsulates the logic for interacting with the NetBeans TypeProvider SPI
  * and holds the results in a private final field.
  */
+@Slf4j
 public class JavaTypeSearch {
 
     private final List<JavaType> results;
@@ -36,6 +38,8 @@ public class JavaTypeSearch {
      * @param preferOpenProjects whether to prioritize results from open projects.
      */
     public JavaTypeSearch(String query, boolean caseSensitive, boolean preferOpenProjects) {
+        log.info("Starting JavaTypeSearch for query: '{}' (caseSensitive={}, preferOpenProjects={})", query, caseSensitive, preferOpenProjects);
+        
         // Determine SearchType
         final SearchType searchType;
         if (query.contains("*") || query.contains("?")) {
@@ -43,21 +47,31 @@ public class JavaTypeSearch {
         } else {
             searchType = caseSensitive ? SearchType.CAMEL_CASE : SearchType.CASE_INSENSITIVE_CAMEL_CASE;
         }
+        log.info("Determined SearchType: {}", searchType);
 
         // Perform Search
         Collection<? extends TypeProvider> providers = Lookup.getDefault().lookupAll(TypeProvider.class);
+        log.info("Found {} TypeProviders in Lookup.", providers.size());
+        
         final List<TypeDescriptor> descriptors = new ArrayList<>();
         TypeProvider.Context context = TypeProviderAccessor.DEFAULT.createContext(null, query, searchType);
         TypeProvider.Result result = TypeProviderAccessor.DEFAULT.createResult(descriptors, new String[1], context);
         for (TypeProvider provider : providers) {
+            int before = descriptors.size();
             provider.computeTypeNames(context, result);
+            int added = descriptors.size() - before;
+            log.info("TypeProvider '{}' added {} descriptors.", provider.getClass().getSimpleName(), added);
         }
+        
+        log.info("Search returned {} raw descriptors.", descriptors.size());
         
         // Filter for Java-specific descriptors
         List<JavaTypeDescription> javaDescriptors = descriptors.stream()
                 .filter(td -> td instanceof JavaTypeDescription)
                 .map(td -> (JavaTypeDescription) td)
                 .collect(Collectors.toList());
+        
+        log.info("Filtered to {} JavaTypeDescriptions.", javaDescriptors.size());
 
         // Sort Results
         if (!preferOpenProjects) {
@@ -86,6 +100,12 @@ public class JavaTypeSearch {
                 .map(JavaType::new)
                 .collect(Collectors.toList())
         );
+        
+        if (log.isInfoEnabled()) {
+            for (JavaType jt : results) {
+                log.info("Found JavaType: {} (URL: {})", jt.getFqn(), jt.getUrl());
+            }
+        }
     }
 
     /**

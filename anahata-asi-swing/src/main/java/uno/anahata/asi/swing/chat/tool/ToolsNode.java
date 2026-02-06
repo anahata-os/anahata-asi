@@ -3,7 +3,6 @@
  */
 package uno.anahata.asi.swing.chat.tool;
 
-import java.util.ArrayList;
 import java.util.List;
 import javax.swing.Icon;
 import uno.anahata.asi.model.tool.AbstractTool;
@@ -16,9 +15,6 @@ import uno.anahata.asi.swing.chat.ChatPanel;
  * @author anahata
  */
 public class ToolsNode extends AbstractContextNode<AbstractToolkit<?>> {
-
-    /** The cached list of children. */
-    private List<AbstractContextNode<?>> children;
 
     /**
      * Constructs a new ToolsNode.
@@ -41,19 +37,19 @@ public class ToolsNode extends AbstractContextNode<AbstractToolkit<?>> {
         return "Available tools provided by the " + userObject.getName() + " toolkit.";
     }
 
-    /**
-     * {@inheritDoc}
-     * Implementation details: Returns a list of ToolNodes for all tools in the toolkit.
-     */
+    /** {@inheritDoc} */
     @Override
-    public List<AbstractContextNode<?>> getChildren() {
-        if (children == null) {
-            children = new ArrayList<>();
-            for (AbstractTool<?, ?> tool : userObject.getAllTools()) {
-                children.add(new ToolNode(chatPanel, tool));
-            }
+    protected List<?> fetchChildObjects() {
+        return userObject.getAllTools();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected AbstractContextNode<?> createChildNode(Object obj) {
+        if (obj instanceof AbstractTool<?, ?> tool) {
+            return new ToolNode(chatPanel, tool);
         }
-        return children;
+        return null;
     }
 
     /** {@inheritDoc} */

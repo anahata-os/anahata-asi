@@ -48,13 +48,16 @@ public class ToolNode extends AbstractContextNode<AbstractTool<?, ?>> {
         return userObject.getDescription();
     }
 
-    /**
-     * {@inheritDoc}
-     * Implementation details: A tool is always a leaf node.
-     */
+    /** {@inheritDoc} */
     @Override
-    public List<AbstractContextNode<?>> getChildren() {
+    protected List<?> fetchChildObjects() {
         return Collections.emptyList();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected AbstractContextNode<?> createChildNode(Object obj) {
+        return null;
     }
 
     /** {@inheritDoc} */

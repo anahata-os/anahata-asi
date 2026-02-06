@@ -5,12 +5,19 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.netbeans.api.java.source.CompilationController;
 import org.netbeans.api.java.source.ElementHandle;
 import org.netbeans.api.java.source.JavaSource;
@@ -25,13 +32,17 @@ import org.netbeans.modules.refactoring.api.RefactoringSession;
 import org.netbeans.modules.refactoring.api.RenameRefactoring;
 import org.netbeans.modules.refactoring.api.SafeDeleteRefactoring;
 import org.netbeans.modules.refactoring.api.WhereUsedQuery;
+import org.netbeans.modules.refactoring.java.api.ChangeParametersRefactoring;
 import org.netbeans.modules.refactoring.java.api.EncapsulateFieldRefactoring;
 import org.netbeans.modules.refactoring.java.api.ExtractInterfaceRefactoring;
+import org.netbeans.modules.refactoring.java.api.ExtractSuperclassRefactoring;
 import org.netbeans.modules.refactoring.java.api.InlineRefactoring;
+import org.netbeans.modules.refactoring.java.api.InnerToOuterRefactoring;
 import org.netbeans.modules.refactoring.java.api.InvertBooleanRefactoring;
 import org.netbeans.modules.refactoring.java.api.MemberInfo;
 import org.netbeans.modules.refactoring.java.api.PullUpRefactoring;
 import org.netbeans.modules.refactoring.java.api.PushDownRefactoring;
+import org.netbeans.modules.refactoring.java.api.UseSuperTypeRefactoring;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.util.Lookup;
@@ -50,6 +61,23 @@ import uno.anahata.asi.tool.AiToolkit;
 @Slf4j
 @AiToolkit("Programmatic refactoring tools for NetBeans. Use these tools to safely rename, move, copy, or delete code elements while maintaining project integrity.")
 public class Refactor {
+
+    /**
+     * DTO for specifying changes to method parameters.
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ParameterChange {
+        /** The 0-based index of the parameter in the original method. Use -1 for new parameters. */
+        private int originalIndex;
+        /** The new name for the parameter. */
+        private String name;
+        /** The new type for the parameter (FQN or simple name). */
+        private String type;
+        /** The default value to use at call sites for new parameters. */
+        private String defaultValue;
+    }
 
     /**
      * Performs a programmatic rename refactoring of a file or class within the IDE.
@@ -90,17 +118,10 @@ public class Refactor {
         }
 
         MoveRefactoring refactoring = new MoveRefactoring(getLookupForFile(sourceFo));
-        refactoring.setTarget(Lookups.singleton(targetFo));
+        // CRITICAL: Provide both FileObject and its URL to ensure the refactoring engine can resolve the package
+        refactoring.setTarget(Lookups.fixed(targetFo, targetFo.toURL()));
         
-        String result = executeRefactoring(refactoring, "Move " + sourceFo.getName());
-        
-        // Post-check for cross-project moves
-        File targetFile = new File(FileUtil.toFile(targetFo), sourceFo.getNameExt());
-        if (!targetFile.exists()) {
-            result += "\nWARNING: Target file not found at " + targetFile.getPath() + ". The refactoring might have failed or is not supported across these locations.";
-        }
-        
-        return result;
+        return executeRefactoring(refactoring, "Move " + sourceFo.getName());
     }
 
     /**
@@ -123,17 +144,10 @@ public class Refactor {
         }
 
         CopyRefactoring refactoring = new CopyRefactoring(getLookupForFile(sourceFo));
-        refactoring.setTarget(Lookups.singleton(targetFo));
+        // CRITICAL: Provide both FileObject and its URL to ensure the refactoring engine can resolve the package
+        refactoring.setTarget(Lookups.fixed(targetFo, targetFo.toURL()));
         
-        String result = executeRefactoring(refactoring, "Copy " + sourceFo.getName());
-
-        // Post-check
-        File targetFile = new File(FileUtil.toFile(targetFo), sourceFo.getNameExt());
-        if (!targetFile.exists()) {
-            result += "\nWARNING: Target file not found at " + targetFile.getPath() + ".";
-        }
-
-        return result;
+        return executeRefactoring(refactoring, "Copy " + sourceFo.getName());
     }
 
     /**
@@ -184,13 +198,17 @@ public class Refactor {
      * 
      * @param filePath The absolute path of the Java file.
      * @param fieldName The name of the field to encapsulate.
+     * @param getterName The name for the getter method (optional, will be generated if null).
+     * @param setterName The name for the setter method (optional, will be generated if null).
      * @return A detailed log of the refactoring process.
      * @throws Exception if the operation fails.
      */
     @AiTool("Encapsulates a field by creating a getter and setter and updating all references to use them.")
     public String encapsulateField(
             @AiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
-            @AiToolParam("The name of the field to encapsulate.") String fieldName) throws Exception {
+            @AiToolParam("The name of the field to encapsulate.") String fieldName,
+            @AiToolParam("The name for the getter method.") String getterName,
+            @AiToolParam("The name for the setter method.") String setterName) throws Exception {
         FileObject fo = getFileObject(filePath);
         TreePathHandle handle = getTreePathHandleForMember(fo, fieldName);
         if (handle == null) {
@@ -198,6 +216,13 @@ public class Refactor {
         }
 
         EncapsulateFieldRefactoring refactoring = new EncapsulateFieldRefactoring(handle);
+        
+        String gName = (getterName != null && !getterName.isEmpty()) ? getterName : "get" + StringUtils.capitalize(fieldName);
+        String sName = (setterName != null && !setterName.isEmpty()) ? setterName : "set" + StringUtils.capitalize(fieldName);
+        
+        refactoring.setGetterName(gName);
+        refactoring.setSetterName(sName);
+        
         return executeRefactoring(refactoring, "Encapsulate Field " + fieldName);
     }
 
@@ -287,7 +312,7 @@ public class Refactor {
         refactoring.setTargetType(targetHandle);
         
         // Resolve members to MemberInfo
-        List<MemberInfo> members = new ArrayList<>();
+        List<MemberInfo<ElementHandle<? extends Element>>> members = new ArrayList<>();
         resolveMemberInfos(fo, memberNames, members);
         
         refactoring.setMembers(members.toArray(new MemberInfo[0]));
@@ -316,12 +341,128 @@ public class Refactor {
         PushDownRefactoring refactoring = new PushDownRefactoring(classHandle);
         
         // Resolve members to MemberInfo
-        List<MemberInfo> members = new ArrayList<>();
+        List<MemberInfo<ElementHandle<? extends Element>>> members = new ArrayList<>();
         resolveMemberInfos(fo, memberNames, members);
         
         refactoring.setMembers(members.toArray(new MemberInfo[0]));
         
         return executeRefactoring(refactoring, "Push Down from " + fo.getName());
+    }
+
+    /**
+     * Changes the signature of a method, including its name, return type, and parameters.
+     * 
+     * @param filePath The absolute path of the Java file.
+     * @param methodName The current name of the method.
+     * @param newName The new name for the method.
+     * @param newReturnType The new return type (FQN or simple name).
+     * @param parameterChanges The new parameter configuration.
+     * @return A detailed log of the refactoring process.
+     * @throws Exception if the operation fails.
+     */
+    @AiTool("Changes a method's signature (name, return type, parameters) and updates all call sites in the project.")
+    public String changeMethodSignature(
+            @AiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
+            @AiToolParam("The current name of the method.") String methodName,
+            @AiToolParam("The new name for the method.") String newName,
+            @AiToolParam("The new return type.") String newReturnType,
+            @AiToolParam("The new parameter list.") List<ParameterChange> parameterChanges) throws Exception {
+        FileObject fo = getFileObject(filePath);
+        TreePathHandle handle = getTreePathHandleForMember(fo, methodName);
+        if (handle == null) {
+            return "Method '" + methodName + "' not found in " + filePath;
+        }
+
+        ChangeParametersRefactoring refactoring = new ChangeParametersRefactoring(handle);
+        refactoring.setMethodName(newName);
+        refactoring.setReturnType(newReturnType);
+        
+        ChangeParametersRefactoring.ParameterInfo[] infos = new ChangeParametersRefactoring.ParameterInfo[parameterChanges.size()];
+        for (int i = 0; i < parameterChanges.size(); i++) {
+            ParameterChange pc = parameterChanges.get(i);
+            infos[i] = new ChangeParametersRefactoring.ParameterInfo(pc.getOriginalIndex(), pc.getName(), pc.getType(), pc.getDefaultValue());
+        }
+        refactoring.setParameterInfo(infos);
+        
+        return executeRefactoring(refactoring, "Change Method Signature: " + methodName);
+    }
+
+    /**
+     * Extracts a superclass from an existing class.
+     * 
+     * @param filePath The absolute path of the Java file.
+     * @param superclassName The name for the new superclass.
+     * @param memberNames The names of the members to move to the superclass.
+     * @return A detailed log of the refactoring process.
+     * @throws Exception if the operation fails.
+     */
+    @AiTool("Extracts a new superclass from a class, moving selected members to it.")
+    public String extractSuperclass(
+            @AiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
+            @AiToolParam("The name for the new superclass.") String superclassName,
+            @AiToolParam("The names of the members to extract.") List<String> memberNames) throws Exception {
+        FileObject fo = getFileObject(filePath);
+        TreePathHandle classHandle = getTreePathHandleForClass(fo);
+        if (classHandle == null) {
+            return "Class not found in " + filePath;
+        }
+
+        ExtractSuperclassRefactoring refactoring = new ExtractSuperclassRefactoring(classHandle);
+        refactoring.setSuperClassName(superclassName);
+        
+        List<MemberInfo<ElementHandle<? extends Element>>> members = new ArrayList<>();
+        resolveMemberInfos(fo, memberNames, members);
+        refactoring.setMembers(members.toArray(new MemberInfo[0]));
+        
+        return executeRefactoring(refactoring, "Extract Superclass " + superclassName);
+    }
+
+    /**
+     * Replaces usages of a class with a supertype where possible.
+     * 
+     * @param filePath The absolute path of the Java file.
+     * @param supertypeFqn The FQN of the supertype to use.
+     * @return A detailed log of the refactoring process.
+     * @throws Exception if the operation fails.
+     */
+    @AiTool("Replaces usages of a class with a supertype (interface or superclass) throughout the project where possible.")
+    public String useSupertype(
+            @AiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
+            @AiToolParam("The FQN of the supertype to use.") String supertypeFqn) throws Exception {
+        FileObject fo = getFileObject(filePath);
+        TreePathHandle classHandle = getTreePathHandleForClass(fo);
+        if (classHandle == null) {
+            return "Class not found in " + filePath;
+        }
+
+        UseSuperTypeRefactoring refactoring = new UseSuperTypeRefactoring(classHandle);
+        ElementHandle<TypeElement> superHandle = ElementHandle.createTypeElementHandle(javax.lang.model.element.ElementKind.CLASS, supertypeFqn);
+        refactoring.setTargetSuperType(superHandle);
+        
+        return executeRefactoring(refactoring, "Use Supertype " + supertypeFqn);
+    }
+
+    /**
+     * Moves a nested/inner class to the top level.
+     * 
+     * @param filePath The absolute path of the Java file containing the inner class.
+     * @param innerClassName The name of the inner class to move.
+     * @return A detailed log of the refactoring process.
+     * @throws Exception if the operation fails.
+     */
+    @AiTool("Moves a nested (inner) class to its own top-level file, updating all references.")
+    public String moveInnerToTopLevel(
+            @AiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
+            @AiToolParam("The name of the inner class to move.") String innerClassName) throws Exception {
+        FileObject fo = getFileObject(filePath);
+        TreePathHandle handle = getTreePathHandleForMember(fo, innerClassName);
+        if (handle == null) {
+            return "Inner class '" + innerClassName + "' not found in " + filePath;
+        }
+
+        InnerToOuterRefactoring refactoring = new InnerToOuterRefactoring(handle);
+        refactoring.setClassName(innerClassName);
+        return executeRefactoring(refactoring, "Move Inner to Top Level: " + innerClassName);
     }
 
     /**
@@ -627,7 +768,7 @@ public class Refactor {
     /**
      * Resolves member names to MemberInfo objects.
      */
-    private void resolveMemberInfos(FileObject fo, List<String> memberNames, List<MemberInfo> members) throws IOException {
+    private void resolveMemberInfos(FileObject fo, List<String> memberNames, List<MemberInfo<ElementHandle<? extends Element>>> members) throws IOException {
         JavaSource js = JavaSource.forFileObject(fo);
         if (js == null) return;
 
@@ -639,7 +780,8 @@ public class Refactor {
                 if (te != null) {
                     for (Element e : te.getEnclosedElements()) {
                         if (memberNames.contains(e.getSimpleName().toString())) {
-                            members.add(MemberInfo.create(e, parameter));
+                            // Use raw type for the list addition to avoid nested generic mismatch
+                            ((List)members).add(MemberInfo.create(e, parameter));
                         }
                     }
                 }

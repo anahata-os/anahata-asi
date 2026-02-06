@@ -161,6 +161,11 @@ public class ConversationPanel extends JPanel {
 
     /**
      * Renders the conversation view by incrementally updating the message panels.
+     * <p>
+     * This method is now strictly structural: it adds or removes panels based on 
+     * the history but does NOT call render() on the panels themselves. Panels 
+     * are responsible for their own rendering via property change listeners.
+     * </p>
      */
     public void render() {        
         // Filter out tool messages from the visible history.
@@ -168,8 +173,8 @@ public class ConversationPanel extends JPanel {
                 .filter(msg -> !(msg instanceof AbstractToolMessage))
                 .collect(Collectors.toList());
         
-        log.info("Rendering history for session {}: {} messages (total history: {})", 
-                chat.getConfig().getSessionId(), history.size(), chat.getContextManager().getHistory().size());
+        log.info("Updating conversation structure for session {}: {} messages", 
+                chat.getConfig().getSessionId(), history.size());
 
         List<AbstractMessage> toRemove = cachedMessagePanels.keySet().stream()
                 .filter(msg -> !history.contains(msg))
@@ -199,7 +204,8 @@ public class ConversationPanel extends JPanel {
                 if (i >= messagesPanel.getComponentCount() || messagesPanel.getComponent(i) != panel) {
                     messagesPanel.add(panel, i);
                 }
-                panel.render();
+                // FIXED: Removed recursive panel.render() call. 
+                // The panel will render itself via addNotify() or property change listeners.
             }
         }
 

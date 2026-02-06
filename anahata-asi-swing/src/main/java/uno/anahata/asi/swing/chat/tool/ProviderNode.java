@@ -22,9 +22,6 @@ import uno.anahata.asi.tool.ToolManager;
  */
 public class ProviderNode extends AbstractContextNode<ContextProvider> {
 
-    /** The cached list of children. */
-    private List<AbstractContextNode<?>> children;
-
     /**
      * Constructs a new ProviderNode.
      * @param chatPanel The parent chat panel.
@@ -46,34 +43,31 @@ public class ProviderNode extends AbstractContextNode<ContextProvider> {
         return userObject.getDescription();
     }
 
-    /**
-     * {@inheritDoc}
-     * Implementation details:
-     * 1. If the provider is a ToolManager, it adds all its toolkits as children.
-     * 2. For other providers, it adds all standard child providers, filtering 
-     *    out those that are already represented as toolkits to avoid duplication.
-     */
+    /** {@inheritDoc} */
     @Override
-    public List<AbstractContextNode<?>> getChildren() {
-        if (children == null) {
-            children = new ArrayList<>();
-            
-            if (userObject instanceof ToolManager tm) {
-                // ToolManager is special: it shows toolkits. 
-                for (AbstractToolkit<?> tk : tm.getToolkits().values()) {
-                    children.add(new ToolkitNode(chatPanel, tk));
-                }
-            } else {
-                // Standard children providers
-                for (ContextProvider child : userObject.getChildrenProviders()) {
-                    // Avoid double-counting toolkits if they are also providers
-                    if (!(child instanceof AbstractToolkit)) {
-                        children.add(new ProviderNode(chatPanel, child));
-                    }
+    protected List<?> fetchChildObjects() {
+        List<Object> objects = new ArrayList<>();
+        if (userObject instanceof ToolManager tm) {
+            objects.addAll(new ArrayList<>(tm.getToolkits().values()));
+        } else {
+            for (ContextProvider child : userObject.getChildrenProviders()) {
+                if (!(child instanceof AbstractToolkit)) {
+                    objects.add(child);
                 }
             }
         }
-        return children;
+        return objects;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected AbstractContextNode<?> createChildNode(Object obj) {
+        if (obj instanceof AbstractToolkit<?> tk) {
+            return new ToolkitNode(chatPanel, tk);
+        } else if (obj instanceof ContextProvider cp) {
+            return new ProviderNode(chatPanel, cp);
+        }
+        return null;
     }
 
     /** {@inheritDoc} */

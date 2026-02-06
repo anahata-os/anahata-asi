@@ -19,9 +19,6 @@ import uno.anahata.asi.swing.chat.ChatPanel;
  */
 public class ContextManagerNode extends AbstractContextNode<ContextManager> {
 
-    /** The cached list of children. */
-    private List<AbstractContextNode<?>> children;
-
     /**
      * Constructs a new ContextManagerNode.
      * @param chatPanel The parent chat panel.
@@ -45,25 +42,32 @@ public class ContextManagerNode extends AbstractContextNode<ContextManager> {
 
     /** {@inheritDoc} */
     @Override
-    public List<AbstractContextNode<?>> getChildren() {
-        if (children == null) {
-            children = new ArrayList<>();
-            
-            // 1. Providers (excluding toolkits which are handled by ToolManager)
-            for (ContextProvider cp : userObject.getProviders()) {
-                if (cp instanceof AbstractToolkit) continue;
-                
-                if (cp instanceof ResourceManager rm) {
-                    children.add(new ResourcesNode(chatPanel, rm));
-                } else {
-                    children.add(new ProviderNode(chatPanel, cp));
-                }
-            }
-            
-            // 2. History
-            children.add(new HistoryNode(chatPanel, userObject));
+    protected List<?> fetchChildObjects() {
+        List<Object> objects = new ArrayList<>();
+        
+        // 1. Providers (excluding toolkits which are handled by ToolManager)
+        for (ContextProvider cp : userObject.getProviders()) {
+            if (cp instanceof AbstractToolkit) continue;
+            objects.add(cp);
         }
-        return children;
+        
+        // 2. History (The ContextManager itself acts as the domain object for history)
+        objects.add(userObject);
+        
+        return objects;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected AbstractContextNode<?> createChildNode(Object obj) {
+        if (obj instanceof ResourceManager rm) {
+            return new ResourcesNode(chatPanel, rm);
+        } else if (obj instanceof ContextProvider cp) {
+            return new ProviderNode(chatPanel, cp);
+        } else if (obj instanceof ContextManager cm) {
+            return new HistoryNode(chatPanel, cm);
+        }
+        return null;
     }
 
     /** {@inheritDoc} */

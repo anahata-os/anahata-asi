@@ -2,22 +2,17 @@
 package uno.anahata.asi.nb.tools.files.nb;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.awt.Image;
 import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.Icon;
 import org.openide.filesystems.FileAttributeEvent;
 import org.openide.filesystems.FileChangeListener;
 import org.openide.filesystems.FileEvent;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileRenameEvent;
 import org.openide.filesystems.FileUtil;
-import org.openide.loaders.DataObject;
-import org.openide.util.ImageUtilities;
 import uno.anahata.asi.model.core.Rebindable;
 import uno.anahata.asi.model.resource.AbstractPathResource;
-import uno.anahata.asi.swing.icons.IconUtils;
 
 /**
  * A helper class that manages the lifecycle and event listening for NetBeans 
@@ -75,29 +70,9 @@ public class NbFileObjectResourceHelper implements FileChangeListener, Rebindabl
             this.fileObject = FileUtil.toFileObject(new File(owner.getPath()));
             if (this.fileObject != null) {
                 setupListener();
-                restoreIcon();
             }
         }
         return fileObject;
-    }
-
-    /**
-     * Re-registers the authentic IDE icon in the global registry during restoration.
-     */
-    private void restoreIcon() {
-        if (owner != null && owner.getIconId() != null && owner.getIconId().startsWith("nb.file.")) {
-            if (IconUtils.getIcon(owner.getIconId()) == null) {
-                try {
-                    DataObject dobj = DataObject.find(fileObject);
-                    Image img = dobj.getNodeDelegate().getIcon(java.beans.BeanInfo.ICON_COLOR_16x16);
-                    Icon icon = ImageUtilities.image2Icon(img);
-                    IconUtils.registerIcon(owner.getIconId(), icon);
-                    LOG.log(Level.INFO, "Restored icon for resource: {0}", owner.getIconId());
-                } catch (Exception e) {
-                    LOG.log(Level.WARNING, "Failed to restore icon for resource: " + owner.getPath(), e);
-                }
-            }
-        }
     }
 
     /**

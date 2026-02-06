@@ -12,9 +12,9 @@ import uno.anahata.asi.swing.chat.ChatPanel;
  * A TreeTableModel that provides a hierarchical, JNDI-style view of the entire 
  * AI context using unified AbstractContextNodes.
  * <p>
- * This model is designed for high performance by using cached token counts 
- * and status fields in the nodes, ensuring that the {@code getValueAt} 
- * method remains O(1).
+ * This model is designed for high performance and UI stability. It preserves 
+ * node identity across refreshes, ensuring that the tree view remains stable 
+ * (no jumping or collapsing) when the underlying context changes.
  * </p>
  * <p>
  * It uses a single {@link ContextManagerNode} as the root of the hierarchy.
@@ -39,12 +39,27 @@ public class ContextTreeTableModel extends AbstractTreeTableModel {
 
     /**
      * Refreshes the model's data from the ContextManager and notifies the view of the change.
-     * Implementation details: It rebuilds the root node as a single ContextManagerNode.
+     * <p>
+     * Implementation details: It preserves the root node instance if it already 
+     * exists, triggering a recursive refresh of the node hierarchy. 
+     * </p>
+     * <p>
+     * To prevent the 'jumping' behavior, it uses identity-preserving nodes and 
+     * fires a structure change event on the root.
+     * </p>
      */
     public final void refresh() {
-        log.info("Rebuilding context tree root for chat: {}", chatPanel.getChat().getShortId());
-        this.root = new ContextManagerNode(chatPanel, chatPanel.getChat().getContextManager());
-        modelSupport.fireTreeStructureChanged(new TreePath(root));
+        if (this.root instanceof ContextManagerNode cmn) {
+            log.info("Refreshing existing context tree root for chat: {}", chatPanel.getChat().getShortId());
+            cmn.refresh();
+            // fireTreeStructureChanged is the safest way to notify of deep changes.
+            // UI stability is maintained by preserving node instances.
+            modelSupport.fireTreeStructureChanged(new TreePath(root));
+        } else {
+            log.info("Creating new context tree root for chat: {}", chatPanel.getChat().getShortId());
+            this.root = new ContextManagerNode(chatPanel, chatPanel.getChat().getContextManager());
+            modelSupport.fireTreeStructureChanged(new TreePath(root));
+        }
     }
     
     /**
@@ -52,7 +67,8 @@ public class ContextTreeTableModel extends AbstractTreeTableModel {
      */
     public void refreshTokens() {
         if (root instanceof AbstractContextNode<?> node) {
-            node.refreshTokens();
+            node.refresh();
+            modelSupport.fireTreeStructureChanged(new TreePath(root));
         }
     }
 

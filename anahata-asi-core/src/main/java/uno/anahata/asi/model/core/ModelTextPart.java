@@ -3,6 +3,7 @@ package uno.anahata.asi.model.core;
 
 import lombok.Getter;
 import lombok.Setter;
+import uno.anahata.asi.chat.ChatConfig;
 
 
 /**
@@ -29,6 +30,12 @@ public class ModelTextPart extends TextPart implements ThoughtSignature {
         super(message, text);
         this.thoughtSignature = thoughtSignature;
         this.thought = thought;
+        
+        // Initialize expanded state for thoughts based on config. 
+        // No 'Catenaccio' null checks here - we trust the architecture!
+        if (thought) {
+            setExpanded(getChatConfig().isExpandThoughts());
+        }
         
         // Leaf class publication
         message.addPart(this);

@@ -170,9 +170,8 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
      * Toggles the visibility of the content container.
      */
     private void toggleExpanded() {
-        getContentContainer().setVisible(!getContentContainer().isVisible());
-        revalidate();
-        repaint();
+        part.setExpanded(!part.isExpanded());
+        // The property change listener will trigger render()
     }
 
     /**
@@ -190,6 +189,7 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
     public final void render() {
         updateHeaderInfoText();
         updateHeaderButtons();
+        updateTurnsLeftLabel();
         renderContent();
         renderFooterInternal();
         updateContentVisibility();
@@ -212,7 +212,24 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
 
         pruningToggleButton.setVisible(prune);
         removeButton.setVisible(remove);
-        turnsLeftLabel.setVisible(prune);
+        
+        // Visibility is also constrained by the turnsLeft value in updateTurnsLeftLabel
+        if (!prune) {
+            turnsLeftLabel.setVisible(false);
+        }
+    }
+
+    /**
+     * Updates the text and visibility of the turns left label.
+     */
+    protected void updateTurnsLeftLabel() {
+        int turnsLeft = part.getTurnsLeft();
+        if (turnsLeft >= 0) {
+            turnsLeftLabel.setText("(" + turnsLeft + ")");
+            turnsLeftLabel.setVisible(true);
+        } else {
+            turnsLeftLabel.setVisible(false);
+        }
     }
 
     /**
@@ -236,9 +253,6 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
         if (!newTitle.equals(getTitle())) {
             setTitle(newTitle);
         }
-        
-        // Update turns left label in the action panel
-        turnsLeftLabel.setText(String.valueOf(part.getTurnsLeft()));
     }
 
     private void renderFooterInternal() {
@@ -274,7 +288,7 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
      */
     protected void updateContentVisibility() {
         boolean isEffectivelyPruned = part.isEffectivelyPruned();
-        boolean shouldShowContent = !isEffectivelyPruned || chatConfig.isShowPrunedParts();
+        boolean shouldShowContent = (!isEffectivelyPruned || chatConfig.isShowPrunedParts()) && part.isExpanded();
         getContentContainer().setVisible(shouldShowContent);
     }
 }

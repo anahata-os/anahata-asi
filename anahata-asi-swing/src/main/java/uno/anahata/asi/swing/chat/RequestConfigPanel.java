@@ -50,6 +50,10 @@ public class RequestConfigPanel extends JPanel implements PropertyChangeListener
     private SliderSpinner candidateCountControl;
     /** Checkbox for session-level streaming toggle. */
     private JCheckBox streamingCheckbox;
+    /** Checkbox for including thoughts in the response. */
+    private JCheckBox includeThoughtsCheckbox;
+    /** Checkbox for expanding thoughts by default. */
+    private JCheckBox expandThoughtsCheckbox;
     /** Panel for response modalities checkboxes. */
     private JPanel modalitiesPanel;
     /** Panel for server tools checkboxes. */
@@ -83,7 +87,7 @@ public class RequestConfigPanel extends JPanel implements PropertyChangeListener
         // Column 3: Control (fill, grows)
         FormLayout layout = new FormLayout(
             "right:pref, 4dlu, fill:pref:grow",
-            "pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 10dlu, pref, 10dlu, pref"
+            "pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 10dlu, pref, 10dlu, pref"
         );
         
         JPanel mainPanel = new JPanel(layout);
@@ -95,6 +99,18 @@ public class RequestConfigPanel extends JPanel implements PropertyChangeListener
         mainPanel.add(new JLabel("Stream Tokens:"), "1, " + row);
         streamingCheckbox = new JCheckBox();
         mainPanel.add(streamingCheckbox, "3, " + row);
+        row += 2;
+
+        // Include Thoughts
+        mainPanel.add(new JLabel("Include Thoughts:"), "1, " + row);
+        includeThoughtsCheckbox = new JCheckBox();
+        mainPanel.add(includeThoughtsCheckbox, "3, " + row);
+        row += 2;
+
+        // Expand Thoughts
+        mainPanel.add(new JLabel("Expand Thoughts:"), "1, " + row);
+        expandThoughtsCheckbox = new JCheckBox();
+        mainPanel.add(expandThoughtsCheckbox, "3, " + row);
         row += 2;
 
         // Temperature
@@ -166,6 +182,16 @@ public class RequestConfigPanel extends JPanel implements PropertyChangeListener
         streamingCheckbox.addActionListener(e -> {
             chat.getConfig().setStreaming(streamingCheckbox.isSelected());
         });
+
+        includeThoughtsCheckbox.addActionListener(e -> {
+            boolean selected = includeThoughtsCheckbox.isSelected();
+            chat.getConfig().setIncludeThoughts(selected);
+            expandThoughtsCheckbox.setEnabled(selected);
+        });
+
+        expandThoughtsCheckbox.addActionListener(e -> {
+            chat.getConfig().setExpandThoughts(expandThoughtsCheckbox.isSelected());
+        });
     }
 
     /**
@@ -177,6 +203,9 @@ public class RequestConfigPanel extends JPanel implements PropertyChangeListener
         AbstractModel model = chat.getSelectedModel();
         
         streamingCheckbox.setSelected(chat.getConfig().isStreaming());
+        includeThoughtsCheckbox.setSelected(chat.getConfig().isIncludeThoughts());
+        expandThoughtsCheckbox.setSelected(chat.getConfig().isExpandThoughts());
+        expandThoughtsCheckbox.setEnabled(chat.getConfig().isIncludeThoughts());
         
         float temp = config.getTemperature() != null ? config.getTemperature() : (model != null && model.getDefaultTemperature() != null ? model.getDefaultTemperature() : 1.0f);
         temperatureControl.setValue((double) temp);

@@ -28,7 +28,19 @@ This is the V2 NetBeans integration module for the Anahata ASI framework.
 -   **`commons-io` Isolation**: This module explicitly bundles `commons-io` to avoid conflicts with the version used by the NetBeans Maven Embedder.
 -   **Automatic Spec Dependencies**: All artifacts listed in the `<dependencies>` section of the `pom.xml` are automatically included as `spec` dependencies in the module manifest by the `nbm-maven-plugin`. Do not manually add them to the `moduleDependencies` configuration unless they require an `impl` dependency type.
 
-## 5. Very Important Notes
+## 5. JIT Testing & Classpath Safety
+
+> [!TIP]
+> **Automated Classpath Safety**
+> When using `NetBeansProjectJVM.compileAndExecuteInProject` on this project, the tool automatically detects the NBM packaging and filters out NetBeans Platform/Stub JARs from the dependency list. 
+> **Rationale:** This prevents `LinkageError`s by ensuring that the plugin's parent classloader remains the sole provider of IDE APIs, while still allowing you to include other project-specific dependencies.
+
+> [!IMPORTANT]
+> **"Compile on Save" Delay Protocol**
+> When testing code modified via `suggestChange` using `NetBeansProjectJVM`, you must account for the asynchronous nature of the IDE's "Compile on Save" feature.
+> **Mandatory Delay**: Always include a 2-3 second delay (e.g., `Thread.sleep(2000)`) at the beginning of your `Anahata.call()` method to ensure the IDE has finished background compilation before your test code executes.
+
+## 6. Very Important Notes
 - **Do not "clean" the project** to avoid deleting runtime JARs.
 - **nbmreload** is the preferred way to test changes to tools or dependencies.
 - **CRITICAL (Reload Requirement):** Changing a file in this plugin project or any of its dependencies (like `anahata-asi-core` or `anahata-asi-swing`) **DOES NOT** automatically reload the plugin. You MUST manually invoke `nbmreload` (or `build-with-dependencies` followed by `nbmreload`) for your changes to take effect in the IDE's runtime.

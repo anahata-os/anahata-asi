@@ -44,13 +44,16 @@ public class ResourceNode extends AbstractContextNode<AbstractResource<?, ?>> {
         return userObject.getDescription();
     }
 
-    /**
-     * {@inheritDoc}
-     * Implementation details: A resource is always a leaf node.
-     */
+    /** {@inheritDoc} */
     @Override
-    public List<AbstractContextNode<?>> getChildren() {
+    protected List<?> fetchChildObjects() {
         return Collections.emptyList();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected AbstractContextNode<?> createChildNode(Object obj) {
+        return null;
     }
 
     /** {@inheritDoc} */

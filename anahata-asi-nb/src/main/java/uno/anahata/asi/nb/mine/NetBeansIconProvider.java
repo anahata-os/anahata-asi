@@ -4,6 +4,7 @@ package uno.anahata.asi.nb.mine;
 import java.awt.Image;
 import java.io.File;
 import javax.swing.Icon;
+import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectUtils;
 import org.openide.filesystems.FileObject;
@@ -28,6 +29,7 @@ import uno.anahata.asi.swing.icons.IconUtils;
  * 
  * @author anahata
  */
+@Slf4j
 public class NetBeansIconProvider implements IconProvider {
 
     /** {@inheritDoc} */
@@ -44,13 +46,17 @@ public class NetBeansIconProvider implements IconProvider {
                 try {
                     DataObject dobj = DataObject.find(fo);
                     Image img = dobj.getNodeDelegate().getIcon(java.beans.BeanInfo.ICON_COLOR_16x16);
-                    return ImageUtilities.image2Icon(img);
+                    if (img != null) {
+                        return ImageUtilities.image2Icon(img);
+                    }
                 } catch (Exception e) {
-                    // Fallback to default
+                    // FIXED: Elevated to warn for visibility, but kept concise.
+                    log.warn("Failed to resolve live icon for resource: {} ({})", apr.getPath(), e.getMessage());
                 }
             }
         }
         
+        // Fallback to the global registry for static icons
         return IconUtils.getIcon(cp.getIconId());
     }
 

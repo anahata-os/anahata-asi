@@ -108,6 +108,12 @@ public class ChatConfig {
     /** If true, token streaming is enabled for model responses. */
     private boolean streaming = true;
     
+    /** If true, the model is requested to include its internal thought process in the response. */
+    private boolean includeThoughts = true;
+
+    /** If true, thought parts are initially expanded in the UI. */
+    private boolean expandThoughts = false;
+
     /** The maximum number of times to retry an API call on failure. */
     private int apiMaxRetries = 5;
 

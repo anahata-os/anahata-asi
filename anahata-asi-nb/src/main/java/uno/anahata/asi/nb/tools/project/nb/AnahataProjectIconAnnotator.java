@@ -41,7 +41,11 @@ import uno.anahata.asi.nb.tools.files.nb.FileAnnotationProvider;
 public class AnahataProjectIconAnnotator implements ProjectIconAnnotator, ChangeListener {
     private static final Logger LOG = Logger.getLogger(AnahataProjectIconAnnotator.class.getName());
     
-    /** The badge image to overlay on project icons. */
+    /** 
+     * The badge image to overlay on project icons. 
+     * FIXED: Renamed to avoid shadowing V1's icon.
+     */
+    private static final String BADGE_ICON_PATH = "icons/v2/anahata.png";
     private static final Image BADGE;
     
     /** The list of change listeners for icon refresh. */
@@ -49,7 +53,7 @@ public class AnahataProjectIconAnnotator implements ProjectIconAnnotator, Change
 
     static {
         LOG.info("AnahataProjectIconAnnotator class loaded.");
-        Image img = ImageUtilities.loadImage("icons/anahata.png");
+        Image img = ImageUtilities.loadImage(BADGE_ICON_PATH);
         if (img != null) {
             BADGE = img.getScaledInstance(8, 8, Image.SCALE_SMOOTH);
         } else {
@@ -155,7 +159,9 @@ public class AnahataProjectIconAnnotator implements ProjectIconAnnotator, Change
      * @return A cleaned, deduplicated string.
      */
     private String deduplicateTooltip(String tooltip) {
-        if (tooltip == null) return null;
+        if (tooltip == null) {
+            return null;
+        }
         String text = tooltip.replaceAll("(?i)<html>", "").replaceAll("(?i)</html>", "");
         String[] lines = text.split("<br>|\n");
         Set<String> uniqueLines = new LinkedHashSet<>();

@@ -41,9 +41,9 @@ public class JavaType {
         }
         this.url = fo.toURL();
         
-        String outer = descriptor.getOuterName();
-        String simple = descriptor.getSimpleName();
-        this.fqn = (outer != null && !outer.isEmpty()) ? outer + "." + simple : simple;
+        // Use the binary name from the handle as the FQN. 
+        // This is more reliable than descriptor.getTypeName() which often returns only the simple name.
+        this.fqn = handle.getBinaryName();
     }
 
     /**

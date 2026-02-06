@@ -1,7 +1,6 @@
 /* Licensed under the Apache License, Version 2.0 */
 package uno.anahata.asi.nb.tools.project.context;
 
-import javax.swing.Icon;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.project.Project;
@@ -10,7 +9,6 @@ import uno.anahata.asi.context.BasicContextProvider;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectAlertsContextProvider;
 import uno.anahata.asi.nb.tools.project.nb.AnahataProjectIconAnnotator;
-import uno.anahata.asi.swing.icons.IconUtils;
 
 /**
  * A hierarchical context provider for a specific NetBeans project.
@@ -47,10 +45,6 @@ public class ProjectContextProvider extends BasicContextProvider {
         this.project = project;
         this.projectPath = project.getProjectDirectory().getPath();
         this.iconId = "nb.project." + projectPath;
-        
-        // Register the authentic project icon in the global registry
-        Icon icon = ProjectUtils.getInformation(project).getIcon();
-        IconUtils.registerIcon(iconId, icon);
         
         // Register with parent
         this.setParent(projectsToolkit);
@@ -101,7 +95,10 @@ public class ProjectContextProvider extends BasicContextProvider {
     @Override
     public String getName() {
         Project p = getProject();
-        return p != null ? ProjectUtils.getInformation(p).getDisplayName() : super.getName();
+        if (p != null) {
+            return ProjectUtils.getInformation(p).getDisplayName();
+        }
+        return super.getName();
     }
 
     /** {@inheritDoc} */

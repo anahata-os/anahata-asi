@@ -72,6 +72,12 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
     private int tokenCount;
 
     /**
+     * Persistent UI state indicating if this part's panel is expanded in the conversation view.
+     */
+    @Schema(hidden = true)
+    private boolean expanded = true;
+
+    /**
      * Constructs a new AbstractPart.
      * 
      * @param message The parent message.
@@ -104,6 +110,17 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
         int oldTokenCount = this.tokenCount;
         this.tokenCount = tokenCount;
         propertyChangeSupport.firePropertyChange("tokenCount", oldTokenCount, tokenCount);
+    }
+
+    /**
+     * Sets the expanded state and fires a property change event.
+     * 
+     * @param expanded The new expanded state.
+     */
+    public void setExpanded(boolean expanded) {
+        boolean oldExpanded = this.expanded;
+        this.expanded = expanded;
+        propertyChangeSupport.firePropertyChange("expanded", oldExpanded, expanded);
     }
 
     /**

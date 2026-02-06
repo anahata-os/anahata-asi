@@ -3,7 +3,6 @@
  */
 package uno.anahata.asi.swing.chat.tool;
 
-import java.util.ArrayList;
 import java.util.List;
 import uno.anahata.asi.model.core.AbstractMessage;
 import uno.anahata.asi.model.core.AbstractPart;
@@ -15,9 +14,6 @@ import uno.anahata.asi.swing.chat.ChatPanel;
  * @author anahata
  */
 public class MessageNode extends AbstractContextNode<AbstractMessage> {
-
-    /** The cached list of children. */
-    private List<AbstractContextNode<?>> children;
 
     /**
      * Constructs a new MessageNode.
@@ -42,14 +38,17 @@ public class MessageNode extends AbstractContextNode<AbstractMessage> {
 
     /** {@inheritDoc} */
     @Override
-    public List<AbstractContextNode<?>> getChildren() {
-        if (children == null) {
-            children = new ArrayList<>();
-            for (AbstractPart part : userObject.getParts(true)) {
-                children.add(new PartNode(chatPanel, part));
-            }
+    protected List<?> fetchChildObjects() {
+        return userObject.getParts(true);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected AbstractContextNode<?> createChildNode(Object obj) {
+        if (obj instanceof AbstractPart part) {
+            return new PartNode(chatPanel, part);
         }
-        return children;
+        return null;
     }
 
     /** {@inheritDoc} */

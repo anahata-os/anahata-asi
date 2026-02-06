@@ -3,7 +3,11 @@
  */
 package uno.anahata.asi.swing.chat.tool;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.swing.Icon;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +32,8 @@ import uno.anahata.asi.swing.icons.IconUtils;
  * while maintaining a consistent JNDI-style view.
  * </p>
  * <p>
- * It implements a hierarchical token aggregation system, where each node 
- * calculates its own tokens and sums up the tokens of its children.
+ * It implements a hierarchical token aggregation system and an identity-preserving 
+ * child synchronization mechanism to ensure UI stability during refreshes.
  * </p>
  *
  * @author anahata
@@ -47,6 +51,9 @@ public abstract class AbstractContextNode<T> {
      * @return the wrapped domain object.
      */
     protected final T userObject;
+
+    /** The cached list of child nodes. */
+    protected List<AbstractContextNode<?>> children;
 
     /** Cached instruction token count (including children). */
     protected int instructionsTokens;
@@ -80,20 +87,51 @@ public abstract class AbstractContextNode<T> {
     public abstract String getDescription();
 
     /**
-     * Gets the list of child nodes for this node, implementing the 
-     * hierarchical logic specific to the node type.
+     * Gets the list of child nodes for this node.
+     * Implementation details: Returns the cached child list, initializing it 
+     * via {@link #refresh()} if necessary.
      * 
      * @return A list of child AbstractContextNodes.
      */
-    public abstract List<AbstractContextNode<?>> getChildren();
+    public final List<AbstractContextNode<?>> getChildren() {
+        if (children == null) {
+            refresh();
+        }
+        return children;
+    }
 
     /**
-     * Recalculates and caches the token counts and status for this node 
-     * and all its descendants.
-     * Implementation details: It resets counts, calls {@link #calculateLocalTokens()}, 
-     * then recursively calls refreshTokens on children and aggregates their counts.
+     * Refreshes the node's state, including its child list and token counts.
+     * <p>
+     * This method implements an identity-preserving synchronization logic: 
+     * it updates the child list by reusing existing node instances for 
+     * domain objects that are still present.
+     * </p>
      */
-    public final void refreshTokens() {
+    public final void refresh() {
+        // 1. Sync Children
+        List<?> newChildObjects = fetchChildObjects();
+        if (newChildObjects == null || newChildObjects.isEmpty()) {
+            this.children = java.util.Collections.emptyList();
+        } else {
+            Map<Object, AbstractContextNode<?>> currentNodes = (children == null) ? java.util.Collections.emptyMap() :
+                    children.stream().collect(Collectors.toMap(AbstractContextNode::getUserObject, Function.identity(), (a, b) -> a));
+
+            List<AbstractContextNode<?>> syncedChildren = new ArrayList<>();
+            for (Object obj : newChildObjects) {
+                AbstractContextNode<?> node = currentNodes.get(obj);
+                if (node == null) {
+                    node = createChildNode(obj);
+                }
+                if (node != null) {
+                    node.refresh(); // Recursive refresh
+                    syncedChildren.add(node);
+                }
+            }
+            this.children = syncedChildren;
+        }
+
+        // 2. Update Local State
         this.instructionsTokens = 0;
         this.declarationsTokens = 0;
         this.historyTokens = 0;
@@ -101,8 +139,8 @@ public abstract class AbstractContextNode<T> {
         
         calculateLocalTokens();
         
-        for (AbstractContextNode<?> child : getChildren()) {
-            child.refreshTokens();
+        // 3. Aggregate Child Tokens
+        for (AbstractContextNode<?> child : children) {
             this.instructionsTokens += child.getInstructionsTokens();
             this.declarationsTokens += child.getDeclarationsTokens();
             this.historyTokens += child.getHistoryTokens();
@@ -110,6 +148,32 @@ public abstract class AbstractContextNode<T> {
         }
         
         updateStatus();
+    }
+
+    /**
+     * Fetches the current list of domain objects that should be represented 
+     * as children of this node.
+     * 
+     * @return A list of domain objects.
+     */
+    protected abstract List<?> fetchChildObjects();
+
+    /**
+     * Creates a new child node for the given domain object.
+     * 
+     * @param userObject The domain object to wrap.
+     * @return A new AbstractContextNode, or null if the object type is not supported.
+     */
+    protected abstract AbstractContextNode<?> createChildNode(Object userObject);
+
+    /**
+     * Recalculates and caches the token counts and status for this node 
+     * and all its descendants.
+     * @deprecated Use {@link #refresh()} instead for a unified update.
+     */
+    @Deprecated
+    public final void refreshTokens() {
+        refresh();
     }
     
     /**

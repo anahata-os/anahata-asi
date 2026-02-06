@@ -1,7 +1,6 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.tools.files.nb;
 
-import java.awt.Image;
 import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,18 +9,16 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.Icon;
 import org.openide.cookies.EditorCookie;
 import org.openide.cookies.LineCookie;
+import org.openide.filesystems.FileAttributeEvent;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileSystem;
 import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
-import org.openide.util.ImageUtilities;
 import uno.anahata.asi.AnahataInstaller;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.model.resource.AbstractPathResource;
-import uno.anahata.asi.swing.icons.IconUtils;
 
 /**
  * Stateless utility class containing the core logic for adding and removing 
@@ -65,17 +62,10 @@ public class FilesContextActionLogic {
                             LOG.log(Level.INFO, "Detected binary/multimodal file ({0}): {1}", new Object[]{fo.getMIMEType(), path});
                         }
                         
-                        if (dobj != null) {
-                            String ext = fo.getExt();
-                            String iconId = "nb.file." + (ext.isEmpty() ? "unknown" : ext);
-                            
-                            if (IconUtils.getIcon(iconId) == null) {
-                                Image img = dobj.getNodeDelegate().getIcon(java.beans.BeanInfo.ICON_COLOR_16x16);
-                                Icon icon = ImageUtilities.image2Icon(img);
-                                IconUtils.registerIcon(iconId, icon);
-                            }
-                            resource.setIconId(iconId);
-                        }
+                        // Set a stable icon ID based on extension. 
+                        // The IconProvider will use this as a fallback if live lookup fails.
+                        String ext = fo.getExt();
+                        resource.setIconId("nb.file." + (ext.isEmpty() ? "unknown" : ext));
                         
                         targetChat.getResourceManager().register(resource);
                         LOG.log(Level.INFO, "Added file to context of session ''{0}'': {1}", new Object[]{targetChat.getDisplayName(), path});

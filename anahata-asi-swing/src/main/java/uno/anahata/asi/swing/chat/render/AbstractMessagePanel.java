@@ -22,9 +22,7 @@ import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
-import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.jdesktop.swingx.JXPanel;
 import org.jdesktop.swingx.JXTitledPanel;
@@ -32,13 +30,10 @@ import org.jdesktop.swingx.painter.MattePainter;
 import uno.anahata.asi.internal.TimeUtils;
 import uno.anahata.asi.model.core.AbstractMessage;
 import uno.anahata.asi.model.core.AbstractPart;
-import uno.anahata.asi.model.core.BlobPart;
-import uno.anahata.asi.model.core.TextPart;
 import uno.anahata.asi.swing.chat.ChatPanel;
 import uno.anahata.asi.swing.chat.SwingChatConfig;
 import uno.anahata.asi.swing.icons.CopyIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
-import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
@@ -176,9 +171,13 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
 
     /**
      * Renders or updates the entire message panel, including its header, content parts, and footer.
+     * <p>
+     * This method is now strictly structural for parts: it adds or removes part panels 
+     * but does NOT call render() on them.
+     * </p>
      */
     public final void render() {
-        log.info("render() message #{}", message.getSequentialId());
+        log.info("Updating message structure for #{}", message.getSequentialId());
         updateHeaderInfoText();
         updateHeaderButtons();
         renderContentParts();
@@ -282,7 +281,8 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
                     partsContainer.add(panel, componentIndex);
                 }
                 
-                panel.render();
+                // FIXED: Removed recursive panel.render() call.
+                // The panel will render itself via addNotify() or property change listeners.
                 componentIndex++;
             }
         }

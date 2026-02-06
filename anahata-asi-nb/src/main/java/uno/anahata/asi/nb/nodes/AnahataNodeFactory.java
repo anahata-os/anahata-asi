@@ -67,8 +67,11 @@ public class AnahataNodeFactory implements NodeFactory {
         private static final String FOLDER_ICON_PATH = "org/openide/loaders/defaultFolder.gif";
         /** The path to the default open folder icon. */
         private static final String FOLDER_OPEN_ICON_PATH = "org/openide/loaders/defaultFolderOpen.gif";
-        /** The path to the Anahata overlay icon. */
-        private static final String OVERLAY_ICON_PATH = "icons/anahata_16.png";
+        /** 
+         * The path to the Anahata overlay icon. 
+         * FIXED: Renamed to avoid shadowing V1's icon in the merged resource layer.
+         */
+        private static final String OVERLAY_ICON_PATH = "icons/v2/anahata.png";
 
         /**
          * Constructs a new JASI folder node.
@@ -102,7 +105,9 @@ public class AnahataNodeFactory implements NodeFactory {
         private Image createMergedIcon(String baseIconPath) {
             Image folderIcon = ImageUtilities.loadImage(baseIconPath);
             Image overlayIcon = ImageUtilities.loadImage(OVERLAY_ICON_PATH);
-            if (overlayIcon == null) return folderIcon;
+            if (overlayIcon == null) {
+                return folderIcon;
+            }
             
             // Scale the overlay icon to 12x12
             Image scaledOverlay = overlayIcon.getScaledInstance(12, 12, Image.SCALE_SMOOTH);
@@ -216,8 +221,11 @@ public class AnahataNodeFactory implements NodeFactory {
      */
     private static class AnahataMdNode extends FilterNode {
 
-        /** The path to the Anahata icon. */
-        private static final String ANAHATA_ICON_PATH = "icons/anahata_16.png";
+        /** 
+         * The path to the Anahata icon. 
+         * FIXED: Renamed to avoid shadowing V1's icon.
+         */
+        private static final String ANAHATA_ICON_PATH = "icons/v2/anahata.png";
 
         /**
          * Constructs a new anahata.md node.
