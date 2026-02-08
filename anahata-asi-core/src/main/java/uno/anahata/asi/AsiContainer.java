@@ -88,7 +88,7 @@ public class AsiContainer extends BasicPropertyChangeSource {
     
     /**
      * Gets the root working directory for this specific host application instance.
-     * e.g., ~/.anahata/ai/netbeans
+     * e.g., ~/.anahata/asi/netbeans
      *
      * @return The application-specific working directory path.
      */
@@ -99,7 +99,7 @@ public class AsiContainer extends BasicPropertyChangeSource {
     /**
      * Gets a named subdirectory within this host application's working directory, 
      * creating it if it doesn't exist.
-     * e.g., ~/.anahata/ai/netbeans/sessions
+     * e.g., ~/.anahata/asi/netbeans/sessions
      * 
      * @param name The name of the subdirectory.
      * @return The Path to the application-specific subdirectory.
@@ -386,19 +386,19 @@ public class AsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Gets the root Anahata AI working directory (e.g., ~/.anahata/ai).
+     * Gets the root Anahata AI working directory (e.g., ~/.anahata/asi).
      *
      * @return The root working directory path.
      */
     public static Path getWorkDir() {
-        return Paths.get(System.getProperty("user.home"), ".anahata", "ai");
+        return Paths.get(System.getProperty("user.home"), ".anahata", "asi");
     }
     
     /**
      * Gets a named subdirectory within the global root working directory, 
      * creating it if it doesn't exist. This is used for shared resources 
      * like provider configurations.
-     * e.g., ~/.anahata/ai/gemini
+     * e.g., ~/.anahata/asi/gemini
      *
      * @param name The name of the subdirectory.
      * @return The Path object for the subdirectory.

@@ -32,3 +32,8 @@
 - [ ] **Code Model Consolidation**:
     - [ ] Evaluate V1 `findTypesInPackage` for migration to V2 `CodeModel`.
     - [ ] Compare V1 `JavaIntrospection.getMembers` with V2 `CodeModel.getMembers` to determine the superior implementation for agentic use.
+- [ ] **Dependency Audit**: Review all `impl` module dependencies in `pom.xml`. Many were added to simplify runtime library management but they break cross-version compatibility. Replace with `spec` dependencies where possible.
+- [ ] **EditorKitProvider Review**: Investigate if `NetBeansEditorKitProvider` should be a static singleton instead of being instantiated per session in `NetBeansChatConfig`.
+
+- [ ] Enhance `Projects.java` with `setCompileOnSave(String projectId, boolean enabled)` to allow programmatic control of the IDE's Compile on Save feature.
+- [ ] **[TOOLKIT] System Toolkit**: Create a dedicated `System` toolkit (or enhance `Shell`) to house general-purpose tools like `killProcess(pid)`.

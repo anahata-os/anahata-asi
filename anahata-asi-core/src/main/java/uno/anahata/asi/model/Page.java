@@ -36,4 +36,16 @@ public class Page<T> {
                 .limit(pageSize)
                 .collect(Collectors.toList());
     }
+
+    /**
+     * Static factory method to create a new Page.
+     * @param <T> The type of the items.
+     * @param allItems The complete list of items.
+     * @param startIndex The starting index.
+     * @param pageSize The page size.
+     * @return A new Page instance.
+     */
+    public static <T> Page<T> of(List<T> allItems, int startIndex, int pageSize) {
+        return new Page<>(allItems, startIndex, pageSize);
+    }
 }

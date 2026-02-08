@@ -57,12 +57,14 @@ This project uses a set of key documents to guide development. For detailed info
 > [!CAUTION]
 > **PARAMOUNT PRINCIPLES: SIMPLICITY AND STABILITY**
 > The absolute priority for all development is **Simplicity and Stability** (or Stability through Simplicity). These principles rule above all others. 
-> - **Core Discussion**: Any proposed changes to the `anahata-asi-core` module **MUST** be discussed and agreed upon with the user in the conversation before calling `suggestChange`.
+> - **Core Discussion**: Any proposed changes to this module **MUST** be discussed and agreed upon with the user in the conversation before calling `suggestChange`.
 > - **No Dirty Hacks**: Avoid "dirty hacks" or workarounds (e.g., `SwingUtilities.invokeLater` or `SwingUtilities.updateComponentTreeUI` to mask initialization order issues). If a design leads to race conditions or UI glitches, it requires a proper refactoring of the underlying architecture, not a patch for the symptoms.
 > - **Unified Content API**: Always prefer `message.addTextPart(text)` or `message.addBlobPart(...)` over direct instantiation of `TextPart` or `BlobPart`. This ensures that the message can control the concrete part types and initialization order.
 > - **No Redundant Signatures**: Avoid adding multiple methods with different signatures that perform the same logical operation. Keep the API lean and consistent.
 > - **No Secondary Constructors**: Do not add "secondary" or "convenience" constructors to work around UI glitches or initialization order problems. Address the root cause in the primary constructor or the factory method.
 > - **Identity & Distributed Observability**: Message metadata must clearly distinguish between the **Logical Actor** (`getFrom()`) and the **Physical/Virtual Host** (`getDevice()`). For tool executions, the actor is the specific JVM instance (`pid@hostname`) and the device is the hostname. This ensures full traceability in distributed or multi-agent scenarios.
+> - **No Reinventing Commons**: Never write code that is already provided by our core dependencies, especially **Apache Commons Lang 3**. For example, use `ExceptionUtils.getStackTrace(e)` instead of writing a custom stack trace stringifier.
+> - **No Catching in @AiTools**: Do not use try-catch blocks inside methods annotated with `@AiTool` unless you are performing specific recovery logic or adding high-value context to the error. The tool execution framework automatically catches all `Throwable`s and adds the full stack trace to the tool response.
 
 1.  **JDK 25 Standard**: All modules are built and documented using **JDK 25**. While the target compatibility remains Java 17 for the core engine, the build environment is standardized on the latest LTS/Current release to leverage modern Javadoc features and performance.
 2.  **Engineering over Patching**: This is a beta project under active development. **There is no requirement for backwards compatibility.** If a design is flawed or leads to race conditions (e.g., initialization order issues in class hierarchies), **redesign and refactor** the code. Do not add "hacky" null checks or workarounds to patch symptoms of poor engineering.
@@ -87,6 +89,14 @@ This project uses a set of key documents to guide development. For detailed info
     - **No Catenaccio**: Avoid defensive programming patterns like redundant null checks or "quiet catches" for internal architectural components. If a component is required, assume it is present. If it's missing, let it fail fast so we can fix the root cause.
     - **Trust the Architecture**: Rely on the established bidirectional relationships and initialization order. 
     - **Go for the Goal**: Focus on clean, direct implementations. We can "park the bus" with defensive checks once the project goes live.
+14. **Cross-Platform Support**: All toolkits and system-level utilities MUST support Linux, Windows, and macOS. Use `OsUtils` and `SystemUtils` to handle platform-specific paths, commands, and behaviors (e.g., lock file names, shell command syntax).
+15. **Standard Toolkit Method Order**: To maintain a consistent and predictable structure, all toolkit implementations MUST order their methods as follows:
+    1.  `rebind()` (Override)
+    2.  `getSystemInstructions()` (Override)
+    3.  `populateMessage()` (Override)
+    4.  `@AiTool` methods (The public API for the model)
+    5.  Public methods that are not `@AiTool`s (if any)
+    6.  Private methods (Internal implementation details)
 
 ## 7. V2 Context Management (Deep Pinning)
 
@@ -124,3 +134,10 @@ The V2 tool framework supports complex Java types as tool parameters.
 When using `NetBeansProjectJVM.compileAndExecuteInProject` to test code that has just been modified via `suggestChange` or `writeFile`, you must account for the asynchronous nature of the IDE's "Compile on Save" feature.
 -   **Mandatory Delay**: Always include a 1-2 second delay (e.g., `Thread.sleep(2000)`) at the beginning of your `Anahata.call()` method if you are testing logic that depends on the latest version of a file in the project.
 -   **Alternative**: Check `SourceUtils.isScanningInProgress()` or similar IDE state indicators to ensure the project is ready before execution.
+
+## 13. Working Directory Structure
+
+The Anahata framework uses a dedicated directory in the user's home folder for persistent state.
+
+-   **V1 (Legacy)**: `~/.anahata/ai-assistant`
+-   **V2 (Current)**: `~/.anahata/asi` (Renamed from `ai` to align with ASI branding)

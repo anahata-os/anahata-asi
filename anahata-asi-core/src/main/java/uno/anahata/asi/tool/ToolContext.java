@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -85,6 +86,21 @@ public class ToolContext {
         return toolkit.getToolManager();
     }
     
+    /**
+     * Retrieves the singleton instance of a registered toolkit class.
+     * 
+     * @param <T> The type of the toolkit.
+     * @param toolkitClass The class of the toolkit to find.
+     * @return The toolkit instance.
+     * @throws IllegalArgumentException if the toolkit is not found.
+     */
+    public <T> T getToolkit(Class<T> toolkitClass) {
+        return getToolManager().getToolkitInstance(toolkitClass)
+                .orElseThrow(() -> {
+                    return new IllegalArgumentException("Toolkit not found: " + toolkitClass.getName());
+                });
+    }
+
     /**
      * Convenience method to get the parent chat session for the current execution.
      * 
@@ -197,6 +213,54 @@ public class ToolContext {
      */
     public Map getApplicationMap() {
         return AsiContainer.applicationAttributes;
+    }
+
+    /**
+     * Executes a task asynchronously in the session's executor service, 
+     * automatically propagating the current tool execution context to the 
+     * background thread.
+     * 
+     * @param taskName A descriptive name for the task (used for thread naming).
+     * @param task The task to execute.
+     */
+    public void runAsync(String taskName, Runnable task) {
+        final JavaMethodToolResponse response = getResponse();
+        getExecutorService().submit(() -> {
+            String oldName = Thread.currentThread().getName();
+            Thread.currentThread().setName(oldName + " [" + taskName + "]");
+            JavaMethodToolResponse.setCurrent(response);
+            try {
+                task.run();
+            } catch (Throwable t) {
+                log.error("Async tool task '{}' failed", taskName, t);
+                try {
+                    response.addError("Async task '" + taskName + "' failed: " + t.getMessage());
+                } catch (Exception e) {
+                    log.error("Failed to report async error to tool response", e);
+                }
+            } finally {
+                JavaMethodToolResponse.setCurrent(null);
+                Thread.currentThread().setName(oldName);
+            }
+        });
+    }
+
+    /**
+     * Gets a thread-safe logging consumer that automatically propagates the 
+     * current tool execution context whenever a message is logged.
+     * 
+     * @return A context-aware logging consumer.
+     */
+    public Consumer<String> getThreadSafeLogger() {
+        final JavaMethodToolResponse response = getResponse();
+        return (msg) -> {
+            JavaMethodToolResponse.setCurrent(response);
+            try {
+                log(msg);
+            } finally {
+                JavaMethodToolResponse.setCurrent(null);
+            }
+        };
     }
 
 }

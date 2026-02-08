@@ -6,6 +6,9 @@ This is the V2 NetBeans integration module for the Anahata ASI framework.
 ## 1. Core Principles
 
 1.  **IDE API Preference**: Always prefer NetBeans APIs (e.g., `MimeLookup`, `EditorKit`) over direct file manipulation or generic Swing components when integrated into the IDE.
+2.  **Dependency Hygiene**: 
+    - **Automatic Spec Dependencies**: All artifacts listed in the `<dependencies>` section of the `pom.xml` are automatically included as `spec` dependencies in the module manifest by the `nbm-maven-plugin`. Do not manually add them to the `moduleDependencies` configuration unless they require an `impl` dependency type.
+    - **Version Alignment**: Always ensure that library versions (especially `flexmark` and `jsoup`) match the versions bundled with the target NetBeans release (currently NB 28). Mismatches cause `MethodNotFound` errors in the IDE.
 
 ## 2. Key Components
 
@@ -26,7 +29,6 @@ This is the V2 NetBeans integration module for the Anahata ASI framework.
 ## 4. Dependency Management
 
 -   **`commons-io` Isolation**: This module explicitly bundles `commons-io` to avoid conflicts with the version used by the NetBeans Maven Embedder.
--   **Automatic Spec Dependencies**: All artifacts listed in the `<dependencies>` section of the `pom.xml` are automatically included as `spec` dependencies in the module manifest by the `nbm-maven-plugin`. Do not manually add them to the `moduleDependencies` configuration unless they require an `impl` dependency type.
 
 ## 5. JIT Testing & Classpath Safety
 
@@ -54,6 +56,9 @@ This is the V2 NetBeans integration module for the Anahata ASI framework.
 - **IMPORTANT (Asynchronous Actions & Batching):** Invoking NetBeans supported actions (like `build-with-dependencies` or `nbmreload`) via the `Projects.invokeAction` tool is **asynchronous**. The tool returns immediately after firing the action. 
     - **CRITICAL:** Never batch multiple asynchronous actions that depend on each other (e.g., `build-with-dependencies` and `nbmreload`) in a single turn. They will execute concurrently, leading to build failures or inconsistent plugin states. You must trigger the build, wait for completion, and then trigger the reload in a subsequent turn.
 - **Note on Dependency Warnings**: You may see a warning about `aopalliance:asm:jar:9.8` being missing from the local repository. This is a known issue in the current NetBeans release and is fixed in the next version. You can safely ignore this warning.
+
+## 7. Cross-Module References
+- **Standalone Sessions**: V2 standalone sessions are stored in `~/.anahata/asi/swing-standalone/sessions`.
 
 ## Future Exploration
 - **Local History Integration**: Explore using `VCSSystemProvider.VersioningSystem localHistory = VersioningManager.getInstance().getLocalHistory(file, !fo.isFolder());` to integrate with the IDE's local history.

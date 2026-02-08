@@ -37,9 +37,17 @@ This file tracks the actionable tasks and tactical goals for the Anahata ASI (V2
 - [ ] **AgiNodeFactory**: Port the V1 logic to create the virtual "Anahata" folder in the Projects tab and handle root `.md` files.
 - [ ] **Project Alerts Refinement**:
     - [ ] **JavacAlerts Default**: Enable JavacAlerts by default (currently disabled).
+- [ ] **Editor Integration Review**:
+    - [ ] Review if using one `NetBeansEditorKitProvider` instance per session makes sense, or if we should use a single static instance for all sessions.
 
 ## 3. Future Tactical Goals
 
+- [ ] **V1 to V2 Migration**: Implement a check on V2 startup (especially if the `~/.anahata/asi` directory is missing) to detect V1 API keys in `~/.anahata/ai-assistant/gemini_api_keys.txt` and offer to copy them to the V2 directory.
+- [ ] **Hierarchical Agent Management**:
+    - [ ] **Subagent API**: Design a new API for the model to spawn subagents with fine-grained control over `ChatConfig` (provider, model, toolkits, permissions).
+    - [ ] **Reporting Mechanism**: Implement a way for subagents to report task completion and results back to the "Boss" agent.
+    - [ ] **Parent/Child Chats**: Establish a formal parent-child relationship between `Chat` instances to support complex agentic hierarchies.
+- [ ] **Domain Model Refinement**: Discuss and potentially rename `Chat.java` to something more descriptive like `Session.java`, `Agent.java`, or `Agi.java`.
 - [ ] **CwQL**: Create a Context Window Query Language spec and implementation. So if the model spawans subagents or wants to peek into saved or disposed sessions. A simple query language can be used like 
         - sessionUUID/history(role=model)/partType=text/thought=false 
         - sessionUUID/tools/RadioTool/selectedPlaybackDevice (to look up the selectedPlaybackDevice field in the RadioTool) 

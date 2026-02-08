@@ -59,32 +59,32 @@ import uno.anahata.asi.nb.tools.project.alerts.ProjectDiagnostics;
 import uno.anahata.asi.nb.tools.project.nb.AnahataProjectIconAnnotator;
 
 /**
- * A toolkit for interacting with the NetBeans Project APIs.
- * It provides tools for managing open projects, retrieving project overviews,
- * and invoking project-level actions.
+ * A toolkit for interacting with the NetBeans Project APIs. It provides tools
+ * for managing open projects, retrieving project overviews, and invoking
+ * project-level actions.
  * <p>
  * This toolkit also acts as a {@link ContextProvider}, managing a hierarchy of
  * {@link ProjectContextProvider}s for all open projects in the IDE.
- * 
+ *
  * @author anahata
  */
 @Slf4j
 @AiToolkit("A toolkit for using netbeans project apis.")
 public class Projects extends AnahataToolkit implements PropertyChangeListener {
 
-    /** 
-     * A flag to track if the toolkit is already listening to global project changes.
-     * This is used for lazy initialization of the {@link OpenProjects} listener.
-     * It is distinct from the 'providing' flag, which controls context injection.
+    /**
+     * A flag to track if the toolkit is already listening to global project
+     * changes. This is used for lazy initialization of the {@link OpenProjects}
+     * listener. It is distinct from the 'providing' flag, which controls
+     * context injection.
      */
     private transient boolean listening = false;
 
-
     // --- PUBLIC STATIC UTILITIES ---
-
     /**
-     * Convenient entry point for other tools to find an open project by its directory path.
-     * 
+     * Convenient entry point for other tools to find an open project by its
+     * directory path.
+     *
      * @param projectDirectoryPath The absolute path to the project directory.
      * @return The {@link Project} instance.
      * @throws Exception if the project is not found or not open.
@@ -104,7 +104,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
 
     /**
      * Gets a list of supported NetBeans Actions for a given project.
-     * 
+     *
      * @param projectPath The absolute path of the project.
      * @return An array of action names.
      * @throws Exception if the project is not found.
@@ -116,10 +116,10 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     }
 
     // --- AI TOOL METHODS ---
-
     /**
-     * Returns a list of absolute paths for all currently open projects in the IDE.
-     * 
+     * Returns a list of absolute paths for all currently open projects in the
+     * IDE.
+     *
      * @return A list of project paths.
      */
     @AiTool("Returns a List of absolute paths for all currently open projects.")
@@ -133,7 +133,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
 
     /**
      * Returns the absolute path of the current 'Main Project' in the IDE.
-     * 
+     *
      * @return The main project path, or null if none is set.
      */
     @AiTool("Returns the absolute path of the current 'Main Project' in the IDE, or null if none is set.")
@@ -144,7 +144,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
 
     /**
      * Sets a specific open project as the 'Main Project' in the IDE.
-     * 
+     *
      * @param projectPath The absolute path of the project to set as main.
      * @throws Exception if the project is not found.
      */
@@ -156,7 +156,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
 
     /**
      * Closes one or more open projects in the IDE.
-     * 
+     *
      * @param projectPaths A list of absolute paths of the projects to close.
      * @throws Exception if any project is not found.
      */
@@ -171,9 +171,10 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
 
     /**
      * Opens a project in the IDE and waits for the operation to complete.
-     * 
+     *
      * @param projectPath The absolute path or relative folder name.
-     * @param openSubprojects Whether to automatically open all subprojects (modules).
+     * @param openSubprojects Whether to automatically open all subprojects
+     * (modules).
      * @return A success or error message.
      * @throws Exception if an error occurs during opening.
      */
@@ -246,7 +247,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
 
     /**
      * Opens all subprojects of a given project.
-     * 
+     *
      * @param projectPath The absolute path of the parent project.
      * @throws Exception if the project is not found.
      */
@@ -263,11 +264,14 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     }
 
     /**
-     * Gets a structured, context-aware overview of a project, including its metadata and dependencies.
-     * 
+     * Gets a structured, context-aware overview of a project, including its
+     * metadata and dependencies.
+     *
      * @param projectPath The absolute path of the project.
-     * @return A {@link ProjectOverview} object containing the project's metadata.
-     * @throws Exception if the project is not found or metadata cannot be retrieved.
+     * @return A {@link ProjectOverview} object containing the project's
+     * metadata.
+     * @throws Exception if the project is not found or metadata cannot be
+     * retrieved.
      */
     @AiTool("Gets a structured, context-aware overview of a project, including metadata, supported actions, and declared dependencies.")
     public ProjectOverview getOverview(@AiToolParam("The absolute path of the project.") String projectPath) throws Exception {
@@ -289,7 +293,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         String javaTargetLevel = null;
         String sourceEncoding = null;
         String packaging = null;
-        
+
         NbMavenProject nbMavenProject = target.getLookup().lookup(NbMavenProject.class);
         if (nbMavenProject != null) {
             // Get declared dependencies
@@ -301,12 +305,12 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
             // Get compiler properties from the Maven model
             org.apache.maven.project.MavenProject rawMvnProject = nbMavenProject.getMavenProject();
             packaging = rawMvnProject.getPackaging();
-            
+
             javaSourceLevel = rawMvnProject.getProperties().getProperty("maven.compiler.release");
             if (javaSourceLevel == null) {
                 javaSourceLevel = rawMvnProject.getProperties().getProperty("maven.compiler.source");
             }
-            
+
             javaTargetLevel = rawMvnProject.getProperties().getProperty("maven.compiler.target");
             sourceEncoding = rawMvnProject.getProperties().getProperty("project.build.sourceEncoding");
         }
@@ -322,7 +326,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
 
         return new ProjectOverview(
                 root.getNameExt(),
-                info.getDisplayName(),                
+                info.getDisplayName(),
                 root.getPath(),
                 packaging,
                 actions,
@@ -335,8 +339,28 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     }
 
     /**
+     * Enables or disables 'Compile on Save' for a specific project.
+     *
+     * @param projectPath The absolute path of the project.
+     * @param enabled {@code true} to enable, {@code false} to disable.
+     * @throws Exception if the project is not found or preferences cannot be
+     * written.
+     */
+    @AiTool("Enables or disables 'Compile on Save' for a specific project.")
+    public void setCompileOnSave(
+            @AiToolParam("The absolute path of the project.") String projectPath,
+            @AiToolParam("Whether to enable Compile on Save.") boolean enabled) throws Exception {
+        Project target = findOpenProject(projectPath);
+        Preferences prefs = ProjectUtils.getPreferences(target, org.netbeans.api.project.ProjectUtils.class, true);
+        prefs.putBoolean("compile.on.save", enabled);
+        prefs.flush();
+        log.info("Compile on Save for {} set to: {}", projectPath, enabled);
+
+    }
+
+    /**
      * Gets the file and folder structure of a project.
-     * 
+     *
      * @param projectPath The absolute path of the project.
      * @return A {@link ProjectFiles} object containing the project's structure.
      * @throws Exception if the project is not found.
@@ -372,8 +396,9 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     }
 
     /**
-     * Retrieves all Java types (classes, interfaces, etc.) defined in the project.
-     * 
+     * Retrieves all Java types (classes, interfaces, etc.) defined in the
+     * project.
+     *
      * @param projectPath The absolute path to the project.
      * @return A list of ProjectComponent DTOs.
      * @throws Exception if the project is not found.
@@ -382,17 +407,17 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     public List<ProjectComponent> getProjectComponents(@AiToolParam("The absolute path to the project.") String projectPath) throws Exception {
         Project project = findOpenProject(projectPath);
         List<ProjectComponent> components = new ArrayList<>();
-        
+
         Sources sources = ProjectUtils.getSources(project);
         SourceGroup[] groups = sources.getSourceGroups(JavaProjectConstants.SOURCES_TYPE_JAVA);
-        
+
         for (SourceGroup sg : groups) {
             ClasspathInfo cpInfo = ClasspathInfo.create(sg.getRootFolder());
             ClassIndex index = cpInfo.getClassIndex();
-            
+
             // CRITICAL FIX: Search only in SOURCE scope to avoid OOM and massive strings.
             Set<ElementHandle<javax.lang.model.element.TypeElement>> allTypes = index.getDeclaredTypes("", ClassIndex.NameKind.PREFIX, EnumSet.of(ClassIndex.SearchScope.SOURCE));
-            
+
             for (ElementHandle<javax.lang.model.element.TypeElement> handle : allTypes) {
                 components.add(ProjectComponent.builder()
                         .fqn(handle.getQualifiedName())
@@ -400,15 +425,17 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
                         .build());
             }
         }
-        
+
         // Sort by FQN for consistent output
         components.sort((c1, c2) -> c1.getFqn().compareToIgnoreCase(c2.getFqn()));
-        
+
         return components;
     }
 
     /**
-     * Performs a live scan of a specific project to find all high-level project problems and Java source file errors/warnings.
+     * Performs a live scan of a specific project to find all high-level project
+     * problems and Java source file errors/warnings.
+     *
      * @param projectPath The absolute path of the project to scan.
      * @return a ProjectDiagnostics object containing the found alerts.
      * @throws Exception if an error occurs.
@@ -472,16 +499,18 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     }
 
     /**
-     * Identifies files within a project that currently have compilation errors by querying the IDE's internal ErrorsCache.
-     * This method is used to perform targeted scans of only the files that are known to be in an error state.
-     * 
+     * Identifies files within a project that currently have compilation errors
+     * by querying the IDE's internal ErrorsCache. This method is used to
+     * perform targeted scans of only the files that are known to be in an error
+     * state.
+     *
      * @param project The project to scan.
      * @return A list of FileObjects representing the files in error.
      */
     public static List<FileObject> findFilesInError(Project project) {
         List<FileObject> results = new ArrayList<>();
         Sources sources = ProjectUtils.getSources(project);
-        
+
         SourceGroup[] groups = sources.getSourceGroups(JavaProjectConstants.SOURCES_TYPE_JAVA);
         for (SourceGroup sg : groups) {
             FileObject root = sg.getRootFolder();
@@ -505,14 +534,15 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     }
 
     /**
-     * Enables or disables the project context provider (overview and anahata.md) for a specific project.
-     * 
+     * Enables or disables the project context provider (overview and
+     * anahata.md) for a specific project.
+     *
      * @param projectPath The absolute path of the project.
      * @param enabled {@code true} to enable, {@code false} to disable.
      */
     @AiTool("Enables or disables the project context provider (overview and anahata.md) for a specific project.")
     public void setProjectProviderEnabled(
-            @AiToolParam("The absolute path of the project.") String projectPath, 
+            @AiToolParam("The absolute path of the project.") String projectPath,
             @AiToolParam("Whether to enable the context provider.") boolean enabled) {
         getProjectProvider(projectPath).ifPresent(pcp -> {
             pcp.setProviding(enabled);
@@ -529,7 +559,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
 
     /**
      * Invokes a NetBeans project action asynchronously.
-     * 
+     *
      * @param projectPath The absolute path of the project.
      * @param action The action name (e.g., 'build', 'run').
      * @throws Exception if the action is not supported or enabled.
@@ -564,7 +594,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
 
     /**
      * Lists all known preferences for a given project.
-     * 
+     *
      * @param projectPath The project absolute path.
      * @return A string containing the preferences.
      * @throws Exception if the project is not found.
@@ -602,11 +632,10 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     }
 
     // --- CONTEXT PROVIDER LOGIC ---
-
     /**
-     * {@inheritDoc}
-     * Overridden to lazily initialize the project change listener and sync the provider hierarchy.
-     * 
+     * {@inheritDoc} Overridden to lazily initialize the project change listener
+     * and sync the provider hierarchy.
+     *
      * @return The list of child context providers (one per open project).
      */
     @Override
@@ -620,24 +649,25 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     }
 
     /**
-     * Synchronizes the list of {@link ProjectContextProvider}s with the currently open projects in the IDE.
-     * This method is called whenever the set of open projects changes.
+     * Synchronizes the list of {@link ProjectContextProvider}s with the
+     * currently open projects in the IDE. This method is called whenever the
+     * set of open projects changes.
      */
     private synchronized void syncProjects() {
         Project[] openProjects = OpenProjects.getDefault().getOpenProjects();
         List<String> currentPaths = new ArrayList<>();
-        
+
         for (Project p : openProjects) {
             String path = p.getProjectDirectory().getPath();
             currentPaths.add(path);
-            
+
             if (getProjectProvider(path).isEmpty()) {
                 ProjectContextProvider pcp = new ProjectContextProvider(this, p);
                 childrenProviders.add(pcp);
                 log.info("Added ProjectContextProvider for: {}", pcp.getName());
             }
         }
-        
+
         // Remove providers for closed projects
         childrenProviders.removeIf(cp -> {
             if (cp instanceof ProjectContextProvider pcp) {
@@ -654,7 +684,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
 
     /**
      * Finds a {@link ProjectContextProvider} for a specific project path.
-     * 
+     *
      * @param projectPath The absolute path of the project.
      * @return An Optional containing the provider if found.
      */
@@ -667,9 +697,9 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     }
 
     /**
-     * {@inheritDoc}
-     * Listens for changes in the set of open projects and triggers a sync.
-     * 
+     * {@inheritDoc} Listens for changes in the set of open projects and
+     * triggers a sync.
+     *
      * @param evt The property change event from {@link OpenProjects}.
      */
     @Override
@@ -680,10 +710,9 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     }
 
     // --- PRIVATE HELPERS ---
-
     /**
      * Recursively builds a tree structure of source folders and files.
-     * 
+     *
      * @param folder The root folder to start from.
      * @param displayName The display name for the root folder.
      * @return A {@link SourceFolder} representing the tree.
@@ -707,17 +736,18 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
 
         long recursiveSize = files.stream().mapToLong(ProjectFile::getSize).sum()
                 + subfolders.stream().mapToLong(SourceFolder::getRecursiveSize).sum();
-        
+
         String folderName = folder.getNameExt();
         String finalDisplayName = folderName.equals(displayName) ? null : displayName;
 
-        return new SourceFolder(finalDisplayName, folder.getPath(), recursiveSize, files.isEmpty() ? null : files, subfolders.isEmpty() ? null: subfolders);
+        return new SourceFolder(finalDisplayName, folder.getPath(), recursiveSize, files.isEmpty() ? null : files, subfolders.isEmpty() ? null : subfolders);
     }
 
     /**
-     * Creates a {@link ProjectFile} metadata object for a given {@link FileObject}.
-     * It checks the AI context to determine the file's current status (e.g., [IC], [STALE]).
-     * 
+     * Creates a {@link ProjectFile} metadata object for a given
+     * {@link FileObject}. It checks the AI context to determine the file's
+     * current status (e.g., [IC], [STALE]).
+     *
      * @param fo The file object.
      * @return The project file metadata.
      * @throws FileStateInvalidException if the file state is invalid.
@@ -743,7 +773,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
                 }
             }
         }
-        
+
         return new ProjectFile(
                 fo.getNameExt(),
                 fo.getSize(),

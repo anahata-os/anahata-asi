@@ -386,6 +386,16 @@
             <artifactId>org-netbeans-modules-parsing-indexing</artifactId>
             <version>${netbeans.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-spi-editor-hints</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-spi-java-hints</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
         
         <!-- NetBeans Modules -->
         <dependency>
@@ -438,6 +448,16 @@
                     <artifactId>asm</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.modules</groupId>
+            <artifactId>org-netbeans-modules-java-editor</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.modules</groupId>
+            <artifactId>org-netbeans-modules-java-hints</artifactId>
+            <version>${netbeans.version}</version>
         </dependency>
         
         <dependency>
@@ -568,6 +588,18 @@
                         <dependency>
                             <type>impl</type>
                             <id>org.netbeans.modules:org-netbeans-modules-maven-indexer</id>
+                        </dependency>
+                        <dependency>
+                            <type>impl</type>
+                            <id>org.netbeans.modules:org-netbeans-modules-java-editor</id>
+                        </dependency>
+                        <dependency>
+                            <type>impl</type>
+                            <id>org.netbeans.api:org-netbeans-spi-java-hints</id>
+                        </dependency>
+                        <dependency>
+                            <type>impl</type>
+                            <id>org.netbeans.modules:org-netbeans-modules-java-hints</id>
                         </dependency>
                     </moduleDependencies>
                 </configuration>
