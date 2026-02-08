@@ -25,7 +25,7 @@ public class ReplacementCard extends JPanel {
 
     public ReplacementCard(TextReplacement replacement, Runnable onToggle) {
         this.replacement = replacement;
-        setLayout(new MigLayout("fillx, insets 5", "[][grow]", "[]0[]"));
+        setLayout(new MigLayout("fillx, insets 8", "[][grow]", "[]2[]5[]"));
         setBorder(BorderFactory.createEtchedBorder());
         
         checkBox.setSelected(true);
@@ -33,14 +33,20 @@ public class ReplacementCard extends JPanel {
         
         String targetPreview = escape(replacement.getTarget());
         JLabel summary = new JLabel("<html>Replace <b>" + targetPreview + "</b></html>");
-        summary.setFont(new Font("SansSerif", Font.PLAIN, 11));
+        summary.setFont(new Font("SansSerif", Font.BOLD, 12));
         summary.setToolTipText(replacement.getTarget());
         
-        add(checkBox, "spany 2, top");
+        add(checkBox, "spany 3, top");
         add(summary, "growx, wrap");
         
+        String reason = replacement.getReason() != null ? replacement.getReason() : "No reason provided.";
+        JLabel reasonLabel = new JLabel("<html><i>Reason: " + reason + "</i></html>");
+        reasonLabel.setFont(new Font("SansSerif", Font.PLAIN, 11));
+        reasonLabel.setForeground(java.awt.Color.GRAY);
+        add(reasonLabel, "growx, wrap");
+        
         commentArea.setRows(2);
-        commentArea.setFont(new Font("Monospaced", Font.PLAIN, 10));
+        commentArea.setFont(new Font("SansSerif", Font.PLAIN, 12));
         commentArea.setLineWrap(true);
         commentArea.setWrapStyleWord(true);
         PromptSupport.setPrompt("Feedback for this change...", commentArea);

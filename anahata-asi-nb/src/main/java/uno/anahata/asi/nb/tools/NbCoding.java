@@ -37,21 +37,30 @@ public class NbCoding extends ToolContext {
             @AiToolParam("A clear explanation of the changes.") String explanation) throws Exception {
         
         final CherryPickDiffPanel[] panelHolder = new CherryPickDiffPanel[1];
-        SwingUtilities.invokeAndWait(() -> panelHolder[0] = new CherryPickDiffPanel(fileReplacements));
+        SwingUtilities.invokeAndWait(() -> panelHolder[0] = new CherryPickDiffPanel(fileReplacements, this));
         CherryPickDiffPanel panel = panelHolder[0];
         
         DialogDescriptor dd = new DialogDescriptor(panel, "Review Surgical Changes");
         dd.setHelpCtx(null);
         
-        if (DialogDisplayer.getDefault().notify(dd) == DialogDescriptor.OK_OPTION) {
-            List<FileTextReplacements> accepted = panel.getAcceptedReplacements();
-            String comments = panel.getAggregatedComments();
-            
-            if (!comments.isEmpty()) {
-                log("User provided feedback during cherry-picking:\n" + comments);
-                getResponse().setUserFeedback(comments);
-            }
-            
+        java.awt.Dialog dialog = org.openide.DialogDisplayer.getDefault().createDialog(dd);
+        dialog.setResizable(true);
+        dialog.setVisible(true);
+        
+        List<FileTextReplacements> accepted = panel.getAcceptedReplacements();
+        String comments = panel.getAggregatedComments();
+        
+        if (!comments.isEmpty()) {
+            log("User provided feedback during cherry-picking:\n" + comments);
+            getResponse().setUserFeedback(comments);
+        }
+        
+        // Attach any captured frames
+        for (byte[] frame : panel.getCapturedFrames()) {
+            getResponse().addAttachment(frame, "image/png");
+        }
+
+        if (dd.getValue() == DialogDescriptor.OK_OPTION) {
             if (accepted.isEmpty()) {
                 return "No changes were selected by the user.";
             }
@@ -61,7 +70,7 @@ public class NbCoding extends ToolContext {
             
             return "Successfully applied changes to " + accepted.size() + " files.";
         } else {
-            return "Changes were cancelled by the user.";
+            return "Changes were cancelled by the user. Feedback was preserved.";
         }
     }
 }

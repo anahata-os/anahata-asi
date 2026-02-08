@@ -32,6 +32,12 @@ public class TextReplacement {
     private String replacement;
 
     /**
+     * A detailed explanation of why this replacement is being made.
+     */
+    @Schema(description = "The reason for this change.")
+    private String reason;
+
+    /**
      * The expected number of occurrences of the target string in the file.
      * If set to a value greater than 0, the operation will fail if the 
      * actual number of replacements does not match this value.

@@ -31,8 +31,8 @@ public class ProjectAlertsContextProvider extends BasicContextProvider {
         super("alerts", "Project Alerts", "Compiler errors and project problems");
         this.projectsToolkit = projectsToolkit;
         this.projectPath = projectPath;
-        // Disabled by default to avoid performance impact on large projects
-        setProviding(false);
+        // Enabled by default for better visibility of compile issues
+        setProviding(true);
     }
 
     /**

@@ -400,19 +400,19 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         } else if (response.getStatus() == ToolExecutionStatus.EXECUTED) {
             runButton.setText("Run Again");
             runButton.setIcon(new RunIcon(16));
-            runButton.addActionListener(e -> response.execute());
+            runButton.addActionListener(e -> executeTool());
             runButton.setEnabled(true);
             revertButton.setVisible(true);
         } else if (response.getStatus() == ToolExecutionStatus.PENDING || response.getStatus() == ToolExecutionStatus.NOT_EXECUTED) {
             runButton.setText("Run");
             runButton.setIcon(new RunIcon(16));
-            runButton.addActionListener(e -> response.execute());
+            runButton.addActionListener(e -> executeTool());
             runButton.setEnabled(true);
             revertButton.setVisible(false);
         } else if (response.getStatus() == ToolExecutionStatus.FAILED) {
             runButton.setText("Retry");
             runButton.setIcon(new RunIcon(16));
-            runButton.addActionListener(e -> response.execute());
+            runButton.addActionListener(e -> executeTool());
             runButton.setEnabled(true);
             revertButton.setVisible(true);
         } else {
@@ -437,6 +437,14 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         }
         area.setFont(chatConfig.getTheme().getMonoFont());
         return area;
+    }
+
+    /**
+     * Executes the tool associated with this panel on a background thread using 
+     * the Chat's dedicated executor.
+     */
+    private void executeTool() {
+        chatPanel.getChat().getExecutor().execute(() -> getPart().getResponse().execute());
     }
 
     @Override

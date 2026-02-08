@@ -142,4 +142,20 @@ public class UICapture {
 
         return ret;
     }
+
+    /**
+     * Captures a single Swing component as a PNG byte array.
+     * 
+     * @param comp The component to capture.
+     * @return The PNG data.
+     * @throws IOException if the capture fails.
+     */
+    public static byte[] captureComponent(java.awt.Component comp) throws IOException {
+        BufferedImage image = new BufferedImage(comp.getWidth(), comp.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        comp.paint(image.getGraphics());
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            ImageIO.write(image, "png", baos);
+            return baos.toByteArray();
+        }
+    }
 }
