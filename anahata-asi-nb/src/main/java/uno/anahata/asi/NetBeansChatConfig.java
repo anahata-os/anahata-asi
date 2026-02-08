@@ -5,6 +5,7 @@ import uno.anahata.asi.chat.ChatConfig;
 import uno.anahata.asi.gemini.GeminiAiProvider;
 import uno.anahata.asi.nb.mine.NetBeansEditorKitProvider;
 import uno.anahata.asi.nb.mine.NetBeansIconProvider;
+import uno.anahata.asi.nb.tools.NbCoding;
 import uno.anahata.asi.nb.tools.files.nb.NbFiles;
 import uno.anahata.asi.nb.tools.ide.IDE;
 import uno.anahata.asi.nb.tools.java.CodeModel;
@@ -44,6 +45,7 @@ public class NetBeansChatConfig extends SwingChatConfig {
         getToolClasses().add(CodeModel.class);
         getToolClasses().add(IDE.class);
         getToolClasses().add(Hints.class);
+        getToolClasses().add(NbCoding.class);
         getToolClasses().add(Host.class);
         
         setEditorKitProvider(new NetBeansEditorKitProvider());

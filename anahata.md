@@ -5,6 +5,10 @@
 > **CRITICAL CODING PRINCIPLE**
 > **NEVER** attempt to write or refactor code without first loading the relevant Java types (classes, interfaces, etc.) into your context. Coding "blind" leads to hallucinations, compilation errors, and architectural drift. Always use `LocalFiles.readFile` or `JavaSources.getSource` to ensure you have the ground truth before proposing changes.
 
+> [!DANGER]
+> **NO HACKING OUR OWN CODE**
+> We do not implement "dirty hacks" or workarounds to mask architectural flaws or API limitations in our own codebase. If a design is broken, we fix the design. We do not "hack" our way around it.
+
 This document provides the high-level strategic overview for the entire `anahata-ai-parent` project.
 
 > [!IMPORTANT]

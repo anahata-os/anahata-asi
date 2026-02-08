@@ -247,6 +247,10 @@ public class GeminiModel extends AbstractModel {
         GeminiGenerateContentParameters prepared = prepareGenerateContentParameters(request);
         
         log.info("Sending request to Gemini model: {} {} content elements", getModelId(), prepared.history().size());
+        for (int i = 0; i < prepared.history().size(); i++) {
+            Content c = prepared.history().get(i);
+            log.info("  Message {}: role={}, parts={}", i, c.role().orElse("N/A"), c.parts().map(List::size).orElse(0));
+        }
 
         // 2. Make the API call
         try {
@@ -279,6 +283,12 @@ public class GeminiModel extends AbstractModel {
         Client client = provider.getClient();
         GeminiGenerateContentParameters prepared = prepareGenerateContentParameters(request);
         Chat chat = request.config().getChat();
+
+        log.info("Streaming request to Gemini model: {} {} content elements", getModelId(), prepared.history().size());
+        for (int i = 0; i < prepared.history().size(); i++) {
+            Content c = prepared.history().get(i);
+            log.info("  Message {}: role={}, parts={}", i, c.role().orElse("N/A"), c.parts().map(List::size).orElse(0));
+        }
 
         try {
             ResponseStream<GenerateContentResponse> stream = client.models.generateContentStream(
