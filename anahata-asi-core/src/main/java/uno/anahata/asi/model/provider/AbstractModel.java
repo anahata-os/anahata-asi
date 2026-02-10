@@ -131,6 +131,13 @@ public abstract class AbstractModel {
      * @return A list of available server tools.
      */
     public abstract List<ServerTool> getAvailableServerTools();
+    
+    /**
+     * Gets the list of server-side tools that should be enabled by default for this model.
+     * 
+     * @return The list of default server tools.
+     */
+    public abstract List<ServerTool> getDefaultServerTools();
 
     /**
      * Gets the default temperature for this model.

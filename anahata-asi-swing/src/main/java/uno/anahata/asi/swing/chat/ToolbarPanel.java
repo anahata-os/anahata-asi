@@ -21,6 +21,7 @@ import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.icons.PrunedPartsIcon;
 import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.icons.ServerToolsIcon;
+import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 
 /**
  * The vertical toolbar panel for the chat UI, containing primary action toggles.
@@ -47,7 +48,7 @@ public class ToolbarPanel extends JPanel {
     /** Toggle button for automatic tool loop replies. */
     private JToggleButton toggleAutoreplyButton;
     /** Toggle button for showing/hiding pruned parts. */
-    private JToggleButton togglePrunedPartsButton;
+    private JToggleButton togglePrunedButton;
     /** Button to clear the chat history. */
     private JButton clearChatButton;
     /** Button to trigger context compression. */
@@ -87,10 +88,10 @@ public class ToolbarPanel extends JPanel {
         // Vertical Glue to push toggles to the middle
         add(Box.createVerticalGlue());
         
-        // 3. Toggle Pruned Parts Button (Middle)
-        togglePrunedPartsButton = createIconToggleButton(new PrunedPartsIcon(ICON_SIZE), "Show/Hide pruned parts in the conversation view.", config.isShowPrunedParts());
-        togglePrunedPartsButton.addActionListener(this::togglePrunedParts);
-        add(togglePrunedPartsButton);
+        // 3. Toggle Pruned Button (Middle)
+        togglePrunedButton = createIconToggleButton(new PrunedPartsIcon(ICON_SIZE), "Show/Hide pruned parts and messages in the conversation view.", config.isShowPruned());
+        togglePrunedButton.addActionListener(this::togglePruned);
+        add(togglePrunedButton);
 
         // 4. Toggle Local Tools Button (Middle)
         // Use the authentic Java icon for local tools
@@ -111,6 +112,10 @@ public class ToolbarPanel extends JPanel {
         // Vertical Glue to keep the toggles in the middle
         add(Box.createVerticalGlue());
 
+        // Declarative, thread-safe binding to tool enablement changes.
+        // We only listen to serverToolsEnabled as it is fired by both setters in ChatConfig.
+        new EdtPropertyChangeListener(this, config, "serverToolsEnabled", evt -> syncToggles());
+
         // Initial state sync
         syncToggles();
     }
@@ -122,7 +127,7 @@ public class ToolbarPanel extends JPanel {
         this.chat = chatPanel.getChat();
         this.config = chatPanel.getChatConfig();
         
-        togglePrunedPartsButton.setSelected(config.isShowPrunedParts());
+        togglePrunedButton.setSelected(config.isShowPruned());
         toggleAutoreplyButton.setSelected(config.isAutoReplyTools());
         syncToggles();
     }
@@ -176,14 +181,13 @@ public class ToolbarPanel extends JPanel {
     }
     
     /**
-     * Action listener for the toggle pruned parts button.
+     * Action listener for the toggle pruned button.
      * @param e The action event.
      */
-    private void togglePrunedParts(ActionEvent e) {
-        boolean show = togglePrunedPartsButton.isSelected();
-        config.setShowPrunedParts(show);
-        log.info("Show Pruned Parts toggled to: {}", show);
-        // TODO: Trigger a full re-render of the conversation view here
+    private void togglePruned(ActionEvent e) {
+        boolean show = togglePrunedButton.isSelected();
+        config.setShowPruned(show);
+        log.info("Show Pruned toggled to: {}", show);
     }
 
     /**

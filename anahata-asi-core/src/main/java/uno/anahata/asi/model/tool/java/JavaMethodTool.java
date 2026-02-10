@@ -65,8 +65,12 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         this.toolInstance = toolInstance;
         this.javaMethodSignature = buildMethodSignature(method);
         
-        // Set retention using the clean inheritance model
-        setRetentionTurns(toolAnnotation.retention());
+        // Set max depth using the clean inheritance model
+        int maxDepth = toolAnnotation.maxDepth();
+        if (maxDepth == 0) {
+            throw new IllegalArgumentException("Tool '" + getName() + "' cannot have maxDepth=0. Use -1 to inherit or >= 1 to live.");
+        }
+        setMaxDepth(maxDepth);
         
         // Build description
         StringBuilder descriptionBuilder = new StringBuilder(toolAnnotation.value());
@@ -109,11 +113,20 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
     
     @Override
     public String getDescription() {
-        StringBuilder descriptionBuilder = new StringBuilder(super.description);
-        descriptionBuilder.append("\nPermission:").append(this.permission);
-        descriptionBuilder.append("\nRetention Turns:").append(getRetentionTurns());
-        descriptionBuilder.append("\nEffective Turns:").append(getEffectiveRetentionTurns());
-        return descriptionBuilder.toString();
+        StringBuilder sb = new StringBuilder(super.description);
+        sb.append("\nPermission: ").append(this.permission);
+        
+        int ret = getMaxDepth();
+        sb.append("\nMax Depth: ").append(ret == -1 ? "-1 (inherit from toolkit)" : ret);
+        
+        int effective = getEffectiveMaxDepth();
+        String source = "tool";
+        if (ret == -1) {
+            source = (toolkit.getDefaultMaxDepth() == -1) ? "chat config" : "toolkit";
+        }
+        sb.append("\nEffective Max Depth: ").append(effective).append(" (inherited from ").append(source).append(")");
+        
+        return sb.toString();
     }
     
     /**

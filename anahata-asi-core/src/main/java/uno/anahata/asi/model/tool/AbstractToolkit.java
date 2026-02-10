@@ -30,8 +30,8 @@ public abstract class AbstractToolkit<T extends AbstractTool<?,?>> {
     /** A description of the toolkit's purpose. */
     protected String description;
     
-    /** The default retention policy for tools in this toolkit. */
-    protected int defaultRetention = -1;
+    /** The default maximum depth policy for tools in this toolkit. */
+    protected int defaultMaxDepth = -1;
 
     /** Whether the toolkit is currently enabled. */
     @Setter
@@ -41,9 +41,6 @@ public abstract class AbstractToolkit<T extends AbstractTool<?,?>> {
      * Constructs a new AbstractToolkit.
      * 
      * @param toolManager The parent ToolManager.
-     * @param id The unique ID of the toolkit.
-     * @param name The human-readable name of the toolkit.
-     * @param description A description of the toolkit's purpose.
      */
     protected AbstractToolkit(@NonNull ToolManager toolManager) {
         this.toolManager = toolManager;

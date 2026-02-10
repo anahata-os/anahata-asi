@@ -17,7 +17,7 @@ import uno.anahata.asi.internal.TextUtils;
 /**
  * The abstract base class for all components of a {@link AbstractMessage}.
  * This class is central to the V2 context management system, providing a rich,
- * self-contained model for intelligent, time-based pruning and full context awareness.
+ * self-contained model for intelligent, depth-based pruning and full context awareness.
  *
  * @author anahata-gemini-pro-2.5
  */
@@ -44,7 +44,7 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      * A three-state flag for explicit pruning control.
      * - {@code true}: This part is explicitly pruned and will be hidden.
      * - {@code false}: This part is "pinned" and never be auto-pruned.
-     * - {@code null}: (Default) Auto-pruning is active based on {@code turnsToKeep}.
+     * - {@code null}: (Default) Auto-pruning is active based on {@code maxDepth}.
      */
     @Schema(hidden = true)
     private Boolean pruned = null;
@@ -56,13 +56,13 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
     private String prunedReason;
 
     /**
-     * An explicit, instance-level override for the number of user turns this
+     * An explicit, instance-level override for the maximum depth this
      * part should remain in the active context. If {@code null}, the effective
      * value is determined by the part type's default, resolved via the
-     * {@link #getDefaultTurnsToKeep()} template method.
+     * {@link #getDefaultMaxDepth()} template method.
      */
     @Schema(hidden = true)
-    private Integer turnsToKeep = null;
+    private Integer maxDepth = null;
 
     /**
      * The number of tokens this part consumes in the context window.
@@ -136,6 +136,17 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
     }
     
     /**
+     * Checks if this part is explicitly pinned.
+     * 
+     * @return {@code true} if the part is pinned.
+     */
+    @JsonIgnore
+    @Schema(hidden = true)
+    public boolean isPinned() {
+        return Boolean.FALSE.equals(this.pruned);
+    }
+
+    /**
      * Calculates the EFFECTIVE pruned state of this part, now with "deep pinning" logic.
      * A part is effectively pruned if it was explicitly pruned, if its PARENT MESSAGE
      * was explicitly pruned, or if its time-to-live has expired. Crucially, it is
@@ -148,11 +159,11 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
     public boolean isEffectivelyPruned() {
         // --- PINNING LOGIC (takes precedence) ---
         // 1. Is the part itself explicitly pinned?
-        if (Boolean.FALSE.equals(this.pruned)) {
+        if (isPinned()) {
             return false; // It's pinned, not pruned.
         }
         // 2. Is the parent message pinned? (Deep Pin)
-        if (message != null && Boolean.FALSE.equals(message.isPruned())) {
+        if (message != null && message.isPinned()) {
             return false; // Inherits pin, not pruned.
         }
 
@@ -165,8 +176,8 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
         if (message != null && Boolean.TRUE.equals(message.isPruned())) {
             return true;
         }
-        // 5. Finally, check the time-based auto-pruning logic (only if pruned is null for both).
-        if (getTurnsLeft() <= 0) {
+        // 5. Finally, check the depth-based auto-pruning logic (only if pruned is null for both).
+        if (getRemainingDepth() <= 0) {
             return true;
         }
 
@@ -174,45 +185,59 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
     }
 
     /**
-     * Calculates the remaining turns before this part is auto-pruned.
+     * Determines if this part is eligible for "hard pruning" (permanent removal from history).
+     * A part is generally considered garbage if its remainingDepth has reached zero and it is not pinned.
      * 
-     * @return The number of turns left, or a large positive number for indefinite retention.
+     * @return {@code true} if the part can be safely removed from history.
      */
     @JsonIgnore
     @Schema(hidden = true)
-    public int getTurnsLeft() {
-        int effectiveTurns = getEffectiveTurnsToKeep();
-        if (effectiveTurns < 0) {
-            return Integer.MAX_VALUE; // Indefinite
-        }
-        return message != null ? effectiveTurns - message.getDepth() : effectiveTurns;
+    public boolean isGarbageCollectable() {
+        // A part is garbage collectable if it's effectively pruned AND its remainingDepth <= 0 AND it's not pinned.
+        // Note: isEffectivelyPruned() already returns false if pinned.
+        return isEffectivelyPruned() && getRemainingDepth() <= 0;
     }
 
     /**
-     * The definitive method for resolving the retention policy for this part.
+     * Calculates the remaining depth before this part is auto-pruned.
+     * 
+     * @return The remaining depth, or a large positive number for indefinite retention.
+     */
+    @JsonIgnore
+    @Schema(hidden = true)
+    public int getRemainingDepth() {
+        int effectiveMaxDepth = getEffectiveMaxDepth();
+        if (effectiveMaxDepth < 0) {
+            return Integer.MAX_VALUE; // Indefinite
+        }
+        return message != null ? effectiveMaxDepth - message.getDepth() : effectiveMaxDepth;
+    }
+
+    /**
+     * The definitive method for resolving the max depth policy for this part.
      * It follows the Template Method pattern, first checking for an explicit
      * instance-level override before falling back to the subclass-specific
      * default.
      * 
-     * @return The effective number of turns to keep this part.
+     * @return The effective maximum depth for this part.
      */
     @JsonIgnore
     @Schema(hidden = true)
-    public final int getEffectiveTurnsToKeep() {
-        if (turnsToKeep != null) {
-            return turnsToKeep;
+    public final int getEffectiveMaxDepth() {
+        if (maxDepth != null) {
+            return maxDepth;
         }
-        return getDefaultTurnsToKeep();
+        return getDefaultMaxDepth();
     }
 
     /**
      * Template method hook for subclasses to provide their specific default
-     * retention policy. This is the fallback value used when no explicit
-     * {@code turnsToKeep} is set on the instance.
+     * max depth policy. This is the fallback value used when no explicit
+     * {@code maxDepth} is set on the instance.
      * 
-     * @return The default number of turns for this part type.
+     * @return The default maximum depth for this part type.
      */
-    protected abstract int getDefaultTurnsToKeep();
+    protected abstract int getDefaultMaxDepth();
 
     /**
      * Gets the parent chat session.
@@ -255,18 +280,18 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      */
     public String createMetadataHeader() {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("[Part ID: %d | Type: %s | Tokens: %d | Turns Left: %d",
+        sb.append(String.format("[Part ID: %d | Type: %s | Tokens: %d | Remaining Depth: %d",
             getSequentialId(),
             getClass().getSimpleName(),
             getTokenCount(),
-            getTurnsLeft()
+            getRemainingDepth()
         ));
 
         appendMetadata(sb);
 
         if (Boolean.TRUE.equals(pruned)) {
             sb.append(" | [PRUNED]");
-        } else if (Boolean.FALSE.equals(pruned)) {
+        } else if (isPinned()) {
             sb.append(" | [PINNED]");
         }
         
@@ -302,7 +327,7 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
         metadata.put("partId", getSequentialId());
         metadata.put("type", getClass().getSimpleName());
         metadata.put("tokens", getTokenCount());
-        metadata.put("turnsLeft", getTurnsLeft());
+        metadata.put("remainingDepth", getRemainingDepth());
         if (pruned != null) {
             metadata.put("pruned", pruned);
         }

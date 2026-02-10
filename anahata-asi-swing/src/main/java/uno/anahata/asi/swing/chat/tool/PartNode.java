@@ -57,11 +57,11 @@ public class PartNode extends AbstractContextNode<AbstractPart> {
     /** {@inheritDoc} */
     @Override
     protected void updateStatus() {
-        int turnsLeft = userObject.getTurnsLeft();
+        int remainingDepth = userObject.getRemainingDepth();
         if (userObject.isEffectivelyPruned()) {
-            this.status = "Pruned" + (turnsLeft >= 0 ? " (" + turnsLeft + " turns left)" : "");
+            this.status = "Pruned" + (remainingDepth >= 0 ? " (" + remainingDepth + " remaining)" : "");
         } else {
-            this.status = "Active" + (turnsLeft >= 0 ? " (" + turnsLeft + " turns left)" : "");
+            this.status = "Active" + (remainingDepth >= 0 ? " (" + remainingDepth + " remaining)" : "");
         }
     }
 }

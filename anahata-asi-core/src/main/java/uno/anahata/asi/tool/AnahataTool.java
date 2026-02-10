@@ -14,14 +14,4 @@ import uno.anahata.asi.toolkit.Java;
  */
 public abstract class AnahataTool extends ToolContext implements Callable<Object>{
     
-    /**
-     * Allows the model to programmatically set the "turns to keep" (retention) 
-     * policy for the current tool call result.
-     * 
-     * @param turnsToKeep The number of turns to keep this result in context.
-     */
-    public void setTurnsToKeep(int turnsToKeep) {
-        getResponse().setTurnsToKeep(turnsToKeep);
-    }
-    
 }

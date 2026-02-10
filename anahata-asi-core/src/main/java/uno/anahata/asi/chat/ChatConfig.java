@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import uno.anahata.asi.AsiContainer;
+import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 import uno.anahata.asi.model.core.RequestConfig;
 import uno.anahata.asi.model.provider.AbstractAiProvider;
 import uno.anahata.asi.toolkit.Session;
@@ -28,7 +29,7 @@ import uno.anahata.asi.toolkit.shell.Shell;
  */
 @Getter
 @Setter
-public class ChatConfig {
+public class ChatConfig extends BasicPropertyChangeSource {
 
     /** A reference to the global, application-wide configuration. */
     @NonNull
@@ -57,9 +58,9 @@ public class ChatConfig {
 
     {
         // Pre-populate with core, essential tools.
-        toolClasses.add(Files.class);
-        toolClasses.add(Java.class);
         toolClasses.add(Session.class);
+        toolClasses.add(Files.class);
+        toolClasses.add(Java.class);        
         toolClasses.add(Resources.class);
         toolClasses.add(Shell.class);
     }
@@ -128,17 +129,14 @@ public class ChatConfig {
     /** The maximum number of tokens allowed in the context window. */
     private int tokenThreshold = 250000; // Moved from ContextManager
     
-    /** The default number of user turns a TextPart should be kept in context. */
-    private int defaultTextPartTurnsToKeep = 108;
+    /** The default maximum depth a TextPart should be kept in context. */
+    private int defaultTextPartMaxDepth = 108;
     
-    /** The default number of user turns a ToolResponse should be kept in context. */
-    private int defaultToolTurnsToKeep = 5;
+    /** The default maximum depth a ToolResponse should be kept in context. */
+    private int defaultToolMaxDepth = 12;
     
-    /** The default number of user turns a BlobPart should be kept in context. */
-    private int defaultBlobPartTurnsToKeep = 3;
-    
-    /** The number of turns a part must be soft-pruned before it is eligible for hard-pruning (permanent deletion). */
-    private int hardPruneDelay = 108;
+    /** The default maximum depth a BlobPart should be kept in context. */
+    private int defaultBlobPartMaxDepth = 3;
     //</editor-fold>
 
     /** The default response modalities for this chat session. */
@@ -151,10 +149,13 @@ public class ChatConfig {
      * @param enabled true to enable local tools.
      */
     public void setLocalToolsEnabled(boolean enabled) {
+        boolean oldServer = this.serverToolsEnabled;
         this.localToolsEnabled = enabled;
         if (enabled) {
             this.serverToolsEnabled = false;
         }
+        // Only fire serverToolsEnabled to trigger a single UI sync
+        propertyChangeSupport.firePropertyChange("serverToolsEnabled", oldServer, this.serverToolsEnabled);
     }
 
     /**
@@ -164,10 +165,12 @@ public class ChatConfig {
      * @param enabled true to enable server-side tools.
      */
     public void setServerToolsEnabled(boolean enabled) {
+        boolean oldServer = this.serverToolsEnabled;
         this.serverToolsEnabled = enabled;
         if (enabled) {
             this.localToolsEnabled = false;
         }
+        propertyChangeSupport.firePropertyChange("serverToolsEnabled", oldServer, enabled);
     }
 
     /**

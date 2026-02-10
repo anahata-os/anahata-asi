@@ -21,6 +21,7 @@ import uno.anahata.asi.model.core.RequestConfig;
 import uno.anahata.asi.model.provider.AbstractModel;
 import uno.anahata.asi.model.provider.ServerTool;
 import uno.anahata.asi.swing.components.SliderSpinner;
+import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 
 /**
  * A panel for editing the RequestConfig of a Chat session.
@@ -72,6 +73,8 @@ public class RequestConfigPanel extends JPanel implements PropertyChangeListener
         loadConfig();
         
         chat.addPropertyChangeListener(this);
+        // Listen to global config changes to refresh tool checkboxes
+        new EdtPropertyChangeListener(this, chat.getConfig(), "serverToolsEnabled", evt -> loadConfig());
     }
 
     /**

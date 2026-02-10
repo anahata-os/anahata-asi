@@ -125,14 +125,6 @@ public abstract class AbstractResource<R, C> extends BasicPropertyChangeSource i
     public abstract boolean isStale() throws IOException;
 
     /**
-     * Gets the number of turns remaining before this resource is pruned.
-     * The implementation of this method defines the resource's lifecycle policy.
-     *
-     * @return The number of turns left, or {@code null} if the resource is permanent/stateful.
-     */
-    public abstract Integer getTurnsRemaining();
-
-    /**
      * Gets a user-friendly description of the resource.
      * @return The description string.
      */
@@ -159,22 +151,17 @@ public abstract class AbstractResource<R, C> extends BasicPropertyChangeSource i
      */
     @Override
     public String getHeader() {
-        Integer turns = getTurnsRemaining();
-        String turnsStr = (turns == null) ? "Permanent" : turns.toString();
-        
         return String.format(
             "--- Resource: %s ---\n" +
             "Id: %s\n" +
             "Refresh Policy: %s\n" +
             "Context Position: %s\n" +
-            "Turns Remaining: %s\n" +
             "Providing: %s\n" +
             "Effectively Providing: %s\n",
             getName(),
             getId(),
             getRefreshPolicy(),
             getContextPosition(),
-            turnsStr,
             isProviding(),
             isEffectivelyProviding()
         );

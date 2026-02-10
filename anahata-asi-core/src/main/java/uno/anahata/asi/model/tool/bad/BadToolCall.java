@@ -25,7 +25,7 @@ public class BadToolCall extends AbstractToolCall<BadTool, BadToolResponse> {
     }
 
     @Override
-    protected int getDefaultTurnsToKeep() {
-        return 1;
+    protected int getDefaultMaxDepth() {
+        return getResponse().getDefaultMaxDepth();
     }
 }

@@ -38,7 +38,7 @@ public class NbSwingUtils {
             public java.awt.Component getListCellRendererComponent(javax.swing.JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 if (value instanceof Chat chat) {
-                    setText(chat.getNickname() + " (" + chat.getShortId() + ")");
+                    setText(chat.getDisplayName() + " (" + chat.getShortId() + ")");
                 }
                 return this;
             }

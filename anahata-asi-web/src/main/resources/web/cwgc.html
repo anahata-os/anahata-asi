@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CWGC | Context Window Garbage Collection</title>
+    <link rel="icon" type="image/png" href="https://www.anahata.uno/icons/anahata_16.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --barca-blue: #004d98;
+            --barca-red: #a50044;
+            --barca-gold: #edbb00;
+            --jasi-dark: #05050a;
+            --jasi-card: #0f0f1a;
+            --jasi-glow: rgba(0, 77, 152, 0.4);
+            --text-main: #e0e0e0;
+            --text-muted: #888;
+            --metadata-color: #fab1a0;
+            --content-color: #55efc4;
+            --placeholder-color: #ff7675;
+        }
+
+        body {
+            background-color: var(--jasi-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            line-height: 1.6;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 4rem;
+            background: radial-gradient(circle at center, var(--jasi-glow) 0%, transparent 70%);
+            padding: 4rem 0;
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            background: linear-gradient(45deg, #fff, var(--barca-gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 0.5rem;
+            font-weight: 900;
+            margin: 0;
+        }
+
+        .subtitle {
+            color: var(--barca-gold);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-size: 1.2rem;
+            margin-top: 1rem;
+        }
+
+        h2 {
+            color: var(--barca-gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 4rem;
+            border-left: 4px solid var(--barca-red);
+            padding-left: 1rem;
+            font-size: 1.8rem;
+        }
+
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .card {
+            background: var(--jasi-card);
+            padding: 2rem;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: var(--barca-blue);
+        }
+
+        .card h3 {
+            color: var(--barca-blue);
+            margin-top: 0;
+            text-transform: uppercase;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-right: 8px;
+        }
+
+        .tag-pruned { background: var(--barca-red); color: #fff; }
+        .tag-pinned { background: var(--barca-gold); color: #000; }
+        .tag-auto { background: var(--barca-blue); color: #fff; }
+
+        .note {
+            background: rgba(237, 187, 0, 0.05);
+            border-left: 5px solid var(--barca-gold);
+            padding: 2rem;
+            margin: 3rem 0;
+            border-radius: 0 15px 15px 0;
+        }
+
+        code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: var(--barca-gold);
+        }
+
+        ul { padding-left: 1.5rem; }
+        li { margin-bottom: 0.8rem; }
+
+        .status-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--jasi-card);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .status-table th, .status-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .status-table th {
+            background: rgba(0, 77, 152, 0.2);
+            color: var(--barca-gold);
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+        }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>CWGC Protocol</h1>
+    <div class="subtitle">Context Window Garbage Collection • V2 Standard</div>
+</header>
+
+<div class="container">
+    
+    <div class="note">
+        <strong>The Core Philosophy:</strong> Transparency and Control. The model must know why it's seeing content (Remaining Depth), while the user retains ultimate authority to Pin or Prune any part of the conversation.
+    </div>
+
+    <h2>1. The Tri-State Pruning Flag</h2>
+    <p>Both <code>AbstractMessage</code> and <code>AbstractPart</code> implement a three-state pruning control system:</p>
+    
+    <table class="status-table">
+        <thead>
+            <tr>
+                <th>State</th>
+                <th>Value</th>
+                <th>Behavior</th>
+                <th>Hard Pruning Immunity</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><span class="tag tag-pruned">Pruned</span></td>
+                <td><code>Boolean.TRUE</code></td>
+                <td>Explicitly hidden from the model (Soft Prune). Remains in UI.</td>
+                <td>No</td>
+            </tr>
+            <tr>
+                <td><span class="tag tag-pinned">Pinned</span></td>
+                <td><code>Boolean.FALSE</code></td>
+                <td>Always visible to the model. Ignores <code>remainingDepth</code>.</td>
+                <td><strong>YES</strong></td>
+            </tr>
+            <tr>
+                <td><span class="tag tag-auto">Auto</span></td>
+                <td><code>null</code></td>
+                <td>Governed by the <code>remainingDepth</code> countdown.</td>
+                <td>No</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>2. Retention & Ageing</h2>
+    <div class="concept-grid">
+        <div class="card">
+            <h3>Retention Hierarchy</h3>
+            <p>How <code>maxDepth</code> is resolved (from specific to general):</p>
+            <ol>
+                <li><strong>Instance Override</strong>: <code>part.setMaxDepth(X)</code></li>
+                <li><strong>Tool Definition</strong>: <code>@AiTool(maxDepth = X)</code></li>
+                <li><strong>Toolkit Default</strong>: <code>@AiToolkit(maxDepth = X)</code></li>
+                <li><strong>Global Policy</strong>: <code>ChatConfig.defaultMaxDepth</code></li>
+            </ol>
+            <p><strong>Inheritance Logic:</strong> For tools, <code>maxDepth = "-1"</code> means inherit from the parent toolkit. If the toolkit also has <code>-1</code>, it falls back to the <code>ChatConfig</code> default.</p>
+            <p><strong>CRITICAL:</strong> The <code>maxDepth</code> is set when the part is <strong>created</strong>. Changing defaults in <code>ChatConfig</code> or annotations only affects parts created <em>after</em> the change.</p>
+        </div>
+        <div class="card">
+            <h3>Remaining Depth Calculation</h3>
+            <p><code>remainingDepth = maxDepth - messageDepth</code></p>
+            <ul>
+                <li><strong>Depth 0</strong>: The most recent message (the 'Head').</li>
+                <li><strong>The Sinking Stack</strong>: Every new message increases the depth of all previous messages, sinking them further into the stack.</li>
+                <li><strong>Clock is Ticking</strong>: Parts only live forever if they are <span class="tag tag-pinned">Pinned</span>. Otherwise, they age with every turn.</li>
+                <li><strong>Default Policies</strong>: 
+                    <ul>
+                        <li>Text Parts: 108 depth</li>
+                        <li>Tool Responses: 12 depth</li>
+                        <li>Blob Parts: 3 depth</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <h2>3. Pruning Logic</h2>
+    
+    <div class="card" style="margin-bottom: 2rem;">
+        <h3>isEffectivelyPruned()</h3>
+        <p>A part or message is considered "Effectively Pruned" if:</p>
+        <ul>
+            <li>It is explicitly set to <span class="tag tag-pruned">Pruned</span>.</li>
+            <li><strong>Inheritance:</strong> Its parent message is set to <span class="tag tag-pruned">Pruned</span>.</li>
+            <li><strong>Time-out:</strong> Its <code>remainingDepth <= 0</code> (and it is NOT Pinned).</li>
+        </ul>
+        <p><strong>Deep Pinning:</strong> If a message is <span class="tag tag-pinned">Pinned</span>, all its parts inherit that immunity and remain visible.</p>
+    </div>
+
+    <div class="concept-grid">
+        <div class="card">
+            <h3>Soft Pruning</h3>
+            <p>Triggered by explicit <code>pruned=true</code>. The content is hidden from the model prompt but <strong>remains visible in the UI history</strong>. This allows the user to "Unprune" or "Pin" the content later.</p>
+        </div>
+        <div class="card">
+            <h3>Hard Pruning ("Bye Bye")</h3>
+            <p>Triggered automatically when <code>remainingDepth <= 0</code> (and the state is not Pinned). The part is <strong>permanently deleted</strong> from the history to reclaim RAM and disk space. <em>Note: Messages are garbage collected when they have no parts left.</em></p>
+        </div>
+    </div>
+
+    <div class="note">
+        <strong>Tool Call & Response Binding:</strong> Tool calls and their associated responses are bidirectionally bound. Pruning, pinning, or changing the retention of one automatically affects the other. Tool calls delegate their retention values to the responses because responses are always one turn more recent (higher depth).
+    </div>
+
+    <div class="note">
+        <strong>Stateful Resources:</strong> Managed resources (files, screen captures) are <strong>turn-agnostic</strong>. They do not have a depth countdown and remain in context until explicitly unregistered by the model or the user.
+    </div>
+
+</div>
+
+<footer>
+    <div style="text-align: center; padding: 4rem; opacity: 0.5; font-size: 0.8rem;">
+        &copy; 2026 Anahata OS. CWGC Protocol Specification v1.0-draft. Visca el Barça!
+    </div>
+</footer>
+
+</body>
+</html>

@@ -10,7 +10,7 @@ import uno.anahata.asi.model.tool.ToolPermission;
 /**
  * Marks a method as an AI-callable tool and provides essential metadata.
  * This is the cornerstone of the V2 tool framework, defining the tool's
- * description, retention policy, and default approval behavior.
+ * description, max depth policy, and default approval behavior.
  *
  * @author anahata-gemini-pro-2.5
  */
@@ -28,16 +28,16 @@ public @interface AiTool {
     String value();
 
     /**
-     * The retention policy for this tool's call/response pair in the
-     * conversation history, in number of user turns. This serves as a
-     * default hint that can be overridden by the model at runtime.
+     * The maximum depth policy for this tool's call/response pair in the
+     * conversation history. This serves as a default hint that can be 
+     * overridden by the model at runtime.
      * <p>
      * A value of -1 indicates that the value should be inherited from the 
      * {@code @AiToolkit} annotation or the system default.
      * 
-     * @return The number of turns to keep this tool's result in context.
+     * @return The maximum depth to keep this tool's result in context.
      */
-    int retention() default -1; // Inherit from toolkit
+    int maxDepth() default -1; // Inherit from toolkit
 
     /**
      * Determines the default approval behavior for this tool.

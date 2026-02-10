@@ -63,7 +63,7 @@ public abstract class BlobPart extends AbstractPart {
     }
 
     @Override
-    protected int getDefaultTurnsToKeep() {
-        return getChatConfig().getDefaultBlobPartTurnsToKeep();
+    protected int getDefaultMaxDepth() {
+        return getChatConfig().getDefaultBlobPartMaxDepth();
     }
 }

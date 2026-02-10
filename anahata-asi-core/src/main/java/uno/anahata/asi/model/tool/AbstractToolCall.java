@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -73,6 +74,10 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
      * The signature of the thought process as a byte array.
      */
     private byte[] thoughtSignature;
+    
+    /** Recursion guard for synchronized removal. */
+    @JsonIgnore
+    private final transient AtomicBoolean removing = new AtomicBoolean(false);
 
     /**
      * Constructs a new AbstractToolCall.
@@ -151,7 +156,7 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
     /**
      * Gets the effective arguments for the UI (original + draft modifications).
      *
-     * @return A map of effective arguments.
+     * @return a map of effective arguments.
      */
     public Map<String, Object> getEffectiveArgs() {
         Map<String, Object> effective = new HashMap<>(args);
@@ -159,18 +164,37 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
         return effective;
     }
 
-    //<editor-fold defaultstate="collapsed" desc="V2 Context Management Delegation">
+    /**
+     * {@inheritDoc}
+     * Synchronized removal: Removing a tool call automatically removes its response.
+     */
+    @Override
+    public void remove() {
+        if (removing.compareAndSet(false, true)) {
+            try {
+                if (response != null) {
+                    response.remove();
+                }
+                super.remove();
+            } finally {
+                removing.set(false);
+            }
+        }
+    }
+
+    //<editor-fold defaultstate="collapsed" desc="V2 Context Management Delegation (Life Inheritance)">
     /**
      * {@inheritDoc}
      */
     @Override
-    protected int getDefaultTurnsToKeep() {
+    protected int getDefaultMaxDepth() {
         // A tool call's lifecycle is always identical to its response.
-        return getResponse().getDefaultTurnsToKeep();
+        return getResponse().getDefaultMaxDepth();
     }
 
     /**
      * {@inheritDoc}
+     * Life Inheritance: The call is pruned if and only if its response is pruned.
      */
     @Override
     public boolean isEffectivelyPruned() {
@@ -179,10 +203,11 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
 
     /**
      * {@inheritDoc}
+     * Life Inheritance: The call shares the same remainingDepth as its response.
      */
     @Override
-    public int getTurnsLeft() {
-        return getResponse().getTurnsLeft();
+    public int getRemainingDepth() {
+        return getResponse().getRemainingDepth();
     }
 
     /**
@@ -195,6 +220,7 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
 
     /**
      * {@inheritDoc}
+     * Delegated to response to maintain bidirectional sync.
      */
     @Override
     public void setPruned(Boolean pruned) {
@@ -205,16 +231,25 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
      * {@inheritDoc}
      */
     @Override
-    public Integer getTurnsToKeep() {
-        return getResponse().getTurnsToKeep();
+    public Integer getMaxDepth() {
+        return getResponse().getMaxDepth();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void setTurnsToKeep(Integer turnsToKeep) {
-        getResponse().setTurnsToKeep(turnsToKeep);
+    public void setMaxDepth(Integer maxDepth) {
+        getResponse().setMaxDepth(maxDepth);
+    }
+    
+    /**
+     * {@inheritDoc}
+     * Life Inheritance: The call is garbage collectable if its response is.
+     */
+    @Override
+    public boolean isGarbageCollectable() {
+        return getResponse().isGarbageCollectable();
     }
     //</editor-fold>
 

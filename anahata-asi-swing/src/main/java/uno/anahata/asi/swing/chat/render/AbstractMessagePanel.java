@@ -86,10 +86,6 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
         setTitleForeground(getHeaderForegroundColor());
         setTitleFont(new Font("SansSerif", Font.BOLD, 13));
         
-        // Background Gradient via MattePainter
-        MattePainter mp = new MattePainter(new GradientPaint(0, 0, getHeaderStartColor(), 1, 0, getHeaderEndColor()), true);
-        setTitlePainter(mp);
-
         // 2. Initialize Header Buttons
         this.pruningToggleButton = new PruningToggleButton(message);
         
@@ -117,7 +113,6 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
         JXPanel mainContent = (JXPanel) getContentContainer();
         mainContent.setLayout(new BorderLayout());
         mainContent.setOpaque(true); // Make it opaque to show the background color
-        mainContent.setBackground(getHeaderEndColor()); // Set the role-specific background
         mainContent.setBorder(BorderFactory.createEmptyBorder(5, 12, 10, 12));
 
         partsContainer = new JXPanel();
@@ -180,10 +175,34 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
         log.info("Updating message structure for #{}", message.getSequentialId());
         updateHeaderInfoText();
         updateHeaderButtons();
+        updateBackgroundColors();
         renderContentParts();
         renderFooterInternal();
+        updateVisibility();
         revalidate();
         repaint();
+    }
+
+    /**
+     * Updates the background colors of the header and content area based on the pruned state.
+     */
+    protected void updateBackgroundColors() {
+        boolean isEffectivelyPruned = message.isEffectivelyPruned();
+        Color start = getHeaderStartColor();
+        Color end = getHeaderEndColor();
+        
+        if (isEffectivelyPruned) {
+            // Distinct 'Ghosted' style for pruned messages
+            start = new Color(235, 235, 235);
+            end = new Color(242, 242, 242);
+            setTitleForeground(new Color(120, 120, 120));
+        } else {
+            setTitleForeground(getHeaderForegroundColor());
+        }
+        
+        MattePainter mp = new MattePainter(new GradientPaint(0, 0, start, 1, 0, end), true);
+        setTitlePainter(mp);
+        getContentContainer().setBackground(end);
     }
 
     /**
@@ -225,7 +244,8 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
      * @return The sender HTML.
      */
     protected String getHeaderSender() {
-        return "<font color='#444444'><b>" + message.getFrom() + "</b></font> ";
+        String color = message.isEffectivelyPruned() ? "#888888" : "#444444";
+        return "<font color='" + color + "'><b>" + message.getFrom() + "</b></font> ";
     }
 
     /**
@@ -233,7 +253,7 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
      * @return The timestamp HTML.
      */
     protected String getHeaderTimestamp() {
-        return "<font color='#666666' size='3'>- " + TimeUtils.formatSmartTimestamp(Instant.ofEpochMilli(message.getTimestamp())) + "</font>";
+        return "<font color='#999999' size='3'>- " + TimeUtils.formatSmartTimestamp(Instant.ofEpochMilli(message.getTimestamp())) + "</font>";
     }
 
     /**
@@ -241,7 +261,7 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
      * @return The header suffix HTML.
      */
     protected String getHeaderSuffix() {
-        return String.format(" <font color='#888888' size='3'><i>(Depth: %d)</i></font>", message.getDepth());
+        return String.format(" <font color='#aaaaaa' size='3'><i>(Depth: %d)</i></font>", message.getDepth());
     }
 
     /**
@@ -313,6 +333,14 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
      */
     protected AbstractPartPanel createPartPanel(AbstractPart part) {
         return PartPanelFactory.createPartPanel(chatPanel, part);
+    }
+
+    /**
+     * Updates the visibility of the entire message panel based on the pruned state.
+     */
+    protected void updateVisibility() {
+        boolean isEffectivelyPruned = message.isEffectivelyPruned();
+        setVisible(!isEffectivelyPruned || chatConfig.isShowPruned());
     }
 
     /**

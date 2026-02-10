@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AsiContainer;
@@ -186,8 +187,8 @@ public abstract class AbstractAiProvider {
         
         Path keysFilePath = getKeysFilePath();
         
-        try {
-            List<String> keys = Files.lines(keysFilePath)
+        try (Stream<String> lines = Files.lines(keysFilePath)) {
+            List<String> keys = lines
                     .map(String::trim)
                     .filter(line -> !line.isEmpty() && !line.startsWith("#") && !line.startsWith("//"))
                     .map(line -> {

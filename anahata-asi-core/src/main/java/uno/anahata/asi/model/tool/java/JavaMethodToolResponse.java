@@ -68,7 +68,7 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
     
     /** Guard to ensure only one thread can execute this response at a time. */
     @JsonIgnore
-    private final AtomicBoolean executing = new AtomicBoolean(false);
+    private final transient AtomicBoolean executing = new AtomicBoolean(false);
 
     public JavaMethodToolResponse(@NonNull JavaMethodToolCall call) {
         super(call);
@@ -161,12 +161,12 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
     }
 
     @Override
-    protected int getDefaultTurnsToKeep() {
-        int toolRetention = getCall().getTool().getRetentionTurns();
-        if (toolRetention != -1) {
-            return toolRetention;
+    protected int getDefaultMaxDepth() {
+        int toolMaxDepth = getCall().getTool().getMaxDepth();
+        if (toolMaxDepth != -1) {
+            return toolMaxDepth;
         }
         // Fall back to the system-wide default from ChatConfig
-        return getChatConfig().getDefaultToolTurnsToKeep();
+        return getChatConfig().getDefaultToolMaxDepth();
     }
 }

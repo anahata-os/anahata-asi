@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -72,6 +73,10 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Schema(description = "If the user modified the argument values in the ui prior to execution, these are the modified arguments and values, arguments not contained on this map did not get modified")
     private final Map<String, Object> modifiedArgs = new HashMap<>();
+    
+    /** Recursion guard for synchronized removal. */
+    @JsonIgnore
+    private final transient AtomicBoolean removing = new AtomicBoolean(false);
 
     public AbstractToolResponse(AbstractToolCall<?, ?> call) {
         super(call.getMessage().getToolMessage());
@@ -264,8 +269,8 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     }
 
     @Override
-    protected int getDefaultTurnsToKeep() {
-        return getCall().getTool().getEffectiveRetentionTurns();
+    protected int getDefaultMaxDepth() {
+        return getCall().getTool().getEffectiveMaxDepth();
     }
     
     /** {@inheritDoc} */
@@ -274,16 +279,45 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
         if (Objects.equals(this.getPruned(), pruned)) {
             return;
         }
+        Boolean old = this.getPruned();
         super.setPruned(pruned);
+        // Bidirectional sync: Fire event for the call as well so UI updates
+        getCall().getPropertyChangeSupport().firePropertyChange("pruned", old, pruned);
     }
 
     /** {@inheritDoc} */
     @Override
-    public void setTurnsToKeep(Integer turnsToKeep) {
-        if (Objects.equals(this.getTurnsToKeep(), turnsToKeep)) {
+    public void setMaxDepth(Integer maxDepth) {
+        if (Objects.equals(this.getMaxDepth(), maxDepth)) {
             return;
         }
-        super.setTurnsToKeep(turnsToKeep);
+        Integer old = this.getMaxDepth();
+        super.setMaxDepth(maxDepth);
+        // Bidirectional sync: Fire event for the call
+        getCall().getPropertyChangeSupport().firePropertyChange("maxDepth", old, maxDepth);
+    }
+
+    /**
+     * {@inheritDoc}
+     * Synchronized removal: Removing a tool response automatically removes its call.
+     */
+    @Override
+    public void remove() {
+        if (removing.compareAndSet(false, true)) {
+            try {
+                if (getCall() != null) {
+                    getCall().remove();
+                }
+                super.remove();
+            } finally {
+                removing.set(false);
+            }
+        }
+    }
+
+    @Override
+    protected void appendMetadata(StringBuilder sb) {
+        sb.append(" | Status: ").append(status);
     }
 
     @Override

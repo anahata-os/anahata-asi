@@ -28,14 +28,14 @@ public @interface AiToolkit {
     String value();
 
     /**
-     * The default retention policy for ALL of this toolkit's tools, in number of user turns. 
+     * The default maximum depth policy for ALL of this toolkit's tools. 
      * This serves as a fallback for any tools in this toolkit that do 
-     * not specify an explicit retention policy in their {@code @AiTool} annotation.
+     * not specify an explicit max depth policy in their {@code @AiTool} annotation.
      * <p>
      * A value of -1 indicates that the value should be inherited from the system default 
      * defined in {@code ChatConfig}.
      * 
-     * @return The default retention turns.
+     * @return The default maximum depth.
      */
-    int retention() default -1; // Inherit from system default
+    int maxDepth() default -1; // Inherit from system default
 }

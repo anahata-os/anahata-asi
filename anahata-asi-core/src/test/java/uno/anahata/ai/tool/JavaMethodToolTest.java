@@ -55,14 +55,14 @@ public class JavaMethodToolTest {
     }
 
     @Test
-    public void testRetentionPolicyIsInheritedFromToolkit() {
+    public void testMaxDepthPolicyIsInheritedFromToolkit() {
         JavaMethodTool doNothingTool = (JavaMethodTool) toolManager.getAllTools().stream()
             .filter(t -> t.getName().equals("MockToolkit.doNothing"))
             .findFirst()
             .orElse(null);
 
         assertNotNull(doNothingTool, "Could not find the doNothing tool.");
-        // MockToolkit has a retention of 10, which should be inherited.
-        assertEquals(10, doNothingTool.getEffectiveRetentionTurns());
+        // MockToolkit has a maxDepth of 10, which should be inherited.
+        assertEquals(10, doNothingTool.getEffectiveMaxDepth());
     }
 }

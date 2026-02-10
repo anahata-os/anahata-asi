@@ -12,6 +12,7 @@ import uno.anahata.asi.internal.TokenizerUtils;
  * @author anahata-gemini-pro-2.5
  */
 @Getter
+@Setter
 public abstract class TextPart extends AbstractPart {
     
     /** The text content of this part. */
@@ -65,12 +66,12 @@ public abstract class TextPart extends AbstractPart {
 
     /**
      * {@inheritDoc}
-     * Returns the default number of turns to keep a text part in context,
+     * Returns the default maximum depth to keep a text part in context,
      * as defined in the chat configuration.
      */
     @Override
-    protected int getDefaultTurnsToKeep() {
-        return getChatConfig().getDefaultTextPartTurnsToKeep();
+    protected int getDefaultMaxDepth() {
+        return getChatConfig().getDefaultTextPartMaxDepth();
     }
     
     /**

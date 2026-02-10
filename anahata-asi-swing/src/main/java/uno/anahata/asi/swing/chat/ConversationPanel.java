@@ -21,13 +21,9 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.model.core.AbstractMessage;
-import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.AbstractToolMessage;
-import uno.anahata.asi.model.core.UserMessage;
 import uno.anahata.asi.swing.chat.render.AbstractMessagePanel;
 import uno.anahata.asi.swing.chat.render.MessagePanelFactory;
-import uno.anahata.asi.swing.chat.render.ModelMessagePanel;
-import uno.anahata.asi.swing.chat.render.UserMessagePanel;
 import uno.anahata.asi.swing.components.ScrollablePanel;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 
@@ -137,6 +133,9 @@ public class ConversationPanel extends JPanel {
         // as soon as the component becomes displayable.
         this.historyListener = new EdtPropertyChangeListener(this, chat.getContextManager(), "history", 
                 evt -> render(), EdtPropertyChangeListener.Mode.INVOKE_LATER, true);
+        
+        // Global listener for "show pruned" toggle to refresh visibility of all panels.
+        new EdtPropertyChangeListener(this, chatPanel.getChatConfig(), "showPruned", evt -> refreshVisibility());
     }
 
     /**
@@ -220,6 +219,19 @@ public class ConversationPanel extends JPanel {
             scrollToBottom();
         }
 
+        revalidate();
+        repaint();
+    }
+
+    /**
+     * Refreshes the visibility and visual state of all cached message panels.
+     * This is called when global settings like 'showPruned' change.
+     */
+    public void refreshVisibility() {
+        log.info("Refreshing visibility for all message panels.");
+        for (AbstractMessagePanel panel : cachedMessagePanels.values()) {
+            panel.render();
+        }
         revalidate();
         repaint();
     }

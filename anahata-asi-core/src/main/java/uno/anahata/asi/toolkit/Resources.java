@@ -32,7 +32,7 @@ public class Resources extends AnahataToolkit {
      * @param resourceIds The unique IDs of the resources to unload.
      * @throws Exception if an error occurs during unregistration.
      */
-    @AiTool(value = "Removes the provided managed resources from the active workspace.", retention = 0)
+    @AiTool(value = "Removes the provided managed resources from the active workspace.", maxDepth = 12)
     public void unregisterResource(
             @AiToolParam("The unique IDs of the resources to unload.") List<String> resourceIds) throws Exception {
         ResourceManager rm = getResourceManager();

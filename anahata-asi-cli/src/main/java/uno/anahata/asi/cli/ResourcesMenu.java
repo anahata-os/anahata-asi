@@ -38,8 +38,7 @@ public class ResourcesMenu {
                     AbstractResource<?, ?> r = resources.get(i);
                     String type = r.getClass().getSimpleName();
                     String name = r.getName();
-                    String turns = r.getTurnsRemaining() == null ? "Permanent" : r.getTurnsRemaining().toString();
-                    System.out.printf("%d: [%s] %s (Turns Left: %s)\n", i + 1, type, name, turns);
+                    System.out.printf("%d: [%s] %s\n", i + 1, type, name);
                 }
             }
             

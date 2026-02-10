@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metadata | In-Band Metadata Injection</title>
+    <link rel="icon" type="image/png" href="https://www.anahata.uno/icons/anahata_16.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --barca-blue: #004d98;
+            --barca-red: #a50044;
+            --barca-gold: #edbb00;
+            --jasi-dark: #05050a;
+            --jasi-card: #0f0f1a;
+            --jasi-glow: rgba(165, 0, 68, 0.4);
+            --text-main: #e0e0e0;
+            --text-muted: #888;
+            --metadata-color: #fab1a0;
+            --content-color: #55efc4;
+            --placeholder-color: #ff7675;
+        }
+
+        body {
+            background-color: var(--jasi-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            line-height: 1.6;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 4rem;
+            background: radial-gradient(circle at center, var(--jasi-glow) 0%, transparent 70%);
+            padding: 4rem 0;
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            background: linear-gradient(45deg, #fff, var(--barca-gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 0.5rem;
+            font-weight: 900;
+            margin: 0;
+        }
+
+        .subtitle {
+            color: var(--barca-gold);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-size: 1.2rem;
+            margin-top: 1rem;
+        }
+
+        h2 {
+            color: var(--barca-gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 4rem;
+            border-left: 4px solid var(--barca-red);
+            padding-left: 1rem;
+            font-size: 1.8rem;
+        }
+
+        .example-box {
+            background: #0a0a15;
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .role-label {
+            font-weight: bold;
+            text-transform: uppercase;
+            padding: 4px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 1.5rem;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+        }
+
+        .role-user { background: #3498db; color: #fff; }
+        .role-model { background: #2ecc71; color: #fff; }
+        .role-tool { background: #9b59b6; color: #fff; }
+
+        pre {
+            background: #05050a;
+            color: #dfe6e9;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+            border: 1px solid #222;
+        }
+
+        .metadata { color: var(--metadata-color); font-style: italic; font-weight: bold; }
+        .content { color: var(--content-color); }
+        .placeholder { color: var(--placeholder-color); font-weight: bold; border: 1px dashed var(--placeholder-color); padding: 4px; display: block; margin-top: 0.5rem; }
+
+        .note {
+            background: rgba(237, 187, 0, 0.05);
+            border-left: 5px solid var(--barca-gold);
+            padding: 2rem;
+            margin: 3rem 0;
+            border-radius: 0 15px 15px 0;
+        }
+
+        footer {
+            text-align: center;
+            padding: 4rem;
+            opacity: 0.5;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>In-Band Metadata</h1>
+    <div class="subtitle">Self-Awareness Injection • V2 Standard</div>
+</header>
+
+<div class="container">
+    
+    <div class="note">
+        <strong>The Goal:</strong> To provide the model with a clear, structured understanding of the conversation's structure, the identity of participants, and the status of every message part, including those that have been pruned.
+    </div>
+
+    <h2>1. Implementation Details</h2>
+    <div class="concept-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <div class="card" style="background: var(--jasi-card); padding: 1.5rem; border-radius: 10px;">
+            <h3 style="color: var(--barca-gold);">shouldCreateMetadata()</h3>
+            <p>A message-level hook that determines if metadata headers should be injected for the message and its parts.</p>
+            <ul>
+                <li><strong>UserMessage</strong>: <code>true</code></li>
+                <li><strong>AbstractModelMessage</strong>: <code>true</code></li>
+                <li><strong>AbstractToolMessage</strong>: <code>false</code> (Pristine Clean)</li>
+                <li><strong>RagMessage</strong>: <code>false</code> (Token Efficiency)</li>
+            </ul>
+        </div>
+        <div class="card" style="background: var(--jasi-card); padding: 1.5rem; border-radius: 10px;">
+            <h3 style="color: var(--barca-gold);">createMetadataHeader()</h3>
+            <p>Generates the actual text string injected into the prompt. It includes:</p>
+            <ul>
+                <li><strong>Message Level</strong>: ID, Role, From, Device, Time, Tokens.</li>
+                <li><strong>Part Level</strong>: ID, Type, Tokens, Remaining Depth.</li>
+                <li><strong>Specialized</strong>: 
+                    <ul>
+                        <li>Tool Calls: Include Response metadata.</li>
+                        <li>Tool Responses: Include Execution Status.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <h2>2. User Message Strategy</h2>
+    <div class="example-box">
+        <span class="role-label role-user">User Role</span>
+        <p>Standard injection: Message header + Part headers. Pruned parts are replaced by metadata-only placeholders.</p>
+        <pre>
+<span class="metadata">--- Message ID: 10 | Role: USER | From: pablo | Device: papa-linux | Time: 10:00:00 | Tokens: 150 ---</span>
+
+<span class="metadata">[Part ID: 1 | Type: TextPart | Tokens: 50 | Remaining Depth: 108]</span>
+<span class="content">Analyze this source code for potential leaks.</span>
+
+<span class="metadata">[Part ID: 2 | Type: BlobPart | Tokens: 500 | Remaining Depth: 0 | [PRUNED] | Hint: text/x-java (OldCode.java)]</span>
+<span class="placeholder">[PRUNED PLACEHOLDER: Metadata preserved for context awareness]</span>
+        </pre>
+    </div>
+
+    <h2>3. Model Message Strategy</h2>
+    <div class="example-box">
+        <span class="role-label role-model">Model Role</span>
+        <p>Text parts follow the User format. Tool calls are grouped with an <strong>Aggregated Tool Metadata</strong> block before the native <code>FunctionCall</code> parts.</p>
+        <pre>
+<span class="metadata">--- Message ID: 11 | Role: MODEL | From: gemini-2.0-flash | Device: google-cloud | Time: 10:00:05 | Tokens: 450 ---</span>
+
+<span class="metadata">[Part ID: 3 | Type: ModelTextPart | Tokens: 50 | Remaining Depth: 108]</span>
+<span class="content">&lt;thought&gt;I will read the file to check for leaks.&lt;/thought&gt;</span>
+
+<span class="metadata">--- Aggregated Tool Metadata ---
+[Message ID: 12 | Role: TOOL | From: 1234@papa-linux | Device: papa-linux | Tokens: 200]
+[Part ID: 4 | Type: JavaMethodToolCall | Tokens: 120 | Remaining Depth: 12 | Response: [Part ID: 5 | Type: JavaMethodToolResponse | Status: SUCCESS]]</span>
+
+<span class="content">[Native FunctionCall: readFile(path="Source.java") ]</span>
+        </pre>
+    </div>
+
+    <h2>4. Tool Message Strategy</h2>
+    <div class="example-box">
+        <span class="role-label role-tool">Tool Role</span>
+        <p><strong>Pristine Clean.</strong> Tool messages contain <strong>only</strong> visible <code>FunctionResponse</code> parts. No metadata headers or placeholders are injected here to comply with strict API sequencing.</p>
+        <pre>
+<span class="content">[Native FunctionResponse: readFile -> { content: "public class...", status: "SUCCESS" } ]</span>
+        </pre>
+    </div>
+
+</div>
+
+<footer>
+    &copy; 2026 Anahata OS. Metadata Specification v2.2. Visca el Barça!
+</footer>
+
+</body>
+</html>

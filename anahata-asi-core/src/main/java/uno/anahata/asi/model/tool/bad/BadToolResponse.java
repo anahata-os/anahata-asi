@@ -44,7 +44,7 @@ public class BadToolResponse extends AbstractToolResponse<BadToolCall> {
     }
     
     @Override
-    protected int getDefaultTurnsToKeep() {
-        return 1;
+    protected int getDefaultMaxDepth() {
+        return getChatConfig().getDefaultToolMaxDepth();
     }
 }

@@ -92,12 +92,6 @@ public class TextFileResource extends AbstractPathResource<String, String> {
 
     /** {@inheritDoc} */
     @Override
-    public Integer getTurnsRemaining() {
-        return null; // Permanent
-    }
-
-    /** {@inheritDoc} */
-    @Override
     public int getTokenCount() {
         int headerTokens = TokenizerUtils.countTokens(getHeader());
         int contentTokens = TokenizerUtils.countTokens(cache);

@@ -63,8 +63,8 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
     private final JButton copyButton;
     /** Button to remove the part from the message. */
     private final JButton removeButton;
-    /** Label to display the number of turns left for this part. */
-    private final JLabel turnsLeftLabel;
+    /** Label to display the remaining depth for this part. */
+    private final JLabel remainingDepthLabel;
 
     /** Container for the part's specific content ("the beef"). */
     private final JXPanel centralContainer;
@@ -92,12 +92,6 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
         setTitleForeground(theme.getPartHeaderFg());
         setTitleFont(new Font("SansSerif", Font.PLAIN, 11));
 
-        // Background Gradient via MattePainter (Faint)
-        // Lightened the background by using a higher alpha or a lighter base color
-        Color startColor = new Color(248, 248, 248, 80); 
-        MattePainter mp = new MattePainter(new GradientPaint(0, 0, startColor, 1, 0, new Color(0,0,0,0)), true);
-        setTitlePainter(mp);
-
         // 2. Initialize Header Buttons and Labels
         this.pruningToggleButton = new PruningToggleButton(part);
         
@@ -111,9 +105,9 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
         this.removeButton.setMargin(new java.awt.Insets(0, 2, 0, 2));
         this.removeButton.addActionListener(e -> part.remove());
         
-        this.turnsLeftLabel = new JLabel();
-        this.turnsLeftLabel.setFont(new Font("SansSerif", Font.ITALIC, 10));
-        this.turnsLeftLabel.setForeground(new Color(160, 160, 160));
+        this.remainingDepthLabel = new JLabel();
+        this.remainingDepthLabel.setFont(new Font("SansSerif", Font.ITALIC, 10));
+        this.remainingDepthLabel.setForeground(new Color(160, 160, 160));
 
         // Copy button on the left
         setLeftDecoration(copyButton);
@@ -121,7 +115,7 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
         // Actions panel on the right
         this.rightButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
         this.rightButtonPanel.setOpaque(false);
-        this.rightButtonPanel.add(turnsLeftLabel);
+        this.rightButtonPanel.add(remainingDepthLabel);
         this.rightButtonPanel.add(pruningToggleButton);
         this.rightButtonPanel.add(removeButton);
         setRightDecoration(rightButtonPanel);
@@ -129,7 +123,7 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
         // 3. Setup Content Layout
         JXPanel mainContainer = (JXPanel) getContentContainer();
         mainContainer.setLayout(new BorderLayout());
-        mainContainer.setOpaque(false);
+        mainContainer.setOpaque(true); // Make it opaque to show the background color
         mainContainer.setBorder(BorderFactory.createEmptyBorder(2, 8, 5, 8));
 
         this.centralContainer = new JXPanel();
@@ -189,12 +183,35 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
     public final void render() {
         updateHeaderInfoText();
         updateHeaderButtons();
-        updateTurnsLeftLabel();
+        updateRemainingDepthLabel();
+        updateBackgroundColors();
         renderContent();
         renderFooterInternal();
         updateContentVisibility();
         revalidate();
         repaint();
+    }
+
+    /**
+     * Updates the background colors of the header based on the pruned state.
+     */
+    protected void updateBackgroundColors() {
+        boolean isEffectivelyPruned = part.isEffectivelyPruned();
+        
+        // Background Gradient via MattePainter (Faint)
+        Color startColor;
+        Color contentBg;
+        if (isEffectivelyPruned) {
+            startColor = new Color(230, 230, 230, 150);
+            contentBg = new Color(240, 240, 240);
+        } else {
+            startColor = new Color(248, 248, 248, 80);
+            contentBg = new Color(0, 0, 0, 0); // Transparent
+        }
+        
+        MattePainter mp = new MattePainter(new GradientPaint(0, 0, startColor, 1, 0, new Color(0,0,0,0)), true);
+        setTitlePainter(mp);
+        getContentContainer().setBackground(contentBg);
     }
 
     /**
@@ -213,22 +230,22 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
         pruningToggleButton.setVisible(prune);
         removeButton.setVisible(remove);
         
-        // Visibility is also constrained by the turnsLeft value in updateTurnsLeftLabel
+        // Visibility is also constrained by the remainingDepth value in updateRemainingDepthLabel
         if (!prune) {
-            turnsLeftLabel.setVisible(false);
+            remainingDepthLabel.setVisible(false);
         }
     }
 
     /**
-     * Updates the text and visibility of the turns left label.
+     * Updates the text and visibility of the remaining depth label.
      */
-    protected void updateTurnsLeftLabel() {
-        int turnsLeft = part.getTurnsLeft();
-        if (turnsLeft >= 0) {
-            turnsLeftLabel.setText("(" + turnsLeft + ")");
-            turnsLeftLabel.setVisible(true);
+    protected void updateRemainingDepthLabel() {
+        int remainingDepth = part.getRemainingDepth();
+        if (remainingDepth >= 0 && remainingDepth < Integer.MAX_VALUE) {
+            remainingDepthLabel.setText("(" + remainingDepth + ")");
+            remainingDepthLabel.setVisible(true);
         } else {
-            turnsLeftLabel.setVisible(false);
+            remainingDepthLabel.setVisible(false);
         }
     }
 
@@ -288,7 +305,7 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
      */
     protected void updateContentVisibility() {
         boolean isEffectivelyPruned = part.isEffectivelyPruned();
-        boolean shouldShowContent = (!isEffectivelyPruned || chatConfig.isShowPrunedParts()) && part.isExpanded();
+        boolean shouldShowContent = (!isEffectivelyPruned || chatConfig.isShowPruned()) && part.isExpanded();
         getContentContainer().setVisible(shouldShowContent);
     }
 }

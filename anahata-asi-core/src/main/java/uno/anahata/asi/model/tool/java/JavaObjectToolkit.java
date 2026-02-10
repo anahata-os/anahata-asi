@@ -59,7 +59,12 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
         // Set parent fields
         this.name = toolClass.getSimpleName();
         this.description = toolkitAnnotation.value();
-        this.defaultRetention = toolkitAnnotation.retention();
+        
+        int maxDepth = toolkitAnnotation.maxDepth();
+        if (maxDepth == 0) {
+            throw new IllegalArgumentException("Toolkit '" + name + "' cannot have maxDepth=0. Use -1 to inherit from config or >= 1 to live.");
+        }
+        this.defaultMaxDepth = maxDepth;
         
         try {
             this.toolInstance = toolClass.getDeclaredConstructor().newInstance();

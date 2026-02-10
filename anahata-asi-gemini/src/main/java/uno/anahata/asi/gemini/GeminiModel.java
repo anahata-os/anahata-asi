@@ -207,6 +207,13 @@ public class GeminiModel extends AbstractModel {
     }
 
     @Override
+    public List<ServerTool> getDefaultServerTools() {
+        return getAvailableServerTools().stream()
+                .filter(st -> st.getId().equals(GoogleSearch.class))
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public Float getDefaultTemperature() {
         return getGenaiModel().temperature().orElse(null);
     }
@@ -231,7 +238,22 @@ public class GeminiModel extends AbstractModel {
         List<Content> googleHistory = history.stream()
                 .map(msg -> new GeminiContentAdapter(msg, includePruned).toGoogle())
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        // Gemini API requirement: The first message in the history must be from the 'user' role.
+        if (!googleHistory.isEmpty() && !"user".equals(googleHistory.get(0).role().orElse(""))) {
+            googleHistory.add(0, Content.builder()
+                    .role("user")
+                    .parts(List.of(Part.fromText(" ")))
+                    .build());
+        }
+
+        // Log the final history for debugging
+        log.info("Final Google History ({} messages):", googleHistory.size());
+        for (int i = 0; i < googleHistory.size(); i++) {
+            Content c = googleHistory.get(i);
+            log.info("  [{}] Role: {}, Parts: {}", i, c.role().orElse("unknown"), c.parts().map(List::size).orElse(0));
+        }
 
         String historyJson = googleHistory.stream()
                 .map(Content::toJson)
@@ -427,7 +449,7 @@ public class GeminiModel extends AbstractModel {
                         }
                         target.toAnahataPart(p);
                     } else {
-                        // For other non-text parts, use the unified conversion logic.
+                        // For other non-text parts, use the unified logic.
                         target.toAnahataPart(p);
                     }
                 }

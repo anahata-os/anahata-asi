@@ -34,7 +34,7 @@ public class Files extends AnahataToolkit {
      * @param newSettings The new viewport settings for the text file.
      * @throws Exception if the resource is not found or reload fails.
      */
-    @AiTool(value = "Updates the viewport of a TextFileResource ", retention = 0)
+    @AiTool(value = "Updates the viewport of a TextFileResource ", maxDepth = 12)
     public void updateTextViewportSettings(
             @AiToolParam("The resourceId (not the path).") String resourceId, 
             @AiToolParam("The new viewport settings for the text file") TextViewportSettings newSettings) throws Exception {
@@ -50,7 +50,7 @@ public class Files extends AnahataToolkit {
      * @return The list of newly created TextFileResources.
      * @throws Exception if no files were successfully loaded.
      */
-    @AiTool(value = "Loads a text file into the context as a managed resource. By default, files are loaded with a LIVE refresh policy, which means they are automatically refreshed from disk right before the API call starts. You do not need to re-load a file if it is already present in the context.", retention = 0)
+    @AiTool(value = "Loads a text file into the context as a managed resource. By default, files are loaded with a LIVE refresh policy, which means they are automatically refreshed from disk right before the API call starts. You do not need to re-load a file if it is already present in the context.", maxDepth = 12)
     public List<TextFileResource> loadTextFile(
             @AiToolParam("The absolute paths to the text files.") List<String> resourcePaths) throws Exception {
 
@@ -81,7 +81,7 @@ public class Files extends AnahataToolkit {
      * @return The newly created TextFileResource.
      * @throws Exception if the file cannot be loaded.
      */
-    @AiTool(value = "Loads a text file into the context with specific viewport settings. This is ideal for tailing logs or filtering large files upon loading.", retention = 0)
+    @AiTool(value = "Loads a text file into the context with specific viewport settings. This is ideal for tailing logs or filtering large files upon loading.", maxDepth = 12)
     public TextFileResource loadTextFileWithSettings(
             @AiToolParam("The absolute path to the file.") String path,
             @AiToolParam("The viewport settings.") TextViewportSettings settings) throws Exception {
@@ -123,7 +123,7 @@ public class Files extends AnahataToolkit {
      * @param message A message describing the change.
      * @throws Exception if the file already exists or an I/O error occurs.
      */
-    @AiTool(value = "Creates a new file with the provided content.", retention = 0)
+    @AiTool(value = "Creates a new file with the provided content.", maxDepth = 12)
     public void createTextFile(
             @AiToolParam("The absolute path to the file.") String path,
             @AiToolParam(value = "The text content to write.", rendererId = "code") String content,
@@ -151,7 +151,7 @@ public class Files extends AnahataToolkit {
      * @param message A message describing the change.
      * @throws Exception if the file does not exist, locking fails, or an I/O error occurs.
      */
-    @AiTool(value = "Overwrites an existing file with the provided content.", retention = 0)
+    @AiTool(value = "Overwrites an existing file with the provided content.", maxDepth = 12)
     public void updateTextFile(
             @AiToolParam("The absolute path to the file.") String path,
             @AiToolParam(value = "The text content to write.", rendererId = "code") String content,
@@ -182,7 +182,7 @@ public class Files extends AnahataToolkit {
      * @param message A message describing the change.
      * @throws Exception if a target string is not found, count mismatch occurs, I/O error occurs, or locking fails.
      */
-    @AiTool(value = "Performs multiple text replacements in a file. Ideal for surgical code edits.", retention = 0)
+    @AiTool(value = "Performs multiple text replacements in a file. Ideal for surgical code edits.", maxDepth = 12)
     public void replaceInTextFile(
             @AiToolParam("The absolute path to the file.") String path,
             @AiToolParam("The list of replacements to perform.") List<TextReplacement> replacements, 
@@ -209,7 +209,7 @@ public class Files extends AnahataToolkit {
      * @param message A message describing the overall change.
      * @throws Exception if any replacement fails.
      */
-    @AiTool(value = "Performs multiple text replacements across multiple files in a single tool call.", retention = 0)
+    @AiTool(value = "Performs multiple text replacements across multiple files in a single tool call.", maxDepth = 12)
     public void replaceInMultipleTextFiles(
             @AiToolParam("The list of files and their replacements.") List<FileTextReplacements> fileReplacements,
             @AiToolParam("A message describing the change.") String message) throws Exception {
@@ -253,7 +253,7 @@ public class Files extends AnahataToolkit {
      * @param content The text content to append.
      * @throws Exception if an I/O error occurs.
      */
-    @AiTool(value = "Appends text to the end of an existing file.", retention = 0)
+    @AiTool(value = "Appends text to the end of an existing file.", maxDepth = 12)
     public void appendTextToFile(
             @AiToolParam("The absolute path to the file.") String path,
             @AiToolParam(value = "The text content to append.", rendererId = "code") String content) throws Exception {

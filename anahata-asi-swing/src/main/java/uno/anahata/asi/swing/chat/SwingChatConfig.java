@@ -35,10 +35,10 @@ public class SwingChatConfig extends ChatConfig {
     private IconProvider iconProvider;
     
     /**
-     * If true, parts that are effectively pruned will still be rendered in the UI
+     * If true, parts and messages that are effectively pruned will still be rendered in the UI
      * (e.g., in a collapsed state) to allow the user to inspect and un-prune them.
      */
-    private boolean showPrunedParts = true;
+    private boolean showPruned = true;
     
     /**
      * If true, sound notifications will be played on status changes.
@@ -71,6 +71,18 @@ public class SwingChatConfig extends ChatConfig {
      */
     public SwingChatConfig(AsiContainer aiConfig, String sessionId) {
         super(aiConfig, sessionId);
+    }
+
+    /**
+     * Sets whether pruned parts and messages should be shown in the UI.
+     * Fires a property change event for reactive UI updates.
+     * 
+     * @param showPruned true to show pruned content.
+     */
+    public void setShowPruned(boolean showPruned) {
+        boolean old = this.showPruned;
+        this.showPruned = showPruned;
+        propertyChangeSupport.firePropertyChange("showPruned", old, showPruned);
     }
 
     public static Color getColor(ChatStatus status) {

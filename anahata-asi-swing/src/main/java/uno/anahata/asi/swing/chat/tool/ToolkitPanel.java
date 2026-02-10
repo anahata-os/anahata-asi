@@ -29,7 +29,7 @@ public class ToolkitPanel extends JPanel {
     private final JLabel nameLabel;
     private final JLabel descLabel;
     private final JCheckBox enabledCheckbox;
-    private final JSpinner retentionSpinner;
+    private final JSpinner maxDepthSpinner;
 
     public ToolkitPanel(ContextPanel parentPanel) {
         this.parentPanel = parentPanel;
@@ -64,11 +64,11 @@ public class ToolkitPanel extends JPanel {
         mainPanel.add(enabledCheckbox, gbc);
         gbc.gridy++;
 
-        JPanel retentionPanel = new JPanel(new BorderLayout(5, 0));
-        retentionPanel.add(new JLabel("Default Retention (turns):"), BorderLayout.WEST);
-        retentionSpinner = new JSpinner(new SpinnerNumberModel(-1, -1, 100, 1));
-        retentionPanel.add(retentionSpinner, BorderLayout.CENTER);
-        mainPanel.add(retentionPanel, gbc);
+        JPanel maxDepthPanel = new JPanel(new BorderLayout(5, 0));
+        maxDepthPanel.add(new JLabel("Default Max Depth:"), BorderLayout.WEST);
+        maxDepthSpinner = new JSpinner(new SpinnerNumberModel(-1, -1, 100, 1));
+        maxDepthPanel.add(maxDepthSpinner, BorderLayout.CENTER);
+        mainPanel.add(maxDepthPanel, gbc);
 
         add(mainPanel, BorderLayout.NORTH);
         add(new JPanel(), BorderLayout.CENTER); // Spacer
@@ -87,9 +87,9 @@ public class ToolkitPanel extends JPanel {
             parentPanel.refresh(false);
         });
 
-        retentionSpinner.setValue(tk.getDefaultRetention());
-        retentionSpinner.addChangeListener(e -> {
-            // Note: AbstractToolkit needs a setter for defaultRetention if we want to edit it here.
+        maxDepthSpinner.setValue(tk.getDefaultMaxDepth());
+        maxDepthSpinner.addChangeListener(e -> {
+            // Note: AbstractToolkit needs a setter for defaultMaxDepth if we want to edit it here.
             // For now, we just display it.
         });
 

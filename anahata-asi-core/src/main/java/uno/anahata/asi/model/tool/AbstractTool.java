@@ -23,9 +23,6 @@ import uno.anahata.asi.model.core.AbstractModelMessage;
 @Slf4j
 public abstract class AbstractTool<P extends AbstractToolParameter, C extends AbstractToolCall> {
     
-    /** The default retention policy for tool calls, in number of user turns. */
-    public static final int DEFAULT_RETENTION_TURNS = 5;
-    
     /** The fully qualified name of the tool, e.g., "LocalFiles.readFile". This is immutable. */
     @NonNull
     protected final String name;
@@ -40,9 +37,9 @@ public abstract class AbstractTool<P extends AbstractToolParameter, C extends Ab
     @Setter
     protected ToolPermission permission;
 
-    /** The number of turns this tool call should be retained in the context. */
+    /** The maximum depth this tool call should be retained in the context. */
     @Setter
-    private int retentionTurns = -1;//inherit
+    private int maxDepth = -1;//inherit
 
     /** A rich, ordered list of the tool's parameters. */
     private final List<P> parameters = new ArrayList<>();
@@ -61,17 +58,17 @@ public abstract class AbstractTool<P extends AbstractToolParameter, C extends Ab
     }
     
     /**
-     * The effective retention turns. 
+     * The effective maximum depth. 
      * 
-     * @return 
+     * @return the effective max depth.
      */
-    public int getEffectiveRetentionTurns() {
-        int ret = retentionTurns;
+    public int getEffectiveMaxDepth() {
+        int ret = maxDepth;
         if (ret == -1) {
-            ret = toolkit.getDefaultRetention();
+            ret = toolkit.getDefaultMaxDepth();
         }
         if (ret == -1) {
-            ret = toolkit.getToolManager().getChat().getConfig().getDefaultToolTurnsToKeep();
+            ret = toolkit.getToolManager().getChat().getConfig().getDefaultToolMaxDepth();
         }
         return ret;
     }

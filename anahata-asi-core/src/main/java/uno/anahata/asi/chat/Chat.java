@@ -39,6 +39,7 @@ import uno.anahata.asi.model.core.UserMessage;
 import uno.anahata.asi.model.provider.AbstractAiProvider;
 import uno.anahata.asi.model.provider.AbstractModel;
 import uno.anahata.asi.model.provider.ApiCallInterruptedException;
+import uno.anahata.asi.model.provider.ServerTool;
 import uno.anahata.asi.resource.ResourceManager;
 import uno.anahata.asi.status.ApiErrorRecord;
 import uno.anahata.asi.status.ChatStatus;
@@ -236,6 +237,22 @@ public class Chat extends BasicPropertyChangeSource {
     public void setSelectedModel(AbstractModel selectedModel) {
         AbstractModel oldModel = this.selectedModel;
         this.selectedModel = selectedModel;
+        
+        if (selectedModel != null) {
+            // 1. Sync existing selected server tools with the new model's capabilities
+            List<ServerTool> available = selectedModel.getAvailableServerTools();
+            requestConfig.getEnabledServerTools().removeIf(st -> 
+                available.stream().noneMatch(a -> a.getId().equals(st.getId()))
+            );
+            
+            // 2. Add the new model's default server tools
+            for (ServerTool def : selectedModel.getDefaultServerTools()) {
+                if (requestConfig.getEnabledServerTools().stream().noneMatch(st -> st.getId().equals(def.getId()))) {
+                    requestConfig.getEnabledServerTools().add(def);
+                }
+            }
+        }
+        
         propertyChangeSupport.firePropertyChange("selectedModel", oldModel, selectedModel);
         autoSave();
     }
@@ -571,8 +588,6 @@ public class Chat extends BasicPropertyChangeSource {
         
         if (!contextManager.getHistory().contains(message)) {
             contextManager.addMessage(message);
-        } else {
-            
         }
         autoSave();
 

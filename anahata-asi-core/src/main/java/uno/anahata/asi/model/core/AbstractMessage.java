@@ -207,6 +207,15 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
     public Boolean isPruned() {
         return pruned;
     }
+    
+    /**
+     * Checks if this message is explicitly pinned.
+     * 
+     * @return {@code true} if the message is pinned.
+     */
+    public boolean isPinned() {
+        return Boolean.FALSE.equals(this.pruned);
+    }
 
     /**
      * Calculates the EFFECTIVE pruned state of this message. A message is
@@ -219,6 +228,9 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
         if (Boolean.TRUE.equals(this.pruned)) {
             return true;
         }
+        if (isPinned()) {
+            return false;
+        }
         // A message is effectively pruned if it has parts and ALL of them are pruned.
         return getParts(false).isEmpty() && !parts.isEmpty();
     }
@@ -230,7 +242,7 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
      * @return {@code true} if the message can be safely removed from history.
      */
     public boolean isGarbageCollectable() {
-        return getParts(true).isEmpty() && !Boolean.FALSE.equals(pruned);
+        return getParts(true).isEmpty() && !isPinned();
     }
 
     /**
@@ -321,7 +333,7 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
         
         if (Boolean.TRUE.equals(pruned)) {
             sb.append(" | [PRUNED]");
-        } else if (Boolean.FALSE.equals(pruned)) {
+        } else if (isPinned()) {
             sb.append(" | [PINNED]");
         }
         

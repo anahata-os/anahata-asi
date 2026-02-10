@@ -2,8 +2,11 @@
 package uno.anahata.asi.model.resource;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import javax.imageio.ImageIO;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +31,10 @@ public class BinaryFileResource extends AbstractPathResource<byte[], byte[]> {
 
     /** The detected MIME type of the binary data. */
     private String mimeType;
+    
+    /** Cached image dimensions for token estimation. */
+    private int width = -1;
+    private int height = -1;
 
     /**
      * Creates a new BinaryFileResource.
@@ -54,6 +61,19 @@ public class BinaryFileResource extends AbstractPathResource<byte[], byte[]> {
         this.setLoadLastModified(getCurrentLastModified());
         this.mimeType = TikaUtils.detectMimeType(getResource().toFile());
         this.cache = data;
+        
+        // Try to extract image dimensions for better token estimation
+        if (mimeType != null && mimeType.startsWith("image/")) {
+            try (ByteArrayInputStream bais = new ByteArrayInputStream(data)) {
+                BufferedImage img = ImageIO.read(bais);
+                if (img != null) {
+                    this.width = img.getWidth();
+                    this.height = img.getHeight();
+                }
+            } catch (Exception e) {
+                log.warn("Failed to read image dimensions for token estimation: {}", getPath());
+            }
+        }
     }
 
     /**
@@ -73,19 +93,27 @@ public class BinaryFileResource extends AbstractPathResource<byte[], byte[]> {
         return mimeType != null ? mimeType : "application/octet-stream";
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public Integer getTurnsRemaining() {
-        return null; // Permanent/Stateful
-    }
-
     /**
      * {@inheritDoc}
      * Returns a heuristic token count for binary data.
      */
     @Override
     public int getTokenCount() {
-        // Heuristic: images/videos often have a fixed or high token cost in models like Gemini.
-        return 1000; 
+        if (cache == null) {
+            return 0;
+        }
+        
+        if (mimeType != null && mimeType.startsWith("image/")) {
+            if (width > 0 && height > 0) {
+                // Gemini-like heuristic: 258 tokens for base + tiles
+                // A very rough guess: 258 + (pixels / 754)
+                return 258 + (width * height / 754);
+            }
+            return 258; // Default for unknown image size
+        }
+        
+        // For other binary data, assume Base64 overhead (~1.33x) 
+        // and a rough 4 bytes per token estimate.
+        return (int) (cache.length * 1.33 / 4);
     }
 }

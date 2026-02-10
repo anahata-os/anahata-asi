@@ -182,10 +182,6 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
         // as their corresponding MODEL message will have converted the ToolCall into a text placeholder.
         synchronized (history) {
             for (AbstractMessage msg : history) {
-                if (msg.getRole() == Role.TOOL && msg.isEffectivelyPruned()) {
-                    log.info("Skipping effectively pruned tool message #{}", msg.getSequentialId());
-                    continue;
-                }
                 visibleHistory.add(msg);
             }
         }
@@ -332,18 +328,17 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
 
     /**
      * Performs a hard prune on the entire chat history, permanently deleting
-     * parts that have been soft-pruned for longer than the configured delay.
+     * parts that have reached their retention limit (remainingDepth <= 0) and are 
+     * not explicitly pinned.
      */
     private void hardPrune() {
-        int hardPruneDelay = chat.getConfig().getHardPruneDelay();
-        if (hardPruneDelay < 0) {
-            return; // Hard pruning disabled
-        }
         synchronized (history) {
             for (AbstractMessage message : history) {
-                // Use getParts(true) to iterate over all parts, including soft-pruned ones
-                for (AbstractPart ap : message.getParts(true)) {
-                    if (ap.isEffectivelyPruned() && ap.getTurnsLeft() < -hardPruneDelay) {
+                // Create a copy to avoid ConcurrentModificationException when calling ap.remove()
+                List<AbstractPart> allParts = new ArrayList<>(message.getParts(true));
+                for (AbstractPart ap : allParts) {
+                    // Hard prune if remainingDepth <= 0 AND it's not pinned (directly or via parent message).
+                    if (ap.getRemainingDepth() <= 0 && !Boolean.FALSE.equals(ap.getPruned()) && !Boolean.FALSE.equals(message.isPruned())) {
                         ap.remove();
                     }
                 }

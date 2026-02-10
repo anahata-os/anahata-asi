@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import net.miginfocom.swing.MigLayout;
@@ -19,8 +20,24 @@ import uno.anahata.asi.model.resource.TextReplacement;
 public class ReplacementListPanel extends JPanel {
     private final List<ReplacementCard> cards = new ArrayList<>();
 
+    /**
+     * Constructs a ReplacementListPanel.
+     * 
+     * @param replacements The list of replacements to display.
+     * @param onUpdate A callback to trigger when selection changes.
+     */
     public ReplacementListPanel(List<TextReplacement> replacements, Runnable onUpdate) {
         setLayout(new BorderLayout());
+        
+        JPanel toolbar = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
+        JButton deselectAllBtn = new JButton("Deselect All");
+        deselectAllBtn.setFont(new java.awt.Font("SansSerif", java.awt.Font.PLAIN, 10));
+        deselectAllBtn.addActionListener(e -> {
+            cards.forEach(c -> c.setSelected(false));
+            onUpdate.run();
+        });
+        toolbar.add(deselectAllBtn);
+        add(toolbar, BorderLayout.NORTH);
         
         JPanel container = new JPanel(new MigLayout("wrap 1, fillx, insets 5", "[grow]"));
         for (TextReplacement r : replacements) {
@@ -31,10 +48,15 @@ public class ReplacementListPanel extends JPanel {
         
         JScrollPane scroll = new JScrollPane(container);
         scroll.setBorder(BorderFactory.createEmptyBorder());
-        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        scroll.getVerticalScrollBar().setUnitIncrement(25);
         add(scroll, BorderLayout.CENTER);
     }
 
+    /**
+     * Gets the list of replacements currently selected in the UI.
+     * 
+     * @return The list of checked replacements.
+     */
     public List<TextReplacement> getSelectedReplacements() {
         return cards.stream()
                 .filter(ReplacementCard::isSelected)
@@ -42,10 +64,28 @@ public class ReplacementListPanel extends JPanel {
                 .collect(Collectors.toList());
     }
     
+    /**
+     * Aggregates comments from all cards in this list.
+     * 
+     * @return A formatted string of comments.
+     */
     public String getAggregatedComments() {
         return cards.stream()
                 .filter(c -> !c.getComment().trim().isEmpty())
                 .map(c -> "Change to '" + c.getReplacement().getTarget() + "': " + c.getComment().trim())
                 .collect(Collectors.joining("\n"));
+    }
+
+    /**
+     * Collects all screenshots from all cards in this list.
+     * 
+     * @return A list of PNG byte arrays.
+     */
+    public List<byte[]> getScreenshots() {
+        List<byte[]> all = new ArrayList<>();
+        for (ReplacementCard card : cards) {
+            all.addAll(card.getScreenshots());
+        }
+        return all;
     }
 }

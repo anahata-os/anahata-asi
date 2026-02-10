@@ -320,7 +320,7 @@ public class InputPanel extends JPanel {
         executeTask(
                 "Attach Screenshot",
                 () -> {
-                    List<Path> files = UICapture.screenshotAllScreenDevices();
+                    List<Path> files = UICapture.screenshotAllScreens();
                     currentMessage.addAttachments(files);
                     return null;
                 }
@@ -334,7 +334,7 @@ public class InputPanel extends JPanel {
         executeTask(
                 "Attach Application Frames",
                 () -> {
-                    List<Path> files = UICapture.screenshotAllJFrames();
+                    List<Path> files = UICapture.screenshotAllWindows();
                     currentMessage.addAttachments(files);
                     return null;
                 }

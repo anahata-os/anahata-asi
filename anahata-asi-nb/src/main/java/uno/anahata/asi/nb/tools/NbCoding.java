@@ -42,9 +42,11 @@ public class NbCoding extends ToolContext {
         
         DialogDescriptor dd = new DialogDescriptor(panel, "Review Surgical Changes");
         dd.setHelpCtx(null);
+        panel.setupDialog(dd);
         
         java.awt.Dialog dialog = org.openide.DialogDisplayer.getDefault().createDialog(dd);
         dialog.setResizable(true);
+        dialog.setBounds(java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds());
         dialog.setVisible(true);
         
         List<FileTextReplacements> accepted = panel.getAcceptedReplacements();
@@ -55,12 +57,16 @@ public class NbCoding extends ToolContext {
             getResponse().setUserFeedback(comments);
         }
         
-        // Attach any captured frames
-        for (byte[] frame : panel.getCapturedFrames()) {
-            getResponse().addAttachment(frame, "image/png");
+        // Attach any captured screenshots
+        List<byte[]> screenshots = panel.getScreenshots();
+        if (!screenshots.isEmpty()) {
+            log("Attaching " + screenshots.size() + " screenshot(s) captured in the diff viewer.");
+            for (byte[] screenshot : screenshots) {
+                getResponse().addAttachment(screenshot, "image/png");
+            }
         }
 
-        if (dd.getValue() == DialogDescriptor.OK_OPTION) {
+        if (dd.getValue() == panel.getOkBtn()) {
             if (accepted.isEmpty()) {
                 return "No changes were selected by the user.";
             }
