@@ -37,6 +37,7 @@ public class ProjectComponentsContextProvider extends BasicContextProvider {
         super("components", "Project Components", "List of all Java types (FQNs) in the project");
         this.projectsToolkit = projectsToolkit;
         this.projectPath = projectPath;
+        super.setProviding(false);
     }
 
     /**

@@ -114,7 +114,7 @@ public class Chat extends BasicPropertyChangeSource {
     /**
      * A thread-safe flag indicating if the chat session has been shut down.
      */
-    private final AtomicBoolean shutdown = new AtomicBoolean(false);
+    private transient AtomicBoolean shutdown = new AtomicBoolean(false);
 
     /**
      * The last response received from the model. Used for state persistence and
@@ -191,6 +191,7 @@ public class Chat extends BasicPropertyChangeSource {
     public void rebind() {
         super.rebind();
         log.info("Kryo rebind hook called for Chat session {}", config.getSessionId());
+        this.shutdown = new AtomicBoolean(false);
     }
 
     /**
@@ -306,12 +307,6 @@ public class Chat extends BasicPropertyChangeSource {
                 return;
             }
             
-            // If both are empty, we have nothing to do.
-            if ((message == null || message.isEmpty()) && contextManager.buildVisibleHistory().isEmpty()) {
-                log.warn("Attempted to send empty message with empty history. Ignoring.");
-                return;
-            }
-
             setRunning(true);
         } finally {
             runningLock.unlock();

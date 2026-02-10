@@ -82,11 +82,12 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         sb.append("- **NetBeansProjects Folder**: ").append(projectsFolder).append("\n");
         
         List<String> folderNames = listAvailableProjectFolders();
+        
+        /*
         List<String> projectSummaries = new ArrayList<>();
         File root = new File(projectsFolder);
-        
         for (String name : folderNames) {
-            File projectDir = new File(root, name);
+            File projectDir = new File(root, name);            
             FileObject fo = FileUtil.toFileObject(projectDir);
             if (fo != null) {
                 try {
@@ -100,8 +101,8 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
                     projectSummaries.add(name + " (Error)");
                 }
             }
-        }
-        sb.append("- **Available Project Folders**: ").append(projectSummaries).append("\n");
+        }*/
+        sb.append("- **Available Project Folders**: ").append(folderNames).append("\n");
         
         List<String> openProjects = getOpenProjects();
         sb.append("- **Current Open Projects**: ").append(openProjects).append("\n");

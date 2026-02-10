@@ -23,42 +23,43 @@ import uno.anahata.asi.tool.AnahataToolkit;
 public class Audio extends AnahataToolkit {
 
     private static final AudioFormat FORMAT = new AudioFormat(16000, 16, 1, true, true);
-    private static final String SELECTED_INPUT_DEVICE = "audio.input.device.id";
-    private static final String SELECTED_OUTPUT_DEVICE = "audio.output.device.id";
 
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class AudioDevice {
-        private String id;
-        private String name;
-        private String vendor;
-        private String description;
-        private String type; // INPUT or OUTPUT
-        private boolean isSelected;
+    @Override
+    public void populateMessage(uno.anahata.asi.model.core.RagMessage ragMessage) throws Exception {
+        List<AudioDevice> devices = listDevices();
+        StringBuilder sb = new StringBuilder("\n## Available Audio Devices\n");
+        sb.append("Current selected input: `").append(getChat().getConfig().getSelectedInputDeviceId()).append("`\n");
+        sb.append("Current selected output: `").append(getChat().getConfig().getSelectedOutputDeviceId()).append("`\n\n");
+        
+        for (AudioDevice device : devices) {
+            sb.append("- ").append(device.toString()).append("\n");
+        }
+        ragMessage.addTextPart(sb.toString());
     }
 
+    /**
+     * Lists all available audio input and output devices.
+     * @return a list of AudioDevice objects.
+     */
     @AiTool("Lists all available audio input and output devices.")
     public List<AudioDevice> listDevices() {
         List<AudioDevice> devices = new ArrayList<>();
         Mixer.Info[] mixerInfos = AudioSystem.getMixerInfo();
         
-        String selectedInput = (String) getSessionMap().get(SELECTED_INPUT_DEVICE);
-        String selectedOutput = (String) getSessionMap().get(SELECTED_OUTPUT_DEVICE);
+        String selectedInput = getChat().getConfig().getSelectedInputDeviceId();
+        String selectedOutput = getChat().getConfig().getSelectedOutputDeviceId();
 
         for (Mixer.Info info : mixerInfos) {
             Mixer mixer = AudioSystem.getMixer(info);
             
-            // Check for input lines
             if (mixer.getTargetLineInfo().length > 0) {
-                AudioDevice device = createDevice(info, "INPUT");
+                AudioDevice device = AudioDevice.fromMixerInfo(info, AudioDevice.Type.INPUT);
                 device.setSelected(device.getId().equals(selectedInput));
                 devices.add(device);
             }
             
-            // Check for output lines
             if (mixer.getSourceLineInfo().length > 0) {
-                AudioDevice device = createDevice(info, "OUTPUT");
+                AudioDevice device = AudioDevice.fromMixerInfo(info, AudioDevice.Type.OUTPUT);
                 device.setSelected(device.getId().equals(selectedOutput));
                 devices.add(device);
             }
@@ -66,32 +67,41 @@ public class Audio extends AnahataToolkit {
         return devices;
     }
 
-    private AudioDevice createDevice(Mixer.Info info, String type) {
-        AudioDevice device = new AudioDevice();
-        device.setId(info.getName() + ":" + type); // Crude unique ID
-        device.setName(info.getName());
-        device.setVendor(info.getVendor());
-        device.setDescription(info.getDescription());
-        device.setType(type);
-        return device;
+    /**
+     * Selects a specific device for recording for the current session.
+     * @param deviceId The unique ID of the device to select.
+     * @return a status message.
+     */
+    @AiTool("Selects a specific device for recording for the current session.")
+    public String selectRecordingDevice(@AiToolParam("The unique ID of the input device to select.") String deviceId) {
+        getChat().getConfig().setSelectedInputDeviceId(deviceId);
+        return "Input device selected: " + deviceId;
     }
 
-    @AiTool("Selects a specific device for recording or playback for the current session.")
-    public String selectDevice(@AiToolParam("The unique ID of the device to select.") String deviceId) {
-        if (deviceId.endsWith(":INPUT")) {
-            getSessionMap().put(SELECTED_INPUT_DEVICE, deviceId);
-            return "Input device selected: " + deviceId;
-        } else if (deviceId.endsWith(":OUTPUT")) {
-            getSessionMap().put(SELECTED_OUTPUT_DEVICE, deviceId);
-            return "Output device selected: " + deviceId;
-        }
-        return "Error: Invalid device ID format. Must end with :INPUT or :OUTPUT";
+    /**
+     * Selects a specific device for playback for the current session.
+     * @param deviceId The unique ID of the device to select.
+     * @return a status message.
+     */
+    @AiTool("Selects a specific device for playback for the current session.")
+    public String selectOutputDevice(@AiToolParam("The unique ID of the output device to select.") String deviceId) {
+        getChat().getConfig().setSelectedOutputDeviceId(deviceId);
+        return "Output device selected: " + deviceId;
     }
 
+    /**
+     * Records audio from the selected input device for a specified duration.
+     * @param durationSeconds Duration in seconds.
+     * @param deviceId Optional specific device ID to use.
+     * @return a status message.
+     * @throws Exception if recording fails.
+     */
     @AiTool("Records audio from the selected input device for a specified duration.")
-    public String record(@AiToolParam("Duration in seconds.") int durationSeconds) throws Exception {
-        String deviceId = (String) getSessionMap().get(SELECTED_INPUT_DEVICE);
-        Mixer.Info mixerInfo = findMixerInfo(deviceId);
+    public String record(@AiToolParam("Duration in seconds.") int durationSeconds,
+                         @AiToolParam(value = "Optional specific device ID to use.", required = false) String deviceId) throws Exception {
+        
+        String actualDeviceId = deviceId != null ? deviceId : getChat().getConfig().getSelectedInputDeviceId();
+        Mixer.Info mixerInfo = AudioDevice.toMixerInfo(actualDeviceId);
         
         TargetDataLine line;
         if (mixerInfo != null) {
@@ -131,13 +141,21 @@ public class Audio extends AnahataToolkit {
         return "Recording complete. File size: " + tempFile.length() + " bytes. Attached to message.";
     }
 
+    /**
+     * Plays an audio file on the selected output device.
+     * @param filePath The absolute path to the audio file.
+     * @param deviceId Optional specific device ID to use.
+     * @return a status message.
+     * @throws Exception if playback fails.
+     */
     @AiTool("Plays an audio file on the selected output device.")
-    public String play(@AiToolParam("The absolute path to the audio file.") String filePath) throws Exception {
+    public String play(@AiToolParam("The absolute path to the audio file.") String filePath,
+                       @AiToolParam(value = "Optional specific device ID to use.", required = false) String deviceId) throws Exception {
         File file = new File(filePath);
         if (!file.exists()) return "Error: File not found: " + filePath;
 
-        String deviceId = (String) getSessionMap().get(SELECTED_OUTPUT_DEVICE);
-        Mixer.Info mixerInfo = findMixerInfo(deviceId);
+        String actualDeviceId = deviceId != null ? deviceId : getChat().getConfig().getSelectedOutputDeviceId();
+        Mixer.Info mixerInfo = AudioDevice.toMixerInfo(actualDeviceId);
 
         try (AudioInputStream ais = AudioSystem.getAudioInputStream(file)) {
             Clip clip;
@@ -154,16 +172,5 @@ public class Audio extends AnahataToolkit {
             Thread.sleep(clip.getMicrosecondLength() / 1000);
             return "Playback finished.";
         }
-    }
-
-    private Mixer.Info findMixerInfo(String deviceId) {
-        if (deviceId == null) return null;
-        int lastColon = deviceId.lastIndexOf(':');
-        if (lastColon == -1) return null;
-        String name = deviceId.substring(0, lastColon);
-        for (Mixer.Info info : AudioSystem.getMixerInfo()) {
-            if (info.getName().equals(name)) return info;
-        }
-        return null;
     }
 }

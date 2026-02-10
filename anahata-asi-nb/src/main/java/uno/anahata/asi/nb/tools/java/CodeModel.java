@@ -1,11 +1,23 @@
 /* Licensed under the Apache License, Version 2.0 */
 package uno.anahata.asi.nb.tools.java;
 
+import java.net.URL;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.TypeElement;
 import lombok.extern.slf4j.Slf4j;
+import org.netbeans.api.java.classpath.ClassPath;
+import org.netbeans.api.java.classpath.GlobalPathRegistry;
+import org.netbeans.api.java.source.ClassIndex;
+import org.netbeans.api.java.source.ClasspathInfo;
+import org.netbeans.api.java.source.ElementHandle;
+import org.netbeans.api.java.source.SourceUtils;
+import org.netbeans.spi.java.classpath.support.ClassPathSupport;
+import org.openide.filesystems.FileObject;
 import uno.anahata.asi.model.Page;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolException;
@@ -200,6 +212,69 @@ public class CodeModel extends AnahataToolkit {
             @AiToolParam(value = "The maximum number of results to return per page.", required = false) Integer pageSize,
             @AiToolParam(value = "Optional list of member kinds to filter by.", required = false) List<ElementKind> kindFilters) throws Exception {
         return getMembers(resolveUniqueType(fqn), startIndex, pageSize, kindFilters);
+    }
+
+    /**
+     * Finds all types within a given package, with an option for recursive search.
+     * @param packageName The fully qualified name of the package to search (e.g., 'java.util').
+     * @param kindFilter Optional kind of type to search for (CLASS, INTERFACE, etc.).
+     * @param recursive If true, the search will include all subpackages.
+     * @param startIndex The starting index (0-based) for pagination.
+     * @param pageSize The maximum number of results to return per page.
+     * @return a paginated result of JavaType objects.
+     */
+    @AiTool("Finds all types within a given package, with an option for recursive search.")
+    public Page<JavaType> findTypesInPackage(
+            @AiToolParam("The fully qualified name of the package to search (e.g., 'java.util').") String packageName,
+            @AiToolParam(value = "Optional kind of type to search for.", required = false) ElementKind kindFilter,
+            @AiToolParam("If true, the search will include all subpackages.") boolean recursive,
+            @AiToolParam(value = "The starting index (0-based) for pagination.", required = false) Integer startIndex,
+            @AiToolParam(value = "The maximum number of results to return per page.", required = false) Integer pageSize) {
+
+        ClasspathInfo cpInfo = getClasspathInfo();
+
+        Set<ElementHandle<javax.lang.model.element.TypeElement>> declaredTypes = cpInfo.getClassIndex().getDeclaredTypes(
+                "", ClassIndex.NameKind.PREFIX, EnumSet.allOf(ClassIndex.SearchScope.class));
+
+        List<JavaType> allResults = declaredTypes.stream()
+                .filter(handle -> {
+                    String fqn = handle.getQualifiedName();
+                    int lastDot = fqn.lastIndexOf('.');
+                    String pkg = lastDot > -1 ? fqn.substring(0, lastDot) : "";
+                    if (recursive) {
+                        return pkg.startsWith(packageName);
+                    } else {
+                        return pkg.equals(packageName);
+                    }
+                })
+                .filter(handle -> kindFilter == null || handle.getKind() == kindFilter)
+                .map(handle -> {
+                    FileObject fo = SourceUtils.getFile(handle, cpInfo);
+                    URL url = null;
+                    try {
+                        if (fo != null) url = fo.toURL();
+                    } catch (Exception e) {
+                        log.warn("Failed to resolve URL for handle: {}", handle.getQualifiedName());
+                    }
+                    return new JavaType(handle, url);
+                })
+                .sorted((t1, t2) -> t1.getFqn().compareTo(t2.getFqn()))
+                .collect(Collectors.toList());
+
+        int start = startIndex != null ? startIndex : 0;
+        int size = pageSize != null ? pageSize : 100;
+
+        return new Page<>(allResults, start, size);
+    }
+
+    private static ClasspathInfo getClasspathInfo() {
+        Set<ClassPath> sourcePaths = GlobalPathRegistry.getDefault().getPaths(ClassPath.SOURCE);
+        Set<ClassPath> compilePaths = GlobalPathRegistry.getDefault().getPaths(ClassPath.COMPILE);
+        Set<ClassPath> bootPaths = GlobalPathRegistry.getDefault().getPaths(ClassPath.BOOT);
+        ClassPath sourceCp = ClassPathSupport.createProxyClassPath(sourcePaths.toArray(new ClassPath[0]));
+        ClassPath compileCp = ClassPathSupport.createProxyClassPath(compilePaths.toArray(new ClassPath[0]));
+        ClassPath bootCp = ClassPathSupport.createProxyClassPath(bootPaths.toArray(new ClassPath[0]));
+        return ClasspathInfo.create(bootCp, compileCp, sourceCp);
     }
 
     /**

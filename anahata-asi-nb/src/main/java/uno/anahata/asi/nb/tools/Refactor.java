@@ -5,12 +5,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import lombok.Data;
@@ -50,6 +47,7 @@ import org.openide.util.lookup.Lookups;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolParam;
 import uno.anahata.asi.tool.AiToolkit;
+import uno.anahata.asi.tool.AnahataToolkit;
 
 /**
  * A toolkit for performing programmatic refactoring operations within the NetBeans IDE.
@@ -60,7 +58,7 @@ import uno.anahata.asi.tool.AiToolkit;
  */
 @Slf4j
 @AiToolkit("Programmatic refactoring tools for NetBeans. Use these tools to safely rename, move, copy, or delete code elements while maintaining project integrity.")
-public class Refactor {
+public class Refactor extends AnahataToolkit{
 
     /**
      * DTO for specifying changes to method parameters.
@@ -478,7 +476,9 @@ public class Refactor {
             @AiToolParam(value = "The absolute path of the file to search for.", rendererId = "path") String filePath,
             @AiToolParam("Whether to search in comments.") boolean searchInComments) throws Exception {
         FileObject fo = getFileObject(filePath);
-        WhereUsedQuery query = new WhereUsedQuery(getLookupForFile(fo));
+        Lookup lookup = getLookupForFile(fo);
+
+        WhereUsedQuery query = new WhereUsedQuery(lookup);
         query.putValue(WhereUsedQuery.FIND_REFERENCES, true);
         query.putValue(WhereUsedQuery.SEARCH_IN_COMMENTS, searchInComments);
 
@@ -519,13 +519,13 @@ public class Refactor {
             throw new IllegalArgumentException("Member search is only supported for Java files.");
         }
 
-        ElementHandle handle = getElementHandleForMember(fo, memberName);
+        TreePathHandle handle = getTreePathHandleForMember(fo, memberName);
         if (handle == null) {
             return "Member '" + memberName + "' not found in " + filePath;
         }
 
-        // CRITICAL: For member search, the lookup should contain the ElementHandle
-        WhereUsedQuery query = new WhereUsedQuery(Lookups.fixed(handle));
+        // CRITICAL: For Java elements, the query lookup MUST contain a TreePathHandle
+        WhereUsedQuery query = new WhereUsedQuery(Lookups.fixed(handle, fo));
         query.putValue(WhereUsedQuery.FIND_REFERENCES, true);
         query.putValue(WhereUsedQuery.SEARCH_IN_COMMENTS, searchInComments);
 
@@ -626,60 +626,16 @@ public class Refactor {
      */
     private Lookup getLookupForFile(FileObject fo) {
         if ("java".equals(fo.getExt())) {
-            JavaSource js = JavaSource.forFileObject(fo);
-            if (js != null) {
-                final ElementHandle[] handle = new ElementHandle[1];
-                try {
-                    js.runUserActionTask(new Task<CompilationController>() {
-                        @Override
-                        public void run(CompilationController parameter) throws Exception {
-                            parameter.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
-                            List<? extends TypeElement> topLevelElements = parameter.getTopLevelElements();
-                            if (!topLevelElements.isEmpty()) {
-                                handle[0] = ElementHandle.create(topLevelElements.get(0));
-                            }
-                        }
-                    }, true);
-                } catch (IOException ex) {
-                    // Fallback to file object only
+            try {
+                TreePathHandle handle = getTreePathHandleForClass(fo);
+                if (handle != null) {
+                    return Lookups.fixed(fo, handle);
                 }
-                if (handle[0] != null) {
-                    return Lookups.fixed(fo, handle[0]);
-                }
+            } catch (IOException e) {
+                log.error("Failed to resolve TreePathHandle for: " + fo.getPath(), e);
             }
         }
         return Lookups.singleton(fo);
-    }
-
-    /**
-     * Helper method to get an ElementHandle for a specific member in a Java file.
-     * 
-     * @param fo The FileObject.
-     * @param memberName The member name.
-     * @return The ElementHandle, or null if not found.
-     * @throws IOException if an I/O error occurs.
-     */
-    private ElementHandle getElementHandleForMember(FileObject fo, String memberName) throws IOException {
-        JavaSource js = JavaSource.forFileObject(fo);
-        if (js == null) return null;
-
-        final ElementHandle[] handle = new ElementHandle[1];
-        js.runUserActionTask(new Task<CompilationController>() {
-            @Override
-            public void run(CompilationController parameter) throws Exception {
-                parameter.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
-                TypeElement te = parameter.getTopLevelElements().isEmpty() ? null : parameter.getTopLevelElements().get(0);
-                if (te != null) {
-                    for (Element e : te.getEnclosedElements()) {
-                        if (e.getSimpleName().contentEquals(memberName)) {
-                            handle[0] = ElementHandle.create(e);
-                            break;
-                        }
-                    }
-                }
-            }
-        }, true);
-        return handle[0];
     }
 
     /**

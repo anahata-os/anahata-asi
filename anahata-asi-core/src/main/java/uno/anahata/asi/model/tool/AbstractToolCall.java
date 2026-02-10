@@ -77,7 +77,7 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
     
     /** Recursion guard for synchronized removal. */
     @JsonIgnore
-    private final transient AtomicBoolean removing = new AtomicBoolean(false);
+    private transient AtomicBoolean removing = new AtomicBoolean(false);
 
     /**
      * Constructs a new AbstractToolCall.
@@ -259,6 +259,13 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
     @Override
     public String asText() {
         return "[Tool Call: " + getToolName() + " with args: " + getArgs().toString() + "]";
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void rebind() {
+        super.rebind();
+        this.removing = new AtomicBoolean(false);
     }
 
     /**

@@ -29,6 +29,8 @@ import org.jdesktop.swingx.prompt.PromptSupport;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 import uno.anahata.asi.model.resource.TextReplacement;
+import uno.anahata.asi.swing.icons.DeleteIcon;
+import uno.anahata.asi.swing.icons.FramesIcon;
 import uno.anahata.asi.swing.internal.UICapture;
 
 import uno.anahata.asi.swing.components.WrappingEditorPane;
@@ -56,14 +58,21 @@ public class ReplacementCard extends JPanel {
      * Constructs a new ReplacementCard.
      * 
      * @param replacement The replacement model.
+     * @param validationError An optional validation error message.
      * @param onToggle A callback triggered when the selection checkbox is toggled.
      */
-    public ReplacementCard(TextReplacement replacement, Runnable onToggle) {
+    public ReplacementCard(TextReplacement replacement, String validationError, Runnable onToggle) {
         this.replacement = replacement;
         setLayout(new MigLayout("fillx, insets 8", "[][grow]", "[]2[]5[]5[60:120, grow]5[]5[]"));
         setBorder(BorderFactory.createEtchedBorder());
         
-        checkBox.setSelected(true);
+        if (validationError != null) {
+            checkBox.setSelected(false);
+            checkBox.setEnabled(false);
+            setBackground(new Color(255, 235, 235)); // Light red for errors
+        } else {
+            checkBox.setSelected(true);
+        }
         checkBox.addActionListener(e -> onToggle.run());
         
         String targetPreview = escape(replacement.getTarget());
@@ -77,6 +86,13 @@ public class ReplacementCard extends JPanel {
         
         add(checkBox, "spany, top");
         add(summary, "growx, wrap");
+
+        if (validationError != null) {
+            JLabel errLabel = new JLabel("<html><b>ERROR:</b> " + validationError + "</html>");
+            errLabel.setForeground(Color.RED.darker());
+            errLabel.setFont(new Font("SansSerif", Font.BOLD, 11));
+            add(errLabel, "growx, wrap");
+        }
         
         String reason = replacement.getReason() != null ? replacement.getReason() : "No reason provided.";
         JEditorPane reasonPane = new JEditorPane("text/html", "<html><b>Reason:</b> " + reason + "</html>");
@@ -121,7 +137,7 @@ public class ReplacementCard extends JPanel {
         scroll.setMinimumSize(new Dimension(100, 60));
         add(scroll, "grow, push, wrap"); 
         
-        JButton takeScreenshotBtn = new JButton("Take Screenshot");
+        JButton takeScreenshotBtn = new JButton("Take Screenshot", new FramesIcon(16));
         takeScreenshotBtn.setFont(new Font("SansSerif", Font.PLAIN, 10));
         takeScreenshotBtn.addActionListener(e -> takeScreenshot());
         add(takeScreenshotBtn, "right, wrap");
@@ -136,15 +152,11 @@ public class ReplacementCard extends JPanel {
         try {
             Component compToCapture = null;
             
-            // Try to find the active TopComponent (the "tab i am looking at")
-            TopComponent active = WindowManager.getDefault().getRegistry().getActivated();
-            if (active != null) {
-                compToCapture = active;
-            } else {
-                java.awt.Window w = SwingUtilities.getWindowAncestor(this);
-                if (w != null) {
-                    compToCapture = w;
-                }
+            // Focus on the diff panel for better context
+            compToCapture = (Component) SwingUtilities.getAncestorOfClass(CherryPickDiffPanel.class, this);
+            
+            if (compToCapture == null) {
+                compToCapture = SwingUtilities.getWindowAncestor(this);
             }
             
             if (compToCapture != null) {
@@ -182,7 +194,7 @@ public class ReplacementCard extends JPanel {
             JLabel label = new JLabel(new ImageIcon(img));
             item.add(label, BorderLayout.CENTER);
             
-            JButton removeBtn = new JButton("Remove");
+            JButton removeBtn = new JButton("Remove", new DeleteIcon(12));
             removeBtn.setFont(new Font("SansSerif", Font.PLAIN, 9));
             removeBtn.setMargin(new java.awt.Insets(0, 2, 0, 2));
             removeBtn.addActionListener(e -> {

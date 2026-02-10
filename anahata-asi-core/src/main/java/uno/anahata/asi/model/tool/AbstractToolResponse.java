@@ -29,6 +29,7 @@ import uno.anahata.asi.model.core.AbstractPart;
  */
 @Getter
 @Setter
+@lombok.extern.slf4j.Slf4j
 public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> extends AbstractPart {
     /** The final status of the invocation after execution. */
     @Setter(lombok.AccessLevel.NONE)
@@ -76,7 +77,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     
     /** Recursion guard for synchronized removal. */
     @JsonIgnore
-    private final transient AtomicBoolean removing = new AtomicBoolean(false);
+    private transient AtomicBoolean removing = new AtomicBoolean(false);
 
     public AbstractToolResponse(AbstractToolCall<?, ?> call) {
         super(call.getMessage().getToolMessage());
@@ -323,5 +324,16 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     @Override
     public String asText() {
         return String.format("[%s] %s", status, result != null ? TextUtils.formatValue(result.toString()) : (errors != null ? errors : ""));
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void rebind() {
+        super.rebind();
+        this.removing = new AtomicBoolean(false);
+        if (status == ToolExecutionStatus.EXECUTING) {
+            log.info("Restored tool response in EXECUTING state. Marking as INTERRUPTED (zombie recovery).");
+            this.status = ToolExecutionStatus.INTERRUPTED;
+        }
     }
 }

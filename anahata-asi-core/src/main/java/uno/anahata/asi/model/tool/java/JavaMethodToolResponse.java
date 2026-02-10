@@ -68,7 +68,7 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
     
     /** Guard to ensure only one thread can execute this response at a time. */
     @JsonIgnore
-    private final transient AtomicBoolean executing = new AtomicBoolean(false);
+    private transient AtomicBoolean executing = new AtomicBoolean(false);
 
     public JavaMethodToolResponse(@NonNull JavaMethodToolCall call) {
         super(call);
@@ -82,6 +82,13 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
     @Override
     public JavaMethodToolCall getCall() {
         return call;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void rebind() {
+        super.rebind();
+        this.executing = new AtomicBoolean(false);
     }
 
     @Override
@@ -121,7 +128,7 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
             setStatus(ToolExecutionStatus.EXECUTED);
 
         } catch (Exception e) {
-            log.error("Exception executing tool " + getCall(), exception);
+            log.error("Exception executing tool " + getCall(), e);
             Throwable cause = (e instanceof InvocationTargetException && e.getCause() != null) ? e.getCause() : e;
             this.exception = cause;
 

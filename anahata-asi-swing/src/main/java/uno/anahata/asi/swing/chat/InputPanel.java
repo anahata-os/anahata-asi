@@ -34,11 +34,15 @@ import uno.anahata.asi.model.tool.AbstractToolResponse;
 import uno.anahata.asi.model.tool.ToolExecutionStatus;
 import uno.anahata.asi.status.ChatStatus;
 import uno.anahata.asi.swing.components.ScrollablePanel;
+import uno.anahata.asi.swing.icons.AttachIcon;
 import uno.anahata.asi.swing.icons.AutoReplyIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
+import uno.anahata.asi.swing.icons.FramesIcon;
 import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.icons.RunAndSendIcon;
+import uno.anahata.asi.swing.icons.ScreenshotIcon;
+import uno.anahata.asi.swing.icons.SendIcon;
 import uno.anahata.asi.swing.internal.AnyChangeDocumentListener;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingTask;
@@ -207,15 +211,15 @@ public class InputPanel extends JPanel {
         microphonePanel = new MicrophonePanel(this);
         actionButtonPanel.add(microphonePanel);
 
-        attachButton = new JButton(IconUtils.getIcon("attach.png"));
+        attachButton = new JButton(new AttachIcon(16));
         attachButton.setToolTipText("Attach Files");
         attachButton.addActionListener(e -> attachFiles());
 
-        screenshotButton = new JButton(IconUtils.getIcon("desktop_screenshot.png"));
+        screenshotButton = new JButton(new ScreenshotIcon(16));
         screenshotButton.setToolTipText("Attach Desktop Screenshot");
         screenshotButton.addActionListener(e -> attachScreenshot());
 
-        captureFramesButton = new JButton(IconUtils.getIcon("capture_frames.png"));
+        captureFramesButton = new JButton(new FramesIcon(16));
         captureFramesButton.setToolTipText("Attach Application Frames");
         captureFramesButton.addActionListener(e -> attachWindowCaptures());
 
@@ -227,7 +231,7 @@ public class InputPanel extends JPanel {
         JPanel eastButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         eastButtonPanel.setOpaque(false);
         
-        sendButton = new JButton("Send");
+        sendButton = new JButton("Send", new SendIcon(16));
         sendButton.addActionListener(e -> sendMessage());
         
         stopButton = new JButton("Stop", IconUtils.getIcon("delete.png", 16, 16));
@@ -396,12 +400,8 @@ public class InputPanel extends JPanel {
         stopButton.setEnabled(isApiActive);
         
         // Send button is enabled unless we are waiting for a candidate choice.
+        // We no longer check buildVisibleHistory() here to avoid UI lag.
         boolean canSend = status != ChatStatus.CANDIDATE_CHOICE_PROMPT;
-        
-        // If visible history is empty and current message is empty, we can't send anything.
-        if (currentMessage.isEmpty() && chat.getContextManager().buildVisibleHistory().isEmpty()) {
-            canSend = false;
-        }
         
         sendButton.setEnabled(canSend);
         
@@ -411,7 +411,7 @@ public class InputPanel extends JPanel {
             sendButton.setIcon(new RunAndSendIcon(16));
         } else {
             sendButton.setText("Send");
-            sendButton.setIcon(null);
+            sendButton.setIcon(new SendIcon(16));
         }
     }
 

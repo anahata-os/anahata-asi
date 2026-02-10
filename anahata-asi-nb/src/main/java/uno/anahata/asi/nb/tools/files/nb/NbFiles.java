@@ -44,7 +44,7 @@ public class NbFiles extends Files {
      * Implementation details: Overridden to return {@link NbTextFileResource}.
      */
     @Override
-    @AiTool(value = "Loads a text file into the context as a managed resource. By default, files are loaded with a LIVE refresh policy, which means they are automatically refreshed from disk right before the API call starts. You do not need to re-load a file if it is already present in the context.", retention = 0)
+    @AiTool(value = "Loads a text file into the context as a managed resource. By default, files are loaded with a LIVE refresh policy, which means they are automatically refreshed from disk right before the API call starts. You do not need to re-load a file if it is already present in the context.")
     public List<TextFileResource> loadTextFile(
             @AiToolParam("The absolute paths to the text files.") List<String> resourcePaths) throws Exception {
         return super.loadTextFile(resourcePaths);
@@ -81,7 +81,7 @@ public class NbFiles extends Files {
      * IDE is immediately aware of the new file.
      */
     @Override
-    @AiTool(value = "Creates a new file with the provided content.", retention = 0)
+    @AiTool(value = "Creates a new file with the provided content.")
     public void createTextFile(
             @AiToolParam("The absolute path to the file.") String path,
             @AiToolParam(value = "The text content to write.", rendererId = "code") String content,
@@ -114,7 +114,7 @@ public class NbFiles extends Files {
      * with a proper {@link FileLock}.
      */
     @Override
-    @AiTool(value = "Overwrites an existing file with the provided content.", retention = 0)
+    @AiTool(value = "Overwrites an existing file with the provided content.")
     public void updateTextFile(
             @AiToolParam("The absolute path to the file.") String path,
             @AiToolParam(value = "The text content to write.", rendererId = "code") String content,
@@ -181,7 +181,7 @@ public class NbFiles extends Files {
      * performing the string replacements on the current content.
      */
     @Override
-    @AiTool(value = "Performs multiple text replacements in a file. Ideal for surgical code edits.", retention = 0)
+    @AiTool(value = "Performs multiple text replacements in a file. Ideal for surgical code edits.")
     public void replaceInTextFile(
             @AiToolParam("The absolute path to the file.") String path,
             @AiToolParam("The list of replacements to perform.") List<TextReplacement> replacements, 
@@ -204,7 +204,7 @@ public class NbFiles extends Files {
      * are used for each file.
      */
     @Override
-    @AiTool(value = "Performs multiple text replacements across multiple files in a single tool call.", retention = 0)
+    @AiTool(value = "Performs multiple text replacements across multiple files in a single tool call.")
     public void replaceInMultipleTextFiles(
             @AiToolParam("The list of files and their replacements.") List<FileTextReplacements> fileReplacements,
             @AiToolParam("A message describing the change.") String message) throws Exception {

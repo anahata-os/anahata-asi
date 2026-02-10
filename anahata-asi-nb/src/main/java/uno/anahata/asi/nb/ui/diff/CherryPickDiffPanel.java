@@ -9,6 +9,7 @@ import java.awt.Image;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import javax.swing.Box;
 import javax.swing.DefaultListCellRenderer;
@@ -31,7 +32,11 @@ import org.openide.filesystems.FileUtil;
 import uno.anahata.asi.model.resource.FileTextReplacements;
 import uno.anahata.asi.model.resource.TextReplacement;
 import uno.anahata.asi.nb.tools.NbCoding;
+import uno.anahata.asi.swing.icons.CancelIcon;
 import uno.anahata.asi.swing.icons.IconUtils;
+import uno.anahata.asi.swing.icons.NextIcon;
+import uno.anahata.asi.swing.icons.OkIcon;
+import uno.anahata.asi.swing.icons.PrevIcon;
 import uno.anahata.asi.swing.internal.UICapture;
 import uno.anahata.asi.toolkit.files.Files;
 
@@ -44,10 +49,10 @@ import uno.anahata.asi.toolkit.files.Files;
 @Slf4j
 public class CherryPickDiffPanel extends JPanel {
     @Getter
-    private final JButton nextBtn = new JButton("Next");
-    private final JButton prevBtn = new JButton("Previous");
-    private final JButton okBtn = new JButton("OK", IconUtils.getIcon("google.png", 16, 16)); // Using google icon as a temporary 'OK' placeholder
-    private final JButton cancelBtn = new JButton("Cancel", IconUtils.getIcon("delete.png", 16, 16));
+    private final JButton nextBtn = new JButton("Next", new NextIcon(16));
+    private final JButton prevBtn = new JButton("Previous", new PrevIcon(16));
+    private final JButton okBtn = new JButton("Apply", new OkIcon(16));
+    private final JButton cancelBtn = new JButton("Cancel", new CancelIcon(16));
     private DialogDescriptor descriptor;
     private final JTabbedPane tabbedPane = new JTabbedPane();
     private final List<FileDiffPanel> filePanels = new ArrayList<>();
@@ -57,16 +62,17 @@ public class CherryPickDiffPanel extends JPanel {
      * Constructs a new CherryPickDiffPanel.
      * 
      * @param fileReplacements The list of proposed changes per file.
+     * @param validationErrors A map of replacements to their validation error messages.
      * @param toolkit The parent NbCoding toolkit instance.
      */
-    public CherryPickDiffPanel(List<FileTextReplacements> fileReplacements, NbCoding toolkit) {
+    public CherryPickDiffPanel(List<FileTextReplacements> fileReplacements, Map<TextReplacement, String> validationErrors, NbCoding toolkit) {
         this.toolkit = toolkit;
         setLayout(new BorderLayout());
         setPreferredSize(new Dimension(1200, 850));
         
         if (fileReplacements != null && !fileReplacements.isEmpty()) {
             for (FileTextReplacements fr : fileReplacements) {
-                FileDiffPanel p = new FileDiffPanel(fr);
+                FileDiffPanel p = new FileDiffPanel(fr, validationErrors);
                 filePanels.add(p);
                 tabbedPane.addTab(new File(fr.getPath()).getName(), p);
             }
@@ -101,6 +107,10 @@ public class CherryPickDiffPanel extends JPanel {
         this.descriptor = dd;
         okBtn.addActionListener(e -> descriptor.setValue(okBtn));
         cancelBtn.addActionListener(e -> descriptor.setValue(DialogDescriptor.CANCEL_OPTION));
+        
+        // Ensure only Apply and Cancel (and the window X button) close the dialog
+        descriptor.setClosingOptions(new Object[]{okBtn, cancelBtn, DialogDescriptor.CANCEL_OPTION});
+        
         updateButtons();
     }
 
@@ -116,6 +126,9 @@ public class CherryPickDiffPanel extends JPanel {
         nextBtn.setEnabled(current < count - 1);
         
         descriptor.setOptions(new Object[]{cancelBtn, prevBtn, nextBtn, okBtn});
+        // CRITICAL: Re-apply closing options because setOptions resets them.
+        // Only Apply, Cancel and the window close button should close the dialog.
+        descriptor.setClosingOptions(new Object[]{okBtn, cancelBtn, DialogDescriptor.CANCEL_OPTION});
     }
 
     public JButton getOkBtn() {
@@ -175,12 +188,13 @@ public class CherryPickDiffPanel extends JPanel {
         /**
          * Constructs a FileDiffPanel for the given file replacements.
          * @param fr the replacements for a single file.
+         * @param validationErrors validation errors mapping.
          */
-        public FileDiffPanel(FileTextReplacements fr) {
+        public FileDiffPanel(FileTextReplacements fr, Map<TextReplacement, String> validationErrors) {
             this.original = fr;
             setLayout(new BorderLayout());
             
-            listPanel = new ReplacementListPanel(fr.getReplacements(), this::updateDiff);
+            listPanel = new ReplacementListPanel(fr.getReplacements(), validationErrors, this::updateDiff);
             
             diffContainer.setMinimumSize(new Dimension(400, 400));
             
@@ -198,7 +212,13 @@ public class CherryPickDiffPanel extends JPanel {
         private void updateDiff() {
             try {
                 FileObject fo = FileUtil.toFileObject(new File(original.getPath()));
-                if (fo == null) return;
+                if (fo == null) {
+                    diffContainer.removeAll();
+                    diffContainer.add(new JLabel("File not found: " + original.getPath(), JLabel.CENTER), BorderLayout.CENTER);
+                    diffContainer.revalidate();
+                    diffContainer.repaint();
+                    return;
+                }
                 
                 String baseContent = fo.asText();
                 List<TextReplacement> selected = listPanel.getSelectedReplacements();

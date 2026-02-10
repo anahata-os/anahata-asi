@@ -178,12 +178,8 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
         List<AbstractMessage> visibleHistory = new ArrayList<>();
 
         // 1. Add all messages from history. 
-        // OPTIMIZATION: Skip TOOL messages that are effectively pruned, 
-        // as their corresponding MODEL message will have converted the ToolCall into a text placeholder.
         synchronized (history) {
-            for (AbstractMessage msg : history) {
-                visibleHistory.add(msg);
-            }
+            visibleHistory.addAll(history);
         }
         
         log.info("Built visible history with {} messages (total history: {})", visibleHistory.size(), history.size());

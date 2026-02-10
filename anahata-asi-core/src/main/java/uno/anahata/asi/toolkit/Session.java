@@ -78,10 +78,12 @@ public class Session extends AnahataToolkit {
             @AiToolParam("Whether to enable or disable the providers.") boolean enabled, 
             @AiToolParam("The IDs of the context providers to update.") List<String> providerIds) {
         ContextManager cm = getChat().getContextManager();
-        for (ContextProvider cp : cm.getProviders()) {
-            if (providerIds.contains(cp.getFullyQualifiedId())) {
-                cp.setProviding(enabled);
-                log((enabled ? "Enabled" : "Disabled") + " provider: " + cp.getName());
+        for (ContextProvider root : cm.getProviders()) {
+            for (ContextProvider cp : root.getFlattenedHierarchy(false)) {
+                if (providerIds.contains(cp.getFullyQualifiedId())) {
+                    cp.setProviding(enabled);
+                    log((enabled ? "Enabled" : "Disabled") + " provider: " + cp.getName());
+                }
             }
         }
     }

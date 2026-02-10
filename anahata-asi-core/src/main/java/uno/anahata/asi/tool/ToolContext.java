@@ -83,7 +83,10 @@ public class ToolContext {
      * @return The ToolManager instance.
      */
     public ToolManager getToolManager() {
-        return toolkit.getToolManager();
+        if (toolkit != null) {
+            return toolkit.getToolManager();
+        }
+        return getResponse().getChat().getToolManager();
     }
     
     /**

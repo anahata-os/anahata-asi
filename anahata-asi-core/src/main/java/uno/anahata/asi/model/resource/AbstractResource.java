@@ -213,10 +213,9 @@ public abstract class AbstractResource<R, C> extends BasicPropertyChangeSource i
     @Override
     public List<String> getSystemInstructions() throws Exception {
         if (contextPosition == ContextPosition.SYSTEM_INSTRUCTIONS) {
-            // For system instructions, we include the full text representation (Header + Content)
+            // For system instructions, we return only the content. The header is added by ContextManager.
             C content = getContent();
-            String text = getHeader() + "\n" + (content != null ? content.toString() : "");
-            return Collections.singletonList(text);
+            return Collections.singletonList(content != null ? content.toString() : "");
         }
         return Collections.emptyList();
     }

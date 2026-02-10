@@ -94,6 +94,14 @@ public class ChatConfig extends BasicPropertyChangeSource {
         this.container = container;
     }
 
+    //<editor-fold defaultstate="collapsed" desc="Audio Configuration">
+    /** The ID of the selected audio input device. */
+    private String selectedInputDeviceId;
+
+    /** The ID of the selected audio output device. */
+    private String selectedOutputDeviceId;
+    //</editor-fold>
+
     //<editor-fold defaultstate="collapsed" desc="Session Loop">
     /** If true, local Java tools are enabled. */
     @Setter(AccessLevel.NONE)
@@ -142,6 +150,28 @@ public class ChatConfig extends BasicPropertyChangeSource {
     /** The default response modalities for this chat session. */
     private List<String> defaultResponseModalities = new ArrayList<>(List.of("TEXT"));
     
+    /**
+     * Sets the selected audio input device ID.
+     * 
+     * @param id The device ID.
+     */
+    public void setSelectedInputDeviceId(String id) {
+        String old = this.selectedInputDeviceId;
+        this.selectedInputDeviceId = id;
+        propertyChangeSupport.firePropertyChange("selectedInputDeviceId", old, id);
+    }
+
+    /**
+     * Sets the selected audio output device ID.
+     * 
+     * @param id The device ID.
+     */
+    public void setSelectedOutputDeviceId(String id) {
+        String old = this.selectedOutputDeviceId;
+        this.selectedOutputDeviceId = id;
+        propertyChangeSupport.firePropertyChange("selectedOutputDeviceId", old, id);
+    }
+
     /**
      * Sets whether local tools are enabled. Enabling local tools automatically
      * disables server-side tools.

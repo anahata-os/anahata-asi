@@ -76,7 +76,7 @@ public class ToolkitsMenu {
     private void displayToolkitDetails(AbstractToolkit<?> toolkit) {
         System.out.println("\n===== Toolkit Details: " + toolkit.getName() + " =====");
         System.out.println("Description: " + toolkit.getDescription());
-        System.out.println("Default Retention: " + toolkit.getDefaultRetention() + " turns");
+        System.out.println("Default Retention: " + toolkit.getDefaultMaxDepth()+ " turns");
         System.out.println("Status: " + (toolkit.isEnabled() ? "ENABLED" : "DISABLED"));
 
         System.out.println("\n--- Tools ---");
@@ -85,7 +85,7 @@ public class ToolkitsMenu {
             String permission = tool.getPermission().name();
             String status = tool.getPermission() == ToolPermission.DENY_NEVER ? "DENIED" : "ALLOWED";
 
-            System.out.printf("\n%d. %s [%s, Retention: %d turns]\n", i + 1, tool.getName(), status, tool.getRetentionTurns());
+            System.out.printf("\n%d. %s [%s, Retention: %d turns]\n", i + 1, tool.getName(), status, tool.getMaxDepth());
             System.out.println("   Description: " + tool.getDescription());
 
             System.out.println("   Parameters:");

@@ -77,7 +77,6 @@ public class TextFileResource extends AbstractPathResource<String, String> {
     @Override
     protected void populateFromCache(RagMessage rm) {
         StringBuilder sb = new StringBuilder();
-        sb.append(getHeader());
         sb.append("```\n");
         sb.append(cache);
         sb.append("\n```");

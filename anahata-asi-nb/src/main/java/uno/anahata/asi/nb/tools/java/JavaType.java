@@ -27,6 +27,17 @@ public class JavaType {
     private URL url;
 
     /**
+     * Constructs a new JavaType from an ElementHandle and a URL.
+     * @param handle the element handle.
+     * @param url the class file URL.
+     */
+    public JavaType(ElementHandle<? extends javax.lang.model.element.TypeElement> handle, URL url) {
+        this.handle = handle;
+        this.url = url;
+        this.fqn = handle != null ? handle.getBinaryName() : null;
+    }
+
+    /**
      * Constructs a new JavaType from a JavaTypeDescription.
      * @param descriptor the type descriptor.
      */

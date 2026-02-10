@@ -4,6 +4,7 @@ package uno.anahata.asi.nb.ui.diff;
 import java.awt.BorderLayout;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -11,6 +12,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import net.miginfocom.swing.MigLayout;
 import uno.anahata.asi.model.resource.TextReplacement;
+import uno.anahata.asi.swing.icons.CancelIcon;
 
 /**
  * A scrollable list of {@link ReplacementCard}s.
@@ -24,13 +26,14 @@ public class ReplacementListPanel extends JPanel {
      * Constructs a ReplacementListPanel.
      * 
      * @param replacements The list of replacements to display.
+     * @param validationErrors validation errors mapping.
      * @param onUpdate A callback to trigger when selection changes.
      */
-    public ReplacementListPanel(List<TextReplacement> replacements, Runnable onUpdate) {
+    public ReplacementListPanel(List<TextReplacement> replacements, Map<TextReplacement, String> validationErrors, Runnable onUpdate) {
         setLayout(new BorderLayout());
         
         JPanel toolbar = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
-        JButton deselectAllBtn = new JButton("Deselect All");
+        JButton deselectAllBtn = new JButton("Deselect All", new CancelIcon(16));
         deselectAllBtn.setFont(new java.awt.Font("SansSerif", java.awt.Font.PLAIN, 10));
         deselectAllBtn.addActionListener(e -> {
             cards.forEach(c -> c.setSelected(false));
@@ -41,7 +44,7 @@ public class ReplacementListPanel extends JPanel {
         
         JPanel container = new JPanel(new MigLayout("wrap 1, fillx, insets 5", "[grow]"));
         for (TextReplacement r : replacements) {
-            ReplacementCard card = new ReplacementCard(r, onUpdate);
+            ReplacementCard card = new ReplacementCard(r, validationErrors.get(r), onUpdate);
             cards.add(card);
             container.add(card, "growx");
         }

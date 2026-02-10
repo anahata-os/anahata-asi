@@ -198,6 +198,8 @@ public class Java extends AnahataToolkit {
             @AiToolParam(value = "Additional classpath entries", required = false) String extraClassPath,
             @AiToolParam(value = "Additional compiler options", required = false) String[] compilerOptions)
             throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        
+        log("Compiling class: " + className);
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
         if (compiler == null) {
@@ -242,18 +244,17 @@ public class Java extends AnahataToolkit {
         };
 
         if (extraClassPath != null) {
+            log("Including extra classpath entries: " + extraClassPath.split(File.pathSeparator).length);
             log.info("extraClassPath: {} entries:\n{}", extraClassPath.split(File.pathSeparator).length, extraClassPath);
         }
-
-        log.info("defaultCompilerClasspath: {} entries:", defaultCompilerClasspath.split(File.pathSeparator).length);
 
         String classpath = defaultCompilerClasspath;
         if (extraClassPath != null && !extraClassPath.isEmpty()) {
             // CRITICAL FIX: Prepend extraClassPath to ensure hot-reloaded classes take precedence
             classpath = extraClassPath + File.pathSeparator + classpath;
         }
-
-        log.info("total classpathEntries: {} entries:", classpath.split(File.pathSeparator).length);
+        
+        log("Total compilation classpath entries: " + classpath.split(File.pathSeparator).length);
         if (compilerOptions != null) {
             log.info("compilerOptions:", Arrays.asList(compilerOptions));
         }
@@ -386,6 +387,14 @@ public class Java extends AnahataToolkit {
         var constructor = c.getDeclaredConstructor();
         constructor.setAccessible(true);
         Object o = constructor.newInstance();
+
+        // Onboard the tool instance into the current context
+        if (o instanceof ToolContext tc) {
+            log("Onboarding tool instance: " + c.getName());
+            tc.setToolkit(this.toolkit);
+        } else {
+            log("Warning: Compiled class does not extend ToolContext. Identity propagation disabled.");
+        }
 
         if (o instanceof Callable callable) {
             log.info("Calling call() method on Callable (or AnahataTool)");
