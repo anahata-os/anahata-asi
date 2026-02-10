@@ -19,11 +19,11 @@ import javax.swing.Icon;
  *
  * @author anahata
  */
-public class LocalToolsIcon implements Icon {
+public class SettingsIcon implements Icon {
 
     private final int size;
 
-    public LocalToolsIcon(int size) {
+    public SettingsIcon(int size) {
         this.size = size;
     }
 
