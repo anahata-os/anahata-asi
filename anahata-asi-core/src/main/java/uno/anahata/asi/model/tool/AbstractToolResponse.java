@@ -324,10 +324,29 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     protected String getIdentityLabel() {
         return "";
     }
+    
+    
+    @Override
+    public String createMetadataHeader() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        sb.append(String.format("Tokens: %d | Status: %s",
+            getTokenCount(),
+            getStatus()
+        ));
+
+        
+        if (isEffectivelyPruned()) {
+            sb.append(" | Hint: ").append(TextUtils.formatValue(asText()));
+        }
+        
+        sb.append("]");
+        return sb.toString();
+    }
 
     @Override
     protected void appendMetadata(StringBuilder sb) {
-        sb.append(" | Status: ").append(status);
+//        sb.append(" | Status: ").append(status);
     }
 
     @Override

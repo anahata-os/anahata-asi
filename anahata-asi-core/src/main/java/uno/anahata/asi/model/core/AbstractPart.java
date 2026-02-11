@@ -96,8 +96,19 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      * @param pruned The new pruned state.
      */
     public void setPruned(Boolean pruned) {
+        setPruned(pruned, null);
+    }
+
+    /**
+     * Sets the pruned state of this part with an optional reason.
+     * 
+     * @param pruned The new pruned state.
+     * @param reason The reason for pruning.
+     */
+    public void setPruned(Boolean pruned, String reason) {
         Boolean oldPruned = this.pruned;
         this.pruned = pruned;
+        this.prunedReason = reason;
         propertyChangeSupport.firePropertyChange("pruned", oldPruned, pruned);
     }
 
@@ -295,14 +306,16 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
 
         if (Boolean.TRUE.equals(pruned)) {
             sb.append(" | [PRUNED]");
+            if (prunedReason != null) {
+                sb.append(" Reason: ").append(prunedReason);
+            }
         } else if (isPinned()) {
             sb.append(" | [PINNED]");
+        } else {
+            sb.append(" | [AUTO]");
         }
         
         if (isEffectivelyPruned()) {
-            if (prunedReason != null) {
-                sb.append(" | Reason: ").append(prunedReason);
-            }
             sb.append(" | Hint: ").append(TextUtils.formatValue(asText()));
         }
         
@@ -327,27 +340,5 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      */
     protected void appendMetadata(StringBuilder sb) {
         // Default implementation does nothing.
-    }
-
-    /**
-     * Returns a map of metadata for this part, suitable for JSON injection.
-     * 
-     * @return A map containing part metadata.
-     */
-    @JsonIgnore
-    @Schema(hidden = true)
-    public Map<String, Object> getMetadataMap() {
-        Map<String, Object> metadata = new LinkedHashMap<>();
-        metadata.put("partId", getSequentialId());
-        metadata.put("type", getClass().getSimpleName());
-        metadata.put("tokens", getTokenCount());
-        metadata.put("remainingDepth", getRemainingDepth());
-        if (pruned != null) {
-            metadata.put("pruned", pruned);
-        }
-        if (prunedReason != null) {
-            metadata.put("prunedReason", prunedReason);
-        }
-        return metadata;
     }
 }

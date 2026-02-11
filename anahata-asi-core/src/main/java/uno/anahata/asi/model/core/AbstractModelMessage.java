@@ -301,7 +301,7 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
 
         T tm = getToolMessage();
         if (tm != null && tm.getSequentialId() != 0) {
-            sb.append(" | Tool Message ID: ").append(tm.getSequentialId());
+            //sb.append(" | Tool Message Tokens: ").append(tm.getTokenCount(false));
         }
     }
 }

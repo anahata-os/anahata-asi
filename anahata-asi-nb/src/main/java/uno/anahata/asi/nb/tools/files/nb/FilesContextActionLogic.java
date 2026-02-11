@@ -171,18 +171,36 @@ public class FilesContextActionLogic {
      * @return The file count.
      */
     private static int countFilesInContext(FileObject fo, Chat chat, boolean recursive) {
+        File file = FileUtil.toFile(fo);
+        if (file == null) {
+            return 0;
+        }
+        String absolutePath = file.getAbsolutePath();
+
         if (fo.isData()) {
-            return isInContext(fo, chat) ? 1 : 0;
+            return chat.getResourceManager().findByPath(absolutePath).isPresent() ? 1 : 0;
         }
-        int total = 0;
-        for (FileObject child : fo.getChildren()) {
-            if (child.isData()) {
-                total += isInContext(child, chat) ? 1 : 0;
-            } else if (recursive) {
-                total += countFilesInContext(child, chat, true);
-            }
-        }
-        return total;
+
+        // Folder logic: path-based counting using registered resources
+        String folderPrefix = absolutePath.endsWith(File.separator) ? absolutePath : absolutePath + File.separator;
+
+        return (int) chat.getResourceManager().getResources().stream()
+                .filter(r -> r instanceof AbstractPathResource)
+                .map(r -> (AbstractPathResource<?, ?>) r)
+                .filter(r -> {
+                    String path = r.getPath();
+                    if (!path.startsWith(folderPrefix)) {
+                        return false;
+                    }
+                    if (recursive) {
+                        return true;
+                    } else {
+                        // Non-recursive: must be a direct child (no more separators in remainder)
+                        String remainder = path.substring(folderPrefix.length());
+                        return !remainder.contains(File.separator);
+                    }
+                })
+                .count();
     }
 
     /**

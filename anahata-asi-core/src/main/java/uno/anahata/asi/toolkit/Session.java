@@ -136,7 +136,8 @@ public class Session extends AnahataToolkit {
             "Use newValue=true to prune (soft-prune), newValue=false to pin, and newValue=null to reset to auto-pruning.")
     public String setMessagePruned(
             @AiToolParam("The sequential IDs of the messages to update.") List<Long> messageIds,
-            @AiToolParam("The new pruned state (true=pruned, false=pinned, null=auto).") Boolean newValue) {
+            @AiToolParam("The new pruned state (true=pruned, false=pinned, null=auto).") Boolean newValue,
+            @AiToolParam(value = "The reason for pruning.", required = false) String prunedReason) {
         List<AbstractMessage> history = getChat().getContextManager().getHistory();
         int count = 0;
         for (AbstractMessage msg : history) {
@@ -144,9 +145,9 @@ public class Session extends AnahataToolkit {
                 // Redirection: If targeting a Tool Message, apply to the parent Model Message instead.
                 // (Pruning propagation will handle the bidirectional sync anyway).
                 if (msg instanceof AbstractToolMessage atm && atm.getModelMessage() != null) {
-                    atm.getModelMessage().setPruned(newValue);
+                    atm.getModelMessage().setPruned(newValue, prunedReason);
                 } else {
-                    msg.setPruned(newValue);
+                    msg.setPruned(newValue, prunedReason);
                 }
                 count++;
             }
@@ -158,7 +159,8 @@ public class Session extends AnahataToolkit {
             "Use newValue=true to prune (soft-prune), newValue=false to pin, and newValue=null to reset to auto-pruning.")
     public String setPartPruned(
             @AiToolParam("The sequential IDs of the parts to update.") List<Long> partIds,
-            @AiToolParam("The new pruned state (true=pruned, false=pinned, null=auto).") Boolean newValue) {
+            @AiToolParam("The new pruned state (true=pruned, false=pinned, null=auto).") Boolean newValue,
+            @AiToolParam(value = "The reason for pruning.", required = false) String prunedReason) {
         List<AbstractMessage> history = getChat().getContextManager().getHistory();
         int count = 0;
         for (AbstractMessage msg : history) {
@@ -166,9 +168,9 @@ public class Session extends AnahataToolkit {
                 if (partIds.contains(part.getSequentialId())) {
                     // Redirection: If targeting a Tool Response, apply to the initiating Tool Call instead.
                     if (part instanceof AbstractToolResponse atr && atr.getCall() != null) {
-                        atr.getCall().setPruned(newValue);
+                        atr.getCall().setPruned(newValue, prunedReason);
                     } else {
-                        part.setPruned(newValue);
+                        part.setPruned(newValue, prunedReason);
                     }
                     count++;
                 }
@@ -198,13 +200,11 @@ public class Session extends AnahataToolkit {
             @AiToolParam("The unique IDs of the resources to unload.") List<String> resourceIds) throws Exception {
         ResourceManager rm = getResourceManager();
         for (String resourceId : resourceIds) {
-            log("Unregistering... " + resourceId);
-            AbstractResource<?, ?> resource = rm.unregister(resourceId);
-            if (resource != null) {
-                log("Unregistered OK " + resourceId);
-            } else {
-                error("Resource not found " + resourceId);
-            }
+            AbstractResource<?, ?> resource = rm.getResource(resourceId);
+            String displayName = resource != null ? resource.getName() : resourceId;
+            log("Unregistering... " + displayName);
+            rm.unregister(resourceId);
+            log("Unregistered OK " + displayName);
         }
     }
 

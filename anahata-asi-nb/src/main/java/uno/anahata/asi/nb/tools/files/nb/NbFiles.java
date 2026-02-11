@@ -5,22 +5,31 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import javax.swing.SwingUtilities;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.StyledDocument;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.openide.cookies.EditorCookie;
 import org.openide.filesystems.FileLock;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
 import org.openide.text.NbDocument;
+import org.openide.DialogDescriptor;
 import org.netbeans.api.queries.FileEncodingQuery;
 import uno.anahata.asi.model.resource.RefreshPolicy;
 import uno.anahata.asi.toolkit.files.FileTextReplacements;
 import uno.anahata.asi.model.resource.files.TextFileResource;
 import uno.anahata.asi.toolkit.files.TextReplacement;
 import uno.anahata.asi.toolkit.files.TextViewportSettings;
+import uno.anahata.asi.nb.ui.diff.CherryPickDiffPanel;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolException;
 import uno.anahata.asi.tool.AiToolkit;
@@ -38,6 +47,20 @@ import uno.anahata.asi.toolkit.files.Files;
 @AiToolkit("A toolkit for loading and managing file-based resources using NetBeans APIs.")
 @Slf4j
 public class NbFiles extends Files {
+
+    /** {@inheritDoc} */
+    @Override
+    public List<String> getSystemInstructions() throws Exception {
+        List<String> instructions = new ArrayList<>(super.getSystemInstructions());
+        instructions.add(
+                "### NbFiles Coding Instructions:\n" +
+                "- **NO GUESSING**: You are strictly prohibited from guessing the methods, fields, or signatures of any Java types. " +
+                "If a type (like `JavaType` or a library class) is not fully present in your context (including its source code or detailed member list), " +
+                "you MUST use `CodeModel.findTypes` or `CodeModel.getTypeSources` to retrieve the ground truth before writing code that uses it.\n" +
+                "- **IMPORTS**: Always ensure you add necessary imports when applying changes that include types not already present in the file's import list."
+        );
+        return instructions;
+    }
 
     /**
      * {@inheritDoc}
@@ -71,7 +94,7 @@ public class NbFiles extends Files {
         resource.setRefreshPolicy(RefreshPolicy.LIVE);
         resource.reload();
         getResourceManager().register(resource);
-        log("Successfully loaded and registered NbTextFileResource: " + path);
+        log("Successfully loaded and registered NbTextFileResource: " + resource.getName());
         return resource;
     }
 
@@ -200,16 +223,107 @@ public class NbFiles extends Files {
 
     /**
      * {@inheritDoc}
-     * Implementation details: Overridden to ensure NetBeans-aware replacements 
-     * are used for each file.
+     * Implementation details: Proposes surgical text replacements across 
+     * multiple files with a cherry-picking diff viewer. This is the preferred 
+     * tool for applying complex code changes in NetBeans.
      */
     @Override
-    @AiTool(value = "Performs multiple text replacements across multiple files in a single tool call.")
+    @AiTool(value = "Performs multiple text replacements across multiple files in a single tool call. "
+            + "This tool proposes surgical changes with a cherry-picking diff viewer for user review.")
     public void replaceInMultipleTextFiles(
             @AiToolParam("The list of files and their replacements.") List<FileTextReplacements> fileReplacements,
             @AiToolParam("A message describing the change.") String message) throws Exception {
+        
+        // --- AUDIT VALIDATION ---
+        Map<TextReplacement, String> validationErrors = new HashMap<>();
+        int validCount = 0;
+        int totalCount = 0;
+        
         for (FileTextReplacements fr : fileReplacements) {
-            replaceInTextFile(fr.getPath(), fr.getReplacements(), fr.getLastModified(), message);
+            File f = new File(fr.getPath());
+            String fileError = null;
+            if (!f.exists()) {
+                fileError = "File not found: " + fr.getPath();
+            } else {
+                FileObject fo = FileUtil.toFileObject(f);
+                if (fo != null && fr.getLastModified() != 0 && fo.lastModified().getTime() != fr.getLastModified()) {
+                    fileError = "File changed on disk (Stale Context). Disk: " + fo.lastModified().getTime() + ", Model: " + fr.getLastModified();
+                }
+            }
+            
+            String content = null;
+            if (fileError == null) {
+                try {
+                    content = FileUtils.readFileToString(f, StandardCharsets.UTF_8);
+                } catch (Exception e) {
+                    fileError = "Error reading file: " + e.getMessage();
+                }
+            }
+
+            for (TextReplacement tr : fr.getReplacements()) {
+                totalCount++;
+                if (fileError != null) {
+                    validationErrors.put(tr, fileError);
+                } else {
+                    int actual = StringUtils.countMatches(content, tr.getTarget());
+                    if (tr.getExpectedCount() != -1 && actual != tr.getExpectedCount()) {
+                         validationErrors.put(tr, "Occurrence mismatch: Expected " + tr.getExpectedCount() + ", found " + actual);
+                    } else {
+                        validCount++;
+                    }
+                }
+            }
+        }
+        
+        if (validCount == 0 && totalCount > 0) {
+            error("Surgical Safety Check Failed (All suggestions invalid):\n" + validationErrors.values().stream().distinct().collect(java.util.stream.Collectors.joining("\n- ", "- ", "")));
+            return;
+        }
+        // --- END AUDIT ---
+        
+        final CherryPickDiffPanel[] panelHolder = new CherryPickDiffPanel[1];
+        SwingUtilities.invokeAndWait(() -> panelHolder[0] = new CherryPickDiffPanel(fileReplacements, validationErrors, this));
+        CherryPickDiffPanel panel = panelHolder[0];
+        
+        DialogDescriptor dd = new DialogDescriptor(panel, "Review Surgical Changes");
+        dd.setHelpCtx(null);
+        panel.setupDialog(dd);
+        
+        java.awt.Dialog dialog = org.openide.DialogDisplayer.getDefault().createDialog(dd);
+        dialog.setResizable(true);
+        dialog.setBounds(java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds());
+        dialog.setVisible(true);
+        
+        List<FileTextReplacements> accepted = panel.getAcceptedReplacements();
+        String comments = panel.getAggregatedComments();
+        
+        if (!comments.isEmpty()) {
+            log("User provided feedback during cherry-picking:\n" + comments);
+            getResponse().setUserFeedback(comments);
+        }
+        
+        // Attach any captured screenshots
+        List<byte[]> screenshots = panel.getScreenshots();
+        if (!screenshots.isEmpty()) {
+            log("Attaching " + screenshots.size() + " screenshot(s) captured in the diff viewer.");
+            for (byte[] screenshot : screenshots) {
+                getResponse().addAttachment(screenshot, "image/png");
+            }
+        }
+
+        if (dd.getValue() == panel.getOkBtn()) {
+            if (accepted.isEmpty()) {
+                log("No changes were selected by the user.");
+                return;
+            }
+            
+            for (FileTextReplacements fr : accepted) {
+                replaceInTextFile(fr.getPath(), fr.getReplacements(), fr.getLastModified(), message);
+            }
+            
+            log("Successfully applied changes to " + accepted.size() + " files.");
+        } else {
+            log("Changes were cancelled by the user. Feedback was preserved.");
         }
     }
 }

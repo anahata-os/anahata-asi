@@ -31,7 +31,7 @@ import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import uno.anahata.asi.toolkit.files.FileTextReplacements;
 import uno.anahata.asi.toolkit.files.TextReplacement;
-import uno.anahata.asi.nb.tools.NbCoding;
+import uno.anahata.asi.nb.tools.files.nb.NbFiles;
 import uno.anahata.asi.swing.icons.CancelIcon;
 import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.icons.NextIcon;
@@ -56,7 +56,7 @@ public class CherryPickDiffPanel extends JPanel {
     private DialogDescriptor descriptor;
     private final JTabbedPane tabbedPane = new JTabbedPane();
     private final List<FileDiffPanel> filePanels = new ArrayList<>();
-    private final NbCoding toolkit;
+    private final NbFiles toolkit;
 
     /**
      * Constructs a new CherryPickDiffPanel.
@@ -65,7 +65,7 @@ public class CherryPickDiffPanel extends JPanel {
      * @param validationErrors A map of replacements to their validation error messages.
      * @param toolkit The parent NbCoding toolkit instance.
      */
-    public CherryPickDiffPanel(List<FileTextReplacements> fileReplacements, Map<TextReplacement, String> validationErrors, NbCoding toolkit) {
+    public CherryPickDiffPanel(List<FileTextReplacements> fileReplacements, Map<TextReplacement, String> validationErrors, NbFiles toolkit) {
         this.toolkit = toolkit;
         setLayout(new BorderLayout());
         setPreferredSize(new Dimension(1200, 850));

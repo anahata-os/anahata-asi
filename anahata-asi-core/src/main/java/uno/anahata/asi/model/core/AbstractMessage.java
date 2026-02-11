@@ -74,6 +74,12 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
     private Boolean pruned = null;
 
     /**
+     * An optional reason for why this message was pruned.
+     */
+    @Setter
+    private String prunedReason;
+
+    /**
      * Gets the role of the entity that created this message. This is
      * implemented by subclasses to provide compile-time type safety.
      *
@@ -169,11 +175,22 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
      * @param pruned The new pruned state.
      */
     public void setPruned(Boolean pruned) {
+        setPruned(pruned, null);
+    }
+
+    /**
+     * Sets the pruned state of this message with an optional reason.
+     * 
+     * @param pruned The new pruned state.
+     * @param reason The reason for pruning.
+     */
+    public void setPruned(Boolean pruned, String reason) {
         if (Objects.equals(this.pruned, pruned)) {
             return;
         }
         Boolean oldPruned = this.pruned;
         this.pruned = pruned;
+        this.prunedReason = reason;
         propertyChangeSupport.firePropertyChange("pruned", oldPruned, pruned);
     }
 
@@ -348,8 +365,13 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
         
         if (Boolean.TRUE.equals(pruned)) {
             sb.append(" | [PRUNED]");
+            if (prunedReason != null) {
+                sb.append(" Reason: ").append(prunedReason);
+            }
         } else if (isPinned()) {
             sb.append(" | [PINNED]");
+        } else {
+            sb.append(" | [AUTO]");
         }
         
         sb.append(" ---");

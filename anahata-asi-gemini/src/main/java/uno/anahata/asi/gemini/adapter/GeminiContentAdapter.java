@@ -96,11 +96,11 @@ public class GeminiContentAdapter {
             StringBuilder sb = new StringBuilder("--- Aggregated Tool Metadata ---\n");
             // Include Tool Message metadata if available
             AbstractMessage toolMsg = toolCalls.get(0).getResponse().getMessage();
-            if (toolMsg != null) {
-                sb.append(toolMsg.createMetadataHeader()).append("\n");
-            }
             for (AbstractToolCall tc : toolCalls) {
                 sb.append(tc.createMetadataHeader()).append("\n");
+            }
+            if (toolMsg != null) {
+                //sb.append(toolMsg.createMetadataHeader()).append("\n");
             }
             googleParts.add(Part.fromText(sb.toString().trim()));
         }
