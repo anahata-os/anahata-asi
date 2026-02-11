@@ -1,4 +1,4 @@
-# NetBeans Annotation Pipeline Strategy (`annotators.md`)
+# NetBeans Annotation Pipeline Strategy (`annotators.md`) 
 
 ## 1. The Core Conflict
 NetBeans has two distinct pipelines for decorating the same set of physical files:

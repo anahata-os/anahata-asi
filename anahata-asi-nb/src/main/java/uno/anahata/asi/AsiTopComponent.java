@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.windows.TopComponent;
-import org.openide.windows.WindowManager;
+import org.openide.windows.WindowManager; 
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.swing.chat.AsiSwitcherContainerPanel;
 import uno.anahata.asi.swing.chat.SessionController;
