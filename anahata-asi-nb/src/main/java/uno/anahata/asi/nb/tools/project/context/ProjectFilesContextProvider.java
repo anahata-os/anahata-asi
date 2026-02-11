@@ -112,31 +112,12 @@ public class ProjectFilesContextProvider extends BasicContextProvider {
     private String formatProjectFile(ProjectFile file, String indent) {
         StringBuilder statusBuilder = new StringBuilder();
         
-        if (file.getContextStatus() != null) {
-            statusBuilder.append(" ").append(file.getContextStatus());
-        }
-        
-        try {
-            FileObject fo = FileUtil.toFileObject(new File(file.getPath()));
-            if (fo != null) {
-                DataObject dobj = DataObject.find(fo);
-                Node node = dobj.getNodeDelegate();
-                
-                String annotated = node.getHtmlDisplayName();
-                if (annotated == null) {
-                    annotated = node.getDisplayName();
-                }
-                
-                if (annotated != null && !annotated.equals(fo.getNameExt())) {
-                    String extra = annotated.replace(fo.getNameExt(), "").trim();
-                    extra = extra.replaceAll("<[^>]*>", "");
-                    if (!extra.isEmpty()) {
-                        statusBuilder.append(" ").append(extra);
-                    }
-                }
+        String annotated = file.getAnnotatedName();
+        if (annotated != null && !annotated.equals(file.getName())) {
+            String extra = annotated.replace(file.getName(), "").trim();
+            if (!extra.isEmpty()) {
+                statusBuilder.append(" ").append(extra);
             }
-        } catch (Exception e) {
-            log.warn("Failed to extract IDE annotations for: {}", file.getPath(), e);
         }
         
         return String.format("%s- 📄 %s%s\n", indent, file.getName(), statusBuilder.toString());

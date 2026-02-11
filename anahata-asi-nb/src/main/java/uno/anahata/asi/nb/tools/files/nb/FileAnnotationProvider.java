@@ -68,11 +68,12 @@ public class FileAnnotationProvider extends AnnotationProvider {
 
     /**
      * {@inheritDoc}
-     * Annotates the icon with an Anahata badge at offset 14,0.
+     * Annotates the icon with an Anahata badge. 
+     * Uses manual aggregation to preserve Git/Error badges.
      */
     @Override
     public Image annotateIcon(Image icon, int type, Set<? extends FileObject> files) {
-        // 1. Delegate to the rest of the chain first to get Git/Error badges
+        // 1. Manually aggregate from other providers first
         Image baseIcon = delegateIcon(icon, type, files);
         
         for (FileObject fo : files) {            
@@ -81,32 +82,23 @@ public class FileAnnotationProvider extends AnnotationProvider {
                 return baseIcon;
             }
             
-            // Surgical Badging: Non-recursive for Logical View (Projects tab), 
-            // recursive for Physical View (Files tab).
-            boolean logical = isLogicalView();
-            boolean recursive = !logical;
-            
+            boolean recursive = !isLogicalView();
             Map<Chat, Integer> sessionCounts = FilesContextActionLogic.getSessionFileCounts(fo, recursive);
             
             if (!sessionCounts.isEmpty() && BADGE != null) {
-                // Merge our badge onto the already-annotated baseIcon at 14,0 (Top Right)
                 Image badged = ImageUtilities.mergeImages(baseIcon, BADGE, 16, 0);
                 
-                // Build rich HTML tooltip
                 StringBuilder sb = new StringBuilder();
                 sb.append("<img src=\"").append(getClass().getResource("/icons/anahata_16.png")).append("\" width=\"12\" height=\"12\"> ");
                 sb.append("<b>In Context In:</b><br>");
                 
-                // Sort sessions by name for consistent tooltip order
                 List<Chat> sortedSessions = new ArrayList<>(sessionCounts.keySet());
                 sortedSessions.sort(Comparator.comparing(Chat::getDisplayName));
                 
                 if (fo.isData()) {
-                    // For files: show session names on one line
                     sb.append("&nbsp;&nbsp;&bull;&nbsp;");
                     sb.append(sortedSessions.stream().map(Chat::getDisplayName).collect(Collectors.joining(", ")));
                 } else {
-                    // For folders: show per-session file counts
                     for (Chat chat : sortedSessions) {
                         sb.append("&nbsp;&nbsp;&bull;&nbsp;").append(chat.getDisplayName())
                           .append(": ").append(sessionCounts.get(chat)).append(" files<br>");
@@ -131,21 +123,15 @@ public class FileAnnotationProvider extends AnnotationProvider {
 
     /**
      * {@inheritDoc}
-     * Adds session names or counts to the file/folder name using HTML.
+     * Merges session nicknames/counts into the HTML name, preserving Git branch info.
      */
     @Override
     public String annotateNameHtml(String name, Set<? extends FileObject> files) {
-        // 1. Delegate to get Git branch names etc.
+        // 1. Delegate to get existing HTML (Git branch, colors, etc.)
         String delegatedName = delegateNameHtml(name, files);
         String currentName = delegatedName != null ? delegatedName : name;
 
         for (FileObject fo : files) {
-            // Skip project roots (handled by AnahataProjectIconAnnotator)
-            if (isProjectRoot(fo)) {
-                return delegatedName;
-            }
-
-            // Surgical Badging: Non-recursive for Logical View (Projects tab)
             boolean recursive = !isLogicalView();
             Map<Chat, Integer> sessionCounts = FilesContextActionLogic.getSessionFileCounts(fo, recursive);
             
@@ -153,19 +139,13 @@ public class FileAnnotationProvider extends AnnotationProvider {
                 StringBuilder labelBuilder = new StringBuilder();
                 labelBuilder.append(" <font color='#707070'>");
                 
-                int totalActiveSessions = AnahataInstaller.getContainer().getActiveChats().size();
-                
                 if (fo.isData()) {
-                    // For files: only show label if there's more than one session active in the IDE
-                    if (totalActiveSessions > 1) {
-                        if (sessionCounts.size() == 1) {
-                            labelBuilder.append("[").append(sessionCounts.keySet().iterator().next().getDisplayName()).append("]");
-                        } else {
-                            labelBuilder.append("[").append(sessionCounts.size()).append("]");
-                        }
+                    if (sessionCounts.size() == 1) {
+                        labelBuilder.append("[").append(sessionCounts.keySet().iterator().next().getNickname()).append("]");
+                    } else {
+                        labelBuilder.append("(").append(sessionCounts.size()).append(")");
                     }
                 } else {
-                    // For folders: [n][m] (one bracket per session with file count, sorted by session name)
                     Map<String, Integer> sortedCounts = new TreeMap<>();
                     for (Map.Entry<Chat, Integer> entry : sessionCounts.entrySet()) {
                         sortedCounts.put(entry.getKey().getDisplayName(), entry.getValue());
@@ -177,15 +157,10 @@ public class FileAnnotationProvider extends AnnotationProvider {
                 labelBuilder.append("</font>");
                 
                 String label = labelBuilder.toString();
-                if (label.trim().equals("<font color='#707070'></font>")) {
-                    return delegatedName;
-                }
                 
-                // If the name is already HTML, inject our label before the closing tag
                 if (currentName.toLowerCase().contains("<html>")) {
                     return currentName.replaceFirst("(?i)</html>", label + "</html>");
                 }
-                // Otherwise, wrap the whole thing
                 return "<html>" + currentName + label + "</html>";
             }
         }

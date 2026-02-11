@@ -25,6 +25,9 @@ public final class ProjectOverview {
     @Schema(description = "The human-readable display name of the project.")
     private final String displayName;
 
+    @Schema(description = "The HTML-formatted display name, containing IDE annotations.")
+    private final String htmlDisplayName;
+
     @Schema(description = "The absolute path to the project's root directory.")
     private final String projectDirectory;
     

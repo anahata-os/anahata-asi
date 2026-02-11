@@ -35,7 +35,8 @@ public class ResourceNode extends AbstractContextNode<AbstractResource<?, ?>> {
     /** {@inheritDoc} */
     @Override
     public String getName() {
-        return userObject.getName();
+        String html = userObject.getHtmlDisplayName();
+        return html != null ? html : userObject.getName();
     }
 
     /** {@inheritDoc} */

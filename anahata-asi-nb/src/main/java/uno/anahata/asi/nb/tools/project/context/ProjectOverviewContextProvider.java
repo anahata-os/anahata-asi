@@ -71,6 +71,7 @@ public class ProjectOverviewContextProvider extends BasicContextProvider {
      */
     private String generateMarkdown(ProjectOverview overview) {
         StringBuilder sb = new StringBuilder();
+        
         sb.append("\n# Project: ").append(overview.getDisplayName()).append(" (`").append(overview.getId()).append("`)\n");
         sb.append("  - Path: `").append(overview.getProjectDirectory()).append("`\n");
         if (overview.getPackaging() != null) {

@@ -75,6 +75,7 @@ public class AnahataProjectIconAnnotator implements ProjectIconAnnotator, Change
      */
     @Override
     public Image annotateIcon(Project p, Image icon, boolean opened) {
+        String existingTooltip = ImageUtilities.getImageToolTip(icon);
         String projectPath = p.getProjectDirectory().getPath();
         List<Chat> activeChats = AnahataInstaller.getContainer().getActiveChats();
         
@@ -113,11 +114,11 @@ public class AnahataProjectIconAnnotator implements ProjectIconAnnotator, Change
                 // Offset 16 is the right place because other badges (like the warning icon) 
                 // show at (8,0). This places our badge to the right of the main 16x16 icon.
                 Image badgedIcon = ImageUtilities.mergeImages(icon, BADGE, 16, 0);
-                return mergeTooltip(badgedIcon, sb.toString());
+                return mergeTooltip(badgedIcon, sb.toString(), existingTooltip);
             }
         } else {
             sb.append("Not in context in any session");
-            return mergeTooltip(icon, sb.toString());
+            return mergeTooltip(icon, sb.toString(), existingTooltip);
         }
 
         return icon;
@@ -130,16 +131,17 @@ public class AnahataProjectIconAnnotator implements ProjectIconAnnotator, Change
      * 
      * @param icon The image to annotate.
      * @param segment The HTML segment to append.
+     * @param existing An optional pre-captured existing tooltip to merge with.
      * @return The image with the combined tooltip.
      */
-    private Image mergeTooltip(Image icon, String segment) {
-        String existing = ImageUtilities.getImageToolTip(icon);
-        if (existing == null || existing.isEmpty()) {
+    private Image mergeTooltip(Image icon, String segment, String existing) {
+        String base = (existing != null && !existing.isEmpty()) ? existing : ImageUtilities.getImageToolTip(icon);
+        if (base == null || base.isEmpty()) {
             return ImageUtilities.addToolTipToImage(icon, "<html>" + segment + "</html>");
         }
         
         // Deduplicate existing lines to fix the Git double-tooltip issue
-        String cleanExisting = deduplicateTooltip(existing);
+        String cleanExisting = deduplicateTooltip(base);
         
         // Ensure our segment starts on a new line/separator
         String separator = "<hr>";

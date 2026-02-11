@@ -6,7 +6,7 @@ import java.util.Scanner;
 import lombok.RequiredArgsConstructor;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.model.resource.AbstractResource;
-import uno.anahata.asi.model.resource.TextFileResource;
+
 import uno.anahata.asi.resource.ResourceManager;
 
 /**

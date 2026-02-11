@@ -34,7 +34,11 @@ public class ProviderNode extends AbstractContextNode<ContextProvider> {
     /** {@inheritDoc} */
     @Override
     public String getName() {
-        return userObject.getName();
+        String name = userObject.getName();
+        if (name != null && name.contains("<") && !name.toLowerCase().startsWith("<html>")) {
+            return "<html>" + name + "</html>";
+        }
+        return name;
     }
 
     /** {@inheritDoc} */

@@ -14,6 +14,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.HashMap;
 import java.util.List;
+
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
@@ -286,6 +287,9 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         }
         
         argsContainer.setVisible(!parameters.isEmpty());
+        if (argsTabbedPane != null && argsTabbedPane.getTabCount() > 0) {
+            adjustTabbedPaneHeight(argsTabbedPane);
+        }
     }
 
     private void renderResults(AbstractToolResponse<?> response) {
@@ -335,6 +339,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
             if (resultsTabbedPane.getSelectedIndex() == -1) {
                 resultsTabbedPane.setSelectedIndex(0);
             }
+            adjustTabbedPaneHeight(resultsTabbedPane);
         }
     }
     
@@ -451,14 +456,32 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
     private void adjustTabbedPaneHeight(JTabbedPane tabbedPane) {
         Component selected = tabbedPane.getSelectedComponent();
         if (selected != null) {
-            Dimension prefSize = selected.getPreferredSize();
-            // Cap the height to avoid excessive expansion, but allow it to shrink
-            int targetHeight = Math.min(prefSize.height + 40, 500); 
-            tabbedPane.setPreferredSize(new Dimension(tabbedPane.getWidth(), targetHeight));
-            tabbedPane.revalidate();
-            tabbedPane.repaint();
-            // Also revalidate the outer container to ensure the layout updates
-            getCentralContainer().revalidate();
+            Component content = selected;
+            if (selected instanceof JScrollPane sp) {
+                content = sp.getViewport().getView();
+            }
+            
+            Dimension prefSize = content.getPreferredSize();
+            // Removed the 700px cap to allow full expansion. 
+            // 40px for tab headers, 40px extra buffer for padding/borders.
+            int targetHeight = prefSize.height + 80; 
+            
+            Dimension currentPref = tabbedPane.getPreferredSize();
+            if (currentPref.height != targetHeight) {
+                int width = tabbedPane.getWidth() > 0 ? tabbedPane.getWidth() : currentPref.width;
+                tabbedPane.setPreferredSize(new Dimension(width, targetHeight));
+                
+                // Force layout update
+                tabbedPane.revalidate();
+                tabbedPane.repaint();
+                getCentralContainer().revalidate();
+                
+                // Also notify the conversation panel to update its scrolling if necessary
+                SwingUtilities.invokeLater(() -> {
+                    chatPanel.getConversationPanel().revalidate();
+                    chatPanel.getConversationPanel().repaint();
+                });
+            }
         }
     }
 

@@ -377,9 +377,18 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
             log.debug("Failed to read compile.on.save preference for project: " + projectPath, e);
         }
 
+        String htmlDisplayName = null;
+        try {
+            org.openide.nodes.Node node = org.openide.loaders.DataObject.find(root).getNodeDelegate();
+            htmlDisplayName = node.getHtmlDisplayName();
+        } catch (Exception e) {
+            log.debug("Failed to get HTML display name for project root", e);
+        }
+
         return new ProjectOverview(
                 root.getNameExt(),
                 info.getDisplayName(),
+                htmlDisplayName,
                 root.getPath(),
                 packaging,
                 actions,
@@ -749,41 +758,30 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
 
     /**
      * Creates a {@link ProjectFile} metadata object for a given
-     * {@link FileObject}. It checks the AI context to determine the file's
-     * current status (e.g., [IC], [STALE]).
+     * {@link FileObject}.
      *
      * @param fo The file object.
      * @return The project file metadata.
      * @throws FileStateInvalidException if the file state is invalid.
      */
     private ProjectFile createProjectFile(FileObject fo) throws FileStateInvalidException {
-        String path = fo.getPath();
-        String status = null;
-        Optional<? extends AbstractPathResource<?, ?>> resOpt = getResourceManager().findByPath(path);
-        if (resOpt.isPresent()) {
-            AbstractPathResource<?, ?> res = resOpt.get();
-            if (!res.exists()) {
-                status = "[DELETED]";
-            } else {
-                try {
-                    if (res.isStale()) {
-                        status = "[STALE]";
-                    } else {
-                        status = "[IC]";
-                    }
-                } catch (IOException e) {
-                    log.error("Error checking staleness for: " + path, e);
-                    status = "[IC]";
-                }
+        String annotatedName = null;
+        try {
+            org.openide.nodes.Node node = org.openide.loaders.DataObject.find(fo).getNodeDelegate();
+            String html = node.getHtmlDisplayName();
+            if (html != null) {
+                annotatedName = html.replaceAll("<[^>]*>", "").trim();
             }
+        } catch (Exception e) {
+            // Ignore failures to get annotated name
         }
 
         return new ProjectFile(
                 fo.getNameExt(),
+                annotatedName,
                 fo.getSize(),
                 fo.lastModified().getTime(),
-                status,
-                path
+                fo.getPath()
         );
     }
 

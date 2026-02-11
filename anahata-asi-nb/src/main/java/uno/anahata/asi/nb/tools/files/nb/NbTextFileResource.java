@@ -41,6 +41,22 @@ public class NbTextFileResource extends TextFileResource {
         this.helper = new NbFileObjectResourceHelper(this, fo);
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public String getHtmlDisplayName() {
+        FileObject fo = helper.getFileObject();
+        if (fo != null) {
+            try {
+                org.openide.nodes.Node node = org.openide.loaders.DataObject.find(fo).getNodeDelegate();
+                String html = node.getHtmlDisplayName();
+                return html != null ? html : node.getDisplayName();
+            } catch (Exception e) {
+                // Ignore and fall back
+            }
+        }
+        return super.getHtmlDisplayName();
+    }
+
     /**
      * {@inheritDoc}
      * Implementation details: Uses {@link FileObject#asText()} for efficient 

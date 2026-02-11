@@ -76,6 +76,17 @@ public abstract class AbstractResource<R, C> extends BasicPropertyChangeSource i
     private boolean providing = true;
 
     /**
+     * Gets an optional HTML-formatted display name for the resource.
+     * This is used by UIs that support HTML rendering (like NetBeans) to show 
+     * status annotations (e.g., Git status colors).
+     * 
+     * @return The HTML display name, or null to use the standard name.
+     */
+    public String getHtmlDisplayName() {
+        return null;
+    }
+
+    /**
      * Gets the parent chat session for this resource.
      * @return The chat session.
      */
