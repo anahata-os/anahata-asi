@@ -82,17 +82,31 @@ public class AnahataProjectIconAnnotator implements ProjectIconAnnotator, Change
         List<String> tooltipLines = new ArrayList<>();
 
         for (Chat chat : activeChats) {
+            final int[] total = {0};
             chat.getToolManager().getToolkitInstance(Projects.class).ifPresent(projectsTool -> {
                 projectsTool.getProjectProvider(projectPath).ifPresent(pcp -> {
+                    List<String> activeChildren = new ArrayList<>();
                     if (pcp.isProviding()) {
-                        List<String> activeChildren = pcp.getChildrenProviders().stream()
+                        total[0]++; // Overview
+                        List<String> children = pcp.getChildrenProviders().stream()
                                 .filter(ContextProvider::isProviding)
                                 .map(ContextProvider::getName)
                                 .collect(Collectors.toList());
-                        
-                        String line = "<b>" + chat.getDisplayName() + "</b>";
+                        activeChildren.addAll(children);
+                        total[0] += children.size();
+                    }
+                    
+                    // Add files (recursive count for unified total)
+                    int fileCount = uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic.getSessionFileCounts(p.getProjectDirectory(), true).getOrDefault(chat, 0);
+                    total[0] += fileCount;
+                    
+                    if (total[0] > 0) {
+                        String line = "<b>" + chat.getDisplayName() + "</b> [" + total[0] + "]";
                         if (!activeChildren.isEmpty()) {
                             line += ": " + String.join(", ", activeChildren);
+                        }
+                        if (fileCount > 0) {
+                            line += " (" + fileCount + " files)";
                         }
                         tooltipLines.add(line);
                     }
@@ -111,9 +125,8 @@ public class AnahataProjectIconAnnotator implements ProjectIconAnnotator, Change
             }
             
             if (BADGE != null) {
-                // Offset 16 is the right place because other badges (like the warning icon) 
-                // show at (8,0). This places our badge to the right of the main 16x16 icon.
-                Image badgedIcon = ImageUtilities.mergeImages(icon, BADGE, 16, 0);
+                // Offset 8 for projects as requested.
+                Image badgedIcon = ImageUtilities.mergeImages(icon, BADGE, 8, 0);
                 return mergeTooltip(badgedIcon, sb.toString(), existingTooltip);
             }
         } else {
@@ -140,36 +153,32 @@ public class AnahataProjectIconAnnotator implements ProjectIconAnnotator, Change
             return ImageUtilities.addToolTipToImage(icon, "<html>" + segment + "</html>");
         }
         
-        // Deduplicate existing lines to fix the Git double-tooltip issue
+        // Use the same robust deduplication logic
         String cleanExisting = deduplicateTooltip(base);
         
-        // Ensure our segment starts on a new line/separator
-        String separator = "<hr>";
+        // CRITICAL: Remove our own previous segment if it exists to prevent duplication
+        cleanExisting = cleanExisting.replaceAll("(?i)<img[^>]*anahata_16\\.png[^>]*>.*", "");
+        cleanExisting = cleanExisting.replaceAll("(?i)Not in context in any session.*", "");
         
-        if (cleanExisting.toLowerCase().contains("<html>")) {
-            return ImageUtilities.addToolTipToImage(icon, cleanExisting.replaceFirst("(?i)</html>", separator + segment + "</html>"));
-        }
-        
-        // Otherwise, wrap both in HTML
+        String separator = "<br><hr>";
         return ImageUtilities.addToolTipToImage(icon, "<html>" + cleanExisting + separator + segment + "</html>");
     }
 
     /**
      * Strips HTML tags and deduplicates lines in a tooltip string.
-     * 
-     * @param tooltip The raw tooltip string.
-     * @return A cleaned, deduplicated string.
      */
     private String deduplicateTooltip(String tooltip) {
-        if (tooltip == null) {
-            return null;
-        }
+        if (tooltip == null) return null;
         String text = tooltip.replaceAll("(?i)<html>", "").replaceAll("(?i)</html>", "");
-        String[] lines = text.split("<br>|\n");
-        Set<String> uniqueLines = new LinkedHashSet<>();
+        String[] lines = text.split("(?i)<br/?>|\\n|<p/?>|<hr/?>");
+        Set<String> uniqueLines = new java.util.LinkedHashSet<>();
+        Set<String> seenPlain = new java.util.HashSet<>();
+        
         for (String line : lines) {
             String trimmed = line.trim();
-            if (!trimmed.isEmpty()) {
+            if (trimmed.isEmpty()) continue;
+            String plain = trimmed.replaceAll("<[^>]*>", "").replaceAll("\\s+", " ").trim();
+            if (!plain.isEmpty() && seenPlain.add(plain)) {
                 uniqueLines.add(trimmed);
             }
         }
@@ -235,11 +244,8 @@ public class AnahataProjectIconAnnotator implements ProjectIconAnnotator, Change
         fireRefresh(project);
         if (project != null) {
             FileObject root = project.getProjectDirectory();
-            try {
-                FileAnnotationProvider.fireRefresh(root.getFileSystem(), Collections.singleton(root));
-            } catch (IOException ex) {
-                LOG.log(Level.WARNING, "Failed to refresh project root annotations", ex);
-            }
+            // Force a recursive refresh of the physical file hierarchy to update Files/Favorites views
+            uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic.fireRefreshRecursive(root);
         }
     }
 }
