@@ -4,7 +4,7 @@ package uno.anahata.asi.nb.tools.files.nb;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import org.openide.filesystems.FileObject;
-import uno.anahata.asi.model.resource.BinaryFileResource;
+import uno.anahata.asi.model.resource.files.BinaryFileResource;
 import uno.anahata.asi.resource.ResourceManager;
 
 /**

@@ -48,8 +48,6 @@ public class SwingChatConfig extends ChatConfig {
     {
         // Register the Yam tools for all Swing-based configurations
         getToolClasses().add(Speech.class);
-        getToolClasses().add(Quota.class);
-        getToolClasses().add(MarketingToolkit.class);
         getToolClasses().add(Browser.class);
         getToolClasses().add(Audio.class);
     }

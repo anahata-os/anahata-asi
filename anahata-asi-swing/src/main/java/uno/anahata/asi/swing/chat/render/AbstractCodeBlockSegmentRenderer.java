@@ -7,6 +7,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.event.MouseWheelEvent;
 import java.util.Objects;
 import java.util.function.Consumer;
 import javax.swing.BorderFactory;
@@ -104,8 +105,13 @@ public abstract class AbstractCodeBlockSegmentRenderer extends AbstractTextSegme
         if (component == null) {
             innerComponent = createInnerComponent();
             
-            // Redispatch mouse wheel events from the inner component to the parent scroll pane
-            innerComponent.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(innerComponent, e));
+            // Consume and redispatch vertical scroll events to prevent horizontal translation
+            innerComponent.addMouseWheelListener(e -> {
+                if (e.getScrollType() == MouseWheelEvent.WHEEL_UNIT_SCROLL && e.getWheelRotation() != 0) {
+                    SwingUtils.redispatchMouseWheelEvent(innerComponent, e);
+                    e.consume();
+                }
+            });
 
             JPanel container = new JPanel(new BorderLayout());
             container.setOpaque(false);
@@ -150,11 +156,16 @@ public abstract class AbstractCodeBlockSegmentRenderer extends AbstractTextSegme
             JScrollPane scrollPane = new JScrollPane(innerComponent);
             scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
             scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-            scrollPane.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+            scrollPane.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
             scrollPane.setOpaque(false);
             scrollPane.getViewport().setOpaque(false);
             
-            scrollPane.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(scrollPane, e));
+            scrollPane.addMouseWheelListener(e -> {
+                if (e.getScrollType() == MouseWheelEvent.WHEEL_UNIT_SCROLL && e.getWheelRotation() != 0) {
+                    SwingUtils.redispatchMouseWheelEvent(scrollPane, e);
+                    e.consume();
+                }
+            });
             container.add(scrollPane, BorderLayout.CENTER);
 
             this.component = container;

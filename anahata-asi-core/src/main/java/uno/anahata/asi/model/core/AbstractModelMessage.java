@@ -108,6 +108,15 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
     }
     
     /**
+     * Checks if this model message has an associated tool message.
+     * 
+     * @return {@code true} if a tool message exists.
+     */
+    public boolean hasToolMessage() {
+        return toolMessage != null;
+    }
+    
+    /**
      * Sets the raw JSON representation of the model's response and fires a property change event.
      * This method replaces any existing content.
      * 
@@ -117,6 +126,18 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
         String oldJson = this.rawJson;
         this.rawJson = rawJson;
         propertyChangeSupport.firePropertyChange("rawJson", oldJson, rawJson);
+    }
+
+    /**
+     * {@inheritDoc}
+     * Propagates the pruned state to the associated tool message.
+     */
+    @Override
+    public void setPruned(Boolean pruned) {
+        super.setPruned(pruned);
+        if (toolMessage != null) {
+            toolMessage.setPruned(pruned);
+        }
     }
 
     /**

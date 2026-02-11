@@ -54,7 +54,7 @@ public class JEditorPaneCodeBlockSegmentRenderer extends AbstractCodeBlockSegmen
             @Override
             public Dimension getPreferredSize() {
                 Dimension d = super.getPreferredSize();
-                if (!editable) {
+                if (!editing) {
                     try {
                         View v = getUI().getRootView(this);
                         if (v != null) {
@@ -64,15 +64,14 @@ public class JEditorPaneCodeBlockSegmentRenderer extends AbstractCodeBlockSegmen
                             int length = getDocument().getLength();
                             if (length > 0) {
                                 // modelToView is the most reliable way to find the actual bottom of the text.
-                                // We use the position of the last character.
                                 Rectangle r = modelToView(length - 1);
                                 if (r != null) {
-                                    d.height = r.y + r.height + 2; // Minimal padding
+                                    d.height = r.y + r.height + 5; 
                                     return d;
                                 }
                             }
                             // Fallback to span if modelToView fails
-                            d.height = (int) v.getPreferredSpan(View.Y_AXIS);
+                            d.height = (int) v.getPreferredSpan(View.Y_AXIS) + 5;
                         }
                     } catch (Exception e) {
                         log.error("Failed to calculate preferred size for JEditorPane", e);

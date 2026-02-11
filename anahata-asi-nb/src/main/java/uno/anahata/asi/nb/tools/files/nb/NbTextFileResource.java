@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import org.openide.filesystems.FileObject;
-import uno.anahata.asi.model.resource.TextFileResource;
+import uno.anahata.asi.model.resource.files.TextFileResource;
 import uno.anahata.asi.resource.ResourceManager;
 
 /**

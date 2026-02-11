@@ -1,19 +1,16 @@
-/*
- * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
- */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.chat.render;
 
 import java.awt.Color;
 import java.awt.Font;
 import javax.swing.JComponent;
+import javax.swing.SwingUtilities;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import uno.anahata.asi.swing.chat.ChatPanel;
 
 /**
- * RSyntaxTextArea implementation of a code block segment renderer.
- *
- * @author anahata
+ * Renders code blocks using RSyntaxTextArea for rich syntax highlighting in standalone/generic Swing environments.
  */
 public class RSyntaxTextAreaCodeBlockSegmentRenderer extends AbstractCodeBlockSegmentRenderer {
 
@@ -28,49 +25,51 @@ public class RSyntaxTextAreaCodeBlockSegmentRenderer extends AbstractCodeBlockSe
         super(chatPanel, initialContent, language);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected JComponent createInnerComponent() {
         RSyntaxTextArea textArea = new RSyntaxTextArea(currentContent);
-        textArea.setSyntaxEditingStyle(mapLanguageToSyntaxStyle(language));
-        textArea.setEditable(false); 
-        textArea.setLineWrap(false); 
+        textArea.setEditable(false);
+        textArea.setLineWrap(false);
+        textArea.setTabSize(4);
         textArea.setCodeFoldingEnabled(true);
         textArea.setAntiAliasingEnabled(true);
-        textArea.setTabSize(4); 
-        textArea.setHighlightCurrentLine(false); 
+        textArea.setHighlightCurrentLine(false);
         
-        textArea.setOpaque(false);
-        textArea.setBackground(new Color(0, 0, 0, 0));
-        textArea.setFont(new java.awt.Font(Font.MONOSPACED, java.awt.Font.PLAIN, 13));
+        // Use a solid background to prevent rendering artifacts/garbling in standalone
+        textArea.setOpaque(true);
+        textArea.setBackground(Color.WHITE);
+        textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 13));
+        
+        // Map language string to RSyntaxTextArea constants
+        textArea.setSyntaxEditingStyle(mapLanguageToSyntax(language));
+
+        // Ensure a repaint is triggered after initialization
+        SwingUtilities.invokeLater(() -> textArea.repaint());
         
         return textArea;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void updateComponentContent(String content) {
-        ((RSyntaxTextArea) innerComponent).setText(content);
+        if (innerComponent instanceof RSyntaxTextArea textArea) {
+            textArea.setText(content);
+            textArea.setCaretPosition(0);
+        }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected String getCurrentContentFromComponent() {
-        return ((RSyntaxTextArea) innerComponent).getText();
+        if (innerComponent instanceof RSyntaxTextArea textArea) {
+            return textArea.getText();
+        }
+        return currentContent;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void setComponentEditable(boolean editable) {
-        ((RSyntaxTextArea) innerComponent).setEditable(editable);
+        if (innerComponent instanceof RSyntaxTextArea textArea) {
+            textArea.setEditable(editable);
+        }
     }
 
     /**
@@ -79,7 +78,7 @@ public class RSyntaxTextAreaCodeBlockSegmentRenderer extends AbstractCodeBlockSe
      * @param language The language string.
      * @return The corresponding syntax style constant.
      */
-    private String mapLanguageToSyntaxStyle(String language) {
+    private String mapLanguageToSyntax(String language) {
         if (language == null) return SyntaxConstants.SYNTAX_STYLE_NONE;
         return switch (language.toLowerCase()) {
             case "java" -> SyntaxConstants.SYNTAX_STYLE_JAVA;
@@ -103,4 +102,5 @@ public class RSyntaxTextAreaCodeBlockSegmentRenderer extends AbstractCodeBlockSe
             default -> SyntaxConstants.SYNTAX_STYLE_NONE;
         };
     }
+
 }

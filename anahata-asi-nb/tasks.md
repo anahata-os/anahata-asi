@@ -1,6 +1,16 @@
 # Tasks for Anahata ASI NetBeans (`anahata-asi-nb`)
 
-## High Priority
+## Strategy: Smart File Operations (In Progress)
+- [ ] **[TOOLKIT] Consolidation to NbFiles**: Move all specialized refactoring and surgical edit logic from `NbCoding` to `NbFiles`. Override `replaceInMultipleTextFiles` to use NetBeans `DataObject` and `EditorCookie` APIs for memory-safe updates.
+- [ ] **[UI] Inline Diffs**: Implement a dedicated "Diff" renderer for file update results. Show git-style diffs in the conversation panel when files are created or modified.
+- [ ] **[CORE] Change IDs**: Implement unique Change IDs for every file operation to improve traceability and feedback (format: `change-id: user-description`).
+- [ ] **[UI] Embedded NetBeans Diff**: Explore embedding the native NetBeans Diff viewer in the `ToolCallPanel` arguments tab for `writeTextFile` operations.
+
+## UI Refinements (High Priority)
+- [ ] **[UI] Dynamic Tab Height**: Ensure `argsTabbedPane` and `resultsTabbedPane` in `ToolCallPanel` resize vertically to fit the selected tab's content.
+- [ ] **[UI] JEditorPane Height**: Fix the persistent white-space issue in NetBeans when rendering `JEditorPane` inside tool arguments.
+- [ ] **[UI] Default Line Numbers**: Enable line numbers by default in the text file resource viewport and add Git annotations.
+
 - [x] **[UI] UI & Context Synchronization**: Ensured the **Context Tab** (Resources node) is fully reactive by removing child caching in the tree nodes. File icons are correctly restored after session reboot via the `NbFileObjectResourceHelper`. Fixed the `JXTreeTable` column jumping issue by disabling auto-creation of columns.
 - [x] **[MULTIMODAL] Binary Resource Support**: Implemented `NbBinaryFileResource` and `EditorCookie` detection.
 - [x] **[UI] Surgical vs. Hierarchical Badging**: Implemented view detection to keep Projects tab clean while allowing bubbling in the Files tab.

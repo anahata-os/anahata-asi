@@ -11,7 +11,7 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import net.miginfocom.swing.MigLayout;
-import uno.anahata.asi.model.resource.TextReplacement;
+import uno.anahata.asi.toolkit.files.TextReplacement;
 import uno.anahata.asi.swing.icons.CancelIcon;
 
 /**

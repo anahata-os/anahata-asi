@@ -13,8 +13,8 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
-import uno.anahata.asi.model.resource.TextViewport;
-import uno.anahata.asi.model.resource.TextViewportSettings;
+import uno.anahata.asi.toolkit.files.TextViewport;
+import uno.anahata.asi.toolkit.files.TextViewportSettings;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**

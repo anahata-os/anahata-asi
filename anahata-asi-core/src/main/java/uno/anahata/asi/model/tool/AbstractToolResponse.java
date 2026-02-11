@@ -316,6 +316,15 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * Hide the tool response ID to avoid model ambiguity.
+     */
+    @Override
+    protected String getIdentityLabel() {
+        return "";
+    }
+
     @Override
     protected void appendMetadata(StringBuilder sb) {
         sb.append(" | Status: ").append(status);

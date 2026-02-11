@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.model.resource;
+package uno.anahata.asi.model.resource.files;
 
+import uno.anahata.asi.toolkit.files.TextViewport;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,6 +12,7 @@ import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.internal.TokenizerUtils;
 import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.model.core.TextPart;
+import uno.anahata.asi.model.resource.AbstractPathResource;
 import uno.anahata.asi.resource.ResourceManager;
 
 /**

@@ -17,7 +17,11 @@ This document provides the high-level strategic overview for the entire `anahata
 > The current runtime is the **V1** architecture (`gemini-java-client` and `anahata-netbeans-ai`). 
 > Do not expect the code in this project to be reflected in my current capabilities or internal state.
 
-## 1. Grand Strategy: "The Flywheel"
+## Strategy: Core Stability & Observability
+- [ ] **[CORE] Tool Call IDs**: Stop using `toolCallIds` for the tool call ID field in GenAI `functionCall`/`functionResponse`. Transition to using our internal `partId` for bidirectional binding.
+- [ ] **[CORE] Part ID Initialization**: Investigate why `AbstractResponsePart`s are defaulting to `partId=0`. Ensure every part receives a unique, sequential ID upon creation or attachment to a message.
+- [ ] **[TOOLKIT] NbFiles DTO Feedback**: Refactor `NbFiles` to return a `FileUpdateResult` DTO instead of a raw string to provide granular, per-file success/failure reporting and inline diffs.
+
 
 The project's strategy is based on the "Flywheel" model, designed to build a powerful ecosystem around a core commercial engine.
 

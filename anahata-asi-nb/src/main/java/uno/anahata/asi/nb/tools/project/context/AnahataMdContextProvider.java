@@ -7,7 +7,7 @@ import java.nio.file.Paths;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.context.BasicContextProvider;
 import uno.anahata.asi.context.ContextPosition;
-import uno.anahata.asi.model.resource.TextFileResource;
+import uno.anahata.asi.model.resource.files.TextFileResource;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.nb.tools.project.nb.AnahataProjectIconAnnotator;
 

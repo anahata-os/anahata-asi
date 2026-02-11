@@ -49,8 +49,41 @@ public abstract class AbstractToolMessage<T extends AbstractModelMessage> extend
 
     /**
      * {@inheritDoc}
-     * Returns the JVM ID (pid@hostname) as the logical sender of tool results.
+     * Propagates the pruned state back to the associated model message.
      */
+    @Override
+    public void setPruned(Boolean pruned) {
+        super.setPruned(pruned);
+        if (modelMessage != null) {
+            modelMessage.setPruned(pruned);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * A tool message is effectively pruned if it is explicitly pruned,
+     * if all its responses are pruned, OR if the initiating model message
+     * is effectively pruned. This ensures consistent context for the AI.
+     */
+    @Override
+    public boolean isEffectivelyPruned() {
+        if (super.isEffectivelyPruned()) {
+            return true;
+        }
+        // Shadow the parent: If the question is gone, the answer is irrelevant.
+        return modelMessage != null && modelMessage.isEffectivelyPruned();
+    }
+
+    /**
+     * {@inheritDoc}
+     * Hide the tool message ID to avoid model ambiguity.
+     */
+    @Override
+    protected String getIdentityLabel() {
+        return "";
+    }
+
+    /** {@inheritDoc} */
     @Override
     public String getFrom() {
         return TextUtils.getJvmId();

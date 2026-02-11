@@ -28,7 +28,7 @@ import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.prompt.PromptSupport;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
-import uno.anahata.asi.model.resource.TextReplacement;
+import uno.anahata.asi.toolkit.files.TextReplacement;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.FramesIcon;
 import uno.anahata.asi.swing.internal.UICapture;

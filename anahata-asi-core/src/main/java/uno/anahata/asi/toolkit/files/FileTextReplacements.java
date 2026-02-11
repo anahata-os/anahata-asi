@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.model.resource;
+package uno.anahata.asi.toolkit.files;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;

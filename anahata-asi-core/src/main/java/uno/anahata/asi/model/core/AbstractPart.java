@@ -280,8 +280,12 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      */
     public String createMetadataHeader() {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("[Part ID: %d | Type: %s | Tokens: %d | Remaining Depth: %d",
-            getSequentialId(),
+        sb.append("[");
+        String identity = getIdentityLabel();
+        if (identity != null && !identity.isEmpty()) {
+            sb.append(identity).append(" | ");
+        }
+        sb.append(String.format("Type: %s | Tokens: %d | Remaining Depth: %d",
             getClass().getSimpleName(),
             getTokenCount(),
             getRemainingDepth()
@@ -304,6 +308,16 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
         
         sb.append("]");
         return sb.toString();
+    }
+
+    /**
+     * Returns the identity label for the metadata header (e.g., "Part ID: 45").
+     * Subclasses can override this to hide or customize the identity.
+     * 
+     * @return The identity label.
+     */
+    protected String getIdentityLabel() {
+        return "Part ID: " + getSequentialId();
     }
 
     /**

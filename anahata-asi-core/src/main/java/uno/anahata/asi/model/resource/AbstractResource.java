@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.context.ContextPosition;
-import uno.anahata.asi.model.context.RefreshPolicy;
 import uno.anahata.asi.model.core.AbstractPart;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 import uno.anahata.asi.model.core.RagMessage;

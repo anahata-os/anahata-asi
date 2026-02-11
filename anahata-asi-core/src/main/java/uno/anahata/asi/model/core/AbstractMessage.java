@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
@@ -124,12 +125,19 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
         if (part.getMessage() != null && part.getMessage() != this) {
             throw new IllegalArgumentException("Part " + part + " already belongs to another message: " + part.getMessage());
         }
-        
+
         // Establish the relationship BEFORE adding to the list and firing the event.
         // This ensures that UI listeners reacting to the "parts" change have access
         // to a fully initialized part object (including its parent message reference).
         part.setMessage(this);
         this.parts.add(part);
+
+        // V2 ID Synchronization Fix: If the message is already identified (part of history),
+        // we must identify the new part immediately to avoid sequentialId=0 issues.
+        if (getSequentialId() != 0 && chat != null) {
+            chat.getContextManager().identifyPart(part);
+        }
+
         propertyChangeSupport.firePropertyChange("parts", null, parts);
     }
     
@@ -161,6 +169,9 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
      * @param pruned The new pruned state.
      */
     public void setPruned(Boolean pruned) {
+        if (Objects.equals(this.pruned, pruned)) {
+            return;
+        }
         Boolean oldPruned = this.pruned;
         this.pruned = pruned;
         propertyChangeSupport.firePropertyChange("pruned", oldPruned, pruned);
@@ -320,8 +331,12 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
      */
     public String createMetadataHeader() {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("--- Message ID: %d | Role: %s | From: %s | Device: %s | Time: %s | Tokens: %d",
-            getSequentialId(),
+        sb.append("--- ");
+        String identity = getIdentityLabel();
+        if (identity != null && !identity.isEmpty()) {
+            sb.append(identity).append(" | ");
+        }
+        sb.append(String.format("Role: %s | From: %s | Device: %s | Time: %s | Tokens: %d",
             getRole(),
             getFrom(),
             getDevice(),
@@ -339,6 +354,16 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
         
         sb.append(" ---");
         return sb.toString();
+    }
+
+    /**
+     * Returns the identity label for the metadata header (e.g., "Message ID: 12").
+     * Subclasses can override this to hide or customize the identity.
+     * 
+     * @return The identity label.
+     */
+    protected String getIdentityLabel() {
+        return "Message ID: " + getSequentialId();
     }
 
     /**

@@ -271,10 +271,20 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
             msg.setSequentialId(messageIdCounter.incrementAndGet());
         }
         for (AbstractPart part : msg.getParts()) {
-            if (part.getSequentialId() == 0) {
-                log.info("Setting id for {} ", part);
-                part.setSequentialId(partIdCounter.incrementAndGet());
-            }
+            identifyPart(part);
+        }
+    }
+
+    /**
+     * Assigns a sequential ID to a single part if it doesn't already have one.
+     * This public method is used for late-arriving parts in streaming scenarios.
+     * 
+     * @param part The part to identify.
+     */
+    public void identifyPart(AbstractPart part) {
+        if (part.getSequentialId() == 0) {
+            log.info("Setting id for {} ", part);
+            part.setSequentialId(partIdCounter.incrementAndGet());
         }
     }
 
@@ -307,7 +317,8 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
 
     /**
      * Removes a message from the history. Fires a property change event for the
-     * "history" property.
+     * "history" property. This method automatically handles the removal of
+     * paired Model/Tool message units.
      *
      * @param message The message to remove.
      */
@@ -315,9 +326,21 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
         boolean removed;
         synchronized (history) {
             removed = history.remove(message);
+            if (removed) {
+                // Removal Synchronization Logic:
+                if (message instanceof AbstractModelMessage amm) {
+                    if (amm.hasToolMessage()) {
+                        history.remove(amm.getToolMessage());
+                    }
+                } else if (message instanceof AbstractToolMessage atm) {
+                    if (atm.getModelMessage() != null) {
+                        history.remove(atm.getModelMessage());
+                    }
+                }
+            }
         }
         if (removed) {
-            log.info("Removed message {} from history.", message.getSequentialId());
+            log.info("Removed message {} (and its partner if applicable) from history.", message.getSequentialId());
             propertyChangeSupport.firePropertyChange("history", null, history);
         }
     }

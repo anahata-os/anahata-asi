@@ -12,12 +12,10 @@ import lombok.NonNull;
 import lombok.Setter;
 import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
-import uno.anahata.asi.model.core.RequestConfig;
 import uno.anahata.asi.model.provider.AbstractAiProvider;
 import uno.anahata.asi.toolkit.Session;
 import uno.anahata.asi.toolkit.files.Files;
 import uno.anahata.asi.toolkit.Java;
-import uno.anahata.asi.toolkit.Resources;
 import uno.anahata.asi.toolkit.shell.Shell;
 
 /**
@@ -61,7 +59,6 @@ public class ChatConfig extends BasicPropertyChangeSource {
         toolClasses.add(Session.class);
         toolClasses.add(Files.class);
         toolClasses.add(Java.class);        
-        toolClasses.add(Resources.class);
         toolClasses.add(Shell.class);
     }
 

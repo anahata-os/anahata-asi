@@ -138,17 +138,26 @@ public class SwingUtils {
     }
 
     /**
-     * Redispatches a {@link MouseWheelEvent} to the parent {@link JScrollPane} of a component.
-     * This is useful for nested scrollable components where the inner component should not
-     * consume vertical scroll events.
+     * Redispatches a {@link MouseWheelEvent} to the first ancestor {@link JScrollPane} that
+     * actually supports vertical scrolling. This is used to "pass through" scroll events
+     * from nested components (like code blocks) to the main conversation scroll pane.
      * 
      * @param component The component receiving the event.
      * @param e The mouse wheel event.
      */
     public static void redispatchMouseWheelEvent(Component component, MouseWheelEvent e) {
-        JScrollPane parentScrollPane = (JScrollPane) SwingUtilities.getAncestorOfClass(JScrollPane.class, component);
-        if (parentScrollPane != null) {
-            parentScrollPane.dispatchEvent(SwingUtilities.convertMouseEvent(component, e, parentScrollPane));
+        Container parent = component.getParent();
+        while (parent != null) {
+            if (parent instanceof JScrollPane sp) {
+                // We search for an ancestor scroll pane that allows vertical scrolling.
+                // This skips the local scroll pane of the code block (which has policy NEVER).
+                if (sp.getVerticalScrollBarPolicy() != JScrollPane.VERTICAL_SCROLLBAR_NEVER && 
+                    sp.getVerticalScrollBar().isEnabled()) {
+                    sp.dispatchEvent(SwingUtilities.convertMouseEvent(component, e, sp));
+                    return;
+                }
+            }
+            parent = parent.getParent();
         }
     }
 

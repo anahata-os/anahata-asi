@@ -118,10 +118,11 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         // --- Arguments Panel (Top) ---
         argsContainer = new JPanel(new BorderLayout());
         argsContainer.setOpaque(false);
-        getCentralContainer().add(argsContainer, "growx, wrap");
+        getCentralContainer().add(argsContainer, "push, grow, wrap");
         
         // --- Response Panel (Middle) ---
         resultsTabbedPane = new JTabbedPane();
+        resultsTabbedPane.addChangeListener(e -> adjustTabbedPaneHeight(resultsTabbedPane));
         
         UITheme theme = chatConfig.getTheme();
         outputArea = createTextArea(theme.getToolOutputFg(), theme.getToolOutputBg());
@@ -157,8 +158,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
             });
         }
         
-        // Cap the response area at 500px height
-        getCentralContainer().add(responseTitledPanel, "growx, hmax 500, wrap");
+        getCentralContainer().add(responseTitledPanel, "growx, wrap");
 
         // --- Bottom Control Bar ---
         JPanel controlBar = new JPanel(new MigLayout("fillx, insets 5", "[][grow][]", "[][]"));
@@ -233,6 +233,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
 
         if (argsTabbedPane == null) {
             argsTabbedPane = new JTabbedPane();
+            argsTabbedPane.addChangeListener(e -> adjustTabbedPaneHeight(argsTabbedPane));
             argsContainer.removeAll();
             argsContainer.add(argsTabbedPane, BorderLayout.CENTER);
         }
@@ -445,6 +446,20 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
      */
     private void executeTool() {
         chatPanel.getChat().getExecutor().execute(() -> getPart().getResponse().execute());
+    }
+
+    private void adjustTabbedPaneHeight(JTabbedPane tabbedPane) {
+        Component selected = tabbedPane.getSelectedComponent();
+        if (selected != null) {
+            Dimension prefSize = selected.getPreferredSize();
+            // Cap the height to avoid excessive expansion, but allow it to shrink
+            int targetHeight = Math.min(prefSize.height + 40, 500); 
+            tabbedPane.setPreferredSize(new Dimension(tabbedPane.getWidth(), targetHeight));
+            tabbedPane.revalidate();
+            tabbedPane.repaint();
+            // Also revalidate the outer container to ensure the layout updates
+            getCentralContainer().revalidate();
+        }
     }
 
     @Override

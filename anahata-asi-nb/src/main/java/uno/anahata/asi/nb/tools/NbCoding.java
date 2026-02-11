@@ -12,7 +12,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.openide.DialogDescriptor;
 import org.openide.DialogDisplayer;
-import uno.anahata.asi.model.resource.FileTextReplacements;
+import uno.anahata.asi.toolkit.files.FileTextReplacements;
 import uno.anahata.asi.nb.tools.files.nb.NbFiles;
 import uno.anahata.asi.nb.ui.diff.CherryPickDiffPanel;
 import uno.anahata.asi.tool.AiTool;
@@ -55,7 +55,7 @@ public class NbCoding extends AnahataToolkit {
             @AiToolParam("A clear explanation of the changes.") String explanation) throws Exception {
         
         // --- AUDIT VALIDATION ---
-        Map<uno.anahata.asi.model.resource.TextReplacement, String> validationErrors = new HashMap<>();
+        Map<uno.anahata.asi.toolkit.files.TextReplacement, String> validationErrors = new HashMap<>();
         int validCount = 0;
         int totalCount = 0;
         NbFiles nbFiles = getToolkit(NbFiles.class);
@@ -78,7 +78,7 @@ public class NbCoding extends AnahataToolkit {
                 }
             }
 
-            for (uno.anahata.asi.model.resource.TextReplacement tr : fr.getReplacements()) {
+            for (uno.anahata.asi.toolkit.files.TextReplacement tr : fr.getReplacements()) {
                 totalCount++;
                 if (fileError != null) {
                     validationErrors.put(tr, fileError);
