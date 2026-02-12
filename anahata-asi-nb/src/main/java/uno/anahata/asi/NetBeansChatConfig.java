@@ -7,8 +7,9 @@ import uno.anahata.asi.nb.mine.NetBeansEditorKitProvider;
 import uno.anahata.asi.nb.mine.NetBeansIconProvider;
 import uno.anahata.asi.nb.tools.Refactor;
 import uno.anahata.asi.nb.tools.files.nb.NbFiles;
+import uno.anahata.asi.nb.tools.ide.Editor;
 import uno.anahata.asi.nb.tools.ide.IDE;
-import uno.anahata.asi.nb.tools.ide.Screens;
+import uno.anahata.asi.swing.tools.Screens;
 import uno.anahata.asi.nb.tools.java.CodeModel;
 import uno.anahata.asi.nb.tools.java.Hints;
 import uno.anahata.asi.nb.tools.java.NbJava;
@@ -45,6 +46,7 @@ public class NetBeansChatConfig extends SwingChatConfig {
         getToolClasses().add(Projects.class);
         getToolClasses().add(CodeModel.class);
         getToolClasses().add(IDE.class);
+        getToolClasses().add(Editor.class);
         getToolClasses().add(Hints.class);
         getToolClasses().add(Refactor.class);
         getToolClasses().add(Host.class);

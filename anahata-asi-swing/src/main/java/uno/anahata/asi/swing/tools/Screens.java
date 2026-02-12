@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.nb.tools.ide;
+package uno.anahata.asi.swing.tools;
 
 import java.io.IOException;
 import java.nio.file.Path;

@@ -1,4 +1,6 @@
-# NetBeans Annotation Pipeline Strategy (`annotators.md`) 
+
+**Every Unexpected behavoiur quirk should be recorded here**
+
 
 ## 1. The Core Conflict
 NetBeans has two distinct pipelines for decorating the same set of physical files:
@@ -37,23 +39,20 @@ A "Hybrid" node is a Project Root folder.
 - **Strategy**: By running last (position 10000) and using a `DELEGATING` guard, we can safely call all other providers to get the "Base" state (Git/SVN), and then append our session labels to that base.
 - **Hybrid Detection**: Improved `isProjectRoot` logic to allow badging in Physical views (Files/Favorites) while skipping in Logical views (Projects).
 
-## 5. Formatting Spec (Round 7 Unified)
+## Round 10.1: The "Messi" Fix (Stability)
+- **Authority**: 
+    - `AnahataProjectIconAnnotator` is the **exclusive** authority for Project nodes in the Projects tab.
+    - `FileAnnotationProvider` **must return null** for Project Roots to prevent duplicate/incorrect labeling (like `(messi)` on project nodes).
+- **Git Preservation**: 
+    - `FileAnnotationProvider` now uses `delegateNameHtml` with a `ThreadLocal` guard to retrieve Git info before appending session labels.
+    - Positions remain at 2000 (Projects) and 2100 (Files) to ensure we run AFTER Git but before the platform finishes.
+
+## 5. Formatting Spec (Round 10 Unified)
 
 ### A. Counting & Ordering Logic
 - **Unified Totals**: For a folder or project node, the count for each session is the **SUM** of all its context providers (Overview, anahata.md) plus all its resources (files).
 - **Session Ordering**: Brackets MUST follow the exact order of `AsiContainer.getActiveChats()`.
 
-### B. Naming Convention
-- **Files Only**: Use **Round Brackets** `()`.
-  - format: `(displayName)` if in **exactly one** session (e.g., `(messi)`).
-  - format: `(n)` if in **multiple** sessions (e.g., `(2)`).
-- **Folders / Project Nodes**: Use **Square Brackets** `[]`.
-  - format: `[sum1][sum2]...` (one bracket per active session).
-  - **CRITICAL**: Projects MUST show square brackets, even when they appear as folders in the Files tab.
-
-### C. Name Annotation Logic (`annotateNameHtml`)
-- **Aggregation**: Perform safe manual delegation first to get the Git HTML.
-- **Injection**: Append our label before the closing `</html>` tag of the delegated result.
 
 ---
 *Last Updated: 2026-02-11 23:14 (Round 7 Safe Aggregator)*

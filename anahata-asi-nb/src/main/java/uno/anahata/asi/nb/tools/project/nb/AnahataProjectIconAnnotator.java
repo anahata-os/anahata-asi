@@ -2,9 +2,9 @@
 package uno.anahata.asi.nb.tools.project.nb;
 
 import java.awt.Image;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -24,58 +24,49 @@ import uno.anahata.asi.AnahataInstaller;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.nb.tools.project.Projects;
-import uno.anahata.asi.nb.tools.files.nb.FileAnnotationProvider;
 
 /**
- * Annotates project icons in the NetBeans Projects tab with an Anahata badge 
- * if the project is currently active in any AI chat context.
+ * Master Aggregator for NetBeans Project icons.
  * <p>
- * This class implements {@link ProjectIconAnnotator} to provide visual feedback 
- * in the IDE's project explorer. It delegates context status checks to 
- * {@link ProjectsContextActionLogic}.
+ * This annotator implements chained delegation to preserve IDE metadata (like Git branch names)
+ * while overlaying Anahata's session badges and unified context totals.
  * </p>
  * 
  * @author anahata
  */
-@ServiceProvider(service = ProjectIconAnnotator.class)
+@ServiceProvider(service = ProjectIconAnnotator.class, position = 2000)
 public class AnahataProjectIconAnnotator implements ProjectIconAnnotator, ChangeListener {
     private static final Logger LOG = Logger.getLogger(AnahataProjectIconAnnotator.class.getName());
     
-    /** 
-     * The badge image to overlay on project icons. 
-     * FIXED: Renamed to avoid shadowing V1's icon.
-     */
     private static final String BADGE_ICON_PATH = "icons/v2/anahata.png";
     private static final Image BADGE;
     
-    /** The list of change listeners for icon refresh. */
     private final javax.swing.event.EventListenerList listeners = new javax.swing.event.EventListenerList();
 
     static {
-        LOG.info("AnahataProjectIconAnnotator class loaded.");
         Image img = ImageUtilities.loadImage(BADGE_ICON_PATH);
-        if (img != null) {
-            BADGE = img.getScaledInstance(8, 8, Image.SCALE_SMOOTH);
-        } else {
-            BADGE = null;
-        }
+        BADGE = (img != null) ? img.getScaledInstance(8, 8, Image.SCALE_SMOOTH) : null;
     }
 
     /**
-     * Default constructor for the annotator.
+     * Default constructor for the project annotator.
      */
     public AnahataProjectIconAnnotator() {
-        LOG.log(Level.INFO, "AnahataProjectIconAnnotator instance created.");
+        LOG.log(Level.INFO, "AnahataProjectIconAnnotator (Universal Chain) initialized.");
     }
     
     /**
-     * {@inheritDoc}
-     * Annotates the project icon with a badge if the project is in an active AI context.
-     * It also builds a rich HTML tooltip listing active sessions and their providers.
+     * Annotates the project icon, delegating to other providers first to ensure Git info is preserved.
+     * 
+     * @param p The project to annotate.
+     * @param icon The base icon.
+     * @param opened Whether the project is opened.
+     * @return The aggregated and badged icon.
      */
     @Override
     public Image annotateIcon(Project p, Image icon, boolean opened) {
         String existingTooltip = ImageUtilities.getImageToolTip(icon);
+        
         String projectPath = p.getProjectDirectory().getPath();
         List<Chat> activeChats = AnahataInstaller.getContainer().getActiveChats();
         
@@ -85,28 +76,24 @@ public class AnahataProjectIconAnnotator implements ProjectIconAnnotator, Change
             final int[] total = {0};
             chat.getToolManager().getToolkitInstance(Projects.class).ifPresent(projectsTool -> {
                 projectsTool.getProjectProvider(projectPath).ifPresent(pcp -> {
-                    List<String> activeChildren = new ArrayList<>();
-                    if (pcp.isProviding()) {
-                        total[0]++; // Overview
-                        List<String> children = pcp.getChildrenProviders().stream()
+                    List<String> activeChildren = pcp.getChildrenProviders().stream()
                                 .filter(ContextProvider::isProviding)
                                 .map(ContextProvider::getName)
                                 .collect(Collectors.toList());
-                        activeChildren.addAll(children);
-                        total[0] += children.size();
-                    }
                     
-                    // Add files (recursive count for unified total)
-                    int fileCount = uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic.getSessionFileCounts(p.getProjectDirectory(), true).getOrDefault(chat, 0);
-                    total[0] += fileCount;
+                    total[0] += activeChildren.size();
                     
-                    if (total[0] > 0) {
+                    // Round 10: In the Project node, we only count providers. 
+                    // Root files are listed in the tooltip but don't bloat the main total.
+                    int fileCount = uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic.getSessionFileCounts(p.getProjectDirectory(), false).getOrDefault(chat, 0);
+                    
+                    if (total[0] > 0 || fileCount > 0) {
                         String line = "<b>" + chat.getDisplayName() + "</b> [" + total[0] + "]";
                         if (!activeChildren.isEmpty()) {
                             line += ": " + String.join(", ", activeChildren);
                         }
                         if (fileCount > 0) {
-                            line += " (" + fileCount + " files)";
+                            line += " (" + fileCount + " root files)";
                         }
                         tooltipLines.add(line);
                     }
@@ -114,96 +101,58 @@ public class AnahataProjectIconAnnotator implements ProjectIconAnnotator, Change
             });
         }
 
-        // Build the Anahata-specific tooltip segment
+        if (tooltipLines.isEmpty()) {
+            return icon;
+        }
+
         StringBuilder sb = new StringBuilder();
         sb.append("<img src=\"").append(getClass().getResource("/icons/anahata_16.png")).append("\" width=\"12\" height=\"12\"> ");
-        
-        if (!tooltipLines.isEmpty()) {
-            sb.append("<b>In Context in:</b><br>");
-            for (String line : tooltipLines) {
-                sb.append("&nbsp;&nbsp;&bull;&nbsp;").append(line).append("<br>");
-            }
-            
-            if (BADGE != null) {
-                // Offset 8 for projects as requested.
-                Image badgedIcon = ImageUtilities.mergeImages(icon, BADGE, 8, 0);
-                return mergeTooltip(badgedIcon, sb.toString(), existingTooltip);
-            }
-        } else {
-            sb.append("Not in context in any session");
-            return mergeTooltip(icon, sb.toString(), existingTooltip);
+        sb.append("<b>In Context in:</b><br>");
+        for (String line : tooltipLines) {
+            sb.append("&nbsp;&nbsp;&bull;&nbsp;").append(line).append("<br>");
         }
-
-        return icon;
+        
+        Image badgedIcon = (BADGE != null) ? ImageUtilities.mergeImages(icon, BADGE, 8, 0) : icon;
+        return mergeTooltip(badgedIcon, sb.toString(), existingTooltip);
     }
 
     /**
-     * Merges our custom HTML tooltip segment with any existing tooltip on the image.
-     * It performs deduplication to fix the Git double-tooltip issue and ensures 
-     * proper separation with a horizontal rule.
+     * Merges the Anahata tooltip segment with existing tooltips.
      * 
-     * @param icon The image to annotate.
-     * @param segment The HTML segment to append.
-     * @param existing An optional pre-captured existing tooltip to merge with.
-     * @return The image with the combined tooltip.
+     * @param icon The target icon.
+     * @param segment Our HTML segment.
+     * @param existing Pre-captured existing tooltip.
+     * @return Icon with merged tooltip.
      */
     private Image mergeTooltip(Image icon, String segment, String existing) {
-        String base = (existing != null && !existing.isEmpty()) ? existing : ImageUtilities.getImageToolTip(icon);
-        if (base == null || base.isEmpty()) {
-            return ImageUtilities.addToolTipToImage(icon, "<html>" + segment + "</html>");
+        String base = (existing != null && !existing.isEmpty()) ? existing : "";
+        if (base.toLowerCase().contains("<html>")) {
+            base = base.replaceAll("(?i)</?html>", "");
         }
         
-        // Use the same robust deduplication logic
-        String cleanExisting = deduplicateTooltip(base);
+        // Remove old Anahata markers to prevent stuttering
+        base = base.replaceAll("(?i)<img[^>]*anahata_16\\.png[^>]*>.*", "");
         
-        // CRITICAL: Remove our own previous segment if it exists to prevent duplication
-        cleanExisting = cleanExisting.replaceAll("(?i)<img[^>]*anahata_16\\.png[^>]*>.*", "");
-        cleanExisting = cleanExisting.replaceAll("(?i)Not in context in any session.*", "");
-        
-        String separator = "<br><hr>";
-        return ImageUtilities.addToolTipToImage(icon, "<html>" + cleanExisting + separator + segment + "</html>");
+        String separator = (!base.isEmpty()) ? "<br><hr>" : "";
+        return ImageUtilities.addToolTipToImage(icon, "<html>" + base + separator + segment + "</html>");
     }
 
-    /**
-     * Strips HTML tags and deduplicates lines in a tooltip string.
-     */
-    private String deduplicateTooltip(String tooltip) {
-        if (tooltip == null) return null;
-        String text = tooltip.replaceAll("(?i)<html>", "").replaceAll("(?i)</html>", "");
-        String[] lines = text.split("(?i)<br/?>|\\n|<p/?>|<hr/?>");
-        Set<String> uniqueLines = new java.util.LinkedHashSet<>();
-        Set<String> seenPlain = new java.util.HashSet<>();
-        
-        for (String line : lines) {
-            String trimmed = line.trim();
-            if (trimmed.isEmpty()) continue;
-            String plain = trimmed.replaceAll("<[^>]*>", "").replaceAll("\\s+", " ").trim();
-            if (!plain.isEmpty() && seenPlain.add(plain)) {
-                uniqueLines.add(trimmed);
-            }
-        }
-        return String.join("<br>", uniqueLines);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public void addChangeListener(ChangeListener cl) {
         listeners.add(ChangeListener.class, cl);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public void removeChangeListener(ChangeListener cl) {
         listeners.remove(ChangeListener.class, cl);
     }
 
     /**
-     * {@inheritDoc}
-     * Notifies all registered listeners that the project icons need to be refreshed.
+     * Notifies listeners to refresh project icons.
+     * 
+     * @param e The change event.
      */
     @Override
     public void stateChanged(ChangeEvent e) {
@@ -216,16 +165,10 @@ public class AnahataProjectIconAnnotator implements ProjectIconAnnotator, Change
     }
     
     /**
-     * Triggers a global refresh of all project icons by notifying all 
-     * {@link AnahataProjectIconAnnotator} instances.
-     * 
-     * @param project The project to refresh. (Currently ignored as we refresh all).
+     * Triggers a global refresh of the projects tab icons.
      */
-    public static void fireRefresh(Project project) {
-        LOG.info("Firing global project icon refresh.");
-        
+    public static void fireRefresh() {
         SwingUtilities.invokeLater(() -> {
-            // Notify the ProjectIconAnnotator listeners (NetBeans internal)
             for (ProjectIconAnnotator pia : Lookup.getDefault().lookupAll(ProjectIconAnnotator.class)) {
                 if (pia instanceof AnahataProjectIconAnnotator apa) {
                     apa.stateChanged(new ChangeEvent(apa));
@@ -235,16 +178,14 @@ public class AnahataProjectIconAnnotator implements ProjectIconAnnotator, Change
     }
 
     /**
-     * Performs a comprehensive refresh of both the project icon and the 
-     * project root's file annotations (e.g., the [n] session count suffix).
+     * Comprehensive refresh for both logical project icons and physical file tree annotations.
      * 
-     * @param project The project to refresh. Can be null for a global refresh.
+     * @param project The project to refresh (can be null).
      */
     public static void fireRefreshAll(Project project) {
-        fireRefresh(project);
+        fireRefresh();
         if (project != null) {
             FileObject root = project.getProjectDirectory();
-            // Force a recursive refresh of the physical file hierarchy to update Files/Favorites views
             uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic.fireRefreshRecursive(root);
         }
     }

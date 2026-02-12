@@ -52,28 +52,33 @@ import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolParam;
 import uno.anahata.asi.tool.AiToolkit;
 import uno.anahata.asi.tool.AnahataToolkit;
-import uno.anahata.asi.model.resource.AbstractPathResource;
 import uno.anahata.asi.nb.tools.project.alerts.JavacAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectDiagnostics;
 import uno.anahata.asi.nb.tools.project.nb.AnahataProjectIconAnnotator;
 
 /**
- * A toolkit for interacting with the NetBeans Project APIs. It provides tools
- * for managing open projects, retrieving project overviews, and invoking
- * project-level actions.
+ * A toolkit for interacting with the NetBeans Project APIs.
  * <p>
- * This toolkit also acts as a {@link ContextProvider}, managing a hierarchy of
- * {@link ProjectContextProvider}s for all open projects in the IDE.
+ * This toolkit acts as a global ContextProvider that manages a hierarchy of 
+ * ProjectContextProviders, one for each open project in the IDE.
  * </p>
- *
+ * <p>
+ * It uses Canonical Paths for all registrations and lookups to ensure consistency 
+ * across physical and virtual (MasterFS) FileObject proxies.
+ * </p>
+ * 
  * @author anahata
  */
 @Slf4j
 @AiToolkit("A toolkit for using netbeans project apis.")
 public class Projects extends AnahataToolkit implements PropertyChangeListener {
 
-    /** {@inheritDoc} */
+    /**
+     * Populates the system message with an overview of the IDE project environment.
+     * 
+     * @param ragMessage The target message.
+     */
     @Override
     public void populateMessage(uno.anahata.asi.model.core.RagMessage ragMessage) {
         String projectsFolder = getNetBeansProjectsFolder();
@@ -82,26 +87,6 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         sb.append("- **NetBeansProjects Folder**: ").append(projectsFolder).append("\n");
         
         List<String> folderNames = listAvailableProjectFolders();
-        
-        /*
-        List<String> projectSummaries = new ArrayList<>();
-        File root = new File(projectsFolder);
-        for (String name : folderNames) {
-            File projectDir = new File(root, name);            
-            FileObject fo = FileUtil.toFileObject(projectDir);
-            if (fo != null) {
-                try {
-                    Project p = org.netbeans.api.project.ProjectManager.getDefault().findProject(fo);
-                    if (p != null) {
-                        projectSummaries.add(name + " [" + ProjectUtils.getInformation(p).getDisplayName() + "]");
-                    } else {
-                        projectSummaries.add(name + " (Not a Project)");
-                    }
-                } catch (IOException ex) {
-                    projectSummaries.add(name + " (Error)");
-                }
-            }
-        }*/
         sb.append("- **Available Project Folders**: ").append(folderNames).append("\n");
         
         List<String> openProjects = getOpenProjects();
@@ -134,21 +119,13 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         return Collections.emptyList();
     }
 
-    /**
-     * A flag to track if the toolkit is already listening to global project
-     * changes. This is used for lazy initialization of the {@link OpenProjects}
-     * listener. It is distinct from the 'providing' flag, which controls
-     * context injection.
-     */
     private transient boolean listening = false;
 
-    // --- PUBLIC STATIC UTILITIES ---
     /**
-     * Convenient entry point for other tools to find an open project by its
-     * directory path.
+     * Finds an open project by its directory path.
      *
      * @param projectDirectoryPath The absolute path to the project directory.
-     * @return The {@link Project} instance.
+     * @return The Project instance.
      * @throws Exception if the project is not found or not open.
      */
     public static Project findOpenProject(String projectDirectoryPath) throws Exception {
@@ -157,7 +134,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
             throw new Exception("Project directory not found: " + projectDirectoryPath);
         }
         for (Project p : OpenProjects.getDefault().getOpenProjects()) {
-            if (p.getProjectDirectory().equals(dir)) {
+            if (getCanonicalPath(p.getProjectDirectory()).equals(projectDirectoryPath)) {
                 return p;
             }
         }
@@ -165,22 +142,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     }
 
     /**
-     * Gets a list of supported NetBeans Actions for a given project.
-     *
-     * @param projectPath The absolute path of the project.
-     * @return An array of action names.
-     * @throws Exception if the project is not found.
-     */
-    public static String[] getSupportedActions(String projectPath) throws Exception {
-        Project p = Projects.findOpenProject(projectPath);
-        ActionProvider ap = p.getLookup().lookup(ActionProvider.class);
-        return ap != null ? ap.getSupportedActions() : new String[0];
-    }
-
-    // --- AI TOOL METHODS ---
-    /**
-     * Returns a list of absolute paths for all currently open projects in the
-     * IDE.
+     * Returns a list of absolute paths for all currently open projects.
      *
      * @return A list of project paths.
      */
@@ -188,24 +150,24 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     public List<String> getOpenProjects() {
         List<String> projectPaths = new ArrayList<>();
         for (Project project : OpenProjects.getDefault().getOpenProjects()) {
-            projectPaths.add(project.getProjectDirectory().getPath());
+            projectPaths.add(getCanonicalPath(project.getProjectDirectory()));
         }
         return projectPaths;
     }
 
     /**
-     * Returns the absolute path of the current 'Main Project' in the IDE.
+     * Returns the absolute path of the current 'Main Project'.
      *
      * @return The main project path, or null if none is set.
      */
     @AiTool("Returns the absolute path of the current 'Main Project' in the IDE, or null if none is set.")
     public String getMainProject() {
         Project p = OpenProjects.getDefault().getMainProject();
-        return p != null ? p.getProjectDirectory().getPath() : null;
+        return p != null ? getCanonicalPath(p.getProjectDirectory()) : null;
     }
 
     /**
-     * Sets a specific open project as the 'Main Project' in the IDE.
+     * Sets a specific open project as the 'Main Project'.
      *
      * @param projectPath The absolute path of the project to set as main.
      * @throws Exception if the project is not found.
@@ -217,7 +179,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     }
 
     /**
-     * Closes one or more open projects in the IDE.
+     * Closes one or more open projects.
      *
      * @param projectPaths A list of absolute paths of the projects to close.
      * @throws Exception if any project is not found.
@@ -232,13 +194,12 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     }
 
     /**
-     * Opens a project in the IDE and waits for the operation to complete.
+     * Opens a project in the IDE and waits for completion.
      *
      * @param projectPath The absolute path or relative folder name.
-     * @param openSubprojects Whether to automatically open all subprojects
-     * (modules).
+     * @param openSubprojects Whether to automatically open all subprojects.
      * @return A success or error message.
-     * @throws Exception if an error occurs during opening.
+     * @throws Exception if an error occurs.
      */
     @AiTool("Opens a project in the IDE, waiting for the asynchronous open operation to complete. This tool prefers the full absolute path as the project path.")
     public String openProject(
@@ -325,6 +286,13 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         }
     }
 
+    /**
+     * Gets a structured overview of a project.
+     * 
+     * @param projectPath The path to the project.
+     * @return Project metadata and actions.
+     * @throws Exception if project not found.
+     */
     @AiTool("Gets a structured, context-aware overview of a project, including metadata, supported actions, and declared dependencies.\n"
             + "WARNING: DO NOT call this tool if the 'Project Overview' context provider for this project is already enabled ('providing').")
     public ProjectOverview getOverview(@AiToolParam("The absolute path of the project.") String projectPath) throws Exception {
@@ -338,10 +306,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
             actions = Arrays.asList(ap.getSupportedActions());
         }
 
-        // Project-agnostic properties
         String javaSourceLevel = SourceLevelQuery.getSourceLevel(target.getProjectDirectory());
-
-        // Maven-specific properties
         List<DependencyScope> mavenDeclaredDependencies = null;
         String javaTargetLevel = null;
         String sourceEncoding = null;
@@ -349,26 +314,21 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
 
         NbMavenProject nbMavenProject = target.getLookup().lookup(NbMavenProject.class);
         if (nbMavenProject != null) {
-            // Get declared dependencies
             List<DependencyScope> temp = Maven.getDeclaredDependencies(projectPath);
             if (temp != null && !temp.isEmpty()) {
                 mavenDeclaredDependencies = temp;
             }
 
-            // Get compiler properties from the Maven model
             org.apache.maven.project.MavenProject rawMvnProject = nbMavenProject.getMavenProject();
             packaging = rawMvnProject.getPackaging();
-
             javaSourceLevel = rawMvnProject.getProperties().getProperty("maven.compiler.release");
             if (javaSourceLevel == null) {
                 javaSourceLevel = rawMvnProject.getProperties().getProperty("maven.compiler.source");
             }
-
             javaTargetLevel = rawMvnProject.getProperties().getProperty("maven.compiler.target");
             sourceEncoding = rawMvnProject.getProperties().getProperty("project.build.sourceEncoding");
         }
 
-        // Detect Compile on Save
         boolean compileOnSave = false;
         try {
             Preferences prefs = ProjectUtils.getPreferences(target, org.netbeans.api.project.ProjectUtils.class, true);
@@ -389,7 +349,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
                 root.getNameExt(),
                 info.getDisplayName(),
                 htmlDisplayName,
-                root.getPath(),
+                getCanonicalPath(root),
                 packaging,
                 actions,
                 mavenDeclaredDependencies,
@@ -400,6 +360,13 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         );
     }
 
+    /**
+     * Enables or disables Compile on Save for a project.
+     * 
+     * @param projectPath The path to the project.
+     * @param enabled Status.
+     * @throws Exception if project not found.
+     */
     @AiTool("Enables or disables 'Compile on Save' for a specific project.")
     public void setCompileOnSave(
             @AiToolParam("The absolute path of the project.") String projectPath,
@@ -409,9 +376,15 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         prefs.putBoolean("compile.on.save", enabled);
         prefs.flush();
         log.info("Compile on Save for {} set to: {}", projectPath, enabled);
-
     }
 
+    /**
+     * Gets the file and folder structure of a project.
+     * 
+     * @param projectPath The path to the project.
+     * @return File structure DTO.
+     * @throws Exception if project not found.
+     */
     @AiTool("Gets the file and folder structure of a project, including root files and a detailed source tree.\n"
             + "WARNING: DO NOT call this tool if the 'Project Files' context provider for this project is already enabled ('providing').")
     public ProjectFiles getProjectFiles(@AiToolParam("The absolute path of the project.") String projectPath) throws Exception {
@@ -443,6 +416,13 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         return new ProjectFiles(rootFiles, rootFolderNames, sourceFolders);
     }
 
+    /**
+     * Retrieves all Java types defined in the project.
+     * 
+     * @param projectPath The path to the project.
+     * @return List of components.
+     * @throws Exception if project not found.
+     */
     @AiTool("Retrieves all Java types (classes, interfaces, enums, records) defined in the project.\n"
             + "WARNING: DO NOT call this tool if the 'Project Components' context provider for this project is already enabled ('providing').")
     public List<ProjectComponent> getProjectComponents(@AiToolParam("The absolute path to the project.") String projectPath) throws Exception {
@@ -455,10 +435,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         for (SourceGroup sg : groups) {
             ClasspathInfo cpInfo = ClasspathInfo.create(sg.getRootFolder());
             ClassIndex index = cpInfo.getClassIndex();
-
-            // CRITICAL FIX: Search only in SOURCE scope to avoid OOM and massive strings.
             Set<ElementHandle<javax.lang.model.element.TypeElement>> allTypes = index.getDeclaredTypes("", ClassIndex.NameKind.PREFIX, EnumSet.of(ClassIndex.SearchScope.SOURCE));
-
             for (ElementHandle<javax.lang.model.element.TypeElement> handle : allTypes) {
                 components.add(ProjectComponent.builder()
                         .fqn(handle.getQualifiedName())
@@ -466,24 +443,26 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
                         .build());
             }
         }
-
-        // Sort by FQN for consistent output
         components.sort((c1, c2) -> c1.getFqn().compareToIgnoreCase(c2.getFqn()));
-
         return components;
     }
 
+    /**
+     * Performs a live scan of a specific project for alerts.
+     * 
+     * @param projectPath The path to the project.
+     * @return Diagnostics DTO.
+     * @throws Exception if project not found.
+     */
     @AiTool("Performs a live scan of a specific project to find all high-level project problems and Java source file errors/warnings.\n"
             + "WARNING: DO NOT call this tool if the 'Project Alerts' context provider for this project is already enabled ('providing').")
     public ProjectDiagnostics getProjectAlerts(@AiToolParam("The absolute path of the project to scan.") String projectPath) throws Exception {
         Project targetProject = findOpenProject(projectPath);
         ProjectDiagnostics projectDiags = new ProjectDiagnostics(ProjectUtils.getInformation(targetProject).getDisplayName());
 
-        // 1. Surf the IDE's internal ErrorsCache to find files that already have errors
         List<FileObject> filesInError = findFilesInError(targetProject);
 
         if (!filesInError.isEmpty()) {
-            log.info("Found {} files in error via ErrorsCache for project {}. Performing targeted scan.", filesInError.size(), projectPath);
             List<CompletableFuture<Void>> futures = new ArrayList<>();
             for (FileObject fo : filesInError) {
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
@@ -510,11 +489,9 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
                 });
                 futures.add(future);
             }
-            // Wait for all targeted scans to complete
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
         }
 
-        // 2. Scan for Project-level problems
         ProjectProblemsProvider problemProvider = targetProject.getLookup().lookup(ProjectProblemsProvider.class);
         if (problemProvider != null) {
             Collection<? extends ProjectProblemsProvider.ProjectProblem> problems = problemProvider.getProblems();
@@ -528,15 +505,11 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
                 ));
             }
         }
-
         return projectDiags;
     }
 
     /**
-     * Identifies files within a project that currently have compilation errors
-     * by querying the IDE's internal ErrorsCache. This method is used to
-     * perform targeted scans of only the files that are known to be in an error
-     * state.
+     * Identifies files within a project that currently have compilation errors.
      *
      * @param project The project to scan.
      * @return A list of FileObjects representing the files in error.
@@ -544,13 +517,11 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     public static List<FileObject> findFilesInError(Project project) {
         List<FileObject> results = new ArrayList<>();
         Sources sources = ProjectUtils.getSources(project);
-
         SourceGroup[] groups = sources.getSourceGroups(JavaProjectConstants.SOURCES_TYPE_JAVA);
         for (SourceGroup sg : groups) {
             FileObject root = sg.getRootFolder();
             URL rootUrl = root.toURL();
             try {
-                // Use the ErrorsCache API to find files with errors in this source root
                 Collection<? extends URL> files = ErrorsCache.getAllFilesInError(rootUrl);
                 if (files != null) {
                     for (URL url : files) {
@@ -567,6 +538,12 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         return results;
     }
 
+    /**
+     * Enables or disables the project context provider.
+     * 
+     * @param projectPath Path to the project.
+     * @param enabled Status.
+     */
     @AiTool("Enables or disables the project context provider (overview and anahata.md) for a specific project.")
     public void setProjectProviderEnabled(
             @AiToolParam("The absolute path of the project.") String projectPath,
@@ -578,12 +555,18 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
                 Project p = findOpenProject(projectPath);
                 AnahataProjectIconAnnotator.fireRefreshAll(p);
             } catch (Exception ex) {
-                log.warn("Failed to find project for refresh: " + projectPath, ex);
                 AnahataProjectIconAnnotator.fireRefreshAll(null);
             }
         });
     }
 
+    /**
+     * Synchronously executes a NetBeans Project action.
+     * 
+     * @param projectPath Project path.
+     * @param action Action name.
+     * @throws Exception if project or action not found.
+     */
     @AiTool("Invokes ('Fires and forgets') a NetBeans Project supported Action (like 'run' or 'build')  on a given open Project (via ActionProvider).\n"
             + "\n\nThis method is always asynchronous by design. (regardless of whether you specify the asynchronous parameter or not)"
             + "as this tool does not return any values nor you can ensure that the action finished when this tool returns."
@@ -596,60 +579,48 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         if (ap == null) {
             throw new IllegalArgumentException(project + " does not have ActionProvider");
         }
-
         Lookup context = project.getLookup();
-
         if (ap.isActionEnabled(action, context)) {
             ap.invokeAction(action, context);
         } else {
-            String[] supportedActions = ap.getSupportedActions();
-            boolean isSupported = Arrays.asList(supportedActions).contains(action);
-            if (isSupported) {
-                throw new IllegalArgumentException("The '" + action + "' action is supported but not currently enabled for project '" + project + "'.");
-            } else {
-                throw new IllegalArgumentException("The '" + action + "' action is not supported by project '" + project + "'. Supported actions are: " + String.join(", ", supportedActions));
-            }
+            throw new IllegalArgumentException("The '" + action + "' action is not supported or enabled for project '" + project + "'.");
         }
     }
 
+    /**
+     * Lists all known preferences for a given project.
+     * 
+     * @param projectPath The path to the project.
+     * @return String representation of preferences.
+     * @throws Exception if project not found.
+     */
     @AiTool("Lists all known preferences for a given project.")
     public String listAllKnownPreferences(@AiToolParam("The absolute path of the project.") String projectPath) throws Exception {
         Project project = findOpenProject(projectPath);
-        if (project == null) {
-            return "Project not found: " + projectPath;
-        }
+        if (project == null) return "Project not found: " + projectPath;
         StringBuilder sb = new StringBuilder();
-        Class<?>[] contextClasses = new Class<?>[]{
-            org.netbeans.api.project.ProjectUtils.class,};
-
+        Class<?>[] contextClasses = new Class<?>[]{ ProjectUtils.class };
         for (Class<?> ctx : contextClasses) {
             sb.append("Preferences for context: ").append(ctx.getName()).append("\n");
             Preferences prefs = ProjectUtils.getPreferences(project, ctx, true);
             try {
                 String[] keys = prefs.keys();
-                if (keys.length == 0) {
-                    sb.append("  (no preferences)\n");
-                } else {
-                    for (String key : keys) {
-                        sb.append("  ").append(key)
-                                .append(" = ").append(prefs.get(key, "<no value>")).append("\n");
-                    }
+                if (keys.length == 0) sb.append("  (no preferences)\n");
+                else {
+                    for (String key : keys) sb.append("  ").append(key).append(" = ").append(prefs.get(key, "<no value>")).append("\n");
                 }
             } catch (BackingStoreException e) {
                 sb.append("  Failed to read preferences: ").append(e.getMessage()).append("\n");
             }
             sb.append("\n");
         }
-
         return sb.toString();
     }
 
-    // --- CONTEXT PROVIDER LOGIC ---
     /**
-     * {@inheritDoc} Overridden to lazily initialize the project change listener
-     * and sync the provider hierarchy.
-     *
-     * @return The list of child context providers (one per open project).
+     * Returns the child context providers (one per open project).
+     * 
+     * @return List of project providers.
      */
     @Override
     public synchronized List<ContextProvider> getChildrenProviders() {
@@ -662,31 +633,24 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     }
 
     /**
-     * Synchronizes the list of {@link ProjectContextProvider}s with the
-     * currently open projects in the IDE. This method is called whenever the
-     * set of open projects changes.
+     * Synchronizes project providers using Canonical Paths.
      */
     private synchronized void syncProjects() {
         Project[] openProjects = OpenProjects.getDefault().getOpenProjects();
         List<String> currentPaths = new ArrayList<>();
-
         for (Project p : openProjects) {
-            String path = p.getProjectDirectory().getPath();
+            String path = getCanonicalPath(p.getProjectDirectory());
             currentPaths.add(path);
-
             if (getProjectProvider(path).isEmpty()) {
                 ProjectContextProvider pcp = new ProjectContextProvider(this, p);
                 childrenProviders.add(pcp);
                 log.info("Added ProjectContextProvider for: {}", pcp.getName());
             }
         }
-
-        // Remove providers for closed projects
         childrenProviders.removeIf(cp -> {
             if (cp instanceof ProjectContextProvider pcp) {
                 if (!currentPaths.contains(pcp.getProjectPath())) {
                     log.info("Removing ProjectContextProvider for closed project at: {}", pcp.getProjectPath());
-                    // Ensure resources are cleaned up and badges are removed
                     pcp.getFlattenedHierarchy(false).forEach(child -> child.setProviding(false));
                     return true;
                 }
@@ -696,10 +660,10 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     }
 
     /**
-     * Finds a {@link ProjectContextProvider} for a specific project path.
-     *
-     * @param projectPath The absolute path of the project.
-     * @return An Optional containing the provider if found.
+     * Finds a provider by its canonical project path.
+     * 
+     * @param projectPath The canonical path.
+     * @return Optional provider.
      */
     public Optional<ProjectContextProvider> getProjectProvider(String projectPath) {
         return childrenProviders.stream()
@@ -710,10 +674,24 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     }
 
     /**
-     * {@inheritDoc} Listens for changes in the set of open projects and
-     * triggers a sync.
-     *
-     * @param evt The property change event from {@link OpenProjects}.
+     * Gets the canonical path for a FileObject.
+     * 
+     * @param fo The file object.
+     * @return The canonical path string.
+     */
+    public static String getCanonicalPath(FileObject fo) {
+        if (fo == null) return null;
+        File f = FileUtil.toFile(fo);
+        if (f != null) {
+            try { return f.getCanonicalPath(); } catch (IOException e) {}
+        }
+        return fo.getPath();
+    }
+
+    /**
+     * Listens for global project changes.
+     * 
+     * @param evt PropertyChangeEvent.
      */
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
@@ -722,81 +700,32 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         }
     }
 
-    // --- PRIVATE HELPERS ---
-    /**
-     * Recursively builds a tree structure of source folders and files.
-     *
-     * @param folder The root folder to start from.
-     * @param displayName The display name for the root folder.
-     * @return A {@link SourceFolder} representing the tree.
-     * @throws FileStateInvalidException if the file state is invalid.
-     */
     private SourceFolder buildSourceFolderTree(FileObject folder, String displayName) throws FileStateInvalidException {
-        if (!folder.isFolder()) {
-            throw new IllegalArgumentException("FileObject must be a folder: " + folder.getPath());
-        }
-
+        if (!folder.isFolder()) throw new IllegalArgumentException("FileObject must be a folder: " + folder.getPath());
         List<ProjectFile> files = new ArrayList<>();
         List<SourceFolder> subfolders = new ArrayList<>();
-
         for (FileObject child : folder.getChildren()) {
-            if (child.isFolder()) {
-                subfolders.add(buildSourceFolderTree(child, child.getNameExt()));
-            } else {
-                files.add(createProjectFile(child));
-            }
+            if (child.isFolder()) subfolders.add(buildSourceFolderTree(child, child.getNameExt()));
+            else files.add(createProjectFile(child));
         }
-
-        long recursiveSize = files.stream().mapToLong(ProjectFile::getSize).sum()
-                + subfolders.stream().mapToLong(SourceFolder::getRecursiveSize).sum();
-
+        long recursiveSize = files.stream().mapToLong(ProjectFile::getSize).sum() + subfolders.stream().mapToLong(SourceFolder::getRecursiveSize).sum();
         String folderName = folder.getNameExt();
         String finalDisplayName = folderName.equals(displayName) ? null : displayName;
-
         return new SourceFolder(finalDisplayName, folder.getPath(), recursiveSize, files.isEmpty() ? null : files, subfolders.isEmpty() ? null : subfolders);
     }
 
-    /**
-     * Creates a {@link ProjectFile} metadata object for a given
-     * {@link FileObject}.
-     *
-     * @param fo The file object.
-     * @return The project file metadata.
-     * @throws FileStateInvalidException if the file state is invalid.
-     */
     private ProjectFile createProjectFile(FileObject fo) throws FileStateInvalidException {
         String annotatedName = null;
         try {
             org.openide.nodes.Node node = org.openide.loaders.DataObject.find(fo).getNodeDelegate();
             String html = node.getHtmlDisplayName();
-            if (html != null) {
-                annotatedName = html.replaceAll("<[^>]*>", "").trim();
-            }
-        } catch (Exception e) {
-            // Ignore failures to get annotated name
-        }
-
-        return new ProjectFile(
-                fo.getNameExt(),
-                annotatedName,
-                fo.getSize(),
-                fo.lastModified().getTime(),
-                fo.getPath()
-        );
+            if (html != null) annotatedName = html.replaceAll("<[^>]*>", "").trim();
+        } catch (Exception e) {}
+        return new ProjectFile(fo.getNameExt(), annotatedName, fo.getSize(), fo.lastModified().getTime(), fo.getPath());
     }
 
-    /**
-     * Programmatically finds the NetBeans projects folder by querying the IDE's ProjectChooser.
-     * This is more robust than hardcoding the path as it respects user preferences.
-     * 
-     * @return The absolute path to the configured NetBeansProjects folder.
-     */
     private String getNetBeansProjectsFolder() {
         File f = org.netbeans.spi.project.ui.support.ProjectChooser.getProjectsFolder();
-        if (f != null) {
-            return f.getAbsolutePath();
-        }
-        // Fallback to the standard default
-        return System.getProperty("user.home") + File.separator + "NetBeansProjects";
+        return f != null ? f.getAbsolutePath() : System.getProperty("user.home") + File.separator + "NetBeansProjects";
     }
 }

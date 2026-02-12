@@ -2,11 +2,13 @@
 package uno.anahata.asi.nb.tools.files.nb;
 
 import java.awt.Image;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,6 +21,9 @@ import org.netbeans.modules.masterfs.providers.InterceptionListener;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileStatusEvent;
 import org.openide.filesystems.FileSystem;
+import org.openide.filesystems.FileUtil;
+import org.openide.loaders.DataObject;
+import org.openide.loaders.DataShadow;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.ServiceProvider;
@@ -26,19 +31,26 @@ import uno.anahata.asi.AnahataInstaller;
 import uno.anahata.asi.chat.Chat;
 
 /**
- * Master Aggregator for file-level annotations. 
- * It delegates to all other providers to preserve Git/IDE status, then overlays Anahata metadata.
- * Uses a ThreadLocal guard to prevent recursive delegation loops.
+ * Master Aggregator for NetBeans file-level annotations. 
+ * <p>
+ * This provider implements a high-position aggregation pattern (position 10000) 
+ * to ensure that all IDE metadata (Git branch names, compilation errors, status colors) 
+ * is preserved while overlaying Anahata's context-aware session labels and badges.
+ * </p>
+ * <p>
+ * It handles the "Root Paradox" by using Canonical Paths to resolve project delegates 
+ * (like pom.xml) to their folders, ensuring accurate unified totals.
+ * </p>
  * 
  * @author anahata
  */
-@ServiceProvider(service = AnnotationProvider.class, position = 10000) 
+@ServiceProvider(service = AnnotationProvider.class, position = 2100) 
 public class FileAnnotationProvider extends AnnotationProvider {
 
     private static final Logger LOG = Logger.getLogger(FileAnnotationProvider.class.getName());
     private static final Image BADGE;
     
-    /** Prevents infinite loops during manual delegation to other providers. */
+    /** Prevents infinite loops during manual delegation for HTML names. */
     private static final ThreadLocal<Boolean> DELEGATING = ThreadLocal.withInitial(() -> false);
 
     static {
@@ -47,48 +59,78 @@ public class FileAnnotationProvider extends AnnotationProvider {
     }
 
     /**
-     * Default constructor.
+     * Default constructor for the master aggregator.
      */
     public FileAnnotationProvider() {
-        LOG.info("FileAnnotationProvider (Master Aggregator) instance created.");
+        LOG.info("FileAnnotationProvider (Master Aggregator) Round 9 initializing...");
     }
 
+    /**
+     * Annotates file and folder icons.
+     * <p>
+     * At position 10000, the 'icon' parameter already contains badges and tooltips from 
+     * previous providers (like Git or Java Errors). We append our badge at offset 16.
+     * </p>
+     * 
+     * @param icon The icon provided by previous providers.
+     * @param type The icon type.
+     * @param files Associated files.
+     * @return Aggregated icon with Anahata badge.
+     */
     @Override
     public Image annotateIcon(Image icon, int type, Set<? extends FileObject> files) {
-        // 1. Get base icon from other providers (Git, etc.)
-        Image baseIcon = delegateIcon(icon, type, files);
-        
+        Image current = icon;
         for (FileObject fo : files) {            
-            // Exclusive Icon Badging: Skip project roots in Logical View (handled by ProjectIconAnnotator)
-            if (isLogicalView() && isProjectRoot(fo)) {
-                return baseIcon;
+            if (isProjectRoot(fo)) {
+                continue; // AnahataProjectIconAnnotator handles this node
             }
-            
-            // Physical badging for files and folders (including roots in Files tab)
-            Map<Chat, Integer> sessionCounts = FilesContextActionLogic.getSessionFileCounts(fo, !isLogicalView());
+
+            FileObject res = resolve(fo);
+            if (res == null) continue;
+
+            Map<Chat, Integer> sessionCounts = FilesContextActionLogic.getSessionFileCounts(res, res.isFolder());
             if (!sessionCounts.isEmpty() && BADGE != null) {
-                Image badged = ImageUtilities.mergeImages(baseIcon, BADGE, 16, 0);
-                return mergeTooltip(badged, buildTooltip(fo, sessionCounts));
+                current = ImageUtilities.mergeImages(current, BADGE, 8, 0);
+                current = mergeTooltip(current, buildTooltip(res, sessionCounts));
             }
         }
-        return baseIcon; 
+        return current; 
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String annotateName(String name, Set<? extends FileObject> files) {
-        return delegateName(name, files);
+        return null; 
     }
 
+    /**
+     * Annotates the HTML display name. 
+     * <p>
+     * Since NetBeans passes a plain-text 'name' to this method, we manually delegate 
+     * to ALL other providers to pick up branch info [main] before appending Anahata labels.
+     * </p>
+     * 
+     * @param name The original plain name.
+     * @param files Associated files.
+     * @return Final aggregated HTML label.
+     */
     @Override
     public String annotateNameHtml(String name, Set<? extends FileObject> files) {
-        // 1. Delegate to pick up Git branch info, status colors, etc.
-        String baseName = delegateNameHtml(name, files);
-        String currentName = (baseName != null) ? baseName : name;
-
         List<Chat> activeChats = AnahataInstaller.getContainer().getActiveChats();
+        
+        for (FileObject fo : files) {
+            if (isProjectRoot(fo)) {
+                return null; // Exclusive Authority: Let AnahataProjectIconAnnotator handle this
+            }
+        }
+
+        // 1. Delegate first to get Git/Subversion status
+        String baseHtml = delegateNameHtml(name, files);
+        String currentName = (baseHtml != null) ? baseHtml : (name != null ? name : "");
 
         for (FileObject fo : files) {
-            // Unified Totals: Files, Folders, and Project Roots are all annotated here.
             List<Integer> sessionTotals = calculateSessionTotals(fo, activeChats);
             boolean anyInContext = sessionTotals.stream().anyMatch(i -> i > 0);
 
@@ -102,27 +144,27 @@ public class FileAnnotationProvider extends AnnotationProvider {
             }
         }
         
-        // Return delegated name if not in context to allow cleanup/preservation
-        return baseName; 
+        return baseHtml; // Return the delegated result if we have nothing to add
     }
 
+    /**
+     * Calculates unified session totals using Canonical Paths to ensure project 
+     * providers are correctly identified in the toolkit.
+     * 
+     * @param fo The file object.
+     * @param activeChats List of active sessions.
+     * @return List of totals.
+     */
     private List<Integer> calculateSessionTotals(FileObject fo, List<Chat> activeChats) {
         List<Integer> totals = new ArrayList<>();
-        Map<Chat, Integer> resourceCounts = FilesContextActionLogic.getSessionFileCounts(fo, !isLogicalView());
+        FileObject res = resolve(fo);
+        if (res == null) return totals;
+        
+        // Round 10: Folders count their local children. Files are 1 or 0.
+        Map<Chat, Integer> resourceCounts = FilesContextActionLogic.getSessionFileCounts(res, res.isFolder());
         
         for (Chat chat : activeChats) {
-            int total = resourceCounts.getOrDefault(chat, 0);
-            
-            // For project roots, we add the provider counts
-            if (isProjectRoot(fo)) {
-                final String path = fo.getPath();
-                total += chat.getToolManager().getToolkitInstance(uno.anahata.asi.nb.tools.project.Projects.class)
-                    .flatMap(t -> t.getProjectProvider(path))
-                    .map(pcp -> pcp.isProviding() ? 1 + (int)pcp.getChildrenProviders().stream()
-                            .filter(uno.anahata.asi.context.ContextProvider::isProviding).count() : 0)
-                    .orElse(0);
-            }
-            totals.add(total);
+            totals.add(resourceCounts.getOrDefault(chat, 0));
         }
         return totals;
     }
@@ -131,36 +173,40 @@ public class FileAnnotationProvider extends AnnotationProvider {
         StringBuilder sb = new StringBuilder();
         sb.append(" <font color='#707070'>");
         
-        if (fo.isData() && !isProjectRoot(fo)) {
-            // Files: (displayName) or (total_count)
+        FileObject res = resolve(fo);
+        if (res != null && res.isFolder()) {
+            for (Integer sum : totals) {
+                if (sum > 0) sb.append("[").append(sum).append("]");
+            }
+        } else {
             long sessionsWithFile = totals.stream().filter(i -> i > 0).count();
             if (sessionsWithFile == 1) {
                 int idx = -1;
                 for (int i = 0; i < totals.size(); i++) {
                     if (totals.get(i) > 0) { idx = i; break; }
                 }
-                sb.append("(").append(chats.get(idx).getDisplayName()).append(")");
-            } else {
+                sb.append("(").append(chats.get(idx).getNickname()).append(")");
+            } else if (sessionsWithFile > 1) {
                 sb.append("(").append(totals.stream().mapToLong(i -> i).sum()).append(")");
-            }
-        } else {
-            // Folders/Projects: [sum1][sum2]... based on session index
-            for (Integer sum : totals) {
-                sb.append("[").append(sum).append("]");
             }
         }
         sb.append("</font>");
         return sb.toString();
     }
 
+    /**
+     * Builds the Anahata tooltip segment.
+     * 
+     * @param fo The file object.
+     * @param counts Map of chat to file count.
+     * @return Tooltip HTML segment.
+     */
     private String buildTooltip(FileObject fo, Map<Chat, Integer> counts) {
         StringBuilder sb = new StringBuilder();
         sb.append("<img src=\"").append(getClass().getResource("/icons/anahata_16.png")).append("\" width=\"12\" height=\"12\"> ");
         sb.append("<b>In Context In:</b><br>");
-        
         List<Chat> sorted = new ArrayList<>(counts.keySet());
         sorted.sort(Comparator.comparing(Chat::getDisplayName));
-        
         for (Chat chat : sorted) {
             sb.append("&nbsp;&nbsp;&bull;&nbsp;").append(chat.getDisplayName())
               .append(": ").append(counts.get(chat)).append(" files<br>");
@@ -168,76 +214,52 @@ public class FileAnnotationProvider extends AnnotationProvider {
         return sb.toString();
     }
 
-    private Image delegateIcon(Image icon, int type, Set<? extends FileObject> files) {
-        if (DELEGATING.get()) return icon;
-        DELEGATING.set(true);
-        try {
-            for (AnnotationProvider ap : Lookup.getDefault().lookupAll(AnnotationProvider.class)) {
-                if (ap == this) continue;
-                Image res = ap.annotateIcon(icon, type, files);
-                if (res != null) return res;
-            }
-        } finally {
-            DELEGATING.set(false);
-        }
-        return icon;
-    }
-
-    private String delegateName(String name, Set<? extends FileObject> files) {
-        if (DELEGATING.get()) return name;
-        DELEGATING.set(true);
-        try {
-            for (AnnotationProvider ap : Lookup.getDefault().lookupAll(AnnotationProvider.class)) {
-                if (ap == this) continue;
-                String res = ap.annotateName(name, files);
-                if (res != null) return res;
-            }
-        } finally {
-            DELEGATING.set(false);
-        }
-        return name;
-    }
-
+    /**
+     * Manually delegates to all other AnnotationProviders to accumulate status info.
+     */
     private String delegateNameHtml(String name, Set<? extends FileObject> files) {
         if (DELEGATING.get()) return null;
         DELEGATING.set(true);
+        String current = null;
         try {
             for (AnnotationProvider ap : Lookup.getDefault().lookupAll(AnnotationProvider.class)) {
                 if (ap == this) continue;
-                String res = ap.annotateNameHtml(name, files);
-                if (res != null) return res;
+                String res = ap.annotateNameHtml(current != null ? current : name, files);
+                if (res != null) current = res;
             }
         } finally {
             DELEGATING.set(false);
         }
-        return null;
+        return current;
     }
 
+    /**
+     * Merges Anahata tooltips with existing ones, applying semantic deduplication.
+     */
     private Image mergeTooltip(Image icon, String segment) {
         String existing = ImageUtilities.getImageToolTip(icon);
         String clean = deduplicateTooltip(existing);
-        
         if (clean != null) {
-            // Remove our own previous segment if it exists
             clean = clean.replaceAll("(?i)<img[^>]*anahata_16\\.png[^>]*>.*", "");
         }
-        
         String separator = (clean != null && !clean.isEmpty()) ? "<br><hr>" : "";
         return ImageUtilities.addToolTipToImage(icon, "<html>" + (clean != null ? clean : "") + separator + segment + "</html>");
     }
 
+    /**
+     * Normalizes and deduplicates tooltip lines to stop Git stuttering.
+     */
     private String deduplicateTooltip(String tooltip) {
         if (tooltip == null) return null;
         String text = tooltip.replaceAll("(?i)</?html>", "");
         String[] lines = text.split("(?i)<br/?>|\\n|<p/?>|<hr/?>");
-        
-        java.util.Set<String> uniqueLines = new java.util.LinkedHashSet<>();
-        java.util.Set<String> seenPlain = new java.util.HashSet<>();
-        
+        Set<String> uniqueLines = new LinkedHashSet<>();
+        Set<String> seenPlain = new HashSet<>();
         for (String line : lines) {
             String trimmed = line.trim();
             if (trimmed.isEmpty()) continue;
-            String plain = trimmed.replaceAll("<[^>]*>", "").replaceAll("\\s+", " ").trim();
+            // Hyper-semantic comparison: ignore tags and non-alphanumeric
+            String plain = trimmed.replaceAll("<[^>]*>", "").replaceAll("[^a-zA-Z0-9\\s]", " ").replaceAll("\\s+", " ").trim().toLowerCase();
             if (!plain.isEmpty() && seenPlain.add(plain)) {
                 uniqueLines.add(trimmed);
             }
@@ -245,29 +267,68 @@ public class FileAnnotationProvider extends AnnotationProvider {
         return String.join("<br>", uniqueLines);
     }
 
-    private boolean isLogicalView() {
-        return StackWalker.getInstance().walk(s -> s.anyMatch(f -> f.getClassName().contains("org.netbeans.modules.project.ui")));
+    /**
+     * Resolves shadow files or virtual objects to their physical disk locations.
+     */
+    private FileObject resolve(FileObject fo) {
+        if (fo == null) return null;
+        try {
+            DataObject dobj = DataObject.find(fo);
+            if (dobj instanceof DataShadow ds) {
+                return ds.getOriginal().getPrimaryFile();
+            }
+        } catch (Exception e) {}
+        return fo;
     }
 
+    /**
+     * Gets the canonical disk path for a FileObject.
+     */
+    private String getCanonicalPath(FileObject fo) {
+        if (fo == null) return null;
+        File f = FileUtil.toFile(fo);
+        if (f != null) {
+            try { return f.getCanonicalPath(); } catch (Exception e) {}
+        }
+        return fo.getPath();
+    }
+
+    /**
+     * Universal check for folders or project roots.
+     */
+    private boolean isRootOrFolder(FileObject fo) {
+        FileObject res = resolve(fo);
+        return (res != null && res.isFolder()) || isProjectRoot(fo);
+    }
+
+    /**
+     * Checks if a FileObject represents the logical root of a project using canonical paths.
+     */
     private boolean isProjectRoot(FileObject fo) {
-        if (fo == null || !fo.isFolder()) return false;
+        if (fo == null) return false;
         Project p = FileOwnerQuery.getOwner(fo);
         if (p == null) return false;
-        return fo.equals(p.getProjectDirectory());
+        
+        String prjPath = getCanonicalPath(p.getProjectDirectory());
+        String foPath = getCanonicalPath(fo);
+        
+        return foPath != null && foPath.equals(prjPath);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public Action[] actions(Set<? extends FileObject> files) {
-        return new Action[0];
-    }
+    public Action[] actions(Set<? extends FileObject> files) { return new Action[0]; }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public InterceptionListener getInterceptionListener() {
-        return null;
-    }
+    public InterceptionListener getInterceptionListener() { return null; }
     
     /**
-     * Fires a refresh event for the given files on the specified filesystem.
+     * Fires a refresh event for the status of specific files.
      * 
      * @param fs The filesystem.
      * @param files The files to refresh.

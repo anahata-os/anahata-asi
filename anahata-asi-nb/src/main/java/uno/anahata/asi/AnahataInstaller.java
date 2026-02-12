@@ -58,7 +58,7 @@ public class AnahataInstaller extends ModuleInstall {
         }
         
         // Trigger initial refresh of project icons
-        AnahataProjectIconAnnotator.fireRefresh(null);
+        AnahataProjectIconAnnotator.fireRefresh();
     }
 
     /**

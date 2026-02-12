@@ -590,6 +590,10 @@
                             <id>org.netbeans.modules:org-netbeans-modules-maven-indexer</id>
                         </dependency>
                         <dependency>
+                            <id>org.netbeans.modules:org-netbeans-modules-editor</id>
+                            <type>impl</type>
+                        </dependency>
+                        <dependency>
                             <type>impl</type>
                             <id>org.netbeans.modules:org-netbeans-modules-java-editor</id>
                         </dependency>
