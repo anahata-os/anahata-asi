@@ -41,12 +41,17 @@ public class JavaMemberSearch {
     public JavaMemberSearch(JavaType javaType) throws Exception {
         this.type = javaType;
 
-        // 1. Build a context-aware ClasspathInfo from the type's own class file.
+        // 1. Build a context-aware ClasspathInfo.
+        // First try to piggyback on project context via forFileObject.
         FileObject classFile = javaType.getClassFileObject();
-        ClasspathInfo cpInfo = ClasspathInfo.create(classFile);
+        JavaSource javaSource = JavaSource.forFileObject(classFile);
+        
+        if (javaSource == null) {
+            // Fallback: If no project owns this file (e.g. orphan JAR), create an explicit one.
+            ClasspathInfo cpInfo = ClasspathInfo.create(classFile);
+            javaSource = JavaSource.create(cpInfo);
+        }
 
-        // 2. Use a JavaSource to resolve the handle and inspect the structure.
-        JavaSource javaSource = JavaSource.create(cpInfo);
         if (javaSource == null) {
             throw new Exception("Could not create JavaSource for: " + classFile.getPath());
         }

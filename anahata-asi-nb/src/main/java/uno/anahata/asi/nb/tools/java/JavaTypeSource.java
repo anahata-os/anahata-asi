@@ -35,11 +35,20 @@ public class JavaTypeSource {
     public JavaTypeSource(JavaType javaType) throws Exception {
         this.javaType = javaType;
         
-        // 1. Build a context-aware ClasspathInfo from the type's own class file.
+        // 1. Build a context-aware JavaSource.
         FileObject classFile = javaType.getClassFileObject();
-        ClasspathInfo cpInfo = ClasspathInfo.create(classFile);
+        JavaSource js = JavaSource.forFileObject(classFile);
+        
+        if (js == null) {
+            // Fallback: Explicit creation for orphan JAR files.
+            ClasspathInfo cpInfo = ClasspathInfo.create(classFile);
+            js = JavaSource.create(cpInfo);
+        }
 
-        JavaSource js = JavaSource.create(cpInfo);
+        if (js == null) {
+            throw new Exception("Could not create JavaSource for: " + classFile.getPath());
+        }
+
         final String[] resourceName = new String[1];
         
         js.runUserActionTask(controller -> {

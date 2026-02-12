@@ -4,6 +4,7 @@ package uno.anahata.asi.nb.tools.java;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.lang.model.element.Element;
 import lombok.Getter;
+import org.netbeans.api.java.source.ClasspathInfo;
 import org.netbeans.api.java.source.JavaSource;
 import org.openide.filesystems.FileObject;
 
@@ -33,8 +34,15 @@ public class JavaTypeDocs {
             fileToUse = javaType.getClassFileObject();
         }
         
-        // 2. Create a JavaSource for the file.
+        // 2. Create a context-aware JavaSource for the file.
         JavaSource js = JavaSource.forFileObject(fileToUse);
+        
+        if (js == null) {
+            // Fallback for orphan files/JARs.
+            ClasspathInfo cpInfo = ClasspathInfo.create(fileToUse);
+            js = JavaSource.create(cpInfo);
+        }
+
         if (js == null) {
             throw new Exception("Could not create JavaSource for: " + fileToUse.getPath());
         }

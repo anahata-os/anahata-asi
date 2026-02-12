@@ -19,6 +19,7 @@ import org.netbeans.api.java.source.SourceUtils;
 import org.netbeans.spi.java.classpath.support.ClassPathSupport;
 import org.openide.filesystems.FileObject;
 import uno.anahata.asi.model.Page;
+import uno.anahata.asi.nb.tools.files.nb.NbFiles;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolException;
 import uno.anahata.asi.tool.AiToolParam;
@@ -79,7 +80,13 @@ public class CodeModel extends AnahataToolkit {
     @AiTool("Gets the source file for a given JavaType.")
     public String getTypeSources(
             @AiToolParam("The minimalist keychain DTO from a findTypes call.") JavaType javaType) throws Exception {
-        return javaType.getSource().getContent();
+        JavaTypeSource source = javaType.getSource();
+        FileObject fo = source.getSourceFile();
+        if (fo != null && "file".equals(fo.toURL().getProtocol())) {
+            getToolkit(NbFiles.class).loadTextFile(Collections.singletonList(fo.getPath()));
+            return "requested type sources was a project file, resource added to context with LIVE refresh policy, see RAG message, any ";
+        }
+        return source.getContent();
     }
 
     /**
@@ -91,7 +98,7 @@ public class CodeModel extends AnahataToolkit {
     @AiTool("Gets the source file for a type specified by its fully qualified name. Fails if the FQN is ambiguous.")
     public String getTypeSourcesByFqn(
             @AiToolParam("The fully qualified name of the type.") String fqn) throws Exception {
-        return resolveUniqueType(fqn).getSource().getContent();
+        return getTypeSources(resolveUniqueType(fqn));
     }
     
     /**
