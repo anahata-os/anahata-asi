@@ -45,6 +45,7 @@ import uno.anahata.asi.swing.chat.ChatPanel;
 import uno.anahata.asi.swing.chat.SwingChatConfig;
 import uno.anahata.asi.swing.chat.SwingChatConfig.UITheme;
 import uno.anahata.asi.swing.components.CodeHyperlink;
+import uno.anahata.asi.swing.icons.CancelIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.icons.RunIcon;
@@ -84,6 +85,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
     private JComboBox<ToolPermission> permissionCombo;
     private JComboBox<ToolExecutionStatus> statusCombo;
     private JButton runButton;
+    private JButton skipButton;
     private JButton revertButton;
     private JProgressBar toolProgressBar;
 
@@ -197,8 +199,12 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
             statusCombo.setForeground(SwingChatConfig.getColor(status));
         });
 
-        revertButton = new JButton("Revert", new DeleteIcon(16));
-        revertButton.setToolTipText("Clear execution results and restore status to NOT_EXECUTED");
+        skipButton = new JButton("Skip", new CancelIcon(16));
+        skipButton.setToolTipText("Set status to NOT_EXECUTED");
+        skipButton.addActionListener(e -> getPart().getResponse().setStatus(ToolExecutionStatus.NOT_EXECUTED));
+
+        revertButton = new JButton("Clear response", new DeleteIcon(16));
+        revertButton.setToolTipText("Clear execution results, erros and logs and sets the status to NOT_EXECUTED");
         revertButton.addActionListener(e -> getPart().getResponse().reset());
 
         runButton = new JButton("Run", new RunIcon(16));
@@ -216,7 +222,8 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         controlBar.add(new JLabel("Status:"), "split 2");
         controlBar.add(statusCombo);
         controlBar.add(toolProgressBar, "gapleft 10");
-        controlBar.add(revertButton, "right, skip 1, split 2");
+        controlBar.add(skipButton, "right, skip 1, split 3");
+        controlBar.add(revertButton);
         controlBar.add(runButton, "right, wrap");
         
         JPanel jsonLinksPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
@@ -396,6 +403,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         }
 
         toolProgressBar.setVisible(response.getStatus() == ToolExecutionStatus.EXECUTING);
+        skipButton.setVisible(response.getStatus() == ToolExecutionStatus.PENDING);
 
         if (response.getStatus() == ToolExecutionStatus.EXECUTING) {
             runButton.setText("Stop");
