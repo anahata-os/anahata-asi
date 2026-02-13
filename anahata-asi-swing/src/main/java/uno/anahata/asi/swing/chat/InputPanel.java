@@ -36,6 +36,7 @@ import uno.anahata.asi.status.ChatStatus;
 import uno.anahata.asi.swing.components.ScrollablePanel;
 import uno.anahata.asi.swing.icons.AttachIcon;
 import uno.anahata.asi.swing.icons.AutoReplyIcon;
+import uno.anahata.asi.swing.icons.CancelIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.FramesIcon;
 import uno.anahata.asi.swing.icons.IconUtils;
@@ -71,6 +72,8 @@ public class InputPanel extends JPanel {
     private JXTextArea inputTextArea;
     /** The button to send the message. */
     private JButton sendButton;
+    /** The button to skip pending tools and send. */
+    private JButton skipAndSendButton;
     /** The button to stop the current API call. */
     private JButton stopButton;
     /** The button to attach files. */
@@ -231,6 +234,10 @@ public class InputPanel extends JPanel {
         JPanel eastButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         eastButtonPanel.setOpaque(false);
         
+        skipAndSendButton = new JButton("Skip Pending & Send", new CancelIcon(16));
+        skipAndSendButton.addActionListener(e -> skipPendingAndSend());
+        skipAndSendButton.setVisible(false);
+        
         sendButton = new JButton("Send", new SendIcon(16));
         sendButton.addActionListener(e -> sendMessage());
         
@@ -238,6 +245,7 @@ public class InputPanel extends JPanel {
         stopButton.addActionListener(e -> chat.stop());
         stopButton.setVisible(false);
 
+        eastButtonPanel.add(skipAndSendButton);
         eastButtonPanel.add(sendButton);
         eastButtonPanel.add(stopButton);
 
@@ -374,6 +382,14 @@ public class InputPanel extends JPanel {
         );
     }
 
+    private void skipPendingAndSend() {
+        AbstractModelMessage promptMsg = chat.getToolPromptMessage();
+        if (promptMsg != null) {
+            promptMsg.skipAllPending();
+        }
+        sendMessage();
+    }
+
     private void updateStagedMessageUI() {
         InputUserMessage staged = chat.getStagedUserMessage();
         if (staged != null) {
@@ -407,11 +423,13 @@ public class InputPanel extends JPanel {
         
         // UI Feedback: Change button text to 'Run' if tools are pending
         if (status == ChatStatus.TOOL_PROMPT) {
-            sendButton.setText("Run & Send");
+            sendButton.setText("Run Pending & Send");
             sendButton.setIcon(new RunAndSendIcon(16));
+            skipAndSendButton.setVisible(true);
         } else {
             sendButton.setText("Send");
             sendButton.setIcon(new SendIcon(16));
+            skipAndSendButton.setVisible(false);
         }
     }
 
@@ -497,5 +515,6 @@ public class InputPanel extends JPanel {
         screenshotButton.setEnabled(enabled);
         captureFramesButton.setEnabled(enabled);
         microphonePanel.setMicrophoneComponentsEnabled(enabled);
+        skipAndSendButton.setEnabled(enabled);
     }
 }

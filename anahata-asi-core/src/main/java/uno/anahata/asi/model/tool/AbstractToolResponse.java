@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.internal.TokenizerUtils;
@@ -94,6 +95,9 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
         this.status = status;
         updateTokenCount();
         propertyChangeSupport.firePropertyChange("status", oldStatus, status);
+        if (getChat() != null) {
+            getChat().checkToolPromptCompletion();
+        }
     }
     
     /**

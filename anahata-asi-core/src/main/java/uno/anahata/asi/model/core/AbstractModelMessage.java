@@ -211,6 +211,26 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
     }
     
     /**
+     * Checks if this model message is the current tool prompt message for the chat.
+     * 
+     * @return {@code true} if this message is the tool prompt message.
+     */
+    public boolean isToolPromptMessage() {
+        return getChat() != null && getChat().getToolPromptMessage() == this;
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void remove() {
+        super.remove();
+        if (isToolPromptMessage()) {
+            getChat().clearToolPrompt();
+        }
+    }
+    
+    /**
      * Filters and returns only the tool call parts from this message.
      * @return A list of {@link AbstractToolCall} parts, or an empty list if none exist.
      */
@@ -229,6 +249,16 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
         T tm = getToolMessage();
         if (tm != null) {
             tm.processPendingTools();
+        }
+    }
+    
+    /**
+     * Sets all tool responses associated with this message that are currently in a PENDING state to NOT_EXECUTED.
+     */
+    public void skipAllPending() {
+        T tm = getToolMessage();
+        if (tm != null) {
+            tm.skipAllPending();
         }
     }
     

@@ -618,13 +618,39 @@ public class Chat extends BasicPropertyChangeSource {
 
     /**
      * Sets the tool prompt message and fires a property change event.
+     * If set to null while in TOOL_PROMPT status, it reverts the status to IDLE.
      * 
      * @param toolPromptMessage The new tool prompt message.
      */
     private void setToolPromptMessage(AbstractModelMessage toolPromptMessage) {
         AbstractModelMessage oldMessage = this.toolPromptMessage;
         this.toolPromptMessage = toolPromptMessage;
+        
+        if (toolPromptMessage == null && statusManager.getCurrentStatus() == ChatStatus.TOOL_PROMPT) {
+            statusManager.fireStatusChanged(ChatStatus.IDLE);
+        }
+        
         propertyChangeSupport.firePropertyChange("toolPromptMessage", oldMessage, toolPromptMessage);
+    }
+
+    /**
+     * Clears the current tool prompt and reverts the status to IDLE if necessary.
+     */
+    public void clearToolPrompt() {
+        setToolPromptMessage(null);
+    }
+
+    /**
+     * Checks if the current tool prompt is complete (no pending tools) and 
+     * clears it if so.
+     */
+    public void checkToolPromptCompletion() {
+        if (toolPromptMessage != null) {
+            AbstractToolMessage tm = toolPromptMessage.getToolMessage();
+            if (tm == null || !tm.hasPendingTools()) {
+                clearToolPrompt();
+            }
+        }
     }
 
     /**

@@ -171,6 +171,15 @@ public abstract class AbstractToolMessage<T extends AbstractModelMessage> extend
     }
 
     /**
+     * Sets all tool responses in this message that are currently in a PENDING state to NOT_EXECUTED.
+     */
+    public void skipAllPending() {
+        getToolResponses().stream()
+            .filter(response -> response.getStatus() == ToolExecutionStatus.PENDING)
+            .forEach(response -> response.setStatus(ToolExecutionStatus.NOT_EXECUTED));
+    }
+
+    /**
      * Processes all tool responses in this message that are currently in a PENDING state.
      * This method is typically called when the user clicks 'Run'. It executes all 
      * pending tools regardless of their individual permission settings, as the 

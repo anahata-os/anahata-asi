@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
+import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.model.core.AbstractPart;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.AbstractToolMessage;
@@ -172,10 +173,14 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
     public void remove() {
         if (removing.compareAndSet(false, true)) {
             try {
+                AbstractModelMessage msg = getMessage();
                 if (response != null) {
                     response.remove();
                 }
                 super.remove();
+                if (msg.isToolPromptMessage()) {
+                    msg.getChat().checkToolPromptCompletion();
+                }
             } finally {
                 removing.set(false);
             }

@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import javax.tools.Diagnostic;
@@ -62,6 +63,20 @@ public class Java extends AnahataToolkit {
      * provided at execution time.
      */
     public String defaultCompilerClasspath;
+
+    /**
+     * A set of infrastructure classes that MUST always be loaded by the parent 
+     * classloader (the ASI engine) to preserve static state and ThreadLocal 
+     * context. This prevents "Identity Crisis" issues where a child-loaded 
+     * script cannot access the engine's context.
+     */
+    private static final Set<String> PARENT_FIRST_CLASSES = Set.of(
+            AnahataTool.class.getName(),
+            ToolContext.class.getName(),
+            JavaMethodToolResponse.class.getName(),
+            uno.anahata.asi.model.tool.ToolResponseAttachment.class.getName(),
+            uno.anahata.asi.tool.AiToolException.class.getName()
+    );
 
     /**
      * Default constructor. Initializes the default classpath from the 
@@ -327,18 +342,26 @@ public class Java extends AnahataToolkit {
                     // 1. Check if class is already loaded by this loader
                     Class<?> c = findLoadedClass(name);
                     if (c == null) {
-                        // 2. Check for our in-memory compiled class first (the "hot-reload" part for Anahata.java)
+                        // 2. PARENT-FIRST for critical infrastructure:
+                        // These classes MUST maintain a single identity across all loaders
+                        // to preserve ThreadLocals and static context anchors.
+                        if (PARENT_FIRST_CLASSES.contains(name)) {
+                            log("Delegating infrastructure class to parent: {}" + name);
+                            return super.loadClass(name, resolve);
+                        }
+
+                        // 3. Check for our in-memory compiled class first (the "hot-reload" part for Anahata.java)
                         byte[] bytes = compiledClasses.get(name);
                         if (bytes != null) {
                             log.info("Hot-reloading in-memory class: {}", name);
                             c = defineClass(name, bytes, 0, bytes.length);
                         } else {
                             try {
-                                // 3. CHILD-FIRST: Try to find the class in our own URLs (e.g., target/classes)
+                                // 4. CHILD-FIRST: Try to find the class in our own URLs (e.g., target/classes)
                                 c = findClass(name);
-                                log.info("Loaded class from extraClassPath (Child-First): {}", name);
+                                log("Loaded class from extraClassPath (Child-First): {}" + name);
                             } catch (ClassNotFoundException e) {
-                                // 4. PARENT-LAST: If not found, delegate to the parent classloader.
+                                // 5. PARENT-LAST: If not found, delegate to the parent classloader.
                                 c = super.loadClass(name, resolve);
                             }
                         }
