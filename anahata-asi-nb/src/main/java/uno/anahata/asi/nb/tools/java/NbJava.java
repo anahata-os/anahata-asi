@@ -76,12 +76,12 @@ public class NbJava extends Java {
             + "This tool enables a powerful 'hot-reload' workflow by creating a dynamic classpath that prioritizes the project's own build directories (e.g., 'target/classes') over the application's default classpath.",
             requiresApproval = true
     )
-    public Object compileAndExecuteInProject(
-            @AiToolParam("The absolute path of the NetBeans project to run in.") String projectPath,
+    public Object compileAndExecuteInProject(            
             @AiToolParam(value = "Source code of a public class named **Anahata** that has **no package declaration** and **extends AnahataTool**.", rendererId = "java") String sourceCode,
+            @AiToolParam("The absolute path of the NetBeans project to run in.") String projectPath,
             @AiToolParam("Whether to include the project's COMPILE and EXECUTE **dependencies**.") boolean includeDependencies,
             @AiToolParam("Whether to include the project's test source folders and test dependencies.") boolean includeTestDependencies,
-            @AiToolParam("Optional additional compiler options.") String[] compilerOptions) throws Exception {
+            @AiToolParam(value="Optional additional compiler options.",required = false) String[] compilerOptions) throws Exception {
 
         Project project = Projects.findOpenProject(projectPath);
         
