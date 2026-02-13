@@ -214,6 +214,8 @@ public class Java extends AnahataToolkit {
             @AiToolParam(value = "Additional compiler options", required = false) String[] compilerOptions)
             throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         
+        final ToolContext ctx = getToolContext();
+                
         log("Compiling class: " + className);
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
@@ -346,7 +348,7 @@ public class Java extends AnahataToolkit {
                         // These classes MUST maintain a single identity across all loaders
                         // to preserve ThreadLocals and static context anchors.
                         if (PARENT_FIRST_CLASSES.contains(name)) {
-                            log("Delegating infrastructure class to parent: {}" + name);
+                            ctx.log("Delegating infrastructure class to parent: " + name);
                             return super.loadClass(name, resolve);
                         }
 
@@ -359,7 +361,7 @@ public class Java extends AnahataToolkit {
                             try {
                                 // 4. CHILD-FIRST: Try to find the class in our own URLs (e.g., target/classes)
                                 c = findClass(name);
-                                log("Loaded class from extraClassPath (Child-First): {}" + name);
+                                log.info("Loaded class from extraClassPath (Child-First): {}" + name);
                             } catch (ClassNotFoundException e) {
                                 // 5. PARENT-LAST: If not found, delegate to the parent classloader.
                                 c = super.loadClass(name, resolve);
