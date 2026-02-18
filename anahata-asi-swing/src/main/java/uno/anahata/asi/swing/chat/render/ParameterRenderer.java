@@ -22,11 +22,11 @@ public interface ParameterRenderer<T> {
      * Updates the renderer with a new value.
      * @param value The new value to render.
      */
-    void update(T value);
+    void updateContent(T value);
 
     /**
      * Triggers the rendering logic.
-     * @return True if a visual update occurred.
+     * @return True if a visual updateContent occurred.
      */
     boolean render();
 }

@@ -57,7 +57,7 @@ public class TextFileUpdateRenderer implements ParameterRenderer<TextFileUpdate>
     }
 
     @Override
-    public void update(TextFileUpdate value) {
+    public void updateContent(TextFileUpdate value) {
         this.update = value;
     }
 
