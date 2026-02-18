@@ -5,16 +5,15 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 import javax.swing.JComponent;
-import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
-import javax.swing.text.StyledDocument;
+import javax.swing.text.Document;
+import javax.swing.text.EditorKit;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.diff.DiffController;
+import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.netbeans.modules.editor.NbEditorUtilities;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
@@ -77,8 +76,18 @@ public class TextFileUpdateRenderer implements ParameterRenderer<TextFileUpdate>
             String name = (fo != null) ? fo.getName() : "new_file";
             String mime = (fo != null) ? fo.getMIMEType() : "text/plain";
 
+            EditorKit kit = MimeLookup.getLookup(mime).lookup(EditorKit.class);
+            Document baseDoc = kit.createDefaultDocument();
+            baseDoc.insertString(0, currentContent, null);
+            
+            Document modDoc = kit.createDefaultDocument();
+            modDoc.insertString(0, newContent, null);
+
             DiffStreamSource baseSource = new DiffStreamSource(name, "Current", currentContent, mime);
+            baseSource.setDocument(baseDoc);
+            
             DiffStreamSource modSource = new DiffStreamSource(name, "Proposed", newContent, mime);
+            modSource.setDocument(modDoc);
             modSource.setEditable(true); // Trigger Merger UI
 
             DiffController next = (controller == null) 
@@ -94,7 +103,7 @@ public class TextFileUpdateRenderer implements ParameterRenderer<TextFileUpdate>
                 container.add(visualizer, BorderLayout.CENTER);
                 
                 // Attach Annotations
-                SwingUtilities.invokeLater(() -> attachAnnotations(visualizer));
+                SwingUtilities.invokeLater(() -> attachAnnotations(modDoc));
                 
                 container.revalidate();
                 container.repaint();
@@ -120,32 +129,17 @@ public class TextFileUpdateRenderer implements ParameterRenderer<TextFileUpdate>
         }
     }
 
-    private void attachAnnotations(JComponent visualizer) {
-        List<JEditorPane> panes = new ArrayList<>();
-        findPanes(visualizer, panes);
-        
-        for (JEditorPane pane : panes) {
-            if (pane.getDocument() instanceof StyledDocument doc && update.getLineComments() != null) {
-                for (LineComment lc : update.getLineComments()) {
-                    try {
-                        Line line = NbEditorUtilities.getLine(doc, lc.getLineNumber() - 1, false);
-                        if (line != null) {
-                            new AiAnnotation(lc.getComment()).attach(line);
-                        }
-                    } catch (Exception ex) {
-                        log.warn("Failed to attach annotation to line {}", lc.getLineNumber(), ex);
+    private void attachAnnotations(Document doc) {
+        if (update.getLineComments() != null) {
+            for (LineComment lc : update.getLineComments()) {
+                try {
+                    Line line = NbEditorUtilities.getLine(doc, lc.getLineNumber() - 1, false);
+                    if (line != null) {
+                        new AiAnnotation(lc.getComment()).attach(line);
                     }
+                } catch (Exception ex) {
+                    log.warn("Failed to attach annotation to line {}", lc.getLineNumber(), ex);
                 }
-            }
-        }
-    }
-
-    private void findPanes(Container c, List<JEditorPane> result) {
-        for (Component child : c.getComponents()) {
-            if (child instanceof JEditorPane pane) {
-                result.add(pane);
-            } else if (child instanceof Container cont) {
-                findPanes(cont, result);
             }
         }
     }
