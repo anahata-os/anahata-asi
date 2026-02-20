@@ -15,8 +15,7 @@ import org.openide.filesystems.FileUtil;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.toolkit.Java;
 import uno.anahata.asi.nb.module.NetBeansModuleUtils;
-import uno.anahata.asi.nb.tools.files.nb.FileAnnotationProvider;
-import uno.anahata.asi.nb.tools.project.nb.AnahataProjectIconAnnotator;
+import uno.anahata.asi.nb.tools.files.nb.AnahataAnnotationProvider;
 import uno.anahata.asi.model.resource.AbstractPathResource;
 
 /**
@@ -43,7 +42,6 @@ public class NetBeansAsiContainer extends AsiContainer {
             for (Chat chat : getActiveChats()) {
                 refreshChatAnnotations(chat);
             }
-            refreshAllProjectAnnotations();
         });
     }
 
@@ -60,7 +58,6 @@ public class NetBeansAsiContainer extends AsiContainer {
         chat.addPropertyChangeListener("nickname", evt -> {
             log.info("Nickname changed for chat {}, triggering surgical annotation refresh.", chat.getShortId());
             refreshChatAnnotations(chat);
-            refreshAllProjectAnnotations();
         });
 
         // Only set default model if not already set (e.g. during restoration)
@@ -78,16 +75,7 @@ public class NetBeansAsiContainer extends AsiContainer {
         
     }
 
-    /**
-     * Triggers a comprehensive refresh of all project icons and name annotations 
-     * for all currently open projects in the IDE.
-     */
-    private void refreshAllProjectAnnotations() {
-        for (Project p : OpenProjects.getDefault().getOpenProjects()) {
-            AnahataProjectIconAnnotator.fireRefreshAll(p);
-        }
-    }
-
+    
     /**
      * Performs a surgical refresh of the IDE UI annotations (badges and labels) 
      * for all file resources currently in the context of the specified chat.
@@ -116,7 +104,7 @@ public class NetBeansAsiContainer extends AsiContainer {
                 }
             });
             
-        toRefresh.forEach(FileAnnotationProvider::fireRefresh);
+        toRefresh.forEach(AnahataAnnotationProvider::fireRefresh);
     }
 
     /**

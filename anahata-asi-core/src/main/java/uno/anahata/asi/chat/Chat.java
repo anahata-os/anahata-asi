@@ -752,7 +752,7 @@ public class Chat extends BasicPropertyChangeSource {
      * @return The session display name (nickname or short ID).
      */
     public String getDisplayName() {
-        return nickname != null ? nickname : getShortId();
+        return nickname != null && !nickname.isBlank() ? nickname : getShortId();
     }
 
     /**

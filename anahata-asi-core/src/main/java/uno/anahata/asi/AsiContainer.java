@@ -216,6 +216,17 @@ public class AsiContainer extends BasicPropertyChangeSource {
         return dir;
     }
 
+    /**
+     * Gets the directory where chat sessions that failed to load are moved.
+     * 
+     * @return The unloadable sessions directory path.
+     */
+    public Path getUnloadableSessionsDir() {
+        Path dir = getSessionsDir().resolve("unloadable");
+        ensureDirectory(dir);
+        return dir;
+    }
+
     private void ensureDirectory(Path dir) {
         try {
             if (!Files.exists(dir)) {
@@ -359,7 +370,14 @@ public class AsiContainer extends BasicPropertyChangeSource {
             register(chat);
             return true;
         } catch (Throwable t) {
-            log.error("Failed to load session from {}. This session might be incompatible with the current version.", path, t);
+            log.error("Failed to load session from {}. Moving to unloadable directory.", path, t);
+            try {
+                Path unloadablePath = getUnloadableSessionsDir().resolve(path.getFileName());
+                Files.move(path, unloadablePath, StandardCopyOption.REPLACE_EXISTING);
+                log.info("Moved incompatible session to: {}", unloadablePath);
+            } catch (IOException e) {
+                log.error("Failed to move incompatible session to unloadable directory: {}", path, e);
+            }
             return false;
         }
     }

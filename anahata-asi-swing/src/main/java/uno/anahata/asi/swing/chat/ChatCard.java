@@ -20,7 +20,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.slf4j.Slf4j; 
 import net.miginfocom.swing.MigLayout;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.status.ChatStatus;

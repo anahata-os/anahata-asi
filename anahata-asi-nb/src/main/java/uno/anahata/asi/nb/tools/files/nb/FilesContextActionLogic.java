@@ -223,7 +223,7 @@ public class FilesContextActionLogic {
         }
         
         for (Map.Entry<FileSystem, Set<FileObject>> entry : toRefreshByFs.entrySet()) {
-            FileAnnotationProvider.fireRefresh(entry.getKey(), entry.getValue());
+            AnahataAnnotationProvider.fireRefresh(entry.getKey(), entry.getValue());
         }
     }
 }

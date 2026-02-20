@@ -71,7 +71,7 @@ public class AnahataNodeFactory implements NodeFactory {
          * The path to the Anahata overlay icon. 
          * FIXED: Renamed to avoid shadowing V1's icon in the merged resource layer.
          */
-        private static final String OVERLAY_ICON_PATH = "icons/v2/anahata.png";
+        private static final String OVERLAY_ICON_PATH = "icons/anahata_32.png";
 
         /**
          * Constructs a new JASI folder node.
