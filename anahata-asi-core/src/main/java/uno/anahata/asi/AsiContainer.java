@@ -343,6 +343,7 @@ public class AsiContainer extends BasicPropertyChangeSource {
         try (Stream<Path> stream = Files.list(sessionsDir)) {
             stream.filter(p -> !Files.isDirectory(p)) // Only load files from the root (active sessions)
                   .filter(p -> p.toString().endsWith(".kryo"))
+                  .parallel()
                   .forEach(p -> {
                       if (!loadSession(p)) {
                           failedCount.incrementAndGet();
