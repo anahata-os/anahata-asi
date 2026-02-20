@@ -56,7 +56,7 @@ This file tracks the actionable tasks and tactical goals for the Anahata ASI (V2
         - remoteContaier/*(all sessions)/history/role=model/(matching:'Task completed')
         - or anything that would allow the ASI to surgically check what other agents are doing or what is in the saved or dispossed sessions dir (infinte memory)
 - [ ] **Global Preferences Panel**: Create a centralized UI for managing global Anahata settings (API keys, theme, pruning policies).
-- [x] **Surgical Edits with Cherry-Picking**: Implemented a V2 version of the `suggestChange` diff dialog using `org.netbeans.api.diff.DiffController` and a custom cherry-picking UI.
+- [x] **Surgical Edits with Cherry-Picking**: Implemented a V2 version of the `updateTextFile` diff dialog using `org.netbeans.api.diff.DiffController` and a custom cherry-picking UI.
 - [ ] **High-Performance Project Alerts**: Re-implement project alerts using background-driven `ErrorProvider` APIs.
 - [ ] **Next-Gen Project Overview**: Explore Java Type-Based overviews and UML-like structural representations.
 - [ ] **Context Window Optimization**: Implement proactive pruning strategies to keep usage below 80%.

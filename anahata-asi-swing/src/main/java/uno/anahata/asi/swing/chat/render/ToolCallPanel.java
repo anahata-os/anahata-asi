@@ -6,6 +6,7 @@ package uno.anahata.asi.swing.chat.render;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -66,7 +67,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
     private JPanel argsContainer;
     private JTabbedPane argsTabbedPane;
     /** Cache of renderers for arguments to support incremental updates and editing. */
-    private final Map<String, AbstractTextSegmentRenderer> argRenderers = new HashMap<>();
+    private final Map<String, ParameterRenderer<?>> argRenderers = new HashMap<>();
     
     private JXTitledPanel responseTitledPanel;
     private JTabbedPane resultsTabbedPane;
@@ -237,7 +238,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
     private void renderArguments(AbstractToolCall<?, ?> call, AbstractToolResponse<?> response) {
         Map<String, Object> effectiveArgs = call.getEffectiveArgs();
         AbstractTool<?, ?> tool = call.getTool();
-        List parameters = tool.getParameters();
+        List<AbstractToolParameter<?>> parameters = (List) tool.getParameters();
 
         if (argsTabbedPane == null) {
             argsTabbedPane = new JTabbedPane();
@@ -247,28 +248,23 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         }
 
         // 1. Update/Create Renderers for all parameters
-        for (Object pObj : parameters) {
-            AbstractToolParameter<?> param = (AbstractToolParameter<?>) pObj;
+        for (AbstractToolParameter<?> param : parameters) {
             String paramName = param.getName();
             Object value = effectiveArgs.get(paramName);
             
-            AbstractTextSegmentRenderer renderer = argRenderers.get(paramName);
-            String valStr = (value == null) ? "null" : (value instanceof String s) ? s : JacksonUtils.prettyPrint(value);
+            ParameterRenderer renderer = argRenderers.get(paramName);
 
             if (renderer == null) {
                 String rendererId = param.getRendererId();
-                if (rendererId != null && !rendererId.isEmpty()) {
-                    AbstractCodeBlockSegmentRenderer codeRenderer = AbstractCodeBlockSegmentRenderer.create(chatPanel, valStr, rendererId);
-                    codeRenderer.setEditable(true);
-                    codeRenderer.setOnSave(newContent -> call.setModifiedArgument(paramName, newContent));
-                    renderer = codeRenderer;
-                } else {
-                    renderer = new MarkupTextSegmentRenderer(chatPanel, valStr, false);
-                }
-                argRenderers.put(paramName, renderer);
+                renderer = ParameterRendererFactory.create(chatPanel, call, paramName, value, rendererId);
                 renderer.render();
+                
+                argRenderers.put(paramName, renderer);
+                // Trigger initial height adjustment
+                SwingUtilities.invokeLater(() -> adjustTabbedPaneHeight(argsTabbedPane));
             } else {
-                renderer.updateContent(valStr);
+                // Update existing
+                renderer.updateContent(value);
                 renderer.render();
             }
 
@@ -470,7 +466,6 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
             }
             
             Dimension prefSize = content.getPreferredSize();
-            // Removed the 700px cap to allow full expansion. 
             // 40px for tab headers, 40px extra buffer for padding/borders.
             int targetHeight = prefSize.height + 80; 
             

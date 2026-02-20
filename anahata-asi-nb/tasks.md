@@ -11,21 +11,6 @@
 - [ ] **[UI] JEditorPane Height**: Fix the persistent white-space issue in NetBeans when rendering `JEditorPane` inside tool arguments.
 - [ ] **[UI] Default Line Numbers**: Enable line numbers by default in the text file resource viewport and add Git annotations.
 
-- [x] **[UI] UI & Context Synchronization**: Ensured the **Context Tab** (Resources node) is fully reactive by removing child caching in the tree nodes. File icons are correctly restored after session reboot via the `NbFileObjectResourceHelper`. Fixed the `JXTreeTable` column jumping issue by disabling auto-creation of columns.
-- [x] **[MULTIMODAL] Binary Resource Support**: Implemented `NbBinaryFileResource` and `EditorCookie` detection.
-- [x] **[UI] Surgical vs. Hierarchical Badging**: Implemented view detection to keep Projects tab clean while allowing bubbling in the Files tab.
-- [x] **[UI] Tooltip Deduplication & Branding**: Fixed the Git double-tooltip issue and added Anahata branding.
-- [x] **[CORE] Session Persistence**: Fixed the Kryo hidden-class crash by refactoring the resource helper.
-- [x] **[UI] V2 AgiNodeFactory**: Ported the V1 logic to create the virtual "Anahata" folder in the Projects tab and handle root `.md` files. Standardized on the "Anahata" name for brand consistency.
-
-## UI Refinements (Completed)
-- [x] Update context menu labels to use "Session" instead of "Chat".
-- [x] Fix "null" nickname display in context menus.
-- [x] Implement branded "Add/Remove from Context" icons.
-- [x] Fix recursive add/remove confusion (now non-recursive by default from menu).
-- [x] Fix folder addition logic (now adds immediate files even if non-recursive).
-- [x] **Smart File Labels**: Only show `[SessionName]` or `[n]` if multiple sessions are active.
-- [x] **Sorted Folder Labels**: Ensure `[n][m]` labels are sorted by session name for consistency.
 
 ## Engineering Notes & Rationale
 - **Context Menu Registration**: Use explicit MIME-type registrations (`text/x-java`, `text/x-maven-pom+xml`) and include `image/any` and `video/any` for multimodal support.

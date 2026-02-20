@@ -53,6 +53,12 @@ A "Hybrid" node is a Project Root folder.
 - **Unified Totals**: For a folder or project node, the count for each session is the **SUM** of all its context providers (Overview, anahata.md) plus all its resources (files).
 - **Session Ordering**: Brackets MUST follow the exact order of `AsiContainer.getActiveChats()`.
 
+Other nb sources involved in the annotation process
+
+org.netbeans.modules.versioning.masterfs.VersioningAnnotationProvider
+org.netbeans.modules.versioning.core.VersioningAnnotationProvider
+org.netbeans.modules.versioning.core.filesystems.VCSFilesystemInterceptor
+org.netbeans.modules.parsing.ui.indexing.errors.ErrorAnnotator
 
 ---
 *Last Updated: 2026-02-11 23:14 (Round 7 Safe Aggregator)*

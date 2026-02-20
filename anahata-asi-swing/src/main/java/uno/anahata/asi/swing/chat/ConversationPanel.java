@@ -82,12 +82,12 @@ public class ConversationPanel extends JPanel {
         this.scrollPane.addMouseWheelListener(e -> {
             if (e.getWheelRotation() < 0) {
                 if (autoScroll) {
-                    log.info("[Scroll] User scrolled UP with wheel, disabling autoScroll");
+                    log.debug("[Scroll] User scrolled UP with wheel, disabling autoScroll");
                     autoScroll = false;
                 }
             } else {
                 if (isAtBottom() && !autoScroll) {
-                    log.info("[Scroll] User scrolled to BOTTOM with wheel, re-enabling autoScroll");
+                    log.debug("[Scroll] User scrolled to BOTTOM with wheel, re-enabling autoScroll");
                     autoScroll = true;
                 }
             }
@@ -100,7 +100,7 @@ public class ConversationPanel extends JPanel {
             if (e.getValueIsAdjusting()) {
                 // User is actively dragging the scrollbar.
                 if (autoScroll && !atBottom) {
-                    log.info("[Scroll] User dragged scrollbar UP, disabling autoScroll");
+                    log.debug("[Scroll] User dragged scrollbar UP, disabling autoScroll");
                     autoScroll = false;
                 } else if (!autoScroll && atBottom) {
                     //log.info("[Scroll] User dragged scrollbar to BOTTOM, re-enabling autoScroll");
@@ -257,11 +257,11 @@ public class ConversationPanel extends JPanel {
     }
 
     public void scrollToBottom() {
-        log.info("[Scroll] scrollToBottom() triggered");
+        log.debug("[Scroll] scrollToBottom() triggered");
         SwingUtilities.invokeLater(() -> {
             JScrollBar verticalBar = scrollPane.getVerticalScrollBar();
             int max = verticalBar.getMaximum();
-            log.info("[Scroll] Setting scrollbar value to {}", max);
+            log.debug("[Scroll] Setting scrollbar value to {}", max);
             verticalBar.setValue(max);
         });
     }

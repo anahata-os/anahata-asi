@@ -34,7 +34,7 @@ import uno.anahata.asi.nb.tools.project.Projects;
  * 
  * @author anahata
  */
-@ServiceProvider(service = ProjectIconAnnotator.class, position = 2000)
+//@ServiceProvider(service = ProjectIconAnnotator.class, position = 2000)
 public class AnahataProjectIconAnnotator implements ProjectIconAnnotator, ChangeListener {
     private static final Logger LOG = Logger.getLogger(AnahataProjectIconAnnotator.class.getName());
     
@@ -183,10 +183,12 @@ public class AnahataProjectIconAnnotator implements ProjectIconAnnotator, Change
      * @param project The project to refresh (can be null).
      */
     public static void fireRefreshAll(Project project) {
+        /*
         fireRefresh();
         if (project != null) {
             FileObject root = project.getProjectDirectory();
             uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic.fireRefreshRecursive(root);
         }
+*/
     }
 }

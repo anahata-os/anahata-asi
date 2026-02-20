@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.swing.SwingUtilities;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.StyledDocument;
@@ -35,6 +36,7 @@ import uno.anahata.asi.tool.AiToolException;
 import uno.anahata.asi.tool.AiToolkit;
 import uno.anahata.asi.tool.AiToolParam;
 import uno.anahata.asi.toolkit.files.Files;
+import uno.anahata.asi.toolkit.files.TextFileUpdate;
 
 /**
  * A NetBeans-specific implementation of the {@link Files} toolkit.
@@ -80,8 +82,17 @@ public class NbFiles extends Files {
      */
     @Override
     protected TextFileResource loadTextFile(String path, TextViewportSettings settings) throws Exception {
-        if (getResourceManager().findByPath(path).isPresent()) {
-            throw new AiToolException("Resource already loaded for path: " + path);
+        
+        Optional<TextFileResource> existing = getResourceManager().findByPath(path)
+                .filter(r -> r instanceof TextFileResource)
+                .map(r -> (TextFileResource) r);
+        
+        if (existing.isPresent()) {
+            TextFileResource resource = existing.get();
+            resource.getViewport().setSettings(settings);
+            resource.reload();
+            log("Updating existing NbTextFileResource: " + path);
+            return resource;
         }
 
         FileObject fo = FileUtil.toFileObject(new File(path));
@@ -227,6 +238,20 @@ public class NbFiles extends Files {
      * multiple files with a cherry-picking diff viewer. This is the preferred 
      * tool for applying complex code changes in NetBeans.
      */
+    /**
+     * Overwrites an existing file using a rich diff-based review process.
+     * 
+     * @param update The update details.
+     * @param message A message describing the change.
+     * @throws Exception if the update fails.
+     */
+    @AiTool(value = "Overwrites an existing file using a rich diff-based review process.", maxDepth = 12)
+    public void updateTextFile2(
+            @AiToolParam("The update details.") TextFileUpdate update,
+            @AiToolParam("A message describing the change, used for local history.") String message) throws Exception {
+        updateTextFile(update.getPath(), update.getNewContent(), update.getLastModified(), message);
+    }
+
     @Override
     @AiTool(value = "Performs multiple text replacements across multiple files in a single tool call. "
             + "This tool proposes surgical changes with a cherry-picking diff viewer for user review.")

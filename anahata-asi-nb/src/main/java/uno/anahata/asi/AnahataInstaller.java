@@ -10,7 +10,10 @@ import org.openide.windows.WindowManager;
 import uno.anahata.asi.nb.util.ElementHandleModule;
 import uno.anahata.asi.tool.schema.SchemaProvider;
 import uno.anahata.asi.nb.tools.project.nb.AnahataProjectIconAnnotator;
+import uno.anahata.asi.nb.ui.render.TextFileUpdateRenderer;
+import uno.anahata.asi.swing.chat.render.ParameterRendererFactory;
 import uno.anahata.asi.swing.internal.SwingUtils;
+import uno.anahata.asi.toolkit.files.TextFileUpdate;
 
 /**
  * Installer for the Anahata ASI V2 module.
@@ -48,6 +51,9 @@ public class AnahataInstaller extends ModuleInstall {
     public void restored() {
         log.info("Anahata ASI V2 Module Restored");
         
+        // Register specialized parameter renderers
+        ParameterRendererFactory.register(TextFileUpdate.class, TextFileUpdateRenderer.class);
+        
         // Register the ElementHandle module for global JSON support in the IDE
         SchemaProvider.OBJECT_MAPPER.registerModule(new ElementHandleModule());
         
@@ -58,7 +64,7 @@ public class AnahataInstaller extends ModuleInstall {
         }
         
         // Trigger initial refresh of project icons
-        AnahataProjectIconAnnotator.fireRefresh();
+        //AnahataProjectIconAnnotator.fireRefresh();
     }
 
     /**

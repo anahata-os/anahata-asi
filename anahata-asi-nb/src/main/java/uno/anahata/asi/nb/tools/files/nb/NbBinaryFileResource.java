@@ -46,7 +46,7 @@ public class NbBinaryFileResource extends BinaryFileResource {
                 String html = node.getHtmlDisplayName();
                 return html != null ? html : node.getDisplayName();
             } catch (Exception e) {
-                // Ignore and fall back
+                log.debug("Failed to get HTML display name for " + fo, e);
             }
         }
         return super.getHtmlDisplayName();

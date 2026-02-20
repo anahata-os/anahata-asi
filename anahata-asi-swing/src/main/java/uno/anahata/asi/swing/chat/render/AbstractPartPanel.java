@@ -257,7 +257,7 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
         // Fix: Handle null rawText to avoid "null" string in summary
         String summary = (rawText == null || rawText.isEmpty()) ? "" : TextUtils.formatValue(rawText);
         
-        log.info("Updating header info text for part: {}", summary);
+        //log.info("Updating header info text for part: {}", summary);
 
         StringBuilder sb = new StringBuilder("<html>");
         sb.append(String.format("<span style='color: #888888;'>%s</span>", summary));

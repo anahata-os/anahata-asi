@@ -36,13 +36,17 @@ public class IDE extends AnahataToolkit {
     }
 
     /**
-     * Monitors the IDE log file (messages.log) by loading it into the context with 'tail' enabled.
+     * Monitors the IDE log file (messages.log) by loading it into the context.
      * 
+     * @param grepPattern Optional regex pattern to filter log lines.
+     * @param tailLines Number of recent lines to include (defaults to 100).
      * @return The TextFileResource representing the log file.
      * @throws Exception if the log file cannot be found or loaded.
      */
-    @AiTool("Monitors the IDE log file (messages.log) by loading it into the context with 'tail' enabled.")
-    public TextFileResource monitorLogs() throws Exception {
+    @AiTool("Monitors the IDE log file (messages.log) by loading it into the context with 'tail' enabled and optional grepping.")
+    public TextFileResource monitorLogs(
+            @AiToolParam("Optional regex pattern to filter log lines (e.g. 'ERROR' or a specific logger name).") String grepPattern,
+            @AiToolParam("Number of lines to tail from the end of the file or matching results.") Integer tailLines) throws Exception {
         String userDir = System.getProperty("netbeans.user");
         if (userDir == null) {
             throw new Exception("System property 'netbeans.user' is not set.");
@@ -57,8 +61,9 @@ public class IDE extends AnahataToolkit {
         
         TextViewportSettings settings = TextViewportSettings.builder()
                 .tail(true)
-                .tailLines(100)
-                .showLineNumbers(true)
+                .tailLines(tailLines != null ? tailLines : 100)
+                .grepPattern(grepPattern)
+                .showLineNumbers(false)
                 .build();
         
         return filesToolkit.loadTextFileWithSettings(logFile.getAbsolutePath(), settings);

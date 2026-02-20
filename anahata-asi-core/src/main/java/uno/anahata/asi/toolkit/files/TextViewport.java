@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
@@ -22,6 +23,7 @@ import org.apache.commons.lang3.Validate;
 @Setter
 @NoArgsConstructor
 @Schema(description = "Represents the view port of a chunk of text")
+@Slf4j
 public class TextViewport {
 
     @Schema(description = "Adjustable viewport configuration")
@@ -50,7 +52,7 @@ public class TextViewport {
         if (settings.getGrepPattern() != null && !settings.getGrepPattern().trim().isEmpty()) {
             Pattern pattern = Pattern.compile(settings.getGrepPattern());
             contentToPaginate = fullText.lines()
-                    .filter(line -> pattern.matcher(line).matches())
+                    .filter(line -> pattern.matcher(line).find())
                     .collect(Collectors.joining("\n"));
             this.matchingLineCount = (int) contentToPaginate.lines().count();
         } else {
@@ -62,14 +64,14 @@ public class TextViewport {
 
         if (settings.isTail()) {
             contentToPaginate = getTail(contentToPaginate, settings.getTailLines());
-            start = 0;
-            end = Math.min(contentToPaginate.length(), settings.getPageSizeInChars());
+            end = contentToPaginate.length();
+            start = Math.max(0, end - settings.getPageSizeInChars());
         } else {
             start = Math.max(0, settings.getStartChar());
             end = Math.min(contentToPaginate.length(), start + settings.getPageSizeInChars());
         }
         
-        if (start >= contentToPaginate.length()) {
+        if (start >= contentToPaginate.length() && !contentToPaginate.isEmpty()) {
             this.processedText = "";
             return;
         }
@@ -77,7 +79,7 @@ public class TextViewport {
         String pageText = contentToPaginate.substring((int)start, (int)end);
         StringBuilder sb = new StringBuilder();
         
-        if (!settings.isTail() && start > 0 && contentToPaginate.charAt((int)start - 1) != '\n') {
+        if (start > 0 && contentToPaginate.charAt((int)start - 1) != '\n') {
             int prevNewline = contentToPaginate.lastIndexOf('\n', (int)start - 1);
             sb.append("[..." + (start - (prevNewline + 1)) + " preceding chars] ");
         }
@@ -95,22 +97,29 @@ public class TextViewport {
                 .count();
 
         if (settings.isShowLineNumbers()) {
-            int startLineNum;
-            if (settings.isTail()) {
-                // For tail, we need to calculate the line number offset in the original text
-                // This is a bit complex if grep is active, but for now we'll just count lines in fullText
-                // until we reach the start of contentToPaginate.
-                // Simplified: just count lines in fullText before the tail.
-                // But wait, contentToPaginate might be filtered.
-                // Let's just use the line count from the start of the tail in the current contentToPaginate.
-                startLineNum = (int) fullText.substring(0, fullText.indexOf(pageText)).lines().count();
+            int startLineNum = -1; // -1 indicates "N/A"
+            
+            boolean isFiltered = (settings.getGrepPattern() != null && !settings.getGrepPattern().isEmpty());
+            
+            if (!isFiltered && !settings.isTail()) {
+                // Precise numbering for standard paging
+                startLineNum = (int) fullText.substring(0, (int) start).lines().count();
             } else {
-                startLineNum = (int) fullText.substring(0, (int)start).lines().count();
+                // For tailing or grepping, try to find the index of the current block in the full text
+                int idx = fullText.indexOf(pageText);
+                if (idx != -1) {
+                    startLineNum = (int) fullText.substring(0, idx).lines().count();
+                }
             }
-            final int[] ln = {startLineNum + 1};
+
+            final int startLn = startLineNum;
+            final int[] ln = {startLn + 1};
             this.processedText = pageLines.stream()
-                .map(line -> String.format("[%d]: %s", ln[0]++, truncateLine(line)))
-                .collect(Collectors.joining("\n"));
+                    .map(line -> {
+                        String numStr = (startLn == -1) ? "N/A" : String.valueOf(ln[0]++);
+                        return String.format("[%s]: %s", numStr, truncateLine(line));
+                    })
+                    .collect(Collectors.joining("\n"));
         } else {
             this.processedText = pageLines.stream()
                 .map(this::truncateLine)

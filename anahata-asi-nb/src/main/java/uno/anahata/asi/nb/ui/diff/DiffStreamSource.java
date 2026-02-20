@@ -6,9 +6,12 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
+import javax.swing.SwingUtilities;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.diff.Difference;
 import org.netbeans.api.diff.StreamSource;
 import org.openide.util.Lookup;
@@ -21,6 +24,7 @@ import org.openide.util.lookup.Lookups;
  * 
  * @author anahata
  */
+@Slf4j
 public class DiffStreamSource extends StreamSource {
     private final String name;
     private final String title;
@@ -32,7 +36,7 @@ public class DiffStreamSource extends StreamSource {
     private Document document;
     
     /** Whether this source should be considered editable by the diff visualizer. */
-    @Getter @Setter
+    @Setter
     private boolean editable = false;
 
     public DiffStreamSource(String name, String title, String content, String mimeType) {
@@ -71,12 +75,32 @@ public class DiffStreamSource extends StreamSource {
 
     /**
      * Implementation details: If {@link #isEditable()} returns true, this method 
-     * provides a StringWriter to satisfy the visualizer's requirement for a 
-     * writable target.
+     * provides a StringWriter that syncs back to the {@link #document} on close.
+     * This ensures that "Merge" actions in the UI are reflected in the live document.
      */
     @Override
     public Writer createWriter(Difference[] conflicts) throws IOException {
-        return isEditable() ? new StringWriter() : null;
+        if (!isEditable()) {
+            return null;
+        }
+        
+        return new StringWriter() {
+            @Override
+            public void close() throws IOException {
+                super.close();
+                String newText = toString();
+                if (document != null) {
+                    SwingUtilities.invokeLater(() -> {
+                        try {
+                            document.remove(0, document.getLength());
+                            document.insertString(0, newText, null);
+                        } catch (BadLocationException ex) {
+                            log.error("Failed to sync merge writer to document", ex);
+                        }
+                    });
+                }
+            }
+        };
     }
 
     @Override

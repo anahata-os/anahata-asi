@@ -3,6 +3,12 @@
  */
 package uno.anahata.asi.swing.chat.render;
 
+import com.vladsch.flexmark.ext.admonition.AdmonitionExtension;
+import com.vladsch.flexmark.ext.autolink.AutolinkExtension;
+import com.vladsch.flexmark.ext.emoji.EmojiExtension;
+import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughExtension;
+import com.vladsch.flexmark.ext.gfm.tasklist.TaskListExtension;
+import com.vladsch.flexmark.ext.gitlab.GitLabExtension;
 import com.vladsch.flexmark.ext.media.tags.MediaTagsExtension;
 import com.vladsch.flexmark.ext.tables.TablesExtension;
 import com.vladsch.flexmark.ext.youtube.embedded.YouTubeLinkExtension;
@@ -54,7 +60,13 @@ public class MarkupTextSegmentRenderer extends AbstractTextSegmentRenderer {
         options.set(Parser.EXTENSIONS, Arrays.asList(
                 TablesExtension.create(),
                 MediaTagsExtension.create(),
-                YouTubeLinkExtension.create()
+                YouTubeLinkExtension.create(),
+                GitLabExtension.create(),
+                AutolinkExtension.create(),        // <--- NUEVA
+                StrikethroughExtension.create(),   // <--- NUEVA
+                TaskListExtension.create(),        // <--- NUEVA
+                EmojiExtension.create(),           // <--- NUEVA
+                AdmonitionExtension.create()       // <--- NUEVA (Opcional pero recomendada)
         ));
         options.set(HtmlRenderer.SOFT_BREAK, "<br />");
         this.markdownParser = Parser.builder(options).build();

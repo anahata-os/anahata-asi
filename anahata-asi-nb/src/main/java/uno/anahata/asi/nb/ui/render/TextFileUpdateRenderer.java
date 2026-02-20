@@ -4,11 +4,17 @@ package uno.anahata.asi.nb.ui.render;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Dimension;
 import java.io.File;
+import java.util.Objects;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.EditorKit;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +28,7 @@ import org.openide.text.Line;
 import uno.anahata.asi.model.tool.AbstractToolCall;
 import uno.anahata.asi.swing.chat.ChatPanel;
 import uno.anahata.asi.swing.chat.render.ParameterRenderer;
+import uno.anahata.asi.swing.internal.SwingUtils;
 import uno.anahata.asi.toolkit.files.LineComment;
 import uno.anahata.asi.toolkit.files.TextFileUpdate;
 import uno.anahata.asi.nb.ui.diff.DiffStreamSource;
@@ -36,15 +43,34 @@ import uno.anahata.asi.nb.ui.diff.DiffStreamSource;
 @Slf4j
 public class TextFileUpdateRenderer implements ParameterRenderer<TextFileUpdate> {
 
-    private final ChatPanel chatPanel;
-    private final AbstractToolCall<?, ?> call;
-    private final String paramName;
+    private ChatPanel chatPanel;
+    private AbstractToolCall<?, ?> call;
+    private String paramName;
     private TextFileUpdate update;
     
-    private final JPanel container = new JPanel(new BorderLayout());
+    /** 
+     * Container panel with a height cap to prevent "blank line heaps" from 
+     * corrupting the conversation layout.
+     */
+    private final JPanel container = new JPanel(new BorderLayout()) {
+        @Override
+        public Dimension getPreferredSize() {
+            Dimension d = super.getPreferredSize();
+            // Cap height at 800px, allow growth up to that point.
+            // This prevents "Scroll Past End" whitespace from blowing up the conversation view.
+            return new Dimension(d.width, Math.min(d.height, 800));
+        }
+    };
+    
     private DiffController controller;
+    private Document modDoc;
+    private TextFileUpdate lastRenderedUpdate;
 
-    public TextFileUpdateRenderer(ChatPanel chatPanel, AbstractToolCall<?, ?> call, String paramName, TextFileUpdate value) {
+    /** No-arg constructor for factory instantiation. */
+    public TextFileUpdateRenderer() {}
+
+    @Override
+    public void init(ChatPanel chatPanel, AbstractToolCall<?, ?> call, String paramName, TextFileUpdate value) {
         this.chatPanel = chatPanel;
         this.call = call;
         this.paramName = paramName;
@@ -66,6 +92,12 @@ public class TextFileUpdateRenderer implements ParameterRenderer<TextFileUpdate>
         if (update == null) {
             return false;
         }
+        
+        // 1. Stability check: if the incoming update is the same as what we just rendered
+        // (including user edits synced back), skip recreation to preserve cursor/scroll.
+        if (Objects.equals(update, lastRenderedUpdate)) {
+            return true;
+        }
 
         try {
             File file = new File(update.getPath());
@@ -73,6 +105,17 @@ public class TextFileUpdateRenderer implements ParameterRenderer<TextFileUpdate>
             
             String currentContent = (fo != null) ? fo.asText() : "";
             String newContent = update.getNewContent();
+            
+            // 2. Secondary stability check: if we already have a document and its content matches the update, 
+            // then the update probably came FROM this document via the sync listener.
+            if (modDoc != null) {
+                String docText = modDoc.getText(0, modDoc.getLength());
+                if (docText.equals(newContent)) {
+                    lastRenderedUpdate = update;
+                    return true;
+                }
+            }
+
             String name = (fo != null) ? fo.getName() : "new_file";
             String mime = (fo != null) ? fo.getMIMEType() : "text/plain";
 
@@ -80,8 +123,33 @@ public class TextFileUpdateRenderer implements ParameterRenderer<TextFileUpdate>
             Document baseDoc = kit.createDefaultDocument();
             baseDoc.insertString(0, currentContent, null);
             
-            Document modDoc = kit.createDefaultDocument();
+            this.modDoc = kit.createDefaultDocument();
             modDoc.insertString(0, newContent, null);
+            
+            // 3. Sync user edits back to the tool call's modifiedArgs
+            modDoc.addDocumentListener(new DocumentListener() {
+                private void sync() {
+                    try {
+                        String text = modDoc.getText(0, modDoc.getLength());
+                        // Create a new update object with the edited content
+                        TextFileUpdate edited = TextFileUpdate.builder()
+                                .path(update.getPath())
+                                .lastModified(update.getLastModified())
+                                .lineComments(update.getLineComments())
+                                .newContent(text)
+                                .build();
+                        
+                        // Update cache to prevent re-rendering this specific change
+                        lastRenderedUpdate = edited;
+                        call.setModifiedArgument(paramName, edited);
+                    } catch (BadLocationException ex) {
+                        log.error("Failed to sync edited document content", ex);
+                    }
+                }
+                @Override public void insertUpdate(DocumentEvent e) { sync(); }
+                @Override public void removeUpdate(DocumentEvent e) { sync(); }
+                @Override public void changedUpdate(DocumentEvent e) { sync(); }
+            });
 
             DiffStreamSource baseSource = new DiffStreamSource(name, "Current", currentContent, mime);
             baseSource.setDocument(baseDoc);
@@ -97,7 +165,7 @@ public class TextFileUpdateRenderer implements ParameterRenderer<TextFileUpdate>
             if (next != controller) {
                 controller = next;
                 JComponent visualizer = controller.getJComponent();
-                applyMergerProperties(visualizer);
+                applyVisualizerSettings(visualizer);
                 
                 container.removeAll();
                 container.add(visualizer, BorderLayout.CENTER);
@@ -108,6 +176,8 @@ public class TextFileUpdateRenderer implements ParameterRenderer<TextFileUpdate>
                 container.revalidate();
                 container.repaint();
             }
+            
+            lastRenderedUpdate = update;
             return true;
         } catch (Exception e) {
             log.error("Failed to render TextFileUpdate diff", e);
@@ -117,14 +187,21 @@ public class TextFileUpdateRenderer implements ParameterRenderer<TextFileUpdate>
         }
     }
 
-    private void applyMergerProperties(Component c) {
+    private void applyVisualizerSettings(Component c) {
         if (c instanceof JComponent jc) {
             jc.putClientProperty("diff_merger", Boolean.TRUE);
             jc.putClientProperty("showMergeButtons", Boolean.TRUE);
         }
+        
+        // Find internal scroll panes and redispatch mouse wheel events to the chat scroll pane.
+        // This allows the user to scroll through the conversation even when over the diff viewer.
+        if (c instanceof JScrollPane sp) {
+            sp.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(sp, e));
+        }
+        
         if (c instanceof Container cont) {
             for (Component child : cont.getComponents()) {
-                applyMergerProperties(child);
+                applyVisualizerSettings(child);
             }
         }
     }

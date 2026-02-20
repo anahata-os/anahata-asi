@@ -44,7 +44,7 @@ import uno.anahata.asi.chat.Chat;
  * 
  * @author anahata
  */
-@ServiceProvider(service = AnnotationProvider.class, position = 2100) 
+//@ServiceProvider(service = AnnotationProvider.class, position = 2100) 
 public class FileAnnotationProvider extends AnnotationProvider {
 
     private static final Logger LOG = Logger.getLogger(FileAnnotationProvider.class.getName());
@@ -90,7 +90,7 @@ public class FileAnnotationProvider extends AnnotationProvider {
 
             Map<Chat, Integer> sessionCounts = FilesContextActionLogic.getSessionFileCounts(res, res.isFolder());
             if (!sessionCounts.isEmpty() && BADGE != null) {
-                current = ImageUtilities.mergeImages(current, BADGE, 8, 0);
+                current = ImageUtilities.mergeImages(current, BADGE, 16, 0);
                 current = mergeTooltip(current, buildTooltip(res, sessionCounts));
             }
         }

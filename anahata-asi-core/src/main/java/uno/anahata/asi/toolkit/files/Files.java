@@ -4,6 +4,7 @@ package uno.anahata.asi.toolkit.files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import uno.anahata.asi.model.resource.RefreshPolicy;
@@ -86,17 +87,26 @@ public class Files extends AnahataToolkit {
     }
 
     /**
-     * Loads a single text file into the context.
+     * Loads a single text file into the context. 
+     * If the resource already exists, it updates its settings and reloads it.
      * 
      * @param path The absolute path to the file.
      * @param settings The viewport settings.
-     * @return The created resource.
-     * @throws Exception if the file is missing or already loaded.
+     * @return The created or updated resource.
+     * @throws Exception if the file is missing.
      */
     protected TextFileResource loadTextFile(String path, TextViewportSettings settings) throws Exception {
 
-        if (getResourceManager().findByPath(path).isPresent()) {
-            throw new AiToolException("Resource already loaded for path: " + path);
+        Optional<TextFileResource> existing = getResourceManager().findByPath(path)
+                .filter(r -> r instanceof TextFileResource)
+                .map(r -> (TextFileResource) r);
+        
+        if (existing.isPresent()) {
+            TextFileResource resource = existing.get();
+            resource.getViewport().setSettings(settings);
+            resource.reload();
+            log("Updating existing text file resource: " + path);
+            return resource;
         }
 
         if (!java.nio.file.Files.exists(Paths.get(path))) {
