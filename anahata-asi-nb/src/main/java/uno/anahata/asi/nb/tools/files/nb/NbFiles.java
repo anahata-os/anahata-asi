@@ -143,30 +143,31 @@ public class NbFiles extends Files {
 
     /**
      * {@inheritDoc}
-     * Implementation details: Uses {@link EditorCookie} to write to the document 
-     * if the file is open in the editor, otherwise uses {@link FileObject#getOutputStream()} 
-     * with a proper {@link FileLock}.
+     * Overwrites an existing file using a rich update object. 
+     * Implements optimistic locking and is optimized for the ASI's diff viewer.
+     * 
+     * @param update The update details (path, content, locking, comments).
+     * @param message A message describing the change, used for local history.
+     * @throws Exception if the file does not exist, locking fails, or an I/O error occurs.
      */
     @Override
-    @AiTool(value = "Overwrites an existing file with the provided content.")
+    @AiTool(value = "Overwrites an existing file using a rich update object. Optimized for the ASI's diff viewer.", maxDepth = 12)
     public void updateTextFile(
-            @AiToolParam("The absolute path to the file.") String path,
-            @AiToolParam(value = "The text content to write.", rendererId = "code") String content,
-            @AiToolParam("Optimistic locking: the expected last modified timestamp of the file on disk.") long lastModified,
+            @AiToolParam("The update details.") TextFileUpdate update,
             @AiToolParam("A message describing the change, used for local history.") String message) throws Exception {
         
-        FileObject fo = FileUtil.toFileObject(new File(path));
+        FileObject fo = FileUtil.toFileObject(new File(update.getPath()));
         if (fo != null) {
             // 1. Optimistic Locking Check
             long current = fo.lastModified().getTime();
-            if (lastModified != 0 && current != lastModified) {
-                throw new AiToolException("Optimistic locking failure: File has been modified in the IDE. Expected: " + lastModified + ", Actual: " + current);
+            if (update.getLastModified() != 0 && current != update.getLastModified()) {
+                throw new AiToolException("Optimistic locking failure: File has been modified in the IDE. Expected: " + update.getLastModified() + ", Actual: " + current);
             }
 
-            writeToFileObject(fo, content, message);
-            log("Successfully updated file via NetBeans API: " + path + " (" + message + ")");
+            writeToFileObject(fo, update.getNewContent(), message);
+            log("Successfully updated file via NetBeans API: " + update.getPath() + " (" + message + ")");
         } else {
-            super.updateTextFile(path, content, lastModified, message);
+            super.updateTextFile(update, message);
         }
     }
 
@@ -226,30 +227,14 @@ public class NbFiles extends Files {
         if (fo != null) {
             String content = fo.asText();
             String newContent = performReplacements(content, replacements);
-            updateTextFile(path, newContent, lastModified, message);
+            updateTextFile(TextFileUpdate.builder()
+                    .path(path)
+                    .newContent(newContent)
+                    .lastModified(lastModified)
+                    .build(), message);
         } else {
             super.replaceInTextFile(path, replacements, lastModified, message);
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     * Implementation details: Proposes surgical text replacements across 
-     * multiple files with a cherry-picking diff viewer. This is the preferred 
-     * tool for applying complex code changes in NetBeans.
-     */
-    /**
-     * Overwrites an existing file using a rich diff-based review process.
-     * 
-     * @param update The update details.
-     * @param message A message describing the change.
-     * @throws Exception if the update fails.
-     */
-    @AiTool(value = "Overwrites an existing file using a rich diff-based review process.", maxDepth = 12)
-    public void updateTextFile2(
-            @AiToolParam("The update details.") TextFileUpdate update,
-            @AiToolParam("A message describing the change, used for local history.") String message) throws Exception {
-        updateTextFile(update.getPath(), update.getNewContent(), update.getLastModified(), message);
     }
 
     @Override

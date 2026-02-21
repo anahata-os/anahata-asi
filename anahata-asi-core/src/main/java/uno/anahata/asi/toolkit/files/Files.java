@@ -149,23 +149,32 @@ public class Files extends AnahataToolkit {
     }
 
     /**
-     * Overwrites an existing file with the provided content.
-     * Implements optimistic locking to prevent overwriting concurrent changes.
+     * Overwrites an existing file using a rich update object. 
+     * Implements optimistic locking and is optimized for the ASI's diff viewer.
      * 
-     * @param path The absolute path to the file.
-     * @param content The text content to write.
-     * @param lastModified The expected last modified timestamp.
+     * @param update The update details (path, content, locking, comments).
      * @param message A message describing the change.
      * @throws Exception if the file does not exist, locking fails, or an I/O error occurs.
      */
-    @AiTool(value = "Overwrites an existing file with the provided content.", maxDepth = 12)
+    @AiTool(value = "Overwrites an existing file using a rich update object. Optimized for the ASI's diff viewer.", maxDepth = 12)
     public void updateTextFile(
-            @AiToolParam("The absolute path to the file.") String path,
-            @AiToolParam(value = "The text content to write.", rendererId = "code") String content,
-            @AiToolParam("Optimistic locking: the expected last modified timestamp of the file on disk.") long lastModified,
+            @AiToolParam("The update details.") TextFileUpdate update,
             @AiToolParam("A message describing the change.") String message) throws Exception {
+        writeFile(update.getPath(), update.getNewContent(), update.getLastModified(), message);
+    }
+
+    /**
+     * Internal helper to perform a thread-safe, locked write to a file.
+     * 
+     * @param path The path to the file.
+     * @param content The new content.
+     * @param lastModified Expected timestamp for optimistic locking.
+     * @param message The change message.
+     * @throws Exception if validation or write fails.
+     */
+    protected void writeFile(String path, String content, long lastModified, String message) throws Exception {
         java.nio.file.Path filePath = Paths.get(path);
-        
+
         if (!java.nio.file.Files.exists(filePath)) {
             throw new AiToolException("File does not exist: " + path);
         }
@@ -174,7 +183,7 @@ public class Files extends AnahataToolkit {
         if (lastModified != 0 && current != lastModified) {
             throw new AiToolException("Optimistic locking failure: File has been modified on disk. Expected: " + lastModified + ", Actual: " + current);
         }
-        
+
         java.nio.file.Files.writeString(filePath, content);
         log("Successfully updated file: " + path + " (" + message + ")");
     }

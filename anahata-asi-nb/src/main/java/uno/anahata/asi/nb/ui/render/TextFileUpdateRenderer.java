@@ -120,6 +120,14 @@ public class TextFileUpdateRenderer implements ParameterRenderer<TextFileUpdate>
             String mime = (fo != null) ? fo.getMIMEType() : "text/plain";
 
             EditorKit kit = MimeLookup.getLookup(mime).lookup(EditorKit.class);
+            if (kit == null && !"text/plain".equals(mime)) {
+                log.info("No EditorKit found for MIME type: {}. Falling back to text/plain", mime);
+                kit = MimeLookup.getLookup("text/plain").lookup(EditorKit.class);
+            }
+            
+            if (kit == null) {
+                throw new IllegalStateException("Could not find an EditorKit for " + mime + " or text/plain");
+            }
             Document baseDoc = kit.createDefaultDocument();
             baseDoc.insertString(0, currentContent, null);
             
