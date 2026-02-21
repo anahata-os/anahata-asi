@@ -3,6 +3,7 @@ package uno.anahata.asi.toolkit.files;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -132,8 +133,8 @@ public class Files extends AnahataToolkit {
      */
     @AiTool(value = "Creates a new file with the provided content.", maxDepth = 12)
     public void createTextFile(
-            @AiToolParam("The absolute path to the file.") String path,
             @AiToolParam(value = "The text content to write.", rendererId = "code") String content,
+            @AiToolParam("The absolute path to the file.") String path,            
             @AiToolParam("A message describing the change.") String message) throws Exception {
         java.nio.file.Path filePath = Paths.get(path);
         
@@ -158,35 +159,26 @@ public class Files extends AnahataToolkit {
      */
     @AiTool(value = "Overwrites an existing file using a rich update object. Optimized for the ASI's diff viewer.", maxDepth = 12)
     public void updateTextFile(
-            @AiToolParam("The update details.") TextFileUpdate update,
+            @AiToolParam("The update details.") FullTextFileUpdate update,
             @AiToolParam("A message describing the change.") String message) throws Exception {
-        writeFile(update.getPath(), update.getNewContent(), update.getLastModified(), message);
-    }
-
-    /**
-     * Internal helper to perform a thread-safe, locked write to a file.
-     * 
-     * @param path The path to the file.
-     * @param content The new content.
-     * @param lastModified Expected timestamp for optimistic locking.
-     * @param message The change message.
-     * @throws Exception if validation or write fails.
-     */
-    protected void writeFile(String path, String content, long lastModified, String message) throws Exception {
-        java.nio.file.Path filePath = Paths.get(path);
-
+        
+        
+        java.nio.file.Path filePath = Paths.get(update.getPath());
+        
         if (!java.nio.file.Files.exists(filePath)) {
-            throw new AiToolException("File does not exist: " + path);
+            throw new AiToolException("File does not exist: " + update.getPath());
         }
 
         long current = java.nio.file.Files.getLastModifiedTime(filePath).toMillis();
-        if (lastModified != 0 && current != lastModified) {
-            throw new AiToolException("Optimistic locking failure: File has been modified on disk. Expected: " + lastModified + ", Actual: " + current);
+        if (update.getLastModified() != 0 && current != update.getLastModified()) {
+            throw new AiToolException("Optimistic locking failure: File has been modified on disk. Given: " + update.getLastModified() + ", Actual: " + current);
         }
 
-        java.nio.file.Files.writeString(filePath, content);
-        log("Successfully updated file: " + path + " (" + message + ")");
+        java.nio.file.Files.writeString(filePath, update.getNewContent());
+        log("Successfully updated file: " + update.getPath() + " (" + message + ")");
+        
     }
+
 
     /**
      * Performs multiple text replacements in a file. Ideal for surgical code edits.
@@ -200,22 +192,20 @@ public class Files extends AnahataToolkit {
      */
     @AiTool(value = "Performs multiple text replacements in a file. Ideal for surgical code edits.", maxDepth = 12)
     public void replaceInTextFile(
-            @AiToolParam("The absolute path to the file.") String path,
-            @AiToolParam("The list of replacements to perform.") List<TextReplacement> replacements, 
-            @AiToolParam("Optimistic locking: the expected last modified timestamp of the file on disk.") long lastModified,
+            @AiToolParam("The replacements.") TextFileReplacements replacements,
             @AiToolParam("A message describing the change.") String message) throws Exception {
-        java.nio.file.Path filePath = Paths.get(path);
+        java.nio.file.Path filePath = Paths.get(replacements.getPath());
         
         long current = java.nio.file.Files.getLastModifiedTime(filePath).toMillis();
-        if (lastModified != 0 && current != lastModified) {
-            throw new AiToolException("Optimistic locking failure: File has been modified on disk. Expected: " + lastModified + ", Actual: " + current);
+        if (replacements.getLastModified() != 0 && current != replacements.getLastModified()) {
+            throw new AiToolException("Optimistic locking failure: File has been modified on disk. Given: " + replacements.getLastModified() + ", Actual: " + current);
         }
         
         String content = java.nio.file.Files.readString(filePath);
-        String newContent = performReplacements(content, replacements);
+        String newContent = replacements.performReplacements(content);
 
-        java.nio.file.Files.writeString(filePath, newContent);
-        log("Successfully updated file with " + replacements.size() + " replacements: " + path + " (" + message + ")");
+        FullTextFileUpdate fullUpdate = new FullTextFileUpdate(replacements.getPath(), replacements.getLastModified(), newContent, Collections.EMPTY_LIST);
+        updateTextFile(fullUpdate, message);
     }
 
     /**
@@ -227,41 +217,15 @@ public class Files extends AnahataToolkit {
      */
     @AiTool(value = "Performs multiple text replacements across multiple files in a single tool call.", maxDepth = 12)
     public void replaceInMultipleTextFiles(
-            @AiToolParam("The list of files and their replacements.") List<FileTextReplacements> fileReplacements,
+            @AiToolParam("The list of files and their replacements.") List<TextFileReplacements> fileReplacements,
             @AiToolParam("A message describing the change.") String message) throws Exception {
         
-        for (FileTextReplacements fr : fileReplacements) {
-            replaceInTextFile(fr.getPath(), fr.getReplacements(), fr.getLastModified(), message);
+        for (TextFileReplacements fr : fileReplacements) {
+            replaceInTextFile(fr, message);
         }
     }
 
-    /**
-     * Helper method to perform string replacements with validation.
-     * 
-     * @param content The original content.
-     * @param replacements The list of replacements.
-     * @return The updated content.
-     * @throws AiToolException if a replacement fails.
-     */
-    protected String performReplacements(String content, List<TextReplacement> replacements) throws AiToolException {
-        String newContent = content;
-        for (TextReplacement replacement : replacements) {
-            String target = replacement.getTarget();
-            int count = StringUtils.countMatches(newContent, target);
-            
-            if (replacement.getExpectedCount() > 0 && count != replacement.getExpectedCount()) {
-                throw new AiToolException("Replacement failed for '" + target + "'. Expected " + replacement.getExpectedCount() + " occurrences, but found " + count);
-            }
-            
-            if (count == 0 && replacement.getExpectedCount() != 0) {
-                 throw new AiToolException("Target string not found in file: " + target);
-            }
-
-            newContent = newContent.replace(target, replacement.getReplacement());
-        }
-        return newContent;
-    }
-
+    
     /**
      * Appends text to the end of an existing file.
      * 

@@ -30,23 +30,23 @@ import uno.anahata.asi.swing.chat.ChatPanel;
 import uno.anahata.asi.swing.chat.render.ParameterRenderer;
 import uno.anahata.asi.swing.internal.SwingUtils;
 import uno.anahata.asi.toolkit.files.LineComment;
-import uno.anahata.asi.toolkit.files.TextFileUpdate;
+import uno.anahata.asi.toolkit.files.FullTextFileUpdate;
 import uno.anahata.asi.nb.ui.diff.DiffStreamSource;
 
 /**
- * A rich renderer for {@link TextFileUpdate} tool parameters that embeds a 
+ * A rich renderer for {@link FullTextFileUpdate} tool parameters that embeds a 
  * NetBeans-native diff viewer with support for the Merger UI (red crosses/arrows)
  * and native gutter annotations for AI comments.
  * 
  * @author anahata
  */
 @Slf4j
-public class TextFileUpdateRenderer implements ParameterRenderer<TextFileUpdate> {
+public class TextFileUpdateRenderer implements ParameterRenderer<FullTextFileUpdate> {
 
     private ChatPanel chatPanel;
     private AbstractToolCall<?, ?> call;
     private String paramName;
-    private TextFileUpdate update;
+    private FullTextFileUpdate update;
     
     /** 
      * Container panel with a height cap to prevent "blank line heaps" from 
@@ -64,13 +64,13 @@ public class TextFileUpdateRenderer implements ParameterRenderer<TextFileUpdate>
     
     private DiffController controller;
     private Document modDoc;
-    private TextFileUpdate lastRenderedUpdate;
+    private FullTextFileUpdate lastRenderedUpdate;
 
     /** No-arg constructor for factory instantiation. */
     public TextFileUpdateRenderer() {}
 
     @Override
-    public void init(ChatPanel chatPanel, AbstractToolCall<?, ?> call, String paramName, TextFileUpdate value) {
+    public void init(ChatPanel chatPanel, AbstractToolCall<?, ?> call, String paramName, FullTextFileUpdate value) {
         this.chatPanel = chatPanel;
         this.call = call;
         this.paramName = paramName;
@@ -83,7 +83,7 @@ public class TextFileUpdateRenderer implements ParameterRenderer<TextFileUpdate>
     }
 
     @Override
-    public void updateContent(TextFileUpdate value) {
+    public void updateContent(FullTextFileUpdate value) {
         this.update = value;
     }
 
@@ -140,12 +140,11 @@ public class TextFileUpdateRenderer implements ParameterRenderer<TextFileUpdate>
                     try {
                         String text = modDoc.getText(0, modDoc.getLength());
                         // Create a new update object with the edited content
-                        TextFileUpdate edited = TextFileUpdate.builder()
-                                .path(update.getPath())
-                                .lastModified(update.getLastModified())
-                                .lineComments(update.getLineComments())
-                                .newContent(text)
-                                .build();
+                        FullTextFileUpdate edited = new FullTextFileUpdate(
+                                update.getPath(),
+                                update.getLastModified(),                                
+                                text,
+                                update.getLineComments());
                         
                         // Update cache to prevent re-rendering this specific change
                         lastRenderedUpdate = edited;

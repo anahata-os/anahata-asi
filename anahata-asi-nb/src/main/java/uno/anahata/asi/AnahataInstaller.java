@@ -13,7 +13,7 @@ import uno.anahata.asi.nb.tools.project.nb.AnahataProjectIconAnnotator;
 import uno.anahata.asi.nb.ui.render.TextFileUpdateRenderer;
 import uno.anahata.asi.swing.chat.render.ParameterRendererFactory;
 import uno.anahata.asi.swing.internal.SwingUtils;
-import uno.anahata.asi.toolkit.files.TextFileUpdate;
+import uno.anahata.asi.toolkit.files.FullTextFileUpdate;
 
 /**
  * Installer for the Anahata ASI V2 module.
@@ -52,7 +52,7 @@ public class AnahataInstaller extends ModuleInstall {
         log.info("Anahata ASI V2 Module Restored");
         
         // Register specialized parameter renderers
-        ParameterRendererFactory.register(TextFileUpdate.class, TextFileUpdateRenderer.class);
+        ParameterRendererFactory.register(FullTextFileUpdate.class, TextFileUpdateRenderer.class);
         
         // Register the ElementHandle module for global JSON support in the IDE
         SchemaProvider.OBJECT_MAPPER.registerModule(new ElementHandleModule());
