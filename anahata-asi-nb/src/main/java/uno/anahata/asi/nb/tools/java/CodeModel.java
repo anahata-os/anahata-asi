@@ -54,7 +54,7 @@ public class CodeModel extends AnahataToolkit {
      * @param pageSize The maximum number of results to return per page.
      * @return a paginated result of JavaType objects.
      */
-    @AiTool("Finds multiple Java types matching a query and returns a paginated result of minimalist, machine-readable keys.")
+    @AiTool("Finds multiple Java types matching a query within the aggregated classpath of all open projects and returns a paginated result of minimalist, machine-readable keys. It's the equivalent of a NetBeans Ctrl+O. Use only if\n a) you are researching/exploring the class path\n b) you dont know the exact fqn of a type c) you know for a fact or suspect there are multiple occurences of the same fqn in the classpath. If you know the fqn and you have no reason to believe there are multiple types with the same fqn, just go straight for the getXxxxByFqn")
     public Page<JavaType> findTypes(
             @AiToolParam("The search query for the types (e.g., simple name, FQN, wildcards).") String query,
             @AiToolParam("Whether the search should be case-sensitive.") boolean caseSensitive,
