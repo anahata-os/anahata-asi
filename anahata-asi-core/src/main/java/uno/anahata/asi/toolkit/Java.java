@@ -47,27 +47,21 @@ import uno.anahata.asi.tool.ToolContext;
 import uno.anahata.asi.tool.AnahataToolkit;
 
 /**
- * A powerful toolkit for compiling and executing Java code dynamically within 
- * the application's JVM. It provides a "hot-reload" capability by using a 
- * child-first classloader and supports context-aware execution through the 
+ * A powerful toolkit for compiling and executing Java code dynamically within
+ * the application's JVM. It provides a "hot-reload" capability by using a
+ * child-first classloader and supports context-aware execution through the
  * {@link AnahataTool} base class.
- * 
+ *
  * @author anahata
  */
 @Slf4j
 @AiToolkit("Toolkit for compiling and executing java code, has a 'temp' HashMap for storing java objects across turns / tool calls and uses a child first classloader if additional classpath entries are provided")
 public class Java extends AnahataToolkit {
-    
-    /**
-     * The base compiler and classloader classpath. Extra entries can be 
-     * provided at execution time.
-     */
-    public String defaultCompilerClasspath;
 
     /**
-     * A set of infrastructure classes that MUST always be loaded by the parent 
-     * classloader (the ASI engine) to preserve static state and ThreadLocal 
-     * context. This prevents "Identity Crisis" issues where a child-loaded 
+     * A set of infrastructure classes that MUST always be loaded by the parent
+     * classloader (the ASI engine) to preserve static state and ThreadLocal
+     * context. This prevents "Identity Crisis" issues where a child-loaded
      * script cannot access the engine's context.
      */
     private static final Set<String> PARENT_FIRST_CLASSES = Set.of(
@@ -79,77 +73,37 @@ public class Java extends AnahataToolkit {
     );
 
     /**
-     * Default constructor. Initializes the default classpath from the 
-     * system's "java.class.path" property.
+     * The base compiler and classloader classpath. Extra entries can be
+     * provided at execution time.
      */
-    public Java() {
-        defaultCompilerClasspath = System.getProperty("java.class.path");
-        log.info("Java toolkit instantiated:");
-    }
+    public String defaultCompilerClasspath;
 
     /**
-     * Gets the current default classpath used for compilation and class loading.
-     * 
-     * @return The full default classpath string.
+     * {@inheritDoc}
      */
-    @AiTool("The full default classpath for compiling java code and for class loading")
-    public String getDefaultClasspath() {
-        return defaultCompilerClasspath;
-    }
-
-    /**
-     * Sets the default classpath for the compiler and classloader.
-     * 
-     * @param defaultCompilerClasspath The new default classpath string.
-     */
-    @AiTool("Sets the default classpath for the compiler and classloader")
-    public void setDefaultClasspath(@AiToolParam("The default classpath for all code compiled by the Java toolkit") String defaultCompilerClasspath) {
-        this.defaultCompilerClasspath = defaultCompilerClasspath;
-    }
-
-    /**
-     * Returns a token-efficient, pretty-printed version of the default classpath.
-     * 
-     * @return The pretty-printed classpath string.
-     */
-    public String getPrettyPrintedDefaultClasspath() {
-        return ClasspathPrinter.prettyPrint(defaultCompilerClasspath);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public void populateMessage(RagMessage ragMessage) throws Exception {
-        String ragText = "\nSession map keys (shared across turns): " + getSessionMap().keySet()
-                + "\nASI Container map keys (shared across sessions): " + getContainerMap().keySet()
-                + "\nApplication map keys (shared across containers): " + getApplicationMap().keySet()
-                + "\nDefault Compiler and ClassLoader Classpath (abbreviated):\n" + getPrettyPrintedDefaultClasspath();
-        ragMessage.addTextPart(ragText);
-    }
-    
-    /** {@inheritDoc} */
     @Override
     public List<String> getSystemInstructions() throws Exception {
         StringBuilder sb = new StringBuilder();
         sb.append("### Java Toolkit Instructions: \n");
-        sb.append("When using `compileAndExecute`, your class should be **public**, named **Anahata**, extend `" + AnahataTool.class.getName()+ "`, have no package declaration and implement the call method of Callable<Object>. ");
+        sb.append("When using `compileAndExecute`, your class should be **public**, named **Anahata**, extend `" + AnahataTool.class.getName() + "`, have no package declaration and implement the call method of Callable<Object>. ");
         sb.append("This provides the following helper methods for a rich, context-aware execution:\n\n");
-        
+
         sb.append("#### Available Methods that you can use within the code you write:\n");
         sb.append("- **Inherited from AnahataTool**:\n");
         appendMethods(sb, AnahataTool.class);
         sb.append("- **Inherited from ToolContext**:\n");
         appendMethods(sb, ToolContext.class);
-        
+
         sb.append("\n#### Multi-threading and Thread Safety:\n");
         sb.append("The `log()`, `error()`, and `addAttachment()` methods rely on a thread-local context and will fail if called from a subthread or the EDT (Event Dispatch Thread).\n");
         sb.append("- To access the context from another thread, capture it in a final variable: `final ToolContext ctx = getToolContext();` and use `ctx.log(...)`, `ctx.error(...)`, etc.\n");
 
         sb.append("\nAbout the maps: the Session Map is for this session only (chat scoped), the ASI Container map is shared across sessions (chats) and the application map is a static field so shared across any all sessions of all containers running in this jvm\n");
         sb.append("\nAbout the attachments: at the time of this release (only tested with gemini-3-flash) only pdf, text and image attachments are supported\n");
-        
+
         sb.append("\n#### Example:\n");
         sb.append("```java\n");
-        sb.append("import " + AnahataTool.class.getName()+ ";\n");
+        sb.append("import " + AnahataTool.class.getName() + ";\n");
         sb.append("\n");
         sb.append("public class Anahata extends AnahataTool {\n");
         sb.append("    @Override\n");
@@ -172,19 +126,71 @@ public class Java extends AnahataToolkit {
         sb.append("\n");
         sb.append("**JVM System Properties**:\n");
         sb.append(getSystemProperties());
-        
-        
+
         return Collections.singletonList(sb.toString());
     }
 
     /**
-     * Appends the signatures of all declared methods of a class to a StringBuilder.
-     * 
+     * Default constructor. Initializes the default classpath from the system's
+     * "java.class.path" property.
+     */
+    public Java() {
+        defaultCompilerClasspath = System.getProperty("java.class.path");
+        log.info("Java toolkit instantiated:");
+    }
+
+    /**
+     * Gets the current default classpath used for compilation and class
+     * loading.
+     *
+     * @return The full default classpath string.
+     */
+    @AiTool("The full default classpath for compiling java code and for class loading")
+    public String getDefaultClasspath() {
+        return defaultCompilerClasspath;
+    }
+
+    /**
+     * Sets the default classpath for the compiler and classloader.
+     *
+     * @param defaultCompilerClasspath The new default classpath string.
+     */
+    @AiTool("Sets the default classpath for the compiler and classloader")
+    public void setDefaultClasspath(@AiToolParam("The default classpath for all code compiled by the Java toolkit") String defaultCompilerClasspath) {
+        this.defaultCompilerClasspath = defaultCompilerClasspath;
+    }
+
+    /**
+     * Returns a token-efficient, pretty-printed version of the default
+     * classpath.
+     *
+     * @return The pretty-printed classpath string.
+     */
+    public String getPrettyPrintedDefaultClasspath() {
+        return ClasspathPrinter.prettyPrint(defaultCompilerClasspath);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void populateMessage(RagMessage ragMessage) throws Exception {
+        String ragText = "\nSession map keys (shared across turns): " + getSessionMap().keySet()
+                + "\nASI Container map keys (shared across sessions): " + getContainerMap().keySet()
+                + "\nApplication map keys (shared across containers): " + getApplicationMap().keySet()
+                + "\nDefault Compiler and ClassLoader Classpath (abbreviated):\n" + getPrettyPrintedDefaultClasspath();
+        ragMessage.addTextPart(ragText);
+    }
+
+    /**
+     * Appends the signatures of all declared methods of a class to a
+     * StringBuilder.
+     *
      * @param sb The StringBuilder to append to.
      * @param clazz The class to inspect.
      */
     private void appendMethods(StringBuilder sb, Class<?> clazz) {
-        
+
         for (Method m : clazz.getDeclaredMethods()) {
             String methodString = JavaMethodTool.buildMethodSignature(m);
             if (!methodString.contains("anahata")) {
@@ -194,14 +200,16 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Compiles Java source code into a Class object using the system's Java compiler.
-     * 
+     * Compiles Java source code into a Class object using the system's Java
+     * compiler.
+     *
      * @param sourceCode The Java source code to compile.
      * @param className The fully qualified name of the class.
      * @param extraClassPath Additional classpath entries to include.
      * @param compilerOptions Additional options for the Java compiler.
      * @return The compiled Class object.
-     * @throws ClassNotFoundException if the class cannot be found after compilation.
+     * @throws ClassNotFoundException if the class cannot be found after
+     * compilation.
      * @throws NoSuchMethodException if a required method is missing.
      * @throws IllegalAccessException if access to a member is denied.
      * @throws InvocationTargetException if a method invocation fails.
@@ -213,9 +221,9 @@ public class Java extends AnahataToolkit {
             @AiToolParam(value = "Additional classpath entries", required = false) String extraClassPath,
             @AiToolParam(value = "Additional compiler options", required = false) String[] compilerOptions)
             throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        
+
         final ToolContext ctx = getToolContext();
-                
+
         log("Compiling class: " + className);
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 
@@ -270,7 +278,7 @@ public class Java extends AnahataToolkit {
             // CRITICAL FIX: Prepend extraClassPath to ensure hot-reloaded classes take precedence
             classpath = extraClassPath + File.pathSeparator + classpath;
         }
-        
+
         log("Total compilation classpath entries: " + classpath.split(File.pathSeparator).length);
         if (compilerOptions != null) {
             log.info("compilerOptions:", Arrays.asList(compilerOptions));
@@ -380,9 +388,10 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Compiles and executes a Java class named 'Anahata' on the application's JVM.
-     * The class must extend {@link AnahataTool} and implement {@link Callable}.
-     * 
+     * Compiles and executes a Java class named 'Anahata' on the application's
+     * JVM. The class must extend {@link AnahataTool} and implement
+     * {@link Callable}.
+     *
      * @param sourceCode The Java source code to compile and execute.
      * @param extraClassPath Additional classpath entries.
      * @param compilerOptions Additional compiler options.
@@ -392,10 +401,10 @@ public class Java extends AnahataToolkit {
     @AiTool(
             value = "Compiles and executes a Java class named 'Anahata' on the application's JVM.\n"
             + "The class should:\n"
-                    + "- be public, \n"
-                    + "- have no package declaration, \n"
-                    + "- extend uno.anahata.ai.tool.AnahataTool and \n"
-                    + "- implement the call method of java.util.concurrent.Callable<Object>.\n",
+            + "- be public, \n"
+            + "- have no package declaration, \n"
+            + "- extend uno.anahata.ai.tool.AnahataTool and \n"
+            + "- implement the call method of java.util.concurrent.Callable<Object>.\n",
             requiresApproval = true
     )
     public Object compileAndExecute(
@@ -407,7 +416,7 @@ public class Java extends AnahataToolkit {
         log.info("executeJavaCode: \nextraCompilerClassPath={}", extraClassPath);
 
         Class c = compile(sourceCode, "Anahata", extraClassPath, compilerOptions);
-        
+
         // CRITICAL FIX: Use setAccessible(true) to allow instantiation even if the class/constructor is not public.
         var constructor = c.getDeclaredConstructor();
         constructor.setAccessible(true);
@@ -428,24 +437,32 @@ public class Java extends AnahataToolkit {
             throw new AiToolException("Source file should extend AnahataTool or implement java.util.Callable");
         }
     }
-    
 
     /**
      * Represents a node in the hierarchical tree of system properties.
      */
     private static class SystemPropertyNode {
-        /** The segment name of this node (e.g., "java"). */
+
+        /**
+         * The segment name of this node (e.g., "java").
+         */
         String segment;
-        /** The full dot-separated path to this node (e.g., "java.vendor"). */
+        /**
+         * The full dot-separated path to this node (e.g., "java.vendor").
+         */
         String fullPath;
-        /** The value of the property, if this is a leaf node. */
+        /**
+         * The value of the property, if this is a leaf node.
+         */
         Object value;
-        /** The children of this node, keyed by their segment name. */
+        /**
+         * The children of this node, keyed by their segment name.
+         */
         Map<String, SystemPropertyNode> children = new TreeMap<>();
 
         /**
          * Constructs a new node.
-         * 
+         *
          * @param segment The segment name.
          * @param fullPath The full path.
          */
@@ -456,7 +473,7 @@ public class Java extends AnahataToolkit {
 
         /**
          * Checks if this node is a leaf (has no children).
-         * 
+         *
          * @return true if it's a leaf.
          */
         boolean isLeaf() {
@@ -465,9 +482,9 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Generates a token-efficient, hierarchical representation of all JVM 
+     * Generates a token-efficient, hierarchical representation of all JVM
      * system properties (excluding the classpath).
-     * 
+     *
      * @return A formatted string of system properties.
      * @throws Exception if an error occurs.
      */
@@ -477,13 +494,17 @@ public class Java extends AnahataToolkit {
 
         for (Object keyObj : props.keySet()) {
             String key = (String) keyObj;
-            if (key.startsWith("java.class.path")) continue;
+            if (key.startsWith("java.class.path")) {
+                continue;
+            }
 
             String[] parts = key.split("\\.");
             SystemPropertyNode current = root;
             StringBuilder pathAcc = new StringBuilder();
             for (String part : parts) {
-                if (pathAcc.length() > 0) pathAcc.append(".");
+                if (pathAcc.length() > 0) {
+                    pathAcc.append(".");
+                }
                 pathAcc.append(part);
                 current = current.children.computeIfAbsent(part, k -> new SystemPropertyNode(k, pathAcc.toString()));
             }
@@ -499,16 +520,16 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Recursively renders a system property node and its children into a 
+     * Recursively renders a system property node and its children into a
      * formatted string.
-     * 
+     *
      * @param sb The StringBuilder to append to.
      * @param node The node to render.
      * @param indent The current indentation level.
      */
     private void renderSysProp(StringBuilder sb, SystemPropertyNode node, int indent) {
         String tabs = "  ".repeat(indent);
-        
+
         // Collapse logic: if a node has exactly one child and no value, merge with child
         SystemPropertyNode current = node;
         String displayLabel = current.segment;
@@ -521,17 +542,17 @@ public class Java extends AnahataToolkit {
         if (current.isLeaf()) {
             // It's a single property or a fully collapsed path
             sb.append(tabs).append("- `").append(displayLabel).append("`: ")
-              .append(TextUtils.formatValue(current.value)).append("\n");
+                    .append(TextUtils.formatValue(current.value)).append("\n");
         } else {
             // It's a group
             // User requested full prefix in the header
             sb.append(tabs).append("**").append(current.fullPath).append("**:\n");
-            
+
             if (current.value != null) {
                 // If the prefix node itself has a value (e.g. java.vendor)
                 sb.append(tabs).append("  - `value`: ").append(TextUtils.formatValue(current.value)).append("\n");
             }
-            
+
             for (SystemPropertyNode child : current.children.values()) {
                 renderSysProp(sb, child, indent + 1);
             }
