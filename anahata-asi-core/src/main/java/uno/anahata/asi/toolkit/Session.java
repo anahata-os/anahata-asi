@@ -3,23 +3,18 @@
  */
 package uno.anahata.asi.toolkit;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.chat.ChatConfig;
 import uno.anahata.asi.context.ContextManager;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.core.AbstractMessage;
-import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.AbstractPart;
-import uno.anahata.asi.model.core.AbstractToolMessage;
 import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.model.provider.ServerTool;
 import uno.anahata.asi.model.resource.AbstractResource;
 import uno.anahata.asi.model.tool.AbstractToolCall;
-import uno.anahata.asi.model.tool.AbstractToolResponse;
 import uno.anahata.asi.model.tool.ToolExecutionStatus;
 import uno.anahata.asi.resource.ResourceManager;
 import uno.anahata.asi.tool.AiTool;
@@ -40,14 +35,16 @@ public class Session extends AnahataToolkit {
     public List<String> getSystemInstructions() throws Exception {
         return List.of(
             "## MISSION CRITICAL: FRAMEWORK INTEGRITY & METADATA PROTOCOL\n" +
-            "1. **METADATA SYNTAX**: The framework uses 'in-band' metadata to maintain structural awareness. \n" +
-            "   - **Message Headers**: `--- Message ID: <N> | Role: <ROLE> | ... ---` marks the start of a message.\n" +
-            "   - **Part Headers**: `[Part ID: <N> | Type: <TYPE> | ...]` marks the start of an individual part (text, blob, tool call) within a message.\n" +
-            "2. **RUNTIME INJECTION**: This metadata is **injected at runtime** by the server-side framework. It is NOT part of the actual message content produced by the user or the model.\n" +
-            "3. **THE PURPOSE OF METADATA**: Metadata allows the framework and you (the model) to track the conversation using a 'Sinking Stack' model. Message and Part IDs are required for you to identify components for selective **Pruning** and **Pinning** via the `Session` toolkit.\n" +
+            "1. **METADATA SYNTAX**: The framework injects 'in-band' metadata to allow you to do targeted prunning or pinning of messages or parts."
+                    + "This metadata is injected before every api call and is dynamically genereated, the user doesnt write it and neither should you.\n" +
+            "   - **Message Headers**: `--- Message ID: <N> | Role: <ROLE> | ... ---` injected as the first text part on the message.\n" +
+            "   - **Part Headers**: `[Part ID: <N> | Type: <TYPE> | ...]` marks the start of an individual part.\n" +
+            "   - **Tool Aggregation**: `--- Aggregated Tool Metadata ---` groups metadata for multiple calls.\n" +
+            "2. **RUNTIME INJECTION**: This metadata is **injected at runtime** by the host framework. It is NOT part of the actual message content produced by the user or the model.\n" +
+            "3. **THE PURPOSE OF METADATA**: Metadata allows the framework and you (the model) to track the conversation using a 'Sinking Stack' model. See the turns remaining of each part, their estimatede size in tokens. Message and Part IDs are required for you to identify components for selective **Pruning** and **Pinning** via the `Session` toolkit.\n" +
             "4. **FORBIDDEN GENERATION**: You are **strictly forbidden** from generating this metadata syntax yourself. \n" +
-            "   - You **never** need to output `--- Message ID` or `[Part ID` to execute tools or communicate with the framework.\n" +
-            "   - Including these headers in your response is a **critical hallucination** that disrupts the user experience and breaks UI rendering.\n",
+            "   - **NEVER** **EVER** output `--- Message ID`, `[Part ID`, or `--- Aggregated Tool Metadata ---` in your response.\n" +
+            "   - These headers are dynaimcally injected by the java framework before every api request. Including them in your text is a **critical hallucination** that disrupts UI and proves you are not understanding the functioning of the framework rendering, wastes tokens and trashes user satisfaction.\n",
 
             "## CWGC Protocol (Context Window Garbage Collection)\n" +
             "The conversation history is managed based on 'Depth' (distance from the current turn).\n" +
@@ -56,13 +53,15 @@ public class Session extends AnahataToolkit {
             "- **Pinning (`pruned=false`)**: Parts are immune to auto-pruning and remain in your prompt indefinitely until manually unpinned.\n",
 
             "## STRICT RESOURCE DISCIPLINE\n" +
-            "1. **SOURCE OF TRUTH**: The `--- Augmented Workspace Context ---` in the RAG message (the first message) is your definitive list of active resources.\n" +
-            "2. **NO REDUNDANT LOADING**: If a file or project is already listed in your context with `providing: true`, it is **LIVE** and automatically updated. \n" +
-            "   - **NEVER** call `loadTextFile` or `loadBinaryFile` or any other tool that adds a resource to context for a resource that is already in context.\n" +
+            "1. **SOURCE OF TRUTH**: The `--- Augmented Workspace Context ---` in the RAG message is your definitive list of active resources. When a resource gets loaded (e.g. via `loadTextFile`) it will get injected into the RAG message on every turn. \n" +
+            "2. **NO REDUNDANT LOADING**: If a file or project is already listed in your context with as **LIVE** refresh policy, it will get reloaded from disk on every turn and the latest version of that resource will show in the RAG message. \n" +
+            "   - **NEVER** call `loadTextFile` or `loadBinaryFile` for a resource that is already in context.\n" +
             "   - **NEVER** call `unloadResource` followed by `loadTextFile` for the same file; this is destructive and inefficient.\n",
+            "   - **NEVER** attempt to `updateTextFile` or `replaceTextFile` for a file that is not in context.\n",
 
             "## User Agency & Thought Process\n" +
-            "- **User Control**: The user is the ultimate authority. They can manually remove or change the pruned state of any part or any message to (prune/pin/auto). Pruning ore removing a model message automatically prunes its associated tool responses.\n" +
+            "- **User Control**: The user is the ultimate authority. They can manually remove messages, parts, or change the pruned state of any part or any message to (prune/pin/auto). Pruning ore removing a model message with tool calls automatically prunes its associated tool responses.\n" +
+            "- **Tool execution**: Every tool call that you propose generates a placeholder response and two buttons on the UI: skip and run. The placeholder response containing egardless of wethere the user runs it or skips it. If a tool response shows as NOT_EXECUTED is because the user skipped its execution. Only responses with EXECUTED or EXECUTING state have actually ran. The user can run the same tool call several times and can also change the arguments of the tool call (i.e. can run the same tool call several times tweaking the arguments on each run). The user can also decide to send the response to the model while the tool is still in EXECUTING state (not finished). When that tool execution finishes, the response of that tool call will change to EXECUTED on the very same message where you proposed the tool call (which could be several turns below the head).\n" +
             "- **Thought Process Visibility**: The `Expand Thoughts` flag in the session metadata tells you if the user can see your reasoning. If `false`, your reasoning is invisible; ensure your final text is self-contained and answers the user directly.\n" 
             );
     }
@@ -146,13 +145,7 @@ public class Session extends AnahataToolkit {
         int count = 0;
         for (AbstractMessage msg : history) {
             if (messageIds.contains(msg.getSequentialId())) {
-                // Redirection: If targeting a Tool Message, apply to the parent Model Message instead.
-                // (Pruning propagation will handle the bidirectional sync anyway).
-                if (msg instanceof AbstractToolMessage atm && atm.getModelMessage() != null) {
-                    atm.getModelMessage().setPruned(newValue, prunedReason);
-                } else {
-                    msg.setPruned(newValue, prunedReason);
-                }
+                msg.setPruned(newValue, prunedReason);
                 count++;
             }
         }
@@ -170,12 +163,7 @@ public class Session extends AnahataToolkit {
         for (AbstractMessage msg : history) {
             for (AbstractPart part : msg.getParts(true)) {
                 if (partIds.contains(part.getSequentialId())) {
-                    // Redirection: If targeting a Tool Response, apply to the initiating Tool Call instead.
-                    if (part instanceof AbstractToolResponse atr && atr.getCall() != null) {
-                        atr.getCall().setPruned(newValue, prunedReason);
-                    } else {
-                        part.setPruned(newValue, prunedReason);
-                    }
+                    part.setPruned(newValue, prunedReason);
                     count++;
                 }
             }
