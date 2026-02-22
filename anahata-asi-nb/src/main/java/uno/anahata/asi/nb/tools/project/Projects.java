@@ -31,6 +31,7 @@ import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectInformation;
 import org.netbeans.api.project.ProjectManager;
 import org.netbeans.api.project.ProjectUtils;
+import org.netbeans.spi.project.AuxiliaryConfiguration;
 import org.netbeans.api.project.SourceGroup;
 import org.netbeans.api.project.Sources;
 import org.netbeans.api.project.ui.OpenProjects;
@@ -73,6 +74,21 @@ import uno.anahata.asi.nb.tools.project.nb.AnahataProjectIconAnnotator;
 @Slf4j
 @AiToolkit("A toolkit for using netbeans project apis.")
 public class Projects extends AnahataToolkit implements PropertyChangeListener {
+
+    /** {@inheritDoc} */
+    @Override
+    public List<String> getSystemInstructions() throws Exception {
+        return Collections.singletonList(
+            "### Compile on Save (CoS) Management:\n" +
+            "NetBeans Maven projects determine the 'Compile on Save' status using a tiered priority system. " +
+            "When a user asks to change this setting, you should offer these options:\n" +
+            "1. **Project POM**: Add/update `<netbeans.compile.on.save>all</netbeans.compile.on.save>` in the project's `pom.xml` properties.\n" +
+            "2. **Parent POM**: If it's a multi-module project, you can set it in the parent POM to apply it to all modules.\n" +
+            "3. **IDE Override**: Use the `setCompileOnSaveOverride` tool. This writes to `nb-configuration.xml` and is the same as using the IDE's 'Project Properties' dialog. " +
+            "This override ALWAYS wins over POM properties.\n\n" +
+            "**Strategy**: If the project is currently 'Disabled' via an override, changing the POM will have no effect until the override is removed or changed."
+        );
+    }
 
     /**
      * Populates the system message with an overview of the IDE project environment.
@@ -329,12 +345,11 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
             sourceEncoding = rawMvnProject.getProperties().getProperty("project.build.sourceEncoding");
         }
 
-        boolean compileOnSave = false;
+        String compileOnSave = "Unknown";
         try {
-            Preferences prefs = ProjectUtils.getPreferences(target, org.netbeans.api.project.ProjectUtils.class, true);
-            compileOnSave = prefs.getBoolean("compile.on.save", true);
+            compileOnSave = isCompileOnSaveEnabled(target);
         } catch (Exception e) {
-            log.debug("Failed to read compile.on.save preference for project: " + projectPath, e);
+            log.debug("Failed to read compile.on.save status for project: " + projectPath, e);
         }
 
         String htmlDisplayName = null;
@@ -361,21 +376,75 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     }
 
     /**
-     * Enables or disables Compile on Save for a project.
+     * Checks the effective 'Compile on Save' status for a project using tiered logic.
      * 
-     * @param projectPath The path to the project.
-     * @param enabled Status.
-     * @throws Exception if project not found.
+     * @param project The project to check.
+     * @return A descriptive string of the status (e.g., "all (IDE Override)", "none (Maven Property)").
      */
-    @AiTool("Enables or disables 'Compile on Save' for a specific project.")
-    public void setCompileOnSave(
+    public String isCompileOnSaveEnabled(Project project) {
+        // 1. Priority 1: Auxiliary Configuration (nb-configuration.xml)
+        AuxiliaryConfiguration aux = project.getLookup().lookup(AuxiliaryConfiguration.class);
+        if (aux != null) {
+            org.w3c.dom.Element el = aux.getConfigurationFragment("properties", "http://www.netbeans.org/ns/maven-properties-data/1", true);
+            if (el != null) {
+                org.w3c.dom.NodeList nodeList = el.getElementsByTagName("netbeans.compile.on.save");
+                if (nodeList.getLength() > 0) {
+                    return nodeList.item(0).getTextContent().trim() + " (IDE Override)";
+                }
+            }
+        }
+
+        // 2. Priority 2: Maven Properties (POM)
+        NbMavenProject nbMvn = project.getLookup().lookup(NbMavenProject.class);
+        if (nbMvn != null) {
+            String mvnProp = nbMvn.getMavenProject().getProperties().getProperty("netbeans.compile.on.save");
+            if (mvnProp != null) {
+                return mvnProp.trim() + " (Maven Property)";
+            }
+            return "all (Maven Default)";
+        }
+
+        return "Enabled"; // Fallback for non-Maven projects
+    }
+
+    /**
+     * Sets the 'Compile on Save' override in the project's nb-configuration.xml.
+     * This override takes precedence over any properties defined in the pom.xml.
+     * 
+     * @param projectPath The absolute path of the project.
+     * @param enabled Whether to enable (all) or disable (none).
+     * @throws Exception on failure.
+     */
+    @AiTool("Sets the 'Compile on Save' override in nb-configuration.xml. This 'shared' configuration is what the IDE's Properties dialog manages and it overrides values in the pom.xml.")
+    public void setCompileOnSaveOverride(
             @AiToolParam("The absolute path of the project.") String projectPath,
-            @AiToolParam("Whether to enable Compile on Save.") boolean enabled) throws Exception {
-        Project target = findOpenProject(projectPath);
-        Preferences prefs = ProjectUtils.getPreferences(target, org.netbeans.api.project.ProjectUtils.class, true);
-        prefs.putBoolean("compile.on.save", enabled);
-        prefs.flush();
-        log.info("Compile on Save for {} set to: {}", projectPath, enabled);
+            @AiToolParam("Whether to enable ('all') or disable ('none') Compile on Save.") boolean enabled) throws Exception {
+        Project project = findOpenProject(projectPath);
+        String value = enabled ? "all" : "none";
+
+        // 1. Write the override to nb-configuration.xml using AuxiliaryConfiguration
+        AuxiliaryConfiguration aux = project.getLookup().lookup(AuxiliaryConfiguration.class);
+        if (aux != null) {
+            String ns = "http://www.netbeans.org/ns/maven-properties-data/1";
+            org.w3c.dom.Element props = aux.getConfigurationFragment("properties", ns, true);
+            
+            if (props == null) {
+                props = org.openide.xml.XMLUtil.createDocument("properties", ns, null, null).getDocumentElement();
+            }
+
+            org.w3c.dom.NodeList nl = props.getElementsByTagName("netbeans.compile.on.save");
+            org.w3c.dom.Element cosElem;
+            if (nl.getLength() > 0) {
+                cosElem = (org.w3c.dom.Element) nl.item(0);
+            } else {
+                cosElem = props.getOwnerDocument().createElementNS(ns, "netbeans.compile.on.save");
+                props.appendChild(cosElem);
+            }
+            cosElem.setTextContent(value);
+            aux.putConfigurationFragment(props, true);
+        }
+
+        log.info("Compile on Save override for {} set to: {} (in nb-configuration.xml)", projectPath, value);
     }
 
     /**

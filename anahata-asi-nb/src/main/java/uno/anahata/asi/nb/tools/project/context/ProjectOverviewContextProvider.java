@@ -79,7 +79,7 @@ public class ProjectOverviewContextProvider extends BasicContextProvider {
         }
         sb.append("  - Java Version: ").append(overview.getJavaSourceLevel()).append(" (source), ").append(overview.getJavaTargetLevel()).append(" (target)\n");
         sb.append("  - Encoding: ").append(overview.getSourceEncoding()).append("\n");
-        sb.append("  - Compile on Save: ").append(overview.isCompileOnSave() ? "Enabled" : "Disabled").append("\n");
+        sb.append("  - Compile on Save: ").append(overview.getCompileOnSave()).append("\n");
         sb.append("  - Actions: `").append(String.join("`, `", overview.getActions())).append("`\n");
 
         if (overview.getMavenDeclaredDependencies() != null && !overview.getMavenDeclaredDependencies().isEmpty()) {

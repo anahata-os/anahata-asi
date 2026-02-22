@@ -23,6 +23,7 @@ import org.netbeans.modules.maven.api.NbMavenProject;
 import org.netbeans.spi.java.classpath.ClassPathProvider;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
+import org.netbeans.api.java.source.SourceUtils;
 import uno.anahata.asi.nb.tools.project.ProjectOverview;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.tool.AiTool;
@@ -41,21 +42,7 @@ import uno.anahata.asi.toolkit.Java;
 @AiToolkit("A NetBeans-aware toolkit for compiling and executing Java code.")
 public class NbJava extends Java {
 
-    /** {@inheritDoc} */
-    @Override
-    public List<String> getSystemInstructions() throws Exception {
-        List<String> base = new ArrayList<>(super.getSystemInstructions());
-        String nbTips = "\n### NetBeans Java Toolkit Tips (`compileAndExecuteInProject`):\n"
-                + "- **Asynchronous Compilation**: NetBeans 'Compile on Save' is asynchronous. If you are executing code that depends on a file you just modified (e.g. via `updateTextFile` or `createTextFile`) in the same turn or the previous one, you **must** add a 1-2 second delay at the start of your `Anahata.call()` method (e.g., `Thread.sleep(2000);`) to ensure the IDE has finished compiling the changes.\n"
-                + "- **Scanning**: You can also use `org.netbeans.api.java.source.SourceUtils.isScanningInProgress()` to wait for the indexer if necessary.\n";
-        
-        if (!base.isEmpty()) {
-            base.set(0, base.get(0) + nbTips);
-        } else {
-            base.add(nbTips);
-        }
-        return base;
-    }
+
 
     /**
      * Compiles and executes Java source code within the context of a specific NetBeans project.
@@ -73,7 +60,8 @@ public class NbJava extends Java {
      */
     @AiTool(
             value = "Compiles and executes Java source code within the context of a specific NetBeans project. "
-            + "This tool enables a powerful 'hot-reload' workflow by creating a dynamic classpath that prioritizes the project's own build directories (e.g., 'target/classes') over the application's default classpath.",
+            + "This tool enables a powerful 'hot-reload' workflow by creating a dynamic classpath that prioritizes the project's own build directories (e.g., 'target/classes') over the plugins classpath. "
+                    + "Use the normal compileAndExecute for general netbeans things or if you are not importing any types from any of the open projects",
             requiresApproval = true
     )
     public Object compileAndExecuteInProject(            
@@ -84,7 +72,10 @@ public class NbJava extends Java {
             @AiToolParam(value="Optional additional compiler options.",required = false) String[] compilerOptions) throws Exception {
 
         Project project = Projects.findOpenProject(projectPath);
+        Projects projectsToolkit = getToolManager().getToolkitInstance(Projects.class).orElseThrow(() -> new IllegalStateException("Projects toolkit not found"));
         
+        waitForIde(project, projectsToolkit.isCompileOnSaveEnabled(project));
+
         ClassPathProvider cpp = project.getLookup().lookup(ClassPathProvider.class);
         if (cpp == null) {
             throw new IllegalStateException("Could not find ClassPathProvider for project: " + projectPath);
@@ -100,11 +91,10 @@ public class NbJava extends Java {
 
         // Map open projects to their target/classes for hot-reload swapping
         Map<String, String> openProjectArtifacts = new HashMap<>();
-        Projects projectsToolkit = getToolManager().getToolkitInstance(Projects.class).orElseThrow(() -> new IllegalStateException("Projects toolkit not found"));
         
         for (Project p : OpenProjects.getDefault().getOpenProjects()) {
-            ProjectOverview overview = projectsToolkit.getOverview(p.getProjectDirectory().getPath());
-            if (overview != null && overview.isCompileOnSave()) {
+            String cosStatus = projectsToolkit.isCompileOnSaveEnabled(p);
+            if (cosStatus.startsWith("all") || cosStatus.equalsIgnoreCase("Enabled")) {
                 NbMavenProject nmp = p.getLookup().lookup(NbMavenProject.class);
                 if (nmp != null) {
                     org.apache.maven.project.MavenProject mp = nmp.getMavenProject();
@@ -234,6 +224,24 @@ public class NbJava extends Java {
         String extraClassPath = String.join(File.pathSeparator, finalPathElements);
 
         return compileAndExecute(sourceCode, extraClassPath, compilerOptions);
+    }
+
+    private void waitForIde(Project project, String cosStatus) throws InterruptedException {
+        if (SourceUtils.isScanInProgress()) {
+            log("Waiting for IDE to finish background scanning/indexing...");
+            while (SourceUtils.isScanInProgress()) {
+                log("Indexer still running, waiting 500ms...");
+                Thread.sleep(500);
+            }
+            log("IDE indexing finished.");
+        }
+
+        // Mandatory settling delay if Compile on Save is active to ensure .class files are written.
+        if (cosStatus.startsWith("all") || cosStatus.equalsIgnoreCase("Enabled")) {
+            log("Waiting 1000ms for 'Compile on Save' file system events to settle...");
+            Thread.sleep(1000);
+            log("CoS settling complete.");
+        }
     }
 
     private static String getJarBaseName(String filename) {
