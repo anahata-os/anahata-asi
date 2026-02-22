@@ -1,0 +1,4 @@
+Line 1: This is a replacement test file.
+Line 2: This line has been successfully updated via updateTextFile!
+Line 3: This line was modified by replacement.
+Line 4: A new line added during update.

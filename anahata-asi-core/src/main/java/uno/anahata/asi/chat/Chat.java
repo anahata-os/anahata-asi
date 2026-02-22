@@ -819,4 +819,15 @@ public class Chat extends BasicPropertyChangeSource {
                 () -> log.error("Model not for: " + providerId + " " + modelId)
             );
     }
+
+    /**
+     * Convenience method to retrieve a toolkit instance from the tool manager.
+     * 
+     * @param <T> The type of the toolkit.
+     * @param toolkitClass The class of the toolkit to find.
+     * @return An Optional containing the toolkit instance.
+     */
+    public <T> Optional<T> getToolkit(Class<T> toolkitClass) {
+        return toolManager.getToolkitInstance(toolkitClass);
+    }
 }

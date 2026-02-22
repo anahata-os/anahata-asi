@@ -25,6 +25,12 @@ import uno.anahata.asi.tool.AiToolParam;
 @AiToolkit("A toolkit for loading and managing file-based resources.")
 @Slf4j
 public class Files extends AnahataToolkit {
+    
+    /** {@inheritDoc} */
+    @Override
+    public List<String> getSystemInstructions() throws Exception {
+        return Collections.singletonList("When writing files, always use the lastModified timestamp from the RAG message");
+    }
 
     /**
      * Updates the viewport settings for a TextFileResource.

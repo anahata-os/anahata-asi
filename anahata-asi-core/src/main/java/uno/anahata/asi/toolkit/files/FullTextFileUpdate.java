@@ -6,6 +6,7 @@ import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -16,8 +17,10 @@ import lombok.NoArgsConstructor;
  * 
  * @author anahata
  */
-@Getter
+@Data
 @NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @Schema(description = "A rich DTO for updating a text file with full new content and line-level comments.")
 public class FullTextFileUpdate extends AbstractTextFileWrite {
     /**
@@ -33,11 +36,10 @@ public class FullTextFileUpdate extends AbstractTextFileWrite {
     @Schema(description = "A list of comments for specific lines, intended for UI rendering.")
     private List<LineComment> lineComments;
 
+    @Builder
     public FullTextFileUpdate(String path, long lastModified, String newContent, List<LineComment> lineComments) {
         super(path, lastModified);
         this.newContent = newContent;
         this.lineComments = lineComments;
     }
-    
-    
 }

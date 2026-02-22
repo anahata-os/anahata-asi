@@ -32,6 +32,7 @@ public class TextFileReplacements extends AbstractTextFileWrite {
     @Schema(description = "The list of replacements to perform in this file.", required = true)
     private List<TextReplacement> replacements;
 
+    @Builder
     public TextFileReplacements(String path, long lastModified, List<TextReplacement> replacements) {
         super(path, lastModified);
         this.replacements = replacements;
