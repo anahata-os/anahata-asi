@@ -168,7 +168,13 @@ public class Files extends AnahataToolkit {
             @AiToolParam("The update details.") FullTextFileUpdate update,
             @AiToolParam("A message describing the change.") String message) throws Exception {
         
-        
+        // --- RESOURCE GUARD ---
+        // Ensure the file is an active managed resource before allowing an update.
+        // This prevents the model from attempting to update files it hasn't actually seen.
+        getResourceManager().findByPath(update.getPath())
+                .filter(r -> r instanceof TextFileResource)
+                .orElseThrow(() -> new AiToolException("Update rejected: '" + update.getPath() + "' is not a managed resource in the current context. You must load the file first."));
+
         java.nio.file.Path filePath = Paths.get(update.getPath());
         
         if (!java.nio.file.Files.exists(filePath)) {
@@ -190,9 +196,7 @@ public class Files extends AnahataToolkit {
      * Performs multiple text replacements in a file. Ideal for surgical code edits.
      * Implements optimistic locking and occurrence count validation.
      * 
-     * @param path The absolute path to the file.
      * @param replacements The list of replacements to perform.
-     * @param lastModified The expected last modified timestamp.
      * @param message A message describing the change.
      * @throws Exception if a target string is not found, count mismatch occurs, I/O error occurs, or locking fails.
      */
@@ -221,7 +225,7 @@ public class Files extends AnahataToolkit {
      * @param message A message describing the overall change.
      * @throws Exception if any replacement fails.
      */
-    @AiTool(value = "Performs multiple text replacements across multiple files in a single tool call.", maxDepth = 12)
+    //@AiTool(value = "Performs multiple text replacements across multiple files in a single tool call.", maxDepth = 12)
     public void replaceInMultipleTextFiles(
             @AiToolParam("The list of files and their replacements.") List<TextFileReplacements> fileReplacements,
             @AiToolParam("A message describing the change.") String message) throws Exception {
