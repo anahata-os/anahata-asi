@@ -8,7 +8,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import javax.swing.SwingUtilities;
 import javax.swing.text.Document;
 import javax.swing.text.Element;
 import javax.swing.text.JTextComponent;
@@ -168,7 +167,7 @@ public class Editor extends AnahataToolkit {
         EditorCookie editorCookie = dataObject.getLookup().lookup(EditorCookie.class);
         
         if (editorCookie != null) {
-            SwingUtilities.invokeLater(() -> {
+            SwingUtils.runInEDT(() -> {
                 try {
                     editorCookie.open();
                     if (scrollToLine != null && scrollToLine > 0) {

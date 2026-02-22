@@ -1,4 +1,4 @@
-/* Licensed under the Apache License, Version 2.0 */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi;
 
 import java.util.Set;
@@ -9,11 +9,12 @@ import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 import uno.anahata.asi.nb.util.ElementHandleModule;
 import uno.anahata.asi.tool.schema.SchemaProvider;
-import uno.anahata.asi.nb.tools.project.nb.AnahataProjectIconAnnotator;
-import uno.anahata.asi.nb.ui.render.TextFileUpdateRenderer;
+import uno.anahata.asi.nb.ui.render.FullTextFileUpdateRenderer;
+import uno.anahata.asi.nb.ui.render.TextFileReplacementsRenderer;
 import uno.anahata.asi.swing.chat.render.ParameterRendererFactory;
 import uno.anahata.asi.swing.internal.SwingUtils;
 import uno.anahata.asi.toolkit.files.FullTextFileUpdate;
+import uno.anahata.asi.toolkit.files.TextFileReplacements;
 
 /**
  * Installer for the Anahata ASI V2 module.
@@ -51,8 +52,9 @@ public class AnahataInstaller extends ModuleInstall {
     public void restored() {
         log.info("Anahata ASI V2 Module Restored");
         
-        // Register specialized parameter renderers
-        ParameterRendererFactory.register(FullTextFileUpdate.class, TextFileUpdateRenderer.class);
+        // Register specialized parameter renderers for file operations
+        ParameterRendererFactory.register(FullTextFileUpdate.class, FullTextFileUpdateRenderer.class);
+        ParameterRendererFactory.register(TextFileReplacements.class, TextFileReplacementsRenderer.class);
         
         // Register the ElementHandle module for global JSON support in the IDE
         SchemaProvider.OBJECT_MAPPER.registerModule(new ElementHandleModule());
@@ -62,9 +64,6 @@ public class AnahataInstaller extends ModuleInstall {
         if (failed > 0) {
             log.log(Level.WARNING, "{0} sessions failed to load due to incompatibility.", failed);
         }
-        
-        // Trigger initial refresh of project icons
-        //AnahataProjectIconAnnotator.fireRefresh();
     }
 
     /**

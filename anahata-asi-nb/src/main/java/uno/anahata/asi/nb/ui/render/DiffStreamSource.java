@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.nb.ui.diff;
+package uno.anahata.asi.nb.ui.render;
 
 import java.io.IOException;
 import java.io.Reader;

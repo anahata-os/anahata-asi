@@ -57,7 +57,7 @@ public class NbFiles extends Files {
                 "### NbFiles Coding Instructions:\n" +
                 "- **NO GUESSING**: You are strictly prohibited from guessing the methods, fields, or signatures of any Java types. " +
                 "If a type (like `JavaType` or a library class) is not fully present in your context (including its source code or detailed member list), " +
-                "you MUST use `CodeModel.findTypes` or `CodeModel.getTypeSources` to retrieve the ground truth before writing code that uses it.\n" +
+                "you MUST use `CodeModel` to retrieve the ground truth before writing code that uses it.\n" +
                 "- **IMPORTS**: Always ensure you add necessary imports when applying changes that include types not already present in the file's import list."
         );
         return instructions;
