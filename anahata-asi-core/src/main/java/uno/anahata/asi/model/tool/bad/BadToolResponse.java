@@ -15,22 +15,10 @@ import uno.anahata.asi.model.tool.ToolExecutionStatus;
 @Getter
 public class BadToolResponse extends AbstractToolResponse<BadToolCall> {
 
-    @NonNull
-    private final BadToolCall call;
-
     public BadToolResponse(@NonNull BadToolCall call) {
         super(call);
-        this.call = call;
         setStatus(ToolExecutionStatus.NOT_EXECUTED);
         setErrors("Tool call rejected: The tool '" + call.getToolName() + "' was not found.");
-        
-        // Note: Publication to the tool message is now handled atomically 
-        // by the AbstractToolCall constructor to prevent race conditions.
-    }
-
-    @Override
-    public BadToolCall getCall() {
-        return call;
     }
 
     @Override
@@ -41,10 +29,5 @@ public class BadToolResponse extends AbstractToolResponse<BadToolCall> {
     @Override
     public void stop() {
         // No-op for bad tools.
-    }
-    
-    @Override
-    protected int getDefaultMaxDepth() {
-        return getChatConfig().getDefaultToolMaxDepth();
     }
 }

@@ -184,6 +184,16 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
     }
 
     /**
+     * Refreshes the transient metadata in the header (e.g., Depth) and propagates
+     * the refresh to all child parts. This ensures that as the conversation
+     * grows, all labels reflect the current distance from the head.
+     */
+    public void refreshMetadata() {
+        updateHeaderInfoText();
+        cachedPartPanels.values().forEach(AbstractPartPanel::refreshMetadata);
+    }
+
+    /**
      * Updates the background colors of the header and content area based on the pruned state.
      */
     protected void updateBackgroundColors() {

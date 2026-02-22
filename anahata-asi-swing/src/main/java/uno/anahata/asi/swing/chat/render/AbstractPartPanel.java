@@ -193,6 +193,16 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
     }
 
     /**
+     * Refreshes the transient metadata in the header (e.g., remaining depth)
+     * without performing a full content re-render. This is called on every
+     * turn to ensure mathematical accuracy as the conversation flows.
+     */
+    public void refreshMetadata() {
+        updateRemainingDepthLabel();
+        updateHeaderInfoText();
+    }
+
+    /**
      * Updates the background colors of the header based on the pruned state.
      */
     protected void updateBackgroundColors() {

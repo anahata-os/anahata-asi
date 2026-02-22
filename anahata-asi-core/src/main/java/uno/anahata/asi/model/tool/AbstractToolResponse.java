@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -19,11 +18,17 @@ import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.internal.TokenizerUtils;
-import uno.anahata.asi.model.core.AbstractPart;
+import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 
 /**
  * Represents the response of a tool call, designed for deferred execution.
  * The fields are populated by the {@link #execute()} method.
+ * <p>
+ * In the V2 architecture, the response is a logical state attribute of the 
+ * {@link AbstractToolCall} rather than a top-level message part. It no longer 
+ * inherits from AbstractPart and does not participate in history or pruning 
+ * directly.
+ * </p>
  * 
  * @author anahata-gemini-pro-2.5
  * @param <C> The specific type of the Call this response is for.
@@ -31,7 +36,13 @@ import uno.anahata.asi.model.core.AbstractPart;
 @Getter
 @Setter
 @lombok.extern.slf4j.Slf4j
-public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> extends AbstractPart {
+public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> extends BasicPropertyChangeSource {
+    
+    /** The originating tool call. */
+    @Schema(hidden = true)
+    @JsonIgnore
+    private final C call;
+
     /** The final status of the invocation after execution. */
     @Setter(lombok.AccessLevel.NONE)
     @Schema(description = "The execution status of the tool call")
@@ -53,7 +64,8 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     @Schema(description = "The name of the thread that executed this tool")
     private String threadName;
     
-    @JsonIgnore
+    @Schema(hidden = true)
+    @JsonIgnore    
     private transient Thread thread;
     
     /** A list of log messages captured during the tool's execution. */
@@ -75,13 +87,28 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Schema(description = "If the user modified the argument values in the ui prior to execution, these are the modified arguments and values, arguments not contained on this map did not get modified")
     private final Map<String, Object> modifiedArgs = new HashMap<>();
-    
-    /** Recursion guard for synchronized removal. */
-    @JsonIgnore
-    private transient AtomicBoolean removing = new AtomicBoolean(false);
 
-    public AbstractToolResponse(AbstractToolCall<?, ?> call) {
-        super(call.getMessage().getToolMessage());
+    /**
+     * The number of tokens this response consumes in the context window.
+     */
+    @Schema(hidden = true)
+    @JsonIgnore
+    private int tokenCount;
+
+    /**
+     * Persistent UI state indicating if this response's panel is expanded in the conversation view.
+     */
+    @Schema(hidden = true)
+    @JsonIgnore
+    private boolean expanded = true;
+
+    /**
+     * Constructs a new AbstractToolResponse.
+     * 
+     * @param call The originating tool call.
+     */
+    public AbstractToolResponse(C call) {
+        this.call = call;
     }
     
     /**
@@ -123,6 +150,10 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
      */
     private void updateTokenCount() {
         setTokenCount(TokenizerUtils.countTokens(JacksonUtils.prettyPrint(this)));
+        // Notify the call that its size has changed.
+        if (call != null) {
+            call.updateResponseTokenCount();
+        }
     }
 
     /**
@@ -130,15 +161,8 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
      * @return The tool's name.
      */
     public String getToolName() {
-        return getCall().getToolName();
+        return call.getToolName();
     }
-    
-    /**
-     * Gets the original invocation request that this result corresponds to.
-     * @return The originating tool call.
-     */
-    @JsonIgnore
-    public abstract C getCall();
     
     /**
      * Executes the tool logic. This method is responsible for populating
@@ -268,92 +292,24 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
      */
     @JsonIgnore
     public Map<String, Object> getEffectiveArgs() {
-        Map<String, Object> effective = new HashMap<>(getCall().getArgs());
-        effective.putAll(modifiedArgs);
-        return effective;
-    }
-
-    @Override
-    protected int getDefaultMaxDepth() {
-        return getCall().getTool().getEffectiveMaxDepth();
-    }
-    
-    /** {@inheritDoc} */
-    @Override
-    public void setPruned(Boolean pruned) {
-        if (Objects.equals(this.getPruned(), pruned)) {
-            return;
-        }
-        Boolean old = this.getPruned();
-        super.setPruned(pruned);
-        // Bidirectional sync: Fire event for the call as well so UI updates
-        getCall().getPropertyChangeSupport().firePropertyChange("pruned", old, pruned);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public void setMaxDepth(Integer maxDepth) {
-        if (Objects.equals(this.getMaxDepth(), maxDepth)) {
-            return;
-        }
-        Integer old = this.getMaxDepth();
-        super.setMaxDepth(maxDepth);
-        // Bidirectional sync: Fire event for the call
-        getCall().getPropertyChangeSupport().firePropertyChange("maxDepth", old, maxDepth);
+        return call.getEffectiveArgs();
     }
 
     /**
-     * {@inheritDoc}
-     * Synchronized removal: Removing a tool response automatically removes its call.
+     * Gets the parent chat session.
+     * 
+     * @return The chat session, or null if not attached.
      */
-    @Override
-    public void remove() {
-        if (removing.compareAndSet(false, true)) {
-            try {
-                if (getCall() != null) {
-                    getCall().remove();
-                }
-                super.remove();
-            } finally {
-                removing.set(false);
-            }
-        }
+    @JsonIgnore
+    public Chat getChat() {
+        return call != null ? call.getChat() : null;
     }
 
     /**
-     * {@inheritDoc}
-     * Hide the tool response ID to avoid model ambiguity.
+     * Returns the content of the response as a simple string.
+     * 
+     * @return The text representation of the response.
      */
-    @Override
-    protected String getIdentityLabel() {
-        return "";
-    }
-    
-    
-    @Override
-    public String createMetadataHeader() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        sb.append(String.format("Tokens: %d | Status: %s",
-            getTokenCount(),
-            getStatus()
-        ));
-
-        
-        if (isEffectivelyPruned()) {
-            sb.append(" | Hint: ").append(TextUtils.formatValue(asText()));
-        }
-        
-        sb.append("]");
-        return sb.toString();
-    }
-
-    @Override
-    protected void appendMetadata(StringBuilder sb) {
-//        sb.append(" | Status: ").append(status);
-    }
-
-    @Override
     public String asText() {
         return String.format("[%s] %s", status, result != null ? TextUtils.formatValue(result.toString()) : (errors != null ? errors : ""));
     }
@@ -362,7 +318,6 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     @Override
     public void rebind() {
         super.rebind();
-        this.removing = new AtomicBoolean(false);
         if (status == ToolExecutionStatus.EXECUTING) {
             log.info("Restored tool response in EXECUTING state. Marking as INTERRUPTED (zombie recovery).");
             this.status = ToolExecutionStatus.INTERRUPTED;

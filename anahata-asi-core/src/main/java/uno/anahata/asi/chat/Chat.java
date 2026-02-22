@@ -22,7 +22,6 @@ import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.context.ContextManager;
 import uno.anahata.asi.model.core.AbstractMessage;
 import uno.anahata.asi.model.core.AbstractModelMessage;
-import uno.anahata.asi.model.core.AbstractToolMessage;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 import uno.anahata.asi.model.core.GenerationRequest;
 import uno.anahata.asi.model.core.InputUserMessage;
@@ -579,13 +578,11 @@ public class Chat extends BasicPropertyChangeSource {
         }
         autoSave();
 
-        // Ensure the tool message is initialized and populated with responses for all calls.
-        AbstractToolMessage toolMessage = message.getToolMessage();
-
-        if (toolMessage.isAutoRunnable()) {
-            log.info("Auto-executing {} tool calls.", toolMessage.getToolResponses().size());
+        // Check if tools can be executed automatically.
+        if (message.isAutoRunnable()) {
+            log.info("Auto-executing {} tool calls.", message.getToolCalls().size());
             statusManager.fireStatusChanged(ChatStatus.AUTO_EXECUTING_TOOLS);
-            toolMessage.executeAllPending();
+            message.executeAllPending();
             
             if (config.isAutoReplyTools()) {
                 log.info("Auto-replying after tool execution.");
@@ -594,7 +591,7 @@ public class Chat extends BasicPropertyChangeSource {
         }
 
         // The turn has ended. Determine the final status based on whether there are pending tool calls.
-        if (toolMessage.hasPendingTools()) {
+        if (message.hasPendingTools()) {
             setToolPromptMessage(message);
             statusManager.fireStatusChanged(ChatStatus.TOOL_PROMPT);
         } else {
@@ -645,11 +642,8 @@ public class Chat extends BasicPropertyChangeSource {
      * clears it if so.
      */
     public void checkToolPromptCompletion() {
-        if (toolPromptMessage != null) {
-            AbstractToolMessage tm = toolPromptMessage.getToolMessage();
-            if (tm == null || !tm.hasPendingTools()) {
-                clearToolPrompt();
-            }
+        if (toolPromptMessage != null && !toolPromptMessage.hasPendingTools()) {
+            clearToolPrompt();
         }
     }
 
@@ -796,7 +790,7 @@ public class Chat extends BasicPropertyChangeSource {
      */
     public void shutdown() {
         shutdown.set(true);
-        log.info("Shutting down Chat for session {}", config.getSessionId());
+        log.info("Shuts down Chat for session {}", config.getSessionId());
         config.getContainer().unregister(this);
         if (executor != null && !executor.isShutdown()) {
             executor.shutdown();

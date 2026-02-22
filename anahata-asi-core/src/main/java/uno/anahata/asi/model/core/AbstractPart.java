@@ -296,11 +296,15 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
         if (identity != null && !identity.isEmpty()) {
             sb.append(identity).append(" | ");
         }
-        sb.append(String.format("Type: %s | Tokens: %d | Remaining Depth: %d",
+        sb.append(String.format("Type: %s | Tokens: %d",
             getClass().getSimpleName(),
-            getTokenCount(),
-            getRemainingDepth()
+            getTokenCount()
         ));
+        
+        int rd = getRemainingDepth();
+        if (rd != Integer.MAX_VALUE) {
+            sb.append(" | Remaining Depth: ").append(rd);
+        }
 
         appendMetadata(sb);
 

@@ -12,29 +12,27 @@ import lombok.Setter;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.internal.TikaUtils;
 import uno.anahata.asi.model.tool.AbstractToolCall;
+import uno.anahata.asi.model.tool.AbstractToolResponse;
 import uno.anahata.asi.model.tool.ToolExecutionStatus;
+import uno.anahata.asi.model.tool.ToolPermission;
 import uno.anahata.asi.model.web.GroundingMetadata;
+import uno.anahata.asi.status.ChatStatus;
 
 /**
  * Represents a message originating from the AI model. It extends {@link AbstractMessage},
  * sets its role to {@code MODEL}, and provides convenience methods for accessing tool calls.
- * This class is generic over the {@link Response} type and the {@link AbstractToolMessage} type
- * to support provider-specific implementations.
+ * In the V2 simplified architecture, this class acts as the atomic unit of a "turn", 
+ * containing both model content and any resulting tool calls/responses.
  *
  * @author anahata-gemini-pro-2.5
  * @param <R> The type of the model response.
- * @param <T> The type of the tool message.
  */
 @Getter
 @Setter
-public abstract class AbstractModelMessage<R extends Response, T extends AbstractToolMessage> extends AbstractMessage {
+public abstract class AbstractModelMessage<R extends Response> extends AbstractMessage {
     
     /** The ID of the model that generated this message. */
     private String modelId;
-    
-    /** A paired message containing the responses to any tool calls in this message. */
-    @Getter(AccessLevel.NONE)
-    private T toolMessage;
     
     /** The reason why the model stopped generating content for this candidate. */
     @Setter(AccessLevel.NONE)
@@ -94,27 +92,6 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
     public String getDevice() {
         return "Cloud";
     }
-
-    /**
-     * Gets the tool message associated with this model message, creating it if necessary.
-     * 
-     * @return The tool message.
-     */
-    public T getToolMessage() {
-        if (toolMessage == null) {
-            createToolMessage();
-        }
-        return toolMessage;
-    }
-    
-    /**
-     * Checks if this model message has an associated tool message.
-     * 
-     * @return {@code true} if a tool message exists.
-     */
-    public boolean hasToolMessage() {
-        return toolMessage != null;
-    }
     
     /**
      * Sets the raw JSON representation of the model's response and fires a property change event.
@@ -126,18 +103,6 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
         String oldJson = this.rawJson;
         this.rawJson = rawJson;
         propertyChangeSupport.firePropertyChange("rawJson", oldJson, rawJson);
-    }
-
-    /**
-     * {@inheritDoc}
-     * Propagates the pruned state to the associated tool message.
-     */
-    @Override
-    public void setPruned(Boolean pruned) {
-        super.setPruned(pruned);
-        if (toolMessage != null) {
-            toolMessage.setPruned(pruned);
-        }
     }
 
     /**
@@ -234,31 +199,101 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
      * Filters and returns only the tool call parts from this message.
      * @return A list of {@link AbstractToolCall} parts, or an empty list if none exist.
      */
-    public List<AbstractToolCall> getToolCalls() {
+    public List<AbstractToolCall<?, ?>> getToolCalls() {
         return getParts().stream()
                 .filter(AbstractToolCall.class::isInstance)
-                .map(AbstractToolCall.class::cast)
+                .map(p -> (AbstractToolCall<?, ?>) p)
                 .collect(Collectors.toList());
     }
     
     /**
-     * Processes all tool responses associated with this message that are in a PENDING state.
-     * Tools with APPROVE_ALWAYS permission are executed, while others are rolled to NOT_EXECUTED.
+     * Returns all tool responses associated with the tool calls in this message.
+     * 
+     * @return A list of tool responses.
      */
-    public void processPendingTools() {
-        T tm = getToolMessage();
-        if (tm != null) {
-            tm.processPendingTools();
+    public List<AbstractToolResponse<?>> getToolResponses() {
+        return getToolCalls().stream()
+                .map(AbstractToolCall::getResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Determines if this entire batch of tool calls can be executed automatically
+     * without user intervention.
+     * @return {@code true} if all conditions for automatic execution are met.
+     */
+    public boolean isAutoRunnable() {
+        if (isStreaming()) {
+            return false;
         }
+        
+        if (!getChat().getConfig().isLocalToolsEnabled()) {
+            return false;
+        }
+        
+        List<AbstractToolCall<?, ?>> calls = getToolCalls();
+        if (calls.isEmpty()) {
+            return false;
+        }
+        
+        for (AbstractToolCall<?, ?> call : calls) {
+            if (call.getTool().getPermission() != ToolPermission.APPROVE_ALWAYS || call.getResponse().getStatus() != ToolExecutionStatus.PENDING) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    /**
+     * Checks if there are any tool calls with responses in a PENDING state.
+     * @return {@code true} if at least one tool is pending.
+     */
+    public boolean hasPendingTools() {
+        return getToolCalls().stream()
+                .anyMatch(call -> call.getResponse().getStatus() == ToolExecutionStatus.PENDING);
     }
     
     /**
-     * Sets all tool responses associated with this message that are currently in a PENDING state to NOT_EXECUTED.
+     * Executes all tool calls in this message that are currently in a PENDING state.
+     */
+    public void executeAllPending() {
+        getToolCalls().stream()
+            .map(AbstractToolCall::getResponse)
+            .filter(response -> response.getStatus() == ToolExecutionStatus.PENDING)
+            .forEach(AbstractToolResponse::execute);
+    }
+
+    /**
+     * Rejects all tool calls in this message that are currently in a PENDING state.
+     * 
+     * @param reason The reason for rejection.
+     */
+    public void rejectAllPending(String reason) {
+        getToolCalls().stream()
+            .map(AbstractToolCall::getResponse)
+            .filter(response -> response.getStatus() == ToolExecutionStatus.PENDING)
+            .forEach(response -> response.reject(reason));
+    }
+
+    /**
+     * Sets all tool calls in this message that are currently in a PENDING state to NOT_EXECUTED.
      */
     public void skipAllPending() {
-        T tm = getToolMessage();
-        if (tm != null) {
-            tm.skipAllPending();
+        getToolCalls().stream()
+            .map(AbstractToolCall::getResponse)
+            .filter(response -> response.getStatus() == ToolExecutionStatus.PENDING)
+            .forEach(response -> response.setStatus(ToolExecutionStatus.NOT_EXECUTED));
+    }
+
+    /**
+     * Processes all tool responses associated with this message that are currently in a PENDING state.
+     * Tools with APPROVE_ALWAYS permission are executed, while others are rolled to NOT_EXECUTED.
+     */
+    public void processPendingTools() {
+        if (hasPendingTools()) {
+            getChat().getStatusManager().fireStatusChanged(ChatStatus.AUTO_EXECUTING_TOOLS);
+            executeAllPending();
         }
     }
     
@@ -267,7 +302,7 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
      * Creates and adds a {@link ModelTextPart} without thought metadata.
      */
     @Override
-    public final ModelTextPart addTextPart(String text) {
+    public final TextPart addTextPart(String text) {
         return addTextPart(text, null, false);
     }
 
@@ -276,7 +311,7 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
      * Creates and adds a {@link ModelBlobPart} without thought metadata.
      */
     @Override
-    public final ModelBlobPart addBlobPart(String mimeType, byte[] data) {
+    public final BlobPart addBlobPart(String mimeType, byte[] data) {
         return addBlobPart(mimeType, data, null);
     }
 
@@ -315,23 +350,11 @@ public abstract class AbstractModelMessage<R extends Response, T extends Abstrac
         return new ModelBlobPart(this, mimeType, data, thoughtSignature);
     }
 
-    /**
-     * Factory method to create the appropriate tool message for this model message.
-     * 
-     * @return The created tool message.
-     */
-    protected abstract T createToolMessage();
-
     /** {@inheritDoc} */
     @Override
     protected void appendMetadata(StringBuilder sb) {
         if (billedTokenCount > 0) {
             sb.append(" | Billed Tokens: ").append(billedTokenCount);
-        }
-
-        T tm = getToolMessage();
-        if (tm != null && tm.getSequentialId() != 0) {
-            //sb.append(" | Tool Message Tokens: ").append(tm.getTokenCount(false));
         }
     }
 }

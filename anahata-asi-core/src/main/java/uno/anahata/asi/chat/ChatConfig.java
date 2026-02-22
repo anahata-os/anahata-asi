@@ -142,6 +142,9 @@ public class ChatConfig extends BasicPropertyChangeSource {
     
     /** The default maximum depth a BlobPart should be kept in context. */
     private int defaultBlobPartMaxDepth = 3;
+
+    /** The default maximum depth a model thought should be kept in context. */
+    private int defaultThoughtPartMaxDepth = 12;
     //</editor-fold>
 
     /** The default response modalities for this chat session. */

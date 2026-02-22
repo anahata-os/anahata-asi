@@ -75,13 +75,9 @@ public class GeminiPartAdapter {
                     .build())
                 .build();
         }
-        if (anahataPart instanceof AbstractToolResponse) {
-            return toGoogleFunctionResponsePart();
-        }
         if (anahataPart instanceof AbstractToolCall) {
             AbstractToolCall toolCall = (AbstractToolCall) anahataPart;
             
-            // FINAL GATE: Purify effective arguments into plain JSON primitives
             Map<String, Object> safeArgs = (Map<String, Object>) JacksonUtils.toJsonPrimitives(toolCall.getEffectiveArgs());
             
             FunctionCall.Builder fcBuilder = FunctionCall.builder()
@@ -99,14 +95,13 @@ public class GeminiPartAdapter {
     /**
      * Converts an AbstractToolResponse into the main Google FunctionResponse Part,
      * including attachments.
+     * 
+     * @param anahataResponse The rich response POJO.
      * @return The corresponding Google FunctionResponse Part.
      */
-    private Part toGoogleFunctionResponsePart() {
-        AbstractToolResponse<?> anahataResponse = (AbstractToolResponse) anahataPart;
-        
+    public static Part toGoogleFunctionResponsePart(AbstractToolResponse<?> anahataResponse) {
         // FINAL GATE: We send the ENTIRE rich response object (status, result, errors, etc.) 
         // as the JSON response. This gives the model full visibility into the execution.
-        // We use toJsonPrimitives directly as the response is already a POJO (Map-like).
         Map<String, Object> responseMap = (Map<String, Object>) JacksonUtils.toJsonPrimitives(anahataResponse);
         
         // 2. Convert attachments to FunctionResponsePart

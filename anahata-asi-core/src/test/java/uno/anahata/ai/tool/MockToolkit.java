@@ -9,6 +9,7 @@ import java.util.List;
 import uno.anahata.asi.model.core.TextPart;
 import uno.anahata.ai.model.tool.MockComplexObject;
 import uno.anahata.ai.model.tool.Tree;
+import uno.anahata.asi.model.tool.java.JavaMethodToolResponse;
 
 @AiToolkit(value = "A mock toolkit for testing schema generation and context injection.", maxDepth = 10)
 public class MockToolkit extends AnahataToolkit {
@@ -43,5 +44,13 @@ public class MockToolkit extends AnahataToolkit {
     public String testContext(@AiToolParam("A message to add to the logs.") String logMessage) {
         log("This is a log message from inside the tool: " + logMessage);
         return "Context test completed successfully.";
+    }
+
+    @AiTool(value = "A tool for testing context access.", requiresApproval = false)
+    public String testContextAccess() {
+        if (JavaMethodToolResponse.getCurrent() != null) {
+            return "Success";
+        }
+        return "Failure";
     }
 }

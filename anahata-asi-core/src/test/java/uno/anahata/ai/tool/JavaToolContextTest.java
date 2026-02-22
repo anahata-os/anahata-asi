@@ -1,100 +1,83 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.ai.tool;
 
-import uno.anahata.asi.tool.ToolManager;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.chat.ChatConfig;
 import uno.anahata.asi.model.core.AbstractModelMessage;
-import uno.anahata.asi.model.core.AbstractToolMessage;
-import uno.anahata.asi.model.core.BlobPart;
 import uno.anahata.asi.model.core.Response;
-import uno.anahata.asi.model.core.TextPart;
-import uno.anahata.asi.model.tool.AbstractTool;
+import uno.anahata.asi.model.core.ResponseUsageMetadata;
 import uno.anahata.asi.model.tool.ToolExecutionStatus;
+import uno.anahata.asi.model.tool.java.JavaMethodTool;
 import uno.anahata.asi.model.tool.java.JavaMethodToolCall;
-import uno.anahata.asi.model.tool.java.JavaMethodToolResponse;
+import uno.anahata.asi.model.tool.java.JavaObjectToolkit;
 
 /**
- * Unit test for the JavaTool context injection mechanism.
- *
- * @author anahata-ai
+ * Tests the thread-local context management and tool execution within the Java toolkit.
+ * 
+ * @author anahata-gemini-pro-2.5
  */
+@Slf4j
 public class JavaToolContextTest {
 
     private Chat chat;
+    private JavaObjectToolkit toolkit;
 
     @BeforeEach
-    public void setUp() {
-        AsiContainer aiConfig = new AsiContainer("test-app");
-        ChatConfig chatConfig = new ChatConfig(aiConfig, "test-session");
-        chatConfig.getToolClasses().add(MockToolkit.class);
-        chat = new Chat(chatConfig);
+    public void setup() {
+        AsiContainer container = new AsiContainer("test-app");
+        ChatConfig config = new ChatConfig(container);
+        config.getToolClasses().add(MockToolkit.class); // Explicitly register for the test
+        chat = new Chat(config);
+        // Retrieve the JavaObjectToolkit wrapper by name
+        toolkit = (JavaObjectToolkit) chat.getToolManager().getToolkits().get("MockToolkit");
     }
 
     @Test
-    public void testJavaToolContextInjection() {
-        // 1. Get the ToolManager from the Chat
-        ToolManager toolManager = chat.getToolManager();
+    public void testToolContextAccess() {
+        JavaMethodTool tool = (JavaMethodTool) toolkit.getTools().stream()
+                .filter(t -> t.getName().endsWith("testContextAccess"))
+                .findFirst().get();
+
+        MockModelMessage message = new MockModelMessage(chat);
         
-        // 2. Find the tool using the public API
-        AbstractTool<?, ?> tool = toolManager.getAllTools().stream()
-            .filter(t -> t.getName().equals("MockToolkit.testContext"))
-            .findFirst()
-            .orElseThrow(() -> new AssertionError("Tool 'MockToolkit.testContext' not found"));
-
-        // 3. Create a mock message context for the call
-        MockModelMessage mockModelMessage = new MockModelMessage(chat, "mock-model");
-
-        // 4. Create a call with the new signature
-        String testMessage = "Hello from the test!";
-        Map<String, Object> args = Collections.singletonMap("logMessage", testMessage);
-        JavaMethodToolCall call = (JavaMethodToolCall) tool.createCall(mockModelMessage, "test-call-1", args);
-
-        // 5. Get the response and execute it
-        JavaMethodToolResponse response = call.getResponse();
-        response.execute();
-
-        // 6. Assert the results
-        assertEquals(ToolExecutionStatus.EXECUTED, response.getStatus(), "Tool should have executed successfully.");
-        assertEquals("Context test completed successfully.", response.getResult(), "The tool should return the correct success message.");
-
-        // 7. Assert the context-injected actions
-        assertFalse(response.getLogs().isEmpty(), "Logs should not be empty.");
-        assertEquals("This is a log message from inside the tool: " + testMessage, response.getLogs().get(0), "The log message should match.");
-
-        // assertFalse(response.getAttachments().isEmpty(), "Attachments should not be empty.");
-        // assertTrue(response.getAttachments().get(0) instanceof TextPart, "The attachment should be a TextPart.");
-        // assertEquals("This is an attachment from inside the tool.", ((TextPart) response.getAttachments().get(0)).getText(), "The attachment content should match.");
+        JavaMethodToolCall call = tool.createCall(message, "call-1", Collections.emptyMap());
         
-        System.out.println("JavaTool context test passed successfully.");
+        Assertions.assertEquals(ToolExecutionStatus.PENDING, call.getResponse().getStatus());
+        
+        call.getResponse().execute();
+        
+        Assertions.assertEquals(ToolExecutionStatus.EXECUTED, call.getResponse().getStatus());
+        Assertions.assertEquals("Success", call.getResponse().getResult());
     }
 
     /**
-     * A mock model message for testing purposes.
+     * A minimal mock of AbstractModelMessage for testing.
      */
-    private static class MockModelMessage extends AbstractModelMessage<Response, MockToolMessage> {
-        public MockModelMessage(Chat chat, String modelId) {
-            super(chat, modelId);
-        }
-
-        @Override
-        protected MockToolMessage createToolMessage() {
-            return new MockToolMessage(this);
+    private static class MockModelMessage extends AbstractModelMessage<MockResponse> {
+        public MockModelMessage(Chat chat) {
+            super(chat, "mock-model");
         }
     }
 
     /**
-     * A mock tool message for testing purposes.
+     * A minimal mock of Response for testing.
      */
-    private static class MockToolMessage extends AbstractToolMessage<MockModelMessage> {
-        public MockToolMessage(MockModelMessage modelMessage) {
-            super(modelMessage);
-        }
+    private static class MockResponse extends Response<MockModelMessage> {
+        @Override public List<MockModelMessage> getCandidates() { return Collections.emptyList(); }
+        @Override public ResponseUsageMetadata getUsageMetadata() { return null; }
+        @Override public Optional<String> getPromptFeedback() { return Optional.empty(); }
+        @Override public int getTotalTokenCount() { return 0; }
+        @Override public String getRawJson() { return "{}"; }
+        @Override public String getRawRequestConfigJson() { return "{}"; }
+        @Override public String getRawHistoryJson() { return "{}"; }
     }
 }

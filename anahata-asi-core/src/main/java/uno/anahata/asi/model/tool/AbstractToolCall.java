@@ -5,19 +5,22 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.model.core.AbstractPart;
 import uno.anahata.asi.model.core.AbstractModelMessage;
-import uno.anahata.asi.model.core.AbstractToolMessage;
 import uno.anahata.asi.model.core.ThoughtSignature;
 
 /**
  * Represents a request to execute a specific tool. It holds a direct reference
  * to the tool's definition and its corresponding response.
+ * <p>
+ * In the V2 architecture, the tool call is the primary message part. It owns
+ * the response lifecycle entirely. Pruning the call effectively prunes the
+ * response for context purposes.
+ * </p>
  *
  * @author anahata-gemini-pro-2.5
  * @param <T> The specific type of the Tool.
@@ -76,10 +79,6 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
      */
     private byte[] thoughtSignature;
     
-    /** Recursion guard for synchronized removal. */
-    @JsonIgnore
-    private transient AtomicBoolean removing = new AtomicBoolean(false);
-
     /**
      * Constructs a new AbstractToolCall.
      *
@@ -96,17 +95,12 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
         this.rawArgs = rawArgs;
         this.args = args;
         
-        // 1. Initialize the response object. 
-        // Note: The response constructor MUST NOT add itself to the message.
-        this.response = createResponse(message.getToolMessage());
+        // 1. Initialize the response object.
+        this.response = createResponse();
         
-        // 2. Ensure the tool message exists and is correctly positioned in the context.
-        AbstractToolMessage toolMessage = getChat().getContextManager().ensureToolMessageFollowsModelMessage(getMessage());
-
-        // 3. Atomic Publication: Add BOTH the call and the response to their messages.
-        // This triggers the UI update only when both are fully initialized and linked.
+        // 2. Publication: Add only the call to the message. 
+        // The response is accessed via the call.
         message.addPart(this);
-        toolMessage.addPart(response);
     }
 
     /**
@@ -132,10 +126,9 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
      * Creates the corresponding response object for this tool call. This acts
      * as a factory method and is called once by the constructor.
      *
-     * @param toolMessage The tool message that will contain the response.
      * @return A new, un-executed tool response.
      */
-    protected abstract R createResponse(AbstractToolMessage toolMessage);
+    protected abstract R createResponse();
 
     /**
      * Updates a modified argument in the draft state and fires a property
@@ -166,111 +159,44 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
     }
 
     /**
-     * {@inheritDoc}
-     * Synchronized removal: Removing a tool call automatically removes its response.
+     * Internal callback used by the response to notify the call that its 
+     * token size has changed.
      */
-    @Override
-    public void remove() {
-        if (removing.compareAndSet(false, true)) {
-            try {
-                AbstractModelMessage msg = getMessage();
-                if (response != null) {
-                    response.remove();
-                }
-                super.remove();
-                if (msg.isToolPromptMessage()) {
-                    msg.getChat().checkToolPromptCompletion();
-                }
-            } finally {
-                removing.set(false);
-            }
-        }
+    protected void updateResponseTokenCount() {
+        // Trigger a recalculation of this part's token count
+        setTokenCount(calculateTotalTokens());
     }
 
-    //<editor-fold defaultstate="collapsed" desc="V2 Context Management Delegation (Life Inheritance)">
+    /**
+     * Calculates the total tokens for this call, including its nested response.
+     * 
+     * @return The total token count.
+     */
+    private int calculateTotalTokens() {
+        // Approximate call tokens based on name and arguments
+        int callTokens = uno.anahata.asi.internal.TokenizerUtils.countTokens(asText());
+        int responseTokens = response != null ? response.getTokenCount() : 0;
+        return callTokens + responseTokens;
+    }
+
     /**
      * {@inheritDoc}
      */
     @Override
     protected int getDefaultMaxDepth() {
-        // A tool call's lifecycle is always identical to its response.
-        return getResponse().getDefaultMaxDepth();
+        int toolMaxDepth = tool.getMaxDepth();
+        if (toolMaxDepth != -1) {
+            return toolMaxDepth;
+        }
+        return getChatConfig().getDefaultToolMaxDepth();
     }
-
-    /**
-     * {@inheritDoc}
-     * Life Inheritance: The call is pruned if and only if its response is pruned.
-     */
-    @Override
-    public boolean isEffectivelyPruned() {
-        return getResponse().isEffectivelyPruned();
-    }
-
-    /**
-     * {@inheritDoc}
-     * Life Inheritance: The call shares the same remainingDepth as its response.
-     */
-    @Override
-    public int getRemainingDepth() {
-        return getResponse().getRemainingDepth();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Boolean getPruned() {
-        return getResponse().getPruned();
-    }
-
-    /**
-     * {@inheritDoc}
-     * Delegated to response to maintain bidirectional sync.
-     */
-    @Override
-    public void setPruned(Boolean pruned) {
-        getResponse().setPruned(pruned);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Integer getMaxDepth() {
-        return getResponse().getMaxDepth();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setMaxDepth(Integer maxDepth) {
-        getResponse().setMaxDepth(maxDepth);
-    }
-    
-    /**
-     * {@inheritDoc}
-     * Life Inheritance: The call is garbage collectable if its response is.
-     */
-    @Override
-    public boolean isGarbageCollectable() {
-        return getResponse().isGarbageCollectable();
-    }
-    //</editor-fold>
 
     /**
      * {@inheritDoc}
      */
     @Override
     public String asText() {
-        return "[Tool Call: " + getToolName() + " with args: " + getArgs().toString() + "]";
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public void rebind() {
-        super.rebind();
-        this.removing = new AtomicBoolean(false);
+        return "[Tool Call: " + getToolName() + " with args: " + args.toString() + "]";
     }
 
     /**
@@ -278,6 +204,9 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
      */
     @Override
     protected void appendMetadata(StringBuilder sb) {
-        sb.append(" | Response: ").append(getResponse().createMetadataHeader());
+        sb.append(String.format(" | Status: %s", response.getStatus()));
+        if (isEffectivelyPruned()) {
+            sb.append(" | Result Hint: ").append(TextUtils.formatValue(response.asText()));
+        }
     }
 }

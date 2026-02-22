@@ -6,7 +6,6 @@ import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
 import uno.anahata.asi.internal.TextUtils;
-import uno.anahata.asi.model.core.AbstractToolMessage;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.tool.AbstractToolCall;
 
@@ -23,7 +22,7 @@ public class JavaMethodToolCall extends AbstractToolCall<JavaMethodTool, JavaMet
     }
 
     @Override
-    protected JavaMethodToolResponse createResponse(AbstractToolMessage toolMessage) {
+    protected JavaMethodToolResponse createResponse() {
         return new JavaMethodToolResponse(this);
     }
 

@@ -8,8 +8,8 @@ import com.google.genai.types.Candidate;
 import com.google.genai.types.Citation;
 import com.google.genai.types.ComputerUse;
 import com.google.genai.types.Content;
-import com.google.genai.types.EnterpriseWebSearch;
-import com.google.genai.types.FileSearch;
+import com.google.genai.types.FinishReason;
+import com.google.genai.types.FunctionCall;
 import com.google.genai.types.FunctionDeclaration;
 import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.GenerateContentResponse;
@@ -21,6 +21,8 @@ import com.google.genai.types.ListModelsConfig;
 import com.google.genai.types.Model;
 import com.google.genai.types.Part;
 import com.google.genai.types.ToolCodeExecution;
+import com.google.genai.types.EnterpriseWebSearch;
+import com.google.genai.types.FileSearch;
 import java.io.InterruptedIOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,7 +39,6 @@ import uno.anahata.asi.gemini.adapter.RequestConfigAdapter;
 import uno.anahata.asi.model.core.AbstractMessage;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.AbstractPart;
-import uno.anahata.asi.model.core.FinishReason;
 import uno.anahata.asi.model.core.GenerationRequest;
 import uno.anahata.asi.model.core.ModelTextPart;
 import uno.anahata.asi.model.core.RequestConfig;
@@ -235,8 +236,10 @@ public class GeminiModel extends AbstractModel {
         List<AbstractMessage> history = request.history();
         boolean includePruned = config.isIncludePruned();
 
+        // 1-to-N Mapping: A single turn-holding ModelMessage expands into multiple API contents.
         List<Content> googleHistory = history.stream()
                 .map(msg -> new GeminiContentAdapter(msg, includePruned).toGoogle())
+                .flatMap(List::stream) 
                 .filter(Objects::nonNull)
                 .collect(Collectors.toCollection(ArrayList::new));
 
@@ -365,7 +368,7 @@ public class GeminiModel extends AbstractModel {
                     
                     // Ensure the finish reason is set if it's still null after the stream
                     if (target.getFinishReason() == null) {
-                        target.setFinishReason(FinishReason.GOD_FUCKING_KNOWS);
+                        target.setFinishReason(uno.anahata.asi.model.core.FinishReason.GOD_FUCKING_KNOWS);
                     }
                 }
             }

@@ -3,16 +3,10 @@
  */
 package uno.anahata.asi.context;
 
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -23,16 +17,9 @@ import uno.anahata.asi.context.provider.CoreContextProvider;
 import uno.anahata.asi.model.core.AbstractMessage;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.AbstractPart;
-import uno.anahata.asi.model.core.AbstractToolMessage;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
-import uno.anahata.asi.model.core.ModelTextPart;
-import uno.anahata.asi.model.core.PropertyChangeSource;
 import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.model.core.Rebindable;
-import uno.anahata.asi.model.core.Role;
-import uno.anahata.asi.model.core.TextPart;
-import uno.anahata.asi.model.core.ThoughtSignature;
-import uno.anahata.asi.model.core.UserMessage;
 import uno.anahata.asi.resource.ResourceManager;
 import uno.anahata.asi.tool.ToolManager;
 
@@ -41,11 +28,6 @@ import uno.anahata.asi.tool.ToolManager;
  * This class owns the conversation history and orchestrates the hybrid context
  * assembly process, combining the V2 dynamic history with the hierarchical
  * provider model.
- * <p>
- * It manages a list of {@link ContextProvider}s, which now includes the
- * {@link uno.anahata.asi.resource.ResourceManager}, unifying stateful resources
- * with standard context injection.
- * </p>
  *
  * @author anahata-ai
  */
@@ -95,9 +77,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
     }
 
     /**
-     * Initializes the manager and registers default providers. Implementation
-     * details: Registers the Core provider, the ToolManager, and the
-     * ResourceManager.
+     * Initializes the manager and registers default providers.
      */
     public void init() {
         registerContextProvider(new CoreContextProvider());
@@ -130,15 +110,13 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
     }
 
     /**
-     * Gets the list of system instructions by processing all enabled providers
-     * and their descendants in the hierarchy.
+     * Gets the list of system instructions by processing all enabled providers.
      *
      * @return A list of formatted system instruction strings.
      */
     public List<String> getSystemInstructions() {
         List<String> allSystemInstructions = new ArrayList<>();
 
-        // Process providers and their children recursively
         for (ContextProvider rootProvider : providers) {
             for (ContextProvider provider : rootProvider.getFlattenedHierarchy(true)) {
                 if (provider.isProviding()) {
@@ -168,23 +146,19 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
     }
 
     /**
-     * Builds the final, filtered list of messages to be sent to the API. This
-     * includes the main conversation history and a synthetic RAG message
-     * populated by all active context providers.
+     * Builds the final, filtered list of messages to be sent to the API.
      *
      * @return The filtered list of messages.
      */
     public List<AbstractMessage> buildVisibleHistory() {
         List<AbstractMessage> visibleHistory = new ArrayList<>();
 
-        // 1. Add all messages from history. 
         synchronized (history) {
             visibleHistory.addAll(history);
         }
         
         log.info("Built visible history with {} messages (total history: {})", visibleHistory.size(), history.size());
 
-        // 2. Add the synthetic RAG message for prompt augmentation.
         RagMessage augmentedMessage = new RagMessage(chat);
         augmentedMessage.addTextPart("--- Augmented Workspace Context ---\n"
                 + "The following is high-salience, just-in-time context provided by the host environment for this turn. "
@@ -192,7 +166,6 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
                 + "This is NOT direct input from the user.");
 
         for (ContextProvider rootProvider : providers) {
-            log.info("Augmenting context with Root provider: {}", rootProvider.getName());
             for (ContextProvider provider : rootProvider.getFlattenedHierarchy(true)) {
                 if (provider.isProviding()) {
                     long start = System.currentTimeMillis();
@@ -201,7 +174,6 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
                         provider.populateMessage(augmentedMessage);
                         long duration = System.currentTimeMillis() - start;
                         augmentedMessage.addTextPart("\n(Provider " + provider.getName() + " took: " + duration + "ms)");
-                        log.info("Provider {} took {}ms", provider.getName(), duration);
                     } catch (Exception e) {
                         log.error("Error populating rag message for provider: {}", provider.getName(), e);
                         augmentedMessage.addTextPart("\nError populating rag message for provider: " + provider.getName() 
@@ -216,9 +188,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
     }
 
     /**
-     * The definitive method for adding any message to the chat history. It
-     * injects the chat reference, assigns sequential IDs to all parts, and
-     * triggers the hard-pruning process.
+     * The definitive method for adding any message to the chat history.
      *
      * @param message The message to add.
      */
@@ -228,46 +198,12 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
     }
 
     /**
-     * Checks it the model message has an associated tool message and adds it to
-     * the history.
-     *
-     * @param modelMessage - the model message
-     * @return The ensured tool message.
-     * @throws IllegalStateException if the model message doesnt have an
-     * associated tool message.
-     */
-    public AbstractToolMessage ensureToolMessageFollowsModelMessage(AbstractModelMessage modelMessage) {
-        AbstractToolMessage toolMessage = modelMessage.getToolMessage();
-        if (toolMessage == null) {
-            throw new IllegalStateException("Model message does not contain a tool message");
-        }
-
-        synchronized (history) {
-            if (history.contains(modelMessage)) {
-                // CRITICAL FIX: Assign sequential IDs to the tool message and its parts before insertion.
-                // This ensures the model recognizes the tool results in the next turn.
-                identifyMessage(toolMessage);
-                if (!history.contains(toolMessage)) {
-                    // Insert it exactly after the model message
-                    history.add(history.indexOf(modelMessage) + 1, toolMessage);
-                    log.info("Inserted tool message {} into history after model message {}", toolMessage.getSequentialId(), modelMessage.getSequentialId());
-                } 
-            } else {
-                log.error("cannotEnsure tool message follows model message because model message is not in history: {}", modelMessage);
-            }
-        }
-        return toolMessage;
-    }
-
-    /**
      * Assigns sequential IDs to the message and all its parts.
      *
      * @param msg The message to identify.
      */
     private void identifyMessage(AbstractMessage msg) {
-        log.info("identifyMessage {} ", msg);
         if (msg.getSequentialId() == 0) {
-            log.info("Setting id for {} ", msg);
             msg.setSequentialId(messageIdCounter.incrementAndGet());
         }
         for (AbstractPart part : msg.getParts()) {
@@ -277,48 +213,33 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
 
     /**
      * Assigns a sequential ID to a single part if it doesn't already have one.
-     * This public method is used for late-arriving parts in streaming scenarios.
      * 
      * @param part The part to identify.
      */
     public void identifyPart(AbstractPart part) {
         if (part.getSequentialId() == 0) {
-            log.info("Setting id for {} ", part);
             part.setSequentialId(partIdCounter.incrementAndGet());
         }
     }
 
     /**
-     * Adds a message to the history without triggering hard pruning. Assigns
-     * sequential IDs to the message and all its parts. Fires a property change
-     * event for the "history" property.
+     * Adds a message to the history without triggering hard pruning.
      *
      * @param message The message to add.
      */
     private void addMessageInternal(AbstractMessage message) {
-
         synchronized (history) {
             if (!history.contains(message)) {
-
                 identifyMessage(message);
-                log.info("Adding message {} to history", message);
+                log.info("Adding message {} to history", message.getSequentialId());
                 history.add(message);
-                if (message instanceof AbstractModelMessage amm) {
-                    if (!amm.getToolCalls().isEmpty()) {//its got tool calls
-                        ensureToolMessageFollowsModelMessage(amm);
-                    }
-                }
             }
         }
-
-        log.info("Added message {} to history size: {} firing event", message, history.size());
         propertyChangeSupport.firePropertyChange("history", null, history);
     }
 
     /**
-     * Removes a message from the history. Fires a property change event for the
-     * "history" property. This method automatically handles the removal of
-     * paired Model/Tool message units.
+     * Removes a message from the history.
      *
      * @param message The message to remove.
      */
@@ -326,43 +247,26 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
         boolean removed;
         synchronized (history) {
             removed = history.remove(message);
-            if (removed) {
-                // Removal Synchronization Logic:
-                if (message instanceof AbstractModelMessage amm) {
-                    if (amm.hasToolMessage()) {
-                        history.remove(amm.getToolMessage());
-                    }
-                } else if (message instanceof AbstractToolMessage atm) {
-                    if (atm.getModelMessage() != null) {
-                        history.remove(atm.getModelMessage());
-                    }
-                }
-            }
         }
         if (removed) {
-            log.info("Removed message {} (and its partner if applicable) from history.", message.getSequentialId());
+            log.info("Removed message {} from history.", message.getSequentialId());
             propertyChangeSupport.firePropertyChange("history", null, history);
         }
     }
 
     /**
-     * Performs a hard prune on the entire chat history, permanently deleting
-     * parts that have reached their retention limit (remainingDepth <= 0) and are 
-     * not explicitly pinned.
+     * Performs a hard prune on the entire chat history.
      */
     private void hardPrune() {
         synchronized (history) {
             for (AbstractMessage message : history) {
-                // Create a copy to avoid ConcurrentModificationException when calling ap.remove()
                 List<AbstractPart> allParts = new ArrayList<>(message.getParts(true));
                 for (AbstractPart ap : allParts) {
-                    // Hard prune if remainingDepth <= 0 AND it's not pinned (directly or via parent message).
                     if (ap.getRemainingDepth() <= 0 && !Boolean.FALSE.equals(ap.getPruned()) && !Boolean.FALSE.equals(message.isPruned())) {
                         ap.remove();
                     }
                 }
             }
-            // The 'Garbage Collector': Remove messages that are eligible for permanent deletion.
             history.removeIf(AbstractMessage::isGarbageCollectable);
         }
     }
@@ -397,15 +301,13 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
     }
 
     /**
-     * {@inheritDoc} Restores the standard context providers after
-     * deserialization.
+     * {@inheritDoc}
      */
     @Override
     public void rebind() {
         super.rebind();
         log.info("Rebinding ContextManager for session: {}", chat.getConfig().getSessionId());
 
-        // Ensure standard providers are registered (they might be missing if session was saved in an older version)
         boolean hasCore = false;
         boolean hasTools = false;
         boolean hasResources = false;

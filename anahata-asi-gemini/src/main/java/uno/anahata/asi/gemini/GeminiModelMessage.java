@@ -19,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.AbstractPart;
-import uno.anahata.asi.model.core.AbstractToolMessage;
 import uno.anahata.asi.model.core.FinishReason;
 import uno.anahata.asi.model.core.ModelBlobPart;
 import uno.anahata.asi.model.core.ModelTextPart;
@@ -37,7 +36,7 @@ import uno.anahata.asi.model.web.GroundingSource;
  */
 @Slf4j
 @Getter
-public class GeminiModelMessage extends AbstractModelMessage<GeminiResponse, GeminiToolMessage> {
+public class GeminiModelMessage extends AbstractModelMessage<GeminiResponse> {
 
     /** The original, native Candidate object from the Google GenAI API. */
     private final transient Candidate geminiCandidate;
@@ -147,11 +146,6 @@ public class GeminiModelMessage extends AbstractModelMessage<GeminiResponse, Gem
 
         // The ToolManager is accessible via the Chat reference in the message.
         return getChat().getToolManager().createToolCall(this, id, name, args);
-    }
-
-    @Override
-    protected GeminiToolMessage createToolMessage() {
-        return new GeminiToolMessage(this);
     }
     
     /**

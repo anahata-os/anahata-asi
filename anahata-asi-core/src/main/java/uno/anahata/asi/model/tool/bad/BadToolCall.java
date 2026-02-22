@@ -4,7 +4,6 @@ package uno.anahata.asi.model.tool.bad;
 import java.util.Map;
 import lombok.NonNull;
 import uno.anahata.asi.model.core.AbstractModelMessage;
-import uno.anahata.asi.model.core.AbstractToolMessage;
 import uno.anahata.asi.model.tool.AbstractToolCall;
 
 /**
@@ -20,12 +19,8 @@ public class BadToolCall extends AbstractToolCall<BadTool, BadToolResponse> {
     }
 
     @Override
-    protected BadToolResponse createResponse(AbstractToolMessage toolMessage) {
+    protected BadToolResponse createResponse() {
         return new BadToolResponse(this);
     }
 
-    @Override
-    protected int getDefaultMaxDepth() {
-        return getResponse().getDefaultMaxDepth();
-    }
 }

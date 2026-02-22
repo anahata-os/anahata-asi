@@ -5,7 +5,6 @@ package uno.anahata.asi.swing.chat;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -25,17 +24,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.jdesktop.swingx.JXTextArea;
 
 import uno.anahata.asi.chat.Chat;
-import uno.anahata.asi.model.core.AbstractMessage;
 import uno.anahata.asi.model.core.AbstractModelMessage;
-import uno.anahata.asi.model.core.AbstractToolMessage;
 import uno.anahata.asi.model.core.InputUserMessage;
-import uno.anahata.asi.model.core.TextPart;
-import uno.anahata.asi.model.tool.AbstractToolResponse;
-import uno.anahata.asi.model.tool.ToolExecutionStatus;
 import uno.anahata.asi.status.ChatStatus;
-import uno.anahata.asi.swing.components.ScrollablePanel;
 import uno.anahata.asi.swing.icons.AttachIcon;
-import uno.anahata.asi.swing.icons.AutoReplyIcon;
 import uno.anahata.asi.swing.icons.CancelIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.FramesIcon;

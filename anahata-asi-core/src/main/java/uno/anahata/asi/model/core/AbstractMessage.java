@@ -113,7 +113,7 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
      * @return {@code true} if the message is prunnable.
      */
     public boolean isPrunnableOrRemovable() {
-        return getChat() != null && getSequentialId() != 0;
+        return getSequentialId() != 0;
     }
 
     /**
@@ -140,7 +140,7 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
 
         // V2 ID Synchronization Fix: If the message is already identified (part of history),
         // we must identify the new part immediately to avoid sequentialId=0 issues.
-        if (getSequentialId() != 0 && chat != null) {
+        if (getSequentialId() != 0) {
             chat.getContextManager().identifyPart(part);
         }
 
@@ -164,9 +164,7 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
      * Removes this message from the chat history.
      */
     public void remove() {
-        if (chat != null) {
-            chat.getContextManager().removeMessage(this);
-        }
+        chat.getContextManager().removeMessage(this);
     }
 
     /**
@@ -199,12 +197,9 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
      * most recent message in the chat history. The head message has a depth of
      * 0.
      *
-     * @return The depth of the message, or -1 if not attached to a chat.
+     * @return The depth of the message.
      */
     public int getDepth() {
-        if (chat == null) {
-            return -1;
-        }
         List<AbstractMessage> history = chat.getContextManager().getHistory();
         int index = history.indexOf(this);
         if (index == -1) {
@@ -246,21 +241,21 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
     }
 
     /**
-     * Calculates the EFFECTIVE pruned state of this message. A message is
-     * effectively pruned if it was explicitly pruned OR if all of its
-     * constituent parts are effectively pruned.
+     * Calculates the EFFECTIVE pruned state of this message. 
+     * A message is effectively pruned ONLY if it contains no visible (un-pruned) parts.
+     * This logic ensures that if any part (like a pinned code block) remains visible,
+     * the message itself remains effectively visible to host that part.
      *
      * @return {@code true} if the message is effectively pruned.
      */
     public boolean isEffectivelyPruned() {
-        if (Boolean.TRUE.equals(this.pruned)) {
+        // If the turn is empty, it's effectively pruned regardless of the message flag.
+        if (parts.isEmpty()) {
             return true;
         }
-        if (isPinned()) {
-            return false;
-        }
-        // A message is effectively pruned if it has parts and ALL of them are pruned.
-        return getParts(false).isEmpty() && !parts.isEmpty();
+        
+        // If there are ANY visible parts (not effectively pruned), the message is NOT effectively pruned.
+        return getParts(false).isEmpty();
     }
 
     /**
@@ -353,12 +348,13 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
         if (identity != null && !identity.isEmpty()) {
             sb.append(identity).append(" | ");
         }
-        sb.append(String.format("Role: %s | From: %s | Device: %s | Time: %s | Tokens: %d",
+        sb.append(String.format("Role: %s | From: %s | Device: %s | Time: %s | Tokens: %d | Depth: %d",
             getRole(),
             getFrom(),
             getDevice(),
             TimeUtils.formatSmartTimestamp(Instant.ofEpochMilli(getTimestamp())),
-            getTokenCount(false)
+            getTokenCount(false),
+            getDepth()
         ));
         
         appendMetadata(sb);

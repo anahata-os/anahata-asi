@@ -21,7 +21,6 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.model.core.AbstractMessage;
-import uno.anahata.asi.model.core.AbstractToolMessage;
 import uno.anahata.asi.swing.chat.render.AbstractMessagePanel;
 import uno.anahata.asi.swing.chat.render.MessagePanelFactory;
 import uno.anahata.asi.swing.components.ScrollablePanel;
@@ -167,10 +166,7 @@ public class ConversationPanel extends JPanel {
      * </p>
      */
     public void render() {        
-        // Filter out tool messages from the visible history.
-        List<AbstractMessage> history = chat.getContextManager().getHistory().stream()
-                .filter(msg -> !(msg instanceof AbstractToolMessage))
-                .collect(Collectors.toList());
+        List<AbstractMessage> history = chat.getContextManager().getHistory();
         
         log.info("Updating conversation structure for session {}: {} messages", 
                 chat.getConfig().getSessionId(), history.size());
@@ -212,6 +208,10 @@ public class ConversationPanel extends JPanel {
             messagesPanel.remove(messagesPanel.getComponentCount() - 1);
         }
         messagesPanel.add(Box.createVerticalGlue());
+
+        // 4. Refresh transient metadata (Depth/Remaining Depth) for ALL panels.
+        // As history grows, the distance from head changes for every message.
+        cachedMessagePanels.values().forEach(AbstractMessagePanel::refreshMetadata);
 
         if (added) {
             log.info("New message added, forcing autoScroll to true.");

@@ -52,14 +52,6 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
     }
 
     /**
-     * The original invocation request that this result corresponds to.
-     * Ignored during schema generation to prevent circular references.
-     */
-    @NonNull
-    @JsonIgnore
-    private final JavaMethodToolCall call;
-
-    /**
      * The raw exception thrown during execution, for debugging and session serialization.
      * Ignored during schema generation as it's an internal detail.
      */
@@ -72,16 +64,7 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
 
     public JavaMethodToolResponse(@NonNull JavaMethodToolCall call) {
         super(call);
-        this.call = call;
         setStatus(ToolExecutionStatus.PENDING);
-        
-        // Note: Publication to the tool message is now handled atomically 
-        // by the AbstractToolCall constructor to prevent race conditions.
-    }
-
-    @Override
-    public JavaMethodToolCall getCall() {
-        return call;
     }
 
     /** {@inheritDoc} */
@@ -165,15 +148,5 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
         }
         log.info("Stopping tool execution thread: {}", t.getName());
         t.interrupt();
-    }
-
-    @Override
-    protected int getDefaultMaxDepth() {
-        int toolMaxDepth = getCall().getTool().getMaxDepth();
-        if (toolMaxDepth != -1) {
-            return toolMaxDepth;
-        }
-        // Fall back to the system-wide default from ChatConfig
-        return getChatConfig().getDefaultToolMaxDepth();
     }
 }

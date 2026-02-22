@@ -45,4 +45,17 @@ public class ModelTextPart extends TextPart implements ThoughtSignature {
     public boolean isThought() {
         return thought;
     }
+
+    /**
+     * {@inheritDoc}
+     * Returns the default maximum depth for thoughts if this is a thought part,
+     * otherwise falls back to the standard text part depth.
+     */
+    @Override
+    protected int getDefaultMaxDepth() {
+        if (isThought()) {
+            return getChatConfig().getDefaultThoughtPartMaxDepth();
+        }
+        return super.getDefaultMaxDepth();
+    }
 }
