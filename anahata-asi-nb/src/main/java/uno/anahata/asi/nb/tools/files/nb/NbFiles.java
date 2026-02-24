@@ -71,7 +71,11 @@ public class NbFiles extends Files {
     @AiTool(value = "Loads a text file into the context as a managed resource. By default, files are loaded with a LIVE refresh policy, which means they are automatically refreshed from disk right before the API call starts. You do not need to re-load a file if it is already present in the context.")
     public List<TextFileResource> loadTextFile(
             @AiToolParam("The absolute paths to the text files.") List<String> resourcePaths) throws Exception {
-        return super.loadTextFile(resourcePaths);
+        List<TextFileResource> ret = new ArrayList<>();
+        for (String resourcePath : resourcePaths) {
+            ret.add(loadTextFile(resourcePath, null));
+        };
+        return ret;
     }
 
     /**
@@ -88,21 +92,36 @@ public class NbFiles extends Files {
         
         if (existing.isPresent()) {
             TextFileResource resource = existing.get();
-            resource.getViewport().setSettings(settings);
-            resource.reload();
-            log("Updating existing NbTextFileResource: " + path);
+            if (settings != null) {
+                log("File was already loaded, Updating viewport settings for: " + path);
+                resource.getViewport().setSettings(settings);
+            }
+            
+            if (resource.getRefreshPolicy() == RefreshPolicy.SNAPSHOT) {
+                log("Updating existing NbTextFileResource: " + path);
+                resource.reload();
+            }
+            
+            if (settings == null && resource.getRefreshPolicy() == RefreshPolicy.LIVE) {
+                error("No point in reloading a file that is already in context with LIVE refresh policy: " + path);
+            }
+            
             return resource;
         }
 
         FileObject fo = FileUtil.toFileObject(new File(path));
         if (fo == null) {
+            log("Could not find FileObject for " + path + " loading as normal TextFileResource");
             return super.loadTextFile(path, settings);
         }
 
         NbTextFileResource resource = new NbTextFileResource(getResourceManager(), fo);
-        resource.getViewport().setSettings(settings);
+        if (settings != null) {
+            resource.getViewport().setSettings(settings);
+        }
+        
         resource.setRefreshPolicy(RefreshPolicy.LIVE);
-        resource.reload();
+        
         getResourceManager().register(resource);
         log("Successfully loaded and registered NbTextFileResource: " + resource.getName());
         return resource;

@@ -13,6 +13,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import org.netbeans.api.project.Project;
+import org.netbeans.api.project.ProjectManager;
 import org.netbeans.spi.project.ui.support.NodeFactory;
 import org.netbeans.spi.project.ui.support.NodeFactorySupport;
 import org.netbeans.spi.project.ui.support.NodeList;
@@ -44,7 +45,7 @@ public class AnahataNodeFactory implements NodeFactory {
      * Default constructor for the node factory.
      */
     public AnahataNodeFactory() {
-        log.info("AnahataNodeFactory initialized for JASI V2.");
+        log.info("AnahataNodeFactory v2 initialized");
     }
 
     /**
@@ -71,7 +72,7 @@ public class AnahataNodeFactory implements NodeFactory {
          * The path to the Anahata overlay icon. 
          * FIXED: Renamed to avoid shadowing V1's icon in the merged resource layer.
          */
-        private static final String OVERLAY_ICON_PATH = "icons/anahata_32.png";
+        private static final String OVERLAY_ICON_PATH = "icons/anahata_16.png";
 
         /**
          * Constructs a new JASI folder node.
@@ -80,8 +81,8 @@ public class AnahataNodeFactory implements NodeFactory {
          */
         public AnahataFolderNode(Project project) {
             super(new AnahataFileChildren(project), Lookups.singleton(project));
-            setName("JASI");
-            setDisplayName("JASI");
+            setName("Anahata");
+            setDisplayName("Anahata");
         }
 
         /** {@inheritDoc} */
@@ -184,7 +185,7 @@ public class AnahataNodeFactory implements NodeFactory {
                 try {
                     FileObject newFile = projectDir.createData("anahata.md");
                     try (Writer writer = new OutputStreamWriter(newFile.getOutputStream())) {
-                        writer.write("# Anahata Project Notes\n\nThis file is for Anahata AI Assistant's notes regarding the '"
+                        writer.write("# Project Instructions\n\nThis file is are the project level system instructions for '"
                                 + project.getProjectDirectory().getName() + "' project.\n");
                     }
                     mdFiles.add(newFile);
@@ -225,7 +226,7 @@ public class AnahataNodeFactory implements NodeFactory {
          * The path to the Anahata icon. 
          * FIXED: Renamed to avoid shadowing V1's icon.
          */
-        private static final String ANAHATA_ICON_PATH = "icons/v2/anahata.png";
+        private static final String ANAHATA_ICON_PATH = "icons/anahata_16.png";
 
         /**
          * Constructs a new anahata.md node.
