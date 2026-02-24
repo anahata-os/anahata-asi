@@ -316,12 +316,30 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
     public <T> Optional<T> getToolkitInstance(Class<T> toolkitClass) {
         for (AbstractToolkit<?> toolkit : toolkits.values()) {
             if (toolkit instanceof JavaObjectToolkit jot) {
-                if (toolkitClass.isInstance(jot.getToolInstance())) {
-                    return Optional.of(toolkitClass.cast(jot.getToolInstance()));
+                if (toolkitClass.isInstance(jot.getToolkitInstance())) {
+                    return Optional.of(toolkitClass.cast(jot.getToolkitInstance()));
                 }
             }
         }
         return Optional.empty();
+    }
+    
+    /**
+     * Enables or disables multiple toolkits by their names (IDs).
+     * 
+     * @param enabled Whether to enable or disable.
+     * @param toolkitNames The names of the toolkits to update.
+     */
+    public void updateToolkits(boolean enabled, List<String> toolkitNames) {
+        for (String name : toolkitNames) {
+            AbstractToolkit<?> toolkit = toolkits.get(name);
+            if (toolkit != null) {
+                toolkit.setEnabled(enabled);
+                log.info("{} toolkit: {}", enabled ? "Enabled" : "Disabled", name);
+            } else {
+                log.warn("Toolkit not found: {}", name);
+            }
+        }
     }
 
     @Override
@@ -373,20 +391,22 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
         StringBuilder sb = new StringBuilder("**Enabled Toolkits**");
         for (AbstractToolkit<?> at: getEnabledToolkits()) {
             sb.append("\n\n**").append(at.getName()).append("**");
-            sb.append("\nDescription:").append(at.getDescription());
-            sb.append("\nDisabled Tools (permission never): ").append(at.getDisabledTools().size());
+            sb.append("\n- ID: `").append(at.getName()).append("` ");
+            sb.append("\n- Description: ").append(at.getDescription());
+            sb.append("\n- Disabled Tools (permission never): ").append(at.getDisabledTools().size());
             for (AbstractTool t: at.getDisabledTools()) {
-                sb.append("\n - ").append(t.getName()).append(":").append(t.getDescription());
+                sb.append("\n  - ").append(t.getName()).append(":").append(t.getDescription());
             }
         }
         
         sb.append("\n\n**Disabled Toolkits**: You can suggest the user to enable them:\n");
         for (AbstractToolkit<?> at: getDisabledToolkits()) {
             sb.append("\n\n**").append(at.getName()).append("**");
-            sb.append(" \nDescription:").append(at.getDescription());
-            sb.append("\nTotal Tools : ").append(at.getAllTools().size());
+            sb.append("\n- ID: `").append(at.getName()).append("` ");
+            sb.append("\n- Description: ").append(at.getDescription());
+            sb.append("\n- Total Tools : ").append(at.getAllTools().size());
             for (AbstractTool t: at.getAllTools()) {
-                sb.append("\n - ").append(t.getName()).append(":").append(t.getDescription());
+                sb.append("\n  - ").append(t.getName()).append(":").append(t.getDescription());
             }
         }
         ragMessage.addTextPart(sb.toString());
