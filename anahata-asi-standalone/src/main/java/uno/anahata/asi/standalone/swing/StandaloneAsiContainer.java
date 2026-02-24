@@ -3,9 +3,13 @@
  */
 package uno.anahata.asi.standalone.swing;
 
+import java.io.File;
 import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.cli.CommandLineArgs;
+import uno.anahata.asi.model.resource.AbstractPathResource;
+import uno.anahata.asi.model.resource.AbstractResource;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * A specialized {@link AsiContainer} for the standalone Swing application.
@@ -14,6 +18,7 @@ import uno.anahata.asi.cli.CommandLineArgs;
  * 
  * @author anahata
  */
+@Slf4j
 public class StandaloneAsiContainer extends AsiContainer {
     
     /** The raw command-line arguments passed to the application. */
@@ -34,12 +39,44 @@ public class StandaloneAsiContainer extends AsiContainer {
      * <p>
      * In the standalone container, this hook is used to parse command-line 
      * arguments and apply them to the newly created chat session.
+     * </p>
      * 
      * @param chat The newly created chat session.
      */
     @Override
     public void onChatCreated(Chat chat) {
-        super.onChatCreated(chat); 
+        super.onChatCreated(chat);
+        log.info("Parsing command-line arguments for new standalone chat.");
         CommandLineArgs.parse(chat, cmdLineArgs);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Creates a new chat session using the {@link StandaloneChatConfig}.
+     * </p>
+     */
+    @Override
+    public Chat createNewChat() {
+        return new Chat(new StandaloneChatConfig(this));
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Opens the file associated with the resource using the system's default 
+     * application via {@link java.awt.Desktop}.
+     * </p>
+     */
+    @Override
+    public void openResource(AbstractResource<?, ?> resource) {
+        if (resource instanceof AbstractPathResource<?> apr) {
+            try {
+                log.info("Opening resource via system desktop: {}", apr.getPath());
+                java.awt.Desktop.getDesktop().open(new File(apr.getPath()));
+            } catch (Exception e) {
+                log.error("Failed to open resource via system desktop: " + apr.getPath(), e);
+            }
+        }
     }
 }

@@ -12,6 +12,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import uno.anahata.asi.AsiContainer;
+import uno.anahata.ai.tool.MockAsiContainer;
+import uno.anahata.asi.model.resource.AbstractResource;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.chat.ChatConfig;
 import uno.anahata.asi.model.tool.java.JavaMethodTool;
@@ -30,7 +32,7 @@ public class JavaMethodToolTest {
 
     @BeforeAll
     public static void setUp() {
-        AsiContainer container = new AsiContainer("test-app");
+        AsiContainer container = new MockAsiContainer("test-app");
         ChatConfig config = new ChatConfig(container, "test-session");
         config.getToolClasses().add(MockToolkit.class);
         chat = new Chat(config);

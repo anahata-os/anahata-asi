@@ -3,15 +3,14 @@ package uno.anahata.asi.model.resource.files;
 
 import uno.anahata.asi.toolkit.files.TextViewport;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.internal.TokenizerUtils;
 import uno.anahata.asi.model.core.RagMessage;
-import uno.anahata.asi.model.core.TextPart;
 import uno.anahata.asi.model.resource.AbstractPathResource;
 import uno.anahata.asi.resource.ResourceManager;
 
@@ -26,7 +25,7 @@ import uno.anahata.asi.resource.ResourceManager;
 @Setter
 @Slf4j
 @Schema(description = "A resource representing a text file")
-public class TextFileResource extends AbstractPathResource<String, String> {
+public class TextFileResource extends AbstractPathResource<String> {
 
     /** The current viewport settings and processed text for this file. */
     @Schema(description = "The current view port for the text file")
@@ -50,29 +49,54 @@ public class TextFileResource extends AbstractPathResource<String, String> {
      * @throws Exception if an I/O error occurs reading from the stream
      */
     public TextFileResource(ResourceManager manager, Path path, TextViewport viewport) throws Exception {
-        super(manager);
-        this.setResource(path); 
-        this.setPath(path.toAbsolutePath().toString());
-        this.setName(path.getFileName().toString());
+        super(manager, path.toAbsolutePath().toString());
         this.viewport = viewport;
-        // reload() removed from constructor to avoid race conditions in subclasses.
-        // Callers or subclasses must ensure reload() is called before use.
     }
     
     /** {@inheritDoc} */
     @Override
     public void reload() throws Exception {
-        log.info("Reloading text file resource: {}", getPath());
-        String content = Files.readString(getResource());
-        this.setLoadLastModified(getCurrentLastModified());
+        // Optimization: Use streaming for tail or grep to avoid loading huge files into JVM heap
+        if (viewport.getSettings().isTail() || (viewport.getSettings().getGrepPattern() != null && !viewport.getSettings().getGrepPattern().isBlank())) {
+            log.info("Reloading text resource (streaming): {}", getPath());
+            viewport.process(getResource(), getCharset());
+            this.setLoadLastModified(getCurrentLastModified());
+            this.onContentReloaded(viewport.getProcessedText());
+        } else {
+            super.reload();
+        }
+    }
+
+    /**
+     * Gets the charset for reading the file. Defaults to platform default.
+     * NetBeans implementation overrides this to use IDE-specific encoding.
+     * 
+     * @return The Charset to use.
+     */
+    protected Charset getCharset() {
+        return Charset.defaultCharset();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected String reloadContent() throws Exception {
+        return Files.readString(getResource(), getCharset());
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected void onContentReloaded(String newContent) {
+        // If coming from super.reload(), it's the full text. Process it.
+        // If coming from streaming reload(), it's already processed, but we check for logical changes.
+        if (newContent != null && !newContent.equals(viewport.getProcessedText())) {
+            this.viewport.process(newContent);
+        }
         
-        // Process the new content through the existing viewport
-        this.viewport.process(content);
-        
-        // Cache only the processed text. The header is generated dynamically.
         String oldCache = this.cache;
         this.cache = viewport.getProcessedText();
-        propertyChangeSupport.firePropertyChange("cache", oldCache, cache);
+        if (oldCache != cache) {
+            propertyChangeSupport.firePropertyChange("cache", oldCache, cache);
+        }
     }
 
     /** {@inheritDoc} */
@@ -80,7 +104,7 @@ public class TextFileResource extends AbstractPathResource<String, String> {
     protected void populateFromCache(RagMessage rm) {
         StringBuilder sb = new StringBuilder();
         sb.append("```\n");
-        sb.append(cache);
+        sb.append(cache != null ? cache : "");
         sb.append("\n```");
         rm.addTextPart(sb.toString());
     }
@@ -95,7 +119,7 @@ public class TextFileResource extends AbstractPathResource<String, String> {
     @Override
     public int getTokenCount() {
         int headerTokens = TokenizerUtils.countTokens(getHeader());
-        int contentTokens = TokenizerUtils.countTokens(cache);
+        int contentTokens = TokenizerUtils.countTokens(cache != null ? cache : "");
         return headerTokens + contentTokens + 10; // +10 for markdown formatting
     }
 

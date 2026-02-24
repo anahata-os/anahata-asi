@@ -3,7 +3,9 @@ package uno.anahata.asi.nb.tools.files.nb;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import lombok.extern.slf4j.Slf4j;
+import org.netbeans.api.queries.FileEncodingQuery;
 import org.openide.filesystems.FileObject;
 import uno.anahata.asi.model.resource.files.TextFileResource;
 import uno.anahata.asi.resource.ResourceManager;
@@ -57,27 +59,21 @@ public class NbTextFileResource extends TextFileResource {
         return super.getHtmlDisplayName();
     }
 
-    /**
-     * {@inheritDoc}
-     * Implementation details: Uses {@link FileObject#asText()} for efficient 
-     * reading and updates the load timestamp from the FileObject metadata.
-     */
+    /** {@inheritDoc} */
     @Override
-    public void reload() throws Exception {
+    protected Charset getCharset() {
+        FileObject fo = helper.getFileObject();
+        return fo != null ? FileEncodingQuery.getEncoding(fo) : super.getCharset();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected String reloadContent() throws Exception {
         FileObject fo = helper.getFileObject();
         if (fo == null) {
             throw new IOException("FileObject not available for: " + getPath());
         }
-        
-        log.info("Reloading NbTextFileResource: {}", getPath());
-        String content = fo.asText();
-        this.setLoadLastModified(fo.lastModified().getTime());
-        
-        this.getViewport().process(content);
-        
-        String oldCache = this.cache;
-        this.cache = getViewport().getProcessedText();
-        propertyChangeSupport.firePropertyChange("cache", oldCache, cache);
+        return fo.asText();
     }
 
     /** {@inheritDoc} */

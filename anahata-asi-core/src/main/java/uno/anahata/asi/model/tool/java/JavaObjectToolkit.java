@@ -34,7 +34,7 @@ import uno.anahata.asi.tool.ToolManager;
 public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implements Rebindable {
 
     /** The singleton instance of the tool class. */
-    private final Object toolInstance;
+    private final Object toolkitInstance;
 
     /** 
      * A list of all declared methods (tools) for this toolkit. 
@@ -67,8 +67,8 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
         this.defaultMaxDepth = maxDepth;
         
         try {
-            this.toolInstance = toolClass.getDeclaredConstructor().newInstance();
-            if (toolInstance instanceof ToolContext tc) {
+            this.toolkitInstance = toolClass.getDeclaredConstructor().newInstance();
+            if (toolkitInstance instanceof ToolContext tc) {
                 tc.setToolkit(this);
             }
         } catch (Exception e) {
@@ -79,7 +79,7 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
         for (Method method : getAllAnnotatedMethods(toolClass)) {
             AiTool toolAnnotation = method.getAnnotation(AiTool.class);
             if (toolAnnotation != null) {
-                tools.add(new JavaMethodTool(this, toolInstance, method, toolAnnotation));
+                tools.add(new JavaMethodTool(this, toolkitInstance, method, toolAnnotation));
             }
         }
     }
@@ -99,7 +99,7 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
 
     @Override
     public ContextProvider getContextProvider() {
-         if (toolInstance instanceof ContextProvider cp) {
+         if (toolkitInstance instanceof ContextProvider cp) {
             return cp;
          } else {
              return null;
@@ -109,7 +109,7 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
     @Override
     public void rebind() {
         log.info("Rebinding JavaObjectToolkit: {}", name);
-        if (toolInstance instanceof ToolContext tc) {
+        if (toolkitInstance instanceof ToolContext tc) {
             tc.setToolkit(this);
         }
 
@@ -119,7 +119,7 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
 
         // Hot-reload logic: Sync the tools list with the current class definition
         Map<String, Method> currentMethods = new HashMap<>();
-        for (Method m : getAllAnnotatedMethods(toolInstance.getClass())) {
+        for (Method m : getAllAnnotatedMethods(toolkitInstance.getClass())) {
             AiTool toolAnnotation = m.getAnnotation(AiTool.class);
             if (toolAnnotation != null) {
                 currentMethods.put(JavaMethodTool.buildMethodSignature(m), m);
@@ -147,7 +147,7 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
             AiTool toolAnnotation = m.getAnnotation(AiTool.class);
             try {
                 log.info("Adding new tool discovered during rebind: {}", entry.getKey());
-                tools.add(new JavaMethodTool(this, toolInstance, m, toolAnnotation));
+                tools.add(new JavaMethodTool(this, toolkitInstance, m, toolAnnotation));
             } catch (Exception e) {
                 log.error("Failed to create new tool during rebind: " + entry.getKey(), e);
             }

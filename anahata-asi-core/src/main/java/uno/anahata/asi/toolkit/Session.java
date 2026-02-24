@@ -71,6 +71,20 @@ public class Session extends AnahataToolkit {
         }
     }
 
+    /**
+     * Enables or disables multiple toolkits by their names (IDs).
+     * 
+     * @param enabled Whether to enable or disable the toolkits.
+     * @param toolkitNames The names (IDs) of the toolkits to update (e.g., 'Audio', 'Browser').
+     */
+    @AiTool("Enables or disables multiple toolkits by their names (IDs).")
+    public void updateToolkits(
+            @AiToolParam("Whether to enable or disable.") boolean enabled, 
+            @AiToolParam("The names of the toolkits to update (e.g., 'Audio', 'Browser').") List<String> toolkitNames) {
+        getChat().getToolManager().updateToolkits(enabled, toolkitNames);
+        log((enabled ? "Enabled" : "Disabled") + " toolkits: " + toolkitNames);
+    }
+
     @AiTool(value = "Stops one or more currently executing tools by their IDs.", requiresApproval = false)
     public String stopRunningTools(@AiToolParam("The unique IDs of the tool calls to stop.") List<String> toolCallIds) {
         List<AbstractToolCall<?, ?>> executing = getChat().getToolManager().getExecutingCalls();

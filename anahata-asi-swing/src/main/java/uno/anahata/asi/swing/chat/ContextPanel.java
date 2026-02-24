@@ -5,10 +5,14 @@ package uno.anahata.asi.swing.chat;
 
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.JButton;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JToolBar;
@@ -20,6 +24,11 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jdesktop.swingx.JXTreeTable;
 import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.context.ContextProvider;
+import uno.anahata.asi.model.resource.AbstractPathResource;
+import uno.anahata.asi.model.resource.AbstractResource;
+import uno.anahata.asi.model.tool.AbstractToolkit;
+import uno.anahata.asi.model.tool.java.JavaObjectToolkit;
 import uno.anahata.asi.swing.chat.tool.ToolPanel;
 import uno.anahata.asi.swing.chat.tool.ToolkitPanel;
 import uno.anahata.asi.swing.chat.tool.ContextProviderPanel;
@@ -37,6 +46,7 @@ import uno.anahata.asi.swing.chat.tool.ToolsNode;
 import uno.anahata.asi.swing.chat.tool.ContextTreeCellRenderer;
 import uno.anahata.asi.swing.chat.render.MessagePanelFactory;
 import uno.anahata.asi.swing.chat.render.PartPanelFactory;
+import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 
@@ -221,10 +231,126 @@ public class ContextPanel extends JPanel {
             }
         });
         
+        // Setup Popup Menu and Double-Click
+        setupInteractions();
+        
         SwingUtilities.invokeLater(() -> {
             splitPane.setDividerLocation(0.5);
             refresh(true);
         });
+    }
+
+    /**
+     * Configures the popup menu and double-click behavior for the tree table.
+     */
+    private void setupInteractions() {
+        JPopupMenu popup = new JPopupMenu();
+        
+        JMenuItem openInEditorItem = new JMenuItem("Open in Editor");
+        openInEditorItem.addActionListener(e -> {
+            int row = treeTable.getSelectedRow();
+            if (row != -1) {
+                Object node = treeTable.getPathForRow(row).getLastPathComponent();
+                if (node instanceof ResourceNode rn) {
+                    openResourceInEditor(rn.getUserObject());
+                }
+            }
+        });
+        
+        JMenuItem removeItem = new JMenuItem("Remove from Context", new DeleteIcon(16));
+        removeItem.addActionListener(e -> {
+            int row = treeTable.getSelectedRow();
+            if (row != -1) {
+                Object node = treeTable.getPathForRow(row).getLastPathComponent();
+                if (node instanceof ResourceNode rn) {
+                    chat.getResourceManager().unregister(rn.getUserObject().getId());
+                }
+            }
+        });
+        
+        JMenuItem toggleItem = new JMenuItem("Toggle Providing");
+        toggleItem.addActionListener(e -> {
+            int row = treeTable.getSelectedRow();
+            if (row != -1) {
+                Object node = treeTable.getPathForRow(row).getLastPathComponent();
+                if (node instanceof ProviderNode pn) {
+                    pn.getUserObject().setProviding(!pn.getUserObject().isProviding());
+                } else if (node instanceof ToolkitNode tkn) {
+                    tkn.getUserObject().setEnabled(!tkn.getUserObject().isEnabled());
+                } else if (node instanceof ResourceNode rn) {
+                    rn.getUserObject().setProviding(!rn.getUserObject().isProviding());
+                }
+                refresh(false);
+            }
+        });
+
+        popup.add(openInEditorItem);
+        popup.add(removeItem);
+        popup.addSeparator();
+        popup.add(toggleItem);
+
+        treeTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2 && SwingUtilities.isLeftMouseButton(e)) {
+                    int row = treeTable.rowAtPoint(e.getPoint());
+                    if (row != -1) {
+                        Object node = treeTable.getPathForRow(row).getLastPathComponent();
+                        if (node instanceof ResourceNode rn) {
+                            openResourceInEditor(rn.getUserObject());
+                        }
+                    }
+                }
+            }
+            
+            @Override
+            public void mousePressed(MouseEvent e) {
+                showPopup(e);
+            }
+            
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                showPopup(e);
+            }
+            
+            private void showPopup(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    int row = treeTable.rowAtPoint(e.getPoint());
+                    if (row != -1) {
+                        treeTable.setRowSelectionInterval(row, row);
+                        Object node = treeTable.getPathForRow(row).getLastPathComponent();
+                        
+                        boolean isResource = node instanceof ResourceNode;
+                        boolean isToolkit = node instanceof ToolkitNode;
+                        boolean isProvider = node instanceof ProviderNode;
+                        
+                        openInEditorItem.setVisible(isResource);
+                        removeItem.setVisible(isResource);
+                        
+                        toggleItem.setVisible(isToolkit || isProvider || isResource);
+                        if (isToolkit) {
+                            ToolkitNode tkn = (ToolkitNode) node;
+                            toggleItem.setText(tkn.getUserObject().isEnabled() ? "Disable Toolkit" : "Enable Toolkit");
+                        } else if (isProvider || isResource) {
+                            ContextProvider cp = (ContextProvider) ((AbstractContextNode<?>)node).getUserObject();
+                            toggleItem.setText(cp.isProviding() ? "Stop Providing" : "Start Providing");
+                        }
+                        
+                        popup.show(e.getComponent(), e.getX(), e.getY());
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Attempts to open the given resource in the host environment's preferred 
+     * editor by delegating to the container.
+     * 
+     * @param res The resource to open.
+     */
+    private void openResourceInEditor(AbstractResource<?, ?> res) {
+        chat.getConfig().getContainer().openResource(res);
     }
 
     /**
@@ -301,9 +427,8 @@ public class ContextPanel extends JPanel {
      */
     public final void refresh(boolean structural) {
         SwingUtilities.invokeLater(() -> {
-            if (!isShowing() && !structural) {
-                return; // Skip background updates if hidden
-            }
+            // FIXED: Removed !isShowing() check to ensure model is updated even if tab is hidden.
+            // This prevents stale state when the user switches to the Context tab.
             
             log.info("Refreshing ContextPanel tree (structural={}) for chat: {}", structural, chat.getShortId());
             

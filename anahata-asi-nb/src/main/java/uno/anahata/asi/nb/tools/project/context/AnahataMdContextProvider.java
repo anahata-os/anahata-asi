@@ -1,13 +1,12 @@
-/* Licensed under the Apache License, Version 2.0 */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.tools.project.context;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.File;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.context.BasicContextProvider;
 import uno.anahata.asi.context.ContextPosition;
 import uno.anahata.asi.model.resource.files.TextFileResource;
+import uno.anahata.asi.nb.tools.files.nb.NbFiles;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.nb.tools.project.nb.AnahataProjectIconAnnotator;
 
@@ -66,16 +65,17 @@ public class AnahataMdContextProvider extends BasicContextProvider {
      * SYSTEM_INSTRUCTIONS resource. Otherwise, it is unregistered.
      */
     private void syncResource() {
-        Path path = Paths.get(projectPath, "anahata.md");
+        File file = new File(projectPath, "anahata.md");
         
-        if (isProviding() && Files.exists(path)) {
+        if (isProviding() && file.exists()) {
             if (registeredResourceId == null) {
                 try {
-                    TextFileResource resource = new TextFileResource(projectsToolkit.getResourceManager(), path);
+                    // Use the toolkit to load the resource correctly (handling NbTextFileResource if needed)
+                    NbFiles filesToolkit = projectsToolkit.getToolkit(NbFiles.class);
+                    TextFileResource resource = filesToolkit.loadTextFileInternal(file.getAbsolutePath(), null);
+                    
                     // Force the position to SYSTEM_INSTRUCTIONS
                     resource.setContextPosition(ContextPosition.SYSTEM_INSTRUCTIONS);
-                    resource.reload();
-                    projectsToolkit.getResourceManager().register(resource);
                     this.registeredResourceId = resource.getId();
                     log.info("Registered anahata.md as SYSTEM_INSTRUCTIONS resource for project: {}", projectPath);
                 } catch (Exception e) {

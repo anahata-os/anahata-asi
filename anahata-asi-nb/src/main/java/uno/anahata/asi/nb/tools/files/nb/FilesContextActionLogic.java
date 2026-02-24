@@ -49,7 +49,7 @@ public class FilesContextActionLogic {
                     String path = file.getAbsolutePath();
                     if (targetChat.getResourceManager().findByPath(path).isEmpty()) {
                         DataObject dobj = DataObject.find(fo);
-                        AbstractPathResource<?, ?> resource;
+                        AbstractPathResource<?> resource;
                         
                         // Proper NetBeans API check: if it has an editor or line cookie, it's textual.
                         boolean isTextual = dobj.getLookup().lookup(EditorCookie.class) != null 
@@ -186,7 +186,7 @@ public class FilesContextActionLogic {
 
         return (int) chat.getResourceManager().getResources().stream()
                 .filter(r -> r instanceof AbstractPathResource)
-                .map(r -> (AbstractPathResource<?, ?>) r)
+                .map(r -> (AbstractPathResource<?>) r)
                 .filter(r -> {
                     String path = r.getPath();
                     if (!path.startsWith(folderPrefix)) {

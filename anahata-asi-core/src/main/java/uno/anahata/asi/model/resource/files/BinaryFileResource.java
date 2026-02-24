@@ -28,7 +28,7 @@ import uno.anahata.asi.resource.ResourceManager;
 @Setter
 @Slf4j
 @Schema(description = "A resource representing a binary file (image, video, etc.)")
-public class BinaryFileResource extends AbstractPathResource<byte[], byte[]> {
+public class BinaryFileResource extends AbstractPathResource<byte[]> {
 
     /** The detected MIME type of the binary data. */
     private String mimeType;
@@ -45,36 +45,41 @@ public class BinaryFileResource extends AbstractPathResource<byte[], byte[]> {
      * @throws Exception if the initial setup fails.
      */
     public BinaryFileResource(ResourceManager manager, Path path) throws Exception {
-        super(manager);
-        this.setResource(path); 
-        this.setPath(path.toAbsolutePath().toString());
-        this.setName(path.getFileName().toString());
+        super(manager, path.toAbsolutePath().toString());
     }
 
-    /**
-     * {@inheritDoc}
-     * Loads the file content as a byte array and detects its MIME type.
-     */
+    /** {@inheritDoc} */
     @Override
-    public void reload() throws Exception {
-        log.info("Reloading binary file resource: {}", getPath());
-        byte[] data = Files.readAllBytes(getResource());
-        this.setLoadLastModified(getCurrentLastModified());
-        this.mimeType = TikaUtils.detectMimeType(getResource().toFile());
-        this.cache = data;
-        
-        // Try to extract image dimensions for better token estimation
-        if (mimeType != null && mimeType.startsWith("image/")) {
-            try (ByteArrayInputStream bais = new ByteArrayInputStream(data)) {
-                BufferedImage img = ImageIO.read(bais);
-                if (img != null) {
-                    this.width = img.getWidth();
-                    this.height = img.getHeight();
-                }
-            } catch (Exception e) {
-                log.warn("Failed to read image dimensions for token estimation: {}", getPath());
-            }
+    protected byte[] reloadContent() throws Exception {
+        long size = java.nio.file.Files.size(getResource());
+        if (size > 10 * 1024 * 1024) { // 10MB Limit
+            throw new java.io.IOException("Binary file is too large to load into context: " + size + " bytes (Max limit: 10MB)");
         }
+        return Files.readAllBytes(getResource());
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected void onContentReloaded(byte[] data) {
+        try {
+            this.mimeType = TikaUtils.detectMimeType(getResource().toFile());
+            this.cache = data;
+            
+            // Try to extract image dimensions for better token estimation
+            if (mimeType != null && mimeType.startsWith("image/")) {
+                try (ByteArrayInputStream bais = new ByteArrayInputStream(data)) {
+                    BufferedImage img = ImageIO.read(bais);
+                    if (img != null) {
+                        this.width = img.getWidth();
+                        this.height = img.getHeight();
+                    }
+                }
+            }
+        } catch (Exception e) {
+             log.warn("Failed to process reloaded binary content: {}", getPath(), e);
+        }
+        
+        propertyChangeSupport.firePropertyChange("cache", null, cache);
     }
 
     /**

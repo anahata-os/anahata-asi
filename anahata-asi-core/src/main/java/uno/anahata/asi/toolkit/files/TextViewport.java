@@ -2,20 +2,28 @@ package uno.anahata.asi.toolkit.files;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.io.BufferedReader;
+import java.io.File;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.input.ReversedLinesFileReader;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 /**
  * A powerful engine that manages the view of a text resource.
- * Holds process results and a nested settings object.
+ * It supports both in-memory processing for small strings and 
+ * on-disk streaming for large files to prevent memory bloat.
  * 
  * @author anahata-ai
  */
@@ -36,22 +44,149 @@ public class TextViewport {
     private Integer matchingLineCount;
     private int truncatedLinesCount;
 
-    public void process(String fullText) {
-        Validate.notNull(fullText, "fullText cannot be null");
-        this.totalChars = fullText.length();
-        this.totalLines = (int) fullText.lines().count();
-
-        if (fullText.isEmpty()) {
-            this.matchingLineCount = 0;
-            this.truncatedLinesCount = 0;
-            this.processedText = "";
-            return;
+    /**
+     * Processes the viewport from a Path using streaming to save memory.
+     * This method correctly sets the total characters and lines for the entire file.
+     * 
+     * @param path The path to the file.
+     * @param charset The charset to use for reading.
+     * @throws Exception if an I/O error occurs.
+     */
+    public void process(Path path, Charset charset) throws Exception {
+        File file = path.toFile();
+        this.totalChars = file.length();
+        
+        // Use a heuristic for total lines to avoid full-file scan on every reload
+        // unless the file is small (< 1MB)
+        if (totalChars < 1024 * 1024) {
+            try (var lines = Files.lines(path, charset)) {
+                this.totalLines = (int) lines.count();
+            }
+        } else {
+            this.totalLines = -1; // Indicates "Unknown/Large"
         }
 
-        String contentToPaginate = fullText;
+        if (settings.isTail()) {
+            processTailStreaming(file, charset);
+        } else if (settings.getGrepPattern() != null && !settings.getGrepPattern().isBlank()) {
+            processGrepStreaming(path, charset);
+        } else {
+            processDirectPaging(path, charset);
+        }
+    }
+
+    /**
+     * Performs a memory-efficient tail operation by reading the file backwards from disk.
+     * If a grep pattern is set, it matches lines as it reads them until the target
+     * line count is reached.
+     * 
+     * @param file The file to read.
+     * @param charset The encoding of the file.
+     * @throws Exception if an I/O error occurs.
+     */
+    private void processTailStreaming(File file, Charset charset) throws Exception {
+        List<String> lines = new ArrayList<>();
+        Pattern pattern = (settings.getGrepPattern() != null && !settings.getGrepPattern().isBlank()) 
+                ? Pattern.compile(settings.getGrepPattern()) : null;
+        
+        int targetCount = settings.getTailLines();
+        
+        try (ReversedLinesFileReader reader = new ReversedLinesFileReader(file, charset)) {
+            String line;
+            while ((line = reader.readLine()) != null && lines.size() < targetCount) {
+                if (pattern == null || pattern.matcher(line).find()) {
+                    lines.add(line);
+                }
+            }
+        }
+        Collections.reverse(lines);
+        finalizeLines(lines, pattern != null ? lines.size() : null);
+    }
+
+    /**
+     * Performs a memory-efficient forward grep by streaming the file line-by-line.
+     * This avoids loading the entire file content if only a subset of lines match.
+     * 
+     * @param path The path to the file.
+     * @param charset The encoding of the file.
+     * @throws Exception if an I/O error occurs.
+     */
+    private void processGrepStreaming(Path path, Charset charset) throws Exception {
+        List<String> lines = new ArrayList<>();
+        Pattern pattern = Pattern.compile(settings.getGrepPattern());
+        
+        // For forward grep, we still need to limit memory
+        int maxLinesToReturn = 500; 
+        int matched = 0;
+        
+        try (BufferedReader reader = Files.newBufferedReader(path, charset)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (pattern.matcher(line).find()) {
+                    matched++;
+                    if (lines.size() < maxLinesToReturn) {
+                        lines.add(line);
+                    }
+                }
+            }
+        }
+        this.matchingLineCount = matched;
+        finalizeLines(lines, matched);
+    }
+
+    /**
+     * Reads a specific range of characters from the file directly into memory.
+     * This is used for simple pagination without filters.
+     * 
+     * @param path The path to the file.
+     * @param charset The encoding of the file.
+     * @throws Exception if an I/O error occurs.
+     */
+    private void processDirectPaging(Path path, Charset charset) throws Exception {
+        // For simple paging, we only read the window
+        long start = Math.max(0, settings.getStartChar());
+        int size = settings.getPageSizeInChars();
+        
+        try (BufferedReader reader = Files.newBufferedReader(path, charset)) {
+            reader.skip(start);
+            char[] buffer = new char[size];
+            int read = reader.read(buffer);
+            if (read > 0) {
+                // Internal call to process the read chunk without overwriting global totals
+                processContent(new String(buffer, 0, read), false);
+            } else {
+                this.processedText = "";
+            }
+        }
+    }
+
+    /**
+     * Legacy/In-memory processor for small strings or full content loads.
+     * This updates the global metadata based on the provided string.
+     * 
+     * @param fullText The full text string to process.
+     */
+    public void process(String fullText) {
+        Validate.notNull(fullText, "fullText cannot be null");
+        processContent(fullText, true);
+    }
+
+    /**
+     * Internal logic for processing content, with optional metadata update.
+     * 
+     * @param text The text to process.
+     * @param updateTotals Whether to update totalChars and totalLines based on this text.
+     */
+    private void processContent(String text, boolean updateTotals) {
+        if (updateTotals) {
+            this.totalChars = text.length();
+            this.totalLines = (int) text.lines().count();
+        }
+
+        String contentToPaginate = text;
         if (settings.getGrepPattern() != null && !settings.getGrepPattern().trim().isEmpty()) {
             Pattern pattern = Pattern.compile(settings.getGrepPattern());
-            contentToPaginate = fullText.lines()
+            contentToPaginate = text.lines()
                     .filter(line -> pattern.matcher(line).find())
                     .collect(Collectors.joining("\n"));
             this.matchingLineCount = (int) contentToPaginate.lines().count();
@@ -59,94 +194,49 @@ public class TextViewport {
             this.matchingLineCount = null;
         }
 
-        long start;
-        long end;
-
         if (settings.isTail()) {
             contentToPaginate = getTail(contentToPaginate, settings.getTailLines());
-            end = contentToPaginate.length();
-            start = Math.max(0, end - settings.getPageSizeInChars());
-        } else {
-            start = Math.max(0, settings.getStartChar());
-            end = Math.min(contentToPaginate.length(), start + settings.getPageSizeInChars());
         }
         
-        if (start >= contentToPaginate.length() && !contentToPaginate.isEmpty()) {
-            this.processedText = "";
-            return;
-        }
-
-        String pageText = contentToPaginate.substring((int)start, (int)end);
-        StringBuilder sb = new StringBuilder();
-        
-        if (start > 0 && contentToPaginate.charAt((int)start - 1) != '\n') {
-            int prevNewline = contentToPaginate.lastIndexOf('\n', (int)start - 1);
-            sb.append("[..." + (start - (prevNewline + 1)) + " preceding chars] ");
-        }
-        
-        sb.append(pageText);
-        
-        if (end < contentToPaginate.length() && contentToPaginate.charAt((int)end) != '\n') {
-            int nextNewline = contentToPaginate.indexOf('\n', (int)end);
-            if (nextNewline != -1) sb.append(" [" + (nextNewline - end) + " more chars...]");
-        }
-        
-        List<String> pageLines = sb.toString().lines().collect(Collectors.toList());
-        this.truncatedLinesCount = (int) pageLines.stream()
-                .filter(line -> line.length() > settings.getColumnWidth())
-                .count();
-
-        if (settings.isShowLineNumbers()) {
-            int startLineNum = -1; // -1 indicates "N/A"
-            
-            boolean isFiltered = (settings.getGrepPattern() != null && !settings.getGrepPattern().isEmpty());
-            
-            if (!isFiltered && !settings.isTail()) {
-                // Precise numbering for standard paging
-                startLineNum = (int) fullText.substring(0, (int) start).lines().count();
-            } else {
-                // For tailing or grepping, try to find the index of the current block in the full text
-                int idx = fullText.indexOf(pageText);
-                if (idx != -1) {
-                    startLineNum = (int) fullText.substring(0, idx).lines().count();
-                }
-            }
-
-            final int startLn = startLineNum;
-            final int[] ln = {startLn + 1};
-            this.processedText = pageLines.stream()
-                    .map(line -> {
-                        String numStr = (startLn == -1) ? "N/A" : String.valueOf(ln[0]++);
-                        return String.format("[%s]: %s", numStr, truncateLine(line));
-                    })
-                    .collect(Collectors.joining("\n"));
-        } else {
-            this.processedText = pageLines.stream()
-                .map(this::truncateLine)
-                .collect(Collectors.joining("\n"));
-        }
-    }
-
-    private String getTail(String text, int n) {
-        if (n <= 0) return "";
-        int count = 0;
-        int pos = text.length();
-        while (count < n && pos > 0) {
-            pos = text.lastIndexOf('\n', pos - 1);
-            if (pos == -1) {
-                pos = 0;
-                break;
-            }
-            count++;
-        }
-        return (pos > 0) ? text.substring(pos + 1) : text;
+        finalizeLines(contentToPaginate.lines().collect(Collectors.toList()), matchingLineCount);
     }
 
     /**
-     * Truncates a single line of text if it exceeds the configured column width.
+     * Updates internal state with processed lines and handles line-level truncation.
      * 
-     * @param line The line to truncate.
-     * @return The truncated line.
+     * @param lines The final list of lines to display.
+     * @param matchCount Total occurrences found (if filtering).
+     */
+    private void finalizeLines(List<String> lines, Integer matchCount) {
+        this.matchingLineCount = matchCount;
+        this.truncatedLinesCount = (int) lines.stream()
+                .filter(l -> l.length() > settings.getColumnWidth())
+                .count();
+
+        this.processedText = lines.stream()
+                .map(this::truncateLine)
+                .collect(Collectors.joining("\n"));
+    }
+
+    /**
+     * Extracts the last N lines from a string.
+     * 
+     * @param text The input string.
+     * @param n Maximum lines to return.
+     * @return The tailing lines.
+     */
+    private String getTail(String text, int n) {
+        if (n <= 0) return "";
+        List<String> all = text.lines().collect(Collectors.toList());
+        int start = Math.max(0, all.size() - n);
+        return all.subList(start, all.size()).stream().collect(Collectors.joining("\n"));
+    }
+
+    /**
+     * Truncates a single line to the configured column width.
+     * 
+     * @param line The input line.
+     * @return The truncated line with an abbreviation marker.
      */
     private String truncateLine(String line) {
         int width = settings.getColumnWidth();
@@ -159,6 +249,6 @@ public class TextViewport {
 
     @Override
     public String toString() {
-        return "TextViewport{" + "settings=" + settings + ", totalChars=" + totalChars + ", totalLines=" + totalLines + ", matchingLineCount=" + matchingLineCount + ", truncatedLinesCount=" + truncatedLinesCount + '}';
+        return "TextViewport{" + "settings=" + settings + ", totalChars=" + totalChars + ", totalLines=" + (totalLines == -1 ? "Large/Unknown" : totalLines) + ", matchingLineCount=" + matchingLineCount + ", truncatedLinesCount=" + truncatedLinesCount + '}';
     }
 }

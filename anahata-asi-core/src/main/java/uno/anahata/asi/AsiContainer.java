@@ -25,6 +25,8 @@ import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.internal.kryo.KryoUtils;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 
+import uno.anahata.asi.model.resource.AbstractResource;
+
 /**
  * A hybrid static/instance class for managing global and application-specific configurations.
  * <ul>
@@ -37,7 +39,7 @@ import uno.anahata.asi.model.core.BasicPropertyChangeSource;
  */
 @Getter
 @Slf4j
-public class AsiContainer extends BasicPropertyChangeSource {
+public abstract class AsiContainer extends BasicPropertyChangeSource {
     
     /** The unique identifier for the host application (e.g., "netbeans"). */
     private final String hostApplicationId;
@@ -179,9 +181,14 @@ public class AsiContainer extends BasicPropertyChangeSource {
      * 
      * @return The newly created chat session.
      */
-    public Chat createNewChat() {
-        throw new UnsupportedOperationException("createNewChat() not implemented for this container.");
-    }
+    public abstract Chat createNewChat();
+
+    /**
+     * Opens the specified resource in the host's preferred viewer/editor.
+     * 
+     * @param resource The resource to open.
+     */
+    public abstract void openResource(AbstractResource<?, ?> resource);
 
     // --- SESSION PERSISTENCE ---
 

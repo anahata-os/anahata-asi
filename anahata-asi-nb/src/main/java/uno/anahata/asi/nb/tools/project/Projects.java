@@ -119,7 +119,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
      * 
      * @return A list of project folder names.
      */
-    @AiTool("Lists all project folders found in the user's NetBeansProjects directory.")
+    //@AiTool("Lists all project folders found in the user's NetBeansProjects directory.")
     public List<String> listAvailableProjectFolders() {
         String projectsFolder = getNetBeansProjectsFolder();
         File dir = new File(projectsFolder);
@@ -162,7 +162,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
      *
      * @return A list of project paths.
      */
-    @AiTool("Returns a List of absolute paths for all currently open projects.")
+    //@AiTool("Returns a List of absolute paths for all currently open projects.")
     public List<String> getOpenProjects() {
         List<String> projectPaths = new ArrayList<>();
         for (Project project : OpenProjects.getDefault().getOpenProjects()) {
@@ -176,7 +176,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
      *
      * @return The main project path, or null if none is set.
      */
-    @AiTool("Returns the absolute path of the current 'Main Project' in the IDE, or null if none is set.")
+    //@AiTool("Returns the absolute path of the current 'Main Project' in the IDE, or null if none is set.")
     public String getMainProject() {
         Project p = OpenProjects.getDefault().getMainProject();
         return p != null ? getCanonicalPath(p.getProjectDirectory()) : null;
@@ -309,8 +309,10 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
      * @return Project metadata and actions.
      * @throws Exception if project not found.
      */
+    /*
     @AiTool("Gets a structured, context-aware overview of a project, including metadata, supported actions, and declared dependencies.\n"
             + "WARNING: DO NOT call this tool if the 'Project Overview' context provider for this project is already enabled ('providing').")
+    */
     public ProjectOverview getOverview(@AiToolParam("The absolute path of the project.") String projectPath) throws Exception {
         Project target = findOpenProject(projectPath);
 
@@ -454,8 +456,10 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
      * @return File structure DTO.
      * @throws Exception if project not found.
      */
+    /*
     @AiTool("Gets the file and folder structure of a project, including root files and a detailed source tree.\n"
             + "WARNING: DO NOT call this tool if the 'Project Files' context provider for this project is already enabled ('providing').")
+    */
     public ProjectFiles getProjectFiles(@AiToolParam("The absolute path of the project.") String projectPath) throws Exception {
         Project target = findOpenProject(projectPath);
         FileObject root = target.getProjectDirectory();
@@ -492,8 +496,10 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
      * @return List of components.
      * @throws Exception if project not found.
      */
+    /*
     @AiTool("Retrieves all Java types (classes, interfaces, enums, records) defined in the project.\n"
             + "WARNING: DO NOT call this tool if the 'Project Components' context provider for this project is already enabled ('providing').")
+    */
     public List<ProjectComponent> getProjectComponents(@AiToolParam("The absolute path to the project.") String projectPath) throws Exception {
         Project project = findOpenProject(projectPath);
         List<ProjectComponent> components = new ArrayList<>();
@@ -523,8 +529,10 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
      * @return Diagnostics DTO.
      * @throws Exception if project not found.
      */
+    /*
     @AiTool("Performs a live scan of a specific project to find all high-level project problems and Java source file errors/warnings.\n"
             + "WARNING: DO NOT call this tool if the 'Project Alerts' context provider for this project is already enabled ('providing').")
+    */
     public ProjectDiagnostics getProjectAlerts(@AiToolParam("The absolute path of the project to scan.") String projectPath) throws Exception {
         Project targetProject = findOpenProject(projectPath);
         ProjectDiagnostics projectDiags = new ProjectDiagnostics(ProjectUtils.getInformation(targetProject).getDisplayName());
@@ -663,7 +671,8 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
      * @return String representation of preferences.
      * @throws Exception if project not found.
      */
-    @AiTool("Lists all known preferences for a given project.")
+    //@AiTool("Lists all known preferences for a given project.")
+    /*
     public String listAllKnownPreferences(@AiToolParam("The absolute path of the project.") String projectPath) throws Exception {
         Project project = findOpenProject(projectPath);
         if (project == null) return "Project not found: " + projectPath;
@@ -685,6 +694,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         }
         return sb.toString();
     }
+    */
 
     /**
      * Returns the child context providers (one per open project).

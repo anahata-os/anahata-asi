@@ -38,19 +38,19 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
     private transient Method method;
 
     /** The singleton instance of the toolkit class, used for invoking non-static methods. */
-    private final Object toolInstance;
+    private final Object toolkitInstance;
 
     /**
      * The definitive, intelligent constructor for creating a JavaMethodTool from a reflection Method.
      * This constructor encapsulates all the logic for parsing annotations and generating schemas.
      *
      * @param toolkit The parent toolkit.
-     * @param toolInstance The singleton instance of the class containing the method.
+     * @param toolkitInstance The singleton instance of the class containing the method.
      * @param method The reflection Method to parse.
      * @param toolAnnotation The pre-fetched @AiTool annotation.
      * @throws Exception if schema generation fails.
      */
-    public JavaMethodTool(JavaObjectToolkit toolkit, Object toolInstance, Method method, AiTool toolAnnotation) throws Exception {
+    public JavaMethodTool(JavaObjectToolkit toolkit, Object toolkitInstance, Method method, AiTool toolAnnotation) throws Exception {
         super(toolkit.getName() + "." + method.getName());
 
         // Set parent fields
@@ -62,7 +62,7 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         
         // Set own fields
         this.method = method;
-        this.toolInstance = toolInstance;
+        this.toolkitInstance = toolkitInstance;
         this.javaMethodSignature = buildMethodSignature(method);
         
         // Set max depth using the clean inheritance model
@@ -92,7 +92,7 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
     public synchronized Method getMethod() {
         if (method == null) {
             log.info("Lazily restoring Method for tool: {} using signature lookup", getName());
-            Class<?> currentClass = toolInstance.getClass();
+            Class<?> currentClass = toolkitInstance.getClass();
             while (currentClass != null && currentClass != Object.class) {
                 for (Method m : currentClass.getDeclaredMethods()) {
                     if (javaMethodSignature.equals(buildMethodSignature(m))) {
@@ -105,7 +105,7 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
             }
             
             if (method == null) {
-                throw new RuntimeException("Failed to restore method via signature lookup: " + javaMethodSignature + " in " + toolInstance.getClass().getName());
+                throw new RuntimeException("Failed to restore method via signature lookup: " + javaMethodSignature + " in " + toolkitInstance.getClass().getName());
             }
         }
         return method;

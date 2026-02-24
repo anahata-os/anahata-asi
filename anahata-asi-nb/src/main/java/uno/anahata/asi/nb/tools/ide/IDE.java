@@ -4,7 +4,8 @@ package uno.anahata.asi.nb.tools.ide;
 import java.io.File;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.model.resource.files.TextFileResource;
+import uno.anahata.asi.nb.tools.files.nb.NbFiles;
+import uno.anahata.asi.nb.tools.files.nb.NbTextFileResource;
 import uno.anahata.asi.toolkit.files.TextViewportSettings;
 import uno.anahata.asi.nb.tools.ide.context.OpenTopComponentsContextProvider;
 import uno.anahata.asi.nb.tools.ide.context.OutputTabsContextProvider;
@@ -12,7 +13,6 @@ import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolParam;
 import uno.anahata.asi.tool.AiToolkit;
 import uno.anahata.asi.tool.AnahataToolkit;
-import uno.anahata.asi.toolkit.files.Files;
 
 /**
  * Provides tools for interacting with the NetBeans IDE.
@@ -40,11 +40,11 @@ public class IDE extends AnahataToolkit {
      * 
      * @param grepPattern Optional regex pattern to filter log lines.
      * @param tailLines Number of recent lines to include (defaults to 100).
-     * @return The TextFileResource representing the log file.
+     * @return The NbTextFileResource representing the log file.
      * @throws Exception if the log file cannot be found or loaded.
      */
-    @AiTool("Monitors the IDE log file (messages.log) by loading it into the context with 'tail' enabled and optional grepping.")
-    public TextFileResource monitorLogs(
+    @AiTool(value = "Monitors the IDE log file (messages.log) by loading it into the context with 'tail' enabled and optional grepping.", maxDepth = 12)
+    public void monitorLogs(
             @AiToolParam("Optional regex pattern to filter log lines (e.g. 'ERROR' or a specific logger name).") String grepPattern,
             @AiToolParam("Number of lines to tail from the end of the file or matching results.") Integer tailLines) throws Exception {
         String userDir = System.getProperty("netbeans.user");
@@ -56,8 +56,7 @@ public class IDE extends AnahataToolkit {
             throw new Exception("IDE log file not found at: " + logFile.getAbsolutePath());
         }
 
-        Files filesToolkit = getToolManager().getToolkitInstance(Files.class)
-                .orElseThrow(() -> new IllegalStateException("Files toolkit not found"));
+        NbFiles filesToolkit = getToolkit(NbFiles.class);
         
         TextViewportSettings settings = TextViewportSettings.builder()
                 .tail(true)
@@ -66,7 +65,7 @@ public class IDE extends AnahataToolkit {
                 .showLineNumbers(false)
                 .build();
         
-        return filesToolkit.loadTextFileWithSettings(logFile.getAbsolutePath(), settings);
+        filesToolkit.loadTextFileInternal(logFile.getAbsolutePath(), settings);
     }
 
     /**
@@ -74,7 +73,7 @@ public class IDE extends AnahataToolkit {
      * @return a list of TopComponentInfo objects.
      * @throws Exception if an error occurs.
      */
-    @AiTool("Lists all open IDE windows (TopComponents).")
+    //@AiTool("Lists all open IDE windows (TopComponents).")
     public List<TopComponentInfo> listTopComponents() throws Exception {
         return NetBeansTopComponents.listTopComponents();
     }

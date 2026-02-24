@@ -24,6 +24,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import uno.anahata.asi.AsiContainer;
+import uno.anahata.ai.tool.MockAsiContainer;
+import uno.anahata.asi.model.resource.AbstractResource;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.chat.ChatConfig;
 import uno.anahata.asi.model.tool.AbstractTool;
@@ -37,7 +39,7 @@ public class SchemaGenerationTest {
 
     @BeforeAll
     public static void setUp() {
-        AsiContainer container = new AsiContainer("test-app");
+        AsiContainer container = new MockAsiContainer("test-app");
         ChatConfig config = new ChatConfig(container, "test-session");
         Chat chat = new Chat(config);
         toolManager = chat.getToolManager();

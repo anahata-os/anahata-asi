@@ -106,7 +106,7 @@ public class GeminiContentAdapter {
         List<AbstractToolCall<?, ?>> toolCalls = modelMsg.getToolCalls();
         if (!toolCalls.isEmpty()) {
             if (shouldCreateMetadata) {
-                StringBuilder sb = new StringBuilder("--- Aggregated Tool Metadata ---\n");
+                StringBuilder sb = new StringBuilder("--- Tool Metadata ---\n");
                 for (AbstractToolCall tc : toolCalls) {
                     sb.append(tc.createMetadataHeader()).append("\n");
                 }

@@ -2,6 +2,7 @@
 package uno.anahata.asi.model.resource;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,13 +23,12 @@ import uno.anahata.asi.resource.ResourceManager;
  * the 'Atomic Reload' architecture for self-healing, live resources.
  * 
  * @author anahata-ai
- * @param <R> The type of the underlying raw Java resource (e.g., String, byte[]).
  * @param <C> The type of the rendered content (e.g., String, byte[]).
  */
 @Slf4j
 @Getter
 @Setter
-public abstract class AbstractPathResource<R, C> extends AbstractResource<Path, C> {
+public abstract class AbstractPathResource<C> extends AbstractResource<Path, C> {
     /** Formatter for displaying timestamps in the resource header. */
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
         .withZone(ZoneId.systemDefault());
@@ -49,9 +49,15 @@ public abstract class AbstractPathResource<R, C> extends AbstractResource<Path, 
     /**
      * Constructs a new path-based resource.
      * @param manager The parent resource manager.
+     * @param path The absolute path to the file.
      */
-    public AbstractPathResource(ResourceManager manager) {
+    public AbstractPathResource(ResourceManager manager, String path) {
         super(manager);
+        this.path = path;
+        if (path != null) {
+            this.setName(new File(path).getName());
+            this.setResource(Paths.get(path));
+        }
     }
 
     /**
@@ -104,6 +110,7 @@ public abstract class AbstractPathResource<R, C> extends AbstractResource<Path, 
      * Checks if the underlying file for this resource exists on the filesystem.
      * @return {@code true} if the file exists, {@code false} otherwise.
      */
+    @Override
     public boolean exists() {
         return Files.exists(Paths.get(path));
     }
@@ -113,6 +120,7 @@ public abstract class AbstractPathResource<R, C> extends AbstractResource<Path, 
      * @return {@code true} if the file is stale, {@code false} otherwise.
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     public boolean isStale() throws IOException {
         return getCurrentLastModified() != getLoadLastModified();
     }
@@ -130,7 +138,35 @@ public abstract class AbstractPathResource<R, C> extends AbstractResource<Path, 
      * Atomically reloads the resource's content from disk and updates the cache.
      * @throws Exception if any error occurs during the reload process.
      */
-    public abstract void reload() throws Exception;
+    @Override
+    public void reload() throws Exception {
+        log.info("Reloading resource: {}", getPath());
+        C newContent = reloadContent();
+        this.setLoadLastModified(getCurrentLastModified());
+        onContentReloaded(newContent);
+    }
+
+    /**
+     * Subclasses must implement this to read the raw content from the filesystem.
+     * 
+     * @return The raw content.
+     * @throws Exception if the read fails.
+     */
+    protected abstract C reloadContent() throws Exception;
+    
+    /**
+     * Hook called after content is reloaded. Subclasses should use this to 
+     * process the content (e.g. viewport processing) and update the cache.
+     * 
+     * @param newContent The newly loaded content.
+     */
+    protected void onContentReloaded(C newContent) {
+        C oldCache = this.cache;
+        this.cache = newContent;
+        if (oldCache != newContent) {
+            propertyChangeSupport.firePropertyChange("cache", oldCache, cache);
+        }
+    }
 
     /** {@inheritDoc} */
     @Override

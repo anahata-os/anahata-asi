@@ -34,7 +34,7 @@ public class NbFileObjectResourceHelper implements FileChangeListener, Rebindabl
      * Ignored by Jackson to prevent circular serialization loops.
      */
     @JsonIgnore
-    private AbstractPathResource<?, ?> owner;
+    private AbstractPathResource<?> owner;
     
     /** The underlying NetBeans FileObject. Transient to support serialization. */
     private transient FileObject fileObject;
@@ -54,7 +54,7 @@ public class NbFileObjectResourceHelper implements FileChangeListener, Rebindabl
      * @param owner The owning resource.
      * @param fo The initial FileObject.
      */
-    public NbFileObjectResourceHelper(AbstractPathResource<?, ?> owner, FileObject fo) {
+    public NbFileObjectResourceHelper(AbstractPathResource<?> owner, FileObject fo) {
         this.owner = owner;
         this.fileObject = fo;
         setupListener();

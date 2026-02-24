@@ -92,7 +92,7 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
         
         try {
             JavaMethodTool tool = getCall().getTool();
-            Object toolInstance = tool.getToolInstance();
+            Object toolkitInstance = tool.getToolkitInstance();
 
             var method = tool.getMethod();
             Parameter[] methodParameters = method.getParameters();
@@ -105,7 +105,7 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
                 argsToInvoke[i] = effectiveArgs.get(paramName);
             }
 
-            Object result = method.invoke(toolInstance, argsToInvoke);
+            Object result = method.invoke(toolkitInstance, argsToInvoke);
 
             setResult(result);
             setStatus(ToolExecutionStatus.EXECUTED);

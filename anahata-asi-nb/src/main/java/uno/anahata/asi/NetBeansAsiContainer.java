@@ -12,11 +12,14 @@ import org.netbeans.api.project.ui.OpenProjects;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileSystem;
 import org.openide.filesystems.FileUtil;
+import org.openide.loaders.DataObject;
+import org.openide.cookies.EditorCookie;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.toolkit.Java;
 import uno.anahata.asi.nb.module.NetBeansModuleUtils;
 import uno.anahata.asi.nb.tools.files.nb.AnahataAnnotationProvider;
 import uno.anahata.asi.model.resource.AbstractPathResource;
+import uno.anahata.asi.model.resource.AbstractResource;
 
 /**
  * NetBeans-specific configuration for the Anahata ASI.
@@ -91,7 +94,7 @@ public class NetBeansAsiContainer extends AsiContainer {
         
         chat.getResourceManager().getResources().stream()
             .filter(r -> r instanceof AbstractPathResource)
-            .map(r -> (AbstractPathResource<?, ?>) r)
+            .map(r -> (AbstractPathResource<?>) r)
             .forEach(r -> {
                 FileObject fo = FileUtil.toFileObject(new File(r.getPath()));
                 if (fo != null) {
@@ -131,5 +134,28 @@ public class NetBeansAsiContainer extends AsiContainer {
     @Override
     public Chat createNewChat() {
         return new Chat(new NetBeansChatConfig(this));
+    }
+
+    /**
+     * {@inheritDoc}
+     * Opens the file associated with the resource in the NetBeans editor.
+     */
+    @Override
+    public void openResource(AbstractResource<?, ?> resource) {
+        if (resource instanceof AbstractPathResource<?> apr) {
+            File file = new File(apr.getPath());
+            FileObject fo = FileUtil.toFileObject(file);
+            if (fo != null) {
+                try {
+                    DataObject dobj = DataObject.find(fo);
+                    EditorCookie ec = dobj.getLookup().lookup(EditorCookie.class);
+                    if (ec != null) {
+                        ec.open();
+                    }
+                } catch (Exception ex) {
+                    log.error("Failed to open resource in NetBeans editor: " + apr.getPath(), ex);
+                }
+            }
+        }
     }
 }

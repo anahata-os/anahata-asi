@@ -127,10 +127,10 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
      * @param path The path to search for.
      * @return An Optional containing the resource if found, otherwise empty.
      */
-    public Optional<? extends AbstractPathResource<?, ?>> findByPath(String path) {
+    public Optional<? extends AbstractPathResource<?>> findByPath(String path) {
         return getResources().stream()
                 .filter(r -> r instanceof AbstractPathResource)
-                .map(r -> (AbstractPathResource<?, ?>) r)
+                .map(r -> (AbstractPathResource<?>) r)
                 .filter(r -> r.getPath().equals(path))
                 .findFirst();
     }

@@ -40,7 +40,7 @@ public class NetBeansIconProvider implements IconProvider {
             if (p != null) {
                 return ProjectUtils.getInformation(p).getIcon();
             }
-        } else if (cp instanceof AbstractPathResource<?, ?> apr) {
+        } else if (cp instanceof AbstractPathResource<?> apr) {
             FileObject fo = FileUtil.toFileObject(new File(apr.getPath()));
             if (fo != null) {
                 try {

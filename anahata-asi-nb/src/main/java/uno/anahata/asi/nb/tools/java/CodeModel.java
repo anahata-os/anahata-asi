@@ -83,8 +83,8 @@ public class CodeModel extends AnahataToolkit {
         JavaTypeSource source = javaType.getSource();
         FileObject fo = source.getSourceFile();
         if (fo != null && "file".equals(fo.toURL().getProtocol())) {
-            getToolkit(NbFiles.class).loadTextFile(Collections.singletonList(fo.getPath()));
-            return "requested type sources was a project file, resource added to context with LIVE refresh policy, see RAG message, any ";
+            getToolkit(NbFiles.class).loadTextFileInternal(fo.getPath(), new uno.anahata.asi.toolkit.files.TextViewportSettings());
+            return "requested type sources was a project file, resource added to context with LIVE refresh policy";
         }
         return source.getContent();
     }

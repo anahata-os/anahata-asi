@@ -7,6 +7,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import uno.anahata.asi.AsiContainer;
+import uno.anahata.asi.model.resource.AbstractResource;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.chat.ChatConfig;
 import uno.anahata.asi.model.tool.AbstractTool;
@@ -116,7 +117,10 @@ public class GeminiFunctionDeclarationAdapterTest {
     }
 
     private AbstractTool<?, ?> getTool(String methodName) throws Exception {
-        AsiContainer container = new AsiContainer("test");
+        AsiContainer container = new AsiContainer("test") {
+            @Override public Chat createNewChat() { return new Chat(new ChatConfig(this)); }
+            @Override public void openResource(AbstractResource<?, ?> resource) {}
+        };
         ChatConfig config = new ChatConfig(container) {
             @Override public List<Class<?>> getToolClasses() { return List.of(TestToolkit.class); }
         };

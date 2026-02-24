@@ -52,21 +52,14 @@ public class NbBinaryFileResource extends BinaryFileResource {
         return super.getHtmlDisplayName();
     }
 
-    /**
-     * {@inheritDoc}
-     * Loads the file content as a byte array using the NetBeans FileObject API.
-     */
+    /** {@inheritDoc} */
     @Override
-    public void reload() throws Exception {
+    protected byte[] reloadContent() throws Exception {
         FileObject fo = helper.getFileObject();
         if (fo == null) {
             throw new IOException("FileObject not available for: " + getPath());
         }
-        
-        log.info("Reloading NbBinaryFileResource: {}", getPath());
-        byte[] data = fo.asBytes();
-        this.setLoadLastModified(fo.lastModified().getTime());
-        this.setCache(data);
+        return fo.asBytes();
     }
 
     /** {@inheritDoc} */
