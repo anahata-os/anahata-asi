@@ -24,11 +24,13 @@ public class FullTextFileUpdateRenderer extends AbstractTextFileWriteRenderer<Fu
 
     @Override
     protected FullTextFileUpdate createUpdatedDto(String newContent) {
-        return new FullTextFileUpdate(
+        FullTextFileUpdate dto = new FullTextFileUpdate(
                 update.getPath(),
                 update.getLastModified(),
                 newContent,
                 update.getLineComments()
         );
+        dto.setOriginalContent(update.getOriginalContent());
+        return dto;
     }
 }

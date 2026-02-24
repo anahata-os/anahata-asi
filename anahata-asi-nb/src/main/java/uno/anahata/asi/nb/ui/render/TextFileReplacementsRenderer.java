@@ -53,7 +53,7 @@ public class TextFileReplacementsRenderer extends AbstractTextFileWriteRenderer<
         // When the user edits a surgical replacement in the UI, we convert it
         // to a 'custom' replacement that replaces everything with the new content.
         // This is necessary because the original surgical list no longer applies to the manual edits.
-        return new TextFileReplacements(
+        TextFileReplacements dto = new TextFileReplacements(
                 update.getPath(),
                 update.getLastModified(),
                 List.of(TextReplacement.builder()
@@ -63,6 +63,8 @@ public class TextFileReplacementsRenderer extends AbstractTextFileWriteRenderer<
                         .expectedCount(1)
                         .build())
         );
+        dto.setOriginalContent(update.getOriginalContent());
+        return dto;
     }
 
     @Override

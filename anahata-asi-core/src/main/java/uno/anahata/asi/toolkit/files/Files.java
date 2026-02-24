@@ -203,7 +203,7 @@ public class Files extends AnahataToolkit {
      * @param message A message describing the change.
      * @throws Exception if the file does not exist, locking fails, or an I/O error occurs.
      */
-    @AiTool(value = "Overwrites an existing file using a rich update object. Optimized for the ASI's diff viewer.", maxDepth = 12)
+    @AiTool(value = "Overwrites an existing file using a filthy rich update object where you can just use line comments rather than putting comments in the code. The ASI's diff viewer displays some comic style bubbles on the lines where you put line comments.", maxDepth = 12)
     public void updateTextFile(
             @AiToolParam("The update details.") FullTextFileUpdate update,
             @AiToolParam("A message describing the change.") String message) throws Exception {
@@ -254,7 +254,7 @@ public class Files extends AnahataToolkit {
      * @param message A message describing the change.
      * @throws Exception if a target string is not found, count mismatch occurs, I/O error occurs, or locking fails.
      */
-    @AiTool(value = "Performs multiple text replacements in a file. Ideal for surgical code edits.", maxDepth = 12)
+    @AiTool(value = "Performs multiple text replacements in a file. Ideal for surgical code edits. Shows the 'reason' of each replacement as comic-style bubble on the ASI's diff viewer.", maxDepth = 12)
     public void replaceInTextFile(
             @AiToolParam("The replacements.") TextFileReplacements replacements,
             @AiToolParam("A message describing the change.") String message) throws Exception {

@@ -188,6 +188,17 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
      * {@inheritDoc}
      */
     @Override
+    public void removePart(AbstractPart part) {
+        super.removePart(part);
+        if (isToolPromptMessage()) {
+            getChat().checkToolPromptCompletion();
+        }
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void remove() {
         super.remove();
         if (isToolPromptMessage()) {

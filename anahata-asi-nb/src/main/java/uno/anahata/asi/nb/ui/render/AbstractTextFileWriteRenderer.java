@@ -10,6 +10,8 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.io.File;
 import java.util.List;
 import java.util.Objects;
@@ -21,10 +23,12 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JLayer;
 import javax.swing.JPanel;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -39,6 +43,7 @@ import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import uno.anahata.asi.model.tool.AbstractToolCall;
+import uno.anahata.asi.model.tool.ToolExecutionStatus;
 import uno.anahata.asi.nb.tools.ide.Editor;
 import uno.anahata.asi.swing.chat.ChatPanel;
 import uno.anahata.asi.swing.chat.render.ParameterRenderer;
@@ -58,14 +63,16 @@ import uno.anahata.asi.toolkit.files.LineComment;
  * 
  * <p>Key Features:</p>
  * <ul>
+ *   <li><b>Historical Diff Persistence</b>: Automatically captures the file state before
+ *   execution and persists it in the tool call DTO. This ensures that even after a 
+ *   NetBeans restart, the history shows what was changed rather than an empty diff.</li>
+ *   <li><b>Boundary-Aware Scrolling</b>: Solves the "Scroll Trap" issue where nested 
+ *   NetBeans scroll panes consume all wheel events. It automatically re-dispatches 
+ *   scrolling to the parent conversation when boundaries are hit.</li>
  *   <li><b>JLayer Decoration</b>: Safely overlays AI content without disrupting the 
  *   internal component tree of the NetBeans Diff module.</li>
  *   <li><b>Comic-Style Annotations</b>: Renders AI comments as translucent bubbles 
  *   anchored to specific line numbers in the modified side of the diff.</li>
- *   <li><b>Hyperlinked Header</b>: Provides quick access to the target file with a 
- *   smart jump to the first annotated line.</li>
- *   <li><b>Optimistic Stability</b>: Compares incoming DTOs and current document 
- *   content to prevent redundant re-renders.</li>
  * </ul>
  * 
  * <p>Research Credits - This implementation was made possible by dissecting the following 
@@ -229,8 +236,25 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
             File file = new File(update.getPath());
             FileObject fo = FileUtil.toFileObject(file);
 
-            String currentContent = (fo != null) ? fo.asText() : "";
-            String proposedContent = calculateProposedContent(currentContent);
+            ToolExecutionStatus status = call.getResponse().getStatus();
+            boolean isPending = status == ToolExecutionStatus.PENDING;
+
+            // --- Historical Persistence Logic ---
+            String baseContent;
+            if (update.getOriginalContent() != null) {
+                // Use the persisted original content for history
+                baseContent = update.getOriginalContent();
+            } else {
+                // First render: capture current content from disk/IDE
+                baseContent = (fo != null) ? fo.asText() : "";
+                if (isPending) {
+                    // Store it in the DTO. Kryo will serialize the change in the args map.
+                    update.setOriginalContent(baseContent);
+                }
+            }
+
+            String currentOnDisk = (fo != null) ? fo.asText() : "";
+            String proposedContent = calculateProposedContent(currentOnDisk);
 
             // 2. Secondary stability check: if we already have a document and its content matches the update
             if (modDoc != null) {
@@ -255,34 +279,39 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
             }
 
             Document baseDoc = kit.createDefaultDocument();
-            baseDoc.insertString(0, currentContent, null);
+            baseDoc.insertString(0, baseContent, null);
 
             this.modDoc = kit.createDefaultDocument();
             modDoc.insertString(0, proposedContent, null);
 
-            // 3. Sync user edits back to the tool call's modifiedArgs
-            modDoc.addDocumentListener(new DocumentListener() {
-                private void sync() {
-                    try {
-                        String text = modDoc.getText(0, modDoc.getLength());
-                        T edited = createUpdatedDto(text);
-                        lastRenderedUpdate = edited;
-                        call.setModifiedArgument(paramName, edited);
-                    } catch (BadLocationException ex) {
-                        log.error("Failed to sync edited document content", ex);
+            // 3. Sync user edits back to the tool call's modifiedArgs (only if pending)
+            if (isPending) {
+                modDoc.addDocumentListener(new DocumentListener() {
+                    private void sync() {
+                        try {
+                            String text = modDoc.getText(0, modDoc.getLength());
+                            T edited = createUpdatedDto(text);
+                            lastRenderedUpdate = edited;
+                            call.setModifiedArgument(paramName, edited);
+                        } catch (BadLocationException ex) {
+                            log.error("Failed to sync edited document content", ex);
+                        }
                     }
-                }
-                @Override public void insertUpdate(DocumentEvent e) { sync(); }
-                @Override public void removeUpdate(DocumentEvent e) { sync(); }
-                @Override public void changedUpdate(DocumentEvent e) { sync(); }
-            });
+                    @Override public void insertUpdate(DocumentEvent e) { sync(); }
+                    @Override public void removeUpdate(DocumentEvent e) { sync(); }
+                    @Override public void changedUpdate(DocumentEvent e) { sync(); }
+                });
+            }
 
-            DiffStreamSource baseSource = new DiffStreamSource(name, "Current", currentContent, mime);
+            String leftTitle = isPending ? "Current" : "Original";
+            String rightTitle = isPending ? "Proposed" : "Applied";
+
+            DiffStreamSource baseSource = new DiffStreamSource(name, leftTitle, baseContent, mime);
             baseSource.setDocument(baseDoc);
 
-            DiffStreamSource modSource = new DiffStreamSource(name, "Proposed", proposedContent, mime);
+            DiffStreamSource modSource = new DiffStreamSource(name, rightTitle, proposedContent, mime);
             modSource.setDocument(modDoc);
-            modSource.setEditable(true); // Trigger Merger UI
+            modSource.setEditable(isPending); // Disable Merger UI once executed
 
             DiffController next = (controller == null)
                     ? DiffController.createEnhanced(baseSource, modSource)
@@ -294,10 +323,10 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
                 applyVisualizerSettings(visualizer);
 
                 // Create the header panel with the file hyperlink and toggle
-                List<LineComment> comments = getLineComments(currentContent);
+                List<LineComment> comments = getLineComments(currentOnDisk);
                 
                 JCheckBox toggle = new JCheckBox("Show AI Comments", true);
-                JPanel headerPanel = createHeaderPanel(update.getPath(), comments, toggle);
+                JPanel headerPanel = createHeaderPanel(update.getPath(), comments, toggle, status);
 
                 // Create the UI Layer for agentic annotations
                 layerUI = new DiffAnnotationsLayerUI(comments);
@@ -373,9 +402,10 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
      * @param path The absolute path to the file.
      * @param comments The list of comments for line jumping.
      * @param toggle The checkbox used to toggle AI comments.
+     * @param status The current execution status of the tool.
      * @return The populated header {@link JPanel}.
      */
-    private JPanel createHeaderPanel(String path, List<LineComment> comments, JCheckBox toggle) {
+    private JPanel createHeaderPanel(String path, List<LineComment> comments, JCheckBox toggle, ToolExecutionStatus status) {
         JPanel panel = new JPanel(new BorderLayout());
         JPanel topRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
         
@@ -408,7 +438,10 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
             }
         });
 
-        topRow.add(new JLabel("File:"));
+        JLabel statusLabel = new JLabel(status == ToolExecutionStatus.PENDING ? "Proposed Changes:" : "Applied Changes:");
+        statusLabel.setFont(statusLabel.getFont().deriveFont(java.awt.Font.BOLD));
+        
+        topRow.add(statusLabel);
         topRow.add(link);
         topRow.add(Box.createHorizontalStrut(20));
         topRow.add(toggle);
@@ -467,12 +500,49 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
             jc.putClientProperty("showMergeButtons", Boolean.TRUE);
         }
         if (c instanceof JScrollPane sp) {
-            // Internal NetBeans scroll panes should handle their own wheel events
-            // to allow normal scrolling on the Graphical and Textual tabs.
+            // FIX: Scroll Trap Redispatcher
+            // This prevents the embedded NetBeans scroll pane from trapping 
+            // the mouse wheel when it's at its boundaries.
+            sp.addMouseWheelListener(new BoundaryAwareMouseWheelListener(sp));
         }
         if (c instanceof Container cont) {
             for (Component child : cont.getComponents()) {
                 applyVisualizerSettings(child);
+            }
+        }
+    }
+
+    /**
+     * A specialized listener that solves the "Scroll Trap" problem in embedded 
+     * NetBeans components.
+     */
+    private static class BoundaryAwareMouseWheelListener implements MouseWheelListener {
+        private final JScrollPane scrollPane;
+
+        public BoundaryAwareMouseWheelListener(JScrollPane scrollPane) {
+            this.scrollPane = scrollPane;
+        }
+
+        @Override
+        public void mouseWheelMoved(MouseWheelEvent e) {
+            JScrollBar bar = scrollPane.getVerticalScrollBar();
+            int value = bar.getValue();
+            int min = bar.getMinimum();
+            int max = bar.getMaximum() - bar.getVisibleAmount();
+
+            boolean atTop = (e.getWheelRotation() < 0 && value <= min);
+            boolean atBottom = (e.getWheelRotation() > 0 && value >= max);
+
+            if (atTop || atBottom) {
+                // Redispatch to the parent (the main conversation scroll pane)
+                Container parent = scrollPane.getParent();
+                while (parent != null) {
+                    if (parent instanceof JScrollPane && parent != scrollPane) {
+                        parent.dispatchEvent(SwingUtilities.convertMouseEvent(scrollPane, e, parent));
+                        break;
+                    }
+                    parent = parent.getParent();
+                }
             }
         }
     }
