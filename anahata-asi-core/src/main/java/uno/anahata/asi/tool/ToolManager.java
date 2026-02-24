@@ -371,20 +371,22 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
         StringBuilder sb = new StringBuilder("**Enabled Toolkits**");
-        for (AbstractToolkit at: getEnabledToolkits()) {
+        for (AbstractToolkit<?> at: getEnabledToolkits()) {
             sb.append("\n\n**").append(at.getName()).append("**");
-            sb.append(" \nDescription:").append(at.getDescription());
+            sb.append("\nDescription:").append(at.getDescription());
             sb.append("\nDisabled Tools (permission never): ").append(at.getDisabledTools().size());
+            for (AbstractTool t: at.getDisabledTools()) {
+                sb.append("\n - ").append(t.getName()).append(":").append(t.getDescription());
+            }
         }
         
-        sb.append("\n\n**Disabled Toolkits**: You can suggest the user to enable them\n");
+        sb.append("\n\n**Disabled Toolkits**: You can suggest the user to enable them:\n");
         for (AbstractToolkit<?> at: getDisabledToolkits()) {
             sb.append("\n\n**").append(at.getName()).append("**");
             sb.append(" \nDescription:").append(at.getDescription());
             sb.append("\nTotal Tools : ").append(at.getAllTools().size());
             for (AbstractTool t: at.getAllTools()) {
-                sb.append("\n**").append(t.getName()).append("**");
-                sb.append("\n").append(t.getDescription());
+                sb.append("\n - ").append(t.getName()).append(":").append(t.getDescription());
             }
         }
         ragMessage.addTextPart(sb.toString());

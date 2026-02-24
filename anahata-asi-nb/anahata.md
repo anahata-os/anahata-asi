@@ -1,3 +1,4 @@
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 # Anahata ASI NetBeans (`anahata-asi-nb`)
 
 This is the V2 NetBeans integration module for the Anahata ASI framework.
@@ -6,45 +7,33 @@ This is the V2 NetBeans integration module for the Anahata ASI framework.
 
 1.  **IDE API Preference**: Always prefer NetBeans APIs (e.g., `MimeLookup`, `EditorKit`) over direct file manipulation or generic Swing components when integrated into the IDE.
 2.  **Dependency Hygiene**: 
-    - **Automatic Spec Dependencies**: All artifacts listed in the `<dependencies>` section of the `pom.xml` are automatically included as `spec` dependencies in the module manifest by the `nbm-maven-plugin`. Do not manually add them to the `moduleDependencies` configuration unless they require an `impl` dependency type.
-    - **Version Alignment**: Always ensure that library versions (especially `flexmark` and `jsoup`) match the versions bundled with the target NetBeans release (currently NB 28). Mismatches cause `MethodNotFound` errors in the IDE.
+    - **Automatic Spec Dependencies**: All artifacts listed in the `<dependencies>` section of the `pom.xml` are automatically included as `spec` dependencies in the module manifest by the `nbm-maven-plugin`.
+    - **Version Alignment**: Always ensure that library versions (especially `flexmark` and `jsoup`) match the versions bundled with the target NetBeans release.
 
+## 2. Annotator Strategy
 
-## 3. Annotator Strategy
+We use a non-intrusive annotation system to provide visual feedback and context within the NetBeans code editors and project views. This includes:
+- **Project Icons**: Custom branding for Anahata-enabled projects.
+- **Editor Annotations**: Real-time feedback from the ASI directly on the source code lines.
 
-## 4. Dependency Management
+## 3. Dependency Management
 
 -   **`commons-io` Isolation**: This module explicitly bundles `commons-io` to avoid conflicts with the version used by the NetBeans Maven Embedder.
 
-## 5. JIT Testing & Classpath Safety
+## 4. JIT Testing & Classpath Safety
 
 > [!TIP]
 > **Automated Classpath Safety**
-> When using `NetBeansProjectJVM.compileAndExecuteInProject` on this project, the tool automatically detects the NBM packaging and filters out NetBeans Platform/Stub JARs from the dependency list. 
-> **Rationale:** This prevents `LinkageError`s by ensuring that the plugin's parent classloader remains the sole provider of IDE APIs, while still allowing you to include other project-specific dependencies.
+> When using `NetBeansProjectJVM.compileAndExecuteInProject`, the tool automatically detects the NBM packaging and filters out NetBeans Platform/Stub JARs to prevent `LinkageError`s.
 
 > [!IMPORTANT]
 > **"Compile on Save" Delay Protocol**
-> When testing code modified via `updateTextFile` using `NetBeansProjectJVM`, you must account for the asynchronous nature of the IDE's "Compile on Save" feature.
-> **Mandatory Delay**: Always include a 2-3 second delay (e.g., `Thread.sleep(2000)`) at the beginning of your `Anahata.call()` method to ensure the IDE has finished background compilation before your test code executes.
+> When testing code modified via `updateTextFile` using `NetBeansProjectJVM`, always include a 2-3 second delay (e.g., `Thread.sleep(2000)`) at the beginning of `Anahata.call()`.
 
-## 6. Very Important Notes
-- **Do not "clean" the project** to avoid deleting runtime JARs.
-- **nbmreload** is the preferred way to test changes to tools or dependencies.
-- **CRITICAL (Reload Requirement):** Changing a file in this plugin project or any of its dependencies (like `anahata-asi-core` or `anahata-asi-swing`) **DOES NOT** automatically reload the plugin. You MUST manually invoke `nbmreload` (or `build-with-dependencies` followed by `nbmreload`) for your changes to take effect in the IDE's runtime.
-- **CRITICAL (nbmreload Protocol):** When you invoke `nbmreload`, the NetBeans module classloader disposes of all old classes. 
-    - **STOP IMMEDIATELY**: Once you receive the `FunctionResponse` for `nbmreload`, you MUST NOT call any more tools or continue "talking" in that turn. The current `Chat` instance is marked for garbage collection.
-    - **WAIT FOR RESTORATION**: You must wait for the next **real user message** (not the system-generated tool feedback) on the new chat instance and new classloader before proceeding.
-    - **NO RELOAD ON ERRORS**: You MUST NOT call `nbmreload` if your last writes caused compile errors in the project. Always check the `Project Alerts` context provider before reloading.
-    - **TURN SEQUENCING**: In turn 3 you can do `updateTextFile` or `writeFile` and call `nbmreload` for as long as there were no compile errors in turn 2. You must wait for a turn without errors before you call `nbmreload`.
-    - **NO BATCHING WITH WRITES**: `nbmreload` CANNOT be in the same batch as any other write tool calls (e.g., `updateTextFile` or `writeFile`).
-- **IMPORTANT (Module Dependencies):** This plugin depends on `anahata-asi-core`, `anahata-asi-swing`, and `anahata-asi-gemini`. An `nbmreload` on this project **does not** automatically build those dependencies. If you modify any of those modules, you **must** run `maven clean install` on the parent project (or the specific module) before reloading.
-- **IMPORTANT (Asynchronous Actions & Batching):** Invoking NetBeans supported actions (like `build-with-dependencies` or `nbmreload`) via the `Projects.invokeAction` tool is **asynchronous**. The tool returns immediately after firing the action. 
-    - **CRITICAL:** Never batch multiple asynchronous actions that depend on each other (e.g., `build-with-dependencies` and `nbmreload`) in a single turn. They will execute concurrently, leading to build failures or inconsistent plugin states. You must trigger the build, wait for completion, and then trigger the reload in a subsequent turn.
-- **Note on Dependency Warnings**: You may see a warning about `aopalliance:asm:jar:9.8` being missing from the local repository. This is a known issue in the current NetBeans release and is fixed in the next version. You can safely ignore this warning.
+## 5. Reloading and Lifecycle
 
-## 7. Cross-Module References
-- **Standalone Sessions**: V2 standalone sessions are stored in `~/.anahata/asi/swing-standalone/sessions`.
+- **nbmreload**: The preferred way to test changes to tools or dependencies.
+- **CRITICAL**: Changing files in this project or its dependencies requires a manual `nbmreload` (or `build-with-dependencies` followed by `nbmreload`) for changes to take effect.
+- **Turn Sequencing**: Never batch `nbmreload` with write operations. Wait for a successful compilation before reloading.
 
-## Future Exploration
-- **Local History Integration**: Explore using `VCSSystemProvider.VersioningSystem localHistory = VersioningManager.getInstance().getLocalHistory(file, !fo.isFolder());` to integrate with the IDE's local history.
+Força Barça!

@@ -87,7 +87,7 @@ public class Browser extends AnahataToolkit implements Rebindable {
     @Override
     public List<String> getSystemInstructions() {
         return Collections.singletonList(
-               "## Browser Toolkit (V2)\n" +
+               "## Chrome Toolkit Instructions:\n" +
                "- **Connection Protocol**: Use the `connect()` tool as your primary entry point. It automatically detects running browsers and handles the restart protocol if necessary.\n" +
                "- **Profile Awareness**: Always prefer the user's active profile (detected via `connect()`) to ensure access to their tabs and history.\n" +
                "- **Advanced Automation**: For complex tasks or Selenium features not exposed via standard tools, you can use `Java` or `NbJava` toolkits. Access the active driver by calling `getToolkit(Browser.class).getDriver()` from your compiled code."

@@ -14,7 +14,6 @@ import java.io.File;
 import java.util.List;
 import java.util.Objects;
 import javax.swing.BorderFactory;
-import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -377,7 +376,8 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
      * @return The populated header {@link JPanel}.
      */
     private JPanel createHeaderPanel(String path, List<LineComment> comments, JCheckBox toggle) {
-        JPanel header = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        JPanel panel = new JPanel(new BorderLayout());
+        JPanel topRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
         
         File f = new File(path);
         JButton link = new JButton("<html><a href='#'>" + f.getName() + "</a></html>");
@@ -408,11 +408,33 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
             }
         });
 
-        header.add(new JLabel("File:"));
-        header.add(link);
-        header.add(Box.createHorizontalStrut(20));
-        header.add(toggle);
-        return header;
+        topRow.add(new JLabel("File:"));
+        topRow.add(link);
+        topRow.add(Box.createHorizontalStrut(20));
+        topRow.add(toggle);
+        
+        panel.add(topRow, BorderLayout.NORTH);
+        
+        if (comments != null && !comments.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            for (LineComment lc : comments) {
+                sb.append("Line ").append(lc.getLineNumber()).append(": ").append(lc.getComment()).append("\n");
+            }
+            
+            JTextArea area = new JTextArea(sb.toString().trim());
+            area.setEditable(false);
+            area.setLineWrap(true);
+            area.setWrapStyleWord(true);
+            area.setFont(new java.awt.Font("SansSerif", java.awt.Font.ITALIC, 11));
+            area.setForeground(Color.GRAY);
+            area.setOpaque(false);
+            area.setBackground(new Color(0, 0, 0, 0));
+            area.setBorder(BorderFactory.createEmptyBorder(0, 15, 5, 10));
+            
+            panel.add(area, BorderLayout.CENTER);
+        }
+        
+        return panel;
     }
 
     /**

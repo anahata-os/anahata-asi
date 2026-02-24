@@ -20,6 +20,7 @@ import uno.anahata.asi.model.core.AbstractPart;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.model.core.Rebindable;
+import uno.anahata.asi.model.resource.AbstractResource;
 import uno.anahata.asi.resource.ResourceManager;
 import uno.anahata.asi.tool.ToolManager;
 
@@ -123,19 +124,28 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
                     long start = System.currentTimeMillis();
                     try {
                         List<String> systemInstructions = provider.getSystemInstructions();
+                        if (provider instanceof AbstractResource) {
+                            allSystemInstructions.add(provider.getHeader());
+                        }
+                        allSystemInstructions.addAll(systemInstructions);
+                        /*
                         long duration = System.currentTimeMillis() - start;
                         if (!systemInstructions.isEmpty()) {
                             StringBuilder sb = new StringBuilder();
-                            sb.append(provider.getHeader());
-                            for (String instruction : systemInstructions) {
-                                sb.append("\n\n").append(instruction);
+                            if (provider instanceof AbstractResource) {
+                                sb.append(provider.getHeader() + "\n\n");
                             }
-                            sb.append("\n\n(Provider ").append(provider.getName()).append(" took: ").append(duration).append("ms)");
+
+                            for (String instruction : systemInstructions) {
+                                sb.append(instruction + "\n\n");
+                            }
+                            //sb.append("\n\n(Provider ").append(provider.getName()).append(" took: ").append(duration).append("ms)");
                             allSystemInstructions.add(sb.toString());
                         }
+                        */
                     } catch (Exception e) {
                         log.error("Error executing system instruction provider: {}", provider.getName(), e);
-                        allSystemInstructions.add("Error executing system instruction provider: " + provider.getName() 
+                        allSystemInstructions.add("Error executing system instruction provider: " + provider.getName()
                                 + "\n" + ExceptionUtils.getStackTrace(e));
                     }
                 }
@@ -156,7 +166,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
         synchronized (history) {
             visibleHistory.addAll(history);
         }
-        
+
         log.info("Built visible history with {} messages (total history: {})", visibleHistory.size(), history.size());
 
         RagMessage augmentedMessage = new RagMessage(chat);
@@ -176,7 +186,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
                         augmentedMessage.addTextPart("\n(Provider " + provider.getName() + " took: " + duration + "ms)");
                     } catch (Exception e) {
                         log.error("Error populating rag message for provider: {}", provider.getName(), e);
-                        augmentedMessage.addTextPart("\nError populating rag message for provider: " + provider.getName() 
+                        augmentedMessage.addTextPart("\nError populating rag message for provider: " + provider.getName()
                                 + "\n" + ExceptionUtils.getStackTrace(e));
                     }
                 }
@@ -213,7 +223,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
 
     /**
      * Assigns a sequential ID to a single part if it doesn't already have one.
-     * 
+     *
      * @param part The part to identify.
      */
     public void identifyPart(AbstractPart part) {

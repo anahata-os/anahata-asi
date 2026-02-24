@@ -31,40 +31,7 @@ import uno.anahata.asi.tool.AnahataToolkit;
 @AiToolkit("Toolkit for managing the current chat session's metadata and context policies.")
 public class Session extends AnahataToolkit {
 
-    @Override
-    public List<String> getSystemInstructions() throws Exception {
-        return List.of(
-            "## MISSION CRITICAL: FRAMEWORK INTEGRITY & METADATA PROTOCOL\n" +
-            "1. **METADATA SYNTAX**: The framework injects 'in-band' metadata to allow you to do targeted prunning or pinning of messages or parts."
-                    + "This metadata is injected before every api call and is dynamically genereated, the user doesnt write it and neither should you.\n" +
-            "   - **Message Headers**: `--- Message ID: <N> | Role: <ROLE> | ... ---` injected as the first text part on the message.\n" +
-            "   - **Part Headers**: `[Part ID: <N> | Type: <TYPE> | ...]` marks the start of an individual part.\n" +
-            "   - **Tool Aggregation**: `--- Aggregated Tool Metadata ---` groups metadata for multiple calls.\n" +
-            "2. **RUNTIME INJECTION**: This metadata is **injected at runtime** by the host framework. It is NOT part of the actual message content produced by the user or the model.\n" +
-            "3. **THE PURPOSE OF METADATA**: Metadata allows the framework and you (the model) to track the conversation using a 'Sinking Stack' model. See the turns remaining of each part, their estimatede size in tokens. Message and Part IDs are required for you to identify components for selective **Pruning** and **Pinning** via the `Session` toolkit.\n" +
-            "4. **FORBIDDEN GENERATION**: You are **strictly forbidden** from generating this metadata syntax yourself. \n" +
-            "   - **NEVER** **EVER** output `--- Message ID`, `[Part ID`, or `--- Aggregated Tool Metadata ---` in your response.\n" +
-            "   - These headers are dynaimcally injected by the java framework before every api request. Including them in your text is a **critical hallucination** that disrupts UI and proves you are not understanding the functioning of the framework rendering, wastes tokens and trashes user satisfaction.\n",
-
-            "## CWGC Protocol (Context Window Garbage Collection)\n" +
-            "The conversation history is managed based on 'Depth' (distance from the current turn).\n" +
-            "- **Auto-Pruning (`pruned=null`)**: Parts are automatically removed from your prompt when their depth exceeds their `maxDepth`.\n" +
-            "- **Soft-Pruning (`pruned=true`)**: Parts are hidden from your prompt but preserved in the UI and history. You can still see their metadata headers in your context.\n" +
-            "- **Pinning (`pruned=false`)**: Parts are immune to auto-pruning and remain in your prompt indefinitely until manually unpinned.\n",
-
-            "## STRICT RESOURCE DISCIPLINE\n" +
-            "1. **SOURCE OF TRUTH**: The `--- Augmented Workspace Context ---` in the RAG message is your definitive list of active resources. When a resource gets loaded (e.g. via `loadTextFile`) it will get injected into the RAG message on every turn. \n" +
-            "2. **NO REDUNDANT LOADING**: If a file or project is already listed in your context with as **LIVE** refresh policy, it will get reloaded from disk on every turn and the latest version of that resource will show in the RAG message. \n" +
-            "   - **NEVER** call `loadTextFile` or `loadBinaryFile` for a resource that is already in context.\n" +
-            "   - **NEVER** call `unloadResource` followed by `loadTextFile` for the same file; this is destructive and inefficient.\n",
-            "   - **NEVER** attempt to `updateTextFile` or `replaceTextFile` for a file that is not in context.\n",
-
-            "## User Agency & Thought Process\n" +
-            "- **User Control**: The user is the ultimate authority. They can manually remove messages, parts, or change the pruned state of any part or any message to (prune/pin/auto). Pruning ore removing a model message with tool calls automatically prunes its associated tool responses.\n" +
-            "- **Tool execution**: Every tool call that you propose generates a placeholder response and two buttons on the UI: skip and run. The placeholder response containing egardless of wethere the user runs it or skips it. If a tool response shows as NOT_EXECUTED is because the user skipped its execution. Only responses with EXECUTED or EXECUTING state have actually ran. The user can run the same tool call several times and can also change the arguments of the tool call (i.e. can run the same tool call several times tweaking the arguments on each run). The user can also decide to send the response to the model while the tool is still in EXECUTING state (not finished). When that tool execution finishes, the response of that tool call will change to EXECUTED on the very same message where you proposed the tool call (which could be several turns below the head).\n" +
-            "- **Thought Process Visibility**: The `Expand Thoughts` flag in the session metadata tells you if the user can see your reasoning. If `false`, your reasoning is invisible; ensure your final text is self-contained and answers the user directly.\n" 
-            );
-    }
+    
 
     /**
      * Updates the current chat session's summary.

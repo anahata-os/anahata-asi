@@ -135,6 +135,8 @@ public class NbFiles extends Files {
             FileObject fo = parentFo.createData(file.getName());
             writeToFileObject(fo, content, message);
             log("Successfully created file via NetBeans API: " + path + " (" + message + ")");
+            // Auto-load the newly created file into the context as requested in tasks.md
+            loadTextFile(path, new TextViewportSettings());
         } else {
             super.createTextFile(path, content, message);
         }
@@ -199,10 +201,14 @@ public class NbFiles extends Files {
         } else {
             // Use FileObject directly with Lock
             log.info("Using FileObject API with lock for: {}", fo.getPath());
+            // Determine encoding BEFORE acquiring the lock or opening the OutputStream 
+            // to avoid "shared access" FSExceptions in MasterFS.
+            Charset encoding = FileEncodingQuery.getEncoding(fo);
             FileLock lock = fo.lock();
-            try (OutputStream os = fo.getOutputStream(lock)) {
-                Charset encoding = FileEncodingQuery.getEncoding(fo);
-                os.write(content.getBytes(encoding));
+            try {
+                try (OutputStream os = fo.getOutputStream(lock)) {
+                    os.write(content.getBytes(encoding));
+                }
             } finally {
                 lock.releaseLock();
             }

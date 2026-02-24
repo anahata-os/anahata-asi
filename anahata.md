@@ -69,3 +69,4 @@ Comprehensive documentation is mandatory for this open-source project. Existing 
 
 - **Working Directory**: `~/.anahata/asi` (Standardized for V2).
 
+Força Barça!
