@@ -54,6 +54,11 @@ public class ProjectFilesContextProvider extends BasicContextProvider {
 
     /**
      * Generates a Markdown string representing the project file tree.
+     * <p>
+     * This method splits the output into the Root Directory (flat list) and 
+     * Source Folders (hierarchical tree). It resolves the relative path for
+     * each top-level source folder to provide context for the AI.
+     * </p>
      * 
      * @param files The project files data.
      * @return A Markdown-formatted string.
@@ -67,25 +72,43 @@ public class ProjectFilesContextProvider extends BasicContextProvider {
         }
 
         sb.append("\n  ## Source Folders\n");
+        FileObject projectFo = FileUtil.toFileObject(new File(projectPath));
         for (SourceFolder sourceFolder : files.getSourceFolders()) {
-            sb.append(formatSourceFolder(sourceFolder, "    ", sourceFolder.getPath()));
+            String relPath = null;
+            if (projectFo != null) {
+                FileObject folderFo = FileUtil.toFileObject(new File(sourceFolder.getPath()));
+                if (folderFo != null) {
+                    // Calculate path relative to project root for top-level source groups
+                    relPath = FileUtil.getRelativePath(projectFo, folderFo);
+                }
+            }
+            sb.append(formatSourceFolder(sourceFolder, "    ", sourceFolder.getPath(), relPath));
         }
 
         return sb.toString();
     }
 
     /**
-     * Recursively formats a source folder and its contents into Markdown.
+     * Recursively formats a source folder and its contents into a Markdown tree.
+     * <p>
+     * Displays the folder name (or display name) followed by an optional 
+     * relative path in parentheses for top-level groups.
+     * </p>
      * 
      * @param folder The source folder to format.
-     * @param indent The current indentation string.
+     * @param indent The current indentation level.
      * @param basePath The base path of the project.
+     * @param relPath Optional relative path for display next to the folder.
      * @return A Markdown-formatted string for the folder.
      */
-    private String formatSourceFolder(SourceFolder folder, String indent, String basePath) {
+    private String formatSourceFolder(SourceFolder folder, String indent, String basePath, String relPath) {
         StringBuilder sb = new StringBuilder();
         String folderName = folder.getDisplayName() != null ? folder.getDisplayName() : new File(folder.getPath()).getName();
-        sb.append(indent).append("- 📂 ").append(folderName).append("\n");
+        sb.append(indent).append("- 📂 ").append(folderName);
+        if (relPath != null && !relPath.isEmpty()) {
+            sb.append(" (").append(relPath).append(")");
+        }
+        sb.append("\n");
 
         String childIndent = indent + "  ";
         if (folder.getFiles() != null) {
@@ -95,15 +118,19 @@ public class ProjectFilesContextProvider extends BasicContextProvider {
         }
         if (folder.getSubfolders() != null) {
             for (SourceFolder subfolder : folder.getSubfolders()) {
-                sb.append(formatSourceFolder(subfolder, childIndent, basePath));
+                // We only show relative paths for top-level folders to avoid clutter
+                sb.append(formatSourceFolder(subfolder, childIndent, basePath, null));
             }
         }
         return sb.toString();
     }
 
     /**
-     * Formats a project file into a Markdown list item, including its context status
-     * and any IDE-level annotations (like Git status).
+     * Formats a project file into a Markdown list item.
+     * <p>
+     * Includes the file name and any IDE-level annotations (e.g., Git status flags)
+     * extracted from the annotated name.
+     * </p>
      * 
      * @param file The project file to format.
      * @param indent The current indentation string.
