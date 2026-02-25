@@ -60,8 +60,8 @@ import uno.anahata.asi.toolkit.shell.ShellExecutionResult;
  */
 @Slf4j
 @Getter
-@AiToolkit("A toolkit for web automation and form filling using Selenium.")
-public class Browser extends AnahataToolkit implements Rebindable {
+@AiToolkit("A toolkit for web automation and form filling using Chrome and Selenium.")
+public class Chrome extends AnahataToolkit implements Rebindable {
 
     /** The active WebDriver instance. */
     private transient WebDriver driver;
