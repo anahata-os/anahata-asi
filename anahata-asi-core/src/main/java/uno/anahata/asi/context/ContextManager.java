@@ -170,7 +170,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
         log.info("Built visible history with {} messages (total history: {})", visibleHistory.size(), history.size());
 
         RagMessage augmentedMessage = new RagMessage(chat);
-        augmentedMessage.addTextPart("--- Augmented Workspace Context ---\n"
+        augmentedMessage.addTextPart("--- RAG message ---\n"
                 + "The following is high-salience, just-in-time context provided by the host environment for this turn. "
                 + "It is dynamically generated and populated by enabled context providers. "
                 + "This is NOT direct input from the user.");

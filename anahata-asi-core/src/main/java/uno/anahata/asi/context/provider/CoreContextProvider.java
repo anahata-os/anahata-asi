@@ -92,7 +92,7 @@ public class CoreContextProvider implements ContextProvider {
             "- Soft-Pruning (`pruned=true`): Pruned parts are removed from the prompt but their metadata with a little hint is still kept so you can get an idea of what the pruned part was about. You can set a message or a part back to auto or pin it for as long as the remaining depth is > 0 \n" +
             "- Pinning (`pruned=false`): Pinned Parts and messages do not get garbage collected and remain in the prompt . Once unpinned, they are subject to the garbage collection.\n" +
 
-            "\n\n\nAbout the AugmentedWorskpace Context\n" +
+            "\n\n\nAbout the RAG message\n" +
             "\n1. The last message on every turn (which always starts with `--- Augmented Workspace Context ---` (also called RAG message), contains all resources either you or the user have loaded (the user can also 'add to context') and all 'providing' context providers.\n" +
             "2. By default, all files (also called resources) added to context have a LIVE refresh policy, this means that if the user changes the file after you have loaded it, you will always get the latest version of that file on every turn so if a file gets added to context (loaded), there is no need to load it again if you suspect it has been modified, the RAG message always contains the latest version of that file (the rag message gets generated after all tool execution finished and right before the api call)\n" +
                     

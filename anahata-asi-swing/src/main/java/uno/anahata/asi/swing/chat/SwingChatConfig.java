@@ -15,7 +15,7 @@ import uno.anahata.asi.model.tool.ToolPermission;
 import uno.anahata.asi.status.ChatStatus;
 import uno.anahata.asi.swing.chat.render.editorkit.EditorKitProvider;
 import uno.anahata.asi.swing.icons.IconProvider;
-import uno.anahata.asi.yam.tools.Browser;
+import uno.anahata.asi.yam.tools.Chrome;
 import uno.anahata.asi.yam.tools.Speech;
 import uno.anahata.asi.yam.tools.audio.Audio;
 
@@ -46,7 +46,7 @@ public class SwingChatConfig extends ChatConfig {
     {
         // Register the Yam tools for all Swing-based configurations
         getToolClasses().add(Speech.class);
-        getToolClasses().add(Browser.class);
+        getToolClasses().add(Chrome.class);
         getToolClasses().add(Audio.class);
     }
 
