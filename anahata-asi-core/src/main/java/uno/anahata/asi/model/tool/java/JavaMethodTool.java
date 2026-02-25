@@ -34,23 +34,19 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
     @NonNull
     private final String javaMethodSignature;
 
-    /** The underlying Java method that this tool represents. */
+    /** The underlying Java method that this tool represents. Transient as Method is not serializable. */
     private transient Method method;
-
-    /** The singleton instance of the toolkit class, used for invoking non-static methods. */
-    private final Object toolkitInstance;
 
     /**
      * The definitive, intelligent constructor for creating a JavaMethodTool from a reflection Method.
      * This constructor encapsulates all the logic for parsing annotations and generating schemas.
      *
      * @param toolkit The parent toolkit.
-     * @param toolkitInstance The singleton instance of the class containing the method.
      * @param method The reflection Method to parse.
      * @param toolAnnotation The pre-fetched @AiTool annotation.
      * @throws Exception if schema generation fails.
      */
-    public JavaMethodTool(JavaObjectToolkit toolkit, Object toolkitInstance, Method method, AiTool toolAnnotation) throws Exception {
+    public JavaMethodTool(JavaObjectToolkit toolkit, Method method, AiTool toolAnnotation) throws Exception {
         super(toolkit.getName() + "." + method.getName());
 
         // Set parent fields
@@ -62,7 +58,6 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         
         // Set own fields
         this.method = method;
-        this.toolkitInstance = toolkitInstance;
         this.javaMethodSignature = buildMethodSignature(method);
         
         // Set max depth using the clean inheritance model
@@ -86,13 +81,25 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
     }
 
     /**
+     * Retrieves the instance of the toolkit class from the parent toolkit.
+     * @return The toolkit instance.
+     */
+    public Object getToolkitInstance() {
+        return ((JavaObjectToolkit)toolkit).getToolkitInstance();
+    }
+
+    /**
      * Returns the underlying Java Method, restoring it lazily if necessary.
      * @return The reflection Method object.
      */
     public synchronized Method getMethod() {
         if (method == null) {
             log.info("Lazily restoring Method for tool: {} using signature lookup", getName());
-            Class<?> currentClass = toolkitInstance.getClass();
+            Object instance = getToolkitInstance();
+            if (instance == null) {
+                 throw new RuntimeException("Cannot restore method: parent toolkit instance is not yet available for tool " + getName());
+            }
+            Class<?> currentClass = instance.getClass();
             while (currentClass != null && currentClass != Object.class) {
                 for (Method m : currentClass.getDeclaredMethods()) {
                     if (javaMethodSignature.equals(buildMethodSignature(m))) {
@@ -105,7 +112,7 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
             }
             
             if (method == null) {
-                throw new RuntimeException("Failed to restore method via signature lookup: " + javaMethodSignature + " in " + toolkitInstance.getClass().getName());
+                throw new RuntimeException("Failed to restore method via signature lookup: " + javaMethodSignature + " in " + instance.getClass().getName());
             }
         }
         return method;
@@ -163,7 +170,6 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         }
         if (!missingParams.isEmpty()) {
             String reason = "Tool call rejected: Missing required parameters: " + String.join(", ", missingParams);
-            //should we map it to a bad tool call or let the user try to reject it?
             JavaMethodToolCall call = new JavaMethodToolCall(modelMessage, id, this, jsonArgs, jsonArgs);
             call.getResponse().reject(reason);
             return call;
@@ -183,7 +189,6 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
             }
         } catch (IllegalArgumentException e) {
             log.error("Failed to convert arguments", e);
-            //question for the asi: should we do a "BadToolCall instead"??
             String reason = "Tool call rejected: Failed to convert arguments. Error: " + e.getMessage();
             JavaMethodToolCall call = new JavaMethodToolCall(modelMessage, id, this, jsonArgs, jsonArgs);
             call.getResponse().reject(reason);

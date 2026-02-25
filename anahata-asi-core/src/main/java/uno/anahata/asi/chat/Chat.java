@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -45,7 +46,7 @@ import uno.anahata.asi.tool.ToolManager;
  * to the AI provider, and delegates context management to a specialized
  * ContextManager.
  *
- * @author anahata-gemini-pro-2.5
+ * @author anahata-ai
  */
 @Slf4j
 @Getter
@@ -72,8 +73,8 @@ public class Chat extends BasicPropertyChangeSource {
     /** The manager for the chat's operational status and error reporting. */
     private final StatusManager statusManager;
     
-    /** The list of registered AI providers (e.g., Gemini, OpenAI). */
-    private final List<AbstractAiProvider> providers = new ArrayList<>();
+    /** The list of registered AI providers. Uses CopyOnWriteArrayList for thread-safe iteration during rebinds or saves. */
+    private final List<AbstractAiProvider> providers = new CopyOnWriteArrayList<>();
 
     /**
      * The currently selected model for the chat session.
@@ -100,7 +101,6 @@ public class Chat extends BasicPropertyChangeSource {
      * while the chat was busy. It will be picked up and processed as soon as
      * the current conversation turn is complete.
      */
-    @Getter
     private InputUserMessage stagedUserMessage;
 
     /**
@@ -157,13 +157,11 @@ public class Chat extends BasicPropertyChangeSource {
         this.requestConfig = new RequestConfig(this);
         this.requestConfig.setResponseModalities(new ArrayList<>(config.getDefaultResponseModalities()));
 
-        contextManager.init();
-
         // Discover and instantiate providers
         log.info("Attempting to instantiate AI providers: " + config.getProviderClasses());
         for (Class<? extends AbstractAiProvider> providerClass : config.getProviderClasses()) {
             try {
-                // Instantiate the provider, passing this ToolManager instance.
+                // Instantiate the provider via reflection
                 AbstractAiProvider provider = providerClass.getDeclaredConstructor().newInstance();
                 this.providers.add(provider);
                 log.info("Successfully instantiated and registered provider: {}", provider.getProviderId());
@@ -171,6 +169,9 @@ public class Chat extends BasicPropertyChangeSource {
                 log.error("Failed to instantiate provider class: {}", providerClass.getName(), e);
             }
         }
+        
+        // Final manager initialization cascade
+        contextManager.init();
         
         config.getContainer().register(this);
     }
@@ -206,6 +207,13 @@ public class Chat extends BasicPropertyChangeSource {
         contextManager.rebind();
         toolManager.rebind();
         resourceManager.rebind();
+        
+        // Zombie Message Recovery: If we reloaded a session with a staged message, 
+        // kickstart the processing loop to consume it.
+        if (stagedUserMessage != null) {
+            log.info("Recovered staged user message during rebind. Triggering send loop.");
+            executor.submit(() -> sendMessage(null));
+        }
     }
 
     /**

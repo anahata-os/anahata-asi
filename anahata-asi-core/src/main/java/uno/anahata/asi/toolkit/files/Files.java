@@ -254,7 +254,7 @@ public class Files extends AnahataToolkit {
      * @param message A message describing the change.
      * @throws Exception if a target string is not found, count mismatch occurs, I/O error occurs, or locking fails.
      */
-    @AiTool(value = "Performs multiple text replacements in a file. Ideal for surgical code edits. Shows the 'reason' of each replacement as comic-style bubble on the ASI's diff viewer.", maxDepth = 12)
+    @AiTool(value = "Performs multiple text replacements in a file. Ideal for surgical edits but tends to fail on source code files. Shows the 'reason' of each replacement as comic-style bubble on the ASI's diff viewer.", maxDepth = 12)
     public void replaceInTextFile(
             @AiToolParam("The replacements.") TextFileReplacements replacements,
             @AiToolParam("A message describing the change.") String message) throws Exception {

@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -51,11 +52,12 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
     private long sequentialId;
 
     /**
-     * The list of parts that make up the message content. Made private to
-     * enforce encapsulation.
+     * The list of parts that make up the message content. Uses CopyOnWriteArrayList 
+     * to allow thread-safe iteration during background serialization (e.g., auto-save) 
+     * while the model is adding parts or appending text to existing parts.
      */
     @Getter(AccessLevel.NONE)
-    private final List<AbstractPart> parts = new ArrayList<>();
+    private final List<AbstractPart> parts = new CopyOnWriteArrayList<>();
 
     /**
      * A backward reference to the Chat session that owns this message. This is

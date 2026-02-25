@@ -86,7 +86,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
     private JComboBox<ToolPermission> permissionCombo;
     private JComboBox<ToolExecutionStatus> statusCombo;
     private JButton runButton;
-    private JButton skipButton;
+    private JButton declineButton;
     private JButton revertButton;
     private JProgressBar toolProgressBar;
 
@@ -200,12 +200,12 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
             statusCombo.setForeground(SwingChatConfig.getColor(status));
         });
 
-        skipButton = new JButton("Skip", new CancelIcon(16));
-        skipButton.setToolTipText("Set status to NOT_EXECUTED");
-        skipButton.addActionListener(e -> getPart().getResponse().setStatus(ToolExecutionStatus.NOT_EXECUTED));
+        declineButton = new JButton("Decline", new CancelIcon(16));
+        declineButton.setToolTipText("Set status to DECLINED");
+        declineButton.addActionListener(e -> getPart().getResponse().setStatus(ToolExecutionStatus.DECLINED));
 
         revertButton = new JButton("Clear response", new DeleteIcon(16));
-        revertButton.setToolTipText("Clear execution results, erros and logs and sets the status to NOT_EXECUTED");
+        revertButton.setToolTipText("Clear execution results, erros and logs and sets the status to DECLINED");
         revertButton.addActionListener(e -> getPart().getResponse().reset());
 
         runButton = new JButton("Run", new RunIcon(16));
@@ -223,7 +223,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         controlBar.add(new JLabel("Status:"), "split 2");
         controlBar.add(statusCombo);
         controlBar.add(toolProgressBar, "gapleft 10");
-        controlBar.add(skipButton, "right, skip 1, split 3");
+        controlBar.add(declineButton, "right, skip 1, split 3");
         controlBar.add(revertButton);
         controlBar.add(runButton, "right, wrap");
         
@@ -399,7 +399,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         }
 
         toolProgressBar.setVisible(response.getStatus() == ToolExecutionStatus.EXECUTING);
-        skipButton.setVisible(response.getStatus() == ToolExecutionStatus.PENDING);
+        declineButton.setVisible(response.getStatus() == ToolExecutionStatus.PENDING);
 
         if (response.getStatus() == ToolExecutionStatus.EXECUTING) {
             runButton.setText("Stop");
@@ -413,7 +413,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
             runButton.addActionListener(e -> executeTool());
             runButton.setEnabled(true);
             revertButton.setVisible(true);
-        } else if (response.getStatus() == ToolExecutionStatus.PENDING || response.getStatus() == ToolExecutionStatus.NOT_EXECUTED) {
+        } else if (response.getStatus() == ToolExecutionStatus.PENDING || response.getStatus() == ToolExecutionStatus.DECLINED) {
             runButton.setText("Run");
             runButton.setIcon(new RunIcon(16));
             runButton.addActionListener(e -> executeTool());

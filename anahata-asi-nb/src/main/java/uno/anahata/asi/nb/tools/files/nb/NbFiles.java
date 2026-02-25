@@ -18,10 +18,8 @@ import org.netbeans.api.queries.FileEncodingQuery;
 import uno.anahata.asi.model.resource.RefreshPolicy;
 import uno.anahata.asi.model.resource.files.TextFileResource;
 import uno.anahata.asi.toolkit.files.TextViewportSettings;
-import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolException;
 import uno.anahata.asi.tool.AiToolkit;
-import uno.anahata.asi.tool.AiToolParam;
 import uno.anahata.asi.toolkit.files.Files;
 import uno.anahata.asi.toolkit.files.FullTextFileUpdate;
 
@@ -42,11 +40,11 @@ public class NbFiles extends Files {
     public List<String> getSystemInstructions() throws Exception {
         List<String> instructions = new ArrayList<>(super.getSystemInstructions());
         instructions.add(
-                "### NbFiles Coding Instructions:\n" +
-                "- **NO GUESSING**: You are strictly prohibited from guessing the methods, fields, or signatures of any Java types. " +
-                "If a type (like `JavaType` or a library class) is not fully present in your context (including its source code or detailed member list), " +
-                "you MUST use `CodeModel` to retrieve the ground truth before writing code that uses it.\n" +
-                "- **IMPORTS**: Always ensure you add necessary imports when applying changes that include types not already present in the file's import list."
+                "The NbFiles Toolkit :\n" +
+                "- You are strictly prohibited from guessing the methods, fields, or signatures of the Java types in the users projects. " +
+                "If a given type in the users projects is not present in your context (like the source code or members list), " +
+                "then use `CodeModel` tools or `loadTextFile` to retrieve the ground truth before writing code that uses it.\n" +
+                "Avoid `replaceTextInFile` for coding."
         );
         return instructions;
     }

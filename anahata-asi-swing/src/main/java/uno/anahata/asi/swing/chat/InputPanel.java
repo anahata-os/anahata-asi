@@ -64,8 +64,8 @@ public class InputPanel extends JPanel {
     private JXTextArea inputTextArea;
     /** The button to send the message. */
     private JButton sendButton;
-    /** The button to skip pending tools and send. */
-    private JButton skipAndSendButton;
+    /** The button to decline pending tools and send. */
+    private JButton declineAndSendButton;
     /** The button to stop the current API call. */
     private JButton stopButton;
     /** The button to attach files. */
@@ -226,9 +226,9 @@ public class InputPanel extends JPanel {
         JPanel eastButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         eastButtonPanel.setOpaque(false);
         
-        skipAndSendButton = new JButton("Skip Pending & Send", new CancelIcon(16));
-        skipAndSendButton.addActionListener(e -> skipPendingAndSend());
-        skipAndSendButton.setVisible(false);
+        declineAndSendButton = new JButton("Decline Pending & Send", new CancelIcon(16));
+        declineAndSendButton.addActionListener(e -> declinePendingAndSend());
+        declineAndSendButton.setVisible(false);
         
         sendButton = new JButton("Send", new SendIcon(16));
         sendButton.addActionListener(e -> sendMessage());
@@ -237,7 +237,7 @@ public class InputPanel extends JPanel {
         stopButton.addActionListener(e -> chat.stop());
         stopButton.setVisible(false);
 
-        eastButtonPanel.add(skipAndSendButton);
+        eastButtonPanel.add(declineAndSendButton);
         eastButtonPanel.add(sendButton);
         eastButtonPanel.add(stopButton);
 
@@ -374,10 +374,10 @@ public class InputPanel extends JPanel {
         );
     }
 
-    private void skipPendingAndSend() {
+    private void declinePendingAndSend() {
         AbstractModelMessage promptMsg = chat.getToolPromptMessage();
         if (promptMsg != null) {
-            promptMsg.skipAllPending();
+            promptMsg.declineAllPending();
         }
         sendMessage();
     }
@@ -417,11 +417,11 @@ public class InputPanel extends JPanel {
         if (status == ChatStatus.TOOL_PROMPT) {
             sendButton.setText("Run Pending & Send");
             sendButton.setIcon(new RunAndSendIcon(16));
-            skipAndSendButton.setVisible(true);
+            declineAndSendButton.setVisible(true);
         } else {
             sendButton.setText("Send");
             sendButton.setIcon(new SendIcon(16));
-            skipAndSendButton.setVisible(false);
+            declineAndSendButton.setVisible(false);
         }
     }
 
@@ -507,6 +507,6 @@ public class InputPanel extends JPanel {
         screenshotButton.setEnabled(enabled);
         captureFramesButton.setEnabled(enabled);
         microphonePanel.setMicrophoneComponentsEnabled(enabled);
-        skipAndSendButton.setEnabled(enabled);
+        declineAndSendButton.setEnabled(enabled);
     }
 }

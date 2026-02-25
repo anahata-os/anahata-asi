@@ -31,8 +31,8 @@ public enum ToolExecutionStatus {
 
     /** 
      * The tool was not executed for a variety of reasons, such as being
-     * skipped by the user, disabled by preferences, or cancelled. The
+     * declined by the user, disabled by preferences, or cancelled. The
      * specific reason should be in the 'error' field of the response.
      */
-    NOT_EXECUTED;
+    DECLINED;
 }

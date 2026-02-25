@@ -8,7 +8,7 @@ import uno.anahata.asi.model.tool.ToolExecutionStatus;
 
 /**
  * The response for a {@link BadToolCall}. Its status is immediately set to
- * {@link ToolExecutionStatus#NOT_EXECUTED} and its execute method is a no-op.
+ * {@link ToolExecutionStatus#DECLINED} and its execute method is a no-op.
  *
  * @author anahata-gemini-pro-2.5
  */
@@ -17,7 +17,7 @@ public class BadToolResponse extends AbstractToolResponse<BadToolCall> {
 
     public BadToolResponse(@NonNull BadToolCall call) {
         super(call);
-        setStatus(ToolExecutionStatus.NOT_EXECUTED);
+        setStatus(ToolExecutionStatus.DECLINED);
         setErrors("Tool call rejected: The tool '" + call.getToolName() + "' was not found.");
     }
 

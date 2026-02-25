@@ -33,8 +33,17 @@ import uno.anahata.asi.tool.ToolManager;
 @Getter
 public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implements Rebindable {
 
-    /** The singleton instance of the tool class. */
-    private final Object toolkitInstance;
+    /** 
+     * The fully qualified name of the toolkit class. 
+     * This is the "Ground Truth" used to restore the instance after deserialization.
+     */
+    private final String toolkitClassName;
+
+    /** 
+     * The singleton instance of the tool class. 
+     * Non-final to support circular reference resolution during Kryo deserialization.
+     */
+    private Object toolkitInstance;
 
     /** 
      * A list of all declared methods (tools) for this toolkit. 
@@ -50,6 +59,7 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
      */
     public JavaObjectToolkit(ToolManager toolManager, Class<?> toolClass) throws Exception {
         super(toolManager);
+        this.toolkitClassName = toolClass.getName();
         
         AiToolkit toolkitAnnotation = toolClass.getAnnotation(AiToolkit.class);
         if (toolkitAnnotation == null) {
@@ -79,7 +89,7 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
         for (Method method : getAllAnnotatedMethods(toolClass)) {
             AiTool toolAnnotation = method.getAnnotation(AiTool.class);
             if (toolAnnotation != null) {
-                tools.add(new JavaMethodTool(this, toolkitInstance, method, toolAnnotation));
+                tools.add(new JavaMethodTool(this, method, toolAnnotation));
             }
         }
     }
@@ -109,6 +119,18 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
     @Override
     public void rebind() {
         log.info("Rebinding JavaObjectToolkit: {}", name);
+        
+        // 1. Restore Instance if missing (transient recovery)
+        if (toolkitInstance == null && toolkitClassName != null) {
+            try {
+                log.info("Restoring toolkit instance for class: {}", toolkitClassName);
+                Class<?> clazz = Class.forName(toolkitClassName);
+                this.toolkitInstance = clazz.getDeclaredConstructor().newInstance();
+            } catch (Exception e) {
+                log.error("Failed to restore toolkit instance during rebind: " + toolkitClassName, e);
+            }
+        }
+
         if (toolkitInstance instanceof ToolContext tc) {
             tc.setToolkit(this);
         }
@@ -117,39 +139,42 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
             this.tools = new ArrayList<>();
         }
 
-        // Hot-reload logic: Sync the tools list with the current class definition
-        Map<String, Method> currentMethods = new HashMap<>();
-        for (Method m : getAllAnnotatedMethods(toolkitInstance.getClass())) {
-            AiTool toolAnnotation = m.getAnnotation(AiTool.class);
-            if (toolAnnotation != null) {
-                currentMethods.put(JavaMethodTool.buildMethodSignature(m), m);
+        // 2. Hot-reload logic: Sync the tools list with the current class definition.
+        // We only proceed if the instance is available to avoid NPEs during circularity resolution.
+        if (toolkitInstance != null) {
+            Map<String, Method> currentMethods = new HashMap<>();
+            for (Method m : getAllAnnotatedMethods(toolkitInstance.getClass())) {
+                AiTool toolAnnotation = m.getAnnotation(AiTool.class);
+                if (toolAnnotation != null) {
+                    currentMethods.put(JavaMethodTool.buildMethodSignature(m), m);
+                }
             }
-        }
 
-        List<JavaMethodTool> toRemove = new ArrayList<>();
-        for (JavaMethodTool tool : tools) {
-            String signature = tool.getJavaMethodSignature();
-            if (currentMethods.containsKey(signature)) {
-                // Tool is still valid. It will lazily restore its Method object.
-                currentMethods.remove(signature);
-            } else {
-                // Tool signature no longer exists in the class.
-                log.warn("Tool signature no longer exists, marking for removal: {}", signature);
-                toRemove.add(tool);
+            List<JavaMethodTool> toRemove = new ArrayList<>();
+            for (JavaMethodTool tool : tools) {
+                String signature = tool.getJavaMethodSignature();
+                if (currentMethods.containsKey(signature)) {
+                    // Tool is still valid. It will lazily restore its Method object.
+                    currentMethods.remove(signature);
+                } else {
+                    // Tool signature no longer exists in the class.
+                    log.warn("Tool signature no longer exists, marking for removal: {}", signature);
+                    toRemove.add(tool);
+                }
             }
-        }
 
-        tools.removeAll(toRemove);
+            tools.removeAll(toRemove);
 
-        // Add new tools
-        for (Map.Entry<String, Method> entry : currentMethods.entrySet()) {
-            Method m = entry.getValue();
-            AiTool toolAnnotation = m.getAnnotation(AiTool.class);
-            try {
-                log.info("Adding new tool discovered during rebind: {}", entry.getKey());
-                tools.add(new JavaMethodTool(this, toolkitInstance, m, toolAnnotation));
-            } catch (Exception e) {
-                log.error("Failed to create new tool during rebind: " + entry.getKey(), e);
+            // Add new tools
+            for (Map.Entry<String, Method> entry : currentMethods.entrySet()) {
+                Method m = entry.getValue();
+                AiTool toolAnnotation = m.getAnnotation(AiTool.class);
+                try {
+                    log.info("Adding new tool discovered during rebind: {}", entry.getKey());
+                    tools.add(new JavaMethodTool(this, m, toolAnnotation));
+                } catch (Exception e) {
+                    log.error("Failed to create new tool during rebind: " + entry.getKey(), e);
+                }
             }
         }
     }

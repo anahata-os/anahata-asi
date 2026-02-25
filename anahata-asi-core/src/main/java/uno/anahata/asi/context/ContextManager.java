@@ -5,7 +5,9 @@ package uno.anahata.asi.context;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.Getter;
 import lombok.NonNull;
@@ -42,10 +44,11 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
     private final Chat chat;
 
     /**
-     * The canonical conversation history. Access is manually synchronized to
-     * avoid Kryo serialization issues with JDK synchronized wrappers.
+     * The canonical conversation history. Uses CopyOnWriteArrayList to allow 
+     * thread-safe iteration during background serialization (e.g., auto-save) 
+     * without blocking streaming updates.
      */
-    private final List<AbstractMessage> history = new ArrayList<>();
+    private final List<AbstractMessage> history = new CopyOnWriteArrayList<>();
 
     /**
      * Counter for assigning unique, sequential IDs to messages.
@@ -91,11 +94,9 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
      * to zero. Fires a property change event for the "history" property.
      */
     public void clear() {
-        synchronized (history) {
-            history.clear();
-            messageIdCounter.set(0);
-            partIdCounter.set(0);
-        }
+        history.clear();
+        messageIdCounter.set(0);
+        partIdCounter.set(0);
         log.info("ContextManager cleared for session {}", chat.getConfig().getSessionId());
         propertyChangeSupport.firePropertyChange("history", null, history);
     }
@@ -121,28 +122,12 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
         for (ContextProvider rootProvider : providers) {
             for (ContextProvider provider : rootProvider.getFlattenedHierarchy(true)) {
                 if (provider.isProviding()) {
-                    long start = System.currentTimeMillis();
                     try {
                         List<String> systemInstructions = provider.getSystemInstructions();
                         if (provider instanceof AbstractResource) {
                             allSystemInstructions.add(provider.getHeader());
                         }
                         allSystemInstructions.addAll(systemInstructions);
-                        /*
-                        long duration = System.currentTimeMillis() - start;
-                        if (!systemInstructions.isEmpty()) {
-                            StringBuilder sb = new StringBuilder();
-                            if (provider instanceof AbstractResource) {
-                                sb.append(provider.getHeader() + "\n\n");
-                            }
-
-                            for (String instruction : systemInstructions) {
-                                sb.append(instruction + "\n\n");
-                            }
-                            //sb.append("\n\n(Provider ").append(provider.getName()).append(" took: ").append(duration).append("ms)");
-                            allSystemInstructions.add(sb.toString());
-                        }
-                        */
                     } catch (Exception e) {
                         log.error("Error executing system instruction provider: {}", provider.getName(), e);
                         allSystemInstructions.add("Error executing system instruction provider: " + provider.getName()
@@ -161,11 +146,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
      * @return The filtered list of messages.
      */
     public List<AbstractMessage> buildVisibleHistory() {
-        List<AbstractMessage> visibleHistory = new ArrayList<>();
-
-        synchronized (history) {
-            visibleHistory.addAll(history);
-        }
+        List<AbstractMessage> visibleHistory = new ArrayList<>(history);
 
         log.info("Built visible history with {} messages (total history: {})", visibleHistory.size(), history.size());
 
@@ -238,12 +219,10 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
      * @param message The message to add.
      */
     private void addMessageInternal(AbstractMessage message) {
-        synchronized (history) {
-            if (!history.contains(message)) {
-                identifyMessage(message);
-                log.info("Adding message {} to history", message.getSequentialId());
-                history.add(message);
-            }
+        if (!history.contains(message)) {
+            identifyMessage(message);
+            log.info("Adding message {} to history", message.getSequentialId());
+            history.add(message);
         }
         propertyChangeSupport.firePropertyChange("history", null, history);
     }
@@ -254,11 +233,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
      * @param message The message to remove.
      */
     public void removeMessage(AbstractMessage message) {
-        boolean removed;
-        synchronized (history) {
-            removed = history.remove(message);
-        }
-        if (removed) {
+        if (history.remove(message)) {
             log.info("Removed message {} from history.", message.getSequentialId());
             propertyChangeSupport.firePropertyChange("history", null, history);
         }
@@ -268,17 +243,15 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
      * Performs a hard prune on the entire chat history.
      */
     private void hardPrune() {
-        synchronized (history) {
-            for (AbstractMessage message : history) {
-                List<AbstractPart> allParts = new ArrayList<>(message.getParts(true));
-                for (AbstractPart ap : allParts) {
-                    if (ap.getRemainingDepth() <= 0 && !Boolean.FALSE.equals(ap.getPruned()) && !Boolean.FALSE.equals(message.isPruned())) {
-                        ap.remove();
-                    }
+        for (AbstractMessage message : history) {
+            List<AbstractPart> allParts = new ArrayList<>(message.getParts(true));
+            for (AbstractPart ap : allParts) {
+                if (ap.getRemainingDepth() <= 0 && !Boolean.FALSE.equals(ap.getPruned()) && !Boolean.FALSE.equals(message.isPruned())) {
+                    ap.remove();
                 }
             }
-            history.removeIf(AbstractMessage::isGarbageCollectable);
         }
+        history.removeIf(AbstractMessage::isGarbageCollectable);
     }
 
     /**
@@ -287,9 +260,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
      * @return A synchronized, unmodifiable list of all messages.
      */
     public List<AbstractMessage> getHistory() {
-        synchronized (history) {
-            return new ArrayList<>(history);
-        }
+        return Collections.unmodifiableList(history);
     }
 
     /**

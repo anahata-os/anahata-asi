@@ -105,7 +105,7 @@ public class SwingChatConfig extends ChatConfig {
             case INTERRUPTED -> new Color(255, 193, 7); // Amber
             case PENDING -> new Color(128, 0, 128);  // Purple
             case NOT_FOUND -> new Color(253, 126, 20); // Orange
-            case NOT_EXECUTED -> new Color(108, 117, 125); // Gray
+            case DECLINED -> new Color(108, 117, 125); // Gray
         };
     }
 

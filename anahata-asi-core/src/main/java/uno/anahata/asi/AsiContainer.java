@@ -22,6 +22,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.status.ChatStatus;
 import uno.anahata.asi.internal.kryo.KryoUtils;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 
@@ -246,10 +247,26 @@ public abstract class AsiContainer extends BasicPropertyChangeSource {
 
     /**
      * Performs an automatic backup of the session to the active sessions directory.
+     * Logic: Only proceeds if the chat is in a stable state (IDLE, TOOL_PROMPT, etc.)
+     * to prevent serialization during volatile operations like streaming.
      * 
      * @param chat The chat session to save.
      */
     public void autoSaveSession(Chat chat) {
+        ChatStatus status = chat.getStatusManager().getCurrentStatus();
+        
+        boolean isStable = status == ChatStatus.IDLE 
+                        || status == ChatStatus.TOOL_PROMPT 
+                        || status == ChatStatus.CANDIDATE_CHOICE_PROMPT
+                        || status == ChatStatus.ERROR
+                        || status == ChatStatus.MAX_RETRIES_REACHED;
+
+        if (!isStable) {
+            log.debug("Skipping auto-save for session {} - chat is currently in volatile state: {}", 
+                    chat.getConfig().getSessionId(), status);
+            return;
+        }
+        
         saveSessionTo(chat, getSessionsDir());
     }
 
@@ -271,13 +288,32 @@ public abstract class AsiContainer extends BasicPropertyChangeSource {
      */
     private void saveSessionTo(Chat chat, Path dir) {
         synchronized (chat) {
-            Path file = dir.resolve(chat.getConfig().getSessionId() + ".kryo");
+            String sessionId = chat.getConfig().getSessionId();
+            Path file = dir.resolve(sessionId + ".kryo");
+            Path tmpFile = dir.resolve(sessionId + ".kryo.tmp");
             try {
-                log.info("Saving session {} to {}", chat.getConfig().getSessionId(), file);
+                log.info("Saving session {} to {}", sessionId, file);
                 byte[] data = KryoUtils.serialize(chat);
-                Files.write(file, data);
+                
+                // 1. Write to temporary file
+                Files.write(tmpFile, data);
+                
+                // 2. Atomic move to destination
+                try {
+                    Files.move(tmpFile, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                    log.warn("Atomic move not supported on this filesystem, falling back to standard move for: {}", file);
+                    Files.move(tmpFile, file, StandardCopyOption.REPLACE_EXISTING);
+                }
+                
             } catch (IOException e) {
-                log.error("Failed to save session: {}", chat.getConfig().getSessionId(), e);
+                log.error("Failed to save session: {}", sessionId, e);
+                // Attempt to clean up the orphaned temp file
+                try {
+                    Files.deleteIfExists(tmpFile);
+                } catch (IOException ex) {
+                    log.debug("Could not delete temporary file: {}", tmpFile);
+                }
             }
         }
     }

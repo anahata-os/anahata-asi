@@ -288,18 +288,18 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
     }
 
     /**
-     * Sets all tool calls in this message that are currently in a PENDING state to NOT_EXECUTED.
+     * Sets all tool calls in this message that are currently in a PENDING state to DECLINED.
      */
-    public void skipAllPending() {
+    public void declineAllPending() {
         getToolCalls().stream()
             .map(AbstractToolCall::getResponse)
             .filter(response -> response.getStatus() == ToolExecutionStatus.PENDING)
-            .forEach(response -> response.setStatus(ToolExecutionStatus.NOT_EXECUTED));
+            .forEach(response -> response.setStatus(ToolExecutionStatus.DECLINED));
     }
 
     /**
      * Processes all tool responses associated with this message that are currently in a PENDING state.
-     * Tools with APPROVE_ALWAYS permission are executed, while others are rolled to NOT_EXECUTED.
+     * Tools with APPROVE_ALWAYS permission are executed, while others are rolled to DECLINED.
      */
     public void processPendingTools() {
         if (hasPendingTools()) {

@@ -40,7 +40,7 @@ public class ToolExecutionMenu {
             
             System.out.println("\nOptions:");
             System.out.println("A: Approve All Pending (Execute all PENDING tools and send results to model)");
-            System.out.println("D: Deny All Pending (Mark all PENDING tools as NOT_EXECUTED)");
+            System.out.println("D: Deny All Pending (Mark all PENDING tools as DECLINED)");
             System.out.println("V: View Details / Execute Single Tool / Set Preference");
             System.out.println("B: Back to Chat (Wait for next user input)");
             System.out.print("Enter choice (A, D, V, B): ");

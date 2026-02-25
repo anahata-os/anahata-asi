@@ -95,33 +95,10 @@ public class GeminiContentAdapter {
 
         List<AbstractPart> allParts = anahataMessage.getParts(true);
         
-        // A. Process Text/Blob Parts
+        // Process ALL parts (Text, Blob, ToolCalls) with interleaved metadata.
+        // This ensures the model has immediate context for each part's identity and status.
         for (AbstractPart part : allParts) {
-            if (!(part instanceof AbstractToolCall)) {
-                addPartWithMetadata(modelParts, part, shouldCreateMetadata);
-            }
-        }
-
-        // B. Process Tool Calls
-        List<AbstractToolCall<?, ?>> toolCalls = modelMsg.getToolCalls();
-        if (!toolCalls.isEmpty()) {
-            if (shouldCreateMetadata) {
-                StringBuilder sb = new StringBuilder("--- Tool Metadata ---\n");
-                for (AbstractToolCall tc : toolCalls) {
-                    sb.append(tc.createMetadataHeader()).append("\n");
-                }
-                modelParts.add(Part.fromText(sb.toString().trim()));
-            }
-
-            for (AbstractToolCall tc : toolCalls) {
-                if (!tc.isEffectivelyPruned() || includePruned) {
-                    Part googlePart = new GeminiPartAdapter(tc).toGoogle();
-                    if (googlePart != null) {
-                        tc.setTokenCount(TokenizerUtils.countTokens(googlePart.toJson()));
-                        modelParts.add(googlePart);
-                    }
-                }
-            }
+            addPartWithMetadata(modelParts, part, shouldCreateMetadata);
         }
 
         if (!modelParts.isEmpty()) {
@@ -129,9 +106,9 @@ public class GeminiContentAdapter {
         }
 
         // --- 2. Synthesize the TOOL role content (Responses) ---
-        List<AbstractToolResponse<?>> executedResponses = toolCalls.stream()
+        List<AbstractToolResponse<?>> executedResponses = modelMsg.getToolCalls().stream()
                 .map(AbstractToolCall::getResponse)
-                .filter(r -> r.getStatus() != ToolExecutionStatus.PENDING && r.getStatus() != ToolExecutionStatus.NOT_EXECUTED)
+                //.filter(r -> r.getStatus() != ToolExecutionStatus.PENDING && r.getStatus() != ToolExecutionStatus.DECLINED)
                 .collect(Collectors.toList());
 
         if (!executedResponses.isEmpty()) {
@@ -155,12 +132,19 @@ public class GeminiContentAdapter {
         return synthesized;
     }
 
+    /**
+     * Adds an Anahata part to the Google GenAI list, automatically injecting 
+     * metadata headers and handling pruned placeholder hints.
+     */
     private void addPartWithMetadata(List<Part> googleParts, AbstractPart part, boolean shouldCreateMetadata) {
         boolean isEffectivelyPruned = part.isEffectivelyPruned();
         
         if (isEffectivelyPruned && !includePruned) {
+            // METADATA INTERLEAVING: Even if pruned, we provide the metadata header 
+            // as a "Hint" (via createMetadataHeader) to maintain semantic context 
+            // of the conversation flow.
             Part.Builder placeholderBuilder = Part.builder()
-                .text(part.createMetadataHeader() + "\n[PRUNED PLACEHOLDER: Metadata preserved for context awareness]");
+                .text(part.createMetadataHeader() + "\n[PRUNED: Content removed to save context window tokens]");
             
             if (part instanceof ThoughtSignature ts && ts.getThoughtSignature() != null) {
                 placeholderBuilder.thoughtSignature(ts.getThoughtSignature());
