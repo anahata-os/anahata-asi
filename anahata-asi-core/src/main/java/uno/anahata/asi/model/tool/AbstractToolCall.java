@@ -97,7 +97,7 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
         
         // 1. Initialize the response object.
         this.response = createResponse();
-        
+        setExpanded(tool.getPermission() != ToolPermission.APPROVE_ALWAYS);
         // 2. Publication: Add only the call to the message. 
         // The response is accessed via the call.
         message.addPart(this);
@@ -196,7 +196,7 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
      */
     @Override
     public String asText() {
-        return "[Tool Call: " + getToolName() + " with args: " + args.toString() + "]";
+        return "[Tool: " + getToolName() + " with args: " + args.toString() + "]";
     }
 
     /**
@@ -205,8 +205,14 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
     @Override
     protected void appendMetadata(StringBuilder sb) {
         sb.append(String.format(" | Status: %s", response.getStatus()));
+
+        String feedback = response.getUserFeedback();
+        if (feedback != null && !feedback.isBlank()) {
+            sb.append(" | User Feedback: ").append(feedback);
+        }
+
         if (isEffectivelyPruned()) {
-            sb.append(" | Result Hint: ").append(TextUtils.formatValue(response.asText()));
+            sb.append(" | Result Hint: ").append(TextUtils.formatValue(response.getResult()));
         }
     }
 }

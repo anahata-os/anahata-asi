@@ -11,6 +11,7 @@ import uno.anahata.asi.context.ContextManager;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.core.AbstractMessage;
 import uno.anahata.asi.model.core.AbstractPart;
+import uno.anahata.asi.model.core.PruningState;
 import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.model.provider.ServerTool;
 import uno.anahata.asi.model.resource.AbstractResource;
@@ -25,13 +26,11 @@ import uno.anahata.asi.tool.AnahataToolkit;
 /**
  * A toolkit for managing the current chat session's metadata and context policies.
  * 
- * @author anahata-gemini-pro-2.5
+ * @author anahata
  */
 @Slf4j
 @AiToolkit("Toolkit for managing the current chat session's metadata and context policies.")
 public class Session extends AnahataToolkit {
-
-    
 
     /**
      * Updates the current chat session's summary.
@@ -44,7 +43,7 @@ public class Session extends AnahataToolkit {
      * @param summary A concise summary of the conversation's current state or topic.
      * @return A confirmation message.
      */
-    @AiTool(value = "Updates the current chat session's summary. " +
+    @AiTool(value = "Updates the current chat session's summary. This shows in the ASI container's dashboard, update it with a brief summary of what you are doing or what you did if you are done." +
             "STRICT USAGE RULE: Only call this if you are calling other real-task related tools.",
             requiresApproval = false)
     public String updateSessionSummary(@AiToolParam("A concise summary of the conversation's current state.") String summary) {
@@ -116,35 +115,35 @@ public class Session extends AnahataToolkit {
         return stoppedCount + " tool(s) have been signaled to stop.\n" + result;
     }
 
-    @AiTool(value = "Sets the pruned/pinned state of one or more messages. " +
-            "Use newValue=true to prune (soft-prune), newValue=false to pin, and newValue=null to reset to auto-pruning.")
-    public String setMessagePruned(
+    @AiTool(value = "Bulk sets the pruning/pinning state of all parts for one or more messages. ")
+    public String setMessagePruningState(
             @AiToolParam("The sequential IDs of the messages to update.") List<Long> messageIds,
-            @AiToolParam("The new pruned state (true=pruned, false=pinned, null=auto).") Boolean newValue,
-            @AiToolParam(value = "The reason for pruning.", required = false) String prunedReason) {
+            @AiToolParam("The new pruning state.") PruningState newState) {
         List<AbstractMessage> history = getChat().getContextManager().getHistory();
         int count = 0;
         for (AbstractMessage msg : history) {
             if (messageIds.contains(msg.getSequentialId())) {
-                msg.setPruned(newValue, prunedReason);
+                switch(newState) {
+                    case PINNED -> msg.pinAllParts();
+                    case PRUNED -> msg.pruneAllParts();
+                    case AUTO -> msg.setAutoAllParts();
+                }
                 count++;
             }
         }
         return "Updated " + count + " message(s).";
     }
 
-    @AiTool(value = "Sets the pruned/pinned state of one or more message parts. " +
-            "Use newValue=true to prune (soft-prune), newValue=false to pin, and newValue=null to reset to auto-pruning.")
-    public String setPartPruned(
+    @AiTool(value = "Sets the pruning/pinning state of one or more message parts. ")
+    public String setPartPruningState(
             @AiToolParam("The sequential IDs of the parts to update.") List<Long> partIds,
-            @AiToolParam("The new pruned state (true=pruned, false=pinned, null=auto).") Boolean newValue,
-            @AiToolParam(value = "The reason for pruning.", required = false) String prunedReason) {
+            @AiToolParam("The new pruning state.") PruningState newState) {
         List<AbstractMessage> history = getChat().getContextManager().getHistory();
         int count = 0;
         for (AbstractMessage msg : history) {
             for (AbstractPart part : msg.getParts(true)) {
                 if (partIds.contains(part.getSequentialId())) {
-                    part.setPruned(newValue, prunedReason);
+                    part.setPruningState(newState);
                     count++;
                 }
             }
@@ -156,8 +155,8 @@ public class Session extends AnahataToolkit {
             "CRITICAL: After calling this, you will lose access to all local tools until the user manually reenables them " +
             "by clicking the Java icon in the toolbar. Use this only if you specifically need a server-side capability.",
             requiresApproval = true)
-    public String enableServerTools() {
-        getChat().getConfig().setServerToolsEnabled(true);
+    public String enableHostedTools() {
+        getChat().getConfig().setHostedToolsEnabled(true);
         return "Server tools have been enabled. Local tools are now disabled. " +
                "You can now use tools like Google Search or Maps if supported by the model.";
     }
@@ -192,27 +191,27 @@ public class Session extends AnahataToolkit {
         sb.append("- **Display Name**: ").append(domainChat.getDisplayName()).append("\n");
         sb.append("- **Selected Model**: ").append(domainChat.getSelectedModel() != null ? domainChat.getSelectedModel().getModelId() : "None").append("\n");
         sb.append("- **Summary**: ").append(domainChat.getConversationSummary() != null ? domainChat.getConversationSummary() : "N/A").append("\n");
-        sb.append("- **Thoughts Visible**: ").append(config.isExpandThoughts()).append(config.isExpandThoughts() ? " (user's ui displaying thought parts)" : "(**user cannot read your thought parts**)\n");
+        sb.append("- **Expand Thoughts**: ").append(config.isExpandThoughts()).append(config.isExpandThoughts() ? " (user's ui expands the thought parts with your reasoning when a new part arrives)" : "(**reasonig not showing**)\n");
         sb.append("- **Total Messages**: ").append(domainChat.getContextManager().getHistory().size()).append("\n");
         sb.append("- **Context Usage**: ").append(String.format("%.1f%%", domainChat.getContextWindowUsage() * 100))
           .append(" (").append(domainChat.getLastTotalTokenCount()).append(" / ").append(config.getTokenThreshold()).append(" tokens)\n");
         
         sb.append("\n### Default Max Depth Policies:\n");
         sb.append("- **Text Parts**: ").append(config.getDefaultTextPartMaxDepth()).append("\n");
-        sb.append("- **Tool Responses**: ").append(config.getDefaultToolMaxDepth()).append("\n");
+        sb.append("- **Tool Calls**: ").append(config.getDefaultToolMaxDepth()).append("\n");
         sb.append("- **Blob Parts**: ").append(config.getDefaultBlobPartMaxDepth()).append("\n");
         sb.append("*(Note: Individual tools or toolkits may override these defaults)*\n");
         
         sb.append("\n### Capabilities:\n");
         sb.append("- **Local Java Tools**: ").append(config.isLocalToolsEnabled() ? "ENABLED" : "DISABLED").append("\n");
-        sb.append("- **Hosted Server Tools**: ").append(config.isServerToolsEnabled() ? "ENABLED" : "DISABLED").append("\n");
+        sb.append("- **Hosted Server Tools**: ").append(config.isHostedToolsEnabled() ? "ENABLED" : "DISABLED").append("\n");
 
-        if (!config.isServerToolsEnabled() && domainChat.getSelectedModel() != null) {
+        if (!config.isHostedToolsEnabled() && domainChat.getSelectedModel() != null) {
             List<ServerTool> serverTools = domainChat.getSelectedModel().getAvailableServerTools();
             if (!serverTools.isEmpty()) {
                 sb.append("\n#### Available Server Tools (Currently Disabled):\n");
                 sb.append("The following tools are available but cannot be used while Local Tools are enabled. " +
-                          "Use `enableServerTools()` to switch modes.\n");
+                          "Use `enableHostedTools()` to switch modes.\n");
                 for (ServerTool st : serverTools) {
                     sb.append("- **").append(st.getDisplayName()).append("**: ").append(st.getDescription()).append("\n");
                 }

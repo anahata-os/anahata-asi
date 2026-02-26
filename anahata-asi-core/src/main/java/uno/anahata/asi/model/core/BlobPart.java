@@ -14,7 +14,7 @@ import uno.anahata.asi.internal.TikaUtils;
  * It can be created from raw bytes or directly from a file path, in which case
  * it retains a reference to the source path for traceability.
  *
- * @author anahata-gemini-pro-2.5
+ * @author anahata
  */
 @Getter
 public abstract class BlobPart extends AbstractPart {
@@ -65,5 +65,15 @@ public abstract class BlobPart extends AbstractPart {
     @Override
     protected int getDefaultMaxDepth() {
         return getChatConfig().getDefaultBlobPartMaxDepth();
+    }
+
+    /**
+     * {@inheritDoc}
+     * Heavy blob parts are surgically removable as soon as they expire to 
+     * save memory and tokens.
+     */
+    @Override
+    public boolean isGarbageCollectable() {
+        return isEffectivelyPruned();
     }
 }

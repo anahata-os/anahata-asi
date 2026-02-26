@@ -17,6 +17,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 import lombok.Getter;
@@ -28,12 +29,16 @@ import org.jdesktop.swingx.painter.MattePainter;
 import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.internal.TimeUtils;
 import uno.anahata.asi.model.core.AbstractPart;
+import uno.anahata.asi.model.core.PruningState;
 import uno.anahata.asi.model.core.ThoughtSignature;
 import uno.anahata.asi.swing.chat.ChatPanel;
 import uno.anahata.asi.swing.chat.SwingChatConfig;
 import uno.anahata.asi.swing.chat.SwingChatConfig.UITheme;
 import uno.anahata.asi.swing.icons.CopyIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
+import uno.anahata.asi.swing.icons.LeafIcon;
+import uno.anahata.asi.swing.icons.LeafIcon.LeafState;
+import uno.anahata.asi.swing.icons.PinnedIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
@@ -57,8 +62,11 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
     /** The chat configuration. */
     protected final SwingChatConfig chatConfig;
 
+    /** Toggle button for pinning control. */
+    private final JToggleButton pinButton;
     /** Toggle button for pruning control. */
-    private final PruningToggleButton pruningToggleButton;
+    private final JToggleButton pruneButton;
+    
     /** Button to copy the part content to the clipboard. */
     private final JButton copyButton;
     /** Button to remove the part from the message. */
@@ -93,8 +101,19 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
         setTitleFont(new Font("SansSerif", Font.PLAIN, 11));
 
         // 2. Initialize Header Buttons and Labels
-        this.pruningToggleButton = new PruningToggleButton(part);
-        
+        this.pinButton = new JToggleButton(new PinnedIcon(14));
+        this.pinButton.setToolTipText("Pin Part (Keep in context indefinitely)");
+        this.pinButton.setMargin(new java.awt.Insets(0, 2, 0, 2));
+        this.pinButton.addActionListener(e -> {
+            part.setPruningState(pinButton.isSelected() ? PruningState.PINNED : PruningState.AUTO);
+        });
+
+        this.pruneButton = new JToggleButton();
+        this.pruneButton.setMargin(new java.awt.Insets(0, 2, 0, 2));
+        this.pruneButton.addActionListener(e -> {
+            part.setPruningState(pruneButton.isSelected() ? PruningState.PRUNED : PruningState.AUTO);
+        });
+
         this.copyButton = new JButton(new CopyIcon(14));
         this.copyButton.setToolTipText("Copy Part Content");
         this.copyButton.setMargin(new java.awt.Insets(0, 2, 0, 2));
@@ -116,7 +135,8 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
         this.rightButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
         this.rightButtonPanel.setOpaque(false);
         this.rightButtonPanel.add(remainingDepthLabel);
-        this.rightButtonPanel.add(pruningToggleButton);
+        this.rightButtonPanel.add(pruneButton);
+        this.rightButtonPanel.add(pinButton);
         this.rightButtonPanel.add(removeButton);
         setRightDecoration(rightButtonPanel);
 
@@ -150,6 +170,8 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
 
         // Declarative, thread-safe binding to all part properties
         new EdtPropertyChangeListener(this, part, null, evt -> render());
+        // Global listener for "show pruned" toggle to refresh visibility of the panel.
+        new EdtPropertyChangeListener(this, chatConfig, "showPruned", evt -> render());
     }
 
     /**
@@ -188,6 +210,7 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
         renderContent();
         renderFooterInternal();
         updateContentVisibility();
+        updateVisibility();
         revalidate();
         repaint();
     }
@@ -237,9 +260,36 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
             remove = parentMessagePanel.isRenderRemoveButtons();
         }
 
-        pruningToggleButton.setVisible(prune);
+        pinButton.setVisible(prune);
+        pruneButton.setVisible(prune);
         removeButton.setVisible(remove);
         
+        // Sync button selection states with model
+        pinButton.setSelected(part.isPinned());
+        pruneButton.setSelected(part.isPruned());
+        
+        // Update Prune Button Icon: 3-Stage Lifecycle
+        LeafState state;
+        if (part.isPruned()) {
+            state = LeafState.DEAD; // Dark Brown
+        } else if (part.isEffectivelyPruned()) {
+            state = LeafState.WITHERED; // Light Brown
+        } else {
+            state = LeafState.ACTIVE; // Green
+        }
+        
+        pruneButton.setIcon(new LeafIcon(14, state));
+        
+        String tooltip;
+        if (part.isPruned()) {
+            tooltip = "Explicitly Pruned (Dead leaf)";
+        } else if (part.isEffectivelyPruned()) {
+            tooltip = "Expired/Effectively Pruned (Withered leaf)";
+        } else {
+            tooltip = "Active Part (Fresh leaf)";
+        }
+        pruneButton.setToolTipText(tooltip);
+
         // Visibility is also constrained by the remainingDepth value in updateRemainingDepthLabel
         if (!prune) {
             remainingDepthLabel.setVisible(false);
@@ -317,5 +367,15 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
         boolean isEffectivelyPruned = part.isEffectivelyPruned();
         boolean shouldShowContent = (!isEffectivelyPruned || chatConfig.isShowPruned()) && part.isExpanded();
         getContentContainer().setVisible(shouldShowContent);
+    }
+
+    /**
+     * Updates the visibility of the entire part panel based on the global configuration.
+     * If the part is effectively pruned and 'showPruned' is false, the entire component
+     * (including the header) is hidden from view.
+     */
+    protected void updateVisibility() {
+        boolean isEffectivelyPruned = part.isEffectivelyPruned();
+        setVisible(!isEffectivelyPruned || chatConfig.isShowPruned());
     }
 }

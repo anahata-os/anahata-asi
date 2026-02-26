@@ -1,12 +1,8 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.model.core;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.swagger.v3.oas.annotations.media.Schema;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.time.Instant;
+import java.util.Objects;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -19,7 +15,7 @@ import uno.anahata.asi.internal.TextUtils;
  * This class is central to the V2 context management system, providing a rich,
  * self-contained model for intelligent, depth-based pruning and full context awareness.
  *
- * @author anahata-gemini-pro-2.5
+ * @author anahata
  */
 @Getter
 @Setter
@@ -28,31 +24,21 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
     /**
      * A unique, sequential identifier assigned to this part when it is added to a chat.
      */
-    @Schema(hidden = true)
     private long sequentialId;
 
     /**
      * A backward reference to the Message that contains this part.
-     * This is for runtime convenience and is ignored during schema generation
-     * to keep the public contract clean.
      */
-    @JsonIgnore
-    @Schema(hidden = true)
     private AbstractMessage message;
 
     /**
-     * A three-state flag for explicit pruning control.
-     * - {@code true}: This part is explicitly pruned and will be hidden.
-     * - {@code false}: This part is "pinned" and never be auto-pruned.
-     * - {@code null}: (Default) Auto-pruning is active based on {@code maxDepth}.
+     * The pruning and pinning state of this part.
      */
-    @Schema(hidden = true)
-    private Boolean pruned = null;
+    private PruningState pruningState = PruningState.AUTO;
     
     /**
      * An optional reason for why this part was pruned.
      */
-    @Schema(hidden = true)
     private String prunedReason;
 
     /**
@@ -61,20 +47,17 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      * value is determined by the part type's default, resolved via the
      * {@link #getDefaultMaxDepth()} template method.
      */
-    @Schema(hidden = true)
     private Integer maxDepth = null;
 
     /**
      * The number of tokens this part consumes in the context window.
      * This value is typically set by the AI provider or estimated during part creation.
      */
-    @Schema(hidden = true)
     private int tokenCount;
 
     /**
      * Persistent UI state indicating if this part's panel is expanded in the conversation view.
      */
-    @Schema(hidden = true)
     private boolean expanded = true;
 
     /**
@@ -91,25 +74,25 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
     }
     
     /**
-     * Sets the pruned state of this part and fires a property change event.
+     * Sets the pruning state of this part and fires a property change event.
      * 
-     * @param pruned The new pruned state.
+     * @param pruningState The new pruning state.
      */
-    public void setPruned(Boolean pruned) {
-        setPruned(pruned, null);
+    public void setPruningState(PruningState pruningState) {
+        setPruningState(pruningState, null);
     }
 
     /**
-     * Sets the pruned state of this part with an optional reason.
+     * Sets the pruning state of this part with an optional reason.
      * 
-     * @param pruned The new pruned state.
+     * @param pruningState The new pruning state.
      * @param reason The reason for pruning.
      */
-    public void setPruned(Boolean pruned, String reason) {
-        Boolean oldPruned = this.pruned;
-        this.pruned = pruned;
+    public void setPruningState(PruningState pruningState, String reason) {
+        PruningState oldState = this.pruningState;
+        this.pruningState = pruningState;
         this.prunedReason = reason;
-        propertyChangeSupport.firePropertyChange("pruned", oldPruned, pruned);
+        propertyChangeSupport.firePropertyChange("pruningState", oldState, pruningState);
     }
 
     /**
@@ -151,62 +134,54 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      * 
      * @return {@code true} if the part is pinned.
      */
-    @JsonIgnore
-    @Schema(hidden = true)
     public boolean isPinned() {
-        return Boolean.FALSE.equals(this.pruned);
+        return pruningState == PruningState.PINNED;
     }
 
     /**
-     * Calculates the EFFECTIVE pruned state of this part, now with "deep pinning" logic.
-     * A part is effectively pruned if it was explicitly pruned, if its PARENT MESSAGE
-     * was explicitly pruned, or if its time-to-live has expired. Crucially, it is
-     * considered NOT pruned if it or its parent message is "pinned" (pruned=false).
+     * Checks if this part is managed automatically.
+     * 
+     * @return {@code true} if the part is in AUTO state.
+     */
+    public boolean isAuto() {
+        return pruningState == PruningState.AUTO;
+    }
+
+    /**
+     * Checks if this part is explicitly pruned.
+     * 
+     * @return {@code true} if the part is PRUNED.
+     */
+    public boolean isPruned() {
+        return pruningState == PruningState.PRUNED;
+    }
+
+    /**
+     * Calculates the EFFECTIVE pruned state of this part. 
+     * A part is effectively pruned if it was explicitly pruned or if its 
+     * time-to-live has expired (while in AUTO state).
      *
      * @return {@code true} if the part is effectively pruned, {@code false} otherwise.
      */
-    @JsonIgnore
-    @Schema(hidden = true)
     public boolean isEffectivelyPruned() {
-        // --- PINNING LOGIC (takes precedence) ---
-        // 1. Is the part itself explicitly pinned?
         if (isPinned()) {
-            return false; // It's pinned, not pruned.
+            return false;
         }
-        // 2. Is the parent message pinned? (Deep Pin)
-        if (message != null && message.isPinned()) {
-            return false; // Inherits pin, not pruned.
-        }
-
-        // --- PRUNING LOGIC ---
-        // 3. Is the part itself explicitly pruned?
-        if (Boolean.TRUE.equals(this.pruned)) {
+        if (isPruned()) {
             return true;
         }
-        // 4. Is the parent message explicitly pruned?
-        if (message != null && Boolean.TRUE.equals(message.isPruned())) {
-            return true;
-        }
-        // 5. Finally, check the depth-based auto-pruning logic (only if pruned is null for both).
-        if (getRemainingDepth() <= 0) {
-            return true;
-        }
-
-        return false;
+        return isAuto() && getRemainingDepth() <= 0;
     }
 
     /**
      * Determines if this part is eligible for "hard pruning" (permanent removal from history).
-     * A part is generally considered garbage if its remainingDepth has reached zero and it is not pinned.
+     * In the atomic model, a part is generally only collectable if IT and ALL its 
+     * siblings in the message are effectively pruned.
      * 
      * @return {@code true} if the part can be safely removed from history.
      */
-    @JsonIgnore
-    @Schema(hidden = true)
     public boolean isGarbageCollectable() {
-        // A part is garbage collectable if it's effectively pruned AND its remainingDepth <= 0 AND it's not pinned.
-        // Note: isEffectivelyPruned() already returns false if pinned.
-        return isEffectivelyPruned() && getRemainingDepth() <= 0;
+        return isEffectivelyPruned() && getMessage().isEffectivelyPruned();
     }
 
     /**
@@ -214,8 +189,6 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      * 
      * @return The remaining depth, or a large positive number for indefinite retention.
      */
-    @JsonIgnore
-    @Schema(hidden = true)
     public int getRemainingDepth() {
         int effectiveMaxDepth = getEffectiveMaxDepth();
         if (effectiveMaxDepth < 0) {
@@ -232,8 +205,6 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      * 
      * @return The effective maximum depth for this part.
      */
-    @JsonIgnore
-    @Schema(hidden = true)
     public final int getEffectiveMaxDepth() {
         if (maxDepth != null) {
             return maxDepth;
@@ -255,8 +226,6 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      * 
      * @return The chat session, or null if not attached to a message.
      */
-    @JsonIgnore
-    @Schema(hidden = true)
     public Chat getChat() {
         return message != null ? message.getChat() : null;
     }
@@ -266,8 +235,6 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      * 
      * @return The chat configuration, or null if not attached to a chat.
      */
-    @JsonIgnore
-    @Schema(hidden = true)
     public ChatConfig getChatConfig() {
         Chat chat = getChat();
         return chat != null ? chat.getConfig() : null;
@@ -308,16 +275,12 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
 
         appendMetadata(sb);
 
-        if (Boolean.TRUE.equals(pruned)) {
-            sb.append(" | [PRUNED]");
-            if (prunedReason != null) {
-                sb.append(" Reason: ").append(prunedReason);
-            }
-        } else if (isPinned()) {
-            sb.append(" | [PINNED]");
-        } else {
-            sb.append(" | [AUTO]");
+        sb.append(" | pruningState: ").append(pruningState);
+        if (isAuto()) {
+            sb.append(" | effectivelyPruned: ").append(isEffectivelyPruned());
         }
+        
+        sb.append(" | expanded: ").append(expanded);
         
         if (isEffectivelyPruned()) {
             sb.append(" | Hint: ").append(TextUtils.formatValue(asText()));
@@ -334,7 +297,7 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      * @return The identity label.
      */
     protected String getIdentityLabel() {
-        return "Part ID: " + getSequentialId();
+        return "x-anahata-part-id: " + getSequentialId();
     }
 
     /**

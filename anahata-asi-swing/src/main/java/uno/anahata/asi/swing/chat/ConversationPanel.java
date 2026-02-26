@@ -134,7 +134,7 @@ public class ConversationPanel extends JPanel {
                 evt -> render(), EdtPropertyChangeListener.Mode.INVOKE_LATER, true);
         
         // Global listener for "show pruned" toggle to refresh visibility of all panels.
-        new EdtPropertyChangeListener(this, chatPanel.getChatConfig(), "showPruned", evt -> refreshVisibility());
+        new EdtPropertyChangeListener(this, chatPanel.getChatConfig(), "showPruned", evt -> render());
     }
 
     /**
@@ -166,10 +166,20 @@ public class ConversationPanel extends JPanel {
      * </p>
      */
     public void render() {        
-        List<AbstractMessage> history = chat.getContextManager().getHistory();
+        List<AbstractMessage> fullHistory = chat.getContextManager().getHistory();
         
-        log.info("Updating conversation structure for session {}: {} messages", 
-                chat.getConfig().getSessionId(), history.size());
+        // PHYSICAL FILTERING: If showPruned is false, only include messages that have active content.
+        final List<AbstractMessage> history;
+        if (!chatPanel.getChatConfig().isShowPruned()) {
+            history = fullHistory.stream()
+                    .filter(m -> !m.isEffectivelyPruned())
+                    .collect(Collectors.toList());
+        } else {
+            history = fullHistory;
+        }
+        
+        log.info("Updating conversation structure for session {}: {} messages visible (of {})", 
+                chat.getConfig().getSessionId(), history.size(), fullHistory.size());
 
         List<AbstractMessage> toRemove = cachedMessagePanels.keySet().stream()
                 .filter(msg -> !history.contains(msg))
@@ -219,19 +229,6 @@ public class ConversationPanel extends JPanel {
             scrollToBottom();
         }
 
-        revalidate();
-        repaint();
-    }
-
-    /**
-     * Refreshes the visibility and visual state of all cached message panels.
-     * This is called when global settings like 'showPruned' change.
-     */
-    public void refreshVisibility() {
-        log.info("Refreshing visibility for all message panels.");
-        for (AbstractMessagePanel panel : cachedMessagePanels.values()) {
-            panel.render();
-        }
         revalidate();
         repaint();
     }

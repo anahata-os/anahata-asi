@@ -36,7 +36,7 @@ public class SwingChatConfig extends ChatConfig {
      * If true, parts and messages that are effectively pruned will still be rendered in the UI
      * (e.g., in a collapsed state) to allow the user to inspect and un-prune them.
      */
-    private boolean showPruned = true;
+    private boolean showPruned = false;
     
     /**
      * If true, sound notifications will be played on status changes.

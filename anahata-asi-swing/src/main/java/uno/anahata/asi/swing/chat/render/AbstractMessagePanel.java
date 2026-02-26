@@ -21,6 +21,7 @@ import javax.swing.BoxLayout;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JPanel;
+import javax.swing.JToggleButton;
 import javax.swing.border.Border;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,7 @@ import uno.anahata.asi.swing.chat.ChatPanel;
 import uno.anahata.asi.swing.chat.SwingChatConfig;
 import uno.anahata.asi.swing.icons.CopyIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
+import uno.anahata.asi.swing.icons.PinnedIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
@@ -56,8 +58,8 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
     /** The chat configuration. */
     protected final SwingChatConfig chatConfig;
 
-    /** Toggle button for pruning control. */
-    private final PruningToggleButton pruningToggleButton;
+    /** Master toggle button for pinning all parts in the interaction. */
+    private final JToggleButton pinButton;
     /** Button to copy the entire message content to the clipboard. */
     private final JButton copyButton;
     /** Button to remove the message from the chat history. */
@@ -87,7 +89,16 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
         setTitleFont(new Font("SansSerif", Font.BOLD, 13));
         
         // 2. Initialize Header Buttons
-        this.pruningToggleButton = new PruningToggleButton(message);
+        this.pinButton = new JToggleButton(new PinnedIcon(16));
+        this.pinButton.setToolTipText("Pin Interaction (Keep all parts in context)");
+        this.pinButton.setMargin(new java.awt.Insets(0, 4, 0, 4));
+        this.pinButton.addActionListener(e -> {
+            if (pinButton.isSelected()) {
+                message.pinAllParts();
+            } else {
+                message.setAutoAllParts();
+            }
+        });
         
         this.copyButton = new JButton(new CopyIcon(16));
         this.copyButton.setToolTipText("Copy Message Content");
@@ -105,7 +116,7 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
         // Pruning and Remove buttons on the right
         JPanel rightButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
         rightButtonPanel.setOpaque(false);
-        rightButtonPanel.add(pruningToggleButton);
+        rightButtonPanel.add(pinButton);
         rightButtonPanel.add(removeButton);
         setRightDecoration(rightButtonPanel);
 
@@ -144,6 +155,8 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
         // Declarative, thread-safe binding to message properties
         new EdtPropertyChangeListener(this, message, "pruned", evt -> render());
         new EdtPropertyChangeListener(this, message, "parts", evt -> render());
+        // Global listener for "show pruned" toggle to refresh the message structure.
+        new EdtPropertyChangeListener(this, chatConfig, "showPruned", evt -> render());
     }
 
     /**
@@ -190,6 +203,12 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
      */
     public void refreshMetadata() {
         updateHeaderInfoText();
+        // If we are physically filtering, we must re-evaluate the parts structure 
+        // because the remaining depth change might have caused a part to "expire" 
+        // into the filtered-out state.
+        if (!chatConfig.isShowPruned()) {
+            renderContentParts();
+        }
         cachedPartPanels.values().forEach(AbstractPartPanel::refreshMetadata);
     }
 
@@ -219,8 +238,11 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
      * Updates the visibility of header buttons based on the render flags.
      */
     protected void updateHeaderButtons() {
-        pruningToggleButton.setVisible(isRenderPruneButtons());
+        pinButton.setVisible(isRenderPruneButtons());
         removeButton.setVisible(isRenderRemoveButtons());
+        
+        // The master pin is selected ONLY if everything is pinned
+        pinButton.setSelected(message.isAllPinned());
     }
 
     /**
@@ -278,21 +300,33 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
      * Renders the content parts of the message using an incremental diffing mechanism.
      */
     protected void renderContentParts() {
-        List<AbstractPart> currentParts = message.getParts();
-
-        // 1. Identify and remove panels for parts no longer present
-        List<AbstractPart> toRemove = cachedPartPanels.keySet().stream()
-            .filter(part -> !currentParts.contains(part))
+        List<AbstractPart> allParts = message.getParts();
+        
+        // 1. Identify and remove panels for parts that are PERMANENTLY deleted from the model.
+        // We do NOT remove from cache if they are just filtered out.
+        List<AbstractPart> deletedFromModel = cachedPartPanels.keySet().stream()
+            .filter(part -> !allParts.contains(part))
             .collect(Collectors.toList());
         
-        for (AbstractPart removedPart : toRemove) {
+        for (AbstractPart removedPart : deletedFromModel) {
             AbstractPartPanel panel = cachedPartPanels.remove(removedPart);
             if (panel != null) {
                 partsContainer.remove(panel);
             }
         }
 
-        // 2. Ensure all parts have panels and are in the correct order
+        // 2. Resolve the filtered list for display.
+        final List<AbstractPart> currentParts;
+        if (!chatConfig.isShowPruned()) {
+            currentParts = allParts.stream()
+                    .filter(p -> !p.isEffectivelyPruned())
+                    .collect(Collectors.toList());
+        } else {
+            currentParts = allParts;
+        }
+
+        // 3. Ensure all visible parts have panels and are in the correct order in the container.
+        // This structural update is very cheap in Swing compared to content rendering.
         int componentIndex = 0;
         for (int i = 0; i < currentParts.size(); i++) {
             AbstractPart part = currentParts.get(i);
@@ -306,18 +340,14 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
             }
 
             if (panel != null) {
-                // CRITICAL: Add to container BEFORE rendering so it can find its ancestors
                 if (componentIndex >= partsContainer.getComponentCount() || partsContainer.getComponent(componentIndex) != panel) {
                     partsContainer.add(panel, componentIndex);
                 }
-                
-                // FIXED: Removed recursive panel.render() call.
-                // The panel will render itself via addNotify() or property change listeners.
                 componentIndex++;
             }
         }
 
-        // 3. Clean up any trailing components
+        // 4. Clean up any trailing components (panels that were visible but are now filtered out).
         while (partsContainer.getComponentCount() > componentIndex) {
             partsContainer.remove(partsContainer.getComponentCount() - 1);
         }

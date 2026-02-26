@@ -364,8 +364,6 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
     /** {@inheritDoc} */
     @Override
     protected void appendMetadata(StringBuilder sb) {
-        if (billedTokenCount > 0) {
-            sb.append(" | Billed Tokens: ").append(billedTokenCount);
-        }
+        // No additional metadata needed at the message level.
     }
 }

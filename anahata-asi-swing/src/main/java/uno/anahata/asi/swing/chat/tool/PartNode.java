@@ -59,9 +59,9 @@ public class PartNode extends AbstractContextNode<AbstractPart> {
     protected void updateStatus() {
         int remainingDepth = userObject.getRemainingDepth();
         if (userObject.isEffectivelyPruned()) {
-            this.status = "Pruned" + (remainingDepth >= 0 ? " (" + remainingDepth + " remaining)" : "");
+            this.status = "Pruned" + (remainingDepth != Integer.MAX_VALUE ? " (" + remainingDepth + " remaining)" : "");
         } else {
-            this.status = "Active" + (remainingDepth >= 0 ? " (" + remainingDepth + " remaining)" : "");
+            this.status = "Active" + (remainingDepth != Integer.MAX_VALUE ? " (" + remainingDepth + " remaining)" : "");
         }
     }
 }

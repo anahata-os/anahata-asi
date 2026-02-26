@@ -73,6 +73,15 @@ public abstract class TextPart extends AbstractPart {
     protected int getDefaultMaxDepth() {
         return getChatConfig().getDefaultTextPartMaxDepth();
     }
+
+    @Override
+    protected void appendMetadata(StringBuilder sb) {
+        if (isThought()){
+            sb.append(" | thought "); 
+        }
+    }
+    
+    
     
     /**
      * Indicates if this text part represents a model thought process.

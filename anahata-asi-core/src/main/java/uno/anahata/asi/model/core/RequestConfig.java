@@ -94,6 +94,6 @@ public class RequestConfig {
      * @return true if server tools are enabled.
      */
     public boolean isServerToolsEnabled() {
-        return chat.getConfig().isServerToolsEnabled();
+        return chat.getConfig().isHostedToolsEnabled();
     }
 }

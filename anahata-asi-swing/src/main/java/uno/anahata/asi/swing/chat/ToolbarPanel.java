@@ -18,7 +18,8 @@ import uno.anahata.asi.chat.ChatConfig;
 import uno.anahata.asi.swing.icons.AutoReplyIcon;
 import uno.anahata.asi.swing.icons.CompressIcon;
 import uno.anahata.asi.swing.icons.IconUtils;
-import uno.anahata.asi.swing.icons.PrunedPartsIcon;
+import uno.anahata.asi.swing.icons.LeafIcon;
+import uno.anahata.asi.swing.icons.LeafIcon.LeafState;
 import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.icons.ServerToolsIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
@@ -44,7 +45,7 @@ public class ToolbarPanel extends JPanel {
     /** Toggle button for local tool execution. */
     private JToggleButton toggleLocalToolsButton;
     /** Toggle button for server-side tool execution. */
-    private JToggleButton toggleServerToolsButton;
+    private JToggleButton toggleHostedToolsButton;
     /** Toggle button for automatic tool loop replies. */
     private JToggleButton toggleAutoreplyButton;
     /** Toggle button for showing/hiding pruned parts. */
@@ -89,23 +90,23 @@ public class ToolbarPanel extends JPanel {
         add(Box.createVerticalGlue());
         
         // 3. Toggle Pruned Button (Middle)
-        togglePrunedButton = createIconToggleButton(new PrunedPartsIcon(ICON_SIZE), "Show/Hide pruned parts and messages in the conversation view.", config.isShowPruned());
+        togglePrunedButton = createIconToggleButton(new LeafIcon(ICON_SIZE, LeafState.ACTIVE), "", config.isShowPruned());
         togglePrunedButton.addActionListener(this::togglePruned);
         add(togglePrunedButton);
 
         // 4. Toggle Local Tools Button (Middle)
         // Use the authentic Java icon for local tools
-        toggleLocalToolsButton = createIconToggleButton(IconUtils.getIcon("java.png", ICON_SIZE), "Enable/Disable local tool execution (Functions).", config.isLocalToolsEnabled());
+        toggleLocalToolsButton = createIconToggleButton(IconUtils.getIcon("java.png", ICON_SIZE), "", config.isLocalToolsEnabled());
         toggleLocalToolsButton.addActionListener(this::toggleLocalTools);
         add(toggleLocalToolsButton);
 
         // 5. Toggle Server Tools Button (Middle)
-        toggleServerToolsButton = createIconToggleButton(new ServerToolsIcon(ICON_SIZE), "Enable/Disable server-side tool execution (e.g., Google Search).", config.isServerToolsEnabled());
-        toggleServerToolsButton.addActionListener(this::toggleServerTools);
-        add(toggleServerToolsButton);
+        toggleHostedToolsButton = createIconToggleButton(new ServerToolsIcon(ICON_SIZE), "", config.isHostedToolsEnabled());
+        toggleHostedToolsButton.addActionListener(this::toggleHostedTools);
+        add(toggleHostedToolsButton);
         
         // 6. Toggle Autoreply Button (Middle)
-        toggleAutoreplyButton = createIconToggleButton(new AutoReplyIcon(ICON_SIZE), "Enable/Disable automatic replying of tool execution.", config.isAutoReplyTools());
+        toggleAutoreplyButton = createIconToggleButton(new AutoReplyIcon(ICON_SIZE), "", config.isAutoReplyTools());
         toggleAutoreplyButton.addActionListener(this::toggleAutoreply);
         add(toggleAutoreplyButton);
         
@@ -114,7 +115,7 @@ public class ToolbarPanel extends JPanel {
 
         // Declarative, thread-safe binding to tool enablement changes.
         // We only listen to serverToolsEnabled as it is fired by both setters in ChatConfig.
-        new EdtPropertyChangeListener(this, config, "serverToolsEnabled", evt -> syncToggles());
+        new EdtPropertyChangeListener(this, config, "hostedToolsEnabled", evt -> syncToggles());
 
         // Initial state sync
         syncToggles();
@@ -127,8 +128,6 @@ public class ToolbarPanel extends JPanel {
         this.chat = chatPanel.getChat();
         this.config = chatPanel.getChatConfig();
         
-        togglePrunedButton.setSelected(config.isShowPruned());
-        toggleAutoreplyButton.setSelected(config.isAutoReplyTools());
         syncToggles();
     }
 
@@ -188,6 +187,7 @@ public class ToolbarPanel extends JPanel {
         boolean show = togglePrunedButton.isSelected();
         config.setShowPruned(show);
         log.info("Show Pruned toggled to: {}", show);
+        syncToggles();
     }
 
     /**
@@ -205,19 +205,34 @@ public class ToolbarPanel extends JPanel {
      * Action listener for the toggle server tools button.
      * @param e The action event.
      */
-    private void toggleServerTools(ActionEvent e) {
-        boolean selected = toggleServerToolsButton.isSelected();
-        config.setServerToolsEnabled(selected);
+    private void toggleHostedTools(ActionEvent e) {
+        boolean selected = toggleHostedToolsButton.isSelected();
+        config.setHostedToolsEnabled(selected);
         log.info("Server tools toggled to: {}", selected);
         syncToggles();
     }
     
     /**
-     * Synchronizes the toggle buttons with the current configuration.
+     * Synchronizes the toggle buttons with the current configuration and updates tooltips.
      */
-    private void syncToggles() {
+    private synchronized void syncToggles() {
+        boolean showPruned = config.isShowPruned();
+        togglePrunedButton.setSelected(showPruned);
+        togglePrunedButton.setIcon(new LeafIcon(ICON_SIZE, showPruned ? LeafState.WITHERED : LeafState.ACTIVE));
+        togglePrunedButton.setToolTipText(showPruned ? 
+                "Showing pruned parts, click to hide" : "Not showing pruned parts, click to show");
+        
         toggleLocalToolsButton.setSelected(config.isLocalToolsEnabled());
-        toggleServerToolsButton.setSelected(config.isServerToolsEnabled());
+        toggleLocalToolsButton.setToolTipText(config.isLocalToolsEnabled() ? 
+                "Java Tools enabled: click to disable" : "Java Tools disabled: click to enable");
+        
+        toggleHostedToolsButton.setSelected(config.isHostedToolsEnabled());
+        toggleHostedToolsButton.setToolTipText(config.isHostedToolsEnabled() ? 
+                "Hosted tools enabled: click to disable" : "Hosted tools disabled: click to enable");
+        
+        toggleAutoreplyButton.setSelected(config.isAutoReplyTools());
+        toggleAutoreplyButton.setToolTipText(config.isAutoReplyTools() ? 
+                "Auto reply tools enabled: click to disable" : "Auto reply tools disabled: click to enable");
     }
 
     /**
@@ -228,5 +243,6 @@ public class ToolbarPanel extends JPanel {
         boolean enabled = toggleAutoreplyButton.isSelected();
         chat.getConfig().setAutoReplyTools(enabled);
         log.info("Auto-Reply after tool execution toggled to: {}", enabled);
+        syncToggles();
     }
 }

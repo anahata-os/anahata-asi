@@ -1,13 +1,9 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.model.core;
 
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
@@ -27,7 +23,7 @@ import uno.anahata.asi.internal.TimeUtils;
  * supports type-safe roles through its subclasses and ensures each message has
  * a unique identity, timestamp, and full access to the chat context.
  *
- * @author anahata-gemini-pro-2.5
+ * @author anahata
  */
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
@@ -66,20 +62,6 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
      * to support full serialization with Kryo.
      */
     private final Chat chat;
-
-    /**
-     * A three-state flag for explicit pruning control. - {@code true}: This
-     * message is explicitly pruned and will be hidden. - {@code false}: This
-     * message is "pinned" and will never be auto-pruned. - {@code null}:
-     * (Default) Auto-pruning is active based on the state of its parts.
-     */
-    private Boolean pruned = null;
-
-    /**
-     * An optional reason for why this message was pruned.
-     */
-    @Setter
-    private String prunedReason;
 
     /**
      * Gets the role of the entity that created this message. This is
@@ -170,31 +152,6 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
     }
 
     /**
-     * Sets the pruned state of this message and fires a property change event.
-     * 
-     * @param pruned The new pruned state.
-     */
-    public void setPruned(Boolean pruned) {
-        setPruned(pruned, null);
-    }
-
-    /**
-     * Sets the pruned state of this message with an optional reason.
-     * 
-     * @param pruned The new pruned state.
-     * @param reason The reason for pruning.
-     */
-    public void setPruned(Boolean pruned, String reason) {
-        if (Objects.equals(this.pruned, pruned)) {
-            return;
-        }
-        Boolean oldPruned = this.pruned;
-        this.pruned = pruned;
-        this.prunedReason = reason;
-        propertyChangeSupport.firePropertyChange("pruned", oldPruned, pruned);
-    }
-
-    /**
      * Calculates the "depth" of this message, defined as its distance from the
      * most recent message in the chat history. The head message has a depth of
      * 0.
@@ -224,50 +181,80 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
     }
 
     /**
-     * A simple getter for the EXPLICIT pruned state of this message. This is
-     * used by child parts to break the circular dependency in pruning logic.
-     *
-     * @return The explicit pruned state.
-     */
-    public Boolean isPruned() {
-        return pruned;
-    }
-    
-    /**
-     * Checks if this message is explicitly pinned.
+     * Checks if any part in this message is explicitly pinned.
      * 
-     * @return {@code true} if the message is pinned.
+     * @return {@code true} if at least one part is pinned.
      */
-    public boolean isPinned() {
-        return Boolean.FALSE.equals(this.pruned);
+    public boolean isAnyPinned() {
+        return parts.stream().anyMatch(AbstractPart::isPinned);
+    }
+
+    /**
+     * Checks if all parts in this message are explicitly pinned.
+     * 
+     * @return {@code true} if all parts are pinned.
+     */
+    public boolean isAllPinned() {
+        return !parts.isEmpty() && parts.stream().allMatch(AbstractPart::isPinned);
+    }
+
+    /**
+     * Checks if all parts in this message are explicitly pruned.
+     * 
+     * @return {@code true} if all parts are PRUNED.
+     */
+    public boolean isAllPruned() {
+        return !parts.isEmpty() && parts.stream().allMatch(AbstractPart::isPruned);
     }
 
     /**
      * Calculates the EFFECTIVE pruned state of this message. 
      * A message is effectively pruned ONLY if it contains no visible (un-pruned) parts.
-     * This logic ensures that if any part (like a pinned code block) remains visible,
-     * the message itself remains effectively visible to host that part.
      *
      * @return {@code true} if the message is effectively pruned.
      */
     public boolean isEffectivelyPruned() {
-        // If the turn is empty, it's effectively pruned regardless of the message flag.
         if (parts.isEmpty()) {
             return true;
         }
-        
-        // If there are ANY visible parts (not effectively pruned), the message is NOT effectively pruned.
         return getParts(false).isEmpty();
     }
 
     /**
      * Determines if this message is eligible for "hard pruning" (permanent removal from history).
-     * A message is generally considered garbage if it has no parts and is not explicitly pinned.
+     * In the atomic model, a message is only collectable if ALL its parts are collectable.
      * 
      * @return {@code true} if the message can be safely removed from history.
      */
     public boolean isGarbageCollectable() {
-        return getParts(true).isEmpty() && !isPinned();
+        if (isAnyPinned()) {
+            return false;
+        }
+        return parts.isEmpty() || parts.stream().allMatch(AbstractPart::isGarbageCollectable);
+    }
+
+    /**
+     * Pins all parts in this message.
+     */
+    public void pinAllParts() {
+        parts.forEach(p -> p.setPruningState(PruningState.PINNED));
+        propertyChangeSupport.firePropertyChange("pruned", null, PruningState.PINNED);
+    }
+
+    /**
+     * Sets all parts in this message to AUTO.
+     */
+    public void setAutoAllParts() {
+        parts.forEach(p -> p.setPruningState(PruningState.AUTO));
+        propertyChangeSupport.firePropertyChange("pruned", null, PruningState.AUTO);
+    }
+
+    /**
+     * Explicitly prunes all parts in this message.
+     */
+    public void pruneAllParts() {
+        parts.forEach(p -> p.setPruningState(PruningState.PRUNED));
+        propertyChangeSupport.firePropertyChange("pruned", null, PruningState.PRUNED);
     }
 
     /**
@@ -312,6 +299,19 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
     }
     
     /**
+     * Calculates the remaining depth of the message as the maximum remaining 
+     * depth of all its parts.
+     * 
+     * @return The maximum remaining depth.
+     */
+    public int getRemainingDepth() {
+        return parts.stream()
+                .mapToInt(AbstractPart::getRemainingDepth)
+                .max()
+                .orElse(0);
+    }
+
+    /**
      * Creates and adds a new text part to this message.
      * 
      * @param text The text content.
@@ -345,34 +345,22 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
      */
     public String createMetadataHeader() {
         StringBuilder sb = new StringBuilder();
-        sb.append("--- ");
+        sb.append("[");
         String identity = getIdentityLabel();
         if (identity != null && !identity.isEmpty()) {
             sb.append(identity).append(" | ");
         }
-        sb.append(String.format("Role: %s | From: %s | Device: %s | Time: %s | Tokens: %d | Depth: %d",
-            getRole(),
+        sb.append(String.format("From: %s | Device: %s | Time: %s | Depth: %d",
             getFrom(),
             getDevice(),
             TimeUtils.formatSmartTimestamp(Instant.ofEpochMilli(getTimestamp())),
-            getTokenCount(false),
             getDepth()
         ));
         
         appendMetadata(sb);
         
-        if (Boolean.TRUE.equals(pruned)) {
-            sb.append(" | [PRUNED]");
-            if (prunedReason != null) {
-                sb.append(" Reason: ").append(prunedReason);
-            }
-        } else if (isPinned()) {
-            sb.append(" | [PINNED]");
-        } else {
-            sb.append(" | [AUTO]");
-        }
         
-        sb.append(" ---");
+        sb.append("]");
         return sb.toString();
     }
 
@@ -383,7 +371,7 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
      * @return The identity label.
      */
     protected String getIdentityLabel() {
-        return "Message ID: " + getSequentialId();
+        return "x-anahata-message-id: " + getSequentialId();
     }
 
     /**

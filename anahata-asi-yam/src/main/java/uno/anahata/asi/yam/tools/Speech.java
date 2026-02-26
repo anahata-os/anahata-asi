@@ -100,7 +100,7 @@ public class Speech extends AnahataToolkit {
      * 
      * @return A status message.
      */
-    @AiTool("Plays a simple system beep as a low-cost alert.")
+    //@AiTool("Plays a simple system beep as a low-cost alert.")
     public String beep() {
         java.awt.Toolkit.getDefaultToolkit().beep();
         return "Beep executed.";

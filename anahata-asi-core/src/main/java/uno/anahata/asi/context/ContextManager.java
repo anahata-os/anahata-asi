@@ -32,7 +32,7 @@ import uno.anahata.asi.tool.ToolManager;
  * assembly process, combining the V2 dynamic history with the hierarchical
  * provider model.
  *
- * @author anahata-ai
+ * @author anahata
  */
 @Slf4j
 @Getter
@@ -240,17 +240,22 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
     }
 
     /**
-     * Performs a hard prune on the entire chat history.
+     * Performs a hard prune on the entire chat history. 
+     * This implementing the Atomic Message model: messages stay structurally 
+     * intact until all their parts are collectable. Heavy parts (Blobs/Thoughts) 
+     * are surgically removed when they expire.
      */
     private void hardPrune() {
+        // Pass 1: Surgical removal of collectable parts (Blobs, Thoughts, etc.)
         for (AbstractMessage message : history) {
             List<AbstractPart> allParts = new ArrayList<>(message.getParts(true));
             for (AbstractPart ap : allParts) {
-                if (ap.getRemainingDepth() <= 0 && !Boolean.FALSE.equals(ap.getPruned()) && !Boolean.FALSE.equals(message.isPruned())) {
+                if (ap.isGarbageCollectable()) {
                     ap.remove();
                 }
             }
         }
+        // Pass 2: Atomic removal of collectable messages
         history.removeIf(AbstractMessage::isGarbageCollectable);
     }
 

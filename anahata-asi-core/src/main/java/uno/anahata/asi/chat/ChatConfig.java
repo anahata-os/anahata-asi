@@ -106,7 +106,7 @@ public class ChatConfig extends BasicPropertyChangeSource {
 
     /** If true, server-side tools (like Google Search) are enabled. */
     @Setter(AccessLevel.NONE)
-    private boolean serverToolsEnabled = false;
+    private boolean hostedToolsEnabled = false;
 
     /** If true, the chat loop will automatically re-prompt the model after executing tools. */
     private boolean autoReplyTools = true;
@@ -179,13 +179,13 @@ public class ChatConfig extends BasicPropertyChangeSource {
      * @param enabled true to enable local tools.
      */
     public void setLocalToolsEnabled(boolean enabled) {
-        boolean oldServer = this.serverToolsEnabled;
+        boolean oldServer = this.hostedToolsEnabled;
         this.localToolsEnabled = enabled;
         if (enabled) {
-            this.serverToolsEnabled = false;
+            this.hostedToolsEnabled = false;
         }
-        // Only fire serverToolsEnabled to trigger a single UI sync
-        propertyChangeSupport.firePropertyChange("serverToolsEnabled", oldServer, this.serverToolsEnabled);
+        // Only fire hostedToolsEnabled to trigger a single UI sync
+        propertyChangeSupport.firePropertyChange("hostedToolsEnabled", oldServer, this.hostedToolsEnabled);
     }
 
     /**
@@ -194,13 +194,13 @@ public class ChatConfig extends BasicPropertyChangeSource {
      * 
      * @param enabled true to enable server-side tools.
      */
-    public void setServerToolsEnabled(boolean enabled) {
-        boolean oldServer = this.serverToolsEnabled;
-        this.serverToolsEnabled = enabled;
+    public void setHostedToolsEnabled(boolean enabled) {
+        boolean oldServer = this.hostedToolsEnabled;
+        this.hostedToolsEnabled = enabled;
         if (enabled) {
             this.localToolsEnabled = false;
         }
-        propertyChangeSupport.firePropertyChange("serverToolsEnabled", oldServer, enabled);
+        propertyChangeSupport.firePropertyChange("hostedToolsEnabled", oldServer, enabled);
     }
 
     /**

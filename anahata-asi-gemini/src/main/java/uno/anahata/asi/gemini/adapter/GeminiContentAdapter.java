@@ -28,7 +28,7 @@ import uno.anahata.asi.model.tool.ToolExecutionStatus;
  * API messages from a single turn-holding ModelMessage.
  * </p>
  *
- * @author anahata-ai
+ * @author anahata
  */
 @RequiredArgsConstructor
 public class GeminiContentAdapter {
@@ -60,10 +60,10 @@ public class GeminiContentAdapter {
 
         boolean shouldCreateMetadata = anahataMessage.shouldCreateMetadata();
         if (shouldCreateMetadata) {
-            googleParts.add(Part.fromText(anahataMessage.createMetadataHeader()));
+            googleParts.add(createMetadataPart(anahataMessage.createMetadataHeader()));
         }
 
-        for (AbstractPart part : anahataMessage.getParts(true)) {
+        for (AbstractPart part : anahataMessage.getParts(includePruned)) {
             addPartWithMetadata(googleParts, part, shouldCreateMetadata);
         }
 
@@ -90,10 +90,10 @@ public class GeminiContentAdapter {
 
         boolean shouldCreateMetadata = anahataMessage.shouldCreateMetadata();
         if (shouldCreateMetadata) {
-            modelParts.add(Part.fromText(anahataMessage.createMetadataHeader()));
+            modelParts.add(createMetadataPart(anahataMessage.createMetadataHeader()));
         }
 
-        List<AbstractPart> allParts = anahataMessage.getParts(true);
+        List<AbstractPart> allParts = anahataMessage.getParts(includePruned);
         
         // Process ALL parts (Text, Blob, ToolCalls) with interleaved metadata.
         // This ensures the model has immediate context for each part's identity and status.
@@ -108,7 +108,6 @@ public class GeminiContentAdapter {
         // --- 2. Synthesize the TOOL role content (Responses) ---
         List<AbstractToolResponse<?>> executedResponses = modelMsg.getToolCalls().stream()
                 .map(AbstractToolCall::getResponse)
-                //.filter(r -> r.getStatus() != ToolExecutionStatus.PENDING && r.getStatus() != ToolExecutionStatus.DECLINED)
                 .collect(Collectors.toList());
 
         if (!executedResponses.isEmpty()) {
@@ -143,8 +142,7 @@ public class GeminiContentAdapter {
             // METADATA INTERLEAVING: Even if pruned, we provide the metadata header 
             // as a "Hint" (via createMetadataHeader) to maintain semantic context 
             // of the conversation flow.
-            Part.Builder placeholderBuilder = Part.builder()
-                .text(part.createMetadataHeader() + "\n[PRUNED: Content removed to save context window tokens]");
+            Part.Builder placeholderBuilder = createMetadataPartBuilder(part.createMetadataHeader() + "\n[PRUNED: Content removed to save context window tokens]");
             
             if (part instanceof ThoughtSignature ts && ts.getThoughtSignature() != null) {
                 placeholderBuilder.thoughtSignature(ts.getThoughtSignature());
@@ -153,7 +151,7 @@ public class GeminiContentAdapter {
             googleParts.add(placeholderBuilder.build());
         } else {
             if (shouldCreateMetadata) {
-                googleParts.add(Part.fromText(part.createMetadataHeader()));
+                googleParts.add(createMetadataPart(part.createMetadataHeader()));
             }
 
             Part googlePart = new GeminiPartAdapter(part).toGoogle();
@@ -162,5 +160,15 @@ public class GeminiContentAdapter {
                 googleParts.add(googlePart);
             }
         }
+    }
+
+    private Part.Builder createMetadataPartBuilder(String text) {
+        return Part.builder()
+                .text(text)
+                .thought(true);
+    }
+
+    private Part createMetadataPart(String text) {
+        return createMetadataPartBuilder(text).build();
     }
 }
