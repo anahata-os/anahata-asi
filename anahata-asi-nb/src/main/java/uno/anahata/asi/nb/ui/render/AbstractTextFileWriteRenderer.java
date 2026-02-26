@@ -142,6 +142,12 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
      * a full visualizer re-render.
      */
     private T lastRenderedUpdate;
+
+    /** 
+     * The last rendered status of the tool call response. Required to detect
+     * transitions from proposal to application.
+     */
+    private ToolExecutionStatus lastRenderedStatus;
     
     /** 
      * The UI layer responsible for painting AI annotations (bubbles and icons) 
@@ -227,8 +233,10 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
             return false;
         }
 
-        // 1. Stability check: if the incoming update is the same as what we just rendered
-        if (Objects.equals(update, lastRenderedUpdate)) {
+        ToolExecutionStatus status = call.getResponse().getStatus();
+
+        // 1. Stability check: if the incoming update AND status are the same as what we just rendered
+        if (Objects.equals(update, lastRenderedUpdate) && status == lastRenderedStatus) {
             return true;
         }
 
@@ -236,7 +244,6 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
             File file = new File(update.getPath());
             FileObject fo = FileUtil.toFileObject(file);
 
-            ToolExecutionStatus status = call.getResponse().getStatus();
             boolean isPending = status == ToolExecutionStatus.PENDING;
 
             // --- Historical Persistence Logic ---
@@ -256,10 +263,10 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
             String currentOnDisk = (fo != null) ? fo.asText() : "";
             String proposedContent = calculateProposedContent(currentOnDisk);
 
-            // 2. Secondary stability check: if we already have a document and its content matches the update
+            // 2. Secondary stability check: content + status
             if (modDoc != null) {
                 String docText = modDoc.getText(0, modDoc.getLength());
-                if (docText.equals(proposedContent)) {
+                if (docText.equals(proposedContent) && status == lastRenderedStatus) {
                     lastRenderedUpdate = update;
                     return true;
                 }
@@ -311,13 +318,14 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
 
             DiffStreamSource modSource = new DiffStreamSource(name, rightTitle, proposedContent, mime);
             modSource.setDocument(modDoc);
-            modSource.setEditable(isPending); // Disable Merger UI once executed
+            modSource.setEditable(isPending); 
 
             DiffController next = (controller == null)
                     ? DiffController.createEnhanced(baseSource, modSource)
                     : DiffController.createEnhanced(controller, baseSource, modSource);
 
-            if (next != controller) {
+            // Trigger a UI rebuild if the controller instance changed OR if the status changed.
+            if (next != controller || status != lastRenderedStatus) {
                 controller = next;
                 JComponent visualizer = controller.getJComponent();
                 applyVisualizerSettings(visualizer);
@@ -368,6 +376,7 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
             }
 
             lastRenderedUpdate = update;
+            lastRenderedStatus = status;
             return true;
         } catch (Exception e) {
             log.error("Failed to render diff", e);
@@ -438,7 +447,15 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
             }
         });
 
-        JLabel statusLabel = new JLabel(status == ToolExecutionStatus.PENDING ? "Proposed Changes:" : "Applied Changes:");
+        String labelText;
+        switch (status) {
+            case PENDING: labelText = "Proposed Changes:"; break;
+            case EXECUTED: labelText = "Applied Changes:"; break;
+            case DECLINED: labelText = "Changes (Declined):"; break;
+            case FAILED: labelText = "Changes (Failed):"; break;
+            default: labelText = "Changes (" + status + "):"; break;
+        }
+        JLabel statusLabel = new JLabel(labelText);
         statusLabel.setFont(statusLabel.getFont().deriveFont(java.awt.Font.BOLD));
         
         topRow.add(statusLabel);
