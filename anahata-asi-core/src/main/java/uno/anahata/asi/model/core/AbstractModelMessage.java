@@ -92,7 +92,7 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
     public String getDevice() {
         return "Cloud";
     }
-    
+
     /**
      * Sets the raw JSON representation of the model's response and fires a property change event.
      * This method replaces any existing content.
@@ -173,6 +173,15 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
     @Override
     public boolean isGarbageCollectable() {
         return super.isGarbageCollectable() && !streaming;
+    }
+
+    /**
+     * {@inheritDoc}
+     * A model message is never effectively pruned while it is streaming.
+     */
+    @Override
+    public boolean isEffectivelyPruned() {
+        return !streaming && super.isEffectivelyPruned();
     }
     
     /**
