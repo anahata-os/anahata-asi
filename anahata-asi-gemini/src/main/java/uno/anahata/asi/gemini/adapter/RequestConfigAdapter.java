@@ -27,6 +27,7 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.internal.TokenizerUtils;
 import uno.anahata.asi.model.core.RequestConfig;
+import uno.anahata.asi.model.core.ThinkingLevel;
 import uno.anahata.asi.model.provider.ServerTool;
 import uno.anahata.asi.model.tool.AbstractTool;
 
@@ -81,13 +82,21 @@ public final class RequestConfigAdapter {
             builder.responseModalities("TEXT");
         }
         
-        // Adapt Thinking Config based on session settings
+        // Adapt Thinking Config based on session settings and thinking level
+        ThinkingConfig.Builder thinkingBuilder = ThinkingConfig.builder();
+        boolean includeThoughts = false;
         if (anahataConfig.getChat() != null) {
-            boolean includeThoughts = anahataConfig.getChat().getConfig().isIncludeThoughts();
-            builder.thinkingConfig(ThinkingConfig.builder()
-                    .includeThoughts(includeThoughts)
-                    .build());
+            includeThoughts = anahataConfig.getChat().getConfig().isIncludeThoughts();
         }
+
+        ThinkingLevel ourLevel = anahataConfig.getThinkingLevel();
+        if (ourLevel != null && ourLevel != ThinkingLevel.THINKING_LEVEL_UNSPECIFIED) {
+            thinkingBuilder.thinkingLevel(new com.google.genai.types.ThinkingLevel(
+                    com.google.genai.types.ThinkingLevel.Known.valueOf(ourLevel.name())
+            ));
+        }
+
+        builder.thinkingConfig(thinkingBuilder.includeThoughts(includeThoughts).build());
 
         Optional.ofNullable(anahataConfig.getTemperature()).ifPresent(builder::temperature);
         Optional.ofNullable(anahataConfig.getMaxOutputTokens()).ifPresent(builder::maxOutputTokens);

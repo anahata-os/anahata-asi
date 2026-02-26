@@ -10,16 +10,21 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SpinnerNumberModel;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.model.core.RequestConfig;
+import uno.anahata.asi.model.core.ThinkingLevel;
 import uno.anahata.asi.model.provider.AbstractModel;
 import uno.anahata.asi.model.provider.ServerTool;
+import uno.anahata.asi.swing.components.ScrollablePanel;
 import uno.anahata.asi.swing.components.SliderSpinner;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 
@@ -30,7 +35,7 @@ import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
  * @author anahata
  */
 @Slf4j
-public class RequestConfigPanel extends JPanel implements PropertyChangeListener {
+public class RequestConfigPanel extends ScrollablePanel implements PropertyChangeListener {
 
     /** The parent chat panel. */
     private final ChatPanel chatPanel;
@@ -55,6 +60,8 @@ public class RequestConfigPanel extends JPanel implements PropertyChangeListener
     private JCheckBox includeThoughtsCheckbox;
     /** Checkbox for expanding thoughts by default. */
     private JCheckBox expandThoughtsCheckbox;
+    /** Dropdown for selecting the thinking level. */
+    private JComboBox<ThinkingLevel> thinkingLevelDropdown;
     /** Panel for response modalities checkboxes. */
     private JPanel modalitiesPanel;
     /** Panel for server tools checkboxes. */
@@ -81,7 +88,6 @@ public class RequestConfigPanel extends JPanel implements PropertyChangeListener
      * Initializes the UI components and layout using JGoodies FormLayout.
      */
     private void initComponents() {
-        setLayout(new BorderLayout());
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         // FormLayout: 
@@ -90,76 +96,88 @@ public class RequestConfigPanel extends JPanel implements PropertyChangeListener
         // Column 3: Control (fill, grows)
         FormLayout layout = new FormLayout(
             "right:pref, 4dlu, fill:pref:grow",
-            "pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 10dlu, pref, 10dlu, pref"
+            "pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 10dlu, pref, 10dlu, pref"
         );
-        
-        JPanel mainPanel = new JPanel(layout);
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        setLayout(layout);
 
         int row = 1;
 
         // Stream Tokens (Session Level)
-        mainPanel.add(new JLabel("Stream Tokens:"), "1, " + row);
+        add(new JLabel("Stream Tokens:"), "1, " + row);
         streamingCheckbox = new JCheckBox();
-        mainPanel.add(streamingCheckbox, "3, " + row);
+        add(streamingCheckbox, "3, " + row);
         row += 2;
 
         // Include Thoughts
-        mainPanel.add(new JLabel("Include Thoughts:"), "1, " + row);
+        add(new JLabel("Include Thoughts:"), "1, " + row);
         includeThoughtsCheckbox = new JCheckBox();
-        mainPanel.add(includeThoughtsCheckbox, "3, " + row);
+        add(includeThoughtsCheckbox, "3, " + row);
         row += 2;
 
         // Expand Thoughts
-        mainPanel.add(new JLabel("Expand Thoughts:"), "1, " + row);
+        add(new JLabel("Expand Thoughts:"), "1, " + row);
         expandThoughtsCheckbox = new JCheckBox();
-        mainPanel.add(expandThoughtsCheckbox, "3, " + row);
+        add(expandThoughtsCheckbox, "3, " + row);
+        row += 2;
+
+        // Thinking Level
+        add(new JLabel("Thinking Level:"), "1, " + row);
+        thinkingLevelDropdown = new JComboBox<>(ThinkingLevel.values());
+        thinkingLevelDropdown.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof ThinkingLevel tl) {
+                    setText(tl.getDisplayValue());
+                }
+                return this;
+            }
+        });
+        add(thinkingLevelDropdown, "3, " + row);
         row += 2;
 
         // Temperature
-        mainPanel.add(new JLabel("Temperature:"), "1, " + row);
+        add(new JLabel("Temperature:"), "1, " + row);
         temperatureControl = new SliderSpinner(new SpinnerNumberModel(1.0, 0.0, 2.0, 0.1), 0, 200, 100.0);
-        mainPanel.add(temperatureControl, "3, " + row);
+        add(temperatureControl, "3, " + row);
         row += 2;
 
         // Max Output Tokens
-        mainPanel.add(new JLabel("Max Output Tokens:"), "1, " + row);
+        add(new JLabel("Max Output Tokens:"), "1, " + row);
         maxOutputTokensControl = new SliderSpinner(new SpinnerNumberModel(2048, 1, 1000000, 1), 1, 1000000, 1.0);
-        mainPanel.add(maxOutputTokensControl, "3, " + row);
+        add(maxOutputTokensControl, "3, " + row);
         row += 2;
 
         // Top K
-        mainPanel.add(new JLabel("Top K:"), "1, " + row);
+        add(new JLabel("Top K:"), "1, " + row);
         topKControl = new SliderSpinner(new SpinnerNumberModel(40, 1, 100, 1), 1, 100, 1.0);
-        mainPanel.add(topKControl, "3, " + row);
+        add(topKControl, "3, " + row);
         row += 2;
 
         // Top P
-        mainPanel.add(new JLabel("Top P:"), "1, " + row);
+        add(new JLabel("Top P:"), "1, " + row);
         topPControl = new SliderSpinner(new SpinnerNumberModel(0.95, 0.0, 1.0, 0.05), 0, 100, 100.0);
-        mainPanel.add(topPControl, "3, " + row);
+        add(topPControl, "3, " + row);
         row += 2;
         
         // Candidate Count
-        mainPanel.add(new JLabel("Max Candidates:"), "1, " + row);
+        add(new JLabel("Max Candidates:"), "1, " + row);
         candidateCountControl = new SliderSpinner(new SpinnerNumberModel(1, 1, 8, 1), 1, 8, 1.0);
-        mainPanel.add(candidateCountControl, "3, " + row);
+        add(candidateCountControl, "3, " + row);
         row += 2;
 
         // Response Modalities
-        mainPanel.add(new JLabel("Response Modalities:"), "1, " + row);
+        add(new JLabel("Response Modalities:"), "1, " + row);
         modalitiesPanel = new JPanel();
         modalitiesPanel.setLayout(new BoxLayout(modalitiesPanel, BoxLayout.Y_AXIS));
-        mainPanel.add(modalitiesPanel, "3, " + row);
+        add(modalitiesPanel, "3, " + row);
         row += 2;
 
         // Server Tools
-        mainPanel.add(new JLabel("Server Tools:"), "1, " + row);
+        add(new JLabel("Server Tools:"), "1, " + row);
         serverToolsPanel = new JPanel();
         serverToolsPanel.setLayout(new BoxLayout(serverToolsPanel, BoxLayout.Y_AXIS));
-        mainPanel.add(serverToolsPanel, "3, " + row);
-
-        add(new JScrollPane(mainPanel), BorderLayout.CENTER);
+        add(serverToolsPanel, "3, " + row);
 
         // Add listeners to update config
         temperatureControl.addChangeListener(e -> {
@@ -195,6 +213,10 @@ public class RequestConfigPanel extends JPanel implements PropertyChangeListener
         expandThoughtsCheckbox.addActionListener(e -> {
             chat.getConfig().setExpandThoughts(expandThoughtsCheckbox.isSelected());
         });
+
+        thinkingLevelDropdown.addActionListener(e -> {
+            config.setThinkingLevel((ThinkingLevel) thinkingLevelDropdown.getSelectedItem());
+        });
     }
 
     /**
@@ -210,6 +232,8 @@ public class RequestConfigPanel extends JPanel implements PropertyChangeListener
         expandThoughtsCheckbox.setSelected(chat.getConfig().isExpandThoughts());
         expandThoughtsCheckbox.setEnabled(chat.getConfig().isIncludeThoughts());
         
+        thinkingLevelDropdown.setSelectedItem(config.getThinkingLevel());
+
         float temp = config.getTemperature() != null ? config.getTemperature() : (model != null && model.getDefaultTemperature() != null ? model.getDefaultTemperature() : 1.0f);
         temperatureControl.setValue((double) temp);
         

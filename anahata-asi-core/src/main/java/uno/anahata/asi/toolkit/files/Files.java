@@ -61,9 +61,7 @@ public class Files extends AnahataToolkit {
         int successCount = 0;
         for (String path : resourcePaths) {
             try {
-                log("Loading " + path + "...");
                 loadTextFileInternal(path, new TextViewportSettings());
-                log("Loaded OK " + path);
                 successCount++;
             } catch (Exception e) {
                 log.error("Exception loading text file resource: {}", path, e);
@@ -139,15 +137,16 @@ public class Files extends AnahataToolkit {
         if (!java.nio.file.Files.exists(Paths.get(path))) {
             throw new AiToolException("File not found: " + path);
         }
-
+        log("Creating TextFileResource with LIVE refresh policy for: " + path );
         TextFileResource resource = createResourceInstance(path);
         if (settings != null) {
+            log("Applying text view port settings");
             resource.getViewport().setSettings(settings);
         }
         resource.setRefreshPolicy(RefreshPolicy.LIVE);
         resource.reload();
         getResourceManager().register(resource);
-        log("Successfully loaded and registered text file: " + path);
+        log("Registered text file resource: " + path);
         return resource;
     }
 

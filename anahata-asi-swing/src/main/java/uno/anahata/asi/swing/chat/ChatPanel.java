@@ -4,7 +4,10 @@
 package uno.anahata.asi.swing.chat;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
+import javax.swing.BorderFactory;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
@@ -64,7 +67,6 @@ public class ChatPanel extends JPanel {
     public ChatPanel(@NonNull Chat chat) {
         this.chat = chat;
         this.chatConfig = (SwingChatConfig) chat.getConfig();
-        
         this.tabbedPane = new JTabbedPane();
         this.configPanel = new RequestConfigPanel(this);
         this.contextPanel = new ContextPanel(this);
@@ -90,9 +92,9 @@ public class ChatPanel extends JPanel {
 
         // Configure Tabbed Pane
         tabbedPane.addTab("Chat", conversationPanel);
-        tabbedPane.addTab("Config", configPanel);
+        tabbedPane.addTab("Config", createScrollPane(configPanel));
         tabbedPane.addTab("Context", contextPanel);
-        tabbedPane.addTab("Support", supportPanel);
+        tabbedPane.addTab("Support", createScrollPane(supportPanel));
 
         // Create a panel to hold CandidateSelectionPanel, InputPanel and StatusPanel
         JPanel southPanel = new JPanel(new BorderLayout());
@@ -114,6 +116,19 @@ public class ChatPanel extends JPanel {
         add(mainSplitPane, BorderLayout.CENTER);
     }
     
+    /**
+     * Creates a standardized JScrollPane for wrapping inner panels.
+     * @param component The component to wrap.
+     * @return A styled JScrollPane.
+     */
+    private JScrollPane createScrollPane(Component component) {
+        JScrollPane scroller = new JScrollPane(component);
+        scroller.setBorder(BorderFactory.createEmptyBorder());
+        scroller.setViewportBorder(BorderFactory.createEmptyBorder());
+        scroller.getVerticalScrollBar().setUnitIncrement(16);
+        return scroller;
+    }
+
     /**
      * Reloads the entire UI with a new Chat instance.
      * This is used when loading a saved session.

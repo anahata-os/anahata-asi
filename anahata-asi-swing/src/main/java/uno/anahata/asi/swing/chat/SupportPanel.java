@@ -5,6 +5,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.net.URI;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.swing.components.ScrollablePanel;
 import uno.anahata.asi.swing.icons.IconUtils;
 
 /**
@@ -14,7 +15,7 @@ import uno.anahata.asi.swing.icons.IconUtils;
  * @author anahata
  */
 @Slf4j
-public class SupportPanel extends JPanel {
+public class SupportPanel extends ScrollablePanel {
 
     /**
      * Constructs a new SupportPanel.
@@ -27,11 +28,9 @@ public class SupportPanel extends JPanel {
      * Initializes the components and layout of the panel.
      */
     private void initComponents() {
-        setLayout(new BorderLayout());
+        setLayout(new GridBagLayout());
         setOpaque(false);
 
-        JPanel contentPanel = new JPanel(new GridBagLayout());
-        contentPanel.setOpaque(false);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;
@@ -41,13 +40,13 @@ public class SupportPanel extends JPanel {
         // Title
         JLabel titleLabel = new JLabel("Support & Community");
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 20f));
-        contentPanel.add(titleLabel, gbc);
+        add(titleLabel, gbc);
 
         gbc.gridy++;
         gbc.insets = new Insets(0, 20, 20, 20);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1.0;
-        contentPanel.add(new JSeparator(), gbc);
+        add(new JSeparator(), gbc);
 
         // Links Grid - Two columns
         JPanel linksGrid = new JPanel(new GridBagLayout());
@@ -87,20 +86,12 @@ public class SupportPanel extends JPanel {
         gbc.fill = GridBagConstraints.NONE; // Do not stretch the grid
         gbc.anchor = GridBagConstraints.NORTHWEST;
         gbc.weighty = 0.0; 
-        contentPanel.add(linksGrid, gbc);
+        add(linksGrid, gbc);
 
         // Add a spacer at the bottom to push everything up
         gbc.gridy++;
         gbc.weighty = 1.0;
-        contentPanel.add(Box.createVerticalGlue(), gbc);
-
-        // Wrap in a scroll pane to ensure it never constrains the parent's height
-        JScrollPane scrollPane = new JScrollPane(contentPanel);
-        scrollPane.setBorder(null);
-        scrollPane.setOpaque(false);
-        scrollPane.getViewport().setOpaque(false);
-        
-        add(scrollPane, BorderLayout.CENTER);
+        add(Box.createVerticalGlue(), gbc);
     }
 
     /**

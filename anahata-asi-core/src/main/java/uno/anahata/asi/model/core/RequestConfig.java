@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import uno.anahata.asi.chat.Chat;
 import uno.anahata.asi.model.provider.ServerTool;
+import uno.anahata.asi.model.core.ThinkingLevel;
 import uno.anahata.asi.model.tool.AbstractTool;
 
 /**
@@ -40,6 +41,9 @@ public class RequestConfig {
     
     /** The number of response variations to generate. */
     private Integer candidateCount = 1;
+
+    /** The level of thinking tokens that the model should generate. */
+    private ThinkingLevel thinkingLevel = ThinkingLevel.THINKING_LEVEL_UNSPECIFIED;
 
     /** The list of response modalities requested for this specific request. */
     private List<String> responseModalities = new ArrayList<>(List.of("TEXT"));
