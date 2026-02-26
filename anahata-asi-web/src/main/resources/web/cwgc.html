@@ -19,6 +19,10 @@
             --metadata-color: #fab1a0;
             --content-color: #55efc4;
             --placeholder-color: #ff7675;
+            
+            --leaf-active: #28a745;
+            --leaf-withered: #b48246;
+            --leaf-dead: #6e461e;
         }
 
         body {
@@ -110,9 +114,9 @@
             margin-right: 8px;
         }
 
-        .tag-pruned { background: var(--barca-red); color: #fff; }
+        .tag-pruned { background: var(--leaf-dead); color: #fff; }
         .tag-pinned { background: var(--barca-gold); color: #000; }
-        .tag-auto { background: var(--barca-blue); color: #fff; }
+        .tag-auto { background: var(--leaf-active); color: #fff; }
 
         .note {
             background: rgba(237, 187, 0, 0.05);
@@ -168,72 +172,53 @@
 <div class="container">
     
     <div class="note">
-        <strong>The Core Philosophy:</strong> Transparency and Control. The model must know why it's seeing content (Remaining Depth), while the user retains ultimate authority to Pin or Prune any part of the conversation.
+        <strong>The Core Philosophy:</strong> Transparency and Stability. The system enforces an <strong>Atomic Interaction</strong> model: conversations remain structurally intact until a turn has completely expired.
     </div>
 
-    <h2>1. The Tri-State Pruning Flag</h2>
-    <p>Both <code>AbstractMessage</code> and <code>AbstractPart</code> implement a three-state pruning control system:</p>
+    <h2>1. The PruningState Enum</h2>
+    <p>Both <code>AbstractMessage</code> and <code>AbstractPart</code> implement an explicit state-based control system:</p>
     
     <table class="status-table">
         <thead>
             <tr>
                 <th>State</th>
-                <th>Value</th>
+                <th>Enum Value</th>
                 <th>Behavior</th>
-                <th>Hard Pruning Immunity</th>
+                <th>Immunity</th>
             </tr>
         </thead>
         <tbody>
             <tr>
+                <td><span class="tag tag-auto">Auto</span></td>
+                <td><code>AUTO</code></td>
+                <td>Default state. Governed by <code>remainingDepth</code> countdown.</td>
+                <td>No</td>
+            </tr>
+            <tr>
                 <td><span class="tag tag-pruned">Pruned</span></td>
-                <td><code>Boolean.TRUE</code></td>
-                <td>Explicitly hidden from the model (Soft Prune). Remains in UI.</td>
+                <td><code>PRUNED</code></td>
+                <td>Explicitly hidden from the model. Content removed, metadata hints preserved.</td>
                 <td>No</td>
             </tr>
             <tr>
                 <td><span class="tag tag-pinned">Pinned</span></td>
-                <td><code>Boolean.FALSE</code></td>
+                <td><code>PINNED</code></td>
                 <td>Always visible to the model. Ignores <code>remainingDepth</code>.</td>
                 <td><strong>YES</strong></td>
-            </tr>
-            <tr>
-                <td><span class="tag tag-auto">Auto</span></td>
-                <td><code>null</code></td>
-                <td>Governed by the <code>remainingDepth</code> countdown.</td>
-                <td>No</td>
             </tr>
         </tbody>
     </table>
 
-    <h2>2. Retention & Ageing</h2>
+    <h2>2. Atomic Interaction Lifecycle</h2>
     <div class="concept-grid">
         <div class="card">
-            <h3>Retention Hierarchy</h3>
-            <p>How <code>maxDepth</code> is resolved (from specific to general):</p>
-            <ol>
-                <li><strong>Instance Override</strong>: <code>part.setMaxDepth(X)</code></li>
-                <li><strong>Tool Definition</strong>: <code>@AiTool(maxDepth = X)</code></li>
-                <li><strong>Toolkit Default</strong>: <code>@AiToolkit(maxDepth = X)</code></li>
-                <li><strong>Global Policy</strong>: <code>ChatConfig.defaultMaxDepth</code></li>
-            </ol>
-            <p><strong>Inheritance Logic:</strong> For tools, <code>maxDepth = "-1"</code> means inherit from the parent toolkit. If the toolkit also has <code>-1</code>, it falls back to the <code>ChatConfig</code> default.</p>
-            <p><strong>CRITICAL:</strong> The <code>maxDepth</code> is set when the part is <strong>created</strong>. Changing defaults in <code>ChatConfig</code> or annotations only affects parts created <em>after</em> the change.</p>
+            <h3>Atomic Interaction Model</h3>
+            <p>To prevent "mutilated messages," interactions remain in history as "ghosts" (containing effectively pruned metadata) until every part in the message has expired.</p>
+            <p><strong>The Rule:</strong> A message is only garbage collected when <strong>ALL</strong> sibling parts are collectable.</p>
         </div>
         <div class="card">
-            <h3>Remaining Depth Calculation</h3>
-            <p><code>remainingDepth = maxDepth - messageDepth</code></p>
-            <ul>
-                <li><strong>Depth 0</strong>: The most recent message (the 'Head').</li>
-                <li><strong>The Sinking Stack</strong>: Every new message increases the depth of all previous messages, sinking them further into the stack.</li>
-                <li><strong>Clock is Ticking</strong>: Parts only live forever if they are <span class="tag tag-pinned">Pinned</span>. Otherwise, they age with every turn.</li>
-                <li><strong>Default Policies</strong>: 
-                    <ul>
-                        <li>Text Parts: 108 depth</li>
-                        <li>Tool Responses: 12 depth</li>
-                        <li>Blob Parts: 3 depth</li>
-                    </ul>
-                </li>
-            </ul>
+            <h3>Surgical Removal</h3>
+            <p>Heavy content (Blobs) and internal reasoning (Thoughts) are eligible for <strong>immediate</strong> hard removal upon expiration to minimize memory and token bloat, even if their parent interaction is still active.</p>
         </div>
     </div>
 
@@ -241,39 +226,42 @@
     
     <div class="card" style="margin-bottom: 2rem;">
         <h3>isEffectivelyPruned()</h3>
-        <p>A part or message is considered "Effectively Pruned" if:</p>
+        <p>This derived boolean determines if content is excluded from the AI prompt. A part is effectively pruned if:</p>
         <ul>
-            <li>It is explicitly set to <span class="tag tag-pruned">Pruned</span>.</li>
-            <li><strong>Inheritance:</strong> Its parent message is set to <span class="tag tag-pruned">Pruned</span>.</li>
-            <li><strong>Time-out:</strong> Its <code>remainingDepth <= 0</code> (and it is NOT Pinned).</li>
+            <li>It is explicitly set to <code>PRUNED</code>.</li>
+            <li><strong>Time-out:</strong> Its state is <code>AUTO</code> and its <code>remainingDepth <= 0</code>.</li>
         </ul>
-        <p><strong>Deep Pinning:</strong> If a message is <span class="tag tag-pinned">Pinned</span>, all its parts inherit that immunity and remain visible.</p>
+        <p><strong>Note:</strong> <code>PINNED</code> state always overrides expiration logic. A Message is effectively pruned only if <strong>all</strong> its parts are invisible.</p>
     </div>
 
+    <h2>4. The "Autumn Leaf" Metaphor</h2>
     <div class="concept-grid">
         <div class="card">
-            <h3>Soft Pruning</h3>
-            <p>Triggered by explicit <code>pruned=true</code>. The content is hidden from the model prompt but <strong>remains visible in the UI history</strong>. This allows the user to "Unprune" or "Pin" the content later.</p>
+            <i class="fas fa-leaf" style="color: var(--leaf-active); font-size: 2rem; margin-bottom: 1rem;"></i>
+            <h3>Active (Green)</h3>
+            <p>Representing the <code>AUTO</code> state with positive remaining depth. These are full of life and context.</p>
         </div>
         <div class="card">
-            <h3>Hard Pruning ("Bye Bye")</h3>
-            <p>Triggered automatically when <code>remainingDepth <= 0</code> (and the state is not Pinned). The part is <strong>permanently deleted</strong> from the history to reclaim RAM and disk space. <em>Note: Messages are garbage collected when they have no parts left.</em></p>
+            <i class="fas fa-leaf" style="color: var(--leaf-withered); font-size: 2rem; margin-bottom: 1rem;"></i>
+            <h3>Withered (Light Brown)</h3>
+            <p>Representing <code>AUTO</code> parts that have <strong>expired</strong>. They are "Effectively Pruned" and ready to fall from the tree.</p>
+        </div>
+        <div class="card">
+            <i class="fas fa-leaf" style="color: var(--leaf-dead); font-size: 2rem; margin-bottom: 1rem;"></i>
+            <h3>Dead (Dark Brown)</h3>
+            <p>Representing <code>PRUNED</code> parts. These have been explicitly cut off from context by the user or model.</p>
         </div>
     </div>
 
     <div class="note">
-        <strong>Tool Call & Response Binding:</strong> Tool calls and their associated responses are bidirectionally bound. Pruning, pinning, or changing the retention of one automatically affects the other. Tool calls delegate their retention values to the responses because responses are always one turn more recent (higher depth).
-    </div>
-
-    <div class="note">
-        <strong>Stateful Resources:</strong> Managed resources (files, screen captures) are <strong>turn-agnostic</strong>. They do not have a depth countdown and remain in context until explicitly unregistered by the model or the user.
+        <strong>Tool Call Stability:</strong> Tool calls remain as metadata ghosts in context long after their results are pruned, ensuring the model maintains a coherent audit trail of its actions.
     </div>
 
 </div>
 
 <footer>
     <div style="text-align: center; padding: 4rem; opacity: 0.5; font-size: 0.8rem;">
-        &copy; 2026 Anahata OS. CWGC Protocol Specification v1.0-draft. Visca el Barça!
+        &copy; 2026 Anahata OS. CWGC Protocol Specification v2.3. Visca el Barça!
     </div>
 </footer>
 

@@ -131,89 +131,65 @@
 
 <header>
     <h1>In-Band Metadata</h1>
-    <div class="subtitle">Self-Awareness Injection • V2 Standard</div>
+    <div class="subtitle">Self-Awareness Injection • V2.3 Standard</div>
 </header>
 
 <div class="container">
     
     <div class="note">
-        <strong>The Goal:</strong> To provide the model with a clear, structured understanding of the conversation's structure, the identity of participants, and the status of every message part, including those that have been pruned.
+        <strong>The Goal:</strong> To provide the model with a clear, structured understanding of the interaction history through "In-Band Metadata Injection." By prefixing every message and part with descriptive headers, the ASI gains a precise map of its context window and UI state.
     </div>
 
-    <h2>1. Implementation Details</h2>
+    <h2>1. The Identity Labels</h2>
     <div class="concept-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
         <div class="card" style="background: var(--jasi-card); padding: 1.5rem; border-radius: 10px;">
-            <h3 style="color: var(--barca-gold);">shouldCreateMetadata()</h3>
-            <p>A message-level hook that determines if metadata headers should be injected for the message and its parts.</p>
-            <ul>
-                <li><strong>UserMessage</strong>: <code>true</code></li>
-                <li><strong>AbstractModelMessage</strong>: <code>true</code></li>
-                <li><strong>AbstractToolMessage</strong>: <code>false</code> (Pristine Clean)</li>
-                <li><strong>RagMessage</strong>: <code>false</code> (Token Efficiency)</li>
-            </ul>
+            <h3 style="color: var(--barca-gold);">x-anahata-message-id</h3>
+            <p>The interactive anchor for an interaction. These interaction-level headers contain role, device, and depth information.</p>
         </div>
         <div class="card" style="background: var(--jasi-card); padding: 1.5rem; border-radius: 10px;">
-            <h3 style="color: var(--barca-gold);">createMetadataHeader()</h3>
-            <p>Generates the actual text string injected into the prompt. It includes:</p>
-            <ul>
-                <li><strong>Message Level</strong>: ID, Role, From, Device, Time, Tokens.</li>
-                <li><strong>Part Level</strong>: ID, Type, Tokens, Remaining Depth.</li>
-                <li><strong>Specialized</strong>: 
-                    <ul>
-                        <li>Tool Calls: Include Response metadata.</li>
-                        <li>Tool Responses: Include Execution Status.</li>
-                    </ul>
-                </li>
-            </ul>
+            <h3 style="color: var(--barca-gold);">x-anahata-part-id</h3>
+            <p>The granular anchor for content blocks. These include type-specific metadata, pruning status, and <code>expanded</code> flags.</p>
         </div>
     </div>
 
-    <h2>2. User Message Strategy</h2>
+    <h2>2. User Interaction Style</h2>
     <div class="example-box">
         <span class="role-label role-user">User Role</span>
-        <p>Standard injection: Message header + Part headers. Pruned parts are replaced by metadata-only placeholders.</p>
+        <p>Standard injection: Interaction header + Content headers. Note the standardized bracket format.</p>
         <pre>
-<span class="metadata">--- Message ID: 10 | Role: USER | From: pablo | Device: papa-linux | Time: 10:00:00 | Tokens: 150 ---</span>
+<span class="metadata">[x-anahata-message-id: 10 | From: pablo | Device: papa-linux | Time: 10:00:00 | Depth: 4]</span>
 
-<span class="metadata">[Part ID: 1 | Type: TextPart | Tokens: 50 | Remaining Depth: 108]</span>
+<span class="metadata">[x-anahata-part-id: 1 | Type: TextPart | Tokens: 50 | Remaining Depth: 108 | expanded: true]</span>
 <span class="content">Analyze this source code for potential leaks.</span>
 
-<span class="metadata">[Part ID: 2 | Type: BlobPart | Tokens: 500 | Remaining Depth: 0 | [PRUNED] | Hint: text/x-java (OldCode.java)]</span>
-<span class="placeholder">[PRUNED PLACEHOLDER: Metadata preserved for context awareness]</span>
+<span class="metadata">[x-anahata-part-id: 2 | Type: BlobPart | Tokens: 500 | Remaining Depth: 0 | pruningState: AUTO | effectivelyPruned: true | Hint: text/x-java (OldCode.java)]</span>
+<span class="placeholder">[PRUNED: Content removed to save context window tokens]</span>
         </pre>
     </div>
 
-    <h2>3. Model Message Strategy</h2>
+    <h2>3. Model Interaction Style (Thought-Based)</h2>
     <div class="example-box">
         <span class="role-label role-model">Model Role</span>
-        <p>Text parts follow the User format. Tool calls are grouped with an <strong>Aggregated Tool Metadata</strong> block before the native <code>FunctionCall</code> parts.</p>
+        <p>All system-injected metadata in Model messages is flagged as a <code>thought</code> part, clearly distinguishing it from your generated output.</p>
         <pre>
-<span class="metadata">--- Message ID: 11 | Role: MODEL | From: gemini-2.0-flash | Device: google-cloud | Time: 10:00:05 | Tokens: 450 ---</span>
+<span class="metadata">[x-anahata-message-id: 11 | From: gemini-3-flash | Device: Cloud | Time: 10:00:05 | Depth: 3]</span>
 
-<span class="metadata">[Part ID: 3 | Type: ModelTextPart | Tokens: 50 | Remaining Depth: 108]</span>
+<span class="metadata">[x-anahata-part-id: 3 | Type: ModelTextPart | Tokens: 50 | Remaining Depth: 108 | expanded: false]</span>
 <span class="content">&lt;thought&gt;I will read the file to check for leaks.&lt;/thought&gt;</span>
 
-<span class="metadata">--- Aggregated Tool Metadata ---
-[Message ID: 12 | Role: TOOL | From: 1234@papa-linux | Device: papa-linux | Tokens: 200]
-[Part ID: 4 | Type: JavaMethodToolCall | Tokens: 120 | Remaining Depth: 12 | Response: [Part ID: 5 | Type: JavaMethodToolResponse | Status: SUCCESS]]</span>
-
-<span class="content">[Native FunctionCall: readFile(path="Source.java") ]</span>
+<span class="metadata">[x-anahata-part-id: 4 | Type: JavaMethodToolCall | Status: SUCCESS | User Feedback: Look into the pom.xml first | Hint: readTextFile(path="Source.java")]</span>
+<span class="content">[Native FunctionCall: readTextFile(path="Source.java") ]</span>
         </pre>
     </div>
 
-    <h2>4. Tool Message Strategy</h2>
-    <div class="example-box">
-        <span class="role-label role-tool">Tool Role</span>
-        <p><strong>Pristine Clean.</strong> Tool messages contain <strong>only</strong> visible <code>FunctionResponse</code> parts. No metadata headers or placeholders are injected here to comply with strict API sequencing.</p>
-        <pre>
-<span class="content">[Native FunctionResponse: readFile -> { content: "public class...", status: "SUCCESS" } ]</span>
-        </pre>
+    <div class="note">
+        <strong>Strict Interaction Rule:</strong> You are FORBIDDEN from mimicking these system metadata headers in your responses. You must never generate text that starts with <code>[x-anahata-message-id:</code> or <code>[x-anahata-part-id:</code>. These headers are reserved for the system framework.
     </div>
 
 </div>
 
 <footer>
-    &copy; 2026 Anahata OS. Metadata Specification v2.2. Visca el Barça!
+    &copy; 2026 Anahata OS. Metadata Specification v2.3. Visca el Barça!
 </footer>
 
 </body>
