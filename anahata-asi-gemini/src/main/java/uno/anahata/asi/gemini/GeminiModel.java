@@ -32,7 +32,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.gemini.adapter.GeminiContentAdapter;
 import uno.anahata.asi.gemini.adapter.GeminiFunctionDeclarationAdapter;
 import uno.anahata.asi.gemini.adapter.RequestConfigAdapter;
@@ -44,7 +44,7 @@ import uno.anahata.asi.model.core.ModelTextPart;
 import uno.anahata.asi.model.core.RequestConfig;
 import uno.anahata.asi.model.core.Response;
 import uno.anahata.asi.model.core.StreamObserver;
-import uno.anahata.asi.model.provider.AbstractAiProvider;
+import uno.anahata.asi.model.provider.AbstractAgiProvider;
 import uno.anahata.asi.model.provider.AbstractModel;
 import uno.anahata.asi.model.provider.ApiCallInterruptedException;
 import uno.anahata.asi.model.provider.ServerTool;
@@ -61,11 +61,11 @@ import uno.anahata.asi.tool.RetryableApiException;
 @Slf4j
 public class GeminiModel extends AbstractModel {
 
-    private final GeminiAiProvider provider;
+    private final GeminiAgiProvider provider;
     private final String modelId;
     private transient Model genaiModel;
 
-    public GeminiModel(GeminiAiProvider provider, Model genaiModel) {
+    public GeminiModel(GeminiAgiProvider provider, Model genaiModel) {
         this.provider = provider;
         this.genaiModel = genaiModel;
         this.modelId = genaiModel.name().orElseThrow(() -> new IllegalArgumentException("Model name is required"));
@@ -84,7 +84,7 @@ public class GeminiModel extends AbstractModel {
     }
 
     @Override
-    public AbstractAiProvider getProvider() {
+    public AbstractAgiProvider getProvider() {
         return provider;
     }
 
@@ -287,8 +287,8 @@ public class GeminiModel extends AbstractModel {
             log.info("Got response from Gemini model: {}", response.toJson());
 
             // 3. Convert the Gemini response to the Anahata response using the new OO response class.
-            Chat chat = request.config().getChat();
-            return new GeminiResponse(prepared.config().toJson(), prepared.historyJson(), chat, getModelId(), response);
+            Agi agi = request.config().getAgi();
+            return new GeminiResponse(prepared.config().toJson(), prepared.historyJson(), agi, getModelId(), response);
         } catch (Exception e) {
             log.error("Exception in generateContent", e);
             if (isInterruption(e)) {
@@ -307,7 +307,7 @@ public class GeminiModel extends AbstractModel {
     public void generateContentStream(GenerationRequest request, StreamObserver<Response<? extends AbstractModelMessage>> observer) {
         Client client = provider.getClient();
         GeminiGenerateContentParameters prepared = prepareGenerateContentParameters(request);
-        Chat chat = request.config().getChat();
+        Agi agi = request.config().getAgi();
 
         log.info("Streaming request to Gemini model: {} {} content elements", getModelId(), prepared.history().size());
         for (int i = 0; i < prepared.history().size(); i++) {
@@ -333,7 +333,7 @@ public class GeminiModel extends AbstractModel {
                     List<Candidate> candidates = chunk.candidates().orElse(Collections.emptyList());
                     String modelVersion = chunk.modelVersion().orElse(getModelId());
                     for (int i = 0; i < candidates.size(); i++) {
-                        targets.add(new GeminiModelMessage(chat, modelVersion));
+                        targets.add(new GeminiModelMessage(agi, modelVersion));
                     }
                     observer.onStart((List)targets);
                     started = true;
@@ -356,7 +356,7 @@ public class GeminiModel extends AbstractModel {
                     }
                 }
                 
-                lastGeminiResponse = new GeminiResponse(prepared.config().toJson(), prepared.historyJson(), chat, getModelId(), chunk);
+                lastGeminiResponse = new GeminiResponse(prepared.config().toJson(), prepared.historyJson(), agi, getModelId(), chunk);
                 observer.onNext(lastGeminiResponse);
             }
             

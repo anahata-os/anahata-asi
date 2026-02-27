@@ -19,10 +19,10 @@ import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 public final class AiExecutors {
 
     /**
-     * Creates a new cached thread pool specifically for managing the lifecycle of a single chat session.
+     * Creates a new cached thread pool specifically for managing the lifecycle of a single agi session.
      * Threads created by this executor are daemon threads to prevent them from blocking application shutdown.
      *
-     * @param threadPreffix The unique identifier for the chat session, used in the thread name.
+     * @param threadPreffix The unique identifier for the agi session, used in the thread name.
      * @return A new cached thread pool ExecutorService.
      */
     public static ExecutorService newCachedThreadPoolExecutor(String threadPreffix) {

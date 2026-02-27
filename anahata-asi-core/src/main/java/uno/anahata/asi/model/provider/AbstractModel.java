@@ -4,7 +4,7 @@
 package uno.anahata.asi.model.provider;
 
 import java.util.List;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.model.core.AbstractMessage;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.GenerationRequest;
@@ -27,7 +27,7 @@ public abstract class AbstractModel {
      * Gets the provider that owns this model.
      * @return The parent AI provider.
      */
-    public abstract AbstractAiProvider getProvider();
+    public abstract AbstractAgiProvider getProvider();
 
     /**
      * Gets the unique identifier for this model (e.g., "models/gemini-1.5-pro").

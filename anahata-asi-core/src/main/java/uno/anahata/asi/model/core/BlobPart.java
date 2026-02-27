@@ -64,7 +64,7 @@ public abstract class BlobPart extends AbstractPart {
 
     @Override
     protected int getDefaultMaxDepth() {
-        return getChatConfig().getDefaultBlobPartMaxDepth();
+        return getAgiConfig().getDefaultBlobPartMaxDepth();
     }
 
     /**

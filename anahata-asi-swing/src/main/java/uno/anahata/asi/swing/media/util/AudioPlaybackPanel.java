@@ -21,7 +21,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jdesktop.swingx.JXComboBox;
 import uno.anahata.asi.AiExecutors;
-import uno.anahata.asi.swing.chat.ChatPanel; // Added import
+import uno.anahata.asi.swing.agi.AgiPanel; // Added import
 import uno.anahata.asi.swing.internal.SwingTask;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
@@ -33,7 +33,7 @@ import uno.anahata.asi.swing.internal.SwingUtils;
 @Getter
 public final class AudioPlaybackPanel extends JPanel {
 
-    private final ChatPanel chatPanel; // New: Reference to the parent ChatPanel
+    private final AgiPanel agiPanel; // New: Reference to the parent AgiPanel
     private final JXComboBox playbackLineComboBox;
     private final JProgressBar playbackLevelBar;
 
@@ -42,9 +42,9 @@ public final class AudioPlaybackPanel extends JPanel {
     private final AtomicBoolean playing = new AtomicBoolean(false);
     private volatile Clip currentClip; // For resource sounds. Made volatile for thread-safety.
 
-    public AudioPlaybackPanel(ChatPanel chatPanel) { // Modified constructor
+    public AudioPlaybackPanel(AgiPanel agiPanel) { // Modified constructor
         super(new FlowLayout(FlowLayout.RIGHT, 5, 0)); // Align to the right
-        this.chatPanel = chatPanel; // Initialize chatPanel
+        this.agiPanel = agiPanel; // Initialize agiPanel
         this.audioExecutor = AiExecutors.newCachedThreadPoolExecutor("audio-player");
 
         playbackLineComboBox = new JXComboBox();

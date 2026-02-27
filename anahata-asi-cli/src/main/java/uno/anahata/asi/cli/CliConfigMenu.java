@@ -3,10 +3,10 @@ package uno.anahata.asi.cli;
 
 import java.util.Scanner;
 import lombok.RequiredArgsConstructor;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 
 /**
- * The main orchestrator for the Chat Configuration menu in the CLI.
+ * The main orchestrator for the Agi Configuration menu in the CLI.
  * This class delegates to specialized menu classes for specific configuration areas.
  *
  * @author anahata-ai
@@ -14,17 +14,17 @@ import uno.anahata.asi.chat.Chat;
 @RequiredArgsConstructor
 public class CliConfigMenu {
 
-    private final Chat chat;
+    private final Agi agi;
     private final Scanner scanner;
 
     public void runConfigMenu() {
         // Instantiate sub-menus once per session
-        SystemInstructionsMenu instructionsMenu = new SystemInstructionsMenu(chat, scanner);
-        ToolkitsMenu toolkitsMenu = new ToolkitsMenu(chat, scanner);
-        ResourcesMenu resourcesMenu = new ResourcesMenu(chat, scanner);
+        SystemInstructionsMenu instructionsMenu = new SystemInstructionsMenu(agi, scanner);
+        ToolkitsMenu toolkitsMenu = new ToolkitsMenu(agi, scanner);
+        ResourcesMenu resourcesMenu = new ResourcesMenu(agi, scanner);
 
         while (true) {
-            System.out.println("\n===== Chat Configuration =====");
+            System.out.println("\n===== Agi Configuration =====");
             System.out.println("1. System Instructions Providers");
             System.out.println("2. Toolkits and Tools Overview");
             System.out.println("3. Managed Resources"); // New option

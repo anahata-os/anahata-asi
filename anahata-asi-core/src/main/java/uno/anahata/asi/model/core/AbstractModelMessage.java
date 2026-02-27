@@ -9,14 +9,14 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.internal.TikaUtils;
 import uno.anahata.asi.model.tool.AbstractToolCall;
 import uno.anahata.asi.model.tool.AbstractToolResponse;
 import uno.anahata.asi.model.tool.ToolExecutionStatus;
 import uno.anahata.asi.model.tool.ToolPermission;
 import uno.anahata.asi.model.web.GroundingMetadata;
-import uno.anahata.asi.status.ChatStatus;
+import uno.anahata.asi.status.AgiStatus;
 
 /**
  * Represents a message originating from the AI model. It extends {@link AbstractMessage},
@@ -67,11 +67,11 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
     /**
      * Constructs a new AbstractModelMessage.
      * 
-     * @param chat The parent chat session.
+     * @param agi The parent agi session.
      * @param modelId The ID of the model.
      */
-    public AbstractModelMessage(@NonNull Chat chat, @NonNull String modelId) {
-        super(chat);
+    public AbstractModelMessage(@NonNull Agi agi, @NonNull String modelId) {
+        super(agi);
         this.modelId = modelId;
     }
     
@@ -185,12 +185,12 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
     }
     
     /**
-     * Checks if this model message is the current tool prompt message for the chat.
+     * Checks if this model message is the current tool prompt message for the agi.
      * 
      * @return {@code true} if this message is the tool prompt message.
      */
     public boolean isToolPromptMessage() {
-        return getChat() != null && getChat().getToolPromptMessage() == this;
+        return getAgi() != null && getAgi().getToolPromptMessage() == this;
     }
     
     /**
@@ -200,7 +200,7 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
     public void removePart(AbstractPart part) {
         super.removePart(part);
         if (isToolPromptMessage()) {
-            getChat().checkToolPromptCompletion();
+            getAgi().checkToolPromptCompletion();
         }
     }
     
@@ -211,7 +211,7 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
     public void remove() {
         super.remove();
         if (isToolPromptMessage()) {
-            getChat().clearToolPrompt();
+            getAgi().clearToolPrompt();
         }
     }
     
@@ -247,7 +247,7 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
             return false;
         }
         
-        if (!getChat().getConfig().isLocalToolsEnabled()) {
+        if (!getAgi().getConfig().isLocalToolsEnabled()) {
             return false;
         }
         
@@ -312,7 +312,7 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
      */
     public void processPendingTools() {
         if (hasPendingTools()) {
-            getChat().getStatusManager().fireStatusChanged(ChatStatus.AUTO_EXECUTING_TOOLS);
+            getAgi().getStatusManager().fireStatusChanged(AgiStatus.AUTO_EXECUTING_TOOLS);
             executeAllPending();
         }
     }

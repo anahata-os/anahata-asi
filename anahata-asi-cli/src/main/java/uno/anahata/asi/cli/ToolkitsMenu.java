@@ -4,7 +4,7 @@ package uno.anahata.asi.cli;
 import java.util.List;
 import java.util.Scanner;
 import lombok.RequiredArgsConstructor;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.model.tool.AbstractTool;
 import uno.anahata.asi.model.tool.AbstractToolParameter;
@@ -19,11 +19,11 @@ import uno.anahata.asi.model.tool.ToolPermission;
 @RequiredArgsConstructor
 public class ToolkitsMenu {
 
-    private final Chat chat;
+    private final Agi agi;
     private final Scanner scanner;
 
     public void runMenu() {
-        List<AbstractToolkit<?>> toolkits = chat.getToolManager().getToolkits().values().stream().toList();
+        List<AbstractToolkit<?>> toolkits = agi.getToolManager().getToolkits().values().stream().toList();
 
         while (true) {
             System.out.println("\n===== Toolkits Overview =====");

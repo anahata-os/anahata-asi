@@ -2,8 +2,8 @@
 package uno.anahata.ai.tool;
 
 import uno.anahata.asi.AsiContainer;
-import uno.anahata.asi.chat.Chat;
-import uno.anahata.asi.chat.ChatConfig;
+import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.model.resource.AbstractResource;
 
 /**
@@ -18,8 +18,8 @@ public class MockAsiContainer extends AsiContainer {
     }
 
     @Override
-    public Chat createNewChat() {
-        return new Chat(new ChatConfig(this));
+    public Agi createNewAgi() {
+        return new Agi(new AgiConfig(this));
     }
 
     @Override

@@ -21,14 +21,14 @@ import org.openide.util.Utilities;
 import org.openide.util.actions.Presenter;
 import uno.anahata.asi.AgiTopComponent;
 import uno.anahata.asi.AnahataInstaller;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.swing.icons.IconUtils;
 
 /**
  * Action to add one or more projects to the AI context.
- * It provides a dynamic submenu listing all active chat sessions and an option
- * to create a new chat.
+ * It provides a dynamic submenu listing all active agi sessions and an option
+ * to create a new agi.
  * <p>
  * This action implements {@link Presenter.Popup} to generate the dynamic menu.
  * 
@@ -80,8 +80,8 @@ public final class AddProjectToContextAction extends AbstractAction implements C
 
     /**
      * {@inheritDoc}
-     * Generates a dynamic submenu listing all active chat sessions.
-     * It filters out chats where all selected projects are already in context.
+     * Generates a dynamic submenu listing all active agi sessions.
+     * It filters out agis where all selected projects are already in context.
      */
     @Override
     public JMenuItem getPopupPresenter() {
@@ -101,50 +101,50 @@ public final class AddProjectToContextAction extends AbstractAction implements C
         JMenu main = new JMenu(label);
         main.setIcon(IconUtils.getAddIcon());
         
-        List<Chat> activeChats = AnahataInstaller.getContainer().getActiveChats();
+        List<Agi> activeAgis = AnahataInstaller.getContainer().getActiveAgis();
         final List<Project> finalProjects = projects;
 
         // 1. Option to create a new session
-        JMenuItem newChatItem = new JMenuItem("Create new session...");
-        newChatItem.addActionListener(e -> {
-            Chat newChat = AnahataInstaller.getContainer().createNewChat();
+        JMenuItem newAgiItem = new JMenuItem("Create new session...");
+        newAgiItem.addActionListener(e -> {
+            Agi newAgi = AnahataInstaller.getContainer().createNewAgi();
             
-            // Open the TopComponent for the new chat
-            AgiTopComponent tc = new AgiTopComponent(newChat);
+            // Open the TopComponent for the new agi
+            AgiTopComponent tc = new AgiTopComponent(newAgi);
             tc.open();
             tc.requestActive();
             
-            addProjectsToChat(newChat, finalProjects);
+            addProjectsToAgi(newAgi, finalProjects);
             LOG.info("Created new session and added projects.");
         });
-        main.add(newChatItem);
+        main.add(newAgiItem);
         main.addSeparator();
 
         // 2. List active sessions (filtered)
-        List<Chat> eligibleChats = activeChats.stream()
-                .filter(chat -> !allProjectsInContext(chat, finalProjects))
+        List<Agi> eligibleAgis = activeAgis.stream()
+                .filter(agi -> !allProjectsInContext(agi, finalProjects))
                 .collect(Collectors.toList());
 
-        if (eligibleChats.isEmpty()) {
-            JMenuItem item = new JMenuItem(activeChats.isEmpty() ? "No active sessions" : "All projects already in context");
+        if (eligibleAgis.isEmpty()) {
+            JMenuItem item = new JMenuItem(activeAgis.isEmpty() ? "No active sessions" : "All projects already in context");
             item.setEnabled(false);
             main.add(item);
         } else {
             // Add to all sessions option
-            if (eligibleChats.size() > 1) {
+            if (eligibleAgis.size() > 1) {
                 JMenuItem allItem = new JMenuItem("Add to all active sessions");
                 allItem.addActionListener(e -> {
-                    for (Chat chat : eligibleChats) {
-                        addProjectsToChat(chat, finalProjects);
+                    for (Agi agi : eligibleAgis) {
+                        addProjectsToAgi(agi, finalProjects);
                     }
                 });
                 main.add(allItem);
                 main.addSeparator();
             }
 
-            for (Chat chat : eligibleChats) {
-                JMenuItem item = new JMenuItem(chat.getDisplayName());
-                item.addActionListener(e -> addProjectsToChat(chat, finalProjects));
+            for (Agi agi : eligibleAgis) {
+                JMenuItem item = new JMenuItem(agi.getDisplayName());
+                item.addActionListener(e -> addProjectsToAgi(agi, finalProjects));
                 main.add(item);
             }
         }
@@ -153,28 +153,28 @@ public final class AddProjectToContextAction extends AbstractAction implements C
     }
 
     /**
-     * Checks if all selected projects are already in the context of the given chat.
+     * Checks if all selected projects are already in the context of the given agi.
      * 
-     * @param chat The chat session to check.
+     * @param agi The agi session to check.
      * @param projects The list of projects.
      * @return {@code true} if all projects are in context.
      */
-    private boolean allProjectsInContext(Chat chat, List<Project> projects) {
-        return projects.stream().allMatch(p -> ProjectsContextActionLogic.isProjectInContext(p, chat));
+    private boolean allProjectsInContext(Agi agi, List<Project> projects) {
+        return projects.stream().allMatch(p -> ProjectsContextActionLogic.isProjectInContext(p, agi));
     }
 
     /**
-     * Enables the project context provider for all selected projects in the given chat.
+     * Enables the project context provider for all selected projects in the given agi.
      * 
-     * @param chat The target chat session.
+     * @param agi The target agi session.
      * @param projects The list of projects to add.
      */
-    private void addProjectsToChat(Chat chat, List<Project> projects) {
-        chat.getToolManager().getToolkitInstance(Projects.class).ifPresent(projectsTool -> {
+    private void addProjectsToAgi(Agi agi, List<Project> projects) {
+        agi.getToolManager().getToolkitInstance(Projects.class).ifPresent(projectsTool -> {
             for (Project p : projects) {
                 String path = p.getProjectDirectory().getPath();
                 projectsTool.setProjectProviderEnabled(path, true);
-                LOG.info("Enabled project context for: " + path + " in session: " + chat.getDisplayName());
+                LOG.info("Enabled project context for: " + path + " in session: " + agi.getDisplayName());
             }
         });
     }

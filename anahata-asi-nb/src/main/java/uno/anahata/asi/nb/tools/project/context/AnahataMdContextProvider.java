@@ -60,7 +60,7 @@ public class AnahataMdContextProvider extends BasicContextProvider {
     }
 
     /**
-     * Synchronizes the anahata.md file with the chat's resource manager.
+     * Synchronizes the anahata.md file with the agi's resource manager.
      * If the provider is enabled and the file exists, it is registered as a 
      * SYSTEM_INSTRUCTIONS resource. Otherwise, it is unregistered.
      */

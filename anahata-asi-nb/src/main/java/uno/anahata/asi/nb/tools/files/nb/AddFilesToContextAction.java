@@ -20,14 +20,14 @@ import org.openide.util.Lookup;
 import org.openide.util.actions.Presenter;
 import uno.anahata.asi.AgiTopComponent;
 import uno.anahata.asi.AnahataInstaller;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 
 /**
  * A context-aware action that provides a dynamic submenu for adding selected files
- * or folders to the context of an active AI chat session.
+ * or folders to the context of an active AI agi session.
  * <p>
  * This action implements {@link Presenter.Popup} to generate a list of active
- * chat sessions as sub-menu items, along with options for multi-chat targeting.
+ * agi sessions as sub-menu items, along with options for multi-agi targeting.
  * It uses {@link FilesContextActionLogic} for the actual resource management.
  * </p>
  * 
@@ -93,47 +93,47 @@ public final class AddFilesToContextAction extends AbstractAction implements Con
 
     /**
      * {@inheritDoc}
-     * Generates a dynamic submenu listing all active chat sessions and targeting options.
+     * Generates a dynamic submenu listing all active agi sessions and targeting options.
      */
     @Override
     public JMenuItem getPopupPresenter() {
         JMenu main = new JMenu("Add to AI Context");
         main.setIcon(new ImageIcon(org.openide.util.ImageUtilities.loadImage("icons/anahata_16.png")));
         
-        List<Chat> activeChats = AnahataInstaller.getContainer().getActiveChats();
+        List<Agi> activeAgis = AnahataInstaller.getContainer().getActiveAgis();
         Collection<? extends FileObject> files = context.lookupAll(FileObject.class);
 
         // 1. Option to create a new session
-        JMenuItem newChatItem = new JMenuItem("Create new session...");
-        newChatItem.addActionListener(e -> {
-            Chat newChat = AnahataInstaller.getContainer().createNewChat();
+        JMenuItem newAgiItem = new JMenuItem("Create new session...");
+        newAgiItem.addActionListener(e -> {
+            Agi newAgi = AnahataInstaller.getContainer().createNewAgi();
             
-            // Open the TopComponent for the new chat
-            AgiTopComponent tc = new AgiTopComponent(newChat);
+            // Open the TopComponent for the new agi
+            AgiTopComponent tc = new AgiTopComponent(newAgi);
             tc.open();
             tc.requestActive();
             
             for (FileObject fo : files) {
                 // Non-recursive by default from the menu to avoid confusion
-                FilesContextActionLogic.addRecursively(fo, newChat, false);
+                FilesContextActionLogic.addRecursively(fo, newAgi, false);
             }
             LOG.info("Created new session and added resources.");
         });
-        main.add(newChatItem);
+        main.add(newAgiItem);
         main.addSeparator();
 
-        if (activeChats.isEmpty()) {
+        if (activeAgis.isEmpty()) {
             JMenuItem item = new JMenuItem("No active sessions");
             item.setEnabled(false);
             main.add(item);
         } else {
             // 2. Add to all sessions option
-            if (activeChats.size() > 1) {
+            if (activeAgis.size() > 1) {
                 JMenuItem allItem = new JMenuItem("Add to all active sessions");
                 allItem.addActionListener(e -> {
-                    for (Chat chat : activeChats) {
+                    for (Agi agi : activeAgis) {
                         for (FileObject fo : files) {
-                            FilesContextActionLogic.addRecursively(fo, chat, false);
+                            FilesContextActionLogic.addRecursively(fo, agi, false);
                         }
                     }
                 });
@@ -142,11 +142,11 @@ public final class AddFilesToContextAction extends AbstractAction implements Con
             }
 
             // 3. List individual sessions
-            for (Chat chat : activeChats) {
-                JMenuItem item = new JMenuItem(chat.getDisplayName());
+            for (Agi agi : activeAgis) {
+                JMenuItem item = new JMenuItem(agi.getDisplayName());
                 item.addActionListener(e -> {
                     for (FileObject fo : files) {
-                        FilesContextActionLogic.addRecursively(fo, chat, false);
+                        FilesContextActionLogic.addRecursively(fo, agi, false);
                     }
                 });
                 main.add(item);

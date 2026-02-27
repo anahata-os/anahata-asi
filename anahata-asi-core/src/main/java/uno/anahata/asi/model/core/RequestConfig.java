@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.model.provider.ServerTool;
 import uno.anahata.asi.model.core.ThinkingLevel;
 import uno.anahata.asi.model.tool.AbstractTool;
@@ -17,7 +17,7 @@ import uno.anahata.asi.model.tool.AbstractTool;
  * The definitive, model-agnostic configuration object for a single API request.
  * It holds both the static behavioral parameters and provides live, just-in-time
  * access to dynamic request data like tools and system instructions via its
- * reference to the parent Chat.
+ * reference to the parent Agi.
  *
  * @author anahata-gemini-pro-2.5
  */
@@ -27,7 +27,7 @@ import uno.anahata.asi.model.tool.AbstractTool;
 public class RequestConfig {
     @NonNull
     @JsonIgnore
-    private final Chat chat;
+    private final Agi agi;
 
     //== Behavioral Parameters ==//
     /** The temperature for the request. */
@@ -74,17 +74,17 @@ public class RequestConfig {
      * @return A list of TextParts representing the system instructions.
      */
     public List<String> getSystemInstructions() {
-        return chat.getContextManager().getSystemInstructions();
+        return agi.getContextManager().getSystemInstructions();
     }
 
     /**
      * Gets the tools for this request, determined just-in-time based on the
-     * chat's configuration (local vs. server-side).
+     * agi's configuration (local vs. server-side).
      * @return A list of AbstractTools, or null if server-side tools are active.
      */
     public List<? extends AbstractTool> getLocalTools() {
-        if (chat.getConfig().isLocalToolsEnabled()) {
-            return chat.getToolManager().getEnabledTools();
+        if (agi.getConfig().isLocalToolsEnabled()) {
+            return agi.getToolManager().getEnabledTools();
         }
         return null;
     }
@@ -94,6 +94,6 @@ public class RequestConfig {
      * @return true if server tools are enabled.
      */
     public boolean isServerToolsEnabled() {
-        return chat.getConfig().isHostedToolsEnabled();
+        return agi.getConfig().isHostedToolsEnabled();
     }
 }

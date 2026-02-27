@@ -31,7 +31,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.internal.ClasspathPrinter;
 import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.model.core.RagMessage;
@@ -98,7 +98,7 @@ public class Java extends AnahataToolkit {
         sb.append("The `log()`, `error()`, and `addAttachment()` methods rely on a thread-local context and will fail if called from a subthread or the EDT (Event Dispatch Thread).\n");
         sb.append("- To access the context from another thread, capture it in a final variable: `final ToolContext ctx = getToolContext();` and use `ctx.log(...)`, `ctx.error(...)`, etc.\n");
 
-        sb.append("\nAbout the maps: the Session Map is for this session only (chat scoped), the ASI Container map is shared across sessions (chats) and the application map is a static field so shared across any all sessions of all containers running in this jvm\n");
+        sb.append("\nAbout the maps: the Session Map is for this session only (agi scoped), the ASI Container map is shared across sessions (agis) and the application map is a static field so shared across any all sessions of all containers running in this jvm\n");
         sb.append("\nAbout the attachments: at the time of this release (only tested with gemini-3-flash) only pdf, text and image attachments are supported\n");
 
         sb.append("\n#### Example:\n");

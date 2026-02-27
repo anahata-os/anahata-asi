@@ -6,7 +6,7 @@ package uno.anahata.asi.cli;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 
 /**
  * A centralized utility for parsing command-line arguments for any Anahata AI launcher.
@@ -20,10 +20,10 @@ public final class CommandLineArgs {
     /**
      * Parses the command-line arguments to find and select a specific AI model.
      *
-     * @param chat The Chat instance to configure.
+     * @param agi The Agi instance to configure.
      * @param args The command-line arguments from the main method.
      */
-    public static void parse(Chat chat, String[] args) {
+    public static void parse(Agi agi, String[] args) {
         if (args == null || args.length == 0) {
             return;
         }
@@ -41,14 +41,14 @@ public final class CommandLineArgs {
         String providerId = providerAndModelId.substring(0, slashIndex);
         String modelId = providerAndModelId.substring(slashIndex + 1);
         
-        log.info("Attempting to select model from arguments: {} {}, chat providers: ", providerId, modelId, chat.getProviders());
+        log.info("Attempting to select model from arguments: {} {}, agi providers: ", providerId, modelId, agi.getProviders());
 
-        chat.getProviders().stream()
+        agi.getProviders().stream()
             .filter(p -> p.getProviderId().equals(providerId))
             .findFirst()
             .flatMap(provider -> provider.findModel(modelId))
             .ifPresentOrElse(
-                chat::setSelectedModel,
+                agi::setSelectedModel,
                 () -> log.error("Model not found from command-line argument: {}", providerAndModelId)
             );
     }

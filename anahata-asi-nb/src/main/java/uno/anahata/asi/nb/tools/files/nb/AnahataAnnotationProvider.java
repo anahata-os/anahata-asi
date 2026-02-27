@@ -16,7 +16,7 @@ import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.ServiceProvider;
 import uno.anahata.asi.AnahataInstaller;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 
 /**
  * Master Shell for Anahata context visibility in NetBeans.
@@ -109,13 +109,13 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
             }
 
             // 4. Calculate Context Presence across active sessions.
-            List<Chat> activeChats = AnahataInstaller.getContainer().getActiveChats();
-            List<Integer> totals = AnahataAnnotationLogic.calculateSessionTotals(resolved, nodeType, activeChats);
+            List<Agi> activeAgis = AnahataInstaller.getContainer().getActiveAgis();
+            List<Integer> totals = AnahataAnnotationLogic.calculateSessionTotals(resolved, nodeType, activeAgis);
             
             boolean anyInContext = totals.stream().anyMatch(i -> i > 0);
             if (anyInContext) {
                 // 5. Construct tooltip and assign to badge pixels.
-                String tooltip = AnahataAnnotationLogic.buildTooltip(resolved, nodeType, activeChats, totals);
+                String tooltip = AnahataAnnotationLogic.buildTooltip(resolved, nodeType, activeAgis, totals);
                 Image taggedBadge = ImageUtilities.assignToolTipToImage(BADGE, tooltip);
                 
                 // 6. Layering: Using (16, 0) right-aligned anchor per spec.
@@ -151,13 +151,13 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
             // 2. Classify node and calculate totals via logic engine.
             FileObject fo = files.iterator().next();
             AnahataAnnotationLogic.NodeType nodeType = AnahataAnnotationLogic.classify(fo);
-            List<Chat> activeChats = AnahataInstaller.getContainer().getActiveChats();
-            List<Integer> totals = AnahataAnnotationLogic.calculateSessionTotals(fo, nodeType, activeChats);
+            List<Agi> activeAgis = AnahataInstaller.getContainer().getActiveAgis();
+            List<Integer> totals = AnahataAnnotationLogic.calculateSessionTotals(fo, nodeType, activeAgis);
             
             boolean anyInContext = totals.stream().anyMatch(i -> i > 0);
             if (anyInContext) {
                 // 3. Dispatch to logic engine for the specific annotation string.
-                String annotation = AnahataAnnotationLogic.buildNameAnnotation(nodeType, activeChats, totals);
+                String annotation = AnahataAnnotationLogic.buildNameAnnotation(nodeType, activeAgis, totals);
                 
                 // 4. Surgical injection before the closing </html> tag.
                 if (currentHtml.toLowerCase().contains("<html>")) {

@@ -84,7 +84,7 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
         setCurrent(this); // Establish the thread-local context
         setStatus(ToolExecutionStatus.EXECUTING);
         setThread(Thread.currentThread());
-        getChat().getToolManager().registerExecutingCall(getCall());
+        getAgi().getToolManager().registerExecutingCall(getCall());
         
         // Capture a snapshot of the modified arguments at the time of execution
         getModifiedArgs().clear();
@@ -132,7 +132,7 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
             }
 
         } finally {
-            getChat().getToolManager().unregisterExecutingCall(getCall());
+            getAgi().getToolManager().unregisterExecutingCall(getCall());
             setCurrent(null); // Clear the context
             setThread(null);
             setExecutionTimeMillis(System.currentTimeMillis() - startTime);

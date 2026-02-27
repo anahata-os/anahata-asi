@@ -32,7 +32,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AsiContainer;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
@@ -69,8 +69,8 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
     @Setter
     private boolean providing = true;
 
-    /** The parent chat session. */
-    private final Chat chat;
+    /** The parent agi session. */
+    private final Agi agi;
     
     /** A map of registered toolkits, keyed by their simple name. */
     private final Map<String, AbstractToolkit<?>> toolkits = new HashMap<>();
@@ -86,17 +86,17 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
     
 
     /**
-     * Primary constructor for use in a live chat session.
+     * Primary constructor for use in a live agi session.
      * This constructor is self-initializing, registering all tools
-     * defined in the ChatConfig.
+     * defined in the AgiConfig.
      *
-     * @param chat The parent chat orchestrator.
+     * @param agi The parent agi orchestrator.
      */
-    public ToolManager(@NonNull Chat chat) {
-        this.chat = chat;
+    public ToolManager(@NonNull Agi agi) {
+        this.agi = agi;
         
         // Self-initialize by registering tools from the container.
-        List<Class<?>> toolClasses = chat.getConfig().getToolClasses();
+        List<Class<?>> toolClasses = agi.getConfig().getToolClasses();
         if (toolClasses != null) {
             registerClasses(toolClasses.toArray(new Class[0]));
         }

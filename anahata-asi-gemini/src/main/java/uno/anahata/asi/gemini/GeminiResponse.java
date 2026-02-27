@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Getter;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.Response;
 import uno.anahata.asi.model.core.ResponseUsageMetadata;
@@ -46,11 +46,11 @@ public class GeminiResponse extends Response<GeminiModelMessage> {
      *
      * @param requestConfigJson The raw JSON of the request configuration.
      * @param historyJson   The raw JSON of the conversation history sent in the request.
-     * @param chat          The parent chat session, required for constructing model messages.
+     * @param agi          The parent agi session, required for constructing model messages.
      * @param modelId       The ID of the model that generated this response.
      * @param genaiResponse The native response object from the API.
      */
-    public GeminiResponse(String requestConfigJson, String historyJson, Chat chat, String modelId, GenerateContentResponse genaiResponse) {
+    public GeminiResponse(String requestConfigJson, String historyJson, Agi agi, String modelId, GenerateContentResponse genaiResponse) {
         this.rawRequestConfigJson = requestConfigJson;
         this.rawHistoryJson = historyJson;
         this.genaiResponse = genaiResponse;        
@@ -66,7 +66,7 @@ public class GeminiResponse extends Response<GeminiModelMessage> {
         List<Candidate> googleCandidates = genaiResponse.candidates().orElse(Collections.emptyList());
         this.candidates = googleCandidates.stream()
             .map(candidate -> {
-                GeminiModelMessage msg = new GeminiModelMessage(chat, modelVersion, candidate, this);
+                GeminiModelMessage msg = new GeminiModelMessage(agi, modelVersion, candidate, this);
                 // Fallback: If candidate doesn't have its own token count and there's only one candidate,
                 // use the total candidatesTokenCount from usageMetadata.
                 if (msg.getTokenCount(false) <= 0 && googleCandidates.size() == 1) {

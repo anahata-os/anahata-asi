@@ -4,7 +4,7 @@ package uno.anahata.asi.cli;
 import java.util.List;
 import java.util.Scanner;
 import lombok.RequiredArgsConstructor;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.model.resource.AbstractResource;
 
 import uno.anahata.asi.resource.ResourceManager;
@@ -17,8 +17,8 @@ import uno.anahata.asi.resource.ResourceManager;
 @RequiredArgsConstructor
 public class ResourcesMenu {
 
-    /** The parent chat session. */
-    private final Chat chat;
+    /** The parent agi session. */
+    private final Agi agi;
     /** The scanner for user input. */
     private final Scanner scanner;
 
@@ -26,7 +26,7 @@ public class ResourcesMenu {
      * Runs the interactive CLI menu for resource management.
      */
     public void runMenu() {
-        ResourceManager resourceManager = chat.getResourceManager();
+        ResourceManager resourceManager = agi.getResourceManager();
         List<AbstractResource<?, ?>> resources = resourceManager.getResources().stream().toList();
 
         while (true) {

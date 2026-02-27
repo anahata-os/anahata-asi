@@ -21,14 +21,14 @@ import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.actions.Presenter;
 import uno.anahata.asi.AnahataInstaller;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 
 /**
  * A context-aware action that provides a dynamic submenu for removing selected files
- * or folders from the context of an active AI chat session.
+ * or folders from the context of an active AI agi session.
  * <p>
  * This action implements {@link Presenter.Popup} to generate a list of active
- * chat sessions as sub-menu items. It uses {@link FilesContextActionLogic} for the 
+ * agi sessions as sub-menu items. It uses {@link FilesContextActionLogic} for the 
  * actual resource management.
  * </p>
  * 
@@ -94,7 +94,7 @@ public final class RemoveFilesFromContextAction extends AbstractAction implement
 
     /**
      * {@inheritDoc}
-     * Generates a dynamic submenu listing all active chat sessions.
+     * Generates a dynamic submenu listing all active agi sessions.
      */
     @Override
     public JMenuItem getPopupPresenter() {
@@ -104,22 +104,22 @@ public final class RemoveFilesFromContextAction extends AbstractAction implement
             main.setIcon(new ImageIcon(img.getScaledInstance(16, 16, Image.SCALE_SMOOTH)));
         }
         
-        List<Chat> activeChats = AnahataInstaller.getContainer().getActiveChats();
+        List<Agi> activeAgis = AnahataInstaller.getContainer().getActiveAgis();
         Collection<? extends FileObject> files = context.lookupAll(FileObject.class);
         
-        if (activeChats.isEmpty()) {
+        if (activeAgis.isEmpty()) {
             JMenuItem item = new JMenuItem("No active sessions");
             item.setEnabled(false);
             main.add(item);
         } else {
             // 1. Remove from all sessions option
-            if (activeChats.size() > 1) {
+            if (activeAgis.size() > 1) {
                 JMenuItem allItem = new JMenuItem("Remove from all active sessions");
                 allItem.addActionListener(e -> {
-                    for (Chat chat : activeChats) {
+                    for (Agi agi : activeAgis) {
                         for (FileObject fo : files) {
                             // Non-recursive by default from the menu
-                            FilesContextActionLogic.removeRecursively(fo, chat, false);
+                            FilesContextActionLogic.removeRecursively(fo, agi, false);
                         }
                     }
                 });
@@ -128,12 +128,12 @@ public final class RemoveFilesFromContextAction extends AbstractAction implement
             }
 
             // 2. List individual sessions
-            for (Chat chat : activeChats) {
-                JMenuItem item = new JMenuItem(chat.getDisplayName());
+            for (Agi agi : activeAgis) {
+                JMenuItem item = new JMenuItem(agi.getDisplayName());
                 item.addActionListener(e -> {
                     for (FileObject fo : files) {
                         // Non-recursive by default from the menu
-                        FilesContextActionLogic.removeRecursively(fo, chat, false);
+                        FilesContextActionLogic.removeRecursively(fo, agi, false);
                     }
                 });
                 main.add(item);

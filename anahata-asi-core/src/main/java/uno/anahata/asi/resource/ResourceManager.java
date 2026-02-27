@@ -16,7 +16,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 import uno.anahata.asi.model.core.RagMessage;
@@ -42,8 +42,8 @@ import uno.anahata.asi.model.resource.AbstractResource;
 @RequiredArgsConstructor
 public class ResourceManager extends BasicPropertyChangeSource implements Rebindable, ContextProvider {
 
-    /** The parent chat session. */
-    private final Chat chat;
+    /** The parent agi session. */
+    private final Agi agi;
 
     /**
      * A map of all tracked resources, keyed by their unique resource ID.

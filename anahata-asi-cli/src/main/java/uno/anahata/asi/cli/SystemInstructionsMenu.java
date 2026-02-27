@@ -4,7 +4,7 @@ package uno.anahata.asi.cli;
 import java.util.List;
 import java.util.Scanner;
 import lombok.RequiredArgsConstructor;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.context.ContextProvider;
 
 /**
@@ -15,11 +15,11 @@ import uno.anahata.asi.context.ContextProvider;
 @RequiredArgsConstructor
 public class SystemInstructionsMenu {
 
-    private final Chat chat;
+    private final Agi agi;
     private final Scanner scanner;
 
     public void runMenu() {
-        List<ContextProvider> providers = chat.getContextManager().getProviders();
+        List<ContextProvider> providers = agi.getContextManager().getProviders();
 
         while (true) {
             System.out.println("\n===== System Instructions Providers =====");

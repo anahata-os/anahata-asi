@@ -6,7 +6,7 @@ package uno.anahata.asi.toolkit;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.chat.ChatConfig;
+import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.context.ContextManager;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.core.AbstractMessage;
@@ -24,16 +24,16 @@ import uno.anahata.asi.tool.AiToolkit;
 import uno.anahata.asi.tool.AnahataToolkit;
 
 /**
- * A toolkit for managing the current chat session's metadata and context policies.
+ * A toolkit for managing the current agi session's metadata and context policies.
  * 
  * @author anahata
  */
 @Slf4j
-@AiToolkit("Toolkit for managing the current chat session's metadata and context policies.")
+@AiToolkit("Toolkit for managing the current agi session's metadata and context policies.")
 public class Session extends AnahataToolkit {
 
     /**
-     * Updates the current chat session's summary.
+     * Updates the current agi session's summary.
      * <p>
      * <b>STRICT USAGE RULE:</b> This tool MUST ONLY be called if there are other 
      * "task-related" tool calls (e.g., file manipulation, shell commands, pruning) 
@@ -43,13 +43,13 @@ public class Session extends AnahataToolkit {
      * @param summary A concise summary of the conversation's current state or topic.
      * @return A confirmation message.
      */
-    @AiTool(value = "Updates the current chat session's summary. This shows in the ASI container's dashboard, update it with a brief summary of what you are doing or what you did if you are done." +
+    @AiTool(value = "Updates the current agi session's summary. This shows in the ASI container's dashboard, update it with a brief summary of what you are doing or what you did if you are done." +
             "STRICT USAGE RULE: Only call this if you are calling other real-task related tools.",
             requiresApproval = false)
     public String updateSessionSummary(@AiToolParam("A concise summary of the conversation's current state.") String summary) {
-        uno.anahata.asi.chat.Chat domainChat = getChat();
+        uno.anahata.asi.agi.Agi domainAgi = getAgi();
         if (summary != null && !summary.isBlank()) {
-            domainChat.setSummary(summary);
+            domainAgi.setSummary(summary);
         }
         log.info("Session summary updated: summary={}", summary);
         return "Session summary updated successfully.";
@@ -59,7 +59,7 @@ public class Session extends AnahataToolkit {
     public void updateContextProviders(
             @AiToolParam("Whether to enable or disable the providers.") boolean enabled, 
             @AiToolParam("The IDs of the context providers to update.") List<String> providerIds) {
-        ContextManager cm = getChat().getContextManager();
+        ContextManager cm = getAgi().getContextManager();
         for (ContextProvider root : cm.getProviders()) {
             for (ContextProvider cp : root.getFlattenedHierarchy(false)) {
                 if (providerIds.contains(cp.getFullyQualifiedId())) {
@@ -80,13 +80,13 @@ public class Session extends AnahataToolkit {
     public void updateToolkits(
             @AiToolParam("Whether to enable or disable.") boolean enabled, 
             @AiToolParam("The names of the toolkits to update (e.g., 'Audio', 'Browser').") List<String> toolkitNames) {
-        getChat().getToolManager().updateToolkits(enabled, toolkitNames);
+        getAgi().getToolManager().updateToolkits(enabled, toolkitNames);
         log((enabled ? "Enabled" : "Disabled") + " toolkits: " + toolkitNames);
     }
 
     @AiTool(value = "Stops one or more currently executing tools by their IDs.", requiresApproval = false)
     public String stopRunningTools(@AiToolParam("The unique IDs of the tool calls to stop.") List<String> toolCallIds) {
-        List<AbstractToolCall<?, ?>> executing = getChat().getToolManager().getExecutingCalls();
+        List<AbstractToolCall<?, ?>> executing = getAgi().getToolManager().getExecutingCalls();
         int stoppedCount = 0;
         StringBuilder logBuilder = new StringBuilder();
         
@@ -119,7 +119,7 @@ public class Session extends AnahataToolkit {
     public String setMessagePruningState(
             @AiToolParam("The sequential IDs of the messages to update.") List<Long> messageIds,
             @AiToolParam("The new pruning state.") PruningState newState) {
-        List<AbstractMessage> history = getChat().getContextManager().getHistory();
+        List<AbstractMessage> history = getAgi().getContextManager().getHistory();
         int count = 0;
         for (AbstractMessage msg : history) {
             if (messageIds.contains(msg.getSequentialId())) {
@@ -138,7 +138,7 @@ public class Session extends AnahataToolkit {
     public String setPartPruningState(
             @AiToolParam("The sequential IDs of the parts to update.") List<Long> partIds,
             @AiToolParam("The new pruning state.") PruningState newState) {
-        List<AbstractMessage> history = getChat().getContextManager().getHistory();
+        List<AbstractMessage> history = getAgi().getContextManager().getHistory();
         int count = 0;
         for (AbstractMessage msg : history) {
             for (AbstractPart part : msg.getParts(true)) {
@@ -156,7 +156,7 @@ public class Session extends AnahataToolkit {
             "by clicking the Java icon in the toolbar. Use this only if you specifically need a server-side capability.",
             requiresApproval = true)
     public String enableHostedTools() {
-        getChat().getConfig().setHostedToolsEnabled(true);
+        getAgi().getConfig().setHostedToolsEnabled(true);
         return "Server tools have been enabled. Local tools are now disabled. " +
                "You can now use tools like Google Search or Maps if supported by the model.";
     }
@@ -182,19 +182,19 @@ public class Session extends AnahataToolkit {
 
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
-        uno.anahata.asi.chat.Chat domainChat = ragMessage.getChat();
-        ChatConfig config = domainChat.getConfig();
+        uno.anahata.asi.agi.Agi domainAgi = ragMessage.getAgi();
+        AgiConfig config = domainAgi.getConfig();
         StringBuilder sb = new StringBuilder();
         sb.append("## Current Session Metadata:\n");
         sb.append("- **Session ID**: ").append(config.getSessionId()).append("\n");
-        sb.append("- **Nickname**: ").append(domainChat.getNickname()).append("\n");
-        sb.append("- **Display Name**: ").append(domainChat.getDisplayName()).append("\n");
-        sb.append("- **Selected Model**: ").append(domainChat.getSelectedModel() != null ? domainChat.getSelectedModel().getModelId() : "None").append("\n");
-        sb.append("- **Summary**: ").append(domainChat.getConversationSummary() != null ? domainChat.getConversationSummary() : "N/A").append("\n");
+        sb.append("- **Nickname**: ").append(domainAgi.getNickname()).append("\n");
+        sb.append("- **Display Name**: ").append(domainAgi.getDisplayName()).append("\n");
+        sb.append("- **Selected Model**: ").append(domainAgi.getSelectedModel() != null ? domainAgi.getSelectedModel().getModelId() : "None").append("\n");
+        sb.append("- **Summary**: ").append(domainAgi.getConversationSummary() != null ? domainAgi.getConversationSummary() : "N/A").append("\n");
         sb.append("- **Expand Thoughts**: ").append(config.isExpandThoughts()).append(config.isExpandThoughts() ? " (user's ui expands the thought parts with your reasoning when a new part arrives)" : "(**reasonig not showing**)\n");
-        sb.append("- **Total Messages**: ").append(domainChat.getContextManager().getHistory().size()).append("\n");
-        sb.append("- **Context Usage**: ").append(String.format("%.1f%%", domainChat.getContextWindowUsage() * 100))
-          .append(" (").append(domainChat.getLastTotalTokenCount()).append(" / ").append(config.getTokenThreshold()).append(" tokens)\n");
+        sb.append("- **Total Messages**: ").append(domainAgi.getContextManager().getHistory().size()).append("\n");
+        sb.append("- **Context Usage**: ").append(String.format("%.1f%%", domainAgi.getContextWindowUsage() * 100))
+          .append(" (").append(domainAgi.getLastTotalTokenCount()).append(" / ").append(config.getTokenThreshold()).append(" tokens)\n");
         
         sb.append("\n### Default Max Depth Policies:\n");
         sb.append("- **Text Parts**: ").append(config.getDefaultTextPartMaxDepth()).append("\n");
@@ -206,8 +206,8 @@ public class Session extends AnahataToolkit {
         sb.append("- **Local Java Tools**: ").append(config.isLocalToolsEnabled() ? "ENABLED" : "DISABLED").append("\n");
         sb.append("- **Hosted Server Tools**: ").append(config.isHostedToolsEnabled() ? "ENABLED" : "DISABLED").append("\n");
 
-        if (!config.isHostedToolsEnabled() && domainChat.getSelectedModel() != null) {
-            List<ServerTool> serverTools = domainChat.getSelectedModel().getAvailableServerTools();
+        if (!config.isHostedToolsEnabled() && domainAgi.getSelectedModel() != null) {
+            List<ServerTool> serverTools = domainAgi.getSelectedModel().getAvailableServerTools();
             if (!serverTools.isEmpty()) {
                 sb.append("\n#### Available Server Tools (Currently Disabled):\n");
                 sb.append("The following tools are available but cannot be used while Local Tools are enabled. " +
@@ -218,7 +218,7 @@ public class Session extends AnahataToolkit {
             }
         }
 
-        List<AbstractToolCall<?, ?>> executing = domainChat.getToolManager().getExecutingCalls();
+        List<AbstractToolCall<?, ?>> executing = domainAgi.getToolManager().getExecutingCalls();
         if (!executing.isEmpty()) {
             sb.append("\n- **Executing Tools**: ");
             sb.append(executing.stream()

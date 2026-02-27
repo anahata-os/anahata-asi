@@ -3,7 +3,7 @@ package uno.anahata.asi.model.core;
 
 import java.util.ArrayList;
 import java.util.List;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 
 /**
  * A specialized UserMessage that represents just-in-time, ephemeral context
@@ -19,16 +19,16 @@ public class RagMessage extends UserMessage {
 
     /**
      * Constructs a new RagMessage.
-     * @param chat The parent chat session.
+     * @param agi The parent agi session.
      */
-    public RagMessage(Chat chat) {
-        super(chat);
+    public RagMessage(Agi agi) {
+        super(agi);
     }
     
     /**
      * Overrides the default pruning logic to declare that this message is
      * ephemeral and should never be pruned. This is the key to preventing
-     * the pruning system from trying to access the (null) Chat context
+     * the pruning system from trying to access the (null) Agi context
      * of this non-history message.
      *
      * @return Always {@code false}.

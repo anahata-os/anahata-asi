@@ -6,8 +6,8 @@ import java.util.Objects;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
-import uno.anahata.asi.chat.Chat;
-import uno.anahata.asi.chat.ChatConfig;
+import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.internal.TextUtils;
 
 /**
@@ -22,7 +22,7 @@ import uno.anahata.asi.internal.TextUtils;
 public abstract class AbstractPart extends BasicPropertyChangeSource {
     
     /**
-     * A unique, sequential identifier assigned to this part when it is added to a chat.
+     * A unique, sequential identifier assigned to this part when it is added to a agi.
      */
     private long sequentialId;
 
@@ -222,22 +222,22 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
     protected abstract int getDefaultMaxDepth();
 
     /**
-     * Gets the parent chat session.
+     * Gets the parent agi session.
      * 
-     * @return The chat session, or null if not attached to a message.
+     * @return The agi session, or null if not attached to a message.
      */
-    public Chat getChat() {
-        return message != null ? message.getChat() : null;
+    public Agi getAgi() {
+        return message != null ? message.getAgi() : null;
     }
 
     /**
-     * Gets the chat configuration.
+     * Gets the agi configuration.
      * 
-     * @return The chat configuration, or null if not attached to a chat.
+     * @return The agi configuration, or null if not attached to a agi.
      */
-    public ChatConfig getChatConfig() {
-        Chat chat = getChat();
-        return chat != null ? chat.getConfig() : null;
+    public AgiConfig getAgiConfig() {
+        Agi agi = getAgi();
+        return agi != null ? agi.getConfig() : null;
     }
 
     /**

@@ -16,15 +16,15 @@ import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.chat.Chat;
-import uno.anahata.asi.swing.chat.ChatPanel;
-import uno.anahata.asi.swing.chat.AsiSwitcherContainerPanel;
-import uno.anahata.asi.swing.chat.SessionController;
+import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.AsiSwitcherContainerPanel;
+import uno.anahata.asi.swing.agi.SessionController;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 
 /**
- * The main container for the Anahata AI Swing UI, managing multiple chat sessions.
- * It provides a session list and a tabbed area for active chats.
+ * The main container for the Anahata AI Swing UI, managing multiple agi sessions.
+ * It provides a session list and a tabbed area for active agis.
  * 
  * @author gemini-3-flash-preview
  */
@@ -37,10 +37,10 @@ public class StandaloneMainPanel extends JPanel implements SessionController {
     /** The sidebar panel for switching between active sessions. */
     private final AsiSwitcherContainerPanel asiContainerPanel;
     
-    /** The central tabbed pane for displaying active chat conversations. */
+    /** The central tabbed pane for displaying active agi conversations. */
     private final JTabbedPane tabbedPane;
     
-    /** The listener for changes in the container's active chats list. */
+    /** The listener for changes in the container's active agis list. */
     private final EdtPropertyChangeListener asiListener;
 
     /**
@@ -63,8 +63,8 @@ public class StandaloneMainPanel extends JPanel implements SessionController {
         tabbedPane.putClientProperty("JTabbedPane.tabClosable", true);
         tabbedPane.putClientProperty("JTabbedPane.tabCloseCallback", (BiConsumer<JTabbedPane, Integer>) (tabPane, tabIndex) -> {
             Component comp = tabPane.getComponentAt(tabIndex);
-            if (comp instanceof ChatPanel chatPanel) {
-                close(chatPanel.getChat());
+            if (comp instanceof AgiPanel agiPanel) {
+                close(agiPanel.getAgi());
             }
         });
 
@@ -73,12 +73,12 @@ public class StandaloneMainPanel extends JPanel implements SessionController {
         splitPane.setOneTouchExpandable(true);
         add(splitPane, BorderLayout.CENTER);
         
-        this.asiListener = new EdtPropertyChangeListener(this, container, "activeChats", this::handleAsiChange);
+        this.asiListener = new EdtPropertyChangeListener(this, container, "activeAgis", this::handleAsiChange);
     }
 
     /**
      * Starts the background refresh of the session list and loads persisted sessions.
-     * If no sessions are loaded, a new empty chat is created.
+     * If no sessions are loaded, a new empty agi is created.
      */
     public void start() {
         asiContainerPanel.startRefresh();
@@ -86,14 +86,14 @@ public class StandaloneMainPanel extends JPanel implements SessionController {
         // Load persisted sessions from disk
         asiContainer.loadSessions();
         
-        List<Chat> activeChats = asiContainer.getActiveChats();
-        if (activeChats.isEmpty()) {
-            log.info("No active sessions found. Creating a new empty chat.");
+        List<Agi> activeAgis = asiContainer.getActiveAgis();
+        if (activeAgis.isEmpty()) {
+            log.info("No active sessions found. Creating a new empty agi.");
             createNew();
         } else {
-            // Sync existing chats - use a copy to avoid ConcurrentModificationException
-            for (Chat chat : new ArrayList<>(activeChats)) {
-                focus(chat);
+            // Sync existing agis - use a copy to avoid ConcurrentModificationException
+            for (Agi agi : new ArrayList<>(activeAgis)) {
+                focus(agi);
             }
         }
     }
@@ -101,16 +101,16 @@ public class StandaloneMainPanel extends JPanel implements SessionController {
     /**
      * {@inheritDoc}
      * <p>
-     * Ensures the chat has a corresponding tab and selects it.
+     * Ensures the agi has a corresponding tab and selects it.
      * 
-     * @param chat The chat session to focus.
+     * @param agi The agi session to focus.
      */
     @Override
-    public void focus(@NonNull Chat chat) {
-        String id = chat.getConfig().getSessionId();
+    public void focus(@NonNull Agi agi) {
+        String id = agi.getConfig().getSessionId();
         log.info("Focusing session: {}", id);
         
-        // Check if we already have a tab for this chat
+        // Check if we already have a tab for this agi
         int tabIndex = -1;
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
             Component comp = tabbedPane.getTabCount() > i ? tabbedPane.getComponentAt(i) : null;
@@ -122,16 +122,16 @@ public class StandaloneMainPanel extends JPanel implements SessionController {
 
         if (tabIndex == -1) {
             log.info("Creating new tab for session: {}", id);
-            // Use the existing chat instance instead of creating a new one
-            ChatPanel panel = new ChatPanel(chat);
+            // Use the existing agi instance instead of creating a new one
+            AgiPanel panel = new AgiPanel(agi);
             panel.setName(id);
             panel.initComponents();
             
-            tabbedPane.addTab(chat.getDisplayName(), panel);
+            tabbedPane.addTab(agi.getDisplayName(), panel);
             tabIndex = tabbedPane.getTabCount() - 1;
             
             // Listen for nickname changes to update the tab title
-            new EdtPropertyChangeListener(this, chat, "nickname", this::handleNicknameChange);
+            new EdtPropertyChangeListener(this, agi, "nickname", this::handleNicknameChange);
         }
 
         tabbedPane.setSelectedIndex(tabIndex);
@@ -140,18 +140,18 @@ public class StandaloneMainPanel extends JPanel implements SessionController {
     /**
      * {@inheritDoc}
      * <p>
-     * Removes the tab associated with the chat session.
+     * Removes the tab associated with the agi session.
      * 
-     * @param chat The chat session to close.
+     * @param agi The agi session to close.
      */
     @Override
-    public void close(@NonNull Chat chat) {
-        String id = chat.getConfig().getSessionId();
+    public void close(@NonNull Agi agi) {
+        String id = agi.getConfig().getSessionId();
         log.info("Closing tab for session: {}", id);
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
             if (id.equals(tabbedPane.getComponentAt(i).getName())) {
                 tabbedPane.removeTabAt(i);
-                // EdtPropertyChangeListener will be GC'd as it's not strongly held by the chat
+                // EdtPropertyChangeListener will be GC'd as it's not strongly held by the agi
                 break;
             }
         }
@@ -162,37 +162,37 @@ public class StandaloneMainPanel extends JPanel implements SessionController {
      * <p>
      * Closes the tab and delegates the permanent disposal of the session to the container.
      * 
-     * @param chat The chat session to dispose.
+     * @param agi The agi session to dispose.
      */
     @Override
-    public void dispose(@NonNull Chat chat) {
-        log.info("Disposing session: {}", chat.getConfig().getSessionId());
-        close(chat);
-        asiContainer.dispose(chat);
+    public void dispose(@NonNull Agi agi) {
+        log.info("Disposing session: {}", agi.getConfig().getSessionId());
+        close(agi);
+        asiContainer.dispose(agi);
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * Creates a new {@link Chat} with a {@link StandaloneChatConfig} and focuses it.
+     * Creates a new {@link Agi} with a {@link StandaloneAgiConfig} and focuses it.
      */
     @Override
     public void createNew() {
         log.info("Creating new session...");
-        // Chat constructor registers itself in AsiContainer, which triggers property change
-        Chat chat = new Chat(new StandaloneChatConfig(asiContainer));
-        focus(chat);
+        // Agi constructor registers itself in AsiContainer, which triggers property change
+        Agi agi = new Agi(new StandaloneAgiConfig(asiContainer));
+        focus(agi);
     }
 
     /**
-     * Handles updates to a chat's nickname by updating the corresponding tab title.
+     * Handles updates to a agi's nickname by updating the corresponding tab title.
      * 
      * @param evt The property change event for "nickname".
      */
     private void handleNicknameChange(PropertyChangeEvent evt) {
-        Chat chat = (Chat) evt.getSource();
-        String id = chat.getConfig().getSessionId();
-        String newDisplayName = chat.getDisplayName();
+        Agi agi = (Agi) evt.getSource();
+        String id = agi.getConfig().getSessionId();
+        String newDisplayName = agi.getDisplayName();
         
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
             if (id.equals(tabbedPane.getComponentAt(i).getName())) {
@@ -203,28 +203,28 @@ public class StandaloneMainPanel extends JPanel implements SessionController {
     }
 
     /**
-     * Handles changes to the container's active chats list, syncing the UI tabs.
+     * Handles changes to the container's active agis list, syncing the UI tabs.
      * 
-     * @param evt The property change event for "activeChats".
+     * @param evt The property change event for "activeAgis".
      */
     private void handleAsiChange(PropertyChangeEvent evt) {
-        List<Chat> oldList = (List<Chat>) evt.getOldValue();
-        List<Chat> newList = (List<Chat>) evt.getNewValue();
+        List<Agi> oldList = (List<Agi>) evt.getOldValue();
+        List<Agi> newList = (List<Agi>) evt.getNewValue();
         
         // Handle additions
         if (newList != null) {
-            for (Chat chat : new ArrayList<>(newList)) {
-                if (oldList == null || !oldList.contains(chat)) {
-                    focus(chat);
+            for (Agi agi : new ArrayList<>(newList)) {
+                if (oldList == null || !oldList.contains(agi)) {
+                    focus(agi);
                 }
             }
         }
         
         // Handle removals
         if (oldList != null) {
-            for (Chat chat : new ArrayList<>(oldList)) {
-                if (newList == null || !newList.contains(chat)) {
-                    close(chat);
+            for (Agi agi : new ArrayList<>(oldList)) {
+                if (newList == null || !newList.contains(agi)) {
+                    close(agi);
                 }
             }
         }

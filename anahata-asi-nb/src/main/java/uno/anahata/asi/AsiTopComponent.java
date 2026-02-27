@@ -9,9 +9,9 @@ import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager; 
-import uno.anahata.asi.chat.Chat;
-import uno.anahata.asi.swing.chat.AsiSwitcherContainerPanel;
-import uno.anahata.asi.swing.chat.SessionController;
+import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.swing.agi.AsiSwitcherContainerPanel;
+import uno.anahata.asi.swing.agi.SessionController;
 
 /**
  * A TopComponent that displays a list of all active Anahata ASI sessions.
@@ -25,7 +25,7 @@ import uno.anahata.asi.swing.chat.SessionController;
 @ActionID(category = "Window", id = "uno.anahata.asi.OpenAsiTopComponent")
 @ActionReference(path = "Menu/Window", position = 101)
 @TopComponent.OpenActionRegistration(
-        displayName = "ASI Sessions",
+        displayName = "Super Intelligence",
         preferredID = "AsiTopComponent"
 )
 @Slf4j
@@ -55,11 +55,11 @@ public class AsiTopComponent extends TopComponent implements SessionController {
     }
 
     @Override
-    public void focus(@NonNull Chat chat) {
+    public void focus(@NonNull Agi agi) {
         Set<TopComponent> opened = WindowManager.getDefault().getRegistry().getOpened();
         for (TopComponent tc : opened) {
             if (tc instanceof AgiTopComponent atc) {
-                if (atc.getChat() == chat) {
+                if (atc.getAgi() == agi) {
                     atc.open();
                     atc.requestActive();
                     return;
@@ -68,17 +68,17 @@ public class AsiTopComponent extends TopComponent implements SessionController {
         }
         
         // If not found, open a new one for this session
-        AgiTopComponent tc = new AgiTopComponent(chat);
+        AgiTopComponent tc = new AgiTopComponent(agi);
         tc.open();
         tc.requestActive();
     }
 
     @Override
-    public void close(@NonNull Chat chat) {
+    public void close(@NonNull Agi agi) {
         Set<TopComponent> opened = WindowManager.getDefault().getRegistry().getOpened();
         for (TopComponent tc : opened) {
             if (tc instanceof AgiTopComponent atc) {
-                if (atc.getChat() == chat) {
+                if (atc.getAgi() == agi) {
                     atc.close();
                     return;
                 }
@@ -87,9 +87,9 @@ public class AsiTopComponent extends TopComponent implements SessionController {
     }
 
     @Override
-    public void dispose(@NonNull Chat chat) {
-        close(chat);
-        AnahataInstaller.getContainer().dispose(chat);
+    public void dispose(@NonNull Agi agi) {
+        close(agi);
+        AnahataInstaller.getContainer().dispose(agi);
     }
 
     @Override

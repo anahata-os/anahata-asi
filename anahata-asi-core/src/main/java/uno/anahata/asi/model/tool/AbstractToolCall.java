@@ -188,7 +188,7 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
         if (toolMaxDepth != -1) {
             return toolMaxDepth;
         }
-        return getChatConfig().getDefaultToolMaxDepth();
+        return getAgiConfig().getDefaultToolMaxDepth();
     }
 
     /**

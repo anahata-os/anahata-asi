@@ -17,12 +17,12 @@ import org.openide.filesystems.FileSystem;
 import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
 import uno.anahata.asi.AnahataInstaller;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.model.resource.AbstractPathResource;
 
 /**
  * Stateless utility class containing the core logic for adding and removing 
- * NetBeans FileObjects to/from an AI chat context.
+ * NetBeans FileObjects to/from an AI agi context.
  * <p>
  * It automatically handles both text and binary (multimodal) resources based 
  * on the file's capabilities (cookies) and MIME type.
@@ -35,19 +35,19 @@ public class FilesContextActionLogic {
     private static final Logger LOG = Logger.getLogger(FilesContextActionLogic.class.getName());
 
     /**
-     * Adds a file or folder's contents to the specified chat context.
+     * Adds a file or folder's contents to the specified agi context.
      * 
      * @param fo The file object to add.
-     * @param targetChat The target chat session.
+     * @param targetAgi The target agi session.
      * @param recursive Whether to add subfolders recursively.
      */
-    public static void addRecursively(FileObject fo, Chat targetChat, boolean recursive) {
+    public static void addRecursively(FileObject fo, Agi targetAgi, boolean recursive) {
         if (fo.isData()) {
             try {
                 File file = FileUtil.toFile(fo);
                 if (file != null) {
                     String path = file.getAbsolutePath();
-                    if (targetChat.getResourceManager().findByPath(path).isEmpty()) {
+                    if (targetAgi.getResourceManager().findByPath(path).isEmpty()) {
                         DataObject dobj = DataObject.find(fo);
                         AbstractPathResource<?> resource;
                         
@@ -56,9 +56,9 @@ public class FilesContextActionLogic {
                                          || dobj.getLookup().lookup(LineCookie.class) != null;
 
                         if (isTextual) {
-                            resource = new NbTextFileResource(targetChat.getResourceManager(), fo);
+                            resource = new NbTextFileResource(targetAgi.getResourceManager(), fo);
                         } else {
-                            resource = new NbBinaryFileResource(targetChat.getResourceManager(), fo);
+                            resource = new NbBinaryFileResource(targetAgi.getResourceManager(), fo);
                             LOG.log(Level.INFO, "Detected binary/multimodal file ({0}): {1}", new Object[]{fo.getMIMEType(), path});
                         }
                         
@@ -67,8 +67,8 @@ public class FilesContextActionLogic {
                         String ext = fo.getExt();
                         resource.setIconId("nb.file." + (ext.isEmpty() ? "unknown" : ext));
                         
-                        targetChat.getResourceManager().register(resource);
-                        LOG.log(Level.INFO, "Added file to context of session ''{0}'': {1}", new Object[]{targetChat.getDisplayName(), path});
+                        targetAgi.getResourceManager().register(resource);
+                        LOG.log(Level.INFO, "Added file to context of session ''{0}'': {1}", new Object[]{targetAgi.getDisplayName(), path});
                         fireRefreshRecursive(fo);
                     }
                 }
@@ -78,64 +78,64 @@ public class FilesContextActionLogic {
         } else if (fo.isFolder()) {
             for (FileObject child : fo.getChildren()) {
                 if (child.isData() || recursive) {
-                    addRecursively(child, targetChat, recursive);
+                    addRecursively(child, targetAgi, recursive);
                 }
             }
         }
     }
 
     /**
-     * Removes a file or folder's contents from the specified chat context.
+     * Removes a file or folder's contents from the specified agi context.
      * 
      * @param fo The file object to remove.
-     * @param targetChat The target chat session.
+     * @param targetAgi The target agi session.
      * @param recursive Whether to remove subfolders recursively.
      */
-    public static void removeRecursively(FileObject fo, Chat targetChat, boolean recursive) {
+    public static void removeRecursively(FileObject fo, Agi targetAgi, boolean recursive) {
         if (fo.isData()) {
             File file = FileUtil.toFile(fo);
             if (file != null) {
                 String path = file.getAbsolutePath();
-                targetChat.getResourceManager().findByPath(path).ifPresent(res -> {
-                    targetChat.getResourceManager().unregister(res.getId());
-                    LOG.log(Level.INFO, "Removed file from context of session ''{0}'': {1}", new Object[]{targetChat.getDisplayName(), path});
+                targetAgi.getResourceManager().findByPath(path).ifPresent(res -> {
+                    targetAgi.getResourceManager().unregister(res.getId());
+                    LOG.log(Level.INFO, "Removed file from context of session ''{0}'': {1}", new Object[]{targetAgi.getDisplayName(), path});
                     fireRefreshRecursive(fo);
                 });
             }
         } else if (fo.isFolder()) {
             for (FileObject child : fo.getChildren()) {
                 if (child.isData() || recursive) {
-                    removeRecursively(child, targetChat, recursive);
+                    removeRecursively(child, targetAgi, recursive);
                 }
             }
         }
     }
 
     /**
-     * Checks if the given file is currently in the target chat's context.
+     * Checks if the given file is currently in the target agi's context.
      * 
      * @param fo The file object to check.
-     * @param chat The chat session to check against.
+     * @param agi The agi session to check against.
      * @return {@code true} if the file is in the context.
      */
-    public static boolean isInContext(FileObject fo, Chat chat) {
+    public static boolean isInContext(FileObject fo, Agi agi) {
         if (fo.isData()) {
             File file = FileUtil.toFile(fo);
-            return file != null && chat.getResourceManager().findByPath(file.getAbsolutePath()).isPresent();
+            return file != null && agi.getResourceManager().findByPath(file.getAbsolutePath()).isPresent();
         }
         return false;
     }
 
     /**
-     * Counts how many active chat sessions have the given file in their context.
+     * Counts how many active agi sessions have the given file in their context.
      * 
      * @param fo The file object to check.
-     * @return The number of chats containing the file.
+     * @return The number of agis containing the file.
      */
-    public static int countChatsInContext(FileObject fo) {
+    public static int countAgisInContext(FileObject fo) {
         int count = 0;
-        for (Chat chat : AnahataInstaller.getContainer().getActiveChats()) {
-            if (isInContext(fo, chat)) {
+        for (Agi agi : AnahataInstaller.getContainer().getActiveAgis()) {
+            if (isInContext(fo, agi)) {
                 count++;
             }
         }
@@ -143,34 +143,34 @@ public class FilesContextActionLogic {
     }
 
     /**
-     * Returns a map of chat sessions and the number of files they have in context 
+     * Returns a map of agi sessions and the number of files they have in context 
      * within the given folder (or 1 if it's a single file).
-     * The map is sorted by chat display name for consistent UI rendering.
+     * The map is sorted by agi display name for consistent UI rendering.
      * 
      * @param fo The file or folder to check.
      * @param recursive Whether to count files in subfolders.
-     * @return A sorted map of Chat to file count.
+     * @return A sorted map of Agi to file count.
      */
-    public static Map<Chat, Integer> getSessionFileCounts(FileObject fo, boolean recursive) {
-        Map<Chat, Integer> counts = new TreeMap<>((c1, c2) -> c1.getDisplayName().compareTo(c2.getDisplayName()));
-        for (Chat chat : AnahataInstaller.getContainer().getActiveChats()) {
-            int count = countFilesInContext(fo, chat, recursive);
+    public static Map<Agi, Integer> getSessionFileCounts(FileObject fo, boolean recursive) {
+        Map<Agi, Integer> counts = new TreeMap<>((c1, c2) -> c1.getDisplayName().compareTo(c2.getDisplayName()));
+        for (Agi agi : AnahataInstaller.getContainer().getActiveAgis()) {
+            int count = countFilesInContext(fo, agi, recursive);
             if (count > 0) {
-                counts.put(chat, count);
+                counts.put(agi, count);
             }
         }
         return counts;
     }
 
     /**
-     * Counts the number of files in context for a specific chat within a folder.
+     * Counts the number of files in context for a specific agi within a folder.
      * 
      * @param fo The file or folder to check.
-     * @param chat The chat session.
+     * @param agi The agi session.
      * @param recursive Whether to count files in subfolders.
      * @return The file count.
      */
-    private static int countFilesInContext(FileObject fo, Chat chat, boolean recursive) {
+    private static int countFilesInContext(FileObject fo, Agi agi, boolean recursive) {
         File file = FileUtil.toFile(fo);
         if (file == null) {
             return 0;
@@ -178,13 +178,13 @@ public class FilesContextActionLogic {
         String absolutePath = file.getAbsolutePath();
 
         if (fo.isData()) {
-            return chat.getResourceManager().findByPath(absolutePath).isPresent() ? 1 : 0;
+            return agi.getResourceManager().findByPath(absolutePath).isPresent() ? 1 : 0;
         }
 
         // Folder logic: path-based counting using registered resources
         String folderPrefix = absolutePath.endsWith(File.separator) ? absolutePath : absolutePath + File.separator;
 
-        return (int) chat.getResourceManager().getResources().stream()
+        return (int) agi.getResourceManager().getResources().stream()
                 .filter(r -> r instanceof AbstractPathResource)
                 .map(r -> (AbstractPathResource<?>) r)
                 .filter(r -> {

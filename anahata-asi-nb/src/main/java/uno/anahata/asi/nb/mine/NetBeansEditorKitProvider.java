@@ -8,7 +8,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.text.EditorKit;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
-import uno.anahata.asi.swing.chat.render.editorkit.EditorKitProvider;
+import uno.anahata.asi.swing.agi.render.editorkit.EditorKitProvider;
 
 /**
  * NetBeans-specific implementation of EditorKitProvider.

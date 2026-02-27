@@ -129,7 +129,7 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         int effective = getEffectiveMaxDepth();
         String source = "tool";
         if (ret == -1) {
-            source = (toolkit.getDefaultMaxDepth() == -1) ? "chat config" : "toolkit";
+            source = (toolkit.getDefaultMaxDepth() == -1) ? "agi config" : "toolkit";
         }
         sb.append("\nEffective Max Depth: ").append(effective).append(" (inherited from ").append(source).append(")");
         

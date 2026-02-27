@@ -11,7 +11,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.context.ContextPosition;
 import uno.anahata.asi.model.core.AbstractPart;
@@ -47,7 +47,7 @@ public abstract class AbstractResource<R, C> extends BasicPropertyChangeSource i
 
     /** 
      * The manager that owns this resource. 
-     * Every resource must be associated with a manager to access the chat context.
+     * Every resource must be associated with a manager to access the agi context.
      */
     @NonNull
     @JsonIgnore
@@ -87,12 +87,12 @@ public abstract class AbstractResource<R, C> extends BasicPropertyChangeSource i
     }
 
     /**
-     * Gets the parent chat session for this resource.
-     * @return The chat session.
+     * Gets the parent agi session for this resource.
+     * @return The agi session.
      */
     @JsonIgnore
-    public Chat getChat() {
-        return resourceManager.getChat();
+    public Agi getAgi() {
+        return resourceManager.getAgi();
     }
 
     /**

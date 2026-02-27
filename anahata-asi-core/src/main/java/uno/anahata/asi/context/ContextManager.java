@@ -14,7 +14,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.context.provider.CoreContextProvider;
 import uno.anahata.asi.model.core.AbstractMessage;
 import uno.anahata.asi.model.core.AbstractModelMessage;
@@ -27,7 +27,7 @@ import uno.anahata.asi.resource.ResourceManager;
 import uno.anahata.asi.tool.ToolManager;
 
 /**
- * The definitive manager for a chat session's context in the V2 architecture.
+ * The definitive manager for a agi session's context in the V2 architecture.
  * This class owns the conversation history and orchestrates the hybrid context
  * assembly process, combining the V2 dynamic history with the hierarchical
  * provider model.
@@ -39,9 +39,9 @@ import uno.anahata.asi.tool.ToolManager;
 public class ContextManager extends BasicPropertyChangeSource implements Rebindable {
 
     /**
-     * The parent chat session.
+     * The parent agi session.
      */
-    private final Chat chat;
+    private final Agi agi;
 
     /**
      * The canonical conversation history. Uses CopyOnWriteArrayList to allow 
@@ -74,10 +74,10 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
     /**
      * Constructs a new ContextManager.
      *
-     * @param chat The parent chat session.
+     * @param agi The parent agi session.
      */
-    public ContextManager(@NonNull Chat chat) {
-        this.chat = chat;
+    public ContextManager(@NonNull Agi agi) {
+        this.agi = agi;
     }
 
     /**
@@ -85,8 +85,8 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
      */
     public void init() {
         registerContextProvider(new CoreContextProvider());
-        registerContextProvider(chat.getToolManager());
-        registerContextProvider(chat.getResourceManager());
+        registerContextProvider(agi.getToolManager());
+        registerContextProvider(agi.getResourceManager());
     }
 
     /**
@@ -97,7 +97,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
         history.clear();
         messageIdCounter.set(0);
         partIdCounter.set(0);
-        log.info("ContextManager cleared for session {}", chat.getConfig().getSessionId());
+        log.info("ContextManager cleared for session {}", agi.getConfig().getSessionId());
         propertyChangeSupport.firePropertyChange("history", null, history);
     }
 
@@ -150,7 +150,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
 
         log.info("Built visible history with {} messages (total history: {})", visibleHistory.size(), history.size());
 
-        RagMessage augmentedMessage = new RagMessage(chat);
+        RagMessage augmentedMessage = new RagMessage(agi);
         augmentedMessage.addTextPart("--- RAG message ---\n"
                 + "The following is high-salience, just-in-time context provided by the host environment for this turn. "
                 + "It is dynamically generated and populated by enabled context providers. "
@@ -179,7 +179,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
     }
 
     /**
-     * The definitive method for adding any message to the chat history.
+     * The definitive method for adding any message to the agi history.
      *
      * @param message The message to add.
      */
@@ -240,7 +240,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
     }
 
     /**
-     * Performs a hard prune on the entire chat history. 
+     * Performs a hard prune on the entire agi history. 
      * This implementing the Atomic Message model: messages stay structurally 
      * intact until all their parts are collectable. Heavy parts (Blobs/Thoughts) 
      * are surgically removed when they expire.
@@ -274,7 +274,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
      * @return The total token count.
      */
     public int getTotalTokenCount() {
-        return chat.getLastTotalTokenCount();
+        return agi.getLastTotalTokenCount();
     }
 
     /**
@@ -283,7 +283,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
      * @return The token threshold.
      */
     public int getTokenThreshold() {
-        return chat.getConfig().getTokenThreshold();
+        return agi.getConfig().getTokenThreshold();
     }
 
     /**
@@ -292,7 +292,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
     @Override
     public void rebind() {
         super.rebind();
-        log.info("Rebinding ContextManager for session: {}", chat.getConfig().getSessionId());
+        log.info("Rebinding ContextManager for session: {}", agi.getConfig().getSessionId());
 
         boolean hasCore = false;
         boolean hasTools = false;
@@ -314,10 +314,10 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
             registerContextProvider(new CoreContextProvider());
         }
         if (!hasTools) {
-            registerContextProvider(chat.getToolManager());
+            registerContextProvider(agi.getToolManager());
         }
         if (!hasResources) {
-            registerContextProvider(chat.getResourceManager());
+            registerContextProvider(agi.getResourceManager());
         }
     }
 }

@@ -9,11 +9,11 @@ import java.util.List;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 
 /**
- * Manages and broadcasts the real-time status of the chat session.
+ * Manages and broadcasts the real-time status of the agi session.
  * This class leverages PropertyChangeSupport to provide reactive updates
  * to the UI.
  *
@@ -23,16 +23,16 @@ import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 @Getter
 public class StatusManager extends BasicPropertyChangeSource {
 
-    private final Chat chat;
+    private final Agi agi;
     private final List<ApiErrorRecord> apiErrors = new ArrayList<>();
 
-    private ChatStatus currentStatus = ChatStatus.IDLE; 
+    private AgiStatus currentStatus = AgiStatus.IDLE; 
     private long statusChangeTime = System.currentTimeMillis();
     private long lastOperationDuration;
     private long currentBackoffAmount; 
 
-    public StatusManager(@NonNull Chat chat) {
-        this.chat = chat;
+    public StatusManager(@NonNull Agi agi) {
+        this.agi = agi;
     }
 
     /**
@@ -40,7 +40,7 @@ public class StatusManager extends BasicPropertyChangeSource {
      *
      * @param newStatus The new status.
      */
-    public void fireStatusChanged(ChatStatus newStatus) {
+    public void fireStatusChanged(AgiStatus newStatus) {
         fireStatusChanged(newStatus, null);
     }
 
@@ -50,8 +50,8 @@ public class StatusManager extends BasicPropertyChangeSource {
      * @param newStatus The new status.
      * @param detailMessage A detail message (e.g., for tool execution).
      */
-    public void fireStatusChanged(ChatStatus newStatus, String detailMessage) {
-        ChatStatus oldStatus = this.currentStatus;
+    public void fireStatusChanged(AgiStatus newStatus, String detailMessage) {
+        AgiStatus oldStatus = this.currentStatus;
 
         if (this.currentStatus != newStatus) {
             log.info("Status changed from {} to {}", this.currentStatus, newStatus);
@@ -59,7 +59,7 @@ public class StatusManager extends BasicPropertyChangeSource {
             this.statusChangeTime = System.currentTimeMillis();
         }
 
-        if (newStatus == ChatStatus.IDLE) { 
+        if (newStatus == AgiStatus.IDLE) { 
             this.lastOperationDuration = System.currentTimeMillis() - statusChangeTime;
         } else {
             this.lastOperationDuration = 0;
@@ -70,13 +70,13 @@ public class StatusManager extends BasicPropertyChangeSource {
     }
 
     /**
-     * Records an API error and sets the chat status.
+     * Records an API error and sets the agi status.
      *
      * @param errorRecord The ApiErrorRecord to record.
-     * @param status The new chat status to set.
+     * @param status The new agi status to set.
      * @param detailMessage A detail message for the status change.
      */
-    public void fireApiError(ApiErrorRecord errorRecord, ChatStatus status, String detailMessage) {
+    public void fireApiError(ApiErrorRecord errorRecord, AgiStatus status, String detailMessage) {
         apiErrors.add(errorRecord);
         this.currentBackoffAmount = errorRecord.getBackoffAmount(); 
         fireStatusChanged(status, detailMessage);
@@ -103,7 +103,7 @@ public class StatusManager extends BasicPropertyChangeSource {
      * Resets the status manager to its initial state.
      */
     public void reset() {
-        this.currentStatus = ChatStatus.IDLE; 
+        this.currentStatus = AgiStatus.IDLE; 
         this.statusChangeTime = System.currentTimeMillis();
         this.lastOperationDuration = 0;
         this.apiErrors.clear();

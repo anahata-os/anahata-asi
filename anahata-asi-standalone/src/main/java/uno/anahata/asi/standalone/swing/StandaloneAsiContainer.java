@@ -5,7 +5,7 @@ package uno.anahata.asi.standalone.swing;
 
 import java.io.File;
 import uno.anahata.asi.AsiContainer;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.cli.CommandLineArgs;
 import uno.anahata.asi.model.resource.AbstractPathResource;
 import uno.anahata.asi.model.resource.AbstractResource;
@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * A specialized {@link AsiContainer} for the standalone Swing application.
  * It handles the storage and parsing of command-line arguments to configure
- * initial chat sessions.
+ * initial agi sessions.
  * 
  * @author anahata
  */
@@ -38,27 +38,27 @@ public class StandaloneAsiContainer extends AsiContainer {
      * {@inheritDoc}
      * <p>
      * In the standalone container, this hook is used to parse command-line 
-     * arguments and apply them to the newly created chat session.
+     * arguments and apply them to the newly created agi session.
      * </p>
      * 
-     * @param chat The newly created chat session.
+     * @param agi The newly created agi session.
      */
     @Override
-    public void onChatCreated(Chat chat) {
-        super.onChatCreated(chat);
-        log.info("Parsing command-line arguments for new standalone chat.");
-        CommandLineArgs.parse(chat, cmdLineArgs);
+    public void onAgiCreated(Agi agi) {
+        super.onAgiCreated(agi);
+        log.info("Parsing command-line arguments for new standalone agi.");
+        CommandLineArgs.parse(agi, cmdLineArgs);
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * Creates a new chat session using the {@link StandaloneChatConfig}.
+     * Creates a new agi session using the {@link StandaloneAgiConfig}.
      * </p>
      */
     @Override
-    public Chat createNewChat() {
-        return new Chat(new StandaloneChatConfig(this));
+    public Agi createNewAgi() {
+        return new Agi(new StandaloneAgiConfig(this));
     }
 
     /**

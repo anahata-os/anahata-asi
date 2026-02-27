@@ -13,7 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.model.tool.java.JavaMethodToolResponse;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolParam;
@@ -119,7 +119,7 @@ public class Shell extends AnahataToolkit {
             log("Could not get process id: " + e);
         }
 
-        ExecutorService executor = getChat().getExecutor();
+        ExecutorService executor = getAgi().getExecutor();
         JavaMethodToolResponse response = getResponse();
         
         Future<String> stdoutFuture = executor.submit(new StreamGobbler(response, process.getInputStream(), false));

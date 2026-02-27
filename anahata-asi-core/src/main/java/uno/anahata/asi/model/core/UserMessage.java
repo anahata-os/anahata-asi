@@ -2,7 +2,7 @@
 package uno.anahata.asi.model.core;
 
 import java.nio.file.Path;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.internal.TextUtils;
 
 /**
@@ -16,10 +16,10 @@ public class UserMessage extends AbstractMessage {
     /**
      * Constructs a new UserMessage.
      * 
-     * @param chat The parent chat session.
+     * @param agi The parent agi session.
      */
-    public UserMessage(Chat chat) {
-        super(chat);
+    public UserMessage(Agi agi) {
+        super(agi);
     }
     
     /** {@inheritDoc} */

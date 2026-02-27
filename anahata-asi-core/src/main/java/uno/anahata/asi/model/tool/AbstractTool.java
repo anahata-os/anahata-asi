@@ -68,7 +68,7 @@ public abstract class AbstractTool<P extends AbstractToolParameter, C extends Ab
             ret = toolkit.getDefaultMaxDepth();
         }
         if (ret == -1) {
-            ret = toolkit.getToolManager().getChat().getConfig().getDefaultToolMaxDepth();
+            ret = toolkit.getToolManager().getAgi().getConfig().getDefaultToolMaxDepth();
         }
         return ret;
     }

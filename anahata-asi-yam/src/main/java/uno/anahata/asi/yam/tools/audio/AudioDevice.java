@@ -28,7 +28,7 @@ public class AudioDevice {
     private String description;
     /** The type of device (INPUT or OUTPUT). */
     private Type type;
-    /** Whether this device is currently selected in the chat session. */
+    /** Whether this device is currently selected in the agi session. */
     private boolean isSelected;
 
     /**

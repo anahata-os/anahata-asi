@@ -52,7 +52,7 @@ public class Speech extends AnahataToolkit {
             throw new IllegalStateException("Speech failed: Voice '" + DEFAULT_VOICE + "' not found. Check your FreeTTS configuration.");
         }
 
-        String actualDeviceId = deviceId != null ? deviceId : getChat().getConfig().getSelectedOutputDeviceId();
+        String actualDeviceId = deviceId != null ? deviceId : getAgi().getConfig().getSelectedOutputDeviceId();
         Mixer.Info mixerInfo = AudioDevice.toMixerInfo(actualDeviceId);
         
         AudioPlayer audioPlayer = createAudioPlayer(mixerInfo);

@@ -56,7 +56,7 @@ public class ScrollablePanel extends JPanel implements Scrollable {
 
     @Override
     public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
-        return 24; // Optimized for faster scrolling in chat/context views
+        return 24; // Optimized for faster scrolling in agi/context views
     }
 
     @Override

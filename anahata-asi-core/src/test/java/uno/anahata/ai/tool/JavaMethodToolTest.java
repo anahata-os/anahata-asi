@@ -14,8 +14,8 @@ import org.junit.jupiter.api.Test;
 import uno.anahata.asi.AsiContainer;
 import uno.anahata.ai.tool.MockAsiContainer;
 import uno.anahata.asi.model.resource.AbstractResource;
-import uno.anahata.asi.chat.Chat;
-import uno.anahata.asi.chat.ChatConfig;
+import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.model.tool.java.JavaMethodTool;
 import uno.anahata.asi.model.tool.java.JavaMethodToolParameter;
 import uno.anahata.asi.tool.schema.SchemaProvider;
@@ -27,16 +27,16 @@ import uno.anahata.asi.tool.schema.SchemaProvider;
  */
 public class JavaMethodToolTest {
     private static final TypeReference<Map<String, Object>> MAP_TYPE_REF = new TypeReference<>() {};
-    private static Chat chat;
+    private static Agi agi;
     private static ToolManager toolManager;
 
     @BeforeAll
     public static void setUp() {
         AsiContainer container = new MockAsiContainer("test-app");
-        ChatConfig config = new ChatConfig(container, "test-session");
+        AgiConfig config = new AgiConfig(container, "test-session");
         config.getToolClasses().add(MockToolkit.class);
-        chat = new Chat(config);
-        toolManager = chat.getToolManager();
+        agi = new Agi(config);
+        toolManager = agi.getToolManager();
     }
 
     @Test

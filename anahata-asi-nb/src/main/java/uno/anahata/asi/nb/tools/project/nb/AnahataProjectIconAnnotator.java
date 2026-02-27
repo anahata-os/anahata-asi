@@ -21,7 +21,7 @@ import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.ServiceProvider;
 import uno.anahata.asi.AnahataInstaller;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.nb.tools.project.Projects;
 
@@ -68,13 +68,13 @@ public class AnahataProjectIconAnnotator implements ProjectIconAnnotator, Change
         String existingTooltip = ImageUtilities.getImageToolTip(icon);
         
         String projectPath = p.getProjectDirectory().getPath();
-        List<Chat> activeChats = AnahataInstaller.getContainer().getActiveChats();
+        List<Agi> activeAgis = AnahataInstaller.getContainer().getActiveAgis();
         
         List<String> tooltipLines = new ArrayList<>();
 
-        for (Chat chat : activeChats) {
+        for (Agi agi : activeAgis) {
             final int[] total = {0};
-            chat.getToolManager().getToolkitInstance(Projects.class).ifPresent(projectsTool -> {
+            agi.getToolManager().getToolkitInstance(Projects.class).ifPresent(projectsTool -> {
                 projectsTool.getProjectProvider(projectPath).ifPresent(pcp -> {
                     List<String> activeChildren = pcp.getChildrenProviders().stream()
                                 .filter(ContextProvider::isProviding)
@@ -85,10 +85,10 @@ public class AnahataProjectIconAnnotator implements ProjectIconAnnotator, Change
                     
                     // Round 10: In the Project node, we only count providers. 
                     // Root files are listed in the tooltip but don't bloat the main total.
-                    int fileCount = uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic.getSessionFileCounts(p.getProjectDirectory(), false).getOrDefault(chat, 0);
+                    int fileCount = uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic.getSessionFileCounts(p.getProjectDirectory(), false).getOrDefault(agi, 0);
                     
                     if (total[0] > 0 || fileCount > 0) {
-                        String line = "<b>" + chat.getDisplayName() + "</b> [" + total[0] + "]";
+                        String line = "<b>" + agi.getDisplayName() + "</b> [" + total[0] + "]";
                         if (!activeChildren.isEmpty()) {
                             line += ": " + String.join(", ", activeChildren);
                         }

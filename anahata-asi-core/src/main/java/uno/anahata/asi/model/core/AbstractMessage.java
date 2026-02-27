@@ -13,7 +13,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.apache.commons.lang3.Validate;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.internal.TimeUtils;
 
@@ -21,7 +21,7 @@ import uno.anahata.asi.internal.TimeUtils;
  * The abstract base class for all messages in a conversation, providing common
  * metadata and functionality for the rich, hierarchical V2 domain model. It
  * supports type-safe roles through its subclasses and ensures each message has
- * a unique identity, timestamp, and full access to the chat context.
+ * a unique identity, timestamp, and full access to the agi context.
  *
  * @author anahata
  */
@@ -42,7 +42,7 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
 
     /**
      * A monotonically increasing number assigned to the message when it is
-     * added to a chat, representing its order in the conversation.
+     * added to a agi, representing its order in the conversation.
      */
     @Setter
     private long sequentialId;
@@ -56,12 +56,12 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
     private final List<AbstractPart> parts = new CopyOnWriteArrayList<>();
 
     /**
-     * A backward reference to the Chat session that owns this message. This is
+     * A backward reference to the Agi session that owns this message. This is
      * the root of the V2 context management system, allowing any domain object
      * to access the full application state. It is intentionally not transient
      * to support full serialization with Kryo.
      */
-    private final Chat chat;
+    private final Agi agi;
 
     /**
      * Gets the role of the entity that created this message. This is
@@ -91,7 +91,7 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
     
     /**
      * Checks if this message is eligible for pruning or removal.
-     * A message is prunnable if it is attached to a chat and has been assigned
+     * A message is prunnable if it is attached to a agi and has been assigned
      * a sequential ID (i.e., it's not the system message or a transient message).
      * 
      * @return {@code true} if the message is prunnable.
@@ -125,7 +125,7 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
         // V2 ID Synchronization Fix: If the message is already identified (part of history),
         // we must identify the new part immediately to avoid sequentialId=0 issues.
         if (getSequentialId() != 0) {
-            chat.getContextManager().identifyPart(part);
+            agi.getContextManager().identifyPart(part);
         }
 
         propertyChangeSupport.firePropertyChange("parts", null, parts);
@@ -145,21 +145,21 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
     }
     
     /**
-     * Removes this message from the chat history.
+     * Removes this message from the agi history.
      */
     public void remove() {
-        chat.getContextManager().removeMessage(this);
+        agi.getContextManager().removeMessage(this);
     }
 
     /**
      * Calculates the "depth" of this message, defined as its distance from the
-     * most recent message in the chat history. The head message has a depth of
+     * most recent message in the agi history. The head message has a depth of
      * 0.
      *
      * @return The depth of the message.
      */
     public int getDepth() {
-        List<AbstractMessage> history = chat.getContextManager().getHistory();
+        List<AbstractMessage> history = agi.getContextManager().getHistory();
         int index = history.indexOf(this);
         if (index == -1) {
             return -1;

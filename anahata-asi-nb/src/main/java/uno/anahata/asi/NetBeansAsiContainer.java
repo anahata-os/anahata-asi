@@ -14,7 +14,7 @@ import org.openide.filesystems.FileSystem;
 import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
 import org.openide.cookies.EditorCookie;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.toolkit.Java;
 import uno.anahata.asi.nb.module.NetBeansModuleUtils;
 import uno.anahata.asi.nb.tools.files.nb.AnahataAnnotationProvider;
@@ -37,40 +37,40 @@ public class NetBeansAsiContainer extends AsiContainer {
     public NetBeansAsiContainer() {
         super("netbeans");
         
-        // Setup global listener for active chat changes to refresh annotations
-        this.addPropertyChangeListener("activeChats", evt -> {
-            log.info("Active chats changed, triggering global annotation refresh.");
+        // Setup global listener for active agi changes to refresh annotations
+        this.addPropertyChangeListener("activeAgis", evt -> {
+            log.info("Active agis changed, triggering global annotation refresh.");
             
-            // Refresh UI annotations for all remaining active chats to update labels (1 vs >1)
-            for (Chat chat : getActiveChats()) {
-                refreshChatAnnotations(chat);
+            // Refresh UI annotations for all remaining active agis to update labels (1 vs >1)
+            for (Agi agi : getActiveAgis()) {
+                refreshAgiAnnotations(agi);
             }
         });
     }
 
     /**
      * {@inheritDoc}
-     * Attaches a nickname listener to each newly created chat to ensure 
+     * Attaches a nickname listener to each newly created agi to ensure 
      * IDE annotations are refreshed when the session name changes.
      */
     @Override
-    public void onChatCreated(Chat chat) {
-        log.info("Initializing NetBeans environment for chat session: {}", chat.getConfig().getSessionId());
+    public void onAgiCreated(Agi agi) {
+        log.info("Initializing NetBeans environment for agi session: {}", agi.getConfig().getSessionId());
         
         // Listen for nickname changes to refresh UI annotations
-        chat.addPropertyChangeListener("nickname", evt -> {
-            log.info("Nickname changed for chat {}, triggering surgical annotation refresh.", chat.getShortId());
-            refreshChatAnnotations(chat);
+        agi.addPropertyChangeListener("nickname", evt -> {
+            log.info("Nickname changed for agi {}, triggering surgical annotation refresh.", agi.getShortId());
+            refreshAgiAnnotations(agi);
         });
 
         // Only set default model if not already set (e.g. during restoration)
-        if (chat.getSelectedModel() == null) {
-            chat.setProviderAndModel("Gemini", "models/gemini-3-flash-preview");
+        if (agi.getSelectedModel() == null) {
+            agi.setProviderAndModel("Gemini", "models/gemini-3-flash-preview");
         }
 
-        // 1. Initialize Java toolkit classpath for this specific chat instance
+        // 1. Initialize Java toolkit classpath for this specific agi instance
         // This is transient and must be re-initialized even for restored sessions.
-        chat.getToolManager().getToolkitInstance(Java.class).ifPresent(java -> {
+        agi.getToolManager().getToolkitInstance(Java.class).ifPresent(java -> {
             String nbClasspath = NetBeansModuleUtils.getNetBeansClasspath();
             log.info("Setting NetBeans classpath on Java toolkit instance.");
             java.setDefaultClasspath(nbClasspath);
@@ -81,18 +81,18 @@ public class NetBeansAsiContainer extends AsiContainer {
     
     /**
      * Performs a surgical refresh of the IDE UI annotations (badges and labels) 
-     * for all file resources currently in the context of the specified chat.
+     * for all file resources currently in the context of the specified agi.
      * <p>
      * This method does NOT reload file content from disk; it only notifies the 
      * IDE that the visual status of these files has changed.
      * </p>
      * 
-     * @param chat The chat session whose resources should be refreshed in the UI.
+     * @param agi The agi session whose resources should be refreshed in the UI.
      */
-    private void refreshChatAnnotations(Chat chat) {
+    private void refreshAgiAnnotations(Agi agi) {
         Map<FileSystem, Set<FileObject>> toRefresh = new HashMap<>();
         
-        chat.getResourceManager().getResources().stream()
+        agi.getResourceManager().getResources().stream()
             .filter(r -> r instanceof AbstractPathResource)
             .map(r -> (AbstractPathResource<?>) r)
             .forEach(r -> {
@@ -111,29 +111,29 @@ public class NetBeansAsiContainer extends AsiContainer {
     }
 
     /**
-     * Finds an existing active chat by its session ID, or creates a new one
+     * Finds an existing active agi by its session ID, or creates a new one
      * if the ID is null or not found.
      * 
      * @param sessionId The session ID to find.
-     * @return The found or newly created chat session.
+     * @return The found or newly created agi session.
      */
-    public Chat findOrCreateChat(String sessionId) {
+    public Agi findOrCreateAgi(String sessionId) {
         if (sessionId != null) {
-            for (Chat chat : getActiveChats()) {
-                if (chat.getConfig().getSessionId().equals(sessionId)) {
-                    return chat;
+            for (Agi agi : getActiveAgis()) {
+                if (agi.getConfig().getSessionId().equals(sessionId)) {
+                    return agi;
                 }
             }
         }
-        return createNewChat();
+        return createNewAgi();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Chat createNewChat() {
-        return new Chat(new NetBeansChatConfig(this));
+    public Agi createNewAgi() {
+        return new Agi(new NetBeansAgiConfig(this));
     }
 
     /**

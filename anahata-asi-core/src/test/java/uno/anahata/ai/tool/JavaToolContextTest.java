@@ -11,8 +11,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.model.resource.AbstractResource;
-import uno.anahata.asi.chat.Chat;
-import uno.anahata.asi.chat.ChatConfig;
+import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.Response;
 import uno.anahata.asi.model.core.ResponseUsageMetadata;
@@ -29,17 +29,17 @@ import uno.anahata.asi.model.tool.java.JavaObjectToolkit;
 @Slf4j
 public class JavaToolContextTest {
 
-    private Chat chat;
+    private Agi agi;
     private JavaObjectToolkit toolkit;
 
     @BeforeEach
     public void setup() {
         AsiContainer container = new MockAsiContainer("test-app");
-        ChatConfig config = new ChatConfig(container);
+        AgiConfig config = new AgiConfig(container);
         config.getToolClasses().add(MockToolkit.class); // Explicitly register for the test
-        chat = new Chat(config);
+        agi = new Agi(config);
         // Retrieve the JavaObjectToolkit wrapper by name
-        toolkit = (JavaObjectToolkit) chat.getToolManager().getToolkits().get("MockToolkit");
+        toolkit = (JavaObjectToolkit) agi.getToolManager().getToolkits().get("MockToolkit");
     }
 
     @Test
@@ -48,7 +48,7 @@ public class JavaToolContextTest {
                 .filter(t -> t.getName().endsWith("testContextAccess"))
                 .findFirst().get();
 
-        MockModelMessage message = new MockModelMessage(chat);
+        MockModelMessage message = new MockModelMessage(agi);
         
         JavaMethodToolCall call = tool.createCall(message, "call-1", Collections.emptyMap());
         
@@ -64,8 +64,8 @@ public class JavaToolContextTest {
      * A minimal mock of AbstractModelMessage for testing.
      */
     private static class MockModelMessage extends AbstractModelMessage<MockResponse> {
-        public MockModelMessage(Chat chat) {
-            super(chat, "mock-model");
+        public MockModelMessage(Agi agi) {
+            super(agi, "mock-model");
         }
     }
 

@@ -3,7 +3,7 @@ package uno.anahata.asi.model.core;
 
 import lombok.Getter;
 import lombok.Setter;
-import uno.anahata.asi.chat.ChatConfig;
+import uno.anahata.asi.agi.AgiConfig;
 
 
 /**
@@ -33,7 +33,7 @@ public class ModelTextPart extends TextPart implements ThoughtSignature {
         
         // Initialize expanded state for thoughts based on config. 
         if (thought) {
-            setExpanded(getChatConfig().isExpandThoughts());
+            setExpanded(getAgiConfig().isExpandThoughts());
         }
         
         // Leaf class publication
@@ -53,7 +53,7 @@ public class ModelTextPart extends TextPart implements ThoughtSignature {
     @Override
     protected int getDefaultMaxDepth() {
         if (isThought()) {
-            return getChatConfig().getDefaultThoughtPartMaxDepth();
+            return getAgiConfig().getDefaultThoughtPartMaxDepth();
         }
         return super.getDefaultMaxDepth();
     }

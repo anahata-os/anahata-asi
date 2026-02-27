@@ -1,0 +1,326 @@
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
+package uno.anahata.asi.swing.agi;
+
+import com.jgoodies.forms.layout.FormLayout;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.util.List;
+import java.util.stream.Collectors;
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.SpinnerNumberModel;
+import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.model.core.RequestConfig;
+import uno.anahata.asi.model.core.ThinkingLevel;
+import uno.anahata.asi.model.provider.AbstractModel;
+import uno.anahata.asi.model.provider.ServerTool;
+import uno.anahata.asi.swing.components.ScrollablePanel;
+import uno.anahata.asi.swing.components.SliderSpinner;
+import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
+
+/**
+ * A panel for editing the RequestConfig of a Agi session.
+ * It uses JGoodies FormLayout for a professional, left-aligned form.
+ * 
+ * @author anahata
+ */
+@Slf4j
+public class RequestConfigPanel extends ScrollablePanel implements PropertyChangeListener {
+
+    /** The parent agi panel. */
+    private final AgiPanel agiPanel;
+    /** The agi session. */
+    private final Agi agi;
+    /** The request configuration being edited. */
+    private final RequestConfig config;
+
+    /** Combined component for temperature. */
+    private SliderSpinner temperatureControl;
+    /** Combined component for max output tokens. */
+    private SliderSpinner maxOutputTokensControl;
+    /** Combined component for top K. */
+    private SliderSpinner topKControl;
+    /** Combined component for top P. */
+    private SliderSpinner topPControl;
+    /** Combined component for candidate count. */
+    private SliderSpinner candidateCountControl;
+    /** Checkbox for session-level streaming toggle. */
+    private JCheckBox streamingCheckbox;
+    /** Checkbox for including thoughts in the response. */
+    private JCheckBox includeThoughtsCheckbox;
+    /** Checkbox for expanding thoughts by default. */
+    private JCheckBox expandThoughtsCheckbox;
+    /** Dropdown for selecting the thinking level. */
+    private JComboBox<ThinkingLevel> thinkingLevelDropdown;
+    /** Panel for response modalities checkboxes. */
+    private JPanel modalitiesPanel;
+    /** Panel for server tools checkboxes. */
+    private JPanel serverToolsPanel;
+
+    /**
+     * Constructs a new RequestConfigPanel.
+     * 
+     * @param agiPanel The parent agi panel.
+     */
+    public RequestConfigPanel(AgiPanel agiPanel) {
+        this.agiPanel = agiPanel;
+        this.agi = agiPanel.getAgi();
+        this.config = agi.getRequestConfig();
+        initComponents();
+        loadConfig();
+        
+        agi.addPropertyChangeListener(this);
+        // Listen to global config changes to refresh tool checkboxes
+        new EdtPropertyChangeListener(this, agi.getConfig(), "serverToolsEnabled", evt -> loadConfig());
+    }
+
+    /**
+     * Initializes the UI components and layout using JGoodies FormLayout.
+     */
+    private void initComponents() {
+        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // FormLayout: 
+        // Column 1: Label (right aligned)
+        // Column 2: Gap
+        // Column 3: Control (fill, grows)
+        FormLayout layout = new FormLayout(
+            "right:pref, 4dlu, fill:pref:grow",
+            "pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 5dlu, pref, 10dlu, pref, 10dlu, pref"
+        );
+        setLayout(layout);
+
+        int row = 1;
+
+        // Stream Tokens (Session Level)
+        add(new JLabel("Stream Tokens:"), "1, " + row);
+        streamingCheckbox = new JCheckBox();
+        add(streamingCheckbox, "3, " + row);
+        row += 2;
+
+        // Include Thoughts
+        add(new JLabel("Include Thoughts:"), "1, " + row);
+        includeThoughtsCheckbox = new JCheckBox();
+        add(includeThoughtsCheckbox, "3, " + row);
+        row += 2;
+
+        // Expand Thoughts
+        add(new JLabel("Expand Thoughts:"), "1, " + row);
+        expandThoughtsCheckbox = new JCheckBox();
+        add(expandThoughtsCheckbox, "3, " + row);
+        row += 2;
+
+        // Thinking Level
+        add(new JLabel("Thinking Level:"), "1, " + row);
+        thinkingLevelDropdown = new JComboBox<>(ThinkingLevel.values());
+        thinkingLevelDropdown.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof ThinkingLevel tl) {
+                    setText(tl.getDisplayValue());
+                }
+                return this;
+            }
+        });
+        add(thinkingLevelDropdown, "3, " + row);
+        row += 2;
+
+        // Temperature
+        add(new JLabel("Temperature:"), "1, " + row);
+        temperatureControl = new SliderSpinner(new SpinnerNumberModel(1.0, 0.0, 2.0, 0.1), 0, 200, 100.0);
+        add(temperatureControl, "3, " + row);
+        row += 2;
+
+        // Max Output Tokens
+        add(new JLabel("Max Output Tokens:"), "1, " + row);
+        maxOutputTokensControl = new SliderSpinner(new SpinnerNumberModel(2048, 1, 1000000, 1), 1, 1000000, 1.0);
+        add(maxOutputTokensControl, "3, " + row);
+        row += 2;
+
+        // Top K
+        add(new JLabel("Top K:"), "1, " + row);
+        topKControl = new SliderSpinner(new SpinnerNumberModel(40, 1, 100, 1), 1, 100, 1.0);
+        add(topKControl, "3, " + row);
+        row += 2;
+
+        // Top P
+        add(new JLabel("Top P:"), "1, " + row);
+        topPControl = new SliderSpinner(new SpinnerNumberModel(0.95, 0.0, 1.0, 0.05), 0, 100, 100.0);
+        add(topPControl, "3, " + row);
+        row += 2;
+        
+        // Candidate Count
+        add(new JLabel("Max Candidates:"), "1, " + row);
+        candidateCountControl = new SliderSpinner(new SpinnerNumberModel(1, 1, 8, 1), 1, 8, 1.0);
+        add(candidateCountControl, "3, " + row);
+        row += 2;
+
+        // Response Modalities
+        add(new JLabel("Response Modalities:"), "1, " + row);
+        modalitiesPanel = new JPanel();
+        modalitiesPanel.setLayout(new BoxLayout(modalitiesPanel, BoxLayout.Y_AXIS));
+        add(modalitiesPanel, "3, " + row);
+        row += 2;
+
+        // Server Tools
+        add(new JLabel("Server Tools:"), "1, " + row);
+        serverToolsPanel = new JPanel();
+        serverToolsPanel.setLayout(new BoxLayout(serverToolsPanel, BoxLayout.Y_AXIS));
+        add(serverToolsPanel, "3, " + row);
+
+        // Add listeners to update config
+        temperatureControl.addChangeListener(e -> {
+            config.setTemperature(((Number) temperatureControl.getValue()).floatValue());
+        });
+
+        maxOutputTokensControl.addChangeListener(e -> {
+            config.setMaxOutputTokens((Integer) maxOutputTokensControl.getValue());
+        });
+
+        topKControl.addChangeListener(e -> {
+            config.setTopK((Integer) topKControl.getValue());
+        });
+
+        topPControl.addChangeListener(e -> {
+            config.setTopP(((Number) topPControl.getValue()).floatValue());
+        });
+        
+        candidateCountControl.addChangeListener(e -> {
+            config.setCandidateCount((Integer) candidateCountControl.getValue());
+        });
+        
+        streamingCheckbox.addActionListener(e -> {
+            agi.getConfig().setStreaming(streamingCheckbox.isSelected());
+        });
+
+        includeThoughtsCheckbox.addActionListener(e -> {
+            boolean selected = includeThoughtsCheckbox.isSelected();
+            agi.getConfig().setIncludeThoughts(selected);
+            expandThoughtsCheckbox.setEnabled(selected);
+        });
+
+        expandThoughtsCheckbox.addActionListener(e -> {
+            agi.getConfig().setExpandThoughts(expandThoughtsCheckbox.isSelected());
+        });
+
+        thinkingLevelDropdown.addActionListener(e -> {
+            config.setThinkingLevel((ThinkingLevel) thinkingLevelDropdown.getSelectedItem());
+        });
+    }
+
+    /**
+     * Loads the current configuration into the UI components.
+     * This method prioritizes user-set values in the RequestConfig,
+     * falling back to model defaults if necessary.
+     */
+    private void loadConfig() {
+        AbstractModel model = agi.getSelectedModel();
+        
+        streamingCheckbox.setSelected(agi.getConfig().isStreaming());
+        includeThoughtsCheckbox.setSelected(agi.getConfig().isIncludeThoughts());
+        expandThoughtsCheckbox.setSelected(agi.getConfig().isExpandThoughts());
+        expandThoughtsCheckbox.setEnabled(agi.getConfig().isIncludeThoughts());
+        
+        thinkingLevelDropdown.setSelectedItem(config.getThinkingLevel());
+
+        float temp = config.getTemperature() != null ? config.getTemperature() : (model != null && model.getDefaultTemperature() != null ? model.getDefaultTemperature() : 1.0f);
+        temperatureControl.setValue((double) temp);
+        
+        int maxTokens = config.getMaxOutputTokens() != null ? config.getMaxOutputTokens() : (model != null ? model.getMaxOutputTokens() : 2048);
+        if (model != null) {
+            maxOutputTokensControl.getSlider().setMaximum(model.getMaxOutputTokens());
+        }
+        maxOutputTokensControl.setValue(maxTokens);
+        
+        int topK = config.getTopK() != null ? config.getTopK() : (model != null && model.getDefaultTopK() != null ? model.getDefaultTopK() : 40);
+        topKControl.setValue(topK);
+        
+        float topP = config.getTopP() != null ? config.getTopP() : (model != null && model.getDefaultTopP() != null ? model.getDefaultTopP() : 0.95f);
+        topPControl.setValue((double) topP);
+        
+        candidateCountControl.setValue(config.getCandidateCount() != null ? config.getCandidateCount() : 1);
+
+        if (model != null) {
+            updateModalities(model);
+            updateServerTools(model);
+        }
+    }
+
+    /**
+     * Updates the response modalities checkboxes based on the selected model.
+     * 
+     * @param model The selected model.
+     */
+    private void updateModalities(AbstractModel model) {
+        modalitiesPanel.removeAll();
+        for (String modality : model.getSupportedResponseModalities()) {
+            JCheckBox cb = new JCheckBox(modality);
+            cb.setAlignmentX(Component.LEFT_ALIGNMENT);
+            cb.setSelected(config.getResponseModalities().contains(modality));
+            cb.addActionListener(e -> {
+                if (cb.isSelected()) {
+                    config.getResponseModalities().add(modality);
+                } else {
+                    config.getResponseModalities().remove(modality);
+                }
+            });
+            modalitiesPanel.add(cb);
+        }
+        modalitiesPanel.revalidate();
+        modalitiesPanel.repaint();
+    }
+
+    /**
+     * Updates the server tools checkboxes based on the selected model.
+     * 
+     * @param model The selected model.
+     */
+    private void updateServerTools(AbstractModel model) {
+        serverToolsPanel.removeAll();
+        
+        List<Object> enabledIds = config.getEnabledServerTools().stream()
+                .map(ServerTool::getId)
+                .collect(Collectors.toList());
+
+        for (ServerTool tool : model.getAvailableServerTools()) {
+            JCheckBox cb = new JCheckBox(tool.getDisplayName());
+            cb.setAlignmentX(Component.LEFT_ALIGNMENT);
+            cb.setToolTipText(tool.getDescription());
+            cb.setSelected(enabledIds.contains(tool.getId()));
+            cb.addActionListener(e -> {
+                if (cb.isSelected()) {
+                    config.getEnabledServerTools().add(tool);
+                } else {
+                    config.getEnabledServerTools().removeIf(st -> st.getId().equals(tool.getId()));
+                }
+            });
+            serverToolsPanel.add(cb);
+        }
+        serverToolsPanel.revalidate();
+        serverToolsPanel.repaint();
+    }
+
+    /**
+     * Handles property change events from the parent Agi session.
+     * Specifically, it listens for "selectedModel" changes to refresh the UI.
+     * 
+     * @param evt The property change event.
+     */
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        if ("selectedModel".equals(evt.getPropertyName())) {
+            loadConfig();
+        }
+    }
+}

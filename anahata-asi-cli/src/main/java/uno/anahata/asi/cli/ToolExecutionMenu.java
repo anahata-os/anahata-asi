@@ -4,7 +4,7 @@ package uno.anahata.asi.cli;
 import java.util.List;
 import java.util.Scanner;
 import lombok.RequiredArgsConstructor;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.internal.ObjectSummarizer;
 import uno.anahata.asi.model.core.AbstractPart;
@@ -20,7 +20,7 @@ import uno.anahata.asi.model.tool.ToolPermission;
 @RequiredArgsConstructor
 public class ToolExecutionMenu {
 
-    private final Chat chat;
+    private final Agi agi;
     private final Scanner scanner;
     private final List<AbstractToolResponse> responses;
 
@@ -42,7 +42,7 @@ public class ToolExecutionMenu {
             System.out.println("A: Approve All Pending (Execute all PENDING tools and send results to model)");
             System.out.println("D: Deny All Pending (Mark all PENDING tools as DECLINED)");
             System.out.println("V: View Details / Execute Single Tool / Set Preference");
-            System.out.println("B: Back to Chat (Wait for next user input)");
+            System.out.println("B: Back to Agi (Wait for next user input)");
             System.out.print("Enter choice (A, D, V, B): ");
 
             String choice = scanner.nextLine().toUpperCase();
@@ -52,7 +52,7 @@ public class ToolExecutionMenu {
                     responses.stream()
                         .filter(r -> r.getStatus() == ToolExecutionStatus.PENDING)
                         .forEach(AbstractToolResponse::execute);
-                    return true; // Signal to the CLI to continue the chat loop
+                    return true; // Signal to the CLI to continue the agi loop
                 case "D":
                     responses.stream()
                         .filter(r -> r.getStatus() == ToolExecutionStatus.PENDING)
@@ -171,11 +171,11 @@ public class ToolExecutionMenu {
             response.getCall().getTool().setPermission(newPermission);
             
             // 2. Update the persistent preferences map
-            chat.getConfig().getContainer().getPreferences().getToolPermissions()
+            agi.getConfig().getContainer().getPreferences().getToolPermissions()
                 .put(response.getCall().getToolName(), newPermission);
             
             // 3. Save the preferences to disk
-            chat.getConfig().getContainer().savePreferences();
+            agi.getConfig().getContainer().savePreferences();
             
             System.out.println("Preference set to: " + newPermission.name());
         } else {

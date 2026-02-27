@@ -49,7 +49,7 @@ import org.openide.filesystems.FileUtil;
 import org.openide.util.NbPreferences;
 import org.openide.util.Task;
 import org.openide.util.TaskListener;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.tool.AiTool;

@@ -27,8 +27,8 @@ import javax.swing.SwingUtilities;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.internal.JacksonUtils;
-import uno.anahata.asi.swing.chat.ChatPanel;
-import uno.anahata.asi.swing.chat.render.AbstractCodeBlockSegmentRenderer;
+import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.render.AbstractCodeBlockSegmentRenderer;
 
 /**
  * A collection of general-purpose Swing utility methods, primarily for image
@@ -170,9 +170,9 @@ public class SwingUtils {
      * @param language The language for syntax highlighting.
      */
     public static void showCodeBlockDialog(Component parent, String title, String text, String language) {
-        ChatPanel chatPanel = (ChatPanel) SwingUtilities.getAncestorOfClass(ChatPanel.class, parent);
-        if (chatPanel == null) {
-            log.warn("Could not find ChatPanel ancestor for showCodeBlockDialog.");
+        AgiPanel agiPanel = (AgiPanel) SwingUtilities.getAncestorOfClass(AgiPanel.class, parent);
+        if (agiPanel == null) {
+            log.warn("Could not find AgiPanel ancestor for showCodeBlockDialog.");
             return;
         }
 
@@ -189,7 +189,7 @@ public class SwingUtils {
         dialog.setLayout(new BorderLayout());
         dialog.setPreferredSize(new Dimension(1000, 800));
 
-        AbstractCodeBlockSegmentRenderer renderer = AbstractCodeBlockSegmentRenderer.create(chatPanel, text, language);
+        AbstractCodeBlockSegmentRenderer renderer = AbstractCodeBlockSegmentRenderer.create(agiPanel, text, language);
         renderer.render();
 
         // For the popup, we want both scrollbars, so we wrap the INNER component

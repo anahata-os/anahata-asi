@@ -21,8 +21,8 @@ import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.chat.Chat;
-import uno.anahata.asi.status.ChatStatus;
+import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.status.AgiStatus;
 import uno.anahata.asi.internal.kryo.KryoUtils;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 
@@ -48,8 +48,8 @@ public abstract class AsiContainer extends BasicPropertyChangeSource {
     /** The persistent preferences for this container instance. */
     private final AsiContainerPreferences preferences;
     
-    /** The list of currently active chat sessions managed by this container. */
-    private final List<Chat> activeChats = new ArrayList<>();
+    /** The list of currently active agi sessions managed by this container. */
+    private final List<Agi> activeAgis = new ArrayList<>();
     
     /** 
      * A shared executor for container-level background tasks. 
@@ -118,71 +118,71 @@ public abstract class AsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Registers a new chat session with this configuration and triggers the 
-     * {@link #onChatCreated(Chat)} hook. Fires a property change event for "activeChats".
+     * Registers a new agi session with this configuration and triggers the 
+     * {@link #onAgiCreated(Agi)} hook. Fires a property change event for "activeAgis".
      * 
-     * @param chat The chat session to register.
+     * @param agi The agi session to register.
      */
-    public void register(Chat chat) {
-        synchronized (activeChats) {
-            for (Chat existing : activeChats) {
-                if (existing.getConfig().getSessionId().equals(chat.getConfig().getSessionId())) {
-                    log.warn("Chat session {} already registered. Skipping.", chat.getConfig().getSessionId());
+    public void register(Agi agi) {
+        synchronized (activeAgis) {
+            for (Agi existing : activeAgis) {
+                if (existing.getConfig().getSessionId().equals(agi.getConfig().getSessionId())) {
+                    log.warn("Agi session {} already registered. Skipping.", agi.getConfig().getSessionId());
                     return;
                 }
             }
-            List<Chat> old = new ArrayList<>(activeChats);
-            activeChats.add(chat);
-            onChatCreated(chat);
-            autoSaveSession(chat); // Ensure the session is persisted in the active directory
-            propertyChangeSupport.firePropertyChange("activeChats", old, Collections.unmodifiableList(activeChats));
-            log.info("Registered chat session: {}", chat.getConfig().getSessionId());
+            List<Agi> old = new ArrayList<>(activeAgis);
+            activeAgis.add(agi);
+            onAgiCreated(agi);
+            autoSaveSession(agi); // Ensure the session is persisted in the active directory
+            propertyChangeSupport.firePropertyChange("activeAgis", old, Collections.unmodifiableList(activeAgis));
+            log.info("Registered agi session: {}", agi.getConfig().getSessionId());
         }
     }
 
     /**
-     * Unregisters a chat session from this configuration. 
-     * Fires a property change event for "activeChats".
+     * Unregisters a agi session from this configuration. 
+     * Fires a property change event for "activeAgis".
      * 
-     * @param chat The chat session to unregister.
+     * @param agi The agi session to unregister.
      */
-    public void unregister(Chat chat) {
-        synchronized (activeChats) {
-            List<Chat> old = new ArrayList<>(activeChats);
-            if (activeChats.remove(chat)) {
-                propertyChangeSupport.firePropertyChange("activeChats", old, Collections.unmodifiableList(activeChats));
-                log.info("Unregistered chat session: {}", chat.getConfig().getSessionId());
+    public void unregister(Agi agi) {
+        synchronized (activeAgis) {
+            List<Agi> old = new ArrayList<>(activeAgis);
+            if (activeAgis.remove(agi)) {
+                propertyChangeSupport.firePropertyChange("activeAgis", old, Collections.unmodifiableList(activeAgis));
+                log.info("Unregistered agi session: {}", agi.getConfig().getSessionId());
             }
         }
     }
 
     /**
-     * Gets an unmodifiable list of all active chat sessions.
+     * Gets an unmodifiable list of all active agi sessions.
      * 
-     * @return The list of active chats.
+     * @return The list of active agis.
      */
-    public List<Chat> getActiveChats() {
-        synchronized (activeChats) {
-            return Collections.unmodifiableList(new ArrayList<>(activeChats));
+    public List<Agi> getActiveAgis() {
+        synchronized (activeAgis) {
+            return Collections.unmodifiableList(new ArrayList<>(activeAgis));
         }
     }
     
     /**
-     * Overridable hook for host-specific initialization when a new chat is created.
+     * Overridable hook for host-specific initialization when a new agi is created.
      * 
-     * @param chat The newly created chat session.
+     * @param agi The newly created agi session.
      */
-    public void onChatCreated(Chat chat) {
+    public void onAgiCreated(Agi agi) {
         // Default implementation does nothing.
     }
     
     /**
-     * Creates a new chat session with a default configuration.
+     * Creates a new agi session with a default configuration.
      * This method should be overridden by host-specific containers.
      * 
-     * @return The newly created chat session.
+     * @return The newly created agi session.
      */
-    public abstract Chat createNewChat();
+    public abstract Agi createNewAgi();
 
     /**
      * Opens the specified resource in the host's preferred viewer/editor.
@@ -194,7 +194,7 @@ public abstract class AsiContainer extends BasicPropertyChangeSource {
     // --- SESSION PERSISTENCE ---
 
     /**
-     * Gets the directory where active chat sessions are stored.
+     * Gets the directory where active agi sessions are stored.
      * 
      * @return The sessions directory path.
      */
@@ -203,7 +203,7 @@ public abstract class AsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Gets the directory where manually saved chat sessions are stored.
+     * Gets the directory where manually saved agi sessions are stored.
      * 
      * @return The saved sessions directory path.
      */
@@ -214,7 +214,7 @@ public abstract class AsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Gets the directory where disposed chat sessions are moved.
+     * Gets the directory where disposed agi sessions are moved.
      * 
      * @return The disposed sessions directory path.
      */
@@ -225,7 +225,7 @@ public abstract class AsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Gets the directory where chat sessions that failed to load are moved.
+     * Gets the directory where agi sessions that failed to load are moved.
      * 
      * @return The unloadable sessions directory path.
      */
@@ -247,53 +247,53 @@ public abstract class AsiContainer extends BasicPropertyChangeSource {
 
     /**
      * Performs an automatic backup of the session to the active sessions directory.
-     * Logic: Only proceeds if the chat is in a stable state (IDLE, TOOL_PROMPT, etc.)
+     * Logic: Only proceeds if the agi is in a stable state (IDLE, TOOL_PROMPT, etc.)
      * to prevent serialization during volatile operations like streaming.
      * 
-     * @param chat The chat session to save.
+     * @param agi The agi session to save.
      */
-    public void autoSaveSession(Chat chat) {
-        ChatStatus status = chat.getStatusManager().getCurrentStatus();
+    public void autoSaveSession(Agi agi) {
+        AgiStatus status = agi.getStatusManager().getCurrentStatus();
         
-        boolean isStable = status == ChatStatus.IDLE 
-                        || status == ChatStatus.TOOL_PROMPT 
-                        || status == ChatStatus.CANDIDATE_CHOICE_PROMPT
-                        || status == ChatStatus.ERROR
-                        || status == ChatStatus.MAX_RETRIES_REACHED;
+        boolean isStable = status == AgiStatus.IDLE 
+                        || status == AgiStatus.TOOL_PROMPT 
+                        || status == AgiStatus.CANDIDATE_CHOICE_PROMPT
+                        || status == AgiStatus.ERROR
+                        || status == AgiStatus.MAX_RETRIES_REACHED;
 
         if (!isStable) {
-            log.debug("Skipping auto-save for session {} - chat is currently in volatile state: {}", 
-                    chat.getConfig().getSessionId(), status);
+            log.debug("Skipping auto-save for session {} - agi is currently in volatile state: {}", 
+                    agi.getConfig().getSessionId(), status);
             return;
         }
         
-        saveSessionTo(chat, getSessionsDir());
+        saveSessionTo(agi, getSessionsDir());
     }
 
     /**
      * Manually saves the session to the 'saved' directory.
      * 
-     * @param chat The chat session to save.
+     * @param agi The agi session to save.
      */
-    public void manualSaveSession(Chat chat) {
-        saveSessionTo(chat, getSavedSessionsDir());
+    public void manualSaveSession(Agi agi) {
+        saveSessionTo(agi, getSavedSessionsDir());
     }
 
     /**
-     * Serializes and saves a chat session to a specific directory using Kryo.
-     * This method is synchronized on the chat instance to prevent concurrent write issues.
+     * Serializes and saves a agi session to a specific directory using Kryo.
+     * This method is synchronized on the agi instance to prevent concurrent write issues.
      * 
-     * @param chat The chat session to save.
+     * @param agi The agi session to save.
      * @param dir The destination directory.
      */
-    private void saveSessionTo(Chat chat, Path dir) {
-        synchronized (chat) {
-            String sessionId = chat.getConfig().getSessionId();
+    private void saveSessionTo(Agi agi, Path dir) {
+        synchronized (agi) {
+            String sessionId = agi.getConfig().getSessionId();
             Path file = dir.resolve(sessionId + ".kryo");
             Path tmpFile = dir.resolve(sessionId + ".kryo.tmp");
             try {
                 log.info("Saving session {} to {}", sessionId, file);
-                byte[] data = KryoUtils.serialize(chat);
+                byte[] data = KryoUtils.serialize(agi);
                 
                 // 1. Write to temporary file
                 Files.write(tmpFile, data);
@@ -319,17 +319,17 @@ public abstract class AsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Permanently disposes of a chat session, shutting it down and moving its 
+     * Permanently disposes of a agi session, shutting it down and moving its 
      * serialized file to the 'disposed' directory.
      * 
-     * @param chat The chat session to dispose.
+     * @param agi The agi session to dispose.
      */
-    public void dispose(Chat chat) {
-        String sessionId = chat.getConfig().getSessionId();
+    public void dispose(Agi agi) {
+        String sessionId = agi.getConfig().getSessionId();
         log.info("Disposing session: {}", sessionId);
         
-        // 1. Shutdown the chat (stops executors, etc.)
-        chat.shutdown();
+        // 1. Shutdown the agi (stops executors, etc.)
+        agi.shutdown();
         
         // 2. Move the session file from active to disposed
         Path activeFile = getSessionsDir().resolve(sessionId + ".kryo");
@@ -344,28 +344,28 @@ public abstract class AsiContainer extends BasicPropertyChangeSource {
         }
         
         // 3. Unregister from active list (fires property change)
-        unregister(chat);
+        unregister(agi);
     }
 
     /**
-     * Imports a chat session from an external file. The session is assigned a 
-     * new ID to avoid collisions and registered as a new active chat.
+     * Imports a agi session from an external file. The session is assigned a 
+     * new ID to avoid collisions and registered as a new active agi.
      * 
      * @param path The path to the serialized session file.
-     * @return The imported Chat session, or null if import failed.
+     * @return The imported Agi session, or null if import failed.
      */
-    public Chat importSession(Path path) {
+    public Agi importSession(Path path) {
         try {
             log.info("Importing session from {}", path);
             byte[] data = Files.readAllBytes(path);
-            Chat chat = KryoUtils.deserialize(data, Chat.class);
+            Agi agi = KryoUtils.deserialize(data, Agi.class);
             
             // Always generate a new session ID for imported sessions to avoid collisions
-            chat.getConfig().setSessionId(UUID.randomUUID().toString());
+            agi.getConfig().setSessionId(UUID.randomUUID().toString());
             
-            chat.rebind(this);
-            register(chat);
-            return chat;
+            agi.rebind(this);
+            register(agi);
+            return agi;
         } catch (Exception e) {
             log.error("Failed to import session from {}", path, e);
             return null;
@@ -373,7 +373,7 @@ public abstract class AsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Scan the sessions directory and loads all serialized chat sessions.
+     * Scan the sessions directory and loads all serialized agi sessions.
      * This is typically called during application startup.
      * 
      * @return The number of sessions that failed to load.
@@ -399,7 +399,7 @@ public abstract class AsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Loads a single chat session from a file, rebinds it to this container, 
+     * Loads a single agi session from a file, rebinds it to this container, 
      * and registers it.
      * 
      * @param path The path to the serialized session file.
@@ -409,9 +409,9 @@ public abstract class AsiContainer extends BasicPropertyChangeSource {
         try {
             log.info("Loading session from {}", path);
             byte[] data = Files.readAllBytes(path);
-            Chat chat = KryoUtils.deserialize(data, Chat.class);
-            chat.rebind(this);
-            register(chat);
+            Agi agi = KryoUtils.deserialize(data, Agi.class);
+            agi.rebind(this);
+            register(agi);
             return true;
         } catch (Throwable t) {
             log.error("Failed to load session from {}. Moving to unloadable directory.", path, t);

@@ -14,7 +14,7 @@ import java.util.Objects;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.internal.TokenizerUtils;
@@ -123,11 +123,11 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
         this.status = status;
         updateTokenCount();
         propertyChangeSupport.firePropertyChange("status", oldStatus, status);
-        if (getChat() != null) {
-            getChat().checkToolPromptCompletion();
+        if (getAgi() != null) {
+            getAgi().checkToolPromptCompletion();
             // Critical Fix: Ensure tool execution state is persisted. 
             // This covers manual 'Run' clicks in the UI.
-            getChat().autoSave();
+            getAgi().autoSave();
         }
     }
     
@@ -300,13 +300,13 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     }
 
     /**
-     * Gets the parent chat session.
+     * Gets the parent agi session.
      * 
-     * @return The chat session, or null if not attached.
+     * @return The agi session, or null if not attached.
      */
     @JsonIgnore
-    public Chat getChat() {
-        return call != null ? call.getChat() : null;
+    public Agi getAgi() {
+        return call != null ? call.getAgi() : null;
     }
 
     /**

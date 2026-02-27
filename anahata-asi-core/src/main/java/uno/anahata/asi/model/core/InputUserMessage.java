@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 
 /**
  * A specialized UserMessage designed for direct manipulation by UI components like
@@ -29,8 +29,8 @@ public class InputUserMessage extends UserMessage {
     @Getter
     private TextPart editableTextPart;
 
-    public InputUserMessage(Chat chat) {
-        super(chat);
+    public InputUserMessage(Agi agi) {
+        super(agi);
     }
 
     /**

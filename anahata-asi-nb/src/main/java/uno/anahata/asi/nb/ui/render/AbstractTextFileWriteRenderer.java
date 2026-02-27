@@ -45,8 +45,8 @@ import org.openide.filesystems.FileUtil;
 import uno.anahata.asi.model.tool.AbstractToolCall;
 import uno.anahata.asi.model.tool.ToolExecutionStatus;
 import uno.anahata.asi.nb.tools.ide.Editor;
-import uno.anahata.asi.swing.chat.ChatPanel;
-import uno.anahata.asi.swing.chat.render.ParameterRenderer;
+import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.render.ParameterRenderer;
 import uno.anahata.asi.swing.internal.SwingUtils;
 import uno.anahata.asi.toolkit.files.AbstractTextFileWrite;
 import uno.anahata.asi.toolkit.files.LineComment;
@@ -100,8 +100,8 @@ import uno.anahata.asi.toolkit.files.LineComment;
 @Slf4j
 public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWrite> implements ParameterRenderer<T> {
 
-    /** The chat panel where this renderer is hosted. */
-    protected ChatPanel chatPanel;
+    /** The agi panel where this renderer is hosted. */
+    protected AgiPanel agiPanel;
     
     /** The tool call associated with this parameter. */
     protected AbstractToolCall<?, ?> call;
@@ -166,8 +166,8 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
 
     /** {@inheritDoc} */
     @Override
-    public void init(ChatPanel chatPanel, AbstractToolCall<?, ?> call, String paramName, T value) {
-        this.chatPanel = chatPanel;
+    public void init(AgiPanel agiPanel, AbstractToolCall<?, ?> call, String paramName, T value) {
+        this.agiPanel = agiPanel;
         this.call = call;
         this.paramName = paramName;
         this.update = value;
@@ -428,7 +428,7 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
         link.addActionListener(e -> {
             try {
                 int jumpLine = (comments != null && !comments.isEmpty()) ? comments.get(0).getLineNumber() : 1;
-                chatPanel.getChat().getToolkit(Editor.class).ifPresent(t -> {
+                agiPanel.getAgi().getToolkit(Editor.class).ifPresent(t -> {
                     try {
                         t.openFile(path, jumpLine);
                     } catch (Exception ex) {

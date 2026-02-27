@@ -15,16 +15,16 @@ import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.windows.TopComponent;
 import org.openide.util.ImageUtilities;
-import uno.anahata.asi.chat.Chat;
-import uno.anahata.asi.status.ChatStatus;
-import uno.anahata.asi.swing.chat.ChatPanel;
-import uno.anahata.asi.swing.chat.SwingChatConfig;
+import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.status.AgiStatus;
+import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
  * The main TopComponent for Anahata ASI V2.
- * It manages a single chat session and its corresponding UI panel.
+ * It manages a single agi session and its corresponding UI panel.
  * <p>
  * This component uses the {@code writeReplace} pattern for robust persistence,
  * ensuring that only the session ID is saved and the component is correctly
@@ -40,12 +40,12 @@ import uno.anahata.asi.swing.internal.SwingUtils;
         iconBase = "icons/anahata_16.png",
         persistenceType = TopComponent.PERSISTENCE_ONLY_OPENED)
 @TopComponent.Registration(mode = "output", openAtStartup = false, position = 0)
-@TopComponent.OpenActionRegistration(displayName = "AGI")
+@TopComponent.OpenActionRegistration(displayName = "General Intelligence")
 @Slf4j
 public final class AgiTopComponent extends TopComponent {
 
-    /** The UI panel for the chat session. */
-    private transient ChatPanel chatPanel;
+    /** The UI panel for the agi session. */
+    private transient AgiPanel agiPanel;
     
     /** The unique ID of the session managed by this component. */
     private String sessionId;
@@ -60,13 +60,13 @@ public final class AgiTopComponent extends TopComponent {
     }
     
     /**
-     * Constructs a new component for an existing chat session.
+     * Constructs a new component for an existing agi session.
      * 
-     * @param chat The chat session.
+     * @param agi The agi session.
      */
-    public AgiTopComponent(Chat chat) {
-        this(chat.getConfig().getSessionId());
-        initPanel(chat);
+    public AgiTopComponent(Agi agi) {
+        this(agi.getConfig().getSessionId());
+        initPanel(agi);
     }
 
     /**
@@ -82,51 +82,51 @@ public final class AgiTopComponent extends TopComponent {
     }
 
     /**
-     * Initializes the chat panel and adds it to the component.
+     * Initializes the agi panel and adds it to the component.
      * 
-     * @param chat The chat session.
+     * @param agi The agi session.
      */
-    private void initPanel(Chat chat) {
-        if (chatPanel != null) return;
-        this.sessionId = chat.getConfig().getSessionId();
-        chatPanel = new ChatPanel(chat);
-        chatPanel.initComponents();
+    private void initPanel(Agi agi) {
+        if (agiPanel != null) return;
+        this.sessionId = agi.getConfig().getSessionId();
+        agiPanel = new AgiPanel(agi);
+        agiPanel.initComponents();
         
         removeAll();
-        add(chatPanel, BorderLayout.CENTER);
+        add(agiPanel, BorderLayout.CENTER);
         revalidate();
         repaint();
         
         updateTitles();
         
         // Listen for nickname changes to update the TopComponent title
-        new EdtPropertyChangeListener(this, chat, "nickname", this::handleNicknameChange);
+        new EdtPropertyChangeListener(this, agi, "nickname", this::handleNicknameChange);
         
         // Listen for status changes to update the tab color
-        new EdtPropertyChangeListener(this, chat.getStatusManager(), "currentStatus", evt -> updateTitles());
+        new EdtPropertyChangeListener(this, agi.getStatusManager(), "currentStatus", evt -> updateTitles());
     }
 
     /**
-     * Updates the TopComponent's name, display name, and tooltip based on the current chat session.
+     * Updates the TopComponent's name, display name, and tooltip based on the current agi session.
      */
     private void updateTitles() {
         String displayName = sessionId != null ? "Session: " + sessionId.substring(0, 7) : "Anahata AGI";
-        ChatStatus status = ChatStatus.IDLE;
+        AgiStatus status = AgiStatus.IDLE;
         
-        Chat chat = getChat();
-        if (chat == null && sessionId != null) {
-            // Try to find the chat in the container even if the panel isn't ready
-            chat = AnahataInstaller.getContainer().getActiveChats().stream()
+        Agi agi = getAgi();
+        if (agi == null && sessionId != null) {
+            // Try to find the agi in the container even if the panel isn't ready
+            agi = AnahataInstaller.getContainer().getActiveAgis().stream()
                     .filter(c -> c.getConfig().getSessionId().equals(sessionId))
                     .findFirst().orElse(null);
         }
         
-        if (chat != null) {
-            displayName = chat.getDisplayName();
-            status = chat.getStatusManager().getCurrentStatus();
+        if (agi != null) {
+            displayName = agi.getDisplayName();
+            status = agi.getStatusManager().getCurrentStatus();
         }
         
-        Color color = SwingChatConfig.getColor(status);
+        Color color = SwingAgiConfig.getColor(status);
         String hexColor = SwingUtils.toHtmlColor(color);
         
         setName(displayName);
@@ -148,28 +148,28 @@ public final class AgiTopComponent extends TopComponent {
 
     /**
      * {@inheritDoc}
-     * Ensures the chat panel is initialized when the component is opened.
+     * Ensures the agi panel is initialized when the component is opened.
      * Uses a SwingWorker to avoid blocking the EDT during heavy initialization.
      */
     @Override
     public void componentOpened() {
-        if (chatPanel == null) {
+        if (agiPanel == null) {
             showLoading();
             
-            new SwingWorker<Chat, Void>() {
+            new SwingWorker<Agi, Void>() {
                 @Override
-                protected Chat doInBackground() throws Exception {
+                protected Agi doInBackground() throws Exception {
                     log.info("Initializing session brain in background: {}", sessionId);
                     NetBeansAsiContainer container = (NetBeansAsiContainer) AnahataInstaller.getContainer();
-                    return container.findOrCreateChat(sessionId);
+                    return container.findOrCreateAgi(sessionId);
                 }
 
                 @Override
                 protected void done() {
                     try {
-                        Chat chat = get();
-                        initPanel(chat);
-                        log.info("Session brain initialized OK: {}", chat.getShortId());
+                        Agi agi = get();
+                        initPanel(agi);
+                        log.info("Session brain initialized OK: {}", agi.getShortId());
                     } catch (Exception e) {
                         log.error("Failed to initialize session brain", e);
                         showError(e.getMessage());
@@ -201,12 +201,12 @@ public final class AgiTopComponent extends TopComponent {
     }
 
     /**
-     * Gets the chat session managed by this component.
+     * Gets the agi session managed by this component.
      * 
-     * @return The chat session, or null if not initialized.
+     * @return The agi session, or null if not initialized.
      */
-    public Chat getChat() {
-        return chatPanel != null ? chatPanel.getChat() : null;
+    public Agi getAgi() {
+        return agiPanel != null ? agiPanel.getAgi() : null;
     }
 
     /**

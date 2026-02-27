@@ -8,8 +8,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.model.resource.AbstractResource;
-import uno.anahata.asi.chat.Chat;
-import uno.anahata.asi.chat.ChatConfig;
+import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.model.tool.AbstractTool;
 import uno.anahata.asi.model.tool.java.JavaObjectToolkit;
 import uno.anahata.asi.tool.AiTool;
@@ -118,14 +118,14 @@ public class GeminiFunctionDeclarationAdapterTest {
 
     private AbstractTool<?, ?> getTool(String methodName) throws Exception {
         AsiContainer container = new AsiContainer("test") {
-            @Override public Chat createNewChat() { return new Chat(new ChatConfig(this)); }
+            @Override public Agi createNewAgi() { return new Agi(new AgiConfig(this)); }
             @Override public void openResource(AbstractResource<?, ?> resource) {}
         };
-        ChatConfig config = new ChatConfig(container) {
+        AgiConfig config = new AgiConfig(container) {
             @Override public List<Class<?>> getToolClasses() { return List.of(TestToolkit.class); }
         };
-        Chat chat = new Chat(config);
-        ToolManager toolManager = new ToolManager(chat);
+        Agi agi = new Agi(config);
+        ToolManager toolManager = new ToolManager(agi);
         JavaObjectToolkit toolkit = new JavaObjectToolkit(toolManager, TestToolkit.class);
         return toolkit.getTools().stream()
                 .filter(t -> t.getName().endsWith("." + methodName))

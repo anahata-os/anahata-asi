@@ -28,8 +28,8 @@ public class Audio extends AnahataToolkit {
     public void populateMessage(uno.anahata.asi.model.core.RagMessage ragMessage) throws Exception {
         List<AudioDevice> devices = listDevices();
         StringBuilder sb = new StringBuilder("\n## Available Audio Devices\n");
-        sb.append("Current selected input: `").append(getChat().getConfig().getSelectedInputDeviceId()).append("`\n");
-        sb.append("Current selected output: `").append(getChat().getConfig().getSelectedOutputDeviceId()).append("`\n\n");
+        sb.append("Current selected input: `").append(getAgi().getConfig().getSelectedInputDeviceId()).append("`\n");
+        sb.append("Current selected output: `").append(getAgi().getConfig().getSelectedOutputDeviceId()).append("`\n\n");
         
         for (AudioDevice device : devices) {
             sb.append("- ").append(device.toString()).append("\n");
@@ -46,8 +46,8 @@ public class Audio extends AnahataToolkit {
         List<AudioDevice> devices = new ArrayList<>();
         Mixer.Info[] mixerInfos = AudioSystem.getMixerInfo();
         
-        String selectedInput = getChat().getConfig().getSelectedInputDeviceId();
-        String selectedOutput = getChat().getConfig().getSelectedOutputDeviceId();
+        String selectedInput = getAgi().getConfig().getSelectedInputDeviceId();
+        String selectedOutput = getAgi().getConfig().getSelectedOutputDeviceId();
 
         for (Mixer.Info info : mixerInfos) {
             Mixer mixer = AudioSystem.getMixer(info);
@@ -74,7 +74,7 @@ public class Audio extends AnahataToolkit {
      */
     @AiTool("Selects a specific device for recording for the current session.")
     public String selectRecordingDevice(@AiToolParam("The unique ID of the input device to select.") String deviceId) {
-        getChat().getConfig().setSelectedInputDeviceId(deviceId);
+        getAgi().getConfig().setSelectedInputDeviceId(deviceId);
         return "Input device selected: " + deviceId;
     }
 
@@ -85,7 +85,7 @@ public class Audio extends AnahataToolkit {
      */
     @AiTool("Selects a specific device for playback for the current session.")
     public String selectOutputDevice(@AiToolParam("The unique ID of the output device to select.") String deviceId) {
-        getChat().getConfig().setSelectedOutputDeviceId(deviceId);
+        getAgi().getConfig().setSelectedOutputDeviceId(deviceId);
         return "Output device selected: " + deviceId;
     }
 
@@ -100,7 +100,7 @@ public class Audio extends AnahataToolkit {
     public String record(@AiToolParam("Duration in seconds.") int durationSeconds,
                          @AiToolParam(value = "Optional specific device ID to use.", required = false) String deviceId) throws Exception {
         
-        String actualDeviceId = deviceId != null ? deviceId : getChat().getConfig().getSelectedInputDeviceId();
+        String actualDeviceId = deviceId != null ? deviceId : getAgi().getConfig().getSelectedInputDeviceId();
         Mixer.Info mixerInfo = AudioDevice.toMixerInfo(actualDeviceId);
         
         TargetDataLine line;
@@ -154,7 +154,7 @@ public class Audio extends AnahataToolkit {
         File file = new File(filePath);
         if (!file.exists()) return "Error: File not found: " + filePath;
 
-        String actualDeviceId = deviceId != null ? deviceId : getChat().getConfig().getSelectedOutputDeviceId();
+        String actualDeviceId = deviceId != null ? deviceId : getAgi().getConfig().getSelectedOutputDeviceId();
         Mixer.Info mixerInfo = AudioDevice.toMixerInfo(actualDeviceId);
 
         try (AudioInputStream ais = AudioSystem.getAudioInputStream(file)) {

@@ -67,11 +67,11 @@ public abstract class TextPart extends AbstractPart {
     /**
      * {@inheritDoc}
      * Returns the default maximum depth to keep a text part in context,
-     * as defined in the chat configuration.
+     * as defined in the agi configuration.
      */
     @Override
     protected int getDefaultMaxDepth() {
-        return getChatConfig().getDefaultTextPartMaxDepth();
+        return getAgiConfig().getDefaultTextPartMaxDepth();
     }
 
     @Override

@@ -16,7 +16,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.chat.Chat;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.AbstractPart;
 import uno.anahata.asi.model.core.FinishReason;
@@ -44,11 +44,11 @@ public class GeminiModelMessage extends AbstractModelMessage<GeminiResponse> {
     /**
      * Constructs a GeminiModelMessage for streaming, without an initial candidate.
      * 
-     * @param chat The parent chat session.
+     * @param agi The parent agi session.
      * @param modelId The ID of the model.
      */
-    public GeminiModelMessage(Chat chat, String modelId) {
-        super(chat, modelId);
+    public GeminiModelMessage(Agi agi, String modelId) {
+        super(agi, modelId);
         this.geminiCandidate = null;
         setStreaming(true);
     }
@@ -56,13 +56,13 @@ public class GeminiModelMessage extends AbstractModelMessage<GeminiResponse> {
     /**
      * Constructs a GeminiModelMessage, encapsulating the conversion logic.
      *
-     * @param chat          The parent chat session.
+     * @param agi          The parent agi session.
      * @param modelId       The ID of the model that generated the content.
      * @param candidate The source Gemini Candidate object.
      * @param response The GeminiResponse that returned this message.
      */
-    public GeminiModelMessage(Chat chat, String modelId, Candidate candidate, GeminiResponse response) {
-        super(chat, response.getModelVersion() != null ? response.getModelVersion() : modelId);
+    public GeminiModelMessage(Agi agi, String modelId, Candidate candidate, GeminiResponse response) {
+        super(agi, response.getModelVersion() != null ? response.getModelVersion() : modelId);
         this.geminiCandidate = candidate;
         setResponse(response);
         
@@ -144,8 +144,8 @@ public class GeminiModelMessage extends AbstractModelMessage<GeminiResponse> {
         Map<String, Object> args = googleFc.args().orElse(Map.of());
         String id = googleFc.id().orElse(null);
 
-        // The ToolManager is accessible via the Chat reference in the message.
-        return getChat().getToolManager().createToolCall(this, id, name, args);
+        // The ToolManager is accessible via the Agi reference in the message.
+        return getAgi().getToolManager().createToolCall(this, id, name, args);
     }
     
     /**

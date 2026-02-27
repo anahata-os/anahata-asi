@@ -11,7 +11,7 @@ import uno.anahata.asi.nb.util.ElementHandleModule;
 import uno.anahata.asi.tool.schema.SchemaProvider;
 import uno.anahata.asi.nb.ui.render.FullTextFileUpdateRenderer;
 import uno.anahata.asi.nb.ui.render.TextFileReplacementsRenderer;
-import uno.anahata.asi.swing.chat.render.ParameterRendererFactory;
+import uno.anahata.asi.swing.agi.render.ParameterRendererFactory;
 import uno.anahata.asi.swing.internal.SwingUtils;
 import uno.anahata.asi.toolkit.files.FullTextFileUpdate;
 import uno.anahata.asi.toolkit.files.TextFileReplacements;

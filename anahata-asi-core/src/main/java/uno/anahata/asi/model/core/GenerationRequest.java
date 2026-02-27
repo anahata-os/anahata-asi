@@ -10,7 +10,7 @@ import lombok.NonNull;
  * <p>
  * This record serves as the primary input for the {@code generateContent} and 
  * {@code generateContentStream} methods in {@code AbstractModel}. It decouples 
- * the model implementation from the complex {@code Chat} orchestrator by 
+ * the model implementation from the complex {@code Agi} orchestrator by 
  * providing a snapshot of the request parameters and the relevant message history.
  * </p>
  *

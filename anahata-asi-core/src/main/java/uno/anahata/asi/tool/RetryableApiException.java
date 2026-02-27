@@ -7,7 +7,7 @@ import lombok.Getter;
 
 /**
  * A specialized exception indicating that an API call failed but is potentially retryable.
- * Providers can throw this exception to signal to the chat orchestrator that a retry
+ * Providers can throw this exception to signal to the agi orchestrator that a retry
  * mechanism (like exponential backoff) should be engaged.
  */
 @Getter

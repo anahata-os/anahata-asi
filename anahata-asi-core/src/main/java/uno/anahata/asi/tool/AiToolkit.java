@@ -33,7 +33,7 @@ public @interface AiToolkit {
      * not specify an explicit max depth policy in their {@code @AiTool} annotation.
      * <p>
      * A value of -1 indicates that the value should be inherited from the system default 
-     * defined in {@code ChatConfig}.
+     * defined in {@code AgiConfig}.
      * 
      * @return The default maximum depth.
      */
