@@ -54,7 +54,7 @@ public class Editor extends AnahataToolkit {
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("### Open Editor Files\n");
+        sb.append(" Open Editor Files\n");
         sb.append("| File Path | Project | Mode | Line | Offset | Modified |\n");
         sb.append("|---|---|---|---|---|---|\n");
 

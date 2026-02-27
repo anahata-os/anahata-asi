@@ -37,7 +37,7 @@ public final class NetBeansOutput {
      */
     public static String getMarkdownReport() throws Exception {
         long start = System.currentTimeMillis();
-        final StringBuilder sb = new StringBuilder("### Open Output Tabs\n");
+        final StringBuilder sb = new StringBuilder(" Open Output Tabs\n");
         
         SwingUtils.runInEDTAndWait(() -> {
             TopComponent outputTC = WindowManager.getDefault().findTopComponent("output");
@@ -54,7 +54,7 @@ public final class NetBeansOutput {
             } else {
                 for (OutputTabInfo tab : tabs) {
                     String cleanName = tab.getDisplayName().replaceAll("<[^>]*>", "");
-                    sb.append(String.format("#### %s (ID: %d, Lines: %d, Running: %s)\n", 
+                    sb.append(String.format("%s (ID: %d, Lines: %d, Running: %s)\n", 
                             cleanName, tab.getId(), tab.getTotalLines(), tab.isRunning()));
                     
                     // Get tail content directly while on EDT

@@ -97,7 +97,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
     /** {@inheritDoc} */
     @Override
     public void populateMessage(RagMessage ragMessage) {
-        StringBuilder sb = new StringBuilder("### Browser Environment\n");
+        StringBuilder sb = new StringBuilder(" Browser Environment\n");
         
         // 1. Connection Status
         sb.append("- **Status**: ").append(initializing ? "Initializing..." : (driver != null ? "CONNECTED" : "DISCONNECTED")).append("\n");

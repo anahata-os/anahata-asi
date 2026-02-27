@@ -117,7 +117,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     @Override
     public List<String> getSystemInstructions() throws Exception {
         return Collections.singletonList(
-            "### Compile on Save (CoS) Management:\n" +
+            " Compile on Save (CoS) Management:\n" +
             "NetBeans Maven projects determine the 'Compile on Save' status using a tiered priority system. " +
             "When a user asks to change this setting, you should offer these options:\n" +
             "1. **Project POM**: Add/update `<netbeans.compile.on.save>all</netbeans.compile.on.save>` in the project's `pom.xml` properties.\n" +

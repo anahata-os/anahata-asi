@@ -37,7 +37,7 @@ public class CodeModel extends AnahataToolkit {
     /** {@inheritDoc} */
     @Override
     public List<String> getSystemInstructions() throws Exception {
-        String instructions = "### CodeModel Toolkit Instructions:\n"
+        String instructions = " CodeModel Toolkit Instructions:\n"
                 + "- **Discovery**: Use `findTypes` to search for classes, interfaces, or enums. It returns `JavaType` objects which contain the full `ElementHandle` and `url` for precise identification.\n"
                 + "- **Shortcuts (ByFqn)**: If you already know the fully qualified name (FQN) of a type or member, you can use the `ByFqn` methods to skip the discovery turn. These methods will fail if the FQN is ambiguous (e.g., exists in multiple open projects).\n"
                 + "- **Member FQNs**: Members are identified by an FQN following the pattern `className.memberName` (e.g., `com.foo.MyClass.myMethod`).\n"

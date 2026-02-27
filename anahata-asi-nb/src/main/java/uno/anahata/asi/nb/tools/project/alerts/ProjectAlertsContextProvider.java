@@ -60,7 +60,7 @@ public class ProjectAlertsContextProvider extends BasicContextProvider {
         } else {
             // 1. Project Problems (High-level)
             if (!diags.getProjectAlerts().isEmpty()) {
-                sb.append("  ### Project Problems\n");
+                sb.append("   Project Problems\n");
                 for (ProjectAlert alert : diags.getProjectAlerts()) {
                     sb.append("    - [").append(alert.getSeverity()).append("] ")
                       .append(alert.getDisplayName()).append(": ").append(alert.getDescription().replace("\n", " ")).append("\n");
@@ -69,7 +69,7 @@ public class ProjectAlertsContextProvider extends BasicContextProvider {
 
             // 2. Java Compiler Alerts (File-level)
             if (!diags.getJavacAlerts().isEmpty()) {
-                sb.append("  ### Java Compiler Alerts\n");
+                sb.append("   Java Compiler Alerts\n");
                 for (JavacAlert alert : diags.getJavacAlerts()) {
                     sb.append("    - [").append(alert.getKind()).append("] ")
                       .append(alert.getFilePath()).append(":").append(alert.getLineNumber())

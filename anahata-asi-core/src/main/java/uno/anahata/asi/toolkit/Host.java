@@ -28,7 +28,7 @@ public class Host extends AnahataToolkit {
     /** {@inheritDoc} */
     @Override
     public void populateMessage(RagMessage ragMessage) {
-        StringBuilder sb = new StringBuilder("### Host System\n");
+        StringBuilder sb = new StringBuilder(" Host System\n");
         sb.append("- **OS**: ").append(SystemUtils.OS_NAME).append(" (").append(SystemUtils.OS_VERSION).append(")\n");
         sb.append("- **Architecture**: ").append(SystemUtils.OS_ARCH).append("\n");
         sb.append("- **Java Version**: ").append(SystemUtils.JAVA_VERSION).append("\n");

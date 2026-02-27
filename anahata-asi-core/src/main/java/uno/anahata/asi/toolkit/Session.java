@@ -196,20 +196,20 @@ public class Session extends AnahataToolkit {
         sb.append("- **Context Usage**: ").append(String.format("%.1f%%", domainAgi.getContextWindowUsage() * 100))
           .append(" (").append(domainAgi.getLastTotalTokenCount()).append(" / ").append(config.getTokenThreshold()).append(" tokens)\n");
         
-        sb.append("\n### Default Max Depth Policies:\n");
+        sb.append("\n Default Max Depth Policies:\n");
         sb.append("- **Text Parts**: ").append(config.getDefaultTextPartMaxDepth()).append("\n");
         sb.append("- **Tool Calls**: ").append(config.getDefaultToolMaxDepth()).append("\n");
         sb.append("- **Blob Parts**: ").append(config.getDefaultBlobPartMaxDepth()).append("\n");
         sb.append("*(Note: Individual tools or toolkits may override these defaults)*\n");
         
-        sb.append("\n### Capabilities:\n");
+        sb.append("\n Capabilities:\n");
         sb.append("- **Local Java Tools**: ").append(config.isLocalToolsEnabled() ? "ENABLED" : "DISABLED").append("\n");
         sb.append("- **Hosted Server Tools**: ").append(config.isHostedToolsEnabled() ? "ENABLED" : "DISABLED").append("\n");
 
         if (!config.isHostedToolsEnabled() && domainAgi.getSelectedModel() != null) {
             List<ServerTool> serverTools = domainAgi.getSelectedModel().getAvailableServerTools();
             if (!serverTools.isEmpty()) {
-                sb.append("\n#### Available Server Tools (Currently Disabled):\n");
+                sb.append("\n Available Server Tools (Currently Disabled):\n");
                 sb.append("The following tools are available but cannot be used while Local Tools are enabled. " +
                           "Use `enableHostedTools()` to switch modes.\n");
                 for (ServerTool st : serverTools) {

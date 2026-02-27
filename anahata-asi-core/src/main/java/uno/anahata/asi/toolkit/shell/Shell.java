@@ -51,7 +51,7 @@ public class Shell extends AnahataToolkit {
     @Override
     public List<String> getSystemInstructions() throws Exception {
         StringBuilder sb = new StringBuilder();
-        sb.append("### Host Environment Variables\n");
+        sb.append(" Host Environment Variables\n");
         Map<String, String> sortedEnv = new TreeMap<>(System.getenv());
         sortedEnv.forEach((k, v) -> sb.append("- **").append(k).append("**: ").append(v).append("\n"));
         return List.of(sb.toString());
