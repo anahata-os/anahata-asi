@@ -1,23 +1,25 @@
-# Anahata AI Gemini Provider
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
+# Anahata ASI Gemini Provider (`anahata-asi-gemini`)
 
-This document provides an overview of the `anahata-ai-gemini` module, which serves as the reference implementation for the V2 provider architecture.
+> [!IMPORTANT]
+> This file is an extension of the `anahata.md` in the parent project. Always keep the root `anahata.md` in context as it contains the master Coding Principles and Javadoc Standards.
+
+This module provides the adapter implementation for the Google Gemini API.
 
 ## 1. Purpose
 
-This module's sole responsibility is to act as an **Adapter** between the Google Gemini API and the core `anahata-ai` framework. It demonstrates how to build a provider that is fully compatible with the V2 architecture, including the `Chat`-centric lifecycle, model-led content generation, and the decoupled CLI test harness.
+This module's sole responsibility is to act as an **Adapter** between the Google Gemini API and the core `anahata-asi` framework.
 
 ## 2. Key Components
 
--   **`GeminiAiProvider`:** The concrete implementation of the `AbstractAiProvider`. It is initialized via its constructor, which accepts a `Chat` instance, following the single-phase initialization pattern of the V2 architecture.
+-   **`GeminiAgiProvider`:** The concrete implementation of `AbstractAgiProvider`.
 
--   **`GeminiModel`:** A wrapper around the native Google GenAI `GenerativeModel` object. It implements the `generateContent(RequestConfig, ...)` method, which is the core of the V2 design.
+-   **`GeminiModel`:** A wrapper around the native Google GenAI `GenerativeModel`. Implements `generateContent`.
 
--   **`adapter` Package:** This package contains all the logic for translating between the core `anahata-ai` domain model (e.g., `RequestConfig`, `Response`, `ModelMessage`) and the Google GenAI API's native types (e.g., `GenerateContentResponse`, `Content`).
+-   **`adapter` Package:** Logic for translating between core domain models and native Gemini API types.
 
 ## 3. CLI Test Harness
 
-This module provides a complete, self-contained example of how to test a provider using the core command-line interface.
+-   **`GeminiCliAgiConfig.java`:** Registers the `GeminiAgiProvider` for CLI usage.
 
--   **`GeminiCliChatConfig.java`:** A simple class that extends `ChatConfig` and registers the `GeminiAiProvider`. The core CLI discovers this class at runtime via reflection.
-
--   **`Main.java`:** A minimal launcher class whose only job is to call the `main` method of the core `uno.anahata.ai.Cli`. This demonstrates the decoupled nature of the test harness.
+-   **`CliMain.java` (in Standalone)**: Launcher for the core CLI with this provider.

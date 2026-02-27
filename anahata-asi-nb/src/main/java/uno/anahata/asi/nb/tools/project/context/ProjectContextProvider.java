@@ -33,6 +33,11 @@ public class ProjectContextProvider extends BasicContextProvider {
 
     /**
      * Constructs a new project context provider.
+     * <p>
+     * Implementation details:
+     * Initializes all project-specific child providers (Overview, anahata.md, Files, Components, Alerts) 
+     * and sets this provider as their parent.
+     * </p>
      * 
      * @param projectsToolkit The parent Projects toolkit.
      * @param project The NetBeans project instance.
@@ -73,6 +78,11 @@ public class ProjectContextProvider extends BasicContextProvider {
 
     /**
      * Gets the NetBeans project instance, restoring it from the path if necessary.
+     * <p>
+     * Implementation details:
+     * If the transient project field is null, it attempts to find it using the toolkit's 
+     * canonical path resolution.
+     * </p>
      * 
      * @return The project instance, or null if it cannot be found or is closed.
      */
@@ -89,8 +99,13 @@ public class ProjectContextProvider extends BasicContextProvider {
     }
 
     /**
-     * {@inheritDoc}
-     * Dynamically returns the current display name of the project.
+     * Returns the dynamic display name of the project.
+     * <p>
+     * Implementation details:
+     * Resolves the current display name from the NetBeans project information.
+     * </p>
+     * 
+     * @return The project's display name.
      */
     @Override
     public String getName() {
@@ -101,15 +116,29 @@ public class ProjectContextProvider extends BasicContextProvider {
         return super.getName();
     }
 
-    /** {@inheritDoc} */
+    /** 
+     * Returns the unique icon ID for the project node.
+     * <p>
+     * Implementation details:
+     * Returns a string prefixed with 'nb.project.' followed by the path.
+     * </p>
+     * 
+     * @return The icon ID string.
+     */
     @Override
     public String getIconId() {
         return iconId;
     }
 
     /**
-     * {@inheritDoc}
-     * Overridden to trigger a comprehensive project refresh in the IDE.
+     * Toggles the providing state and triggers a project-level UI refresh.
+     * <p>
+     * Implementation details:
+     * Updates the base state and calls {@link FilesContextActionLogic#fireRefreshRecursive} 
+     * for the project directory to update icons in the Projects tab.
+     * </p>
+     * 
+     * @param enabled The new state.
      */
     @Override
     public void setProviding(boolean enabled) {

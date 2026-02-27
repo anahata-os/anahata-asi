@@ -51,8 +51,9 @@ public class AnahataAnnotationLogic {
     /**
      * Performs stack-trace forensics to classify the UI node identity.
      * <p>
-     * This logic is identical to the verified Mock version to ensure 100% 
-     * reliable detection of Logical View (Project/Package) nodes.
+     * Implementation details:
+     * Scans the current call stack for specific NetBeans node implementation classes 
+     * (PackageNode, BadgingNode) to distinguish between Projects view and Files view.
      * </p>
      * 
      * @param fo The FileObject to classify.
@@ -76,10 +77,11 @@ public class AnahataAnnotationLogic {
     }
 
     /**
-     * Resolves DataShadows (shortcuts) to their original files.
+     * Resolves DataShadows (shortcuts) to their original physical files.
      * <p>
-     * This ensures that context lookups happen on the physical resource 
-     * even if the node being annotated is a virtual shortcut.
+     * Implementation details:
+     * Unwraps {@link DataShadow} instances using the DataObject API. 
+     * Ensures context checks are performed on the ground truth resource.
      * </p>
      * 
      * @param fo The potentially virtual FileObject.
@@ -103,12 +105,10 @@ public class AnahataAnnotationLogic {
     /**
      * Calculates the context presence totals for each active session.
      * <p>
-     * Logic varies by node type:
-     * <ul>
-     *   <li><b>Projects:</b> Total 'effectively providing' providers.</li>
-     *   <li><b>Packages:</b> Sum of resources in that package ONLY (non-recursive).</li>
-     *   <li><b>Folders:</b> Recursive resource count for tree visibility.</li>
-     * </ul>
+     * Implementation details:
+     * - Projects: Counts active providers via the Projects toolkit.
+     * - Packages: Performs a non-recursive resource count.
+     * - Folders: Performs a recursive resource count for tree propagation.
      * </p>
      * 
      * @param fo The file or container.
@@ -142,11 +142,8 @@ public class AnahataAnnotationLogic {
     /**
      * Builds the HTML name annotation suffix.
      * <p>
-     * Format per spec:
-     * <ul>
-     *   <li><b>Containers:</b> [sum1][sum2]...</li>
-     *   <li><b>Files:</b> (displayName) or (count)</li>
-     * </ul>
+     * Implementation details:
+     * Dispatches to specific bracketed or parenthesized formatting based on node type.
      * </p>
      * 
      * @param nodeType The node identity.
@@ -163,6 +160,11 @@ public class AnahataAnnotationLogic {
 
     /**
      * Builds the descriptive HTML tooltip for the Anahata badge.
+     * <p>
+     * Implementation details:
+     * Injects the Anahata icon and builds a structured list of active sessions 
+     * and providers (for projects) or resource counts (for containers).
+     * </p>
      * 
      * @param fo The target node's FileObject.
      * @param nodeType The classified identity.
@@ -201,10 +203,12 @@ public class AnahataAnnotationLogic {
         return sb.toString();
     }
 
-    // --- Private Detail Helpers ---
-
     /**
      * Formats context counts into greyed-out square brackets (e.g., [3][1]).
+     * <p>
+     * Implementation details:
+     * Appends a series of bracketed totals styled with a neutral grey color.
+     * </p>
      * 
      * @param totals The session-specific counts.
      * @return The bracketed HTML string.
@@ -220,7 +224,12 @@ public class AnahataAnnotationLogic {
     }
 
     /**
-     * Formats file name annotations according to the spec: (displayName) or (count).
+     * Formats file name annotations using parentheses.
+     * <p>
+     * Implementation details:
+     * If in a single session, shows the session nickname. In multiple sessions, 
+     * shows the total session count.
+     * </p>
      * 
      * @param agis Active agi list.
      * @param totals Session counts.
@@ -243,10 +252,11 @@ public class AnahataAnnotationLogic {
     }
 
     /**
-     * Locates the names of all providers for a project that are currently 'effectively providing'.
+     * Locates the names of all active providers for a project.
      * <p>
-     * Implementation uses FileOwnerQuery to resolve the project root from any FileObject 
-     * (crucial for Logical View nodes where the set of files often contains children of the root).
+     * Implementation details:
+     * Uses {@link FileOwnerQuery} to find the project root from the node's FileObject. 
+     * Queries the toolkit for the flattened hierarchy of 'effectively providing' providers.
      * </p>
      * 
      * @param agi The session to check.
@@ -273,7 +283,12 @@ public class AnahataAnnotationLogic {
     }
 
     /**
-     * Flattens a provider hierarchy and extracts names of effectively-providing nodes.
+     * Flattens a provider hierarchy and extracts names of nodes that are actually providing context.
+     * <p>
+     * Implementation details:
+     * Performs a depth-first search of the children providers, checking the 
+     * {@link ContextProvider#isEffectivelyProviding()} status.
+     * </p>
      * 
      * @param root The starting context provider.
      * @return List of matching names.

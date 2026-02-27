@@ -1,18 +1,17 @@
-/* Licensed under the Apache License, Version 2.0 */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.tools.project.context;
 
 import java.io.File;
 import lombok.extern.slf4j.Slf4j;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
-import org.openide.loaders.DataObject;
-import org.openide.nodes.Node;
 import uno.anahata.asi.context.BasicContextProvider;
 import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.nb.tools.project.ProjectFile;
 import uno.anahata.asi.nb.tools.project.ProjectFiles;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.nb.tools.project.SourceFolder;
+import uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic;
 
 /**
  * Provides a real-time view of a project's file and folder structure.
@@ -43,8 +42,16 @@ public class ProjectFilesContextProvider extends BasicContextProvider {
     }
 
     /**
-     * {@inheritDoc}
-     * Populates the RAG message with a Markdown tree of the project's files.
+     * Injects the project's file tree into the RAG message.
+     * <p>
+     * Implementation details:
+     * Fetches the current file structural data from the Projects toolkit and 
+     * generates a Markdown tree. It distinguishes between root files and 
+     * source-group folders for clarity.
+     * </p>
+     * 
+     * @param ragMessage The target RAG message.
+     * @throws Exception if project files cannot be retrieved.
      */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
@@ -53,8 +60,28 @@ public class ProjectFilesContextProvider extends BasicContextProvider {
     }
 
     /**
+     * Toggles providing status and triggers a UI refresh.
+     * <p>
+     * Implementation details:
+     * Notifies the IDE that the project icon should be redrawn to reflect 
+     * the new context state.
+     * </p>
+     * 
+     * @param enabled New state.
+     */
+    @Override
+    public void setProviding(boolean enabled) {
+        boolean old = isProviding();
+        super.setProviding(enabled);
+        if (old != enabled && parent instanceof ProjectContextProvider pcp) {
+            FilesContextActionLogic.fireRefreshRecursive(pcp.getProject().getProjectDirectory());
+        }
+    }
+
+    /**
      * Generates a Markdown string representing the project file tree.
      * <p>
+     * Implementation details:
      * This method splits the output into the Root Directory (flat list) and 
      * Source Folders (hierarchical tree). It resolves the relative path for
      * each top-level source folder to provide context for the AI.
@@ -91,6 +118,7 @@ public class ProjectFilesContextProvider extends BasicContextProvider {
     /**
      * Recursively formats a source folder and its contents into a Markdown tree.
      * <p>
+     * Implementation details:
      * Displays the folder name (or display name) followed by an optional 
      * relative path in parentheses for top-level groups.
      * </p>
@@ -128,6 +156,7 @@ public class ProjectFilesContextProvider extends BasicContextProvider {
     /**
      * Formats a project file into a Markdown list item.
      * <p>
+     * Implementation details:
      * Includes the file name and any IDE-level annotations (e.g., Git status flags)
      * extracted from the annotated name.
      * </p>

@@ -42,28 +42,31 @@ This project uses a set of key documents to guide development. For detailed info
 - **Logging Standard**: Use SLF4J (`@Slf4j`) for all logging. Never use `System.out.println()`.
 - **Lombok Purity**: Rely on Maven for Lombok annotation processing; do not add explicit getters/setters for Lombok-managed fields.
 - **Domain Driven Architecture (DDA)**: Business logic and state transitions must reside in `anahata-asi-core`. UI components in `anahata-asi-swing` are for rendering only.
+- **Thread Awareness**: Toolkit methods can be invoked from background threads (during AI tool execution) or the Event Dispatch Thread (when triggered by user UI actions). The `SwingUtils` class contains convenience methods like `runInEDT` and `runInEDTAndWait` to help handle these transitions safely.
 - **Reactive UI**: Use `PropertyChangeSource` and `EdtPropertyChangeListener` for UI-to-Domain bindings to ensure EDT execution.
 - **Cross-Platform Support**: All toolkits and utilities must support Linux, Windows, and macOS via `OsUtils` and `SystemUtils`.
 - **Standard Toolkit Method Order**: 
-    1. `rebind()`
-    2. `getSystemInstructions()`
-    3. `populateMessage()`
+    1. `rebind()` (if needed)
+    2. `getSystemInstructions()` (if needed)
+    3. `populateMessage()` (if needed)
     4. `@AiTool` methods
-    5. Public helper methods
-    6. Private implementation details
+    5. Public helper methods (if needed)
+    6. Private implementation details (if needed)
 
 ## 5. Javadoc Standards
 
 Comprehensive documentation is mandatory for this open-source project. Existing Javadoc and comments must never be removed.
 
-- **Mandatory Documentation**: Javadoc is required for **everything** that can be javadocced: all classes, interfaces, enums, fields (including private), and methods (including public, protected, private, and overrides).
-- **Inheritance**: Use `{@inheritDoc}` or provide a concise explanation of the specific implementation.
+- **Mandatory Documentation**: Javadoc is mandatory in everything: private, public, protected. No `@inheritDoc` allowed.
+- **Override/Implementation Logic**: Every override or implementation must describe **why** the member is being overridden/implemented and provide a detailed description of the specific implementation logic.
 - **Meaningful Content**: Avoid "lazy" Javadoc. Explain the significance and semantics within the domain model.
 - **Implementation Details**: For complex logic, use Javadoc to explain internal side effects and thread-safety considerations.
 
+## 6. Evolutionary Status
 
-### 6.6. JIT Testing
-- **Compilation Delay**: When testing modified code via `NetBeansProjectJVM`, include a 1-2 second delay at the start of `Anahata.call()` to allow "Compile on Save" to finish.
+This project is in a pre-production state. We value architectural purity and long-term maintainability.
+
+- **Architectural Rework**: If you identify a cleaner or more efficient design pattern, you are encouraged to propose and implement a rework of existing structures. Refactoring for clarity and future-proofing is preferred over applying patches to flawed designs.
 
 ## 7. Environment
 

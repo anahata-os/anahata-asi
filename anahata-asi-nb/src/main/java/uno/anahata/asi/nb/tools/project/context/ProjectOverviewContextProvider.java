@@ -30,6 +30,10 @@ public class ProjectOverviewContextProvider extends BasicContextProvider {
 
     /**
      * Constructs a new overview provider for a specific project.
+     * <p>
+     * Implementation details:
+     * Stores references to the parent toolkit and target path.
+     * </p>
      * 
      * @param projectsToolkit The parent Projects toolkit.
      * @param projectPath The absolute path to the project.
@@ -41,8 +45,15 @@ public class ProjectOverviewContextProvider extends BasicContextProvider {
     }
 
     /**
-     * {@inheritDoc}
-     * Populates the RAG message with a Markdown overview of the project.
+     * Injects the project's Markdown overview into the RAG message.
+     * <p>
+     * Implementation details:
+     * Fetches the project metadata from the toolkit and generates a structured 
+     * Markdown summary including packaging, versions, actions, and dependencies.
+     * </p>
+     * 
+     * @param ragMessage The target RAG message.
+     * @throws Exception if project overview cannot be fetched.
      */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
@@ -51,8 +62,13 @@ public class ProjectOverviewContextProvider extends BasicContextProvider {
     }
 
     /**
-     * {@inheritDoc}
-     * Overridden to trigger a project UI refresh when the overview is toggled.
+     * Toggles providing status and triggers a UI refresh.
+     * <p>
+     * Implementation details:
+     * Updates base state and notifies the IDE to redraw project icons.
+     * </p>
+     * 
+     * @param enabled New state.
      */
     @Override
     public void setProviding(boolean enabled) {
@@ -65,6 +81,11 @@ public class ProjectOverviewContextProvider extends BasicContextProvider {
 
     /**
      * Generates a Markdown string representing the project overview.
+     * <p>
+     * Implementation details:
+     * Builds a comprehensive Markdown report including project identity, path, 
+     * packaging, Java versions, encoding, CoS status, actions, and dependencies.
+     * </p>
      * 
      * @param overview The project overview data.
      * @return A Markdown-formatted string.
@@ -94,6 +115,11 @@ public class ProjectOverviewContextProvider extends BasicContextProvider {
 
     /**
      * Formats a Maven dependency scope and its artifacts into Markdown.
+     * <p>
+     * Implementation details:
+     * Iterates through groups and artifacts for the given scope, applying 
+     * consistent indentation and formatting.
+     * </p>
      * 
      * @param scope The dependency scope to format.
      * @param indent The current indentation string.

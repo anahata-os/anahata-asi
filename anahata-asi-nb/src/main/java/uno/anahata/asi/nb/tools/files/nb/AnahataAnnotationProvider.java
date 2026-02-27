@@ -4,9 +4,9 @@ package uno.anahata.asi.nb.tools.files.nb;
 import java.awt.Image;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.Action;
-import javax.swing.SwingUtilities;
 import org.netbeans.modules.masterfs.providers.AnnotationProvider;
 import org.netbeans.modules.masterfs.providers.InterceptionListener;
 import org.openide.filesystems.FileObject;
@@ -17,6 +17,7 @@ import org.openide.util.Lookup;
 import org.openide.util.lookup.ServiceProvider;
 import uno.anahata.asi.AnahataInstaller;
 import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
  * Master Shell for Anahata context visibility in NetBeans.
@@ -38,6 +39,7 @@ import uno.anahata.asi.agi.Agi;
 @ServiceProvider(service = AnnotationProvider.class, position = 10000)
 public class AnahataAnnotationProvider extends AnnotationProvider {
 
+    /** Logger for tracking annotation lifecycle and delegation issues. */
     private static final Logger LOG = Logger.getLogger(AnahataAnnotationProvider.class.getName());
     
     /** 
@@ -70,19 +72,26 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
 
     /**
      * Default constructor for the service loader.
+     * Initializes the provider and logs the startup message.
      */
     public AnahataAnnotationProvider() {
-        LOG.info("AnahataAnnotationProvider (v2.7) Master Shell initializing...");
+        LOG.info("AnahataAnnotationProvider (v3.0) Master Shell initializing...");
     }
 
     /**
-     * Aggregates icon badges from previous providers and overlays the Anahata bell.
+     * Annotates the icon of a file or set of files.
      * <p>
-     * Implementation uses a global BUSY guard and manual forensic delegation to 
-     * ensure Git badges and other IDE markers are preserved.
+     * Implementation details:
+     * 1. Preserves existing badges (Git, Errors) by delegating to other providers.
+     * 2. Uses {@link AnahataAnnotationLogic} to classify the node and calculate session totals.
+     * 3. Overlays the Anahata bell icon if any of the files are in an active AI context.
+     * 4. Injects a dynamically built tooltip into the merged image.
      * </p>
      * 
-     * {@inheritDoc}
+     * @param icon The base icon to annotate.
+     * @param type The type of icon (e.g., closed/opened folder).
+     * @param files The set of files represented by the node.
+     * @return The badged icon, or the original if no context is present.
      */
     @Override
     public Image annotateIcon(Image icon, int type, Set<? extends FileObject> files) {
@@ -129,12 +138,17 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
     }
 
     /**
-     * Aggregates HTML labels and appends session-specific context counts or nicknames.
+     * Annotates the HTML name of a file or set of files.
      * <p>
-     * Implementation uses a global BUSY guard to prevent re-entrant HTML building.
+     * Implementation details:
+     * 1. Preserves existing HTML decorations (Git branch, status colors) via delegation.
+     * 2. Uses {@link AnahataAnnotationLogic} to determine the specific annotation suffix (bracketed counts or session names).
+     * 3. Surgically injects the suffix before the closing &lt;/html&gt; tag.
      * </p>
      * 
-     * {@inheritDoc}
+     * @param name The original HTML name (may be null).
+     * @param files The set of files represented by the node.
+     * @return The annotated HTML string.
      */
     @Override
     public String annotateNameHtml(String name, Set<? extends FileObject> files) {
@@ -174,12 +188,37 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
     }
 
     /**
+     * Provides dynamic context menu actions for the selected files.
+     * <p>
+     * Implementation details:
+     * Returns a single {@link AnahataContextActionPresenter} which generates the dynamic 
+     * "Add/Remove from AI Context" submenus. This allows all file types to be managed 
+     * without specific MIME-type registrations.
+     * </p>
+     * 
+     * @param files The set of selected files.
+     * @return An array of actions to add to the context menu.
+     */
+    @Override
+    public Action[] actions(Set<? extends FileObject> files) {
+        if (files == null || files.isEmpty()) {
+            return new Action[0];
+        }
+        return new Action[]{ new AnahataContextActionPresenter(files) };
+    }
+
+    /**
      * Safely loops through other providers to aggregate their Icon results.
+     * <p>
+     * Implementation details:
+     * Prevents infinite recursion by checking the {@link #DELEGATING_ICON} guard.
+     * Iterates through all {@link AnnotationProvider} services except this one.
+     * </p>
      * 
      * @param icon The base icon to annotate.
      * @param type Icon type (BeanInfo).
      * @param files The set of target files.
-     * @return The aggregated and aggregated image.
+     * @return The aggregated and badged image.
      */
     private Image delegateIcon(Image icon, int type, Set<? extends FileObject> files) {
         if (DELEGATING_ICON.get()) {
@@ -205,6 +244,11 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
 
     /**
      * Safely loops through other providers to aggregate their HTML results.
+     * <p>
+     * Implementation details:
+     * Prevents infinite recursion by checking the {@link #DELEGATING_NAME} guard.
+     * Iterates through all {@link AnnotationProvider} services except this one.
+     * </p>
      * 
      * @param name The current HTML name.
      * @param files The set of target files.
@@ -232,15 +276,30 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
         }
     }
 
-    /** {@inheritDoc} */
+    /** 
+     * Not used. Anahata uses HTML-based name annotation for better styling.
+     * 
+     * @param name Original name.
+     * @param files Target files.
+     * @return null.
+     */
     @Override public String annotateName(String name, Set<? extends FileObject> files) { return null; }
-    /** {@inheritDoc} */
-    @Override public Action[] actions(Set<? extends FileObject> files) { return new Action[0]; }
-    /** {@inheritDoc} */
+    
+    /** 
+     * Not used by the Anahata provider.
+     * 
+     * @return null.
+     */
     @Override public InterceptionListener getInterceptionListener() { return null; }
 
     /**
      * Fires a refresh event to redraw nodes for specific files across all AnnotationProviders.
+     * <p>
+     * Implementation details:
+     * Uses {@link SwingUtils#runInEDT} to ensure the status change is fired on the 
+     * Event Dispatch Thread immediately. Notifies all {@link AnahataAnnotationProvider} 
+     * instances to update their visual state.
+     * </p>
      * 
      * @param fs The filesystem of the target files.
      * @param files The set of files requiring a redraw.
@@ -249,7 +308,7 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
         if (files == null || files.isEmpty() || fs == null) {
             return;
         }
-        SwingUtilities.invokeLater(() -> {
+        SwingUtils.runInEDT(() -> {
             try {
                 for (AnnotationProvider ap : Lookup.getDefault().lookupAll(AnnotationProvider.class)) {
                     if (ap instanceof AnahataAnnotationProvider aap) {
@@ -257,7 +316,7 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
                     }
                 }
             } catch (Exception ex) {
-                // Ignore refresh errors to prevent IDE instability
+                LOG.log(Level.SEVERE, "Failed to fire file status refresh event.", ex);
             }
         });
     }

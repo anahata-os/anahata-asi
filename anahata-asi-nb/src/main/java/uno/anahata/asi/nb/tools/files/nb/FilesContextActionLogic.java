@@ -11,7 +11,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.openide.cookies.EditorCookie;
 import org.openide.cookies.LineCookie;
-import org.openide.filesystems.FileAttributeEvent;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileSystem;
 import org.openide.filesystems.FileUtil;
@@ -32,10 +31,19 @@ import uno.anahata.asi.model.resource.AbstractPathResource;
  */
 public class FilesContextActionLogic {
 
+    /** Logger for tracking resource registration and refresh events. */
     private static final Logger LOG = Logger.getLogger(FilesContextActionLogic.class.getName());
 
     /**
      * Adds a file or folder's contents to the specified agi context.
+     * <p>
+     * Implementation details:
+     * 1. Resolves the FileObject to a physical file.
+     * 2. Checks if it's already registered.
+     * 3. Uses cookies (Editor/Line) to distinguish between textual and binary resources.
+     * 4. Recursively traverses folders if the flag is set.
+     * 5. Triggers an IDE UI refresh for the path and its parents.
+     * </p>
      * 
      * @param fo The file object to add.
      * @param targetAgi The target agi session.
@@ -86,6 +94,11 @@ public class FilesContextActionLogic {
 
     /**
      * Removes a file or folder's contents from the specified agi context.
+     * <p>
+     * Implementation details:
+     * Identifies resources by path and unregisters them from the session. 
+     * Triggers an IDE UI refresh.
+     * </p>
      * 
      * @param fo The file object to remove.
      * @param targetAgi The target agi session.
@@ -112,11 +125,15 @@ public class FilesContextActionLogic {
     }
 
     /**
-     * Checks if the given file is currently in the target agi's context.
+     * Checks if a file is currently in an agi's context.
+     * <p>
+     * Implementation details:
+     * Matches the canonical path of the FileObject against registered resources.
+     * </p>
      * 
      * @param fo The file object to check.
-     * @param agi The agi session to check against.
-     * @return {@code true} if the file is in the context.
+     * @param agi The agi session.
+     * @return true if registered.
      */
     public static boolean isInContext(FileObject fo, Agi agi) {
         if (fo.isData()) {
@@ -127,10 +144,14 @@ public class FilesContextActionLogic {
     }
 
     /**
-     * Counts how many active agi sessions have the given file in their context.
+     * Counts active agis containing the given file.
+     * <p>
+     * Implementation details:
+     * Iterates through all active sessions and performs a context check.
+     * </p>
      * 
-     * @param fo The file object to check.
-     * @return The number of agis containing the file.
+     * @param fo The file.
+     * @return The agi count.
      */
     public static int countAgisInContext(FileObject fo) {
         int count = 0;
@@ -143,13 +164,16 @@ public class FilesContextActionLogic {
     }
 
     /**
-     * Returns a map of agi sessions and the number of files they have in context 
-     * within the given folder (or 1 if it's a single file).
-     * The map is sorted by agi display name for consistent UI rendering.
+     * Returns resource counts for each session within a folder.
+     * <p>
+     * Implementation details:
+     * Builds a sorted map of Agi instances to the number of their resources 
+     * located under the given path.
+     * </p>
      * 
-     * @param fo The file or folder to check.
-     * @param recursive Whether to count files in subfolders.
-     * @return A sorted map of Agi to file count.
+     * @param fo The target folder.
+     * @param recursive Whether to search recursively.
+     * @return A sorted map of Agi to count.
      */
     public static Map<Agi, Integer> getSessionFileCounts(FileObject fo, boolean recursive) {
         Map<Agi, Integer> counts = new TreeMap<>((c1, c2) -> c1.getDisplayName().compareTo(c2.getDisplayName()));
@@ -164,6 +188,11 @@ public class FilesContextActionLogic {
 
     /**
      * Counts the number of files in context for a specific agi within a folder.
+     * <p>
+     * Implementation details:
+     * Uses prefix-based path matching on the session's resource list to find 
+     * children of the given path.
+     * </p>
      * 
      * @param fo The file or folder to check.
      * @param agi The agi session.
@@ -204,10 +233,15 @@ public class FilesContextActionLogic {
     }
 
     /**
-     * Fires a refresh event for the given file and all its parent folders.
-     * This ensures that badges and name annotations propagate up the tree.
+     * Fires a comprehensive refresh event for a file and all its ancestors.
+     * <p>
+     * Implementation details:
+     * Ascends the folder tree and aggregates all parents. Dispatches the refresh 
+     * event to all active annotation providers to ensure badges and annotations 
+     * are redrawn correctly.
+     * </p>
      * 
-     * @param fo The file object to refresh.
+     * @param fo The starting FileObject.
      */
     public static void fireRefreshRecursive(FileObject fo) {
         Map<FileSystem, Set<FileObject>> toRefreshByFs = new HashMap<>();

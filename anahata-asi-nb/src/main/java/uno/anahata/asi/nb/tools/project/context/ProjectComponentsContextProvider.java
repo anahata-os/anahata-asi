@@ -1,4 +1,4 @@
-/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
+/* Licensed under the Apache License, Version 2.0 */
 package uno.anahata.asi.nb.tools.project.context;
 
 import java.util.List;
@@ -7,6 +7,7 @@ import uno.anahata.asi.context.BasicContextProvider;
 import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.nb.tools.project.ProjectComponent;
 import uno.anahata.asi.nb.tools.project.Projects;
+import uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic;
 
 /**
  * Provides a Java-centric view of a project by listing all its top-level types.
@@ -41,8 +42,16 @@ public class ProjectComponentsContextProvider extends BasicContextProvider {
     }
 
     /**
-     * {@inheritDoc}
-     * Populates the RAG message with a Markdown list of project components.
+     * Injects the list of project Java components into the RAG message.
+     * <p>
+     * Implementation details:
+     * Queries the Projects toolkit for all declared Java types in the project 
+     * and appends them as a Markdown list. Truncates the list if it exceeds 
+     * MAX_COMPONENTS for performance.
+     * </p>
+     * 
+     * @param ragMessage The target RAG message.
+     * @throws Exception if project components cannot be fetched.
      */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
@@ -51,7 +60,31 @@ public class ProjectComponentsContextProvider extends BasicContextProvider {
     }
 
     /**
+     * Toggles providing status and triggers a UI refresh.
+     * <p>
+     * Implementation details:
+     * Notifies the IDE that the project icon should be redrawn to reflect 
+     * the new context state.
+     * </p>
+     * 
+     * @param enabled New state.
+     */
+    @Override
+    public void setProviding(boolean enabled) {
+        boolean old = isProviding();
+        super.setProviding(enabled);
+        if (old != enabled && parent instanceof ProjectContextProvider pcp) {
+            FilesContextActionLogic.fireRefreshRecursive(pcp.getProject().getProjectDirectory());
+        }
+    }
+
+    /**
      * Generates a Markdown string representing the project components.
+     * <p>
+     * Implementation details:
+     * Iterates through the component list and formats each as an FQN followed 
+     * by its Java kind (Class, Interface, etc.).
+     * </p>
      * 
      * @param components The list of project components.
      * @return A Markdown-formatted string.

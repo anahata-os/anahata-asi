@@ -35,7 +35,16 @@ import uno.anahata.asi.toolkit.files.FullTextFileUpdate;
 @Slf4j
 public class NbFiles extends Files {
 
-    /** {@inheritDoc} */
+    /**
+     * Returns the mandatory system instructions for this toolkit.
+     * <p>
+     * Implementation details:
+     * Appends a strict prohibition against guessing Java type signatures.
+     * </p>
+     * 
+     * @return List of instructions.
+     * @throws Exception on error.
+     */
     @Override
     public List<String> getSystemInstructions() throws Exception {
         List<String> instructions = new ArrayList<>(super.getSystemInstructions());
@@ -49,7 +58,40 @@ public class NbFiles extends Files {
         return instructions;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * Loads a text file as a managed resource.
+     * <p>
+     * Implementation details:
+     * Overrides the core logic to trigger an IDE UI refresh for the file's icon 
+     * and status immediately after registration.
+     * </p>
+     * 
+     * @param path Absolute path.
+     * @param settings Viewport settings.
+     * @return The loaded resource.
+     * @throws Exception on failure.
+     */
+    @Override
+    public TextFileResource loadTextFileInternal(String path, TextViewportSettings settings) throws Exception {
+        TextFileResource resource = super.loadTextFileInternal(path, settings);
+        FileObject fo = FileUtil.toFileObject(new File(path));
+        if (fo != null) {
+            FilesContextActionLogic.fireRefreshRecursive(fo);
+        }
+        return resource;
+    }
+
+    /**
+     * Updates viewport settings for an already loaded resource.
+     * <p>
+     * Implementation details:
+     * Manages logic for re-loading resources based on refresh policies.
+     * </p>
+     * 
+     * @param resource The resource to update.
+     * @param settings The new settings.
+     * @throws Exception on error.
+     */
     @Override
     protected void updateExistingResource(TextFileResource resource, TextViewportSettings settings) throws Exception {
         if (settings != null) {
@@ -65,7 +107,18 @@ public class NbFiles extends Files {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * Creates a new resource instance for the given path.
+     * <p>
+     * Implementation details:
+     * Returns a {@link NbTextFileResource} which integrates with the NetBeans 
+     * FileObject lifecycle.
+     * </p>
+     * 
+     * @param path Absolute path.
+     * @return The resource instance.
+     * @throws Exception on creation error.
+     */
     @Override
     protected TextFileResource createResourceInstance(String path) throws Exception {
         FileObject fo = FileUtil.toFileObject(new File(path));
@@ -76,7 +129,19 @@ public class NbFiles extends Files {
         return super.createResourceInstance(path);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * Creates a new file on disk.
+     * <p>
+     * Implementation details:
+     * Uses the NetBeans {@link FileObject#createData} API to ensure the IDE 
+     * indexes the new file immediately. Triggers a UI refresh.
+     * </p>
+     * 
+     * @param path Absolute path.
+     * @param content Content.
+     * @param message Change message.
+     * @throws Exception on write error.
+     */
     @Override
     protected void performCreate(String path, String content, String message) throws Exception {
         File file = new File(path);
@@ -92,7 +157,17 @@ public class NbFiles extends Files {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * Validates an update request against the managed resource.
+     * <p>
+     * Implementation details:
+     * Performs optimistic locking by comparing timestamps and ensures the path 
+     * is a managed resource.
+     * </p>
+     * 
+     * @param update The update details.
+     * @throws Exception if validation fails.
+     */
     @Override
     protected void validateUpdate(FullTextFileUpdate update) throws Exception {
         FileObject fo = FileUtil.toFileObject(new File(update.getPath()));
@@ -112,7 +187,17 @@ public class NbFiles extends Files {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * Performs a file update.
+     * <p>
+     * Implementation details:
+     * Uses NetBeans APIs to perform a synchronized write to the FileObject.
+     * </p>
+     * 
+     * @param update The update.
+     * @param message Message.
+     * @throws Exception on write error.
+     */
     @Override
     protected void performUpdate(FullTextFileUpdate update, String message) throws Exception {
         FileObject fo = FileUtil.toFileObject(new File(update.getPath()));
@@ -127,6 +212,12 @@ public class NbFiles extends Files {
     /**
      * Helper method to write content to a FileObject, handling both editor 
      * documents and direct stream access.
+     * <p>
+     * Implementation details:
+     * If the file is open in an editor, it uses {@link NbDocument#runAtomicAsUser} 
+     * to update the document, preserving undo history. Otherwise, it uses 
+     * {@link FileObject#lock()} for a safe stream write.
+     * </p>
      * 
      * @param fo The FileObject to write to.
      * @param content The new content.
