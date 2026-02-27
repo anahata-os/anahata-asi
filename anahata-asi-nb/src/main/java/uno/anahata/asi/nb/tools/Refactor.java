@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -44,6 +45,8 @@ import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
+import uno.anahata.asi.model.resource.AbstractPathResource;
+import uno.anahata.asi.model.resource.AbstractResource;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolParam;
 import uno.anahata.asi.tool.AiToolkit;
@@ -93,7 +96,8 @@ public class Refactor extends AnahataToolkit{
         RenameRefactoring refactoring = new RenameRefactoring(getLookupForFile(fo));
         refactoring.setNewName(newName);
         
-        return executeRefactoring(refactoring, "Rename " + fo.getName());
+        String result = executeRefactoring(refactoring, "Rename " + fo.getName());
+        return enrichWithContextInfo(filePath, result, "renamed");
     }
 
     /**
@@ -119,7 +123,8 @@ public class Refactor extends AnahataToolkit{
         // CRITICAL: Provide both FileObject and its URL to ensure the refactoring engine can resolve the package
         refactoring.setTarget(Lookups.fixed(targetFo, targetFo.toURL()));
         
-        return executeRefactoring(refactoring, "Move " + sourceFo.getName());
+        String result = executeRefactoring(refactoring, "Move " + sourceFo.getName());
+        return enrichWithContextInfo(filePath, result, "moved");
     }
 
     /**
@@ -164,7 +169,32 @@ public class Refactor extends AnahataToolkit{
         SafeDeleteRefactoring refactoring = new SafeDeleteRefactoring(getLookupForFile(fo));
         refactoring.setCheckInComments(checkInComments);
         
-        return executeRefactoring(refactoring, "Safe Delete " + fo.getName());
+        String result = executeRefactoring(refactoring, "Safe Delete " + fo.getName());
+        return enrichWithContextInfo(filePath, result, "deleted");
+    }
+
+    /**
+     * Enriches the tool output with information about managed resources affected by the refactoring.
+     * It provides specific instructions on how to purge or recover deleted resource content.
+     */
+    private String enrichWithContextInfo(String path, String result, String action) {
+        Optional<? extends AbstractPathResource<?>> res = getResourceManager().findByPath(path);
+        if (res.isPresent()) {
+            String uuid = res.get().getId();
+            StringBuilder sb = new StringBuilder(result);
+            sb.append("\n--- Context Awareness ---\n");
+            if ("deleted".equals(action)) {
+                sb.append("Resource [").append(uuid).append("] remains in context. Its last known content is cached. ")
+                  .append("Use Session.unloadResource to remove it from the RAG Message or ")
+                  .append("Session.updateContextProviders(false, List.of(\"").append(uuid).append("\")) to free the cached content from the context window ")
+                  .append("and Session.updateContextProviders(true, List.of(\"").append(uuid).append("\")) if you need to recover its contents.");
+            } else {
+                sb.append("NOTICE: Managed resource (ID: ").append(uuid).append(") has been ").append(action).append(". ")
+                  .append("The internal resource path and name will update automatically to match the new location.");
+            }
+            return sb.toString();
+        }
+        return result;
     }
 
     /**

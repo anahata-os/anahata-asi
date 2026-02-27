@@ -7,15 +7,14 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 
 /**
- * Encapsulates adjustable viewport configuration.
+ * Encapsulates adjustable viewport configuration for text resources.
+ * 
  * @author anahata-ai
  */
 @Getter
 @Setter
-@ToString
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -35,4 +34,32 @@ public class TextViewportSettings {
     private boolean tail = false;
     @Builder.Default
     private int tailLines = 100;
+
+    /**
+     * Returns a comprehensive summary of the viewport settings for UI display.
+     * @return A summary string.
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        if (grepPattern != null && !grepPattern.isBlank()) {
+            sb.append("Grep: '").append(grepPattern).append("' ");
+        }
+        if (tail) {
+            sb.append("Tail: ").append(tailLines).append(" lines ");
+        } else {
+            if (startChar > 0 || pageSizeInChars < Integer.MAX_VALUE) {
+                sb.append(String.format("Range: %d-%d ", startChar, startChar + pageSizeInChars));
+            }
+        }
+        if (showLineNumbers) {
+            sb.append("(+Lines) ");
+        }
+        if (columnWidth != 1024) {
+            sb.append("Cols: ").append(columnWidth).append(" ");
+        }
+        
+        String res = sb.toString().trim();
+        return res.isEmpty() ? "Full View" : res;
+    }
 }

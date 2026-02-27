@@ -125,9 +125,11 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
         propertyChangeSupport.firePropertyChange("status", oldStatus, status);
         if (getAgi() != null) {
             getAgi().checkToolPromptCompletion();
-            // Critical Fix: Ensure tool execution state is persisted. 
-            // This covers manual 'Run' clicks in the UI.
-            getAgi().autoSave();
+            // check if this would make more sense 
+            if (oldStatus != null && status != ToolExecutionStatus.EXECUTING) {
+                getAgi().autoSave();
+            }
+            
         }
     }
     

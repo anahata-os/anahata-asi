@@ -141,7 +141,7 @@ public class AgiConfig extends BasicPropertyChangeSource {
     private int defaultToolMaxDepth = 12;
     
     /** The default maximum depth a BlobPart should be kept in context. */
-    private int defaultBlobPartMaxDepth = 3;
+    private int defaultBlobPartMaxDepth = 4;
 
     /** The default maximum depth a model thought should be kept in context. */
     private int defaultThoughtPartMaxDepth = 12;

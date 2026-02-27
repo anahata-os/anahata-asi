@@ -53,6 +53,16 @@ public abstract class AbstractPathResource<C> extends AbstractResource<Path, C> 
      */
     public AbstractPathResource(ResourceManager manager, String path) {
         super(manager);
+        setPath(path);
+    }
+
+    /**
+     * Sets the path of the resource and ensures the underlying Path handle 
+     * and name are synchronized.
+     * 
+     * @param path The new absolute path.
+     */
+    public void setPath(String path) {
         this.path = path;
         if (path != null) {
             this.setName(new File(path).getName());

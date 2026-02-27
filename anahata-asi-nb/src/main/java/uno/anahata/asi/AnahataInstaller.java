@@ -10,10 +10,12 @@ import org.openide.windows.WindowManager;
 import uno.anahata.asi.nb.util.ElementHandleModule;
 import uno.anahata.asi.tool.schema.SchemaProvider;
 import uno.anahata.asi.nb.ui.render.FullTextFileUpdateRenderer;
+import uno.anahata.asi.nb.ui.render.FullTextFileCreateRenderer;
 import uno.anahata.asi.nb.ui.render.TextFileReplacementsRenderer;
 import uno.anahata.asi.swing.agi.render.ParameterRendererFactory;
 import uno.anahata.asi.swing.internal.SwingUtils;
 import uno.anahata.asi.toolkit.files.FullTextFileUpdate;
+import uno.anahata.asi.toolkit.files.FullTextFileCreate;
 import uno.anahata.asi.toolkit.files.TextFileReplacements;
 
 /**
@@ -54,6 +56,7 @@ public class AnahataInstaller extends ModuleInstall {
         
         // Register specialized parameter renderers for file operations
         ParameterRendererFactory.register(FullTextFileUpdate.class, FullTextFileUpdateRenderer.class);
+        ParameterRendererFactory.register(FullTextFileCreate.class, FullTextFileCreateRenderer.class);
         ParameterRendererFactory.register(TextFileReplacements.class, TextFileReplacementsRenderer.class);
         
         // Register the ElementHandle module for global JSON support in the IDE

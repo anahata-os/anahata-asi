@@ -191,6 +191,17 @@ public abstract class AsiContainer extends BasicPropertyChangeSource {
      */
     public abstract void openResource(AbstractResource<?, ?> resource);
 
+    /**
+     * Selects and highlights the specified resource in the host application's 
+     * project or navigation tree.
+     * 
+     * @param resource The resource to select.
+     */
+    public void selectResource(AbstractResource<?, ?> resource) {
+        // Default implementation does nothing. Host-specific containers 
+        // should override this to provide navigation logic.
+    }
+
     // --- SESSION PERSISTENCE ---
 
     /**

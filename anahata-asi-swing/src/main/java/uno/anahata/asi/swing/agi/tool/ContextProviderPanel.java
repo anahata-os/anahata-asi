@@ -21,10 +21,8 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.core.RagMessage;
-import uno.anahata.asi.model.core.TextPart;
-import uno.anahata.asi.model.core.UserMessage;
 import uno.anahata.asi.swing.agi.ContextPanel;
-import uno.anahata.asi.swing.agi.render.OtherMessageViewer;
+import uno.anahata.asi.swing.agi.render.RagMessageViewer;
 
 /**
  * A panel that displays the details and context previews for a {@link ContextProvider}.
@@ -153,7 +151,7 @@ public class ContextProviderPanel extends JPanel {
         tabbedPane.removeAll();
         
         // 1. System: This Provider
-        UserMessage thisSysMsg = new UserMessage(agi);
+        RagMessage thisSysMsg = new RagMessage(agi);
         try {
             List<String> instructions = cp.getSystemInstructions();
             if (!instructions.isEmpty()) {
@@ -171,7 +169,7 @@ public class ContextProviderPanel extends JPanel {
         }
 
         // 2. System: Children (Aggregated)
-        UserMessage childrenSysMsg = new UserMessage(agi);
+        RagMessage childrenSysMsg = new RagMessage(agi);
         for (ContextProvider child : cp.getChildrenProviders()) {
             for (ContextProvider p : child.getFlattenedHierarchy(true)) {
                 try {
@@ -227,11 +225,11 @@ public class ContextProviderPanel extends JPanel {
         }
     }
 
-    private void renderPreview(UserMessage msg, JPanel tab, String emptyText) {
+    private void renderPreview(RagMessage msg, JPanel tab, String emptyText) {
         if (msg.getParts().isEmpty() && !emptyText.isEmpty()) {
             msg.addTextPart(emptyText);
         }
-        OtherMessageViewer panel = new OtherMessageViewer(parentPanel.getAgiPanel(), msg, false, false);
+        RagMessageViewer panel = new RagMessageViewer(parentPanel.getAgiPanel(), msg, false, false);
         panel.render();
         tab.removeAll();
         tab.add(panel, BorderLayout.CENTER);

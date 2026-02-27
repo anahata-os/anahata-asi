@@ -163,35 +163,33 @@ public class Files extends AnahataToolkit {
     /**
      * Creates a new file with the provided content.
      * 
-     * @param path The absolute path to the file.
-     * @param content The text content to write.
+     * @param create The rich creation object for the new file.
      * @param message A message describing the change.
      * @throws Exception if the file already exists or an I/O error occurs.
      */
     @AiTool(value = "Creates a new file with the provided content.", maxDepth = 12)
     public void createTextFile(
-            @AiToolParam(value = "The text content to write.", rendererId = "code") String content,
-            @AiToolParam("The absolute path to the file.") String path,            
+            @AiToolParam("The creation details.") FullTextFileCreate create,            
             @AiToolParam("A message describing the change.") String message) throws Exception {
-        java.nio.file.Path filePath = Paths.get(path);
+        java.nio.file.Path filePath = Paths.get(create.getPath());
         
         if (java.nio.file.Files.exists(filePath)) {
-            throw new AiToolException("File already exists: " + path);
+            throw new AiToolException("File already exists: " + create.getPath());
         }
         
         if (filePath.getParent() != null) {
             java.nio.file.Files.createDirectories(filePath.getParent());
         }
         
-        performCreate(path, content, message);
+        performCreate(create, message);
     }
     
     /**
      * Hook to perform the actual file creation.
      */
-    protected void performCreate(String path, String content, String message) throws Exception {
-        java.nio.file.Files.writeString(Paths.get(path), content);
-        log("Successfully created file: " + path + " (" + message + ")");
+    protected void performCreate(FullTextFileCreate create, String message) throws Exception {
+        java.nio.file.Files.writeString(Paths.get(create.getPath()), create.getContent());
+        log("Successfully created file: " + create.getPath() + " (" + message + ")");
     }
 
     /**

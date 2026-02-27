@@ -14,29 +14,31 @@ import uno.anahata.asi.model.core.AbstractMessage;
 import uno.anahata.asi.swing.agi.AgiPanel;
 
 /**
- * A specialized message panel for use in the {@link OtherMessageViewer}.
- * It implements {@link Scrollable} and allows disabling pruning and removal controls.
+ * A specialized message panel for rendering messages in non-history UI components.
+ * It suppresses pruning and removal controls by default and supports scrolling.
  * 
  * @author anahata
  */
-public class OtherMessagePanel extends AbstractMessagePanel<AbstractMessage> implements Scrollable {
+public class RagMessagePanel extends AbstractMessagePanel<AbstractMessage> implements Scrollable {
 
     private final boolean renderPruneButtons;
     private final boolean renderRemoveButtons;
 
     /**
-     * Constructs a new OtherMessagePanel.
+     * Constructs a new RagMessagePanel.
      * 
      * @param agiPanel The parent agi panel.
      * @param message The message to render.
      * @param renderPruneButtons Whether to render pruning controls.
      * @param renderRemoveButtons Whether to render remove controls.
      */
-    public OtherMessagePanel(@NonNull AgiPanel agiPanel, @NonNull AbstractMessage message, 
+    public RagMessagePanel(@NonNull AgiPanel agiPanel, @NonNull AbstractMessage message, 
                              boolean renderPruneButtons, boolean renderRemoveButtons) {
         super(agiPanel, message);
         this.renderPruneButtons = renderPruneButtons;
         this.renderRemoveButtons = renderRemoveButtons;
+        // Immediate update of buttons after super constructor
+        updateHeaderButtons();
     }
 
     @Override

@@ -22,6 +22,7 @@ import uno.anahata.asi.tool.AiToolException;
 import uno.anahata.asi.tool.AiToolkit;
 import uno.anahata.asi.toolkit.files.Files;
 import uno.anahata.asi.toolkit.files.FullTextFileUpdate;
+import uno.anahata.asi.toolkit.files.FullTextFileCreate;
 
 /**
  * A NetBeans-specific implementation of the {@link Files} toolkit.
@@ -130,30 +131,29 @@ public class NbFiles extends Files {
     }
 
     /**
-     * Creates a new file on disk.
+     * Creates a new file on disk using NetBeans APIs.
      * <p>
      * Implementation details:
-     * Uses the NetBeans {@link FileObject#createData} API to ensure the IDE 
-     * indexes the new file immediately. Triggers a UI refresh.
+     * Uses {@link FileObject#createData} to ensure immediate indexing and triggers
+     * a UI refresh.
      * </p>
      * 
-     * @param path Absolute path.
-     * @param content Content.
+     * @param create The creation DTO.
      * @param message Change message.
      * @throws Exception on write error.
      */
     @Override
-    protected void performCreate(String path, String content, String message) throws Exception {
-        File file = new File(path);
+    protected void performCreate(FullTextFileCreate create, String message) throws Exception {
+        File file = new File(create.getPath());
         FileObject parentFo = FileUtil.toFileObject(file.getParentFile());
         if (parentFo != null) {
             FileObject fo = parentFo.createData(file.getName());
-            writeToFileObject(fo, content, message);
-            log("Successfully created file via NetBeans API: " + path + " (" + message + ")");
+            writeToFileObject(fo, create.getContent(), message);
+            log("Successfully created file via NetBeans API: " + create.getPath() + " (" + message + ")");
             // Auto-load newly created file
-            loadTextFileInternal(path, new TextViewportSettings());
+            loadTextFileInternal(create.getPath(), new TextViewportSettings());
         } else {
-            super.performCreate(path, content, message);
+            super.performCreate(create, message);
         }
     }
 

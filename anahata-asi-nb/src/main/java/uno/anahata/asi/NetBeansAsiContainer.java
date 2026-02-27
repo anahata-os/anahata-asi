@@ -14,12 +14,15 @@ import org.openide.filesystems.FileSystem;
 import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
 import org.openide.cookies.EditorCookie;
+import org.openide.util.Lookup;
+import org.openide.util.lookup.Lookups;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.toolkit.Java;
 import uno.anahata.asi.nb.module.NetBeansModuleUtils;
 import uno.anahata.asi.nb.tools.files.nb.AnahataAnnotationProvider;
 import uno.anahata.asi.model.resource.AbstractPathResource;
 import uno.anahata.asi.model.resource.AbstractResource;
+import uno.anahata.asi.nb.tools.ide.IDE;
 
 /**
  * NetBeans-specific configuration for the Anahata ASI.
@@ -155,6 +158,23 @@ public class NetBeansAsiContainer extends AsiContainer {
                 } catch (Exception ex) {
                     log.error("Failed to open resource in NetBeans editor: " + apr.getPath(), ex);
                 }
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * Locates and selects the resource in the NetBeans project explorer.
+     * Delegates to the implementation in the IDE toolkit.
+     */
+    @Override
+    public void selectResource(AbstractResource<?, ?> resource) {
+        if (resource instanceof AbstractPathResource<?> apr) {
+            try {
+                // Default to PROJECTS target for UI selection
+                IDE.selectInStatic(apr.getPath(), IDE.SelectInTarget.PROJECTS);
+            } catch (Exception ex) {
+                log.error("Failed to select resource in NetBeans: " + apr.getPath(), ex);
             }
         }
     }

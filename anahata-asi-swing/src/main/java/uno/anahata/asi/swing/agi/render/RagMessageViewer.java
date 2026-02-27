@@ -15,26 +15,26 @@ import uno.anahata.asi.swing.agi.AgiPanel;
  *
  * @author anahata
  */
-public class OtherMessageViewer extends JScrollPane {
+public class RagMessageViewer extends JScrollPane {
 
     private final AgiPanel agiPanel;
     private final AbstractMessage message;
     private final AbstractMessagePanel<AbstractMessage> messagePanel;
 
     /**
-     * Constructs a new OtherMessageViewer.
+     * Constructs a new RagMessageViewer.
      *
      * @param agiPanel The parent agi panel.
      * @param message The message to render.
      * @param renderPruneButtons Whether to render pruning controls.
      * @param renderRemoveButtons Whether to render remove controls.
      */
-    public OtherMessageViewer(@NonNull AgiPanel agiPanel, @NonNull AbstractMessage message, 
+    public RagMessageViewer(@NonNull AgiPanel agiPanel, @NonNull AbstractMessage message, 
                              boolean renderPruneButtons, boolean renderRemoveButtons) {
         this.agiPanel = agiPanel;
         this.message = message;
 
-        this.messagePanel = new OtherMessagePanel(agiPanel, message, renderPruneButtons, renderRemoveButtons);
+        this.messagePanel = new RagMessagePanel(agiPanel, message, renderPruneButtons, renderRemoveButtons);
 
         setViewportView(messagePanel);
         setBorder(null);
