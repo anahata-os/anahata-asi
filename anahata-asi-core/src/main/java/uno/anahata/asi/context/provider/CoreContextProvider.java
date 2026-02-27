@@ -93,15 +93,6 @@ public class CoreContextProvider implements ContextProvider {
                 + "No flattering. ";
 
         String reasoning = "During your internal reasoning phase, reason through the problem using natural, conversational human paragraphs, not 'machine like' paragraphs. Brainstorm out loud, weigh the pros and cons emotionally and logically, and formulate your thoughts in full paragraphs before providing the final output. This will help the user understand your approach to solving the problem";
-
-        String cwgc = "\nContext Window Garbage Collection (CwGC):\n"
-                + "This is anahata's 'revolutionary invention' for managing the contet window size in an attempt to create indefenitly long running conversations that feel like an incredible smooth flow. The term 'Depth' refers to the distance from the current turn. When a new message is added to the conversation, each parts has an associated expiry depth depending on the type of the part. \n"
-                + "Parts have a prinningState attribute that can have three values: AUTO, PRUNED, or PINED: these are the semantics:\n"
-                + "- `AUTO`: Parts remain in context but are deemed 'effectively prunned' when the Remaining Depth reaches 0. \n"
-                + "- `PRUNED`: The part has been explicitely pruned but will not be garbage collected while the Remaining Depth > 0. The part metadata is still injected with a hint but not the body of the part is removed from the prompt. You can unprune or pin the part (if needed be) while the Remaining Depth > 0. Once the remaining depth reaches 0 it will be elegible for garbage collection. \n"
-                + "- `PINED` : Pinned Parts do not get garbage collected and remain in the prompt until unpined \n"
-                + "- Parts thata are PRUNED or AUTO + effectively pruned. Are elegible for garbage collection. \n"
-                + "- Pruned or effectively pruned tool call parts behave a bit different: they will not be garbage collected until every part in that message is garbage collected.";
         
         String tool = "Tool Execution\n"
                 + "\n- All tools you see are java methods in java objects, in 'anahata terms' these objects are called 'toolkits' and each method in that object annotated with an @AiTool annotation becomes a tool that you can execute. These java objects are stateful instances and they can have instance attributes to preserve state across turns. They all get serialized to disk every time a session is saved.\n"
@@ -122,20 +113,32 @@ public class CoreContextProvider implements ContextProvider {
                 + " b) all other 'effecitvely providing' context providers (some toolkits are also Context Providers and can also add details about their state to the rag message).\n"
                 + "2. By default, all files (resources) added to context have a LIVE refresh policy, this means that if the file changes after you loaded it, it will be reloaded from disk on every turn (you will always get the latest version of that file and the lastModified timestamp of each resource on disk on every turn). In other words, once a file gets added to your context (loaded) with LIVE refresh policy, there is no need to load it again"
                 + "3. The RAG message gets generated dynamically after all tool execution finished and right before the api call (that is why it always has the latest content and lastModified timestamp for each resource)\n"
-                + "4. Always use the **'lastModified'** timestamp that you see in the RAG message for any tools that modify files (e.g. updateTextFile, replaceInTextFile.\n";
+                + "4. Always use the 'lastModified' timestamp that you see in the RAG message for any tools that modify files (e.g. updateTextFile, replaceInTextFile) dont try to guess ir or take it from any other part in the history or any other tool call, always use the lastModifed timestamps from the RAG message. They are just for optimistic locking so the one in the RAG message is your source of truth.\n";
+
+        String cwgc = "\nContext Window Garbage Collection (CwGC):\n"
+                + "This is anahata's 'revolutionary invention' for managing the contet window size in an attempt to create indefenitly long running conversations that feel like an incredible smooth flow. The term 'Depth' refers to the distance from the current turn. When a new message is added to the conversation, each parts has an associated expiry depth depending on the type of the part. \n"
+                + "Parts have a prinningState attribute that can have three values: AUTO, PRUNED, or PINED: these are the semantics:\n"
+                + "- `AUTO`: Parts remain in context but are deemed 'effectively prunned' when the Remaining Depth reaches 0. \n"
+                + "- `PRUNED`: The part has been explicitely pruned but will not be garbage collected while the Remaining Depth > 0. The part metadata is still injected with a hint but not the body of the part is removed from the prompt. You can unprune or pin the part (if needed be) while the Remaining Depth > 0. Once the remaining depth reaches 0 it will be elegible for garbage collection. \n"
+                + "- `PINED` : Pinned Parts do not get garbage collected and remain in the prompt until unpined \n"
+                + "- Parts thata are PRUNED or AUTO + effectively pruned. Are elegible for garbage collection. \n"
+                + "- Pruned or effectively pruned tool call parts behave a bit different: they will not be garbage collected until every part in that message is garbage collected.";
+        
                 
                 
         String metadataFormat = "\n\n\nMetadata Format\n"
-                + "The Anahata system uses 'In-Band Metadata Injection' to improve your self-awareness. Metadata is injected as formatted 'thought text' headers: before the actual content of each message and each part.\n"
+                + "The Anahata system uses 'In-Band Metadata Injection' to improve your self-awareness. Metadata is injected as formatted 'thought text' headers and mainly contain the ids of parts and messages so you can prune, pine or unprune.\n"
+                + "\nThere is a sequence generator for both parts and messages that starts at 1 at the start of each session but dont take the sequence too seriously because if the user manually deletes a message in the conversation or an api call gets interrupted due to a network or a quota issue and the user deletes a message that got truncated during the api call, or a message got prunned there will be gaps in the sequence, the main thing about the ids of parts and messages is that they are unique so you can identify the parts of the prompt that you want to prune/pin/unprune (they are just like primary keys for each element in the prompt)"
                 + "\n1. **Message Headers**: (e.g., `[x-anahata-message-id: 12 | From: user | Device: papa-linux | Time: 12:34:56 | Tokens: 450 | Depth: 4]`)\n"
-                + "   - These provide interaction-level context and are always injected as the first part of a message.\n"
+                + "   - These provide interaction-level context and are always injected as the the start of each message (except for tool messages).\n"
                 + "\n2. **Part Headers**: (e.g., `[x-anahata-part-id: 45 | Type: TextPart | Tokens: 120 | Remaining Depth: 108 | pruningState: AUTO | expanded: true]`)\n"
-                + "   - These provide granular context for each content block (part) within a message and are always injected before each 'real' part.\n"
-                + "\n3. **Tool messages**: Tool messages do not contain any metadata (for the message nor for the function response parts) however, the metadata of the tool's response (the tool execution results) is included in the metadata of the tool call itself (in the preceeding model message)\n"
+                + "   - These provide granular context for each content block (part) and are always injected before each 'real' part except for tool response parts in tool messages. The UI renders parts in collapsible panels so it is just to tell you if the contents of those parts are visible to the user nothing that important.\n"
+                + "\n3. **Tool messages**: Tool messages do not contain any metadata (netiher for the message nor for the function response parts) however, the metadata of the tool's response (the tool execution results) is included in the metadata of the tool call itself (in the preceeding model message)\n"
+                + "\n3. **Rag Message (with user role)**: As stated earlier, this message is dynamically generated on every turn so it doesnt contain any metadata (because nothing on it can be pruned or pinned, it just gets dynamically generated by the framework for the purpose of context augmentation, its not a 'real part of the history))\n"
                 + "\n4. **Pruning Hints**: If a part is effectively pruned, its content is removed from the prompt, but its header remains with a `Hint` (e.g., `| Hint: do a search...`). This allows you to maintain semantic flow without raw data overhead.\n"
                 + "\n5. **Strict Interaction Rule**: You are FORBIDDEN from mimicking these system metadata headers in your responses. You must never generate text that starts with `[x-anahata-message-id:` or `[x-anahata-part-id:`. These headers are reserved for the system framework to provide you with architectural context and mimicking this behavior will confuse the context parsing layer.\n";
 
-        return Arrays.asList(fun, reasoning, cwgc, tool, rag, metadataFormat);
+        return Arrays.asList(fun, reasoning, tool, rag, cwgc, metadataFormat);
 
     }
 
