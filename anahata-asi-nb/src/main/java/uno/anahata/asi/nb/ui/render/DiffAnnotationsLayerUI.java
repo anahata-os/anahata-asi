@@ -14,13 +14,17 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JLayer;
+import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
+import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
 import javax.swing.plaf.LayerUI;
 import javax.swing.text.Element;
@@ -29,12 +33,17 @@ import uno.anahata.asi.toolkit.files.LineComment;
 
 /**
  * A highly specialized {@link LayerUI} designed to decorate NetBeans components—specifically 
- * the native Diff Viewer—with agentic annotations that reveal themselves on hover.
+ * the native Diff Viewer—with agentic annotations and boundary-aware scrolling logic.
  * 
- * <p>This decorator uses the {@link JLayer} pattern to paint Anahata branding icons
- * next to commented lines. When the user hovers over an icon, a "Comic-style" translucent 
- * comment bubble expands to show the AI's feedback. This ensures that the code remains 
- * fully readable until the user explicitly requests to see the comments.</p>
+ * <p>Key Responsibilities:</p>
+ * <ul>
+ *   <li><b>Agentic Decoration</b>: Paints Anahata icons next to commented lines. 
+ *   Reveals AI comment bubbles on hover.</li>
+ *   <li><b>Scroll Trap Resolution</b>: Intercepts mouse wheel events globally 
+ *   within the visualizer. If the master diff scroll pane has reached its top 
+ *   or bottom boundary, the event is re-dispatched to the parent conversation, 
+ *   enabling fluid scrolling between messages.</li>
+ * </ul>
  * 
  * @author anahata
  */
@@ -87,13 +96,117 @@ public class DiffAnnotationsLayerUI extends LayerUI<JComponent> {
     /**
      * {@inheritDoc}
      * 
-     * <p>Configures the layer to receive mouse motion events to track hovers.</p>
+     * <p>Configures the layer to receive mouse motion and mouse wheel events.</p>
      */
     @Override
     public void installUI(JComponent c) {
         super.installUI(c);
         if (c instanceof JLayer l) {
-            l.setLayerEventMask(AWTEvent.MOUSE_MOTION_EVENT_MASK);
+            // We listen to both motion (for hover bubbles) and wheels (for boundary-aware scrolling)
+            l.setLayerEventMask(AWTEvent.MOUSE_MOTION_EVENT_MASK | AWTEvent.MOUSE_WHEEL_EVENT_MASK);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * <p>Solves the "Scroll Trap" by monitoring the master diff scroll bar boundaries.</p>
+     */
+    @Override
+    protected void processMouseWheelEvent(MouseWheelEvent e, JLayer<? extends JComponent> l) {
+        // 1. Master Discovery: Find the primary visible vertical scroll bar of the diff view.
+        // In synchronized side-by-side mode, this is usually the one on the right.
+        // In unified mode, it's the only one.
+        JScrollBar masterBar = findVisibleVerticalScrollBar(l.getView());
+
+        if (masterBar != null) {
+            int value = masterBar.getValue();
+            int min = masterBar.getMinimum();
+            int max = masterBar.getMaximum() - masterBar.getVisibleAmount();
+
+            int rotation = e.getWheelRotation();
+            // 2. Boundary Check: Allow a 1-unit margin for rounding/jitter issues
+            boolean atTop = (rotation < 0 && value <= min + 1);
+            boolean atBottom = (rotation > 0 && value >= max - 1);
+
+            if (atTop || atBottom) {
+                // Boundary hit! Redirect the wheel event to the parent conversation
+                redispatchToParent(e, l);
+                e.consume(); // Intercept: don't let internal components handle it
+                return;
+            }
+            
+            // 3. Middle Check: If not at boundary, ensure internal components see the event.
+            // If the mouse is over a non-scrollable area (like the divider), we still redispatch.
+            if (!isInsideScrollableView(e.getComponent())) {
+                redispatchToParent(e, l);
+                e.consume();
+                return;
+            }
+        } else {
+            // No visible vertical scroll bar found (content fits or component is special).
+            // Pass the event directly to the conversation.
+            redispatchToParent(e, l);
+            e.consume();
+            return;
+        }
+        
+        // Otherwise, allow the event to propagate naturally to the original target (e.g., the editor)
+        super.processMouseWheelEvent(e, l);
+    }
+
+    /**
+     * Recursively searches for a visible vertical scroll bar that is effectively scrollable.
+     * 
+     * @param c The component to start the search from.
+     * @return The found {@link JScrollBar}, or {@code null} if not found.
+     */
+    private JScrollBar findVisibleVerticalScrollBar(Component c) {
+        if (c instanceof JScrollPane sp) {
+            JScrollBar vBar = sp.getVerticalScrollBar();
+            // Critical fix: use isShowing() instead of isVisible().
+            // Hidden tabs still report scrollbars as visible, causing discovery collision.
+            if (vBar != null && vBar.isShowing() && vBar.getMaximum() > vBar.getVisibleAmount()) {
+                return vBar;
+            }
+        }
+        if (c instanceof Container cont) {
+            for (Component child : cont.getComponents()) {
+                JScrollBar found = findVisibleVerticalScrollBar(child);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Determines if the specified component is part of a scrollable viewport.
+     * 
+     * @param c The component to check.
+     * @return {@code true} if inside a {@link JViewport}.
+     */
+    private boolean isInsideScrollableView(Component c) {
+        return SwingUtilities.getAncestorOfClass(JViewport.class, c) != null;
+    }
+
+    /**
+     * Re-dispatches a mouse wheel event to the first ancestor JScrollPane that 
+     * is not part of the internal visualizer.
+     * 
+     * @param e The original wheel event.
+     * @param l The JLayer instance.
+     */
+    private void redispatchToParent(MouseWheelEvent e, JLayer<? extends JComponent> l) {
+        Container parent = l.getParent();
+        while (parent != null) {
+            // We search for the main ConversationPanel's scroll pane
+            if (parent instanceof JScrollPane && parent != l.getView()) {
+                parent.dispatchEvent(SwingUtilities.convertMouseEvent(e.getComponent(), e, parent));
+                break;
+            }
+            parent = parent.getParent();
         }
     }
 

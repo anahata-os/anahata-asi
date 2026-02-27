@@ -505,9 +505,9 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
     }
 
     /**
-     * Injects custom client properties and listeners into the NetBeans component tree.
-     * Specifically, it enables the "diff_merger" system and handles mouse wheel 
-     * redispatching for nested scroll panes.
+     * Injects custom client properties into the NetBeans component tree.
+     * Specifically, it enables the "diff_merger" system. The unified scrolling 
+     * logic is now handled by the JLayer's LayerUI.
      * 
      * @param c The component to start the configuration from.
      */
@@ -516,50 +516,9 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
             jc.putClientProperty("diff_merger", Boolean.TRUE);
             jc.putClientProperty("showMergeButtons", Boolean.TRUE);
         }
-        if (c instanceof JScrollPane sp) {
-            // FIX: Scroll Trap Redispatcher
-            // This prevents the embedded NetBeans scroll pane from trapping 
-            // the mouse wheel when it's at its boundaries.
-            sp.addMouseWheelListener(new BoundaryAwareMouseWheelListener(sp));
-        }
         if (c instanceof Container cont) {
             for (Component child : cont.getComponents()) {
                 applyVisualizerSettings(child);
-            }
-        }
-    }
-
-    /**
-     * A specialized listener that solves the "Scroll Trap" problem in embedded 
-     * NetBeans components.
-     */
-    private static class BoundaryAwareMouseWheelListener implements MouseWheelListener {
-        private final JScrollPane scrollPane;
-
-        public BoundaryAwareMouseWheelListener(JScrollPane scrollPane) {
-            this.scrollPane = scrollPane;
-        }
-
-        @Override
-        public void mouseWheelMoved(MouseWheelEvent e) {
-            JScrollBar bar = scrollPane.getVerticalScrollBar();
-            int value = bar.getValue();
-            int min = bar.getMinimum();
-            int max = bar.getMaximum() - bar.getVisibleAmount();
-
-            boolean atTop = (e.getWheelRotation() < 0 && value <= min);
-            boolean atBottom = (e.getWheelRotation() > 0 && value >= max);
-
-            if (atTop || atBottom) {
-                // Redispatch to the parent (the main conversation scroll pane)
-                Container parent = scrollPane.getParent();
-                while (parent != null) {
-                    if (parent instanceof JScrollPane && parent != scrollPane) {
-                        parent.dispatchEvent(SwingUtilities.convertMouseEvent(scrollPane, e, parent));
-                        break;
-                    }
-                    parent = parent.getParent();
-                }
             }
         }
     }

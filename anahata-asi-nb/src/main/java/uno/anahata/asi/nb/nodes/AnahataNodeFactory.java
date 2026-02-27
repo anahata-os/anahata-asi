@@ -36,7 +36,7 @@ import org.openide.util.lookup.Lookups;
  * 
  * @author anahata
  */
-@NodeFactory.Registration(projectType = {"org-netbeans-modules-maven", "org-netbeans-modules-java-j2seproject"}, position = 500)
+@NodeFactory.Registration(projectType = {"org-netbeans-modules-maven", "org-netbeans-modules-java-j2seproject"}, position = 108)
 public class AnahataNodeFactory implements NodeFactory {
 
     private static final Logger log = Logger.getLogger(AnahataNodeFactory.class.getName());
