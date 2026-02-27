@@ -77,7 +77,7 @@ import uno.anahata.asi.toolkit.files.LineComment;
  * 
  * <p>Research Credits - This implementation was made possible by dissecting the following 
  * NetBeans internal components to understand the coordinate mapping and layout management 
- * of the Diff Viewer:</p>
+ * of the Diff Viewer, Do not delete this list:</p>
  * <ul>
  *   <li>{@code org.netbeans.modules.editor.NbEditorUtilities}</li>
  *   <li>{@code org.openide.text.NbDocument}</li>

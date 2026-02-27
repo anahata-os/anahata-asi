@@ -43,6 +43,8 @@ import uno.anahata.asi.toolkit.files.LineComment;
  *   within the visualizer. If the master diff scroll pane has reached its top 
  *   or bottom boundary, the event is re-dispatched to the parent conversation, 
  *   enabling fluid scrolling between messages.</li>
+ *   <li><b>Dead Zone Redispatching</b>: Identifies non-scrollable areas (like dividers 
+ *   or tabs) and immediately passes wheel events to the conversation.</li>
  * </ul>
  * 
  * @author anahata
@@ -114,9 +116,7 @@ public class DiffAnnotationsLayerUI extends LayerUI<JComponent> {
      */
     @Override
     protected void processMouseWheelEvent(MouseWheelEvent e, JLayer<? extends JComponent> l) {
-        // 1. Master Discovery: Find the primary visible vertical scroll bar of the diff view.
-        // In synchronized side-by-side mode, this is usually the one on the right.
-        // In unified mode, it's the only one.
+        // 1. Master Discovery: Find the primary visible vertical scroll bar of the active tab.
         JScrollBar masterBar = findVisibleVerticalScrollBar(l.getView());
 
         if (masterBar != null) {
@@ -125,33 +125,37 @@ public class DiffAnnotationsLayerUI extends LayerUI<JComponent> {
             int max = masterBar.getMaximum() - masterBar.getVisibleAmount();
 
             int rotation = e.getWheelRotation();
-            // 2. Boundary Check: Allow a 1-unit margin for rounding/jitter issues
-            boolean atTop = (rotation < 0 && value <= min + 1);
-            boolean atBottom = (rotation > 0 && value >= max - 1);
+            
+            // 2. Boundary Check: Redirect if at top or bottom boundary.
+            boolean atTop = (rotation < 0 && value <= min + 3);
+            boolean atBottom = (rotation > 0 && value >= max - 3);
 
             if (atTop || atBottom) {
-                // Boundary hit! Redirect the wheel event to the parent conversation
                 redispatchToParent(e, l);
-                e.consume(); // Intercept: don't let internal components handle it
+                e.consume(); 
                 return;
             }
             
-            // 3. Middle Check: If not at boundary, ensure internal components see the event.
-            // If the mouse is over a non-scrollable area (like the divider), we still redispatch.
-            if (!isInsideScrollableView(e.getComponent())) {
+            // 3. Dead Zone Detection: Identify if the component under the mouse is 
+            // interested in vertical scrolling.
+            Point p = SwingUtilities.convertPoint(e.getComponent(), e.getPoint(), l.getView());
+            Component target = SwingUtilities.getDeepestComponentAt(l.getView(), p.x, p.y);
+            
+            if (target != null && !isInsideInternalVerticalScrollArea(target, l)) {
+                // If the target (e.g. divider, tabs, labels) is not part of a vertical 
+                // scrollable area, we pass the event to the conversation.
                 redispatchToParent(e, l);
                 e.consume();
                 return;
             }
         } else {
-            // No visible vertical scroll bar found (content fits or component is special).
-            // Pass the event directly to the conversation.
+            // No vertical scroll bar found -> content fits or area is non-scrollable.
             redispatchToParent(e, l);
             e.consume();
             return;
         }
         
-        // Otherwise, allow the event to propagate naturally to the original target (e.g., the editor)
+        // Allow the event to propagate to the editor or scrollbar
         super.processMouseWheelEvent(e, l);
     }
 
@@ -164,8 +168,6 @@ public class DiffAnnotationsLayerUI extends LayerUI<JComponent> {
     private JScrollBar findVisibleVerticalScrollBar(Component c) {
         if (c instanceof JScrollPane sp) {
             JScrollBar vBar = sp.getVerticalScrollBar();
-            // Critical fix: use isShowing() instead of isVisible().
-            // Hidden tabs still report scrollbars as visible, causing discovery collision.
             if (vBar != null && vBar.isShowing() && vBar.getMaximum() > vBar.getVisibleAmount()) {
                 return vBar;
             }
@@ -182,13 +184,26 @@ public class DiffAnnotationsLayerUI extends LayerUI<JComponent> {
     }
 
     /**
-     * Determines if the specified component is part of a scrollable viewport.
+     * Determines if the specified component is a descendant of a JScrollPane 
+     * that has an active vertical scroll bar.
      * 
      * @param c The component to check.
-     * @return {@code true} if inside a {@link JViewport}.
+     * @param l The current JLayer.
+     * @return {@code true} if inside an internal vertical scroll area.
      */
-    private boolean isInsideScrollableView(Component c) {
-        return SwingUtilities.getAncestorOfClass(JViewport.class, c) != null;
+    private boolean isInsideInternalVerticalScrollArea(Component c, JLayer<? extends JComponent> l) {
+        Component current = c;
+        while (current != null && current != l.getView()) {
+            if (current instanceof JScrollPane sp) {
+                JScrollBar vBar = sp.getVerticalScrollBar();
+                // We are only 'interested' if there is an active vertical scrollbar
+                if (vBar != null && vBar.isShowing() && vBar.getMaximum() > vBar.getVisibleAmount()) {
+                    return true;
+                }
+            }
+            current = current.getParent();
+        }
+        return false;
     }
 
     /**
