@@ -8,7 +8,7 @@ import org.netbeans.api.project.ProjectUtils;
 import uno.anahata.asi.context.BasicContextProvider;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectAlertsContextProvider;
-import uno.anahata.asi.nb.tools.project.nb.AnahataProjectIconAnnotator;
+import uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic;
 
 /**
  * A hierarchical context provider for a specific NetBeans project.
@@ -116,7 +116,10 @@ public class ProjectContextProvider extends BasicContextProvider {
         boolean old = isProviding();
         super.setProviding(enabled);
         if (old != enabled) {
-            AnahataProjectIconAnnotator.fireRefreshAll(getProject());
+            Project p = getProject();
+            if (p != null) {
+                FilesContextActionLogic.fireRefreshRecursive(p.getProjectDirectory());
+            }
         }
     }
 }

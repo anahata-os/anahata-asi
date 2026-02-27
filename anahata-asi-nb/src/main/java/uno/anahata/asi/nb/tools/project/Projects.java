@@ -16,8 +16,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.prefs.BackingStoreException;
-import java.util.prefs.Preferences;
 import java.util.Set;
 import javax.tools.Diagnostic;
 import lombok.extern.slf4j.Slf4j;
@@ -56,7 +54,7 @@ import uno.anahata.asi.tool.AnahataToolkit;
 import uno.anahata.asi.nb.tools.project.alerts.JavacAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectDiagnostics;
-import uno.anahata.asi.nb.tools.project.nb.AnahataProjectIconAnnotator;
+import uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic;
 
 /**
  * A toolkit for interacting with the NetBeans Project APIs.
@@ -630,9 +628,9 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
             log.info("Project context for {} set to: {}", projectPath, enabled);
             try {
                 Project p = findOpenProject(projectPath);
-                AnahataProjectIconAnnotator.fireRefreshAll(p);
+                FilesContextActionLogic.fireRefreshRecursive(p.getProjectDirectory());
             } catch (Exception ex) {
-                AnahataProjectIconAnnotator.fireRefreshAll(null);
+                // Ignore
             }
         });
     }
