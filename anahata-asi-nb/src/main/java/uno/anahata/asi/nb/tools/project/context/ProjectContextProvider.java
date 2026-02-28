@@ -2,15 +2,12 @@
 package uno.anahata.asi.nb.tools.project.context;
 
 import java.io.File;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectUtils;
 import org.openide.filesystems.FileObject;
-import uno.anahata.asi.context.BasicContextProvider;
 import uno.anahata.asi.context.ContextPosition;
 import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.model.resource.AbstractPathResource;
@@ -22,7 +19,6 @@ import uno.anahata.asi.nb.tools.maven.DependencyScope;
 import uno.anahata.asi.nb.tools.maven.DependencyGroup;
 import uno.anahata.asi.nb.tools.maven.DeclaredArtifact;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectAlertsContextProvider;
-import uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic;
 
 /**
  * A hierarchical context provider for a specific NetBeans project.
@@ -31,24 +27,15 @@ import uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic;
  * @author anahata
  */
 @Slf4j
-public class ProjectContextProvider extends BasicContextProvider {
+public class ProjectContextProvider extends AbstractProjectContextProvider {
 
-    /** The parent Projects toolkit. */
-    private final Projects projectsToolkit;
-
-    /** The NetBeans project instance. Transient to support serialization. */
-    private transient Project project;
-
-    /** The absolute path to the project directory. */
-    @Getter
-    private final String projectPath;
-    
     /**
      * Constructs a new project context provider.
      * <p>
      * Implementation details:
-     * Initializes project-specific child providers (Files, Components, Alerts) 
-     * and triggers initial anahata.md synchronization.
+     * Initializes project-specific child providers (Structure, Alerts) 
+     * and triggers initial anahata.md synchronization. Legacy structural providers 
+     * (Files, Components) are currently disabled in favor of the unified Structure provider.
      * </p>
      * 
      * @param projectsToolkit The parent Projects toolkit.
@@ -57,15 +44,20 @@ public class ProjectContextProvider extends BasicContextProvider {
     public ProjectContextProvider(Projects projectsToolkit, Project project) {
         super(Projects.getCanonicalPath(project.getProjectDirectory()), 
               "Overview", 
-              "Context for project: " + ProjectUtils.getInformation(project).getDisplayName());
-        this.projectsToolkit = projectsToolkit;
+              "Context for project: " + ProjectUtils.getInformation(project).getDisplayName(),
+              projectsToolkit,
+              Projects.getCanonicalPath(project.getProjectDirectory()));
         this.project = project;
-        this.projectPath = Projects.getCanonicalPath(project.getProjectDirectory());
         
         // Register with parent
         this.setParent(projectsToolkit);
         
         // Initialize structural children
+        ProjectStructureContextProvider structure = new ProjectStructureContextProvider(projectsToolkit, projectPath);
+        structure.setParent(this);
+        children.add(structure);
+
+        /* Legacy providers commented out in favor of unified ProjectStructureContextProvider
         ProjectFilesContextProvider files = new ProjectFilesContextProvider(projectsToolkit, projectPath);
         files.setParent(this);
         children.add(files);
@@ -73,6 +65,7 @@ public class ProjectContextProvider extends BasicContextProvider {
         ProjectComponentsContextProvider components = new ProjectComponentsContextProvider(projectsToolkit, projectPath);
         components.setParent(this);
         children.add(components);
+        */
 
         ProjectAlertsContextProvider alerts = new ProjectAlertsContextProvider(projectsToolkit, projectPath);
         alerts.setParent(this);
@@ -80,21 +73,6 @@ public class ProjectContextProvider extends BasicContextProvider {
 
         // Sync anahata.md on creation
         syncMdResource();
-    }
-
-    /**
-     * Gets the NetBeans project instance, restoring it from the path if necessary.
-     * @return The project instance, or null if it cannot be found or is closed.
-     */
-    public Project getProject() {
-        if (project == null) {
-            try {
-                project = Projects.findOpenProject(projectPath);
-            } catch (Exception e) {
-                log.debug("Project not open at path: {}", projectPath);
-            }
-        }
-        return project;
     }
 
     /**
@@ -112,17 +90,8 @@ public class ProjectContextProvider extends BasicContextProvider {
      */
     @Override
     public void setProviding(boolean enabled) {
-        boolean old = isProviding();
         super.setProviding(enabled);
-        
         syncMdResource();
-        
-        if (old != enabled) {
-            Project p = getProject();
-            if (p != null) {
-                FilesContextActionLogic.fireRefreshRecursive(p.getProjectDirectory());
-            }
-        }
     }
 
     /**
