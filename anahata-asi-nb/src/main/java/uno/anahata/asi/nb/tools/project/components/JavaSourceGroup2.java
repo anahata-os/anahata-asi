@@ -27,8 +27,9 @@ import org.openide.filesystems.FileUtil;
  * A specialized container for a Java source group (e.g., src/main/java).
  * <p>
  * This class performs a deep scan of the Java source root, resolving logical 
- * types into a hierarchical package-centric view. It distinguishes between 
- * top-level types and inner classes to provide an architecturally accurate map.
+ * types into a hierarchical package-centric view. It performs a hybrid scan, 
+ * merging logical type information from the index with a physical filesystem 
+ * walk to ensure 'package-info.java' and other non-indexed files are included.
  * </p>
  * 
  * @author Anahata
@@ -57,31 +58,34 @@ public final class JavaSourceGroup2 extends ProjectNode2 {
     private List<JavaPackage2> packages = new ArrayList<>();
 
     /**
-     * Constructs and populates the Java source group logic.
+     * Constructs and populates the Java source group logic using a hybrid approach.
      * <p>
      * Implementation details:
-     * 1. Uses the NetBeans ClassIndex to find all primary types within the root.
-     * 2. Resolves each type's physical FileObject to capture size and status.
-     * 3. Groups components into their respective Java packages.
-     * 4. Post-processes the component map to establish nesting relationships 
-     *    for inner and nested classes.
+     * 1. Queries the NetBeans ClassIndex for all declared types in the group.
+     * 2. Resolves these types to their physical FileObjects.
+     * 3. Performs a recursive physical walk of the source root.
+     * 4. Merges the results: for each file, it either adds the logical types 
+     *    discovered from the index or adds the file itself if no types were indexed 
+     *    (handles package-info.java and non-java files).
+     * 5. Post-processes the component map to establish nesting relationships.
      * </p>
      * 
      * @param project The parent project.
      * @param sg The NetBeans source group instance.
-     * @throws Exception if index access or file resolution fails.
+     * @throws Exception if index access or physical walk fails.
      */
     public JavaSourceGroup2(Project project, SourceGroup sg) throws Exception {
         this.name = sg.getDisplayName();
         this.relPath = FileUtil.getRelativePath(project.getProjectDirectory(), sg.getRootFolder());
         this.packages = new ArrayList<>();
 
-        Map<String, JavaPackage2> pkgMap = new TreeMap<>();
-        ClasspathInfo cpInfo = ClasspathInfo.create(sg.getRootFolder());
+        FileObject root = sg.getRootFolder();
+        ClasspathInfo cpInfo = ClasspathInfo.create(root);
         ClassIndex index = cpInfo.getClassIndex();
         Set<ElementHandle<javax.lang.model.element.TypeElement>> allTypes = index.getDeclaredTypes("", ClassIndex.NameKind.PREFIX, EnumSet.of(ClassIndex.SearchScope.SOURCE));
         
-        Map<String, ProjectComponent2> typeMap = new HashMap<>();
+        Map<FileObject, List<ProjectComponent2>> fileToComponents = new HashMap<>();
+        Map<String, ProjectComponent2> fqnToComponent = new HashMap<>();
 
         for (ElementHandle<javax.lang.model.element.TypeElement> handle : allTypes) {
             FileObject fo = SourceUtils.getFile(handle, cpInfo);
@@ -90,56 +94,60 @@ public final class JavaSourceGroup2 extends ProjectNode2 {
             }
 
             ProjectComponent2 comp = new ProjectComponent2(fo, handle);
-            typeMap.put(comp.getFqn(), comp);
-
-            String pkgName = getPackageName(handle.getQualifiedName());
-            pkgMap.computeIfAbsent(pkgName, k -> JavaPackage2.builder().name(k).build())
-                  .addComponent(comp);
+            fqnToComponent.put(comp.getFqn(), comp);
+            fileToComponents.computeIfAbsent(fo, k -> new ArrayList<>()).add(comp);
         }
         
-        // Establish nesting relationships
-        for (ProjectComponent2 comp : new ArrayList<>(typeMap.values())) {
+        // Establish nesting relationships for indexed types
+        for (ProjectComponent2 comp : new ArrayList<>(fqnToComponent.values())) {
             String fqn = comp.getFqn();
             int lastDot = fqn.lastIndexOf('.');
             if (lastDot != -1) {
                 String parentFqn = fqn.substring(0, lastDot);
-                if (typeMap.containsKey(parentFqn)) {
-                    typeMap.get(parentFqn).addChild(comp);
-                    String pkgName = getPackageName(fqn);
-                    pkgMap.get(pkgName).getComponents().remove(comp);
+                if (fqnToComponent.containsKey(parentFqn)) {
+                    ProjectComponent2 parentComp = fqnToComponent.get(parentFqn);
+                    parentComp.addChild(comp);
+                    // Remove from the file's primary components list as it is now a child
+                    fileToComponents.get(comp.getFileObject()).remove(comp);
                 }
             }
         }
+
+        // Perform physical walk to find all files and group them into packages
+        Map<String, JavaPackage2> pkgMap = new TreeMap<>();
+        walkJavaPackages(root, root, fileToComponents, pkgMap);
         this.packages.addAll(pkgMap.values());
     }
 
     /**
-     * Extracts the logical package name from a fully qualified type name.
-     * <p>
-     * Uses a simple heuristic: the package name consists of all parts 
-     * before the first part that starts with an uppercase letter.
-     * </p>
-     * 
-     * @param fqn The fully qualified name.
-     * @return The package name string.
+     * Recursively walks the directory structure to identify Java packages and their contents.
      */
-    private String getPackageName(String fqn) {
-        int lastDot = fqn.lastIndexOf('.');
-        if (lastDot == -1) {
-            return "";
-        }
-        String[] parts = fqn.split("\\.");
-        StringBuilder pkg = new StringBuilder();
-        for (int i = 0; i < parts.length; i++) {
-            if (Character.isUpperCase(parts[i].charAt(0))) {
-                break;
+    private void walkJavaPackages(FileObject root, FileObject current, Map<FileObject, List<ProjectComponent2>> fileToComponents, Map<String, JavaPackage2> pkgMap) throws Exception {
+        String relPkgPath = FileUtil.getRelativePath(root, current);
+        String pkgName = (relPkgPath == null || relPkgPath.isEmpty()) ? "" : relPkgPath.replace('/', '.');
+        
+        JavaPackage2 pkg = pkgMap.computeIfAbsent(pkgName, k -> JavaPackage2.builder().name(k).build());
+
+        for (FileObject child : current.getChildren()) {
+            if (child.isFolder()) {
+                walkJavaPackages(root, child, fileToComponents, pkgMap);
+            } else {
+                List<ProjectComponent2> indexed = fileToComponents.get(child);
+                if (indexed != null && !indexed.isEmpty()) {
+                    for (ProjectComponent2 comp : indexed) {
+                        pkg.addComponent(comp);
+                    }
+                } else {
+                    // Not indexed (package-info.java or resource)
+                    pkg.addComponent(new ProjectComponent2(child, null));
+                }
             }
-            if (i > 0) {
-                pkg.append(".");
-            }
-            pkg.append(parts[i]);
         }
-        return pkg.toString();
+        
+        // Clean up empty packages
+        if (pkg.getComponents().isEmpty() && pkgMap.containsKey(pkgName)) {
+            pkgMap.remove(pkgName);
+        }
     }
 
     /** 
@@ -154,11 +162,6 @@ public final class JavaSourceGroup2 extends ProjectNode2 {
 
     /** 
      * Renders the Java source group header and all constituent packages.
-     * <p>
-     * Implementation details:
-     * Outputs a level-3 header for the group name and relative path, then 
-     * sorts and renders each logical package.
-     * </p>
      * 
      * @param sb The target StringBuilder.
      * @param indent The current indentation level.

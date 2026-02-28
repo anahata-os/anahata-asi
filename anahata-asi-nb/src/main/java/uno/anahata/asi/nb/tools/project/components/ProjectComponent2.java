@@ -1,4 +1,4 @@
-/* Licensed under the Apache License, Version 2.0 */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.tools.project.components;
 
 import java.util.ArrayList;
@@ -36,26 +36,21 @@ public final class ProjectComponent2 extends ProjectNode2 {
     private String fqn;
 
     /** 
-     * The Java element kind (e.g., CLASS, INTERFACE, ENUM).
-     * This is null for physical files.
+     * The Java element kind (e.g., CLASS, INTERFACE, ENUM, PACKAGE).
      */
     private ElementKind kind;
-    
-    /** 
-     * The exact name of the file as it appears on the filesystem. 
-     */
-    private String fileName;
     
     /** 
      * The display name provided by the IDE's node system. 
      * This typically contains Git/SVN status indicators like "[M]" or "[A]".
      */
     private String annotatedName;
-    
-    /** 
-     * The physical size of the associated file in bytes. 
+
+    /**
+     * The underlying NetBeans FileObject.
      */
-    private long size;
+    @ToString.Exclude
+    private transient FileObject fileObject;
 
     /** 
      * The parent component in the hierarchy. 
@@ -75,7 +70,8 @@ public final class ProjectComponent2 extends ProjectNode2 {
      * <p>
      * Implementation details:
      * 1. Extracts physical size and filename from the FileObject.
-     * 2. Uses the DataObject/Node API to retrieve the 'Annotated' display name, 
+     * 2. If the file is 'package-info.java', it is explicitly marked as ElementKind.PACKAGE.
+     * 3. Uses the DataObject/Node API to retrieve the 'Annotated' display name, 
      *    stripping any HTML tags used by the IDE for rendering badges.
      * </p>
      * 
@@ -84,11 +80,15 @@ public final class ProjectComponent2 extends ProjectNode2 {
      * @throws FileStateInvalidException If the file reference is no longer valid.
      */
     public ProjectComponent2(FileObject fo, ElementHandle<?> handle) throws FileStateInvalidException {
+        this.fileObject = fo;
         this.fqn = (handle != null) ? handle.getQualifiedName() : null;
         this.kind = (handle != null) ? handle.getKind() : null;
-        this.fileName = fo.getNameExt();
-        this.size = fo.getSize();
         this.children = new ArrayList<>();
+        
+        // Explicitly treat package-info as ElementKind.PACKAGE
+        if (fo.getNameExt().startsWith("package-info")) {
+            this.kind = ElementKind.PACKAGE;
+        }
         
         try {
             org.openide.nodes.Node node = org.openide.loaders.DataObject.find(fo).getNodeDelegate();
@@ -99,7 +99,7 @@ public final class ProjectComponent2 extends ProjectNode2 {
                 this.annotatedName = node.getDisplayName();
             }
         } catch (Exception e) {
-            this.annotatedName = fileName;
+            this.annotatedName = fo.getNameExt();
         }
     }
     
@@ -113,6 +113,15 @@ public final class ProjectComponent2 extends ProjectNode2 {
         this.children.add(child);
     }
 
+    /**
+     * Gets the name of the file associated with this component.
+     * 
+     * @return The filename with extension, or null if no file is associated.
+     */
+    public String getFileName() {
+        return (fileObject != null) ? fileObject.getNameExt() : null;
+    }
+
     /** 
      * Returns the physical size of this component plus the size of all nested children.
      * 
@@ -120,36 +129,43 @@ public final class ProjectComponent2 extends ProjectNode2 {
      */
     @Override
     public long getTotalSize() {
-        return size + children.stream().mapToLong(ProjectComponent2::getTotalSize).sum();
+        long baseSize = (fileObject != null) ? fileObject.getSize() : 0;
+        return baseSize + children.stream().mapToLong(ProjectComponent2::getTotalSize).sum();
     }
 
     /** 
      * Renders this component as a Markdown list item.
      * <p>
      * Implementation details:
-     * 1. Ignores rendering if 'summary' mode is active (handled by parent containers).
-     * 2. Uses the 📄 icon for top-level files.
-     * 3. Appends the Java kind and any IDE status flags (e.g., Git [M]) to the name.
-     * 4. Recursively triggers rendering for any nested children.
+     * 1. Renders the component name with a 📄 icon if it is a top-level file.
+     * 2. Appends the Java kind and any IDE status flags (e.g., Git [M]) to the name.
+     * 3. Recursively triggers rendering for any nested children.
      * </p>
      * 
      * @param sb The StringBuilder to append to.
      * @param indent The current indentation string.
-     * @param summary Ignored at the component level.
+     * @param summary If true, the parent container is handling the aggregation. 
+     *                However, root-level files (parent == null) should still render.
      */
     @Override
     public void renderMarkdown(StringBuilder sb, String indent, boolean summary) {
-        if (summary) {
-            return;
+        // We only skip rendering for components with parents in summary mode
+        // to allow root-level files to always show.
+        if (summary && parent != null) {
+             return;
         }
 
-        boolean isTopLevel = (parent == null);
-        String icon = isTopLevel ? "📄 " : "";
+        boolean isTopLevelFile = (parent == null);
+        String icon = isTopLevelFile ? "📄 " : "";
         String simpleName = getSimpleName();
+        String fileName = getFileName();
+        if (fileName == null) {
+            fileName = simpleName;
+        }
         
         String status = "";
         if (annotatedName != null && !annotatedName.isEmpty()) {
-            status = annotatedName.replace(fileName != null ? fileName : simpleName, "").trim();
+            status = annotatedName.replace(fileName, "").trim();
             if (!status.isEmpty()) {
                 status = " " + status;
             }
@@ -157,14 +173,15 @@ public final class ProjectComponent2 extends ProjectNode2 {
 
         sb.append(indent).append("- ").append(icon).append("`").append(simpleName).append("` ");
         
-        if (kind != null && kind != ElementKind.PACKAGE) {
-            sb.append("(").append(kind).append(") ");
+        if (kind != null) {
+            sb.append("(").append(kind.name()).append(") ");
         }
         
         sb.append(status);
         
-        if (isTopLevel) {
-            sb.append(" [").append(TextUtils.formatSize(size)).append("]");
+        // Show size only for top-level physical files
+        if (isTopLevelFile && fileObject != null) {
+            sb.append(" [").append(TextUtils.formatSize(fileObject.getSize())).append("]");
         }
         
         sb.append("\n");
@@ -183,14 +200,35 @@ public final class ProjectComponent2 extends ProjectNode2 {
      * 
      * @return The display name.
      */
-    private String getSimpleName() {
-        if (kind == ElementKind.PACKAGE) {
+    public String getSimpleName() {
+        String fileName = getFileName();
+        if (kind == ElementKind.PACKAGE || (fileName != null && fileName.startsWith("package-info"))) {
             return "package-info";
         }
         if (fqn == null) {
-            return fileName;
+            return (fileName != null) ? fileName : "unknown";
         }
         int lastDot = fqn.lastIndexOf('.');
         return (lastDot == -1) ? fqn : fqn.substring(lastDot + 1);
+    }
+    
+    /**
+     * Gets a displayable type string for this component.
+     * <p>
+     * For Java types, it returns the ElementKind string. For generic files, 
+     * it returns the file extension in lowercase.
+     * </p>
+     * 
+     * @return The type identifier.
+     */
+    public String getComponentType() {
+        if (kind != null) {
+            return kind.name();
+        }
+        String fileName = getFileName();
+        if (fileName != null && fileName.contains(".")) {
+            return fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
+        }
+        return "file";
     }
 }

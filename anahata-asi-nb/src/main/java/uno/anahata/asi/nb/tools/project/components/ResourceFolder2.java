@@ -3,6 +3,8 @@ package uno.anahata.asi.nb.tools.project.components;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -61,7 +63,8 @@ public final class ResourceFolder2 extends ProjectNode2 {
      * <p>
      * Implementation details:
      * 1. Renders the folder path prefixed with the 📂 icon.
-     * 2. In 'summary' mode, appends aggregate file totals and size to the header.
+     * 2. In 'summary' mode, appends aggregate totals by file extension (e.g. 1 png, 3 md) 
+     *    and the total recursive size.
      * 3. In standard mode, recursively triggers rendering for all child components.
      * </p>
      * 
@@ -72,12 +75,18 @@ public final class ResourceFolder2 extends ProjectNode2 {
     @Override
     public void renderMarkdown(StringBuilder sb, String indent, boolean summary) {
         long totalSize = getTotalSize();
-        int fileCount = components.size();
 
         sb.append(indent).append("- 📂 `").append(path).append("` ");
         
         if (summary) {
-            sb.append("(").append(fileCount).append(" files) [").append(TextUtils.formatSize(totalSize)).append("]");
+            Map<String, Long> counts = components.stream()
+                    .collect(Collectors.groupingBy(ProjectComponent2::getComponentType, Collectors.counting()));
+            
+            String stats = counts.entrySet().stream()
+                    .map(e -> e.getValue() + " " + e.getKey())
+                    .collect(Collectors.joining(", "));
+            
+            sb.append("(").append(stats).append(") [").append(TextUtils.formatSize(totalSize)).append("]");
         }
         
         sb.append("\n");

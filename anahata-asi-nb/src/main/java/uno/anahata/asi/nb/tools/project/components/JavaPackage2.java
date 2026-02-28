@@ -3,6 +3,9 @@ package uno.anahata.asi.nb.tools.project.components;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -67,7 +70,7 @@ public final class JavaPackage2 extends ProjectNode2 {
      * <p>
      * Implementation details:
      * 1. Renders the package name prefixed with the 📦 icon.
-     * 2. In 'summary' mode, appends the file count and total size to the header.
+     * 2. In 'summary' mode, appends aggregate totals by component type (e.g. 2 CLASS, 1 png) and size.
      * 3. In standard mode, sorts components (ensuring package-info is first) 
      *    and recursively triggers their rendering logic.
      * </p>
@@ -79,12 +82,18 @@ public final class JavaPackage2 extends ProjectNode2 {
     @Override
     public void renderMarkdown(StringBuilder sb, String indent, boolean summary) {
         long totalSize = getTotalSize();
-        int fileCount = components.size();
 
         sb.append(indent).append("- 📦 `").append(name).append("` ");
         
         if (summary) {
-            sb.append("(").append(fileCount).append(" files) [").append(TextUtils.formatSize(totalSize)).append("]");
+            Map<String, Long> counts = components.stream()
+                    .collect(Collectors.groupingBy(ProjectComponent2::getComponentType, Collectors.counting()));
+            
+            String stats = counts.entrySet().stream()
+                    .map(e -> e.getValue() + " " + e.getKey())
+                    .collect(Collectors.joining(", "));
+            
+            sb.append("(").append(stats).append(") [").append(TextUtils.formatSize(totalSize)).append("]");
         }
         
         sb.append("\n");
