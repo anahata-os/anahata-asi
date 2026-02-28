@@ -5,15 +5,12 @@ package uno.anahata.asi.nb.nodes;
 
 import java.awt.Image;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import org.netbeans.api.project.Project;
-import org.netbeans.api.project.ProjectManager;
 import org.netbeans.spi.project.ui.support.NodeFactory;
 import org.netbeans.spi.project.ui.support.NodeFactorySupport;
 import org.netbeans.spi.project.ui.support.NodeList;
@@ -28,11 +25,11 @@ import org.openide.nodes.FilterNode;
 import org.openide.nodes.Node;
 import org.openide.util.ImageUtilities;
 import org.openide.util.lookup.Lookups;
+import uno.anahata.asi.nb.tools.project.Projects;
 
 /**
- * A factory that creates the "JASI" virtual folder in the NetBeans Projects window.
+ * A factory that creates the "Anahata" virtual folder in the NetBeans Projects window.
  * This folder contains project-specific AI resources like {@code anahata.md}.
- * Ported from V1 to the JASI (V2) architecture.
  * 
  * @author anahata
  */
@@ -50,17 +47,17 @@ public class AnahataNodeFactory implements NodeFactory {
 
     /**
      * {@inheritDoc}
-     * Creates the "JASI" virtual node for the given project.
+     * Creates the "Anahata" virtual node for the given project.
      */
     @Override
     public NodeList<?> createNodes(Project project) {
-        log.log(Level.FINE, "Creating JASI nodes for project: {0}", project.getProjectDirectory().getName());
+        log.log(Level.FINE, "Creating Anahata nodes for project: {0}", project.getProjectDirectory().getName());
         AnahataFolderNode anahataNode = new AnahataFolderNode(project);
         return NodeFactorySupport.fixedNodeList(anahataNode);
     }
 
     /**
-     * A virtual folder node named "JASI" that serves as a container for AI-related files.
+     * A virtual folder node named "Anahata" that serves as a container for AI-related files.
      */
     private static class AnahataFolderNode extends AbstractNode {
 
@@ -70,12 +67,11 @@ public class AnahataNodeFactory implements NodeFactory {
         private static final String FOLDER_OPEN_ICON_PATH = "org/openide/loaders/defaultFolderOpen.gif";
         /** 
          * The path to the Anahata overlay icon. 
-         * FIXED: Renamed to avoid shadowing V1's icon in the merged resource layer.
          */
         private static final String OVERLAY_ICON_PATH = "icons/anahata_16.png";
 
         /**
-         * Constructs a new JASI folder node.
+         * Constructs a new Anahata folder node.
          * 
          * @param project The project this node belongs to.
          */
@@ -119,7 +115,7 @@ public class AnahataNodeFactory implements NodeFactory {
     }
 
     /**
-     * Manages the children of the JASI folder, specifically looking for .md files.
+     * Manages the children of the Anahata folder, specifically looking for .md files.
      */
     private static class AnahataFileChildren extends Children.Keys<FileObject> {
 
@@ -131,7 +127,7 @@ public class AnahataNodeFactory implements NodeFactory {
         private final FileChangeAdapter fileChangeListener;
 
         /**
-         * Constructs a new children manager for the JASI folder.
+         * Constructs a new children manager for the Anahata folder.
          * 
          * @param project The project to monitor.
          */
@@ -171,26 +167,16 @@ public class AnahataNodeFactory implements NodeFactory {
          */
         private void refreshKeys() {
             List<FileObject> mdFiles = new ArrayList<>();
-            boolean anahataMdExists = false;
+            try {
+                // Delegate creation to centralized utility
+                Projects.ensureAnahataMdExists(project);
+            } catch (IOException e) {
+                log.log(Level.SEVERE, "Failed to ensure anahata.md exists", e);
+            }
+
             for (FileObject child : projectDir.getChildren()) {
                 if (child.isData() && "md".equalsIgnoreCase(child.getExt())) {
                     mdFiles.add(child);
-                    if ("anahata.md".equalsIgnoreCase(child.getNameExt())) {
-                        anahataMdExists = true;
-                    }
-                }
-            }
-
-            if (!anahataMdExists) {
-                try {
-                    FileObject newFile = projectDir.createData("anahata.md");
-                    try (Writer writer = new OutputStreamWriter(newFile.getOutputStream())) {
-                        writer.write("# Project Instructions\n\nThis file is are the project level system instructions for '"
-                                + project.getProjectDirectory().getName() + "' project.\n");
-                    }
-                    mdFiles.add(newFile);
-                } catch (IOException e) {
-                    log.log(Level.SEVERE, "Failed to create anahata.md", e);
                 }
             }
 
@@ -224,7 +210,6 @@ public class AnahataNodeFactory implements NodeFactory {
 
         /** 
          * The path to the Anahata icon. 
-         * FIXED: Renamed to avoid shadowing V1's icon.
          */
         private static final String ANAHATA_ICON_PATH = "icons/anahata_16.png";
 

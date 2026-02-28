@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.model.resource.AbstractResource;
 import uno.anahata.asi.model.resource.RefreshPolicy;
 import uno.anahata.asi.model.resource.files.TextFileResource;
 import uno.anahata.asi.tool.AiTool;
@@ -18,6 +19,11 @@ import uno.anahata.asi.tool.AiToolParam;
 /**
  * The definitive V2 toolkit for interacting with file-based resources.
  * It provides tools for loading, writing, and surgically editing text files.
+ * <p>
+ * This toolkit is built on the hierarchical context provider architecture, 
+ * allowing files to be managed as stateful resources with configurable 
+ * viewports and refresh policies.
+ * </p>
  *
  * @author anahata-ai
  */
@@ -25,7 +31,11 @@ import uno.anahata.asi.tool.AiToolParam;
 @Slf4j
 public class Files extends AnahataToolkit {
     
-    /** {@inheritDoc} */
+    /**
+     * Returns the mandatory system instructions for file operations.
+     * @return List of instructions.
+     * @throws Exception on error.
+     */
     @Override
     public List<String> getSystemInstructions() throws Exception {
         return Collections.singletonList("When writing files, always use the lastModified timestamp from the RAG message");
@@ -33,6 +43,11 @@ public class Files extends AnahataToolkit {
 
     /**
      * Updates the viewport settings for a TextFileResource.
+     * <p>
+     * Implementation details:
+     * This method retrieves the resource by ID, updates its internal viewport 
+     * settings, and triggers a reload to apply any new filtering or tailing logic.
+     * </p>
      * 
      * @param resourceId The resource identifier.
      * @param newSettings The new viewport settings for the text file.
@@ -43,30 +58,52 @@ public class Files extends AnahataToolkit {
             @AiToolParam("The resourceId (not the path).") String resourceId, 
             @AiToolParam("The new viewport settings for the text file") TextViewportSettings newSettings) throws Exception {
         TextFileResource tfr = getResourceManager().getResource(resourceId);
-        tfr.getViewport().setSettings(newSettings);
-        tfr.reload();
+        if (tfr != null) {
+            tfr.getViewport().setSettings(newSettings);
+            tfr.reload();
+        }
     }
 
     /**
      * Loads one or more text files into the context as managed resources.
+     * <p>
+     * Implementation details:
+     * This method is optimized for bulk operations. It prepares each resource 
+     * (checking existence and initializing viewports) and then performs a single 
+     * batch registration via {@link uno.anahata.asi.resource.ResourceManager#registerAll(Collection)}. 
+     * This prevents the UI from performing redundant rebuilds for every file.
+     * </p>
      *
      * @param resourcePaths The absolute paths to the text files.
-     * @return The list of newly created TextFileResources.
      * @throws Exception if no files were successfully loaded.
      */
     @AiTool(value = "Loads a text file into the context as a managed resource. By default, files are loaded with a LIVE refresh policy, which means they are automatically refreshed from disk right before the API call starts. You do not need to re-load a file if it is already present in the context.", maxDepth = 12)
     public void loadTextFile(
             @AiToolParam("The absolute paths to the text files.") List<String> resourcePaths) throws Exception {
 
+        if (resourcePaths == null || resourcePaths.isEmpty()) {
+            return;
+        }
+
+        List<AbstractResource<?, ?>> toRegister = new ArrayList<>();
         int successCount = 0;
+        
         for (String path : resourcePaths) {
             try {
-                loadTextFileInternal(path, new TextViewportSettings());
-                successCount++;
+                TextFileResource resource = prepareTextFileResource(path, new TextViewportSettings());
+                if (resource != null) {
+                    toRegister.add(resource);
+                    successCount++;
+                }
             } catch (Exception e) {
-                log.error("Exception loading text file resource: {}", path, e);
-                error("Failed to load " + path + ": " + e.getMessage());
+                log.error("Exception preparing text file resource: {}", path, e);
+                error("Failed to prepare " + path + ": " + e.getMessage());
             }
+        }
+
+        if (!toRegister.isEmpty()) {
+            getResourceManager().registerAll(toRegister);
+            log("Batch registered " + toRegister.size() + " resources.");
         }
 
         if (successCount == 0) {
@@ -76,10 +113,13 @@ public class Files extends AnahataToolkit {
 
     /**
      * Loads a text file into the context with specific viewport settings.
+     * <p>
+     * Implementation details:
+     * A convenience wrapper for single-file loading with custom viewport parameters.
+     * </p>
      *
      * @param path The absolute path to the file.
      * @param settings The viewport settings to apply.
-     * @return The newly created TextFileResource.
      * @throws Exception if the file cannot be loaded.
      */
     @AiTool(value = "Loads a text file into the context with specific viewport settings. This is ideal for tailing logs or filtering large files upon loading.", maxDepth = 12)
@@ -91,12 +131,16 @@ public class Files extends AnahataToolkit {
 
     /**
      * Internal logic for loading or updating a single text file.
-     * Unlike the tool methods, this returns the rich object for internal Java callers.
+     * <p>
+     * Implementation details:
+     * Checks if a resource for the given path already exists. If so, updates 
+     * its settings and reloads it. Otherwise, creates and registers a new instance.
+     * </p>
      * 
      * @param path The absolute path to the file.
      * @param settings The viewport settings.
      * @return The created or updated resource.
-     * @throws Exception if the file is missing.
+     * @throws Exception if the file operation fails.
      */
     public TextFileResource loadTextFileInternal(String path, TextViewportSettings settings) throws Exception {
 
@@ -109,11 +153,49 @@ public class Files extends AnahataToolkit {
             return existing.get();
         }
 
-        return createAndRegisterResource(path, settings);
+        TextFileResource resource = prepareTextFileResource(path, settings);
+        getResourceManager().register(resource);
+        return resource;
     }
     
     /**
+     * Prepares a text file resource instance without registering it.
+     * <p>
+     * Implementation details:
+     * Verifies file existence, creates the resource instance, applies 
+     * viewport settings, and performs the initial reload.
+     * </p>
+     * 
+     * @param path The absolute path.
+     * @param settings The viewport settings.
+     * @return The prepared resource instance.
+     * @throws Exception if the file is missing or reload fails.
+     */
+    protected TextFileResource prepareTextFileResource(String path, TextViewportSettings settings) throws Exception {
+        if (!java.nio.file.Files.exists(Paths.get(path))) {
+            throw new AiToolException("File not found: " + path);
+        }
+        
+        log("Preparing TextFileResource for: " + path );
+        TextFileResource resource = createResourceInstance(path);
+        
+        if (settings != null) {
+            log("Applying text view port settings for: " + path);
+            resource.getViewport().setSettings(settings);
+        }
+        
+        resource.setRefreshPolicy(RefreshPolicy.LIVE);
+        resource.reload();
+        return resource;
+    }
+
+    /**
      * Hook to update an existing resource during a load request.
+     * <p>
+     * Implementation details:
+     * Updates the viewport and triggers a reload of the file content.
+     * </p>
+     * 
      * @param resource The existing resource.
      * @param settings The new settings.
      * @throws Exception if the update fails.
@@ -127,33 +209,15 @@ public class Files extends AnahataToolkit {
     }
 
     /**
-     * Creates, reloads, and registers a new resource.
-     * @param path The path.
-     * @param settings The settings.
-     * @return The new resource.
-     * @throws Exception if creation fails.
-     */
-    protected TextFileResource createAndRegisterResource(String path, TextViewportSettings settings) throws Exception {
-        if (!java.nio.file.Files.exists(Paths.get(path))) {
-            throw new AiToolException("File not found: " + path);
-        }
-        log("Creating TextFileResource with LIVE refresh policy for: " + path );
-        TextFileResource resource = createResourceInstance(path);
-        if (settings != null) {
-            log("Applying text view port settings");
-            resource.getViewport().setSettings(settings);
-        }
-        resource.setRefreshPolicy(RefreshPolicy.LIVE);
-        resource.reload();
-        getResourceManager().register(resource);
-        log("Registered text file resource: " + path);
-        return resource;
-    }
-
-    /**
      * Factory method for creating the specific resource instance.
-     * @param path The path.
-     * @return The instance.
+     * <p>
+     * Implementation details:
+     * Instantiates a new {@link TextFileResource}. Subclasses can override this 
+     * to provide environment-specific implementations (e.g., {@code NbTextFileResource}).
+     * </p>
+     * 
+     * @param path The absolute path.
+     * @return The resource instance.
      * @throws Exception if instantiation fails.
      */
     protected TextFileResource createResourceInstance(String path) throws Exception {
@@ -162,6 +226,10 @@ public class Files extends AnahataToolkit {
 
     /**
      * Creates a new file with the provided content.
+     * <p>
+     * Implementation details:
+     * Ensures parent directories exist before delegating to the actual write operation.
+     * </p>
      * 
      * @param create The rich creation object for the new file.
      * @param message A message describing the change.
@@ -185,7 +253,15 @@ public class Files extends AnahataToolkit {
     }
     
     /**
-     * Hook to perform the actual file creation.
+     * Performs the actual file creation on disk.
+     * <p>
+     * Implementation details:
+     * Uses standard NIO {@link java.nio.file.Files#writeString} for the operation.
+     * </p>
+     * 
+     * @param create The creation DTO.
+     * @param message Descriptive message.
+     * @throws Exception on I/O error.
      */
     protected void performCreate(FullTextFileCreate create, String message) throws Exception {
         java.nio.file.Files.writeString(Paths.get(create.getPath()), create.getContent());
@@ -194,11 +270,15 @@ public class Files extends AnahataToolkit {
 
     /**
      * Overwrites an existing file using a rich update object. 
-     * Implements optimistic locking and is optimized for the ASI's diff viewer.
+     * <p>
+     * Implementation details:
+     * Orchestrates validation (context checks and optimistic locking) before 
+     * performing the update.
+     * </p>
      * 
      * @param update The update details (path, content, locking, comments).
      * @param message A message describing the change.
-     * @throws Exception if the file does not exist, locking fails, or an I/O error occurs.
+     * @throws Exception if validation or update fails.
      */
     @AiTool(value = "Overwrites an existing file using a filthy rich update object where you can just use line comments rather than putting comments in the code. The ASI's diff viewer displays some comic style bubbles on the lines where you put line comments.", maxDepth = 12)
     public void updateTextFile(
@@ -211,7 +291,14 @@ public class Files extends AnahataToolkit {
     
     /**
      * Validates an update request against the current state of the resource.
-     * @param update The update.
+     * <p>
+     * Implementation details:
+     * 1. Verifies that the file is already a managed resource.
+     * 2. Checks physical existence on disk.
+     * 3. Performs optimistic locking using the lastModified timestamp.
+     * </p>
+     * 
+     * @param update The update details.
      * @throws Exception if validation fails.
      */
     protected void validateUpdate(FullTextFileUpdate update) throws Exception {
@@ -235,7 +322,15 @@ public class Files extends AnahataToolkit {
     }
     
     /**
-     * Hook to perform the actual file update.
+     * Performs the actual file update on disk.
+     * <p>
+     * Implementation details:
+     * Uses standard NIO {@link java.nio.file.Files#writeString} for the update.
+     * </p>
+     * 
+     * @param update The update details.
+     * @param message Descriptive message.
+     * @throws Exception on I/O error.
      */
     protected void performUpdate(FullTextFileUpdate update, String message) throws Exception {
         java.nio.file.Files.writeString(Paths.get(update.getPath()), update.getNewContent());
@@ -245,11 +340,15 @@ public class Files extends AnahataToolkit {
 
     /**
      * Performs multiple text replacements in a file. Ideal for surgical code edits.
-     * Implements optimistic locking and occurrence count validation.
+     * <p>
+     * Implementation details:
+     * Performs an optimistic locking check before reading the file, applying 
+     * replacements, and then delegating to {@link #updateTextFile(FullTextFileUpdate, String)}.
+     * </p>
      * 
      * @param replacements The list of replacements to perform.
      * @param message A message describing the change.
-     * @throws Exception if a target string is not found, count mismatch occurs, I/O error occurs, or locking fails.
+     * @throws Exception if replacements fail or locking mismatch occurs.
      */
     @AiTool(value = "Performs multiple text replacements in a file. Ideal for surgical edits but tends to fail on source code files. Shows the 'reason' of each replacement as comic-style bubble on the ASI's diff viewer.", maxDepth = 12)
     public void replaceInTextFile(
@@ -271,6 +370,10 @@ public class Files extends AnahataToolkit {
 
     /**
      * Appends text to the end of an existing file.
+     * <p>
+     * Implementation details:
+     * Uses NIO {@link java.nio.file.StandardOpenOption#APPEND}.
+     * </p>
      * 
      * @param path The absolute path to the file.
      * @param content The text content to append.

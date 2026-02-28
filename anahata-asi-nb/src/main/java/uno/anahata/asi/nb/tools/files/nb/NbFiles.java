@@ -180,7 +180,7 @@ public class NbFiles extends Files {
             // Optimistic Locking Check
             long current = fo.lastModified().getTime();
             if (update.getLastModified() != 0 && current != update.getLastModified()) {
-                throw new AiToolException("Optimistic locking failure: File modified in IDE. Expected: " + update.getLastModified() + ", Actual: " + current);
+                throw new AiToolException("Optimistic locking failure: You gave: " + update.getLastModified() + ", Actual: " + current);
             }
         } else {
             super.validateUpdate(update);

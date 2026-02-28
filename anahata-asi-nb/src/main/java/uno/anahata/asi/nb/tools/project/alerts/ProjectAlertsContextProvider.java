@@ -30,7 +30,7 @@ public class ProjectAlertsContextProvider extends BasicContextProvider {
      * @param projectPath The absolute path to the project.
      */
     public ProjectAlertsContextProvider(Projects projectsToolkit, String projectPath) {
-        super("alerts", "Project Alerts", "Compiler errors and project problems");
+        super("alerts", "Alerts", "Compiler errors and project problems");
         this.projectsToolkit = projectsToolkit;
         this.projectPath = projectPath;
         // Enabled by default for better visibility of compile issues
@@ -53,7 +53,7 @@ public class ProjectAlertsContextProvider extends BasicContextProvider {
         ProjectDiagnostics diags = projectsToolkit.getProjectAlerts(projectPath);
         
         StringBuilder sb = new StringBuilder();
-        sb.append("\n## Project Alerts (").append(diags.getProjectName()).append(")\n");
+        sb.append("\n**Project Alerts ").append(diags.getProjectName()).append("**\n");
         
         if (diags.getJavacAlerts().isEmpty() && diags.getProjectAlerts().isEmpty()) {
             sb.append("  - No alerts found.\n");

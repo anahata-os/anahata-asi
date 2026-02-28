@@ -123,7 +123,10 @@ public class ToolContext {
      * @return The parent Agi instance.
      */
     public Agi getAgi() {
-        return getToolManager().getAgi();
+        if (toolkit != null) {
+            return toolkit.getToolManager().getAgi();
+        }
+        return getResponse().getAgi();
     }
 
     /**
@@ -147,22 +150,32 @@ public class ToolContext {
 
     /**
      * Adds a standard log message to the current tool's response.
+     * If called outside a tool execution thread, it logs to the SLF4J logger.
      *
      * @param message The log message to add.
-     * @throws IllegalStateException if called outside a tool execution thread.
      */
     public void log(String message) {
-        getResponse().addLog(message);
+        JavaMethodToolResponse response = JavaMethodToolResponse.getCurrent();
+        if (response != null) {
+            response.addLog(message);
+        } else {
+            log.info("[{}] {}", getClass().getName(), message);
+        }
     }
 
     /**
      * Adds an error message to the current tool's response.
+     * If called outside a tool execution thread, it logs to the SLF4J logger.
      *
      * @param message The error message to add.
-     * @throws IllegalStateException if called outside a tool execution thread.
      */
     public void error(String message) {
-        getResponse().addError(message);
+        JavaMethodToolResponse response = JavaMethodToolResponse.getCurrent();
+        if (response != null) {
+            response.addError(message);
+        } else {
+            log.error("[{}] {}", getClass().getName(), message);
+        }
     }
 
     /**
