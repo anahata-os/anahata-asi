@@ -15,11 +15,12 @@ import uno.anahata.asi.swing.agi.render.editorkit.EditorKitProvider;
  * @param type The {@link TextSegmentType} of the segment (TEXT or CODE).
  * @param content The raw text content of the segment.
  * @param language The programming language for code segments (null for text segments).
+ * @param closed True if the segment (especially a code block) is fully closed/complete.
  *
  * @author anahata
  */
 @Slf4j
-public record TextSegmentDescriptor(TextSegmentType type, String content, String language) {
+public record TextSegmentDescriptor(TextSegmentType type, String content, String language, boolean closed) {
 
     /**
      * Creates and returns an appropriate {@link AbstractTextSegmentRenderer} for this descriptor.
@@ -29,10 +30,12 @@ public record TextSegmentDescriptor(TextSegmentType type, String content, String
      * @return A concrete instance of {@link AbstractTextSegmentRenderer}.
      */
     public AbstractTextSegmentRenderer createRenderer(AgiPanel agiPanel, boolean isThought) {
-        return switch (type) {
+        AbstractTextSegmentRenderer renderer = switch (type) {
             case TEXT -> new MarkupTextSegmentRenderer(agiPanel, content, isThought);
             case CODE -> createCodeBlockRenderer(agiPanel);
         };
+        renderer.setClosed(closed);
+        return renderer;
     }
 
     private AbstractTextSegmentRenderer createCodeBlockRenderer(AgiPanel agiPanel) {

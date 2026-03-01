@@ -120,6 +120,9 @@ public abstract class AbstractCodeBlockSegmentRenderer extends AbstractTextSegme
             copyButton.addActionListener(e -> SwingUtils.copyToClipboard(getCurrentContentFromComponent()));
             leftHeaderPanel.add(copyButton);
             
+            // Allow subclasses to inject extra buttons
+            addExtraHeaderButtons(leftHeaderPanel);
+            
             if (editable) {
                 editButton = new JButton("Edit");
                 editButton.setToolTipText("Toggle Edit Mode");
@@ -158,6 +161,15 @@ public abstract class AbstractCodeBlockSegmentRenderer extends AbstractTextSegme
             contentRendered(); 
         }
         return changed;
+    }
+
+    /**
+     * Hook for subclasses to inject specialized buttons into the header area.
+     * 
+     * @param leftHeaderPanel The panel containing the header buttons.
+     */
+    protected void addExtraHeaderButtons(JPanel leftHeaderPanel) {
+        // Default implementation does nothing.
     }
 
     /**

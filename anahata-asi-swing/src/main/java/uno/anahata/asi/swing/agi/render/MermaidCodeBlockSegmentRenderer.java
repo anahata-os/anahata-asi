@@ -5,12 +5,15 @@ package uno.anahata.asi.swing.agi.render;
 
 import java.awt.CardLayout;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Image;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Objects;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -39,6 +42,13 @@ public class MermaidCodeBlockSegmentRenderer extends AbstractCodeBlockSegmentRen
     private final JLabel imageLabel = new JLabel("Loading diagram...", SwingConstants.CENTER);
     /** The inner editor used for modifying the Mermaid code. */
     private AbstractCodeBlockSegmentRenderer innerEditor;
+    
+    /** Button to copy the rendered image to the clipboard. */
+    private JButton copyImageButton;
+    /** The last successfully rendered image. */
+    private Image currentImage;
+    /** The Mermaid source used for the last successful render. */
+    private String lastRenderedDiagramContent;
 
     /**
      * Constructs a new MermaidCodeBlockSegmentRenderer.
@@ -63,15 +73,20 @@ public class MermaidCodeBlockSegmentRenderer extends AbstractCodeBlockSegmentRen
         imageLabel.setBackground(Color.WHITE);
         cardPanel.add(imageLabel, "IMAGE");
 
-        // 2. The Editor Card: Uses RSyntaxTextArea for code editing
-        innerEditor = new RSyntaxTextAreaCodeBlockSegmentRenderer(agiPanel, currentContent, "mermaid");
-        innerEditor.render(); // Initialize the sub-renderer
+        // 2. The Editor Card: Use the authoritative provider to get line numbers/IDE fidelity
+        innerEditor = agiConfig.getEditorKitProvider().createRenderer(agiPanel, currentContent, "mermaid");
+        innerEditor.render(); 
         cardPanel.add(innerEditor.getInnerComponent(), "EDITOR");
 
-        cardLayout.show(cardPanel, "IMAGE");
         cardPanel.setOpaque(false);
         
-        updateDiagram();
+        if (closed) {
+            cardLayout.show(cardPanel, "IMAGE");
+            updateDiagram();
+        } else {
+            imageLabel.setText("Waiting for diagram code to complete...");
+            cardLayout.show(cardPanel, "EDITOR");
+        }
         
         return cardPanel;
     }
@@ -86,11 +101,23 @@ public class MermaidCodeBlockSegmentRenderer extends AbstractCodeBlockSegmentRen
             return;
         }
 
-        imageLabel.setText("Generating diagram...");
+        // Deferred Rendering: Don't call the server while the block is still streaming.
+        if (!closed) {
+            imageLabel.setText("Streaming diagram code...");
+            imageLabel.setIcon(null);
+            return;
+        }
         
-        // Use standard SwingTask for robust background execution and error handling
+        // Guard: Don't re-render if the content hasn't changed.
+        if (Objects.equals(currentContent, lastRenderedDiagramContent)) {
+            return;
+        }
+
+        imageLabel.setText("Generating diagram...");
+        if (copyImageButton != null) copyImageButton.setEnabled(false);
+        
+        // Use standard SwingTask with showError=false to prevent popups during transient failures
         new SwingTask<Image>(null, "Mermaid Renderer", () -> {
-            // simple base64 encoding of the source code for mermaid.ink
             String encoded = Base64.getEncoder().encodeToString(currentContent.getBytes(StandardCharsets.UTF_8));
             String urlString = "https://mermaid.ink/img/" + encoded;
             URL url = new URL(urlString);
@@ -98,15 +125,19 @@ public class MermaidCodeBlockSegmentRenderer extends AbstractCodeBlockSegmentRen
             if (image == null) throw new Exception("Failed to decode image from server.");
             return image;
         }, image -> {
+            this.currentImage = image;
+            this.lastRenderedDiagramContent = currentContent;
             imageLabel.setText("");
             imageLabel.setIcon(new ImageIcon(image));
+            if (copyImageButton != null) copyImageButton.setEnabled(true);
             imageLabel.revalidate();
             imageLabel.repaint();
         }, e -> {
             log.error("Failed to render Mermaid diagram", e);
             imageLabel.setText("<html><center>Failed to render diagram<br>" + e.getMessage() + "</center></html>");
             imageLabel.setIcon(null);
-        }).execute();
+            if (copyImageButton != null) copyImageButton.setEnabled(false);
+        }, false).execute();
     }
 
     /** {@inheritDoc} */
@@ -115,7 +146,14 @@ public class MermaidCodeBlockSegmentRenderer extends AbstractCodeBlockSegmentRen
         if (innerEditor != null) {
             innerEditor.updateContent(content);
         }
-        updateDiagram();
+        
+        // Automatic transition: if we just closed, show the image card and update
+        if (closed && !editing) {
+            cardLayout.show(cardPanel, "IMAGE");
+            updateDiagram();
+        } else if (!closed && !editing) {
+            cardLayout.show(cardPanel, "EDITOR");
+        }
     }
 
     /** {@inheritDoc} */
@@ -128,6 +166,19 @@ public class MermaidCodeBlockSegmentRenderer extends AbstractCodeBlockSegmentRen
     @Override
     protected void setComponentEditable(boolean editable) {
         // Handled by card switching and inner editor
+    }
+    
+    /** {@inheritDoc} */
+    @Override
+    protected void addExtraHeaderButtons(JPanel leftHeaderPanel) {
+        copyImageButton = new JButton("Copy Image");
+        copyImageButton.setToolTipText("Copy Diagram to OS Clipboard");
+        copyImageButton.setFont(new Font("SansSerif", Font.PLAIN, 11));
+        copyImageButton.setMargin(new java.awt.Insets(1, 5, 1, 5));
+        copyImageButton.setFocusPainted(false);
+        copyImageButton.setEnabled(currentImage != null);
+        copyImageButton.addActionListener(e -> SwingUtils.copyImageToClipboard(currentImage));
+        leftHeaderPanel.add(copyImageButton);
     }
     
     /**

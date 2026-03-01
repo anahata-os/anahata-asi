@@ -155,7 +155,7 @@ public class ToolContext {
      * @param message The log message to add.
      */
     public void log(String message) {
-        JavaMethodToolResponse response = JavaMethodToolResponse.getCurrent();
+        JavaMethodToolResponse response = getResponse();
         if (response != null) {
             response.addLog(message);
         } else {
@@ -170,7 +170,7 @@ public class ToolContext {
      * @param message The error message to add.
      */
     public void error(String message) {
-        JavaMethodToolResponse response = JavaMethodToolResponse.getCurrent();
+        JavaMethodToolResponse response = getResponse();
         if (response != null) {
             response.addError(message);
         } else {

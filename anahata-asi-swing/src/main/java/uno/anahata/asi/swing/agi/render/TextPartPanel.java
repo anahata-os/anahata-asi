@@ -30,9 +30,9 @@ public class TextPartPanel extends AbstractPartPanel<TextPart> {
 
     /** 
      * Regex pattern for identifying code blocks in markdown. 
-     * Updated to support unclosed blocks for better streaming experience.
+     * It captures the language, the content, and the optional closing backticks.
      */
-    private static final Pattern CODE_BLOCK_PATTERN = Pattern.compile("```(\\w*)\\r?\\n([\\s\\S]*?)(?:\\r?\\n```|\\z)");
+    private static final Pattern CODE_BLOCK_PATTERN = Pattern.compile("```(\\w*)\\r?\\n([\\s\\S]*?)(?:\\r?\\n(```)|\\z)");
 
     /** Cache of segment renderers to support incremental updates. */
     private final List<AbstractTextSegmentRenderer> cachedSegmentRenderers = new ArrayList<>();
@@ -118,13 +118,15 @@ public class TextPartPanel extends AbstractPartPanel<TextPart> {
             // Preceding text segment
             if (matcher.start() > lastEnd) {
                 String textSegmentContent = markdownText.substring(lastEnd, matcher.start());
-                descriptors.add(new TextSegmentDescriptor(TextSegmentType.TEXT, textSegmentContent, null));
+                descriptors.add(new TextSegmentDescriptor(TextSegmentType.TEXT, textSegmentContent, null, true));
             }
 
             // Code block segment
             String language = matcher.group(1);
             String code = matcher.group(2);
-            descriptors.add(new TextSegmentDescriptor(TextSegmentType.CODE, code, language));
+            // If the closing backticks (group 3) are found, the block is closed.
+            boolean closed = matcher.group(3) != null && !matcher.group(3).isEmpty();
+            descriptors.add(new TextSegmentDescriptor(TextSegmentType.CODE, code, language, closed));
 
             lastEnd = matcher.end();
         }
@@ -132,7 +134,7 @@ public class TextPartPanel extends AbstractPartPanel<TextPart> {
         // Remaining text segment
         if (lastEnd < markdownText.length()) {
             String textSegmentContent = markdownText.substring(lastEnd);
-            descriptors.add(new TextSegmentDescriptor(TextSegmentType.TEXT, textSegmentContent, null));
+            descriptors.add(new TextSegmentDescriptor(TextSegmentType.TEXT, textSegmentContent, null, false));
         }
         return descriptors;
     }
@@ -174,6 +176,7 @@ public class TextPartPanel extends AbstractPartPanel<TextPart> {
             for (int i = 0; i < newSegmentDescriptors.size(); i++) {
                 TextSegmentDescriptor newDescriptor = newSegmentDescriptors.get(i);
                 AbstractTextSegmentRenderer cachedRenderer = cachedSegmentRenderers.get(i);
+                cachedRenderer.setClosed(newDescriptor.closed());
                 cachedRenderer.updateContent(newDescriptor.content());
                 cachedRenderer.render(); // Call render to update the component if content changed
             }

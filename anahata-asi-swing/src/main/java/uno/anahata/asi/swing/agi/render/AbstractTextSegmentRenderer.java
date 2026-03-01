@@ -6,6 +6,7 @@ package uno.anahata.asi.swing.agi.render;
 import java.util.Objects;
 import javax.swing.JComponent;
 import lombok.Getter;
+import lombok.Setter;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 
@@ -29,6 +30,13 @@ public abstract class AbstractTextSegmentRenderer {
     protected String currentContent; 
     /** The content that was last rendered into the component. */
     protected String lastRenderedContent; 
+
+    /** 
+     * Whether the segment is fully closed/complete. 
+     * For code blocks, this is true if the closing backticks are present.
+     */
+    @Setter
+    protected boolean closed = true;
 
     /**
      * Constructs a new AbstractTextSegmentRenderer.

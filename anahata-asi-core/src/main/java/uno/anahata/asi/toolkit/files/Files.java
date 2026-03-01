@@ -337,7 +337,7 @@ public class Files extends AnahataToolkit {
         // 3. Optimistic Locking
         long current = java.nio.file.Files.getLastModifiedTime(filePath).toMillis();
         if (write.getLastModified() != 0 && current != write.getLastModified()) {
-            throw new AiToolException("Optimistic locking failure: File state has changed in context. \nGiven: " + write.getLastModified() + ", Actual: " + current + "\nRefetch the file to get the latest version.");
+            throw new AiToolException("Optimistic locking failure: File state has changed in context. \nYou gave: " + write.getLastModified() + ", Current: " + current + "\n. For LIVE resources, always use the lastModified from the resource header in the RAG message or the system instructions if it is a resource with SYSTEM_INSTRUCTIONS Context Position");
         }
     }
     

@@ -158,7 +158,7 @@ public class NbFiles extends Files {
             // Optimistic Locking Check
             long current = fo.lastModified().getTime();
             if (write.getLastModified() != 0 && current != write.getLastModified()) {
-                throw new AiToolException("Optimistic locking failure: You gave: " + write.getLastModified() + ", Actual: " + current);
+                throw new AiToolException("Optimistic locking failure: File state has changed in context. \nYou gave: " + write.getLastModified() + ", Current: " + current + "\n. For LIVE resources, always use the lastModified from the resource header in the RAG message (or the resource header in the system instructions if it is a resource with SYSTEM_INSTRUCTIONS Context Position)");
             }
         } else {
             super.validateWrite(write);

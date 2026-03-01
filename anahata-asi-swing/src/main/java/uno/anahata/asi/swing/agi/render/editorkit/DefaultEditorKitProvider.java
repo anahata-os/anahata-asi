@@ -4,6 +4,7 @@
 package uno.anahata.asi.swing.agi.render.editorkit;
 
 import java.io.File;
+import java.util.Map;
 import javax.swing.text.EditorKit;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.rtf.RTFEditorKit;
@@ -25,6 +26,22 @@ import uno.anahata.asi.swing.agi.render.RSyntaxTextAreaCodeBlockSegmentRenderer;
  */
 @Slf4j
 public class DefaultEditorKitProvider implements EditorKitProvider {
+
+    private static final Map<String, String> EXT_MAP = Map.ofEntries(
+        Map.entry("java", "java"),
+        Map.entry("py", "python"),
+        Map.entry("xml", "xml"),
+        Map.entry("html", "html"),
+        Map.entry("js", "javascript"),
+        Map.entry("ts", "typescript"),
+        Map.entry("json", "json"),
+        Map.entry("sql", "sql"),
+        Map.entry("md", "markdown"),
+        Map.entry("yaml", "yaml"),
+        Map.entry("yml", "yaml"),
+        Map.entry("sh", "shell"),
+        Map.entry("properties", "properties")
+    );
 
     /**
      * {@inheritDoc}
@@ -48,27 +65,42 @@ public class DefaultEditorKitProvider implements EditorKitProvider {
      * {@inheritDoc}
      * <p>
      * Implementation details:
-     * Leverages Apache Tika to detect MIME types from filenames and maps 
-     * them to language identifiers suitable for {@link RSyntaxTextAreaCodeBlockSegmentRenderer}.
+     * Robust language detection that prioritizes file extensions (for proposed files)
+     * and falls back to Apache Tika for existing files.
      * </p>
      */
     @Override
     public String getLanguageForFile(String filename) {
-        try {
-            // Tika returns MIME types, which RSyntaxTextArea handles well 
-            // after our mapping logic.
-            String mime = TikaUtils.detectMimeType(new File(filename));
-            if (mime == null) {
-                return "text";
+        // 1. Primary: Extension Map (Works for non-existent files)
+        int dot = filename.lastIndexOf('.');
+        if (dot != -1) {
+            String ext = filename.substring(dot + 1).toLowerCase();
+            String lang = EXT_MAP.get(ext);
+            if (lang != null) {
+                log.info("Language detected via extension [{}]: {}", ext, lang);
+                return lang;
             }
-            // Strip the 'text/' or 'application/' prefix to get a language ID
-            int slash = mime.lastIndexOf('/');
-            String lang = (slash != -1) ? mime.substring(slash + 1) : mime;
-            return lang.replace("x-", ""); // cleanup common mime prefixes
-        } catch (Exception e) {
-            log.debug("Tika detection failed for: {}", filename);
-            return "text";
         }
+
+        // 2. Secondary: Tika (Only if file exists)
+        File f = new File(filename);
+        if (f.exists()) {
+            try {
+                String mime = TikaUtils.detectMimeType(f);
+                if (mime != null) {
+                    int slash = mime.lastIndexOf('/');
+                    String lang = (slash != -1) ? mime.substring(slash + 1) : mime;
+                    lang = lang.replace("x-", "");
+                    log.info("Language detected via Tika [{}]: {}", mime, lang);
+                    return lang;
+                }
+            } catch (Exception e) {
+                log.debug("Tika detection failed for: {}", filename);
+            }
+        }
+
+        log.info("Language detection failed for [{}], falling back to 'text'.", filename);
+        return "text";
     }
 
     /**

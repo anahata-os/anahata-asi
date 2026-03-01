@@ -16,10 +16,18 @@ import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.MouseWheelEvent;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
+import java.util.Objects;
+import javax.imageio.ImageIO;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
@@ -135,6 +143,65 @@ public class SwingUtils {
         StringSelection selection = new StringSelection(text);
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(selection, selection);
+    }
+
+    /**
+     * Copies a Java Image to the system clipboard.
+     * <p>
+     * Implementation details:
+     * Supports both {@link DataFlavor#imageFlavor} and {@link DataFlavor#javaFileListFlavor}.
+     * The latter is achieved by saving a temporary PNG of the image, allowing it to 
+     * be pasted directly into the OS filesystem (e.g., File Explorer).
+     * </p>
+     * 
+     * @param image The image to copy. Must not be null.
+     */
+    public static void copyImageToClipboard(Image image) {
+        Objects.requireNonNull(image, "Image to copy cannot be null.");
+        
+        Transferable transferable = new Transferable() {
+            @Override
+            public DataFlavor[] getTransferDataFlavors() {
+                return new DataFlavor[]{DataFlavor.imageFlavor, DataFlavor.javaFileListFlavor};
+            }
+
+            @Override
+            public boolean isDataFlavorSupported(DataFlavor flavor) {
+                return DataFlavor.imageFlavor.equals(flavor) || DataFlavor.javaFileListFlavor.equals(flavor);
+            }
+
+            @Override
+            public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
+                if (DataFlavor.imageFlavor.equals(flavor)) {
+                    return image;
+                }
+                
+                if (DataFlavor.javaFileListFlavor.equals(flavor)) {
+                    // 1. Convert to BufferedImage if necessary
+                    BufferedImage bi;
+                    if (image instanceof BufferedImage buff) {
+                        bi = buff;
+                    } else {
+                        bi = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+                        Graphics2D g = bi.createGraphics();
+                        g.drawImage(image, 0, 0, null);
+                        g.dispose();
+                    }
+                    
+                    // 2. Save to a temporary file
+                    File tempFile = File.createTempFile("anahata-diagram-", ".png");
+                    tempFile.deleteOnExit();
+                    ImageIO.write(bi, "PNG", tempFile);
+                    
+                    // 3. Return as a list of files
+                    return List.of(tempFile);
+                }
+                
+                throw new UnsupportedFlavorException(flavor);
+            }
+        };
+        
+        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(transferable, null);
     }
 
     /**
