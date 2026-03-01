@@ -22,6 +22,7 @@ import uno.anahata.asi.model.core.AbstractPart;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.model.core.Rebindable;
+import uno.anahata.asi.model.resource.AbstractPathResource;
 import uno.anahata.asi.model.resource.AbstractResource;
 import uno.anahata.asi.resource.ResourceManager;
 import uno.anahata.asi.tool.ToolManager;
@@ -84,7 +85,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
      * Initializes the manager and registers default providers.
      */
     public void init() {
-        registerContextProvider(new CoreContextProvider());
+        registerContextProvider(new CoreContextProvider(agi));
         registerContextProvider(agi.getToolManager());
         registerContextProvider(agi.getResourceManager());
     }
@@ -123,11 +124,14 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
             for (ContextProvider provider : rootProvider.getFlattenedHierarchy(true)) {
                 if (provider.isProviding()) {
                     try {
-                        List<String> systemInstructions = provider.getSystemInstructions();
-                        if (provider instanceof AbstractResource) {
+                        if (provider instanceof AbstractResource ar) {
+                            if (ar.getContextPosition() != ContextPosition.SYSTEM_INSTRUCTIONS) {
+                                continue;
+                            }
                             allSystemInstructions.add(provider.getHeader());
                         }
-                        allSystemInstructions.addAll(systemInstructions);
+                        
+                        allSystemInstructions.addAll(provider.getSystemInstructions());
                     } catch (Exception e) {
                         log.error("Error executing system instruction provider: {}", provider.getName(), e);
                         allSystemInstructions.add("Error executing system instruction provider: " + provider.getName()
@@ -159,6 +163,12 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
         for (ContextProvider rootProvider : providers) {
             for (ContextProvider provider : rootProvider.getFlattenedHierarchy(true)) {
                 if (provider.isProviding()) {
+                    // CRITICAL: Respect ContextPosition for resources. 
+                    // Resources in SYSTEM_INSTRUCTIONS must not appear in the RAG message.
+                    if (provider instanceof AbstractResource ar && ar.getContextPosition() != ContextPosition.PROMPT_AUGMENTATION) {
+                        continue;
+                    }
+                    
                     long start = System.currentTimeMillis();
                     try {
                         augmentedMessage.addTextPart(provider.getHeader());
@@ -311,7 +321,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
         }
 
         if (!hasCore) {
-            registerContextProvider(new CoreContextProvider());
+            registerContextProvider(new CoreContextProvider(agi));
         }
         if (!hasTools) {
             registerContextProvider(agi.getToolManager());

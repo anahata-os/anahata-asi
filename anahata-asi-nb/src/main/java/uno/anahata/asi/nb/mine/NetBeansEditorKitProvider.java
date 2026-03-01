@@ -1,18 +1,27 @@
 /* Licensed under the Apache License, Version 2.0 */
 package uno.anahata.asi.nb.mine;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.text.EditorKit;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
+import org.openide.filesystems.FileUtil;
+import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.render.AbstractCodeBlockSegmentRenderer;
+import uno.anahata.asi.swing.agi.render.JEditorPaneCodeBlockSegmentRenderer;
 import uno.anahata.asi.swing.agi.render.editorkit.EditorKitProvider;
 
 /**
- * NetBeans-specific implementation of EditorKitProvider.
- * It uses the NetBeans MimeLookup API to provide EditorKits for various languages.
+ * NetBeans-specific implementation of {@link EditorKitProvider}.
+ * <p>
+ * This implementation leverages the NetBeans {@code MimeLookup} and {@code FileUtil}
+ * APIs to provide high-fidelity syntax highlighting and language detection
+ * within the IDE.
+ * </p>
+ *
+ * @author anahata
  */
 public class NetBeansEditorKitProvider implements EditorKitProvider {
     private static final Logger logger = Logger.getLogger(NetBeansEditorKitProvider.class.getName());
@@ -20,8 +29,8 @@ public class NetBeansEditorKitProvider implements EditorKitProvider {
     private final Map<String, String> languageToMimeTypeMap;
 
     /**
-     * Default constructor for NetBeansEditorKitProvider.
-     * Initializes the language-to-MIME-type map using hardcoded fallbacks and the IDE's registered MIME types.
+     * Constructs a new NetBeansEditorKitProvider and initializes the 
+     * language-to-MIME-type mapping cache.
      */
     public NetBeansEditorKitProvider() {
         logger.log(Level.INFO, "Initializing NetBeansEditorKitProvider language cache...");
@@ -37,36 +46,21 @@ public class NetBeansEditorKitProvider implements EditorKitProvider {
             "json", "text/x-json",
             "sql", "text/x-sql",
             "properties", "text/x-properties",
-            "bash", "text/plain" // Added explicit bash fallback
+            "bash", "text/plain" 
         );
         languageToMimeTypeMap.putAll(hardcodedMap);
-        logger.log(Level.INFO, "Populated cache with {0} hardcoded languaget to mime type.", languageToMimeTypeMap.size());
         languageToMimeTypeMap.putAll(MimeUtils.getExtensionToMimeTypeMap());
-        logger.log(Level.INFO, "After MimeUtils2.getExtensionToMimeTypeMap(): {0} ", languageToMimeTypeMap.size());
-        /*
-        logger.log(Level.INFO, "Populated cache with {0} hardcoded fallbacks.", languageToMimeTypeMap.size());
-
-        // 2. Override with MIME types from ENABLED modules (the reliable scan).
-        List<MimeInfo> activeMimes = DisabledModulesMimeUtils.getMimeTypesFromActiveModules();
-        int enabledCount = 0;
-        for (MimeInfo info : activeMimes) {
-            String primaryExtension = info.getPrimaryExtension();
-            if (primaryExtension != null) {
-                logger.log(Level.INFO, "Overriding with active module: {0} -> {1}", new Object[]{primaryExtension, info.mimeType});
-                languageToMimeTypeMap.put(primaryExtension, info.mimeType);
-                enabledCount++;
-            }
-        }
-        logger.log(Level.INFO, "Discovered and overwrote with {0} MIME types from enabled modules.", enabledCount);
-
-        // 3. Log information about potential MIME types in DISABLED modules.
-*/
-        //logMimeTypesFromDisabledModules();
-
-
         logger.log(Level.INFO, "Cache initialization complete. Final cache size: {0}", languageToMimeTypeMap.size());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details:
+     * Resolves the NetBeans MIME type for the given language ID and retrieves 
+     * the corresponding {@link EditorKit} from the global {@code MimeLookup}.
+     * </p>
+     */
     @Override
     public EditorKit getEditorKitForLanguage(String language) {
         String langLower = (language == null) ? "" : language.toLowerCase().trim();
@@ -79,5 +73,54 @@ public class NetBeansEditorKitProvider implements EditorKitProvider {
             }
         }
         return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details:
+     * Delegates to {@link FileUtil#getMIMEType} for authoritative detection 
+     * and performs a reverse-lookup in the local cache to find a simplified 
+     * language ID.
+     * </p>
+     */
+    @Override
+    public String getLanguageForFile(String filename) {
+        // Use NetBeans FileUtil for authoritative MIME detection
+        String mime = FileUtil.getMIMEType(filename);
+        if (mime == null) {
+            return "text";
+        }
+        
+        // Try to find a reverse mapping in our cache first
+        for (Map.Entry<String, String> entry : languageToMimeTypeMap.entrySet()) {
+            if (entry.getValue().equalsIgnoreCase(mime)) {
+                return entry.getKey();
+            }
+        }
+        
+        // Fallback: use the subtype part of the mime (e.g., x-java -> java)
+        int slash = mime.lastIndexOf('/');
+        String sub = (slash != -1) ? mime.substring(slash + 1) : mime;
+        return sub.replace("x-", "");
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details:
+     * Instantiates a {@link JEditorPaneCodeBlockSegmentRenderer} to provide 
+     * full NetBeans editor fidelity, including project-aware semantic 
+     * highlighting and annotations.
+     * </p>
+     */
+    @Override
+    public AbstractCodeBlockSegmentRenderer createRenderer(AgiPanel agiPanel, String content, String language) {
+        EditorKit kit = getEditorKitForLanguage(language);
+        // Fallback to plain text kit if specific kit is missing
+        if (kit == null) {
+            kit = MimeLookup.getLookup("text/plain").lookup(EditorKit.class);
+        }
+        return new JEditorPaneCodeBlockSegmentRenderer(agiPanel, content, language, kit);
     }
 }

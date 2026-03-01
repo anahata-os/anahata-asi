@@ -32,7 +32,7 @@ import org.openide.filesystems.FileUtil;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public final class ResourceSourceGroup2 extends ProjectNode2 {
+public final class ResourceSourceGroup extends ProjectNode {
 
     /** 
      * The display name of the source group. 
@@ -48,7 +48,7 @@ public final class ResourceSourceGroup2 extends ProjectNode2 {
      * The list of physical folders discovered within this group. 
      */
     @Builder.Default
-    private List<ResourceFolder2> folders = new ArrayList<>();
+    private List<ResourceFolder> folders = new ArrayList<>();
 
     /**
      * Constructs and populates the resource source group tree.
@@ -57,12 +57,12 @@ public final class ResourceSourceGroup2 extends ProjectNode2 {
      * @param sg The NetBeans source group instance.
      * @throws Exception if the physical walk fails.
      */
-    public ResourceSourceGroup2(Project project, SourceGroup sg) throws Exception {
+    public ResourceSourceGroup(Project project, SourceGroup sg) throws Exception {
         this.name = sg.getDisplayName();
         this.relPath = FileUtil.getRelativePath(project.getProjectDirectory(), sg.getRootFolder());
         this.folders = new ArrayList<>();
 
-        Map<String, ResourceFolder2> dirMap = new TreeMap<>();
+        Map<String, ResourceFolder> dirMap = new TreeMap<>();
         walkResources(sg.getRootFolder(), sg.getRootFolder(), dirMap);
         this.folders.addAll(dirMap.values());
     }
@@ -76,20 +76,20 @@ public final class ResourceSourceGroup2 extends ProjectNode2 {
      * @param dirMap The target map to store discovered folders.
      * @throws FileStateInvalidException if the file reference is invalid.
      */
-    private void walkResources(FileObject root, FileObject current, Map<String, ResourceFolder2> dirMap) throws FileStateInvalidException {
+    private void walkResources(FileObject root, FileObject current, Map<String, ResourceFolder> dirMap) throws FileStateInvalidException {
         String path = FileUtil.getRelativePath(root, current);
         if (path == null || path.isEmpty()) {
             path = "/";
         }
         
-        ResourceFolder2 folder = ResourceFolder2.builder().path(path).build();
+        ResourceFolder folder = ResourceFolder.builder().path(path).build();
         dirMap.put(path, folder);
 
         for (FileObject child : current.getChildren()) {
             if (child.isFolder()) {
                 walkResources(root, child, dirMap);
             } else {
-                folder.addComponent(new ProjectComponent2(child, null));
+                folder.addComponent(new ProjectComponent(child, null));
             }
         }
         
@@ -110,7 +110,7 @@ public final class ResourceSourceGroup2 extends ProjectNode2 {
      */
     @Override
     public long getTotalSize() {
-        return folders.stream().mapToLong(ResourceFolder2::getTotalSize).sum();
+        return folders.stream().mapToLong(ResourceFolder::getTotalSize).sum();
     }
 
     /** 
@@ -138,9 +138,9 @@ public final class ResourceSourceGroup2 extends ProjectNode2 {
             return;
         }
 
-        folders.sort(Comparator.comparing(ResourceFolder2::getPath));
+        folders.sort(Comparator.comparing(ResourceFolder::getPath));
 
-        for (ResourceFolder2 folder : folders) {
+        for (ResourceFolder folder : folders) {
             folder.renderMarkdown(sb, indent, summary);
         }
     }

@@ -5,11 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.project.Project;
 import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.nb.tools.project.Projects;
-import uno.anahata.asi.nb.tools.project.components.ProjectStructure2;
+import uno.anahata.asi.nb.tools.project.components.ProjectStructure;
 
 /**
  * Provides a unified, architecturally-aware view of a project's structure.
- * This provider leverages the ProjectStructure2 domain model to inject a 
+ * This provider leverages the ProjectStructure domain model to inject a 
  * hierarchical map of logical Java components and physical resources into 
  * the RAG message.
  * 
@@ -31,7 +31,7 @@ public class ProjectStructureContextProvider extends AbstractProjectContextProvi
      * @param projectPath The absolute path to the project directory.
      */
     public ProjectStructureContextProvider(Projects projectsToolkit, String projectPath) {
-        super("structure", "Project Structure", "Unified logical and physical project map", projectsToolkit, projectPath);
+        super("structure", "Structure", "Unified logical and physical project map", projectsToolkit, projectPath);
     }
 
     /**
@@ -39,7 +39,7 @@ public class ProjectStructureContextProvider extends AbstractProjectContextProvi
      * <p>
      * Implementation details:
      * 1. Resolves the NetBeans Project instance via the base class helper.
-     * 2. Constructs a ProjectStructure2 domain object (performing a recursive scan).
+     * 2. Constructs a ProjectStructure domain object (performing a recursive scan).
      * 3. Triggers the domain object's self-rendering logic.
      * </p>
      * 
@@ -50,9 +50,10 @@ public class ProjectStructureContextProvider extends AbstractProjectContextProvi
     public void populateMessage(RagMessage ragMessage) throws Exception {
         Project project = getProject();
         if (project == null) {
+            ragMessage.addTextPart("Couldn't fetch NetBeans Project, project may have been closed");
             return;
         }
-        ProjectStructure2 structure = new ProjectStructure2(project);
+        ProjectStructure structure = new ProjectStructure(project);
         
         StringBuilder sb = new StringBuilder();
         structure.renderMarkdown(sb, "  ", summaryMode);

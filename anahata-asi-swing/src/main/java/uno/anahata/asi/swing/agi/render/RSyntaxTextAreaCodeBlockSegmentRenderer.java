@@ -4,15 +4,20 @@ package uno.anahata.asi.swing.agi.render;
 import java.awt.Color;
 import java.awt.Font;
 import javax.swing.JComponent;
+import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
+import org.fife.ui.rtextarea.RTextScrollPane;
 import uno.anahata.asi.swing.agi.AgiPanel;
 
 /**
  * Renders code blocks using RSyntaxTextArea for rich syntax highlighting in standalone/generic Swing environments.
  */
 public class RSyntaxTextAreaCodeBlockSegmentRenderer extends AbstractCodeBlockSegmentRenderer {
+
+    /** The actual text area component. */
+    private RSyntaxTextArea textArea;
 
     /**
      * Constructs a new RSyntaxTextAreaCodeBlockSegmentRenderer.
@@ -25,9 +30,17 @@ public class RSyntaxTextAreaCodeBlockSegmentRenderer extends AbstractCodeBlockSe
         super(agiPanel, initialContent, language);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details:
+     * Simply creates the RSyntaxTextArea. The scroll pane and line numbers 
+     * are handled by {@link #createScrollPane(JComponent)}.
+     * </p>
+     */
     @Override
     protected JComponent createInnerComponent() {
-        RSyntaxTextArea textArea = new RSyntaxTextArea(currentContent);
+        this.textArea = new RSyntaxTextArea(currentContent);
         textArea.setEditable(false);
         textArea.setLineWrap(false);
         textArea.setTabSize(4);
@@ -35,7 +48,7 @@ public class RSyntaxTextAreaCodeBlockSegmentRenderer extends AbstractCodeBlockSe
         textArea.setAntiAliasingEnabled(true);
         textArea.setHighlightCurrentLine(false);
         
-        // Use a solid background to prevent rendering artifacts/garbling in standalone
+        // Use a solid background to prevent rendering artifacts in some look-and-feels
         textArea.setOpaque(true);
         textArea.setBackground(Color.WHITE);
         textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 13));
@@ -49,25 +62,41 @@ public class RSyntaxTextAreaCodeBlockSegmentRenderer extends AbstractCodeBlockSe
         return textArea;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details:
+     * Wraps the text area in an RTextScrollPane to provide native line numbers 
+     * and folding support in standalone mode.
+     * </p>
+     */
+    @Override
+    protected JScrollPane createScrollPane(JComponent inner) {
+        RTextScrollPane scrollPane = new RTextScrollPane(inner);
+        scrollPane.setLineNumbersEnabled(true);
+        scrollPane.setFoldIndicatorEnabled(true);
+        return scrollPane;
+    }
+
+    /** {@inheritDoc} */
     @Override
     protected void updateComponentContent(String content) {
-        if (innerComponent instanceof RSyntaxTextArea textArea) {
+        if (textArea != null) {
             textArea.setText(content);
             textArea.setCaretPosition(0);
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     protected String getCurrentContentFromComponent() {
-        if (innerComponent instanceof RSyntaxTextArea textArea) {
-            return textArea.getText();
-        }
-        return currentContent;
+        return (textArea != null) ? textArea.getText() : currentContent;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void setComponentEditable(boolean editable) {
-        if (innerComponent instanceof RSyntaxTextArea textArea) {
+        if (textArea != null) {
             textArea.setEditable(editable);
         }
     }

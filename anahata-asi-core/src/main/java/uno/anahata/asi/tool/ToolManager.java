@@ -31,15 +31,12 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.model.core.Rebindable;
-import uno.anahata.asi.model.core.TextPart;
-import uno.anahata.asi.model.resource.AbstractResource;
 import uno.anahata.asi.model.tool.AbstractTool;
 import uno.anahata.asi.model.tool.AbstractToolCall;
 import uno.anahata.asi.model.tool.bad.BadTool;
@@ -68,6 +65,14 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
     /** Whether this manager is currently providing context augmentation. */
     @Setter
     private boolean providing = true;
+
+    /**
+     * Flag to control whether the tool response schemas are wrapped in the 
+     * standard JavaMethodToolResponse structure. If false, only the raw result 
+     * type is used in the tool definition, and the wrapper is explained globally.
+     */
+    @Setter
+    private boolean wrapResponseSchemas = false;
 
     /** The parent agi session. */
     private final Agi agi;

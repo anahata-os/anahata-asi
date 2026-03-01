@@ -31,7 +31,7 @@ import org.openide.filesystems.FileObject;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public final class ProjectStructure2 extends ProjectNode2 {
+public final class ProjectStructure extends ProjectNode {
 
     /** 
      * The display name of the project. 
@@ -42,7 +42,7 @@ public final class ProjectStructure2 extends ProjectNode2 {
      * Files located directly in the project root directory. 
      */
     @Builder.Default
-    private List<ProjectComponent2> rootFiles = new ArrayList<>();
+    private List<ProjectComponent> rootFiles = new ArrayList<>();
 
     /** 
      * Names of folders located in the project root that are not source groups. 
@@ -54,13 +54,13 @@ public final class ProjectStructure2 extends ProjectNode2 {
      * Containers for logical Java source roots. 
      */
     @Builder.Default
-    private List<JavaSourceGroup2> javaSourceGroups = new ArrayList<>();
+    private List<JavaSourceGroup> javaSourceGroups = new ArrayList<>();
 
     /** 
      * Containers for physical resource source roots. 
      */
     @Builder.Default
-    private List<ResourceSourceGroup2> resourceSourceGroups = new ArrayList<>();
+    private List<ResourceSourceGroup> resourceSourceGroups = new ArrayList<>();
 
     /**
      * Builds the complete project structure recursively.
@@ -74,7 +74,7 @@ public final class ProjectStructure2 extends ProjectNode2 {
      * @param project The NetBeans project instance to map.
      * @throws Exception if construction of any constituent group fails.
      */
-    public ProjectStructure2(Project project) throws Exception {
+    public ProjectStructure(Project project) throws Exception {
         this.projectName = ProjectUtils.getInformation(project).getDisplayName();
         this.rootFiles = new ArrayList<>();
         this.rootFolders = new ArrayList<>();
@@ -94,16 +94,16 @@ public final class ProjectStructure2 extends ProjectNode2 {
                     rootFolders.add(child.getNameExt());
                 }
             } else {
-                rootFiles.add(new ProjectComponent2(child, null));
+                rootFiles.add(new ProjectComponent(child, null));
             }
         }
 
         for (SourceGroup sg : sources.getSourceGroups(JavaProjectConstants.SOURCES_TYPE_JAVA)) {
-            javaSourceGroups.add(new JavaSourceGroup2(project, sg));
+            javaSourceGroups.add(new JavaSourceGroup(project, sg));
         }
 
         for (SourceGroup sg : sources.getSourceGroups(JavaProjectConstants.SOURCES_TYPE_RESOURCES)) {
-            resourceSourceGroups.add(new ResourceSourceGroup2(project, sg));
+            resourceSourceGroups.add(new ResourceSourceGroup(project, sg));
         }
     }
 
@@ -120,9 +120,9 @@ public final class ProjectStructure2 extends ProjectNode2 {
      */
     @Override
     public long getTotalSize() {
-        long size = rootFiles.stream().mapToLong(ProjectComponent2::getTotalSize).sum();
-        size += javaSourceGroups.stream().mapToLong(JavaSourceGroup2::getTotalSize).sum();
-        size += resourceSourceGroups.stream().mapToLong(ResourceSourceGroup2::getTotalSize).sum();
+        long size = rootFiles.stream().mapToLong(ProjectComponent::getTotalSize).sum();
+        size += javaSourceGroups.stream().mapToLong(JavaSourceGroup::getTotalSize).sum();
+        size += resourceSourceGroups.stream().mapToLong(ResourceSourceGroup::getTotalSize).sum();
         return size;
     }
 
@@ -148,16 +148,16 @@ public final class ProjectStructure2 extends ProjectNode2 {
             if (!rootFolders.isEmpty()) {
                 sb.append(indent).append("  - Folders: `").append(String.join("`, `", rootFolders)).append("`\n");
             }
-            for (ProjectComponent2 file : rootFiles) {
+            for (ProjectComponent file : rootFiles) {
                 file.renderMarkdown(sb, indent + "  ", summary);
             }
         }
 
-        for (JavaSourceGroup2 group : javaSourceGroups) {
+        for (JavaSourceGroup group : javaSourceGroups) {
             group.renderMarkdown(sb, indent, summary);
         }
 
-        for (ResourceSourceGroup2 group : resourceSourceGroups) {
+        for (ResourceSourceGroup group : resourceSourceGroups) {
             group.renderMarkdown(sb, indent, summary);
         }
     }

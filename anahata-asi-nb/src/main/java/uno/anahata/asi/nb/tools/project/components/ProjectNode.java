@@ -10,7 +10,7 @@ import java.io.Serializable;
  * 
  * @author Anahata
  */
-public abstract class ProjectNode2 implements Serializable {
+public abstract class ProjectNode implements Serializable {
 
     /**
      * Calculates the total recursive size of this node and all its descendants.

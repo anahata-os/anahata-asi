@@ -27,7 +27,7 @@ import uno.anahata.asi.internal.TextUtils;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public final class ProjectComponent2 extends ProjectNode2 {
+public final class ProjectComponent extends ProjectNode {
 
     /** 
      * The fully qualified name of the Java type. 
@@ -57,13 +57,13 @@ public final class ProjectComponent2 extends ProjectNode2 {
      * This is used to distinguish between top-level types and inner/nested types.
      */
     @ToString.Exclude
-    private ProjectComponent2 parent;
+    private ProjectComponent parent;
 
     /** 
      * The list of child components, typically representing nested or inner types. 
      */
     @Builder.Default
-    private List<ProjectComponent2> children = new ArrayList<>();
+    private List<ProjectComponent> children = new ArrayList<>();
 
     /**
      * Constructs a new project component from a physical file and an optional Java handle.
@@ -79,7 +79,7 @@ public final class ProjectComponent2 extends ProjectNode2 {
      * @param handle The optional ElementHandle identifying the Java type.
      * @throws FileStateInvalidException If the file reference is no longer valid.
      */
-    public ProjectComponent2(FileObject fo, ElementHandle<?> handle) throws FileStateInvalidException {
+    public ProjectComponent(FileObject fo, ElementHandle<?> handle) throws FileStateInvalidException {
         this.fileObject = fo;
         this.fqn = (handle != null) ? handle.getQualifiedName() : null;
         this.kind = (handle != null) ? handle.getKind() : null;
@@ -108,7 +108,7 @@ public final class ProjectComponent2 extends ProjectNode2 {
      * 
      * @param child The nested component (e.g., an inner class) to add.
      */
-    public void addChild(ProjectComponent2 child) {
+    public void addChild(ProjectComponent child) {
         child.setParent(this);
         this.children.add(child);
     }
@@ -130,7 +130,7 @@ public final class ProjectComponent2 extends ProjectNode2 {
     @Override
     public long getTotalSize() {
         long baseSize = (fileObject != null) ? fileObject.getSize() : 0;
-        return baseSize + children.stream().mapToLong(ProjectComponent2::getTotalSize).sum();
+        return baseSize + children.stream().mapToLong(ProjectComponent::getTotalSize).sum();
     }
 
     /** 
@@ -186,7 +186,7 @@ public final class ProjectComponent2 extends ProjectNode2 {
         
         sb.append("\n");
 
-        for (ProjectComponent2 child : children) {
+        for (ProjectComponent child : children) {
             child.renderMarkdown(sb, indent + "  ", false);
         }
     }

@@ -36,6 +36,10 @@ public record TextSegmentDescriptor(TextSegmentType type, String content, String
     }
 
     private AbstractTextSegmentRenderer createCodeBlockRenderer(AgiPanel agiPanel) {
+        if ("mermaid".equalsIgnoreCase(language)) {
+            return new MermaidCodeBlockSegmentRenderer(agiPanel, content, language);
+        }
+        
         EditorKitProvider editorKitProvider = agiPanel.getAgiConfig().getEditorKitProvider();
         if (editorKitProvider != null) {
             try {

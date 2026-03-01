@@ -21,8 +21,9 @@ import uno.anahata.asi.toolkit.files.TextViewportSettings;
 import uno.anahata.asi.tool.AiToolException;
 import uno.anahata.asi.tool.AiToolkit;
 import uno.anahata.asi.toolkit.files.Files;
-import uno.anahata.asi.toolkit.files.FullTextFileUpdate;
+import uno.anahata.asi.toolkit.files.AbstractTextFileWrite;
 import uno.anahata.asi.toolkit.files.FullTextFileCreate;
+import uno.anahata.asi.toolkit.files.FullTextFileUpdate;
 
 /**
  * A NetBeans-specific implementation of the {@link Files} toolkit.
@@ -37,14 +38,11 @@ import uno.anahata.asi.toolkit.files.FullTextFileCreate;
 public class NbFiles extends Files {
 
     /**
-     * Returns the mandatory system instructions for this toolkit.
+     * {@inheritDoc}
      * <p>
      * Implementation details:
      * Appends a strict prohibition against guessing Java type signatures.
      * </p>
-     * 
-     * @return List of instructions.
-     * @throws Exception on error.
      */
     @Override
     public List<String> getSystemInstructions() throws Exception {
@@ -60,17 +58,12 @@ public class NbFiles extends Files {
     }
 
     /**
-     * Loads a text file as a managed resource.
+     * {@inheritDoc}
      * <p>
      * Implementation details:
      * Overrides the core logic to trigger an IDE UI refresh for the file's icon 
      * and status immediately after registration.
      * </p>
-     * 
-     * @param path Absolute path.
-     * @param settings Viewport settings.
-     * @return The loaded resource.
-     * @throws Exception on failure.
      */
     @Override
     public TextFileResource loadTextFileInternal(String path, TextViewportSettings settings) throws Exception {
@@ -83,15 +76,11 @@ public class NbFiles extends Files {
     }
 
     /**
-     * Updates viewport settings for an already loaded resource.
+     * {@inheritDoc}
      * <p>
      * Implementation details:
      * Manages logic for re-loading resources based on refresh policies.
      * </p>
-     * 
-     * @param resource The resource to update.
-     * @param settings The new settings.
-     * @throws Exception on error.
      */
     @Override
     protected void updateExistingResource(TextFileResource resource, TextViewportSettings settings) throws Exception {
@@ -109,16 +98,12 @@ public class NbFiles extends Files {
     }
 
     /**
-     * Creates a new resource instance for the given path.
+     * {@inheritDoc}
      * <p>
      * Implementation details:
      * Returns a {@link NbTextFileResource} which integrates with the NetBeans 
      * FileObject lifecycle.
      * </p>
-     * 
-     * @param path Absolute path.
-     * @return The resource instance.
-     * @throws Exception on creation error.
      */
     @Override
     protected TextFileResource createResourceInstance(String path) throws Exception {
@@ -131,16 +116,12 @@ public class NbFiles extends Files {
     }
 
     /**
-     * Creates a new file on disk using NetBeans APIs.
+     * {@inheritDoc}
      * <p>
      * Implementation details:
      * Uses {@link FileObject#createData} to ensure immediate indexing and triggers
      * a UI refresh.
      * </p>
-     * 
-     * @param create The creation DTO.
-     * @param message Change message.
-     * @throws Exception on write error.
      */
     @Override
     protected void performCreate(FullTextFileCreate create, String message) throws Exception {
@@ -158,45 +139,38 @@ public class NbFiles extends Files {
     }
 
     /**
-     * Validates an update request against the managed resource.
+     * {@inheritDoc}
      * <p>
      * Implementation details:
-     * Performs optimistic locking by comparing timestamps and ensures the path 
-     * is a managed resource.
+     * Performs optimistic locking by comparing timestamps using the NetBeans 
+     * FileObject metadata and ensures the path is a managed resource.
      * </p>
-     * 
-     * @param update The update details.
-     * @throws Exception if validation fails.
      */
     @Override
-    protected void validateUpdate(FullTextFileUpdate update) throws Exception {
-        FileObject fo = FileUtil.toFileObject(new File(update.getPath()));
+    public void validateWrite(AbstractTextFileWrite write) throws Exception {
+        FileObject fo = FileUtil.toFileObject(new File(write.getPath()));
         if (fo != null) {
             // Context Check
-            getResourceManager().findByPath(update.getPath())
+            getResourceManager().findByPath(write.getPath())
                 .filter(r -> r instanceof TextFileResource)
-                .orElseThrow(() -> new AiToolException("Update rejected: '" + update.getPath() + "' is not a managed resource."));
+                .orElseThrow(() -> new AiToolException("Update rejected: '" + write.getPath() + "' is not a managed resource."));
 
             // Optimistic Locking Check
             long current = fo.lastModified().getTime();
-            if (update.getLastModified() != 0 && current != update.getLastModified()) {
-                throw new AiToolException("Optimistic locking failure: You gave: " + update.getLastModified() + ", Actual: " + current);
+            if (write.getLastModified() != 0 && current != write.getLastModified()) {
+                throw new AiToolException("Optimistic locking failure: You gave: " + write.getLastModified() + ", Actual: " + current);
             }
         } else {
-            super.validateUpdate(update);
+            super.validateWrite(write);
         }
     }
 
     /**
-     * Performs a file update.
+     * {@inheritDoc}
      * <p>
      * Implementation details:
      * Uses NetBeans APIs to perform a synchronized write to the FileObject.
      * </p>
-     * 
-     * @param update The update.
-     * @param message Message.
-     * @throws Exception on write error.
      */
     @Override
     protected void performUpdate(FullTextFileUpdate update, String message) throws Exception {

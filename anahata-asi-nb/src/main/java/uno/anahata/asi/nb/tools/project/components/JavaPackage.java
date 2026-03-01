@@ -28,7 +28,7 @@ import uno.anahata.asi.internal.TextUtils;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public final class JavaPackage2 extends ProjectNode2 {
+public final class JavaPackage extends ProjectNode {
 
     /** 
      * The fully qualified name of the Java package. 
@@ -39,14 +39,14 @@ public final class JavaPackage2 extends ProjectNode2 {
      * The list of top-level Java components (types) contained within this package. 
      */
     @Builder.Default
-    private List<ProjectComponent2> components = new ArrayList<>();
+    private List<ProjectComponent> components = new ArrayList<>();
     
     /**
      * Adds a top-level Java component to this package.
      * 
      * @param component The component to add.
      */
-    public void addComponent(ProjectComponent2 component) {
+    public void addComponent(ProjectComponent component) {
         this.components.add(component);
     }
 
@@ -55,14 +55,14 @@ public final class JavaPackage2 extends ProjectNode2 {
      * <p>
      * Implementation details:
      * Iterates through all registered components and sums their results 
-     * from {@link ProjectComponent2#getTotalSize()}.
+     * from {@link ProjectComponent#getTotalSize()}.
      * </p>
      * 
      * @return The total byte count for the package.
      */
     @Override
     public long getTotalSize() {
-        return components.stream().mapToLong(ProjectComponent2::getTotalSize).sum();
+        return components.stream().mapToLong(ProjectComponent::getTotalSize).sum();
     }
 
     /** 
@@ -87,7 +87,7 @@ public final class JavaPackage2 extends ProjectNode2 {
         
         if (summary) {
             Map<String, Long> counts = components.stream()
-                    .collect(Collectors.groupingBy(ProjectComponent2::getComponentType, Collectors.counting()));
+                    .collect(Collectors.groupingBy(ProjectComponent::getComponentType, Collectors.counting()));
             
             String stats = counts.entrySet().stream()
                     .map(e -> e.getValue() + " " + e.getKey())
@@ -99,7 +99,7 @@ public final class JavaPackage2 extends ProjectNode2 {
         sb.append("\n");
 
         if (!summary) {
-            List<ProjectComponent2> sorted = new ArrayList<>(components);
+            List<ProjectComponent> sorted = new ArrayList<>(components);
             sorted.sort((a, b) -> {
                 String aName = a.getFileName() != null ? a.getFileName() : "";
                 String bName = b.getFileName() != null ? b.getFileName() : "";
@@ -115,7 +115,7 @@ public final class JavaPackage2 extends ProjectNode2 {
                 return aVal.compareToIgnoreCase(bVal);
             });
 
-            for (ProjectComponent2 component : sorted) {
+            for (ProjectComponent component : sorted) {
                 component.renderMarkdown(sb, indent + "  ", false);
             }
         }

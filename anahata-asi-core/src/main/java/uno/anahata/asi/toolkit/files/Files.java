@@ -38,7 +38,9 @@ public class Files extends AnahataToolkit {
      */
     @Override
     public List<String> getSystemInstructions() throws Exception {
-        return Collections.singletonList("When writing files, always use the lastModified timestamp from the RAG message");
+        return Collections.singletonList("**Files toolkit instructions**:\n "
+                + "When writing files, always use the lastModified timestamp from the resource in question on the RAG message, its the source of truth."
+                + "Only update text files that you have in context, never attemp to modify a file or any other resource that is not listed in the resources section of the RAG message.");
     }
 
     /**
@@ -239,17 +241,34 @@ public class Files extends AnahataToolkit {
     public void createTextFile(
             @AiToolParam("The creation details.") FullTextFileCreate create,            
             @AiToolParam("A message describing the change.") String message) throws Exception {
+        
+        validateCreate(create);
+        
         java.nio.file.Path filePath = Paths.get(create.getPath());
-        
-        if (java.nio.file.Files.exists(filePath)) {
-            throw new AiToolException("File already exists: " + create.getPath());
-        }
-        
         if (filePath.getParent() != null) {
             java.nio.file.Files.createDirectories(filePath.getParent());
         }
         
         performCreate(create, message);
+    }
+
+    /**
+     * Performs a pre-flight validation for a file creation request.
+     * 
+     * @param create The creation DTO.
+     * @throws Exception if the request is invalid.
+     */
+    public void validateCreate(FullTextFileCreate create) throws Exception {
+        // 1. Physical existence check
+        java.nio.file.Path filePath = Paths.get(create.getPath());
+        if (java.nio.file.Files.exists(filePath)) {
+            throw new AiToolException("File already exists: " + create.getPath());
+        }
+
+        // 2. Resource manager context check: file should not be managed if it doesn't exist
+        if (getResourceManager().findByPath(create.getPath()).isPresent()) {
+            throw new AiToolException("Logic Error: Attempting to create a file that is already registered as a managed resource: " + create.getPath());
+        }
     }
     
     /**
@@ -280,17 +299,18 @@ public class Files extends AnahataToolkit {
      * @param message A message describing the change.
      * @throws Exception if validation or update fails.
      */
-    @AiTool(value = "Overwrites an existing file using a filthy rich update object where you can just use line comments rather than putting comments in the code. The ASI's diff viewer displays some comic style bubbles on the lines where you put line comments.", maxDepth = 12)
+    @AiTool(value = "Overwrites an existing file. **Never attempt for files that are not in context**. Uses a **filthy rich** update object where you for line comments so the ASI's diff viewer displays the coments in comic style bubbles so you dont need to add inline comments / explanations to the code to later have to remove them.", maxDepth = 12)
     public void updateTextFile(
             @AiToolParam("The update details.") FullTextFileUpdate update,
             @AiToolParam("A message describing the change.") String message) throws Exception {
         
-        validateUpdate(update);
+        validateWrite(update);
         performUpdate(update, message);
     }
     
     /**
-     * Validates an update request against the current state of the resource.
+     * Validates an update or replacement request against the current state of 
+     * the resource.
      * <p>
      * Implementation details:
      * 1. Verifies that the file is already a managed resource.
@@ -298,26 +318,26 @@ public class Files extends AnahataToolkit {
      * 3. Performs optimistic locking using the lastModified timestamp.
      * </p>
      * 
-     * @param update The update details.
+     * @param write The file write DTO.
      * @throws Exception if validation fails.
      */
-    protected void validateUpdate(FullTextFileUpdate update) throws Exception {
+    public void validateWrite(AbstractTextFileWrite write) throws Exception {
         // 1. Context Check
-        getResourceManager().findByPath(update.getPath())
+        getResourceManager().findByPath(write.getPath())
                 .filter(r -> r instanceof TextFileResource)
-                .orElseThrow(() -> new AiToolException("Update rejected: '" + update.getPath() + "' is not a managed resource in the current context. You must load the file first."));
+                .orElseThrow(() -> new AiToolException("Update rejected: '" + write.getPath() + "' is not a managed resource in the current context. You must load the file first."));
 
-        java.nio.file.Path filePath = Paths.get(update.getPath());
+        java.nio.file.Path filePath = Paths.get(write.getPath());
         
         // 2. Existence Check
         if (!java.nio.file.Files.exists(filePath)) {
-            throw new AiToolException("File does not exist: " + update.getPath());
+            throw new AiToolException("File does not exist: " + write.getPath());
         }
 
         // 3. Optimistic Locking
         long current = java.nio.file.Files.getLastModifiedTime(filePath).toMillis();
-        if (update.getLastModified() != 0 && current != update.getLastModified()) {
-            throw new AiToolException("Optimistic locking failure: File has been modified on disk. Given: " + update.getLastModified() + ", Actual: " + current);
+        if (write.getLastModified() != 0 && current != write.getLastModified()) {
+            throw new AiToolException("Optimistic locking failure: File state has changed in context. \nGiven: " + write.getLastModified() + ", Actual: " + current + "\nRefetch the file to get the latest version.");
         }
     }
     
@@ -354,13 +374,10 @@ public class Files extends AnahataToolkit {
     public void replaceInTextFile(
             @AiToolParam("The replacements.") TextFileReplacements replacements,
             @AiToolParam("A message describing the change.") String message) throws Exception {
+        
+        validateWrite(replacements);
+        
         java.nio.file.Path filePath = Paths.get(replacements.getPath());
-        
-        long current = java.nio.file.Files.getLastModifiedTime(filePath).toMillis();
-        if (replacements.getLastModified() != 0 && current != replacements.getLastModified()) {
-            throw new AiToolException("Optimistic locking failure: File has been modified on disk. Given: " + replacements.getLastModified() + ", Actual: " + current);
-        }
-        
         String content = java.nio.file.Files.readString(filePath);
         String newContent = replacements.performReplacements(content);
 

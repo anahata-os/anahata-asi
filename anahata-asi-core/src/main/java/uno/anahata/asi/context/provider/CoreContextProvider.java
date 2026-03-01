@@ -3,16 +3,17 @@
  */
 package uno.anahata.asi.context.provider;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.context.ContextProvider;
-import uno.anahata.asi.tool.AnahataToolkit;
 import uno.anahata.asi.model.core.RagMessage;
-import uno.anahata.asi.model.core.TextPart;
+import uno.anahata.asi.model.tool.java.JavaMethodToolResponse;
+import uno.anahata.asi.tool.schema.SchemaProvider;
 
 /**
  * Provides the foundational system instructions and metadata awareness for the
@@ -22,12 +23,23 @@ import uno.anahata.asi.model.core.TextPart;
  */
 public class CoreContextProvider implements ContextProvider {
 
+    /** The parent agi session. */
+    private final Agi agi;
+
     /**
      * Whether this provider is currently active.
      */
     @Setter
     @Getter
     private boolean providing = true;
+
+    /**
+     * Constructs a new CoreContextProvider for a specific agi session.
+     * @param agi The parent agi session. Must not be null.
+     */
+    public CoreContextProvider(@NonNull Agi agi) {
+        this.agi = agi;
+    }
 
     /**
      * {@inheritDoc}
@@ -106,6 +118,11 @@ public class CoreContextProvider implements ContextProvider {
                 + "\n- If a tool call you proposed is still 'EXECUTING', the user can click send and you wont get the result of the tool call until possibly a few turns later and you will only see the result of the tool call when the execution finish. In other words, lets say on your first turn (message id 2) you propose a tool call, if the user clicks send when the tool is EXECUTING, you repond and the user then says 'cool bananas' the same tool message in the history (the one that followed model message id = 2) that say EXECUTING in the first turn, now it has 'magically changed' in the history to EXECUTED and the result is there. So yeah, the history is not what you would call 'inmutable'. \n"
                 + "\n- There is a toggle button on the UI (and therefore a flag in the anahata framework) called 'auto-reply tool calls' so if you produce a batch of the tool calls, the user can either let the anahata framework automatically execute the batch of tool calls in the sequence you proposed and send you the responses 'inmediatly' or he may decide to review them one by one, tweak the parameters, skip some or run whichever tools he wants in whichever order he wants and even write a message before sending you the tool execution responses.\n";
         
+        if (!agi.getToolManager().isWrapResponseSchemas()) {
+            String schema = SchemaProvider.generateInlinedSchemaString(JavaMethodToolResponse.class);
+            tool += "\n- **Global Tool Response Wrapper**: Note that JSON schemas in individual tool definitions represent only the raw 'result' type. However, EVERY tool response is wrapped in a `JavaMethodToolResponse` object. This wrapper includes execution status, errors, logs, and other metadata. The wrapper structure is defined by this schema:\n\n"
+                    + "```json\n" + schema + "\n```\n";
+        }
         
         String rag = "The RAG message:\n"
                 + "1. The last message on every turn (which always starts with `--- RAG Message ---` is Augmented Workspace Context. Gets dynamically generated and the user doesnt see it in the UI. It contains:\n"
@@ -139,7 +156,6 @@ public class CoreContextProvider implements ContextProvider {
                 + "\n5. **Strict Interaction Rule**: You are FORBIDDEN from mimicking these system metadata headers in your responses. You must never generate text that starts with `[x-anahata-message-id:` or `[x-anahata-part-id:`. These headers are reserved for the system framework to provide you with architectural context and mimicking this behavior will confuse the context parsing layer.\n";
 
         return Arrays.asList(fun, reasoning, tool, rag, cwgc, metadataFormat);
-
     }
 
     /**

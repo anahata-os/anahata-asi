@@ -60,6 +60,7 @@ import uno.anahata.asi.nb.tools.project.alerts.JavacAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectDiagnostics;
 import uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic;
+import uno.anahata.asi.nb.tools.project.context.ProjectStructureContextProvider;
 
 /**
  * A toolkit for interacting with the NetBeans Project APIs.
@@ -78,7 +79,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
 
     /** Flag indicating if the toolkit is currently listening for global IDE project changes. */
     private transient boolean listening = false;
-
+    
     /**
      * Rebinds the toolkit to the current agi instance.
      * <p>
@@ -92,7 +93,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     public void rebind() {
         super.rebind();
         // Force initialization of children to ensure UI annotations reflect context immediately
-        getChildrenProviders();
+        //getChildrenProviders();
         
         // Trigger UI refresh for all open projects to show context badges immediately
         for (String path : getOpenProjects()) {
@@ -118,7 +119,8 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     @Override
     public List<String> getSystemInstructions() throws Exception {
         return Collections.singletonList(
-            " Compile on Save (CoS) Management:\n" +
+            "Fqn / path resulutions: use the **" + ProjectStructureContextProvider.class.getName()+ "** of each project to fetch project sources by fqn in CodeModel or to work our th path to source files With NbFiles.loadTextFile:\n" +
+            "\n\nCompile on Save (CoS) Management:\n" +
             "NetBeans Maven projects determine the 'Compile on Save' status using a tiered priority system. " +
             "When a user asks to change this setting, you should offer these options:\n" +
             "1. **Project POM**: Add/update `<netbeans.compile.on.save>all</netbeans.compile.on.save>` in the project's `pom.xml` properties.\n" +
@@ -606,39 +608,6 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         }
 
         return new ProjectFiles(rootFiles, rootFolderNames, sourceFolders);
-    }
-
-    /**
-     * Lists all Java types (classes, interfaces, etc.) defined in the project.
-     * <p>
-     * Uses the NetBeans ClassIndex to perform a scope-limited search for 
-     * all declared types across the project's Java source groups.
-     * </p>
-     * 
-     * @param projectPath The absolute path to the project.
-     * @return a list of {@link ProjectComponent}s.
-     * @throws Exception if project not open.
-     */
-    public List<ProjectComponent> getProjectComponents(@AiToolParam("The absolute path to the project.") String projectPath) throws Exception {
-        Project project = findOpenProject(projectPath);
-        List<ProjectComponent> components = new ArrayList<>();
-
-        Sources sources = ProjectUtils.getSources(project);
-        SourceGroup[] groups = sources.getSourceGroups(JavaProjectConstants.SOURCES_TYPE_JAVA);
-
-        for (SourceGroup sg : groups) {
-            ClasspathInfo cpInfo = ClasspathInfo.create(sg.getRootFolder());
-            ClassIndex index = cpInfo.getClassIndex();
-            Set<ElementHandle<javax.lang.model.element.TypeElement>> allTypes = index.getDeclaredTypes("", ClassIndex.NameKind.PREFIX, EnumSet.of(ClassIndex.SearchScope.SOURCE));
-            for (ElementHandle<javax.lang.model.element.TypeElement> handle : allTypes) {
-                components.add(ProjectComponent.builder()
-                        .fqn(handle.getQualifiedName())
-                        .kind(handle.getKind())
-                        .build());
-            }
-        }
-        components.sort((c1, c2) -> c1.getFqn().compareToIgnoreCase(c2.getFqn()));
-        return components;
     }
 
     /**

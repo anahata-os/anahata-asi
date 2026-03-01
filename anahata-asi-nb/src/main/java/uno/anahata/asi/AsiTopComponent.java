@@ -25,8 +25,8 @@ import uno.anahata.asi.swing.agi.SessionController;
 @ActionID(category = "Window", id = "uno.anahata.asi.OpenAsiTopComponent")
 @ActionReference(path = "Menu/Window", position = 101)
 @TopComponent.OpenActionRegistration(
-        displayName = "Super Intelligence",
-        preferredID = "AsiTopComponent"
+        displayName = "Anahata ASI",
+        preferredID = "asi"
 )
 @Slf4j
 public class AsiTopComponent extends TopComponent implements SessionController {
@@ -34,7 +34,7 @@ public class AsiTopComponent extends TopComponent implements SessionController {
     private final AsiSwitcherContainerPanel sessionsPanel;
 
     public AsiTopComponent() {
-        setName("ASI");
+        setName("Anahata ASI");
         setToolTipText("Manage active AGI sessions");
         setLayout(new BorderLayout());
 

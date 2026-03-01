@@ -39,7 +39,7 @@ import org.openide.filesystems.FileUtil;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public final class JavaSourceGroup2 extends ProjectNode2 {
+public final class JavaSourceGroup extends ProjectNode {
 
     /** 
      * The display name of the source group. 
@@ -55,7 +55,7 @@ public final class JavaSourceGroup2 extends ProjectNode2 {
      * The list of logical packages discovered within this group. 
      */
     @Builder.Default
-    private List<JavaPackage2> packages = new ArrayList<>();
+    private List<JavaPackage> packages = new ArrayList<>();
 
     /**
      * Constructs and populates the Java source group logic using a hybrid approach.
@@ -74,7 +74,7 @@ public final class JavaSourceGroup2 extends ProjectNode2 {
      * @param sg The NetBeans source group instance.
      * @throws Exception if index access or physical walk fails.
      */
-    public JavaSourceGroup2(Project project, SourceGroup sg) throws Exception {
+    public JavaSourceGroup(Project project, SourceGroup sg) throws Exception {
         this.name = sg.getDisplayName();
         this.relPath = FileUtil.getRelativePath(project.getProjectDirectory(), sg.getRootFolder());
         this.packages = new ArrayList<>();
@@ -84,8 +84,8 @@ public final class JavaSourceGroup2 extends ProjectNode2 {
         ClassIndex index = cpInfo.getClassIndex();
         Set<ElementHandle<javax.lang.model.element.TypeElement>> allTypes = index.getDeclaredTypes("", ClassIndex.NameKind.PREFIX, EnumSet.of(ClassIndex.SearchScope.SOURCE));
         
-        Map<FileObject, List<ProjectComponent2>> fileToComponents = new HashMap<>();
-        Map<String, ProjectComponent2> fqnToComponent = new HashMap<>();
+        Map<FileObject, List<ProjectComponent>> fileToComponents = new HashMap<>();
+        Map<String, ProjectComponent> fqnToComponent = new HashMap<>();
 
         for (ElementHandle<javax.lang.model.element.TypeElement> handle : allTypes) {
             FileObject fo = SourceUtils.getFile(handle, cpInfo);
@@ -93,19 +93,19 @@ public final class JavaSourceGroup2 extends ProjectNode2 {
                 continue;
             }
 
-            ProjectComponent2 comp = new ProjectComponent2(fo, handle);
+            ProjectComponent comp = new ProjectComponent(fo, handle);
             fqnToComponent.put(comp.getFqn(), comp);
             fileToComponents.computeIfAbsent(fo, k -> new ArrayList<>()).add(comp);
         }
         
         // Establish nesting relationships for indexed types
-        for (ProjectComponent2 comp : new ArrayList<>(fqnToComponent.values())) {
+        for (ProjectComponent comp : new ArrayList<>(fqnToComponent.values())) {
             String fqn = comp.getFqn();
             int lastDot = fqn.lastIndexOf('.');
             if (lastDot != -1) {
                 String parentFqn = fqn.substring(0, lastDot);
                 if (fqnToComponent.containsKey(parentFqn)) {
-                    ProjectComponent2 parentComp = fqnToComponent.get(parentFqn);
+                    ProjectComponent parentComp = fqnToComponent.get(parentFqn);
                     parentComp.addChild(comp);
                     // Remove from the file's primary components list as it is now a child
                     fileToComponents.get(comp.getFileObject()).remove(comp);
@@ -114,7 +114,7 @@ public final class JavaSourceGroup2 extends ProjectNode2 {
         }
 
         // Perform physical walk to find all files and group them into packages
-        Map<String, JavaPackage2> pkgMap = new TreeMap<>();
+        Map<String, JavaPackage> pkgMap = new TreeMap<>();
         walkJavaPackages(root, root, fileToComponents, pkgMap);
         this.packages.addAll(pkgMap.values());
     }
@@ -122,24 +122,24 @@ public final class JavaSourceGroup2 extends ProjectNode2 {
     /**
      * Recursively walks the directory structure to identify Java packages and their contents.
      */
-    private void walkJavaPackages(FileObject root, FileObject current, Map<FileObject, List<ProjectComponent2>> fileToComponents, Map<String, JavaPackage2> pkgMap) throws Exception {
+    private void walkJavaPackages(FileObject root, FileObject current, Map<FileObject, List<ProjectComponent>> fileToComponents, Map<String, JavaPackage> pkgMap) throws Exception {
         String relPkgPath = FileUtil.getRelativePath(root, current);
         String pkgName = (relPkgPath == null || relPkgPath.isEmpty()) ? "" : relPkgPath.replace('/', '.');
         
-        JavaPackage2 pkg = pkgMap.computeIfAbsent(pkgName, k -> JavaPackage2.builder().name(k).build());
+        JavaPackage pkg = pkgMap.computeIfAbsent(pkgName, k -> JavaPackage.builder().name(k).build());
 
         for (FileObject child : current.getChildren()) {
             if (child.isFolder()) {
                 walkJavaPackages(root, child, fileToComponents, pkgMap);
             } else {
-                List<ProjectComponent2> indexed = fileToComponents.get(child);
+                List<ProjectComponent> indexed = fileToComponents.get(child);
                 if (indexed != null && !indexed.isEmpty()) {
-                    for (ProjectComponent2 comp : indexed) {
+                    for (ProjectComponent comp : indexed) {
                         pkg.addComponent(comp);
                     }
                 } else {
                     // Not indexed (package-info.java or resource)
-                    pkg.addComponent(new ProjectComponent2(child, null));
+                    pkg.addComponent(new ProjectComponent(child, null));
                 }
             }
         }
@@ -157,7 +157,7 @@ public final class JavaSourceGroup2 extends ProjectNode2 {
      */
     @Override
     public long getTotalSize() {
-        return packages.stream().mapToLong(JavaPackage2::getTotalSize).sum();
+        return packages.stream().mapToLong(JavaPackage::getTotalSize).sum();
     }
 
     /** 
@@ -180,9 +180,9 @@ public final class JavaSourceGroup2 extends ProjectNode2 {
             return;
         }
 
-        packages.sort(Comparator.comparing(JavaPackage2::getName));
+        packages.sort(Comparator.comparing(JavaPackage::getName));
 
-        for (JavaPackage2 pkg : packages) {
+        for (JavaPackage pkg : packages) {
             pkg.renderMarkdown(sb, indent, summary);
         }
     }

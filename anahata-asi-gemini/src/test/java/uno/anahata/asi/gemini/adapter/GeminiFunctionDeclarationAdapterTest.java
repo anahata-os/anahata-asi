@@ -32,7 +32,7 @@ public class GeminiFunctionDeclarationAdapterTest {
 
     @Test
     public void testToGoogleNative() throws Exception {
-        AbstractTool<?, ?> tool = getTool("testMethod");
+        AbstractTool<?, ?> tool = getTool("testMethod", true);
         GeminiFunctionDeclarationAdapter adapter = new GeminiFunctionDeclarationAdapter(tool, true);
         
         FunctionDeclaration func = adapter.toGoogle();
@@ -47,14 +47,29 @@ public class GeminiFunctionDeclarationAdapterTest {
         assertTrue(func.parameters().get().properties().get().containsKey("param1"));
         assertTrue(func.parameters().get().properties().get().containsKey("param2"));
         
-        // Verify response
+        // Verify response (expects wrapped structure)
         assertTrue(func.response().isPresent());
         assertEquals(com.google.genai.types.Type.Known.STRING, func.response().get().properties().get().get("result").type().get().knownEnum());
     }
 
     @Test
+    public void testToGoogleNativeRawSchema() throws Exception {
+        // When wrapping is false, the response schema is the raw return type (String)
+        AbstractTool<?, ?> tool = getTool("testMethod", false);
+        GeminiFunctionDeclarationAdapter adapter = new GeminiFunctionDeclarationAdapter(tool, true);
+        
+        FunctionDeclaration func = adapter.toGoogle();
+        
+        assertNotNull(func);
+        assertTrue(func.response().isPresent());
+        // Should be a simple STRING type, not an OBJECT with properties
+        assertEquals(com.google.genai.types.Type.Known.STRING, func.response().get().type().get().knownEnum());
+        assertFalse(func.response().get().properties().isPresent(), "Raw schema should not have properties map");
+    }
+
+    @Test
     public void testToGoogleJson() throws Exception {
-        AbstractTool<?, ?> tool = getTool("testMethod");
+        AbstractTool<?, ?> tool = getTool("testMethod", true);
         GeminiFunctionDeclarationAdapter adapter = new GeminiFunctionDeclarationAdapter(tool, false);
         
         FunctionDeclaration func = adapter.toGoogle();
@@ -69,7 +84,7 @@ public class GeminiFunctionDeclarationAdapterTest {
         Map<String, Object> params = (Map<String, Object>) func.parametersJsonSchema().get();
         assertEquals("object", params.get("type"));
         
-        // Verify response
+        // Verify response (expects wrapped structure)
         assertTrue(func.responseJsonSchema().isPresent());
         Map<String, Object> response = (Map<String, Object>) func.responseJsonSchema().get();
         Map<String, Object> props = (Map<String, Object>) response.get("properties");
@@ -78,7 +93,7 @@ public class GeminiFunctionDeclarationAdapterTest {
 
     @Test
     public void testVoidMethodOmitResultNative() throws Exception {
-        AbstractTool<?, ?> tool = getTool("voidMethod");
+        AbstractTool<?, ?> tool = getTool("voidMethod", true);
         GeminiFunctionDeclarationAdapter adapter = new GeminiFunctionDeclarationAdapter(tool, true);
         
         FunctionDeclaration func = adapter.toGoogle();
@@ -91,12 +106,12 @@ public class GeminiFunctionDeclarationAdapterTest {
         assertFalse(props.containsKey("result"), "Response schema should not contain 'result' for void methods");
         
         List<String> required = func.response().get().required().orElse(List.of());
-        assertFalse(required.contains("result"), "Response schema should not require 'result' for void methods");
+        assertFalse(required.contains("contains result' for void methods"));
     }
 
     @Test
     public void testVoidMethodOmitResultJson() throws Exception {
-        AbstractTool<?, ?> tool = getTool("voidMethod");
+        AbstractTool<?, ?> tool = getTool("voidMethod", true);
         GeminiFunctionDeclarationAdapter adapter = new GeminiFunctionDeclarationAdapter(tool, false);
         
         FunctionDeclaration func = adapter.toGoogle();
@@ -116,7 +131,7 @@ public class GeminiFunctionDeclarationAdapterTest {
         }
     }
 
-    private AbstractTool<?, ?> getTool(String methodName) throws Exception {
+    private AbstractTool<?, ?> getTool(String methodName, boolean wrap) throws Exception {
         AsiContainer container = new AsiContainer("test") {
             @Override public Agi createNewAgi() { return new Agi(new AgiConfig(this)); }
             @Override public void openResource(AbstractResource<?, ?> resource) {}
@@ -125,7 +140,9 @@ public class GeminiFunctionDeclarationAdapterTest {
             @Override public List<Class<?>> getToolClasses() { return List.of(TestToolkit.class); }
         };
         Agi agi = new Agi(config);
-        ToolManager toolManager = new ToolManager(agi);
+        ToolManager toolManager = agi.getToolManager();
+        toolManager.setWrapResponseSchemas(wrap);
+        
         JavaObjectToolkit toolkit = new JavaObjectToolkit(toolManager, TestToolkit.class);
         return toolkit.getTools().stream()
                 .filter(t -> t.getName().endsWith("." + methodName))

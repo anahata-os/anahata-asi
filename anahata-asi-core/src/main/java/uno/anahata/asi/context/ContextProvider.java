@@ -49,7 +49,9 @@ public interface ContextProvider {
      * @return {@code true} if effectively providing, {@code false} otherwise.
      */
     default boolean isEffectivelyProviding() {
-        if (!isProviding()) return false;
+        if (!isProviding()) {
+            return false;
+        }
         ContextProvider parent = getParentProvider();
         return parent == null || parent.isEffectivelyProviding();
     }
@@ -122,6 +124,15 @@ public interface ContextProvider {
     }
 
     /**
+     * Gets the designated position of this provider's content in the AI prompt.
+     * 
+     * @return The context position. Defaults to {@link ContextPosition#PROMPT_AUGMENTATION}.
+     */
+    default ContextPosition getContextPosition() {
+        return ContextPosition.PROMPT_AUGMENTATION;
+    }
+
+    /**
      * Gets a list of system instruction strings provided by this context provider.
      * These are typically prepended to the conversation as high-level guidance.
      * 
@@ -129,7 +140,7 @@ public interface ContextProvider {
      * @throws Exception if an error occurs during instruction generation.
      */
     default List<String> getSystemInstructions() throws Exception {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 
     /**
@@ -167,7 +178,9 @@ public interface ContextProvider {
     default int getInstructionsTokenCount() {
         try {
             List<String> instructions = getSystemInstructions();
-            if (instructions.isEmpty()) return 0;
+            if (instructions.isEmpty()) {
+                return 0;
+            }
             int count = TokenizerUtils.countTokens(getHeader());
             for (String s : instructions) {
                 count += TokenizerUtils.countTokens(s);

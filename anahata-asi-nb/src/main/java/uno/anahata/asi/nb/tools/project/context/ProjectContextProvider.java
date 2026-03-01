@@ -43,8 +43,8 @@ public class ProjectContextProvider extends AbstractProjectContextProvider {
      */
     public ProjectContextProvider(Projects projectsToolkit, Project project) {
         super(Projects.getCanonicalPath(project.getProjectDirectory()), 
-              "Overview", 
-              "Context for project: " + ProjectUtils.getInformation(project).getDisplayName(),
+              ProjectUtils.getInformation(project).getDisplayName(), 
+              "Root Project Context Provider for project: " + ProjectUtils.getInformation(project).getDisplayName(),
               projectsToolkit,
               Projects.getCanonicalPath(project.getProjectDirectory()));
         this.project = project;
@@ -81,7 +81,7 @@ public class ProjectContextProvider extends AbstractProjectContextProvider {
      */
     @Override
     public String getName() {        
-        return "Overview";
+        return ProjectUtils.getInformation(project).getDisplayName();
     }
 
     /**

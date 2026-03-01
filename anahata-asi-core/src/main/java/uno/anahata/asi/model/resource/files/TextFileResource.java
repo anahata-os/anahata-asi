@@ -6,9 +6,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.context.ContextPosition;
 import uno.anahata.asi.internal.TokenizerUtils;
 import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.model.resource.AbstractPathResource;
@@ -53,10 +56,13 @@ public class TextFileResource extends AbstractPathResource<String> {
         this.viewport = viewport;
     }
     
-    /** {@inheritDoc} */
+    /** 
+     * {@inheritDoc} 
+     * <p>Optimizes reloading by using streaming for large files when tailing or 
+     * grepping is active, avoiding heap exhaustion.</p>
+     */
     @Override
     public void reload() throws Exception {
-        // Optimization: Use streaming for tail or grep to avoid loading huge files into JVM heap
         if (viewport.getSettings().isTail() || (viewport.getSettings().getGrepPattern() != null && !viewport.getSettings().getGrepPattern().isBlank())) {
             log.info("Reloading text resource (streaming): {}", getPath());
             viewport.process(getResource(), getCharset());
@@ -77,17 +83,22 @@ public class TextFileResource extends AbstractPathResource<String> {
         return Charset.defaultCharset();
     }
 
-    /** {@inheritDoc} */
+    /** 
+     * {@inheritDoc} 
+     * <p>Reads the raw file content using the detected or configured charset.</p>
+     */
     @Override
     protected String reloadContent() throws Exception {
         return Files.readString(getResource(), getCharset());
     }
 
-    /** {@inheritDoc} */
+    /** 
+     * {@inheritDoc} 
+     * <p>Applies viewport processing to the newly reloaded content and updates 
+     * the local cache with the processed result.</p>
+     */
     @Override
     protected void onContentReloaded(String newContent) {
-        // If coming from super.reload(), it's the full text. Process it.
-        // If coming from streaming reload(), it's already processed, but we check for logical changes.
         if (newContent != null && !newContent.equals(viewport.getProcessedText())) {
             this.viewport.process(newContent);
         }
@@ -99,7 +110,10 @@ public class TextFileResource extends AbstractPathResource<String> {
         }
     }
 
-    /** {@inheritDoc} */
+    /** 
+     * {@inheritDoc} 
+     * <p>Wraps the processed viewport content in a markdown code block for RAG injection.</p>
+     */
     @Override
     protected void populateFromCache(RagMessage rm) {
         StringBuilder sb = new StringBuilder();
@@ -107,6 +121,25 @@ public class TextFileResource extends AbstractPathResource<String> {
         sb.append(cache != null ? cache : "");
         sb.append("\n```");
         rm.addTextPart(sb.toString());
+    }
+
+    /** 
+     * {@inheritDoc} 
+     * <p>Provides the processed viewport content, wrapped in markdown, if the 
+     * resource is in the SYSTEM_INSTRUCTIONS position. Uses {@link #getContent()} 
+     * to ensure the cache is fresh.</p>
+     */
+    @Override
+    public List<String> getSystemInstructions() throws Exception {
+        if (getContextPosition() == ContextPosition.SYSTEM_INSTRUCTIONS) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("```\n");
+            String content = getContent();
+            sb.append(content != null ? content : "");
+            sb.append("\n```");
+            return Collections.singletonList(sb.toString());
+        }
+        return Collections.emptyList();
     }
     
     /** {@inheritDoc} */

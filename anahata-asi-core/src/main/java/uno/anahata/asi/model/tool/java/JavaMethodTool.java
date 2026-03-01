@@ -37,6 +37,12 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
     /** The underlying Java method that this tool represents. Transient as Method is not serializable. */
     private transient Method method;
 
+    /** The fully wrapped JSON schema (including JavaMethodToolResponse structure). */
+    private String wrappedResponseJsonSchema;
+
+    /** The raw JSON schema of the method's return type only. */
+    private String rawResponseJsonSchema;
+
     /**
      * The definitive, intelligent constructor for creating a JavaMethodTool from a reflection Method.
      * This constructor encapsulates all the logic for parsing annotations and generating schemas.
@@ -54,7 +60,10 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         this.permission = toolAnnotation.requiresApproval()
             ? ToolPermission.PROMPT
             : ToolPermission.APPROVE_ALWAYS;
-        super.responseJsonSchema = SchemaProvider.generateInlinedSchemaString(getResponseType(), "result", method.getGenericReturnType());
+        
+        // Cache both schema versions
+        this.wrappedResponseJsonSchema = SchemaProvider.generateInlinedSchemaString(getResponseType(), "result", method.getGenericReturnType());
+        this.rawResponseJsonSchema = SchemaProvider.generateInlinedSchemaString(method.getGenericReturnType());
         
         // Set own fields
         this.method = method;
@@ -77,6 +86,29 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         java.lang.reflect.Parameter[] params = method.getParameters();
         for (int i = 0; i < params.length; i++) {
             getParameters().add(JavaMethodToolParameter.of(this, params[i], i));
+        }
+    }
+
+    /**
+     * Refreshes the cached schemas for this tool.
+     * @throws Exception if schema generation fails.
+     */
+    public void refreshSchema() throws Exception {
+        this.wrappedResponseJsonSchema = SchemaProvider.generateInlinedSchemaString(getResponseType(), "result", getMethod().getGenericReturnType());
+        this.rawResponseJsonSchema = SchemaProvider.generateInlinedSchemaString(getMethod().getGenericReturnType());
+    }
+
+    /**
+     * {@inheritDoc}
+     * Implementation details: Dynamically returns either the wrapped or raw schema 
+     * based on the {@code wrapResponseSchemas} flag in the {@code ToolManager}.
+     */
+    @Override
+    public String getResponseJsonSchema() {
+        if (toolkit.getToolManager().isWrapResponseSchemas()) {
+            return wrappedResponseJsonSchema;
+        } else {
+            return rawResponseJsonSchema;
         }
     }
 

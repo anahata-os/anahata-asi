@@ -125,6 +125,7 @@ public class ToolPanel extends JPanel {
     private AbstractCodeBlockSegmentRenderer createJsonRenderer() {
         AbstractCodeBlockSegmentRenderer renderer = AbstractCodeBlockSegmentRenderer.create(parentPanel.getAgiPanel(), "", "json");
         renderer.setEditable(false);
+        renderer.render(); // Ensure the component is created before adding to JTabbedPane
         return renderer;
     }
 
@@ -153,13 +154,13 @@ public class ToolPanel extends JPanel {
 
         // 2. Update Response Schema
         responseSchemaRenderer.updateContent(JacksonUtils.prettyPrintJsonString(tool.getResponseJsonSchema()));
-        responseSchemaRenderer.render();
+        responseSchemaRenderer.render(); // Refresh the view
 
         // 3. Update Native Declaration
         RequestConfig config = parentPanel.getAgi().getRequestConfig();
         String nativeJson = parentPanel.getAgi().getSelectedModel().getToolDeclarationJson(tool, config);
         nativeDeclarationRenderer.updateContent(JacksonUtils.prettyPrintJsonString(nativeJson));
-        nativeDeclarationRenderer.render();
+        nativeDeclarationRenderer.render(); // Refresh the view
 
         // 4. Update Permissions (Footer)
         JPanel footer = (JPanel) getComponent(2);

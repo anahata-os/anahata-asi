@@ -7,9 +7,13 @@ import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -25,10 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jdesktop.swingx.JXTreeTable;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.context.ContextProvider;
-import uno.anahata.asi.model.resource.AbstractPathResource;
 import uno.anahata.asi.model.resource.AbstractResource;
-import uno.anahata.asi.model.tool.AbstractToolkit;
-import uno.anahata.asi.model.tool.java.JavaObjectToolkit;
 import uno.anahata.asi.swing.agi.tool.ToolPanel;
 import uno.anahata.asi.swing.agi.tool.ToolkitPanel;
 import uno.anahata.asi.swing.agi.tool.ContextProviderPanel;
@@ -49,6 +50,7 @@ import uno.anahata.asi.swing.agi.render.PartPanelFactory;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
+import uno.anahata.asi.tool.ToolManager;
 
 /**
  * A panel dedicated to displaying and managing the available AI context
@@ -89,6 +91,9 @@ public class ContextPanel extends JPanel {
     /** Container for dynamically created message or part panels. */
     private final JPanel messagePartDetailPanel;
     
+    /** Registry for mapping domain types to custom UI configurers. */
+    private final Map<Class<?>, BiConsumer<Object, JPanel>> customConfigRegistry = new HashMap<>();
+
     /** Listener for history changes to trigger tree refreshes. */
     private EdtPropertyChangeListener historyListener;
     
@@ -124,6 +129,51 @@ public class ContextPanel extends JPanel {
         setLayout(new BorderLayout());
         
         setupListeners();
+        registerDefaultCustomConfigs();
+    }
+    
+    /**
+     * Registers the default configuration UIs for core components.
+     */
+    private void registerDefaultCustomConfigs() {
+        registerCustomConfig(ToolManager.class, (tm, panel) -> {
+            JCheckBox wrapCheck = new JCheckBox("Wrap Response Schemas");
+            wrapCheck.setToolTipText("If enabled, tool response schemas include the full JavaMethodToolResponse structure. If disabled, only the raw return type is shown.");
+            wrapCheck.setSelected(tm.isWrapResponseSchemas());
+            wrapCheck.addActionListener(e -> tm.setWrapResponseSchemas(wrapCheck.isSelected()));
+            panel.add(wrapCheck);
+        });
+    }
+
+    /**
+     * Registers a custom UI configurer for a specific domain object type.
+     * 
+     * @param <T> The type of the domain object.
+     * @param type The class of the domain object.
+     * @param configurer A consumer that populates a provided JPanel based on the object instance.
+     */
+    public <T> void registerCustomConfig(Class<T> type, BiConsumer<T, JPanel> configurer) {
+        customConfigRegistry.put(type, (obj, panel) -> configurer.accept(type.cast(obj), panel));
+    }
+
+    /**
+     * Populates a panel with custom configuration UI for a given object, if registered.
+     * 
+     * @param obj The domain object (user object of the selected node).
+     * @param panel The target panel to populate.
+     */
+    public void populateCustomConfig(Object obj, JPanel panel) {
+        panel.removeAll();
+        if (obj == null) return;
+        
+        // Check for exact class match or interfaces/superclasses
+        for (Map.Entry<Class<?>, BiConsumer<Object, JPanel>> entry : customConfigRegistry.entrySet()) {
+            if (entry.getKey().isInstance(obj)) {
+                entry.getValue().accept(obj, panel);
+            }
+        }
+        panel.revalidate();
+        panel.repaint();
     }
 
     /**

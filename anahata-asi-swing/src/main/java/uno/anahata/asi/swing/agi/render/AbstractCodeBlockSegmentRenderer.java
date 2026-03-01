@@ -153,7 +153,7 @@ public abstract class AbstractCodeBlockSegmentRenderer extends AbstractTextSegme
             container.add(headerPanel, BorderLayout.NORTH);
             
             // ScrollPane
-            JScrollPane scrollPane = new JScrollPane(innerComponent);
+            JScrollPane scrollPane = createScrollPane(innerComponent);
             scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
             scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
             scrollPane.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
@@ -177,6 +177,18 @@ public abstract class AbstractCodeBlockSegmentRenderer extends AbstractTextSegme
             contentRendered(); 
         }
         return changed;
+    }
+
+    /**
+     * Creates the scroll pane used to contain the inner component.
+     * Subclasses can override this to provide specialized scroll containers
+     * (e.g., RTextScrollPane for line numbers).
+     * 
+     * @param inner The component to be scrolled.
+     * @return A JScrollPane instance.
+     */
+    protected JScrollPane createScrollPane(JComponent inner) {
+        return new JScrollPane(inner);
     }
 
     /**

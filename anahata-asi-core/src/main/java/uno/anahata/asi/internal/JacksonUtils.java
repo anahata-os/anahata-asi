@@ -89,7 +89,8 @@ public final class JacksonUtils {
 
     /**
      * Recursively removes redundant and token-heavy fields from a JsonNode.
-     * Strips: 'exampleSetFlag' and 'types'.
+     * Strips: 'exampleSetFlag', 'types', and 'jsonSchema'.
+     * Also removes child descriptions if they match the parent description (redundancy optimization).
      * 
      * @param node The JsonNode to purify.
      */
@@ -99,6 +100,32 @@ public final class JacksonUtils {
             ObjectNode objectNode = (ObjectNode) node;
             objectNode.remove("exampleSetFlag");
             objectNode.remove("types");
+            objectNode.remove("jsonSchema");
+            
+            // Optimization: Remove child descriptions if they are identical to the parent's
+            JsonNode parentDescNode = objectNode.get("description");
+            if (parentDescNode != null && parentDescNode.isTextual()) {
+                String parentDesc = parentDescNode.asText();
+                
+                // 1. Check array items
+                JsonNode items = objectNode.get("items");
+                if (items != null && items.isObject()) {
+                    JsonNode childDesc = items.get("description");
+                    if (childDesc != null && parentDesc.equals(childDesc.asText())) {
+                        ((ObjectNode) items).remove("description");
+                    }
+                }
+                
+                // 2. Check map additionalProperties
+                JsonNode addProps = objectNode.get("additionalProperties");
+                if (addProps != null && addProps.isObject()) {
+                    JsonNode childDesc = addProps.get("description");
+                    if (childDesc != null && parentDesc.equals(childDesc.asText())) {
+                        ((ObjectNode) addProps).remove("description");
+                    }
+                }
+            }
+            
             objectNode.fields().forEachRemaining(entry -> purifySchema(entry.getValue()));
         } else if (node.isArray()) {
             node.forEach(JacksonUtils::purifySchema);

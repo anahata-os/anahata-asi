@@ -26,7 +26,7 @@ import uno.anahata.asi.internal.TextUtils;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public final class ResourceFolder2 extends ProjectNode2 {
+public final class ResourceFolder extends ProjectNode {
 
     /** 
      * The relative path of the folder from the source group root. 
@@ -37,14 +37,14 @@ public final class ResourceFolder2 extends ProjectNode2 {
      * The list of components (files) contained within this folder. 
      */
     @Builder.Default
-    private List<ProjectComponent2> components = new ArrayList<>();
+    private List<ProjectComponent> components = new ArrayList<>();
     
     /**
      * Adds a physical component (file) to this folder.
      * 
      * @param component The component to add.
      */
-    public void addComponent(ProjectComponent2 component) {
+    public void addComponent(ProjectComponent component) {
         this.components.add(component);
     }
 
@@ -55,7 +55,7 @@ public final class ResourceFolder2 extends ProjectNode2 {
      */
     @Override
     public long getTotalSize() {
-        return components.stream().mapToLong(ProjectComponent2::getTotalSize).sum();
+        return components.stream().mapToLong(ProjectComponent::getTotalSize).sum();
     }
 
     /** 
@@ -80,7 +80,7 @@ public final class ResourceFolder2 extends ProjectNode2 {
         
         if (summary) {
             Map<String, Long> counts = components.stream()
-                    .collect(Collectors.groupingBy(ProjectComponent2::getComponentType, Collectors.counting()));
+                    .collect(Collectors.groupingBy(ProjectComponent::getComponentType, Collectors.counting()));
             
             String stats = counts.entrySet().stream()
                     .map(e -> e.getValue() + " " + e.getKey())
@@ -92,7 +92,7 @@ public final class ResourceFolder2 extends ProjectNode2 {
         sb.append("\n");
 
         if (!summary) {
-            for (ProjectComponent2 component : components) {
+            for (ProjectComponent component : components) {
                 component.renderMarkdown(sb, indent + "  ", false);
             }
         }

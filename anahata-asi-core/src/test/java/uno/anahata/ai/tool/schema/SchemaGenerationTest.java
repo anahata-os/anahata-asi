@@ -25,7 +25,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import uno.anahata.asi.AsiContainer;
 import uno.anahata.ai.tool.MockAsiContainer;
-import uno.anahata.asi.model.resource.AbstractResource;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.model.tool.AbstractTool;
@@ -33,6 +32,11 @@ import uno.anahata.ai.tool.MockToolkit;
 import uno.anahata.asi.tool.ToolManager;
 import uno.anahata.asi.model.tool.java.JavaMethodTool;
 
+/**
+ * Tests for JSON schema generation and wrapping logic.
+ * 
+ * @author anahata
+ */
 public class SchemaGenerationTest {
     private static final TypeReference<Map<String, Object>> MAP_TYPE_REF = new TypeReference<>() {};
     private static ToolManager toolManager;
@@ -46,21 +50,27 @@ public class SchemaGenerationTest {
         toolManager.registerClasses(MockToolkit.class);
     }
 
+    /**
+     * Verifies that all registered tools produce correctly wrapped response schemas
+     * when the wrapResponseSchemas flag is enabled.
+     * 
+     * @throws Exception if schema parsing or generation fails.
+     */
     @Test
     public void testAllToolSchemasAreCorrectlyWrapped() throws Exception {
+        toolManager.setWrapResponseSchemas(true);
         for (AbstractTool<?, ?> tool : toolManager.getAllTools()) {
             String responseSchemaJson = tool.getResponseJsonSchema();
-            System.out.println("Verifying schema for tool: " + tool.getName() + "\n" + responseSchemaJson);
+            System.out.println("Verifying wrapped schema for tool: " + tool.getName() + "\n" + responseSchemaJson);
             assertNotNull(responseSchemaJson, "Response schema should not be null for tool: " + tool.getName());
 
             Map<String, Object> responseSchemaMap = SchemaProvider.OBJECT_MAPPER.readValue(responseSchemaJson, MAP_TYPE_REF);
             Map<String, Object> properties = (Map<String, Object>) responseSchemaMap.get("properties");
-            assertNotNull(properties, "Response schema must have a 'properties' field.");
+            assertNotNull(properties, "Response schema must have a 'properties' field when wrapped.");
 
             // Assert that standard wrapper fields are present
             assertTrue(properties.containsKey("status"), "Schema must contain 'status' property.");
             assertTrue(properties.containsKey("logs"), "Schema must contain 'logs' property. Schema: " + responseSchemaJson);
-            //assertTrue(properties.containsKey("attachments"), "Schema must contain 'attachments' property.");
 
             // Check for 'result' property based on whether the method is void or not
             boolean isVoid = false;
@@ -71,10 +81,8 @@ public class SchemaGenerationTest {
             }
 
             if (isVoid) {
-                // This is a void method, so the 'result' property should be absent.
                 assertFalse(properties.containsKey("result"), "Void method schema should not contain 'result' property.");
             } else {
-                // This is a non-void method, so the 'result' property should be present.
                 assertTrue(properties.containsKey("result"), "Non-void method schema must contain 'result' property. Tool: " + tool.getName());
                 assertNotNull(properties.get("result"), "The 'result' property should not be null for a non-void method.");
             }
@@ -88,11 +96,45 @@ public class SchemaGenerationTest {
                 Map<String, Object> childrenSchema = (Map<String, Object>) rootNodeProps.get("children");
                 Map<String, Object> itemsSchema = (Map<String, Object>) childrenSchema.get("items");
                 
-                // The 'items' of the children list should be a recursive reference to TreeNode
                 assertEquals("uno.anahata.ai.model.tool.TreeNode", itemsSchema.get("title"));
                 String description = (String) itemsSchema.get("description");
                 assertTrue(description.contains("Recursive reference to uno.anahata.ai.model.tool.TreeNode"), 
                         "Recursive reference description missing or incorrect: " + description);
+            }
+        }
+    }
+
+    /**
+     * Verifies that all registered tools produce raw response schemas
+     * when the wrapResponseSchemas flag is disabled.
+     * 
+     * @throws Exception if schema parsing or generation fails.
+     */
+    @Test
+    public void testAllToolSchemasAreCorrectlyRaw() throws Exception {
+        toolManager.setWrapResponseSchemas(false);
+        for (AbstractTool<?, ?> tool : toolManager.getAllTools()) {
+            String responseSchemaJson = tool.getResponseJsonSchema();
+            System.out.println("Verifying raw schema for tool: " + tool.getName() + "\n" + responseSchemaJson);
+            
+            boolean isVoid = (tool instanceof JavaMethodTool jmt) 
+                    ? jmt.getMethod().getReturnType().equals(void.class)
+                    : tool.getName().endsWith("doNothing");
+
+            if (isVoid) {
+                assertNull(responseSchemaJson, "Raw schema for void method should be null. Tool: " + tool.getName());
+            } else {
+                assertNotNull(responseSchemaJson, "Raw schema for non-void method should not be null. Tool: " + tool.getName());
+                Map<String, Object> responseSchemaMap = SchemaProvider.OBJECT_MAPPER.readValue(responseSchemaJson, MAP_TYPE_REF);
+                
+                // For a raw schema, the root should NOT have 'status' or 'logs'
+                assertFalse(responseSchemaMap.containsKey("status"), "Raw schema must not contain 'status' wrapper property.");
+                assertFalse(responseSchemaMap.containsKey("logs"), "Raw schema must not contain 'logs' wrapper property.");
+                
+                // For complex objects, we expect properties, but for simple types like String, it might be different
+                if (tool.getName().endsWith("getString")) {
+                    assertEquals("string", responseSchemaMap.get("type"));
+                }
             }
         }
     }
