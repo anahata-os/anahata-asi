@@ -10,8 +10,6 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
 import java.io.File;
 import java.util.List;
 import java.util.Objects;
@@ -23,12 +21,9 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JLayer;
 import javax.swing.JPanel;
-import javax.swing.JScrollBar;
-import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -49,6 +44,7 @@ import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.render.ParameterRenderer;
 import uno.anahata.asi.swing.internal.SwingUtils;
 import uno.anahata.asi.toolkit.files.AbstractTextFileWrite;
+import uno.anahata.asi.toolkit.files.Files;
 import uno.anahata.asi.toolkit.files.LineComment;
 
 /**
@@ -63,16 +59,13 @@ import uno.anahata.asi.toolkit.files.LineComment;
  * 
  * <p>Key Features:</p>
  * <ul>
+ *   <li><b>Immediate Pre-Flight Validation</b>: Delegates to the authoritative 
+ *   {@link Files#validateWrite} logic to reject hallucinated or stale proposals 
+ *   as soon as they are rendered.</li>
  *   <li><b>Historical Diff Persistence</b>: Automatically captures the file state before
- *   execution and persists it in the tool call DTO. This ensures that even after a 
- *   NetBeans restart, the history shows what was changed rather than an empty diff.</li>
- *   <li><b>Boundary-Aware Scrolling</b>: Solves the "Scroll Trap" issue where nested 
- *   NetBeans scroll panes consume all wheel events. It automatically re-dispatches 
- *   scrolling to the parent conversation when boundaries are hit.</li>
+ *   execution and persists it in the tool call DTO.</li>
  *   <li><b>JLayer Decoration</b>: Safely overlays AI content without disrupting the 
  *   internal component tree of the NetBeans Diff module.</li>
- *   <li><b>Comic-Style Annotations</b>: Renders AI comments as translucent bubbles 
- *   anchored to specific line numbers in the modified side of the diff.</li>
  * </ul>
  * 
  * <p>Research Credits - This implementation was made possible by dissecting the following 
@@ -186,6 +179,30 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
     }
 
     /**
+     * Performs an immediate validation of the file write using the 
+     * authoritative logic in the Files toolkit. If validation fails, the 
+     * tool call is rejected immediately.
+     * 
+     * @return true if valid, false if rejected.
+     */
+    private boolean validatePreFlight() {
+        if (call.getResponse().getStatus() != ToolExecutionStatus.PENDING) {
+            return true; 
+        }
+
+        try {
+            Files files = agiPanel.getAgi().getToolkit(Files.class)
+                    .orElseThrow(() -> new IllegalStateException("Files toolkit not found."));
+            files.validateWrite(update);
+            return true;
+        } catch (Exception e) {
+            log.warn("Pre-flight validation failed for {}: {}", update.getPath(), e.getMessage());
+            call.getResponse().reject(e.getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Subclasses must provide the full proposed content based on the current disk state.
      * 
      * @param currentContent The current text content of the file.
@@ -224,8 +241,8 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
     /** 
      * {@inheritDoc} 
      * 
-     * <p>The main rendering loop. Performs stability checks, initializes the NetBeans 
-     * Diff system, and installs the agentic decoration layer.</p>
+     * <p>The main rendering loop. Performs pre-flight validation, initializes 
+     * the NetBeans Diff system, and installs the agentic decoration layer.</p>
      */
     @Override
     public boolean render() {
@@ -233,9 +250,15 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
             return false;
         }
 
+        // 1. Validation check
+        if (!validatePreFlight()) {
+            renderError(call.getResponse().getErrors());
+            return true;
+        }
+
         ToolExecutionStatus status = call.getResponse().getStatus();
 
-        // 1. Stability check: if the incoming update AND status are the same as what we just rendered
+        // 2. Stability check: if the incoming update AND status are the same as what we just rendered
         if (Objects.equals(update, lastRenderedUpdate) && status == lastRenderedStatus) {
             return true;
         }
@@ -263,7 +286,7 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
             String currentOnDisk = (fo != null) ? fo.asText() : "";
             String proposedContent = calculateProposedContent(currentOnDisk);
 
-            // 2. Secondary stability check: content + status
+            // 3. Secondary stability check: content + status
             if (modDoc != null) {
                 String docText = modDoc.getText(0, modDoc.getLength());
                 if (docText.equals(proposedContent) && status == lastRenderedStatus) {
@@ -291,7 +314,7 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
             this.modDoc = kit.createDefaultDocument();
             modDoc.insertString(0, proposedContent, null);
 
-            // 3. Sync user edits back to the tool call's modifiedArgs (only if pending)
+            // 4. Sync user edits back to the tool call's modifiedArgs (only if pending)
             if (isPending) {
                 modDoc.addDocumentListener(new DocumentListener() {
                     private void sync() {

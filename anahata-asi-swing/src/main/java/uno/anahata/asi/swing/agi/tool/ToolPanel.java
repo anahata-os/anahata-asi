@@ -123,7 +123,9 @@ public class ToolPanel extends JPanel {
      * @return The configured renderer.
      */
     private AbstractCodeBlockSegmentRenderer createJsonRenderer() {
-        AbstractCodeBlockSegmentRenderer renderer = AbstractCodeBlockSegmentRenderer.create(parentPanel.getAgiPanel(), "", "json");
+        // Use the authoritative EditorKitProvider from the config.
+        AbstractCodeBlockSegmentRenderer renderer = parentPanel.getAgiPanel().getAgiConfig().getEditorKitProvider()
+                .createRenderer(parentPanel.getAgiPanel(), "", "json");
         renderer.setEditable(false);
         renderer.render(); // Ensure the component is created before adding to JTabbedPane
         return renderer;

@@ -60,7 +60,6 @@ public class MarkupTextSegmentRenderer extends AbstractTextSegmentRenderer {
         options.set(Parser.EXTENSIONS, Arrays.asList(
                 TablesExtension.create(),
                 MediaTagsExtension.create(),
-                YouTubeLinkExtension.create(),
                 GitLabExtension.create(),
                 AutolinkExtension.create(),
                 StrikethroughExtension.create(),

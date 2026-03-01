@@ -189,7 +189,7 @@ public class SwingUtils {
         dialog.setLayout(new BorderLayout());
         dialog.setPreferredSize(new Dimension(1000, 800));
 
-        AbstractCodeBlockSegmentRenderer renderer = AbstractCodeBlockSegmentRenderer.create(agiPanel, text, language);
+        AbstractCodeBlockSegmentRenderer renderer = agiPanel.getAgiConfig().getEditorKitProvider().createRenderer(agiPanel, text, language);
         renderer.render();
 
         // For the popup, we want both scrollbars, so we wrap the INNER component

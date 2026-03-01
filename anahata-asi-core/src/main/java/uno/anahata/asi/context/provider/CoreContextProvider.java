@@ -106,7 +106,9 @@ public class CoreContextProvider implements ContextProvider {
 
         String reasoning = "During your internal reasoning phase, reason through the problem using natural, conversational human paragraphs, not 'machine like' paragraphs. Brainstorm out loud, weigh the pros and cons emotionally and logically, and formulate your thoughts in full paragraphs before providing the final output. This will help the user understand your approach to solving the problem";
         
-        String tool = "Tool Execution\n"
+        String ui = "**UML**: The UI supports rendering of UML diagrams using marmaid codeblocks.";
+        
+        String tool = "**Tool Execution**\n"
                 + "\n- All tools you see are java methods in java objects, in 'anahata terms' these objects are called 'toolkits' and each method in that object annotated with an @AiTool annotation becomes a tool that you can execute. These java objects are stateful instances and they can have instance attributes to preserve state across turns. They all get serialized to disk every time a session is saved.\n"
                 + "\n- Toolkits can be enabled or disabled (would make the tools invisible to you) and there is a 'permission' for each tool that can take these values: Prompt, Approve, Deny. The user can change the permission of any tool and also enable/disable toolkits at will. If a toolkit is disabled, you should still get a hint of what that toolkit can do. \n"
                 + "\n- Some toolkits implement 'ContextProvider' so if the developer of a toolkit like Browser wants to add context about that toolkit on every turn, he just has to implement a 'populatRagMessage' method on the toolkit itself with real time information about that toolkit. \n"
@@ -124,7 +126,7 @@ public class CoreContextProvider implements ContextProvider {
                     + "```json\n" + schema + "\n```\n";
         }
         
-        String rag = "The RAG message:\n"
+        String rag = "**The RAG message**:\n"
                 + "1. The last message on every turn (which always starts with `--- RAG Message ---` is Augmented Workspace Context. Gets dynamically generated and the user doesnt see it in the UI. It contains:\n"
                 + " a) all resources either you or the user have loaded (the user can also 'add files to context' manually)"
                 + " b) all other 'effecitvely providing' context providers (some toolkits are also Context Providers and can also add details about their state to the rag message).\n"
@@ -132,7 +134,7 @@ public class CoreContextProvider implements ContextProvider {
                 + "3. The RAG message gets generated dynamically after all tool execution finished and right before the api call (that is why it always has the latest content and lastModified timestamp for each resource)\n"
                 + "4. Always use the 'lastModified' timestamp that you see in the RAG message for any tools that modify files (e.g. updateTextFile, replaceInTextFile) dont try to guess ir or take it from any other part in the history or any other tool call, always use the lastModifed timestamps from the RAG message. They are just for optimistic locking so the one in the RAG message is your source of truth.\n";
 
-        String cwgc = "\nContext Window Garbage Collection (CwGC):\n"
+        String cwgc = "**Context Window Garbage Collection (CwGC)**:\n"
                 + "This is anahata's 'revolutionary invention' for managing the contet window size in an attempt to create indefenitly long running conversations that feel like an incredible smooth flow. The term 'Depth' refers to the distance from the current turn. When a new message is added to the conversation, each parts has an associated expiry depth depending on the type of the part. \n"
                 + "Parts have a prinningState attribute that can have three values: AUTO, PRUNED, or PINED: these are the semantics:\n"
                 + "- `AUTO`: Parts remain in context but are deemed 'effectively prunned' when the Remaining Depth reaches 0. \n"
@@ -140,10 +142,8 @@ public class CoreContextProvider implements ContextProvider {
                 + "- `PINED` : Pinned Parts do not get garbage collected and remain in the prompt until unpined \n"
                 + "- Parts thata are PRUNED or AUTO + effectively pruned. Are elegible for garbage collection. \n"
                 + "- Pruned or effectively pruned tool call parts behave a bit different: they will not be garbage collected until every part in that message is garbage collected.";
-        
                 
-                
-        String metadataFormat = "\n\n\nMetadata Format\n"
+        String metadataFormat = "**Metadata Format**\n"
                 + "The Anahata system uses 'In-Band Metadata Injection' to improve your self-awareness. Metadata is injected as formatted 'thought text' headers and mainly contain the ids of parts and messages so you can prune, pine or unprune.\n"
                 + "\nThere is a sequence generator for both parts and messages that starts at 1 at the start of each session but dont take the sequence too seriously because if the user manually deletes a message in the conversation or an api call gets interrupted due to a network or a quota issue and the user deletes a message that got truncated during the api call, or a message got prunned there will be gaps in the sequence, the main thing about the ids of parts and messages is that they are unique so you can identify the parts of the prompt that you want to prune/pin/unprune (they are just like primary keys for each element in the prompt)"
                 + "\n1. **Message Headers**: (e.g., `[x-anahata-message-id: 12 | From: user | Device: papa-linux | Time: 12:34:56 | Tokens: 450 | Depth: 4]`)\n"
@@ -154,8 +154,10 @@ public class CoreContextProvider implements ContextProvider {
                 + "\n3. **Rag Message (with user role)**: As stated earlier, this message is dynamically generated on every turn so it doesnt contain any metadata (because nothing on it can be pruned or pinned, it just gets dynamically generated by the framework for the purpose of context augmentation, its not a 'real part of the history))\n"
                 + "\n4. **Pruning Hints**: If a part is effectively pruned, its content is removed from the prompt, but its header remains with a `Hint` (e.g., `| Hint: do a search...`). This allows you to maintain semantic flow without raw data overhead.\n"
                 + "\n5. **Strict Interaction Rule**: You are FORBIDDEN from mimicking these system metadata headers in your responses. You must never generate text that starts with `[x-anahata-message-id:` or `[x-anahata-part-id:`. These headers are reserved for the system framework to provide you with architectural context and mimicking this behavior will confuse the context parsing layer.\n";
+        
+        String payg = "\n\n\nPrune as you go\n";
 
-        return Arrays.asList(fun, reasoning, tool, rag, cwgc, metadataFormat);
+        return Arrays.asList(fun, reasoning, ui, tool, rag, cwgc, metadataFormat, payg);
     }
 
     /**

@@ -8,9 +8,9 @@ import java.util.logging.Logger;
 import javax.swing.text.EditorKit;
 import org.netbeans.api.editor.mimelookup.MimeLookup;
 import org.openide.filesystems.FileUtil;
+import uno.anahata.asi.nb.ui.render.NbCodeBlockSegmentRenderer;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.render.AbstractCodeBlockSegmentRenderer;
-import uno.anahata.asi.swing.agi.render.JEditorPaneCodeBlockSegmentRenderer;
 import uno.anahata.asi.swing.agi.render.editorkit.EditorKitProvider;
 
 /**
@@ -109,9 +109,9 @@ public class NetBeansEditorKitProvider implements EditorKitProvider {
      * {@inheritDoc}
      * <p>
      * Implementation details:
-     * Instantiates a {@link JEditorPaneCodeBlockSegmentRenderer} to provide 
-     * full NetBeans editor fidelity, including project-aware semantic 
-     * highlighting and annotations.
+     * Instantiates a {@link NbCodeBlockSegmentRenderer} to provide 
+     * full NetBeans editor fidelity, including line numbers, code folding, 
+     * and annotations.
      * </p>
      */
     @Override
@@ -121,6 +121,6 @@ public class NetBeansEditorKitProvider implements EditorKitProvider {
         if (kit == null) {
             kit = MimeLookup.getLookup("text/plain").lookup(EditorKit.class);
         }
-        return new JEditorPaneCodeBlockSegmentRenderer(agiPanel, content, language, kit);
+        return new NbCodeBlockSegmentRenderer(agiPanel, content, language, kit);
     }
 }

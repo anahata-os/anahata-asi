@@ -36,7 +36,8 @@ public class CodeBlockParameterRenderer implements ParameterRenderer<String> {
      */
     public void init(AgiPanel agiPanel, AbstractToolCall<?, ?> call, String paramName, String value, String language) {
         this.language = language;
-        this.renderer = AbstractCodeBlockSegmentRenderer.create(agiPanel, value, language);
+        // Use the authoritative EditorKitProvider from the config to create the renderer.
+        this.renderer = agiPanel.getAgiConfig().getEditorKitProvider().createRenderer(agiPanel, value, language);
         this.renderer.setEditable(true);
         this.renderer.setOnSave(newContent -> call.setModifiedArgument(paramName, newContent));
     }

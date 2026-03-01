@@ -13,8 +13,11 @@ import uno.anahata.asi.model.core.Role;
 import uno.anahata.asi.model.tool.ToolExecutionStatus;
 import uno.anahata.asi.model.tool.ToolPermission;
 import uno.anahata.asi.status.AgiStatus;
+import uno.anahata.asi.swing.agi.render.FullTextFileCreateRenderer;
+import uno.anahata.asi.swing.agi.render.ParameterRendererFactory;
 import uno.anahata.asi.swing.agi.render.editorkit.EditorKitProvider;
 import uno.anahata.asi.swing.icons.IconProvider;
+import uno.anahata.asi.toolkit.files.FullTextFileCreate;
 import uno.anahata.asi.yam.tools.Chrome;
 import uno.anahata.asi.yam.tools.Speech;
 import uno.anahata.asi.yam.tools.audio.Audio;
@@ -26,6 +29,10 @@ import uno.anahata.asi.yam.tools.audio.Audio;
  */
 @Getter @Setter
 public class SwingAgiConfig extends AgiConfig {
+    
+    static {
+        ParameterRendererFactory.register(FullTextFileCreate.class, FullTextFileCreateRenderer.class);
+    }
     
     private EditorKitProvider editorKitProvider;
     

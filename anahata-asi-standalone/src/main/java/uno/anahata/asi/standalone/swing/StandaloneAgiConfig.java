@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.gemini.GeminiAgiProvider;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
+import uno.anahata.asi.swing.agi.render.editorkit.DefaultEditorKitProvider;
 
 /**
  * The default {@link uno.anahata.ai.config.AgiConfig} implementation for the 
@@ -29,6 +30,7 @@ public class StandaloneAgiConfig extends SwingAgiConfig {
      */
     public StandaloneAgiConfig(AsiContainer asiConfig) {
         super(asiConfig);
+        super.setEditorKitProvider(new DefaultEditorKitProvider());
     }
 
     /**

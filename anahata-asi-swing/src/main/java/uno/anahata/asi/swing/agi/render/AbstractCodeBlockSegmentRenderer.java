@@ -16,12 +16,10 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.text.EditorKit;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.swing.agi.AgiPanel;
-import uno.anahata.asi.swing.agi.render.editorkit.EditorKitProvider;
 import uno.anahata.asi.swing.icons.CopyIcon;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
@@ -41,6 +39,13 @@ public abstract class AbstractCodeBlockSegmentRenderer extends AbstractTextSegme
     /** The inner component that actually displays/edits the code. */
     @Getter
     protected JComponent innerComponent;
+
+    /** 
+     * The scroll pane containing the inner component. 
+     * Subclasses can access this to perform decorations (e.g. adding sidebars).
+     */
+    @Getter
+    protected JScrollPane scrollPane;
     
     /** Whether the code block is currently in edit mode. */
     @Getter
@@ -67,30 +72,6 @@ public abstract class AbstractCodeBlockSegmentRenderer extends AbstractTextSegme
     public AbstractCodeBlockSegmentRenderer(AgiPanel agiPanel, String initialContent, String language) {
         super(agiPanel, initialContent);
         this.language = language;
-    }
-
-    /**
-     * Factory method to create the appropriate code block renderer based on the
-     * available EditorKitProvider.
-     * 
-     * @param agiPanel The agi panel.
-     * @param content The initial content.
-     * @param language The language.
-     * @return A concrete AbstractCodeBlockSegmentRenderer instance.
-     */
-    public static AbstractCodeBlockSegmentRenderer create(AgiPanel agiPanel, String content, String language) {
-        EditorKitProvider editorKitProvider = agiPanel.getAgiConfig().getEditorKitProvider();
-        if (editorKitProvider != null) {
-            try {
-                EditorKit kit = editorKitProvider.getEditorKitForLanguage(language);
-                if (kit != null) {
-                    return new JEditorPaneCodeBlockSegmentRenderer(agiPanel, content, language, kit);
-                }
-            } catch (Exception e) {
-                log.error("Failed to obtain EditorKit for language: {}", language, e);
-            }
-        }
-        return new RSyntaxTextAreaCodeBlockSegmentRenderer(agiPanel, content, language);
     }
 
     /**
@@ -153,7 +134,7 @@ public abstract class AbstractCodeBlockSegmentRenderer extends AbstractTextSegme
             container.add(headerPanel, BorderLayout.NORTH);
             
             // ScrollPane
-            JScrollPane scrollPane = createScrollPane(innerComponent);
+            this.scrollPane = createScrollPane(innerComponent);
             scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
             scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
             scrollPane.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
