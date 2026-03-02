@@ -292,6 +292,7 @@ public class Session extends AnahataToolkit {
         
         sb.append("\n Default Max Depth Policies:\n");
         sb.append("- **Text Parts**: ").append(config.getDefaultTextPartMaxDepth()).append("\n");
+        sb.append("- **Model Thought Parts**: ").append(config.getDefaultThoughtPartMaxDepth()).append("\n");
         sb.append("- **Tool Calls**: ").append(config.getDefaultToolMaxDepth()).append("\n");
         sb.append("- **Blob Parts**: ").append(config.getDefaultBlobPartMaxDepth()).append("\n");
         sb.append("*(Note: Individual tools or toolkits may override these defaults)*\n");
@@ -314,7 +315,7 @@ public class Session extends AnahataToolkit {
 
         List<AbstractToolCall<?, ?>> executing = domainAgi.getToolManager().getExecutingCalls();
         if (!executing.isEmpty()) {
-            sb.append("\n- **Executing Tools**: ");
+            sb.append("\n- **Currently Executing Tools**: ");
             sb.append(executing.stream()
                 .map(tc -> tc.getToolName() + " (ID: " + tc.getId() + ")")
                 .collect(Collectors.joining(", ")));
