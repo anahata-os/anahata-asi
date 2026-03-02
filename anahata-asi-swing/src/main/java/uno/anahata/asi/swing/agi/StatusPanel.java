@@ -105,6 +105,10 @@ public class StatusPanel extends JPanel {
         this.agi = agiPanel.getAgi();
         this.agiConfig = agiPanel.getAgiConfig();
         this.audioPlaybackPanel = new AudioPlaybackPanel(agiPanel);
+        
+        // Enable File Drop
+        setTransferHandler(new AgiTransferHandler(agiPanel));
+        
         initComponents();
         
         this.refreshTimer = new Timer(1000, e -> refresh());
