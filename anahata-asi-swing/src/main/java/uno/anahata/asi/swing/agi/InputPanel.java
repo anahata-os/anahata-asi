@@ -18,6 +18,7 @@ import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.swing.*;
+import javax.swing.undo.UndoManager;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -91,12 +92,14 @@ public class InputPanel extends JPanel {
     
     private EdtPropertyChangeListener stagedListener;
     private EdtPropertyChangeListener statusListener;
+    
+    private final UndoManager undoManager = new UndoManager();
 
     /**
      * The "live" message being composed by the user. This is the single source
      * of truth for the current input.
      */
-    private InputUserMessage currentMessage;
+    protected InputUserMessage currentMessage;
 
     /**
      * Constructs a new InputPanel.
@@ -123,14 +126,43 @@ public class InputPanel extends JPanel {
         inputTextArea.setLineWrap(true);
         inputTextArea.setWrapStyleWord(true);
 
+        // --- UNDO / REDO ---
+        inputTextArea.getDocument().addUndoableEditListener(undoManager);
+        
+        InputMap im = inputTextArea.getInputMap(JComponent.WHEN_FOCUSED);
+        ActionMap am = inputTextArea.getActionMap();
+
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.CTRL_DOWN_MASK), "undo");
+        am.put("undo", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (undoManager.canUndo()) undoManager.undo();
+            }
+        });
+
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_Y, KeyEvent.CTRL_DOWN_MASK), "redo");
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.CTRL_DOWN_MASK | KeyEvent.SHIFT_DOWN_MASK), "redo");
+        am.put("redo", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (undoManager.canRedo()) undoManager.redo();
+            }
+        });
+
+        // --- FILE DROP SUPPORT ---
+        // Pass the original TransferHandler as a delegate to preserve standard behaviors like Copy/Paste
+        AgiTransferHandler th = new AgiTransferHandler(agiPanel, inputTextArea.getTransferHandler());
+        setTransferHandler(th);
+        inputTextArea.setTransferHandler(th);
+
         // --- REAL-TIME MODEL UPDATE ---
         inputTextArea.getDocument().addDocumentListener(new AnyChangeDocumentListener(this::updateMessageText));
 
         // Ctrl+Enter to send
         KeyStroke ctrlEnter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, KeyEvent.CTRL_DOWN_MASK);
-        inputTextArea.getInputMap(JComponent.WHEN_FOCUSED).put(ctrlEnter, "sendMessage");
+        im.put(ctrlEnter, "sendMessage");
 
-        inputTextArea.getActionMap().put("sendMessage", new AbstractAction() {
+        am.put("sendMessage", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (sendButton.isEnabled()) {
@@ -291,6 +323,14 @@ public class InputPanel extends JPanel {
     void attach(Path p) throws Exception {
         currentMessage.addAttachment(p);
         updateSendButtonState();
+        scrollToBottomPreview();
+    }
+    
+    public void scrollToBottomPreview() {
+        SwingUtilities.invokeLater(() -> {
+            JScrollBar verticalBar = previewScrollPane.getVerticalScrollBar();
+            verticalBar.setValue(verticalBar.getMaximum());
+        });
     }
 
     /**
@@ -311,6 +351,7 @@ public class InputPanel extends JPanel {
                                 .map(File::toPath)
                                 .collect(Collectors.toList());
                         currentMessage.addAttachments(paths);
+                        scrollToBottomPreview();
                         return null;
                     }
             );
@@ -326,6 +367,7 @@ public class InputPanel extends JPanel {
                 () -> {
                     List<Path> files = UICapture.screenshotAllScreens();
                     currentMessage.addAttachments(files);
+                    scrollToBottomPreview();
                     return null;
                 }
         );
@@ -340,6 +382,7 @@ public class InputPanel extends JPanel {
                 () -> {
                     List<Path> files = UICapture.screenshotAllWindows();
                     currentMessage.addAttachments(files);
+                    scrollToBottomPreview();
                     return null;
                 }
         );
@@ -487,6 +530,7 @@ public class InputPanel extends JPanel {
         this.currentMessage = new InputUserMessage(agi);
         
         inputTextArea.setText("");
+        undoManager.discardAllEdits();
         
         // Recreate the renderer for the new message.
         // The old renderer's EdtPropertyChangeListener will unbind automatically
