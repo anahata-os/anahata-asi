@@ -15,6 +15,7 @@ import java.time.Instant;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
@@ -143,7 +144,7 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
         // 3. Setup Content Layout
         JXPanel mainContainer = (JXPanel) getContentContainer();
         mainContainer.setLayout(new BorderLayout());
-        mainContainer.setOpaque(true); // Make it opaque to show the background color
+        mainContainer.setOpaque(false); 
         mainContainer.setBorder(BorderFactory.createEmptyBorder(2, 8, 5, 8));
 
         this.centralContainer = new JXPanel();
@@ -244,7 +245,10 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
         
         MattePainter mp = new MattePainter(new GradientPaint(0, 0, startColor, 1, 0, new Color(0,0,0,0)), true);
         setTitlePainter(mp);
-        getContentContainer().setBackground(contentBg);
+        
+        JComponent contentContainer = (JComponent) getContentContainer();
+        contentContainer.setOpaque(isEffectivelyPruned);
+        contentContainer.setBackground(contentBg);
     }
 
     /**
