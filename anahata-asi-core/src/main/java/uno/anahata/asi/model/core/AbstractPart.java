@@ -9,6 +9,7 @@ import lombok.Setter;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.internal.TextUtils;
+import uno.anahata.asi.internal.TokenizerUtils;
 
 /**
  * The abstract base class for all components of a {@link AbstractMessage}.
@@ -174,17 +175,6 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
     }
 
     /**
-     * Determines if this part is eligible for "hard pruning" (permanent removal from history).
-     * In the atomic model, a part is generally only collectable if IT and ALL its 
-     * siblings in the message are effectively pruned.
-     * 
-     * @return {@code true} if the part can be safely removed from history.
-     */
-    public boolean isGarbageCollectable() {
-        return isEffectivelyPruned() && getMessage().isEffectivelyPruned();
-    }
-
-    /**
      * Calculates the remaining depth before this part is auto-pruned.
      * 
      * @return The remaining depth, or a large positive number for indefinite retention.
@@ -288,6 +278,15 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
         
         sb.append("]");
         return sb.toString();
+    }
+
+    /**
+     * Calculates the token count of the metadata header for this part.
+     * 
+     * @return The token count of the metadata header.
+     */
+    public int getMetadataTokenCount() {
+        return TokenizerUtils.countTokens(createMetadataHeader());
     }
 
     /**
