@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -251,22 +252,51 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
 
     /**
      * Performs a hard prune on the entire agi history. 
-     * This implementing the Atomic Message model: messages stay structurally 
-     * intact until all their parts are collectable. Heavy parts (Blobs/Thoughts) 
-     * are surgically removed when they expire.
+     * In the strict atomic model, messages stay structurally intact until 
+     * all their parts are collectable. 
      */
     private void hardPrune() {
-        // Pass 1: Surgical removal of collectable parts (Blobs, Thoughts, etc.)
-        for (AbstractMessage message : history) {
-            List<AbstractPart> allParts = new ArrayList<>(message.getParts(true));
-            for (AbstractPart ap : allParts) {
-                if (ap.isGarbageCollectable()) {
-                    ap.remove();
-                }
-            }
+        List<AbstractMessage> toRemove = history.stream()
+                .filter(AbstractMessage::isGarbageCollectable)
+                .collect(Collectors.toList());
+        
+        for (AbstractMessage msg : toRemove) {
+            int tokens = msg.getTokenCount(true);
+            log.info("Garbage collecting message turn {} ({} tokens recycled)", msg.getSequentialId(), tokens);
+            history.remove(msg);
         }
-        // Pass 2: Atomic removal of collectable messages
-        history.removeIf(AbstractMessage::isGarbageCollectable);
+        
+        if (!toRemove.isEmpty()) {
+            propertyChangeSupport.firePropertyChange("history", null, history);
+        }
+    }
+
+    /**
+     * Calculates the total token count of all parts in the history that 
+     * are currently effectively pruned.
+     * 
+     * @return The total pruned token count.
+     */
+    public int getAllEffectivelyPrunedPartsTokenCount() {
+        return history.stream()
+                .flatMap(m -> m.getParts().stream())
+                .filter(AbstractPart::isEffectivelyPruned)
+                .mapToInt(AbstractPart::getTokenCount)
+                .sum();
+    }
+
+    /**
+     * Calculates the total token count of the metadata headers for all parts 
+     * in the history that are currently effectively pruned.
+     * 
+     * @return The total pruned metadata token count.
+     */
+    public int getAllEffectivelyPrunedMetadataTokenCount() {
+        return history.stream()
+                .flatMap(m -> m.getParts().stream())
+                .filter(AbstractPart::isEffectivelyPruned)
+                .mapToInt(AbstractPart::getMetadataTokenCount)
+                .sum();
     }
 
     /**
