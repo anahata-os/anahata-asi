@@ -114,7 +114,11 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     
     /**
      * Sets the status of the tool execution and fires a property change event.
-     * Also updates the token count.
+     * Also updates the token count and checks if the tool prompt is complete.
+     * 
+     * <p>Metabolic Optimization: We only call autoSave() when reaching a terminal 
+     * state (not PENDING or EXECUTING). This ensures transactional saves 
+     * without redundant disk IO during tool conception or activation.</p>
      * 
      * @param status The new status.
      */
@@ -125,11 +129,11 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
         propertyChangeSupport.firePropertyChange("status", oldStatus, status);
         if (getAgi() != null) {
             getAgi().checkToolPromptCompletion();
-            // check if this would make more sense 
-            if (oldStatus != null && status != ToolExecutionStatus.EXECUTING) {
+            
+            // Transactional Save Guard: Save on terminal states only.
+            if (status != ToolExecutionStatus.PENDING && status != ToolExecutionStatus.EXECUTING) {
                 getAgi().autoSave();
             }
-            
         }
     }
     
