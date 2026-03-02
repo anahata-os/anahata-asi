@@ -168,15 +168,6 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
 
     /**
      * {@inheritDoc}
-     * A model message is not garbage collectable if it is currently streaming.
-     */
-    @Override
-    public boolean isGarbageCollectable() {
-        return super.isGarbageCollectable() && !streaming;
-    }
-
-    /**
-     * {@inheritDoc}
      * A model message is never effectively pruned while it is streaming.
      */
     @Override
@@ -282,20 +273,11 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
             .map(AbstractToolCall::getResponse)
             .filter(response -> response.getStatus() == ToolExecutionStatus.PENDING)
             .forEach(AbstractToolResponse::execute);
+        // Collapse after execution
+        getToolCalls().forEach(tc -> tc.setExpanded(false));
     }
 
-    /**
-     * Rejects all tool calls in this message that are currently in a PENDING state.
-     * 
-     * @param reason The reason for rejection.
-     */
-    public void rejectAllPending(String reason) {
-        getToolCalls().stream()
-            .map(AbstractToolCall::getResponse)
-            .filter(response -> response.getStatus() == ToolExecutionStatus.PENDING)
-            .forEach(response -> response.reject(reason));
-    }
-
+    
     /**
      * Sets all tool calls in this message that are currently in a PENDING state to DECLINED.
      */
@@ -304,6 +286,8 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
             .map(AbstractToolCall::getResponse)
             .filter(response -> response.getStatus() == ToolExecutionStatus.PENDING)
             .forEach(response -> response.setStatus(ToolExecutionStatus.DECLINED));
+        // Collapse after declining
+        getToolCalls().forEach(tc -> tc.setExpanded(false));
     }
 
     /**
@@ -314,6 +298,8 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
         if (hasPendingTools()) {
             getAgi().getStatusManager().fireStatusChanged(AgiStatus.AUTO_EXECUTING_TOOLS);
             executeAllPending();
+        } else {
+            getToolCalls().forEach(tc -> tc.setExpanded(false));
         }
     }
     
