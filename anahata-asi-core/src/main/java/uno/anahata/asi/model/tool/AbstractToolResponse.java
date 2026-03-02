@@ -124,7 +124,10 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
      */
     public void setStatus(ToolExecutionStatus status) {
         ToolExecutionStatus oldStatus = this.status;
-        this.status = status;
+        if (oldStatus == status) {
+            return;
+        }
+        this.status = status;        
         updateTokenCount();
         propertyChangeSupport.firePropertyChange("status", oldStatus, status);
         if (getAgi() != null) {
@@ -132,6 +135,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
             
             // Transactional Save Guard: Save on terminal states only.
             if (status != ToolExecutionStatus.PENDING && status != ToolExecutionStatus.EXECUTING) {
+                log.info("Calling autoSave on tool call status changed  " + oldStatus + "->" + status + " (" + this + ")");
                 getAgi().autoSave();
             }
         }
