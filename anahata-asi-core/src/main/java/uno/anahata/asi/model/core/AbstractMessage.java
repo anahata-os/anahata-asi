@@ -222,15 +222,12 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
 
     /**
      * Determines if this message is eligible for "hard pruning" (permanent removal from history).
-     * In the atomic model, a message is only collectable if ALL its parts are collectable.
+     * In the atomic model, a message is collectable if it is effectively pruned.
      * 
      * @return {@code true} if the message can be safely removed from history.
      */
     public boolean isGarbageCollectable() {
-        if (isAnyPinned()) {
-            return false;
-        }
-        return parts.isEmpty() || parts.stream().allMatch(AbstractPart::isGarbageCollectable);
+        return isEffectivelyPruned();
     }
 
     /**
