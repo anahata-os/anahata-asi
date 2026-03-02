@@ -61,6 +61,7 @@ public class FullTextFileCreateRenderer implements ParameterRenderer<FullTextFil
         this.call = call;
         this.paramName = paramName;
         this.value = value;
+        container.setOpaque(false);
     }
 
     /** {@inheritDoc} */
@@ -174,6 +175,7 @@ public class FullTextFileCreateRenderer implements ParameterRenderer<FullTextFil
      */
     private JPanel createHeaderPanel(ToolExecutionStatus status) {
         JPanel header = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        header.setOpaque(false);
         
         String labelText = (status == ToolExecutionStatus.PENDING) ? "Proposed New File:" : "Created File:";
         JLabel label = new JLabel(labelText);
