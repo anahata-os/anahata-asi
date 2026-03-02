@@ -57,18 +57,4 @@ public class ModelTextPart extends TextPart implements ThoughtSignature {
         }
         return super.getDefaultMaxDepth();
     }
-
-    
-    /**
-     * {@inheritDoc}
-     * Internal model thoughts are surgically removable when expired, 
-     * even if their parent message is still active.
-     */
-    @Override
-    public boolean isGarbageCollectable() {
-        if (isThought()) {
-            return isEffectivelyPruned();
-        }
-        return super.isGarbageCollectable();
-    }
 }
