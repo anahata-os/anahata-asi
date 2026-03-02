@@ -74,6 +74,9 @@ public class ConversationPanel extends JPanel {
         this.scrollPane.setBorder(null);
         this.scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         add(scrollPane, BorderLayout.CENTER);
+        
+        // Enable File Drop
+        setTransferHandler(new AgiTransferHandler(agiPanel));
 
         // --- Smart Scroll Logic (Opt-Out) ---
         
