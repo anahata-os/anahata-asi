@@ -37,6 +37,8 @@ public class AgiPanel extends JPanel {
     private final ContextPanel contextPanel;
     /** The panel providing support links and community resources. */
     private final SupportPanel supportPanel;
+    /** The panel for monitoring GC metrics. */
+    private final CwGcPanel cwGcPanel;
     /** The panel for user input. */
     private final InputPanel inputPanel;
     /** The header panel. */
@@ -71,12 +73,17 @@ public class AgiPanel extends JPanel {
         this.configPanel = new RequestConfigPanel(this);
         this.contextPanel = new ContextPanel(this);
         this.supportPanel = new SupportPanel();
+        this.cwGcPanel = new CwGcPanel(this);
         this.inputPanel = new InputPanel(this); 
         this.headerPanel = new HeaderPanel(this);
         this.toolbarPanel = new ToolbarPanel(this); 
         this.statusPanel = new StatusPanel(this); 
         this.conversationPanel = new ConversationPanel(this); 
         this.candidateSelectionPanel = new CandidateSelectionPanel(this);
+        
+        // GLOBAL TRANSFER HANDLER: Install on the root panel so files can be dropped 
+        // anywhere in the Agi area to be attached.
+        setTransferHandler(new AgiTransferHandler(this));
     }
 
     /**
@@ -94,6 +101,7 @@ public class AgiPanel extends JPanel {
         tabbedPane.addTab("Agi", conversationPanel);
         tabbedPane.addTab("Config", createScrollPane(configPanel));
         tabbedPane.addTab("Context", contextPanel);
+        tabbedPane.addTab("CwGC", cwGcPanel);
         tabbedPane.addTab("Support", createScrollPane(supportPanel));
 
         // Create a panel to hold CandidateSelectionPanel, InputPanel and StatusPanel
@@ -145,6 +153,7 @@ public class AgiPanel extends JPanel {
             conversationPanel.reload();
             // Note: RequestConfigPanel doesn't have a reload() yet, but it's initialized with agi
             contextPanel.reload();
+            cwGcPanel.reload();
             statusPanel.reload();
             inputPanel.reload();
             toolbarPanel.reload();
