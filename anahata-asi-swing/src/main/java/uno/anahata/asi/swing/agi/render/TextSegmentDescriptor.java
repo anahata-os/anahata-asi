@@ -3,7 +3,6 @@
  */
 package uno.anahata.asi.swing.agi.render;
 
-import javax.swing.text.EditorKit;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.render.editorkit.EditorKitProvider;
@@ -46,14 +45,15 @@ public record TextSegmentDescriptor(TextSegmentType type, String content, String
         EditorKitProvider editorKitProvider = agiPanel.getAgiConfig().getEditorKitProvider();
         if (editorKitProvider != null) {
             try {
-                EditorKit kit = editorKitProvider.getEditorKitForLanguage(language);
-                if (kit != null) {
-                    return new JEditorPaneCodeBlockSegmentRenderer(agiPanel, content, language, kit);
-                }
+                // THE ARCHITECTURAL GATEWAY: Always use the provider's factory to allow
+                // platform-specific renderers (like NetBeans' NbCodeBlockSegmentRenderer)
+                // to be instantiated with full IDE integration.
+                return editorKitProvider.createRenderer(agiPanel, content, language);
             } catch (Exception e) {
-                log.error("Failed to obtain EditorKit for language: {}", language, e);
+                log.error("Failed to create code block renderer via provider for language: {}", language, e);
             }
         }
+        // Fallback for standalone mode without a specialized provider
         return new RSyntaxTextAreaCodeBlockSegmentRenderer(agiPanel, content, language);
     }
 }
