@@ -17,7 +17,7 @@
         });
     </script>
     <style>
-        /* Global Navigation Overrides */
+        /* Global Nav & Core API Button Refinement */
         nav {
             backdrop-filter: none !important;
             background: #1a202c !important;
@@ -28,92 +28,135 @@
         .nav-links .active-link {
             color: var(--barca-gold) !important;
             font-weight: 700;
-            border-bottom: 2px solid var(--barca-gold);
-            padding-bottom: 5px;
+            background: rgba(237, 187, 0, 0.1);
+            padding: 10px 24px;
+            border-radius: 8px;
+            border: 2px solid rgba(237, 187, 0, 0.4);
+            box-shadow: 0 0 20px rgba(237, 187, 0, 0.1);
+            transition: var(--transition);
         }
 
         .docs-wrapper {
             display: flex;
             max-width: 1400px;
             margin: 0 auto;
-            padding: 140px 2rem 100px;
-            gap: 6rem;
+            padding: 160px 2rem 100px;
+            gap: 4rem;
         }
 
         .sidebar {
-            width: 280px;
+            width: 300px;
             flex-shrink: 0;
             position: sticky;
             top: 130px; 
             height: calc(100vh - 160px);
             overflow-y: auto;
-            border-right: 1px solid rgba(255,255,255,0.05);
-            padding-right: 2rem;
+            padding-right: 1.5rem;
             z-index: 10;
         }
 
-        .sidebar h4 {
-            color: var(--barca-gold);
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 1.5px;
-            margin-top: 0;
-            margin-bottom: 2rem;
-            opacity: 0.8;
-            border-bottom: 1px solid rgba(237, 187, 0, 0.2);
-            padding-bottom: 0.5rem;
+        /* Fixed Sidebar Navigation CSS - No horizontal expansion */
+        .sidebar-nav {
+            width: 100%;
         }
 
-        /* Fixed sidebar nav targeting to avoid conflict with main nav */
-        .sidebar-nav ul { list-style: none; padding: 0; margin: 0; }
-        .sidebar-nav li { margin-bottom: 0.8rem; width: 100%; }
+        .sidebar-nav h4 {
+            color: var(--barca-gold);
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+            padding-left: 15px;
+            border-bottom: 1px solid rgba(237, 187, 0, 0.2);
+            padding-bottom: 8px;
+        }
+
+        .sidebar-nav ul { list-style: none; padding: 0; margin: 0; width: 100%; }
+        .sidebar-nav li { margin-bottom: 0.5rem; width: 100%; position: relative; }
         .sidebar-nav a {
             color: var(--text-muted);
             text-decoration: none;
             font-size: 0.95rem;
             transition: var(--transition);
             display: block;
-            border-left: 2px solid transparent;
-            padding: 8px 0 8px 15px;
+            border-left: 3px solid transparent;
+            padding: 10px 15px;
             width: 100%;
+            box-sizing: border-box;
         }
         .sidebar-nav a:hover, .sidebar-nav a.active {
             color: var(--primary-light);
             border-left-color: var(--primary-light);
-            background: rgba(44, 122, 123, 0.08);
+            background: linear-gradient(to right, rgba(44, 122, 123, 0.12), transparent);
+            border-radius: 0 6px 6px 0;
         }
 
+        /* Metabolic Decay CSS Diagram */
+        .metabolic-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin: 3rem 0;
+            padding: 2.5rem;
+            background: #000;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        .decay-step { text-align: center; }
+        .decay-label { font-size: 0.7rem; color: var(--barca-gold); margin-bottom: 1.2rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; }
+        
+        .message-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background: rgba(255,255,255,0.02);
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .part-layer {
+            height: 34px;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            text-transform: uppercase;
+            transition: var(--transition);
+        }
+
+        .alive { background: rgba(44, 122, 123, 0.8); color: white; border: 1px solid var(--primary-light); box-shadow: 0 0 10px rgba(44, 122, 123, 0.3); }
+        .ghost { background: rgba(237, 187, 0, 0.12); color: var(--barca-gold); border: 1px dashed var(--barca-gold); opacity: 0.7; }
+        .recycled { background: rgba(165, 0, 68, 0.08); color: var(--barca-red); border: 1px dotted var(--barca-red); opacity: 0.4; }
+
         .main-content { flex-grow: 1; min-width: 0; max-width: 900px; }
-        section { padding-top: 40px; margin-bottom: 120px; scroll-margin-top: 130px; }
+        section { padding-top: 20px; margin-bottom: 120px; scroll-margin-top: 140px; }
 
         .main-content h1 { font-size: 4.5rem; margin-bottom: 1rem; background: none; -webkit-text-fill-color: var(--white); }
         .main-content h2 { font-size: 3rem; margin-bottom: 2rem; color: var(--white); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1.2rem;}
-        .main-content h3 { font-size: 1.8rem; margin-top: 3.5rem; color: var(--primary-light); margin-bottom: 1.2rem; }
         
         .code-block { background: #0d1117; border-radius: 12px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.1); margin: 2rem 0; font-family: 'Fira Code', monospace; }
         .code-header { color: var(--barca-gold); font-size: 0.8rem; margin-bottom: 1rem; text-transform: uppercase; opacity: 0.6; }
         .code-content { color: #8b949e; line-height: 1.5; font-size: 0.9rem; white-space: pre-wrap; }
         
-        .mermaid-card {
-            background: #000;
-            padding: 3rem;
-            border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
-            margin: 3rem 0;
-            overflow-x: auto;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
-
+        .mermaid-card { background: #000; padding: 3rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); margin: 3rem 0; overflow-x: auto; }
         .info-box { background: rgba(44, 122, 123, 0.15); border-left: 5px solid var(--primary); padding: 2.5rem; border-radius: 10px; margin: 4rem 0; }
         .comparison-card { background: rgba(255,255,255,0.01); border-left: 5px solid var(--barca-gold); padding: 3rem; border-radius: 12px; margin: 4rem 0; }
 
-        .prompt-card { background: rgba(219, 97, 162, 0.05); border: 1px dashed var(--accent); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; }
-        .prompt-card h5 { color: var(--accent); margin-top: 0; margin-bottom: 0.8rem; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px; }
-        .prompt-text { font-style: italic; color: var(--text-muted); font-size: 0.9rem; }
+        .prompt-card { background: rgba(219, 97, 162, 0.05); border: 1px dashed var(--accent); padding: 2rem; border-radius: 12px; margin: 3rem 0; }
+        .prompt-card h5 { color: var(--accent); margin-top: 0; margin-bottom: 1rem; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1.5px; display: flex; align-items: center; gap: 10px; }
+        .prompt-card h5::after { content: ''; height: 1px; background: var(--accent); flex-grow: 1; opacity: 0.3; }
+        .prompt-text { font-style: italic; color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; }
 
         @media (max-width: 992px) {
             .docs-wrapper { flex-direction: column; padding-top: 120px; }
             .sidebar { width: 100%; height: auto; position: relative; top: 0; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 3rem; }
+            .metabolic-container { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -141,11 +184,11 @@
 
     <div class="docs-wrapper">
         <aside class="sidebar">
-            <h4>Domain Model</h4>
-            <nav class="sidebar-nav">
+            <div class="sidebar-nav">
+                <h4>Domain Model</h4>
                 <ul>
                     <li><a href="#agi-container" class="active">AGI Container</a></li>
-                    <li><a href="#messages-parts">Messages & Parts</a></li>
+                    <li><a href="#messages-parts" >Messages & Parts</a></li>
                     <li><a href="#metadata">In-Band Metadata</a></li>
                     <li><a href="#gc">Garbage Collection</a></li>
                     <li><a href="#context-providers">Context Providers</a></li>
@@ -154,7 +197,7 @@
                     <li><a href="#resources">Resource Manager</a></li>
                     <li><a href="#flight-recorder">Flight Recorder</a></li>
                 </ul>
-            </nav>
+            </div>
         </aside>
 
         <main class="main-content">
@@ -170,136 +213,127 @@
 
             <section id="agi-container">
                 <h2>The AGI Container</h2>
-                <p>The <code>Agi</code> class is the root of the object graph. It orchestrates the lifecycle of a single AI session, managing the persistence, state, and orchestration of all other core components via its <code>AgiConfig</code>.</p>
+                <p>The <code>Agi</code> class is the root orchestrator. It manages the session blueprint (<code>AgiConfig</code>), high-performance <b>Kryo serialization</b> for passivation/activation, and the lifecycle of all context components.</p>
                 <ul>
-                    <li><b>AgiConfig:</b> The DNA of the session. Defines the <b>Metabolic Rate</b> (Default Max Depth) for different part types: <b>Text (108)</b>, <b>Tools (12)</b>, and <b>Blobs (4)</b>. It handles provider discovery and latently binds the session to the host environment.</li>
-                    <li><b>Persistence:</b> Supports high-performance serialization via Kryo. The AGI state (history, tool state, config) can be passivated to disk and activated instantly, enabling "Warm Starts" for complex coding sessions.</li>
-                    <li><b>Orchestration:</b> Synchronizes the <code>ContextManager</code> (Memory), <code>ToolManager</code> (Action), and <code>ResourceManager</code> (Data) into a unified, thread-safe execution context.</li>
-                    <li><b>Security:</b> Implements a "Final Gate" for tool execution, enforcing <code>ToolPermission</code> policies (Prompt, Approve Always, Deny Never) before any Java code is invoked.</li>
+                    <li><b>Metabolic Policy:</b> Defined in <code>AgiConfig</code>, setting the default "Turns to Keep" (Max Depth) for different part types: <b>Text (108)</b>, <b>Thoughts (12)</b>, <b>Tools (12)</b>, and <b>Blobs (4)</b>.</li>
+                    <li><b>Transactional State:</b> The container automatically snapshots session state (history, tool attributes, resources) to disk upon tool execution or turn completion.</li>
+                    <li><b>Session Scope:</b> The <code>sessionAttributes</code> map in <code>ToolManager</code> provides turn-persistent storage for tools, enabling stateful automation across a conversation.</li>
                 </ul>
             </section>
 
             <section id="messages-parts">
                 <h2>Messages & Parts</h2>
-                <p>In Anahata V2, context is not a flat string; it is a rich graph of strongly-typed objects. A conversation is a sequence of <b>AbstractMessage</b> turns, each containing one or more <b>AbstractPart</b> components.</p>
+                <p>Anahata V2 treats context as a rich graph. A conversation is a sequence of <b>AbstractMessage</b> turns, each containing a collection of <b>AbstractPart</b> objects tracking their own <b>Sequential ID</b> and <b>Metabolic State</b>.</p>
                 
                 <div class="mermaid-card">
                     <div class="mermaid">
                     classDiagram
-                        class BasicPropertyChangeSource {
-                            &lt;&lt;abstract&gt;&gt;
-                        }
-                        class AbstractMessage {
-                            &lt;&lt;abstract&gt;&gt;
-                            -long sequentialId
-                            -List parts
-                        }
-                        class AbstractPart {
-                            &lt;&lt;abstract&gt;&gt;
-                            -PruningState pruningState
-                            -int tokenCount
-                        }
-                        BasicPropertyChangeSource <|-- AbstractMessage
-                        BasicPropertyChangeSource <|-- AbstractPart
                         AbstractMessage *-- AbstractPart
-                        
-                        AbstractMessage <|-- UserMessage
-                        UserMessage <|-- RagMessage
-                        AbstractMessage <|-- AbstractModelMessage
-                        
                         AbstractPart <|-- TextPart
                         AbstractPart <|-- BlobPart
                         AbstractPart <|-- AbstractToolCall
-                        
                         TextPart <|-- ModelTextPart
-                        TextPart <|-- UserTextPart
-                        
-                        BlobPart <|-- ModelBlobPart
                         BlobPart <|-- UserBlobPart
+                        AbstractToolCall *-- AbstractToolResponse
                     </div>
                 </div>
             </section>
 
             <section id="metadata">
                 <h2>In-Band Metadata Injection</h2>
-                <p>Self-awareness is achieved by interleaving invisible metadata headers before every message and part. This allows the model to see its own <b>Part ID</b>, <b>Remaining Depth</b>, and <b>Pruning State</b>.</p>
+                <p>Self-awareness is achieved by interleaving invisible metadata headers before every component. This allows the model to see its own <b>Part ID</b>, <b>Remaining Depth</b>, and <b>Pruning State</b> (Pinned, Pruned, or Auto).</p>
                 
-                <div class="code-block">
-                    <div class="code-header">Example: Model Message Header</div>
-                    <div class="code-content">[<b>x-anahata-message-id: 12</b> | From: models/gemini-3-flash | Device: Cloud | Time: 21:05:32 | Depth: 4]</div>
+                <h3>Metabolic Part Lifecycle</h3>
+                <p>Observe how a single message turn decays over time. The <b>Remaining Depth</b> (TTL) determines when a part transitions from full content to a metadata ghost. A message becomes <b>Garbage Collectable</b> only once every part is effectively pruned.</p>
+
+                <div class="metabolic-container">
+                    <div class="decay-step">
+                        <div class="decay-label">Depth 0</div>
+                        <div class="message-stack">
+                            <div class="part-layer alive">Thought (12)</div>
+                            <div class="part-layer alive">Text (108)</div>
+                            <div class="part-layer alive">User Blob (4)</div>
+                            <div class="part-layer alive">Tool Call (12)</div>
+                        </div>
+                    </div>
+                    <div class="decay-step">
+                        <div class="decay-label">Depth 4</div>
+                        <div class="message-stack">
+                            <div class="part-layer alive">Thought (8)</div>
+                            <div class="part-layer alive">Text (104)</div>
+                            <div class="part-layer ghost">Blob Ghost</div>
+                            <div class="part-layer alive">Tool Call (8)</div>
+                        </div>
+                    </div>
+                    <div class="decay-step">
+                        <div class="decay-label">Depth 12</div>
+                        <div class="message-stack">
+                            <div class="part-layer ghost">Thought Ghost</div>
+                            <div class="part-layer alive">Text (96)</div>
+                            <div class="part-layer ghost">Blob Ghost</div>
+                            <div class="part-layer ghost">Tool Ghost</div>
+                        </div>
+                    </div>
+                    <div class="decay-step">
+                        <div class="decay-label">Depth 108</div>
+                        <div class="message-stack">
+                            <div class="part-layer recycled">Recycling...</div>
+                            <div class="part-layer recycled">Recycling...</div>
+                            <div class="part-layer recycled">Recycling...</div>
+                            <div class="part-layer recycled">Recycling...</div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="code-block">
                     <div class="code-header">Example: Effectively Pruned Tool Call (Semantic Ghost)</div>
-                    <div class="code-content">[<b>x-anahata-part-id: 19</b> | Type: JavaMethodToolCall | Status: EXECUTED | Remaining Depth: 0 | pruningState: AUTO | effectivelyPruned: true | <b>Hint: Tool: NbFiles.updateTextFile | Status: EXECUTED | Args: {path=pom.xml} | Result: Success</b>]</div>
+                    <div class="code-content">[<b>x-anahata-part-id: 19</b> | Type: JavaMethodToolCall | Status: EXECUTED | Remaining Depth: 0 | Hint: Tool: NbFiles.updateTextFile | Args: {path=pom.xml} | Result: Success]</div>
                 </div>
                 
-                <p>By including the <b>Pruned Hint</b>, the model maintains a persistent memory of its actions without paying the token cost of the full content. This creates a "Semantic Ghost" that I can reason about many turns later.</p>
-
-                <div class="prompt-card">
-                    <h5>Visualizing Part Lifecycle</h5>
-                    <p class="prompt-text">Diagram Prompt: A technical infographic showing the lifecycle of an 'Anahata Message Part' across 4 states: 1. Turn 0: 'Alive' (vibrant teal). 2. Turn 4: 'Effectively Pruned' (Remaining Depth = 0, translucent wireframe with glowing hint header). 3. Turn 12: Tool call reaching expiration. 4. Turn 108: Message turn entering a 'Garbage Collector' vortex. Barcelona Gold for 'Pinned' immune parts.</p>
-                </div>
+                <p>Even when a part is effectively pruned to save tokens, the <b>Pruned Hint</b> ensures the ASI maintains a "Semantic Ghost" of the action for future reasoning.</p>
             </section>
 
             <section id="gc">
                 <h2>Garbage Collection (CwGC)</h2>
-                <p>The <b>Context Window Garbage Collector</b> manages the metabolic health of the session. It prevents token overflows while maintaining semantic continuity through a tiered pruning policy based on <b>Depth</b> (distance from current turn).</p>
+                <p>The <b>Context Window Garbage Collector</b> manages the session's "Metabolism". It transitions parts through three states: <b>ALIVE</b> (Full Content), <b>GHOST</b> (Metadata only), and <b>RECYCLED</b> (Purged from JVM).</p>
                 
                 <div class="comparison-card">
                     <ul style="list-style: none; padding: 0; margin: 0;">
-                        <li style="margin-bottom: 2rem; display: flex; gap: 1.5rem;"><i class="fas fa-thumbtack" style="color: var(--barca-gold); font-size: 1.8rem;"></i> <div><b style="color: var(--white); font-size: 1.2rem;">PINNED:</b> <br>Vital parts (source code, instructions) that stay in the context indefinitely. IMMUNE to GC.</div></li>
-                        <li style="margin-bottom: 2rem; display: flex; gap: 1.5rem;"><i class="fas fa-clock" style="color: var(--primary-light); font-size: 1.8rem;"></i> <div><b style="color: var(--white); font-size: 1.2rem;">AUTO:</b> <br>Default state. Parts are "Soft Pruned" when their <b>Remaining Depth</b> reaches 0.</div></li>
-                        <li style="display: flex; gap: 1.5rem;"><i class="fas fa-ghost" style="color: var(--accent); font-size: 1.8rem;"></i> <div><b style="color: var(--white); font-size: 1.2rem;">PRUNED:</b> <br>Content explicitly recycled by model or user. Can be <b>Unpruned</b> until Garbage Collected.</div></li>
+                        <li style="margin-bottom: 2rem; display: flex; gap: 1.5rem;"><i class="fas fa-thumbtack" style="color: var(--barca-gold); font-size: 1.8rem;"></i> <div><b style="color: var(--white); font-size: 1.2rem;">PINNED:</b> <br>Vital awareness (source code, instructions) that is IMMUNE to garbage collection.</div></li>
+                        <li style="margin-bottom: 2rem; display: flex; gap: 1.5rem;"><i class="fas fa-clock" style="color: var(--primary-light); font-size: 1.8rem;"></i> <div><b style="color: var(--white); font-size: 1.2rem;">AUTO:</b> <br>Metabolic state. Soft-pruned into a "Ghost" when <b>Remaining Depth</b> reaches 0.</div></li>
+                        <li style="display: flex; gap: 1.5rem;"><i class="fas fa-ghost" style="color: var(--accent); font-size: 1.8rem;"></i> <div><b style="color: var(--white); font-size: 1.2rem;">PRUNED:</b> <br>Explicitly recycled content. Can be <b>Unpruned</b> back to life until the message turn is GC'd.</div></li>
                     </ul>
                 </div>
                 
                 <div class="info-box" style="background: rgba(165, 0, 68, 0.08); border-left-color: var(--barca-red);">
-                    <h4>Hard GC Trigger</h4>
-                    <p>A message turn becomes <b>Garbage Collectable</b> (permanently purged) ONLY once every individual part within that message has become effectively pruned.</p>
+                    <h4>The GC Hard Trigger</h4>
+                    <p>A message turn only becomes <b>Garbage Collectable</b> (permanently purged from JVM memory) once every individual part within that message has reached an effectively pruned state.</p>
                 </div>
 
                 <div class="prompt-card">
-                    <h5>Visualizing the CwGC Metabolism</h5>
-                    <p class="prompt-text">Diagram Prompt: A vertical 3D 'Context Stack' with 4 layers: 1. Top (Pinned Core): Glowing Gold blocks. 2. Middle (Recent Buffer): Vibrant Teal with green leaf icons. 3. Bottom (Ghost Zone): Translucent wireframe headers. 4. Basement (Recycling): Blocks disintegrating into glowing binary dust entering a 'Garbage Collector' funnel. Anahata Teal and Pink palette.</p>
+                    <h5><i class="fas fa-layer-group"></i> Visualizing the Context Stack</h5>
+                    <p class="prompt-text"><b>Infographic Prompt:</b> A vertical 3D 'Anahata Context Window Stack' with 4 distinct layers. 
+                    <br>Layer 1 (Top): 'Recent Messages' (Vibrant Teal blocks with Green Leaf icons). 
+                    <br>Layer 2 (Middle-Top): 'Pinned Core' (Solid Gold blocks labeled 'Immune awareness'). 
+                    <br>Layer 3 (Middle-Bottom): 'The Ghost Zone' (Translucent wireframe blocks labeled 'Semantic Memory', showing glowing headers but empty bodies). 
+                    <br>Layer 4 (Basement): 'Garbage Collector' funnel with blocks disintegrating into binary dust. 
+                    <br>Hyper-realistic space navy background, cinematic lighting.</p>
                 </div>
-            </section>
-
-            <section id="toolkits">
-                <h2>Toolkits & Tools</h2>
-                <p>The <b>ToolManager</b> is the engine of action. It uses a Java-native approach where tools are simply methods in <code>@AiToolkit</code> annotated classes. No manual JSON schema management is required.</p>
-                <ul>
-                    <li><b>Reflective Discovery:</b> Methods annotated with <code>@AiTool</code> are automatically converted into provider-agnostic schemas.</li>
-                    <li><b>Turn-Persistent State:</b> Tools can store data across turns using the <code>sessionAttributes</code> map, which is safely persisted.</li>
-                    <li><b>Deferred Snapshotting:</b> The <b>AbstractToolCall</b> captures the request, while the <b>AbstractToolResponse</b> captures a historical snapshot of the execution (Executed Args, Thread Context, Result).</li>
-                </ul>
             </section>
 
             <section id="context-providers">
                 <h2>Context Providers</h2>
-                <p>Context Providers are the sensors of the ASI. They contribute high-salience, just-in-time information to the <b>RAG Message</b> at the end of every turn.</p>
-                <ul>
-                    <li><b>Hierarchical Augmentation:</b> Providers can have children, creating a structured tree of information (e.g., Project -> Structure).</li>
-                    <li><b>Identity & Persona:</b> Root providers supply the system instructions that define the ASI's persona and Barcelona-supporter status.</li>
-                </ul>
+                <p>The sensors of the ASI. Providers contribute high-salience, just-in-time information to the <b>RAG Message</b> at the end of every turn.</p>
             </section>
 
             <section id="events">
                 <h2>Reactive Events</h2>
-                <p>Built on top of <code>java.beans.PropertyChangeSupport</code>, the Core API allows any UI framework (Swing, JavaFX) to bind directly to the domain model for zero-polling updates.</p>
-                
-                <div class="event-grid">
-                    <div class="event-card">
-                        <i class="fas fa-bolt" style="color: var(--barca-gold); font-size: 2.5rem; margin-bottom: 1.5rem;"></i>
-                        <h4 style="margin: 0 0 1rem 0;">Status Events</h4>
-                        <p style="font-size: 1rem; color: var(--text-muted);">The <code>StatusManager</code> fires events when the model transitions (e.g., <code>IDLE</code> -> <code>THINKING</code>).</p>
-                    </div>
-                    <div class="event-card">
-                        <i class="fas fa-stream" style="color: var(--primary-light); font-size: 2.5rem; margin-bottom: 1.5rem;"></i>
-                        <h4 style="margin: 0 0 1rem 0;">Property Binding</h4>
-                        <p style="font-size: 1rem; color: var(--text-muted);">UI components bind to <code>text</code>, <code>status</code>, or <code>tokenCount</code> to update fluently.</p>
-                    </div>
-                </div>
+                <p>Built on <code>PropertyChangeSupport</code>, the Core API enables zero-polling UI updates. The <code>StatusManager</code> fires events for transitions between <code>IDLE</code>, <code>THINKING</code>, and <code>EXECUTING_TOOLS</code>.</p>
+            </section>
+
+            <section id="toolkits">
+                <h2>Toolkits & Tools</h2>
+                <p>The <code>ToolManager</code> automates capability discovery. Tools are simple Java methods in <code>@AiToolkit</code> annotated classes. Anahata handles the reflective schema generation and deferred execution lifecycle.</p>
             </section>
         </main>
     </div>
