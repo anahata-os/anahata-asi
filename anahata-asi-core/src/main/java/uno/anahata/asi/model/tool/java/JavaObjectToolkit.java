@@ -16,6 +16,8 @@ import uno.anahata.asi.model.core.Rebindable;
 import uno.anahata.asi.model.tool.AbstractToolkit;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolkit;
+import uno.anahata.asi.tool.AnahataTool;
+import uno.anahata.asi.tool.AnahataToolkit;
 import uno.anahata.asi.tool.ToolContext;
 import uno.anahata.asi.tool.ToolManager;
 
@@ -79,10 +81,11 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
         try {
             this.toolkitInstance = toolClass.getDeclaredConstructor().newInstance();
             if (toolkitInstance instanceof ToolContext tc) {
+                log.info("Onboarding {}", tc);
                 tc.setToolkit(this);
             }
         } catch (Exception e) {
-            throw new IllegalArgumentException("Could not instantiate toolkit class: " + toolClass.getName() + ". It must be public and have a public no-arg constructor.", e);
+            throw new IllegalArgumentException("Could not initialize toolkit class: " + toolClass.getName() + ". It must be public and have a public no-arg constructor.", e);
         }
 
         this.tools = new ArrayList<>();
@@ -91,6 +94,21 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
             if (toolAnnotation != null) {
                 tools.add(new JavaMethodTool(this, method, toolAnnotation));
             }
+        }
+    }
+
+    /**
+     * {@inheritDoc} 
+     * <p>
+     * Implementation details: 
+     * Delegates to the underlying implementation if it is an {@link AnahataToolkit}.
+     * </p>
+     */
+    @Override
+    public void initialize() {
+        if (toolkitInstance instanceof AnahataToolkit at) {
+            log.info("Initializing toolkit implementation: {}", at.getName());
+            at.initialize();
         }
     }
 

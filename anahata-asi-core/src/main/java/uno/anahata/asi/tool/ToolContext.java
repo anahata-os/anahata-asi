@@ -155,12 +155,13 @@ public class ToolContext {
      * @param message The log message to add.
      */
     public void log(String message) {
-        JavaMethodToolResponse response = getResponse();
-        if (response != null) {
+        try {
+            JavaMethodToolResponse response = getResponse();
             response.addLog(message);
-        } else {
-            log.info("[{}] {}", getClass().getName(), message);
+        } catch (Exception e) {
+            log.info("Toolkit log outside tool execution context: [{}] {}", getClass().getSimpleName(), message);
         }
+        
     }
 
     /**

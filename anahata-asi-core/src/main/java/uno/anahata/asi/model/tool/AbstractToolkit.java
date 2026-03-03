@@ -104,4 +104,11 @@ public abstract class AbstractToolkit<T extends AbstractTool<?,?>> {
      * @return the context provider if any.
      */
     public abstract ContextProvider getContextProvider();
+
+    /**
+     * Performs one-time setup after the toolkit is registered.
+     */
+    public void initialize() {
+        // Subclasses can override
+    }
 }

@@ -67,15 +67,38 @@ public abstract class AnahataToolkit extends ToolContext implements ContextProvi
         return getToolManager();
     }
 
+    /** {@inheritDoc} */
     @Override
     public List<ContextProvider> getChildrenProviders() {
         return childrenProviders;
     }
 
+    /**
+     * Rebinds the toolkit after deserialization.
+     * <p>
+     * This method is called by the framework during session activation to restore 
+     * transient state, reconnect listeners, or refresh cached project instances. 
+     * It should not be used for initial setup logic that applies to new sessions.
+     * </p>
+     */
     @Override
     public void rebind() {
         log.info("Rebinding toolkit: {}", getName());
         // Toolkits can override this to restore transient state
+    }
+
+    /**
+     * Performs initial setup for a newly created toolkit instance.
+     * <p>
+     * This method is called exactly once by the {@link ToolManager} after the 
+     * toolkit has been instantiated and registered. It provides a clean hook 
+     * for toolkits to perform one-time initialization logic that requires 
+     * the tool environment to be fully configured, such as scanning for 
+     * project instructions or registering default resources.
+     * </p>
+     */
+    public void initialize() {
+        log.info("Initializing toolkit: {}", getName());
     }
     
 }

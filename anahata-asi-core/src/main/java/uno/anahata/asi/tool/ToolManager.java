@@ -119,11 +119,20 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
      * Scans the given classes for methods annotated with {@link AiTool},
      * creates the corresponding toolkits, and applies any application-wide
      * preferences.
+     * <p>
+     * Implementation details:
+     * Uses a two-pass registration flow. The first pass instantiates and registers
+     * all toolkits in the map. The second pass triggers {@code initialize()} on
+     * each toolkit. This eliminates race conditions where one toolkit needs to
+     * look up another during setup.
+     * </p>
      *
      * @param classes The classes to scan for tools.
      */
     public final void registerClasses(Class<?>... classes) {
         log.info("Registering tool classes...");
+        
+        // Pass 1: Instantiate and Register
         for (Class<?> clazz : classes) {
             try {
                 JavaObjectToolkit toolkit = new JavaObjectToolkit(this, clazz);
@@ -133,6 +142,17 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
                 log.error("Failed to register toolkit for class: {}", clazz.getName(), e);
             }
         }
+        
+        // Pass 2: Initialize
+        log.info("Performing post-registration toolkit initialization...");
+        for (AbstractToolkit<?> toolkit : toolkits.values()) {
+            try {
+                toolkit.initialize();
+            } catch (Exception e) {
+                log.error("Failed to initialize toolkit: {}", toolkit.getName(), e);
+            }
+        }
+        
         applyPreferences();
     }
 
