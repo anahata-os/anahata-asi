@@ -83,6 +83,38 @@ public interface ResourceHandle extends Rebindable {
         return getLastModified() > lastLoadTimestamp;
     }
 
+    /**
+     * Determines if the resource is textual and suitable for a TextView.
+     * <p>
+     * This method provides a centralized capability check. It whitelists common 
+     * structured data formats that may be classified under the 'application/' 
+     * hierarchy but are inherently textual.
+     * </p>
+     * @return true if the resource should be handled by a TextView.
+     */
+    default boolean isTextual() {
+        String mime = getMimeType();
+        if (mime == null) {
+            return false;
+        }
+
+        mime = mime.toLowerCase().split(";")[0].trim();
+
+        if (mime.startsWith("text/")) {
+            return true;
+        }
+
+        // Whitelist for common application-based text formats
+        return mime.endsWith("/xml")
+                || mime.endsWith("/json")
+                || mime.endsWith("/javascript")
+                || mime.contains("yaml")
+                || mime.contains("markdown")
+                || mime.equals("application/x-sh")
+                || mime.equals("application/x-java-source")
+                || mime.equals("application/octet-stream"); // Catch-all for lost/unknown files
+    }
+
     /** 
      * Associates this handle with its parent Resource. 
      * @param owner The owning Resource orchestrator.
