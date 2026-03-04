@@ -70,7 +70,7 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
         
         // Set parent fields
         this.name = toolClass.getSimpleName();
-        this.description = toolkitAnnotation.value();
+        this.description = "fqn:" + toolClass.getName() + "\n" + toolkitAnnotation.value();
         
         int maxDepth = toolkitAnnotation.maxDepth();
         if (maxDepth == 0) {
@@ -203,7 +203,7 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
      * @param clazz The class to start the search from.
      * @return A list of annotated methods, with child methods taking precedence over parent methods.
      */
-    private List<Method> getAllAnnotatedMethods(Class<?> clazz) {
+    private static List<Method> getAllAnnotatedMethods(Class<?> clazz) {
         List<Method> annotatedMethods = new ArrayList<>();
         Set<String> signatures = new HashSet<>();
         Class<?> currentClass = clazz;
