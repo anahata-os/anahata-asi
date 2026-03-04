@@ -165,9 +165,9 @@ public class Session extends AnahataToolkit {
      * @param newState The new pruning state to apply.
      * @return Confirmation message.
      */
-    @AiTool(value = "Bulk sets the pruning/pinning state of all parts for one or more messages. ")
+    @AiTool(value = "Bulk sets the pruningState of all parts for one or more messages. ")
     public String setMessagePruningState(
-            @AiToolParam("The sequential IDs of the messages to update.") List<Long> messageIds,
+            @AiToolParam("The x-anahata-message-id of the messages to update.") List<Long> messageIds,
             @AiToolParam("The new pruning state.") PruningState newState) {
         List<AbstractMessage> history = getAgi().getContextManager().getHistory();
         int count = 0;
@@ -196,9 +196,9 @@ public class Session extends AnahataToolkit {
      * @param newState The new pruning state.
      * @return Confirmation message.
      */
-    @AiTool(value = "Sets the pruning/pinning state of one or more message parts. ")
+    @AiTool(value = "Sets the pruningState state of one or more message parts. ")
     public String setPartPruningState(
-            @AiToolParam("The sequential IDs of the parts to update.") List<Long> partIds,
+            @AiToolParam("The x-anahata-part-id of the parts to update.") List<Long> partIds,
             @AiToolParam("The new pruning state.") PruningState newState) {
         List<AbstractMessage> history = getAgi().getContextManager().getHistory();
         int count = 0;
