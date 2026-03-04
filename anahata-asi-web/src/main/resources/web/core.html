@@ -384,50 +384,50 @@
                 <div class="mermaid-card" onclick="this.classList.toggle('expanded')">
                     <div class="mermaid">
                     classDiagram
-                        class contextProvider {
+                        class ContextProvider {
                             &lt;&lt;interface&gt;&gt;
                             +getId() String
                             +getName() String
                             +isProviding() boolean
-                            +getContextPosition() contextPosition
+                            +getContextPosition() ContextPosition
                             +getSystemInstructions() List
-                            +populateMessage(ragMessage)
+                            +populateMessage(RagMessage)
                         }
-                        class basicContextProvider {
+                        class BasicContextProvider {
                             -String id
                             -String name
                             -boolean providing
                         }
-                        class contextManager {
+                        class ContextManager {
                             -List providers
-                            +addMessage(abstractMessage)
+                            +addMessage(AbstractMessage)
                         }
-                        class resourceManager2 {
+                        class ResourceManager2 {
                             -Map resources
                         }
-                        class resource {
-                            -resourceHandle handle
-                            -resourceView view
-                            -refreshPolicy policy
-                            -contextPosition position
+                        class Resource {
+                            -ResourceHandle handle
+                            -ResourceView view
+                            -RefreshPolicy policy
+                            -ContextPosition position
                         }
-                        class contextPosition {
+                        class ContextPosition {
                             &lt;&lt;enumeration&gt;&gt;
                             SYSTEM_INSTRUCTIONS
                             PROMPT_AUGMENTATION
                         }
-                        class refreshPolicy {
+                        class RefreshPolicy {
                             &lt;&lt;enumeration&gt;&gt;
                             LIVE
                             SNAPSHOT
                         }
-                        contextProvider <|.. basicContextProvider
-                        basicContextProvider <|-- contextManager
-                        basicContextProvider <|-- resourceManager2
-                        basicContextProvider <|-- resource
-                        resource o-- contextPosition
-                        resource o-- refreshPolicy
-                        contextManager "1" *-- "*" contextProvider : manages
+                        ContextProvider <|.. BasicContextProvider
+                        BasicContextProvider <|-- ContextManager
+                        BasicContextProvider <|-- ResourceManager2
+                        BasicContextProvider <|-- Resource
+                        Resource o-- ContextPosition
+                        Resource o-- RefreshPolicy
+                        ContextManager "1" *-- "*" ContextProvider : manages
                     </div>
                 </div>
             </section>
@@ -459,11 +459,11 @@
                     <div class="logic-grid">
                         <div class="logic-card">
                             <h5>Dual-Role Positioning</h5>
-                            <p>A single <code>resource</code> can be loaded into either the <b>SYSTEM_INSTRUCTIONS</b> position (providing high-level behavioral guidance) or the <b>PROMPT_AUGMENTATION</b> (RAG) position for just-in-time facts. The system automatically routes the processed content to the correct section of the prompt.</p>
+                            <p>A single <code>Resource</code> can be loaded into either the <b>SYSTEM_INSTRUCTIONS</b> position (providing high-level behavioral guidance) or the <b>PROMPT_AUGMENTATION</b> (RAG) position for just-in-time facts. The system automatically routes the processed content to the correct section of the prompt.</p>
                         </div>
                         <div class="logic-card">
                             <h5>Reactive Awareness</h5>
-                            <p>The <code>resourceManager2</code> identifies resources that are registered but disabled, injecting their metadata headers into the RAG message. This ensures the ASI remains aware of available but silent assets.</p>
+                            <p>The <code>ResourceManager2</code> identifies resources that are registered but disabled, injecting their metadata headers into the RAG message. This ensures the ASI remains aware of available but silent assets.</p>
                         </div>
                     </div>
                 </div>
@@ -478,18 +478,18 @@
                             F[ftp/http server]
                             NB[netbeans fileObject]
                         end
-                        L --> LH[pathHandle]
-                        Z --> UH[urlHandle]
-                        F --> UH
-                        NB --> NH[nbHandle]
+                        L --> PathHandle
+                        Z --> UrlHandle
+                        F --> UrlHandle
+                        NB --> NbHandle
                         
-                        LH --> R[resource]
-                        UH --> R
-                        NH --> R
+                        PathHandle --> Resource
+                        UrlHandle --> Resource
+                        NbHandle --> Resource
                         
                         subgraph Policies
-                            R -- "Refresh: LIVE" --> P1[Auto-Reload on Turn]
-                            R -- "Refresh: SNAPSHOT" --> P2[Static Memory]
+                            Resource -- "Refresh: LIVE" --> P1[Auto-Reload on Turn]
+                            Resource -- "Refresh: SNAPSHOT" --> P2[Static Memory]
                         end
                         
                         subgraph Delivery
@@ -505,48 +505,48 @@
                 <div class="mermaid-card" onclick="this.classList.toggle('expanded')">
                     <div class="mermaid">
                     classDiagram
-                        class resource {
-                            -resourceHandle handle
-                            -resourceView view
-                            -refreshPolicy policy
-                            -contextPosition position
+                        class Resource {
+                            -ResourceHandle handle
+                            -ResourceView view
+                            -RefreshPolicy policy
+                            -ContextPosition position
                             +reload()
                         }
-                        class resourceHandle {
+                        class ResourceHandle {
                             &lt;&lt;interface&gt;&gt;
-                            +openStream() inputStream
+                            +openStream() InputStream
                             +getLastModified() long
                         }
-                        class resourceView {
+                        class ResourceView {
                             &lt;&lt;interface&gt;&gt;
-                            +reload(resourceHandle)
-                            +populateRag(ragMessage, resourceHandle)
+                            +reload(ResourceHandle)
+                            +populateRag(RagMessage, ResourceHandle)
                         }
-                        class refreshPolicy {
+                        class RefreshPolicy {
                             &lt;&lt;enumeration&gt;&gt;
                             LIVE
                             SNAPSHOT
                         }
-                        class contextPosition {
+                        class ContextPosition {
                             &lt;&lt;enumeration&gt;&gt;
                             SYSTEM_INSTRUCTIONS
                             PROMPT_AUGMENTATION
                         }
-                        class textView
-                        class mediaView
-                        class pathHandle
-                        class urlHandle
-                        class nbHandle
+                        class TextView
+                        class MediaView
+                        class PathHandle
+                        class UrlHandle
+                        class NbHandle
                         
-                        resource o-- resourceHandle
-                        resource o-- resourceView
-                        resource o-- refreshPolicy
-                        resource o-- contextPosition
-                        resourceView <|.. textView
-                        resourceView <|.. mediaView
-                        resourceHandle <|.. pathHandle
-                        resourceHandle <|.. urlHandle
-                        resourceHandle <|.. nbHandle
+                        Resource o-- ResourceHandle
+                        Resource o-- ResourceView
+                        Resource o-- RefreshPolicy
+                        Resource o-- ContextPosition
+                        ResourceView <|.. TextView
+                        ResourceView <|.. MediaView
+                        ResourceHandle <|.. PathHandle
+                        ResourceHandle <|.. UrlHandle
+                        ResourceHandle <|.. NbHandle
                     </div>
                 </div>
             </section>
