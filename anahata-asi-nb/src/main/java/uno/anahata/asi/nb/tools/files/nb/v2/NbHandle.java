@@ -17,6 +17,7 @@ import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileRenameEvent;
 import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
+import uno.anahata.asi.internal.TikaUtils;
 import uno.anahata.asi.model.core.Rebindable;
 import uno.anahata.asi.resource.v2.AbstractResourceHandle;
 
@@ -101,7 +102,17 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
     @Override
     public String getMimeType() {
         FileObject fo = getFileObject();
-        return (fo != null) ? fo.getMIMEType() : "application/octet-stream";
+        String mime = (fo != null) ? fo.getMIMEType() : null;
+        
+        // High-fidelity Fallback: If NB doesn't know, ask Tika
+        if (mime == null || "content/unknown".equals(mime)) {
+            try {
+                return TikaUtils.detectMimeType(new java.io.File(path));
+            } catch (Exception e) {
+                return "application/octet-stream";
+            }
+        }
+        return mime;
     }
 
     /** {@inheritDoc} */
