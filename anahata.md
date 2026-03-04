@@ -10,10 +10,10 @@ The project is divided into the following active modules:
 1. **`anahata-asi-core`**: The foundational, model-agnostic framework. Contains all core interfaces, the domain model, and the tool-chain.
 2. **`anahata-asi-gemini`**: The first provider-specific implementation, acting as an Adapter between the Google Gemini API and the core framework.
 3. **`anahata-asi-swing`**: A reusable, provider-agnostic Swing UI component for building agentic workflows.
-4. **`anahata-asi-cli`**: The command-line interface for interacting with JASI.
-5. **`anahata-asi-standalone`**: A standalone Java application for running JASI outside of an IDE.
-6. **`anahata-asi-web`**: The official JASI Portal and documentation hub.
-7. **`anahata-asi-nb`**: The V2 NetBeans integration module.
+4. **`anahata-asi-cli`**: A draft command-line interface for interacting with ASI, semi discontinued. 
+5. **`anahata-asi-standalone`**: A standalone Java application for running ASI outside of an IDE.
+6. **`anahata-asi-web`**: The official ASI Portal and documentation hub.
+7. **`anahata-asi-nb`**: The NetBeans integration module.
 8. **`anahata-asi-yam`**: The "Yet Another Module" for creative and experimental agentic tools.
 
 ## 3. Strategic Documents
@@ -28,6 +28,7 @@ This project uses a set of key documents to guide development. For detailed info
 > **Simplicity and Stability**
 > The absolute priority for all development is **Simplicity and Stability** (or Stability through Simplicity). These principles rule above all others. 
 
+- **Domain Driven Architecture (DDA)**: The entire multimodule project is based on DDA. Business logic and state transitions must reside in the domain model entities. Anything UI agnositc should be in `anahata-asi-core`. UI components of core in `anahata-asi-swing`.
 - **Architectural Integrity**: We do not implement "dirty hacks" or workarounds to mask architectural flaws. If a design is broken, we fix the design.
 - **JDK 25 Standard**: All modules are built and documented using **JDK 25**.
 - **Engineering over Patching**: There is no requirement for backwards compatibility in this beta stage. Redesign flawed components instead of adding null checks.
@@ -39,8 +40,8 @@ This project uses a set of key documents to guide development. For detailed info
 - **Fail Fast**: Avoid defensive programming like redundant null checks for internal components. Let it fail so root causes can be fixed.
 - **Mandatory Braces**: Always use curly braces `{}` for all control flow statements (`if`, `else`, `for`, `while`, `do`).
 - **Logging Standard**: Use SLF4J (`@Slf4j`) for all logging. Never use `System.out.println()`.
-- **Lombok Purity**: Rely on Maven for Lombok annotation processing; do not add explicit getters/setters for Lombok-managed fields.
-- **Domain Driven Architecture (DDA)**: Business logic and state transitions must reside in `anahata-asi-core`. UI components in `anahata-asi-swing` are for rendering only.
+- **Lombok Purity**: Rely on Lombok annotation processing; do not add explicit getters/setters for Lombok-managed fields.
+- **Static should be static**: A method that does not use instance members should be made static.
 - **Thread Awareness**: Toolkit methods can be invoked from background threads (during AI tool execution) or the Event Dispatch Thread (when triggered by user UI actions). The `SwingUtils` class contains convenience methods like `runInEDT` and `runInEDTAndWait` to help handle these transitions safely.
 - **Reactive UI**: Use `PropertyChangeSource` and `EdtPropertyChangeListener` for UI-to-Domain bindings to ensure EDT execution.
 - **Cross-Platform Support**: All toolkits and utilities must support Linux, Windows, and macOS via `OsUtils` and `SystemUtils`.
