@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.resource.v2;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import lombok.Getter;
@@ -108,13 +109,20 @@ public class Resource extends BasicContextProvider implements Rebindable {
     /** 
      * {@inheritDoc} 
      * <p>Orchestrates the reload and delegates instruction generation to the active view.</p>
+     * <p><b>Guideline Protection Shield:</b> If the resource is in the SYSTEM_INSTRUCTIONS 
+     * position but the view is incapable of providing instructions (binary/media), it 
+     * returns a warning instruction to prevent silent disappearance.</p>
      */
     @Override
     public List<String> getSystemInstructions() throws Exception {
         if (contextPosition == ContextPosition.SYSTEM_INSTRUCTIONS) {
             reloadIfNeeded();
             if (view != null) {
-                return view.getInstructions(handle);
+                List<String> instructions = view.getInstructions(handle);
+                if (instructions.isEmpty()) {
+                    return Collections.singletonList("**WARNING**: Managed resource '" + getName() + "' (" + getMimeType() + ") cannot be used as SYSTEM_INSTRUCTIONS because it is a binary resource. Please move it to PROMPT_AUGMENTATION.");
+                }
+                return instructions;
             }
         }
         return super.getSystemInstructions();
@@ -225,6 +233,7 @@ public class Resource extends BasicContextProvider implements Rebindable {
     /** 
      * {@inheritDoc} 
      * <p>Appends URI, MIME type, and view-specific metadata to the base header.</p>
+     * <p>Includes a status warning if the resource is in an unsupported context position.</p>
      */
     @Override
     public String getHeader() {
@@ -234,6 +243,11 @@ public class Resource extends BasicContextProvider implements Rebindable {
         sb.append("Refresh Policy: ").append(getRefreshPolicy()).append("\n");
         sb.append("Context Position: ").append(getContextPosition()).append("\n");
         sb.append("Last Modified: ").append(handle.getLastModified()).append("\n");
+        
+        if (contextPosition == ContextPosition.SYSTEM_INSTRUCTIONS && view instanceof MediaView) {
+            sb.append("Status: **WARNING** (Position set to SYSTEM_INSTRUCTIONS but resource is binary/media)\n");
+        }
+        
         if (view != null) {
             sb.append("View Details: ").append(view.toString()).append("\n");
         }
