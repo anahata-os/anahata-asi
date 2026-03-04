@@ -13,6 +13,10 @@ import lombok.Setter;
 import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 import uno.anahata.asi.model.provider.AbstractAgiProvider;
+import uno.anahata.asi.resource.v2.PathHandle;
+import uno.anahata.asi.resource.v2.ResourceHandle;
+import uno.anahata.asi.resource.v2.Resources;
+import uno.anahata.asi.resource.v2.UrlHandle;
 import uno.anahata.asi.toolkit.Session;
 import uno.anahata.asi.toolkit.files.Files;
 import uno.anahata.asi.toolkit.Java;
@@ -57,6 +61,7 @@ public class AgiConfig extends BasicPropertyChangeSource {
     {
         // Pre-populate with core, essential tools.
         toolClasses.add(Session.class);
+        toolClasses.add(Resources.class);
         toolClasses.add(Files.class);
         toolClasses.add(Java.class);        
         toolClasses.add(Shell.class);
@@ -210,6 +215,19 @@ public class AgiConfig extends BasicPropertyChangeSource {
      */
     public int getTokenThreshold() {
         return tokenThreshold;
+    }
+
+    /**
+     * Creates a specialized ResourceHandle for the given URI based on the host environment.
+     * 
+     * @param uri The resource URI.
+     * @return A concrete ResourceHandle implementation.
+     */
+    public ResourceHandle createResourceHandle(java.net.URI uri) {
+        if ("file".equalsIgnoreCase(uri.getScheme())) {
+            return new PathHandle(uri.getPath());
+        }
+        return new UrlHandle(uri.toString());
     }
     
     /**

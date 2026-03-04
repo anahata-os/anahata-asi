@@ -28,7 +28,6 @@ This project uses a set of key documents to guide development. For detailed info
 > **Simplicity and Stability**
 > The absolute priority for all development is **Simplicity and Stability** (or Stability through Simplicity). These principles rule above all others. 
 
-- **Ground Truth Discovery**: Never attempt to write or refactor code without first loading the relevant Java types (classes, interfaces, etc.) into your context. Use `LocalFiles.readFile` or `JavaSources.getSource`.
 - **Architectural Integrity**: We do not implement "dirty hacks" or workarounds to mask architectural flaws. If a design is broken, we fix the design.
 - **JDK 25 Standard**: All modules are built and documented using **JDK 25**.
 - **Engineering over Patching**: There is no requirement for backwards compatibility in this beta stage. Redesign flawed components instead of adding null checks.

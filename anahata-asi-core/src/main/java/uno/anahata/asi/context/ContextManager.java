@@ -88,6 +88,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
     public void init() {
         registerContextProvider(new CoreContextProvider(agi));
         registerContextProvider(agi.getToolManager());
+        registerContextProvider(agi.getResourceManager2());
         registerContextProvider(agi.getResourceManager());
     }
 

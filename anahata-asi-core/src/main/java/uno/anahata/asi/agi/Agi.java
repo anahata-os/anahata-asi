@@ -34,6 +34,8 @@ import uno.anahata.asi.model.provider.AbstractModel;
 import uno.anahata.asi.model.provider.ApiCallInterruptedException;
 import uno.anahata.asi.model.provider.ServerTool;
 import uno.anahata.asi.resource.ResourceManager;
+import uno.anahata.asi.resource.v2.ResourceManager2;
+import uno.anahata.asi.resource.v2.Resources;
 import uno.anahata.asi.status.ApiErrorRecord;
 import uno.anahata.asi.status.AgiStatus;
 import uno.anahata.asi.status.StatusManager;
@@ -66,6 +68,9 @@ public class Agi extends BasicPropertyChangeSource {
     
     /** The manager for stateful resources (e.g., files) in the context. */
     private final ResourceManager resourceManager;
+
+    /** The V2 URI-centric Resource Manager. */
+    private final ResourceManager2 resourceManager2;
     
     /** The executor service for background tasks and API calls. */
     private transient ExecutorService executor;
@@ -152,6 +157,7 @@ public class Agi extends BasicPropertyChangeSource {
         this.executor = AiExecutors.newCachedThreadPoolExecutor(config.getSessionId());
         this.contextManager = new ContextManager(this);
         this.resourceManager = new ResourceManager(this);
+        this.resourceManager2 = new ResourceManager2(this);
         this.statusManager = new StatusManager(this);
         this.toolManager = new ToolManager(this);
         this.requestConfig = new RequestConfig(this);
@@ -203,13 +209,9 @@ public class Agi extends BasicPropertyChangeSource {
         this.running = false;
         this.currentExecutionThread = null;
         
-        log.info("Triggering rebind cascade for agi session {}", config.getSessionId());
-        contextManager.rebind();
-        toolManager.rebind();
-        resourceManager.rebind();
+        log.info("Triggering environmental bootstrapping for agi session {}", config.getSessionId());
         
-        // Zombie Message Recovery: If we reloaded a session with a staged message, 
-        // kickstart the processing loop to consume it.
+        // Zombie Message Recovery: If we reloaded a session with a staged message,         // kickstart the processing loop to consume it.
         if (stagedUserMessage != null) {
             log.info("Recovered staged user message during rebind. Triggering send loop.");
             executor.submit(() -> sendMessage(null));

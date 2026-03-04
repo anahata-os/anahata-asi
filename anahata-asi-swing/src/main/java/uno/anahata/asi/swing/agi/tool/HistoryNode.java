@@ -4,16 +4,18 @@
 package uno.anahata.asi.swing.agi.tool;
 
 import java.util.List;
+import javax.swing.Icon;
 import uno.anahata.asi.context.ContextManager;
 import uno.anahata.asi.model.core.AbstractMessage;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.icons.PulseIcon;
 
 /**
  * A context tree node representing the conversation history.
- *
- * @author anahata
  */
 public class HistoryNode extends AbstractContextNode<ContextManager> {
+
+    private static final Icon ICON = new PulseIcon(16);
 
     /**
      * Constructs a new HistoryNode.
@@ -28,6 +30,12 @@ public class HistoryNode extends AbstractContextNode<ContextManager> {
     @Override
     public String getName() {
         return "History";
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Icon getIcon() {
+        return ICON;
     }
 
     /** {@inheritDoc} */

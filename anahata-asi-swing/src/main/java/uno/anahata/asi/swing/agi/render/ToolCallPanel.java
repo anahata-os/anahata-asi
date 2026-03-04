@@ -206,7 +206,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
 
         revertButton = new JButton("Clear response", new DeleteIcon(16));
         revertButton.setToolTipText("Clear execution results, erros and logs and sets the status to DECLINED");
-        revertButton.addActionListener(e -> getPart().getResponse().reset());
+        revertButton.addActionListener(e -> getPart().getResponse().decline());
 
         runButton = new JButton("Run", new RunIcon(16));
         

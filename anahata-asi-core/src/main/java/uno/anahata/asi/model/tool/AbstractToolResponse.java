@@ -194,8 +194,8 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
      * @param reason The reason for the rejection.
      */
     public void reject(String reason) {
-        setStatus(ToolExecutionStatus.DECLINED);
         setErrors(reason);
+        setStatus(ToolExecutionStatus.FAILED);
     }
     
     /**
@@ -217,7 +217,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     /**
      * Resets the response to its initial state, clearing results, errors, logs, and attachments.
      */
-    public void reset() {
+    public void decline() {
         setStatus(ToolExecutionStatus.DECLINED);
         setResult(null);
         setErrors(null);

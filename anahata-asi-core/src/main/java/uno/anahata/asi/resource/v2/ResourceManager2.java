@@ -1,0 +1,155 @@
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
+package uno.anahata.asi.resource.v2;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.context.BasicContextProvider;
+import uno.anahata.asi.context.ContextProvider;
+import uno.anahata.asi.model.core.BasicPropertyChangeSource;
+import uno.anahata.asi.model.core.RagMessage;
+import uno.anahata.asi.model.core.Rebindable;
+
+/**
+ * The next-generation V2 Resource Manager.
+ * <p>
+ * This manager is URI-centric and capability-based. It orchestrates V2 
+ * {@link Resource} instances, providing a reactive and unified context source 
+ * for the AI model. It fires property change events to maintain UI synchronization.
+ * </p>
+ */
+@Slf4j
+@Getter
+@RequiredArgsConstructor
+public class ResourceManager2 extends BasicPropertyChangeSource implements Rebindable, ContextProvider {
+
+    /** The parent agi session. */
+    private final Agi agi;
+
+    /** Registry of V2 resources, keyed by UUID. */
+    private final Map<String, Resource> resources = new LinkedHashMap<>();
+
+    /** Whether this manager is currently active. */
+    @Setter
+    private boolean providing = true;
+
+    /**
+     * Registers a new V2 resource and fires a property change event.
+     * @param resource The resource to register.
+     */
+    public void register(@NonNull Resource resource) {
+        synchronized (resources) {
+            resources.put(resource.getId(), resource);
+            log.info("Registered V2 resource: {} ({})", resource.getName(), resource.getId());
+        }
+        propertyChangeSupport.firePropertyChange("resources", null, getResourcesList());
+    }
+
+    /**
+     * Unregisters a resource and cleans up its handle.
+     * @param id The resource UUID.
+     */
+    public void unregister(@NonNull String id) {
+        Resource res;
+        synchronized (resources) {
+            res = resources.remove(id);
+        }
+        if (res != null) {
+            res.dispose();
+            log.info("Unregistered V2 resource: {} ({})", res.getName(), id);
+            propertyChangeSupport.firePropertyChange("resources", null, getResourcesList());
+        }
+    }
+
+    /**
+     * Returns an unmodifiable list of currently managed resources.
+     * @return The resource list.
+     */
+    public List<Resource> getResourcesList() {
+        synchronized (resources) {
+            return Collections.unmodifiableList(new ArrayList<>(resources.values()));
+        }
+    }
+
+    /**
+     * Finds a managed resource by its URI.
+     * @param uri The URI to search for.
+     * @return Optional containing the resource.
+     */
+    public Optional<Resource> findByUri(@NonNull String uri) {
+        synchronized (resources) {
+            return resources.values().stream()
+                    .filter(r -> r.getHandle().getUri().toString().equals(uri))
+                    .findFirst();
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public List<ContextProvider> getChildrenProviders() {
+        synchronized (resources) {
+            return new ArrayList<>(resources.values());
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void rebind() {
+        log.info("Rebinding ResourceManager2 for session: {}", agi.getConfig().getSessionId());
+        // Internal link restoration is handled by Kryo + RebindableWrapperSerializer
+    }
+
+    /** {@inheritDoc} 
+     * Injects a summary of disabled V2 resources into the RAG message.
+     */
+    @Override
+    public void populateMessage(RagMessage ragMessage) throws Exception {
+        List<Resource> disabled = getResourcesList().stream()
+                .filter(r -> !r.isEffectivelyProviding())
+                .collect(Collectors.toList());
+        
+        if (!disabled.isEmpty()) {
+            StringBuilder sb = new StringBuilder("**Disabled Resources (V2)** (Registered but not effectively providing context):\n");
+            for (Resource r : disabled) {
+                sb.append("\n").append(r.getHeader());
+            }
+            sb.append("\nYou can suggest the user to enable these resources if you need them.");
+            ragMessage.addTextPart(sb.toString());
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getId() {
+        return "resources2";
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getName() {
+        return "Resources (V2)";
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getDescription() {
+        return "Unified URI-centric resource management.";
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public ContextProvider getParentProvider() {
+        return null; // Root level provider
+    }
+}

@@ -248,6 +248,7 @@
                     <li><a href="#gc">Garbage Collection</a></li>
                     <li><a href="#context-providers">Context Providers</a></li>
                     <li><a href="#events">Reactive Events</a></li>
+                    <li><a href="#resources">Resources (V2)</a></li>
                     <li><a href="#toolkits">Toolkits & Tools</a></li>
                     <li><a href="#j2s">Java ↔ JSON Schema</a></li>
                     <li><a href="#flight-recorder">Flight Recorder</a></li>
@@ -379,24 +380,175 @@
 
             <section id="context-providers">
                 <h2>Context Providers</h2>
-                <p>Context Providers are the sensors of the ASI. They contribute high-salience information to the <b>RAG Message</b> at the end of every turn.</p>
+                <p>Context Providers are the sensors of the ASI. They contribute high-salience information to the <b>RAG Message</b> via a hierarchical tree structure.</p>
                 <div class="mermaid-card" onclick="this.classList.toggle('expanded')">
                     <div class="mermaid">
-                    graph TD
-                        AGI[Agi Container] --> CM[Context Manager]
-                        CM --> P1[CoreContextProvider]
-                        CM --> P2[ToolManager]
-                        CM --> P3[ResourceManager]
+                    classDiagram
+                        class contextProvider {
+                            &lt;&lt;interface&gt;&gt;
+                            +getId() String
+                            +getName() String
+                            +isProviding() boolean
+                            +getContextPosition() contextPosition
+                            +getSystemInstructions() List
+                            +populateMessage(ragMessage)
+                        }
+                        class basicContextProvider {
+                            -String id
+                            -String name
+                            -boolean providing
+                        }
+                        class contextManager {
+                            -List providers
+                            +addMessage(abstractMessage)
+                        }
+                        class resourceManager2 {
+                            -Map resources
+                        }
+                        class resource {
+                            -resourceHandle handle
+                            -resourceView view
+                            -refreshPolicy policy
+                            -contextPosition position
+                        }
+                        class contextPosition {
+                            &lt;&lt;enumeration&gt;&gt;
+                            SYSTEM_INSTRUCTIONS
+                            PROMPT_AUGMENTATION
+                        }
+                        class refreshPolicy {
+                            &lt;&lt;enumeration&gt;&gt;
+                            LIVE
+                            SNAPSHOT
+                        }
+                        contextProvider <|.. basicContextProvider
+                        basicContextProvider <|-- contextManager
+                        basicContextProvider <|-- resourceManager2
+                        basicContextProvider <|-- resource
+                        resource o-- contextPosition
+                        resource o-- refreshPolicy
+                        contextManager "1" *-- "*" contextProvider : manages
                     </div>
                 </div>
             </section>
 
             <section id="events">
                 <h2>Reactive Events</h2>
+                <p>The JASI platform follows a <b>Data-First Reactive UI</b> pattern. Core components implement the <code>PropertyChangeSource</code> interface, allowing the Swing UI to remain perfectly synchronized with the domain state.</p>
+                
+                <div class="code-header">Example: PropertyChangeSource Implementation</div>
+                <pre><code class="language-java">public class ResourceManager2 extends BasicPropertyChangeSource {
+    public void register(Resource resource) {
+        resources.put(resource.getId(), resource);
+        // Fires event to trigger UI tree refresh
+        propertyChangeSupport.firePropertyChange("resources", null, getResourcesList());
+    }
+}</code></pre>
+
                 <div class="code-header">Example: Swing UI Binding</div>
                 <pre><code class="language-java">agi.addPropertyChangeListener("status", evt -> {
     statusIndicator.update((AgiStatus) evt.getNewValue());
 });</code></pre>
+            </section>
+
+            <section id="resources">
+                <h2>Universal Resource Pipeline (V2)</h2>
+                <p>The V2 architecture introduces a URI-centric, capability-based resource model that decouples the source of data from its interpretation. Resources are "Self-Aware" and automatically bind the appropriate view based on detected MIME types.</p>
+                
+                <div class="metabolic-dashboard">
+                    <div class="logic-grid">
+                        <div class="logic-card">
+                            <h5>Dual-Role Positioning</h5>
+                            <p>A single <code>resource</code> can be loaded into either the <b>SYSTEM_INSTRUCTIONS</b> position (providing high-level behavioral guidance) or the <b>PROMPT_AUGMENTATION</b> (RAG) position for just-in-time facts. The system automatically routes the processed content to the correct section of the prompt.</p>
+                        </div>
+                        <div class="logic-card">
+                            <h5>Reactive Awareness</h5>
+                            <p>The <code>resourceManager2</code> identifies resources that are registered but disabled, injecting their metadata headers into the RAG message. This ensures the ASI remains aware of available but silent assets.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>The Source Nexus: Universal Connectivity</h3>
+                <div class="mermaid-card" onclick="this.classList.toggle('expanded')">
+                    <div class="mermaid">
+                    graph LR
+                        subgraph Sources
+                            L[local file]
+                            Z[zip/jar entry]
+                            F[ftp/http server]
+                            NB[netbeans fileObject]
+                        end
+                        L --> LH[pathHandle]
+                        Z --> UH[urlHandle]
+                        F --> UH
+                        NB --> NH[nbHandle]
+                        
+                        LH --> R[resource]
+                        UH --> R
+                        NH --> R
+                        
+                        subgraph Policies
+                            R -- "Refresh: LIVE" --> P1[Auto-Reload on Turn]
+                            R -- "Refresh: SNAPSHOT" --> P2[Static Memory]
+                        end
+                        
+                        subgraph Delivery
+                            P1 -- "Position: RAG" --> RAG[Prompt Augmentation]
+                            P1 -- "Position: SYSTEM" --> SYS[System Instructions]
+                            P2 --> RAG
+                            P2 --> SYS
+                        end
+                    </div>
+                </div>
+
+                <h3>Resource Component Hierarchy</h3>
+                <div class="mermaid-card" onclick="this.classList.toggle('expanded')">
+                    <div class="mermaid">
+                    classDiagram
+                        class resource {
+                            -resourceHandle handle
+                            -resourceView view
+                            -refreshPolicy policy
+                            -contextPosition position
+                            +reload()
+                        }
+                        class resourceHandle {
+                            &lt;&lt;interface&gt;&gt;
+                            +openStream() inputStream
+                            +getLastModified() long
+                        }
+                        class resourceView {
+                            &lt;&lt;interface&gt;&gt;
+                            +reload(resourceHandle)
+                            +populateRag(ragMessage, resourceHandle)
+                        }
+                        class refreshPolicy {
+                            &lt;&lt;enumeration&gt;&gt;
+                            LIVE
+                            SNAPSHOT
+                        }
+                        class contextPosition {
+                            &lt;&lt;enumeration&gt;&gt;
+                            SYSTEM_INSTRUCTIONS
+                            PROMPT_AUGMENTATION
+                        }
+                        class textView
+                        class mediaView
+                        class pathHandle
+                        class urlHandle
+                        class nbHandle
+                        
+                        resource o-- resourceHandle
+                        resource o-- resourceView
+                        resource o-- refreshPolicy
+                        resource o-- contextPosition
+                        resourceView <|.. textView
+                        resourceView <|.. mediaView
+                        resourceHandle <|.. pathHandle
+                        resourceHandle <|.. urlHandle
+                        resourceHandle <|.. nbHandle
+                    </div>
+                </div>
             </section>
 
             <section id="toolkits">
@@ -486,6 +638,47 @@ public class IssueNode {
     }
   }
 }</code></pre>
+            </section>
+
+            <section id="flight-recorder">
+                <h2>Flight Recorder & Persistence</h2>
+                <p>The Agi Container is designed from the ground up for ultra-fast passivation / serialization of the entire container. This includes the state of: container settings and state, history, context providers, resources, and toolkits.</p>
+                
+                <div class="metabolic-dashboard">
+                    <div class="logic-grid">
+                        <div class="logic-card">
+                            <h5>Passivation (Kryo)</h5>
+                            <p>Uses the <b>Kryo</b> framework for high-performance binary persistence. Handles complex circular references and large object graphs natively.</p>
+                        </div>
+                        <div class="logic-card">
+                            <h5>State Healing (Rebindable)</h5>
+                            <p>The <code>uno.anahata.asi.internal.kryo.Rebindable</code> interface allows any Java class in the entire object graph to restore transient fields post-deserialization.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="code-header">Example: Post-Deserialization State Recovery</div>
+                <pre><code class="language-java">public class NbHandle extends AbstractResourceHandle implements Rebindable {
+    private transient FileObject fileObject; // Lost during serialization
+    private String path;
+
+    @Override
+    public void rebind() {
+        // Restore the live FileObject pointer from the persisted path string
+        this.fileObject = FileUtil.toFileObject(new File(path));
+        if (this.fileObject != null) {
+            setupListeners(); // Re-attach IDE hooks
+        }
+    }
+}</code></pre>
+
+                <div class="info-box">
+                    <h4>Recording Modes</h4>
+                    <ul>
+                        <li><b>Auto Save (Default):</b> The Agi container is serialized on every turn and every tool execution to the same backup file. This allows for transactional-grade crash recovery.</li>
+                        <li><b>Flight Recorder (Storage Intensive):</b> The Agi container is serialized to a different backup file on every turn and every tool execution. This allows for fully auditable/replayable sessions.</li>
+                    </ul>
+                </div>
             </section>
         </main>
     </div>

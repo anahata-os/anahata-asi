@@ -299,7 +299,7 @@ public class Files extends AnahataToolkit {
      * @param message A message describing the change.
      * @throws Exception if validation or update fails.
      */
-    @AiTool(value = "Overwrites an existing file. **Never attempt for files that are not in context**. Uses a **filthy rich** update object where you for line comments so the ASI's diff viewer displays the coments in comic style bubbles so you dont need to add inline comments / explanations to the code to later have to remove them.", maxDepth = 12)
+    @AiTool(value = "Overwrites an existing file. **Never attempt for files that are not in context or for creating new files**. Uses a **filthy rich** update object where you for line comments so the ASI's diff viewer displays the coments in comic style bubbles so you dont need to add inline comments / explanations to the code to later have to remove them.", maxDepth = 12)
     public void updateTextFile(
             @AiToolParam("The update details.") FullTextFileUpdate update,
             @AiToolParam("A message describing the change.") String message) throws Exception {
@@ -370,7 +370,7 @@ public class Files extends AnahataToolkit {
      * @param message A message describing the change.
      * @throws Exception if replacements fail or locking mismatch occurs.
      */
-    @AiTool(value = "Performs multiple text replacements in a file. Ideal for surgical edits but tends to fail on source code files. Shows the 'reason' of each replacement as comic-style bubble on the ASI's diff viewer.", maxDepth = 12)
+    @AiTool(value = "Performs multiple text replacements in a file **Never attempt for files that are not in context**. Ideal for surgical edits but tends to fail on source code files. Shows the 'reason' of each replacement as comic-style bubble on the ASI's diff viewer.", maxDepth = 12)
     public void replaceInTextFile(
             @AiToolParam("The replacements.") TextFileReplacements replacements,
             @AiToolParam("A message describing the change.") String message) throws Exception {

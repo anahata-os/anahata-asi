@@ -79,6 +79,16 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
 
     /** Flag indicating if the toolkit is currently listening for global IDE project changes. */
     private transient boolean listening = false;
+
+    /**
+     * Registers project providers.
+     */
+    @Override
+    public void initialize() {
+        getChildrenProviders();
+    }
+    
+    
     
     /**
      * Rebinds the toolkit to the current agi instance.
@@ -105,7 +115,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
             }
         }
     }
-
+    
     /**
      * Returns the mandatory system instructions for managing Compile on Save.
      * <p>
@@ -130,6 +140,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
             "**Strategy**: If the project is currently 'Disabled' via an override, changing the POM will have no effect until the override is removed or changed."
         );
     }
+
 
     /**
      * Populates the RAG message with a high-level overview of the IDE environment.

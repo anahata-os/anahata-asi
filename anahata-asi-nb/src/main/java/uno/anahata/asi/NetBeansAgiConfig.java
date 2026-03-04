@@ -15,6 +15,8 @@ import uno.anahata.asi.nb.tools.java.Hints;
 import uno.anahata.asi.nb.tools.java.NbJava;
 import uno.anahata.asi.nb.tools.maven.Maven;
 import uno.anahata.asi.nb.tools.project.Projects;
+import uno.anahata.asi.nb.tools.files.nb.v2.NbHandle;
+import uno.anahata.asi.resource.v2.ResourceHandle;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.toolkit.Host;
 import uno.anahata.asi.toolkit.Java;
@@ -72,5 +74,16 @@ public class NetBeansAgiConfig extends SwingAgiConfig {
      */
     public NetBeansAgiConfig(AsiContainer asiConfig, String sessionId) {
         super(asiConfig, sessionId);
+    }
+
+    /** {@inheritDoc} 
+     * Overrides the factory to return the reactive NbHandle for local or JAR resources.
+     */
+    @Override
+    public ResourceHandle createResourceHandle(java.net.URI uri) {
+        if ("file".equalsIgnoreCase(uri.getScheme()) || "jar".equalsIgnoreCase(uri.getScheme())) {
+            return new NbHandle(uri.getPath());
+        }
+        return super.createResourceHandle(uri);
     }
 }
