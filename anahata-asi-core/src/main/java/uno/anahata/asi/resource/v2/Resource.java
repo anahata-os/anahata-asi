@@ -210,10 +210,10 @@ public class Resource extends BasicContextProvider implements Rebindable {
      * Detects the resource capability via MIME type and binds the correct interpreter.
      */
     private void autoBindView() {
-        String mime = handle.getMimeType();
-        log.info("Auto-binding view for resource '{}' (MIME: {})", getName(), mime);
+        log.info("Auto-binding view for resource '{}' (MIME: {})", getName(), handle.getMimeType());
         
-        if (mime.startsWith("text/") || mime.equals("application/octet-stream")) {
+        // Decoupled decision: let the handle decide if it can be viewed as text
+        if (handle.isTextual()) {
             TextView tv = new TextView();
             tv.setOwner(this);
             this.view = tv;
