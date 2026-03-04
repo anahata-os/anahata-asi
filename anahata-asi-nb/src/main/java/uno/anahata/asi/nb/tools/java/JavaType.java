@@ -38,7 +38,7 @@ public class JavaType {
     }
 
     /**
-     * Constructs a new JavaType from a JavaTypeDescription.
+     * Constructs a new JavaType from a JavaTypeDescription object from the Ctrl+O Go-To Type GUI.
      * @param descriptor the type descriptor.
      */
     public JavaType(JavaTypeDescription descriptor) {
