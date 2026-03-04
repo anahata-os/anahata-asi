@@ -117,7 +117,7 @@ public class ToolContext {
     }
 
     /**
-     * Convenience method to get the parent agi session for the current
+     * Convenience method to get the parent agi container for the current
      * execution.
      *
      * @return The parent Agi instance.
@@ -127,6 +127,15 @@ public class ToolContext {
             return toolkit.getToolManager().getAgi();
         }
         return getResponse().getAgi();
+    }
+    
+    /**
+     * Gets the current ASI container hosting this Agi container is running.
+     *
+     * @return The container-scoped attributes map.
+     */
+    public AsiContainer getContainer() {
+        return getAgi().getConfig().getContainer();
     }
 
     /**
@@ -229,7 +238,7 @@ public class ToolContext {
     public Map getSessionMap() {
         return getToolManager().getSessionAttributes();
     }
-
+    
     /**
      * Gets a map for sharing objects across all sessions within the current ASI
      * container.
@@ -237,7 +246,7 @@ public class ToolContext {
      * @return The container-scoped attributes map.
      */
     public Map getContainerMap() {
-        return getAgi().getConfig().getContainer().getContainerAttributes();
+        return getContainer().getContainerAttributes();
     }
 
     /**
