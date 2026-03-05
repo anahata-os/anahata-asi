@@ -10,7 +10,7 @@ import org.openide.awt.ActionReference;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager; 
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.swing.agi.AsiSwitcherContainerPanel;
+import uno.anahata.asi.swing.AsiSwitcherContainerPanel;
 import uno.anahata.asi.swing.agi.SessionController;
 
 /**

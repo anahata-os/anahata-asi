@@ -9,7 +9,7 @@ import uno.anahata.asi.nb.tools.Refactor;
 import uno.anahata.asi.nb.tools.files.nb.NbFiles;
 import uno.anahata.asi.nb.tools.ide.Editor;
 import uno.anahata.asi.nb.tools.ide.IDE;
-import uno.anahata.asi.swing.tools.Screens;
+import uno.anahata.asi.swing.toolkits.Screens;
 import uno.anahata.asi.nb.tools.java.CodeModel;
 import uno.anahata.asi.nb.tools.java.Hints;
 import uno.anahata.asi.nb.tools.java.NbJava;

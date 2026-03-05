@@ -14,6 +14,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.text.Document;
 import javax.swing.text.EditorKit;
 import javax.swing.text.View;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.editor.fold.FoldHierarchy;
 import org.netbeans.editor.AnnotationDesc;
@@ -23,6 +24,7 @@ import org.netbeans.editor.EditorUI;
 import org.netbeans.editor.Utilities;
 import org.netbeans.modules.editor.NbEditorUI;
 import org.netbeans.modules.parsing.api.Source;
+import org.openide.filesystems.FileObject;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.render.AbstractCodeBlockSegmentRenderer;
 
@@ -42,6 +44,13 @@ public class NbCodeBlockSegmentRenderer extends AbstractCodeBlockSegmentRenderer
 
     /** The NetBeans EditorKit used for syntax highlighting and IDE integration. */
     protected final EditorKit kit;
+    
+    /** 
+     * An optional FileObject used to back the document for full semantic 
+     * features (errors, folds). 
+     */
+    @Setter
+    protected FileObject fileObject;
     
     /** Flag to ensure the high-fidelity onboarding happens exactly once. */
     private boolean onboarded = false;
@@ -77,7 +86,7 @@ public class NbCodeBlockSegmentRenderer extends AbstractCodeBlockSegmentRenderer
             @Override
             public Dimension getPreferredSize() {
                 Dimension d = super.getPreferredSize();
-                if (!editing) {
+                if (!editing && !verticalScrollEnabled) {
                     try {
                         View v = getUI().getRootView(this);
                         if (v != null) {
@@ -112,12 +121,21 @@ public class NbCodeBlockSegmentRenderer extends AbstractCodeBlockSegmentRenderer
         });
 
         // 2. TRIGGER IDE DISCOVERY: Setting ContentType triggers the BaseTextUI onboarding.
-        editor.setContentType(kit.getContentType());
         editor.setEditorKit(kit);
-        editor.getDocument().putProperty("mimeType", kit.getContentType());
+        editor.setContentType(kit.getContentType());
+        
+        Document doc = editor.getDocument();
+        doc.putProperty("mimeType", kit.getContentType());
+        
+        // CRITICAL: If we have a FileObject, associate it with the document to trigger the Parsing API (errors, etc.)
+        if (fileObject != null) {
+            doc.putProperty(Document.StreamDescriptionProperty, fileObject);
+        }
+        
+        editor.setText(currentContent);
         
         // 3. SEMANTIC ACTIVATION: Trigger the Parsing API for standalone documents.
-        Source.create(editor.getDocument());
+        Source.create(doc);
 
         // 4. SYNCHRONOUS CHECK: Sometimes the UI is already there.
         EditorUI eui = Utilities.getEditorUI(editor);
