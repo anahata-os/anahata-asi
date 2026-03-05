@@ -2,12 +2,16 @@
 package uno.anahata.asi.tool;
 
 /**
- * A custom exception that can be thrown by AI tools to provide a concise,
+ * A custom runtime exception that can be thrown by AI tools to provide a concise,
  * user-friendly error message to the model without including a stack trace.
+ * <p>
+ * Using a RuntimeException simplifies tool signatures by removing the need for 
+ * checked exception declarations.
+ * </p>
  *
- * @author anahata-gemini-pro-2.5
+ * @author anahata
  */
-public class AiToolException extends Exception {
+public class AiToolException extends RuntimeException {
 
     public AiToolException(String message) {
         super(message);
