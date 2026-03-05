@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.context.BasicContextProvider;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 import uno.anahata.asi.model.core.RagMessage;
@@ -40,20 +39,53 @@ public class ResourceManager2 extends BasicPropertyChangeSource implements Rebin
     /** Registry of V2 resources, keyed by UUID. */
     private final Map<String, Resource> resources = new LinkedHashMap<>();
 
-    /** Whether this manager is currently active. */
+    /** Whether this manager is currently providing context augmentation. */
     @Setter
     private boolean providing = true;
 
     /**
-     * Registers a new V2 resource and fires a property change event.
-     * @param resource The resource to register.
+     * Registers a new V2 resource, making it managed by the framework.
+     * <p>
+     * This is a convenience wrapper around {@link #registerAll(Collection)}. 
+     * </p>
+     * @param resource The resource to register. Must not be null.
      */
     public void register(@NonNull Resource resource) {
-        synchronized (resources) {
-            resources.put(resource.getId(), resource);
-            log.info("Registered V2 resource: {} ({})", resource.getName(), resource.getId());
+        registerAll(Collections.singletonList(resource));
+    }
+
+    /**
+     * Registers multiple resources in a single atomic operation.
+     * <p>
+     * This method filters out any resources whose URI is already registered 
+     * to prevent duplicates. It performs the update within a synchronized block 
+     * and fires exactly ONE property change event to maintain UI performance.
+     * </p>
+     * 
+     * @param toRegister The collection of resources to register. Must not be null.
+     */
+    public void registerAll(@NonNull Collection<Resource> toRegister) {
+        if (toRegister.isEmpty()) {
+            return;
         }
-        propertyChangeSupport.firePropertyChange("resources", null, getResourcesList());
+
+        List<Resource> added = new ArrayList<>();
+        synchronized (resources) {
+            for (Resource res : toRegister) {
+                String uri = res.getHandle().getUri().toString();
+                if (findByUri(uri).isEmpty()) {
+                    resources.put(res.getId(), res);
+                    added.add(res);
+                    log.info("Registered V2 resource: {} ({})", res.getName(), res.getId());
+                } else {
+                    log.debug("Skipping duplicate resource registration for URI: {}", uri);
+                }
+            }
+        }
+        
+        if (!added.isEmpty()) {
+            propertyChangeSupport.firePropertyChange("resources", null, getResourcesList());
+        }
     }
 
     /**
