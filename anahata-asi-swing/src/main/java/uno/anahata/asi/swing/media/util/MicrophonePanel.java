@@ -1,246 +1,260 @@
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.media.util;
 
-import java.awt.Component;
 import java.awt.FlowLayout;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import javax.sound.sampled.AudioFileFormat;
-import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.Line;
 import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.Mixer;
 import javax.sound.sampled.TargetDataLine;
-import javax.swing.BoxLayout;
-import javax.swing.DefaultListCellRenderer;
-import javax.swing.JButton;
-import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
 import org.jdesktop.swingx.JXComboBox;
-import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.model.core.InputUserMessage;
+import uno.anahata.asi.model.audio.AudioDevice;
+import uno.anahata.asi.model.audio.AudioUtils;
 import uno.anahata.asi.swing.agi.InputPanel;
-import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.icons.MicrophoneIcon;
 import uno.anahata.asi.swing.icons.RecordingIcon;
+import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingTask;
-import uno.anahata.asi.swing.internal.SwingUtils;
+import uno.anahata.asi.toolkit.Audio;
 
 /**
- * A panel that encapsulates all microphone-related UI components and logic.
- * This includes a microphone button, a dropdown for selecting input lines,
- * and a progress bar to show audio levels.
+ * A reactive panel that encapsulates microphone selection and recording logic.
+ * <p>
+ * This panel is a high-salience observer of the autonomous {@link Audio} toolkit. 
+ * It synchronizes its state with the session's selected input device and provides 
+ * real-time visual feedback of recording levels.
+ * </p>
  *
  * @author anahata
  */
 @Slf4j
 public final class MicrophonePanel extends JPanel {
 
+    /** The parent input panel for attaching recordings to messages. */
     private final InputPanel parentPanel;
+    /** Toggle button to start/stop recording. */
     private final JToggleButton micButton;
+    /** Dropdown for selecting the hardware input channel. */
     private final JXComboBox microphoneLineComboBox;
+    /** Real-time volume meter for recording feedback. */
     private final JProgressBar levelBar;
-
     
-    private TargetDataLine targetDataLine;
+    /** Flag indicating if recording is currently active. */
     private final AtomicBoolean recording = new AtomicBoolean(false);
-    private ByteArrayOutputStream byteArrayOutputStream;
+    /** Buffer for accumulating raw PCM data during recording. */
+    private ByteArrayOutputStream recordingBuffer;
+    /** Listener for toolkit-driven device selection changes. */
+    private EdtPropertyChangeListener toolkitListener;
 
+    /**
+     * Constructs a new MicrophonePanel and binds it to the session config.
+     * 
+     * @param parentPanel The parent InputPanel.
+     */
     public MicrophonePanel(InputPanel parentPanel) {
-        super(new FlowLayout(FlowLayout.LEFT, 5, 0)); // Use FlowLayout for horizontal arrangement
+        super(new FlowLayout(FlowLayout.LEFT, 5, 0));
         this.parentPanel = parentPanel;
         
         micButton = new JToggleButton(new MicrophoneIcon(24));
         micButton.setSelectedIcon(new RecordingIcon(24));
         micButton.setToolTipText("Click to start/stop recording");
         micButton.addActionListener(e -> toggleRecording());
-        micButton.setEnabled(false); // Disable until lines are loaded
+        micButton.setEnabled(false);
 
-        microphoneLineComboBox = new JXComboBox(); // Removed generic type parameters
+        microphoneLineComboBox = new JXComboBox();
         microphoneLineComboBox.setToolTipText("Select microphone input line");
-        microphoneLineComboBox.setEnabled(false); // Disable until lines are loaded
-        microphoneLineComboBox.setRenderer(new LineInfoRenderer());
+        microphoneLineComboBox.setEnabled(false);
         microphoneLineComboBox.addActionListener(e -> {
-            if (!micButton.isSelected()) { // Only allow changing if not recording
-                LineInfo selectedLineInfo = (LineInfo) microphoneLineComboBox.getSelectedItem();
-                if (selectedLineInfo != null) {
-                    setTargetDataLine(selectedLineInfo.getTargetDataLine());
+            if (!micButton.isSelected()) {
+                Audio toolkit = getAudioToolkit();
+                AudioDevice selected = (AudioDevice) microphoneLineComboBox.getSelectedItem();
+                if (toolkit != null && selected != null && !selected.equals(toolkit.getSelectedInputDevice())) {
+                    toolkit.setSelectedInputDevice(selected);
                 }
             }
         });
         
         levelBar = new JProgressBar(0, 100);
-        levelBar.setStringPainted(false); // Don't show percentage text
-        levelBar.setPreferredSize(new java.awt.Dimension(100, 20)); // Set a preferred size
-        levelBar.setVisible(false); // Initially hidden
+        levelBar.setStringPainted(false);
+        levelBar.setPreferredSize(new java.awt.Dimension(100, 20));
+        levelBar.setVisible(false);
 
         add(micButton);
         add(microphoneLineComboBox);
         add(levelBar);
 
+        bindToToolkit();
         initMicrophoneLineComboBox();
     }
 
+    /**
+     * Resolves the autonomous Audio toolkit from the session.
+     * @return The toolkit instance or null.
+     */
+    private Audio getAudioToolkit() {
+        return parentPanel.getAgi().getToolManager().getToolkitInstance(Audio.class).orElse(null);
+    }
+
+    /**
+     * Binds the UI listener to the toolkit's property change support.
+     */
+    private void bindToToolkit() {
+        Audio toolkit = getAudioToolkit();
+        if (toolkit != null) {
+            this.toolkitListener = new EdtPropertyChangeListener(this, toolkit, "selectedInputDevice", evt -> {
+                AudioDevice newDevice = (AudioDevice) evt.getNewValue();
+                if (newDevice != null && !newDevice.equals(microphoneLineComboBox.getSelectedItem())) {
+                    microphoneLineComboBox.setSelectedItem(newDevice);
+                }
+            });
+        }
+    }
+
+    /** @return true if the microphone is currently recording. */
     public boolean isRecording() {
         return recording.get();
     }
     
+    /**
+     * Enables or disables the UI components.
+     * @param enabled true to enable.
+     */
     public void setMicrophoneComponentsEnabled(boolean enabled) {
         micButton.setEnabled(enabled);
         microphoneLineComboBox.setEnabled(enabled && !micButton.isSelected());
     }
 
-    private void setTargetDataLine(TargetDataLine newTargetDataLine) {
-        if (recording.get()) {
-            throw new IllegalStateException("Cannot change microphone line while recording is in progress.");
-        }
-        if (this.targetDataLine != null && this.targetDataLine.isOpen()) {
-            this.targetDataLine.close();
-        }
-        this.targetDataLine = newTargetDataLine;
-    }
-
-    public void startRecording() throws LineUnavailableException {
-        if (recording.get()) {
-            throw new IllegalStateException("Recording is already in progress");
-        }
-        targetDataLine.open(SoundUtils.RECORDING_FORMAT);
-        targetDataLine.start();
-        recording.set(true);
-        byteArrayOutputStream = new ByteArrayOutputStream();
-        
-        // Recording now happens on the calling thread (SwingWorker's doInBackground)
-        byte[] buffer = new byte[4096];
-        int bytesRead;
-        try {
-            while (recording.get()) {
-                bytesRead = targetDataLine.read(buffer, 0, buffer.length);
-                if (bytesRead > 0) {
-                    byteArrayOutputStream.write(buffer, 0, bytesRead);
-                    double rms = SoundUtils.calculateRMS(buffer, bytesRead);
-                    SwingUtilities.invokeLater(() -> levelBar.setValue((int)(rms * 100)));
-                }
-            }
-        } catch (Exception e) {
-            log.error("Error during audio recording buffer read", e);
+    /**
+     * Toggles recording on or off based on the button state.
+     */
+    public void toggleRecording() {
+        if (micButton.isSelected()) {
+            startRecordingWorkflow();
+        } else {
+            stopRecordingWorkflow();
         }
     }
 
-    public File stopRecording() throws IOException {
-        if (!recording.get()) {
-            log.warn("Stop recording called, but recording was not in progress.");
-            return null;
+    /**
+     * Initializes the hardware line and starts the recording loop on the Agi executor.
+     */
+    private void startRecordingWorkflow() {
+        AudioDevice device = (AudioDevice) microphoneLineComboBox.getSelectedItem();
+        if (device == null) {
+            micButton.setSelected(false);
+            return;
         }
-        recording.set(false); 
-        
-        targetDataLine.stop();
-        targetDataLine.close();
-        
-        File tempFile = File.createTempFile("recording", ".wav");
-        
-        byte[] audioData = byteArrayOutputStream.toByteArray();
-        try (ByteArrayInputStream bais = new ByteArrayInputStream(audioData);
-             AudioInputStream ais = new AudioInputStream(bais, SoundUtils.RECORDING_FORMAT, audioData.length / SoundUtils.RECORDING_FORMAT.getFrameSize())) {
-            AudioSystem.write(ais, AudioFileFormat.Type.WAVE, tempFile);
-        }
-        return tempFile;
-    }
-    
-    
-    
-    private void initMicrophoneLineComboBox() {
-        new SwingTask<>(
-            this, // Pass 'this' as the owner
-            "Load Microphone Lines",
-            () -> SoundUtils.getAvailableRecordingLines(),
-            (lines) -> {
-                if (lines != null && !lines.isEmpty()) {
-                    for (LineInfo lineInfo : lines) {
-                        microphoneLineComboBox.addItem(lineInfo);
+
+        microphoneLineComboBox.setEnabled(false);
+        microphoneLineComboBox.setVisible(false);
+        levelBar.setVisible(true);
+
+        parentPanel.getAgi().getExecutor().submit(() -> {
+            try (TargetDataLine line = device.getInputLine(AudioDevice.DEFAULT_FORMAT)) {
+                line.open(AudioDevice.DEFAULT_FORMAT);
+                line.start();
+                recording.set(true);
+                recordingBuffer = new ByteArrayOutputStream();
+                
+                log.info("Recording started on device: {}", device.getName());
+                
+                byte[] buffer = new byte[4096];
+                int read;
+                while (recording.get()) {
+                    read = line.read(buffer, 0, buffer.length);
+                    if (read > 0) {
+                        recordingBuffer.write(buffer, 0, read);
+                        double rms = AudioUtils.calculateRMS(buffer, read);
+                        SwingUtilities.invokeLater(() -> levelBar.setValue((int) (rms * 100)));
                     }
-                    microphoneLineComboBox.setEnabled(true);
-                    micButton.setEnabled(true);
-                    
-                    // Select the first item in the list and initialize the microphone
-                    microphoneLineComboBox.setSelectedIndex(0);
-                    setTargetDataLine(lines.get(0).getTargetDataLine());
-                } else {
-                    micButton.setEnabled(false);
-                    microphoneLineComboBox.setEnabled(false);
-                    micButton.setToolTipText("No microphone lines found.");
                 }
+                
+                line.stop();
+            } catch (LineUnavailableException e) {
+                log.error("Microphone hardware unavailable: {}", device.getName(), e);
+                SwingUtilities.invokeLater(() -> {
+                    micButton.setSelected(false);
+                    stopRecordingWorkflow();
+                });
+            }
+        });
+    }
+
+    /**
+     * Signals the recording loop to stop and packages the result into a WAVE file.
+     */
+    private void stopRecordingWorkflow() {
+        recording.set(false);
+        microphoneLineComboBox.setEnabled(true);
+        microphoneLineComboBox.setVisible(true);
+        levelBar.setVisible(false);
+        levelBar.setValue(0);
+
+        new SwingTask<File>(
+            this,
+            "Finalize Recording",
+            () -> {
+                if (recordingBuffer == null) {
+                    return null;
+                }
+                byte[] data = recordingBuffer.toByteArray();
+                File tempFile = File.createTempFile("recording-", ".wav");
+                try (AudioInputStream ais = new AudioInputStream(new java.io.ByteArrayInputStream(data), AudioDevice.DEFAULT_FORMAT, data.length / AudioDevice.DEFAULT_FORMAT.getFrameSize())) {
+                    AudioSystem.write(ais, AudioFileFormat.Type.WAVE, tempFile);
+                }
+                return tempFile;
             },
-            (error) -> {
-                micButton.setEnabled(false);
-                microphoneLineComboBox.setEnabled(false);
-                microphoneLineComboBox.setToolTipText("Error loading microphone lines: " + ((Exception) error).getMessage());
-                // SwingTask already logs and shows the exception dialog
+            (audioFile) -> {
+                if (audioFile != null) {
+                    try {
+                        parentPanel.getCurrentMessage().addAttachment(audioFile);
+                        parentPanel.getInputMessagePreview().render();
+                    } catch (Exception e) {
+                        log.error("Failed to attach recording to message", e);
+                    }
+                }
             }
         ).execute();
     }
     
     /**
-     * Toggles microphone recording on or off.
+     * Discovers available input hardware and populates the UI dropdown.
      */
-    public void toggleRecording() {
-        if (micButton.isSelected()) {
-            // Start recording
-            LineInfo selectedLineInfo = (LineInfo) microphoneLineComboBox.getSelectedItem();
-            if (selectedLineInfo == null) {
-                log.warn("No microphone line selected. Cannot start recording.");
-                micButton.setSelected(false);
-                return;
-            }
-            setTargetDataLine(selectedLineInfo.getTargetDataLine());
-            microphoneLineComboBox.setEnabled(false);
-            microphoneLineComboBox.setVisible(false); // Hide combo box while recording
-            levelBar.setVisible(true); // Show progress bar
-            new SwingTask<Void> (
-                this, // Pass 'this' as the owner
-                "Start Recording",
-                () -> {
-                    startRecording();
-                    return null;
+    private void initMicrophoneLineComboBox() {
+        new SwingTask<List<AudioDevice>>(
+            this,
+            "Load Microphone Devices",
+            () -> AudioDevice.listAvailableDevices(AudioDevice.Type.INPUT),
+            (devices) -> {
+                microphoneLineComboBox.removeAllItems();
+                for (AudioDevice d : devices) {
+                    microphoneLineComboBox.addItem(d);
                 }
-            ).execute();
-        } else {
-            // Stop recording
-            if (targetDataLine == null) {
-                log.warn("Microphone not initialized. Cannot stop recording.");
-                return;
-            }
-            microphoneLineComboBox.setEnabled(true);
-            microphoneLineComboBox.setVisible(true); // Show combo box after recording stops
-            levelBar.setVisible(false); // Hide progress bar
-            new SwingTask<Void> (
-                this, // Pass 'this' as the owner
-                "Stop Recording",
-                () -> {
-                    File audioFile = stopRecording();
-                    if (audioFile != null) {
-                        parentPanel.getCurrentMessage().addAttachment(audioFile.toPath());
-                    }
-                    return null; // Return Void
-                },
-                (error) -> {
-                    parentPanel.getInputMessagePreview().render(); // Refresh preview
-                    // SwingTask already logs and shows the exception dialog
+                microphoneLineComboBox.setEnabled(true);
+                micButton.setEnabled(true);
+
+                // Initial Selection from Toolkit
+                Audio toolkit = getAudioToolkit();
+                if (toolkit != null && toolkit.getSelectedInputDevice() != null) {
+                    microphoneLineComboBox.setSelectedItem(toolkit.getSelectedInputDevice());
                 }
-            ).execute();
-        }
+            },
+            (error) -> {
+                micButton.setEnabled(false);
+                microphoneLineComboBox.setEnabled(false);
+                microphoneLineComboBox.setToolTipText("Hardware Error: " + ((Exception) error).getMessage());
+            }
+        ).execute();
     }
 }
