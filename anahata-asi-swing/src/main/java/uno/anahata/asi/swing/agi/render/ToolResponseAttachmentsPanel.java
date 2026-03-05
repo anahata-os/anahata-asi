@@ -26,7 +26,7 @@ import uno.anahata.asi.model.tool.ToolResponseAttachment;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.SearchIcon;
-import uno.anahata.asi.swing.media.util.AudioPlaybackPanel;
+import uno.anahata.asi.swing.audio.AudioPlaybackPanel;
 
 /**
  * A panel for rendering a list of {@link ToolResponseAttachment}s.
