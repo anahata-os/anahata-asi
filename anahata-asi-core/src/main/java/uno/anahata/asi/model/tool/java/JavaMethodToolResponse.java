@@ -56,7 +56,7 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
      * Ignored during schema generation as it's an internal detail.
      */
     @JsonIgnore
-    private Throwable exception;
+    private transient Throwable exception;
     
     /** Guard to ensure only one thread can execute this response at a time. */
     @JsonIgnore
@@ -134,6 +134,7 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
         } finally {
             getAgi().getToolManager().unregisterExecutingCall(getCall());
             setCurrent(null); // Clear the context
+            //TODO this clears the threadName too, maybe we should keep the thread name so the model knows what thread executed the tool
             setThread(null);
             setExecutionTimeMillis(System.currentTimeMillis() - startTime);
             executing.set(false);
