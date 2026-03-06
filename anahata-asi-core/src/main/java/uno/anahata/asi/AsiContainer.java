@@ -10,7 +10,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -19,14 +18,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.status.AgiStatus;
 import uno.anahata.asi.internal.kryo.KryoUtils;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
-
-import uno.anahata.asi.model.resource.AbstractResource;
 
 /**
  * A hybrid static/instance class for managing global and application-specific configurations.
@@ -183,24 +179,6 @@ public abstract class AsiContainer extends BasicPropertyChangeSource {
      * @return The newly created agi session.
      */
     public abstract Agi createNewAgi();
-
-    /**
-     * Opens the specified resource in the host's preferred viewer/editor.
-     * 
-     * @param resource The resource to open.
-     */
-    public abstract void openResource(AbstractResource<?, ?> resource);
-
-    /**
-     * Selects and highlights the specified resource in the host application's 
-     * project or navigation tree.
-     * 
-     * @param resource The resource to select.
-     */
-    public void selectResource(AbstractResource<?, ?> resource) {
-        // Default implementation does nothing. Host-specific containers 
-        // should override this to provide navigation logic.
-    }
 
     // --- SESSION PERSISTENCE ---
 
