@@ -24,6 +24,7 @@ import org.netbeans.spi.java.classpath.ClassPathProvider;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.netbeans.api.java.source.SourceUtils;
+import uno.anahata.asi.nb.module.NetBeansModuleUtils;
 import uno.anahata.asi.nb.tools.project.ProjectOverview;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.tool.AiTool;
@@ -42,7 +43,11 @@ import uno.anahata.asi.toolkit.Java;
 @AiToolkit("A NetBeans-aware toolkit for compiling and executing Java code.")
 public class NbJava extends Java {
 
-
+    @Override
+    public void initialize() {
+        setDefaultClasspath(NetBeansModuleUtils.getNetBeansClasspath());
+    }
+    
 
     /**
      * Compiles and executes Java source code within the context of a specific NetBeans project.
