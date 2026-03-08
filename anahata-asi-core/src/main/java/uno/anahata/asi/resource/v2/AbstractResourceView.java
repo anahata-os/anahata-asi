@@ -22,12 +22,12 @@ public abstract class AbstractResourceView implements ResourceView {
     protected Resource owner;
 
     /**
-     * Triggers a markViewDirty on the owner resource to signal that 
-     * the view's settings have changed.
+     * Triggers a markDirty on the owner resource to signal that 
+     * the view's settings have changed and need re-interpretation.
      */
-    public void markViewDirty() {
+    public void markDirty() {
         if (owner != null) {
-            owner.markViewDirty();
+            owner.markDirty();
         }
     }
 }

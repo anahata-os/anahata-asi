@@ -39,6 +39,7 @@ import uno.anahata.asi.swing.agi.resources.Resource2Node;
 import uno.anahata.asi.swing.agi.resources.Resource2Panel;
 import uno.anahata.asi.swing.agi.resources.ResourceUI;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
+import uno.anahata.asi.swing.agi.resources.Resources2Node;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
@@ -274,6 +275,9 @@ public class ContextPanel extends JPanel {
                 } else if (cn instanceof Resource2Node r2n) {
                     resource2Panel.setResource(r2n.getUserObject());
                     detailLayout.show(detailContainer, "resource2");
+                } else if (cn instanceof Resources2Node r2m) {
+                    providerPanel.setContextProvider(r2m.getUserObject());
+                    detailLayout.show(detailContainer, "provider");
                 } else if (cn instanceof ResourcesNode rsn) {
                     providerPanel.setContextProvider(rsn.getUserObject());
                     detailLayout.show(detailContainer, "provider");

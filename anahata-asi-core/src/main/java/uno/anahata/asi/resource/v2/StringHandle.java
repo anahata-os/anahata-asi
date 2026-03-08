@@ -5,7 +5,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -36,8 +38,8 @@ public class StringHandle extends AbstractResourceHandle {
     @Setter
     private String content;
     
-    /** The creation timestamp for staleness checks. */
-    private final long created = System.currentTimeMillis();
+    /** The last modification timestamp. */
+    private long lastModified = System.currentTimeMillis();
 
     /**
      * Constructs a new StringHandle.
@@ -54,11 +56,11 @@ public class StringHandle extends AbstractResourceHandle {
 
     /** 
      * {@inheritDoc} 
-     * <p>Returns the constant creation timestamp.</p>
+     * <p>Returns the mutable modification timestamp.</p>
      */
     @Override
     public long getLastModified() {
-        return created;
+        return lastModified;
     }
 
     /** 
@@ -90,13 +92,19 @@ public class StringHandle extends AbstractResourceHandle {
 
     /** 
      * {@inheritDoc} 
-     * <p>Updates the internal string and notifies the owner orchestrator.</p>
+     * <p>Updates the internal string and notifies the owner orchestrator. 
+     * Implements an equality gate to prevent redundant interpretation cycles.</p>
      */
     @Override
     public void write(String content) throws IOException {
+        if (Objects.equals(this.content, content)) {
+            return;
+        }
+        
         this.content = content;
+        this.lastModified = System.currentTimeMillis();
         if (owner != null) {
-            owner.markSourceDirty();
+            owner.markDirty();
         }
     }
 
@@ -107,5 +115,26 @@ public class StringHandle extends AbstractResourceHandle {
     @Override
     public boolean isVirtual() {
         return true;
+    }
+
+    /**
+     * Authoritatively resolves a standard MIME type for the given language identifier.
+     * <p>
+     * <b>Technical Purity:</b> Maps 'text' to 'text/plain', 'json' to 'application/json', 
+     * and uses the standard 'text/x-[lang]' prefix for all other IDE-supported languages.
+     * </p>
+     * 
+     * @param lang The language identifier (e.g., 'java', 'python').
+     * @return The standard MIME type string.
+     */
+    public static String resolveMimeType(String lang) {
+        if (lang == null || lang.isBlank() || lang.equalsIgnoreCase("text")) {
+            return "text/plain";
+        }
+        if (lang.equalsIgnoreCase("json")) {
+            return "application/json";
+        }
+        // NetBeans and RSyntax generally prefer the x- prefix for specific languages
+        return "text/x-" + lang.toLowerCase();
     }
 }

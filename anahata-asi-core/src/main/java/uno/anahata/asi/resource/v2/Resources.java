@@ -51,6 +51,11 @@ public class Resources extends AnahataToolkit {
 
     /**
      * Loads multiple resources into the agi context in a single turn.
+     * 
+     * @param uriStrings The URIs to load.
+     * @param initialSettings Optional initial viewport configuration.
+     * @return The list of unique resource identifiers.
+     * @throws Exception if loading fails.
      */
     @AiTool(value = "Loads multiple resources into the context by their URIs.", maxDepth = 12)
     public List<String> loadResources(
@@ -89,6 +94,10 @@ public class Resources extends AnahataToolkit {
 
     /**
      * Updates the viewport configuration for an existing text resource.
+     * 
+     * @param resourceId The UUID of the resource.
+     * @param settings The new settings.
+     * @throws Exception if the resource is not found.
      */
     @AiTool("Updates the viewport configuration for a text resource.")
     public void updateViewport(
@@ -105,6 +114,8 @@ public class Resources extends AnahataToolkit {
 
     /**
      * Unloads multiple resources from the context.
+     * 
+     * @param resourceIds The UUIDs to unregister.
      */
     @AiTool("Unloads multiple resources from the context.")
     public void unloadResources(@AiToolParam("The list of resource identifiers.") List<String> resourceIds) {
@@ -115,6 +126,10 @@ public class Resources extends AnahataToolkit {
 
     /**
      * Creates a new text file on the host filesystem and automatically registers it as a resource.
+     * 
+     * @param create The creation DTO.
+     * @return The new resource UUID.
+     * @throws Exception if creation fails.
      */
     @AiTool("Creates a new text file and registers it as a resource.")
     public String createTextFile(@AiToolParam("The file creation details.") FullTextFileCreate create) throws Exception {
@@ -136,6 +151,9 @@ public class Resources extends AnahataToolkit {
 
     /**
      * Updates an existing text file with full new content.
+     * 
+     * @param update The update DTO.
+     * @throws Exception if the update fails.
      */
     @AiTool("Updates an existing text file using full content replacement.")
     public void updateTextFile(@AiToolParam("The update details.") FullTextFileUpdate update) throws Exception {
@@ -143,16 +161,19 @@ public class Resources extends AnahataToolkit {
         
         Path path = Paths.get(update.getPath());
         Optional<Resource> res = getAgi().getResourceManager2().findByPath(path.toString());
-        Charset charset = res.get().getHandle().getCharset();
-
-        Files.writeString(path, update.getNewContent(), charset);
-        res.get().markSourceDirty();
-        
-        log("Updated text file: " + update.getPath());
+        if (res.isPresent()) {
+            Charset charset = res.get().getHandle().getCharset();
+            Files.writeString(path, update.getNewContent(), charset);
+            res.get().markDirty();
+            log("Updated text file: " + update.getPath());
+        }
     }
 
     /**
      * Performs surgical text replacements in an existing file.
+     * 
+     * @param replacements The replacements DTO.
+     * @throws Exception if replacements fail.
      */
     @AiTool("Performs multiple text replacements in a file.")
     public void replaceInTextFile(@AiToolParam("The set of replacements.") TextFileReplacements replacements) throws Exception {
@@ -161,17 +182,22 @@ public class Resources extends AnahataToolkit {
         Path path = Paths.get(replacements.getPath());
         Optional<Resource> res = getAgi().getResourceManager2().findByPath(path.toString());
         
-        String content = res.get().asText();
-        String updated = replacements.performReplacements(content);
-        
-        Files.writeString(path, updated, res.get().getHandle().getCharset());
-        res.get().markSourceDirty();
-        
-        log("Performed replacements in: " + replacements.getPath());
+        if (res.isPresent()) {
+            String content = res.get().asText();
+            String updated = replacements.performReplacements(content);
+            
+            Files.writeString(path, updated, res.get().getHandle().getCharset());
+            res.get().markDirty();
+            
+            log("Performed replacements in: " + replacements.getPath());
+        }
     }
 
     /**
      * Registers multiple paths as managed resources in a single turn.
+     * 
+     * @param paths The list of filesystem paths.
+     * @return The list of created resource orchestrators.
      */
     public List<Resource> registerPaths(@NonNull List<Path> paths) {
         List<Resource> toRegister = new ArrayList<>();

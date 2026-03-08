@@ -55,11 +55,12 @@ public class TextView extends AbstractResourceView {
      */
     public void setViewportSettings(TextViewportSettings settings) {
         this.viewport.setSettings(settings);
-        markViewDirty();
+        markDirty();
     }
 
-    /** {@inheritDoc} 
-     * Performs a memory-efficient stream processing using the viewport engine.
+    /** 
+     * {@inheritDoc} 
+     * <p>Performs a memory-efficient stream processing using the viewport engine.</p>
      */
     @Override
     public void reload(ResourceHandle handle) throws Exception {
@@ -67,29 +68,35 @@ public class TextView extends AbstractResourceView {
         this.processedCache = viewport.process(handle);
     }
 
-    /** {@inheritDoc} 
-     * Adds the processed text chunk to the RAG message, wrapped in markdown.
+    /** 
+     * {@inheritDoc} 
+     * <p>Adds the processed text chunk to the RAG message, wrapped in markdown.</p>
      */
     @Override
     public void populateRag(RagMessage ragMessage, ResourceHandle handle) throws Exception {
         ragMessage.addTextPart("```\n" + (processedCache != null ? processedCache : "") + "\n```");
     }
 
-    /** {@inheritDoc} 
-     * Returns the processed text for system instruction injection.
+    /** 
+     * {@inheritDoc} 
+     * <p>Returns the processed text for system instruction injection.</p>
      */
     @Override
     public List<String> getInstructions(ResourceHandle handle) throws Exception {
         return Collections.singletonList("```\n" + (processedCache != null ? processedCache : "") + "\n```");
     }
 
-    /** {@inheritDoc} */
+    /** 
+     * {@inheritDoc} 
+     */
     @Override
     public int getTokenCount(ResourceHandle handle) {
         return TokenizerUtils.countTokens(processedCache != null ? processedCache : "") + 20;
     }
 
-    /** {@inheritDoc} */
+    /** 
+     * {@inheritDoc} 
+     */
     @Override
     public String toString() {
         return viewport.toString();

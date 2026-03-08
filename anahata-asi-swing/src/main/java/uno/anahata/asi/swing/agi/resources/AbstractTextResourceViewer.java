@@ -7,7 +7,9 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.event.MouseWheelEvent;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.event.MouseWheelListener;
 import java.io.IOException;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -90,7 +92,14 @@ public abstract class AbstractTextResourceViewer extends JPanel {
     /** The button to toggle between View and Edit modes. */
     protected JButton editBtn;
     /** Flag indicating the current UI mode (view vs edit). */
+    @Getter
     protected boolean editing = false;
+
+    /** 
+     * Flag used to disable listeners during UI synchronization to prevent 
+     * recursive feedback loops.
+     */
+    private boolean syncing = false;
     
     /** 
      * Flag indicating if vertical scrolling is enabled. 
@@ -287,10 +296,23 @@ public abstract class AbstractTextResourceViewer extends JPanel {
             scroll.setVerticalScrollBarPolicy(verticalScrollEnabled ? JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED : JScrollPane.VERTICAL_SCROLLBAR_NEVER);
             scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
             
+            if (!verticalScrollEnabled && scroll.getViewport().getView() != null) {
+                // SIZING SINGULARITY: Force the scroll pane to report its content height as 
+                // its preferred height. This allows containing panels (like ToolCallPanel) 
+                // to "breathe" to the exact size of the text area.
+                Dimension viewPref = scroll.getViewport().getView().getPreferredSize();
+                scroll.setPreferredSize(new Dimension(scroll.getPreferredSize().width, viewPref.height));
+            }
+            
             // AUTHORITATIVE DISCOVERY: Install redispatcher on the innermost component (the leaf)
             // to ensure vertical wheel events pass through to the conversation.
             Component leaf = SwingUtils.findComponentLeaf(scroll);
             if (leaf != null) {
+                // Purity Fix: Remove existing wheel forwarders to prevent double-dispatching during re-syncs
+                for (MouseWheelListener mwl : leaf.getMouseWheelListeners()) {
+                    leaf.removeMouseWheelListener(mwl);
+                }
+                
                 leaf.addMouseWheelListener(e -> {
                     SwingUtils.redispatchMouseWheelEvent(leaf, e);
                     e.consume();
@@ -348,32 +370,41 @@ public abstract class AbstractTextResourceViewer extends JPanel {
      * </p>
      */
     protected void syncWithResource() {
-        // Late binding: re-check the view if it was null initially
-        if (textView == null && resource.getView() instanceof TextView tv) {
-            this.textView = tv;
-        }
-        
-        // AUTHORITATIVE RESOLUTION: If it's a virtual snippet (previewAsEditor), 
-        // always use raw content to avoid duplicate line numbering.
+        this.syncing = true;
         try {
-            String content = (previewAsEditor) 
-                    ? resource.asText() 
-                    : (textView != null && textView.getProcessedCache() != null) ? textView.getProcessedCache() : resource.asText();
-            updatePreviewContent(content);
-        } catch (IOException e) {
-            log.error("Failed to synchronize content from resource: {}", resource.getName(), e);
-        }
+            // Late binding: re-check the view if it was null initially
+            if (textView == null && resource.getView() instanceof TextView tv) {
+                this.textView = tv;
+            }
 
-        if (textView == null) {
-            return;
+            // AUTHORITATIVE RESOLUTION: If it's a virtual snippet (previewAsEditor), 
+            // always use raw content to avoid duplicate line numbering.
+            try {
+                String content = (previewAsEditor) 
+                        ? resource.asText() 
+                        : (textView != null && textView.getProcessedCache() != null) ? textView.getProcessedCache() : resource.asText();
+                updatePreviewContent(content);
+            } catch (IOException e) {
+                log.error("Failed to synchronize content from resource: {}", resource.getName(), e);
+            }
+
+            // HEIGHT SINGULARITY: Re-trigger scroll configuration whenever content changes in 
+            // passthrough mode. We wrap in invokeLater to ensure the text component has 
+            // updated its own preferred size calculation after the text was set.
+            if (!verticalScrollEnabled) {
+                SwingUtilities.invokeLater(this::configureScrollBehavior);
+            }
+
+            if (textView != null) {
+                TextViewportSettings settings = textView.getViewport().getSettings();
+                tailCheck.setSelected(settings.isTail());
+                tailLinesSpinner.setValue(settings.getTailLines());
+                grepField.setText(settings.getGrepPattern());
+                lineNumbersCheck.setSelected(settings.isIncludeLineNumbers());
+            }
+        } finally {
+            this.syncing = false;
         }
-        
-        TextViewportSettings settings = textView.getViewport().getSettings();
-        
-        tailCheck.setSelected(settings.isTail());
-        tailLinesSpinner.setValue(settings.getTailLines());
-        grepField.setText(settings.getGrepPattern());
-        lineNumbersCheck.setSelected(settings.isIncludeLineNumbers());
     }
 
     /**
@@ -381,7 +412,7 @@ public abstract class AbstractTextResourceViewer extends JPanel {
      * and triggers a background reload.
      */
     private void updateViewportSettings() {
-        if (textView == null) {
+        if (syncing || textView == null) {
             return;
         }
         
@@ -391,7 +422,7 @@ public abstract class AbstractTextResourceViewer extends JPanel {
         settings.setGrepPattern(grepField.getText());
         settings.setIncludeLineNumbers(lineNumbersCheck.isSelected());
         
-        textView.markViewDirty();
+        textView.markDirty();
         
         new SwingTask<>(this, "Update Viewport", () -> {
             resource.reloadIfNeeded();

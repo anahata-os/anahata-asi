@@ -302,19 +302,19 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
     /** 
      * {@inheritDoc} 
      * <p>Implementation details: Notifies the owner resource of content changes 
-     * detected by the IDE.</p>
+     * detected by the IDE using the new unified {@code markDirty()} marker.</p>
      */
     @Override
     public void fileChanged(FileEvent fe) {
         if (owner != null) {
-            owner.markSourceDirty();
+            owner.markDirty();
         }
     }
 
     /** 
      * {@inheritDoc} 
      * <p>Implementation details: Updates internal URI/Path and notifies owner 
-     * of the identity change within the IDE.</p>
+     * of the identity change within the IDE using the unified dirty marker.</p>
      */
     @Override
     public void fileRenamed(FileRenameEvent fe) {
@@ -323,7 +323,7 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
         this.path = uri.getScheme().equalsIgnoreCase("file") ? uri.getPath() : null;
         
         if (owner != null) {
-            owner.markSourceDirty();
+            owner.markDirty();
         }
     }
 
@@ -334,7 +334,11 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
     /** {@inheritDoc} 
      * <p>Implementation details: Notifies owner that the source is gone.</p>
      */
-    @Override public void fileDeleted(FileEvent fe) { if (owner != null) { owner.markSourceDirty(); } }
+    @Override public void fileDeleted(FileEvent fe) { 
+        if (owner != null) { 
+            owner.markDirty(); 
+        } 
+    }
     /** {@inheritDoc} */
     @Override public void fileAttributeChanged(FileAttributeEvent fe) {}
 }

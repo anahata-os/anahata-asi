@@ -51,11 +51,11 @@ public class Resource extends BasicContextProvider implements Rebindable {
     /** The timestamp of the last successful content reload from the handle. */
     private long lastLoadTimestamp = -1;
     
-    /** Flag indicating the source content has changed (pushed by reactive handles). */
-    private boolean sourceDirty = true;
-
-    /** Flag indicating the view configuration (viewport) has changed and needs reprocessing. */
-    private boolean viewDirty = true;
+    /** 
+     * Internal flag indicating the resource or its view configuration is dirty 
+     * and needs re-interpretation.
+     */
+    private boolean dirty = true;
 
     /**
      * Constructs a new Resource orchestrator.
@@ -91,14 +91,14 @@ public class Resource extends BasicContextProvider implements Rebindable {
 
     /**
      * Agnostically writes text content back to the source handle.
-     * Automatically triggers {@link #markSourceDirty()} upon success.
+     * Automatically triggers {@link #markDirty()} upon success.
      * 
      * @param content The text to write.
      * @throws IOException if the write fails.
      */
     public void write(String content) throws IOException {
         handle.write(content);
-        markSourceDirty();
+        markDirty();
     }
 
     /**
@@ -131,24 +131,13 @@ public class Resource extends BasicContextProvider implements Rebindable {
     }
 
     /** 
-     * Marks the source content as needing a reload. 
-     * Typically called by reactive handles when filesystem events are detected.
+     * Marks the resource as dirty, triggering a re-interpretation during the 
+     * next Turn or manual UI refresh.
      */
-    public void markSourceDirty() {
-        if (!sourceDirty) {
-            this.sourceDirty = true;
-            propertyChangeSupport.firePropertyChange("sourceDirty", false, true);
-        }
-    }
-
-    /** 
-     * Marks the view as needing a reload due to configuration changes (e.g., viewport tweaks).
-     * This signals the orchestrator to re-run the interpreter before the next Turn.
-     */
-    public void markViewDirty() {
-        if (!viewDirty) {
-            this.viewDirty = true;
-            propertyChangeSupport.firePropertyChange("viewDirty", false, true);
+    public void markDirty() {
+        if (!dirty) {
+            this.dirty = true;
+            propertyChangeSupport.firePropertyChange("dirty", false, true);
         }
     }
 
@@ -178,12 +167,16 @@ public class Resource extends BasicContextProvider implements Rebindable {
 
     /** 
      * {@inheritDoc} 
-     * <p>Orchestrates the reload and delegates RAG population to the active view.</p>
+     * <p>
+     * Implementation details:
+     * Performs a 'Pure Sense' of the resource view. Freshness must be guaranteed 
+     * by turn-level orchestration calling {@link #reloadIfNeeded()} prior to 
+     * RAG generation.
+     * </p>
      */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
         if (contextPosition == ContextPosition.PROMPT_AUGMENTATION) {
-            reloadIfNeeded();
             if (view != null) {
                 view.populateRag(ragMessage, handle);
             }
@@ -192,12 +185,15 @@ public class Resource extends BasicContextProvider implements Rebindable {
 
     /** 
      * {@inheritDoc} 
-     * <p>Orchestrates the reload and delegates instruction generation to the active view.</p>
+     * <p>
+     * Implementation details:
+     * Performs a 'Pure Sense' of instructions. Freshness is guaranteed by 
+     * turn-level orchestration.
+     * </p>
      */
     @Override
     public List<String> getSystemInstructions() throws Exception {
         if (contextPosition == ContextPosition.SYSTEM_INSTRUCTIONS) {
-            reloadIfNeeded();
             if (view != null) {
                 List<String> instructions = view.getInstructions(handle);
                 if (instructions.isEmpty()) {
@@ -210,7 +206,7 @@ public class Resource extends BasicContextProvider implements Rebindable {
     }
 
     /**
-     * Synchronously reloads the resource content if the source or view is dirty or stale.
+     * Synchronously reloads the resource content if it is dirty or stale.
      * <p>
      * <b>Auto-Binding:</b> If no view is currently assigned, this method performs 
      * MIME detection via the handle and binds the appropriate interpreter (Text vs Media).
@@ -226,10 +222,11 @@ public class Resource extends BasicContextProvider implements Rebindable {
             autoBindView();
         }
 
-        boolean sourceStale = handle.isStale(lastLoadTimestamp);
-        if (sourceDirty || viewDirty || (refreshPolicy == RefreshPolicy.LIVE && sourceStale)) {
-            log.info("Reloading resource: {} ({}) [SourceDirty: {}, ViewDirty: {}, SourceStale: {}]", 
-                    getName(), id, sourceDirty, viewDirty, sourceStale);
+        boolean stale = (refreshPolicy == RefreshPolicy.LIVE && handle.isStale(lastLoadTimestamp));
+        
+        if (dirty || stale) {
+            log.info("Reloading resource: {} ({}) [Dirty: {}, Stale: {}]", 
+                    getName(), id, dirty, stale);
             
             // SYNCHRONIZE IDENTITY: Notify UI of URI or Name changes (e.g. from physical renames)
             propertyChangeSupport.firePropertyChange("name", null, handle.getName());
@@ -239,8 +236,8 @@ public class Resource extends BasicContextProvider implements Rebindable {
                 view.reload(handle);
             }
             this.lastLoadTimestamp = handle.getLastModified();
-            this.sourceDirty = false;
-            this.viewDirty = false;
+            this.dirty = false;
+            
             // Notify UI that a physical reload occurred
             propertyChangeSupport.firePropertyChange("reloaded", false, true); 
         }
@@ -270,6 +267,7 @@ public class Resource extends BasicContextProvider implements Rebindable {
      */
     @Override
     public void rebind() {
+        super.rebind();
         handle.setOwner(this);
         if (view instanceof AbstractResourceView arv) {
             arv.setOwner(this);

@@ -76,7 +76,7 @@ public class TextUtils {
             }
         }
         int maxLength = 64;
-        String s = String.valueOf(value).replace("\n", "\\n").replace("\r", "");
+        String s = resolveContentString(value).replace("\n", "\\n").replace("\r", "");
         int totalChars = s.length();
         String tag = " *(..." + (totalChars - maxLength) + " more chars...)* ";
         if (totalChars > (maxLength + tag.length() + 8)) {
@@ -84,6 +84,37 @@ public class TextUtils {
         } else {
             return s;
         }
+    }
+
+    /**
+     * Intelligently resolves the pure Java representation for a value.
+     * <p>
+     * <b>Technical Purity:</b> This method bypasses JSON serialization entirely. 
+     * Collections are joined with newlines for clean multi-line display, while 
+     * arrays leverage a professional bracketed comma-separated format using reflection.
+     * </p>
+     * 
+     * @param value The object to represent.
+     * @return The raw Java string representation.
+     */
+    public static String resolveContentString(Object value) {
+        if (value == null) {
+            return "null";
+        }
+        if (value instanceof Collection<?> col) {
+            return col.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining("\n"));
+        }
+        if (value.getClass().isArray()) {
+            int length = java.lang.reflect.Array.getLength(value);
+            java.util.StringJoiner sj = new java.util.StringJoiner(", ", "[", "]");
+            for (int i = 0; i < length; i++) {
+                sj.add(String.valueOf(java.lang.reflect.Array.get(value, i)));
+            }
+            return sj.toString();
+        }
+        return String.valueOf(value);
     }
 
     /**

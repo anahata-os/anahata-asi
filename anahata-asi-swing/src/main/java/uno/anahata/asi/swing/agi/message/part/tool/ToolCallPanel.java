@@ -13,6 +13,8 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -335,7 +337,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         
         argsContainer.setVisible(!parameters.isEmpty());
         if (argsTabbedPane != null && argsTabbedPane.getTabCount() > 0) {
-            adjustTabbedPaneHeight(argsTabbedPane);
+            SwingUtilities.invokeLater(() -> adjustTabbedPaneHeight(argsTabbedPane));
         }
     }
 
@@ -389,7 +391,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
             if (resultsTabbedPane.getSelectedIndex() == -1) {
                 resultsTabbedPane.setSelectedIndex(0);
             }
-            adjustTabbedPaneHeight(resultsTabbedPane);
+            SwingUtilities.invokeLater(() -> adjustTabbedPaneHeight(resultsTabbedPane));
         }
     }
     
@@ -514,30 +516,39 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
     }
 
     /**
-     * Authoritatively adjusts the height of the tabbed pane by reaching inside 
-     * host-assembled frames (NetBeans/RSyntax) to find the actual content height.
+     * Authoritatively adjusts the height of the tabbed pane by leveraging the 
+     * selected component's preferred size.
+     * <p>
+     * <b>Geometric Accuracy:</b> Since high-fidelity viewers now report their 
+     * true content height when vertical scrolling is disabled, this method 
+     * ensures a perfect fit without magic offsets or hacks.
+     * </p>
      */
     private void adjustTabbedPaneHeight(JTabbedPane tabbedPane) {
-        Component selected = tabbedPane.getSelectedComponent();
-        if (selected != null) {
-            // REACH INSIDE: Find the innermost leaf component (the text area) to get the true height
-            Component leaf = SwingUtils.findComponentLeaf(selected);
-            Dimension prefSize = leaf.getPreferredSize();
+        int selectedIndex = tabbedPane.getSelectedIndex();
+        if (selectedIndex != -1) {
+            Component selected = tabbedPane.getComponentAt(selectedIndex);
+            // AUTHORITATIVE SIZING: The viewer now handles its own content-aware preferred height.
+            Dimension prefSize = selected.getPreferredSize();
             
-            // 40px for tab headers, 40px extra buffer for padding/borders.
-            int targetHeight = prefSize.height + 80; 
+            // Calculate exact UI overhead (tab header + insets)
+            Insets insets = tabbedPane.getInsets();
+            Rectangle tabBounds = tabbedPane.getBoundsAt(selectedIndex);
+            int tabAreaHeight = (tabBounds != null) ? tabBounds.height : 30;
+            
+            int targetHeight = prefSize.height + insets.top + insets.bottom + tabAreaHeight + 5; 
             
             Dimension currentPref = tabbedPane.getPreferredSize();
             if (currentPref.height != targetHeight) {
                 int width = tabbedPane.getWidth() > 0 ? tabbedPane.getWidth() : currentPref.width;
                 tabbedPane.setPreferredSize(new Dimension(width, targetHeight));
                 
-                // Force layout update
+                // Authoritative layout push
                 tabbedPane.revalidate();
                 tabbedPane.repaint();
                 getCentralContainer().revalidate();
                 
-                // Also notify the conversation panel to update its scrolling if necessary
+                // Signal conversation to update scrollbars
                 SwingUtilities.invokeLater(() -> {
                     agiPanel.getConversationPanel().revalidate();
                     agiPanel.getConversationPanel().repaint();
