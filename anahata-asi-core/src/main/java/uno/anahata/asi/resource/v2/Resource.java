@@ -90,8 +90,12 @@ public class Resource extends BasicContextProvider implements Rebindable {
     }
 
     /**
-     * Agnostically writes text content back to the source handle.
-     * Automatically triggers {@link #markDirty()} upon success.
+     * Authoritatively writes text content back to the source handle and 
+     * marks the resource as dirty to ensure a subsequent reload.
+     * <p>
+     * <b>Technical Purity:</b> This is the singular entry point for mutations, 
+     * managing both connectivity and state management in one weld.
+     * </p>
      * 
      * @param content The text to write.
      * @throws IOException if the write fails.
@@ -176,6 +180,7 @@ public class Resource extends BasicContextProvider implements Rebindable {
      */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
+        reloadIfNeeded();
         if (contextPosition == ContextPosition.PROMPT_AUGMENTATION) {
             if (view != null) {
                 view.populateRag(ragMessage, handle);
@@ -193,6 +198,7 @@ public class Resource extends BasicContextProvider implements Rebindable {
      */
     @Override
     public List<String> getSystemInstructions() throws Exception {
+        reloadIfNeeded();
         if (contextPosition == ContextPosition.SYSTEM_INSTRUCTIONS) {
             if (view != null) {
                 List<String> instructions = view.getInstructions(handle);

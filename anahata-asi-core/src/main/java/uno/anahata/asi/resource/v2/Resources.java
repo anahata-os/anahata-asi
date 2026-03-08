@@ -162,9 +162,9 @@ public class Resources extends AnahataToolkit {
         Path path = Paths.get(update.getPath());
         Optional<Resource> res = getAgi().getResourceManager2().findByPath(path.toString());
         if (res.isPresent()) {
-            Charset charset = res.get().getHandle().getCharset();
-            Files.writeString(path, update.getNewContent(), charset);
-            res.get().markDirty();
+            // SINGULAR ENTRY POINT: The Resource orchestrator now manages both 
+            // connectivity (disk write) and state (dirty marking).
+            res.get().write(update.getNewContent());
             log("Updated text file: " + update.getPath());
         }
     }
@@ -186,8 +186,8 @@ public class Resources extends AnahataToolkit {
             String content = res.get().asText();
             String updated = replacements.performReplacements(content);
             
-            Files.writeString(path, updated, res.get().getHandle().getCharset());
-            res.get().markDirty();
+            // SINGULAR ENTRY POINT: Management through the orchestrator API.
+            res.get().write(updated);
             
             log("Performed replacements in: " + replacements.getPath());
         }
