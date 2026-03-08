@@ -219,6 +219,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
      */
     public void decline() {
         setStatus(ToolExecutionStatus.DECLINED);
+        setUserFeedback("Declined by user. @AiTool annotated method did not get invoked.");
         setResult(null);
         setErrors(null);
         setThread(null);

@@ -44,7 +44,6 @@ import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRenderer;
 import uno.anahata.asi.swing.internal.SwingUtils;
 import uno.anahata.asi.toolkit.files.AbstractTextFileWrite;
-import uno.anahata.asi.toolkit.files.Files;
 import uno.anahata.asi.toolkit.files.LineComment;
 
 /**
@@ -191,13 +190,11 @@ public abstract class AbstractTextFileWriteRenderer<T extends AbstractTextFileWr
         }
 
         try {
-            Files files = agiPanel.getAgi().getToolkit(Files.class)
-                    .orElseThrow(() -> new IllegalStateException("Files toolkit not found."));
-            files.validateWrite(update);
+            update.validate(agiPanel.getAgi());
             return true;
         } catch (Exception e) {
             log.warn("Pre-flight validation failed for {}: {}", update.getPath(), e.getMessage());
-            call.getResponse().reject(e.getMessage());
+            call.getResponse().reject("Validation Failed. No changes have been applied to the resource: " + e.getMessage());
             return false;
         }
     }

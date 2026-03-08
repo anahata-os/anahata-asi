@@ -47,7 +47,7 @@ public class Resource2Node extends AbstractContextNode<Resource> {
     /** {@inheritDoc} */
     @Override
     protected void calculateLocalTokens() {
-        int tokens = (userObject.getView() != null) ? userObject.getView().getTokenCount(userObject.getHandle()) : 0;
+        int tokens = (userObject.getView() != null) ? userObject.getView().getTokenCount() : 0;
         if (userObject.getContextPosition() == ContextPosition.SYSTEM_INSTRUCTIONS) {
             this.instructionsTokens = tokens;
         } else {

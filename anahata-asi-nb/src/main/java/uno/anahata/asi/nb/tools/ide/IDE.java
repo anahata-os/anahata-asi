@@ -3,6 +3,7 @@ package uno.anahata.asi.nb.tools.ide;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
 import javax.swing.Action;
 import lombok.extern.slf4j.Slf4j;
@@ -13,8 +14,8 @@ import org.openide.loaders.DataObject;
 import org.openide.util.ContextAwareAction;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
-import uno.anahata.asi.nb.tools.files.nb.NbFiles;
-import uno.anahata.asi.toolkit.files.TextViewportSettings;
+import uno.anahata.asi.resource.v2.Resources;
+import uno.anahata.asi.resource.v2.view.TextViewportSettings;
 import uno.anahata.asi.nb.tools.ide.context.OpenTopComponentsContextProvider;
 import uno.anahata.asi.nb.tools.ide.context.OutputTabsContextProvider;
 import uno.anahata.asi.tool.AiTool;
@@ -78,16 +79,16 @@ public class IDE extends AnahataToolkit {
             throw new Exception("IDE log file not found at: " + logFile.getAbsolutePath());
         }
 
-        NbFiles filesToolkit = getToolkit(NbFiles.class);
+        Resources resourcesToolkit = getToolkit(Resources.class);
         
         TextViewportSettings settings = TextViewportSettings.builder()
                 .tail(true)
                 .tailLines(tailLines != null ? tailLines : 100)
                 .grepPattern(grepPattern)
-                .showLineNumbers(false)
+                .includeLineNumbers(false)
                 .build();
         
-        filesToolkit.loadTextFileInternal(logFile.getAbsolutePath(), settings);
+        resourcesToolkit.loadResources(Collections.singletonList(logFile.toURI().toString()), settings);
     }
 
     /**

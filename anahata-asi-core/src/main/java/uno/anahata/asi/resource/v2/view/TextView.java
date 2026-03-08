@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.resource.v2.view;
 
+import java.beans.PropertyChangeListener;
 import uno.anahata.asi.resource.v2.handle.ResourceHandle;
 import java.util.Collections;
 import java.util.List;
@@ -10,27 +11,31 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.internal.TokenizerUtils;
 import uno.anahata.asi.model.core.RagMessage;
+import uno.anahata.asi.model.core.Rebindable;
 import uno.anahata.asi.resource.v2.Resource;
-import uno.anahata.asi.resource.v2.handle.ResourceHandle;
 
 /**
  * A resource view that interprets content as plain text.
  * <p>
  * This view integrates the V2 {@link TextViewport} for high-fidelity 
- * streaming of large files.
+ * streaming of large files and implements self-aware reactivity to 
+ * viewport settings changes.
  * </p>
  */
 @Slf4j
 @Getter
 @Setter
 @NoArgsConstructor
-public class TextView extends AbstractResourceView {
+public class TextView extends AbstractResourceView implements Rebindable {
 
     /** The viewport engine for processing text. */
     private final TextViewport viewport = new TextViewport();
 
-    /** Cached processed output from the last reload. */
-    private String processedCache;
+    /** 
+     * Persistent listener for settings changes to trigger interpretation reloads. 
+     * We keep a field reference to ensure single registration in the PropertyChangeSupport.
+     */
+    private final PropertyChangeListener settingsListener = evt -> markDirty();
 
     /**
      * Constructs a TextView and links it to its parent resource.
@@ -38,6 +43,7 @@ public class TextView extends AbstractResourceView {
      */
     public TextView(Resource owner) {
         this.owner = owner;
+        setupListener();
     }
 
     /**
@@ -48,27 +54,38 @@ public class TextView extends AbstractResourceView {
     public TextView(Resource owner, TextViewportSettings settings) {
         this.owner = owner;
         this.viewport.setSettings(settings);
+        setupListener();
     }
 
     /**
-     * Updates the viewport settings and triggers a reactive reload 
-     * via the parent resource.
-     * 
-     * @param settings The new settings to apply.
+     * Authoritatively registers the persistent listener on the viewport settings.
      */
-    public void setViewportSettings(TextViewportSettings settings) {
-        this.viewport.setSettings(settings);
-        markDirty();
+    private void setupListener() {
+        TextViewportSettings settings = viewport.getSettings();
+        // Technical Purity: remove before add to prevent double-registration
+        settings.removePropertyChangeListener(settingsListener);
+        settings.addPropertyChangeListener(settingsListener);
     }
 
     /** 
      * {@inheritDoc} 
-     * <p>Performs a memory-efficient stream processing using the viewport engine.</p>
+     * <p>Implementation details: Re-establishes the reactive listener 
+     * for viewport settings after deserialization.</p>
      */
     @Override
-    public void reload(ResourceHandle handle) throws Exception {
+    public void rebind() {
+        setupListener();
+    }
+
+    /** 
+     * {@inheritDoc} 
+     * <p>Performs memory-efficient stream processing using the viewport engine.</p>
+     */
+    @Override
+    public void reload() throws Exception {
+        ResourceHandle handle = owner.getHandle();
         log.debug("Reloading TextView (Streaming) for: {}", handle.getUri());
-        this.processedCache = viewport.process(handle);
+        viewport.process(handle);
     }
 
     /** 
@@ -76,8 +93,9 @@ public class TextView extends AbstractResourceView {
      * <p>Adds the processed text chunk to the RAG message, wrapped in markdown.</p>
      */
     @Override
-    public void populateRag(RagMessage ragMessage, ResourceHandle handle) throws Exception {
-        ragMessage.addTextPart("```\n" + (processedCache != null ? processedCache : "") + "\n```");
+    public void populateRag(RagMessage ragMessage) throws Exception {
+        String content = viewport.getVisibleContent();
+        ragMessage.addTextPart("```\n" + (content != null ? content : "") + "\n```");
     }
 
     /** 
@@ -85,16 +103,18 @@ public class TextView extends AbstractResourceView {
      * <p>Returns the processed text for system instruction injection.</p>
      */
     @Override
-    public List<String> getInstructions(ResourceHandle handle) throws Exception {
-        return Collections.singletonList("```\n" + (processedCache != null ? processedCache : "") + "\n```");
+    public List<String> getInstructions() throws Exception {
+        String content = viewport.getVisibleContent();
+        return Collections.singletonList("```\n" + (content != null ? content : "") + "\n```");
     }
 
     /** 
      * {@inheritDoc} 
      */
     @Override
-    public int getTokenCount(ResourceHandle handle) {
-        return TokenizerUtils.countTokens(processedCache != null ? processedCache : "") + 20;
+    public int getTokenCount() {
+        String content = viewport.getVisibleContent();
+        return TokenizerUtils.countTokens(content != null ? content : "") + 20;
     }
 
     /** 

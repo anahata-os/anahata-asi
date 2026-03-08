@@ -53,6 +53,20 @@ public class Resources extends AnahataToolkit {
     }
 
     /**
+     * Intelligently resolves the actor string for registration heritage.
+     * <p>
+     * <b>Technical Purity:</b> Inspects the current tool execution context to 
+     * identify the model and tool responsible for the registration.
+     * </p>
+     * 
+     * @return The actor description string.
+     */
+    private String getActor() {
+        String toolName = getResponse().getCall().getTool().getName();
+        return getModelId() + " via @AiTool " + toolName;
+    }
+
+    /**
      * Loads multiple resources into the agi context in a single turn.
      * 
      * @param uriStrings The URIs to load.
@@ -73,7 +87,7 @@ public class Resources extends AnahataToolkit {
             Optional<Resource> existing = manager.findByUri(uriString);
             if (existing.isPresent()) {
                 if (initialSettings != null && existing.get().getView() instanceof TextView tv) {
-                    tv.setViewportSettings(initialSettings);
+                    tv.getViewport().setSettings(initialSettings);
                 }
                 ids.add(existing.get().getId());
                 continue;
@@ -91,7 +105,7 @@ public class Resources extends AnahataToolkit {
             ids.add(resource.getId());
         }
         
-        manager.registerAll(toRegister);
+        manager.registerAll(toRegister, getActor());
         return ids;
     }
 
@@ -108,7 +122,8 @@ public class Resources extends AnahataToolkit {
             @AiToolParam("The new viewport settings.") TextViewportSettings settings) throws Exception {
         Resource res = getAgi().getResourceManager2().getResources().get(resourceId);
         if (res != null && res.getView() instanceof TextView tv) {
-            tv.setViewportSettings(settings);
+            tv.getViewport().setSettings(settings);
+            tv.markDirty(); // Explicitly trigger re-interpretation
             log("Updated viewport for: " + res.getName());
         } else {
             throw new AiToolException("Resource not found or not textual: " + resourceId);
@@ -146,7 +161,7 @@ public class Resources extends AnahataToolkit {
         
         ResourceHandle handle = getAgi().getConfig().createResourceHandle(path.toUri());
         Resource resource = new Resource(handle);
-        getAgi().getResourceManager2().register(resource);
+        getAgi().getResourceManager2().register(resource, getActor());
         
         log("Created text file: " + create.getPath());
         return resource.getId();
@@ -194,22 +209,5 @@ public class Resources extends AnahataToolkit {
             
             log("Performed replacements in: " + replacements.getPath());
         }
-    }
-
-    /**
-     * Registers multiple paths as managed resources in a single turn.
-     * 
-     * @param paths The list of filesystem paths.
-     * @return The list of created resource orchestrators.
-     */
-    public List<Resource> registerPaths(@NonNull List<Path> paths) {
-        List<Resource> toRegister = new ArrayList<>();
-        for (Path p : paths) {
-            ResourceHandle handle = getAgi().getConfig().createResourceHandle(p.toUri());
-            Resource resource = new Resource(handle);
-            toRegister.add(resource);
-        }
-        getAgi().getResourceManager2().registerAll(toRegister);
-        return toRegister;
     }
 }

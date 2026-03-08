@@ -1,7 +1,6 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.resource.v2.view;
 
-import uno.anahata.asi.resource.v2.handle.ResourceHandle;
 import java.io.InputStream;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,11 +21,14 @@ public class MediaView extends AbstractResourceView {
     /** Cached binary data. */
     private byte[] cachedData;
 
-    /** {@inheritDoc} 
-     * Reads all bytes from the handle. Includes a 10MB safety warning.
+    /** 
+     * {@inheritDoc} 
+     * <p>Implementation details: Reads all bytes from the handle. 
+     * Includes a 10MB safety warning.</p>
      */
     @Override
-    public void reload(ResourceHandle handle) throws Exception {
+    public void reload() throws Exception {
+        ResourceHandle handle = owner.getHandle();
         log.debug("Reloading MediaView for: {}", handle.getUri());
         try (InputStream is = handle.openStream()) {
             this.cachedData = is.readAllBytes();
@@ -36,19 +38,22 @@ public class MediaView extends AbstractResourceView {
         }
     }
 
-    /** {@inheritDoc} 
-     * Adds the cached binary data as a BlobPart to the RAG message.
+    /** 
+     * {@inheritDoc} 
+     * <p>Implementation details: Adds the cached binary data as a BlobPart to the RAG message.</p>
      */
     @Override
-    public void populateRag(RagMessage ragMessage, ResourceHandle handle) throws Exception {
+    public void populateRag(RagMessage ragMessage) throws Exception {
         if (cachedData != null) {
-            ragMessage.addBlobPart(handle.getMimeType(), cachedData);
+            ragMessage.addBlobPart(owner.getHandle().getMimeType(), cachedData);
         }
     }
 
-    /** {@inheritDoc} */
+    /** 
+     * {@inheritDoc} 
+     */
     @Override
-    public int getTokenCount(ResourceHandle handle) {
+    public int getTokenCount() {
         if (cachedData == null) {
             return 0;
         }

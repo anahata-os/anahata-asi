@@ -176,7 +176,7 @@ public class Java extends AnahataToolkit {
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
         String ragText = "\nSession map keys (shared across turns): " + getSessionMap().keySet()
-                + "\nASI Container map keys (shared across sessions): " + getContainerMap().keySet()
+                + "\nASI Container map keys (shared across sessions): " + getAsiContainerMap().keySet()
                 + "\nApplication map keys (shared across containers): " + getApplicationMap().keySet()
                 + "\nDefault Compiler and ClassLoader Classpath (abbreviated):\n" + getPrettyPrintedDefaultClasspath();
         ragMessage.addTextPart(ragText);

@@ -2,6 +2,7 @@
 package uno.anahata.asi.resource.v2;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,6 +22,7 @@ import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.model.core.Rebindable;
+import uno.anahata.asi.resource.v2.handle.ResourceHandle;
 
 /**
  * The next-generation V2 Resource Manager.
@@ -47,13 +49,12 @@ public class ResourceManager2 extends BasicPropertyChangeSource implements Rebin
 
     /**
      * Registers a new V2 resource, making it managed by the framework.
-     * <p>
-     * This is a convenience wrapper around {@link #registerAll(Collection)}. 
-     * </p>
+     * 
      * @param resource The resource to register. Must not be null.
+     * @param registeredBy A string describing who registered the resource.
      */
-    public void register(@NonNull Resource resource) {
-        registerAll(Collections.singletonList(resource));
+    public void register(@NonNull Resource resource, String registeredBy) {
+        registerAll(Collections.singletonList(resource), registeredBy);
     }
 
     /**
@@ -65,8 +66,9 @@ public class ResourceManager2 extends BasicPropertyChangeSource implements Rebin
      * </p>
      * 
      * @param toRegister The collection of resources to register. Must not be null.
+     * @param registeredBy A string describing who registered the resources.
      */
-    public void registerAll(@NonNull Collection<Resource> toRegister) {
+    public void registerAll(@NonNull Collection<Resource> toRegister, String registeredBy) {
         if (toRegister.isEmpty()) {
             return;
         }
@@ -76,9 +78,14 @@ public class ResourceManager2 extends BasicPropertyChangeSource implements Rebin
             for (Resource res : toRegister) {
                 String uri = res.getHandle().getUri().toString();
                 if (findByUri(uri).isEmpty()) {
+                    
+                    // Authoritative Registration Metadata
+                    res.setRegistrationTime(System.currentTimeMillis());
+                    res.setDescription(registeredBy);
+
                     resources.put(res.getId(), res);
                     added.add(res);
-                    log.info("Registered V2 resource: {} ({})", res.getName(), res.getId());
+                    log.info("Registered V2 resource: {} ({}) [By: {}]", res.getName(), res.getId(), registeredBy);
                 } else {
                     log.debug("Skipping duplicate resource registration for URI: {}", uri);
                 }
@@ -137,6 +144,42 @@ public class ResourceManager2 extends BasicPropertyChangeSource implements Rebin
         return findByUri(Paths.get(path).toUri().toString());
     }
 
+    /**
+     * Registers multiple filesystem paths as managed resources.
+     * 
+     * @param paths The list of paths to register.
+     * @param registeredBy A description of the origin.
+     * @return The list of created resources.
+     */
+    public List<Resource> registerPaths(@NonNull List<Path> paths, String registeredBy) {
+        List<Resource> toRegister = new ArrayList<>();
+        for (Path p : paths) {
+            ResourceHandle handle = agi.getConfig().createResourceHandle(p.toUri());
+            Resource resource = new Resource(handle);
+            toRegister.add(resource);
+        }
+        registerAll(toRegister, registeredBy);
+        return toRegister;
+    }
+
+    /**
+     * Registers a pre-created resource handle directly.
+     * <p>
+     * <b>Technical Purity:</b> This convenience method avoids redundant 
+     * handle creation cycles when a host-aware toolkit (like NetBeans) 
+     * already has an authoritative object (like a FileObject).
+     * </p>
+     * 
+     * @param handle The source handle.
+     * @param registeredBy A description of the origin.
+     * @return The created and registered Resource orchestrator.
+     */
+    public Resource registerHandle(@NonNull ResourceHandle handle, String registeredBy) {
+        Resource res = new Resource(handle);
+        register(res, registeredBy);
+        return res;
+    }
+
     /** {@inheritDoc} */
     @Override
     public List<ContextProvider> getChildrenProviders() {
@@ -193,5 +236,5 @@ public class ResourceManager2 extends BasicPropertyChangeSource implements Rebin
     @Override
     public ContextProvider getParentProvider() {
         return null; // Root level provider
-}
+    }
 }

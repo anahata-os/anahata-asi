@@ -18,7 +18,8 @@ import org.netbeans.api.java.source.SourceUtils;
 import org.netbeans.spi.java.classpath.support.ClassPathSupport;
 import org.openide.filesystems.FileObject;
 import uno.anahata.asi.model.Page;
-import uno.anahata.asi.nb.tools.files.nb.NbFiles;
+import uno.anahata.asi.nb.resources.handle.NbHandle;
+import uno.anahata.asi.resource.v2.Resources;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolException;
 import uno.anahata.asi.tool.AiToolParam;
@@ -72,27 +73,30 @@ public class CodeModel extends AnahataToolkit {
     }
 
     /**
-     * Gets the source file for a given JavaType.
+     * Gets the source file for a given JavaType and automatically registers it as a resource.
      * @param javaType The minimalist keychain DTO from a findTypes call.
-     * @return the content of the source file.
+     * @return a confirmation message.
      * @throws Exception if the source cannot be retrieved.
      */
-    @AiTool("Gets the source file for a given JavaType.")
+    @AiTool("Gets the source file for a given JavaType. This operation automatically registers the source as a managed resource.")
     public String getTypeSources(
             @AiToolParam("The minimalist keychain DTO from a findTypes call.") JavaType javaType) throws Exception {
         JavaTypeSource source = javaType.getSource();
         FileObject fo = source.getSourceFile();
-        if (fo != null && "file".equals(fo.toURL().getProtocol())) {
-            getToolkit(NbFiles.class).loadTextFileInternal(fo.getPath(), new uno.anahata.asi.toolkit.files.TextViewportSettings());
-            return "requested type sources was a project file, resource added to context with LIVE refresh policy";
+        if (fo != null) {
+            // DIRECT REGISTRATION: Create handle with FileObject to avoid subsequent lookups
+            NbHandle handle = new NbHandle(fo);
+            String actor = getModelId() + " via @AiTool getTypeSources";
+            getAgi().getResourceManager2().registerHandle(handle, actor);
+            return "Source file '" + fo.getNameExt() + "' registered as a managed resource.";
         }
-        return source.getContent();
+        return "Source code not available for this type (it may be a library binary without source attached).";
     }
 
     /**
-     * Gets the source file for a type specified by its fully qualified name.
+     * Gets the source file for a type specified by its fully qualified name and registers it as a resource.
      * @param fqn The fully qualified name of the type.
-     * @return the content of the source file.
+     * @return a confirmation message.
      * @throws Exception if the type is not found or ambiguous.
      */
     @AiTool("Gets the source file for a type specified by its fully qualified name. Fails if the FQN is ambiguous.")
@@ -165,7 +169,7 @@ public class CodeModel extends AnahataToolkit {
      * Gets the Javadoc for a member specified by its fully qualified name.
      * @param memberFqn The FQN of the member (e.g., 'com.foo.Class.method').
      * @return the Javadoc comment.
-     * @throws Exception if the member is not found or ambiguous.
+     * @throws Exception if the Javadoc cannot be found or ambiguous.
      */
     @AiTool("Gets the Javadoc for a member specified by its fully qualified name. Fails if the FQN is ambiguous.")
     public String getMemberJavadocsByFqn(

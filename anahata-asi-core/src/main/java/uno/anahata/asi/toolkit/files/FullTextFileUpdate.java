@@ -3,12 +3,14 @@ package uno.anahata.asi.toolkit.files;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.resource.v2.Resource;
 import uno.anahata.asi.tool.AiToolException;
 
 /**
@@ -48,5 +50,23 @@ public class FullTextFileUpdate extends AbstractTextFileWrite {
     @Override
     public void validate(Agi agi) throws AiToolException {
         super.validate(agi);
+        
+        Optional<Resource> res = agi.getResourceManager2().findByPath(getPath());
+        if (res.isPresent()) {
+            try {
+                Resource r = res.get();
+                // Ensure we are comparing against the latest physical state
+                r.reloadIfNeeded();
+                if (java.util.Objects.equals(r.asText(), newContent)) {
+                    throw new AiToolException("Update rejected: The provided content is identical to the current file content on disk.");
+                }
+            } catch (AiToolException e) {
+                throw e;
+            } catch (Exception e) {
+                // EXCEPTION POLICY: Strictly forbidding quiet catching. 
+                // All read/reload failures during validation must be reported.
+                throw new AiToolException("Failed to validate file identity for update: " + e.getMessage(), e);
+            }
+        }
     }
 }

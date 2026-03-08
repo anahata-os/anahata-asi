@@ -270,7 +270,9 @@ public class Resource2Panel extends JPanel {
      * Synchronizes the common metadata controls with the resource state.
      */
     private void syncUiWithResource() {
-        if (currentResource == null) return;
+        if (currentResource == null || syncing) {
+            return;
+        }
         
         this.syncing = true;
         try {
@@ -320,8 +322,8 @@ public class Resource2Panel extends JPanel {
     private JComponent createModelPerspectiveComponent() {
         RagMessage rawMsg = new RagMessage(agiPanel.getAgi());
         try {
-            // AUTHORITATIVE SENSING: Ensure fresh reload before generating perspective
-            currentResource.reloadIfNeeded();
+            // SENSING PURITY: Freshness is guaranteed by the Turn orchestration or 
+            // the change event that triggered this sync. Reloading here causes recursion.
             rawMsg.addTextPart(currentResource.getHeader());
             if (currentResource.getContextPosition() == ContextPosition.SYSTEM_INSTRUCTIONS) {
                 currentResource.getSystemInstructions().forEach(rawMsg::addTextPart);

@@ -177,6 +177,25 @@ public interface ResourceHandle extends Rebindable {
                 || mime.equals("application/octet-stream"); // Catch-all for lost/unknown files
     }
 
+    /**
+     * Returns a machine-readable header summarizing the connectivity state.
+     * <p>
+     * <b>Technical Purity:</b> The first line always contains the implementation 
+     * class FQN. The second line provides a comma-separated list of common attributes. 
+     * Subclasses should override this to append implementation-specific details.
+     * </p>
+     * @return The header string.
+     */
+    default String getHeader() {
+        return "Handler fqn: " + getClass().getName() + "\n" +
+               "Handler details: uri=" + getUri() + 
+               ", mime=" + getMimeType() + 
+               ", exists=" + exists() + 
+               ", virtual=" + isVirtual() + 
+               ", writable=" + isWritable() + 
+               ", lastModified=" + getLastModified();
+    }
+
     /** 
      * Associates this handle with its parent Resource. 
      * @param owner The owning Resource orchestrator.

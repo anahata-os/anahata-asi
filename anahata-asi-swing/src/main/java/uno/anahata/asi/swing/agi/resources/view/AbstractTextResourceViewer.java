@@ -370,6 +370,10 @@ public abstract class AbstractTextResourceViewer extends JPanel {
      * </p>
      */
     protected void syncWithResource() {
+        if (syncing) {
+            return;
+        }
+        
         this.syncing = true;
         try {
             // Late binding: re-check the view if it was null initially
@@ -382,7 +386,7 @@ public abstract class AbstractTextResourceViewer extends JPanel {
             try {
                 String content = (previewAsEditor) 
                         ? resource.asText() 
-                        : (textView != null && textView.getProcessedCache() != null) ? textView.getProcessedCache() : resource.asText();
+                        : (textView != null && textView.getViewport().getVisibleContent() != null) ? textView.getViewport().getVisibleContent() : resource.asText();
                 updatePreviewContent(content);
             } catch (IOException e) {
                 log.error("Failed to synchronize content from resource: {}", resource.getName(), e);

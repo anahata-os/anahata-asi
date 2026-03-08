@@ -51,12 +51,10 @@ public class FilesContextActionLogic2 {
         collectAdditions(fo, targetAgi, recursive, pathsToRegister, fosToRefresh);
         
         if (!pathsToRegister.isEmpty()) {
-            targetAgi.getToolkit(Resources.class).ifPresent(tk -> {
-                tk.registerPaths(pathsToRegister);
-                fireBatchRefreshRecursive(fosToRefresh);
-                log.info("Batch added {} resources to V2 context in session '{}'", 
-                        pathsToRegister.size(), targetAgi.getDisplayName());
-            });
+            targetAgi.getResourceManager2().registerPaths(pathsToRegister, "added to context by user via context menu item");
+            fireBatchRefreshRecursive(fosToRefresh);
+            log.info("Batch added {} resources to V2 context in session '{}'", 
+                    pathsToRegister.size(), targetAgi.getDisplayName());
         }
     }
 

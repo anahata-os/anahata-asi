@@ -1,7 +1,6 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.resource.v2.view;
 
-import uno.anahata.asi.resource.v2.handle.ResourceHandle;
 import java.util.Collections;
 import java.util.List;
 import uno.anahata.asi.model.core.RagMessage;
@@ -16,42 +15,51 @@ import uno.anahata.asi.resource.v2.Resource;
  */
 public interface ResourceView {
     /** 
-     * Reloads and processes the content from the handle. 
+     * Reloads and processes the content from the source. 
      * This is called by the Resource orchestrator when the resource is stale or dirty.
      * 
-     * @param handle The source handle to read from.
      * @throws Exception if processing or reading fails.
      */
-    void reload(ResourceHandle handle) throws Exception;
+    void reload() throws Exception;
 
     /** 
      * Populates the RAG message with the appropriate parts (Text or Blob). 
      * 
      * @param ragMessage The target RAG message.
-     * @param handle The source handle for metadata context.
      * @throws Exception if population fails.
      */
-    void populateRag(RagMessage ragMessage, ResourceHandle handle) throws Exception;
+    void populateRag(RagMessage ragMessage) throws Exception;
 
     /** 
      * Provides system instructions if the resource is in that position. 
      * Returns a list of processed text blocks.
      * 
-     * @param handle The source handle for metadata context.
      * @return A list of instruction strings.
      * @throws Exception if instruction generation fails.
      */
-    default List<String> getInstructions(ResourceHandle handle) throws Exception {
+    default List<String> getInstructions() throws Exception {
         return Collections.emptyList();
     }
     
     /** 
      * Returns an estimated token count for the current processed state of the view. 
      * 
-     * @param handle The source handle for metadata context.
      * @return The estimated token count.
      */
-    int getTokenCount(ResourceHandle handle);
+    int getTokenCount();
+
+    /**
+     * Returns a machine-readable header summarizing the interpretation state.
+     * <p>
+     * <b>Technical Purity:</b> The first line always contains the implementation 
+     * class FQN. The second line provides the salient interpretation details 
+     * (e.g., viewport metrics).
+     * </p>
+     * @return The header string.
+     */
+    default String getHeader() {
+        return "View fqn: " + getClass().getName();
+    }
 
     /**
      * Associates this view with its parent resource.

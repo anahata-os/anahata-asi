@@ -332,14 +332,15 @@ public class InputPanel extends JPanel {
      * Registers a list of file paths as managed V2 resources and provides feedback.
      * 
      * @param paths The paths to register.
+     * @param registeredBy A string describing the origin of the registration.
      */
-    public void registerPathsAsResources(List<Path> paths) {
+    public void registerPathsAsResources(List<Path> paths, String registeredBy) {
         executeTask("Register Resources", () -> {
             ResourceManager2 manager = agi.getResourceManager2();
             for (Path p : paths) {
                 ResourceHandle handle = agi.getConfig().createResourceHandle(p.toUri());
                 Resource resource = new Resource(handle);
-                manager.register(resource);
+                manager.register(resource, registeredBy);
             }
             return paths.size();
         }, (count) -> {
@@ -382,7 +383,7 @@ public class InputPanel extends JPanel {
         fileChooser.setMultiSelectionEnabled(true);
         if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             File[] selectedFiles = fileChooser.getSelectedFiles();
-            registerPathsAsResources(Arrays.stream(selectedFiles).map(File::toPath).toList());
+            registerPathsAsResources(Arrays.stream(selectedFiles).map(File::toPath).toList(), "added to context by user via attach button");
         }
     }
 

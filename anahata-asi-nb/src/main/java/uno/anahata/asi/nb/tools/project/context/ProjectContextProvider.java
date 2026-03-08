@@ -2,6 +2,8 @@
 package uno.anahata.asi.nb.tools.project.context;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -10,9 +12,7 @@ import org.netbeans.api.project.ProjectUtils;
 import org.openide.filesystems.FileObject;
 import uno.anahata.asi.context.ContextPosition;
 import uno.anahata.asi.model.core.RagMessage;
-import uno.anahata.asi.model.resource.AbstractPathResource;
-import uno.anahata.asi.model.resource.files.TextFileResource;
-import uno.anahata.asi.nb.tools.files.nb.NbFiles;
+import uno.anahata.asi.resource.v2.Resource;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.nb.tools.project.ProjectOverview;
 import uno.anahata.asi.nb.tools.maven.DependencyScope;
@@ -56,16 +56,6 @@ public class ProjectContextProvider extends AbstractProjectContextProvider {
         ProjectStructureContextProvider structure = new ProjectStructureContextProvider(projectsToolkit, projectPath);
         structure.setParent(this);
         children.add(structure);
-
-        /* Legacy providers commented out in favor of unified ProjectStructureContextProvider
-        ProjectFilesContextProvider files = new ProjectFilesContextProvider(projectsToolkit, projectPath);
-        files.setParent(this);
-        children.add(files);
-
-        ProjectComponentsContextProvider components = new ProjectComponentsContextProvider(projectsToolkit, projectPath);
-        components.setParent(this);
-        children.add(components);
-        */
 
         ProjectAlertsContextProvider alerts = new ProjectAlertsContextProvider(projectsToolkit, projectPath);
         alerts.setParent(this);
@@ -111,7 +101,7 @@ public class ProjectContextProvider extends AbstractProjectContextProvider {
      */
     private void syncMdResource() {
         String mdPath = new File(projectPath, "anahata.md").getAbsolutePath();
-        Optional<? extends AbstractPathResource<?>> existing = projectsToolkit.getResourceManager().findByPath(mdPath);
+        Optional<Resource> existing = projectsToolkit.getAgi().getResourceManager2().findByPath(mdPath);
 
         if (isProviding()) {
             if (existing.isEmpty()) {
@@ -120,22 +110,29 @@ public class ProjectContextProvider extends AbstractProjectContextProvider {
                     if (p == null) return;
                     
                     FileObject mdFo = Projects.ensureAnahataMdExists(p);
-                    NbFiles filesToolkit = projectsToolkit.getToolkit(NbFiles.class);
-                    TextFileResource resource = filesToolkit.loadTextFileInternal(mdFo.getPath(), null);
+                    Path path = new File(mdFo.getPath()).toPath();
                     
-                    // Force the position to SYSTEM_INSTRUCTIONS
-                    resource.setContextPosition(ContextPosition.SYSTEM_INSTRUCTIONS);
-                    log.info("Registered anahata.md as SYSTEM_INSTRUCTIONS for project: {}", projectPath);
+                    List<Resource> registered = projectsToolkit.getAgi().getResourceManager2().registerPaths(
+                        List.of(path), 
+                        "added to context by user via project instructions sync"
+                    );
+                    
+                    if (!registered.isEmpty()) {
+                        Resource resource = registered.get(0);
+                        // Force the position to SYSTEM_INSTRUCTIONS
+                        resource.setContextPosition(ContextPosition.SYSTEM_INSTRUCTIONS);
+                        log.info("Registered anahata.md as SYSTEM_INSTRUCTIONS for project: {}", projectPath);
+                    }
                 } catch (Exception e) {
                     log.error("Failed to sync anahata.md for project: " + projectPath, e);
                 }
-            } else if (existing.get() instanceof TextFileResource tfr) {
+            } else {
                 // Ensure it's in the right position if it exists
-                tfr.setContextPosition(ContextPosition.SYSTEM_INSTRUCTIONS);
+                existing.get().setContextPosition(ContextPosition.SYSTEM_INSTRUCTIONS);
             }
         } else {
             existing.ifPresent(resource -> {
-                projectsToolkit.getResourceManager().unregister(resource.getId());
+                projectsToolkit.getAgi().getResourceManager2().unregister(resource.getId());
                 log.info("Unregistered anahata.md for project: {}", projectPath);
             });
         }

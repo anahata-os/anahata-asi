@@ -131,7 +131,7 @@ public class FullTextFileCreateRenderer implements ParameterRenderer<FullTextFil
             value.validate(agiPanel.getAgi());
             return true;
         } catch (Exception e) {
-            call.getResponse().reject(e.getMessage());
+            call.getResponse().reject("Validation failed, no file got created: " + e.getMessage());
             return false;
         }
     }

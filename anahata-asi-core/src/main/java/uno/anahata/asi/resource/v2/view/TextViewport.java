@@ -19,8 +19,6 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.input.ReversedLinesFileReader;
 import org.apache.commons.lang3.StringUtils;
-import uno.anahata.asi.resource.v2.handle.PathHandle;
-import uno.anahata.asi.resource.v2.handle.ResourceHandle;
 
 /**
  * The V2 Universal Streaming Viewport Engine.
@@ -46,6 +44,9 @@ public class TextViewport {
     /** Current viewport configuration. */
     private TextViewportSettings settings = new TextViewportSettings();
 
+    /** The processed text chunk captured during the last process pass. */
+    private String visibleContent;
+
     /** Total size of the source in characters. */
     private long totalChars;
     
@@ -59,14 +60,22 @@ public class TextViewport {
     private int truncatedLinesCount;
 
     /**
-     * Processes a resource handle and returns the resulting text chunk.
+     * Constructs a viewport engine with specific initial settings.
+     * @param settings The viewport configuration.
+     */
+    public TextViewport(TextViewportSettings settings) {
+        this.settings = settings;
+    }
+
+    /**
+     * Processes a resource handle and authoritatively updates the internal 
+     * {@code visibleContent} and metrics.
      * 
      * @param handle The source handle.
-     * @return The processed text ready for the prompt.
      * @throws Exception if processing fails.
      */
-    public String process(ResourceHandle handle) throws Exception {
-        log.debug("Processing viewport for: {}", handle.getUri());
+    public void process(ResourceHandle handle) throws Exception {
+        log.debug("Processing viewport engine for: {}", handle.getUri());
         
         // 1. Initial metadata update (if physical and small)
         if (!handle.isVirtual() && handle instanceof PathHandle ph) {
@@ -87,7 +96,7 @@ public class TextViewport {
             lines = processPagination(handle);
         }
 
-        return finalizeOutput(lines);
+        this.visibleContent = finalizeOutput(lines);
     }
 
     /** 

@@ -1,12 +1,11 @@
 /* Licensed under the Apache License, Version 2.0 */
 package uno.anahata.asi;
 
-import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.gemini.GeminiAgiProvider;
 import uno.anahata.asi.nb.mine.NetBeansEditorKitProvider;
 import uno.anahata.asi.nb.mine.NetBeansIconProvider;
 import uno.anahata.asi.nb.tools.Refactor;
-import uno.anahata.asi.nb.tools.files.nb.NbFiles;
+
 import uno.anahata.asi.nb.tools.ide.Editor;
 import uno.anahata.asi.nb.tools.ide.IDE;
 import uno.anahata.asi.swing.toolkit.Screens;
@@ -20,7 +19,6 @@ import uno.anahata.asi.resource.v2.handle.ResourceHandle;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.toolkit.Host;
 import uno.anahata.asi.toolkit.Java;
-import uno.anahata.asi.toolkit.files.Files;
 
 /**
  * NetBeans-specific agi configuration.
@@ -36,9 +34,6 @@ import uno.anahata.asi.toolkit.files.Files;
 public class NetBeansAgiConfig extends SwingAgiConfig {
 
     {
-        // Replace core Files with NbFiles
-        getToolClasses().remove(Files.class);
-        getToolClasses().add(NbFiles.class);
         
         // Replace core Java with NbJava
         getToolClasses().remove(Java.class);
@@ -82,7 +77,7 @@ public class NetBeansAgiConfig extends SwingAgiConfig {
     @Override
     public ResourceHandle createResourceHandle(java.net.URI uri) {
         if ("file".equalsIgnoreCase(uri.getScheme()) || "jar".equalsIgnoreCase(uri.getScheme())) {
-            return new NbHandle(uri.getPath());
+            return new NbHandle(uri);
         }
         return super.createResourceHandle(uri);
     }

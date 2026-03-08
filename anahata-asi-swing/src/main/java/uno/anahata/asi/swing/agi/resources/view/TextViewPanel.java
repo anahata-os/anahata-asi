@@ -91,7 +91,7 @@ public class TextViewPanel extends AbstractViewPanel<TextView> {
             grepField.setText(settings.getGrepPattern());
             lineNumbersCheck.setSelected(settings.isIncludeLineNumbers());
             
-            int tokens = view.getTokenCount(view.getOwner().getHandle());
+            int tokens = view.getTokenCount();
             tokenLabel.setText("Estimated Tokens: " + tokens);
         } finally {
             this.syncing = false;

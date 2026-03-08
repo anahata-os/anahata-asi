@@ -232,37 +232,6 @@ public class Session extends AnahataToolkit {
         return "Server tools have been enabled. Local tools are now disabled. " +
                "You can now use tools like Google Search or Maps if supported by the model.";
     }
-    
-    /**
-     * Removes multiple managed resources from the active context in a single 
-     * high-performance operation.
-     * <p>
-     * Uses the batch unregistration path in {@link uno.anahata.asi.resource.ResourceManager}. 
-     * This ensures that the user receives descriptive feedback on exactly which 
-     * resources were removed while the UI only rebuilds once.
-     * </p>
-     * 
-     * @param resourceIds The unique IDs of the resources to unload.
-     */
-    @AiTool(value = "Removes the provided managed resources from the active workspace (the RAG message).")
-    public void unloadResource(
-            @AiToolParam("The unique IDs of the resources to unload.") List<String> resourceIds) {
-        if (resourceIds == null || resourceIds.isEmpty()) {
-            log("No resource IDs provided for unloading.");
-            return;
-        }
-
-        List<AbstractResource<?, ?>> removed = getResourceManager().unregisterAll(resourceIds);
-        
-        if (removed.isEmpty()) {
-            log("No resources were found matching the provided IDs.");
-        } else {
-            String names = removed.stream()
-                    .map(AbstractResource::getName)
-                    .collect(Collectors.joining(", "));
-            log("Successfully unregistered " + removed.size() + " resources: " + names);
-        }
-    }
 
     /**
      * Populates the RAG message with comprehensive session metadata.

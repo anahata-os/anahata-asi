@@ -245,7 +245,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
 
         declineButton = new JButton("Decline", new CancelIcon(16));
         declineButton.setToolTipText("Set status to DECLINED");
-        declineButton.addActionListener(e -> getPart().getResponse().setStatus(ToolExecutionStatus.DECLINED));
+        declineButton.addActionListener(e -> getPart().getResponse().reject("Rejected by user"));
 
         revertButton = new JButton("Clear response", new DeleteIcon(16));
         revertButton.setToolTipText("Clear execution results, erros and logs and sets the status to DECLINED");

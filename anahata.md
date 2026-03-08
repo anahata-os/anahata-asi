@@ -36,8 +36,10 @@ This project uses a set of key documents to guide development. For detailed info
 - **API Leanliness**: Avoid redundant signatures or secondary constructors. Keep the API lean and consistent.
 - **Identity & Distributed Observability**: Message metadata must distinguish between the Logical Actor (`getFrom()`) and the Physical/Virtual Host (`getDevice()`).
 - **No Reinventing Commons**: Use existing libraries like **Apache Commons Lang 3**.
+- **Fail Fast**: Avoid defensive programming like redundant null checks for internal components. Let it fail so root causes can be fixed. 
+- **No Method-Start Null Checks**: You are strictly forbidden from starting a method with a null check on parameters for the sake of defensive programming (e.g., `if (other == null) return;`). Let the JVM throw the NullPointerException so the caller can be corrected.
+- **No Quietly Catching Exceptions**: You are strictly forbidden from catching exceptions and doing nothing. All exceptions should be logged. 
 - **Clean Execution**: Do not use try-catch blocks inside `@AiTool` methods unless performing specific recovery. The framework handles exceptions automatically.
-- **Fail Fast**: Avoid defensive programming like redundant null checks for internal components. Let it fail so root causes can be fixed.
 - **Mandatory Braces**: Always use curly braces `{}` for all control flow statements (`if`, `else`, `for`, `while`, `do`).
 - **Logging Standard**: Use SLF4J (`@Slf4j`) for all logging. Never use `System.out.println()`.
 - **Lombok Purity**: Rely on Lombok annotation processing; do not add explicit getters/setters for Lombok-managed fields.
@@ -63,13 +65,17 @@ Comprehensive documentation is mandatory for this open-source project. Existing 
     `/** {@inheritDoc} <p>Describe the specific implementation logic here, explaining why and how this member is being overridden/implemented.</p> */`
 - **Implementation Details**: For complex logic, use Javadoc to explain internal side effects and thread-safety considerations.
 
-## 6. Evolutionary Status
+## 6. Lifecycle Management
+
+- **The rebind() Hook**: The `rebind()` method is strictly reserved for recovering transient fields and re-establishing listeners after deserialization (e.g., from Kryo). It must never be called programmatically from business logic or constructors. Implementations must always call `super.rebind()` to ensure parent recovery.
+
+## 7. Evolutionary Status
 
 This project is in a pre-production state. We value architectural purity and long-term maintainability.
 
 - **Architectural Rework**: If you identify a cleaner or more efficient design pattern, you are encouraged to propose and implement a rework of existing structures. Refactoring for clarity and future-proofing is preferred over applying patches to flawed designs.
 
-## 7. Environment
+## 8. Environment
 
 - **Working Directory**: `~/.anahata/asi` (Standardized for V2).
 

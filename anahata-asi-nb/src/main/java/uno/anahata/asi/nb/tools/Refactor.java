@@ -47,6 +47,7 @@ import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import uno.anahata.asi.model.resource.AbstractPathResource;
 import uno.anahata.asi.model.resource.AbstractResource;
+import uno.anahata.asi.resource.v2.Resource;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolParam;
 import uno.anahata.asi.tool.AiToolkit;
@@ -178,14 +179,14 @@ public class Refactor extends AnahataToolkit{
      * It provides specific instructions on how to purge or recover deleted resource content.
      */
     private String enrichWithContextInfo(String path, String result, String action) {
-        Optional<? extends AbstractPathResource<?>> res = getResourceManager().findByPath(path);
+        Optional<Resource> res = getResourceManager2().findByPath(path);
         if (res.isPresent()) {
             String uuid = res.get().getId();
             StringBuilder sb = new StringBuilder(result);
             sb.append("\n--- Context Awareness ---\n");
             if ("deleted".equals(action)) {
                 sb.append("Resource [").append(uuid).append("] remains in context. Its last known content is cached. ")
-                  .append("Use Session.unloadResource to remove it from the RAG Message or ")
+                  .append("Use Resources.unloadResources to remove it from the RAG Message or ")
                   .append("Session.updateContextProviders(false, List.of(\"").append(uuid).append("\")) to free the cached content from the context window ")
                   .append("and Session.updateContextProviders(true, List.of(\"").append(uuid).append("\")) if you need to recover its contents.");
             } else {
