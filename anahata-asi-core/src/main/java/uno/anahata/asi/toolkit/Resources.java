@@ -3,7 +3,7 @@ package uno.anahata.asi.toolkit;
 
 import uno.anahata.asi.agi.resource.view.TextViewportSettings;
 import uno.anahata.asi.agi.resource.view.TextView;
-import uno.anahata.asi.agi.resource.view.ResourceHandle;
+import uno.anahata.asi.agi.resource.handle.ResourceHandle;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;

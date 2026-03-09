@@ -21,7 +21,7 @@ import org.openide.filesystems.URLMapper;
 import org.openide.loaders.DataObject;
 import uno.anahata.asi.internal.TikaUtils;
 import uno.anahata.asi.persistence.Rebindable;
-import uno.anahata.asi.agi.resource.view.AbstractResourceHandle;
+import uno.anahata.asi.agi.resource.handle.AbstractResourceHandle;
 import uno.anahata.asi.agi.resource.Resource;
 
 /**

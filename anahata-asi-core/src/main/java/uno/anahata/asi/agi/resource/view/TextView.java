@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.agi.resource.view;
 
+import uno.anahata.asi.agi.resource.handle.ResourceHandle;
 import java.beans.PropertyChangeListener;
 import java.util.Collections;
 import java.util.List;

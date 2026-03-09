@@ -28,7 +28,7 @@ import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.message.AbstractModelMessage;
 import uno.anahata.asi.agi.message.InputUserMessage;
 import uno.anahata.asi.agi.resource.Resource;
-import uno.anahata.asi.agi.resource.view.ResourceHandle;
+import uno.anahata.asi.agi.resource.handle.ResourceHandle;
 import uno.anahata.asi.agi.resource.ResourceManager2;
 import uno.anahata.asi.agi.status.AgiStatus;
 import uno.anahata.asi.swing.agi.AgiPanel;

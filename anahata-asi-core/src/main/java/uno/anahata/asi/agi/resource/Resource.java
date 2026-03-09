@@ -4,7 +4,7 @@ package uno.anahata.asi.agi.resource;
 import uno.anahata.asi.agi.resource.view.ResourceView;
 import uno.anahata.asi.agi.resource.view.MediaView;
 import uno.anahata.asi.agi.resource.view.TextView;
-import uno.anahata.asi.agi.resource.view.ResourceHandle;
+import uno.anahata.asi.agi.resource.handle.ResourceHandle;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;

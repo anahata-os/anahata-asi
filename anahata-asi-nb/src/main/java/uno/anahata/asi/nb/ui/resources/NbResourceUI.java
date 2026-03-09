@@ -12,7 +12,7 @@ import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
 import uno.anahata.asi.nb.tools.ide.IDE;
-import uno.anahata.asi.agi.resource.view.PathHandle;
+import uno.anahata.asi.agi.resource.handle.PathHandle;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.resources.DefaultResourceUI;

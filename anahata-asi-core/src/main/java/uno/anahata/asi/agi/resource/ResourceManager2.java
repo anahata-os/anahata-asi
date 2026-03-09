@@ -22,7 +22,7 @@ import uno.anahata.asi.agi.context.ContextProvider;
 import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.persistence.Rebindable;
-import uno.anahata.asi.agi.resource.view.ResourceHandle;
+import uno.anahata.asi.agi.resource.handle.ResourceHandle;
 
 /**
  * The next-generation V2 Resource Manager.

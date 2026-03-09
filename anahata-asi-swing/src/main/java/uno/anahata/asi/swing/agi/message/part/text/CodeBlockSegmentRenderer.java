@@ -19,7 +19,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.resource.Resource;
-import uno.anahata.asi.agi.resource.view.StringHandle;
+import uno.anahata.asi.agi.resource.handle.StringHandle;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
 import uno.anahata.asi.swing.agi.resources.ResourceUI;

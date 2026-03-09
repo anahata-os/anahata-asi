@@ -1,6 +1,8 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.agi.resource.view;
 
+import uno.anahata.asi.agi.resource.handle.ResourceHandle;
+import uno.anahata.asi.agi.resource.handle.PathHandle;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
