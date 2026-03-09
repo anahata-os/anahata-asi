@@ -41,8 +41,8 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
     private final Agi agi;
 
     /**
-     * The canonical conversation history. Uses CopyOnWriteArrayList to allow 
-     * thread-safe iteration during background serialization (e.g., auto-save) 
+     * The canonical conversation history. Uses CopyOnWriteArrayList to allow
+     * thread-safe iteration during background serialization (e.g., auto-save)
      * without blocking streaming updates.
      */
     private final List<AbstractMessage> history = new CopyOnWriteArrayList<>();
@@ -130,13 +130,14 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
                             if (ar.getContextPosition() != ContextPosition.SYSTEM_INSTRUCTIONS) {
                                 continue;
                             }
+                            ar.reloadIfNeeded();
                             allSystemInstructions.add(provider.getHeader());
                         }
-                        
+
                         allSystemInstructions.addAll(provider.getSystemInstructions());
                     } catch (Exception e) {
                         log.error("Error executing system instruction provider: {}", provider.getName(), e);
-                        allSystemInstructions.add("Error executing system instruction provider: " + provider.getName()
+                        allSystemInstructions.add("Exception getting content from system instructions provider: " + provider.getName()
                                 + "\n" + ExceptionUtils.getStackTrace(e));
                     }
                 }
@@ -162,9 +163,9 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
     }
 
     /**
-     * Constructs the RAG (Retrieval-Augmented Generation) message by aggregating 
-     * content from all enabled context providers.
-     * 
+     * Constructs the RAG (Retrieval-Augmented Generation) message by
+     * aggregating content from all enabled context providers.
+     *
      * @return A fully populated RagMessage.
      */
     public RagMessage buildRagMessage() {
@@ -177,14 +178,15 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
         for (ContextProvider rootProvider : providers) {
             for (ContextProvider provider : rootProvider.getFlattenedHierarchy(true)) {
                 if (provider.isProviding()) {
-                    // CRITICAL: Respect ContextPosition for resources. 
-                    // Resources in SYSTEM_INSTRUCTIONS must not appear in the RAG message.
-                    if (provider instanceof Resource r && r.getContextPosition() != ContextPosition.PROMPT_AUGMENTATION) {
-                        continue;
-                    }
 
                     long start = System.currentTimeMillis();
                     try {
+                        if (provider instanceof Resource r) {
+                            if (r.getContextPosition() != ContextPosition.PROMPT_AUGMENTATION) {
+                                continue;
+                            }
+                            r.reloadIfNeeded();
+                        }
                         augmentedMessage.addTextPart(provider.getHeader());
                         provider.populateMessage(augmentedMessage);
                         long duration = System.currentTimeMillis() - start;
@@ -262,21 +264,21 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
     }
 
     /**
-     * Performs a hard prune on the entire agi history. 
-     * In the strict atomic model, messages stay structurally intact until 
-     * all their parts are collectable. 
+     * Performs a hard prune on the entire agi history. In the strict atomic
+     * model, messages stay structurally intact until all their parts are
+     * collectable.
      */
     private void hardPrune() {
         List<AbstractMessage> toRemove = history.stream()
                 .filter(AbstractMessage::isGarbageCollectable)
                 .collect(Collectors.toList());
-        
+
         for (AbstractMessage msg : toRemove) {
             log.info("Garbage collecting message turn {} ({} tokens recycled)", msg.getSequentialId(), msg.getTokenCount(true));
             garbageCollector.recordCollection(msg);
             history.remove(msg);
         }
-        
+
         if (!toRemove.isEmpty()) {
             propertyChangeSupport.firePropertyChange("history", null, history);
         }
