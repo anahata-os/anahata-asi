@@ -3,7 +3,7 @@ package uno.anahata.asi.nb.tools.project.context;
 
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.project.Project;
-import uno.anahata.asi.model.core.RagMessage;
+import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.nb.tools.project.components.ProjectStructure;
 

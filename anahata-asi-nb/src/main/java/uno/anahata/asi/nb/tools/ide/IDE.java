@@ -14,14 +14,14 @@ import org.openide.loaders.DataObject;
 import org.openide.util.ContextAwareAction;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
-import uno.anahata.asi.resource.v2.Resources;
-import uno.anahata.asi.resource.v2.view.TextViewportSettings;
+import uno.anahata.asi.toolkit.Resources;
+import uno.anahata.asi.agi.resource.view.TextViewportSettings;
 import uno.anahata.asi.nb.tools.ide.context.OpenTopComponentsContextProvider;
 import uno.anahata.asi.nb.tools.ide.context.OutputTabsContextProvider;
-import uno.anahata.asi.tool.AiTool;
-import uno.anahata.asi.tool.AiToolParam;
-import uno.anahata.asi.tool.AiToolkit;
-import uno.anahata.asi.tool.AnahataToolkit;
+import uno.anahata.asi.agi.tool.AiTool;
+import uno.anahata.asi.agi.tool.AiToolParam;
+import uno.anahata.asi.agi.tool.AiToolkit;
+import uno.anahata.asi.agi.tool.AnahataToolkit;
 
 /**
  * Provides tools for interacting with the NetBeans IDE.

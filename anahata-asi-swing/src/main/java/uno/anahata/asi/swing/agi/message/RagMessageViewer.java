@@ -5,7 +5,7 @@ package uno.anahata.asi.swing.agi.message;
 
 import javax.swing.JScrollPane;
 import lombok.NonNull;
-import uno.anahata.asi.model.core.AbstractMessage;
+import uno.anahata.asi.agi.message.AbstractMessage;
 import uno.anahata.asi.swing.agi.AgiPanel;
 
 /**

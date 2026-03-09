@@ -4,12 +4,12 @@ import java.util.List;
 import java.util.Scanner;
 import lombok.RequiredArgsConstructor;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.model.core.AbstractMessage;
-import uno.anahata.asi.model.core.AbstractModelMessage;
-import uno.anahata.asi.model.core.InputUserMessage;
-import uno.anahata.asi.model.core.Response;
-import uno.anahata.asi.model.core.TextPart;
-import uno.anahata.asi.model.core.UserMessage;
+import uno.anahata.asi.agi.message.AbstractMessage;
+import uno.anahata.asi.agi.message.AbstractModelMessage;
+import uno.anahata.asi.agi.message.InputUserMessage;
+import uno.anahata.asi.agi.provider.Response;
+import uno.anahata.asi.agi.message.TextPart;
+import uno.anahata.asi.agi.message.UserMessage;
 import uno.anahata.asi.model.provider.AbstractModel;
 
 /**

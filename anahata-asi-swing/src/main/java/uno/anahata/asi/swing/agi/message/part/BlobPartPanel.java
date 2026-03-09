@@ -16,14 +16,14 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import lombok.NonNull;
-import uno.anahata.asi.model.core.BlobPart;
+import uno.anahata.asi.agi.message.BlobPart;
 import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.render.MediaRenderer;
 import uno.anahata.asi.swing.audio.AudioPlaybackPanel;
 
 /**
- * Renders a {@link uno.anahata.asi.model.core.BlobPart} into a JComponent,
+ * Renders a {@link uno.anahata.asi.agi.message.BlobPart} into a JComponent,
  * handling images, audio, and file information.
  *
  * @author anahata

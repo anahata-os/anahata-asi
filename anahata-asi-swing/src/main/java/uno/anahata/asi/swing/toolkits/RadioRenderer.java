@@ -25,7 +25,7 @@ import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import uno.anahata.asi.model.audio.AudioDevice;
+import uno.anahata.asi.toolkit.audio.AudioDevice;
 import uno.anahata.asi.yam.tools.Radio;
 
 /**

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Scanner;
 import lombok.RequiredArgsConstructor;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.context.ContextProvider;
+import uno.anahata.asi.agi.context.ContextProvider;
 
 /**
  * Handles the CLI menu for managing System Instructions Providers.

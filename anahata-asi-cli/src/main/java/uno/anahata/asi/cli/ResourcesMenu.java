@@ -6,8 +6,8 @@ import java.util.Scanner;
 import lombok.RequiredArgsConstructor;
 import uno.anahata.asi.agi.Agi;
 
-import uno.anahata.asi.resource.v2.Resource;
-import uno.anahata.asi.resource.v2.ResourceManager2;
+import uno.anahata.asi.agi.resource.Resource;
+import uno.anahata.asi.agi.resource.ResourceManager2;
 
 /**
  * Handles the CLI menu for viewing and managing stateful resources.

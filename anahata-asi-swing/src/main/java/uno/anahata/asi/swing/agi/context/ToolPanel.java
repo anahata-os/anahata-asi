@@ -23,10 +23,10 @@ import javax.swing.JTabbedPane;
 import javax.swing.JToggleButton;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.internal.JacksonUtils;
-import uno.anahata.asi.model.core.RequestConfig;
-import uno.anahata.asi.model.tool.AbstractTool;
-import uno.anahata.asi.model.tool.AbstractToolParameter;
-import uno.anahata.asi.model.tool.ToolPermission;
+import uno.anahata.asi.agi.provider.RequestConfig;
+import uno.anahata.asi.agi.tool.spi.AbstractTool;
+import uno.anahata.asi.agi.tool.spi.AbstractToolParameter;
+import uno.anahata.asi.agi.tool.ToolPermission;
 import uno.anahata.asi.swing.agi.context.ContextPanel;
 import uno.anahata.asi.swing.agi.message.part.text.CodeBlockSegmentRenderer;
 

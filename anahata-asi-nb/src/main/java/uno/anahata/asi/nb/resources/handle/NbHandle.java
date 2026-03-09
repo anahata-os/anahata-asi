@@ -20,9 +20,9 @@ import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.URLMapper;
 import org.openide.loaders.DataObject;
 import uno.anahata.asi.internal.TikaUtils;
-import uno.anahata.asi.model.core.Rebindable;
-import uno.anahata.asi.resource.v2.handle.AbstractResourceHandle;
-import uno.anahata.asi.resource.v2.Resource;
+import uno.anahata.asi.persistence.Rebindable;
+import uno.anahata.asi.agi.resource.view.AbstractResourceHandle;
+import uno.anahata.asi.agi.resource.Resource;
 
 /**
  * A NetBeans-native resource handle that wraps a {@link FileObject}.

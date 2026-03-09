@@ -30,12 +30,12 @@ import org.jdesktop.swingx.JXHyperlink;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.internal.TimeUtils;
-import uno.anahata.asi.model.core.Response;
-import uno.anahata.asi.model.core.ResponseUsageMetadata;
-import uno.anahata.asi.model.tool.AbstractToolCall;
-import uno.anahata.asi.status.ApiErrorRecord;
-import uno.anahata.asi.status.AgiStatus;
-import uno.anahata.asi.status.StatusManager;
+import uno.anahata.asi.agi.provider.Response;
+import uno.anahata.asi.agi.message.ResponseUsageMetadata;
+import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
+import uno.anahata.asi.agi.status.ApiErrorRecord;
+import uno.anahata.asi.agi.status.AgiStatus;
+import uno.anahata.asi.agi.status.StatusManager;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.AgiTransferHandler;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
@@ -44,7 +44,7 @@ import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingUtils;
 import uno.anahata.asi.swing.audio.AudioPlaybackPanel;
-import uno.anahata.asi.tool.ToolManager;
+import uno.anahata.asi.agi.tool.ToolManager;
 
 /**
  * A panel that displays the real-time status of the agi session, including

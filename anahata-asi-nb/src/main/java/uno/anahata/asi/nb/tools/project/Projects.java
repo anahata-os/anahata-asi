@@ -48,14 +48,14 @@ import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.URLMapper;
 import org.openide.util.Lookup;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.context.ContextProvider;
+import uno.anahata.asi.agi.context.ContextProvider;
 import uno.anahata.asi.nb.tools.project.context.ProjectContextProvider;
 import uno.anahata.asi.nb.tools.maven.Maven;
 import uno.anahata.asi.nb.tools.maven.DependencyScope;
-import uno.anahata.asi.tool.AiTool;
-import uno.anahata.asi.tool.AiToolParam;
-import uno.anahata.asi.tool.AiToolkit;
-import uno.anahata.asi.tool.AnahataToolkit;
+import uno.anahata.asi.agi.tool.AiTool;
+import uno.anahata.asi.agi.tool.AiToolParam;
+import uno.anahata.asi.agi.tool.AiToolkit;
+import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.nb.tools.project.alerts.JavacAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectDiagnostics;
@@ -153,7 +153,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
      * @param ragMessage The target RAG message.
      */
     @Override
-    public void populateMessage(uno.anahata.asi.model.core.RagMessage ragMessage) {
+    public void populateMessage(uno.anahata.asi.agi.message.RagMessage ragMessage) {
         String projectsFolder = getNetBeansProjectsFolder();
         StringBuilder sb = new StringBuilder();
         sb.append("## IDE Project Environment\n");

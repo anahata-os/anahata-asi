@@ -14,7 +14,7 @@ import javax.swing.Box;
 import javax.swing.JComponent;
 import lombok.Getter;
 import lombok.NonNull;
-import uno.anahata.asi.model.core.TextPart;
+import uno.anahata.asi.agi.message.TextPart;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.message.part.text.CodeBlockSegmentRenderer;
 import uno.anahata.asi.swing.agi.message.part.text.AbstractTextSegmentRenderer;
@@ -22,7 +22,7 @@ import uno.anahata.asi.swing.agi.message.part.text.TextSegmentDescriptor;
 import uno.anahata.asi.swing.agi.message.part.text.TextSegmentType;
 
 /**
- * Renders a {@link uno.anahata.asi.model.core.TextPart} into a list of JComponents,
+ * Renders a {@link uno.anahata.asi.agi.message.TextPart} into a list of JComponents,
  * handling markdown and code block rendering.
  * <p>
  * This panel supports incremental updates and <b>Higher-Level Persistence</b>: 

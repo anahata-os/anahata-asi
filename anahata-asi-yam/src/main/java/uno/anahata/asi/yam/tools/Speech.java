@@ -5,10 +5,10 @@ import com.sun.speech.freetts.Voice;
 import com.sun.speech.freetts.VoiceManager;
 import com.sun.speech.freetts.audio.AudioPlayer;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.tool.AiTool;
-import uno.anahata.asi.tool.AiToolParam;
-import uno.anahata.asi.tool.AiToolkit;
-import uno.anahata.asi.tool.AnahataToolkit;
+import uno.anahata.asi.agi.tool.AiTool;
+import uno.anahata.asi.agi.tool.AiToolParam;
+import uno.anahata.asi.agi.tool.AiToolkit;
+import uno.anahata.asi.agi.tool.AnahataToolkit;
 
 /**
  * A toolkit for speech synthesis (TTS) and audio alerts.

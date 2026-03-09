@@ -11,13 +11,13 @@ import org.junit.jupiter.api.Test;
 import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
-import uno.anahata.asi.model.core.AbstractModelMessage;
-import uno.anahata.asi.model.core.Response;
-import uno.anahata.asi.model.core.ResponseUsageMetadata;
-import uno.anahata.asi.model.tool.ToolExecutionStatus;
-import uno.anahata.asi.model.tool.java.JavaMethodTool;
-import uno.anahata.asi.model.tool.java.JavaMethodToolCall;
-import uno.anahata.asi.model.tool.java.JavaObjectToolkit;
+import uno.anahata.asi.agi.message.AbstractModelMessage;
+import uno.anahata.asi.agi.provider.Response;
+import uno.anahata.asi.agi.message.ResponseUsageMetadata;
+import uno.anahata.asi.agi.tool.ToolExecutionStatus;
+import uno.anahata.asi.agi.tool.spi.java.JavaMethodTool;
+import uno.anahata.asi.agi.tool.spi.java.JavaMethodToolCall;
+import uno.anahata.asi.agi.tool.spi.java.JavaObjectToolkit;
 
 /**
  * Tests the thread-local context management and tool execution within the Java toolkit.

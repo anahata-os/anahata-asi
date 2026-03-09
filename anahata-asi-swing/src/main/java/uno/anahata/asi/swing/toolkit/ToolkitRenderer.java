@@ -4,7 +4,7 @@ package uno.anahata.asi.swing.toolkit;
 import java.awt.Component;
 import javax.swing.JComponent;
 import uno.anahata.asi.swing.agi.AgiPanel;
-import uno.anahata.asi.tool.AnahataToolkit;
+import uno.anahata.asi.agi.tool.AnahataToolkit;
 
 /**
  * Functional interface for rendering a specialized UI for an {@link AnahataToolkit}.

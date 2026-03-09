@@ -14,7 +14,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
-import uno.anahata.asi.model.tool.AbstractToolkit;
+import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
 import uno.anahata.asi.swing.toolkits.ToolkitUiRegistry;
 
 /**

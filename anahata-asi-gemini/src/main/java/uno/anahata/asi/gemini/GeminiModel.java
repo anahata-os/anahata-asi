@@ -36,20 +36,20 @@ import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.gemini.adapter.GeminiContentAdapter;
 import uno.anahata.asi.gemini.adapter.GeminiFunctionDeclarationAdapter;
 import uno.anahata.asi.gemini.adapter.RequestConfigAdapter;
-import uno.anahata.asi.model.core.AbstractMessage;
-import uno.anahata.asi.model.core.AbstractModelMessage;
-import uno.anahata.asi.model.core.AbstractPart;
-import uno.anahata.asi.model.core.GenerationRequest;
-import uno.anahata.asi.model.core.ModelTextPart;
-import uno.anahata.asi.model.core.RequestConfig;
-import uno.anahata.asi.model.core.Response;
-import uno.anahata.asi.model.core.StreamObserver;
+import uno.anahata.asi.agi.message.AbstractMessage;
+import uno.anahata.asi.agi.message.AbstractModelMessage;
+import uno.anahata.asi.agi.message.AbstractPart;
+import uno.anahata.asi.model.provider.GenerationRequest;
+import uno.anahata.asi.agi.message.ModelTextPart;
+import uno.anahata.asi.agi.provider.RequestConfig;
+import uno.anahata.asi.agi.provider.Response;
+import uno.anahata.asi.agi.provider.StreamObserver;
 import uno.anahata.asi.model.provider.AbstractAgiProvider;
 import uno.anahata.asi.model.provider.AbstractModel;
 import uno.anahata.asi.model.provider.ApiCallInterruptedException;
 import uno.anahata.asi.model.provider.ServerTool;
-import uno.anahata.asi.model.tool.AbstractTool;
-import uno.anahata.asi.tool.RetryableApiException;
+import uno.anahata.asi.agi.tool.spi.AbstractTool;
+import uno.anahata.asi.model.provider.RetryableApiException;
 
 /**
  * Gemini-specific implementation of the {@code AbstractModel}. It wraps the
@@ -368,7 +368,7 @@ public class GeminiModel extends AbstractModel {
                     
                     // Ensure the finish reason is set if it's still null after the stream
                     if (target.getFinishReason() == null) {
-                        target.setFinishReason(uno.anahata.asi.model.core.FinishReason.GOD_FUCKING_KNOWS);
+                        target.setFinishReason(uno.anahata.asi.agi.provider.FinishReason.GOD_FUCKING_KNOWS);
                     }
                 }
             }

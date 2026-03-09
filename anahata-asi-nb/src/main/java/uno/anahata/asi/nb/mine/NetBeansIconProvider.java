@@ -9,12 +9,12 @@ import org.netbeans.api.project.ProjectUtils;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
 import org.openide.util.ImageUtilities;
-import uno.anahata.asi.context.ContextProvider;
-import uno.anahata.asi.model.tool.AbstractTool;
-import uno.anahata.asi.model.tool.AbstractToolkit;
+import uno.anahata.asi.agi.context.ContextProvider;
+import uno.anahata.asi.agi.tool.spi.AbstractTool;
+import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
 import uno.anahata.asi.nb.tools.project.context.ProjectContextProvider;
-import uno.anahata.asi.resource.v2.Resource;
+import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.swing.icons.IconProvider;
 import uno.anahata.asi.swing.icons.IconUtils;
 

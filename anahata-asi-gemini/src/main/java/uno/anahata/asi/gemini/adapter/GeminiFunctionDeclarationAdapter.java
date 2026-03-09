@@ -12,8 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import uno.anahata.asi.gemini.schema.GeminiSchemaAdapter;
 import uno.anahata.asi.internal.JacksonUtils;
-import uno.anahata.asi.model.tool.AbstractTool;
-import uno.anahata.asi.model.tool.AbstractToolParameter;
+import uno.anahata.asi.agi.tool.spi.AbstractTool;
+import uno.anahata.asi.agi.tool.spi.AbstractToolParameter;
 
 /**
  * An object-oriented adapter that converts a single Anahata AbstractTool into a

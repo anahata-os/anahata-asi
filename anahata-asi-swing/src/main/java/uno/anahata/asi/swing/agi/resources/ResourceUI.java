@@ -4,7 +4,7 @@ package uno.anahata.asi.swing.agi.resources;
 import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
-import uno.anahata.asi.resource.v2.Resource;
+import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.swing.agi.AgiPanel;
 
 /**

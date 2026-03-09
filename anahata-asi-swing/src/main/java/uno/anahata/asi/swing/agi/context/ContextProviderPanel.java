@@ -19,8 +19,8 @@ import javax.swing.SwingConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.context.ContextProvider;
-import uno.anahata.asi.model.core.RagMessage;
+import uno.anahata.asi.agi.context.ContextProvider;
+import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.swing.agi.context.ContextPanel;
 import uno.anahata.asi.swing.agi.message.RagMessageViewer;
 

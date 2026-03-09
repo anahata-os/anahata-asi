@@ -17,14 +17,14 @@ import org.netbeans.api.java.source.ElementHandle;
 import org.netbeans.api.java.source.SourceUtils;
 import org.netbeans.spi.java.classpath.support.ClassPathSupport;
 import org.openide.filesystems.FileObject;
-import uno.anahata.asi.model.Page;
+import uno.anahata.asi.agi.tool.Page;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
-import uno.anahata.asi.resource.v2.Resources;
-import uno.anahata.asi.tool.AiTool;
-import uno.anahata.asi.tool.AiToolException;
-import uno.anahata.asi.tool.AiToolParam;
-import uno.anahata.asi.tool.AiToolkit;
-import uno.anahata.asi.tool.AnahataToolkit;
+import uno.anahata.asi.toolkit.Resources;
+import uno.anahata.asi.agi.tool.AiTool;
+import uno.anahata.asi.agi.tool.AiToolException;
+import uno.anahata.asi.agi.tool.AiToolParam;
+import uno.anahata.asi.agi.tool.AiToolkit;
+import uno.anahata.asi.agi.tool.AnahataToolkit;
 
 /**
  * Provides tools for interacting with the Java code model in NetBeans.

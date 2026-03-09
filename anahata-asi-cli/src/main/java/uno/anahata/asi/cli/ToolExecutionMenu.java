@@ -7,10 +7,10 @@ import lombok.RequiredArgsConstructor;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.internal.ObjectSummarizer;
-import uno.anahata.asi.model.core.AbstractPart;
-import uno.anahata.asi.model.tool.AbstractToolResponse;
-import uno.anahata.asi.model.tool.ToolExecutionStatus;
-import uno.anahata.asi.model.tool.ToolPermission;
+import uno.anahata.asi.agi.message.AbstractPart;
+import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
+import uno.anahata.asi.agi.tool.ToolExecutionStatus;
+import uno.anahata.asi.agi.tool.ToolPermission;
 
 /**
  * Handles the interactive CLI menu for managing tool execution requests.

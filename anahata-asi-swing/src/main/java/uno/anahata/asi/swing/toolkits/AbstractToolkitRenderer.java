@@ -8,7 +8,7 @@ import javax.swing.JPanel;
 import lombok.Getter;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
-import uno.anahata.asi.tool.AnahataToolkit;
+import uno.anahata.asi.agi.tool.AnahataToolkit;
 
 /**
  * A base class for specialized toolkit UIs.

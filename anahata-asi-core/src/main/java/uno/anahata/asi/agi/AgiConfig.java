@@ -11,16 +11,16 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import uno.anahata.asi.AsiContainer;
-import uno.anahata.asi.model.core.BasicPropertyChangeSource;
+import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
 import uno.anahata.asi.model.provider.AbstractAgiProvider;
-import uno.anahata.asi.resource.v2.handle.PathHandle;
-import uno.anahata.asi.resource.v2.handle.ResourceHandle;
-import uno.anahata.asi.resource.v2.Resources;
-import uno.anahata.asi.resource.v2.handle.UrlHandle;
+import uno.anahata.asi.agi.resource.view.PathHandle;
+import uno.anahata.asi.agi.resource.view.ResourceHandle;
+import uno.anahata.asi.toolkit.Resources;
+import uno.anahata.asi.agi.resource.view.UrlHandle;
 import uno.anahata.asi.toolkit.Audio;
 import uno.anahata.asi.toolkit.Session;
 import uno.anahata.asi.toolkit.Java;
-import uno.anahata.asi.toolkit.shell.Shell;
+import uno.anahata.asi.toolkit.Shell;
 
 /**
  * A model-agnostic, intelligent configuration object for a single agi session.

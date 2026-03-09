@@ -21,13 +21,13 @@ import javazoom.jl.player.AudioDeviceBase;
 import javazoom.jl.player.Player;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.model.audio.AudioDevice.Type;
-import uno.anahata.asi.model.core.RagMessage;
-import uno.anahata.asi.tool.AiTool;
-import uno.anahata.asi.tool.AiToolException;
-import uno.anahata.asi.tool.AiToolParam;
-import uno.anahata.asi.tool.AiToolkit;
-import uno.anahata.asi.tool.AnahataToolkit;
+import uno.anahata.asi.toolkit.audio.AudioDevice.Type;
+import uno.anahata.asi.agi.message.RagMessage;
+import uno.anahata.asi.agi.tool.AiTool;
+import uno.anahata.asi.agi.tool.AiToolException;
+import uno.anahata.asi.agi.tool.AiToolParam;
+import uno.anahata.asi.agi.tool.AiToolkit;
+import uno.anahata.asi.agi.tool.AnahataToolkit;
 
 /**
  * A stateful toolkit for playing internet radio streams.
@@ -77,7 +77,7 @@ public class Radio extends AnahataToolkit {
 
     /** The selected output device for radio playback. */
     @Getter
-    private uno.anahata.asi.model.audio.AudioDevice selectedOutputDevice;
+    private uno.anahata.asi.toolkit.audio.AudioDevice selectedOutputDevice;
 
     /** JLayer player instance. */
     private transient Player player;
@@ -104,7 +104,7 @@ public class Radio extends AnahataToolkit {
     public void rebind() {
         super.rebind();
         if (selectedOutputDevice != null) {
-            uno.anahata.asi.model.audio.AudioDevice live = uno.anahata.asi.model.audio.AudioDevice.findDevice(Type.OUTPUT, selectedOutputDevice.getId());
+            uno.anahata.asi.toolkit.audio.AudioDevice live = uno.anahata.asi.toolkit.audio.AudioDevice.findDevice(Type.OUTPUT, selectedOutputDevice.getId());
             if (live == null) {
                 initOutputLineFromDefault();
             } else {
@@ -121,8 +121,8 @@ public class Radio extends AnahataToolkit {
     }
 
     private void initOutputLineFromDefault() {
-        uno.anahata.asi.model.audio.AudioDevice.listAvailableDevices(Type.OUTPUT).stream()
-                .filter(uno.anahata.asi.model.audio.AudioDevice::isDefaultLine)
+        uno.anahata.asi.toolkit.audio.AudioDevice.listAvailableDevices(Type.OUTPUT).stream()
+                .filter(uno.anahata.asi.toolkit.audio.AudioDevice::isDefaultLine)
                 .findFirst()
                 .ifPresent(this::setSelectedOutputDevice);
     }
@@ -131,8 +131,8 @@ public class Radio extends AnahataToolkit {
      * Sets the selected output device and fires a property change event.
      * @param device The device to select.
      */
-    public void setSelectedOutputDevice(uno.anahata.asi.model.audio.AudioDevice device) {
-        uno.anahata.asi.model.audio.AudioDevice old = this.selectedOutputDevice;
+    public void setSelectedOutputDevice(uno.anahata.asi.toolkit.audio.AudioDevice device) {
+        uno.anahata.asi.toolkit.audio.AudioDevice old = this.selectedOutputDevice;
         if (Objects.equals(old, device)) {
             return;
         }
@@ -182,7 +182,7 @@ public class Radio extends AnahataToolkit {
         propertyChangeSupport.firePropertyChange("playing", false, true);
         propertyChangeSupport.firePropertyChange("currentStationUrl", null, url);
 
-        final uno.anahata.asi.model.audio.AudioDevice device = selectedOutputDevice;
+        final uno.anahata.asi.toolkit.audio.AudioDevice device = selectedOutputDevice;
 
         playbackTask = getExecutorService().submit(() -> {
             try {
@@ -236,7 +236,7 @@ public class Radio extends AnahataToolkit {
      */
     @AiTool("Selects a specific device for radio playback.")
     public String selectOutputDevice(@AiToolParam("The unique ID of the output device.") String deviceId) {
-        uno.anahata.asi.model.audio.AudioDevice device = uno.anahata.asi.model.audio.AudioDevice.findDevice(Type.OUTPUT, deviceId);
+        uno.anahata.asi.toolkit.audio.AudioDevice device = uno.anahata.asi.toolkit.audio.AudioDevice.findDevice(Type.OUTPUT, deviceId);
         if (device == null) {
             throw new AiToolException("Device not found: " + deviceId);
         }
@@ -245,16 +245,16 @@ public class Radio extends AnahataToolkit {
     }
 
     /**
-     * A specialized JLayer-to-JavaSound bridge that routes streams to a specific {@link uno.anahata.asi.model.audio.AudioDevice}.
+     * A specialized JLayer-to-JavaSound bridge that routes streams to a specific {@link uno.anahata.asi.toolkit.audio.AudioDevice}.
      * Ported from JavaSoundAudioDevice (LGPL) to bypass private field restrictions and rigid hardware discovery.
      */
     private static class BridgedJavaSoundAudioDevice extends AudioDeviceBase {
-        private final uno.anahata.asi.model.audio.AudioDevice hardwareDevice;
+        private final uno.anahata.asi.toolkit.audio.AudioDevice hardwareDevice;
         private SourceDataLine source = null;
         private AudioFormat fmt = null;
         private byte[] byteBuf = new byte[4096];
 
-        public BridgedJavaSoundAudioDevice(uno.anahata.asi.model.audio.AudioDevice hardwareDevice) {
+        public BridgedJavaSoundAudioDevice(uno.anahata.asi.toolkit.audio.AudioDevice hardwareDevice) {
             this.hardwareDevice = hardwareDevice;
         }
 

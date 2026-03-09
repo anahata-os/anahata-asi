@@ -4,8 +4,8 @@
 package uno.anahata.asi.swing.agi.context;
 
 import java.util.List;
-import uno.anahata.asi.model.core.AbstractMessage;
-import uno.anahata.asi.model.core.AbstractPart;
+import uno.anahata.asi.agi.message.AbstractMessage;
+import uno.anahata.asi.agi.message.AbstractPart;
 import uno.anahata.asi.swing.agi.AgiPanel;
 
 /**

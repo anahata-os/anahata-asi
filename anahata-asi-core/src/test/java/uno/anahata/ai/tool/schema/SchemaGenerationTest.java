@@ -17,7 +17,7 @@
  */
 package uno.anahata.ai.tool.schema;
 
-import uno.anahata.asi.tool.schema.SchemaProvider;
+import uno.anahata.asi.agi.tool.schema.SchemaProvider;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,10 +27,10 @@ import uno.anahata.asi.AsiContainer;
 import uno.anahata.ai.tool.MockAsiContainer;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
-import uno.anahata.asi.model.tool.AbstractTool;
+import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.ai.tool.MockToolkit;
-import uno.anahata.asi.tool.ToolManager;
-import uno.anahata.asi.model.tool.java.JavaMethodTool;
+import uno.anahata.asi.agi.tool.ToolManager;
+import uno.anahata.asi.agi.tool.spi.java.JavaMethodTool;
 
 /**
  * Tests for JSON schema generation and wrapping logic.

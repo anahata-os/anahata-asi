@@ -20,7 +20,7 @@ import javax.swing.table.TableRowSorter;
 import lombok.NonNull;
 import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.status.AgiStatus;
+import uno.anahata.asi.agi.status.AgiStatus;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 
 /**

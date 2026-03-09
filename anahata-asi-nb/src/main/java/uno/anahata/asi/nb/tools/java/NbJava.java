@@ -27,9 +27,9 @@ import org.netbeans.api.java.source.SourceUtils;
 import uno.anahata.asi.nb.module.NetBeansModuleUtils;
 import uno.anahata.asi.nb.tools.project.ProjectOverview;
 import uno.anahata.asi.nb.tools.project.Projects;
-import uno.anahata.asi.tool.AiTool;
-import uno.anahata.asi.tool.AiToolParam;
-import uno.anahata.asi.tool.AiToolkit;
+import uno.anahata.asi.agi.tool.AiTool;
+import uno.anahata.asi.agi.tool.AiToolParam;
+import uno.anahata.asi.agi.tool.AiToolkit;
 import uno.anahata.asi.toolkit.Java;
 
 /**

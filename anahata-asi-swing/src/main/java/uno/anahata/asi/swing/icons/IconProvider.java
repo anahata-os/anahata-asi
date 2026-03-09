@@ -4,9 +4,9 @@
 package uno.anahata.asi.swing.icons;
 
 import javax.swing.Icon;
-import uno.anahata.asi.context.ContextProvider;
-import uno.anahata.asi.model.tool.AbstractTool;
-import uno.anahata.asi.model.tool.AbstractToolkit;
+import uno.anahata.asi.agi.context.ContextProvider;
+import uno.anahata.asi.agi.tool.spi.AbstractTool;
+import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
 
 /**
  * An interface for providing icons for various context-related objects.

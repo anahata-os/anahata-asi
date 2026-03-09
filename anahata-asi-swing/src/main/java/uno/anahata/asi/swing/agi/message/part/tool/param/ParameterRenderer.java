@@ -2,7 +2,7 @@
 package uno.anahata.asi.swing.agi.message.part.tool.param;
 
 import javax.swing.JComponent;
-import uno.anahata.asi.model.tool.AbstractToolCall;
+import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.swing.agi.AgiPanel;
 
 /**

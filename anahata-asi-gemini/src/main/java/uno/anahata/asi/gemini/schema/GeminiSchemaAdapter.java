@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.internal.JacksonUtils;
-import uno.anahata.asi.tool.schema.SchemaProvider;
+import uno.anahata.asi.agi.tool.schema.SchemaProvider;
 
 /**
  * Adapts the core framework's rich JSON schema generation into the simpler,

@@ -8,10 +8,10 @@ import javax.swing.JPanel;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.model.tool.AbstractToolkit;
-import uno.anahata.asi.model.tool.java.JavaObjectToolkit;
+import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
+import uno.anahata.asi.agi.tool.spi.java.JavaObjectToolkit;
 import uno.anahata.asi.swing.agi.AgiPanel;
-import uno.anahata.asi.tool.AnahataToolkit;
+import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.yam.tools.Radio;
 
 /**

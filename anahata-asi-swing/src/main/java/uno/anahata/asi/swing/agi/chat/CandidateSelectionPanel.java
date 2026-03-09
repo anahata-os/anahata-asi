@@ -16,7 +16,7 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import lombok.NonNull;
-import uno.anahata.asi.model.core.AbstractModelMessage;
+import uno.anahata.asi.agi.message.AbstractModelMessage;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 

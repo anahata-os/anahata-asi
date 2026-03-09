@@ -11,7 +11,7 @@ import java.util.function.Consumer;
 import javax.swing.JComponent;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.model.core.PropertyChangeSource;
+import uno.anahata.asi.agi.event.PropertyChangeSource;
 
 /**
  * A smart, lifecycle-aware {@link PropertyChangeListener} that ensures UI updates

@@ -7,45 +7,36 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Insets;
-import java.awt.Rectangle;
 import java.awt.event.MouseWheelListener;
 import java.io.IOException;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JSpinner;
-import javax.swing.JTextField;
 import javax.swing.JToolBar;
-import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.resource.v2.Resource;
-import uno.anahata.asi.resource.v2.view.TextView;
-import uno.anahata.asi.resource.v2.view.TextViewportSettings;
+import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.icons.RestartIcon;
-import uno.anahata.asi.swing.internal.AnyChangeDocumentListener;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
-import uno.anahata.asi.swing.internal.SwingTask;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
  * Common base for high-fidelity text resource viewers with autonomous Edit/Save UI.
  * <p>
- * This class provides the integrated control strip containing both the 
- * Viewport Toolbar (Tail, Grep, Lines) and the Edit/Save toggle. 
+ * This class provides the integrated control strip containing the 
+ * Edit/Save toggle. 
  * </p>
  * <p>
- * Persistence is decoupled via the {@link SaveAction} interface, allowing 
- * this component to be reused for managed resources (saving to disk), 
- * tool parameters (updating DTOs), or chat snippets.
+ * <b>Capability Purity:</b> The Capability View (this component) always displays 
+ * the full source content of the resource. Semantic processing like Tail, Grep, 
+ * or Viewport-injected line numbers are reserved exclusively for the 
+ * 'Model Perspective' (RAG) to ensure the user always has a clean, 
+ * authoritative view of the source.
  * </p>
  * 
  * @author anahata
@@ -66,27 +57,15 @@ public abstract class AbstractTextResourceViewer extends JPanel {
     protected final AgiPanel agiPanel;
     /** The resource orchestrator being viewed. */
     protected final Resource resource;
-    /** The semantic text view interpreter. Might be null for virtual snippets. */
-    protected TextView textView;
 
     /** The layout manager for swapping between preview and editor views. */
     protected final CardLayout cardLayout = new CardLayout();
     /** The container panel for the card layout. */
     protected final JPanel cardPanel = new JPanel(cardLayout);
 
-    /** The integrated toolbar for viewport and edit actions. */
+    /** The integrated toolbar for edit actions. */
     protected JToolBar controlStrip;
-    /** The panel hosting the viewport-specific controls (Tail, Grep, etc.). */
-    protected JPanel viewportControls;
-    /** The checkbox to enable/disable tailing mode. */
-    protected JCheckBox tailCheck;
-    /** The spinner for the number of tail lines. */
-    protected JSpinner tailLinesSpinner;
-    /** The text field for grep filtering patterns. */
-    protected JTextField grepField;
-    /** The checkbox to toggle line numbers in the preview. */
-    protected JCheckBox lineNumbersCheck;
-
+    
     /** The panel hosting the edit and save buttons. */
     protected JPanel actionNexus;
     /** The button to toggle between View and Edit modes. */
@@ -132,8 +111,6 @@ public abstract class AbstractTextResourceViewer extends JPanel {
     protected AbstractTextResourceViewer(AgiPanel agiPanel, Resource resource) {
         this.agiPanel = agiPanel;
         this.resource = resource;
-        // The view might be null if reloadIfNeeded() hasn't been called yet.
-        this.textView = (resource.getView() instanceof TextView tv) ? tv : null;
         
         // Authoritative Default: Virtual snippets use 'Preview-as-Editor' mode
         this.previewAsEditor = resource.getHandle().isVirtual();
@@ -161,33 +138,6 @@ public abstract class AbstractTextResourceViewer extends JPanel {
         controlStrip = new JToolBar();
         controlStrip.setFloatable(false);
         controlStrip.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY));
-
-        // 1a. Viewport Controls
-        viewportControls = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        viewportControls.setOpaque(false);
-
-        tailCheck = new JCheckBox("Tail");
-        tailCheck.addItemListener(e -> updateViewportSettings());
-        viewportControls.add(tailCheck);
-
-        viewportControls.add(new JLabel("Lines:"));
-        tailLinesSpinner = new JSpinner(new SpinnerNumberModel(100, 1, 10000, 50));
-        tailLinesSpinner.setMaximumSize(new Dimension(60, 22));
-        tailLinesSpinner.addChangeListener(e -> updateViewportSettings());
-        viewportControls.add(tailLinesSpinner);
-
-        viewportControls.add(new JLabel("Grep:"));
-        grepField = new JTextField();
-        grepField.setPreferredSize(new Dimension(150, 22));
-        grepField.getDocument().addDocumentListener(new AnyChangeDocumentListener(this::updateViewportSettings));
-        viewportControls.add(grepField);
-
-        lineNumbersCheck = new JCheckBox("Lines");
-        lineNumbersCheck.addItemListener(e -> updateViewportSettings());
-        viewportControls.add(lineNumbersCheck);
-
-        controlStrip.add(viewportControls);
-        controlStrip.addSeparator();
 
         // 1b. Action Nexus (Edit/Save)
         actionNexus = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
@@ -238,7 +188,6 @@ public abstract class AbstractTextResourceViewer extends JPanel {
      */
     public void setEditing(boolean editing) {
         this.editing = editing;
-        viewportControls.setVisible(!editing && !previewAsEditor);
         
         if (editing) {
             editBtn.setText("💾 SAVE");
@@ -366,8 +315,9 @@ public abstract class AbstractTextResourceViewer extends JPanel {
     /** 
      * Synchronizes UI controls with current resource state. 
      * <p>
-     * Ensures immediate visibility for snippets by authoritatively pulling from 
-     * the raw handle content, avoiding duplicate line numbering from the viewport engine.
+     * <b>SENSING PURITY:</b> The Capability View always displays the full, 
+     * authoritative source content from the handle. Semantic viewport 
+     * processing (tail/grep) is only visible to the model in the RAG view.
      * </p>
      */
     protected void syncWithResource() {
@@ -377,18 +327,9 @@ public abstract class AbstractTextResourceViewer extends JPanel {
         
         this.syncing = true;
         try {
-            // Late binding: re-check the view if it was null initially
-            if (textView == null && resource.getView() instanceof TextView tv) {
-                this.textView = tv;
-            }
-
-            // AUTHORITATIVE RESOLUTION: If it's a virtual snippet (previewAsEditor), 
-            // always use raw content to avoid duplicate line numbering.
+            // AUTHORITATIVE RESOLUTION: Always pull the full raw content for the User View.
             try {
-                String content = (previewAsEditor) 
-                        ? resource.asText() 
-                        : (textView != null && textView.getViewport().getVisibleContent() != null) ? textView.getViewport().getVisibleContent() : resource.asText();
-                updatePreviewContent(content);
+                updatePreviewContent(resource.asText());
             } catch (IOException e) {
                 log.error("Failed to synchronize content from resource: {}", resource.getName(), e);
             }
@@ -400,38 +341,8 @@ public abstract class AbstractTextResourceViewer extends JPanel {
                 SwingUtilities.invokeLater(this::configureScrollBehavior);
             }
 
-            if (textView != null) {
-                TextViewportSettings settings = textView.getViewport().getSettings();
-                tailCheck.setSelected(settings.isTail());
-                tailLinesSpinner.setValue(settings.getTailLines());
-                grepField.setText(settings.getGrepPattern());
-                lineNumbersCheck.setSelected(settings.isIncludeLineNumbers());
-            }
         } finally {
             this.syncing = false;
         }
-    }
-
-    /**
-     * Updates the underlying viewport settings based on the UI state 
-     * and triggers a background reload.
-     */
-    private void updateViewportSettings() {
-        if (syncing || textView == null) {
-            return;
-        }
-        
-        TextViewportSettings settings = textView.getViewport().getSettings();
-        settings.setTail(tailCheck.isSelected());
-        settings.setTailLines((Integer) tailLinesSpinner.getValue());
-        settings.setGrepPattern(grepField.getText());
-        settings.setIncludeLineNumbers(lineNumbersCheck.isSelected());
-        
-        textView.markDirty();
-        
-        new SwingTask<>(this, "Update Viewport", () -> {
-            resource.reloadIfNeeded();
-            return null;
-        }).execute();
     }
 }

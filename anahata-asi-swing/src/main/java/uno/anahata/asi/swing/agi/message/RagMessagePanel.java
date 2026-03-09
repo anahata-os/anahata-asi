@@ -10,7 +10,7 @@ import javax.swing.BorderFactory;
 import javax.swing.Scrollable;
 import javax.swing.border.Border;
 import lombok.NonNull;
-import uno.anahata.asi.model.core.AbstractMessage;
+import uno.anahata.asi.agi.message.AbstractMessage;
 import uno.anahata.asi.swing.agi.AgiPanel;
 
 /**

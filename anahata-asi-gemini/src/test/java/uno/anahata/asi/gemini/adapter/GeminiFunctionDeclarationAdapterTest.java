@@ -10,11 +10,11 @@ import uno.anahata.asi.AsiContainer;
 import uno.anahata.ai.tool.MockAsiContainer;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
-import uno.anahata.asi.model.tool.AbstractTool;
-import uno.anahata.asi.model.tool.java.JavaObjectToolkit;
-import uno.anahata.asi.tool.AiTool;
-import uno.anahata.asi.tool.AiToolkit;
-import uno.anahata.asi.tool.ToolManager;
+import uno.anahata.asi.agi.tool.spi.AbstractTool;
+import uno.anahata.asi.agi.tool.spi.java.JavaObjectToolkit;
+import uno.anahata.asi.agi.tool.AiTool;
+import uno.anahata.asi.agi.tool.AiToolkit;
+import uno.anahata.asi.agi.tool.ToolManager;
 
 public class GeminiFunctionDeclarationAdapterTest {
 

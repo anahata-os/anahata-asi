@@ -19,7 +19,7 @@ import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileSystem;
 import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
-import uno.anahata.asi.resource.v2.Resource;
+import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
 

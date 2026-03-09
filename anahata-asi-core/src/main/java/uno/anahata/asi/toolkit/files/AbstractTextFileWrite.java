@@ -13,8 +13,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.resource.v2.Resource;
-import uno.anahata.asi.tool.AiToolException;
+import uno.anahata.asi.agi.resource.Resource;
+import uno.anahata.asi.agi.tool.AiToolException;
 
 /**
  * Base DTO for text file operations, providing common fields for path, 

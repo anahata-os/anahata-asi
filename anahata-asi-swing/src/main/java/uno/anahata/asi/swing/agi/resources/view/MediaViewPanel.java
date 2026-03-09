@@ -6,7 +6,7 @@ import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.internal.TextUtils;
-import uno.anahata.asi.resource.v2.view.MediaView;
+import uno.anahata.asi.agi.resource.view.MediaView;
 
 /**
  * A specialized metadata panel for the {@link MediaView}.

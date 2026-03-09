@@ -5,9 +5,9 @@ package uno.anahata.asi.swing.agi.context;
 
 import java.util.Collections;
 import java.util.List;
-import uno.anahata.asi.model.tool.AbstractTool;
-import uno.anahata.asi.model.tool.AbstractToolkit;
-import uno.anahata.asi.model.tool.ToolPermission;
+import uno.anahata.asi.agi.tool.spi.AbstractTool;
+import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
+import uno.anahata.asi.agi.tool.ToolPermission;
 import uno.anahata.asi.swing.agi.AgiPanel;
 
 /**

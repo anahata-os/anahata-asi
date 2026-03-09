@@ -1,6 +1,5 @@
 /*
- * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
- */
+ * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.agi.context;
 
 import java.awt.BorderLayout;
@@ -30,8 +29,8 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jdesktop.swingx.JXTreeTable;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.context.ContextProvider;
-import uno.anahata.asi.resource.v2.Resource;
+import uno.anahata.asi.agi.context.ContextProvider;
+import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.message.MessagePanelFactory;
 import uno.anahata.asi.swing.agi.message.part.PartPanelFactory;
@@ -43,7 +42,7 @@ import uno.anahata.asi.swing.agi.resources.Resources2Node;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
-import uno.anahata.asi.tool.ToolManager;
+import uno.anahata.asi.agi.tool.ToolManager;
 
 /**
  * A panel dedicated to displaying and managing the available AI context
@@ -115,7 +114,8 @@ public class ContextPanel extends JPanel {
         detailContainer.add(createScrollPane(toolPanel), "tool");
         detailContainer.add(createScrollPane(toolkitPanel), "toolkit");
         detailContainer.add(createScrollPane(providerPanel), "provider");
-        detailContainer.add(resource2Panel, "resource2");
+        // AUTHORITATIVE CONSISTENCY: Wrap the resource dashboard in a scrollpane to handle metadata overflow.
+        detailContainer.add(createScrollPane(resource2Panel), "resource2");
         detailContainer.add(new JScrollPane(messagePartDetailPanel), "messagePart");
         detailContainer.add(new JPanel(), "empty");
         

@@ -9,13 +9,13 @@ import java.util.Objects;
 import javax.sound.sampled.*;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.model.audio.AudioDevice;
-import uno.anahata.asi.model.core.RagMessage;
-import uno.anahata.asi.tool.AiTool;
-import uno.anahata.asi.tool.AiToolException;
-import uno.anahata.asi.tool.AiToolParam;
-import uno.anahata.asi.tool.AiToolkit;
-import uno.anahata.asi.tool.AnahataToolkit;
+import uno.anahata.asi.toolkit.audio.AudioDevice;
+import uno.anahata.asi.agi.message.RagMessage;
+import uno.anahata.asi.agi.tool.AiTool;
+import uno.anahata.asi.agi.tool.AiToolException;
+import uno.anahata.asi.agi.tool.AiToolParam;
+import uno.anahata.asi.agi.tool.AiToolkit;
+import uno.anahata.asi.agi.tool.AnahataToolkit;
 
 /**
  * The definitive core toolkit for audio operations.

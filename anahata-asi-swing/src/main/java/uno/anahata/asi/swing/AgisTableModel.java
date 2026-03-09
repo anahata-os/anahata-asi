@@ -11,7 +11,7 @@ import javax.swing.table.AbstractTableModel;
 import lombok.NonNull;
 import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.status.AgiStatus;
+import uno.anahata.asi.agi.status.AgiStatus;
 
 /**
  * A reusable table model for displaying active AI agi sessions.

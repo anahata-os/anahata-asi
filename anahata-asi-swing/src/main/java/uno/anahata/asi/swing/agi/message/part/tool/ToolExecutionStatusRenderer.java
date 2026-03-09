@@ -6,7 +6,7 @@ package uno.anahata.asi.swing.agi.message.part.tool;
 import java.awt.Component;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JList;
-import uno.anahata.asi.model.tool.ToolExecutionStatus;
+import uno.anahata.asi.agi.tool.ToolExecutionStatus;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 
 /**

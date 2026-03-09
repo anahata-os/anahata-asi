@@ -1,15 +1,15 @@
 /* Licensed under the Anahata Software License, Version 108 - https://github.com/anahata-os/anahata-ai/blob/main/LICENSE */
 package uno.anahata.ai.tool;
 
-import uno.anahata.asi.tool.AiToolParam;
-import uno.anahata.asi.tool.AnahataToolkit;
-import uno.anahata.asi.tool.AiTool;
-import uno.anahata.asi.tool.AiToolkit;
+import uno.anahata.asi.agi.tool.AiToolParam;
+import uno.anahata.asi.agi.tool.AnahataToolkit;
+import uno.anahata.asi.agi.tool.AiTool;
+import uno.anahata.asi.agi.tool.AiToolkit;
 import java.util.List;
-import uno.anahata.asi.model.core.TextPart;
+import uno.anahata.asi.agi.message.TextPart;
 import uno.anahata.ai.model.tool.MockComplexObject;
 import uno.anahata.ai.model.tool.Tree;
-import uno.anahata.asi.model.tool.java.JavaMethodToolResponse;
+import uno.anahata.asi.agi.tool.spi.java.JavaMethodToolResponse;
 
 @AiToolkit(value = "A mock toolkit for testing schema generation and context injection.", maxDepth = 10)
 public class MockToolkit extends AnahataToolkit {

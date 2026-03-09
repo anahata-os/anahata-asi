@@ -15,7 +15,7 @@ import uno.anahata.asi.nb.tools.java.NbJava;
 import uno.anahata.asi.nb.tools.maven.Maven;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
-import uno.anahata.asi.resource.v2.handle.ResourceHandle;
+import uno.anahata.asi.agi.resource.view.ResourceHandle;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.toolkit.Host;
 import uno.anahata.asi.toolkit.Java;

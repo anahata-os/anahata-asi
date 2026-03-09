@@ -3,7 +3,7 @@ package uno.anahata.asi.swing.agi.resources.handle;
 
 import javax.swing.JLabel;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.resource.v2.handle.StringHandle;
+import uno.anahata.asi.agi.resource.view.StringHandle;
 
 /**
  * A specialized metadata panel for the {@link StringHandle}.

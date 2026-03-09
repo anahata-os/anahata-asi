@@ -2,8 +2,8 @@
 package uno.anahata.asi.nb.tools.project.alerts;
 
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.context.BasicContextProvider;
-import uno.anahata.asi.model.core.RagMessage;
+import uno.anahata.asi.agi.context.BasicContextProvider;
+import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.nb.tools.project.context.ProjectContextProvider;
 import uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic2;

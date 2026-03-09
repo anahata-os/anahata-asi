@@ -7,7 +7,7 @@ import java.awt.Color;
 import javax.swing.BorderFactory;
 import javax.swing.border.Border;
 import lombok.NonNull;
-import uno.anahata.asi.model.core.UserMessage;
+import uno.anahata.asi.agi.message.UserMessage;
 import uno.anahata.asi.swing.agi.AgiPanel;
 
 /**

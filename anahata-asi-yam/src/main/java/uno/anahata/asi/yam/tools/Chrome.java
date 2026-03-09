@@ -34,13 +34,13 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.internal.OsUtils;
-import uno.anahata.asi.model.core.RagMessage;
-import uno.anahata.asi.model.core.Rebindable;
-import uno.anahata.asi.tool.AiTool;
-import uno.anahata.asi.tool.AiToolParam;
-import uno.anahata.asi.tool.AiToolkit;
-import uno.anahata.asi.tool.AnahataToolkit;
-import uno.anahata.asi.toolkit.shell.Shell;
+import uno.anahata.asi.agi.message.RagMessage;
+import uno.anahata.asi.persistence.Rebindable;
+import uno.anahata.asi.agi.tool.AiTool;
+import uno.anahata.asi.agi.tool.AiToolParam;
+import uno.anahata.asi.agi.tool.AiToolkit;
+import uno.anahata.asi.agi.tool.AnahataToolkit;
+import uno.anahata.asi.toolkit.Shell;
 import uno.anahata.asi.toolkit.shell.ShellExecutionResult;
 
 /**

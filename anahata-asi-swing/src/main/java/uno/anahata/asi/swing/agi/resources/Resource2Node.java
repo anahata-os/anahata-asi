@@ -4,8 +4,8 @@ package uno.anahata.asi.swing.agi.resources;
 import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.context.ContextPosition;
-import uno.anahata.asi.resource.v2.Resource;
+import uno.anahata.asi.agi.context.ContextPosition;
+import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.context.AbstractContextNode;
 

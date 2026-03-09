@@ -27,12 +27,12 @@ import org.netbeans.modules.java.hints.spiimpl.options.HintsSettings;
 import org.netbeans.spi.editor.hints.ErrorDescription;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
-import uno.anahata.asi.model.Page;
+import uno.anahata.asi.agi.tool.Page;
 import uno.anahata.asi.nb.tools.project.Projects;
-import uno.anahata.asi.tool.AiTool;
-import uno.anahata.asi.tool.AiToolParam;
-import uno.anahata.asi.tool.AiToolkit;
-import uno.anahata.asi.tool.AnahataToolkit;
+import uno.anahata.asi.agi.tool.AiTool;
+import uno.anahata.asi.agi.tool.AiToolParam;
+import uno.anahata.asi.agi.tool.AiToolkit;
+import uno.anahata.asi.agi.tool.AnahataToolkit;
 
 /**
  * A toolkit for managing and applying Java hints and code fixes within the NetBeans IDE.

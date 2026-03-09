@@ -20,7 +20,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.model.core.AbstractMessage;
+import uno.anahata.asi.agi.message.AbstractMessage;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.AgiTransferHandler;
 import uno.anahata.asi.swing.agi.message.AbstractMessagePanel;
@@ -31,7 +31,7 @@ import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 /**
  * The main container for the conversation history, responsible for rendering
  * a list of {@link AbstractMessagePanel} instances. It handles incremental
- * updates by listening to the {@link uno.anahata.asi.context.ContextManager} for history changes.
+ * updates by listening to the {@link uno.anahata.asi.agi.context.ContextManager} for history changes.
  *
  * @author anahata
  */

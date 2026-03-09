@@ -12,8 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
-import uno.anahata.asi.resource.v2.Resource;
-import uno.anahata.asi.resource.v2.view.TextView;
+import uno.anahata.asi.agi.resource.Resource;
+import uno.anahata.asi.agi.resource.view.TextView;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.internal.SwingUtils;
 

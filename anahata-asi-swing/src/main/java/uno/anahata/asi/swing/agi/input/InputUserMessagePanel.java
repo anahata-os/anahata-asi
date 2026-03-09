@@ -17,7 +17,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.model.core.InputUserMessage;
+import uno.anahata.asi.agi.message.InputUserMessage;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.message.AbstractMessagePanel;
 

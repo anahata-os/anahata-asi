@@ -21,9 +21,9 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
-import uno.anahata.asi.status.AgiStatus;
-import uno.anahata.asi.internal.kryo.KryoUtils;
-import uno.anahata.asi.model.core.BasicPropertyChangeSource;
+import uno.anahata.asi.agi.status.AgiStatus;
+import uno.anahata.asi.persistence.kryo.KryoUtils;
+import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
 
 /**
  * A hybrid static/instance class for managing global and application-specific configurations.

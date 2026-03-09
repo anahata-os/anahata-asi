@@ -52,10 +52,10 @@ import org.openide.util.TaskListener;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.nb.tools.project.Projects;
-import uno.anahata.asi.tool.AiTool;
-import uno.anahata.asi.tool.AiToolParam;
-import uno.anahata.asi.tool.AiToolkit;
-import uno.anahata.asi.tool.AnahataToolkit;
+import uno.anahata.asi.agi.tool.AiTool;
+import uno.anahata.asi.agi.tool.AiToolParam;
+import uno.anahata.asi.agi.tool.AiToolkit;
+import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.util.TeeInputOutput;
 
 /**

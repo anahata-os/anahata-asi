@@ -6,12 +6,12 @@ package uno.anahata.asi.swing.agi.message.part;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.model.core.AbstractPart;
-import uno.anahata.asi.model.core.BlobPart;
-import uno.anahata.asi.model.core.ModelBlobPart;
-import uno.anahata.asi.model.core.ModelTextPart;
-import uno.anahata.asi.model.core.TextPart;
-import uno.anahata.asi.model.tool.AbstractToolCall;
+import uno.anahata.asi.agi.message.AbstractPart;
+import uno.anahata.asi.agi.message.BlobPart;
+import uno.anahata.asi.agi.message.ModelBlobPart;
+import uno.anahata.asi.agi.message.ModelTextPart;
+import uno.anahata.asi.agi.message.TextPart;
+import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.message.part.tool.ToolCallPanel;
 

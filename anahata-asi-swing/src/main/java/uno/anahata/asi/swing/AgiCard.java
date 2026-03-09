@@ -23,7 +23,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j; 
 import net.miginfocom.swing.MigLayout;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.status.AgiStatus;
+import uno.anahata.asi.agi.status.AgiStatus;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.SearchIcon;

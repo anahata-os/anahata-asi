@@ -331,6 +331,7 @@
                         </links>
                         <top>
                             <![CDATA[
+        <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=f19c44f5-8b2e-458f-beab-96e4f9f8e603" />
         <div class="anahata-footer">
             <img src="https://www.anahata.uno/assets/logo-transparent.png" alt="Anahata Logo" class="anahata-logo">
             <a href="https://github.com/sponsors/anahata-os" target="_blank" class="donate-link">
@@ -353,8 +354,8 @@
                 <span class="forca-text">Força <span class="barca-red">Barça!</span></span>
                 <img src="https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg" alt="Barça Crest">
             </div>
-            <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=f19c44f5-8b2e-458f-beab-96e4f9f8e603" />
         </div>
+                            
     ]]></bottom>
                     </configuration>
                     <executions>

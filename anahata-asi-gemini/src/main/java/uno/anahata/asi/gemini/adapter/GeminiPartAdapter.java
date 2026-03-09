@@ -11,15 +11,15 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.internal.JacksonUtils;
-import uno.anahata.asi.model.core.AbstractPart;
-import uno.anahata.asi.model.core.BlobPart;
-import uno.anahata.asi.model.core.ModelBlobPart;
-import uno.anahata.asi.model.core.ModelTextPart;
-import uno.anahata.asi.model.core.TextPart;
-import uno.anahata.asi.model.core.ThoughtSignature;
-import uno.anahata.asi.model.tool.AbstractToolCall;
-import uno.anahata.asi.model.tool.AbstractToolResponse;
-import uno.anahata.asi.model.tool.ToolResponseAttachment;
+import uno.anahata.asi.agi.message.AbstractPart;
+import uno.anahata.asi.agi.message.BlobPart;
+import uno.anahata.asi.agi.message.ModelBlobPart;
+import uno.anahata.asi.agi.message.ModelTextPart;
+import uno.anahata.asi.agi.message.TextPart;
+import uno.anahata.asi.agi.message.ThoughtSignature;
+import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
+import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
+import uno.anahata.asi.agi.tool.ToolResponseAttachment;
 
 /**
  * An object-oriented adapter that converts a single Anahata AbstractPart into a

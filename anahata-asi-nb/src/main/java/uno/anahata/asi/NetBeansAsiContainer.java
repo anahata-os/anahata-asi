@@ -14,7 +14,7 @@ import uno.anahata.asi.nb.ui.resources.NbResourceUI;
 import uno.anahata.asi.nb.util.ElementHandleModule;
 import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
-import uno.anahata.asi.tool.schema.SchemaProvider;
+import uno.anahata.asi.agi.tool.schema.SchemaProvider;
 import uno.anahata.asi.toolkit.files.FullTextFileUpdate;
 import uno.anahata.asi.toolkit.files.TextFileReplacements;
 

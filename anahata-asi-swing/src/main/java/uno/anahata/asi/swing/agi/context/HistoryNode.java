@@ -5,8 +5,8 @@ package uno.anahata.asi.swing.agi.context;
 
 import java.util.List;
 import javax.swing.Icon;
-import uno.anahata.asi.context.ContextManager;
-import uno.anahata.asi.model.core.AbstractMessage;
+import uno.anahata.asi.agi.context.ContextManager;
+import uno.anahata.asi.agi.message.AbstractMessage;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.icons.PulseIcon;
 

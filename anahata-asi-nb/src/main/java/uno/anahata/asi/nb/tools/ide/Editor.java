@@ -29,12 +29,12 @@ import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 import uno.anahata.asi.AgiTopComponent;
 import uno.anahata.asi.AsiTopComponent;
-import uno.anahata.asi.model.core.RagMessage;
+import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.swing.internal.SwingUtils;
-import uno.anahata.asi.tool.AiTool;
-import uno.anahata.asi.tool.AiToolParam;
-import uno.anahata.asi.tool.AiToolkit;
-import uno.anahata.asi.tool.AnahataToolkit;
+import uno.anahata.asi.agi.tool.AiTool;
+import uno.anahata.asi.agi.tool.AiToolParam;
+import uno.anahata.asi.agi.tool.AiToolkit;
+import uno.anahata.asi.agi.tool.AnahataToolkit;
 
 /**
  * Provides tools for interacting with the NetBeans editor, such as opening files,

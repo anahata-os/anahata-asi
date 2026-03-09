@@ -26,10 +26,10 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.internal.TokenizerUtils;
-import uno.anahata.asi.model.core.RequestConfig;
-import uno.anahata.asi.model.core.ThinkingLevel;
+import uno.anahata.asi.agi.provider.RequestConfig;
+import uno.anahata.asi.agi.provider.ThinkingLevel;
 import uno.anahata.asi.model.provider.ServerTool;
-import uno.anahata.asi.model.tool.AbstractTool;
+import uno.anahata.asi.agi.tool.spi.AbstractTool;
 
 /**
  * A focused adapter responsible for converting our model-agnostic RequestConfig

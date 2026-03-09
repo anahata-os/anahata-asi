@@ -16,8 +16,8 @@ import lombok.NoArgsConstructor;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.resource.v2.Resource;
-import uno.anahata.asi.tool.AiToolException;
+import uno.anahata.asi.agi.resource.Resource;
+import uno.anahata.asi.agi.tool.AiToolException;
 
 /**
  * Represents a set of text replacement operations for a specific file. Extends

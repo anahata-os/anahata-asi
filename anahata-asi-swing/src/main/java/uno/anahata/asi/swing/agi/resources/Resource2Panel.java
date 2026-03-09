@@ -1,6 +1,5 @@
 /*
- * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
- */
+ * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.agi.resources;
 
 import uno.anahata.asi.swing.agi.resources.view.AbstractViewPanel;
@@ -20,14 +19,15 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.border.TitledBorder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import uno.anahata.asi.context.ContextPosition;
-import uno.anahata.asi.model.core.RagMessage;
-import uno.anahata.asi.resource.v2.RefreshPolicy;
-import uno.anahata.asi.resource.v2.Resource;
-import uno.anahata.asi.resource.v2.view.TextView;
+import uno.anahata.asi.agi.context.ContextPosition;
+import uno.anahata.asi.agi.message.RagMessage;
+import uno.anahata.asi.agi.resource.RefreshPolicy;
+import uno.anahata.asi.agi.resource.Resource;
+import uno.anahata.asi.agi.resource.view.TextView;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.message.RagMessageViewer;
 import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
@@ -242,6 +242,11 @@ public class Resource2Panel extends JPanel {
 
     /**
      * Sets the resource to manage and initializes the dynamic viewer.
+     * <p>
+     * <b>Background SENSING:</b> This method performs a background reload of 
+     * the resource to trigger view binding and content freshness before 
+     * assembling the Strategy-based UI.
+     * </p>
      * @param res The V2 resource instance.
      */
     public void setResource(Resource res) {
@@ -254,23 +259,54 @@ public class Resource2Panel extends JPanel {
         editBtn.setText("📝 EDIT");
         editBtn.setIcon(null);
         
-        if (res != null) {
-            this.resourceListener = new EdtPropertyChangeListener(this, res, null, evt -> syncUiWithResource());
-        }
-        
+        // 1. Initial Cleanup
         viewerContainer.removeAll();
         actionPanel.removeAll();
         actionPanel.add(editBtn);
         handleSectorContainer.removeAll();
         viewSectorContainer.removeAll();
+        mainTabs.removeAll();
+
+        if (res == null) {
+            revalidate();
+            repaint();
+            return;
+        }
+
+        // 2. Background Reload & UI Assembly
+        new SwingTask<>(this, "Loading Resource", () -> {
+            res.reloadIfNeeded();
+            return null;
+        }, done -> {
+            this.resourceListener = new EdtPropertyChangeListener(this, res, null, evt -> syncUiWithResource());
+            assembleResourceUI();
+        }, error -> {
+            viewerContainer.add(new JLabel("<html><font color='red'><b>Failed to load resource:</b><br>" + error.getMessage() + "</font></html>"), BorderLayout.CENTER);
+            updateTabs();
+        }).execute();
+
+        // 3. Show Placeholder
+        JLabel loadingLabel = new JLabel("Sensing Resource...", SwingConstants.CENTER);
+        loadingLabel.setFont(loadingLabel.getFont().deriveFont(Font.ITALIC, 16f));
+        viewerContainer.add(loadingLabel, BorderLayout.CENTER);
+        mainTabs.addTab("Capability View", viewerContainer);
+    }
+
+    /**
+     * Assemblies the specialized UI components using the host-aware strategy.
+     */
+    private void assembleResourceUI() {
+        if (currentResource == null) return;
         
+        viewerContainer.removeAll();
         this.activeStrategy = ResourceUiRegistry.getInstance().getResourceUI();
-        if (res != null && activeStrategy != null) {
+        
+        if (activeStrategy != null) {
             // Swap specialized metadata panels
-            handleSectorContainer.add(activeStrategy.createHandlePanel(res, agiPanel), BorderLayout.CENTER);
-            viewSectorContainer.add(activeStrategy.createViewPanel(res, agiPanel), BorderLayout.CENTER);
+            handleSectorContainer.add(activeStrategy.createHandlePanel(currentResource, agiPanel), BorderLayout.CENTER);
+            viewSectorContainer.add(activeStrategy.createViewPanel(currentResource, agiPanel), BorderLayout.CENTER);
             
-            this.activeViewer = activeStrategy.createContent(res, agiPanel);
+            this.activeViewer = activeStrategy.createContent(currentResource, agiPanel);
             
             // ARCHITECTURAL FIDELITY: Hide the viewer's internal toolbar because Resource2Panel 
             // provides its own integrated control header and sectoral view panels.
@@ -279,9 +315,9 @@ public class Resource2Panel extends JPanel {
             }
             
             viewerContainer.add(activeViewer, BorderLayout.CENTER);
-            activeStrategy.populateActions(actionPanel, res, agiPanel);
-            editBtn.setVisible(activeStrategy.canEdit(res) && res.isWritable());
-        } else if (res != null) {
+            activeStrategy.populateActions(actionPanel, currentResource, agiPanel);
+            editBtn.setVisible(activeStrategy.canEdit(currentResource) && currentResource.isWritable());
+        } else {
             viewerContainer.add(new JLabel("No ResourceUI strategy registered for this host environment."), BorderLayout.CENTER);
             editBtn.setVisible(false);
         }
@@ -328,8 +364,8 @@ public class Resource2Panel extends JPanel {
     private void updateTabs() {
         mainTabs.removeAll();
         
-        // Tab 1: Capability View (Only for textual resources)
-        if (currentResource.getHandle().isTextual()) {
+        // Tab 1: Capability View (Only for textual resources or valid views)
+        if (currentResource.getHandle().isTextual() || currentResource.getView() != null) {
             mainTabs.addTab("Capability View", viewerContainer);
         }
         
@@ -346,7 +382,7 @@ public class Resource2Panel extends JPanel {
         RagMessage rawMsg = new RagMessage(agiPanel.getAgi());
         try {
             // SENSING PURITY: Freshness is guaranteed by the Turn orchestration or 
-            // the change event that triggered this sync. Reloading here causes recursion.
+            // the background load task. Reloading here causes recursion.
             rawMsg.addTextPart(currentResource.getHeader());
             if (currentResource.getContextPosition() == ContextPosition.SYSTEM_INSTRUCTIONS) {
                 currentResource.getSystemInstructions().forEach(rawMsg::addTextPart);

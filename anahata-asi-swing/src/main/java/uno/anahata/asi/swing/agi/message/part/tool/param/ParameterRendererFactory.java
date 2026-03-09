@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.internal.TextUtils;
-import uno.anahata.asi.model.tool.AbstractToolCall;
+import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.swing.agi.AgiPanel;
 
 /**

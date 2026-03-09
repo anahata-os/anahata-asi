@@ -11,7 +11,7 @@ import javax.swing.JPanel;
 import javax.swing.border.TitledBorder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.resource.v2.view.ResourceView;
+import uno.anahata.asi.agi.resource.view.ResourceView;
 
 /**
  * Common base for view-specific metadata panels.

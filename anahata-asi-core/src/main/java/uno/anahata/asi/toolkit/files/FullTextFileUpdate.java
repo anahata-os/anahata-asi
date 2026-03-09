@@ -10,8 +10,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.resource.v2.Resource;
-import uno.anahata.asi.tool.AiToolException;
+import uno.anahata.asi.agi.resource.Resource;
+import uno.anahata.asi.agi.tool.AiToolException;
 
 /**
  * A rich DTO for updating a text file with its full new content. It encapsulates the new content, 

@@ -6,10 +6,10 @@ import java.util.Scanner;
 import lombok.RequiredArgsConstructor;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.internal.JacksonUtils;
-import uno.anahata.asi.model.tool.AbstractTool;
-import uno.anahata.asi.model.tool.AbstractToolParameter;
-import uno.anahata.asi.model.tool.AbstractToolkit;
-import uno.anahata.asi.model.tool.ToolPermission;
+import uno.anahata.asi.agi.tool.spi.AbstractTool;
+import uno.anahata.asi.agi.tool.spi.AbstractToolParameter;
+import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
+import uno.anahata.asi.agi.tool.ToolPermission;
 
 /**
  * Handles the CLI menu for managing Toolkits and viewing detailed tool information.

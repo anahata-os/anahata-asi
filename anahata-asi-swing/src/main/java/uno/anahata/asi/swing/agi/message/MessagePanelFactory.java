@@ -5,9 +5,9 @@ package uno.anahata.asi.swing.agi.message;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import uno.anahata.asi.model.core.AbstractMessage;
-import uno.anahata.asi.model.core.AbstractModelMessage;
-import uno.anahata.asi.model.core.UserMessage;
+import uno.anahata.asi.agi.message.AbstractMessage;
+import uno.anahata.asi.agi.message.AbstractModelMessage;
+import uno.anahata.asi.agi.message.UserMessage;
 import uno.anahata.asi.swing.agi.AgiPanel;
 
 /**

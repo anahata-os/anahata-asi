@@ -17,15 +17,15 @@ import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.model.core.AbstractModelMessage;
-import uno.anahata.asi.model.core.AbstractPart;
-import uno.anahata.asi.model.core.FinishReason;
-import uno.anahata.asi.model.core.ModelBlobPart;
-import uno.anahata.asi.model.core.ModelTextPart;
-import uno.anahata.asi.model.core.ThoughtSignature;
-import uno.anahata.asi.model.tool.AbstractToolCall;
-import uno.anahata.asi.model.web.GroundingMetadata;
-import uno.anahata.asi.model.web.GroundingSource;
+import uno.anahata.asi.agi.message.AbstractModelMessage;
+import uno.anahata.asi.agi.message.AbstractPart;
+import uno.anahata.asi.agi.provider.FinishReason;
+import uno.anahata.asi.agi.message.ModelBlobPart;
+import uno.anahata.asi.agi.message.ModelTextPart;
+import uno.anahata.asi.agi.message.ThoughtSignature;
+import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
+import uno.anahata.asi.agi.message.web.GroundingMetadata;
+import uno.anahata.asi.agi.message.web.GroundingSource;
 
 /**
  * An object-oriented representation of a ModelMessage derived from the Gemini provider.

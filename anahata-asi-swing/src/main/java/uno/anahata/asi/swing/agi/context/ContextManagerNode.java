@@ -6,10 +6,10 @@ package uno.anahata.asi.swing.agi.context;
 import uno.anahata.asi.swing.agi.resources.Resources2Node;
 import java.util.ArrayList;
 import java.util.List;
-import uno.anahata.asi.context.ContextManager;
-import uno.anahata.asi.context.ContextProvider;
-import uno.anahata.asi.model.tool.AbstractToolkit;
-import uno.anahata.asi.resource.v2.ResourceManager2;
+import uno.anahata.asi.agi.context.ContextManager;
+import uno.anahata.asi.agi.context.ContextProvider;
+import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
+import uno.anahata.asi.agi.resource.ResourceManager2;
 import uno.anahata.asi.swing.agi.AgiPanel;
 
 /**

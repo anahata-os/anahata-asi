@@ -19,14 +19,14 @@ import org.openide.filesystems.FileUtil;
 import uno.anahata.asi.AnahataInstaller;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.nb.tools.files.nb.AnahataAnnotationProvider;
-import uno.anahata.asi.resource.v2.Resource;
-import uno.anahata.asi.resource.v2.Resources;
+import uno.anahata.asi.agi.resource.Resource;
+import uno.anahata.asi.toolkit.Resources;
 
 /**
  * Logic handler for adding NetBeans files and folders to the V2 AI context.
  * <p>
  * This class bridges the IDE's {@link FileObject} selections with the 
- * {@link uno.anahata.asi.resource.v2.ResourceManager2}. It handles recursion 
+ * {@link uno.anahata.asi.agi.resource.ResourceManager2}. It handles recursion 
  * for folders and provides a V1-compatible API for seamless migration.
  * </p>
  * 

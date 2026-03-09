@@ -8,7 +8,7 @@ import java.lang.reflect.Type;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.tool.schema.SchemaProvider;
+import uno.anahata.asi.agi.tool.schema.SchemaProvider;
 
 /**
  * A generic utility class for Jackson-based JSON operations.

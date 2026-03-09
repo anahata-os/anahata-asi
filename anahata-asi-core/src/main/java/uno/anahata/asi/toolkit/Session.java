@@ -7,19 +7,19 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.AgiConfig;
-import uno.anahata.asi.context.ContextManager;
-import uno.anahata.asi.context.ContextProvider;
-import uno.anahata.asi.model.core.AbstractMessage;
-import uno.anahata.asi.model.core.AbstractPart;
-import uno.anahata.asi.model.core.PruningState;
-import uno.anahata.asi.model.core.RagMessage;
+import uno.anahata.asi.agi.context.ContextManager;
+import uno.anahata.asi.agi.context.ContextProvider;
+import uno.anahata.asi.agi.message.AbstractMessage;
+import uno.anahata.asi.agi.message.AbstractPart;
+import uno.anahata.asi.agi.message.PruningState;
+import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.model.provider.ServerTool;
-import uno.anahata.asi.model.tool.AbstractToolCall;
-import uno.anahata.asi.model.tool.ToolExecutionStatus;
-import uno.anahata.asi.tool.AiTool;
-import uno.anahata.asi.tool.AiToolParam;
-import uno.anahata.asi.tool.AiToolkit;
-import uno.anahata.asi.tool.AnahataToolkit;
+import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
+import uno.anahata.asi.agi.tool.ToolExecutionStatus;
+import uno.anahata.asi.agi.tool.AiTool;
+import uno.anahata.asi.agi.tool.AiToolParam;
+import uno.anahata.asi.agi.tool.AiToolkit;
+import uno.anahata.asi.agi.tool.AnahataToolkit;
 
 /**
  * The definitive toolkit for managing the current agi session's metadata, 

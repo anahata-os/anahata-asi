@@ -5,8 +5,8 @@ package uno.anahata.asi.swing.agi.context;
 
 import java.util.ArrayList;
 import java.util.List;
-import uno.anahata.asi.context.ContextProvider;
-import uno.anahata.asi.model.tool.AbstractToolkit;
+import uno.anahata.asi.agi.context.ContextProvider;
+import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
 import uno.anahata.asi.swing.agi.AgiPanel;
 
 /**

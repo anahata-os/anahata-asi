@@ -5,8 +5,8 @@ package uno.anahata.asi.swing.agi.context;
 
 import java.util.List;
 import javax.swing.Icon;
-import uno.anahata.asi.model.tool.AbstractTool;
-import uno.anahata.asi.model.tool.AbstractToolkit;
+import uno.anahata.asi.agi.tool.spi.AbstractTool;
+import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.icons.AtomsIcon;
 

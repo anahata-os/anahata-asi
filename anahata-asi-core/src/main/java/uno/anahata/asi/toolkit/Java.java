@@ -34,17 +34,17 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.internal.ClasspathPrinter;
 import uno.anahata.asi.internal.TextUtils;
-import uno.anahata.asi.model.core.RagMessage;
-import uno.anahata.asi.model.core.TextPart;
-import uno.anahata.asi.model.tool.java.JavaMethodTool;
-import uno.anahata.asi.model.tool.java.JavaMethodToolResponse;
-import uno.anahata.asi.tool.AiTool;
-import uno.anahata.asi.tool.AiToolException;
-import uno.anahata.asi.tool.AiToolParam;
-import uno.anahata.asi.tool.AiToolkit;
-import uno.anahata.asi.tool.AnahataTool;
-import uno.anahata.asi.tool.ToolContext;
-import uno.anahata.asi.tool.AnahataToolkit;
+import uno.anahata.asi.agi.message.RagMessage;
+import uno.anahata.asi.agi.message.TextPart;
+import uno.anahata.asi.agi.tool.spi.java.JavaMethodTool;
+import uno.anahata.asi.agi.tool.spi.java.JavaMethodToolResponse;
+import uno.anahata.asi.agi.tool.AiTool;
+import uno.anahata.asi.agi.tool.AiToolException;
+import uno.anahata.asi.agi.tool.AiToolParam;
+import uno.anahata.asi.agi.tool.AiToolkit;
+import uno.anahata.asi.agi.tool.AnahataTool;
+import uno.anahata.asi.agi.tool.ToolContext;
+import uno.anahata.asi.agi.tool.AnahataToolkit;
 
 /**
  * A powerful toolkit for compiling and executing Java code dynamically within
@@ -64,12 +64,11 @@ public class Java extends AnahataToolkit {
      * context. This prevents "Identity Crisis" issues where a child-loaded
      * script cannot access the engine's context.
      */
-    private static final Set<String> PARENT_FIRST_CLASSES = Set.of(
-            AnahataTool.class.getName(),
+    private static final Set<String> PARENT_FIRST_CLASSES = Set.of(AnahataTool.class.getName(),
             ToolContext.class.getName(),
             JavaMethodToolResponse.class.getName(),
-            uno.anahata.asi.model.tool.ToolResponseAttachment.class.getName(),
-            uno.anahata.asi.tool.AiToolException.class.getName()
+            uno.anahata.asi.agi.tool.ToolResponseAttachment.class.getName(),
+            uno.anahata.asi.agi.tool.AiToolException.class.getName()
     );
 
     /**

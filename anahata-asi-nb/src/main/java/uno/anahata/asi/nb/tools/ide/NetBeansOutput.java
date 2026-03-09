@@ -13,8 +13,8 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
-import uno.anahata.asi.toolkit.files.TextViewport;
-import uno.anahata.asi.toolkit.files.TextViewportSettings;
+import uno.anahata.asi.agi.resource.view.TextViewport;
+import uno.anahata.asi.agi.resource.view.TextViewportSettings;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
@@ -67,8 +67,10 @@ public final class NetBeansOutput {
                                     .tailLines(20)
                                     .columnWidth(512)
                                     .build());
+                            /*
                             viewport.process(text);
                             sb.append("```text\n").append(viewport.getProcessedText()).append("\n```\n");
+                            */
                         }
                     });
                 }

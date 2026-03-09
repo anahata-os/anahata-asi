@@ -6,7 +6,7 @@ import javax.swing.JLabel;
 import javax.swing.JTextField;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.internal.TimeUtils;
-import uno.anahata.asi.resource.v2.handle.UrlHandle;
+import uno.anahata.asi.agi.resource.view.UrlHandle;
 
 /**
  * A specialized metadata panel for the {@link UrlHandle}.

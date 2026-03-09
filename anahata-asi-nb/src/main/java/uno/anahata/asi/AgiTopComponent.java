@@ -16,7 +16,7 @@ import org.openide.awt.ActionReference;
 import org.openide.windows.TopComponent;
 import org.openide.util.ImageUtilities;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.status.AgiStatus;
+import uno.anahata.asi.agi.status.AgiStatus;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;

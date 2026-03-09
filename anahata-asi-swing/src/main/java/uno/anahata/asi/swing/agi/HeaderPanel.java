@@ -17,7 +17,7 @@ import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.JXTextField;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.internal.kryo.KryoUtils;
+import uno.anahata.asi.persistence.kryo.KryoUtils;
 import uno.anahata.asi.model.provider.AbstractAgiProvider;
 import uno.anahata.asi.model.provider.AbstractModel;
 import uno.anahata.asi.swing.icons.LoadSessionIcon;

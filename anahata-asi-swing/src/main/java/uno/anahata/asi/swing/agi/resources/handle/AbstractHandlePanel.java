@@ -17,7 +17,7 @@ import javax.swing.border.TitledBorder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.internal.TimeUtils;
-import uno.anahata.asi.resource.v2.handle.ResourceHandle;
+import uno.anahata.asi.agi.resource.view.ResourceHandle;
 
 /**
  * A specialized metadata panel for the {@link ResourceHandle} layer.

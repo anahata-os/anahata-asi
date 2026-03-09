@@ -5,13 +5,12 @@ package uno.anahata.asi.model.provider;
 
 import java.util.List;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.model.core.AbstractMessage;
-import uno.anahata.asi.model.core.AbstractModelMessage;
-import uno.anahata.asi.model.core.GenerationRequest;
-import uno.anahata.asi.model.core.RequestConfig;
-import uno.anahata.asi.model.core.Response;
-import uno.anahata.asi.model.core.StreamObserver;
-import uno.anahata.asi.model.tool.AbstractTool;
+import uno.anahata.asi.agi.message.AbstractMessage;
+import uno.anahata.asi.agi.message.AbstractModelMessage;
+import uno.anahata.asi.agi.provider.RequestConfig;
+import uno.anahata.asi.agi.provider.Response;
+import uno.anahata.asi.agi.provider.StreamObserver;
+import uno.anahata.asi.agi.tool.spi.AbstractTool;
 
 /**
  * The abstract base class for a specific AI model (e.g., "gemini-1.5-pro-latest").

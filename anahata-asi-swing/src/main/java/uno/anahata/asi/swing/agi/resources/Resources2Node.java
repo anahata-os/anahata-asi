@@ -3,8 +3,8 @@ package uno.anahata.asi.swing.agi.resources;
 
 import java.util.List;
 import javax.swing.Icon;
-import uno.anahata.asi.resource.v2.Resource;
-import uno.anahata.asi.resource.v2.ResourceManager2;
+import uno.anahata.asi.agi.resource.Resource;
+import uno.anahata.asi.agi.resource.ResourceManager2;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.context.AbstractContextNode;
 import uno.anahata.asi.swing.icons.PrismIcon;
