@@ -3,14 +3,12 @@ package uno.anahata.ai.tool;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uno.anahata.asi.AsiContainer;
-import uno.anahata.asi.model.resource.AbstractResource;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.model.core.AbstractModelMessage;

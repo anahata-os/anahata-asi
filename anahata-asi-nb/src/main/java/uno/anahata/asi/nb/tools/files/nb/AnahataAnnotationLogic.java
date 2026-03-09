@@ -14,7 +14,6 @@ import org.openide.loaders.DataShadow;
 import uno.anahata.asi.AnahataInstaller;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.context.ContextProvider;
-import uno.anahata.asi.nb.tools.files.nb.v2.FilesContextActionLogic2;
 import uno.anahata.asi.nb.tools.project.Projects;
 
 /**

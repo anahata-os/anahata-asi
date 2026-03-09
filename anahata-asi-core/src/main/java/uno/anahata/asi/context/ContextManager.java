@@ -3,7 +3,6 @@
  */
 package uno.anahata.asi.context;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -18,15 +17,11 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.context.provider.CoreContextProvider;
 import uno.anahata.asi.model.core.AbstractMessage;
-import uno.anahata.asi.model.core.AbstractModelMessage;
 import uno.anahata.asi.model.core.AbstractPart;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.model.core.Rebindable;
-import uno.anahata.asi.model.resource.AbstractPathResource;
-import uno.anahata.asi.model.resource.AbstractResource;
-import uno.anahata.asi.resource.ResourceManager;
-import uno.anahata.asi.tool.ToolManager;
+import uno.anahata.asi.resource.v2.Resource;
 
 /**
  * The definitive manager for a agi session's context in the V2 architecture.
@@ -94,7 +89,6 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
         registerContextProvider(new CoreContextProvider(agi));
         registerContextProvider(agi.getToolManager());
         registerContextProvider(agi.getResourceManager2());
-        registerContextProvider(agi.getResourceManager());
     }
 
     /**
@@ -132,7 +126,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
             for (ContextProvider provider : rootProvider.getFlattenedHierarchy(true)) {
                 if (provider.isProviding()) {
                     try {
-                        if (provider instanceof AbstractResource ar) {
+                        if (provider instanceof Resource ar) {
                             if (ar.getContextPosition() != ContextPosition.SYSTEM_INSTRUCTIONS) {
                                 continue;
                             }
@@ -185,7 +179,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
                 if (provider.isProviding()) {
                     // CRITICAL: Respect ContextPosition for resources. 
                     // Resources in SYSTEM_INSTRUCTIONS must not appear in the RAG message.
-                    if (provider instanceof AbstractResource ar && ar.getContextPosition() != ContextPosition.PROMPT_AUGMENTATION) {
+                    if (provider instanceof Resource r && r.getContextPosition() != ContextPosition.PROMPT_AUGMENTATION) {
                         continue;
                     }
 

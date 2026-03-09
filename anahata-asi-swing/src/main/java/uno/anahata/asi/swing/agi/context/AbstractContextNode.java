@@ -15,10 +15,10 @@ import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.core.AbstractMessage;
 import uno.anahata.asi.model.core.AbstractPart;
-import uno.anahata.asi.model.resource.AbstractResource;
 import uno.anahata.asi.model.tool.AbstractTool;
 import uno.anahata.asi.model.tool.AbstractToolkit;
 import uno.anahata.asi.model.tool.ToolPermission;
+import uno.anahata.asi.resource.v2.Resource;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.icons.IconProvider;
@@ -221,8 +221,8 @@ public abstract class AbstractContextNode<T> {
     public boolean isActive() {
         if (userObject instanceof ContextProvider cp) {
             boolean active = cp.isEffectivelyProviding();
-            if (cp instanceof AbstractResource<?, ?> res) {
-                active = active && res.exists();
+            if (cp instanceof Resource res) {
+                active = active && res.getHandle().exists();
             }
             return active;
         } else if (userObject instanceof AbstractToolkit<?> tk) {

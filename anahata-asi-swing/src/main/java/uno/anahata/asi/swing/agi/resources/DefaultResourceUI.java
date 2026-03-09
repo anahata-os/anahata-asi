@@ -139,7 +139,7 @@ public class DefaultResourceUI implements ResourceUI {
             mvp.setView(mv);
             return mvp;
         }
-        return new JPanel();
+        throw new IllegalStateException("Cannot create view panel for resource " + resource);
     }
 
     /** 

@@ -9,7 +9,6 @@ import java.util.List;
 import uno.anahata.asi.context.ContextManager;
 import uno.anahata.asi.context.ContextProvider;
 import uno.anahata.asi.model.tool.AbstractToolkit;
-import uno.anahata.asi.resource.ResourceManager;
 import uno.anahata.asi.resource.v2.ResourceManager2;
 import uno.anahata.asi.swing.agi.AgiPanel;
 
@@ -64,8 +63,6 @@ public class ContextManagerNode extends AbstractContextNode<ContextManager> {
     protected AbstractContextNode<?> createChildNode(Object obj) {
         if (obj instanceof ResourceManager2 rm2) {
             return new Resources2Node(agiPanel, rm2);
-        } else if (obj instanceof ResourceManager rm) {
-            return new ResourcesNode(agiPanel, rm);
         } else if (obj instanceof ContextProvider cp) {
             return new ProviderNode(agiPanel, cp);
         } else if (obj instanceof ContextManager cm) {

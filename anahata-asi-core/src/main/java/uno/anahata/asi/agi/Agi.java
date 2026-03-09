@@ -33,7 +33,6 @@ import uno.anahata.asi.model.provider.AbstractAgiProvider;
 import uno.anahata.asi.model.provider.AbstractModel;
 import uno.anahata.asi.model.provider.ApiCallInterruptedException;
 import uno.anahata.asi.model.provider.ServerTool;
-import uno.anahata.asi.resource.ResourceManager;
 import uno.anahata.asi.resource.v2.ResourceManager2;
 import uno.anahata.asi.resource.v2.Resources;
 import uno.anahata.asi.status.ApiErrorRecord;
@@ -66,9 +65,6 @@ public class Agi extends BasicPropertyChangeSource {
     /** The manager for the conversation history and context assembly. */
     private final ContextManager contextManager;
     
-    /** The manager for stateful resources (e.g., files) in the context. */
-    private final ResourceManager resourceManager;
-
     /** The V2 URI-centric Resource Manager. */
     private final ResourceManager2 resourceManager2;
     
@@ -162,7 +158,6 @@ public class Agi extends BasicPropertyChangeSource {
         log.info("Constructing agi with config: " + config);
         this.executor = AiExecutors.newCachedThreadPoolExecutor(config.getSessionId());
         this.contextManager = new ContextManager(this);
-        this.resourceManager = new ResourceManager(this);
         this.resourceManager2 = new ResourceManager2(this);
         this.statusManager = new StatusManager(this);
         this.toolManager = new ToolManager(this);

@@ -17,7 +17,6 @@ import uno.anahata.asi.context.ContextPosition;
 import uno.anahata.asi.model.core.BasicPropertyChangeSource;
 import uno.anahata.asi.model.core.RagMessage;
 import uno.anahata.asi.model.core.Rebindable;
-import uno.anahata.asi.model.resource.RefreshPolicy;
 import uno.anahata.asi.internal.TimeUtils;
 
 /**

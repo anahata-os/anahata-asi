@@ -117,6 +117,13 @@ public class TextView extends AbstractResourceView implements Rebindable {
         return TokenizerUtils.countTokens(content != null ? content : "") + 20;
     }
 
+    @Override
+    public String getHeader() {
+        return super.getHeader() + "\nViewPort: " + viewport;
+    }
+    
+    
+
     /** 
      * {@inheritDoc} 
      */

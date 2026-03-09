@@ -219,6 +219,6 @@ public class TextViewport {
      */
     @Override
     public String toString() {
-        return "TextViewport{" + "settings=" + settings + ", chars=" + totalChars + ", lines=" + totalLines + ", matched=" + matchingLineCount + ", truncated=" + truncatedLinesCount + '}';
+        return "TextViewport{" + "settings=" + settings + ", totalChars=" + totalChars + ", totalLines=" + totalLines + ", matchingLineCount=" + matchingLineCount + ", truncatedLinesCount=" + truncatedLinesCount + '}';
     }
 }

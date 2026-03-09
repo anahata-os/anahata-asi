@@ -59,7 +59,7 @@ import uno.anahata.asi.tool.AnahataToolkit;
 import uno.anahata.asi.nb.tools.project.alerts.JavacAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectDiagnostics;
-import uno.anahata.asi.nb.tools.files.nb.v2.FilesContextActionLogic2;
+import uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic2;
 import uno.anahata.asi.nb.tools.project.context.ProjectStructureContextProvider;
 
 /**

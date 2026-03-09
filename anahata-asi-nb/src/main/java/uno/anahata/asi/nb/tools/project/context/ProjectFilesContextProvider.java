@@ -11,7 +11,7 @@ import uno.anahata.asi.nb.tools.project.ProjectFile;
 import uno.anahata.asi.nb.tools.project.ProjectFiles;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.nb.tools.project.SourceFolder;
-import uno.anahata.asi.nb.tools.files.nb.v2.FilesContextActionLogic2;
+import uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic2;
 
 /**
  * Provides a real-time view of a project's file and folder structure.

@@ -278,9 +278,6 @@ public class ContextPanel extends JPanel {
                 } else if (cn instanceof Resources2Node r2m) {
                     providerPanel.setContextProvider(r2m.getUserObject());
                     detailLayout.show(detailContainer, "provider");
-                } else if (cn instanceof ResourcesNode rsn) {
-                    providerPanel.setContextProvider(rsn.getUserObject());
-                    detailLayout.show(detailContainer, "provider");
                 } else {
                     detailLayout.show(detailContainer, "empty");
                 }

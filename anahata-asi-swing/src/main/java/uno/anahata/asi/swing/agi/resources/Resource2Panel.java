@@ -25,11 +25,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import uno.anahata.asi.context.ContextPosition;
 import uno.anahata.asi.model.core.RagMessage;
-import uno.anahata.asi.model.resource.RefreshPolicy;
+import uno.anahata.asi.resource.v2.RefreshPolicy;
 import uno.anahata.asi.resource.v2.Resource;
 import uno.anahata.asi.resource.v2.view.TextView;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.message.RagMessageViewer;
+import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
 import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingTask;
@@ -136,7 +137,11 @@ public class Resource2Panel extends JPanel {
 
         rgbc.gridx = 0; rgbc.gridy++; rgbc.weightx = 0; rgbc.fill = GridBagConstraints.NONE;
         providingBox = new JCheckBox("Providing Context");
-        providingBox.addActionListener(e -> { if (!syncing && currentResource != null) currentResource.setProviding(providingBox.isSelected()); });
+        providingBox.addActionListener(e -> { 
+            if (!syncing && currentResource != null) {
+                currentResource.setProviding(providingBox.isSelected()); 
+            }
+        });
         resourceSector.add(providingBox, rgbc);
 
         rgbc.gridx = 1; rgbc.fill = GridBagConstraints.HORIZONTAL;
@@ -144,11 +149,19 @@ public class Resource2Panel extends JPanel {
         rComboPanel.setOpaque(false);
         rComboPanel.add(new JLabel("Position:"));
         positionCombo = new JComboBox<>(ContextPosition.values());
-        positionCombo.addActionListener(e -> { if (!syncing && currentResource != null) currentResource.setContextPosition((ContextPosition) positionCombo.getSelectedItem()); });
+        positionCombo.addActionListener(e -> { 
+            if (!syncing && currentResource != null) {
+                currentResource.setContextPosition((ContextPosition) positionCombo.getSelectedItem()); 
+            }
+        });
         rComboPanel.add(positionCombo);
         rComboPanel.add(new JLabel("Refresh:"));
         policyCombo = new JComboBox<>(RefreshPolicy.values());
-        policyCombo.addActionListener(e -> { if (!syncing && currentResource != null) currentResource.setRefreshPolicy((RefreshPolicy) policyCombo.getSelectedItem()); });
+        policyCombo.addActionListener(e -> { 
+            if (!syncing && currentResource != null) {
+                currentResource.setRefreshPolicy((RefreshPolicy) policyCombo.getSelectedItem()); 
+            }
+        });
         rComboPanel.add(policyCombo);
         resourceSector.add(rComboPanel, rgbc);
 
@@ -232,7 +245,9 @@ public class Resource2Panel extends JPanel {
      * @param res The V2 resource instance.
      */
     public void setResource(Resource res) {
-        if (resourceListener != null) resourceListener.unbind();
+        if (resourceListener != null) {
+            resourceListener.unbind();
+        }
         
         this.currentResource = res;
         this.editing = false;
@@ -256,6 +271,13 @@ public class Resource2Panel extends JPanel {
             viewSectorContainer.add(activeStrategy.createViewPanel(res, agiPanel), BorderLayout.CENTER);
             
             this.activeViewer = activeStrategy.createContent(res, agiPanel);
+            
+            // ARCHITECTURAL FIDELITY: Hide the viewer's internal toolbar because Resource2Panel 
+            // provides its own integrated control header and sectoral view panels.
+            if (activeViewer instanceof AbstractTextResourceViewer atrv) {
+                atrv.setToolbarVisible(false);
+            }
+            
             viewerContainer.add(activeViewer, BorderLayout.CENTER);
             activeStrategy.populateActions(actionPanel, res, agiPanel);
             editBtn.setVisible(activeStrategy.canEdit(res) && res.isWritable());

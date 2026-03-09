@@ -216,8 +216,8 @@ public abstract class AbstractTextResourceViewer extends JPanel {
         if (editing) {
             // PERFORM SAVE
             String newContent = getEditorContent();
-            if (newContent != null && saveAction != null) {
-                log.info("Saving new content to {} ", saveAction );
+            log.info("toggleEditMode Saving new content to {} ", saveAction);
+            if (newContent != null && saveAction != null) {                
                 saveAction.save(newContent);
             } else {
                 setEditing(false);

@@ -15,7 +15,6 @@ import org.openide.util.actions.Presenter;
 import uno.anahata.asi.AgiTopComponent;
 import uno.anahata.asi.AnahataInstaller;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.nb.tools.files.nb.v2.FilesContextActionLogic2;
 
 /**
  * A presenter for the dynamic "AI Context" context menu.

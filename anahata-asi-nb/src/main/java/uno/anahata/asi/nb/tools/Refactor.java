@@ -45,8 +45,6 @@ import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
-import uno.anahata.asi.model.resource.AbstractPathResource;
-import uno.anahata.asi.model.resource.AbstractResource;
 import uno.anahata.asi.resource.v2.Resource;
 import uno.anahata.asi.tool.AiTool;
 import uno.anahata.asi.tool.AiToolParam;
