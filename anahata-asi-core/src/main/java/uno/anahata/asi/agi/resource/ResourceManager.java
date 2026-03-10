@@ -117,6 +117,7 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
 
     /**
      * Returns an unmodifiable list of currently managed resources.
+     * @return an unmodifiable list of all managed resources.
      */
     public List<Resource> getResourcesList() {
         synchronized (resources) {
