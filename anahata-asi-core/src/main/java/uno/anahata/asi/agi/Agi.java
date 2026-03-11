@@ -693,7 +693,7 @@ public class Agi extends BasicPropertyChangeSource {
     }
 
     /**
-     * Resets the entire agi session to a clean slate.
+     * Resets the entire agi session history to a clean slate.
      */
     public void clear() {
         log.info("Clearing agi session {}", config.getSessionId());
@@ -703,10 +703,13 @@ public class Agi extends BasicPropertyChangeSource {
         setActiveCandidates(Collections.emptyList());
         setToolPromptMessage(null);
         setStagedUserMessage(null);
+        log.info("Agi history cleared. Managed resources still in context");
+        /*
         String newSessionId = UUID.randomUUID().toString();
         config.setSessionId(newSessionId);
-        this.nickname = null;
-        log.info("Agi session cleared. New session ID: {}", newSessionId);
+        */
+        //this.nickname = null;
+        //log.info("Agi session cleared. New session ID: {}", newSessionId);
     }
 
     /**

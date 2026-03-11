@@ -46,16 +46,36 @@ public class ToolContext {
      * execution.
      */
     public JavaMethodToolResponse getResponse() {
-        JavaMethodToolResponse response = JavaMethodToolResponse.getCurrent();
+        JavaMethodToolResponse response = peekResponse();
         if (response == null) {
             throw new IllegalStateException("Cannot access ToolContext outside of a tool execution thread. Capture the context with getToolContext() before entering a subthread.");
         }
         return response;
     }
-    
+
+    /**
+     * Internal helper to retrieve the response if it exists, without throwing an 
+     * exception. Supports both ThreadLocal and captured contexts.
+     * 
+     * @return The current response, or null.
+     */
+    protected JavaMethodToolResponse peekResponse() {
+        return JavaMethodToolResponse.getCurrent();
+    }
+
+    /**
+     * Checks if the current thread or this context instance is associated with 
+     * an active tool execution.
+     * 
+     * @return true if a tool is executing.
+     */
+    public boolean isToolExecution() {
+        return peekResponse() != null;
+    }
+
     /**
      * The id of model that is executing the tool.
-     * 
+     *
      * @return The id of model that is executing the tool.
      */
     public String getModelId() {
@@ -137,7 +157,7 @@ public class ToolContext {
         }
         return getResponse().getAgi();
     }
-    
+
     /**
      * Gets the current ASI container hosting this Agi container is running.
      *
@@ -146,7 +166,7 @@ public class ToolContext {
     public AsiContainer getAsiContainer() {
         return getAgi().getConfig().getContainer();
     }
-    
+
     /**
      * Convenience method to get the application's ResourceManager.
      *
@@ -167,32 +187,31 @@ public class ToolContext {
     }
 
     /**
-     * Adds a standard log message to the current tool's response.
-     * If called outside a tool execution thread, it logs to the SLF4J logger.
+     * Adds a standard log message to the current tool's response. If called
+     * outside a tool execution thread, it logs to the SLF4J logger.
      *
      * @param message The log message to add.
      */
     public void log(String message) {
-        try {
-            JavaMethodToolResponse response = getResponse();
+        JavaMethodToolResponse response = peekResponse();
+        if (response != null) {
             response.addLog(message);
-        } catch (Exception e) {
+        } else {
             log.warn("ToolContext log outside of tool execution context: [{}] {}", getClass().getSimpleName(), message);
         }
-        
     }
 
     /**
-     * Adds an error message to the current tool's response.
-     * If called outside a tool execution thread, it logs to the SLF4J logger.
+     * Adds an error message to the current tool's response. If called outside a
+     * tool execution thread, it logs to the SLF4J logger.
      *
      * @param message The error message to add.
      */
     public void error(String message) {
-        try {
-            JavaMethodToolResponse response = getResponse();
+        JavaMethodToolResponse response = peekResponse();
+        if (response != null) {
             response.addError(message);
-        } catch (Exception e) {
+        } else {
             log.error("ToolContext error outside of tool execution context: [{}] {}", getClass().getSimpleName(), message);
         }
     }
@@ -204,7 +223,6 @@ public class ToolContext {
      * @param mimeType The MIME type of the data (e.g., 'image/png').
      */
     public void addAttachment(byte[] data, String mimeType) {
-        //this just throws an error
         getResponse().addAttachment(data, mimeType);
     }
 
@@ -248,7 +266,7 @@ public class ToolContext {
     public Map getSessionMap() {
         return getToolManager().getSessionAttributes();
     }
-    
+
     /**
      * Gets a map for sharing objects across all sessions within the current ASI
      * container.
@@ -334,6 +352,11 @@ public class ToolContext {
         @Override
         public JavaMethodToolResponse getResponse() {
             // Bypass ThreadLocal! Use the captured reference directly.
+            return capturedResponse;
+        }
+
+        @Override
+        protected JavaMethodToolResponse peekResponse() {
             return capturedResponse;
         }
 

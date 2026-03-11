@@ -48,4 +48,10 @@ public class Page<T> {
     public static <T> Page<T> of(List<T> allItems, int startIndex, int pageSize) {
         return new Page<>(allItems, startIndex, pageSize);
     }
+
+    @Override
+    public String toString() {
+        return "Page{" + "startIndex=" + startIndex + ", totalCount=" + totalCount + ", pageSize=" + pageSize + ", page=" + page + '}';
+    }
+    
 }

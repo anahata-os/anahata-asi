@@ -17,6 +17,9 @@ import uno.anahata.asi.swing.agi.message.part.tool.param.FullTextFileCreateRende
 import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory;
 import uno.anahata.asi.swing.agi.render.editorkit.EditorKitProvider;
 import uno.anahata.asi.swing.icons.IconProvider;
+import uno.anahata.asi.swing.toolkit.Screens;
+import uno.anahata.asi.swing.toolkit.SwingJava;
+import uno.anahata.asi.toolkit.Java;
 import uno.anahata.asi.toolkit.files.FullTextFileCreate;
 import uno.anahata.asi.yam.tools.Chrome;
 import uno.anahata.asi.yam.tools.Radio;
@@ -52,9 +55,12 @@ public class SwingAgiConfig extends AgiConfig {
 
     {
         // Register the Yam tools for all Swing-based configurations
+        getToolClasses().remove(Java.class);
+        getToolClasses().add(SwingJava.class);
         getToolClasses().add(Radio.class);
         getToolClasses().add(Speech.class);
         getToolClasses().add(Chrome.class);
+        getToolClasses().add(Screens.class);
     }
 
     /**

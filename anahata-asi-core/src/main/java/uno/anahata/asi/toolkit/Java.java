@@ -42,15 +42,20 @@ import uno.anahata.asi.agi.tool.AiTool;
 import uno.anahata.asi.agi.tool.AiToolException;
 import uno.anahata.asi.agi.tool.AiToolParam;
 import uno.anahata.asi.agi.tool.AiToolkit;
-import uno.anahata.asi.agi.tool.AnahataTool;
+import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.ToolContext;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
+import uno.anahata.asi.agi.tool.ToolManager;
+import uno.anahata.asi.agi.tool.ToolResponseAttachment;
+import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
+import uno.anahata.asi.agi.tool.spi.java.JavaMethodToolCall;
+import uno.anahata.asi.agi.tool.spi.java.JavaObjectToolkit;
 
 /**
  * A powerful toolkit for compiling and executing Java code dynamically within
  * the application's JVM. It provides a "hot-reload" capability by using a
  * child-first classloader and supports context-aware execution through the
- * {@link AnahataTool} base class.
+ * {@link AgiTool} base class.
  *
  * @author anahata
  */
@@ -64,11 +69,19 @@ public class Java extends AnahataToolkit {
      * context. This prevents "Identity Crisis" issues where a child-loaded
      * script cannot access the engine's context.
      */
-    private static final Set<String> PARENT_FIRST_CLASSES = Set.of(AnahataTool.class.getName(),
+    protected static final Set<String> PARENT_FIRST_CLASSES = Set.of(
+            AgiTool.class.getName(),
+            Java.class.getName(),
             ToolContext.class.getName(),
+            Agi.class.getName(),
+            ToolManager.class.getName(),
+            AbstractToolkit.class.getName(),
+            JavaObjectToolkit.class.getName(),
+            JavaMethodTool.class.getName(),
+            JavaMethodToolCall.class.getName(),
             JavaMethodToolResponse.class.getName(),
-            uno.anahata.asi.agi.tool.ToolResponseAttachment.class.getName(),
-            uno.anahata.asi.agi.tool.AiToolException.class.getName()
+            ToolResponseAttachment.class.getName(),
+            AiToolException.class.getName()
     );
 
     /**
@@ -84,27 +97,26 @@ public class Java extends AnahataToolkit {
     public List<String> getSystemInstructions() throws Exception {
         StringBuilder sb = new StringBuilder();
         sb.append(" Java Toolkit Instructions: \n");
-        sb.append("When using `compileAndExecute`, your class should be **public**, named **Anahata**, extend `" + AnahataTool.class.getName() + "`, have no package declaration and implement the call method of Callable<Object>. ");
+        sb.append("When using `compileAndExecute`, your class should be **public**, named **Anahata**, extend `" + AgiTool.class.getName() + "`, have no package declaration and implement the call method of Callable<Object>. ");
         sb.append("This provides the following helper methods for a rich, context-aware execution:\n\n");
 
         sb.append(" Available Methods that you can use within the code you write:\n");
-        sb.append("- **Inherited from AnahataTool**:\n");
-        appendMethods(sb, AnahataTool.class);
+        
         sb.append("- **Inherited from ToolContext**:\n");
         appendMethods(sb, ToolContext.class);
 
         sb.append("\n Multi-threading and Thread Safety:\n");
-        sb.append("The `log()`, `error()`, and `addAttachment()` methods rely on a thread-local context and will fail if called from a subthread or the EDT (Event Dispatch Thread).\n");
+        //sb.append("The `log()`, `error()`, and `addAttachment()` methods rely on a thread-local context and will fail if called from a subthread or the EDT (Event Dispatch Thread).\n");
         sb.append("- To access the context from another thread, capture it in a final variable: `final ToolContext ctx = getToolContext();` and use `ctx.log(...)`, `ctx.error(...)`, etc.\n");
 
-        sb.append("\nAbout the maps: the Session Map is for this session only (agi scoped), the ASI Container map is shared across sessions (agis) and the application map is a static field so shared across any all sessions of all containers running in this jvm\n");
+        sb.append("\nAbout the maps: the Session Map is for this session only (agi scoped), the ASI Container map is shared across sessions (agis) in the current AsiContainer. The application map is a static field shared across all sessions of all containers running in this jvm\n");
         sb.append("\nAbout the attachments: at the time of this release (only tested with gemini-3-flash) only pdf, text and image attachments are supported\n");
 
         sb.append("\n Example:\n");
         sb.append("```java\n");
-        sb.append("import " + AnahataTool.class.getName() + ";\n");
+        sb.append("import " + getConcreteClassModelShouldExtend().getName() + ";\n");
         sb.append("\n");
-        sb.append("public class Anahata extends AnahataTool {\n");
+        sb.append("public class Anahata extends " + getConcreteClassModelShouldExtend().getSimpleName()+ "{\n");
         sb.append("    @Override\n");
         sb.append("    public Object call() throws Exception {\n");
         sb.append("        log(\"Starting script execution...\");\n");
@@ -127,6 +139,15 @@ public class Java extends AnahataToolkit {
         sb.append(getSystemProperties());
 
         return Collections.singletonList(sb.toString());
+    }
+    
+    /**
+     * The class the model should extend when generating Agi tools.
+     * 
+     * @return the base AgiTool class.
+     */
+    protected Class<? extends ToolContext> getConcreteClassModelShouldExtend() {
+        return AgiTool.class;
     }
 
     /**
@@ -188,11 +209,11 @@ public class Java extends AnahataToolkit {
      * @param sb The StringBuilder to append to.
      * @param clazz The class to inspect.
      */
-    private void appendMethods(StringBuilder sb, Class<?> clazz) {
+    protected void appendMethods(StringBuilder sb, Class<?> clazz) {
 
         for (Method m : clazz.getDeclaredMethods()) {
             String methodString = JavaMethodTool.buildMethodSignature(m);
-            if (!methodString.contains("anahata")) {
+            if (!methodString.contains("anahata") && !methodString.contains("lambda$")) {
                 sb.append("- `").append(methodString).append("`\n");
             }
         }
@@ -388,7 +409,7 @@ public class Java extends AnahataToolkit {
 
     /**
      * Compiles and executes a Java class named 'Anahata' on the application's
-     * JVM. The class must extend {@link AnahataTool} and implement
+     * JVM. The class must extend {@link AgiTool} and implement
      * {@link Callable}.
      *
      * @param sourceCode The Java source code to compile and execute.

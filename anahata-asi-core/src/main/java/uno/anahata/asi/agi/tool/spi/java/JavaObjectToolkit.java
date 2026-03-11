@@ -16,7 +16,7 @@ import uno.anahata.asi.persistence.Rebindable;
 import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
 import uno.anahata.asi.agi.tool.AiTool;
 import uno.anahata.asi.agi.tool.AiToolkit;
-import uno.anahata.asi.agi.tool.AnahataTool;
+import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.ToolContext;
 import uno.anahata.asi.agi.tool.ToolManager;

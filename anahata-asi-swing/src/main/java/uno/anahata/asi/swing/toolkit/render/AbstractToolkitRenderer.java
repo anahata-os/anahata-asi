@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.swing.toolkits;
+package uno.anahata.asi.swing.toolkit.render;
 
 import java.awt.BorderLayout;
 import java.beans.PropertyChangeEvent;

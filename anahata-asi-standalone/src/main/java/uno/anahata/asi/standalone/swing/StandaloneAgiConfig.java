@@ -8,6 +8,8 @@ import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.gemini.GeminiAgiProvider;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.render.editorkit.DefaultEditorKitProvider;
+import uno.anahata.asi.swing.toolkit.SwingJava;
+import uno.anahata.asi.toolkit.Java;
 
 /**
  * The default {@link uno.anahata.ai.config.AgiConfig} implementation for the 

@@ -18,7 +18,7 @@ import uno.anahata.asi.nb.resources.handle.NbHandle;
 import uno.anahata.asi.agi.resource.handle.ResourceHandle;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.toolkit.Host;
-import uno.anahata.asi.toolkit.Java;
+import uno.anahata.asi.swing.toolkit.SwingJava;
 
 /**
  * NetBeans-specific agi configuration.
@@ -36,7 +36,7 @@ public class NetBeansAgiConfig extends SwingAgiConfig {
     {
         
         // Replace core Java with NbJava
-        getToolClasses().remove(Java.class);
+        getToolClasses().remove(SwingJava.class);
         getToolClasses().add(NbJava.class);
         
         getToolClasses().add(Maven.class);

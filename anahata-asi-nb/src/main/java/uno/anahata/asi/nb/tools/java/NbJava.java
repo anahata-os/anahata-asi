@@ -25,12 +25,12 @@ import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.netbeans.api.java.source.SourceUtils;
 import uno.anahata.asi.nb.module.NetBeansModuleUtils;
-import uno.anahata.asi.nb.tools.project.ProjectOverview;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.agi.tool.AiTool;
 import uno.anahata.asi.agi.tool.AiToolParam;
 import uno.anahata.asi.agi.tool.AiToolkit;
 import uno.anahata.asi.toolkit.Java;
+import uno.anahata.asi.swing.toolkit.SwingJava;
 
 /**
  * A NetBeans-aware extension of the core {@link Java} toolkit.
@@ -41,11 +41,12 @@ import uno.anahata.asi.toolkit.Java;
  */
 @Slf4j
 @AiToolkit("A NetBeans-aware toolkit for compiling and executing Java code.")
-public class NbJava extends Java {
+public class NbJava extends SwingJava {
 
     @Override
     public void initialize() {
         setDefaultClasspath(NetBeansModuleUtils.getNetBeansClasspath());
+        log.info("NbJava initialize() completed. default classPath:" + getDefaultClasspath());
     }
     
 

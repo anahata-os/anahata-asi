@@ -15,7 +15,7 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
-import uno.anahata.asi.swing.toolkits.ToolkitUiRegistry;
+import uno.anahata.asi.swing.toolkit.render.ToolkitUiRegistry;
 
 /**
  * A panel that displays the details and management controls for an {@link AbstractToolkit}.

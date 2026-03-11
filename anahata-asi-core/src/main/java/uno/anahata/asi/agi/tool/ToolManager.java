@@ -80,7 +80,7 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
     private final Map<String, AbstractToolkit<?>> toolkits = new HashMap<>();
     
     /** A thread-safe list of currently executing tool calls. */
-    private final List<AbstractToolCall<?, ?>> executingCalls = new CopyOnWriteArrayList<>();
+    private transient List<AbstractToolCall<?, ?>> executingCalls = new CopyOnWriteArrayList<>();
     
     /**
      * A session-scoped map for tools to store state across turns.
@@ -370,6 +370,7 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
     public void rebind() {
         super.rebind();
         log.info("Rebinding ToolManager...");
+        executingCalls = new CopyOnWriteArrayList<>();
         
         for (AbstractToolkit<?> toolkit : toolkits.values()) {
             if (toolkit instanceof Rebindable rebindable) {
