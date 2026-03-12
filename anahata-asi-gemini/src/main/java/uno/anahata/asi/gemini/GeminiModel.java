@@ -255,7 +255,7 @@ public class GeminiModel extends AbstractModel {
         log.info("Final Google History ({} messages):", googleHistory.size());
         for (int i = 0; i < googleHistory.size(); i++) {
             Content c = googleHistory.get(i);
-            log.info("  [{}] Role: {}, Parts: {}", i, c.role().orElse("unknown"), c.parts().map(List::size).orElse(0));
+            log.debug("  [{}] Role: {}, Parts: {}", i, c.role().orElse("unknown"), c.parts().map(List::size).orElse(0));
         }
 
         String historyJson = googleHistory.stream()
