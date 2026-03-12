@@ -103,7 +103,7 @@ public final class MicrophonePanel extends JPanel {
      * @return The toolkit instance or null.
      */
     private Audio getAudioToolkit() {
-        return parentPanel.getAgi().getToolManager().getToolkitInstance(Audio.class).orElse(null);
+        return parentPanel.getAgi().getToolkit(Audio.class).orElse(null);
     }
 
     /**
