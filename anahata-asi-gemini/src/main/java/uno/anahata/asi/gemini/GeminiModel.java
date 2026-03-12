@@ -3,13 +3,10 @@ package uno.anahata.asi.gemini;
 
 import com.google.genai.Client;
 import com.google.genai.ResponseStream;
-import com.google.genai.errors.ClientException;
 import com.google.genai.types.Candidate;
 import com.google.genai.types.Citation;
 import com.google.genai.types.ComputerUse;
 import com.google.genai.types.Content;
-import com.google.genai.types.FinishReason;
-import com.google.genai.types.FunctionCall;
 import com.google.genai.types.FunctionDeclaration;
 import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.GenerateContentResponse;

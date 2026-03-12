@@ -13,11 +13,9 @@ import uno.anahata.asi.agi.message.AbstractMessage;
 import uno.anahata.asi.agi.message.AbstractModelMessage;
 import uno.anahata.asi.agi.message.AbstractPart;
 import uno.anahata.asi.agi.message.Role;
-import uno.anahata.asi.agi.message.TextPart;
 import uno.anahata.asi.agi.message.ThoughtSignature;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
-import uno.anahata.asi.agi.tool.ToolExecutionStatus;
 
 /**
  * An object-oriented adapter that converts a single Anahata AbstractMessage into one

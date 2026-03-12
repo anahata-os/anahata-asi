@@ -13,10 +13,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.agi.message.AbstractModelMessage;
 import uno.anahata.asi.agi.provider.Response;
 import uno.anahata.asi.agi.message.ResponseUsageMetadata;
-import uno.anahata.asi.agi.message.web.GroundingMetadata;
 
 /**
  * A specialized, object-oriented Response class for the Gemini provider.
