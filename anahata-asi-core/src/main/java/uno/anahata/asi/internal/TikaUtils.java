@@ -24,7 +24,11 @@ public final class TikaUtils {
      * @throws Exception if an error occurs during detection.
      */
     public static String detectMimeType(File file) throws Exception {
-        return TIKA.detect(file);
+        String detected = TIKA.detect(file);
+        if ("audio/vnd.wave".equals(detected)) {
+            detected = "audio/wav";
+        }
+        return detected;
     }
 
     /**
