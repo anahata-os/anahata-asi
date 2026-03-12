@@ -1,14 +1,9 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.agi.message;
 
-import uno.anahata.asi.agi.message.AbstractMessage;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import lombok.Getter;
 import lombok.NonNull;
-import uno.anahata.asi.internal.TikaUtils;
 
 /**
  * An abstract base class for binary data parts, such as an image or a document.

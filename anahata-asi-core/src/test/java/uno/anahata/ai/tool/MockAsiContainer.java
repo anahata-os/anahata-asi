@@ -2,7 +2,6 @@
 package uno.anahata.ai.tool;
 
 import uno.anahata.asi.AsiContainer;
-import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
 
 /**

@@ -169,6 +169,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
      * @return A fully populated RagMessage.
      */
     public RagMessage buildRagMessage() {
+        long ts = System.currentTimeMillis();
         RagMessage augmentedMessage = new RagMessage(agi);
         augmentedMessage.addTextPart("--- RAG message ---\n"
                 + "The following is high-salience, just-in-time context provided by the host environment for this turn. "
@@ -199,6 +200,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
                 }
             }
         }
+        log.info("buildRagMessage took " + ts + " ms.");
         return augmentedMessage;
     }
 

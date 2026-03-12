@@ -1,8 +1,6 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.agi.message;
 
-import uno.anahata.asi.agi.message.AbstractMessage;
-
 /**
  * A concrete {@link TextPart} implementation for text content provided by the user.
  * It publishes itself to the parent message only after full initialization.

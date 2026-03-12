@@ -9,7 +9,6 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.agi.provider.ThinkingLevel;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
 
 /**

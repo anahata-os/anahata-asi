@@ -3,7 +3,6 @@
  */
 package uno.anahata.asi.agi.tool;
 
-import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;

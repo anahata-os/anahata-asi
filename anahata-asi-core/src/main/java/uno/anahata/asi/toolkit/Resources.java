@@ -5,7 +5,6 @@ import uno.anahata.asi.agi.resource.view.TextViewportSettings;
 import uno.anahata.asi.agi.resource.view.TextView;
 import uno.anahata.asi.agi.resource.handle.ResourceHandle;
 import java.net.URI;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.tool.AiTool;
 import uno.anahata.asi.agi.tool.AiToolException;
@@ -27,7 +25,6 @@ import uno.anahata.asi.toolkit.files.FullTextFileCreate;
 import uno.anahata.asi.toolkit.files.FullTextResourceUpdate;
 import uno.anahata.asi.toolkit.files.TextResourceReplacements;
 import uno.anahata.asi.toolkit.files.TextResourceLineReplacements;
-import uno.anahata.asi.toolkit.files.TextReplacement;
 
 /**
  * The definitive V2 toolkit for managing multimodal resources.
@@ -197,7 +194,7 @@ public class Resources extends AnahataToolkit {
      * @param replacements The replacements DTO.
      * @throws Exception if replacements fail.
      */
-    @AiTool("Performs multiple text replacements in a file.")
+    @AiTool("Performs multiple text replacements in a file but doesnt magically include missing imports.")
     public void replaceInTextFile(@AiToolParam("The set of replacements.") TextResourceReplacements replacements) throws Exception {
         replacements.validate(getAgi());
         

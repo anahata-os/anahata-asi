@@ -11,6 +11,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.tool.AiToolException;
 
@@ -25,6 +26,7 @@ import uno.anahata.asi.agi.tool.AiToolException;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "Represents a set of line-based replacements in a text file.")
+@Slf4j
 public class TextResourceLineReplacements extends AbstractTextResourceWrite {
 
     /**
@@ -98,6 +100,7 @@ public class TextResourceLineReplacements extends AbstractTextResourceWrite {
         
         int lastEndLine = -1;
         for (LineReplacement lr : sorted) {
+            log.info("Validating replacement: {}", lr);
             if (lr.getStartLine() <= lastEndLine) {
                 throw new AiToolException("Overlapping line replacements detected at line " + lr.getStartLine());
             }

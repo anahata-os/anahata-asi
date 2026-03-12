@@ -4,11 +4,9 @@
 package uno.anahata.asi.agi.status;
 
 import java.time.Instant;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
  * A record of a single API error, including context for retries.

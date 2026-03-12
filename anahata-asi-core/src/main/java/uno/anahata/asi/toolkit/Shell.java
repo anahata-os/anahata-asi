@@ -12,8 +12,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
-import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.tool.spi.java.JavaMethodToolResponse;
 import uno.anahata.asi.agi.tool.AiTool;
 import uno.anahata.asi.agi.tool.AiToolParam;

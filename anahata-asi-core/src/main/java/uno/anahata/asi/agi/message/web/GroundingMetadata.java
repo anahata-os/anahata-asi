@@ -6,7 +6,6 @@ package uno.anahata.asi.agi.message.web;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Value;
-import lombok.experimental.SuperBuilder;
 
 /**
  * Metadata about the grounding sources used by the model.

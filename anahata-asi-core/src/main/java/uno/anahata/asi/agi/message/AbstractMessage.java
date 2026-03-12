@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.apache.commons.lang3.Validate;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.internal.TimeUtils;
 import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
 import uno.anahata.asi.internal.TokenizerUtils;

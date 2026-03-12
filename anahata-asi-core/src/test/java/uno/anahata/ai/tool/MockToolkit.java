@@ -6,7 +6,6 @@ import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.AiTool;
 import uno.anahata.asi.agi.tool.AiToolkit;
 import java.util.List;
-import uno.anahata.asi.agi.message.TextPart;
 import uno.anahata.ai.model.tool.MockComplexObject;
 import uno.anahata.ai.model.tool.Tree;
 import uno.anahata.asi.agi.tool.spi.java.JavaMethodToolResponse;

@@ -2,19 +2,13 @@
 package uno.anahata.asi.toolkit.files;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 import java.util.List;
-import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.resource.Resource;

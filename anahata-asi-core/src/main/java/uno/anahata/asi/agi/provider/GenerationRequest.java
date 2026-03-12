@@ -1,11 +1,9 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.agi.provider;
 
-import uno.anahata.asi.agi.message.AbstractMessage;
 import java.util.List;
 import lombok.NonNull;
 import uno.anahata.asi.agi.message.AbstractMessage;
-import uno.anahata.asi.agi.provider.RequestConfig;
 
 /**
  * A simple, immutable record that encapsulates all the information required for
