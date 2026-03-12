@@ -36,10 +36,15 @@ public interface AgiController {
      * 
      * @param agi The agi session to dispose.
      */
-    void dispose(@NonNull Agi agi);
+    default void dispose(@NonNull Agi agi) {}
     
+    /**
+     * Requests the import of a previously saved agi session from a file.
+     */
+    default void importSession() {}
+
     /**
      * Requests the creation of a new, empty AI agi session.
      */
-    void createNew();
+    default void createNew() {}
 }

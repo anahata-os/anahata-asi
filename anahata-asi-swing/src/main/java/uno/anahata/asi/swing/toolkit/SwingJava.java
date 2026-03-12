@@ -35,7 +35,7 @@ public class SwingJava extends Java {
         
         StringBuilder sb = new StringBuilder();
         sb.append("\n**Swing execution helpers**\n");
-        sb.append("You have also access to these helpers for EDT operations:\n\n");
+        sb.append("You have also access to these helpers for EDT operations (inherited from SwingAgiTool):\n\n");
         sb.append("- `runInEdt(Runnable runnable)`: Safely executes code on the Event Dispatch Thread (EDT) while propagating the current tool context. Use this for non-blocking UI updates.\n");
         sb.append("- `runInEdtAndWait(Runnable runnable)`: Executes code on the EDT and waits for completion. Use this when you need to ensure the UI has updated before proceeding.\n\n");
         sb.append("**Example usage**:\n");

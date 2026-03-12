@@ -28,7 +28,7 @@ import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 import uno.anahata.asi.AgiTopComponent;
-import uno.anahata.asi.AsiTopComponent;
+import uno.anahata.asi.AsiCardsTopComponent;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.swing.internal.SwingUtils;
 import uno.anahata.asi.agi.tool.AiTool;
@@ -261,7 +261,7 @@ public class Editor extends AnahataToolkit {
     }
 
     private boolean isFileEditor(TopComponent tc) {
-        if (tc instanceof AgiTopComponent || tc instanceof AsiTopComponent) {
+        if (tc instanceof AgiTopComponent || tc instanceof AsiCardsTopComponent) {
             return false;
         }
 

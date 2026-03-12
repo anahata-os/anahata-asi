@@ -54,12 +54,12 @@ import uno.anahata.asi.agi.tool.AnahataToolkit;
 /**
  * A toolkit for performing programmatic refactoring operations within the NetBeans IDE.
  * This toolkit leverages the NetBeans Refactoring API to ensure that changes are 
- * propagated correctly across the project (e.g., updating imports, references, etc.).
+ * propagated correctly across the projects (e.g., updating imports, references, etc.).
  * 
  * @author anahata-gemini-pro-2.5
  */
 @Slf4j
-@AiToolkit("Programmatic refactoring tools for NetBeans. Use these tools to safely rename, move, copy, or delete code elements while maintaining project integrity.")
+@AiToolkit("Programmatic refactoring tools for NetBeans. Use these tools to safely rename, move, copy, or delete code elements while maintaining integrity across all open projects.")
 public class Refactor extends AnahataToolkit{
 
     /**
@@ -87,7 +87,7 @@ public class Refactor extends AnahataToolkit{
      * @return A detailed log of the refactoring process.
      * @throws Exception if there is an error invoking the operation.
      */
-    @AiTool("Renames a file or class. This is a 'safe' rename that updates all references in the project.")
+    @AiTool("Renames a file or class. This is a 'safe' rename that updates all references in all open projects.")
     public String rename(
             @AiToolParam(value = "The absolute path of the file to rename.", rendererId = "path") String filePath, 
             @AiToolParam("The new name (without extension).") String newName) throws Exception {
@@ -387,7 +387,7 @@ public class Refactor extends AnahataToolkit{
      * @return A detailed log of the refactoring process.
      * @throws Exception if the operation fails.
      */
-    @AiTool("Changes a method's signature (name, return type, parameters) and updates all call sites in the project.")
+    @AiTool("Changes a method's signature (name, return type, parameters) and updates all call sites in all open projects.")
     public String changeMethodSignature(
             @AiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AiToolParam("The current name of the method.") String methodName,
@@ -452,7 +452,7 @@ public class Refactor extends AnahataToolkit{
      * @return A detailed log of the refactoring process.
      * @throws Exception if the operation fails.
      */
-    @AiTool("Replaces usages of a class with a supertype (interface or superclass) throughout the project where possible.")
+    @AiTool("Replaces usages of a class with a supertype (interface or superclass) throughout all open projects where possible.")
     public String useSupertype(
             @AiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AiToolParam("The FQN of the supertype to use.") String supertypeFqn) throws Exception {
@@ -493,14 +493,14 @@ public class Refactor extends AnahataToolkit{
     }
 
     /**
-     * Finds all usages of a file or class within the project.
+     * Finds all usages of a file or class within all open projects.
      *
      * @param filePath        The absolute path of the file to search for.
      * @param searchInComments Whether to search for usages in comments and strings.
      * @return A formatted list of all found usages.
      * @throws Exception if there is an error invoking the query.
      */
-    @AiTool("Finds all references/usages of a file or class in the project.")
+    @AiTool("Finds all references/usages of a file or type in all open projects.")
     public String whereUsed(
             @AiToolParam(value = "The absolute path of the file to search for.", rendererId = "path") String filePath,
             @AiToolParam("Whether to search in comments.") boolean searchInComments) throws Exception {
@@ -538,7 +538,7 @@ public class Refactor extends AnahataToolkit{
      * @return A formatted list of all found usages.
      * @throws Exception if there is an error invoking the query.
      */
-    @AiTool("Finds all references/usages of a specific class member (method or field) in the project.")
+    @AiTool("Finds all references/usages of a specific class member (method or field) in all open projects.")
     public String whereUsedMember(
             @AiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AiToolParam("The name of the member (method or field).") String memberName,

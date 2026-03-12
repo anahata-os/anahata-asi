@@ -10,7 +10,7 @@ import org.openide.awt.ActionReference;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager; 
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.swing.AsiSwitcherContainerPanel;
+import uno.anahata.asi.swing.AsiCardsContainerPanel;
 import uno.anahata.asi.swing.AgiController;
 
 /**
@@ -18,28 +18,28 @@ import uno.anahata.asi.swing.AgiController;
  * It uses the switcher view which defaults to Sticky Notes (Cards).
  */
 @TopComponent.Description(
-        preferredID = "AsiTopComponent",
+        preferredID = "AsiCardsTopComponent",
         iconBase = "icons/anahata_16.png",
         persistenceType = TopComponent.PERSISTENCE_ONLY_OPENED)
 @TopComponent.Registration(mode = "navigator", openAtStartup = true, position = 108)
-@ActionID(category = "Window", id = "uno.anahata.asi.OpenAsiTopComponent")
+@ActionID(category = "Window", id = "uno.anahata.asi.OpenAsiCardsTopComponent")
 @ActionReference(path = "Menu/Window", position = 101)
 @TopComponent.OpenActionRegistration(
         displayName = "Anahata ASI",
         preferredID = "asi"
 )
 @Slf4j
-public class AsiTopComponent extends TopComponent implements AgiController {
+public class AsiCardsTopComponent extends TopComponent implements AgiController {
 
-    private final AsiSwitcherContainerPanel sessionsPanel;
+    private final AsiCardsContainerPanel sessionsPanel;
 
-    public AsiTopComponent() {
+    public AsiCardsTopComponent() {
         setName("Anahata ASI");
         setToolTipText("Manage active AGI sessions");
         setLayout(new BorderLayout());
 
         // Use the shared AsiContainer from the installer
-        sessionsPanel = new AsiSwitcherContainerPanel(AnahataInstaller.getContainer());
+        sessionsPanel = new AsiCardsContainerPanel(AnahataInstaller.getContainer());
         sessionsPanel.setController(this);
         add(sessionsPanel, BorderLayout.CENTER);
     }
@@ -86,16 +86,4 @@ public class AsiTopComponent extends TopComponent implements AgiController {
         }
     }
 
-    @Override
-    public void dispose(@NonNull Agi agi) {
-        close(agi);
-        AnahataInstaller.getContainer().dispose(agi);
-    }
-
-    @Override
-    public void createNew() {
-        AgiTopComponent tc = new AgiTopComponent();
-        tc.open();
-        tc.requestActive();
-    }
 }

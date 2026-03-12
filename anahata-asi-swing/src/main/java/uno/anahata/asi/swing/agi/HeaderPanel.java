@@ -20,7 +20,6 @@ import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.persistence.kryo.KryoUtils;
 import uno.anahata.asi.agi.provider.AbstractAgiProvider;
 import uno.anahata.asi.agi.provider.AbstractModel;
-import uno.anahata.asi.swing.icons.LoadSessionIcon;
 import uno.anahata.asi.swing.icons.SaveSessionIcon;
 import uno.anahata.asi.swing.icons.SearchIcon;
 import uno.anahata.asi.swing.internal.SwingTask;
@@ -41,7 +40,6 @@ public class HeaderPanel extends JPanel {
 
     private JXTextField nicknameField;
     private JButton saveSessionButton;
-    private JButton loadSessionButton;
     private JComboBox<AbstractAgiProvider> providerComboBox;
     private JComboBox<AbstractModel> modelComboBox;
     private JButton searchModelsButton;
@@ -54,7 +52,7 @@ public class HeaderPanel extends JPanel {
 
     public void initComponents() {
         setLayout(new MigLayout("insets 5, fillx, gap 10",
-                                "[][][]push[][][]", // Component constraints: Nickname, Save, Load, PUSH, Provider, Model, Search
+                                "[][]push[][][]", // Nickname, Save, PUSH, Provider, Model, Search
                                 "[]")); // Row constraints
 
         // Nickname Field
@@ -73,11 +71,6 @@ public class HeaderPanel extends JPanel {
         saveSessionButton.setToolTipText("Save Session");
         saveSessionButton.addActionListener(e -> saveSession());
         add(saveSessionButton);
-
-        loadSessionButton = new JButton(new LoadSessionIcon(ICON_SIZE));
-        loadSessionButton.setToolTipText("Import Session");
-        loadSessionButton.addActionListener(e -> loadSession());
-        add(loadSessionButton);
 
         // Provider ComboBox (Right-aligned, skipping the push column)
         providerComboBox = new JComboBox<>();
@@ -205,19 +198,6 @@ public class HeaderPanel extends JPanel {
             agi.save();
             return null;
         }).execute();
-    }
-
-    private void loadSession() {
-        JFileChooser fileChooser = new JFileChooser(agi.getConfig().getContainer().getSavedSessionsDir().toFile());
-        fileChooser.setDialogTitle("Import Agi Session");
-        if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            File file = fileChooser.getSelectedFile();
-            new SwingTask<>(this, "Import Session", () -> {
-                return agi.getConfig().getContainer().importSession(file.toPath());
-            }, loadedAgi -> {
-                // The container already registered it, and the MainPanel listener will focus it.
-            }).execute();
-        }
     }
 
     // Custom renderer to display provider's display name

@@ -192,16 +192,16 @@ public class Hints extends AnahataToolkit {
                     HintsSettings settings = HintsSettings.getSettingsFor(info.getFileObject());
                     HintsInvoker invoker = new HintsInvoker(settings, new AtomicBoolean());
                     List<ErrorDescription> hints = invoker.computeHints(info);
-                    for (ErrorDescription ed : hints) {
-                        allHints.add(new HintInfo(
-                                fo.getPath(),
-                                ed.getDescription(),
-                                ed.getSeverity().toString(),
-                                ed.getRange().getBegin().getLine(),
-                                ed.getRange().getBegin().getColumn(),
-                                ed.getId()
-                        ));
-                    }
+                    if (hints != null) {
+                        for (ErrorDescription ed : hints) {
+                            if (ed != null) {
+                                String desc = ed.getDescription() != null ? ed.getDescription() : "No description";
+                                String severity = ed.getSeverity() != null ? ed.getSeverity().toString() : "UNKNOWN";
+                                String id = ed.getId() != null ? ed.getId() : "unknown";
+                                allHints.add(new HintInfo(fo.getPath(), desc, severity, ed.getRange().getBegin().getLine(), ed.getRange().getBegin().getColumn(), id));
+                            }
+                        }
+                    }                    
                 }, true);
             }
         }

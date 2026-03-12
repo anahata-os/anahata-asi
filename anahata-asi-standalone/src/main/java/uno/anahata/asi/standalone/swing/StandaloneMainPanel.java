@@ -16,7 +16,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.swing.agi.AgiPanel;
-import uno.anahata.asi.swing.AsiSwitcherContainerPanel;
+import uno.anahata.asi.swing.AsiCardsContainerPanel;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.AgiController;
 
@@ -33,7 +33,7 @@ public class StandaloneMainPanel extends JPanel implements AgiController {
     private final StandaloneAsiContainer asiContainer;
     
     /** The sidebar panel for switching between active sessions. */
-    private final AsiSwitcherContainerPanel asiContainerPanel;
+    private final AsiCardsContainerPanel asiContainerPanel;
     
     /** The central tabbed pane for displaying active agi conversations. */
     private final JTabbedPane tabbedPane;
@@ -51,7 +51,7 @@ public class StandaloneMainPanel extends JPanel implements AgiController {
         
         setLayout(new BorderLayout());
 
-        asiContainerPanel = new AsiSwitcherContainerPanel(container);
+        asiContainerPanel = new AsiCardsContainerPanel(container);
         asiContainerPanel.setController(this);
 
         tabbedPane = new JTabbedPane();
@@ -159,32 +159,6 @@ public class StandaloneMainPanel extends JPanel implements AgiController {
                 break;
             }
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Closes the tab and delegates the permanent disposal of the session to the container.
-     * 
-     * @param agi The agi session to dispose.
-     */
-    @Override
-    public void dispose(@NonNull Agi agi) {
-        log.info("Disposing session: {}", agi.getConfig().getSessionId());
-        close(agi);
-        asiContainer.dispose(agi);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Authoritatively creates a new session via the container's final orchestrator.
-     */
-    @Override
-    public void createNew() {
-        log.info("Creating new session via StandaloneAsiContainer...");
-        Agi agi = asiContainer.createNewAgi();
-        focus(agi);
     }
 
     /**

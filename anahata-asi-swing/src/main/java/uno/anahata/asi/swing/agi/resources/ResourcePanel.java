@@ -32,6 +32,7 @@ import uno.anahata.asi.agi.resource.view.TextView;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.message.RagMessageViewer;
 import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
+import uno.anahata.asi.swing.components.ScrollablePanel;
 import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingTask;
@@ -52,7 +53,7 @@ import uno.anahata.asi.swing.internal.SwingTask;
  * @author anahata
  */
 @Slf4j
-public class ResourcePanel extends JPanel {
+public class ResourcePanel extends ScrollablePanel {
 
     /** The parent agi panel. */
     private final AgiPanel agiPanel;

@@ -3,6 +3,11 @@
  */
 package uno.anahata.asi.swing;
 
+import java.io.File;
+import java.nio.file.Path;
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
 import java.awt.BorderLayout;
 import java.awt.event.HierarchyEvent;
 import javax.swing.Box;
@@ -18,6 +23,8 @@ import org.slf4j.LoggerFactory;
 import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.swing.icons.DeleteIcon;
+import uno.anahata.asi.swing.icons.LoadSessionIcon;
+
 import uno.anahata.asi.swing.icons.RestartIcon;
 
 /**
@@ -64,6 +71,12 @@ public abstract class AbstractAsiContainerPanel extends JPanel implements AgiCon
         newButton.setToolTipText("Create a new AI session");
         newButton.addActionListener(e -> createNew());
         toolBar.add(newButton);
+
+        JButton importButton = new JButton("Import", new LoadSessionIcon(16));
+        importButton.setToolTipText("Import a previously saved AI session");
+        importButton.addActionListener(e -> importSession());
+        toolBar.add(importButton);
+
 
         closeButton = new JButton("Close");
         closeButton.setToolTipText("Close the selected AI session window");
@@ -117,13 +130,33 @@ public abstract class AbstractAsiContainerPanel extends JPanel implements AgiCon
 
     @Override
     public void dispose(@NonNull Agi agi) {
-        if (controller != null) controller.dispose(agi);
+        close(agi);
+        asiContainer.dispose(agi);
     }
 
     @Override
     public void createNew() {
-        if (controller != null) controller.createNew();
+        focus(asiContainer.createNewAgi());
     }
+
+    @Override
+    public void importSession() {
+        Path savedDir = asiContainer.getSavedSessionsDir();
+        
+        JFileChooser chooser = new JFileChooser(savedDir.toFile());
+        chooser.setDialogTitle("Import Anahata Session");
+        chooser.setFileFilter(new FileNameExtensionFilter("Anahata Sessions (*.kryo)", "kryo"));
+        
+        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = chooser.getSelectedFile();
+            Agi imported = asiContainer.importSession(selectedFile.toPath());
+            if (imported != null) {
+                focus(imported);
+            }
+        }
+    }
+
+
 
     /**
      * Sets whether the toolbar is visible.

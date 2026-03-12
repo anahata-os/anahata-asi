@@ -21,14 +21,13 @@ import javax.swing.BoxLayout;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
 import javax.swing.Timer;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jdesktop.swingx.JXHyperlink;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.internal.TimeUtils;
 import uno.anahata.asi.agi.provider.Response;
 import uno.anahata.asi.agi.message.ResponseUsageMetadata;
@@ -42,7 +41,6 @@ import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.components.CodeHyperlink;
 import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
-import uno.anahata.asi.swing.internal.SwingUtils;
 import uno.anahata.asi.swing.audio.AudioPlaybackPanel;
 import uno.anahata.asi.agi.tool.ToolManager;
 import uno.anahata.asi.swing.components.ExceptionDialog;
@@ -81,6 +79,8 @@ public class StatusPanel extends JPanel {
     private ContextUsageBar contextUsageBar;
     /** Panel for displaying API error and retry details. */
     private JPanel apiErrorsPanel; 
+    /** ScrollPane wrapping the API errors panel. */
+    private JScrollPane apiErrorsScrollPane; 
     /** Label for detailed token usage information. */
     private JLabel tokenDetailsLabel; 
     /** Hyperlink to view the raw JSON request configuration. */
@@ -227,9 +227,16 @@ public class StatusPanel extends JPanel {
 
         apiErrorsPanel = new JPanel();
         apiErrorsPanel.setAlignmentX(LEFT_ALIGNMENT);
-        apiErrorsPanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
-        apiErrorsPanel.setVisible(false);
-        add(apiErrorsPanel);
+        
+        apiErrorsScrollPane = new JScrollPane(apiErrorsPanel);
+        apiErrorsScrollPane.setAlignmentX(LEFT_ALIGNMENT);
+        apiErrorsScrollPane.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
+        apiErrorsScrollPane.setVisible(false);
+        // Capping height to approximately 3 rows (header + errors)
+        apiErrorsScrollPane.setMaximumSize(new Dimension(Integer.MAX_VALUE, 85));
+        apiErrorsScrollPane.setPreferredSize(new Dimension(200, 85));
+        
+        add(apiErrorsScrollPane);
     }
 
     /**
@@ -319,7 +326,7 @@ public class StatusPanel extends JPanel {
         tokenDetailsLabel.setVisible(false);
 
         if (isRetrying) {
-            apiErrorsPanel.setVisible(true);
+            apiErrorsScrollPane.setVisible(true);
             apiErrorsPanel.removeAll();
             apiErrorsPanel.setLayout(new GridLayout(0, 1));
 
@@ -348,7 +355,7 @@ public class StatusPanel extends JPanel {
             }
             
         } else if (lastResponse != null) {
-            apiErrorsPanel.setVisible(false);
+            apiErrorsScrollPane.setVisible(false);
             apiErrorsPanel.removeAll();
             apiErrorsPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 
@@ -378,7 +385,7 @@ public class StatusPanel extends JPanel {
             }
             
         } else {
-            apiErrorsPanel.setVisible(false);
+            apiErrorsScrollPane.setVisible(false);
         }
         
         revalidate();
