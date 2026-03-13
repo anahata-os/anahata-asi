@@ -37,18 +37,15 @@ import uno.anahata.asi.toolkit.files.TextResourceLineReplacements;
  * @author anahata
  */
 @Slf4j
-@AiToolkit("A toolkit for managing V2 URI-centric resources.")
+@AiToolkit("A URI-centric toolkit for managing resources.")
 public class Resources extends AnahataToolkit {
 
     /** {@inheritDoc} */
     @Override
     public List<String> getSystemInstructions() throws Exception {
         return Collections.singletonList(
-            "**Resources (V2) Toolkit Instructions**:\n" +
-            "- Use `loadResources` to bring local or remote assets into context.\n" +
-            "- Use `updateViewport` to toggle line numbers, grep patterns, or tailing.\n" +
-            "- Use `createTextFile` and `updateTextFile` for persistent storage operations.\n" +
-            "- **CRITICAL**: You must load a file using `loadResources` before attempting to update it."
+            "**Resources Toolkit Instructions**:\n" +
+            "- Only resources in context can be modified. Do not attempt to modify resources that are not in context. Always use the lastModified from the RAG Message"
         );
     }
 
@@ -194,8 +191,8 @@ public class Resources extends AnahataToolkit {
      * @param replacements The replacements DTO.
      * @throws Exception if replacements fail.
      */
-    @AiTool("Performs multiple text replacements in a file but doesnt magically include missing imports.")
-    public void replaceInTextFile(@AiToolParam("The set of replacements.") TextResourceReplacements replacements) throws Exception {
+    @AiTool("Performs multiple text replacements in a textresource but doesn't magically include imports.")
+    public void findAndReplaceInTextResource(@AiToolParam("The set of replacements.") TextResourceReplacements replacements) throws Exception {
         replacements.validate(getAgi());
         
         Resource res = getAgi().getResourceManager().getResources().get(replacements.getResourceUuid());
@@ -217,7 +214,7 @@ public class Resources extends AnahataToolkit {
      * @throws Exception if replacements fail.
      */
     @AiTool("Performs multiple line-based replacements in a file.")
-    public void replaceLinesInTextFile(@AiToolParam("The set of line replacements.") TextResourceLineReplacements replacements) throws Exception {
+    public void replaceLinesInTextResource(@AiToolParam("The set of line replacements.") TextResourceLineReplacements replacements) throws Exception {
         replacements.validate(getAgi());
         
         Resource res = getAgi().getResourceManager().getResources().get(replacements.getResourceUuid());
