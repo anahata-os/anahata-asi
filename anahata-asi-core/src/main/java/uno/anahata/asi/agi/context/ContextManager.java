@@ -172,8 +172,8 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
         long ts = System.currentTimeMillis();
         RagMessage augmentedMessage = new RagMessage(agi);
         augmentedMessage.addTextPart("--- RAG message ---\n"
-                + "The following is high-salience, just-in-time context provided by the host environment for this turn. "
-                + "It is dynamically generated and populated by enabled context providers. "
+                + "The following is high-salience, just-in-time live context provided by the host environment for this turn. "
+                + "It has been dynamically generated and populated by all 'effectively providing' context providers. All resources with a LIVE refresh policy have been reloaded from disk. Use the lastModified timestamp provided on the header of each resource for resource modifications."
                 + "This is NOT direct input from the user.");
 
         for (ContextProvider rootProvider : providers) {
