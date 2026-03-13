@@ -20,9 +20,13 @@ import uno.anahata.asi.internal.TokenizerUtils;
 
 /**
  * The abstract base class for all messages in a conversation, providing common
- * metadata and functionality for the rich, hierarchical V2 domain model. It
- * supports type-safe roles through its subclasses and ensures each message has
- * a unique identity, timestamp, and full access to the agi context.
+ * metadata and functionality for the rich, hierarchical V2 domain model.
+ * <p>
+ * This class ensures each message has a unique identity, timestamp, and full 
+ * access to the {@link Agi} context. It supports thread-safe iteration of its 
+ * components via a {@code CopyOnWriteArrayList} to facilitate background 
+ * persistence during active generation.
+ * </p>
  *
  * @author anahata
  */

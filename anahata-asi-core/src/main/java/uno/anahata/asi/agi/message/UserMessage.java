@@ -6,10 +6,15 @@ import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.internal.TextUtils;
 
 /**
- * Represents a message originating from the end-user in a conversation.
- * It extends the base {@link AbstractMessage} and sets its role to {@code USER}.
+ * Represents a conversation message originating from the end-user.
+ * <p>
+ * This class is the primary entry point for human intent within the Agi session. 
+ * It extends {@link AbstractMessage} to provide user-specific identity 
+ * resolution and ensures that all user-provided content is correctly typed 
+ * and attributed to the host device.
+ * </p>
  *
- * @author anahata-gemini-pro-2.5
+ * @author anahata
  */
 public class UserMessage extends AbstractMessage {
 
@@ -22,7 +27,10 @@ public class UserMessage extends AbstractMessage {
         super(agi);
     }
     
-    /** {@inheritDoc} */
+    /** 
+     * {@inheritDoc} 
+     * <p>Returns the {@link Role#USER} constant for this message type.</p> 
+     */
     @Override
     public Role getRole() {
         return Role.USER;
@@ -30,14 +38,17 @@ public class UserMessage extends AbstractMessage {
 
     /**
      * {@inheritDoc}
-     * Returns the user's identity as 'username@device'.
+     * <p>Returns the user's identity formatted as 'username@device'.</p>
      */
     @Override
     public String getFrom() {
         return TextUtils.getUserName() + "@" + TextUtils.getDeviceId();
     }
 
-    /** {@inheritDoc} */
+    /** 
+     * {@inheritDoc} 
+     * <p>Returns the unique identifier of the host that originated this user message.</p> 
+     */
     @Override
     public String getDevice() {
         return TextUtils.getDeviceId();

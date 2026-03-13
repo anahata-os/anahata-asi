@@ -13,10 +13,13 @@ import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
 
 /**
- * Manages and broadcasts the real-time status of the agi session.
- * This class leverages PropertyChangeSupport to provide reactive updates
- * to the UI.
- *
+ * Manages and broadcasts the real-time operational status of an Agi session.
+ * <p>
+ * This manager acts as the 'Voice of Anahata', utilizing a {@link PropertyChangeSource} 
+ * to provide reactive updates to the UI layer. It tracks state transitions, 
+ * performance metrics, and coordinates the retry logic for API failures.
+ * </p>
+ * 
  * @author anahata
  */
 @Slf4j

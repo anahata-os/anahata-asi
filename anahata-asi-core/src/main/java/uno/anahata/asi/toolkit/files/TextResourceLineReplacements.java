@@ -36,8 +36,8 @@ public class TextResourceLineReplacements extends AbstractTextResourceWrite {
     private List<LineReplacement> replacements;
 
     @Builder
-    public TextResourceLineReplacements(String path, long lastModified, List<LineReplacement> replacements) {
-        super(path, lastModified);
+    public TextResourceLineReplacements(String uuid, long lastModified, List<LineReplacement> replacements) {
+        super(uuid, lastModified);
         this.replacements = replacements;
     }
 
@@ -49,8 +49,6 @@ public class TextResourceLineReplacements extends AbstractTextResourceWrite {
      * @throws AiToolException if replacements overlap or line numbers are out of bounds.
      */
     public String performReplacements(String currentContent) throws AiToolException {
-        // Use a list of lines for easier manipulation. 
-        // We split with -1 to preserve trailing empty lines/newcasting.
         List<String> lines = new ArrayList<>(Arrays.asList(currentContent.split("\\R", -1)));
         
         // 1. Sort replacements descending by startLine to maintain index integrity
@@ -94,13 +92,17 @@ public class TextResourceLineReplacements extends AbstractTextResourceWrite {
     public void validate(Agi agi) throws Exception {
         super.validate(agi);
         
+        if (replacements == null || replacements.isEmpty()) {
+            throw new AiToolException("No replacements provided.");
+        }
+
         // Check for overlapping line ranges
         List<LineReplacement> sorted = new ArrayList<>(replacements);
         sorted.sort(Comparator.comparingInt(LineReplacement::getStartLine));
         
         int lastEndLine = -1;
         for (LineReplacement lr : sorted) {
-            log.info("Validating replacement: {}", lr);
+            log.info("Validating replacement at line {}: count={}", lr.getStartLine(), lr.getLineCount());
             if (lr.getStartLine() <= lastEndLine) {
                 throw new AiToolException("Overlapping line replacements detected at line " + lr.getStartLine());
             }

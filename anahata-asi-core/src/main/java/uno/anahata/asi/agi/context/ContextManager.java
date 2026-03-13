@@ -24,11 +24,13 @@ import uno.anahata.asi.persistence.Rebindable;
 import uno.anahata.asi.agi.resource.Resource;
 
 /**
- * The definitive manager for a agi session's context in the V2 architecture.
- * This class owns the conversation history and orchestrates the hybrid context
- * assembly process, combining the V2 dynamic history with the hierarchical
- * provider model.
- *
+ * The definitive manager for an Agi session's context in the V2 architecture.
+ * <p>
+ * This manager orchestrates the 'Working Memory' of Anahata, maintaining the 
+ * conversation history, coordinating Retrieval-Augmented Generation (RAG), 
+ * and enforcing context window limits via the {@link ContextWindowGarbageCollector}.
+ * </p>
+ * 
  * @author anahata
  */
 @Slf4j
@@ -311,41 +313,5 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
      */
     public int getTokenThreshold() {
         return agi.getConfig().getTokenThreshold();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void rebind() {
-        super.rebind();
-        /*
-        log.info("Rebinding ContextManager for session: {}", agi.getConfig().getSessionId());
-
-        boolean hasCore = false;
-        boolean hasTools = false;
-        boolean hasResources = false;
-
-        for (ContextProvider p : providers) {
-            if (p instanceof CoreContextProvider) {
-                hasCore = true;
-            }
-            if (p instanceof ToolManager) {
-                hasTools = true;
-            }
-            if (p instanceof ResourceManager) {
-                hasResources = true;
-            }
-        }
-
-        if (!hasCore) {
-            registerContextProvider(new CoreContextProvider(agi));
-        }
-        if (!hasTools) {
-            registerContextProvider(agi.getToolManager());
-        }
-        if (!hasResources) {
-            registerContextProvider(agi.getResourceManager());
-        }*/
     }
 }

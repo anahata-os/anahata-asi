@@ -12,8 +12,9 @@ import uno.anahata.asi.toolkit.files.TextResourceLineReplacements;
  * A rich renderer for {@link TextResourceLineReplacements} tool parameters.
  * It provides a preview of line-based replacements in the NetBeans diff viewer.
  * 
- * <p>Uses a cumulative shift algorithm to map original line numbers to their 
- * final positions in the proposed content panel.</p>
+ * <p>This renderer uses a chronological mapping strategy to project original 
+ * line numbers onto their final positions in the proposed content panel, 
+ * ensuring that AI comments stay aligned with the changes.</p>
  * 
  * @author anahata
  */
@@ -56,7 +57,7 @@ public class TextResourceLineReplacementsRenderer extends AbstractTextResourceWr
     /** {@inheritDoc} */
     @Override
     protected TextResourceLineReplacements createUpdatedDto(String newContent) {
-        // Implementation follows the full override logic for user manual edits
+        // Full override logic for user manual edits
         LineReplacement fullOverride = LineReplacement.builder()
                 .startLine(1)
                 .lineCount(Integer.MAX_VALUE) 

@@ -11,9 +11,14 @@ import uno.anahata.asi.internal.TokenizerUtils;
 import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
 
 /**
- * The abstract base class for all components of a {@link AbstractMessage}.
- * This class is central to the V2 context management system, providing a rich,
- * self-contained model for intelligent, depth-based pruning and full context awareness.
+ * The foundational component of an {@link AbstractMessage}, representing a 
+ * discrete block of multimodal content.
+ * <p>
+ * This class is central to the V2 context management system, implementing 
+ * self-contained logic for intelligent, depth-based pruning and explicit 
+ * pinning. It maintains its own token count and environmental awareness 
+ * through its parent message.
+ * </p>
  *
  * @author anahata
  */
@@ -300,23 +305,21 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
     }
 
     /**
-     * Returns the identity label for the metadata header (e.g., "Part ID: 45").
-     * Subclasses can override this to hide or customize the identity.
-     * 
-
-    /**
-     * Returns the number of tokens this part contributes to the context window
-     * in its current state. If effectively pruned, returns only the metadata 
-     * overhead; otherwise returns the full token count plus metadata.
+     * Calculates the total "effective" tokens contributed by this part.
+     * <p>
+     * If the part is effectively pruned, this returns only the metadata 
+     * overhead; otherwise, it returns the full token count plus metadata.
+     * </p>
      * 
      * @return The effective token count.
      */
     public int getEffectiveTokenCount() {
-        int metadataCount = getMetadataTokenCount();
-        return isEffectivelyPruned() ? metadataCount : (getTokenCount() + metadataCount);
+        int mc = getMetadataTokenCount();
+        return isEffectivelyPruned() ? mc : (getTokenCount() + mc);
     }
-    
-    /*
+    /**
+     * Returns the identity label for the metadata header (e.g., "Part ID: 45").
+     * 
      * @return The identity label.
      */
     protected String getIdentityLabel() {

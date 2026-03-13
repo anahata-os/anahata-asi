@@ -23,9 +23,13 @@ import uno.anahata.asi.toolkit.Java;
 import uno.anahata.asi.toolkit.Shell;
 
 /**
- * A model-agnostic, intelligent configuration object for a single agi session.
- * It defines the blueprint for a agi, including which AI providers and tools are available,
- * as well as the default context management policies.
+ * The definitive configuration blueprint for an individual Agi session.
+ * <p>
+ * Defines the operational parameters, enabled toolkits, AI providers, 
+ * and context management policies. This class serves as the 'DNA' of 
+ * an Agi, ensuring architectural consistency and facilitating model-agnostic 
+ * orchestration across session restarts.
+ * </p>
  * 
  * @author anahata
  */
@@ -59,7 +63,6 @@ public class AgiConfig extends BasicPropertyChangeSource {
         // Pre-populate with core, essential tools.
         toolClasses.add(Session.class);
         toolClasses.add(Resources.class);
-        //toolClasses.add(Files.class);
         toolClasses.add(Java.class);        
         toolClasses.add(Shell.class);
         toolClasses.add(Audio.class);
@@ -146,9 +149,13 @@ public class AgiConfig extends BasicPropertyChangeSource {
     private List<String> defaultResponseModalities = new ArrayList<>(List.of("TEXT"));
     
     /**
-     * Sets whether local tools are enabled.
+     * Configures the session to utilize local Java-based toolkits.
+     * <p>
+     * Enabling local tools automatically disables hosted server tools to 
+     * maintain environmental consistency.
+     * </p>
      * 
-     * @param enabled true to enable local tools.
+     * @param enabled true to enable local toolkits.
      */
     public void setLocalToolsEnabled(boolean enabled) {
         boolean oldServer = this.hostedToolsEnabled;
@@ -160,7 +167,11 @@ public class AgiConfig extends BasicPropertyChangeSource {
     }
 
     /**
-     * Sets whether server-side tools are enabled.
+     * Configures the session to utilize hosted server-side tools (e.g., Google Search).
+     * <p>
+     * Enabling hosted tools automatically disables local Java toolkits to 
+     * prevent capability conflicts.
+     * </p>
      * 
      * @param enabled true to enable server-side tools.
      */
@@ -183,10 +194,14 @@ public class AgiConfig extends BasicPropertyChangeSource {
     }
 
     /**
-     * Creates a specialized ResourceHandle for the given URI based on the host environment.
+     * Creates a specialized {@link ResourceHandle} based on the URI scheme.
+     * <p>
+     * Supports 'file' schemes via {@link PathHandle} and fallbacks to 
+     * {@link UrlHandle} for remote resources.
+     * </p>
      * 
-     * @param uri The resource URI.
-     * @return A concrete ResourceHandle implementation.
+     * @param uri The resource URI to wrap.
+     * @return A concrete handle implementation for the specified URI.
      */
     public ResourceHandle createResourceHandle(java.net.URI uri) {
         if ("file".equalsIgnoreCase(uri.getScheme())) {

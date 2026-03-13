@@ -1,4 +1,3 @@
-// [POKER TEST] - Verification of multi-offset surgical integrity.
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.test;
 
@@ -55,6 +54,7 @@ import javax.swing.SwingUtilities;
  */
 public class BigTestClass {
 
+    private final long testTimestamp = System.currentTimeMillis();
     private final AtomicLong operationsCounter = new AtomicLong(0);
     private static final Logger log = Logger.getLogger(BigTestClass.class.getName());
     private final String id;
@@ -162,8 +162,11 @@ public class BigTestClass {
     }
 
     // Line 164: Block D
-    public void blockD() {
-        log.info("Block D has been redefined using surgical line replacement.");
+    /**
+     * Sychronized block D for thread-safe testing.
+     */
+    public synchronized void blockD() {
+        log.log(Level.INFO, "Block D executed safely at {0}", testTimestamp);
     }
 
     // Line 172: Block E

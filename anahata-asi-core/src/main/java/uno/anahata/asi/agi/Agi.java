@@ -3,7 +3,6 @@
  */
 package uno.anahata.asi.agi;
 
-import java.beans.PropertyChangeSupport;
 import java.io.InterruptedIOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,12 +41,19 @@ import uno.anahata.asi.agi.provider.RetryableApiException;
 import uno.anahata.asi.agi.tool.ToolManager;
 
 /**
- * The central, provider-agnostic orchestrator for a single agi session in the
- * V2 architecture. This class manages the conversation flow, orchestrates calls
- * to the AI provider, and delegates context management to a specialized
- * ContextManager.
+ * The central, provider-agnostic artificial super intelligence (ASI) orchestrator.
+ * <p>
+ * This class serves as the 'Anahata' (heart) of a conversation session, managing 
+ * the high-level lifecycle of an agentic turn. It orchestrates the flow between 
+ * user input, tool execution, context assembly via {@link ContextManager}, and 
+ * multimodal generation via registered {@link AbstractAgiProvider}s.
+ * </p>
+ * <p>
+ * <b>Thread Safety:</b> This class is designed to be thread-safe, utilizing 
+ * reentrant locks for state transitions and atomic booleans for lifecycle flags.
+ * </p>
  *
- * @author anahata-ai
+ * @author anahata
  */
 @Slf4j
 @Getter
@@ -181,9 +187,12 @@ public class Agi extends BasicPropertyChangeSource {
         contextManager.init();
     }
 
-    /**
-     * Re-initializes the transient {@link PropertyChangeSupport} after deserialization.
-     * This method is called automatically by the Kryo RebindableWrapperSerializer.
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Re-initializes the transient lifecycle flags and ensures the session is 
+     * ready for active generation after deserialization. 
+     * </p>
      */
     @Override
     public void rebind() {
@@ -680,7 +689,7 @@ public class Agi extends BasicPropertyChangeSource {
      * This method is called when the user clicks 'Run'.
      */
     public void processPendingTools() {
-        if (statusManager.getCurrentStatus() == AgiStatus.TOOL_PROMPT && toolPromptMessage != null) {
+        if (statusManager.getCurrentStatus() == AgiStatus.AWAKENING_KUNDALINI && toolPromptMessage != null) {
             toolPromptMessage.processPendingTools();
         }
     }

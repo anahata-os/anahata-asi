@@ -27,11 +27,12 @@ import uno.anahata.asi.toolkit.files.TextResourceReplacements;
 import uno.anahata.asi.toolkit.files.TextResourceLineReplacements;
 
 /**
- * The definitive V2 toolkit for managing multimodal resources.
+ * The definitive V2 URI-centric toolkit for managed multimodal resources.
  * <p>
- * This toolkit is URI-centric and handles both reading (RAG) and writing
- * (persistent mutations). It leverages the Handy Resource API for elegant
- * content management.
+ * This toolkit provides a unified interface for RAG-based context augmentation 
+ * and persistent, surgical mutations of text-based resources. It abstracts 
+ * the complexities of different storage protocols (File, URL, String) while 
+ * enforcing optimistic locking and context integrity.
  * </p>
  *
  * @author anahata
@@ -40,8 +41,12 @@ import uno.anahata.asi.toolkit.files.TextResourceLineReplacements;
 @AiToolkit("A URI-centric toolkit for managing resources.")
 public class Resources extends AnahataToolkit {
 
-    /**
-     * {@inheritDoc}
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Injects critical surgical precision rules into the model's system prompt, 
+     * ensuring environmental awareness during file mutations.
+     * </p>
      */
     @Override
     public List<String> getSystemInstructions() throws Exception {
