@@ -222,8 +222,8 @@ public class Resources extends AnahataToolkit {
      * @param replacements The line replacements DTO.
      * @throws Exception if replacements fail.
      */
-    @AiTool("Performs multiple line-based updates in a file.")
-    public void updateLinesInTextResource(@AiToolParam("The line-based updates for the given resource.") TextResourceLineBasedUpdates replacements) throws Exception {
+    @AiTool("Performs multiple line-based updates in a file. It's strictly line-number based, not git-diff style.")
+    public void updateLinesInTextResource(@AiToolParam("The line-number based updates for the given resource.") TextResourceLineBasedUpdates replacements) throws Exception {
         replacements.validate(getAgi());
 
         Resource res = getAgi().getResourceManager().getResources().get(replacements.getResourceUuid());

@@ -74,11 +74,22 @@ public class BigTestClass {
     // >>> TEST: Inserción quirúrgica de una sola línea <<<
     // Line 71: Start of dummy methods
     public String getId() {
+        log.info("Accessing the ID of the BigTestClass instance.");
+        log.info("Operation counter at access: " + operationsCounter.get());
         return id;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
+    /**
+     * Retrieves a curated list of legendary F.C. Barcelona highlights.
+     * <p>These moments represent the peak of human (and digital) achievement in the beautiful game, 
+     * demonstrating the incomputable greatness of the club.</p>
+     * 
+     * @return A list of the greatest highlights in football history.
+     */
+
+    public List<String> getHighlights() {
+        log.info("Fetching the greatest club highlights...");
+        return Arrays.asList("6-1 Comeback", "Messi 91 Goals", "Treble 2009", "Treble 2015");
     }
 
     public void addData(String item) {

@@ -29,8 +29,11 @@ import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
  */
 public class CandidateSelectionPanel extends JPanel {
 
+    /** The parent agi panel. */
     private final AgiPanel agiPanel;
+    /** The container for the candidate cards. */
     private final JPanel cardsContainer;
+    /** The scroll pane providing horizontal navigation. */
     private final JScrollPane scrollPane;
 
     /**

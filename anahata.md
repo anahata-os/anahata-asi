@@ -60,6 +60,7 @@ This project uses a set of key documents to guide development. For detailed info
 Comprehensive documentation is mandatory for this open-source project. Existing Javadoc and comments must never be removed.
 
 - **Mandatory Visibility**: Javadoc is mandatory for **ALL** visibilities: `public`, `protected`, `package-private`, and `private`. If it can be Javadocced, it must be Javadocced.
+- **Javadocs should always be above any annotations**: if a class or a method has annotations, the javadoc should always be above the annotations.
 - **ASI-Grade Quality**: Javadocs must be meaningful, providing architectural context, thread-safety notes, and domain-level significance. Avoid "lazy" or redundant Javadoc that just repeats the method name.
 - **Override/Implementation Logic**: Every override or implementation must use the following javadoc pattern:
     `/** 

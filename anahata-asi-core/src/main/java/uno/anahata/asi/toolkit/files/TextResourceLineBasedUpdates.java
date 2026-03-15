@@ -105,12 +105,13 @@ public class TextResourceLineBasedUpdates extends AbstractTextResourceWrite {
         
         int lastEndLine = -1;
         for (LineBasedUpdate lr : sorted) {
-            if (lr.getLineCount() > 0) {
-                if (lr.getStartLine() <= lastEndLine) {
-                    throw new AiToolException("Overlapping line updates detected at line " + lr.getStartLine());
-                }
-                lastEndLine = lr.getStartLine() + lr.getLineCount() - 1;
+            log.info("Validating startLine={} lineCount={}, newContent='{}'", lr.getStartLine(), lr.getLineCount(), lr.getNewContent());
+            if (lr.getStartLine() <= lastEndLine) {
+                throw new AiToolException("Overlapping line updates detected at line " + lr.getStartLine());
             }
+            // Technical precision: insertions (count=0) occupy the startLine point, 
+            // removals/replacements occupy [startLine, startLine + count - 1]
+            lastEndLine = lr.getStartLine() + Math.max(0, lr.getLineCount() - 1);
         }
     }
 }
