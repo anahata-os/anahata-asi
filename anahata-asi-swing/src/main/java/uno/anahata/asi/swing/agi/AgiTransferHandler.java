@@ -26,24 +26,48 @@ import uno.anahata.asi.swing.internal.SwingTask;
 @Slf4j
 public class AgiTransferHandler extends TransferHandler {
 
+    /** The parent agi panel to provide context for resource registration. */
     private final AgiPanel agiPanel;
+    /** An optional delegate TransferHandler to preserve existing transfer behavior. */
     private final TransferHandler delegate;
 
+    /**
+     * Constructs a new AgiTransferHandler without a delegate.
+     * 
+     * @param agiPanel The parent agi panel.
+     */
     public AgiTransferHandler(AgiPanel agiPanel) {
         this(agiPanel, null);
     }
 
+    /**
+     * Constructs a new AgiTransferHandler with an optional delegate.
+     * 
+     * @param agiPanel The parent agi panel.
+     * @param delegate The delegate TransferHandler, can be null.
+     */
     public AgiTransferHandler(AgiPanel agiPanel, TransferHandler delegate) {
         this.agiPanel = agiPanel;
         this.delegate = delegate;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Returns true if the transfer contains a list of files or if the delegate 
+     * supports the import.</p>
+     */
     @Override
     public boolean canImport(TransferSupport support) {
         return support.isDataFlavorSupported(DataFlavor.javaFileListFlavor) || 
                (delegate != null && delegate.canImport(support));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Extracts file lists from the transfer and registers them as resources 
+     * in the current session via a background task. If the data is not a file list, 
+     * it falls back to the delegate.</p>
+     */
     @Override
     public boolean importData(TransferSupport support) {
         if (support.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
@@ -74,11 +98,20 @@ public class AgiTransferHandler extends TransferHandler {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Returns the source actions supported by the delegate or defaults to COPY.</p>
+     */
     @Override
     public int getSourceActions(JComponent c) {
         return delegate != null ? delegate.getSourceActions(c) : COPY;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Exports the data to the clipboard using the delegate if present, or 
+     * the standard implementation.</p>
+     */
     @Override
     public void exportToClipboard(JComponent comp, Clipboard clip, int action) throws IllegalStateException {
         if (delegate != null) {
@@ -88,6 +121,11 @@ public class AgiTransferHandler extends TransferHandler {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Initiates a drag operation using the delegate if present, or the 
+     * standard implementation.</p>
+     */
     @Override
     public void exportAsDrag(JComponent comp, InputEvent e, int action) {
         if (delegate != null) {
@@ -97,6 +135,11 @@ public class AgiTransferHandler extends TransferHandler {
         }
     }
     
+    /**
+     * {@inheritDoc}
+     * <p>Provides a visual representation of the transfer using the delegate 
+     * if present.</p>
+     */
     @Override
     public Icon getVisualRepresentation(Transferable t) {
         return delegate != null ? delegate.getVisualRepresentation(t) : super.getVisualRepresentation(t);
