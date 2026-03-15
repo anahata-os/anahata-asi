@@ -711,6 +711,7 @@ public class Agi extends BasicPropertyChangeSource {
         contextManager.clear();
         statusManager.reset();
         toolManager.reset();
+        conversationSummary = "Conversation history cleared.";
         setActiveCandidates(Collections.emptyList());
         setToolPromptMessage(null);
         setStagedUserMessage(null);
