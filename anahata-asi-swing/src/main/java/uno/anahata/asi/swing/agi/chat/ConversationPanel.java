@@ -39,24 +39,25 @@ import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 @Slf4j
 public class ConversationPanel extends JPanel {
 
-    /** The parent agi panel. */
+    /** The parent container providing shared configuration and access to the agi session. */
     private final AgiPanel agiPanel;
-    /** The agi session. */
+    /** The active agi session orchestrating the conversation flow. */
     private Agi agi;
-    /** The panel containing the message components. */
+    /** The scrollable content area where individual message panels are rendered. */
     private final ScrollablePanel messagesPanel;
-    /** The scroll pane for the conversation. */
+    /** The scroll pane managing the vertical viewport of the conversation history. */
     private final JScrollPane scrollPane;
-    /** Cache of message panels to support incremental updates. */
+    /** An internal cache of message panels to enable high-performance incremental updates and reuse. */
     private final Map<AbstractMessage, AbstractMessagePanel> cachedMessagePanels = new HashMap<>();
-    /** The listener for history changes. */
+    /** The property change listener bound to the context manager's history to trigger structural updates on the EDT. */
     private EdtPropertyChangeListener historyListener;
     
     /** 
-     * Flag indicating if the view should automatically scroll to the bottom 
+     * A stateful flag that determines if the viewport should automatically snap to the latest message 
      * when content changes. 
      */
     private boolean autoScroll = true;
+
 
     /**
      * Constructs a new ConversationPanel.
@@ -238,10 +239,21 @@ public class ConversationPanel extends JPanel {
         repaint();
     }
 
+    /**
+     * Factory method to create a specialized message panel based on the message type.
+     * 
+     * @param message The message to render.
+     * @return The appropriate panel implementation.
+     */
     private AbstractMessagePanel createMessagePanel(AbstractMessage message) {
         return MessagePanelFactory.createMessagePanel(agiPanel, message);
     }
 
+    /**
+     * Logic to determine if the scroll bar is currently positioned at the bottom of the viewport.
+     * 
+     * @return true if the scroll bar is at or near the bottom.
+     */
     public boolean isAtBottom() {
         JScrollBar verticalBar = scrollPane.getVerticalScrollBar();
         int extent = verticalBar.getModel().getExtent();
@@ -258,6 +270,10 @@ public class ConversationPanel extends JPanel {
         return atBottom;
     }
 
+    /**
+     * Programmatically snaps the vertical scroll bar to the bottom on the EDT.
+     * Typically called after a layout shift or when a new message is added.
+     */
     public void scrollToBottom() {
         log.debug("[Scroll] scrollToBottom() triggered");
         SwingUtilities.invokeLater(() -> {

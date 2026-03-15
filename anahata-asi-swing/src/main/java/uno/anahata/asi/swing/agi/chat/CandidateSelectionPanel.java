@@ -29,12 +29,13 @@ import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
  */
 public class CandidateSelectionPanel extends JPanel {
 
-    /** The parent agi panel. */
+    /** The parent orchestration panel used for accessing the agi session and shared UI components. */
     private final AgiPanel agiPanel;
-    /** The container for the candidate cards. */
+    /** The internal container that holds the candidate card panels, managed by a BoxLayout for horizontal alignment. */
     private final JPanel cardsContainer;
-    /** The scroll pane providing horizontal navigation. */
+    /** Provides the scrollable viewport for navigating through the available candidates. */
     private final JScrollPane scrollPane;
+
 
     /**
      * Constructs a new CandidateSelectionPanel.
@@ -70,7 +71,7 @@ public class CandidateSelectionPanel extends JPanel {
     }
 
     /**
-     * Updates the UI to reflect the current list of active candidates.
+     * Synchronizes the UI state with the agi's active candidates list, ensuring real-time visibility.
      */
     private void updateCandidates() {
         List<AbstractModelMessage> candidates = agiPanel.getAgi().getActiveCandidates();
@@ -91,7 +92,7 @@ public class CandidateSelectionPanel extends JPanel {
     }
 
     /**
-     * Creates a "card" for a single candidate, containing its message panel and a selection button.
+     * Constructs an individual candidate card, wrapping a {@link ModelMessagePanel} with a selection trigger.
      *
      * @param candidate The candidate message.
      * @return The card panel.
