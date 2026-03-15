@@ -39,7 +39,7 @@ public class TextPartPanel extends AbstractPartPanel<TextPart> {
      * Regex pattern for identifying code blocks in markdown. 
      * It captures the language, the content, and the optional closing backticks.
      */
-    private static final Pattern CODE_BLOCK_PATTERN = Pattern.compile("```(\\w*)\\r?\\n([\\s\\S]*?)(?:\\r?\\n(```)|\\z)");
+    private static final Pattern CODE_BLOCK_PATTERN = Pattern.compile("```([^\\s\\n]*)\\r?\\n([\\s\\S]*?)(?:\\r?\\n(```)|(```)\\z|\\z)");
 
     /** Cache of segment renderers to support incremental updates. */
     private final List<AbstractTextSegmentRenderer> cachedSegmentRenderers = new ArrayList<>();
@@ -131,8 +131,9 @@ public class TextPartPanel extends AbstractPartPanel<TextPart> {
             // Code block segment
             String language = matcher.group(1);
             String code = matcher.group(2);
-            // If the closing backticks (group 3) are found, the block is closed.
-            boolean closed = matcher.group(3) != null && !matcher.group(3).isEmpty();
+            // If the closing backticks (group 3 or 4) are found, the block is closed.
+            boolean closed = (matcher.group(3) != null && !matcher.group(3).isEmpty()) 
+                    || (matcher.groupCount() >= 4 && matcher.group(4) != null && !matcher.group(4).isEmpty());
             descriptors.add(new TextSegmentDescriptor(TextSegmentType.CODE, code, language, closed));
 
             lastEnd = matcher.end();
