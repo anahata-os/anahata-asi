@@ -39,21 +39,36 @@ import uno.anahata.asi.swing.provider.AgiProviderRegistryViewer;
 public class HeaderPanel extends JPanel {
     private static final int ICON_SIZE = 24;
 
+    /** The parent aggregator panel providing access to session and config. */
     private final AgiPanel agiPanel;
+    /** The active agi session orchestrator. */
     private Agi agi;
 
+    /** The text field for the session's nickname, synchronized with the domain on focus loss. */
     private JXTextField nicknameField;
+    /** The button to trigger a manual session save and export to a file. */
     private JButton saveSessionButton;
+    /** The selector for the AI provider, populates the model selector on change. */
     private JComboBox<AbstractAgiProvider> providerComboBox;
+    /** The selector for the specific AI model, supports autocompletion via {@link AutoCompleteDecorator}. */
     private JComboBox<AbstractModel> modelComboBox;
+    /** The button to open the global model registry viewer for deep exploration. */
     private JButton searchModelsButton;
 
+    /** 
+     * Constructs the header panel and initializes references.
+     * 
+     * @param agiPanel The parent aggregator panel.
+     */
     public HeaderPanel(AgiPanel agiPanel) {
         this.agiPanel = agiPanel;
         this.agi = agiPanel.getAgi();
         log.info("Header Panel constructor, selected agi model: " + agi.getSelectedModel());        
     }
 
+    /** 
+     * Initializes the UI components using MigLayout and populates the model selectors.
+     */
     public void initComponents() {
         setLayout(new MigLayout("insets 5, fillx, gap 10",
                                 "[][]push[][][]", // Nickname, Save, PUSH, Provider, Model, Search
@@ -145,6 +160,9 @@ public class HeaderPanel extends JPanel {
         repaint();
     }
 
+    /** 
+     * Fetches all registered providers from the agi session and adds them to the combo box.
+     */
     private void populateProviders() {
         List<AbstractAgiProvider> providers = agi.getProviders();
         for (AbstractAgiProvider provider : providers) {
@@ -152,6 +170,9 @@ public class HeaderPanel extends JPanel {
         }
     }
 
+    /** 
+     * Installs action listeners for provider and model selection.
+     */
     private void addListeners() {
         providerComboBox.addActionListener(e -> updateModelsForSelectedProvider());
         
@@ -165,6 +186,9 @@ public class HeaderPanel extends JPanel {
         searchModelsButton.addActionListener(e -> showProviderRegistry());
     }
     
+    /** 
+     * Opens the provider registry viewer dialog to search and select models from all providers.
+     */
     private void showProviderRegistry() {
         // Collect all models from all providers
         List<AbstractModel> allModels = agi.getProviders().stream()
@@ -186,6 +210,9 @@ public class HeaderPanel extends JPanel {
         dialog.setVisible(true);
     }
 
+    /** 
+     * Updates the model combo box items based on the currently selected provider.
+     */
     private void updateModelsForSelectedProvider() {
         AbstractAgiProvider selectedProvider = (AbstractAgiProvider) providerComboBox.getSelectedItem();
         modelComboBox.removeAllItems();
@@ -197,6 +224,9 @@ public class HeaderPanel extends JPanel {
         }
     }
 
+    /** 
+     * Triggers a manual save and exports the session to a .kryo file chosen by the user.
+     */
     private void saveSession() {
         new SwingTask<>(this, "Save Session", () -> {
             // 1. Perform standard auto-save
@@ -243,8 +273,12 @@ public class HeaderPanel extends JPanel {
         }).execute();
     }
 
-    // Custom renderer to display provider's display name
+    /** Custom renderer to display provider's display name. */
     private static class ProviderRenderer extends DefaultListCellRenderer {
+        /** 
+         * {@inheritDoc} 
+         * <p>Renders the provider's ID in the list.</p> 
+         */
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
@@ -255,8 +289,13 @@ public class HeaderPanel extends JPanel {
         }
     }
 
-    // Custom renderer to display model's display name
+    /** Custom renderer to display model's display name. */
     private static class ModelRenderer extends DefaultListCellRenderer {
+        /** 
+         * {@inheritDoc} 
+         * <p>Renders the model's display name in the list, ensuring it follows the 
+         * agi's selected model format.</p> 
+         */
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
