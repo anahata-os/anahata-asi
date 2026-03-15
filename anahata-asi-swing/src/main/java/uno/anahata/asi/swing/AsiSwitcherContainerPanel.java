@@ -22,13 +22,24 @@ import uno.anahata.asi.swing.icons.TableIcon;
  */
 public class AsiSwitcherContainerPanel extends JPanel {
 
+    /** The implementation for tabular display. */
     private final AsiTableContainerPanel tablePanel;
+    /** The implementation for card-based display. */
     private final AsiCardsContainerPanel cardsPanel;
+    /** The layout manager for switching views. */
     private final CardLayout viewLayout;
+    /** The panel holding both view variants. */
     private final JPanel mainView;
+    /** The button to toggle between views. */
     private final JToggleButton viewToggle;
+    /** The toolbar for switching actions. */
     private final JToolBar toolBar;
 
+    /** 
+     * Constructs a new switcher and initializes both view variants.
+     * 
+     * @param container The ASI container.
+     */
     public AsiSwitcherContainerPanel(@NonNull AsiContainer container) {
         setLayout(new BorderLayout());
         
@@ -64,21 +75,37 @@ public class AsiSwitcherContainerPanel extends JPanel {
         add(mainView, BorderLayout.CENTER);
     }
 
+    /** 
+     * Sets the session controller for both underlying views.
+     * 
+     * @param controller The controller instance.
+     */
     public void setController(AgiController controller) {
         tablePanel.setController(controller);
         cardsPanel.setController(controller);
     }
 
+    /** 
+     * Starts the periodic refresh for both underlying views.
+     */
     public void startRefresh() {
         tablePanel.startRefresh();
         cardsPanel.startRefresh();
     }
 
+    /** 
+     * Stops the periodic refresh for both underlying views.
+     */
     public void stopRefresh() {
         tablePanel.stopRefresh();
         cardsPanel.stopRefresh();
     }
 
+    /** 
+     * Returns the selected session from the currently active view.
+     * 
+     * @return The selected agi.
+     */
     public Agi getSelectedAgi() {
         if (viewToggle.isSelected()) { // Table view
             return tablePanel.getSelectedAgi();
