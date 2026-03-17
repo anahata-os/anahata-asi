@@ -87,7 +87,7 @@ public class Refactor extends AnahataToolkit{
      * @return A detailed log of the refactoring process.
      * @throws Exception if there is an error invoking the operation.
      */
-    @AiTool("Renames a file or class. This is a 'safe' rename that updates all references in all open projects.")
+    @AiTool("Renames a file or class. This is a 'safe' rename that updates all references in all open projects and the most efficient way of renaming a type as it updates the file's content, all its references and the file name on the file system in a single shot.")
     public String rename(
             @AiToolParam(value = "The absolute path of the file to rename.", rendererId = "path") String filePath, 
             @AiToolParam("The new name (without extension).") String newName) throws Exception {

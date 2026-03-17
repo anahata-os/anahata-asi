@@ -101,6 +101,8 @@
         <junit.version>5.10.3</junit.version>
         <flatlaf.version>3.4.1</flatlaf.version>
         <jtokkit.version>1.1.0</jtokkit.version>
+        <java-diff-utils.version>4.15</java-diff-utils.version>
+
         
         <!-- 
             CRITICAL: flexmark and jsoup versions MUST match the versions 
@@ -239,6 +241,12 @@
                 <version>3.2.3</version>
             </dependency>
             
+            <dependency>
+                <groupId>io.github.java-diff-utils</groupId>
+                <artifactId>java-diff-utils</artifactId>
+                <version>${java-diff-utils.version}</version>
+            </dependency>
+
             <!-- 
                 CRITICAL: jsoup version MUST match the version bundled with 
                 the target NetBeans release (currently NB 28).

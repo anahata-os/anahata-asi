@@ -43,6 +43,12 @@ public class TextResourceLineBasedUpdates extends AbstractTextResourceWrite {
 
     /**
      * Applies the line-based updates to the given content.
+     * <p>
+     * <b>Model Habit Absorption:</b> This method intelligently absorbs a single trailing 
+     * newline in {@code newContent}, treating it as structural rather than an 
+     * instruction to create a blank line. This prevents the common "extra blank line" 
+     * bug while still allowing intentional blank lines via double-newlines.
+     * </p>
      * 
      * @param currentContent The original file content.
      * @return The modified content.
@@ -67,7 +73,7 @@ public class TextResourceLineBasedUpdates extends AbstractTextResourceWrite {
             
             int listIndex = start - 1;
             
-            // Remove requested lines (Handle "remove remaining" for UI overrides)
+            // 1. Remove requested lines (Handle "remove remaining" for UI overrides)
             for (int i = 0; i < count; i++) {
                 if (listIndex < lines.size()) {
                     lines.remove(listIndex);
@@ -79,16 +85,30 @@ public class TextResourceLineBasedUpdates extends AbstractTextResourceWrite {
                 }
             }
             
-            // Insert replacement text
-            if (lr.getNewContent() != null && !lr.getNewContent().isEmpty()) {
-                String[] newLines = lr.getNewContent().split("\\R", -1);
-                for (int i = newLines.length - 1; i >= 0; i--) {
-                    lines.add(listIndex, newLines[i]);
+            // 2. Insert replacement text with "Structural Newline Absorption"
+            String content = lr.getNewContent();
+            if (content != null && !content.isEmpty()) {
+                List<String> newLines = new ArrayList<>(Arrays.asList(content.split("\\R", -1)));
+                
+                // ABSORPTION: If the content ends with a newline, split("-1") leaves a trailing empty string.
+                // We remove it to sync with the model's "one newline per line" intuition.
+                if (newLines.size() > 1 && newLines.get(newLines.size() - 1).isEmpty()) {
+                    newLines.remove(newLines.size() - 1);
+                }
+
+                for (int i = newLines.size() - 1; i >= 0; i--) {
+                    lines.add(listIndex, newLines.get(i));
                 }
             }
         }
         
         return String.join(separator, lines);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String calculateResultingContent(String currentContent) throws Exception {
+        return performUpdates(currentContent);
     }
 
     /** {@inheritDoc} */
@@ -105,13 +125,15 @@ public class TextResourceLineBasedUpdates extends AbstractTextResourceWrite {
         
         int lastEndLine = -1;
         for (LineBasedUpdate lr : sorted) {
-            log.info("Validating startLine={} lineCount={}, newContent='{}'", lr.getStartLine(), lr.getLineCount(), lr.getNewContent());
             if (lr.getStartLine() <= lastEndLine) {
                 throw new AiToolException("Overlapping line updates detected at line " + lr.getStartLine());
             }
             // Technical precision: insertions (count=0) occupy the startLine point, 
             // removals/replacements occupy [startLine, startLine + count - 1]
-            lastEndLine = lr.getStartLine() + Math.max(0, lr.getLineCount() - 1);
+            //lastEndLine = lr.getStartLine() + Math.max(0, lr.getLineCount() - 1);
+            // OLD: lastEndLine = lr.getStartLine() + Math.max(0, lr.getLineCount() - 1);
+            // NEW: Correctly handle insertions (count 0) so they don't "occupy" a line.
+            lastEndLine = lr.getStartLine() + lr.getLineCount() - (lr.getLineCount() > 0 ? 1 : 0);
         }
     }
 }

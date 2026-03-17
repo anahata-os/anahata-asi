@@ -173,10 +173,14 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
     public RagMessage buildRagMessage() {
         long ts = System.currentTimeMillis();
         RagMessage augmentedMessage = new RagMessage(agi);
-        augmentedMessage.addTextPart("--- RAG message ---\n"
-                + "The following is high-salience, just-in-time live context provided by the host environment for this turn. "
-                + "It has been dynamically generated and populated by all 'effectively providing' context providers. All resources with a LIVE refresh policy have been reloaded from disk. Use the lastModified timestamp provided on the header of each resource for resource modifications."
-                + "This is NOT direct input from the user.");
+        augmentedMessage.addTextPart("--- **RAG message** ---\n"
+                + "The following is high-salience, just-in-time live context provided by for this turn.\n"                
+                + "It has been dynamically generated and populated by all managed resources with a `PROMPT_AUGMENTATION` context position"
+                + " and by all effectively providing context providers. The RAG message is and will always be the last message in the prompt"
+                + " on every turn and as you can see, it has no message-level or part-level metadata because is not a part of the history of the conversation (its just dinamycally generated on every turn). Instead of message level metadata or part level metadata, it has the id of all registered context providers and the uuid of all registered reources that make the content of this message.\n"
+                + "All resources with a `LIVE` refresh policy have been reloaded from disk and are garanteed to be up to date and in sync with the underlying device regardless of what the last tool calls did.\n"
+                + "Use the `lastModified` timestamp provided on the header of each resource when you need to modify a resource and take the line numbers on the `LIVE` resources as the only source of truth.\n"
+                + "Even though this message has a user role, it is not direct input from the user. As a matter of fact, the user probably doesnt even know what the RAG message is.");
 
         for (ContextProvider rootProvider : providers) {
             for (ContextProvider provider : rootProvider.getFlattenedHierarchy(true)) {

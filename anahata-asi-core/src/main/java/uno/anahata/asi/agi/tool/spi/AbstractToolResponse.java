@@ -191,14 +191,30 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     public abstract void stop();
 
     /**
-     * Rejects the tool call before execution, setting the status to DECLINED.
+     * Rejects the tool call before execution, setting the status to FAILED.
+     * 
      * @param reason The reason for the rejection.
      */
     public void reject(String reason) {
         setErrors(reason);
         setStatus(ToolExecutionStatus.FAILED);
     }
-    
+
+    /**
+     * Rejects the tool call before execution with detailed context.
+     * 
+     * @param reason The high-level reason for rejection.
+     * @param details Additional technical details (e.g., a diff of the failed intent).
+     */
+    public void reject(String reason, String details) {
+        if (details != null && !details.isBlank()) {
+            setErrors(reason + "\n\nDetails:\n" + details);
+        } else {
+            setErrors(reason);
+        }
+        setStatus(ToolExecutionStatus.FAILED);
+    }
+
     /**
      * Sets the running thread and updates the thread name.
      * 

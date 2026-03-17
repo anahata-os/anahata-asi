@@ -10,7 +10,6 @@ import java.awt.FlowLayout;
 import java.awt.Image;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
-import java.nio.file.Files;
 import java.util.List;
 import java.util.Objects;
 import javax.swing.BorderFactory;
@@ -40,6 +39,7 @@ import org.openide.util.ImageUtilities;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.agi.tool.ToolExecutionStatus;
+import uno.anahata.asi.internal.AnahataDiffUtils;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRenderer;
@@ -61,8 +61,7 @@ import uno.anahata.asi.toolkit.files.LineComment;
  * <p>Key Features:</p>
  * <ul>
  *   <li><b>Immediate Pre-Flight Validation</b>: Delegates to the authoritative 
-     *   {@link AbstractTextResourceWrite#validate} logic to reject hallucinated or stale proposals 
-
+ *   {@link AbstractTextResourceWrite#validate} logic to reject hallucinated or stale proposals 
  *   as soon as they are rendered.</li>
  *   <li><b>Historical Diff Persistence</b>: Automatically captures the file state before
  *   execution and persists it in the tool call DTO.</li>
@@ -183,7 +182,7 @@ public abstract class AbstractTextResourceWriteRenderer<T extends AbstractTextRe
     /**
      * Performs an immediate validation of the file write using the 
      * authoritative logic in the Files toolkit. If validation fails, the 
-     * tool call is rejected immediately.
+     * tool call is rejected immediately with a diff of the failed intent.
      * 
      * @return true if valid, false if rejected.
      */
@@ -197,7 +196,20 @@ public abstract class AbstractTextResourceWriteRenderer<T extends AbstractTextRe
             return true;
         } catch (Exception e) {
             log.warn("Pre-flight validation failed for resource {}: {}", update.getResourceUuid(), e.getMessage());
-            call.getResponse().reject("Validation Failed. No changes have been applied to the resource: " + e.getMessage());
+            
+            String diff = "";
+            try {
+                Resource resource = agiPanel.getAgi().getResourceManager().get(update.getResourceUuid());
+                if (resource != null) {
+                    String current = resource.asText();
+                    String proposed = update.calculateResultingContent(current);
+                    diff = AnahataDiffUtils.generateUnifiedDiff(resource.getName(), current, proposed);
+                }
+            } catch (Exception ex) {
+                log.error("Failed to generate intent diff for failed validation", ex);
+            }
+            
+            call.getResponse().reject("Validation Failed: " + e.getMessage(), diff);
             return false;
         }
     }
@@ -252,13 +264,10 @@ public abstract class AbstractTextResourceWriteRenderer<T extends AbstractTextRe
 
         // 1. Validation check
         if (!validatePreFlight()) {
-            //renderError(call.getResponse().getErrors());
             return true;
         }
         
         Resource resource = agiPanel.getAgi().getResourceManager().get(update.getResourceUuid());
-                
-
         ToolExecutionStatus status = call.getResponse().getStatus();
 
         // 2. Stability check: if the incoming update AND status are the same as what we just rendered
@@ -267,7 +276,6 @@ public abstract class AbstractTextResourceWriteRenderer<T extends AbstractTextRe
         }
 
         try {
-            
             String currentOnDisk = resource.asText();
             boolean isPending = status == ToolExecutionStatus.PENDING;
 
@@ -432,7 +440,7 @@ public abstract class AbstractTextResourceWriteRenderer<T extends AbstractTextRe
     /**
      * Creates the top header panel containing the file link and annotation toggle.
      * 
-     * @param path The absolute path to the file.
+     * @param resource The managed resource.
      * @param comments The list of comments for line jumping.
      * @param toggle The checkbox used to toggle AI comments.
      * @param status The current execution status of the tool.
@@ -442,27 +450,24 @@ public abstract class AbstractTextResourceWriteRenderer<T extends AbstractTextRe
         JPanel panel = new JPanel(new BorderLayout());
         JPanel topRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
         
-        
         JLabel htmlDisplayName = new JLabel(resource.getHtmlDisplayName());
         htmlDisplayName.setToolTipText(resource.getHandle().getUri().toString());
         htmlDisplayName.setOpaque(false);
         
         if (resource.getHandle() instanceof NbHandle nbh) {
-                FileObject fo = nbh.getFileObject();
-                if (fo != null) {
-                    try {
-                        DataObject dobj = DataObject.find(fo);
-                        Image img = dobj.getNodeDelegate().getIcon(java.beans.BeanInfo.ICON_COLOR_16x16);
-                        if (img != null) {
-                            htmlDisplayName.setIcon(ImageUtilities.image2Icon(img));
-                        }
-                    } catch (Exception e) {
-                        // FIXED: Elevated to warn for visibility, but kept concise.
-                        log.warn("Failed to resolve live icon for resource: {} ({})", resource, e.getMessage());
+            FileObject fo = nbh.getFileObject();
+            if (fo != null) {
+                try {
+                    DataObject dobj = DataObject.find(fo);
+                    Image img = dobj.getNodeDelegate().getIcon(java.beans.BeanInfo.ICON_COLOR_16x16);
+                    if (img != null) {
+                        htmlDisplayName.setIcon(ImageUtilities.image2Icon(img));
                     }
+                } catch (Exception e) {
+                    log.warn("Failed to resolve live icon for resource: {} ({})", resource, e.getMessage());
                 }
             }
-        
+        }
 
         toggle.addActionListener(e -> {
             if (layerUI != null) {
@@ -531,8 +536,7 @@ public abstract class AbstractTextResourceWriteRenderer<T extends AbstractTextRe
 
     /**
      * Injects custom client properties into the NetBeans component tree.
-     * Specifically, it enables the "diff_merger" system. The unified scrolling 
-     * logic is now handled by the JLayer's LayerUI.
+     * Specifically, it enables the "diff_merger" system.
      * 
      * @param c The component to start the configuration from.
      */

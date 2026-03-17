@@ -56,6 +56,16 @@ public abstract class AbstractTextResourceWrite {
         this.lastModified = lastModified;
     }
 
+
+    /**
+     * Calculates the resulting content of the resource if this operation were applied.
+     * 
+     * @param currentContent The current content of the resource.
+     * @return The resulting content.
+     * @throws Exception if the calculation fails.
+     */
+    public abstract String calculateResultingContent(String currentContent) throws Exception;
+
     /**
      * Performs pre-flight validation of the update operation against the V2 resource context.
      * 

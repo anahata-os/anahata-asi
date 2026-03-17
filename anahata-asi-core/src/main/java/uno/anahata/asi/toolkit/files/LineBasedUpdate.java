@@ -20,7 +20,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Schema(description = "Represents a line-based update operation.")
+@Schema(description = "Represents a line-based update operation that can insert, delete or replace a a single line or a range of lines.")
 public class LineBasedUpdate {
     /**
      * The 1-based start line number.

@@ -21,6 +21,8 @@ import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.AiToolParam;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.resource.ResourceManager;
+import uno.anahata.asi.internal.AnahataDiffUtils;
+import uno.anahata.asi.toolkit.files.AbstractTextResourceWrite;
 import uno.anahata.asi.toolkit.files.FullTextFileCreate;
 import uno.anahata.asi.toolkit.files.FullTextResourceUpdate;
 import uno.anahata.asi.toolkit.files.TextResourceReplacements;
@@ -176,21 +178,30 @@ public class Resources extends AnahataToolkit {
     }
 
     /**
-     * Updates an existing text file with full new content.
+     * Updates an existing text file using full content replacement.
      *
      * @param update The update DTO.
+     * @return A standard unified diff of the changes applied.
      * @throws Exception if the update fails.
      */
-    @AiTool("Updates an existing text file using full content replacement.")
-    public void updateTextResource(@AiToolParam("The update details.") FullTextResourceUpdate update) throws Exception {
-        update.validate(getAgi());
+    @AiTool("Updates an existing text file using full content replacement. Returns a standard unified diff of the changes applied.")
+    public String updateTextResource(@AiToolParam("The update details.") FullTextResourceUpdate update) throws Exception {
+        try {
+            update.validate(getAgi());
 
-        Resource res = getAgi().getResourceManager().getResources().get(update.getResourceUuid());
-        if (res != null) {
-            // SINGULAR ENTRY POINT: The Resource orchestrator now manages both 
-            // connectivity (disk write) and state (dirty marking).
-            res.write(update.getNewContent());
-            log("Updated text file: " + res.getName());
+            Resource res = getAgi().getResourceManager().getResources().get(update.getResourceUuid());
+            if (res != null) {
+                String original = res.asText();
+                String revised = update.getNewContent();
+                
+                res.write(revised);
+                log("Updated text file: " + res.getName());
+                
+                return AnahataDiffUtils.generateUnifiedDiff(res.getName(), original, revised);
+            }
+            return "";
+        } catch (Exception e) {
+            throw wrapWithDiff(update, e);
         }
     }
 
@@ -198,21 +209,27 @@ public class Resources extends AnahataToolkit {
      * Performs surgical text replacements in an existing file.
      *
      * @param replacements The replacements DTO.
+     * @return A standard unified diff of the changes applied.
      * @throws Exception if replacements fail.
      */
-    @AiTool("Performs multiple text replacements in a textresource. Discouraged for sourc code files or multiline replacements.")
-    public void findAndReplaceInTextResource(@AiToolParam("The set of replacements.") TextResourceReplacements replacements) throws Exception {
-        replacements.validate(getAgi());
+    @AiTool("Performs multiple text replacements in a text resource. Returns a standard unified diff of the changes applied.")
+    public String findAndReplaceInTextResource(@AiToolParam("The set of replacements.") TextResourceReplacements replacements) throws Exception {
+        try {
+            replacements.validate(getAgi());
 
-        Resource res = getAgi().getResourceManager().getResources().get(replacements.getResourceUuid());
-        if (res != null) {
-            String content = res.asText();
-            String updated = replacements.performReplacements(content);
+            Resource res = getAgi().getResourceManager().getResources().get(replacements.getResourceUuid());
+            if (res != null) {
+                String original = res.asText();
+                String revised = replacements.performReplacements(original);
 
-            // SINGULAR ENTRY POINT: Management through the orchestrator API.
-            res.write(updated);
-
-            log("Performed replacements in: " + res.getName());
+                res.write(revised);
+                log("Performed replacements in: " + res.getName());
+                
+                return AnahataDiffUtils.generateUnifiedDiff(res.getName(), original, revised);
+            }
+            return "";
+        } catch (Exception e) {
+            throw wrapWithDiff(replacements, e);
         }
     }
 
@@ -220,22 +237,51 @@ public class Resources extends AnahataToolkit {
      * Performs line-based replacements in an existing file.
      *
      * @param replacements The line replacements DTO.
+     * @return A standard unified diff of the changes applied.
      * @throws Exception if replacements fail.
      */
-    @AiTool("Performs multiple line-based updates in a file. It's strictly line-number based, not git-diff style.")
-    public void updateLinesInTextResource(@AiToolParam("The line-number based updates for the given resource.") TextResourceLineBasedUpdates replacements) throws Exception {
-        replacements.validate(getAgi());
+    @AiTool("Performs multiple line-based updates in a file. Returns a standard unified diff of the changes applied.")
+    public String updateLinesInTextResource(@AiToolParam("The line-number based updates for the given resource.") TextResourceLineBasedUpdates replacements) throws Exception {
+        try {
+            replacements.validate(getAgi());
 
-        Resource res = getAgi().getResourceManager().getResources().get(replacements.getResourceUuid());
-        if (res != null) {
+            Resource res = getAgi().getResourceManager().getResources().get(replacements.getResourceUuid());
+            if (res != null) {
+                String original = res.asText();
+                String revised = replacements.performUpdates(original);
 
-            String content = res.asText();
-            String updated = replacements.performUpdates(content);
-
-            res.write(updated);
-
-            log("Performed replacements in: " + res.getName());
+                res.write(revised);
+                log("Performed replacements in: " + res.getName());
+                
+                return AnahataDiffUtils.generateUnifiedDiff(res.getName(), original, revised);
+            }
+            return "";
+        } catch (Exception e) {
+            throw wrapWithDiff(replacements, e);
         }
+    }
 
+    /**
+     * Helper to wrap exceptions with a unified diff of the failed intent.
+     * 
+     * @param update The update operation.
+     * @param e The original exception.
+     * @return A new exception enriched with diff context.
+     */
+    private Exception wrapWithDiff(AbstractTextResourceWrite update, Exception e) {
+        try {
+            Resource res = getAgi().getResourceManager().getResources().get(update.getResourceUuid());
+            if (res != null) {
+                String current = res.asText();
+                String proposed = update.calculateResultingContent(current);
+                String diff = AnahataDiffUtils.generateUnifiedDiff(res.getName(), current, proposed);
+                if (!diff.isBlank()) {
+                    return new AiToolException(e.getMessage() + "\n\nProposed Diff (Not Applied):\n" + diff, e);
+                }
+            }
+        } catch (Exception inner) {
+            log.error("Failed to generate intent diff for error context", inner);
+        }
+        return e;
     }
 }

@@ -47,6 +47,12 @@ public class FullTextResourceUpdate extends AbstractTextResourceWrite {
 
     /** {@inheritDoc} */
     @Override
+    public String calculateResultingContent(String currentContent) throws Exception {
+        return newContent;
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public void validate(Agi agi) throws Exception {
         super.validate(agi);
         

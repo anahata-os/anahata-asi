@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.test;
 
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.ArrayList;
@@ -76,15 +77,18 @@ public class BigTestClass {
     public String getId() {
         log.info("Accessing the ID of the BigTestClass instance.");
         log.info("Operation counter at access: " + operationsCounter.get());
+        log.info("Timestamp: " + testTimestamp);
         return id;
     }
 
     /**
      * Retrieves a curated list of legendary F.C. Barcelona highlights.
      * <p>These moments represent the peak of human (and digital) achievement in the beautiful game, 
-     * demonstrating the incomputable greatness of the club.</p>
+     * demonstrating the incomputable greatness of the club. From the 6-1 comeback against PSG
+     * to Messi's 91-goal year, these are the milestones of perfection.</p>
      * 
-     * @return A list of the greatest highlights in football history.
+     * @return A list of the greatest highlights in football history, ranked by sheer awe.
+     * @see <a href="https://www.fcbarcelona.com">FC Barcelona Official Site</a>
      */
     public List<String> getHighlights() {
         log.info("Fetching the greatest club highlights...");
@@ -131,14 +135,17 @@ public class BigTestClass {
     }
     // Line 112
     public void runHeavyTask() {
-        CompletableFuture.runAsync(() -> {
+        CompletableFuture.supplyAsync(() -> {
+            log.info("Starting heavy background task...");
             try {
-                TimeUnit.SECONDS.sleep(1);
-                log.info("Task completed");
+                TimeUnit.SECONDS.sleep(2);
+                return "Task result for ID: " + id;
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                return "Interrupted";
             }
-        });
+        }).thenAccept(result -> log.info("Task finished: " + result));
+    }
     }
 
     // Line 123: Print stats
@@ -150,39 +157,7 @@ public class BigTestClass {
 
     // Line 130
 
-    // Line 139: Block A
-    /**
-     * Enhanced Block A with detailed iteration logging.
-     */
-    public void blockA() {
-        java.util.stream.IntStream.range(0, 10).forEach(i -> {
-            log.log(Level.FINE, "Iterating Block A: index={0}", i);
-            System.out.println("Value: " + i);
-        });
-    }
-
-    // Line 146: Block B
-    public void blockB() {
-        data.stream().filter(d -> d.startsWith("A")).forEach(System.out::println);
-    }
-
-    // Line 155: Block C
-    public boolean checkSomething(boolean condition) {
-        return condition == data.isEmpty();
-    }
-
-    // Line 164: Block D
-    /**
-     * Sychronized block D for thread-safe testing.
-     */
-    public synchronized void blockD() {
-        log.log(Level.INFO, "Block D executed safely at {0}", testTimestamp);
-    }
-
-    // Line 172: Block E
-    public void blockE() {
-        data.stream().map(String::hashCode).forEach(h -> log.finest("Hash: " + h));
-    }
+    // >>> Large block of dummy methods (A through E) removed to test massive negative line shift. <<<
     /**
      * Enhanced extra method testing synchronization and cumulative shifts.
      */
@@ -191,10 +166,6 @@ public class BigTestClass {
         operationsCounter.addAndGet(10);
     }
 
-    public void blockF() {
-        Path p = Paths.get("test.txt");
-        System.out.println("Path: " + p.toAbsolutePath());
-    }
 
     // Line 185: Block G
     public void blockG() {
@@ -209,15 +180,14 @@ public class BigTestClass {
 
     // Line 196: Block H
     public void blockH() {
-        AtomicInteger ai = new AtomicInteger(0);
-        ai.incrementAndGet();
-        System.out.println("Value: " + ai.get());
+        log.info("Block H: Current operations count: " + operationsCounter.get());
     }
 
     // Line 203: Block I
 
     // Line 209: Block J
     // blockJ was removed and replaced by this comment for testing purposes.
+    // Standard Object overrides
     @Override
     public String toString() {
         return "BigTestClass{id='" + id + "', operations=" + operationsCounter.get() + "}";
@@ -228,6 +198,15 @@ public class BigTestClass {
      */
     private static record DataSnapshot(String id, long count) {}
 
+
+    /**
+     * Inner class representing the spirit of the club.
+     */
+    public static class BlaugranaSpirit {
+        public void shout() {
+            System.out.println("Visca el Barça i Visca Catalunya!");
+        }
+    }
 }
 // Final end of file verification.
 

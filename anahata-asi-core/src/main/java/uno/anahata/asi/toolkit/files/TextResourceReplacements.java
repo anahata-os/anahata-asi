@@ -66,6 +66,12 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
         return newContent;
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public String calculateResultingContent(String currentContent) throws Exception {
+        return performReplacements(currentContent);
+    }
+
     /** {@inheritDoc} 
      * Validates the replacements against the current state of the resource handle.
      */
