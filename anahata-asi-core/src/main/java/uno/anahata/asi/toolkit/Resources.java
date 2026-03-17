@@ -184,20 +184,24 @@ public class Resources extends AnahataToolkit {
      * @return A standard unified diff of the changes applied.
      * @throws Exception if the update fails.
      */
-    @AiTool("Updates an existing text file using full content replacement.")
-    public void updateTextResource(@AiToolParam("The update details.") FullTextResourceUpdate update) throws Exception {
+    @AiTool("Updates an existing text file using full content replacement. Returns a standard unified diff of the changes applied.")
+    public String updateTextResource(@AiToolParam("The update details.") FullTextResourceUpdate update) throws Exception {
+        try {
+            update.validate(getAgi());
 
-        update.validate(getAgi());
+            Resource res = getAgi().getResourceManager().getResources().get(update.getResourceUuid());
+            if (res != null) {
+                String original = res.asText();
+                update.setOriginalContent(original);
+                String revised = update.getNewContent();
 
-        Resource res = getAgi().getResourceManager().getResources().get(update.getResourceUuid());
-        if (res != null) {
-            String original = res.asText();
-            update.setOriginalContent(original);
-            String revised = update.getNewContent();
-
-            res.write(revised);
-            log("Updated text file: " + res.getName());
-
+                res.write(revised);
+                log("Updated text file: " + res.getName());
+                return AnahataDiffUtils.generateUnifiedDiff(res.getName(), original, revised);
+            }
+            return "";
+        } catch (Exception e) {
+            throw wrapWithDiff(update, e);
         }
     }
 
