@@ -473,7 +473,7 @@ public class InputPanel extends JPanel {
      */
     private void updateSendButtonState() {
         AgiStatus status = agi.getStatusManager().getCurrentStatus();
-        boolean isApiActive = status == AgiStatus.API_CALL_IN_PROGRESS || status == AgiStatus.WAITING_WITH_BACKOFF;
+        boolean isApiActive = status == AgiStatus.AWAKENING_KUNDALINI || status == AgiStatus.API_CALL_IN_PROGRESS || status == AgiStatus.WAITING_WITH_BACKOFF;
         stopButton.setVisible(isApiActive);
         stopButton.setEnabled(isApiActive);
         boolean canSend = status != AgiStatus.CANDIDATE_CHOICE_PROMPT;
