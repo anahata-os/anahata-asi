@@ -57,6 +57,7 @@ public class Resources extends AnahataToolkit {
                 + "1. **Context Integrity**: Only modify resources currently in context. Always use the `lastModified` timestamp from the LATEST RAG message.\n"
                 + "2. **Line Reference**: Line numbers are 1-based and must be verified against the RAG message before every call.\n"
                 + "3. **Reasoning**: Always provide a meaningful `reason` for each replacement; it will be displayed as an AI comment in the UI.\n"
+                + "4. **Updating text resources**: All update text resource methods flush the new content to disk inmediatly if EXECUTED and no changes are written to disk otherwise. Remember the Rag Message gets generated after all tool execution and it will reflect the changes of any successfully executed updates for LIVE resources.\n"
         );
     }
 
