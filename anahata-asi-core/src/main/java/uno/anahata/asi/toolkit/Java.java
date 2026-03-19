@@ -95,7 +95,7 @@ public class Java extends AnahataToolkit {
     public List<String> getSystemInstructions() throws Exception {
         StringBuilder sb = new StringBuilder();
         sb.append(" Java Toolkit Instructions: \n");
-        sb.append("When using `compileAndExecute`, your class should be **public**, named **Anahata**, extend `" + AgiTool.class.getName() + "`, have no package declaration and implement the call method of Callable<Object>. ");
+        sb.append("When using `compileAndExecute`, your class should be **public**, named **Anahata**, extend `" + getConcreteClassModelShouldExtend().getName() + "`, have no package declaration and implement the call() method of " + Callable.class.getName()+ "<Object>. ");
         sb.append("This provides the following helper methods for a rich, context-aware execution:\n\n");
 
         sb.append(" Available Methods that you can use within the code you write:\n");

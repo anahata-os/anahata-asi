@@ -188,10 +188,10 @@ public class FullTextFileCreateRenderer implements ParameterRenderer<FullTextFil
      */
     private void initViewer() {
         File f = new File(value.getPath());
-        String lang = agiPanel.getAgiConfig().getEditorKitProvider().getLanguageForFile(f.getName());
         
         // We use a StringHandle to support streaming and safe editing without disk side-effects
-        this.ephemeralHandle = new StringHandle(f.getName(), "text/x-" + lang, value.getContent());
+        // Cero Hardcoding: NetBeans will detect the kit from the extension (f.getName())
+        this.ephemeralHandle = new StringHandle(f.getName(), value.getContent());
         Resource ephemeral = new Resource(ephemeralHandle);
         
         ResourceUI strategy = ResourceUiRegistry.getInstance().getResourceUI();

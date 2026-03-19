@@ -30,9 +30,6 @@ public class StringHandle extends AbstractResourceHandle {
     /** The display name of the snippet. */
     @Getter
     private final String name;
-    /** The MIME type of the snippet. */
-    @Getter
-    private final String mimeType;
     
     /** The actual text content held in memory. */
     @Getter
@@ -45,13 +42,11 @@ public class StringHandle extends AbstractResourceHandle {
     /**
      * Constructs a new StringHandle.
      * @param name The display name (e.g., "proposed.java").
-     * @param mimeType The MIME type for interpreter selection.
      * @param content The initial text content.
      */
     @SneakyThrows
-    public StringHandle(String name, String mimeType, String content) {
+    public StringHandle(String name, String content) {
         this.name = name;
-        this.mimeType = mimeType;
         this.content = content;
         this.uri = URI.create("mem:///" + URLEncoder.encode(name, "UTF-8"));
     }
@@ -120,23 +115,21 @@ public class StringHandle extends AbstractResourceHandle {
     }
 
     /**
-     * Authoritatively resolves a standard MIME type for the given language identifier.
-     * <p>
-     * <b>Technical Purity:</b> Maps 'text' to 'text/plain', 'json' to 'application/json', 
-     * and uses the standard 'text/x-[lang]' prefix for all other IDE-supported languages.
-     * </p>
-     * 
-     * @param lang The language identifier (e.g., 'java', 'python').
-     * @return The standard MIME type string.
+     * {@inheritDoc} 
+     * <p>Memory handles are always considered textual in the current platform version.</p>
      */
-    public static String resolveMimeType(String lang) {
-        if (lang == null || lang.isBlank() || lang.equalsIgnoreCase("text")) {
-            return "text/plain";
-        }
-        if (lang.equalsIgnoreCase("json")) {
-            return "application/json";
-        }
-        // NetBeans and RSyntax generally prefer the x- prefix for specific languages
-        return "text/x-" + lang.toLowerCase();
+    @Override
+    public boolean isTextual() {
+        return true;
+    }
+
+    /**
+     * {@inheritDoc} 
+     * <p>Memory handles default to text/plain. The viewer is responsible for 
+     * environment-specific language detection via the resource name.</p>
+     */
+    @Override
+    public String getMimeType() {
+        return "text/plain";
     }
 }

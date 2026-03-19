@@ -1,5 +1,6 @@
 /*
  * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
+ *
  */
 package uno.anahata.asi.swing.agi.message.part.text;
 
@@ -195,8 +196,9 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
      * </p>
      */
     protected void initViewer() {
-        // THE UNIVERSAL WAY: Wrap in virtual resource and ask Registry
-        StringHandle handle = new StringHandle("snippet." + language, "text/x-" + language, currentContent);
+        // THE UNIVERSAL WAY: Wrap in virtual resource and ask Registry.
+        // CERO HARDCODING: Mimes are resolved by the viewer based on name.
+        StringHandle handle = new StringHandle("snippet." + language, currentContent);
         Resource ephemeral = new Resource(handle);
         
         try {

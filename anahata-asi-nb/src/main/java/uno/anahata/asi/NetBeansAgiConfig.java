@@ -1,8 +1,7 @@
-/* Licensed under the Apache License, Version 2.0 */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi;
 
 import uno.anahata.asi.gemini.GeminiAgiProvider;
-import uno.anahata.asi.nb.mine.NetBeansEditorKitProvider;
 import uno.anahata.asi.nb.mine.NetBeansIconProvider;
 import uno.anahata.asi.nb.tools.Refactor;
 
@@ -34,7 +33,6 @@ import uno.anahata.asi.swing.toolkit.SwingJava;
 public class NetBeansAgiConfig extends SwingAgiConfig {
 
     {
-        
         // Replace core Java with NbJava
         getToolClasses().remove(SwingJava.class);
         getToolClasses().add(NbJava.class);
@@ -49,7 +47,6 @@ public class NetBeansAgiConfig extends SwingAgiConfig {
         getToolClasses().add(Host.class);
         getToolClasses().add(Screens.class);
         
-        setEditorKitProvider(new NetBeansEditorKitProvider());
         setIconProvider(new NetBeansIconProvider());
         getProviderClasses().add(GeminiAgiProvider.class);
     }

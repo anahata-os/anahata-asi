@@ -15,7 +15,6 @@ import uno.anahata.asi.agi.tool.ToolPermission;
 import uno.anahata.asi.agi.status.AgiStatus;
 import uno.anahata.asi.swing.agi.message.part.tool.param.FullTextFileCreateRenderer;
 import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory;
-import uno.anahata.asi.swing.agi.render.editorkit.EditorKitProvider;
 import uno.anahata.asi.swing.icons.IconProvider;
 import uno.anahata.asi.swing.toolkit.Screens;
 import uno.anahata.asi.swing.toolkit.SwingJava;
@@ -36,12 +35,6 @@ public class SwingAgiConfig extends AgiConfig {
     static {
         ParameterRendererFactory.register(FullTextFileCreate.class, FullTextFileCreateRenderer.class);
     }
-    
-    /** 
-     * The provider for NetBeans-specific editor kits, used to render code blocks 
-     * with the appropriate syntax highlighting. 
-     */
-    private EditorKitProvider editorKitProvider;
     
     /** 
      * The provider for context-related icons, used to visually distinguish between 

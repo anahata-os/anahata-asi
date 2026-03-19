@@ -74,10 +74,9 @@ public class ObjectToStringParameterRenderer implements ParameterRenderer<Object
         
         // 1. Resolve Purity: Convert object to string using authoritative utility
         String content = TextUtils.resolveContentString(value);
-        String mimeType = StringHandle.resolveMimeType(language);
         
-        // 2. Initialize High-Fidelity Sense
-        StringHandle handle = new StringHandle("param." + language, mimeType, content);
+        // 2. Initialize High-Fidelity Sense (Cero Hardcoding: names trigger host-specific detection)
+        StringHandle handle = new StringHandle("param." + language, content);
         Resource ephemeral = new Resource(handle);
         
         ResourceUI strategy = ResourceUiRegistry.getInstance().getResourceUI();

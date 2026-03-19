@@ -4,6 +4,7 @@ package uno.anahata.asi.nb.ui.resources;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Insets;
+import java.io.IOException;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JPanel;
@@ -15,8 +16,11 @@ import org.netbeans.editor.Utilities;
 import org.netbeans.modules.editor.NbEditorUI;
 import org.netbeans.modules.parsing.api.Source;
 import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
+import org.openide.filesystems.FileSystem;
 import org.openide.loaders.DataObject;
 import uno.anahata.asi.agi.resource.Resource;
+import uno.anahata.asi.agi.resource.handle.StringHandle;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
@@ -110,12 +114,23 @@ public class NetBeansTextResourceViewer extends AbstractTextResourceViewer {
      */
     private void initEditor() {
         try {
-            // 1. Authoritative MIME Sensing
-            String mime = resource.getMimeType();
+            // 1. Authoritative MIME Sensing (Soberanía del Entorno)
+            String mime = "text/plain";
+            FileObject efmFo = null; // Efemeral FileObject for snippets
+            
             if (resource.getHandle() instanceof NbHandle nbh) {
                 FileObject fo = nbh.getFileObject();
                 if (fo != null) {
                     mime = fo.getMIMEType();
+                }
+            } else if (resource.getHandle() instanceof StringHandle) {
+                // Sonda de Memoria: le preguntamos a NetBeans qué kit usaría para este nombre
+                try {
+                    FileSystem memFS = FileUtil.createMemoryFileSystem();
+                    efmFo = memFS.getRoot().createData(resource.getName());
+                    mime = efmFo.getMIMEType();
+                } catch (IOException ex) {
+                    log.warn("Mime probe failed for snippet: {}. Defaulting to text/plain.", resource.getName());
                 }
             }
 
@@ -129,18 +144,20 @@ public class NetBeansTextResourceViewer extends AbstractTextResourceViewer {
             editor.putClientProperty("scroll-past-end", Boolean.FALSE);
             editor.setMargin(new Insets(0, 0, 0, 0));
             
-            // 3. Document Identity Binding
+            // 3. Document Identity Binding (Total Adoption)
             Document doc = editor.getDocument();
             doc.putProperty("mimeType", mime);
-            if (resource.getHandle() instanceof NbHandle nbh) {
-                FileObject fo = nbh.getFileObject();
-                if (fo != null) {
-                    try {
-                        DataObject dobj = DataObject.find(fo);
-                        doc.putProperty(Document.StreamDescriptionProperty, dobj);
-                    } catch (Exception ex) {
-                        log.warn("Failed to find DataObject for: {}", resource.getName());
-                    }
+            
+            FileObject finalFo = (efmFo != null) ? efmFo : 
+                                 (resource.getHandle() instanceof NbHandle nbh ? nbh.getFileObject() : null);
+            
+            if (finalFo != null) {
+                try {
+                    DataObject dobj = DataObject.find(finalFo);
+                    // This is the key for full high-fidelity: bind the document to an IDE DataObject
+                    doc.putProperty(Document.StreamDescriptionProperty, dobj);
+                } catch (Exception ex) {
+                    log.warn("Failed to find DataObject for: {}", resource.getName());
                 }
             }
 
