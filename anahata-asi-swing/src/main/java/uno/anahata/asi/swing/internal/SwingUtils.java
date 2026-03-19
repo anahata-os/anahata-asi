@@ -33,9 +33,17 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
+import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
+import uno.anahata.asi.agi.resource.Resource;
+import uno.anahata.asi.agi.resource.handle.StringHandle;
+import uno.anahata.asi.swing.agi.resources.ResourceUI;
+import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
+import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.message.part.text.CodeBlockSegmentRenderer;
 import uno.anahata.asi.swing.agi.message.part.text.MermaidCodeBlockSegmentRenderer;
@@ -294,26 +302,39 @@ public class SwingUtils {
         } else {
             dialog = new JDialog((JFrame) null, title, Dialog.ModalityType.MODELESS);
         }
-
         dialog.setLayout(new BorderLayout());
         dialog.setPreferredSize(new Dimension(1000, 800));
 
-        // THE SINGULARITY PATH: Directly instantiate the renderer.
-        CodeBlockSegmentRenderer renderer;
+        // THE SINGULARITY PATH
         if ("mermaid".equalsIgnoreCase(language)) {
-            renderer = new MermaidCodeBlockSegmentRenderer(agiPanel, text, language);
+            MermaidCodeBlockSegmentRenderer renderer = new MermaidCodeBlockSegmentRenderer(agiPanel, text, language);
+            renderer.setVerticalScrollEnabled(true);
+            renderer.render();
+            dialog.add(renderer.getComponent(), BorderLayout.CENTER);
         } else {
-            renderer = new CodeBlockSegmentRenderer(agiPanel, text, language);
-        }
-        
-        // Dialogs require vertical scrolling for full navigation
-        renderer.setVerticalScrollEnabled(true);
-        renderer.render();
+            // Direct ResourceUI Rendering (High-fidelity and clutter-free for dialogs)
+            StringHandle handle = new StringHandle("popup." + language, text);
+            Resource resource = new Resource(handle);
+            try {
+                resource.reloadIfNeeded();
+            } catch (Exception ex) {
+                log.error("Failed to sense popup resource: {}", language, ex);
+            }
 
-        // THE ARCHITECTURAL FIX: Always use the renderer's own component (which contains 
-        // the high-fidelity container built by NetBeans) instead of extracting the 
-        // inner component and re-wrapping it.
-        dialog.add(renderer.getComponent(), BorderLayout.CENTER);
+            ResourceUI strategy = ResourceUiRegistry.getInstance().getResourceUI();
+            if (strategy != null) {
+                JComponent viewer = strategy.createContent(resource, agiPanel);
+                if (viewer instanceof AbstractTextResourceViewer atv) {
+                    atv.setToolbarVisible(true); // Integrated actions (Copy)
+                    atv.setReadOnly(true); // Strictly read-only for popups
+                    atv.setVerticalScrollEnabled(true); // Bidirectional navigation
+                    atv.setPreviewAsEditor(true); // High-fidelity snippet mode
+                }
+                dialog.add(viewer, BorderLayout.CENTER);
+            } else {
+                dialog.add(new JLabel("No ResourceUI strategy registered."), BorderLayout.CENTER);
+            }
+        }
 
         dialog.pack();
         dialog.setLocationRelativeTo(parent);
