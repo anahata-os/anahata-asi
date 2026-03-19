@@ -91,6 +91,8 @@ public class ContextPanel extends JPanel {
     
     /** Listener for resource changes to trigger tree refreshes. */
     private EdtPropertyChangeListener resourcesListener;
+    /** Flag to ensure initComponents is only called once. */
+    private boolean initialized = false;
 
     /**
      * Constructs a new ContextPanel.
@@ -486,7 +488,7 @@ public class ContextPanel extends JPanel {
             
             // 1. Capture current expansion state
             Set<TreePath> expandedPaths = getExpandedPaths();
-
+            
             // 2. Update Model
             if (structural) {
                 this.treeTableModel = new ContextTreeTableModel(agiPanel);
@@ -546,9 +548,6 @@ public class ContextPanel extends JPanel {
         agi.getExecutor().execute(() -> {
             try {
                 treeTableModel.refreshTokens();
-                SwingUtilities.invokeLater(() -> {
-                    treeTable.repaint();
-                });
             } catch (Exception e) {
                 log.error("Error refreshing context tokens", e);
             }
@@ -562,6 +561,10 @@ public class ContextPanel extends JPanel {
     @Override
     public void addNotify() {
         super.addNotify();
+        if (!initialized) {
+            initComponents();
+            initialized = true;
+        }
         refresh(true);
     }
 }

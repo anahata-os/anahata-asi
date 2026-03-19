@@ -4,38 +4,38 @@
 package uno.anahata.asi.swing.agi.context;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.util.ArrayList;
 import java.util.List;
 import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JToggleButton;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.internal.JacksonUtils;
+import uno.anahata.asi.agi.resource.Resource;
+import uno.anahata.asi.agi.resource.handle.StringHandle;
+import uno.anahata.asi.swing.agi.resources.ResourceUI;
+import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
+import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
 import uno.anahata.asi.agi.provider.RequestConfig;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.agi.tool.spi.AbstractToolParameter;
 import uno.anahata.asi.agi.tool.ToolPermission;
-import uno.anahata.asi.swing.agi.context.ContextPanel;
-import uno.anahata.asi.swing.agi.message.part.text.CodeBlockSegmentRenderer;
 import uno.anahata.asi.swing.components.ScrollablePanel;
+import uno.anahata.asi.swing.components.AdjustingTabPane;
 
 /**
  * A panel that displays the details and controls for a specific {@link AbstractTool}.
  * <p>
- * It provides a tabbed view for inspecting the tool's parameters (one section per 
- * parameter), the return type schema, and the native declaration string.
+ * It provides a dynamic tabbed view for inspecting tool parameters, the return 
+ * type schema, and the native declaration string.
  * </p>
  *
  * @author anahata
@@ -45,25 +45,15 @@ public class ToolPanel extends ScrollablePanel {
 
     /** The parent context panel. */
     private final ContextPanel parentPanel;
-    /** The tabbed pane for schemas. */
-    private final JTabbedPane tabbedPane;
+    /** The specialized tabbed pane for schemas. */
+    private final AdjustingTabPane tabbedPane;
     
     /** Label for the tool name. */
     private final JLabel nameLabel;
     /** Label for the tool description. */
     private final JLabel descLabel;
-    /** Panel for permissions footer. */
-    private final JPanel footerPanel;
-    
-    /** Panel containing the list of parameter sections. */
-    private final JPanel paramsListPanel;
-    /** Renderer for the response schema. */
-    private final CodeBlockSegmentRenderer responseSchemaRenderer;
-    /** Renderer for the native provider declaration. */
-    private final CodeBlockSegmentRenderer nativeDeclarationRenderer;
-    
-    /** Cache of parameter renderers to avoid redundant creation. */
-    private final List<CodeBlockSegmentRenderer> paramRenderers = new ArrayList<>();
+    /** Panel for permission buttons in the header. */
+    private final JPanel permissionPanel;
 
     /**
      * Constructs a new ToolPanel.
@@ -77,7 +67,7 @@ public class ToolPanel extends ScrollablePanel {
         // Ensure the panel can be resized small enough to not squeeze the tree
         setMinimumSize(new Dimension(0, 0));
 
-        // Header Panel
+        // 1. Header Panel (Tool Details)
         JPanel headerPanel = new JPanel(new GridBagLayout());
         headerPanel.setBorder(BorderFactory.createTitledBorder("Tool Details"));
         
@@ -86,52 +76,29 @@ public class ToolPanel extends ScrollablePanel {
         gbc.gridy = 0;
         gbc.weightx = 1.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(4, 8, 4, 8);
+        gbc.insets = new Insets(4, 8, 2, 8);
 
         nameLabel = new JLabel();
-        nameLabel.setFont(nameLabel.getFont().deriveFont(java.awt.Font.BOLD, 14f));
+        nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD, 14f));
         headerPanel.add(nameLabel, gbc);
+        
+        // Permissions Group below the name
         gbc.gridy++;
+        gbc.insets = new Insets(2, 8, 2, 8);
+        permissionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        permissionPanel.setOpaque(false);
+        headerPanel.add(permissionPanel, gbc);
 
+        gbc.gridy++;
+        gbc.insets = new Insets(2, 8, 4, 8);
         descLabel = new JLabel();
         headerPanel.add(descLabel, gbc);
-        gbc.gridy++;
 
         add(headerPanel, BorderLayout.NORTH);
 
-        // Tabs for Schemas
-        tabbedPane = new JTabbedPane();
-        
-        paramsListPanel = new JPanel();
-        paramsListPanel.setLayout(new BoxLayout(paramsListPanel, BoxLayout.Y_AXIS));
-        paramsListPanel.setOpaque(false);
-        
-        responseSchemaRenderer = createJsonRenderer();
-        nativeDeclarationRenderer = createJsonRenderer();
-        
-        tabbedPane.addTab("Parameters", new JScrollPane(paramsListPanel));
-        tabbedPane.addTab("Response Schema", responseSchemaRenderer.getComponent());
-        tabbedPane.addTab("Native Declaration", nativeDeclarationRenderer.getComponent());
-        
+        // 2. Tabs Container (Center)
+        tabbedPane = new AdjustingTabPane(150);
         add(tabbedPane, BorderLayout.CENTER);
-
-        // Footer for Permissions
-        footerPanel = new JPanel(new BorderLayout());
-        footerPanel.setBorder(BorderFactory.createEmptyBorder(8, 0, 0, 0));
-        add(footerPanel, BorderLayout.SOUTH);
-    }
-
-    /**
-     * Creates a code block renderer configured for JSON.
-     * @return The configured renderer.
-     */
-    private CodeBlockSegmentRenderer createJsonRenderer() {
-        // THE SINGULARITY PATH: Directly instantiate the concrete worker.
-        CodeBlockSegmentRenderer renderer = new CodeBlockSegmentRenderer(parentPanel.getAgiPanel(), "", "json");
-        renderer.setEditable(false);
-        // Defer rendering to avoid layout races
-        javax.swing.SwingUtilities.invokeLater(renderer::render); 
-        return renderer;
     }
 
     /**
@@ -139,66 +106,77 @@ public class ToolPanel extends ScrollablePanel {
      * @param tool The selected tool.
      */
     public void setTool(AbstractTool<?, ?> tool) {
-        nameLabel.setText("Tool: " + tool.getName());
+        nameLabel.setText(tool.getName());
         descLabel.setText("<html>" + tool.getDescription().replace("\n", "<br>") + "</html>");
 
-        // 1. Update Parameters Tab
-        paramsListPanel.removeAll();
-        paramRenderers.clear();
+        // Update Permissions
+        permissionPanel.removeAll();
+        permissionPanel.add(createPermissionButtonGroup(tool));
+
+        // Rebuild Tabs
+        tabbedPane.removeAll();
         
+        // 1. Parameter Tabs
         List<? extends AbstractToolParameter> parameters = tool.getParameters();
-        if (parameters.isEmpty()) {
-            paramsListPanel.add(new JLabel("This tool has no parameters.", JLabel.CENTER));
-        } else {
-            for (AbstractToolParameter<?> param : parameters) {
-                paramsListPanel.add(createParameterSection(param));
-                paramsListPanel.add(Box.createVerticalStrut(10));
-            }
+        for (AbstractToolParameter<?> param : parameters) {
+            String title = (param.isRequired() ? "* " : "") + param.getName();
+            tabbedPane.addTab(title, createSchemaViewer(param.getName(), param.getJsonSchema()));
         }
-        paramsListPanel.add(Box.createVerticalGlue());
 
-        // 2. Update Response Schema
-        responseSchemaRenderer.updateContent(JacksonUtils.prettyPrintJsonString(tool.getResponseJsonSchema()));
-        responseSchemaRenderer.render(); // Refresh the view
+        // 2. Response Schema Tab (Disabled if method is void)
+        String responseSchema = tool.getResponseJsonSchema();
+        if (responseSchema == null || responseSchema.isBlank()) {
+            tabbedPane.addTab("Response Schema", new JPanel());
+            tabbedPane.setEnabledAt(tabbedPane.getTabCount() - 1, false);
+        } else {
+            tabbedPane.addTab("Response Schema", createSchemaViewer("response", responseSchema));
+        }
 
-        // 3. Update Native Declaration
+        // 3. Native Declaration Tab
         RequestConfig config = parentPanel.getAgi().getRequestConfig();
         String nativeJson = parentPanel.getAgi().getSelectedModel().getToolDeclarationJson(tool, config);
-        nativeDeclarationRenderer.updateContent(JacksonUtils.prettyPrintJsonString(nativeJson));
-        nativeDeclarationRenderer.render(); // Refresh the view
+        tabbedPane.addTab("Native Declaration", createSchemaViewer("native", nativeJson));
 
-        // 4. Update Permissions (Footer)
-        footerPanel.removeAll();
-        footerPanel.add(createPermissionButtonGroup(tool), BorderLayout.WEST);
-
+        tabbedPane.refresh();
         revalidate();
         repaint();
     }
 
     /**
-     * Creates a UI section for a single tool parameter.
-     * @param param The parameter to render.
-     * @return A JPanel containing the parameter's name and schema.
+     * Creates a high-fidelity viewer for a JSON schema.
+     * @param name The name for the ephemeral resource.
+     * @param json The JSON string to render.
+     * @return A JComponent (viewer) wrapped in a padded panel.
      */
-    private JPanel createParameterSection(AbstractToolParameter<?> param) {
-        JPanel section = new JPanel(new BorderLayout(5, 5));
-        section.setOpaque(false);
-        section.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)
-        ));
-
-        JLabel nameLabel = new JLabel(param.getName() + (param.isRequired() ? " (Required)" : " (Optional)"));
-        nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD));
-        section.add(nameLabel, BorderLayout.NORTH);
-
-        CodeBlockSegmentRenderer renderer = createJsonRenderer();
-        renderer.updateContent(JacksonUtils.prettyPrintJsonString(param.getJsonSchema()));
-        renderer.render();
-        section.add(renderer.getComponent(), BorderLayout.CENTER);
+    private JComponent createSchemaViewer(String name, String json) {
+        if (json == null) {
+            return new JLabel(" Error: No schema data provided.");
+        }
+        // Direct ResourceUI Rendering (High-fidelity and clutter-free)
+        String prettyJson = JacksonUtils.prettyPrintJsonString(json);
+        StringHandle handle = new StringHandle(name + ".json", prettyJson);
+        Resource ephemeral = new Resource(handle);
+        try { 
+            ephemeral.reloadIfNeeded(); 
+        } catch (Exception e) { 
+            log.error("Failed to reload ephemeral resource for {}", name, e); 
+        }
         
-        paramRenderers.add(renderer);
-        return section;
+        ResourceUI strategy = ResourceUiRegistry.getInstance().getResourceUI();
+        JComponent viewer = strategy.createContent(ephemeral, parentPanel.getAgiPanel());
+        if (viewer instanceof AbstractTextResourceViewer atv) {
+            atv.setToolbarVisible(false);
+            atv.setVerticalScrollEnabled(false);
+            atv.setPreviewAsEditor(true);
+        }
+        
+        // Add a small border for padding within the tab
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setOpaque(false);
+        wrapper.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        wrapper.add(viewer, BorderLayout.CENTER);
+        
+        return wrapper;
     }
 
     /**
@@ -207,31 +185,42 @@ public class ToolPanel extends ScrollablePanel {
      * @return A configured JPanel with the button group.
      */
     private JPanel createPermissionButtonGroup(AbstractTool<?, ?> tool) {
-        JPanel buttonPanel = new JPanel();
-        ButtonGroup group = new ButtonGroup();
+        JPanel groupPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        groupPanel.setOpaque(false);
+        
+        JLabel label = new JLabel("Permission: ");
+        label.setFont(label.getFont().deriveFont(Font.BOLD));
+        groupPanel.add(label);
 
+        ButtonGroup group = new ButtonGroup();
         JToggleButton promptButton = new JToggleButton("Prompt");
         JToggleButton alwaysButton = new JToggleButton("Always Allow");
         JToggleButton neverButton = new JToggleButton("Never Allow");
+
+        // Small styling
+        Font btnFont = promptButton.getFont().deriveFont(11f);
+        promptButton.setFont(btnFont);
+        alwaysButton.setFont(btnFont);
+        neverButton.setFont(btnFont);
 
         group.add(promptButton);
         group.add(alwaysButton);
         group.add(neverButton);
 
-        buttonPanel.add(promptButton);
-        buttonPanel.add(alwaysButton);
-        buttonPanel.add(neverButton);
+        groupPanel.add(promptButton);
+        groupPanel.add(alwaysButton);
+        groupPanel.add(neverButton);
 
         switch (tool.getPermission()) {
-            case APPROVE_ALWAYS: alwaysButton.setSelected(true); break;
-            case DENY_NEVER: neverButton.setSelected(true); break;
-            default: promptButton.setSelected(true); break;
+            case APPROVE_ALWAYS -> alwaysButton.setSelected(true);
+            case DENY_NEVER -> neverButton.setSelected(true);
+            default -> promptButton.setSelected(true);
         }
 
         promptButton.addActionListener(e -> { tool.setPermission(ToolPermission.PROMPT); parentPanel.refresh(false); });
         alwaysButton.addActionListener(e -> { tool.setPermission(ToolPermission.APPROVE_ALWAYS); parentPanel.refresh(false); });
         neverButton.addActionListener(e -> { tool.setPermission(ToolPermission.DENY_NEVER); parentPanel.refresh(false); });
 
-        return buttonPanel;
+        return groupPanel;
     }
 }

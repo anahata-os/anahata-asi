@@ -68,7 +68,7 @@ public class ContextTreeTableModel extends AbstractTreeTableModel {
     public void refreshTokens() {
         if (root instanceof AbstractContextNode<?> node) {
             node.refresh();
-            modelSupport.fireTreeStructureChanged(new TreePath(root));
+            javax.swing.SwingUtilities.invokeLater(() -> modelSupport.fireTreeStructureChanged(new TreePath(root)));
         }
     }
 
