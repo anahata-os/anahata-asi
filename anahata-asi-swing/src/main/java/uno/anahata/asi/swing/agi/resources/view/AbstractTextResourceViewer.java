@@ -308,18 +308,18 @@ public abstract class AbstractTextResourceViewer extends JPanel {
                 }
             }
             
-            Component leaf = SwingUtils.findComponentLeaf(scroll);
-            if (leaf instanceof JComponent jLeaf && jLeaf.getClientProperty("atrv.wheel.forwarder") == null) {
-                jLeaf.addMouseWheelListener(e -> {
-                    if (!verticalScrollEnabled) {
-                        SwingUtils.redispatchMouseWheelEvent(jLeaf, e);
-                        e.consume();
-                    }
-                });
-                jLeaf.putClientProperty("atrv.wheel.forwarder", Boolean.TRUE);
+            if (!verticalScrollEnabled) {
+                Component leaf = SwingUtils.findComponentLeaf(scroll);
+                if (leaf instanceof JComponent jLeaf && jLeaf.getClientProperty("atrv.wheel.forwarder") == null) {
+                    jLeaf.addMouseWheelListener(e -> {
+                        if (!verticalScrollEnabled) {
+                            SwingUtils.redispatchMouseWheelEvent(jLeaf, e);
+                            e.consume();
+                        }
+                    });
+                    jLeaf.putClientProperty("atrv.wheel.forwarder", Boolean.TRUE);
+                }
             }
-            
-            revalidate();
             repaint();
         }
     }
