@@ -11,7 +11,7 @@ import uno.anahata.asi.nb.tools.project.ProjectFile;
 import uno.anahata.asi.nb.tools.project.ProjectFiles;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.nb.tools.project.SourceFolder;
-import uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic2;
+import uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic;
 
 /**
  * Provides a real-time view of a project's file and folder structure.
@@ -74,7 +74,7 @@ public class ProjectFilesContextProvider extends BasicContextProvider {
         boolean old = isProviding();
         super.setProviding(enabled);
         if (old != enabled && parent instanceof ProjectContextProvider pcp) {
-            FilesContextActionLogic2.fireRefreshRecursive(pcp.getProject().getProjectDirectory());
+            FilesContextActionLogic.fireRefreshRecursive(pcp.getProject().getProjectDirectory());
         }
     }
 
