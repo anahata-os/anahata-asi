@@ -6,7 +6,7 @@ import uno.anahata.asi.agi.context.BasicContextProvider;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.nb.tools.project.context.ProjectContextProvider;
-import uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic2;
+import uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic;
 
 /**
  * Provides real-time diagnostics for a project, including Java compiler errors
@@ -96,7 +96,7 @@ public class ProjectAlertsContextProvider extends BasicContextProvider {
         boolean old = isProviding();
         super.setProviding(enabled);
         if (old != enabled && parent instanceof ProjectContextProvider pcp) {
-            FilesContextActionLogic2.fireRefreshRecursive(pcp.getProject().getProjectDirectory());
+            FilesContextActionLogic.fireRefreshRecursive(pcp.getProject().getProjectDirectory());
         }
     }
 }
