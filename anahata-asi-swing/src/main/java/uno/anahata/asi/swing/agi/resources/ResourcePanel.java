@@ -45,23 +45,27 @@ import uno.anahata.asi.swing.internal.SwingTask;
 /**
  * A specialized panel for managing and viewing a V2 {@link Resource}.
  * <p>
- * This panel acts as a high-level orchestrator and command-and-control center. 
- * It dynamically swaps specialized sub-panels for Handle and View metadata 
+ * This panel acts as a high-level orchestrator and command-and-control center.
+ * It dynamically swaps specialized sub-panels for Handle and View metadata
  * based on the resource type.
  * </p>
  * <p>
- * <b>Fidelity Stack:</b> This panel uses a dual AdjustingTabPane architecture 
+ * <b>Fidelity Stack:</b> This panel uses a dual AdjustingTabPane architecture
  * within a vertical BoxLayout to ensure a perfectly compact UI.
  * </p>
- * 
+ *
  * @author anahata
  */
 @Slf4j
 public class ResourcePanel extends ScrollablePanel {
 
-    /** The parent agi panel. */
+    /**
+     * The parent agi panel.
+     */
     private final AgiPanel agiPanel;
-    /** The resource currently being managed. */
+    /**
+     * The resource currently being managed.
+     */
     private Resource currentResource;
 
     // Global Header
@@ -74,36 +78,57 @@ public class ResourcePanel extends ScrollablePanel {
     private final JComboBox<ContextPosition> positionCombo;
     private final JComboBox<RefreshPolicy> policyCombo;
 
-    /** Container for handle-specific metadata panel. */
+    /**
+     * Container for handle-specific metadata panel.
+     */
     private final JPanel handleSectorContainer;
-    /** Container for view-specific metadata panel. */
+    /**
+     * Container for view-specific metadata panel.
+     */
     private final JPanel viewSectorContainer;
 
-    /** Container for the content component provided by the strategy. */
+    /**
+     * Container for the content component provided by the strategy.
+     */
     private final JPanel viewerContainer;
-    
-    /** The primary content component returned by the strategy. */
+
+    /**
+     * The primary content component returned by the strategy.
+     */
     private JComponent activeViewer;
-    /** The active strategy being used for the current resource. */
+    /**
+     * The active strategy being used for the current resource.
+     */
     private ResourceUI activeStrategy;
 
-    /** Tab panes for metadata and content. */
+    /**
+     * Tab pane for metadata.
+     */
     private final AdjustingTabPane metadataTabs;
+    
+    /**
+     * Tab pane for content.
+     */
     private final AdjustingTabPane contentTabs;
 
-    /** Guard flag to prevent feedback loops during UI synchronization. */
+    /**
+     * Guard flag to prevent feedback loops during UI synchronization.
+     */
     private boolean syncing = false;
 
-    /** Reactive listener for resource state changes. */
+    /**
+     * Reactive listener for resource state changes.
+     */
     private EdtPropertyChangeListener resourceListener;
 
     /**
      * Constructs a new ResourcePanel.
+     *
      * @param agiPanel The parent AgiPanel.
      */
     public ResourcePanel(AgiPanel agiPanel) {
         this.agiPanel = agiPanel;
-        
+
         setLayout(new BorderLayout());
         setOpaque(true);
         setBackground(javax.swing.UIManager.getColor("Panel.background"));
@@ -113,7 +138,7 @@ public class ResourcePanel extends ScrollablePanel {
         JPanel globalHeader = new JPanel(new BorderLayout());
         globalHeader.setOpaque(false);
         globalHeader.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        
+
         nameLabel = new JLabel("Resource");
         nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD, 18f));
         globalHeader.add(nameLabel, BorderLayout.WEST);
@@ -123,16 +148,16 @@ public class ResourcePanel extends ScrollablePanel {
         globalHeader.add(actionPanel, BorderLayout.EAST);
 
         // 2. METADATA TABS (Identity, Handle, View)
-        metadataTabs = new AdjustingTabPane(50); 
-        
+        metadataTabs = new AdjustingTabPane(50);
+
         // Identity Tab - Pure JGoodies Implementation
         JPanel identityTab = new JPanel();
         identityTab.setOpaque(false);
         identityTab.setBorder(BorderFactory.createTitledBorder(null, "Identity (Core Metadata)", TitledBorder.LEFT, TitledBorder.TOP, identityTab.getFont().deriveFont(Font.BOLD)));
 
         FormLayout idLayout = new FormLayout(
-            "pref, 6dlu, pref, 0:grow", // Cols: Label, Gap, Component, Pusher
-            "p, 3dlu, p, 3dlu, p, 3dlu, p" // Rows: UUID, Position, Policy, Providing
+                "pref, 6dlu, pref, 0:grow", // Cols: Label, Gap, Component, Pusher
+                "p, 3dlu, p, 3dlu, p, 3dlu, p" // Rows: UUID, Position, Policy, Providing
         );
         identityTab.setLayout(idLayout);
         CellConstraints cc = new CellConstraints();
@@ -145,9 +170,9 @@ public class ResourcePanel extends ScrollablePanel {
         // ROW 1: Position
         identityTab.add(new JLabel("Position:"), cc.xy(1, 3));
         positionCombo = new JComboBox<>(ContextPosition.values());
-        positionCombo.addActionListener(e -> { 
+        positionCombo.addActionListener(e -> {
             if (!syncing && currentResource != null) {
-                currentResource.setContextPosition((ContextPosition) positionCombo.getSelectedItem()); 
+                currentResource.setContextPosition((ContextPosition) positionCombo.getSelectedItem());
             }
         });
         identityTab.add(positionCombo, cc.xy(3, 3));
@@ -155,9 +180,9 @@ public class ResourcePanel extends ScrollablePanel {
         // ROW 2: Refresh Policy
         identityTab.add(new JLabel("Refresh Policy:"), cc.xy(1, 5));
         policyCombo = new JComboBox<>(RefreshPolicy.values());
-        policyCombo.addActionListener(e -> { 
+        policyCombo.addActionListener(e -> {
             if (!syncing && currentResource != null) {
-                currentResource.setRefreshPolicy((RefreshPolicy) policyCombo.getSelectedItem()); 
+                currentResource.setRefreshPolicy((RefreshPolicy) policyCombo.getSelectedItem());
             }
         });
         identityTab.add(policyCombo, cc.xy(3, 5));
@@ -165,13 +190,13 @@ public class ResourcePanel extends ScrollablePanel {
         // ROW 3: Providing Context
         providingBox = new JCheckBox("Providing Context");
         providingBox.setOpaque(false);
-        providingBox.addActionListener(e -> { 
+        providingBox.addActionListener(e -> {
             if (!syncing && currentResource != null) {
-                currentResource.setProviding(providingBox.isSelected()); 
+                currentResource.setProviding(providingBox.isSelected());
             }
         });
         identityTab.add(providingBox, cc.xyw(1, 7, 3));
-        
+
         metadataTabs.addTab("Identity", identityTab);
 
         handleSectorContainer = new JPanel(new BorderLayout());
@@ -183,8 +208,8 @@ public class ResourcePanel extends ScrollablePanel {
         metadataTabs.addTab("View", viewSectorContainer);
 
         // 3. CONTENT TABS (Capabilities, Model perspective (RAG))
-        contentTabs = new AdjustingTabPane(350); 
-        
+        contentTabs = new AdjustingTabPane(350);
+
         viewerContainer = new JPanel(new BorderLayout());
         viewerContainer.setOpaque(false);
 
@@ -192,13 +217,13 @@ public class ResourcePanel extends ScrollablePanel {
         JPanel contentStack = new JPanel();
         contentStack.setLayout(new BoxLayout(contentStack, BoxLayout.Y_AXIS));
         contentStack.setOpaque(false);
-        
+
         contentStack.add(globalHeader);
         contentStack.add(Box.createVerticalStrut(10));
         contentStack.add(metadataTabs);
         contentStack.add(Box.createVerticalStrut(15));
         contentStack.add(contentTabs);
-        
+
         // Final glue to push everything up
         contentStack.add(Box.createVerticalGlue());
 
@@ -209,8 +234,8 @@ public class ResourcePanel extends ScrollablePanel {
         JTextField f = new JTextField(35); // Long enough for UUID
         f.setEditable(false);
         f.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.LIGHT_GRAY),
-            BorderFactory.createEmptyBorder(2, 5, 2, 5)
+                BorderFactory.createLineBorder(Color.LIGHT_GRAY),
+                BorderFactory.createEmptyBorder(2, 5, 2, 5)
         ));
         f.setOpaque(true);
         f.setBackground(UIManager.getColor("TextField.inactiveBackground"));
@@ -222,7 +247,7 @@ public class ResourcePanel extends ScrollablePanel {
      */
     private void saveContent(String content) {
         new SwingTask<>(this, "Saving Resource", () -> {
-            log.info("Saving content to {}", currentResource );
+            log.info("Saving content to {}", currentResource);
             currentResource.write(content);
             currentResource.reloadIfNeeded();
             return null;
@@ -233,14 +258,15 @@ public class ResourcePanel extends ScrollablePanel {
 
     /**
      * Sets the resource to manage and initializes the dynamic viewer.
+     * @param res The one and only Anahata Resource
      */
     public void setResource(Resource res) {
         if (resourceListener != null) {
             resourceListener.unbind();
         }
-        
+
         this.currentResource = res;
-        
+
         // 1. Initial Cleanup
         viewerContainer.removeAll();
         actionPanel.removeAll();
@@ -268,7 +294,7 @@ public class ResourcePanel extends ScrollablePanel {
         }).execute();
 
         // 3. Show Placeholder
-        JLabel loadingLabel = new JLabel("Sensing Blaugrana Resource...", SwingConstants.CENTER);
+        JLabel loadingLabel = new JLabel("Sensing Resource...", SwingConstants.CENTER);
         loadingLabel.setFont(loadingLabel.getFont().deriveFont(Font.ITALIC, 16f));
         viewerContainer.add(loadingLabel, BorderLayout.CENTER);
         contentTabs.addTab("Capabilities", viewerContainer);
@@ -278,30 +304,33 @@ public class ResourcePanel extends ScrollablePanel {
      * Assemblies the specialized UI components using the host-aware strategy.
      */
     private void assembleResourceUI() {
-        if (currentResource == null) return;
-        
+        if (currentResource == null) {
+            return;
+        }
+
         viewerContainer.removeAll();
         this.activeStrategy = ResourceUiRegistry.getInstance().getResourceUI();
-        
+
         if (activeStrategy != null) {
             handleSectorContainer.removeAll();
             handleSectorContainer.add(activeStrategy.createHandlePanel(currentResource, agiPanel), BorderLayout.CENTER);
-            
+
             viewSectorContainer.removeAll();
             viewSectorContainer.add(activeStrategy.createViewPanel(currentResource, agiPanel), BorderLayout.CENTER);
-            
+
             this.activeViewer = activeStrategy.createContent(currentResource, agiPanel);
-            
+
             if (activeViewer instanceof AbstractTextResourceViewer atv) {
                 atv.setToolbarVisible(activeStrategy.canEdit(currentResource) && currentResource.isWritable());
                 atv.setVerticalScrollEnabled(false);
                 atv.setSaveAction(this::saveContent);
             }
-            
+
             viewerContainer.add(activeViewer, BorderLayout.CENTER);
+            actionPanel.removeAll();
             activeStrategy.populateActions(actionPanel, currentResource, agiPanel);
         }
-        
+
         syncUiWithResource();
     }
 
@@ -312,7 +341,7 @@ public class ResourcePanel extends ScrollablePanel {
         if (currentResource == null || syncing) {
             return;
         }
-        
+
         this.syncing = true;
         try {
             nameLabel.setText(currentResource.getName());
@@ -332,7 +361,7 @@ public class ResourcePanel extends ScrollablePanel {
         } finally {
             this.syncing = false;
         }
-        
+
         revalidate();
         repaint();
     }
@@ -343,7 +372,7 @@ public class ResourcePanel extends ScrollablePanel {
     private void updatePerspectives() {
         int selected = contentTabs.getSelectedIndex();
         boolean hasCapabilities = currentResource.getHandle().isTextual() || currentResource.getView() != null;
-        
+
         // ARCHITECTURAL STABILITY: We only rebuild if the tab count or composition changed 
         // to prevent losing reference to actively rendering components.
         int expectedCount = hasCapabilities ? 2 : 1;
@@ -358,11 +387,11 @@ public class ResourcePanel extends ScrollablePanel {
             int ragIndex = hasCapabilities ? 1 : 0;
             contentTabs.setComponentAt(ragIndex, createModelPerspectiveComponent());
         }
-        
+
         if (selected >= 0 && selected < contentTabs.getTabCount()) {
             contentTabs.setSelectedIndex(selected);
         }
-        
+
         contentTabs.refresh();
     }
 
