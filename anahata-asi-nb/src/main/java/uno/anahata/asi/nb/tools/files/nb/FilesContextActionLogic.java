@@ -33,9 +33,9 @@ import uno.anahata.asi.toolkit.Resources;
  * @author anahata
  */
 @Slf4j
-public class FilesContextActionLogic2 {
+public class FilesContextActionLogic {
 
-    private static final Logger LOG = Logger.getLogger(FilesContextActionLogic2.class.getName());
+    private static final Logger LOG = Logger.getLogger(FilesContextActionLogic.class.getName());
 
     /**
      * Adds a file or folder's contents to the specified agi context recursively.
