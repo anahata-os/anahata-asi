@@ -22,7 +22,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@Schema(description = "A set of semantic line edits (insertions, replacements, deletions) targeting absolute coordinates.")
+@Schema(description = "A set of semantic line edits (insertions, replacements, deletions) targeting 1-based line numbers on a resource in the RAG message.")
 public class TextResourceLineEdits extends AbstractTextResourceWrite {
 
     @Schema(description = "List of insertions (adding code without removal).")
