@@ -238,7 +238,7 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         if (!missingParams.isEmpty()) {
             String reason = "Tool call rejected: Missing required parameters: " + String.join(", ", missingParams);
             JavaMethodToolCall call = new JavaMethodToolCall(modelMessage, id, this, jsonArgs, jsonArgs);
-            call.getResponse().reject(reason);
+            call.getResponse().fail(reason);
             return call;
         }
 
@@ -258,7 +258,7 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
             log.error("Failed to convert arguments", e);
             String reason = "Tool call rejected: Failed to convert arguments. Error: " + e.getMessage();
             JavaMethodToolCall call = new JavaMethodToolCall(modelMessage, id, this, jsonArgs, jsonArgs);
-            call.getResponse().reject(reason);
+            call.getResponse().fail(reason);
             return call;
         }
 

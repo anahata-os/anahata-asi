@@ -186,13 +186,13 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
         if (toolkit != null && !toolkit.isEnabled()) {
             String reason = "Tool call rejected: The toolkit '" + toolkit.getName() + "' is disabled.";
             log.warn(reason);
-            call.getResponse().reject(reason);
+            call.getResponse().fail(reason);
         }
 
         if (tool.getPermission() == ToolPermission.DENY_NEVER) {
             String reason = "Tool call rejected: The tool '" + name + "' has a DENY_NEVER permission.";
             log.warn(reason);
-            call.getResponse().reject(reason);
+            call.getResponse().fail(reason);
         }
 
         return call;
