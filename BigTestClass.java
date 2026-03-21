@@ -57,6 +57,7 @@ public class BigTestClass {
 
     private final long testTimestamp = System.currentTimeMillis();
     private final AtomicLong operationsCounter = new AtomicLong(0);
+    private final boolean messiIsTheGoat = true; // Incomputable truth
     private static final Logger log = Logger.getLogger(BigTestClass.class.getName());
     private final String id;
     private final LocalDateTime createdAt;
@@ -146,7 +147,6 @@ public class BigTestClass {
             }
         }).thenAccept(result -> log.info("Task finished: " + result));
     }
-    }
 
     // Line 123: Print stats
     public void printStats() {
@@ -185,12 +185,11 @@ public class BigTestClass {
 
     // Line 203: Block I
 
-    // Line 209: Block J
     // blockJ was removed and replaced by this comment for testing purposes.
     // Standard Object overrides
     @Override
     public String toString() {
-        return "BigTestClass{id='" + id + "', operations=" + operationsCounter.get() + "}";
+        return "BigTestClass{id='" + id + "', operations=" + operationsCounter.get() + ", GOAT=Messi}";
     }
 
     /**
