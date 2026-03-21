@@ -25,7 +25,7 @@ import uno.anahata.asi.agi.Agi;
  * </p>
  * <p>
  * <b>V2 Migration:</b> This presenter authoritatively uses the 
- * {@link FilesContextActionLogic2} to interface with the V2 resource engine.
+ * {@link FilesContextActionLogic} to interface with the V2 resource engine.
  * </p>
  * 
  * @author anahata
@@ -86,7 +86,7 @@ public class AnahataContextActionPresenter extends AbstractAction implements Pre
             tc.requestActive();
             for (FileObject fo : files) {
                 // V2 MIGRATION
-                FilesContextActionLogic2.addRecursively(fo, newAgi, false);
+                FilesContextActionLogic.addRecursively(fo, newAgi, false);
             }
         });
         addMenu.add(newAgiItem);
@@ -97,7 +97,7 @@ public class AnahataContextActionPresenter extends AbstractAction implements Pre
             item.addActionListener(e -> {
                 for (FileObject fo : files) {
                     // V2 MIGRATION
-                    FilesContextActionLogic2.addRecursively(fo, agi, false);
+                    FilesContextActionLogic.addRecursively(fo, agi, false);
                 }
             });
             addMenu.add(item);
@@ -115,7 +115,7 @@ public class AnahataContextActionPresenter extends AbstractAction implements Pre
             boolean hasAny = false;
             for (FileObject fo : files) {
                 // V2 MIGRATION
-                if (FilesContextActionLogic2.isInContext(fo, agi)) {
+                if (FilesContextActionLogic.isInContext(fo, agi)) {
                     hasAny = true;
                     break;
                 }
@@ -126,7 +126,7 @@ public class AnahataContextActionPresenter extends AbstractAction implements Pre
                 item.addActionListener(e -> {
                     for (FileObject fo : files) {
                         // V2 MIGRATION
-                        FilesContextActionLogic2.removeRecursively(fo, agi, false);
+                        FilesContextActionLogic.removeRecursively(fo, agi, false);
                     }
                 });
                 removeMenu.add(item);
