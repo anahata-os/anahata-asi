@@ -209,7 +209,7 @@ public abstract class AbstractTextResourceWriteRenderer<T extends AbstractTextRe
                 log.error("Failed to generate intent diff for failed validation", ex);
             }
             
-            call.getResponse().reject("Validation Failed: " + e.getMessage(), diff);
+            call.getResponse().fail("Validation Failed: " + e.getMessage(), diff);
             return false;
         }
     }
