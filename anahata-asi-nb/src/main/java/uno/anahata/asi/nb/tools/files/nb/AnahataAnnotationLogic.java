@@ -26,7 +26,7 @@ import uno.anahata.asi.nb.tools.project.Projects;
  * </p>
  * <p>
  * <b>V2 Migration:</b> This class authoritatively uses the Universal Resource 
- * Pipeline (URP) via {@link FilesContextActionLogic2}.
+ * Pipeline (URP) via {@link FilesContextActionLogic}.
  * </p>
  * 
  * @author anahata
@@ -144,7 +144,7 @@ public class AnahataAnnotationLogic {
         } else {
             boolean recursive = (nodeType == NodeType.FOLDER);
             // V2 MIGRATION: Using the next-generation logic engine
-            Map<Agi, Integer> counts = FilesContextActionLogic2.getSessionFileCounts(res, recursive);
+            Map<Agi, Integer> counts = FilesContextActionLogic.getSessionFileCounts(res, recursive);
             for (Agi agi : activeAgis) {
                 totals.add(counts.getOrDefault(agi, 0));
             }
