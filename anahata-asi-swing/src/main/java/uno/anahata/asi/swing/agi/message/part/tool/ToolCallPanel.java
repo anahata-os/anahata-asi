@@ -244,8 +244,12 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         });
 
         declineButton = new JButton("Decline", new CancelIcon(16));
-        declineButton.setToolTipText("Set status to DECLINED");
-        declineButton.addActionListener(e -> getPart().getResponse().reject("Rejected by user"));
+        declineButton.setToolTipText("Set status to FAILED");
+        declineButton.addActionListener(e -> {
+            getPart().getResponse().fail("Rejected by user");
+            getPart().setExpanded(false);
+        });
+                ;
 
         revertButton = new JButton("Clear response", new DeleteIcon(16));
         revertButton.setToolTipText("Clear execution results, erros and logs and sets the status to DECLINED");
@@ -512,7 +516,12 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
      * the Agi's dedicated executor.
      */
     private void executeTool() {
-        agiPanel.getAgi().getExecutor().execute(() -> getPart().getResponse().execute());
+        agiPanel.getAgi().getExecutor().execute(() -> {
+            getPart().getResponse().execute();
+            if (getPart().getResponse().getStatus() == ToolExecutionStatus.EXECUTED) {
+                getPart().setExpanded(false);
+            }
+        });
     }
 
     /**
