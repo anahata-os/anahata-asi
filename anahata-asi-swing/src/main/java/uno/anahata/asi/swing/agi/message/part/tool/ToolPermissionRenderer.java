@@ -17,6 +17,12 @@ import uno.anahata.asi.swing.agi.SwingAgiConfig;
  */
 public class ToolPermissionRenderer extends DefaultListCellRenderer {
 
+    /** 
+     * {@inheritDoc} 
+     * <p>Implementation details: Renders the human-readable display value 
+     * and applies the color coding corresponding to the permission level 
+     * (e.g., Green for Always, Red for Never).</p>
+     */
     @Override
     public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         // For the JComboBox button (index == -1), we don't want the selection background
