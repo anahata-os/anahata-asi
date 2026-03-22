@@ -11,22 +11,34 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
-import javax.swing.Icon;
 
 /**
  * A programmatically drawn Icon representing a "Screenshot" action.
- * Stylized as a monitor using the Barça palette.
+ * <p>
+ * Stylized as a flat-screen monitor using the Barça palette (Blue screen, Red stand), 
+ * representing the capture and management of multimodal UI state.
+ * </p>
  *
  * @author anahata
  */
-public class ScreenshotIcon implements Icon {
+public class ScreenshotIcon extends AbstractAnahataIcon {
 
-    private final int size;
 
+    /**
+     * Constructs a new ScreenshotIcon with the specified size.
+     * @param size The size in pixels.
+     */
     public ScreenshotIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders a crisp monitor silhouette with a weighted base to symbolize 
+     * the capture of visual context.
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2d = (Graphics2D) g.create();
@@ -63,13 +75,4 @@ public class ScreenshotIcon implements Icon {
         g2d.dispose();
     }
 
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
-    }
 }

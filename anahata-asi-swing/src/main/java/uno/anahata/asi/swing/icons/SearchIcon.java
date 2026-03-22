@@ -9,22 +9,34 @@ import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import javax.swing.Icon;
 
 /**
  * A programmatically drawn search (magnifying glass) icon using the full Barça palette.
- * Features concentric Blue, Yellow, and Green circles.
+ * <p>
+ * Features concentric Blue, Yellow, and Green circles symbolizing deep inspection 
+ * and retrieval within the agentic context.
+ * </p>
  *
- * @author anahata-ai
+ * @author anahata
  */
-public class SearchIcon implements Icon {
+public class SearchIcon extends AbstractAnahataIcon {
 
-    private final int size;
 
+    /**
+     * Constructs a new SearchIcon with the specified size.
+     * @param size The size in pixels.
+     */
     public SearchIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders a multi-layered lens with a heavy handle to represent search 
+     * and inspection capabilities.
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2d = (Graphics2D) g.create();
@@ -70,13 +82,4 @@ public class SearchIcon implements Icon {
         g2d.dispose();
     }
 
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
-    }
 }

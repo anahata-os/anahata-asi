@@ -9,17 +9,16 @@ import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import javax.swing.Icon;
 
 /**
  * A programmatic Swing icon for tools, representing an executable function.
- * It draws a "play" symbol inside a circular border.
+ * <p>
+ * Stylized as a "play" symbol inside a circular border using Barça Blue.
+ * </p>
  * 
  * @author anahata
  */
-public class ToolIcon implements Icon {
-    /** The size of the icon in pixels. */
-    private final int size;
+public class ToolIcon extends AbstractAnahataIcon {
     /** The primary color of the icon. */
     private final Color color;
 
@@ -37,11 +36,16 @@ public class ToolIcon implements Icon {
      * @param color The color to use.
      */
     public ToolIcon(int size, Color color) {
-        this.size = size;
+        super(size);
         this.color = color;
     }
 
-    /** {@inheritDoc} */
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders the play symbol with a circular border to signify an executable tool.
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2 = (Graphics2D) g.create();
@@ -69,15 +73,4 @@ public class ToolIcon implements Icon {
         g2.dispose();
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public int getIconHeight() {
-        return size;
-    }
 }

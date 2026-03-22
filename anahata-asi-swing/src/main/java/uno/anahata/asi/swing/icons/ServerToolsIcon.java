@@ -11,22 +11,34 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
-import javax.swing.Icon;
 
 /**
  * A programmatically drawn Icon representing server-side tool execution.
- * Stylized as a dark rack server with multi-colored status LEDs.
+ * <p>
+ * Stylized as a dark rack server with multi-colored status LEDs, 
+ * representing powerful, remote agentic capabilities.
+ * </p>
  *
  * @author anahata
  */
-public class ServerToolsIcon implements Icon {
+public class ServerToolsIcon extends AbstractAnahataIcon {
 
-    private final int size;
 
+    /**
+     * Constructs a new ServerToolsIcon with the specified size.
+     * @param size The size in pixels.
+     */
     public ServerToolsIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders a rack server chassis with interactive status LEDs to signify 
+     * the state of remote tool execution.
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2d = (Graphics2D) g.create();
@@ -94,13 +106,4 @@ public class ServerToolsIcon implements Icon {
         g2d.dispose();
     }
 
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
-    }
 }

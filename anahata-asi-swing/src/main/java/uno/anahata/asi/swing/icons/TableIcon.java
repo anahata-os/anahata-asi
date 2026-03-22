@@ -8,20 +8,31 @@ import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import javax.swing.Icon;
 
 /**
- * A simple icon representing a table.
+ * A simple programmatic icon representing a data table.
+ * <p>
+ * Stylized with a header and grid lines using the component's foreground color.
+ * </p>
  * 
- * @author anahata-gemini-pro-2.5
+ * @author anahata
  */
-public class TableIcon implements Icon {
-    private final int size;
+public class TableIcon extends AbstractAnahataIcon {
 
+    /**
+     * Constructs a new TableIcon with the specified size.
+     * @param size The size in pixels.
+     */
     public TableIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders a wireframe table with a distinct header row to visualize data structures.
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2 = (Graphics2D) g.create();
@@ -41,13 +52,4 @@ public class TableIcon implements Icon {
         g2.dispose();
     }
 
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
-    }
 }

@@ -15,18 +15,30 @@ import javax.swing.Icon;
 
 /**
  * A programmatically drawn Icon representing the local tool execution feature (Functions).
- * It is stylized as a gear.
+ * <p>
+ * Stylized as a gear using Anahata Blue to represent local agentic machinery.
+ * </p>
  *
  * @author anahata
  */
-public class SettingsIcon implements Icon {
+public class SettingsIcon extends AbstractAnahataIcon {
 
-    private final int size;
 
+    /**
+     * Constructs a new SettingsIcon with the specified size.
+     * @param size The size in pixels.
+     */
     public SettingsIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders a mechanical gear with high-fidelity teeth geometry to represent 
+     * the local "machinery" of the agent.
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2d = (Graphics2D) g.create();
@@ -66,15 +78,5 @@ public class SettingsIcon implements Icon {
         g2d.fill(new Ellipse2D.Double(cx - size*0.12, cy - size*0.12, size*0.24, size*0.24));
         
         g2d.dispose();
-    }
-
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
     }
 }

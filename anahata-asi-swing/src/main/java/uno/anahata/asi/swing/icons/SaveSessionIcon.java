@@ -10,22 +10,35 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import javax.swing.Icon;
 
 /**
  * A programmatically drawn Icon representing the "Save Session" action.
- * It is stylized as a classic floppy disk using the full Barça palette.
+ * <p>
+ * It is stylized as a classic floppy disk using the full Barça palette 
+ * (Blue body, Red shutter, Yellow label), including a "5-0" scoreline accent. 
+ * This icon symbolizes the persistence of the ASI state.
+ * </p>
  *
  * @author anahata
  */
-public class SaveSessionIcon implements Icon {
+public class SaveSessionIcon extends AbstractAnahataIcon {
 
-    private final int size;
 
+    /**
+     * Constructs a new SaveSessionIcon with the specified size.
+     * @param size The size in pixels.
+     */
     public SaveSessionIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders a high-fidelity floppy disk with specialized "5-0" Barça accents 
+     * to visualize persistent state operations.
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2d = (Graphics2D) g.create();
@@ -75,13 +88,4 @@ public class SaveSessionIcon implements Icon {
         g2d.dispose();
     }
 
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
-    }
 }

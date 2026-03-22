@@ -9,21 +9,32 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Path2D;
-import javax.swing.Icon;
 
 /**
  * A programmatically drawn Send icon (Paper Plane).
- * Stylized with Barca Blue.
+ * <p>
+ * Stylized with Barça Blue to represent the submission of messages 
+ * to the inference engine.
+ * </p>
  * 
  * @author anahata
  */
-public class SendIcon implements Icon {
-    private final int size;
+public class SendIcon extends AbstractAnahataIcon {
 
+    /**
+     * Constructs a new SendIcon with the specified size.
+     * @param size The size in pixels.
+     */
     public SendIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders a sleek paper plane with a central structural fold using Barça Blue.
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2d = (Graphics2D) g.create();
@@ -49,13 +60,4 @@ public class SendIcon implements Icon {
         g2d.dispose();
     }
 
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
-    }
 }
