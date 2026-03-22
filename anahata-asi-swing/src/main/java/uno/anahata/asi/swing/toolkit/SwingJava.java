@@ -28,7 +28,14 @@ import uno.anahata.asi.toolkit.Java;
 @AiToolkit("A Swing-aware Java toolkit that supports EDT synchronization with context propagation.")
 public class SwingJava extends Java {
 
-    /** {@inheritDoc} */
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Injects Swing-specific execution helpers into the system instructions, 
+     * enabling the model to use {@code runInEdt} and {@code runInEdtAndWait} 
+     * for safe UI interactions.
+     * </p> 
+     */
     @Override
     public List<String> getSystemInstructions() throws Exception {
         List<String> instructions = new ArrayList<>(super.getSystemInstructions());
@@ -55,7 +62,13 @@ public class SwingJava extends Java {
      * 
      * @return the SwingAgiTool class.
      */
-    @Override
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Configures the code generator to produce classes extending {@link SwingAgiTool}, 
+     * which provides the necessary plumbing for EDT-aware context propagation.
+     * </p> 
+     */
     protected Class<? extends ToolContext> getConcreteClassModelShouldExtend() {
         return SwingAgiTool.class;
     }
