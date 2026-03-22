@@ -20,26 +20,40 @@ import uno.anahata.asi.agi.status.StatusManager;
 import uno.anahata.asi.swing.agi.AgiPanel;
 
 /**
- * A custom JPanel that renders a progress bar for context window usage.
+ * A high-precision UI component that renders a progress bar for context window usage.
+ * <p>
+ * This component acts as a real-time observer of the {@link ContextManager}, 
+ * providing visual feedback on token consumption relative to the model's 
+ * configured threshold. It dynamically updates its color based on usage 
+ * levels and session status.
+ * </p>
  *
  * @author anahata
  */
 public class ContextUsageBar extends JPanel {
 
+    /** Formatter for percentage display. */
     private static final DecimalFormat PERCENT_FORMAT = new DecimalFormat("0.0%");
+    /** Formatter for raw token counts. */
     private static final NumberFormat NUMBER_FORMAT = NumberFormat.getInstance();
+    /** Fixed height for the usage bar. */
     private static final int BAR_HEIGHT = 20;
+    /** Minimum width to ensure text readability. */
     private static final int MIN_WIDTH = 250;
 
+    /** The parent agi panel providing session context. */
     private final AgiPanel agiPanel;
 
-    // State fields, updated in refresh()
+    /** Current total token count in the context. */
     private int totalTokens = 0;
+    /** The maximum token threshold allowed by the configuration. */
     private int maxTokens;
+    /** Normalized usage percentage (0.0 to 1.0). */
     private double percentage = 0.0;
+    /** Human-readable usage string (e.g., "45.2% (12,000 / 25,000)"). */
     private String usageText = "0% (0 / 0)";
-    private AgiStatus status = AgiStatus.IDLE; // Fixed: IDLE_WAITING_FOR_USER -> IDLE
-
+    /** The current state of the AGI session. */
+    private AgiStatus status = AgiStatus.IDLE;
     /**
      * Constructs a new ContextUsageBar.
      *
@@ -86,9 +100,15 @@ public class ContextUsageBar extends JPanel {
         repaint();
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders a multi-layered usage bar with a background, a progress fill 
+     * using the Barça-inspired status palette, and a centered text overlay.
+     * </p>
+     */
     @Override
     protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g.create();
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
