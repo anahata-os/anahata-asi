@@ -83,7 +83,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
     /** Cache of renderers for arguments to support incremental updates and editing. */
     private final Map<String, ParameterRenderer<?>> argRenderers = new HashMap<>();
     
-    /** titled panel containing the tool execution results. */
+    /** Titled panel containing the tool execution results. */
     private JXTitledPanel responseTitledPanel;
     /** Tabbed pane for Output, Logs, Errors, and Attachments. */
     private JTabbedPane resultsTabbedPane;
