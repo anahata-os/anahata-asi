@@ -102,6 +102,7 @@ public class StatusPanel extends JPanel {
     /** Label for displaying prompt blocking reasons. */
     private JLabel blockReasonLabel; 
     
+    /** Reactive listener for tool execution status changes to trigger panel refreshes. */
     private EdtPropertyChangeListener executingCallsListener;
 
     /**
