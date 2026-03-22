@@ -46,8 +46,14 @@ import uno.anahata.asi.agi.tool.ToolManager;
 import uno.anahata.asi.swing.components.ExceptionDialog;
 
 /**
- * A panel that displays the real-time status of the agi session, including
- * API call status, context usage, and error/retry information.
+ * The primary dashboard for real-time monitoring of an AGI session's health and state.
+ * <p>
+ * This panel aggregates status indicators, context usage metrics, token 
+ * consumption details, and API error logs into a unified observability 
+ * interface. It uses a push-and-pull refresh strategy via property change 
+ * listeners and a periodic timer to ensure the user always sees the most 
+ * accurate representation of the ASI's digital consciousness.
+ * </p>
  *
  * @author anahata
  */
@@ -119,9 +125,12 @@ public class StatusPanel extends JPanel {
         this.executingCallsListener = new EdtPropertyChangeListener(this, agi.getToolManager(), "executingCalls", evt -> refresh());
     }
 
-    /**
-     * {@inheritDoc}
-     * Starts the refresh timer when the panel is added to the UI.
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Initiates the real-time refresh timer to synchronize UI state with the 
+     * background AGI orchestrator.
+     * </p>
      */
     @Override
     public void addNotify() {
@@ -129,9 +138,12 @@ public class StatusPanel extends JPanel {
         refreshTimer.start();
     }
 
-    /**
-     * {@inheritDoc}
-     * Stops the refresh timer when the panel is removed from the UI.
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Terminates the refresh timer to prevent memory leaks and unnecessary 
+     * background processing when the panel is no longer visible.
+     * </p>
      */
     @Override
     public void removeNotify() {
@@ -425,8 +437,12 @@ public class StatusPanel extends JPanel {
             repaint();
         }
 
-        /**
-         * {@inheritDoc}
+        /** 
+         * {@inheritDoc} 
+         * <p>
+         * Renders a circular status pip with anti-aliasing to provide a 
+         * smooth, high-salience visual cue of the current session state.
+         * </p>
          */
         @Override
         protected void paintComponent(Graphics g) {
