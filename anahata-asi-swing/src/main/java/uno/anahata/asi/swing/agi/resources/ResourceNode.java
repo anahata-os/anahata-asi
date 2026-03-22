@@ -15,24 +15,41 @@ import uno.anahata.asi.swing.agi.context.AbstractContextNode;
 @Slf4j
 public class ResourceNode extends AbstractContextNode<Resource> {
 
+    /**
+     * Constructs a new ResourceNode.
+     * @param agiPanel The parent AgiPanel.
+     * @param userObject The Resource domain object.
+     */
     public ResourceNode(AgiPanel agiPanel, Resource userObject) {
         super(agiPanel, userObject);
     }
 
-    /** {@inheritDoc} */
+    /** 
+     * {@inheritDoc} 
+     * <p>Implementation details: Prioritizes the model-provided HTML display 
+     * name for rich rendering in the context tree.</p>
+     */
     @Override
     public String getName() {
         String html = userObject.getHtmlDisplayName();
         return html != null ? html : userObject.getName();
     }
 
-    /** {@inheritDoc} */
+    /** 
+     * {@inheritDoc} 
+     * <p>Implementation details: Provides the underlying resource URI as the 
+     * primary descriptive identifier.</p>
+     */
     @Override
     public String getDescription() {
         return "URI: " + userObject.getHandle().getUri();
     }
 
-    /** {@inheritDoc} */
+    /** 
+     * {@inheritDoc} 
+     * <p>Implementation details: Resources are leaf nodes in the context tree 
+     * and do not have children.</p>
+     */
     @Override
     protected List<?> fetchChildObjects() {
         return Collections.emptyList();
@@ -44,7 +61,11 @@ public class ResourceNode extends AbstractContextNode<Resource> {
         return null;
     }
 
-    /** {@inheritDoc} */
+    /** 
+     * {@inheritDoc} 
+     * <p>Implementation details: Calculates token usage based on the 
+     * associated view and assigns it to either SYSTEM or RAG buckets.</p>
+     */
     @Override
     protected void calculateLocalTokens() {
         int tokens = (userObject.getView() != null) ? userObject.getView().getTokenCount() : 0;
@@ -55,7 +76,11 @@ public class ResourceNode extends AbstractContextNode<Resource> {
         }
     }
 
-    /** {@inheritDoc} */
+    /** 
+     * {@inheritDoc} 
+     * <p>Implementation details: Reflects the real-time availability and 
+     * refresh policy of the resource.</p>
+     */
     @Override
     protected void updateStatus() {
         if (!userObject.isProviding()) {
