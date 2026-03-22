@@ -11,7 +11,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.util.Arrays;
-// import java.util.List; // Removed as not directly used for List<Extension>
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JPanel;
@@ -36,7 +35,9 @@ import com.vladsch.flexmark.util.misc.Extension; // Corrected import for Extensi
 @UtilityClass
 public class HtmlRendererUtils {
 
+    /** The Flexmark parser used to transform Markdown into an Abstract Syntax Tree (AST). */
     private final Parser markdownParser;
+    /** The Flexmark renderer used to transform the AST into HTML. */
     private final HtmlRenderer htmlRenderer;
 
     static {
