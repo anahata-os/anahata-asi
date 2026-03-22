@@ -1,3 +1,4 @@
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.icons;
 
 import java.awt.Color;
@@ -5,20 +6,32 @@ import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import javax.swing.Icon;
 
 /**
- * A simple, programmatically drawn Icon that shows a filled red circle
- * to indicate that a recording is in progress.
+ * A programmatically drawn Icon that indicates active recording.
+ * <p>
+ * Stylized as a glowing Red circle, providing urgent visual feedback during 
+ * audio acquisition turns.
+ * </p>
+ * 
+ * @author anahata
  */
-public class RecordingIcon implements Icon {
+public class RecordingIcon extends AbstractAnahataIcon {
 
-    private final int size;
-
+    /**
+     * Constructs a new RecordingIcon with the specified size.
+     * @param size The size in pixels.
+     */
     public RecordingIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders a multi-layered glowing circle to simulate hardware LED behavior.
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2d = (Graphics2D) g.create();
@@ -37,15 +50,5 @@ public class RecordingIcon implements Icon {
         g2d.fillOval(x + 7, y + 7, size / 4, size / 4);
         
         g2d.dispose();
-    }
-
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
     }
 }

@@ -1,6 +1,4 @@
-/*
- * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
- */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.icons;
 
 import java.awt.BasicStroke;
@@ -10,22 +8,32 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Rectangle2D;
-import javax.swing.Icon;
 
 /**
  * A programmatically drawn Icon representing "Frames" or "Windows".
- * Stylized as overlapping windows using the Barça palette.
+ * <p>
+ * Stylized as overlapping windows using the Barça palette to visualize 
+ * top-level components and desktop-level windows.
+ * </p>
  *
  * @author anahata
  */
-public class FramesIcon implements Icon {
+public class FramesIcon extends AbstractAnahataIcon {
 
-    private final int size;
-
+    /**
+     * Constructs a new FramesIcon with the specified size.
+     * @param size The size in pixels.
+     */
     public FramesIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders overlapping UI windows with distinct title bars.
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2d = (Graphics2D) g.create();
@@ -70,15 +78,5 @@ public class FramesIcon implements Icon {
         }
         
         g2d.dispose();
-    }
-
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
     }
 }

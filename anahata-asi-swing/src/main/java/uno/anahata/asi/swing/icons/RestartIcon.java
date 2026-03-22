@@ -1,6 +1,4 @@
-/*
- * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
- */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.icons;
 
 import java.awt.BasicStroke;
@@ -10,21 +8,32 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Path2D;
-import javax.swing.Icon;
 
 /**
  * A programmatically drawn Icon representing a restart or clear action.
- * Stylized as a clean circular arrow using Anahata brand colors.
+ * <p>
+ * Stylized as a clean circular arrow using Anahata Blue and Green brand colors, 
+ * symbolizing the resetting of conversation state.
+ * </p>
  *
  * @author anahata
  */
-public class RestartIcon implements Icon {
-    private final int size;
+public class RestartIcon extends AbstractAnahataIcon {
 
+    /**
+     * Constructs a new RestartIcon with the specified size.
+     * @param size The size in pixels.
+     */
     public RestartIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders a looping arrow with a distinct directional head.
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2d = (Graphics2D) g.create();
@@ -52,15 +61,5 @@ public class RestartIcon implements Icon {
         g2d.draw(arrow);
         
         g2d.dispose();
-    }
-
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
     }
 }

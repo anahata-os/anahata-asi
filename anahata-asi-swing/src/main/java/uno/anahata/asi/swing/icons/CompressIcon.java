@@ -1,6 +1,4 @@
-/*
- * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details.
- */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.icons;
 
 import java.awt.BasicStroke;
@@ -9,21 +7,33 @@ import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import javax.swing.Icon;
 
 /**
- * A programmatically drawn Icon representing a context compression action.
- * It is stylized as four arrows pointing inwards.
+ * A programmatically drawn icon representing a context compression action.
+ * <p>
+ * Stylized as four arrows pointing inwards toward a central nucleus, 
+ * symbolizing the synthesis of information within the context window.
+ * </p>
  *
  * @author anahata
  */
-public class CompressIcon implements Icon {
-    private final int size;
+public class CompressIcon extends AbstractAnahataIcon {
 
+    /**
+     * Constructs a new CompressIcon with the specified size.
+     * @param size The size in pixels.
+     */
     public CompressIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders the compression symbol using inward-facing chevrons 
+     * and a central focus point.
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2d = (Graphics2D) g.create();
@@ -48,15 +58,5 @@ public class CompressIcon implements Icon {
         
         g2d.fillOval(x + size/2 - 2, y + size/2 - 2, 4, 4);
         g2d.dispose();
-    }
-
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
     }
 }

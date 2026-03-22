@@ -8,22 +8,33 @@ import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import javax.swing.Icon;
 
 /**
  * A programmatically drawn Icon representing a single "Run" action.
- * Stylized as a single play button (triangle).
+ * <p>
+ * Stylized as a single play button (triangle) using Anahata brand colors, 
+ * symbolizing the execution of a single agentic tool.
+ * </p>
  *
- * @author anahata-ai
+ * @author anahata
  */
-public class RunIcon implements Icon {
+public class RunIcon extends AbstractAnahataIcon {
 
-    private final int size;
 
+    /**
+     * Constructs a new RunIcon with the specified size.
+     * @param size The size in pixels.
+     */
     public RunIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders a crisp play triangle representing tool execution.
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2d = (Graphics2D) g.create();
@@ -44,13 +55,4 @@ public class RunIcon implements Icon {
         g2d.dispose();
     }
 
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
-    }
 }

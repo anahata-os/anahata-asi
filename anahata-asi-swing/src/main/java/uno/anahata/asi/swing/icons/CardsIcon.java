@@ -8,18 +8,16 @@ import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import javax.swing.Icon;
 
 /**
  * A simple icon representing a grid of cards.
  * 
  * @author anahata-gemini-pro-2.5
  */
-public class CardsIcon implements Icon {
-    private final int size;
+public class CardsIcon extends AbstractAnahataIcon {
 
     public CardsIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
     @Override
@@ -38,15 +36,5 @@ public class CardsIcon implements Icon {
         g2.drawRect(x + padding * 2 + cardSize, y + padding * 2 + cardSize, cardSize, cardSize);
         
         g2.dispose();
-    }
-
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
     }
 }

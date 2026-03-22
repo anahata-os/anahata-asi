@@ -1,31 +1,38 @@
-/*
- * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
- */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.icons;
 
-import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.awt.geom.Path2D;
-import javax.swing.Icon;
 
 /**
  * A programmatically drawn trash can icon for delete actions.
- * Stylized with a Red body, Yellow stripe, Blue lid, and a Red handle.
+ * <p>
+ * Stylized with a Red body, Yellow stripe, Blue lid, and a Red handle, 
+ * leveraging the full Barça palette to provide a high-contrast visual cue 
+ * for destructive operations.
+ * </p>
  *
  * @author anahata
  */
-public class DeleteIcon implements Icon {
+public class DeleteIcon extends AbstractAnahataIcon {
 
-    private final int size;
-
+    /**
+     * Constructs a new DeleteIcon with the specified size.
+     * @param size The size in pixels.
+     */
     public DeleteIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders a tapered trash bin with specialized "Barça-grade" accents.
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2d = (Graphics2D) g.create();
@@ -62,15 +69,5 @@ public class DeleteIcon implements Icon {
         }
 
         g2d.dispose();
-    }
-
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
     }
 }

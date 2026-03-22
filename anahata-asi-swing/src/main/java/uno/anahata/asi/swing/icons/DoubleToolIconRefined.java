@@ -1,25 +1,23 @@
-/*
- * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
- */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.icons;
 
-import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import javax.swing.Icon;
 
 /**
  * A refined programmatic Swing icon for tool containers (ToolsNode).
- * It draws a "fast-forward" symbol (two triangles) without a border.
+ * <p>
+ * It draws a "fast-forward" symbol (two triangles) representing the sequential 
+ * execution capability of the tool-chain.
+ * </p>
  * 
  * @author anahata
  */
-public class DoubleToolIconRefined implements Icon {
-    /** The size of the icon in pixels. */
-    private final int size;
+public class DoubleToolIconRefined extends AbstractAnahataIcon {
+
     /** The primary color of the icon. */
     private final Color color;
 
@@ -37,11 +35,16 @@ public class DoubleToolIconRefined implements Icon {
      * @param color The color to use.
      */
     public DoubleToolIconRefined(int size, Color color) {
-        this.size = size;
+        super(size);
         this.color = color;
     }
 
-    /** {@inheritDoc} */
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders the fast-forward triangles with precise alignment.
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2 = (Graphics2D) g.create();
@@ -64,24 +67,12 @@ public class DoubleToolIconRefined implements Icon {
         g2.dispose();
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public int getIconHeight() {
-        return size;
-    }
-
     /**
      * Creates a new instance of this icon with a different size.
      * @param s The new size.
      * @return The derived icon.
      */
-    public Icon derive(int s) {
+    public DoubleToolIconRefined derive(int s) {
         return new DoubleToolIconRefined(s, color);
     }
 }

@@ -1,6 +1,4 @@
-/*
- * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
- */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.icons;
 
 import java.awt.BasicStroke;
@@ -10,22 +8,32 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Path2D;
-import javax.swing.Icon;
 
 /**
  * A programmatically drawn Icon representing the "Load Session" action.
- * It is stylized as a folder with an arrow pointing out, using the full Barça palette.
+ * <p>
+ * It is stylized as a folder with an arrow pointing out, using the full 
+ * Barça palette (Yellow body, Blue border, Red arrow).
+ * </p>
  *
  * @author anahata
  */
-public class LoadSessionIcon implements Icon {
+public class LoadSessionIcon extends AbstractAnahataIcon {
 
-    private final int size;
-
+    /**
+     * Constructs a new LoadSessionIcon with the specified size.
+     * @param size The size in pixels.
+     */
     public LoadSessionIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders a persistent storage folder with a retrieval arrow.
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2d = (Graphics2D) g.create();
@@ -80,15 +88,5 @@ public class LoadSessionIcon implements Icon {
         }
         
         g2d.dispose();
-    }
-
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
     }
 }

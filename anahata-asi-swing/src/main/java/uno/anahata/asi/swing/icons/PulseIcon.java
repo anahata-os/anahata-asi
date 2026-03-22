@@ -8,19 +8,32 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Path2D;
-import javax.swing.Icon;
 
 /**
  * A programmatically drawn Icon representing History (Pulse).
- * Stylized as an EKG/Pulse line using Barça blue.
+ * <p>
+ * Stylized as an EKG/Pulse line using Barça Blue to represent the vital 
+ * and continuous flow of the conversation history.
+ * </p>
+ * 
+ * @author anahata
  */
-public class PulseIcon implements Icon {
-    private final int size;
+public class PulseIcon extends AbstractAnahataIcon {
 
+    /**
+     * Constructs a new PulseIcon with the specified size.
+     * @param size The size in pixels.
+     */
     public PulseIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders a rhythmic pulse wave across the icon area.
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2 = (Graphics2D) g.create();
@@ -39,7 +52,4 @@ public class PulseIcon implements Icon {
         g2.draw(p);
         g2.dispose();
     }
-
-    @Override public int getIconWidth() { return size; }
-    @Override public int getIconHeight() { return size; }
 }

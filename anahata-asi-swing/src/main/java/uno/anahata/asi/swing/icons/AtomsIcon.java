@@ -11,15 +11,33 @@ import javax.swing.Icon;
 
 /**
  * A programmatically drawn Icon representing Toolkits (Atoms).
- * Stylized as four orbiting circles using Anahata Green.
+ * <p>
+ * This icon is used within the <b>Context Explorer</b> to represent 
+ * {@link uno.anahata.asi.agi.tool.spi.AbstractToolkit} instances. 
+ * Stylized as four orbiting circles around a central nucleus using 
+ * Anahata Green to signify the modular, atomic nature of the tool-chain.
+ * </p>
+ * 
+ * @author anahata
  */
-public class AtomsIcon implements Icon {
-    private final int size;
+public class AtomsIcon extends AbstractAnahataIcon  {
 
+    /**
+     * Constructs a new AtomsIcon with the specified size.
+     * @param size The size in pixels.
+     */
     public AtomsIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders the atomic toolkit symbol using precise geometric primitives. 
+     * Applies anti-aliasing hints to ensure the orbiting "electrons" 
+     * remain crisp at small UI scales.
+     * </p> 
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2 = (Graphics2D) g.create();
@@ -39,6 +57,4 @@ public class AtomsIcon implements Icon {
         g2.dispose();
     }
 
-    @Override public int getIconWidth() { return size; }
-    @Override public int getIconHeight() { return size; }
 }

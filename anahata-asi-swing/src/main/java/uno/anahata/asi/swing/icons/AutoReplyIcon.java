@@ -9,7 +9,6 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import javax.swing.Icon;
 
 /**
  * A programmatically drawn Icon representing the auto-reply feature.
@@ -17,12 +16,10 @@ import javax.swing.Icon;
  *
  * @author anahata
  */
-public class AutoReplyIcon implements Icon {
-
-    private final int size;
+public class AutoReplyIcon extends AbstractAnahataIcon {
 
     public AutoReplyIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
     @Override
@@ -52,15 +49,5 @@ public class AutoReplyIcon implements Icon {
         g2d.drawString("A", x + size - size/3, y + size - 2);
         
         g2d.dispose();
-    }
-
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
     }
 }

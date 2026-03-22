@@ -8,22 +8,33 @@ import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import javax.swing.Icon;
 
 /**
  * A programmatically drawn Icon representing a "Run All and Send" action.
- * Stylized as two overlapping play buttons (triangles), inspired by the AutoReplyIcon.
+ * <p>
+ * Stylized as two overlapping play buttons (triangles) using Anahata brand colors, 
+ * representing the sequential execution and submission of tool results.
+ * </p>
  *
- * @author anahata-ai
+ * @author anahata
  */
-public class RunAndSendIcon implements Icon {
+public class RunAndSendIcon extends AbstractAnahataIcon {
 
-    private final int size;
 
+    /**
+     * Constructs a new RunAndSendIcon with the specified size.
+     * @param size The size in pixels.
+     */
     public RunAndSendIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders dual-play triangles symbolizing batch execution.
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2d = (Graphics2D) g.create();
@@ -49,13 +60,4 @@ public class RunAndSendIcon implements Icon {
         g2d.dispose();
     }
 
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
-    }
 }

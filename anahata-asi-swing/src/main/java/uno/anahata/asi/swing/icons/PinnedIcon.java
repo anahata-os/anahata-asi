@@ -1,6 +1,4 @@
-/*
- * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
- */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.icons;
 
 import java.awt.BasicStroke;
@@ -10,22 +8,33 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
-import javax.swing.Icon;
 
 /**
  * A programmatically drawn pushpin icon to represent a "pinned" state.
- * The icon is twisted at a 45-degree angle with a Yellow body and Blue needle.
+ * <p>
+ * The icon is twisted at a 45-degree angle with a Yellow body and Blue needle, 
+ * using the Barça palette to signify information that must remain in the 
+ * active context window.
+ * </p>
  *
  * @author anahata
  */
-public class PinnedIcon implements Icon {
+public class PinnedIcon extends AbstractAnahataIcon {
 
-    private final int size;
-
+    /**
+     * Constructs a new PinnedIcon with the specified size.
+     * @param size The size in pixels.
+     */
     public PinnedIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders a tilted pushpin with distinct physical components (head, body, needle).
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2d = (Graphics2D) g.create();
@@ -59,15 +68,5 @@ public class PinnedIcon implements Icon {
 
         g2d.setTransform(old);
         g2d.dispose();
-    }
-
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
     }
 }

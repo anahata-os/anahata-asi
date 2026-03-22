@@ -9,7 +9,6 @@ import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import javax.swing.Icon;
 
 /**
  * A programmatically drawn Cancel/X icon.
@@ -17,11 +16,10 @@ import javax.swing.Icon;
  * 
  * @author anahata
  */
-public class CancelIcon implements Icon {
-    private final int size;
+public class CancelIcon extends AbstractAnahataIcon {
 
     public CancelIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
     @Override
@@ -41,15 +39,5 @@ public class CancelIcon implements Icon {
         g2d.drawLine(x + size - padding, y + padding, x + padding, y + size - padding);
         
         g2d.dispose();
-    }
-
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
     }
 }

@@ -10,7 +10,6 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Path2D;
-import javax.swing.Icon;
 
 /**
  * A programmatically drawn Icon representing an "Attach" action.
@@ -18,12 +17,10 @@ import javax.swing.Icon;
  *
  * @author anahata
  */
-public class AttachIcon implements Icon {
-
-    private final int size;
+public class AttachIcon extends AbstractAnahataIcon {
 
     public AttachIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
     @Override
@@ -58,15 +55,5 @@ public class AttachIcon implements Icon {
         g2d.draw(clip);
         
         g2d.dispose();
-    }
-
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
     }
 }

@@ -1,6 +1,4 @@
-/*
- * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
- */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.icons;
 
 import java.awt.BasicStroke;
@@ -9,22 +7,32 @@ import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import javax.swing.Icon;
 
 /**
  * A programmatically drawn icon representing a "Copy" action.
- * Stylized as two overlapping squares with the full Barça palette.
+ * <p>
+ * Stylized as two overlapping squares using the authentic Barça palette 
+ * (Red, Blue, and Yellow) to signify duplication and movement.
+ * </p>
  *
  * @author anahata
  */
-public class CopyIcon implements Icon {
+public class CopyIcon extends AbstractAnahataIcon {
 
-    private final int size;
-
+    /**
+     * Constructs a new CopyIcon with the specified size.
+     * @param size The size in pixels.
+     */
     public CopyIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders the dual-square copy symbol with high-fidelity color blending.
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2d = (Graphics2D) g.create();
@@ -61,15 +69,5 @@ public class CopyIcon implements Icon {
         }
 
         g2d.dispose();
-    }
-
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
     }
 }

@@ -1,6 +1,4 @@
-/*
- * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
- */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.icons;
 
 import java.awt.BasicStroke;
@@ -10,21 +8,32 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Path2D;
-import javax.swing.Icon;
 
 /**
  * A programmatically drawn OK/Checkmark icon.
- * Stylized with a bold Barca Yellow checkmark.
+ * <p>
+ * Stylized with a bold Barça Yellow checkmark, representing confirmation 
+ * and successful validation of agentic tasks.
+ * </p>
  * 
  * @author anahata
  */
-public class OkIcon implements Icon {
-    private final int size;
+public class OkIcon extends AbstractAnahataIcon {
 
+    /**
+     * Constructs a new OkIcon with the specified size.
+     * @param size The size in pixels.
+     */
     public OkIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders a classic checkmark using high-contrast Barça colors.
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2d = (Graphics2D) g.create();
@@ -44,15 +53,5 @@ public class OkIcon implements Icon {
         
         g2d.draw(path);
         g2d.dispose();
-    }
-
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
     }
 }

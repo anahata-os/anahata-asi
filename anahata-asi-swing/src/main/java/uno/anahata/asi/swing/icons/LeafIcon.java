@@ -1,6 +1,4 @@
-/*
- * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
- */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.icons;
 
 import java.awt.BasicStroke;
@@ -10,20 +8,20 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Path2D;
-import javax.swing.Icon;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 /**
  * A programmatically drawn icon representing a leaf in various stages of its lifecycle.
- * Used to visualize the pruning and expiration state of context parts.
+ * <p>
+ * This icon is used to visualize the "metabolism" of context parts, specifically 
+ * indicating whether a part is active, withered (effectively pruned), or dead (permanently deleted).
+ * </p>
  * 
  * @author anahata
  */
-@RequiredArgsConstructor
-public class LeafIcon implements Icon {
+public class LeafIcon extends AbstractAnahataIcon {
 
-    /** Stage of the leaf's lifecycle. */
+    /** Stage of the leaf's lifecycle, mapped to context pruning states. */
     public enum LeafState {
         /** Active, full of life (Green). Representing AUTO + Not Expired. */
         ACTIVE,
@@ -33,10 +31,26 @@ public class LeafIcon implements Icon {
         DEAD
     }
 
-    private final int size;
     @Getter
     private final LeafState state;
 
+    /**
+     * Constructs a new LeafIcon with the specified size and state.
+     * @param size The size in pixels.
+     * @param state The current lifecycle stage.
+     */
+    public LeafIcon(int size, LeafState state) {
+        super(size);
+        this.state = state;
+    }
+
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders the leaf with biological fidelity, adjusting color and opacity based on 
+     * the metabolic state.
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2d = (Graphics2D) g.create();
@@ -69,15 +83,5 @@ public class LeafIcon implements Icon {
         g2d.drawLine((int)(x + size / 2.0), (int)(y + size - 4.0), (int)(x + size / 2.0), (int)(y + 4.0));
 
         g2d.dispose();
-    }
-
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
     }
 }

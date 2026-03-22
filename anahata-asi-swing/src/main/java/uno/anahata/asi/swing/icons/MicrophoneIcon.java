@@ -1,3 +1,4 @@
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.icons;
 
 import java.awt.BasicStroke;
@@ -6,19 +7,32 @@ import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import javax.swing.Icon;
 
 /**
- * A programmatically drawn Icon that shows a microphone with a red base.
+ * A programmatically drawn Icon that shows a studio microphone.
+ * <p>
+ * Stylized with a Red head and Blue stand, representing audio input 
+ * capabilities within the multimodal ASI interface.
+ * </p>
+ * 
+ * @author anahata
  */
-public class MicrophoneIcon implements Icon {
+public class MicrophoneIcon extends AbstractAnahataIcon {
 
-    private final int size;
-
+    /**
+     * Constructs a new MicrophoneIcon with the specified size.
+     * @param size The size in pixels.
+     */
     public MicrophoneIcon(int size) {
-        this.size = size;
+        super(size);
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Renders a high-fidelity microphone with a weighted circular base.
+     * </p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2d = (Graphics2D) g.create();
@@ -47,15 +61,5 @@ public class MicrophoneIcon implements Icon {
         }
 
         g2d.dispose();
-    }
-
-    @Override
-    public int getIconWidth() {
-        return size;
-    }
-
-    @Override
-    public int getIconHeight() {
-        return size;
     }
 }
