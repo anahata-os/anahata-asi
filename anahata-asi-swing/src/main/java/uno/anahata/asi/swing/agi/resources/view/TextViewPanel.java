@@ -29,10 +29,15 @@ import uno.anahata.asi.swing.internal.SwingTask;
 @Slf4j
 public class TextViewPanel extends AbstractViewPanel<TextView> {
 
+    /** Toggle for enabling/disabling the tailing behavior (following the end of the file). */
     private final JCheckBox tailCheck;
+    /** Spinner to configure the number of lines to tail. */
     private final JSpinner tailLinesSpinner;
+    /** Field for entering a regex pattern to filter lines (grep). */
     private final JTextField grepField;
+    /** Toggle for showing/hiding line numbers in the viewport. */
     private final JCheckBox lineNumbersCheck;
+    /** Label displaying real-time token metrics. */
     private final JLabel tokenLabel;
 
     /** Guard flag to prevent feedback loops during UI synchronization. */
