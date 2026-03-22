@@ -22,8 +22,13 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ResourceUiRegistry {
 
+    /** The singleton instance of the registry. */
     private static final ResourceUiRegistry INSTANCE = new ResourceUiRegistry();
 
+    /**
+     * Gets the singleton instance.
+     * @return The registry instance.
+     */
     public static ResourceUiRegistry getInstance() {
         return INSTANCE;
     }
