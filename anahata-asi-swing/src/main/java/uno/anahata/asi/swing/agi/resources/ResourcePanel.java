@@ -1,18 +1,13 @@
-/*
- * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.agi.resources;
 
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -38,7 +33,6 @@ import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
 import uno.anahata.asi.swing.agi.resources.view.AbstractViewPanel;
 import uno.anahata.asi.swing.components.AdjustingTabPane;
 import uno.anahata.asi.swing.components.ScrollablePanel;
-import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingTask;
 
@@ -68,14 +62,18 @@ public class ResourcePanel extends ScrollablePanel {
      */
     private Resource currentResource;
 
-    // Global Header
+    /** Label displaying the resource name in the global header. */
     private final JLabel nameLabel;
+    /** Panel hosting resource-specific actions (e.g., Open, Edit) provided by the strategy. */
     private final JPanel actionPanel;
 
-    // Metadata Components (Identity Tab)
+    /** Text field displaying the unique resource identifier. */
     private final JTextField idField;
+    /** Checkbox to toggle the active context-providing state of the resource. */
     private final JCheckBox providingBox;
+    /** Combo box for selecting the target context position (SYSTEM vs RAG). */
     private final JComboBox<ContextPosition> positionCombo;
+    /** Combo box for selecting the refresh policy for synchronization. */
     private final JComboBox<RefreshPolicy> policyCombo;
 
     /**
@@ -230,6 +228,10 @@ public class ResourcePanel extends ScrollablePanel {
         add(contentStack, BorderLayout.CENTER);
     }
 
+    /**
+     * Creates a standardized read-only text field for immutable metadata like UUIDs.
+     * @return A configured {@link JTextField}.
+     */
     private JTextField createReadOnlyField() {
         JTextField f = new JTextField(35); // Long enough for UUID
         f.setEditable(false);
@@ -307,7 +309,8 @@ public class ResourcePanel extends ScrollablePanel {
     }
 
     /**
-     * Assemblies the specialized UI components using the host-aware strategy.
+     * Orchestrates the high-fidelity UI assembly by selecting the appropriate 
+     * {@link ResourceUI} strategy and populating handles, views, and viewers.
      */
     private void assembleResourceUI() {
         if (currentResource == null) {
@@ -403,7 +406,9 @@ public class ResourcePanel extends ScrollablePanel {
     }
 
     /**
-     * Generates the "Model Perspective" component.
+     * Generates a "Model Perspective" using a {@link RagMessagePanel} to show 
+     * exactly how this resource is presented to the ASI during generation.
+     * @return The rendered model perspective component.
      */
     private JComponent createModelPerspectiveComponent() {
         RagMessage rawMsg = new RagMessage(agiPanel.getAgi());
