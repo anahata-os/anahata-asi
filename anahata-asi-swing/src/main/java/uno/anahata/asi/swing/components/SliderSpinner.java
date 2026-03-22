@@ -1,4 +1,4 @@
-/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Fora Bara! */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.components;
 
 import com.jgoodies.forms.layout.FormLayout;
@@ -112,7 +112,11 @@ public class SliderSpinner extends JPanel {
         spinner.addChangeListener(listener);
     }
 
-    /** {@inheritDoc} */
+    /** 
+     * {@inheritDoc} 
+     * <p>Overridden to synchronize the enabled state across both the spinner 
+     * and the slider sub-components.</p> 
+     */
     @Override
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);

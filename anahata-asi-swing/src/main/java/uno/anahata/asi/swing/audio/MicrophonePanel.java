@@ -121,7 +121,15 @@ public final class MicrophonePanel extends JPanel {
         }
     }
 
-    /** @return true if the microphone is currently recording. */
+    /** 
+     * Indicates whether the microphone is currently capturing raw PCM data.
+     * <p>
+     * This state is used to synchronize the UI recording indicators and 
+     * to manage the lifecycle of the hardware input line within the 
+     * broader AGI conversation context.
+     * </p>
+     * @return {@code true} if a recording workflow is currently active. 
+     */
     public boolean isRecording() {
         return recording.get();
     }

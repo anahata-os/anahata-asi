@@ -1,5 +1,5 @@
 /*
- * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Fora Bara!
+ * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
  */
 package uno.anahata.asi.swing.components;
 
@@ -43,6 +43,17 @@ public class ExceptionDialog extends JDialog {
         initComponents(taskName, description, stackTrace);
     }
 
+    /**
+     * Initializes the dialog's components and layout.
+     * <p>
+     * This method sets up the header with the task name and error description, 
+     * a scrollable text area for the stack trace, and a button panel for 
+     * copying the trace and closing the dialog.
+     * </p>
+     * @param taskName The name of the failed task.
+     * @param description The brief error description.
+     * @param stackTrace The full stack trace string.
+     */
     private void initComponents(String taskName, String description, String stackTrace) {
         setLayout(new BorderLayout(10, 10));
         

@@ -207,7 +207,14 @@ public final class AudioPlaybackPanel extends JPanel {
         };
     }
 
-    /** Stops all currently playing notification sounds. */
+    /** 
+     * Stops all currently playing notification sounds and releases resources.
+     * <p>
+     * This method terminates the execution of the {@link #currentClip} and 
+     * clears the reference to ensure proper garbage collection. It also 
+     * resets the global {@link #playing} state.
+     * </p>
+     */
     public void stop() {
         Clip clip = currentClip;
         if (clip != null && clip.isRunning()) {

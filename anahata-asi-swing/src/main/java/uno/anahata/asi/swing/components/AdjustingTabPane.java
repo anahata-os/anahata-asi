@@ -17,6 +17,13 @@ import javax.swing.JTabbedPane;
  */
 public class AdjustingTabPane extends JTabbedPane {
     
+    /**
+     * The absolute minimum height to maintain for this tab pane.
+     * <p>
+     * This ensures a baseline visibility even if the content of the 
+     * selected tab is smaller or null.
+     * </p>
+     */
     private final int minHeight;
 
     /**
@@ -28,6 +35,11 @@ public class AdjustingTabPane extends JTabbedPane {
         addChangeListener(e -> refresh());
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>Overridden to trigger a {@link #refresh()} whenever a new tab is added, 
+     * ensuring the layout is updated to reflect the new tab's height.</p> 
+     */
     @Override
     public void addTab(String title, Component component) {
         super.addTab(title, component);
@@ -46,18 +58,36 @@ public class AdjustingTabPane extends JTabbedPane {
         }
     }
 
-    /** {@inheritDoc} */
+    /** 
+     * {@inheritDoc} 
+     * <p>Calculates the preferred size by adjusting the height to match the 
+     * currently selected component's preferred height plus header overhead.</p> 
+     */
     @Override
     public Dimension getPreferredSize() {
         return calculateAdjustedSize(super.getPreferredSize());
     }
 
-    /** {@inheritDoc} */
+    /** 
+     * {@inheritDoc} 
+     * <p>Ensures the minimum size respects the dynamic adjustment logic and 
+     * the configured {@link #minHeight}.</p> 
+     */
     @Override
     public Dimension getMinimumSize() {
         return calculateAdjustedSize(super.getMinimumSize());
     }
 
+    /**
+     * Calculates the dynamically adjusted dimension for the tab pane.
+     * <p>
+     * It extracts the height from the currently selected component and adds 
+     * a constant offset (45px) for the tab headers. The resulting height 
+     * is clamped to the minimum height.
+     * </p>
+     * @param original The original dimension to use as a template (mainly for width).
+     * @return The adjusted dimension.
+     */
     private Dimension calculateAdjustedSize(Dimension original) {
         Component c = getSelectedComponent();
         if (c != null) {

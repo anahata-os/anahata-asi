@@ -31,9 +31,24 @@ import uno.anahata.asi.swing.internal.SwingUtils;
 @Slf4j
 public class WrappingEditorPane extends JEditorPane implements Scrollable {
 
+    /**
+     * Whether this editor pane should track the viewport's width to force 
+     * line wrapping.
+     * <p>
+     * When {@code true}, horizontal scrolling is disabled and content is 
+     * wrapped within the viewport's bounds.
+     * </p>
+     */
     @Setter
     private boolean trackViewportWidth = true;
 
+    /**
+     * Constructs a new WrappingEditorPane.
+     * <p>
+     * Initializes the component with mouse wheel redispatching, hyperlink 
+     * activation, and a context menu for copying text.
+     * </p>
+     */
     public WrappingEditorPane() {
         // Redispatch mouse wheel events to the parent scroll pane to ensure
         // vertical scrolling works even when the mouse is over this component.
@@ -75,27 +90,45 @@ public class WrappingEditorPane extends JEditorPane implements Scrollable {
         });
     }
 
-    @Override
+    /** 
+     * {@inheritDoc} 
+     * <p>Returns the configured {@link #trackViewportWidth} state. When enabled, 
+     * this is what triggers HTML line wrapping in a scroll pane.</p> 
+     */
     public boolean getScrollableTracksViewportWidth() {
         return trackViewportWidth;
     }
 
-    @Override
+    /** 
+     * {@inheritDoc} 
+     * <p>Returns the component's preferred size, allowing the parent scroll 
+     * pane to manage the layout.</p> 
+     */
     public Dimension getPreferredScrollableViewportSize() {
         return getPreferredSize();
     }
 
-    @Override
+    /** 
+     * {@inheritDoc} 
+     * <p>Returns a fixed increment of 24 pixels for smooth vertical scrolling.</p> 
+     */
     public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
         return 24;
     }
 
-    @Override
+    /** 
+     * {@inheritDoc} 
+     * <p>Returns the visible height of the rectangle to support page-based scrolling.</p> 
+     */
     public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
         return visibleRect.height;
     }
 
-    @Override
+    /** 
+     * {@inheritDoc} 
+     * <p>Always returns {@code false} as this component is designed for 
+     * vertical scrolling with dynamic height.</p> 
+     */
     public boolean getScrollableTracksViewportHeight() {
         return false;
     }

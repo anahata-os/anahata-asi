@@ -19,16 +19,36 @@ import uno.anahata.asi.swing.internal.SwingUtils;
  * A specialized JLabel that acts as a clickable hyperlink for displaying
  * code or JSON content in a popup dialog.
  * 
- * @author gemini-3-flash-preview
+ * @author anahata
  */
 @Getter @Setter
 public class CodeHyperlink extends JLabel {
 
-    /** A supplier for the title of the popup dialog. */
+    /** 
+     * A supplier for the title of the popup dialog. 
+     * <p>
+     * This title is displayed at the top of the dialog window when the hyperlink 
+     * is clicked. It can be dynamically generated based on the current state.
+     * </p>
+     */
     private Supplier<String> titleSupplier;
-    /** A supplier for the content to display, allowing for lazy loading/formatting. */
+
+    /** 
+     * A supplier for the content to display, allowing for lazy loading and formatting. 
+     * <p>
+     * The content is fetched only when the user clicks the hyperlink. This is 
+     * ideal for large JSON payloads or code blocks that require expensive processing.
+     * </p>
+     */
     private Supplier<String> contentSupplier;
-    /** The language for syntax highlighting in the popup dialog. */
+
+    /** 
+     * The language for syntax highlighting in the popup dialog. 
+     * <p>
+     * Supports standard RSyntaxTextArea constants like "json", "java", "xml", etc. 
+     * If set to "json", the content will be automatically pretty-printed.
+     * </p>
+     */
     private String language;
 
     /**

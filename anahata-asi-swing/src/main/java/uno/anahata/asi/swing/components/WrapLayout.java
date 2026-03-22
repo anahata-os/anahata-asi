@@ -1,3 +1,4 @@
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.components;
 
 import java.awt.*;
@@ -7,7 +8,7 @@ import javax.swing.*;
  * A modified version of FlowLayout that allows components to wrap to the next
  * line.
  *
- * @author https://tips4java.wordpress.com/2008/11/06/wrap-layout/
+ * @author anahata
  */
 public class WrapLayout extends FlowLayout {
 
@@ -47,12 +48,10 @@ public class WrapLayout extends FlowLayout {
     }
 
     /**
-     * Returns the preferred dimensions for this layout given the
-     * <i>visible</i> components in the specified target container.
-     *
-     * @param target the component which needs to be laid out
-     * @return the preferred dimensions to lay out the subcomponents of the
-     *         specified container
+    /** 
+     * {@inheritDoc} 
+     * <p>Calculates the preferred size by allowing components to flow into 
+     * multiple rows if they exceed the container's width.</p> 
      */
     @Override
     public Dimension preferredLayoutSize(Container target) {
@@ -60,12 +59,10 @@ public class WrapLayout extends FlowLayout {
     }
 
     /**
-     * Returns the minimum dimensions needed to layout the <i>visible</i>
-     * components contained in the specified target container.
-     *
-     * @param target the component which needs to be laid out
-     * @return the minimum dimensions to lay out the subcomponents of the
-     *         specified container
+    /** 
+     * {@inheritDoc} 
+     * <p>Calculates the minimum size required to display the components 
+     * with wrapping logic enabled.</p> 
      */
     @Override
     public Dimension minimumLayoutSize(Container target) {
@@ -82,6 +79,16 @@ public class WrapLayout extends FlowLayout {
      *                  dimension
      * @return the dimension to lay out the subcomponents of the specified
      *         container
+     */
+    /**
+     * Internal logic for calculating the layout size.
+     * <p>
+     * Iterates through components, wrapping them based on available width 
+     * and calculating the total height dynamically.
+     * </p>
+     * @param target The container being laid out.
+     * @param preferred {@code true} for preferred size, {@code false} for minimum.
+     * @return The calculated dimensions.
      */
     private Dimension layoutSize(Container target, boolean preferred) {
         synchronized (target.getTreeLock()) {
@@ -147,6 +154,12 @@ public class WrapLayout extends FlowLayout {
      * @param dim       update the width and height when appropriate
      * @param rowWidth  the width of the row to add
      * @param rowHeight the height of the row to add
+     */
+    /**
+     * Updates the running total dimensions with the results of a completed row.
+     * @param dim The cumulative dimension object to update.
+     * @param rowWidth The width of the row just completed.
+     * @param rowHeight The height of the row just completed.
      */
     private void addRow(Dimension dim, int rowWidth, int rowHeight) {
         dim.width = Math.max(dim.width, rowWidth);

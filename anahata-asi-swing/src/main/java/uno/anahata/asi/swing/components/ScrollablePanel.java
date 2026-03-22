@@ -18,7 +18,20 @@ import javax.swing.SwingConstants;
  */
 public class ScrollablePanel extends JPanel implements Scrollable {
 
+    /**
+     * Whether this panel's width should always match the viewport's width.
+     * <p>
+     * When {@code true}, horizontal scrolling is effectively disabled and 
+     * components are expected to wrap or scale.
+     * </p>
+     */
     private boolean scrollableTracksViewportWidth = true;
+    /**
+     * Whether this panel's height should always match the viewport's height.
+     * <p>
+     * When {@code true}, vertical scrolling is effectively disabled.
+     * </p>
+     */
     private boolean scrollableTracksViewportHeight = false;
 
     /**
@@ -49,35 +62,61 @@ public class ScrollablePanel extends JPanel implements Scrollable {
         }
     }
 
-    @Override
+    /** 
+     * {@inheritDoc} 
+     * <p>Returns the component's preferred size as the viewport size, 
+     * assuming the parent scroll pane will manage the actual visible area.</p> 
+     */
     public Dimension getPreferredScrollableViewportSize() {
         return getPreferredSize();
     }
 
-    @Override
+    /** 
+     * {@inheritDoc} 
+     * <p>Returns a fixed increment of 24 pixels, optimized for smooth 
+     * scrolling of chat and context components.</p> 
+     */
     public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
         return 24; // Optimized for faster scrolling in agi/context views
     }
 
-    @Override
+    /** 
+     * {@inheritDoc} 
+     * <p>Returns the full height (or width) of the visible rectangle to 
+     * support "page down/up" scrolling behavior.</p> 
+     */
     public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
         return (orientation == SwingConstants.VERTICAL) ? visibleRect.height : visibleRect.width;
     }
 
-    @Override
+    /** 
+     * {@inheritDoc} 
+     * <p>Returns the configured {@link #scrollableTracksViewportWidth} state.</p> 
+     */
     public boolean getScrollableTracksViewportWidth() {
         return scrollableTracksViewportWidth;
     }
 
-    @Override
+    /** 
+     * {@inheritDoc} 
+     * <p>Returns the configured {@link #scrollableTracksViewportHeight} state.</p> 
+     */
     public boolean getScrollableTracksViewportHeight() {
         return scrollableTracksViewportHeight;
     }
 
+    /**
+     * Sets whether this panel should track the viewport's width.
+     * @param scrollableTracksViewportWidth {@code true} to track width.
+     */
     public void setScrollableTracksViewportWidth(boolean scrollableTracksViewportWidth) {
         this.scrollableTracksViewportWidth = scrollableTracksViewportWidth;
     }
 
+    /**
+     * Sets whether this panel should track the viewport's height.
+     * @param scrollableTracksViewportHeight {@code true} to track height.
+     */
     public void setScrollableTracksViewportHeight(boolean scrollableTracksViewportHeight) {
         this.scrollableTracksViewportHeight = scrollableTracksViewportHeight;
     }
