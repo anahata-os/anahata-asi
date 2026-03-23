@@ -8,6 +8,15 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            securityLevel: 'loose',
+            fontFamily: 'Inter'
+        });
+    </script>
 </head>
 <body>
     <div id="main-nav"></div>
@@ -19,9 +28,10 @@
                 <ul>
                     <li><a href="#orchestration" class="active">UI Orchestration</a></li>
                     <li><a href="#diff-update">Diff-and-Update</a></li>
+                    <li><a href="#session-mgmt">Session Management</a></li>
                     <li><a href="#rendering">Multimodal Rendering</a></li>
                     <li><a href="#binding">Reactive Binding</a></li>
-                    <li><a href="#observability">Surgical Precision</a></li>
+                    <li><a href="#precision">Surgical Precision</a></li>
                     <li><a href="#metabolism">Digital Observability</a></li>
                     <li><a href="#tooling">Swing-Aware Tools</a></li>
                 </ul>
@@ -82,9 +92,38 @@ public void focus(@NonNull Agi agi) {
                         </div>
                     </div>
                 </div>
-                <div class="showcase-box" style="margin-top: 2rem; text-align: center;">
-                    <img src="screenshots/context-explorer-tree.png" alt="Tiki-Taka Rendering" class="clickable-media" data-caption="The Context Explorer: A hierarchical JNDI-style view of the entire ASI session graph." style="max-width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 1rem;">Click to expand: The Context Explorer tree.</p>
+
+                <div class="mermaid-card" onclick="this.classList.toggle('expanded')" style="margin-top: 3rem;">
+                    <div class="code-header" style="position: absolute; top: 1rem; left: 2rem;">Component Hierarchy & Recycling Flow</div>
+                    <div class="mermaid">
+                        graph TD
+                            CP[ConversationPanel] --> |Identity Cache| MP[MessagePanel]
+                            MP --> |PartPanelFactory| PP[AbstractPartPanel]
+                            PP --> |TextSegmentDescriptor| SR[SegmentRenderer]
+                            SR --> |Recycle| CB[CodeBlockRenderer]
+                            SR --> |Recycle| MR[MarkupRenderer]
+                            SR --> |Recycle| DR[DiagramRenderer]
+                    </div>
+                </div>
+            </section>
+
+            <section id="session-mgmt">
+                <h2>Session Management Strategies</h2>
+                <p>The Swing module provides high-level container panels for orchestrating multiple active ASI sessions within a host application.</p>
+                
+                <div class="responsive-grid">
+                    <div class="nb-card" style="margin: 0; border-top-color: var(--barca-gold);">
+                        <h4>AsiCardsContainer</h4>
+                        <p style="font-size: 0.9rem;">A modern, vertical card-based switcher (as seen in the Desktop app) that provides real-time health badges and session nicknames.</p>
+                    </div>
+                    <div class="nb-card" style="margin: 0; border-top-color: var(--barca-blue);">
+                        <h4>AsiTableContainer</h4>
+                        <p style="font-size: 0.9rem;">A spreadsheet-style view leveraging <code>JXTreeTable</code> for dense environments requiring granular sorting and filtering of session metadata.</p>
+                    </div>
+                    <div class="nb-card" style="margin: 0; border-top-color: var(--barca-red);">
+                        <h4>AsiSwitcherContainer</h4>
+                        <p style="font-size: 0.9rem;">A lightweight, gesture-based overlay for rapid context switching between the starting XI of active models.</p>
+                    </div>
                 </div>
             </section>
 
@@ -128,7 +167,7 @@ public void focus(@NonNull Agi agi) {
                 </div>
             </section>
 
-            <section id="observability">
+            <section id="precision">
                 <h2>Surgical Precision</h2>
                 <p>The Resources toolkit uses a visual-first diff engine that allows the user to review every insertion, replacement, and deletion with AI-provided reasoning.</p>
                 <div class="showcase-box" style="margin-top: 2rem; text-align: center;">
