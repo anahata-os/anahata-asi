@@ -48,7 +48,7 @@ public abstract class AbstractToolkitRenderer<T extends AnahataToolkit> extends 
      * </p>
      */
     @Override
-    public JPanel bind(T toolkit, AgiPanel parent) {
+    public JPanel createToolkitPanel(T toolkit, AgiPanel parent) {
         if (this.edtListener != null) {
             this.edtListener.unbind();
         }
