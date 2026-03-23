@@ -30,7 +30,8 @@
                 <ul>
                     <li><a href="#overview" class="active">Overview</a></li>
                     <li><a href="#chrome">Chrome Automation</a></li>
-                    <li><a href="#multimedia">Multimedia Tools</a></li>
+                    <li><a href="#radio">Internet Radio</a></li>
+                    <li><a href="#speech">Speech Synthesis</a></li>
                     <li><a href="#experimental">Experimental Lab</a></li>
                 </ul>
             </div>
@@ -46,29 +47,60 @@
 
             <section id="chrome">
                 <h2>Chrome Automation</h2>
-                <div class="toolkit-card">
-                    <i class="fab fa-chrome"></i>
-                    <h3>Web Control</h3>
-                    <p>Powered by Selenium, this toolkit allows the ASI to navigate the web, fill forms, extract data, and take screenshots for visual reasoning.</p>
+                <p>The <code>Chrome</code> toolkit leverages <b>Selenium WebDriver</b> to give the ASI full "eyes and hands" on the web. It is engineered for secure, debug-mode interactions with an existing browser profile.</p>
+                
+                <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 2rem; margin: 2rem 0;">
+                    <div class="toolkit-card" style="margin: 0;">
+                        <h4>Visual Reasoning</h4>
+                        <p>The ASI can take screenshots of any page or specific element, enabling it to "see" UI layouts and debug front-end issues visually.</p>
+                    </div>
+                    <div class="toolkit-card" style="margin: 0; border-top: 4px solid var(--barca-gold);">
+                        <h4>Form Metabolism</h4>
+                        <p>Surgical form-filling capabilities allow the model to navigate complex multi-step workflows or automate repetitive data entry tasks.</p>
+                    </div>
+                </div>
+
+                <div class="nb-card" style="background: rgba(0,0,0,0.3);">
+                    <h5 style="color: var(--barca-gold); margin-top: 0;">The Connection Loop</h5>
+                    <ol style="font-size: 0.9rem; opacity: 0.8;">
+                        <li>Automatically detects running Chrome instances.</li>
+                        <li>Restarts Chrome in <code>--remote-debugging-port</code> mode if necessary.</li>
+                        <li>Maintains session persistence via a dedicated "Anahata" profile.</li>
+                    </ol>
                 </div>
             </section>
 
-            <section id="multimedia">
-                <h2>Multimedia Toolkits</h2>
+            <section id="radio">
+                <h2>Internet Radio</h2>
+                <p>The <code>Radio</code> toolkit provides a direct audio feed for the developer's "Metabolic Flow." Integrated with the SomaFM API and high-quality streams like KEXP and FIP Paris.</p>
+                
                 <div class="toolkit-grid">
                     <div class="toolkit-card">
-                        <i class="fas fa-radio"></i>
-                        <h3>Radio Toolkit</h3>
-                        <p>Stream internet radio directly within the ASI session. Perfect for maintaining a productive background flow.</p>
+                        <i class="fas fa-music"></i>
+                        <h3>Station Curation</h3>
+                        <p>Deeply integrated SomaFM channels (Groove Salad, Drone Zone, Lush) provided as native system instructions.</p>
                     </div>
                     <div class="toolkit-card">
-                        <i class="fas fa-volume-up"></i>
-                        <h3>Speech Toolkit</h3>
-                        <p>Text-to-Speech (TTS) capabilities for audio alerts and voice-enabled interactions.</p>
+                        <i class="fas fa-sliders-h"></i>
+                        <h3>Device Targeting</h3>
+                        <p>Synchronous hardware line selection ensures audio is routed to the correct output device (HDMI, Headphones, System) without OS intervention.</p>
                     </div>
                 </div>
             </section>
-        </main>
+
+            <section id="speech">
+                <h2>Speech Synthesis (TTS)</h2>
+                <p>Leveraging the <b>FreeTTS</b> engine, the <code>Speech</code> toolkit allows the ASI to communicate via high-salience audio alerts or full text-to-speech synthesis.</p>
+                
+                <div class="nb-card">
+                    <p>Designed for "Eyes-Free" debugging and status notifications, the toolkit provides immediate feedback on long-running tasks or critical errors using the <code>speak(text)</code> tool.</p>
+                </div>
+            </section>
+
+            <section id="experimental">
+                <h2>The Experimental Lab</h2>
+                <p>Yam is the birthplace of all new multimodal capabilities. From Android device control (ADB integration) to advanced image processing, it serves as the incubation chamber for the next generation of Anahata tools.</p>
+            </section>
     </div>
 
     <script src="nav.js"></script>

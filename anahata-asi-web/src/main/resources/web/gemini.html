@@ -15,7 +15,6 @@
         .sidebar-nav a { color: var(--text-muted); text-decoration: none; display: block; padding: 10px 15px; transition: var(--transition); border-left: 3px solid transparent; }
         .sidebar-nav a:hover, .sidebar-nav a.active { color: var(--primary-light); border-left-color: var(--primary-light); background: linear-gradient(to right, rgba(44, 122, 123, 0.1), transparent); }
         .main-content { flex-grow: 1; max-width: 900px; }
-        .adapter-box { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 2rem; margin: 2rem 0; }
     </style>
 </head>
 <body>
@@ -27,9 +26,9 @@
                 <h4>Gemini Adapter</h4>
                 <ul>
                     <li><a href="#overview" class="active">Overview</a></li>
-                    <li><a href="#components">Core Components</a></li>
-                    <li><a href="#integration">API Integration</a></li>
-                </ul>
+                    <li><a href="#adapter">Content Adapter</a></li>
+                    <li><a href="#tooling">Native Tool Calling</a></li>
+                    <li><a href="#config">Request Mapping</a></li>
             </div>
         </aside>
 
@@ -37,21 +36,39 @@
             <section id="overview">
                 <h1>Anahata <span style="color: var(--barca-gold)">Gemini</span></h1>
                 <p class="tagline" style="text-align: left;">The bridge between the Anahata Core and Google's GenAI ecosystem.</p>
-                
                 <p>The Gemini module acts as a high-performance adapter, translating Anahata's domain model into native Google GenAI requests and responses.</p>
             </section>
-
-            <section id="components">
-                <h2>Key Components</h2>
-                <div class="adapter-box">
-                    <ul>
-                        <li><b>GeminiAgiProvider:</b> Concrete implementation of the provider interface.</li>
-                        <li><b>GeminiModel:</b> A native wrapper around Google's <code>GenerativeModel</code>.</li>
-                        <li><b>GeminiContentAdapter:</b> Strategic logic for multi-modal part translation.</li>
-                    </ul>
+            <section id="adapter">
+                <h2>The Content Translation Engine</h2>
+                <p>The core of the Gemini module is the <code>GeminiPartAdapter</code>. It performs bidirectional translation between Anahata's provider-agnostic domain model and the native Google GenAI structures.</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 2rem 0;">
+                    <div class="adapter-box" style="margin: 0;">
+                        <i class="fas fa-images" style="color: var(--barca-gold); font-size: 1.5rem; margin-bottom: 1rem; display: block;"></i>
+                        <h4>Multimodal Parts</h4>
+                        <p>Seamlessly handles <code>BlobPart</code> conversion for images, audio, and PDF attachments, ensuring MIME types are correctly mapped for Gemini's vision and hearing capabilities.</p>
+                    </div>
+                    <div class="adapter-box" style="margin: 0; border-top: 4px solid var(--verified-green);">
+                        <i class="fas fa-ghost" style="color: var(--verified-green); font-size: 1.5rem; margin-bottom: 1rem; display: block;"></i>
+                        <h4>Ghost Metadata</h4>
+                        <p>Translates Anahata's "In-Band Metadata" into standard text content while maintaining the semantic cues required for Gemini to respect context pruning.</p>
+                    </div>
                 </div>
             </section>
-        </main>
+
+            <section id="tooling">
+                <h2>Native Tool Calling</h2>
+                <p>Gemini's <code>FunctionDeclaration</code> system is bridged via the <code>GeminiFunctionDeclarationAdapter</code>. This component automatically generates Google-compatible tool schemas from Anahata's <code>AbstractTool</code> definitions.</p>
+                
+                <div class="adapter-box">
+                    <p><b>Recursive Schema Support:</b> Unlike standard libraries, the Gemini module supports deep recursive objects in tool parameters, enabling the model to return complex nested trees directly as tool responses.</p>
+                </div>
+            </section>
+
+            <section id="config">
+                <h2>Dynamic Request Mapping</h2>
+                <p>The <code>RequestConfigAdapter</code> ensures that session-level settings (Temperature, TopK, Stop Sequences) are precisely applied to each API call. It also manages the <b>Thinking Level</b> mapping for models like Gemini 2.0 Flash Thinking.</p>
+            </section>
     </div>
 
     <script src="nav.js"></script>

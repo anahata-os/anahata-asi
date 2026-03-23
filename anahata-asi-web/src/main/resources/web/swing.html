@@ -8,17 +8,6 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
-    <style>
-        .docs-wrapper { display: flex; max-width: 1400px; margin: 0 auto; padding: 160px 2rem 100px; gap: 4rem; }
-        .sidebar { width: 300px; flex-shrink: 0; position: sticky; top: 130px; height: calc(100vh - 160px); overflow-y: auto; padding-right: 1.5rem; }
-        .sidebar-nav h4 { color: var(--barca-gold); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(237, 187, 0, 0.2); padding-bottom: 8px; }
-        .sidebar-nav ul { list-style: none; padding: 0; }
-        .sidebar-nav a { color: var(--text-muted); text-decoration: none; display: block; padding: 10px 15px; transition: var(--transition); border-left: 3px solid transparent; }
-        .sidebar-nav a:hover, .sidebar-nav a.active { color: var(--primary-light); border-left-color: var(--primary-light); background: linear-gradient(to right, rgba(44, 122, 123, 0.1), transparent); }
-        .main-content { flex-grow: 1; max-width: 900px; }
-        .feature-box { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 2rem; margin: 2rem 0; }
-        .strategy-card { border-left: 4px solid var(--primary); padding-left: 1.5rem; margin: 2rem 0; }
-    </style>
 </head>
 <body>
     <div id="main-nav"></div>
@@ -32,6 +21,7 @@
                     <li><a href="#diff-update">Diff-and-Update</a></li>
                     <li><a href="#rendering">Multimodal Rendering</a></li>
                     <li><a href="#binding">Reactive Binding</a></li>
+                    <li><a href="#observability">Digital Observability</a></li>
                     <li><a href="#tooling">Swing-Aware Tools</a></li>
                 </ul>
             </div>
@@ -46,6 +36,29 @@
                     <h3>The AgiPanel</h3>
                     <p>The primary container for an AGI session. It coordinates the chat interface, resource management, and real-time status monitoring in a unified, responsive layout.</p>
                 </div>
+                <div class="showcase-box" style="margin-top: 2rem; text-align: center;">
+                    <video autoplay loop muted playsinline style="max-width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+                        <source src="assets/agipanel.webm" type="video/webm">
+                        Your browser does not support the video tag.
+                    </video>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 1rem;">Real-time interaction with the AgiPanel orchestrator.</p>
+                </div>
+
+                <div class="code-header" style="margin-top: 3rem;">Implementation: Embedding an AGI Session</div>
+                <pre><code class="language-java">// Extracted from StandaloneMainPanel.java
+public void focus(@NonNull Agi agi) {
+    // 1. Instantiate the panel with the AGI orchestrator
+    AgiPanel panel = new AgiPanel(agi);
+    
+    // 2. Initialize internal Swing components
+    panel.initComponents();
+    
+    // 3. Add to your container (e.g., a JTabbedPane)
+    tabbedPane.addTab(agi.getDisplayName(), panel);
+    
+    // 4. Update domain state
+    agi.setOpen(true);
+}</code></pre>
             </section>
             <section id="diff-update">
                 <h2>The "Tiki-Taka" Rendering Engine</h2>
@@ -67,7 +80,10 @@
                         </div>
                     </div>
                 </div>
-            </section>
+                <div class="showcase-box" style="margin-top: 2rem; text-align: center;">
+                    <img src="screenshots/context-explorer-tree.png" alt="Tiki-Taka Rendering" style="max-width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 1rem;">The Context Explorer browsing the hierarchical domain state.</p>
+                </div>
 
             <section id="rendering">
                 <h2>Multimodal High-Fidelity Rendering</h2>
@@ -94,6 +110,9 @@
                         <h4>Live Media</h4>
                         <p>The <code>MediaRenderer</code> manages the lifecycle of audio playback and image rendering, ensuring resources are disposed of when the turn is recycled.</p>
                     </div>
+                <div class="showcase-box" style="margin-top: 2rem;">
+                    <img src="screenshots/syntax-highlighting_refined.png" alt="Syntax Highlighting" style="width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                </div>
                 </div>
             </section>
 
@@ -103,6 +122,14 @@
                 
                 <div class="strategy-card">
                     <p><b>EDT Safety:</b> The <code>SwingUtils.runInEDT</code> pattern ensures that asynchronous events from the ASI model (like streaming text or tool status updates) are marshaled safely onto the Event Dispatch Thread.</p>
+                </div>
+            </section>
+
+            <section id="observability">
+                <h2>Surgical Precision</h2>
+                <p>The Resources toolkit uses a visual-first diff engine that allows the user to review every insertion, replacement, and deletion with AI-provided reasoning.</p>
+                <div class="showcase-box" style="margin-top: 2rem; text-align: center;">
+                    <img src="screenshots/surgical-diff-viewer.png" alt="Surgical Diff" style="max-width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
                 </div>
             </section>
 
@@ -124,6 +151,9 @@
                         <h4>Metabolic Visualizers</h4>
                         <p>The <code>CwGcPanel</code> provides real-time donut charts of token usage and the <b>Recycling Log</b>.</p>
                         <i class="fas fa-chart-pie" style="font-size: 4rem; opacity: 0.1; position: absolute; bottom: 1rem; right: 1rem;"></i>
+                        <div style="text-align: center; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
+                            <img src="screenshots/metabolic-donut-gc.png" alt="Metabolic Donut" style="width: 100%; height: auto; border-radius: 8px;">
+                        </div>
                     </div>
                 </div>
             </section>
@@ -140,11 +170,22 @@
             return UICapture.capture(myComponent);
         });
     }
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+                    <div class="nb-card" style="margin: 0; border-top-color: var(--barca-gold);">
+                        <h5 style="color: var(--barca-gold); margin-top: 0; text-transform: uppercase; font-size: 0.7rem;">Active Toolkit Renderer</h5>
+                        <img src="screenshots/radio-toolkit-ui.png" alt="Radio Toolkit" style="width: 100%; border-radius: 8px; margin-top: 1rem;">
+                    </div>
+                    <div class="nb-card" style="margin: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.01);">
+                        <p style="font-size: 0.9rem; opacity: 0.5; font-style: italic;">[Placeholder for Screenshot Capture Tooling]</p>
+                    </div>
+                </div>
 }</code></pre>
             </section>
         </main>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
     <script src="nav.js"></script>
 </body>
 </html>

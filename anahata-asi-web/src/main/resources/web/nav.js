@@ -64,4 +64,46 @@ document.addEventListener('DOMContentLoaded', () => {
             links.classList.toggle('active');
         });
     }
+
+    // ScrollSpy Logic for Documentation Sidebars
+    const initScrollSpy = () => {
+        const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
+        const sections = Array.from(sidebarLinks).map(link => {
+            const href = link.getAttribute('href');
+            return href.startsWith('#') ? document.querySelector(href) : null;
+        }).filter(s => s !== null);
+
+        if (sidebarLinks.length === 0 || sections.length === 0) return;
+
+        const observerOptions = {
+            root: null,
+            rootMargin: '-150px 0px -70% 0px', // Focus on the top part of the viewport
+            threshold: 0
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute('id');
+                    sidebarLinks.forEach(link => {
+                        link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
+                    });
+                }
+            });
+        }, observerOptions);
+
+        sections.forEach(section => observer.observe(section));
+
+        // Fallback for manual clicks
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                setTimeout(() => {
+                    sidebarLinks.forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                }, 100);
+            });
+        });
+    };
+
+    initScrollSpy();
 });

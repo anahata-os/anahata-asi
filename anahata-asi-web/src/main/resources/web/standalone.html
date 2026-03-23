@@ -26,10 +26,10 @@
         <aside class="sidebar">
             <div class="sidebar-nav">
                 <h4>Standalone App</h4>
-                <ul>
                     <li><a href="#overview" class="active">Overview</a></li>
-                    <li><a href="#launchers">Launchers</a></li>
-                    <li><a href="#persistence">Persistence</a></li>
+                    <li><a href="#launchers">Swing Launcher</a></li>
+                    <li><a href="#persistence">Persistence Metabolism</a></li>
+                    <li><a href="#portability">Pure Java Portability</a></li>
                 </ul>
             </div>
         </aside>
@@ -43,20 +43,29 @@
             </section>
 
             <section id="launchers">
-                <h2>Dual Launchers</h2>
-                <div style="display: grid; grid-template-columns: 1fr; gap: 2rem;">
-                    <div class="launcher-card">
-                        <i class="fas fa-desktop"></i>
-                        <h3>Swing Launcher</h3>
-                        <p>The full multimodal graphical experience in a lightweight desktop frame.</p>
-                    </div>
+                <h2>The Swing Launcher</h2>
+                <p>The <code>SwingMain</code> class provides the entry point for the desktop experience. It initializes a specialized <code>StandaloneAsiContainer</code> that provides the full multimodal interface in a streamlined, independent window frame.</p>
+                
+                <div class="launcher-card">
+                    <i class="fas fa-desktop"></i>
+                    <h3>High-Fidelity Interface</h3>
+                    <p>Utilizes the same <b>Diff-and-Update</b> rendering engine and reactive bindings as the NetBeans module, ensuring no loss in capability when running outside the IDE.</p>
                 </div>
-                    <div class="launcher-card">
             </section>
 
             <section id="persistence">
-                <h2>Session Persistence</h2>
-                <p>All standalone sessions are securely persisted to the user's home directory (<code>~/.anahata/asi/standalone/sessions</code>), ensuring your conversation state and tool history are always preserved.</p>
+                <h2>Persistence Metabolism</h2>
+                <p>Standalone sessions use a transactional-grade persistence model. The entire AGI state—including conversation history, registered toolkits, and metabolic stats—is serialized using <b>Kryo</b> on every turn.</p>
+                
+                <div style="background: rgba(255,255,255,0.02); border-left: 4px solid var(--barca-gold); padding: 1.5rem; margin: 2rem 0; border-radius: 0 8px 8px 0;">
+                    <h5 style="color: var(--barca-gold); margin-top: 0;">Session Storage Location</h5>
+                    <code>~/.anahata/asi/standalone/sessions/{uuid}/agi.bin</code>
+                </div>
+            </section>
+
+            <section id="portability">
+                <h2>Pure Java Portability</h2>
+                <p>Engineered for the "Write Once, Run Singularity" model. Anahata ASI Desktop requires only a <b>JDK 25</b> compatible runtime and works seamlessly across Linux, Windows, and macOS via standardized <code>OsUtils</code> abstractions.</p>
             </section>
         </main>
     </div>
