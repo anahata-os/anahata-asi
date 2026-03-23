@@ -53,6 +53,85 @@ body {
     padding: 0 2rem;
 }
 
+/* Dropdown Menu Styles */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-toggle {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #1a202c;
+    min-width: 220px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 0.8rem 0;
+    z-index: 1100;
+    margin-top: 0.5rem;
+}
+
+/* The "Tiki-Taka Bridge" - prevents the menu from disappearing when moving from link to menu */
+.dropdown-menu::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: 0;
+    width: 100%;
+    height: 20px;
+    display: block;
+}
+
+.dropdown:hover .dropdown-menu {
+    display: block;
+    animation: fadeIn 0.2s ease;
+}
+
+.dropdown-menu a {
+    padding: 0.8rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-size: 0.9rem;
+    color: var(--text-muted) !important;
+    border-left: none !important;
+}
+
+.dropdown-menu a i {
+    width: 18px;
+    text-align: center;
+    color: var(--barca-gold);
+}
+
+.dropdown-menu a:hover, .dropdown-menu a.active-item {
+    background: rgba(44, 122, 123, 0.1);
+    color: var(--primary-light) !important;
+}
+
+.active-link {
+    color: var(--barca-gold) !important;
+    font-weight: 700;
+}
+
+.nav-solid {
+    background: #1a202c !important;
+    backdrop-filter: none !important;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 /* Navigation */
 nav {
     background: rgba(26, 32, 44, 0.8);
@@ -276,6 +355,10 @@ section {
     border-radius: 16px;
     border: 1px solid rgba(255,255,255,0.05);
     transition: var(--transition);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .feature-card:hover { transform: translateY(-12px); border-color: var(--primary-light); }

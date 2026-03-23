@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anahata NetBeans | The JASI Platform</title>
+    <link rel="icon" type="image/png" href="https://www.anahata.uno/icons/anahata_16.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .docs-wrapper { display: flex; max-width: 1400px; margin: 0 auto; padding: 160px 2rem 100px; gap: 4rem; }
+        .sidebar { width: 300px; flex-shrink: 0; position: sticky; top: 130px; height: calc(100vh - 160px); overflow-y: auto; padding-right: 1.5rem; }
+        .sidebar-nav h4 { color: var(--barca-gold); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(237, 187, 0, 0.2); padding-bottom: 8px; }
+        .sidebar-nav ul { list-style: none; padding: 0; }
+        .sidebar-nav a { color: var(--text-muted); text-decoration: none; display: block; padding: 10px 15px; transition: var(--transition); border-left: 3px solid transparent; }
+        .sidebar-nav a:hover, .sidebar-nav a.active { color: var(--primary-light); border-left-color: var(--primary-light); background: linear-gradient(to right, rgba(44, 122, 123, 0.1), transparent); }
+        .main-content { flex-grow: 1; max-width: 900px; }
+        .nb-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 2rem; margin: 2rem 0; border-top: 4px solid #3498db; }
+    </style>
+</head>
+<body>
+    <div id="main-nav"></div>
+
+    <div class="docs-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-nav">
+                <h4>IDE Integration</h4>
+                <ul>
+                    <li><a href="#overview" class="active">Overview</a></li>
+                    <li><a href="#annotators">Annotator Strategy</a></li>
+                    <li><a href="#tooling">Native IDE Tooling</a></li>
+                    <li><a href="#refactoring">Smart Refactoring</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <section id="overview">
+                <h1>NetBeans <span style="color: var(--barca-gold)">ASI Studio</span></h1>
+                <p class="tagline" style="text-align: left;">Deep IDE integration for the ultimate Java coding experience.</p>
+                
+                <p>The NetBeans module transforms the IDE into a high-fidelity ASI Container, giving the model direct access to project structures, compilation errors, and native refactoring APIs.</p>
+            </section>
+
+            <section id="annotators">
+                <h2>Annotator Strategy</h2>
+                <div class="nb-card">
+                    <p>We use a non-intrusive annotation system to provide context within the IDE:</p>
+                    <ul>
+                        <li><b>Project Icons:</b> Real-time badges for Anahata-enabled projects.</li>
+                        <li><b>Context Menus:</b> Unified "AI Context" submenus across all file types.</li>
+                        <li><b>Editor Feedback:</b> Direct line annotations from the ASI on source code.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="tooling">
+                <h2>Native IDE Tooling</h2>
+                <p>Anahata NetBeans exposes the full power of the platform to the ASI:</p>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
+                    <div class="nb-card" style="margin: 0;">
+                        <h4>Maven Integration</h4>
+                        <p>Project dependency management and lifecycle execution.</p>
+                    </div>
+                    <div class="nb-card" style="margin: 0;">
+                        <h4>Code Model</h4>
+                        <p>Deep browsing of types, members, and Javadocs via NetBeans Java Source APIs.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="nav.js"></script>
+</body>
+</html>

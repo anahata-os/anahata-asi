@@ -216,26 +216,7 @@
 </head>
 <body>
     <div class="uml-overlay" id="overlay"></div>
-    <nav>
-        <div class="nav-container container">
-            <a href="index.html" class="logo">
-                <img src="assets/logo-transparent.png" alt="Anahata Logo" style="height: 40px;">
-            </a>
-            <div class="menu-toggle"><i class="fas fa-bars"></i></div>
-            <div class="nav-links">
-                <a href="index.html#modules">Modules</a>
-                <a href="core.html" class="active-link">Core API</a>
-                <a href="apidocs/index.html">Javadocs</a>
-                <div class="social-links" style="display: flex; gap: 1.2rem; margin-left: 1rem; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 1.5rem;">
-                    <a href="https://www.youtube.com/@anahata108" target="_blank"><i class="fab fa-youtube"></i></a>
-                    <a href="https://discord.gg/Pjev7Cha" target="_blank"><i class="fab fa-discord"></i></a>
-                    <a href="https://x.com/AnahataASI" target="_blank"><i class="fa-brands fa-x-twitter"></i></a>
-                    <a href="https://github.com/anahata-os/anahata-asi" target="_blank"><i class="fab fa-github"></i></a>
-                </div>
-                <a href="https://github.com/anahata-os/sponsors" class="btn-sponsor" style="margin-left: 1rem;">Sponsor</a>
-            </div>
-        </div>
-    </nav>
+    <div id="main-nav"></div>
 
     <div class="docs-wrapper">
         <aside class="sidebar">
@@ -693,6 +674,7 @@ public class IssueNode {
     </footer>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="nav.js"></script>
     <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=f19c44f5-8b2e-458f-beab-96e4f9f8e603" />
 </body>
 </html>

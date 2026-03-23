@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anahata Swing | The JASI Platform</title>
+    <link rel="icon" type="image/png" href="https://www.anahata.uno/icons/anahata_16.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <style>
+        .docs-wrapper { display: flex; max-width: 1400px; margin: 0 auto; padding: 160px 2rem 100px; gap: 4rem; }
+        .sidebar { width: 300px; flex-shrink: 0; position: sticky; top: 130px; height: calc(100vh - 160px); overflow-y: auto; padding-right: 1.5rem; }
+        .sidebar-nav h4 { color: var(--barca-gold); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(237, 187, 0, 0.2); padding-bottom: 8px; }
+        .sidebar-nav ul { list-style: none; padding: 0; }
+        .sidebar-nav a { color: var(--text-muted); text-decoration: none; display: block; padding: 10px 15px; transition: var(--transition); border-left: 3px solid transparent; }
+        .sidebar-nav a:hover, .sidebar-nav a.active { color: var(--primary-light); border-left-color: var(--primary-light); background: linear-gradient(to right, rgba(44, 122, 123, 0.1), transparent); }
+        .main-content { flex-grow: 1; max-width: 900px; }
+        .feature-box { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 2rem; margin: 2rem 0; }
+        .strategy-card { border-left: 4px solid var(--primary); padding-left: 1.5rem; margin: 2rem 0; }
+    </style>
+</head>
+<body>
+    <div id="main-nav"></div>
+
+    <div class="docs-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-nav">
+                <h4>Swing UI Components</h4>
+                <ul>
+                    <li><a href="#orchestration" class="active">UI Orchestration</a></li>
+                    <li><a href="#diff-update">Diff-and-Update</a></li>
+                    <li><a href="#rendering">Multimodal Rendering</a></li>
+                    <li><a href="#binding">Reactive Binding</a></li>
+                    <li><a href="#tooling">Swing-Aware Tools</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <section id="orchestration">
+                <h1>Anahata <span style="color: var(--barca-gold)">Swing</span></h1>
+                <p class="tagline" style="text-align: left;">High-fidelity, provider-agnostic UI components for building agentic workflows in Java.</p>
+                
+                <div class="feature-box">
+                    <h3>The AgiPanel</h3>
+                    <p>The primary container for an AGI session. It coordinates the chat interface, resource management, and real-time status monitoring in a unified, responsive layout.</p>
+                </div>
+            </section>
+
+            <section id="diff-update">
+                <h2>Diff-and-Update Strategy</h2>
+                <div class="strategy-card">
+                    <p>To maintain extreme performance in conversations with thousands of turns, Anahata Swing uses a surgical "Diff-and-Update" rendering engine:</p>
+                    <ul>
+                        <li><b>Message Level:</b> ConversationPanel tracks AbstractMessage objects and reuses panel instances.</li>
+                        <li><b>Part Level:</b> Individual message parts are rendered using specialized, reusable PartPanels.</li>
+                        <li><b>Text Level:</b> Markdown is parsed into descriptors and rendered via high-performance segments.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="rendering">
+                <h2>Multimodal Rendering</h2>
+                <p>Anahata Swing goes beyond simple text. It supports rich, interactive rendering for:</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2rem;">
+                    <div class="feature-box" style="margin: 0;">
+                        <i class="fas fa-file-alt"></i>
+                        <h4>Dynamic Resources</h4>
+                        <p>Specialized viewers for code, images, and project files with live sync.</p>
+                    </div>
+                    <div class="feature-box" style="margin: 0;">
+                        <i class="fas fa-project-diagram"></i>
+                        <h4>UML & Mermaid</h4>
+                        <p>Real-time rendering of Mermaid diagrams within the chat flow.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="binding">
+                <h2>Reactive Domain Binding</h2>
+                <p>Leveraging <code>PropertyChangeSource</code> and <code>EdtPropertyChangeListener</code>, the UI reflects domain changes instantly and safely on the Event Dispatch Thread (EDT).</p>
+            </section>
+        </main>
+    </div>
+
+    <script src="nav.js"></script>
+</body>
+</html>

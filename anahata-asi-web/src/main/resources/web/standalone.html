@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anahata Standalone | The JASI Platform</title>
+    <link rel="icon" type="image/png" href="https://www.anahata.uno/icons/anahata_16.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .docs-wrapper { display: flex; max-width: 1400px; margin: 0 auto; padding: 160px 2rem 100px; gap: 4rem; }
+        .sidebar { width: 300px; flex-shrink: 0; position: sticky; top: 130px; height: calc(100vh - 160px); overflow-y: auto; padding-right: 1.5rem; }
+        .sidebar-nav h4 { color: var(--barca-gold); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(237, 187, 0, 0.2); padding-bottom: 8px; }
+        .sidebar-nav ul { list-style: none; padding: 0; }
+        .sidebar-nav a { color: var(--text-muted); text-decoration: none; display: block; padding: 10px 15px; transition: var(--transition); border-left: 3px solid transparent; }
+        .sidebar-nav a:hover, .sidebar-nav a.active { color: var(--primary-light); border-left-color: var(--primary-light); background: linear-gradient(to right, rgba(44, 122, 123, 0.1), transparent); }
+        .main-content { flex-grow: 1; max-width: 900px; }
+        .launcher-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 2.5rem; margin: 2rem 0; text-align: center; }
+        .launcher-card i { font-size: 3rem; color: var(--primary-light); margin-bottom: 1.5rem; }
+    </style>
+</head>
+<body>
+    <div id="main-nav"></div>
+
+    <div class="docs-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-nav">
+                <h4>Standalone App</h4>
+                <ul>
+                    <li><a href="#overview" class="active">Overview</a></li>
+                    <li><a href="#launchers">Launchers</a></li>
+                    <li><a href="#persistence">Persistence</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <section id="overview">
+                <h1>Anahata <span style="color: var(--barca-gold)">ASI Desktop</span></h1>
+                <p class="tagline" style="text-align: left;">Portable ASI launchers for desktop and terminal environments.</p>
+                
+                <p>Standalone provides pure Java application wrappers to run Anahata ASI sessions outside of any IDE, making the platform accessible anywhere Java is installed.</p>
+            </section>
+
+            <section id="launchers">
+                <h2>Dual Launchers</h2>
+                <div style="display: grid; grid-template-columns: 1fr; gap: 2rem;">
+                    <div class="launcher-card">
+                        <i class="fas fa-desktop"></i>
+                        <h3>Swing Launcher</h3>
+                        <p>The full multimodal graphical experience in a lightweight desktop frame.</p>
+                    </div>
+                </div>
+                    <div class="launcher-card">
+            </section>
+
+            <section id="persistence">
+                <h2>Session Persistence</h2>
+                <p>All standalone sessions are securely persisted to the user's home directory (<code>~/.anahata/asi/standalone/sessions</code>), ensuring your conversation state and tool history are always preserved.</p>
+            </section>
+        </main>
+    </div>
+
+    <script src="nav.js"></script>
+</body>
+</html>

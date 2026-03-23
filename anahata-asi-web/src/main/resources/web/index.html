@@ -31,26 +31,7 @@
     </style>
 </head>
 <body>
-    <nav>
-        <div class="nav-container container">
-            <a href="index.html" class="logo">
-                <img src="assets/logo-transparent.png" alt="Anahata Logo" style="height: 40px;">
-            </a>
-            <div class="menu-toggle"><i class="fas fa-bars"></i></div>
-            <div class="nav-links">
-                <a href="#modules">Modules</a>
-                <a href="core.html">Core API</a>
-                <a href="apidocs/index.html">Javadocs</a>
-                <div class="social-links" style="display: flex; gap: 1.2rem; margin-left: 1rem; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 1.5rem;">
-                    <a href="https://www.youtube.com/@anahata108" target="_blank" title="Anahata TV"><i class="fab fa-youtube"></i></a>
-                    <a href="https://discord.gg/Pjev7Cha" target="_blank" title="Discord"><i class="fab fa-discord"></i></a>
-                    <a href="https://x.com/AnahataASI" target="_blank" title="Twitter / X"><i class="fa-brands fa-x-twitter"></i></a>
-                    <a href="https://github.com/anahata-os/anahata-asi" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
-                </div>
-                <a href="https://github.com/anahata-os/sponsors" class="btn-sponsor" style="margin-left: 1rem;">Sponsor</a>
-            </div>
-        </div>
-    </nav>
+    <div id="main-nav"></div>
 
     <header class="hero" style="padding-top: 8rem;">
         <div class="hero-overlay"></div>
@@ -84,47 +65,71 @@
                     <p>A platform agnostic, Domain-Driven, Object Oriented stack built for reliability, observability, security and LLM provider independence.</p>
                 </div>
                 
-                <div class="feature-grid">
-                    <!-- Provider Module -->
-                    <div class="feature-card">
+                <h3 style="color: var(--barca-gold); margin-bottom: 2rem; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 2px;">Libraries</h3>
+                <div class="feature-grid" style="margin-bottom: 4rem;">
+                    <!-- ASI Gemini -->
+                    <a href="gemini.html" class="feature-card" style="text-decoration: none; color: inherit;">
                         <i class="fas fa-plug" style="font-size: 2.5rem; color: var(--barca-gold); margin-bottom: 1.5rem;"></i>
-                        <h3>ASI Provider</h3>
-                        <p>Specialized drivers for LLM vendors to adapt the ASI to individual Large Language Model Providers.</p>
+                        <h3>ASI Gemini</h3>
+                        <p>The bridge between Anahata and Google's GenAI. Adapts multi-modal content and native tool calling to the core domain.</p>
                         <div class="implementation-box">
-                            <b>Gemini Provider</b>
+                            <b>Provider Adapter</b>
                         </div>
-                    </div>
+                    </a>
 
-                    <!-- Core Module -->
-                    <div class="feature-card">
+                    <!-- ASI Core -->
+                    <a href="core.html" class="feature-card" style="text-decoration: none; color: inherit;">
                         <i class="fas fa-brain" style="font-size: 2.5rem; color: var(--primary-light); margin-bottom: 1.5rem;"></i>
                         <h3>ASI Core</h3>
-                        <p>The Heart of the Platform. Domain Driven model of the Context Window: <b>AGI Container</b>, Messages & Parts, Toolkits, Tools, Context Providers, Resources, Events, Garbage Collection, Security, Auto-Backups, and Passivation.</p>
-                        <div class="coming-soon">Coming: Query Language (CwQL), Flight Recorder</div>
-                    </div>
+                        <p>The Heart of the Platform. Domain model of the Context Window, Toolkits, Resources, and ContextWindow Garbage Collection (CwGC).</p>
+                        <div class="implementation-box">
+                            <b>Foundational Engine</b>
+                        </div>
+                    </a>
 
-                    <!-- UI Module -->
-                    <div class="feature-card">
+                    <!-- ASI Swing -->
+                    <a href="swing.html" class="feature-card" style="text-decoration: none; color: inherit;">
                         <i class="fas fa-desktop" style="font-size: 2.5rem; color: var(--verified-green); margin-bottom: 1.5rem;"></i>
-                        <h3>ASI UI</h3>
-                        <p>Cross Platform, Multi Modal visualization. Includes the Context Window heatmaps, Garbage Collector dashboards, and the Global ASI Container monitor.</p>
+                        <h3>ASI Swing</h3>
+                        <p>High-fidelity multimodal UI components. Provides the AgiPanel, reactive bindings, and the "Diff-and-Update" rendering engine.</p>
                         <div class="implementation-box">
-                            <b>ASI Swing</b>
+                            <b>Visual Framework</b>
                         </div>
-                    </div>
+                    </a>
 
-                    <!-- Application Module -->
-                    <div class="feature-card">
-                        <i class="fas fa-rocket" style="font-size: 2.5rem; color: var(--accent); margin-bottom: 1.5rem;"></i>
-                        <h3>ASI Application</h3>
-                        <p>Cross-platform applications built on the ASI Platform. Extend Toolkits, Context Providers, and tailor user interfaces with full security controls.</p>
+                    <!-- ASI Yam -->
+                    <a href="yam.html" class="feature-card" style="text-decoration: none; color: inherit;">
+                        <i class="fas fa-flask" style="font-size: 2.5rem; color: var(--accent); margin-bottom: 1.5rem;"></i>
+                        <h3>ASI Yam</h3>
+                        <p>The experimental laboratory. Specialized toolkits for Chrome automation, Internet Radio, and Text-to-Speech (TTS).</p>
                         <div class="implementation-box">
-                            <b>NetBeans Coding Assistant</b>
+                            <b>Experimental Lab</b>
                         </div>
+                    </a>
+                </div>
+
+                <h3 style="color: var(--barca-gold); margin-bottom: 2rem; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 2px;">Applications</h3>
+                <div class="feature-grid">
+                    <!-- ASI Standalone -->
+                    <!-- Anahata ASI Desktop -->
+                    <a href="standalone.html" class="feature-card" style="text-decoration: none; color: inherit;">
+                        <i class="fas fa-rocket" style="font-size: 2.5rem; color: var(--primary-light); margin-bottom: 1.5rem;"></i>
+                        <h3>Anahata ASI Desktop</h3>
+                        <p>Portable ASI launchers for desktop environments outside of any IDE. Pure Java portability.</p>
                         <div class="implementation-box">
-                            <b>ASI Standalone</b>
+                            <b>Swing Launcher</b>
                         </div>
-                    </div>
+                    </a>
+
+                    <!-- NetBeans ASI Studio -->
+                    <a href="nb.html" class="feature-card" style="text-decoration: none; color: inherit;">
+                        <i class="fas fa-code" style="font-size: 2.5rem; color: var(--barca-gold); margin-bottom: 1.5rem;"></i>
+                        <h3>NetBeans ASI Studio</h3>
+                        <p>Deep IDE integration. Smart annotators, native refactoring toolkits, and real-time project context management.</p>
+                        <div class="implementation-box">
+                            <b>ASI IDE Container</b>
+                        </div>
+                    </a>
                 </div>
             </div>
         </section>
@@ -135,11 +140,6 @@
                     <h2 style="font-size: 3rem; margin-bottom: 1rem;">Visca el Barça!</h2>
                     <p style="font-size: 1.2rem; opacity: 0.9;">Powered by the spirit of <b>Tiki-Taka</b>. Precision, flow, and absolute dominance in the field of AI. Messi is the GOAT, and Anahata is the Messi of software architectures.</p>
                     <ul class="sextete-list">
-                        <li class="sextete-item"><i class="fas fa-trophy"></i> La Liga</li>
-                        <li class="sextete-item"><i class="fas fa-trophy"></i> Copa del Rey</li>
-                        <li class="sextete-item"><i class="fas fa-trophy"></i> Champions League</li>
-                        <li class="sextete-item"><i class="fas fa-trophy"></i> FIFA Club World Cup</li>
-                    </ul>
                 </div>
                 <img src="assets/logos/barsa.png" alt="FC Barcelona" class="barca-logo">
             </div>
@@ -172,5 +172,6 @@
         </div>
         <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=f19c44f5-8b2e-458f-beab-96e4f9f8e603" />
     </footer>
+    <script src="nav.js"></script>
 </body>
 </html>
