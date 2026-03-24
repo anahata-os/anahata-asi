@@ -8,6 +8,19 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            securityLevel: 'loose',
+            fontFamily: 'Inter',
+            themeVariables: {
+                primaryColor: '#2c7a7b',
+                lineColor: '#edbb00'
+            }
+        });
+    </script>
 </head>
 <body>
     <div id="main-nav"></div>
@@ -19,10 +32,10 @@
                 <ul>
                     <li><a href="#overview" class="active">Overview</a></li>
                     <li><a href="#annotators">Annotator Strategy</a></li>
-                    <li><a href="#maven">Maven Lifecycle</a></li>
+                    <li><a href="#maven">Maven Embedder</a></li>
                     <li><a href="#codemodel">Java Code Model</a></li>
-                    <li><a href="#refactoring">Smart Refactoring</a></li>
-                    <li><a href="#nbmreload">Hot Reloading</a></li>
+                    <li><a href="#refactoring">Refactoring Bridge</a></li>
+                    <li><a href="#lifecycle">Hot Reloading</a></li>
                 </ul>
             </div>
         </aside>
@@ -30,105 +43,117 @@
         <main class="main-content">
             <section id="overview">
                 <h1>NetBeans <span style="color: var(--barca-gold)">ASI Studio</span></h1>
-                <p class="tagline" style="text-align: left;">Deep IDE integration for the ultimate Java coding experience.</p>
-                <p>NetBeans ASI Studio transforms the IDE into a high-fidelity ASI Container. It isn't just a plugin; it's a structural bridge that gives the model direct access to project graphs, compilation lifecycles, and the industry-standard NetBeans Refactoring engine.</p>
+                <p class="tagline" style="text-align: left;">Deep IDE orchestration for the ultimate Java coding experience. Turning NetBeans into a high-fidelity ASI Container.</p>
+                <p>NetBeans ASI Studio is not just a plugin; it's a structural bridge that gives the model direct access to project graphs, compilation lifecycles, and the industry-standard NetBeans Refactoring engine. It follows the **IDE API Preference Principle**: always prefer <code>MimeLookup</code> or <code>EditorKit</code> over direct file manipulation.</p>
                 
                 <div class="nb-card" style="border-top-color: var(--barca-gold);">
-                    <p><b>Architectural Principle:</b> Always prefer NetBeans APIs (e.g., <code>MimeLookup</code>, <code>EditorKit</code>) over direct file manipulation. This ensures that the ASI respects the IDE's internal state and transactional integrity.</p>
+                    <p><b>Singularity-Ready:</b> By integrating directly with the IDE's internal state, the ASI respects transactional integrity and project-specific configurations (like Compile on Save) that are invisible to standard file-system agents.</p>
                 </div>
             </section>
 
             <section id="annotators">
                 <h2>The Annotator Strategy</h2>
-                <p>Powered by the <code>AnahataAnnotationProvider</code>, the Studio provides a non-intrusive, real-time feedback loop directly on your source code. It uses a <b>Manual Delegation Chain</b> to preserve existing IDE decorators (like Git status or Error badges).</p>
+                <p>The Studio provides non-intrusive, real-time visual feedback directly on the source code via the <code>AnahataAnnotationProvider</code>. This is achieved through a <b>Manual Delegation Chain</b> that preserves existing IDE decorators (like Git status or Error badges).</p>
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
-                    <div class="nb-card" style="margin: 0; border-top-color: var(--verified-green);">
-                        <i class="fas fa-layer-group" style="color: var(--barca-gold); font-size: 1.5rem; margin-bottom: 1rem; display: block;"></i>
-                        <h4>Project Badges</h4>
-                        <p>Injects the Anahata bell icon and real-time session counters (e.g., <code>[2]</code>) into the Projects view, showing exactly which files are currently being analyzed by which ASI sessions.</p>
-                    </div>
-                    <div class="nb-card" style="margin: 0; border-top-color: var(--barca-red);">
-                        <i class="fas fa-comment-dots" style="color: var(--barca-gold); font-size: 1.5rem; margin-bottom: 1rem; display: block;"></i>
-                        <h4>Line Annotations</h4>
-                        <p>The ASI "paints" feedback, suggestions, or errors directly onto specific lines in the Java editor using native <code>Annotation</code> objects, allowing for visual-first debugging.</p>
+                <div class="mermaid-card" onclick="this.classList.toggle('expanded')">
+                    <div class="code-header">Annotator Delegation Flow</div>
+                    <div class="mermaid">
+                        graph TD
+                            NB[NetBeans Node] --> AAP[AnahataAnnotationProvider]
+                            AAP --> |BUSY Guard| Delegate[delegateIcon / delegateNameHtml]
+                            Delegate --> Git[GitAnnotationProvider]
+                            Delegate --> Error[ErrorAnnotationProvider]
+                            Git --> AAP
+                            Error --> AAP
+                            AAP --> |Final Overlay| UI[Anahata Bell + Session Count]
                     </div>
                 </div>
-                <div class="showcase-box" style="margin-top: 2rem; text-align: center;">
-                    <img src="screenshots/context-provider-details.png" alt="Context Annotator" class="clickable-media" data-caption="The Annotator Strategy: High-fidelity visual badges and session-aware tooltips directly in the NetBeans project explorer." style="max-width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+
+                <div class="asymmetric-grid">
+                    <div class="nb-card" style="margin: 0; border-top-color: var(--verified-green);">
+                        <h4>Project View Badges</h4>
+                        <p style="font-size: 0.9rem;">Injected at position <code>10000</code>, our provider adds the Anahata bell icon and real-time session counters (e.g., <code>[2]</code>) to the Projects view, indicating active AI analysis.</p>
+                    </div>
+                    <div class="nb-card" style="margin: 0; border-top-color: var(--barca-red);">
+                        <h4>Line Annotations</h4>
+                        <p style="font-size: 0.9rem;">The ASI "paints" suggestions or errors directly onto specific lines using native <code>Annotation</code> objects, allowing for visual-first, agentic debugging.</p>
+                    </div>
                 </div>
             </section>
 
             <section id="maven">
-                <h2>Maven Lifecycle Integration</h2>
-                <p>The <code>Maven</code> toolkit gives the ASI "hands" on your build lifecycle. It leverages the <b>NetBeans Maven Embedder</b> to perform synchronous goal execution and recursive dependency resolution.</p>
+                <h2>NetBeans Maven Embedder</h2>
+                <p>The <code>Maven</code> toolkit leverages the host IDE's internal Maven engine to perform synchronous build goal execution and recursive dependency resolution.</p>
                 
                 <div class="nb-card">
                     <ul style="list-style: none; padding: 0;">
-                        <li style="margin-bottom: 1rem;"><i class="fas fa-check-circle" style="color: var(--verified-green); margin-right: 10px;"></i> <b>Full Transitive Analysis:</b> <code>getResolvedDependencies</code> returns the final runtime classpath, providing the model with absolute situational awareness.</li>
-                        <li style="margin-bottom: 1rem;"><i class="fas fa-check-circle" style="color: var(--verified-green); margin-right: 10px;"></i> <b>Synchronous Build Loop:</b> Executes <code>clean</code>, <code>install</code>, or <code>nbm-reload</code> and captures the log output for immediate feedback.</li>
-                        <li style="margin-bottom: 1rem;"><i class="fas fa-check-circle" style="color: var(--verified-green); margin-right: 10px;"></i> <b>The addDependency Super-Tool:</b> A multi-phase safety tool that verifies artifact existence before modifying the POM.</li>
+                        <li style="margin-bottom: 1.5rem;"><i class="fas fa-check-circle" style="color: var(--verified-green); margin-right: 12px;"></i> <b>Full Transitive Analysis:</b> <code>getResolvedDependencies</code> returns the absolute runtime classpath, providing the model with total situational awareness.</li>
+                        <li style="margin-bottom: 1.5rem;"><i class="fas fa-check-circle" style="color: var(--verified-green); margin-right: 12px;"></i> <b>Synchronous Build Loop:</b> Executes <code>clean</code>, <code>install</code>, or <code>nbmreload</code> and captures the log output for immediate feedback in the chat.</li>
+                        <li style="margin-bottom: 1.5rem;"><i class="fas fa-check-circle" style="color: var(--verified-green); margin-right: 12px;"></i> <b>The addDependency Super-Tool:</b> A safe, multi-phase tool that verifies artifact existence and downloads sources before modifying the POM.</li>
                     </ul>
                 </div>
             </section>
 
             <section id="codemodel">
                 <h2>Java Code Model (Index-Aware)</h2>
-                <p>The <code>CodeModel</code> toolkit is the model's primary sensor for the codebase. It uses high-performance NetBeans indices to explore types without manual file parsing.</p>
+                <p>Powered by <code>org.netbeans.api.java.source</code>, the <code>CodeModel</code> toolkit is the model's primary sensor. It explores types via high-performance indices rather than slow manual parsing.</p>
                 
+                <div class="code-header">Technical Advantage: FQN-Resolution</div>
                 <div class="nb-card" style="border-top-color: var(--barca-blue);">
-                    <h4>The "One-Shot" Advantage</h4>
-                    <p>Unlike standard agents that must "grep" through folders, NetBeans ASI Studio uses <b>FQN-Resolution</b>. Tools like <code>getMembersByFqn</code> allow the model to skip discovery turns and jump straight to the source of a specific class or method.</p>
+                    <p style="margin: 0;">Tools like <code>getMembersByFqn</code> allow the ASI to skip "discovery turns." If the type name is known, the model jumps straight to the source, significantly reducing turn overhead and token cost.</p>
                 </div>
                 
-                <div class="code-header">Technical Flow: Hierarchy Exploration</div>
-                <pre><code class="language-java">// Example of recursive hierarchy analysis
-JavaHierarchyNode node = codeModel.getSubtypesByFqn("java.util.List", 2);
-// Returns a recursive tree of implementations known to the IDE index.</code></pre>
+                <div class="code-header" style="margin-top: 2rem;">Implementation: Subtype Search Task</div>
+                <pre><code class="language-java">// Exposing the IDE Index as an AI Tool
+public JavaHierarchyNode getSubtypesByFqn(String fqn, int maxDepth) {
+    // Uses NetBeans ElementHandle and ClassIndex to build a recursive tree
+    // across all open projects and their dependencies.
+    return searchSubtypes(fqn, maxDepth);
+}</code></pre>
             </section>
 
             <section id="refactoring">
                 <h2>Smart Refactoring Bridge</h2>
-                <p>The <code>Refactor</code> toolkit exposes the IDE's industry-standard refactoring engine as agentic tools. This ensures that when the ASI modifies code, all references across the entire project graph remain consistent.</p>
+                <p>The <code>Refactor</code> toolkit exposes the IDE's industry-standard refactoring engine as agentic tools. This ensures that when the ASI modifies code, every reference in every open project is updated atomically.</p>
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2rem;">
-                    <div class="nb-card" style="margin: 0; padding: 1.5rem;">
-                        <h5 style="color: var(--barca-gold); margin-top: 0; text-transform: uppercase; font-size: 0.7rem;">Symbolic Operations</h5>
-                        <ul style="font-size: 0.85rem; opacity: 0.8; padding-left: 1rem; margin: 0;">
-                            <li>Rename Class/Method</li>
-                            <li>Move to Package</li>
-                            <li>Change Method Signature</li>
-                            <li>Inline Constant/Variable</li>
-                        </ul>
-                    </div>
-                    <div class="nb-card" style="margin: 0; padding: 1.5rem;">
-                        <h5 style="color: var(--barca-gold); margin-top: 0; text-transform: uppercase; font-size: 0.7rem;">Structural Operations</h5>
-                        <ul style="font-size: 0.85rem; opacity: 0.8; padding-left: 1rem; margin: 0;">
-                            <li>Extract Interface</li>
-                            <li>Extract Superclass</li>
-                            <li>Pull Up / Push Down</li>
-                            <li>Encapsulate Field</li>
-                        </ul>
+                <div class="nb-card">
+                    <h5 style="color: var(--barca-gold); margin-top: 0; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px;">The Refactoring Lifecycle</h5>
+                    <div class="responsive-grid" style="margin: 1.5rem 0 0 0;">
+                        <div>
+                            <span style="color: var(--primary-light); font-weight: 700;">1. Pre-check</span>
+                            <p style="font-size: 0.8rem; opacity: 0.7;">Verifies the element exists and is eligible for the operation (e.g., not a read-only JAR).</p>
+                        </div>
+                        <div>
+                            <span style="color: var(--primary-light); font-weight: 700;">2. Parameters</span>
+                            <p style="font-size: 0.8rem; opacity: 0.7;">Validates new names or signatures (FQN-resolution, reserved words).</p>
+                        </div>
+                        <div>
+                            <span style="color: var(--primary-light); font-weight: 700;">3. Prepare</span>
+                            <p style="font-size: 0.8rem; opacity: 0.7;">Discovers all references and structural impact across the entire project graph.</p>
+                        </div>
+                        <div>
+                            <span style="color: var(--primary-light); font-weight: 700;">4. Execute</span>
+                            <p style="font-size: 0.8rem; opacity: 0.7;">Transactional application of changes to the filesystem and the active IDE buffer.</p>
+                        </div>
                     </div>
                 </div>
 
-                <div class="code-header" style="margin-top: 2rem;">Implementation: A Safe Rename</div>
+                <div class="code-header" style="margin-top: 2rem;">Implementation: A Safe Rename Tool</div>
                 <pre><code class="language-java">// Extracted from Refactor.java
-@AiTool("Renames a file or class. This is a 'safe' rename that updates all references...")
+@AiTool("Renames a file or class. This is a 'safe' rename...")
 public String rename(String filePath, String newName) throws Exception {
     FileObject fo = getFileObject(filePath);
     RenameRefactoring refactoring = new RenameRefactoring(getLookupForFile(fo));
     refactoring.setNewName(newName);
     
-    // Standard NetBeans Refactoring Lifecycle:
-    // 1. Pre-check -> 2. Parameters -> 3. Prepare -> 4. Execute
+    // Execute through the 4-phase lifecycle and return a detailed log
     return executeRefactoring(refactoring, "Rename " + fo.getName());
 }</code></pre>
             </section>
 
-            <section id="nbmreload">
+            <section id="lifecycle">
                 <h2>The Development Lifecycle</h2>
-                <p>For contributors building new toolkits, NetBeans ASI Studio supports a high-velocity <code>nbmreload</code> workflow. Changes to tools in the <code>anahata-asi-nb</code> module or its dependencies can be deployed into the host IDE in a single turn, enabling real-time experimentation without platform restarts.</p>
+                <p>Contributors building new toolkits can leverage the <code>nbmreload</code> goal. This triggers a synchronous reload of the Anahata plugin into the host IDE instance, allowing for a tight "Code → Build → Test" loop in a single turn without platform restarts.</p>
             </section>
         </main>
     </div>
