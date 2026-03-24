@@ -111,4 +111,9 @@ public abstract class AnahataToolkit extends ToolContext implements ContextProvi
         return propertyChangeSupport;
     }
     
+
+    /** {@inheritDoc} */
+    public void postActivate() {
+        log.info("Post-activating toolkit: {}", getName());
+    }
 }
