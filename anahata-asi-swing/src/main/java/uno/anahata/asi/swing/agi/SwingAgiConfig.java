@@ -54,9 +54,10 @@ public class SwingAgiConfig extends AgiConfig {
     private boolean audioFeedbackEnabled = true; 
 
     {
-        // Register the Yam tools for all Swing-based configurations
-        getToolClasses().remove(Java.class);
+        // Replace java for swing java
+        getToolClasses().remove(Java.class);        
         getToolClasses().add(SwingJava.class);
+        // Add yam tools
         getToolClasses().add(Radio.class);
         getToolClasses().add(Speech.class);
         getToolClasses().add(Chrome.class);
