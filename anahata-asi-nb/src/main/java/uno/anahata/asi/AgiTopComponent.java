@@ -40,8 +40,8 @@ import uno.anahata.asi.swing.internal.SwingUtils;
         preferredID = "agi",
         iconBase = "icons/anahata_16.png",
         persistenceType = TopComponent.PERSISTENCE_ONLY_OPENED)
-@TopComponent.Registration(mode = "output", openAtStartup = false, position = 0)
-@TopComponent.OpenActionRegistration(displayName = "AGI Container")
+@TopComponent.Registration(mode = "output", openAtStartup = false, position = 102)
+@TopComponent.OpenActionRegistration(displayName = "New AGI Container")
 @Slf4j
 public final class AgiTopComponent extends TopComponent {
 
