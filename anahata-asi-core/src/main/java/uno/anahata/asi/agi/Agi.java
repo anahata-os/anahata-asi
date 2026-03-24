@@ -243,6 +243,8 @@ public class Agi extends BasicPropertyChangeSource {
 
         log.info("Triggering environmental bootstrapping for agi session {}", config.getSessionId());
 
+        // Warm up managers and toolkits before we start any processing loops
+        this.postActivate();
         // Zombie Message Recovery: If we reloaded a session with a staged message, 
         // kickstart the processing loop to consume it.
         if (stagedUserMessage != null) {
@@ -902,5 +904,14 @@ public class Agi extends BasicPropertyChangeSource {
      */
     public <T> Optional<T> getToolkit(Class<T> toolkitClass) {
         return toolManager.getToolkitInstance(toolkitClass);
+    }
+
+    /**
+     * Performs post-restoration logic, warming up managers and toolkits.
+     * This is called by the container after the session is bound and restored.
+     */
+    public void postActivate() {
+        log.info("Post-activating Agi session: {}", config.getSessionId());
+        toolManager.postActivate();
     }
 }
