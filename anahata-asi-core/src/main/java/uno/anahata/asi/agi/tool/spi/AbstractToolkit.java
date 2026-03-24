@@ -111,4 +111,13 @@ public abstract class AbstractToolkit<T extends AbstractTool<?,?>> {
     public void initialize() {
         // Subclasses can override
     }
+
+    /**
+     * Performs logic after the session has been activated and bound to the environment.
+     * Subclasses should override this to perform one-time setup that requires the 
+     * entire session graph to be available.
+     */
+    public void postActivate() {
+        // Subclasses can override
+    }
 }
