@@ -7,7 +7,7 @@ import org.netbeans.api.project.Project;
 import org.openide.filesystems.FileObject;
 import uno.anahata.asi.agi.context.BasicContextProvider;
 import uno.anahata.asi.nb.tools.project.Projects;
-import uno.anahata.asi.nb.tools.files.nb.FilesContextActionLogic;
+import uno.anahata.asi.nb.annotation.FilesContextActionLogic;
 
 /**
  * Common base class for context providers that are bound to a specific NetBeans project.

@@ -1,5 +1,5 @@
 /* Licensed under the Apache License, Version 2.0 */
-package uno.anahata.asi.nb.tools.files.nb;
+package uno.anahata.asi.nb.annotation;
 
 import java.awt.Image;
 import java.awt.event.ActionEvent;

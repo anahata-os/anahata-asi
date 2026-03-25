@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
-import uno.anahata.asi.nb.tools.files.nb.AnahataAnnotationProvider;
+import uno.anahata.asi.nb.annotation.AnahataAnnotationProvider;
 import uno.anahata.asi.nb.ui.render.FullTextResourceUpdateRenderer;
 import uno.anahata.asi.nb.ui.render.TextResourceReplacementsRenderer;
 import uno.anahata.asi.nb.ui.render.TextResourceLineUpdatesRenderer;

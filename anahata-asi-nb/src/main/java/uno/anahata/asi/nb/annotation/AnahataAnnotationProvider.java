@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.nb.tools.files.nb;
+package uno.anahata.asi.nb.annotation;
 
 import java.awt.Image;
 import java.util.Collections;

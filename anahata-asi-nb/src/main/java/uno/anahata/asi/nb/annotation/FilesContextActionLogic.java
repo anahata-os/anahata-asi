@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.nb.tools.files.nb;
+package uno.anahata.asi.nb.annotation;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -18,7 +18,7 @@ import org.openide.filesystems.FileSystem;
 import org.openide.filesystems.FileUtil;
 import uno.anahata.asi.nb.AnahataInstaller;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.nb.tools.files.nb.AnahataAnnotationProvider;
+import uno.anahata.asi.nb.annotation.AnahataAnnotationProvider;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.toolkit.Resources;
 
