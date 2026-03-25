@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import lombok.extern.slf4j.Slf4j;
 import org.openide.filesystems.FileObject;
@@ -18,9 +17,6 @@ import org.openide.filesystems.FileSystem;
 import org.openide.filesystems.FileUtil;
 import uno.anahata.asi.nb.AnahataInstaller;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.nb.annotation.AnahataAnnotationProvider;
-import uno.anahata.asi.agi.resource.Resource;
-import uno.anahata.asi.toolkit.Resources;
 
 /**
  * Logic handler for adding NetBeans files and folders to the V2 AI context.
@@ -58,6 +54,15 @@ public class FilesContextActionLogic {
         }
     }
 
+    /**
+     * Recursively collects files that need to be added to the context.
+     * 
+     * @param fo The current file or folder.
+     * @param targetAgi The target session.
+     * @param recursive Whether to recurse into subfolders.
+     * @param toRegister Output list of paths to register.
+     * @param fosToRefresh Output set of file objects to refresh.
+     */
     private static void collectAdditions(FileObject fo, Agi targetAgi, boolean recursive, 
                                        List<Path> toRegister, Set<FileObject> fosToRefresh) {
         if (fo.isData()) {
@@ -101,6 +106,15 @@ public class FilesContextActionLogic {
         }
     }
     
+    /**
+     * Recursively collects resource IDs that need to be removed from the context.
+     * 
+     * @param fo The current file or folder.
+     * @param targetAgi The target session.
+     * @param recursive Whether to recurse into subfolders.
+     * @param ids Output list of resource IDs to unregister.
+     * @param fos Output set of file objects to refresh.
+     */
     private static void collectRemovals(FileObject fo, Agi targetAgi, boolean recursive, 
                                       List<String> ids, Set<FileObject> fos) {
         if (fo.isData()) {
@@ -158,6 +172,14 @@ public class FilesContextActionLogic {
         return counts;
     }
 
+    /**
+     * Internal counter for files belonging to a folder that are in context.
+     * 
+     * @param fo The folder or file to check.
+     * @param agi The session to query.
+     * @param recursive Whether to perform a recursive count.
+     * @return The number of resources in context.
+     */
     private static int countFilesInContext(FileObject fo, Agi agi, boolean recursive) {
         File file = FileUtil.toFile(fo);
         if (file == null) return 0;
@@ -180,6 +202,11 @@ public class FilesContextActionLogic {
                 .count();
     }
 
+    /**
+     * Fires a batch refresh event for a set of file objects, including their parent hierarchy.
+     * 
+     * @param targets The set of file objects to refresh.
+     */
     private static void fireBatchRefreshRecursive(Set<FileObject> targets) {
         Map<FileSystem, Set<FileObject>> toRefreshByFs = new HashMap<>();
         for (FileObject fo : targets) {
@@ -197,6 +224,11 @@ public class FilesContextActionLogic {
         }
     }
 
+    /**
+     * Fires a recursive refresh event for a single file object and its parents.
+     * 
+     * @param fo The file object to refresh.
+     */
     public static void fireRefreshRecursive(FileObject fo) {
         fireBatchRefreshRecursive(Set.of(fo));
     }
