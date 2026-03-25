@@ -16,6 +16,8 @@ import uno.anahata.asi.swing.AgiController;
 /**
  * A TopComponent that displays a list of all active Anahata ASI sessions.
  * It uses the switcher view which defaults to Sticky Notes (Cards).
+ * 
+ * @author anahata
  */
 @TopComponent.Description(
         preferredID = "AsiCardsTopComponent",
@@ -31,8 +33,12 @@ import uno.anahata.asi.swing.AgiController;
 @Slf4j
 public class AsiCardsTopComponent extends TopComponent implements AgiController {
 
+    /** The UI panel displaying the active sessions as cards. */
     private final AsiCardsContainerPanel sessionsPanel;
 
+    /**
+     * Default constructor for the cards view.
+     */
     public AsiCardsTopComponent() {
         setName("Anahata ASI");
         setToolTipText("Manage active AGI sessions");
@@ -44,16 +50,35 @@ public class AsiCardsTopComponent extends TopComponent implements AgiController 
         add(sessionsPanel, BorderLayout.CENTER);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Starts the periodic refresh of the sessions panel.
+     * </p>
+     */
     @Override
     public void componentOpened() {
         sessionsPanel.startRefresh();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Stops the periodic refresh of the sessions panel.
+     * </p>
+     */
     @Override
     public void componentClosed() {
         sessionsPanel.stopRefresh();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Finds the TopComponent for the given agi and requests focus.
+     * If not found, a new TopComponent is created.
+     * </p>
+     */
     @Override
     public void focus(@NonNull Agi agi) {
         Set<TopComponent> opened = WindowManager.getDefault().getRegistry().getOpened();
@@ -73,6 +98,12 @@ public class AsiCardsTopComponent extends TopComponent implements AgiController 
         tc.requestActive();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Finds and closes the TopComponent associated with the given agi.
+     * </p>
+     */
     @Override
     public void close(@NonNull Agi agi) {
         Set<TopComponent> opened = WindowManager.getDefault().getRegistry().getOpened();
