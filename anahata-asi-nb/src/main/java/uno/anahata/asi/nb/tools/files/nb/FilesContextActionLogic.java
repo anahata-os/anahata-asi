@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileSystem;
 import org.openide.filesystems.FileUtil;
-import uno.anahata.asi.AnahataInstaller;
+import uno.anahata.asi.nb.AnahataInstaller;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.nb.tools.files.nb.AnahataAnnotationProvider;
 import uno.anahata.asi.agi.resource.Resource;

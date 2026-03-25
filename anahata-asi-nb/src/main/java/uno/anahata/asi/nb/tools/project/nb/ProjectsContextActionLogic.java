@@ -3,7 +3,7 @@ package uno.anahata.asi.nb.tools.project.nb;
 
 import java.util.logging.Logger;
 import org.netbeans.api.project.Project;
-import uno.anahata.asi.AnahataInstaller;
+import uno.anahata.asi.nb.AnahataInstaller;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.nb.tools.project.Projects;
 

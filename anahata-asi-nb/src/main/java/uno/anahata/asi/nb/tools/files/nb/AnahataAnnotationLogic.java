@@ -11,7 +11,7 @@ import org.netbeans.api.project.Project;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
 import org.openide.loaders.DataShadow;
-import uno.anahata.asi.AnahataInstaller;
+import uno.anahata.asi.nb.AnahataInstaller;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.context.ContextProvider;
 import uno.anahata.asi.nb.tools.project.Projects;

@@ -12,8 +12,8 @@ import javax.swing.JMenuItem;
 import org.openide.filesystems.FileObject;
 import org.openide.util.ImageUtilities;
 import org.openide.util.actions.Presenter;
-import uno.anahata.asi.AgiTopComponent;
-import uno.anahata.asi.AnahataInstaller;
+import uno.anahata.asi.nb.AgiTopComponent;
+import uno.anahata.asi.nb.AnahataInstaller;
 import uno.anahata.asi.agi.Agi;
 
 /**

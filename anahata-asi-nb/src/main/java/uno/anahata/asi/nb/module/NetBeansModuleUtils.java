@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 import org.openide.modules.Dependency;
 import org.openide.modules.ModuleInfo;
 import org.openide.modules.Modules;
-import uno.anahata.asi.AnahataInstaller;
+import uno.anahata.asi.nb.AnahataInstaller;
 
 /**
  * Utility class for introspecting NetBeans modules and their classpaths.

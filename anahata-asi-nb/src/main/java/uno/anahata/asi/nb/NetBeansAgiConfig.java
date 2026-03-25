@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi;
+package uno.anahata.asi.nb;
 
+import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.gemini.GeminiAgiProvider;
 import uno.anahata.asi.nb.mine.NetBeansIconProvider;
 import uno.anahata.asi.nb.tools.Refactor;

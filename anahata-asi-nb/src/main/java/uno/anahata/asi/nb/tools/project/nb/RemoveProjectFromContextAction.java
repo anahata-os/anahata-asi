@@ -19,7 +19,7 @@ import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
 import org.openide.util.Utilities;
 import org.openide.util.actions.Presenter;
-import uno.anahata.asi.AnahataInstaller;
+import uno.anahata.asi.nb.AnahataInstaller;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.swing.icons.IconUtils;

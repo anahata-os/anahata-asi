@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi;
+package uno.anahata.asi.nb;
 
 import java.util.Set;
 import java.util.logging.Level;
@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 import org.openide.modules.ModuleInstall;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
+import uno.anahata.asi.AsiContainer;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**

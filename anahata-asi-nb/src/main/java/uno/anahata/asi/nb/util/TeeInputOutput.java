@@ -1,5 +1,5 @@
 /* Licensed under the Apache License, Version 2.0 */
-package uno.anahata.asi.util;
+package uno.anahata.asi.nb.util;
 
 import java.io.IOException;
 import java.io.Reader;

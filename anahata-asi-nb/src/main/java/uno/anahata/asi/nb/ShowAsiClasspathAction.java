@@ -1,5 +1,5 @@
 /* Licensed under the Apache License, Version 2.0 */
-package uno.anahata.asi;
+package uno.anahata.asi.nb;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
