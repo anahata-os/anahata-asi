@@ -28,6 +28,8 @@ import uno.anahata.asi.agi.provider.RequestConfig;
 import uno.anahata.asi.agi.provider.ThinkingLevel;
 import uno.anahata.asi.agi.provider.ServerTool;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
+import java.util.stream.Collectors;
+import uno.anahata.asi.toolkit.History;
 
 /**
  * A focused adapter responsible for converting our model-agnostic RequestConfig
@@ -43,22 +45,19 @@ public final class RequestConfigAdapter {
      * Converts an Anahata RequestConfig to a Google GenAI
      * GenerateContentConfig.
      *
-     * @param anahataConfig The Anahata config to convert.
+     * @param requestConfig The Anahata config to convert.
      * @return The corresponding GenerateContentConfig, or null if the input is
      * null.
      */
-    public static GenerateContentConfig toGoogle(RequestConfig anahataConfig) {
-        if (anahataConfig == null) {
-            return null;
-        }
-        
-        log.info("Generating GenerateContentConfig for " + anahataConfig);
+    public static GenerateContentConfig toGoogle(RequestConfig requestConfig) {
+                
+        log.info("Generating GenerateContentConfig for " + requestConfig);
 
         GenerateContentConfig.Builder builder = GenerateContentConfig.builder();
         
-        if (!anahataConfig.getSystemInstructions().isEmpty()) {
+        if (!requestConfig.getSystemInstructions().isEmpty()) {
             List<Part> parts = new ArrayList<>();
-            for (String si : anahataConfig.getSystemInstructions()) {
+            for (String si : requestConfig.getSystemInstructions()) {
                parts.add(Part.fromText(si));
             }
             
@@ -66,14 +65,14 @@ public final class RequestConfigAdapter {
             String rawJson = sysInstContent.toJson();
             int tokenCount = TokenizerUtils.countTokens(rawJson);
             
-            anahataConfig.setSystemInstructionsRawJson(rawJson);
-            anahataConfig.setSystemInstructionsTokenCount(tokenCount);
+            requestConfig.setSystemInstructionsRawJson(rawJson);
+            requestConfig.setSystemInstructionsTokenCount(tokenCount);
             log.info("System Instructions: {} tokens", tokenCount);
             
             builder.systemInstruction(sysInstContent);
         }
         
-        List<String> modalities = anahataConfig.getResponseModalities();
+        List<String> modalities = requestConfig.getResponseModalities();
         if (modalities != null && !modalities.isEmpty()) {
             builder.responseModalities(modalities);
         } else {
@@ -82,10 +81,10 @@ public final class RequestConfigAdapter {
         
         // Adapt Thinking Config based on session settings and thinking level
         ThinkingConfig.Builder thinkingBuilder = ThinkingConfig.builder();
-        boolean includeThoughts = anahataConfig.getAgi().getConfig().isIncludeThoughts();
+        boolean includeThoughts = requestConfig.getAgi().getConfig().isIncludeThoughts();
         
 
-        ThinkingLevel ourLevel = anahataConfig.getThinkingLevel();
+        ThinkingLevel ourLevel = requestConfig.getThinkingLevel();
         if (ourLevel != null && ourLevel != ThinkingLevel.THINKING_LEVEL_UNSPECIFIED) {
             thinkingBuilder.thinkingLevel(new com.google.genai.types.ThinkingLevel(
                     com.google.genai.types.ThinkingLevel.Known.valueOf(ourLevel.name())
@@ -94,24 +93,25 @@ public final class RequestConfigAdapter {
 
         builder.thinkingConfig(thinkingBuilder.includeThoughts(includeThoughts).build());
 
-        Optional.ofNullable(anahataConfig.getTemperature()).ifPresent(builder::temperature);
-        Optional.ofNullable(anahataConfig.getMaxOutputTokens()).ifPresent(builder::maxOutputTokens);
+        Optional.ofNullable(requestConfig.getTemperature()).ifPresent(builder::temperature);
+        Optional.ofNullable(requestConfig.getMaxOutputTokens()).ifPresent(builder::maxOutputTokens);
 
         // Fix: topK and topP are Floats in the Gemini API, but Integer/Float in our core model.
         // We must convert Integer topK to Float for the builder.
-        Optional.ofNullable(anahataConfig.getTopK()).map(Integer::floatValue).ifPresent(builder::topK);
-        Optional.ofNullable(anahataConfig.getTopP()).ifPresent(builder::topP);
+        Optional.ofNullable(requestConfig.getTopK()).map(Integer::floatValue).ifPresent(builder::topK);
+        Optional.ofNullable(requestConfig.getTopP()).ifPresent(builder::topP);
         
-        if (anahataConfig.getCandidateCount() != null) {
-            builder.candidateCount(anahataConfig.getCandidateCount());
+        if (requestConfig.getCandidateCount() != null) {
+            builder.candidateCount(requestConfig.getCandidateCount());
         }
 
-        List<? extends AbstractTool> localTools = anahataConfig.getLocalTools();
+        List<? extends AbstractTool> localTools = requestConfig.getLocalTools();
         if (localTools != null && !localTools.isEmpty()) {
             log.info("Local tools enabled, adding " + localTools.size() + " tools");
             List<FunctionDeclaration> declarations = new ArrayList<>();
             
-            boolean useNativeSchemas = anahataConfig.isUseNativeSchemas();
+            boolean useNativeSchemas = requestConfig.isUseNativeSchemas();
+            List<String> historyToolNames = new ArrayList<>();
             for (AbstractTool<?, ?> tool : localTools) {
                 FunctionDeclaration fd = new GeminiFunctionDeclarationAdapter(tool, useNativeSchemas).toGoogle();
                 if (fd != null) {
@@ -121,19 +121,33 @@ public final class RequestConfigAdapter {
                     // but we log it for now. The tool itself should ideally hold its provider-specific count.
                     log.debug("Tool {}: {} tokens", tool.getName(), tokenCount);
                     declarations.add(fd);
+                    if (tool.getName().startsWith(History.class.getSimpleName())) {
+                        historyToolNames.add(fd.name().get());
+                    }
                 }
             }
 
             if (!declarations.isEmpty()) {
                 Tool tool = Tool.builder().functionDeclarations(declarations).build();
                 builder.tools(tool);
+                
+                FunctionCallingConfig.Builder fccb = FunctionCallingConfig.builder();
+                
+                if (requestConfig.isInjectInbandMetadata()) {
+                    log.info("In-band Metadata injection enabled, only History tools are allowed: " + historyToolNames);
+                    fccb.allowedFunctionNames(historyToolNames);
+                    fccb.mode(FunctionCallingConfigMode.Known.ANY);
+                } else {
+                    fccb.mode(FunctionCallingConfigMode.Known.VALIDATED);
+                }
+                
                 ToolConfig tc = ToolConfig.builder()
-                        .functionCallingConfig(FunctionCallingConfig.builder()
-                                .mode(FunctionCallingConfigMode.Known.VALIDATED)).build();
+                                .functionCallingConfig(fccb.build())
+                        .build();
                 builder.toolConfig(tc);
             }
-        } else if (anahataConfig.isServerToolsEnabled()) {
-            List<ServerTool> enabledTools = anahataConfig.getEnabledServerTools();
+        } else if (requestConfig.isServerToolsEnabled()) {
+            List<ServerTool> enabledTools = requestConfig.getEnabledServerTools();
             if (enabledTools != null && !enabledTools.isEmpty()) {
                 log.info("Server tools enabled, adding {} tools", enabledTools.size());
                 Tool.Builder toolBuilder = Tool.builder();
