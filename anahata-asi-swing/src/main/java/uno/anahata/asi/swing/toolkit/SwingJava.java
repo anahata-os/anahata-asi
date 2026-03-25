@@ -64,6 +64,7 @@ public class SwingJava extends Java {
      * which provides the necessary plumbing for EDT-aware context propagation.
      * </p> 
      */
+    @Override
     protected Class<? extends ToolContext> getConcreteClassModelShouldExtend() {
         return SwingAgiTool.class;
     }
