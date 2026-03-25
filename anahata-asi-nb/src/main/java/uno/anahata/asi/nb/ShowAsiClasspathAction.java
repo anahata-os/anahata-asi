@@ -25,6 +25,12 @@ import uno.anahata.asi.nb.module.NetBeansModuleUtils;
 @ActionReference(path = "Menu/Tools", position = 11)
 public final class ShowAsiClasspathAction implements ActionListener {
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Displays the ASI classpath grouped by directory in a dedicated output tab.
+     * </p>
+     */
     @Override
     public void actionPerformed(ActionEvent e) {
         InputOutput io = IOProvider.getDefault().getIO("Anahata ASI Classpath", true);
