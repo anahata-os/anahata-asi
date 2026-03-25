@@ -1,4 +1,4 @@
-/* Licensed under the Apache License, Version 2.0 */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.annotation;
 
 import java.awt.Image;
@@ -45,9 +45,10 @@ public class AnahataContextActionPresenter extends AbstractAction implements Pre
         this.files = files;
     }
 
-    /**
-     * Inherited from {@link AbstractAction}. This method is not used directly 
-     * as this action only serves as a popup presenter.
+    /** 
+     * {@inheritDoc} 
+     * <p>This implementation is a no-op as the action is exclusively used as a 
+     * {@link Presenter.Popup} to generate the dynamic submenus.</p> 
      * 
      * @param e The action event.
      */
@@ -56,14 +57,12 @@ public class AnahataContextActionPresenter extends AbstractAction implements Pre
         // No direct action
     }
 
-    /**
-     * Builds and returns the dynamic "AI Context" menu item.
-     * <p>
-     * Implementation details:
+    /** 
+     * {@inheritDoc} 
+     * <p>Implementation details:
      * 1. Lists all active sessions (Agis) from the installer.
      * 2. Provides an option to create a new session and immediately add the selection.
-     * 3. Dynamically filters the "Remove" menu to only show sessions containing the selection.
-     * </p>
+     * 3. Dynamically filters the "Remove" menu to only show sessions containing the selection.</p> 
      * 
      * @return A JMenuItem (specifically a JMenu) representing the context menu.
      */

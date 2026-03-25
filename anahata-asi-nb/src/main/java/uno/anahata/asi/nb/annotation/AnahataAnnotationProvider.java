@@ -88,15 +88,13 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
         LOG.info("AnahataAnnotationProvider (v3.0) Master Shell initializing...");
     }
 
-    /**
-     * Annotates the icon of a file or set of files.
-     * <p>
-     * Implementation details:
+    /** 
+     * {@inheritDoc} 
+     * <p>Implementation details:
      * 1. Preserves existing badges (Git, Errors) by delegating to other providers.
      * 2. Uses {@link AnahataAnnotationLogic} to classify the node and calculate session totals.
      * 3. Overlays the Anahata bell icon if any of the files are in an active AI context.
-     * 4. Injects a dynamically built tooltip into the merged image.
-     * </p>
+     * 4. Injects a dynamically built tooltip into the merged image.</p> 
      * 
      * @param icon The base icon to annotate.
      * @param type The type of icon (e.g., closed/opened folder).
@@ -147,14 +145,12 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
         }
     }
 
-    /**
-     * Annotates the HTML name of a file or set of files.
-     * <p>
-     * Implementation details:
+    /** 
+     * {@inheritDoc} 
+     * <p>Implementation details:
      * 1. Preserves existing HTML decorations (Git branch, status colors) via delegation.
      * 2. Uses {@link AnahataAnnotationLogic} to determine the specific annotation suffix (bracketed counts or session names).
-     * 3. Surgically injects the suffix before the closing &lt;/html&gt; tag.
-     * </p>
+     * 3. Surgically injects the suffix before the closing &lt;/html&gt; tag.</p> 
      * 
      * @param name The original HTML name (may be null).
      * @param files The set of files represented by the node.
@@ -197,14 +193,12 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
         }
     }
 
-    /**
-     * Provides dynamic context menu actions for the selected files.
-     * <p>
-     * Implementation details:
+    /** 
+     * {@inheritDoc} 
+     * <p>Implementation details:
      * Returns a single {@link AnahataContextActionPresenter} which generates the dynamic 
      * "Add/Remove from AI Context" submenus. This allows all file types to be managed 
-     * without specific MIME-type registrations.
-     * </p>
+     * without specific MIME-type registrations.</p> 
      * 
      * @param files The set of selected files.
      * @return An array of actions to add to the context menu.

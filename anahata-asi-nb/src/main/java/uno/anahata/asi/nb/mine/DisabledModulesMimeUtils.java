@@ -1,4 +1,4 @@
-/* Licensed under the Apache License, Version 2.0 */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.mine;
 
 import java.io.File;
@@ -71,6 +71,11 @@ public final class DisabledModulesMimeUtils {
             return (extensions != null && !extensions.isEmpty()) ? extensions.get(0) : null;
         }
         
+        /** 
+         * {@inheritDoc} 
+         * <p>Returns a human-readable representation of the MIME info, including 
+         * the module code name and its current activation state.</p> 
+         */
         @Override
         public String toString() {
             return String.format("%s [%s] %s", mimeType, moduleCodeName, enabled ? "ENABLED" : "DISABLED");
