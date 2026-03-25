@@ -53,11 +53,19 @@ public class GeminiContentAdapter {
         return results;
     }
 
+    /**
+     * 
+     * @return 
+     */
+    private boolean shouldInjectInbandMetadata() {
+        return anahataMessage.getAgi().getRequestConfig().isInjectInbandMetadata()&& anahataMessage.shouldCreateMetadata();
+    }
+
     private Content toGoogleUser() {
         Content.Builder builder = Content.builder().role("user");
         List<Part> googleParts = new ArrayList<>();
 
-        if (anahataMessage.shouldCreateMetadata()) {
+        if (shouldInjectInbandMetadata()) {
             googleParts.add(createMetadataPart(anahataMessage.createMetadataHeader()));
         }
 
@@ -88,7 +96,7 @@ public class GeminiContentAdapter {
         Content.Builder modelContentBuilder = Content.builder().role("model");
         List<Part> modelParts = new ArrayList<>();
 
-        if (anahataMessage.shouldCreateMetadata()) {
+        if (shouldInjectInbandMetadata()) {
             modelParts.add(createMetadataPart(anahataMessage.createMetadataHeader()));
         }
 
@@ -140,7 +148,7 @@ public class GeminiContentAdapter {
         boolean isEffectivelyPruned = part.isEffectivelyPruned();
         boolean shouldIncludeContent = !isEffectivelyPruned || includePruned;
 
-        if (anahataMessage.shouldCreateMetadata()) {
+        if (shouldInjectInbandMetadata()) {
             // METADATA INTERLEAVING: The metadata header is always created if the 
             // message allows it. The AbstractPart itself now handles the 
             // rich "Ghost" hint when effectively pruned.
@@ -167,8 +175,8 @@ public class GeminiContentAdapter {
 
     private Part.Builder createMetadataPartBuilder(String text) {
         return Part.builder()
-                .text(text)
-                .thought(true);
+                .text(text);
+                //.thought(true);
     }
 
     private Part createMetadataPart(String text) {
