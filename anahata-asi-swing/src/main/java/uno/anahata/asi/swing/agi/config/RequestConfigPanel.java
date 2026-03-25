@@ -95,7 +95,9 @@ public class RequestConfigPanel extends ScrollablePanel implements PropertyChang
     /** Spinner for default blob max depth. */
     private JSpinner blobMaxDepthSpinner;
     /** Spinner for default thought max depth. */
-    private JSpinner thoughtMaxDepthSpinner;
+    private JSpinner thoughtMaxDepthSpinner;    
+    /** Checkbox for injecting in-band metadata. */
+    private JCheckBox injectInbandMetadataCheckbox;
     /** Checkbox for including pruned parts in the API request. */
     private JCheckBox includePrunedCheckbox;
 
@@ -257,6 +259,9 @@ public class RequestConfigPanel extends ScrollablePanel implements PropertyChang
         includePrunedCheckbox = new JCheckBox("Include pruned parts in API request");
         metabolismPanel.add(includePrunedCheckbox, "wrap");
 
+        metabolismPanel.add(new JLabel("History Metadata:"));
+        injectInbandMetadataCheckbox = new JCheckBox("Inject in-band metadata (IDs, Remaining Depth, Token Sizes, Pruned hints,etc.)");
+        metabolismPanel.add(injectInbandMetadataCheckbox, "wrap");
         metabolicTab.add(metabolismPanel, "growx, wrap");
         tabbedPane.addTab("Metabolic", new JScrollPane(metabolicTab));
 
@@ -324,6 +329,7 @@ public class RequestConfigPanel extends ScrollablePanel implements PropertyChang
         blobMaxDepthSpinner.addChangeListener(e -> agi.getConfig().setDefaultBlobPartMaxDepth((Integer) blobMaxDepthSpinner.getValue()));
         thoughtMaxDepthSpinner.addChangeListener(e -> agi.getConfig().setDefaultThoughtPartMaxDepth((Integer) thoughtMaxDepthSpinner.getValue()));
         includePrunedCheckbox.addActionListener(e -> config.setIncludePruned(includePrunedCheckbox.isSelected()));
+        injectInbandMetadataCheckbox.addActionListener(e -> config.setInjectInbandMetadata(injectInbandMetadataCheckbox.isSelected()));
     }
 
     /**
@@ -374,7 +380,7 @@ public class RequestConfigPanel extends ScrollablePanel implements PropertyChang
         blobMaxDepthSpinner.setValue(agiConfig.getDefaultBlobPartMaxDepth());
         thoughtMaxDepthSpinner.setValue(agiConfig.getDefaultThoughtPartMaxDepth());
         includePrunedCheckbox.setSelected(config.isIncludePruned());
-
+        injectInbandMetadataCheckbox.setSelected(config.isInjectInbandMetadata());
         if (model != null) {
             updateModalities(model);
             updateServerTools(model);
