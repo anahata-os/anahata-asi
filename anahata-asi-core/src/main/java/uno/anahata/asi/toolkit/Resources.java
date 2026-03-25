@@ -26,7 +26,6 @@ import uno.anahata.asi.toolkit.files.AbstractTextResourceWrite;
 import uno.anahata.asi.toolkit.files.FullTextFileCreate;
 import uno.anahata.asi.toolkit.files.FullTextResourceUpdate;
 import uno.anahata.asi.toolkit.files.TextResourceReplacements;
-import uno.anahata.asi.toolkit.files.TextResourceLineBasedUpdates;
 import uno.anahata.asi.toolkit.files.lines.TextResourceLineEdits;
 
 /**
@@ -60,12 +59,14 @@ public class Resources extends AnahataToolkit {
                 + "3. **Updating text resources**: All update text resource tools flush the changes to disk inmediatly when `EXECUTED`.\n "
                 + "4. **Rag Message**: The Rag Message is the source of truth for resource modifications, it gets freshly generated when the user completes his turn (i.e. after all tools in the batch have been executed or declined). "
                         + "All resources registered with `LIVE` refresh policy are garanteed to be up to date (in sync) with the underlying storage.\n"
-                + "5. **Resources.editTextResource tool**: This is not a git style tool that requires surrounding anchor lines. It is a strict, surgical 1-based line number tool with optimistic locking validation for text resources loaded with includeLineNumbers=true. The UI for this tool shows the user a rich graphical diff visualizer with the edits you intend to make to the text resource and overlays comic-style annotations with the reasons for your edits on the right hand side of the diff viewer. "
-                        + "\n\tUse this tool **paying careful attention to the line numbers in the RAG message** and use it in a **user-oriented way** choosing the appropiate type of edit (insert / replace / delete) for each logical change to the lines of the text resource. Do not use line replacement edits with 'surrounding lines' that need no change when you can implement the same with a pure insert. This is very important for the following reasons: "
-                        + "\n\ta)Providing surrounding anchor/context lines is more prone to fail as this is not the way the tool is designed"
-                        + "\n\tb)The graphical diff visualizer will not match the edits you intend to make to the text resource (will not show unchanged lines)"
+                + "5. **Resources.editTextResource tool**: This is not a git style tool that requires surrounding anchor lines. It is a strict, surgical 1-based line number tool with optimistic locking validation for text resources loaded with includeLineNumbers=true."
+                        + " The UI for this tool shows the user a rich graphical diff visualizer with the edits you intend to make to the text resource and overlays comic-style annotations with the reasons for your edits on the right hand side of the diff viewer. "
+                        + "\n\tUse this tool **paying careful attention to the line numbers in the RAG message** and use it in a **user-oriented way** choosing the appropiate type of edit (insert / replace / delete) for each logical change you intend to make."
+                        + " **\n\tDo not use replacements with existing surrounding lines that need no change when you can perform the edits with pure inserts**. This is very important for the following reasons: "
+                        + "\n\ta)Providing surrounding anchor/context lines is prone to fail as this is not the way the tool is designed (its based on optimstic locking, not in matching anchors)."
+                        + "\n\tb)The graphical diff visualizer will not display the changes you intend to make to the text resource (because it will not highlight surrounding lines that have not changed)"
                         + "\n\tc)Will cause the comic-style bubbles to be offset (on a line that has no changes)."
-                        + "\n\tFor these reasons, you should always use inserts when the changes can be implemented with pure insert operation (rather than using a replace operation containing the lines before and after the block of code that you want to insert).\n"
+                        + "\n\tFor these reasons, when using the editTextResource tool, **you MUST always choose 'inserts' over 'replacements' when possible**.\n"
         );
     }
 
@@ -253,43 +254,6 @@ public class Resources extends AnahataToolkit {
     }
 
     /**
-     * Performs line-based replacements in an existing file.
-     *
-     * @param updates The line replacements DTO.
-     * @return A standard unified diff of the changes applied.
-     * @throws Exception if replacements fail.
-     */
-    //Temporarily disabled
-    /*
-    @AiTool(" Performs surgical line-based updates using 1-based line numbers on text resources in the RAG message. "
-            + "This tool uses optimistic locking rather than 'git-style' surrounding anchors.\n"
-            + " When sending multiple updates in a single call, all line numbers must refer to the original state in the RAG message (the tool handles index shifting internally). \n"
-            + " For PURE INSERTION (`lineCount=0`). This places `newContent` BEFORE the `startLine`, pushing the original line down without any risk of deleting it. Only use `lineCount > 0` when you intend to remove or overwrite existing code.\n"
-            + "CRITICAL: Do NOT include surrounding context/anchors in `newContent`. Use lineCount=0 for insertions.")
-    */
-    public String updateLinesInTextResource(
-            @AiToolParam("Contains the resource details, list modified timstamp and the line-number based updates for the given resource. ") TextResourceLineBasedUpdates updates) throws Exception {
-        try {
-            updates.validate(getAgi());
-
-            Resource res = getAgi().getResourceManager().getResources().get(updates.getResourceUuid());
-            if (res != null) {
-                String original = res.asText();
-                updates.setOriginalContent(original);
-                String revised = updates.performUpdates(original);
-
-                res.write(revised);
-                log("Performed replacements in: " + res.getName());
-
-                return AnahataDiffUtils.generateUnifiedDiff(res.getName(), original, revised);
-            }
-            return "";
-        } catch (Exception e) {
-            throw wrapWithDiff(updates, e);
-        }
-    }
-
-    /**
      * Performs a set of semantic line edits (insertions, replacements, deletions) 
      * in an existing file.
      * <p>
@@ -304,9 +268,9 @@ public class Resources extends AnahataToolkit {
     @AiTool("An ultra-precise, surgical text resource editor for text resources in the RAG message with 'includeLineNumbers' enabled. "
             + "Targets absolute 1-based line numbers from the RAG message using semantic intent (Insert, Replace, Delete). "
             + "Vertification is based on line numbers and the lastModified timestamp in the RAG message and  "
-            + "not based on surrounding anchors like git patch style tools so do not use replacements (using existing lines as anchors) for pure insertions. "
-            + "If you need to insert new lines into the resource, use pure insertions instead of replacements that start with one or two lines of existing content."
-            + "All line numbers you use when calling this tool must correspond to the line numbers in the text resource in the RAG message.\n\n"
+            + "not based on surrounding anchors like git patch style tools so do not use replacements (using existing lines as anchors) for changes that can and should be implemented with pure inserts. "
+            + "If you need to insert new lines into the resource, use pure insertions instead of replacements that start with one or two lines of existing 'anchor' content."
+            + "All line numbers you use when calling this tool must correspond to the line numbers in the text resource in the RAG message, all changes are performed based on the line numbers of the resource in the RAG message at the time of making the call, the tool handles index shifting automatically.\n\n"
             + "This is presented to the user in a graphical diff viewer where he reviews your proposed changes with a comic style bubble overlayed over the code showing your comment/reason for each edit when the user hovers over it. "
             + "Always make sure that each edit (regardless of wether it is an insert a replacement or a delete correspond to a single 'intent' that the user is going to review: for example, if you need to add javadoc to two fields and a constructor that are next to each other, always use 3 inserts rather than 1 big replacement."
             + "When doing replacements, do not include content that it is already in the file. Always be as minimal and surgical as possible and try to no include lines that do not need to change. "
