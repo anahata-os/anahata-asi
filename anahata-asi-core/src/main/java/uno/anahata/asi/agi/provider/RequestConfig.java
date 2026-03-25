@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
+import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
 
 /**
  * The definitive, model-agnostic configuration object for a single API request.
@@ -22,7 +23,7 @@ import uno.anahata.asi.agi.tool.spi.AbstractTool;
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class RequestConfig {
+public class RequestConfig extends BasicPropertyChangeSource {
     @NonNull
     @JsonIgnore
     private final Agi agi;
@@ -51,6 +52,17 @@ public class RequestConfig {
 
     /** If true, the adapter should include pruned messages and parts in the API request. For debugging. */
     private boolean includePruned = false;
+    
+    /** If true, in-band metadata headers are injected into the prompt for history pruning purposes. */
+    private boolean injectInbandMetadata = false;
+
+    public void setInjectInbandMetadata(boolean injectInbandMetadata) {
+        boolean old = this.injectInbandMetadata;
+        if (old != injectInbandMetadata) {
+            this.injectInbandMetadata = injectInbandMetadata;
+            propertyChangeSupport.firePropertyChange("injectInbandMetadata", old, injectInbandMetadata);
+        }
+    }
     
     /** 
      * Whether to use the native provider Schema objects for tool parameters
