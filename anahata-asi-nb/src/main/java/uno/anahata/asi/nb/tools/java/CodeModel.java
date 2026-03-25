@@ -384,7 +384,7 @@ public class CodeModel extends AnahataToolkit {
 
         if (results.size() > 1) {
             log.warn("Ambiguous FQN: {}. Found {} matches.", fqn, results.size());
-            throw new AiToolException("Multiple types found for FQN: " + fqn + ". Please use findTypes to select the correct one.");
+            throw new AiToolException("Multiple types found for FQN: " + fqn + ": " + results + ". Please use the tool that takes a JavaType as a parameter to specify or the Resources Toolkit if you now the url.");
         }
 
         log.info("Successfully resolved unique type: {} -> {}", fqn, results.get(0).getUrl());
