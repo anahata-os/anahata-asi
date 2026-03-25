@@ -93,7 +93,7 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         descriptionBuilder.append("\n\nToolkit: ").append(this.toolkit.getName());
         descriptionBuilder.append("\nMethod:\n").append(this.javaMethodSignature);
         this.description = descriptionBuilder.toString();
-
+        
         // A tool creates its own parameters.
         initParameters();
         
@@ -132,15 +132,17 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         return ((JavaObjectToolkit) toolkit).getToolkitInstance();
     }
 
+    
     /**
-     * Returns the underlying Java Method, restoring it lazily if necessary.
-     *
-     * @return The reflection Method object.
+     * Performs post-restoration logic, warming up the reflection method and parameters.
+     * This is called during the session binding phase to ensure the tool is ready 
+     * before the UI or AI processing begins.
+     * 
+     * @throws Exception if method restoration or parameter initialization fails.
      */
-    @SneakyThrows
-    public synchronized Method getMethod() {
+    public void postActivate() throws Exception {
         if (method == null) {
-            log.info("Lazily restoring Method for tool: {} using signature lookup", getName());
+            log.info("Restoring Method for tool: {} using signature lookup", getName());
             Object instance = getToolkitInstance();
             if (instance == null) {
                 throw new RuntimeException("Cannot restore method: parent toolkit instance is not yet available for tool " + getName());
@@ -150,7 +152,6 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
                 for (Method m : currentClass.getDeclaredMethods()) {
                     if (javaMethodSignature.equals(buildMethodSignature(m))) {
                         this.method = m;
-                        //recreate parameters
                         initParameters();
                         break;
                     }
@@ -165,7 +166,6 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
                 throw new RuntimeException("Failed to restore method via signature lookup: " + javaMethodSignature + " in " + instance.getClass().getName());
             }
         }
-        return method;
     }
     
     /**
@@ -183,7 +183,7 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
             getParameters().add(JavaMethodToolParameter.of(this, params[i], i));
         }
     }
-
+    
     @Override
     public String getDescription() {
         StringBuilder sb = new StringBuilder(super.description);
