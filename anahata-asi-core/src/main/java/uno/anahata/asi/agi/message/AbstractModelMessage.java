@@ -4,7 +4,9 @@ package uno.anahata.asi.agi.message;
 import uno.anahata.asi.agi.message.web.GroundingMetadata;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -65,6 +67,12 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
     
     /** Whether the model is currently streaming content for this message. */
     private boolean streaming = false;
+    
+    /**
+     * A turn scoped map for tools to store turn-scoped attributes.
+     */
+    @Setter(AccessLevel.NONE)
+    private final Map turnAttributes = new HashMap();
     
     /**
      * Constructs a new AbstractModelMessage.
