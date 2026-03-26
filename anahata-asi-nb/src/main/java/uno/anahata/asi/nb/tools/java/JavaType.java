@@ -22,8 +22,11 @@ import org.openide.filesystems.URLMapper;
 @AllArgsConstructor
 public class JavaType {
 
+    /** The NetBeans ElementHandle providing a unique, resolvable identity for the type. */
     private ElementHandle handle;
+    /** The fully qualified name of the type (e.g., java.lang.String). */
     private String fqn;
+    /** The URL pointing to the class file or source file for this type. */
     private URL url;
 
     /**
