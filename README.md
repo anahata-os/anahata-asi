@@ -1,4 +1,4 @@
-# Anahata AI: The JASI Platform (Java Artificial Super Intelligence)
+# Anahata ASI: A Pure Java, Apache Licensed, Modular Platform for Artificial Super Intelligence
 
 [![Build Status](https://github.com/anahata-os/anahata-asi/actions/workflows/deploy-artifacts.yml/badge.svg)](https://github.com/anahata-os/anahata-asi/actions/workflows/deploy-artifacts.yml)
 [![Website & Javadoc](https://github.com/anahata-os/anahata-asi/actions/workflows/deploy-website.yml/badge.svg)](https://github.com/anahata-os/anahata-asi/actions/workflows/deploy-website.yml)
