@@ -29,6 +29,7 @@ import org.openide.util.Lookup;
 @Slf4j
 public class JavaTypeSearch {
 
+    /** The unmodifiable list of Java types found during the search. */
     private final List<JavaType> results;
 
     /**

@@ -25,6 +25,7 @@ import org.openide.filesystems.FileObject;
 @Getter
 public class JavaSupertypeSearch {
 
+    /** The root node of the supertype hierarchy tree. */
     private final JavaHierarchyNode rootNode;
 
     /**

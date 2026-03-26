@@ -19,6 +19,10 @@ public class JavaMemberDocs extends JavaTypeDocs {
         super(member);
     }
     
+    /**
+     * Gets the JavaMember associated with these docs.
+     * @return the member.
+     */
     public JavaMember getMember() {
         return (JavaMember) javaType;
     }

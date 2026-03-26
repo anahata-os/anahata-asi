@@ -26,6 +26,7 @@ import org.openide.filesystems.FileObject;
 @Getter
 public class JavaSubtypeSearch {
 
+    /** The root node of the subtype hierarchy tree. */
     private final JavaHierarchyNode rootNode;
 
     /**

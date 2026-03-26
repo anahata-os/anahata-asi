@@ -30,7 +30,9 @@ import org.openide.filesystems.FileObject;
 @Getter
 public class JavaMemberSearch {
 
+    /** The JavaType being searched. */
     private final JavaType type;
+    /** The list of members found for the type. */
     private final List<JavaMember> members;
 
     /**

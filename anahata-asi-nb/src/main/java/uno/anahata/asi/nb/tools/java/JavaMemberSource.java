@@ -55,6 +55,10 @@ public class JavaMemberSource extends JavaTypeSource {
         this.content = sourceRef.get();
     }
     
+    /**
+     * Gets the JavaMember associated with this source.
+     * @return the member.
+     */
     public JavaMember getMember() {
         return (JavaMember) javaType;
     }

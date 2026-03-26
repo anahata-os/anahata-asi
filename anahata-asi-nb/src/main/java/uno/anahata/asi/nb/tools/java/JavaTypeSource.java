@@ -23,8 +23,11 @@ import org.openide.filesystems.URLMapper;
 @Getter
 public class JavaTypeSource {
 
+    /** The JavaType identity for which the source is being retrieved. */
     protected final JavaType javaType;
+    /** The FileObject pointing to the found source file. */
     protected final FileObject sourceFile;
+    /** The full text content of the source file. */
     protected String content;
 
     /**

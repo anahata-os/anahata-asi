@@ -15,7 +15,9 @@ import org.openide.filesystems.FileObject;
 @Getter
 public class JavaTypeDocs {
 
+    /** The JavaType identity for which the Javadoc is being retrieved. */
     protected final JavaType javaType;
+    /** The raw Javadoc comment string retrieved from the element. */
     protected String javadoc;
 
     /**
@@ -80,6 +82,11 @@ public class JavaTypeDocs {
         }
     }
 
+    /**
+     * Cleans the raw Javadoc string by trimming whitespace.
+     * @param rawDoc the raw doc comment.
+     * @return the cleaned comment.
+     */
     protected static String cleanJavadoc(String rawDoc) {
         if (rawDoc == null) {
             return "";

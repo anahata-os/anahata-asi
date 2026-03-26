@@ -22,14 +22,17 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Represents a node in a Java type hierarchy tree.")
 public class JavaHierarchyNode {
 
+    /** The JavaType identity for this node. */
     @Schema(description = "The JavaType keychain for this node.")
     private JavaType type;
 
+    /** Recursive list of types that this type extends or implements. */
     @Builder.Default
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Schema(description = "Recursive list of types that this type extends or implements.")
     private List<JavaHierarchyNode> supertypes = new ArrayList<>();
 
+    /** Recursive list of types that extend or implement this type. */
     @Builder.Default
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Schema(description = "Recursive list of types that extend or implement this type.")
