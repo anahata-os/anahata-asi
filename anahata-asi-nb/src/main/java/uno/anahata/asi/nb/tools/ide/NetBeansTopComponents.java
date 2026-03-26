@@ -23,6 +23,12 @@ import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
  * Static utility for gathering information about open TopComponents (windows) in NetBeans.
+ * <p>
+ * This utility provides a comprehensive snapshot of the IDE's windowing state, 
+ * including metadata about open editors, explorer views, and output windows. 
+ * It extracts detailed information such as project ownership, 
+ * active node selections, and current memory footprint.
+ * </p>
  * 
  * @author anahata
  */
@@ -147,6 +153,12 @@ public final class NetBeansTopComponents {
         return results;
     }
 
+    /**
+     * Escapes Markdown pipe characters and newlines for safe inclusion in tables.
+     * 
+     * @param s The string to escape.
+     * @return The escaped string.
+     */
     private static String escape(String s) {
         return s != null ? s.replace("|", "\\|").replace("\n", " ") : "N/A";
     }

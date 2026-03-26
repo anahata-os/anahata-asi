@@ -66,6 +66,7 @@ public class Resources extends AnahataToolkit {
                         + "\n\tc)Will cause the comic-style bubbles to be offset (on a line that has no changes)."
                         + "\n\tFor these reasons, when using the editTextResource tool, **you MUST always choose 'inserts' over 'replacements' when possible**.\n"
                         + "\n\tWhen adding Javadoc or comments, always use LineInsertion unless you are explicitly correcting an existing (and poorly formatted) comment. Replacing a line with 'itself plus more' is a common source of coordinate errors."
+                        + "\n\tBoundary Syntax Check: Before finalizing a range, check the lines immediately above (startLine - 1) and below (endLine + 1). If they contain syntax markers like /**, */, {, or }, ensure you aren't accidentally orphaning them or creating duplicates."
         );
     }
 

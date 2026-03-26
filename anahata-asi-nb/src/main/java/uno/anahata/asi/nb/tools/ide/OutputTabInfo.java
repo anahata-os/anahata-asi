@@ -6,7 +6,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 /**
- * Represents information about a tab in the NetBeans Output Window.
+ * Represents a logical snapshot of a tab in the NetBeans Output Window.
+ * <p>
+ * This DTO captures identifying information and current state (such as line count 
+ * and running status) for a specific output stream.
+ * </p>
  */
 @Schema(description = "Represents information about a tab in the NetBeans Output Window.")
 @Data

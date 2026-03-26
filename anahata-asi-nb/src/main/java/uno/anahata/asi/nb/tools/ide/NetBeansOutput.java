@@ -19,6 +19,12 @@ import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
  * Static utility for interacting with the NetBeans Output Window and its tabs.
+ * <p>
+ * This class provides methods to discover, inspect, and extract content from 
+ * the various tabs in the IDE's Output Window (e.g., build logs, version control output).
+ * It leverages deep component hierarchy inspection to find the underlying 
+ * {@link JTextComponent} instances for each tab.
+ * </p>
  * 
  * @author anahata
  */
@@ -26,6 +32,7 @@ import uno.anahata.asi.swing.internal.SwingUtils;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class NetBeansOutput {
 
+    /** The internal NetBeans class name for an output tab component. */
     private static final String OUTPUT_TAB_CLASS = "org.netbeans.core.output2.OutputTab";
 
     /**
@@ -118,6 +125,12 @@ public final class NetBeansOutput {
         return sb.toString();
     }
 
+    /**
+     * Recursively traverses the component hierarchy to find all output tabs.
+     * 
+     * @param component The starting component.
+     * @param tabInfos The list to populate with found tab information.
+     */
     private static void findOutputTabsRecursive(Component component, List<OutputTabInfo> tabInfos) {
         if (component == null) return;
 
@@ -141,6 +154,12 @@ public final class NetBeansOutput {
         }
     }
 
+    /**
+     * Finds the first JTextComponent within a component hierarchy.
+     * 
+     * @param comp The root component.
+     * @return An Optional containing the JTextComponent if found.
+     */
     private static Optional<JTextComponent> findTextComponent(Component comp) {
         if (comp instanceof JEditorPane) return Optional.of((JEditorPane) comp);
         if (comp instanceof Container container) {
@@ -152,11 +171,24 @@ public final class NetBeansOutput {
         return Optional.empty();
     }
 
+    /**
+     * Finds a text component by its identity hash code.
+     * 
+     * @param id The identity hash code.
+     * @return An Optional containing the JTextComponent if found.
+     */
     private static Optional<JTextComponent> findTextComponentById(long id) {
         TopComponent outputTC = WindowManager.getDefault().findTopComponent("output");
         return outputTC != null ? findTextComponentRecursive(outputTC, id) : Optional.empty();
     }
     
+    /**
+     * Recursively searches for a text component with a matching identity hash code.
+     * 
+     * @param component The starting component.
+     * @param targetId The target identity hash code.
+     * @return An Optional containing the JTextComponent if found.
+     */
     private static Optional<JTextComponent> findTextComponentRecursive(Component component, long targetId) {
         if (component == null) return Optional.empty();
         if (component instanceof JTextComponent && System.identityHashCode(component) == targetId) {

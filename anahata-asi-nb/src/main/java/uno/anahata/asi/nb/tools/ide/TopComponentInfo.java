@@ -6,7 +6,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 /**
- * Represents detailed information about an open TopComponent (window) in the IDE.
+ * Represents detailed metadata about an open TopComponent (window) in the IDE.
+ * <p>
+ * This DTO aggregates information from the NetBeans windowing system, 
+ * including identification, visual state, project context, and associated files.
+ * </p>
  */
 @Schema(description = "Represents detailed information about an open TopComponent (window) in the IDE.")
 @Data
