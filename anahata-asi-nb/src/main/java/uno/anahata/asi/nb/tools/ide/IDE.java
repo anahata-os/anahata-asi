@@ -48,6 +48,11 @@ public class IDE extends AnahataToolkit {
 
     /**
      * Constructs a new IDE toolkit and initializes its child context providers.
+     * <p>
+     * Specifically, it registers the {@link OpenTopComponentsContextProvider} and 
+     * the {@link OutputTabsContextProvider} to provide live snapshots of the 
+     * IDE's windowing system to the RAG message.
+     * </p>
      */
     public IDE() {
         OpenTopComponentsContextProvider otc = new OpenTopComponentsContextProvider();
