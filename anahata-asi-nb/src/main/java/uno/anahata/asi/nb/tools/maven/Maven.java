@@ -1,4 +1,4 @@
-/* Licensed under the Apache License, Version 2.0 */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.tools.maven;
 
 import java.io.File;
@@ -77,7 +77,11 @@ public class Maven extends AnahataToolkit {
         
     }
 
-    /** {@inheritDoc} */
+    /** 
+     * {@inheritDoc} 
+     * <p>Provides context-aware instructions for the Maven toolkit, 
+     * specifying the current path to the Maven executable as configured in the IDE.</p> 
+     */
     @Override
     public List<String> getSystemInstructions() throws Exception {
         return Collections.singletonList("Maven Command Line: " + getNbCommandLineMavenPath());
@@ -100,11 +104,17 @@ public class Maven extends AnahataToolkit {
     //<editor-fold defaultstate="collapsed" desc="From MavenSearch.java">
     /**
      * Searches the Maven index for artifacts matching a given query.
-     * @param query The search query.
-     * @param startIndex The starting index (0-based) for pagination.
-     * @param pageSize The maximum number of results to return.
+     * <p>
+     * This method performs a multi-field search (groupId, artifactId, version, name, description, classes)
+     * across all repositories configured in NetBeans. It supports pagination and handles
+     * query splitting for multi-keyword searches.
+     * </p>
+     * 
+     * @param query The search query, with terms separated by spaces (e.g., 'junit platform').
+     * @param startIndex The starting index (0-based) for pagination. Defaults to 0 if null.
+     * @param pageSize The maximum number of results to return. Defaults to 100 if null.
      * @return a MavenSearchResultPage containing the found artifacts.
-     * @throws Exception if an error occurs.
+     * @throws Exception if an error occurs during the index query or result processing.
      */
     @AiTool("Searches the Maven index for artifacts matching a given query. The search is performed across all configured repositories (local, remote, and project-specific).")
     public MavenSearchResultPage searchMavenIndex(
@@ -184,14 +194,25 @@ public class Maven extends AnahataToolkit {
     //<editor-fold defaultstate="collapsed" desc="From MavenPom.java">
     /**
      * The definitive 'super-tool' for adding a Maven dependency.
-     * @param projectId The ID of the project to modify.
+     * <p>
+     * This tool follows a safe, multi-phase process:
+     * <ol>
+     *   <li><b>Pre-flight:</b> Verifies artifact existence in remote repositories.</li>
+     *   <li><b>Modification:</b> Atomically adds the dependency to the project's {@code pom.xml}.</li>
+     *   <li><b>Resolution:</b> Runs {@code dependency:resolve} to ensure transitive dependencies are satisfied.</li>
+     *   <li><b>Background:</b> Triggers asynchronous download of sources and javadocs.</li>
+     * </ol>
+     * Finally, it triggers a NetBeans project reload to reflect changes in the IDE.
+     * </p>
+     * 
+     * @param projectPath The absolute path of the project to modify.
      * @param groupId The groupId of the dependency.
      * @param artifactId The artifactId of the dependency.
      * @param version The version of the dependency.
-     * @param scope The scope of the dependency.
-     * @param classifier The classifier of the dependency.
-     * @param type The type of the dependency.
-     * @return an AddDependencyResult object.
+     * @param scope The scope of the dependency (e.g., 'compile', 'test'). If null, defaults to 'compile'.
+     * @param classifier The classifier of the dependency (e.g., 'jdk17'). Can be null.
+     * @param type The type of the dependency (e.g., 'test-jar'). If null, defaults to 'jar'.
+     * @return an AddDependencyResult object containing the outcome of each phase.
      */
     @AiTool("The definitive 'super-tool' for adding a Maven dependency. It follows a safe, multi-phase process and returns a structured result object. The model is responsible for interpreting the result.")
     public AddDependencyResult addDependency(
@@ -300,6 +321,12 @@ public class Maven extends AnahataToolkit {
         return groupResolvedArtifacts(artifacts);
     }
 
+    /**
+     * Groups a list of flat Maven dependencies into a hierarchical structure by scope and groupId.
+     * 
+     * @param dependencies The flat list of Maven dependencies.
+     * @return A list of DependencyScope objects representing the grouped structure.
+     */
     private static List<DependencyScope> groupDeclaredDependencies(List<Dependency> dependencies) {
         Map<String, List<Dependency>> dependenciesByScope = dependencies.stream()
                 .collect(Collectors.groupingBy(dep -> dep.getScope() == null ? "compile" : dep.getScope()));
@@ -346,6 +373,12 @@ public class Maven extends AnahataToolkit {
         return result;
     }
     
+    /**
+     * Groups a collection of resolved Maven artifacts into a hierarchical structure by scope and groupId.
+     * 
+     * @param artifacts The collection of resolved artifacts.
+     * @return A list of ResolvedDependencyScope objects representing the grouped structure.
+     */
     private static List<ResolvedDependencyScope> groupResolvedArtifacts(Collection<Artifact> artifacts) {
         Map<String, List<Artifact>> artifactsByScope = artifacts.stream()
                 .collect(Collectors.groupingBy(art -> art.getScope() == null ? "compile" : art.getScope()));
@@ -654,6 +687,17 @@ public class Maven extends AnahataToolkit {
         return downloadArtifact(embedder, nbMavenProject, temporaryArtifact, classifier, new StringBuilder());
     }
     
+    /**
+     * Attempts to resolve and download a specific artifact (or classified variant like sources/javadoc) 
+     * using the provided Maven embedder.
+     * 
+     * @param embedder The Maven embedder to use for resolution.
+     * @param project The project providing the remote repository configuration.
+     * @param art The base artifact to resolve.
+     * @param classifier The classifier to resolve (e.g., 'sources', 'javadoc', or null for main).
+     * @param errors A StringBuilder to capture any resolution error messages.
+     * @return true if the artifact was successfully resolved and downloaded to the local repository.
+     */
     private static boolean downloadArtifact(MavenEmbedder embedder, NbMavenProject project, Artifact art, String classifier, StringBuilder errors) {
         if (Artifact.SCOPE_SYSTEM.equals(art.getScope())) {
             return false;
@@ -688,6 +732,17 @@ public class Maven extends AnahataToolkit {
         return false;
     }
     
+    /**
+     * Builds a human-readable summary string for a batch download operation.
+     * 
+     * @param artifactType The name of the artifact type being downloaded (e.g., 'Sources').
+     * @param targetType The type of the target (e.g., 'Project', 'Artifact').
+     * @param targetId The identifier of the target.
+     * @param success The number of successfully downloaded artifacts.
+     * @param failed The number of artifacts that failed to download.
+     * @param errors A StringBuilder containing the accumulated error details.
+     * @return A descriptive result string.
+     */
     private static String buildResultString(String artifactType, String targetType, String targetId, int success, int failed, StringBuilder errors) {
         String result = String.format("%s download for %s '%s' complete. Success: %d, Failed: %d.", artifactType, targetType, targetId, success, failed);
         if (failed > 0) {
