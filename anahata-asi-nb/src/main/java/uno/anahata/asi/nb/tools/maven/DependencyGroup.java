@@ -1,4 +1,4 @@
-/* Licensed under the Apache License, Version 2.0 */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.tools.maven;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -8,7 +8,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * A container that groups declared artifacts by their common groupId.
+ * A container that groups declared Maven artifacts by their common {@code groupId}.
+ * <p>
+ * This structure is used by the {@link Maven} toolkit to provide a hierarchical 
+ * and token-efficient representation of project dependencies.
+ * </p>
+ * 
  * @author anahata
  */
 @Data

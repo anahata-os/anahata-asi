@@ -10,6 +10,11 @@ import lombok.NoArgsConstructor;
 /**
  * Represents the detailed result of a Maven build execution, including status, 
  * exit code, captured output, and a breakdown of build phases.
+ * <p>
+ * This DTO is the primary outcome of {@link Maven#runGoals} and provides the 
+ * necessary data for the ASI to reason about build successes, failures, 
+ * and performance bottlenecks across different Maven phases.
+ * </p>
  * 
  * @author anahata
  */
