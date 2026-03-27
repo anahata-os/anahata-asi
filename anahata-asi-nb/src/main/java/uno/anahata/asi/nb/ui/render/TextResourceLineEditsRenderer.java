@@ -114,7 +114,7 @@ public class TextResourceLineEditsRenderer extends AbstractTextResourceWriteRend
         // When the user manually edits the diff, we treat it as a full file replacement
         LineReplacement fullOverride = new LineReplacement();
         fullOverride.setStartLine(1);
-        fullOverride.setEndLine(Integer.MAX_VALUE); // Handled by coordinate validation logic
+        fullOverride.setEndLine(DiffCommentUtils.getLineCount(update.getOriginalContent())); 
         fullOverride.setContent(newContent);
         fullOverride.setReason("User manual edit");
         
