@@ -372,7 +372,7 @@ public abstract class AbstractTextResourceWriteRenderer<T extends AbstractTextRe
             if (next != controller || status != lastRenderedStatus) {
                 controller = next;
                 JComponent visualizer = controller.getJComponent();
-                applyVisualizerSettings(visualizer);
+                applyVisualizerSettings(visualizer, false);
 
                 // Create the header panel with the file hyperlink and toggle
                 List<LineComment> comments = getLineComments();
@@ -405,7 +405,7 @@ public abstract class AbstractTextResourceWriteRenderer<T extends AbstractTextRe
                             if (layerUI != null) {
                                 // Only show bubbles on the Graphical tab (index 0)
                                 layerUI.setShowingComments(toggle.isSelected() && tabs.getSelectedIndex() == 0);
-                                applyVisualizerSettings(jlayer);
+                                applyVisualizerSettings(jlayer, false);
                                 jlayer.repaint();
                             }
                         }
@@ -423,7 +423,7 @@ public abstract class AbstractTextResourceWriteRenderer<T extends AbstractTextRe
                         if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && jlayer.isShowing()) {
                             SwingUtils.runInEDT(() -> {
                                 fixSplitPane(jlayer);
-                                applyVisualizerSettings(jlayer);
+                                applyVisualizerSettings(jlayer, false);
                             });
                             jlayer.removeHierarchyListener(this);
                         }
@@ -576,27 +576,44 @@ public abstract class AbstractTextResourceWriteRenderer<T extends AbstractTextRe
     }
 
     /**
+     * Testing manual edit
+     * 
      * Injects custom client properties into the NetBeans component tree.
-     * Specifically, it enables the "diff_merger" system.
+     * This method recursively scans the visualizer to enable the merger UI 
+     * and sets the editability of the proposed side editor based on its 
+     * role property or physical position in a split pane.
      * 
      * @param c The component to start the configuration from.
+     * @param isProposedSide Whether the component is on the proposed side of a split.
      */
-    private void applyVisualizerSettings(Component c) {
+    private void applyVisualizerSettings(Component c, boolean isProposedSide) {
         if (c instanceof JEditorPane pane) {
+            // Priority 1: Check document property (AsiRole)
             Object role = pane.getDocument().getProperty("AsiRole");
-            if ("Proposed".equals(role)) {
+            boolean proposed = "Proposed".equals(role) || isProposedSide;
+
+            if (proposed) {
+                // Proposed side is editable only in PENDING state
                 pane.setEditable(call.getResponse().getStatus() == ToolExecutionStatus.PENDING);
             } else {
+                // Base side is never editable in this renderer
                 pane.setEditable(false);
             }
         }
+
         if (c instanceof JComponent jc) {
+            // Enable the internal NetBeans diff merger logic
             jc.putClientProperty("diff_merger", Boolean.TRUE);
             jc.putClientProperty("showMergeButtons", Boolean.TRUE);
         }
-        if (c instanceof Container cont) {
+
+        if (c instanceof JSplitPane sp) {
+            // Side-by-side diff: Left is Original, Right is Proposed
+            applyVisualizerSettings(sp.getLeftComponent(), false);
+            applyVisualizerSettings(sp.getRightComponent(), true);
+        } else if (c instanceof Container cont) {
             for (Component child : cont.getComponents()) {
-                applyVisualizerSettings(child);
+                applyVisualizerSettings(child, isProposedSide);
             }
         }
     }
