@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.swing.toolkit.render;
+package uno.anahata.asi.swing.toolkit.radio;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -25,6 +25,7 @@ import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import uno.anahata.asi.swing.toolkit.render.AbstractToolkitRenderer;
 import uno.anahata.asi.toolkit.audio.AudioDevice;
 import uno.anahata.asi.yam.tools.Radio;
 
