@@ -20,12 +20,15 @@ import lombok.Data;
 @Schema(description = "Represents a paginated result set from a Maven index search.")
 public class MavenSearchResultPage {
     
+    /** The starting index (0-based) for this subset of results. */
     @Schema(description = "The starting index (0-based) for pagination.")
     private final int startIndex;
 
+    /** The total count of artifacts matching the query across all repositories. */
     @Schema(description = "The total number of results found matching the query.")
     private final int totalCount;
 
+    /** The list of artifact search results for the current page. */
     @Schema(description = "The list of artifacts for the current page.")
     private final List<MavenArtifactSearchResult> page;
 }
