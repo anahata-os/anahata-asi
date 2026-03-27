@@ -68,11 +68,18 @@ import uno.anahata.asi.nb.util.TeeInputOutput;
 @AiToolkit("A toolkit for using netbeans maven tools.")
 @Slf4j
 public class Maven extends AnahataToolkit {
+    /** Logger instance for the Maven toolkit. */
     private static final Logger LOG = Logger.getLogger(Maven.class.getName());
+    /** Maximum number of output lines to capture from a Maven build. */
     private static final int MAX_OUTPUT_LINES = 100;
+    /** Maximum character length per output line. */
     private static final int MAX_LINE_LENGTH = 2000;
+    /** Default timeout for Maven build execution (5 minutes). */
     private static final long DEFAULT_TIMEOUT_MS = 300_000; // 5 minutes
 
+    /**
+     * Default constructor for the Maven toolkit.
+     */
     public Maven() {
         
     }
@@ -89,7 +96,12 @@ public class Maven extends AnahataToolkit {
     
     /**
      * Gets the path to the Maven installation configured in NetBeans.
-     * @return the Maven path.
+     * <p>
+     * Accesses the IDE's Maven preferences node to retrieve the standardized 
+     * command-line Maven path.
+     * </p>
+     * 
+     * @return the Maven path, or a failure message if not found or execution fails.
      */
     //@AiTool("Gets the path to the Maven installation configured in NetBeans.")
     public static String getNbCommandLineMavenPath() {
