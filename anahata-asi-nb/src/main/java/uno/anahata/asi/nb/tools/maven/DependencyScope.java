@@ -22,9 +22,11 @@ import lombok.NoArgsConstructor;
 @Schema(description = "A container that groups dependency information by scope.")
 public class DependencyScope {
     
-    @Schema(description = "The dependency scope (e.g., compile, test, provided).", example = "compile")
+    /** The Maven dependency scope (e.g., 'compile', 'test'). */
+    @Schema(description = "The dependency scope (e.g., compile, test, provided).", example = "compile")    
     private String scope;
     
-    @Schema(description = "The list of dependency groups belonging to this scope.")
+    /** The list of dependency groups categorized under this scope. */
+    @Schema(description = "The list of dependency groups belonging to this scope.")    
     private List<DependencyGroup> groups;
 }
