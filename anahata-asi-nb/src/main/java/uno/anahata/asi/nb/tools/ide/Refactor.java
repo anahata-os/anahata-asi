@@ -178,7 +178,15 @@ public class Refactor extends AnahataToolkit{
 
     /**
      * Enriches the tool output with information about managed resources affected by the refactoring.
-     * It provides specific instructions on how to purge or recover deleted resource content.
+     * <p>
+     * It provides specific instructions on how to purge or recover deleted resource content 
+     * based on whether the action was a deletion or a move.
+     * </p>
+     * 
+     * @param path The path of the resource.
+     * @param result The raw refactoring result.
+     * @param action The type of refactoring action performed (e.g., 'deleted', 'moved').
+     * @return An enriched result string.
      */
     private String enrichWithContextInfo(String path, String result, String action) {
         Optional<Resource> res = getResourceManager().findByPath(path);
@@ -582,6 +590,10 @@ public class Refactor extends AnahataToolkit{
 
     /**
      * Helper method to execute a refactoring operation through its standard lifecycle.
+     * <p>
+     * Performs pre-checks, parameter validation, session preparation, and finally 
+     * executes the refactoring while collecting elements and status reports.
+     * </p>
      * 
      * @param refactoring The refactoring operation to execute.
      * @param sessionName The name for the refactoring session.
@@ -728,7 +740,17 @@ public class Refactor extends AnahataToolkit{
     }
 
     /**
-     * Resolves member names to ElementHandles.
+     * Resolves member names to ElementHandles within a specific FileObject.
+     * <p>
+     * Scans the enclosed elements of the top-level type and populates the 
+     * provided method and field lists with matching element handles.
+     * </p>
+     * 
+     * @param fo The target Java FileObject.
+     * @param memberNames The names of the members to resolve.
+     * @param methods The list to populate with method handles.
+     * @param fields The list to populate with field handles.
+     * @throws IOException if the search fails.
      */
     private void resolveMembers(FileObject fo, List<String> memberNames, List<ElementHandle<ExecutableElement>> methods, List<ElementHandle<VariableElement>> fields) throws IOException {
         JavaSource js = JavaSource.forFileObject(fo);
@@ -755,7 +777,16 @@ public class Refactor extends AnahataToolkit{
     }
 
     /**
-     * Resolves member names to MemberInfo objects.
+     * Resolves member names to MemberInfo objects for refactoring operations.
+     * <p>
+     * Identifies elements by name and creates appropriate {@link MemberInfo} 
+     * wrappers using the provided compilation context.
+     * </p>
+     * 
+     * @param fo The target Java FileObject.
+     * @param memberNames The names of the members to resolve.
+     * @param members The list to populate with MemberInfo objects.
+     * @throws IOException if the search fails.
      */
     private void resolveMemberInfos(FileObject fo, List<String> memberNames, List<MemberInfo<ElementHandle<? extends Element>>> members) throws IOException {
         JavaSource js = JavaSource.forFileObject(fo);
