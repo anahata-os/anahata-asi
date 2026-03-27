@@ -54,7 +54,7 @@ import uno.anahata.asi.toolkit.resources.text.LineComment;
  * Base class for rendering file write operations (full updates or surgical replacements)
  * using the NetBeans native diff viewer decorated with agentic annotations.
  * 
- * <p>This renderer implements a sophisticated "Decorator Pattern" to overcome the limitations
+ * <p>This renderer implements a sophisticated Decorator Pattern to overcome the limitations
  * of the NetBeans Diff module, which typically isolates its sidebars from the standard
  * annotation system. By using a {@link JLayer} with a custom {@link DiffAnnotationsLayerUI},
  * we are able to paint comic-style AI comment bubbles directly over the diff visualizer
@@ -149,6 +149,11 @@ public abstract class AbstractTextResourceWriteRenderer<T extends AbstractTextRe
      * entry point for the decoration logic.
      */
     private JLayer<JComponent> jlayer;
+
+    /**
+     * The internal tab switcher of the NetBeans visualizer.
+     */
+    private JTabbedPane tabs;
 
     /**
      * The tab index recommended based on diff size (0=Graphical, 1=Textual).
@@ -384,19 +389,34 @@ public abstract class AbstractTextResourceWriteRenderer<T extends AbstractTextRe
                 layerUI = new DiffAnnotationsLayerUI(comments);
                 jlayer = new JLayer<>(visualizer, layerUI);
                 
-                // Wrap the JLayer in a panel that enforces the height cap
-                // JLayer is final, so we cap the wrapper instead.
+                // Wrap the JLayer in a panel that enforces a smart height policy.
+                // Textual tab (patch view) expands fully; Graphical tab is capped.
                 JPanel diffWrapper = new JPanel(new BorderLayout()) {
                     @Override
                     public Dimension getPreferredSize() {
                         Dimension d = super.getPreferredSize();
+                        // Index 1 is usually the 'Textual' tab in the NetBeans Diff Viewer
+                        if (tabs != null && tabs.getSelectedIndex() == 1) {
+                            Component textualTab = tabs.getComponentAt(1);
+                            log.info("Found textualTab " + textualTab);
+                            if (textualTab instanceof Container cont) {
+                                JEditorPane pane = SwingUtils.findComponent(cont, JEditorPane.class);
+                                log.info("Found editor pane " + pane);
+                                if (pane != null) {
+                                    int lineCount = pane.getDocument().getDefaultRootElement().getElementCount();
+                                    int lineHeight = pane.getFontMetrics(pane.getFont()).getHeight();
+                                    // Height = lines * height + margin for headers/tabs
+                                    return new Dimension(d.width, (lineCount * lineHeight) + 120);
+                                }
+                            }
+                        }
                         return new Dimension(d.width, Math.min(d.height, 800));
                     }
                 };
                 diffWrapper.add(jlayer, BorderLayout.CENTER);
 
-                // Handle tab changes to show/hide bubbles
-                JTabbedPane tabs = SwingUtils.findComponent(visualizer, JTabbedPane.class);
+                // Handle tab changes to show/hide bubbles and adjust height
+                this.tabs = SwingUtils.findComponent(visualizer, JTabbedPane.class);
                 if (tabs != null) {
                     tabs.setSelectedIndex(getInitialTabIndex());
                     tabs.addChangeListener(new ChangeListener() {
@@ -406,6 +426,10 @@ public abstract class AbstractTextResourceWriteRenderer<T extends AbstractTextRe
                                 // Only show bubbles on the Graphical tab (index 0)
                                 layerUI.setShowingComments(toggle.isSelected() && tabs.getSelectedIndex() == 0);
                                 applyVisualizerSettings(jlayer, false);
+                                
+                                // Ripple the layout change up to the conversation panel
+                                container.revalidate();
+                                container.repaint();
                                 jlayer.repaint();
                             }
                         }
