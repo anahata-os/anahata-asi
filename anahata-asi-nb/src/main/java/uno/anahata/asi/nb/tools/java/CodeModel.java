@@ -19,7 +19,6 @@ import org.netbeans.spi.java.classpath.support.ClassPathSupport;
 import org.openide.filesystems.FileObject;
 import uno.anahata.asi.agi.tool.Page;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
-import uno.anahata.asi.toolkit.resources.Resources;
 import uno.anahata.asi.agi.tool.AiTool;
 import uno.anahata.asi.agi.tool.AiToolException;
 import uno.anahata.asi.agi.tool.AiToolParam;
@@ -102,7 +101,7 @@ public class CodeModel extends AnahataToolkit {
      * @return a confirmation message.
      * @throws Exception if the type is not found or ambiguous.
      */
-    @AiTool("Loads the source file for of a java type as a managed resource by its fully qualified name (fqn). Fails if the FQN is ambiguous.")
+    @AiTool(value = "Loads the source file for of a java type as a managed resource by its fully qualified name (fqn). Fails if the FQN is ambiguous.", requiresApproval = false)
     public String loadTypeSourcesByFqn(
             @AiToolParam("The fully qualified name of the type.") String fqn) throws Exception {
         return loadTypeSources(resolveUniqueType(fqn));
