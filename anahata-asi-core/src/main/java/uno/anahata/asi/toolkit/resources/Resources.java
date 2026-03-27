@@ -21,6 +21,9 @@ import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.AiToolParam;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.resource.ResourceManager;
+import uno.anahata.asi.agi.tool.ToolPermission;
+import uno.anahata.asi.agi.tool.spi.AbstractTool;
+import uno.anahata.asi.agi.tool.spi.java.JavaMethodTool;
 import uno.anahata.asi.toolkit.resources.text.FullTextFileCreate;
 import uno.anahata.asi.toolkit.resources.text.FullTextResourceUpdate;
 import uno.anahata.asi.toolkit.resources.text.TextResourceReplacements;
@@ -69,6 +72,17 @@ public class Resources extends AnahataToolkit {
                         + "\n\tBoundary Syntax Check: Before finalizing a range, check the lines immediately above (startLine - 1) and below (endLine + 1). If they contain syntax markers like /**, */, {, or }, ensure you aren't accidentally orphaning them or creating duplicates."
         );
     }
+
+    @Override
+    public void initialize() {
+        Optional<JavaMethodTool> o = getToolkit().getTools().stream().filter(t-> t.getName().equals("editTextResource")).findFirst();
+        if (!o.isEmpty()) {
+            log.warn("Setting permission of Resources.editTextResource tool to DENY_NEVER as at the time of this release gemini-3-flash is just not getting it right. If you have a better model and you are keen to try it, then just enable it manually in the Context tab");
+            o.get().setPermission(ToolPermission.DENY_NEVER);
+        }
+    }
+    
+    
 
     /**
      * Intelligently resolves the actor string for registration heritage.
@@ -220,7 +234,8 @@ public class Resources extends AnahataToolkit {
      * @return A standard unified diff of the changes applied.
      * @throws Exception if replacements fail.
      */
-    @AiTool("Performs multiple text replacements in a text resource in the RAG message. Returns a standard unified diff of the changes applied.")
+    @AiTool("Performs multiple text replacements in a text resource in the RAG message. Returns a standard unified diff of the changes applied.\n"
+            + "**Call this tool once per resource only**: If you need to do two replacements in one file, use two TextReplacement in the same tool call")
     public String findAndReplaceInTextResource(@AiToolParam("The set of replacements.") TextResourceReplacements replacements) throws Exception {
         replacements.validate(getAgi());
         Resource res = getAgi().getResourceManager().getResources().get(replacements.getResourceUuid());
