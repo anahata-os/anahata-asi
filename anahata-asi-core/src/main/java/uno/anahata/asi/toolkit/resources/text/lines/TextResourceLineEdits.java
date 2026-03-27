@@ -14,9 +14,9 @@ import uno.anahata.asi.agi.tool.AiToolException;
 /**
  * The next-generation surgical line editor for AGI.
  * <p>
- * This DTO replaces arithmetic requirements with semantic intent. It separates 
- * insertions, replacements, and deletions into distinct lists to maximize 
- * model precision.
+ * This DTO replaces arithmetic requirements with semantic intent. It separates
+ * insertions, replacements, and deletions into distinct lists to maximize model
+ * precision.
  * </p>
  */
 @Data
@@ -73,15 +73,16 @@ public class TextResourceLineEdits extends AbstractTextResourceWrite {
     /**
      * {@inheritDoc}
      * <p>
-     * Implementation details: Performs pre-flight normalization of coordinates. 
-     * Specifically, it clips 'Integer.MAX_VALUE' markers to the actual line count 
-     * of the resource to prevent visualizer crashes in the IDE.
+     * Implementation details: Performs pre-flight normalization of coordinates.
+     * Specifically, it clips 'Integer.MAX_VALUE' markers to the actual line
+     * count of the resource to prevent visualizer crashes in the IDE.
      * </p>
      */
     @Override
     public void validate(uno.anahata.asi.agi.Agi agi) throws Exception {
         super.validate(agi);
 
+        /*
         // Calculate line count using the authoritative snapshot
         int lineCount = originalContent.split("\\R", -1).length;
 
@@ -93,7 +94,7 @@ public class TextResourceLineEdits extends AbstractTextResourceWrite {
                 }
             }
         }
-        
+
         if (deletions != null) {
             for (LineDeletion del : deletions) {
                 if (del.getEndLine() == Integer.MAX_VALUE) {
@@ -101,7 +102,9 @@ public class TextResourceLineEdits extends AbstractTextResourceWrite {
                 }
             }
         }
-
+         */
+        
+        
         // 2. Perform Overlap Detection
         List<AbstractLineEdit> sorted = new ArrayList<>();
         if (insertions != null) {
@@ -113,7 +116,7 @@ public class TextResourceLineEdits extends AbstractTextResourceWrite {
         if (deletions != null) {
             sorted.addAll(deletions);
         }
-        
+
         // Ascending sort with tie-breaker: point-insertions come before range-edits for the same coordinate.
         sorted.sort(new SurgicalEditComparator());
 
@@ -121,7 +124,7 @@ public class TextResourceLineEdits extends AbstractTextResourceWrite {
         int lastInsertionPoint = -1;
         for (AbstractLineEdit edit : sorted) {
             int start = edit.getSortLine();
-            
+
             if (edit instanceof LineInsertion) {
                 if (start <= lastEnd) {
                     throw new uno.anahata.asi.agi.tool.AiToolException("Overlapping surgical edits: insertion at line " + start + " is inside a previous range ending at " + lastEnd);
@@ -136,7 +139,7 @@ public class TextResourceLineEdits extends AbstractTextResourceWrite {
                     throw new uno.anahata.asi.agi.tool.AiToolException("Overlapping surgical edits: range starting at line " + start + " overlaps with a previous range ending at " + lastEnd);
                 }
                 // Note: start == lastInsertionPoint is ALLOWED. The insertion is logically "above" the range.
-                lastEnd = (edit instanceof LineReplacement rep) ? rep.getEndLine() : ((LineDeletion)edit).getEndLine();
+                lastEnd = (edit instanceof LineReplacement rep) ? rep.getEndLine() : ((LineDeletion) edit).getEndLine();
             }
         }
     }
