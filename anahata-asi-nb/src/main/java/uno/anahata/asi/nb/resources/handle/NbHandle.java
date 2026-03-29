@@ -277,8 +277,9 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
         }
 
         FileObject fo = getFileObject();
+        Charset charset = getCharset();
         try (OutputStream os = fo.getOutputStream()) {
-            os.write(content.getBytes(getCharset()));
+            os.write(content.getBytes(charset));
         }
     }
 
