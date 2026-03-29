@@ -3,9 +3,11 @@ package uno.anahata.asi.nb;
 
 import java.beans.PropertyChangeListener;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.AbstractAsiContainer;
+import org.openide.windows.TopComponent;
+import org.openide.windows.WindowManager;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.nb.annotation.AnahataAnnotationProvider;
@@ -14,6 +16,7 @@ import uno.anahata.asi.nb.ui.render.TextResourceReplacementsRenderer;
 import uno.anahata.asi.nb.ui.render.TextResourceLineEditsRenderer;
 import uno.anahata.asi.nb.ui.resources.NbResourceUI;
 import uno.anahata.asi.nb.util.ElementHandleModule;
+import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
 import uno.anahata.asi.agi.tool.schema.SchemaProvider;
@@ -32,7 +35,7 @@ import uno.anahata.asi.toolkit.resources.text.lines.TextResourceLineEdits;
  * @author anahata
  */
 @Slf4j
-public class NetBeansAsiContainer extends AbstractAsiContainer {
+public class NetBeansAsiContainer extends AbstractSwingAsiContainer {
 
     static {
         log.info("Performing global NetBeans environment configuration...");
@@ -68,31 +71,66 @@ public class NetBeansAsiContainer extends AbstractAsiContainer {
      * </p>
      */
     @Override
-    protected AgiConfig createNewAgiConfig() {
+    public AgiConfig createNewAgiConfig() {
         return new NetBeansAgiConfig(this);
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * Initializes the session environment with NetBeans defaults.
+     * Implementation details: Selects the default AI model and provider for 
+     * the NetBeans environment.
      * </p>
      */
     @Override
-    public void onAgiCreated(Agi agi) {
+    protected void configureNewAgi(Agi agi) {
         log.info("Initializing NetBeans defaults for new agi session: {}", agi.getShortId());
-
         // Default model configuration for NetBeans
         if (agi.getSelectedModel() == null) {
             agi.setProviderAndModel("Gemini", "models/gemini-3-flash-preview");
         }
     }
 
+    @Override
+    protected void focusUI(Agi agi) {
+        AgiTopComponent atc = findTopComponent(agi);
+        if (atc == null) {
+            atc = new AgiTopComponent(agi);
+        }
+        atc.open();
+        atc.requestActive();
+    }
+
+    @Override
+    protected void closeUI(Agi agi) {
+        AgiTopComponent atc = findTopComponent(agi);
+        if (atc != null) {
+            atc.close();
+        }
+    }
+
+    @Override
+    public Object getUI(Agi agi) {
+        AgiTopComponent atc = findTopComponent(agi);
+        return atc != null ? atc.getAgiPanel() : null;
+    }
+
+    private AgiTopComponent findTopComponent(Agi agi) {
+        Set<TopComponent> opened = WindowManager.getDefault().getRegistry().getOpened();
+        for (TopComponent tc : opened) {
+            if (tc instanceof AgiTopComponent atc && atc.getAgi() == agi) {
+                return atc;
+            }
+        }
+        return null;
+    }
+
     /**
      * {@inheritDoc}
      * <p>
      * Implementation details: Establishes a reactive bridge between the core 
-     * Resource Manager and the NetBeans Annotation system.
+     * Resource Manager and the NetBeans Annotation system. 
+     * The pulse logic is filtered to only trigger refreshes if the session is logically open.
      * </p>
      */
     @Override
@@ -101,8 +139,10 @@ public class NetBeansAsiContainer extends AbstractAsiContainer {
 
         // REACTIVE BRIDGE: Listen for resource changes and nickname updates to trigger IDE refreshes
         PropertyChangeListener listener = evt -> {
-            log.info("Reactive pulse trigger ('{}') in session '{}'. Firing IDE annotation refresh.", evt.getPropertyName(), agi.getDisplayName());
-            AnahataAnnotationProvider.fireRefresh(null, null);
+            if (agi.isOpen()) {
+                log.info("Reactive pulse trigger ('{}') in session '{}'. Firing IDE annotation refresh.", evt.getPropertyName(), agi.getDisplayName());
+                AnahataAnnotationProvider.fireRefresh(null, null);
+            }
         };
 
         agi.getResourceManager().addPropertyChangeListener("resources", listener);

@@ -170,12 +170,6 @@ public class ToolExecutionMenu {
             // 1. Update the tool instance's permission
             response.getCall().getTool().setPermission(newPermission);
             
-            // 2. Update the persistent preferences map
-            agi.getConfig().getContainer().getPreferences().getToolPermissions()
-                .put(response.getCall().getToolName(), newPermission);
-            
-            // 3. Save the preferences to disk
-            agi.getConfig().getContainer().savePreferences();
             
             System.out.println("Preference set to: " + newPermission.name());
         } else {

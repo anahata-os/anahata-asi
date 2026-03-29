@@ -235,7 +235,7 @@ public class Agi extends BasicPropertyChangeSource {
     public void bindToContainer(@NonNull AbstractAsiContainer container) {
         log.info("Rebinding agi session {} to container {}", config.getSessionId(), container.getHostApplicationId());
         // Re-initialize transient fields that require external context (like the container)
-        this.config.rebind(container);
+        this.config.setAsiContainer(container);
         this.executor = AiExecutors.newCachedThreadPoolExecutor(config.getSessionId());
         this.runningLock = new ReentrantLock();
         this.running = false;
@@ -258,14 +258,14 @@ public class Agi extends BasicPropertyChangeSource {
      * directory.
      */
     public void autoSave() {
-        config.getContainer().autoSaveSession(this);
+        config.getAsiContainer().autoSaveSession(this);
     }
 
     /**
      * Manually saves the session to the 'saved' directory.
      */
     public void save() {
-        config.getContainer().manualSaveSession(this);
+        config.getAsiContainer().manualSaveSession(this);
     }
 
     /**
@@ -872,7 +872,7 @@ public class Agi extends BasicPropertyChangeSource {
     public void shutdown() {
         shutdown.set(true);
         log.info("Shuts down Agi for session {}", config.getSessionId());
-        config.getContainer().unregister(this);
+        config.getAsiContainer().unregister(this);
         if (executor != null && !executor.isShutdown()) {
             executor.shutdown();
         }

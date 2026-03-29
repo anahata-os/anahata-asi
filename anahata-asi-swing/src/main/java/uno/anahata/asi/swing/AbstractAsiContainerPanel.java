@@ -35,15 +35,11 @@ import uno.anahata.asi.swing.icons.RestartIcon;
  * @author anahata
  */
 @Slf4j
-public abstract class AbstractAsiContainerPanel extends JPanel implements AgiController {
+public abstract class AbstractAsiContainerPanel extends JPanel {
 
     /** The application-wide ASI container. */
     @Getter
-    protected final AbstractAsiContainer asiContainer;
-    
-    /** The controller for handling session actions. */
-    @Getter @Setter
-    protected AgiController controller;
+    protected final AbstractSwingAsiContainer asiContainer;
     
     /** The toolbar containing session actions. */
     protected final JToolBar toolBar;
@@ -60,7 +56,7 @@ public abstract class AbstractAsiContainerPanel extends JPanel implements AgiCon
      * 
      * @param container The ASI container.
      */
-    public AbstractAsiContainerPanel(@NonNull AbstractAsiContainer container) {
+    public AbstractAsiContainerPanel(@NonNull AbstractSwingAsiContainer container) {
         this.asiContainer = container;
         
         // 1. Setup Toolbar
@@ -90,6 +86,12 @@ public abstract class AbstractAsiContainerPanel extends JPanel implements AgiCon
         toolBar.add(closeButton);
         
         disposeButton = new JButton("Dispose", new DeleteIcon(16));
+        disposeButton.setToolTipText("Permanently delete the selected AI session");
+        disposeButton.addActionListener(e -> {
+            Agi agi = getSelectedAgi();
+            if (agi != null) dispose(agi);
+        });
+        toolBar.add(disposeButton);
 
         // 2. Setup Refresh Timer
         this.refreshTimer = new Timer(1000, e -> {
@@ -115,61 +117,44 @@ public abstract class AbstractAsiContainerPanel extends JPanel implements AgiCon
     }
 
     /** 
-     * {@inheritDoc} 
-     * <p>Delegates the focus request to the registered controller, if any.</p> 
+     * Authoritatively requests focus for the given agi session via the container.
+     * 
+     * @param agi The agi session to focus.
      */
-    @Override
     public void focus(@NonNull Agi agi) {
-        if (controller != null) controller.focus(agi);
+        asiContainer.open(agi);
     }
 
     /** 
-     * {@inheritDoc} 
-     * <p>Delegates the close request to the registered controller, if any.</p> 
+     * Authoritatively requests the closure of the given agi session via the container.
+     * 
+     * @param agi The agi session to close.
      */
-    @Override
     public void close(@NonNull Agi agi) {
-        if (controller != null) controller.close(agi);
+        asiContainer.close(agi);
     }
 
     /** 
-     * {@inheritDoc} 
-     * <p>Closes the session tab/window and then instructs the ASI container to permanently dispose of the session.</p> 
+     * Authoritatively requests the disposal of the given agi session via the container.
+     * 
+     * @param agi The agi session to dispose.
      */
-    @Override
     public void dispose(@NonNull Agi agi) {
-        close(agi);
         asiContainer.dispose(agi);
     }
 
     /** 
-     * {@inheritDoc} 
-     * <p>Creates a brand-new agi session via the container and requests focus for it.</p> 
+     * Authoritatively creates a new agi session via the container.
      */
-    @Override
     public void createNew() {
-        focus(asiContainer.createNewAgi());
+        asiContainer.createNewAgi();
     }
 
     /** 
-     * {@inheritDoc} 
-     * <p>Opens a file chooser for .kryo files and imports the selected session into the container.</p> 
+     * Invokes the shared Swing import UI from the container.
      */
-    @Override
     public void importSession() {
-        Path savedDir = asiContainer.getSavedSessionsDir();
-        
-        JFileChooser chooser = new JFileChooser(savedDir.toFile());
-        chooser.setDialogTitle("Import Anahata Session");
-        chooser.setFileFilter(new FileNameExtensionFilter("Anahata Sessions (*.kryo)", "kryo"));
-        
-        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            File selectedFile = chooser.getSelectedFile();
-            Agi imported = asiContainer.importSession(selectedFile.toPath());
-            if (imported != null) {
-                focus(imported);
-            }
-        }
+        asiContainer.importSessionWithUI(this);
     }
 
 

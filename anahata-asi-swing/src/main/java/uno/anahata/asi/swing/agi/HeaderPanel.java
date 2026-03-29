@@ -235,7 +235,7 @@ public class HeaderPanel extends JPanel {
             // 2. Open File Chooser for manual "Save As"
             SwingUtilities.invokeLater(() -> {
                 AgiConfig config = agi.getConfig();
-                AbstractAsiContainer container = config.getContainer();
+                AbstractAsiContainer container = config.getAsiContainer();
                 Path savedDir = container.getSavedSessionsDir();
                 
                 String nickname = agi.getNickname();

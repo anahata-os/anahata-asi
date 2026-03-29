@@ -174,7 +174,7 @@ public class ToolContext {
      * @return The container-scoped attributes map.
      */
     public AbstractAsiContainer getAsiContainer() {
-        return getAgi().getConfig().getContainer();
+        return getAgi().getConfig().getAsiContainer();
     }
 
     /**

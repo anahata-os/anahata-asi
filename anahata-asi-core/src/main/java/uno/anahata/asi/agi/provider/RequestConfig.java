@@ -22,11 +22,19 @@ import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
  */
 @Getter
 @Setter
-@RequiredArgsConstructor
 public class RequestConfig extends BasicPropertyChangeSource {
-    @NonNull
+
+    /** The parent Agi session this configuration belongs to. */
     @JsonIgnore
-    private final Agi agi;
+    private Agi agi;
+
+    /**
+     * Constructs a new request configuration for the specified Agi.
+     * @param agi The parent session.
+     */
+    public RequestConfig(Agi agi) {
+        this.agi = agi;
+    }
 
     //== Behavioral Parameters ==//
     /** The temperature for the request. */

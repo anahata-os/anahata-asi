@@ -3,15 +3,12 @@ package uno.anahata.asi.nb;
 
 import java.awt.BorderLayout;
 import java.util.Set;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.windows.TopComponent;
-import org.openide.windows.WindowManager; 
-import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.AsiCardsContainerPanel;
-import uno.anahata.asi.swing.AgiController;
 
 /**
  * A TopComponent that displays a list of all active Anahata ASI sessions.
@@ -31,7 +28,7 @@ import uno.anahata.asi.swing.AgiController;
         preferredID = "asi"
 )
 @Slf4j
-public class AsiCardsTopComponent extends TopComponent implements AgiController {
+public class AsiCardsTopComponent extends TopComponent {
 
     /** The UI panel displaying the active sessions as cards. */
     private final AsiCardsContainerPanel sessionsPanel;
@@ -44,9 +41,9 @@ public class AsiCardsTopComponent extends TopComponent implements AgiController 
         setToolTipText("Manage active AGI sessions");
         setLayout(new BorderLayout());
 
-        // Use the shared AsiContainer from the installer
-        sessionsPanel = new AsiCardsContainerPanel(AnahataInstaller.getContainer());
-        sessionsPanel.setController(this);
+        // Use the shared AsiContainer from the installer, casting to the Swing-aware base
+        AbstractSwingAsiContainer container = (AbstractSwingAsiContainer) AnahataInstaller.getContainer();
+        sessionsPanel = new AsiCardsContainerPanel(container);
         add(sessionsPanel, BorderLayout.CENTER);
     }
 
@@ -71,50 +68,4 @@ public class AsiCardsTopComponent extends TopComponent implements AgiController 
     public void componentClosed() {
         sessionsPanel.stopRefresh();
     }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Implementation details: Finds the TopComponent for the given agi and requests focus.
-     * If not found, a new TopComponent is created.
-     * </p>
-     */
-    @Override
-    public void focus(@NonNull Agi agi) {
-        Set<TopComponent> opened = WindowManager.getDefault().getRegistry().getOpened();
-        for (TopComponent tc : opened) {
-            if (tc instanceof AgiTopComponent atc) {
-                if (atc.getAgi() == agi) {
-                    atc.open();
-                    atc.requestActive();
-                    return;
-                }
-            }
-        }
-        
-        // If not found, open a new one for this session
-        AgiTopComponent tc = new AgiTopComponent(agi);
-        tc.open();
-        tc.requestActive();
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Implementation details: Finds and closes the TopComponent associated with the given agi.
-     * </p>
-     */
-    @Override
-    public void close(@NonNull Agi agi) {
-        Set<TopComponent> opened = WindowManager.getDefault().getRegistry().getOpened();
-        for (TopComponent tc : opened) {
-            if (tc instanceof AgiTopComponent atc) {
-                if (atc.getAgi() == agi) {
-                    atc.close();
-                    return;
-                }
-            }
-        }
-    }
-
 }

@@ -18,7 +18,6 @@ import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.AsiCardsContainerPanel;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
-import uno.anahata.asi.swing.AgiController;
 
 /**
  * The main container for the Anahata AI Swing UI, managing multiple agi sessions.
@@ -27,7 +26,7 @@ import uno.anahata.asi.swing.AgiController;
  * @author gemini-3-flash-preview
  */
 @Slf4j
-public class StandaloneMainPanel extends JPanel implements AgiController {
+public class StandaloneMainPanel extends JPanel {
 
     /** The parent ASI container managing the global state. */
     private final StandaloneAsiContainer asiContainer;
@@ -48,11 +47,12 @@ public class StandaloneMainPanel extends JPanel implements AgiController {
      */
     public StandaloneMainPanel(StandaloneAsiContainer container) {
         this.asiContainer = container;
+        // Register this panel as the UI display for the container
+        container.setMainPanel(this);
         
         setLayout(new BorderLayout());
 
         asiContainerPanel = new AsiCardsContainerPanel(container);
-        asiContainerPanel.setController(this);
 
         tabbedPane = new JTabbedPane();
         tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
@@ -62,7 +62,7 @@ public class StandaloneMainPanel extends JPanel implements AgiController {
         tabbedPane.putClientProperty("JTabbedPane.tabCloseCallback", (BiConsumer<JTabbedPane, Integer>) (tabPane, tabIndex) -> {
             Component comp = tabPane.getComponentAt(tabIndex);
             if (comp instanceof AgiPanel agiPanel) {
-                close(agiPanel.getAgi());
+                asiContainer.close(agiPanel.getAgi());
             }
         });
 
@@ -87,28 +87,25 @@ public class StandaloneMainPanel extends JPanel implements AgiController {
         List<Agi> activeAgis = asiContainer.getActiveAgis();
         if (activeAgis.isEmpty()) {
             log.info("No active sessions found. Creating a new empty agi.");
-            createNew();
+            asiContainer.createNewAgi();
         } else {
             // Restore sessions that were marked as 'Open' during previous exit
             for (Agi agi : new ArrayList<>(activeAgis)) {
                 if (agi.isOpen()) {
-                    focus(agi);
+                    asiContainer.open(agi);
                 }
             }
         }
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
-     * Ensures the agi has a corresponding tab and selects it.
+     * Internal UI helper to ensure the agi has a corresponding tab and selects it.
      * 
      * @param agi The agi session to focus.
      */
-    @Override
-    public void focus(@NonNull Agi agi) {
+    public void ensureTabAndSelect(@NonNull Agi agi) {
         String id = agi.getConfig().getSessionId();
-        log.info("Focusing session: {}", id);
+        log.info("Ensuring tab and selecting session: {}", id);
         
         // Check if we already have a tab for this agi
         int tabIndex = -1;
@@ -122,17 +119,12 @@ public class StandaloneMainPanel extends JPanel implements AgiController {
 
         if (tabIndex == -1) {
             log.info("Creating new tab for session: {}", id);
-            // Use the existing agi instance instead of creating a new one
-            AgiPanel panel = new AgiPanel(agi);
-            panel.setName(id);
-            panel.initComponents();
+            // Retrieve the UI component from the container
+            AgiPanel panel = (AgiPanel) asiContainer.getUI(agi);
             
             tabbedPane.addTab(agi.getDisplayName(), panel);
             tabIndex = tabbedPane.getTabCount() - 1;
             
-            // Sync domain state
-            agi.setOpen(true);
-
             // Listen for nickname changes to update the tab title
             new EdtPropertyChangeListener(this, agi, "nickname", this::handleNicknameChange);
         }
@@ -141,21 +133,16 @@ public class StandaloneMainPanel extends JPanel implements AgiController {
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
-     * Removes the tab associated with the agi session and toggles the open state.
+     * Internal UI helper to remove the tab associated with the agi session.
      * 
      * @param agi The agi session to close.
      */
-    @Override
-    public void close(@NonNull Agi agi) {
+    public void removeTab(@NonNull Agi agi) {
         String id = agi.getConfig().getSessionId();
-        log.info("Closing tab for session: {}", id);
+        log.info("Removing tab for session: {}", id);
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
             if (id.equals(tabbedPane.getComponentAt(i).getName())) {
                 tabbedPane.removeTabAt(i);
-                agi.setOpen(false);
-                // EdtPropertyChangeListener will be GC'd as it's not strongly held by the agi
                 break;
             }
         }
@@ -194,7 +181,7 @@ public class StandaloneMainPanel extends JPanel implements AgiController {
                 if (oldList == null || !oldList.contains(agi)) {
                     // Only focus if the session is marked as 'Open'
                     if (agi.isOpen()) {
-                        focus(agi);
+                        asiContainer.open(agi);
                     }
                 }
             }
@@ -204,7 +191,7 @@ public class StandaloneMainPanel extends JPanel implements AgiController {
         if (oldList != null) {
             for (Agi agi : new ArrayList<>(oldList)) {
                 if (newList == null || !newList.contains(agi)) {
-                    close(agi);
+                    asiContainer.close(agi);
                 }
             }
         }

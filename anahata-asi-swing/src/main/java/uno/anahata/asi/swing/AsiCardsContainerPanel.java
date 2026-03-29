@@ -12,7 +12,6 @@ import java.util.Map;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import lombok.NonNull;
-import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.swing.components.WrapLayout;
 
@@ -34,7 +33,7 @@ public class AsiCardsContainerPanel extends AbstractAsiContainerPanel {
      * 
      * @param container The ASI container.
      */
-    public AsiCardsContainerPanel(@NonNull AbstractAsiContainer container) {
+    public AsiCardsContainerPanel(@NonNull AbstractSwingAsiContainer container) {
         super(container);
         
         this.cardContainer = new JPanel(new WrapLayout(WrapLayout.LEFT, 10, 10));
@@ -74,7 +73,7 @@ public class AsiCardsContainerPanel extends AbstractAsiContainerPanel {
             Agi agi = activeAgis.get(i);
             AgiCard card = cachedCards.get(agi);
             if (card == null) {
-                card = new AgiCard(agi, this);
+                card = new AgiCard(agi, asiContainer);
                 card.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mousePressed(MouseEvent e) {

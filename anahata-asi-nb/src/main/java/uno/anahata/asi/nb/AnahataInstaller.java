@@ -25,13 +25,13 @@ public class AnahataInstaller extends ModuleInstall {
     private static final Logger log = Logger.getLogger(AnahataInstaller.class.getName());
     
     /** The singleton container instance. */
-    private static AbstractAsiContainer container;
+    private static NetBeansAsiContainer container;
 
     /**
      * Gets the global ASI container for NetBeans.
      * @return The container instance.
      */
-    public static synchronized AbstractAsiContainer getContainer() {
+    public static synchronized NetBeansAsiContainer getContainer() {
         if (container == null) {
             container = new NetBeansAsiContainer();
         }

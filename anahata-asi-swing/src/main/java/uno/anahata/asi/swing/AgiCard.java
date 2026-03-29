@@ -20,6 +20,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j; 
 import net.miginfocom.swing.MigLayout;
+import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.status.AgiStatus;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
@@ -42,8 +43,8 @@ public class AgiCard extends JPanel {
     /** The agi session represented by this card. */
     @Getter
     private final Agi agi;
-    /** The controller for handling session actions. */
-    private final AgiController controller;
+    /** The container for handling session actions. */
+    private final AbstractAsiContainer container;
     /** The label displaying the agi's nickname. */
     private final JLabel nameLabel;
     /** The text area displaying the agi's summary. */
@@ -78,11 +79,11 @@ public class AgiCard extends JPanel {
      * Constructs a new AgiCard for the given agi session.
      * 
      * @param agi The agi session to represent.
-     * @param controller The controller for session actions.
+     * @param container The container for session actions.
      */
-    public AgiCard(@NonNull Agi agi, @NonNull AgiController controller) {
+    public AgiCard(@NonNull Agi agi, @NonNull AbstractAsiContainer container) {
         this.agi = agi;
-        this.controller = controller;
+        this.container = container;
         this.theme = ((SwingAgiConfig)agi.getConfig()).getTheme();
 
         // Use MigLayout for the whole card to control vertical growth
@@ -103,7 +104,7 @@ public class AgiCard extends JPanel {
         closeBtn.setBorderPainted(false);
         closeBtn.setContentAreaFilled(false);
         closeBtn.setFocusable(false);
-        closeBtn.addActionListener(e -> controller.close(agi));
+        closeBtn.addActionListener(e -> container.close(agi));
         header.add(closeBtn, "w 20!, h 20!");
         
         JButton disposeBtn = new JButton(new DeleteIcon(14));
@@ -111,7 +112,7 @@ public class AgiCard extends JPanel {
         disposeBtn.setBorderPainted(false);
         disposeBtn.setContentAreaFilled(false);
         disposeBtn.setFocusable(false);
-        disposeBtn.addActionListener(e -> controller.dispose(agi));
+        disposeBtn.addActionListener(e -> container.dispose(agi));
         header.add(disposeBtn, "w 20!, h 20!");
 
         add(header, "growx, wrap");
@@ -159,11 +160,11 @@ public class AgiCard extends JPanel {
         idLabel.setForeground(Color.GRAY);
         footer.add(idLabel, "growx");
         
-        JButton focusBtn = new JButton("Focus", new SearchIcon(14));
+        JButton focusBtn = new JButton("Open", new SearchIcon(14));
         focusBtn.setToolTipText("Open/Focus this session tab");
         focusBtn.setMargin(new Insets(2, 4, 2, 4));
         focusBtn.setFont(focusBtn.getFont().deriveFont(10f));
-        focusBtn.addActionListener(e -> controller.focus(agi));
+        focusBtn.addActionListener(e -> container.open(agi));
         footer.add(focusBtn);
         
         add(footer, "growx");
@@ -173,7 +174,7 @@ public class AgiCard extends JPanel {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
-                    controller.focus(agi);
+                    container.open(agi);
                 }
             }
             

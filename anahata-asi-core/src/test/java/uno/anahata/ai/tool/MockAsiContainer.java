@@ -2,6 +2,7 @@
 package uno.anahata.ai.tool;
 
 import uno.anahata.asi.AbstractAsiContainer;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
 
 /**
@@ -19,5 +20,20 @@ public class MockAsiContainer extends AbstractAsiContainer {
     @Override
     public AgiConfig createNewAgiConfig() {
         return new AgiConfig(this);
+    }
+
+    @Override
+    protected void onAgiOpened(Agi agi) {
+        // No-op for mock
+    }
+
+    @Override
+    protected void onAgiClosed(Agi agi) {
+        // No-op for mock
+    }
+
+    @Override
+    public Object getUI(Agi agi) {
+        return null;
     }
 }

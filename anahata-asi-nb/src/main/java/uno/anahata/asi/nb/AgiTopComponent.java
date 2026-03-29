@@ -107,8 +107,8 @@ public final class AgiTopComponent extends TopComponent {
         // Listen for status changes to update the tab color
         new EdtPropertyChangeListener(this, agi.getStatusManager(), "currentStatus", evt -> updateTitles());
 
-        // Initial open state sync
-        agi.setOpen(true);
+        // Authoritative visibility sync
+        AnahataInstaller.getContainer().open(agi);
     }
 
     /**
@@ -165,8 +165,7 @@ public final class AgiTopComponent extends TopComponent {
                 @Override
                 protected Agi doInBackground() throws Exception {
                     log.info("Initializing session brain in background: {}", sessionId);
-                    NetBeansAsiContainer container = (NetBeansAsiContainer) AnahataInstaller.getContainer();
-                    return container.findOrCreateAgi(sessionId);
+                    return AnahataInstaller.getContainer().findOrCreateAgi(sessionId);
                 }
 
                 @Override
@@ -182,8 +181,8 @@ public final class AgiTopComponent extends TopComponent {
                 }
             }.execute();
         } else {
-            // Synchronize domain model state
-            getAgi().setOpen(true);
+            // Authoritative visibility sync
+            AnahataInstaller.getContainer().open(getAgi());
         }
     }
 

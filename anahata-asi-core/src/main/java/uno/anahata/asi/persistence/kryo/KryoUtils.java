@@ -75,6 +75,23 @@ public class KryoUtils {
     }
 
     /**
+     * Creates a deep clone of the given object using Kryo's built-in copy mechanism.
+     * 
+     * @param <T> The type of the object.
+     * @param object The object to clone.
+     * @return A deep clone of the object.
+     */
+    public static <T> T clone(T object) {
+        if (object == null) return null;
+        long start = System.currentTimeMillis();
+        Kryo kryo = getKryo();
+        T clone = kryo.copy(object);
+        long end = System.currentTimeMillis();
+        log.info("Kryo deep clone of {} took {} ms", object.getClass().getSimpleName(), (end - start));
+        return clone;
+    }
+
+    /**
      * Serializes an object into a byte array.
      *
      * @param object The object to serialize.

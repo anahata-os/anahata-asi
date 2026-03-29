@@ -40,7 +40,7 @@ public class AgiConfig extends BasicPropertyChangeSource {
 
     /** A reference to the global, application-wide configuration. */
     @NonNull
-    private transient AbstractAsiContainer container;
+    private transient AbstractAsiContainer asiContainer;
 
     /** The unique identifier for this specific agi session. */
     @NonNull
@@ -86,17 +86,8 @@ public class AgiConfig extends BasicPropertyChangeSource {
      * @param sessionId The unique session ID.
      */
     public AgiConfig(@NonNull AbstractAsiContainer asiConfig, @NonNull String sessionId) {
-        this.container = asiConfig;
+        this.asiContainer = asiConfig;
         this.sessionId = sessionId;
-    }
-
-    /**
-     * Re-binds this configuration to an AsiContainer after deserialization.
-     * 
-     * @param container The AsiContainer to bind to.
-     */
-    public void rebind(@NonNull AbstractAsiContainer container) {
-        this.container = container;
     }
 
     //<editor-fold defaultstate="collapsed" desc="Session Loop">
@@ -217,6 +208,6 @@ public class AgiConfig extends BasicPropertyChangeSource {
      * @return The host application ID.
      */
     public String getHostApplicationId() {
-        return container.getHostApplicationId();
+        return asiContainer.getHostApplicationId();
     }
 }

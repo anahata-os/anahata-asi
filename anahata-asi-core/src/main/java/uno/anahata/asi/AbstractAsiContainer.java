@@ -18,6 +18,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
@@ -115,27 +116,71 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Creates a new agi session blueprint. Overridden by concrete containers.
+     * Creates a new agi session blueprint. Overridden by concrete containers 
+     * to provide product-specific configurations (e.g., NetBeansAgiConfig).
      * @return The new agi configuration.
      */
-    protected abstract AgiConfig createNewAgiConfig();
+    public abstract AgiConfig createNewAgiConfig();
 
     /**
-     * Authoritatively creates and registers a brand-new Agi session.
-     * <p>
-     * <b>Lifecycle Authority:</b> This method orchestrates the creation, 
-     * initial birth hook, pooling, and initial auto-save in one atomic weld.
-     * </p>
-     * @return The newly created Agi session.
+     * Authoritatively creates, configures, registers, and opens a brand-new 
+     * Agi session using the user's preferred template.
+     * 
+     * @return The newly created and opened Agi session.
      */
     public final Agi createNewAgi() {
-        AgiConfig config = createNewAgiConfig();
+        return createNewAgi(preferences.createAgiConfig(this));
+    }
+
+    /**
+     * Authoritatively creates, configures, registers, and opens a brand-new 
+     * Agi session with the provided configuration.
+     * <p>
+     * <b>Lifecycle Authority:</b> This method orchestrates the creation, 
+     * initial setup, pooling, and initial opening in one atomic weld.
+     * </p>
+     * @param config The session configuration.
+     * @return The newly created and opened Agi session.
+     */
+    public final Agi createNewAgi(AgiConfig config) {
         Agi agi = new Agi(config);
-        onAgiCreated(agi);
+        configureNewAgi(agi);
         registerInternal(agi);
-        autoSaveSession(agi);
+        open(agi);
         return agi;
     }
+
+    /**
+     * Authoritatively requests that the specified agi session be opened and 
+     * brought to the front in the host UI.
+     * 
+     * @param agi The agi session to open.
+     */
+    public void open(@NonNull Agi agi) {
+        log.info("Requesting open for session: {}", agi.getShortId());
+        agi.setOpen(true);
+        onAgiOpened(agi);
+    }
+
+    /**
+     * Authoritatively requests that the specified agi session's UI tab or 
+     * window be closed.
+     * 
+     * @param agi The agi session to close.
+     */
+    public void close(@NonNull Agi agi) {
+        log.info("Requesting close for session: {}", agi.getShortId());
+        agi.setOpen(false);
+        onAgiClosed(agi);
+    }
+
+    /**
+     * Retrieves the platform-specific UI component associated with an Agi session.
+     * 
+     * @param agi The session.
+     * @return The UI component (e.g., AgiPanel or AgiTopComponent).
+     */
+    public abstract Object getUI(Agi agi);
 
     /**
      * Internal logic for session pooling and common hook invocation.
@@ -190,19 +235,7 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     }
     
     /**
-     * Hook invoked ONLY during the initial birth of an Agi session.
-     * @param agi The newly created session.
-     */
-    public void onAgiCreated(Agi agi) {}
-
-    /**
-     * Hook invoked ONLY after an Agi session is reloaded/deserialized from disk.
-     * @param agi The reloaded session.
-     */
-    public void onAgiRestored(Agi agi) {}
-
-    /**
-     * Common hook invoked whenever a session (new or restored) enters the active pool.
+     * Hook invoked whenever a session enters the active pool.
      * @param agi The registered session.
      */
     public void onAgiRegistered(Agi agi) {}
@@ -212,6 +245,24 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
      * @param agi The unregistered session.
      */
     public void onAgiUnregistered(Agi agi) {}
+
+    /**
+     * Hook invoked to perform initial post-birth configuration of a new Agi.
+     * @param agi The new session.
+     */
+    protected void configureNewAgi(Agi agi) {}
+
+    /**
+     * Hook invoked when a session has been logically opened.
+     * @param agi The opened session.
+     */
+    protected abstract void onAgiOpened(Agi agi);
+
+    /**
+     * Hook invoked when a session has been logically closed.
+     * @param agi The closed session.
+     */
+    protected abstract void onAgiClosed(Agi agi);
 
     // --- SESSION PERSISTENCE ---
 
@@ -386,7 +437,6 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
             agi.getConfig().setSessionId(UUID.randomUUID().toString());
             
             agi.bindToContainer(this);
-            onAgiRestored(agi);
             registerInternal(agi);
             return agi;
         } catch (Exception e) {
@@ -434,7 +484,6 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
             byte[] data = Files.readAllBytes(path);
             Agi agi = KryoUtils.deserialize(data, Agi.class);
             agi.bindToContainer(this);
-            onAgiRestored(agi);
             registerInternal(agi);
             return true;
         } catch (Throwable t) {
