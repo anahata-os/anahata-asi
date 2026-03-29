@@ -34,14 +34,11 @@ import uno.anahata.asi.swing.internal.SwingUtils;
  * 
  * @author anahata
  */
-@ActionID(category = "Window", id = "uno.anahata.asi.OpenAgiTopComponent")
-@ActionReference(path = "Menu/Window", position = 334)
 @TopComponent.Description(
         preferredID = "agi",
         iconBase = "icons/anahata_16.png",
         persistenceType = TopComponent.PERSISTENCE_ONLY_OPENED)
 @TopComponent.Registration(mode = "output", openAtStartup = false, position = 102)
-@TopComponent.OpenActionRegistration(displayName = "New AGI Container")
 @Slf4j
 public final class AgiTopComponent extends TopComponent {
 
@@ -68,7 +65,6 @@ public final class AgiTopComponent extends TopComponent {
      */
     public AgiTopComponent(Agi agi) {
         this(agi.getConfig().getSessionId());
-        initPanel(agi);
     }
 
     /**
@@ -106,9 +102,6 @@ public final class AgiTopComponent extends TopComponent {
         
         // Listen for status changes to update the tab color
         new EdtPropertyChangeListener(this, agi.getStatusManager(), "currentStatus", evt -> updateTitles());
-
-        // Authoritative visibility sync
-        AnahataInstaller.getContainer().open(agi);
     }
 
     /**
@@ -119,13 +112,6 @@ public final class AgiTopComponent extends TopComponent {
         AgiStatus status = AgiStatus.IDLE;
         
         Agi agi = getAgi();
-        if (agi == null && sessionId != null) {
-            // Try to find the agi in the container even if the panel isn't ready
-            agi = AnahataInstaller.getContainer().getActiveAgis().stream()
-                    .filter(c -> c.getConfig().getSessionId().equals(sessionId))
-                    .findFirst().orElse(null);
-        }
-        
         if (agi != null) {
             displayName = agi.getDisplayName();
             status = agi.getStatusManager().getCurrentStatus();
@@ -181,8 +167,11 @@ public final class AgiTopComponent extends TopComponent {
                 }
             }.execute();
         } else {
-            // Authoritative visibility sync
-            AnahataInstaller.getContainer().open(getAgi());
+            Agi agi = getAgi();
+            if (agi != null && !agi.isOpen()) {
+                // Authoritative visibility sync
+                AnahataInstaller.getContainer().open(agi);
+            }
         }
     }
 
@@ -195,9 +184,9 @@ public final class AgiTopComponent extends TopComponent {
     @Override
     protected void componentClosed() {
         Agi agi = getAgi();
-        if (agi != null) {
-            log.info("Closing TopComponent for agi session: {}. Toggling open state to false.", agi.getShortId());
-            agi.setOpen(false);
+        if (agi != null && agi.isOpen()) {
+            log.info("Closing TopComponent for agi session: {}. Syncing with container.", agi.getShortId());
+            AnahataInstaller.getContainer().close(agi);
         }
     }
 
@@ -236,7 +225,16 @@ public final class AgiTopComponent extends TopComponent {
      * @return The agi session, or null if not initialized.
      */
     public Agi getAgi() {
-        return agiPanel != null ? agiPanel.getAgi() : null;
+        if (agiPanel != null) {
+            return agiPanel.getAgi();
+        }
+        if (sessionId != null) {
+            // Try to find the agi in the container even if the panel isn't ready
+            return AnahataInstaller.getContainer().getActiveAgis().stream()
+                    .filter(c -> c.getConfig().getSessionId().equals(sessionId))
+                    .findFirst().orElse(null);
+        }
+        return null;
     }
 
     /**

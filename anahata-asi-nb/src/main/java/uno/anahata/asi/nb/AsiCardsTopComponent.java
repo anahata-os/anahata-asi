@@ -41,8 +41,8 @@ public class AsiCardsTopComponent extends TopComponent {
         setToolTipText("Manage active AGI sessions");
         setLayout(new BorderLayout());
 
-        // Use the shared AsiContainer from the installer, casting to the Swing-aware base
-        AbstractSwingAsiContainer container = (AbstractSwingAsiContainer) AnahataInstaller.getContainer();
+        // Use the shared AsiContainer from the installer
+        NetBeansAsiContainer container = AnahataInstaller.getContainer();
         sessionsPanel = new AsiCardsContainerPanel(container);
         add(sessionsPanel, BorderLayout.CENTER);
     }

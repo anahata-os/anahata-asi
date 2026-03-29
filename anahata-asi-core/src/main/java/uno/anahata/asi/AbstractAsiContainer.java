@@ -157,8 +157,14 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
      * @param agi The agi session to open.
      */
     public void open(@NonNull Agi agi) {
-        log.info("Requesting open for session: {}", agi.getShortId());
-        agi.setOpen(true);
+        boolean stateChanged = !agi.isOpen();
+        if (stateChanged) {
+            log.info("Requesting open for session: {}", agi.getShortId());
+            agi.setOpen(true);
+        }
+        
+        // Always invoke the hook: if it's already open, the environment 
+        // uses this to 'Focus' (select the tab).
         onAgiOpened(agi);
     }
 
@@ -169,6 +175,10 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
      * @param agi The agi session to close.
      */
     public void close(@NonNull Agi agi) {
+        if (!agi.isOpen()) {
+            return;
+        }
+        
         log.info("Requesting close for session: {}", agi.getShortId());
         agi.setOpen(false);
         onAgiClosed(agi);
