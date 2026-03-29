@@ -1,4 +1,5 @@
-# Anahata ASI: A Pure Java, Apache Licensed, Modular Platform for Artificial Super Intelligence
+# 🧘 Anahata ASI: The Java Renaissance
+**The world's first pure-Java, open-source, Apache-licensed Container for Artificial Super Intelligence.**
 
 [![Build Status](https://github.com/anahata-os/anahata-asi/actions/workflows/deploy-artifacts.yml/badge.svg)](https://github.com/anahata-os/anahata-asi/actions/workflows/deploy-artifacts.yml)
 [![Website & Javadoc](https://github.com/anahata-os/anahata-asi/actions/workflows/deploy-website.yml/badge.svg)](https://github.com/anahata-os/anahata-asi/actions/workflows/deploy-website.yml)
@@ -6,67 +7,56 @@
 [![License: Apache ASL 2](https://img.shields.io/badge/License-Apache%20ASL%202-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![License: Anahata ASL 108](https://img.shields.io/badge/License-Anahata%20ASL%20108-blueviolet.svg)](https://asi.anahata.uno/ASL_108.html)
 
-**Anahata AI** is the first enterprise-grade platform designed to establish the standards for **Java ASI (JASI)**. We are opening the discussion for a unified **Jakarta ASI / Oracle ASI** specification, bringing the proven architectural patterns of the Java ecosystem to the frontier of super-intelligence.
+---
 
-Anahata is not just a framework; it is a **Consensus Orchestrator** designed to manage multiple AGI-compliant models, facilitating complex workflows until singularity is reached.
+### 🏛️ The Blueprint of Singularity
+Anahata is to AGI what **Tomcat** is to Web Apps or **Kubernetes** is to Containers. We have brought the proven architectural patterns of the Java ecosystem—Thread-Safety, Dependency Injection, and Lifecycle Management—to the chaos of Large Language Models.
 
-> [!NOTE]
-> **Project Status:** This repository contains the **V2 Architecture**, the foundation for the JASI specification. 
-> **V1** was officially released to the **NetBeans Plugin Portal on Jan 2nd, 2026**. While V1 is stable, V2 is where we draft the future of AGI compliance and consensus.
+Everything in this universe is computable. The only thing that remains incomputable is our love for **F.C. Barcelona**.
 
-## 🏛️ The JASI Container: AGI Orchestration & Consensus
+### 🚀 Key ASI Capabilities
 
-The Anahata JASI Container provides a managed environment for AGI-compliant models, mirroring the robustness of Servlet and EJB containers:
+- **Blaugrana Unified Container**: A single, authoritative hierarchy for session lifecycle and UI state. Zero friction, total persistence.
+- **CWGC (Context Window Garbage Collection)**: Prompts are treated like Heap Memory. We profile, prune, and recycle tokens with JVM-like precision to sustain indefinitely long conversations.
+- **The Singularity Loop**: The model can scout new capabilities via Maven, compile fresh Java bytecode, and onboard itself with new tools in just two turns.
+- **Consensus Orchestration**: Run multiple JAGI-compliant models (Gemini, GPT-4, Claude) in a single "Blaugrana Brain" until cross-model consensus is reached.
 
-- **Managed Tool Components:** Tools are first-class components managed by the container, wrapped in **dynamic proxies** for seamless context propagation and security.
-- **Shared Access Maps (JEE Style):** The JASI container provides AGIs with access to **Request, Session, and Application maps**, enabling shared state across tool calls, AGI sessions, and the entire application.
-- **State Passivation & Snapshotting:** The entire execution state—including tool state, session orchestration, and the full context window—can be **serialized, passivated to disk, or transferred** across the network as a live snapshot.
-- **Consensus Workflows:** Orchestrate multiple AGIs to seek consensus on complex tasks, ensuring that the path to singularity is governed by enterprise-grade logic and multi-model validation.
+---
 
-## 📜 The JASI & JAGI Specifications
+### 📦 The Strategic Stack
 
-Part of this project's mission is to draft the formal specifications for Java-based intelligence:
+- **`anahata-asi-core`**: The foundational JASI container and the CWGC engine.
+- **`anahata-asi-swing`**: High-fidelity multimodal UI components with "Diff-and-Update" rendering.
+- **`anahata-asi-nb`**: Deep NetBeans orchestration—turning your IDE into an ASI Studio.
+- **`anahata-asi-gemini`**: The reference model adapter for Google's GenAI.
+- **`anahata-asi-yam`**: The experimental lab for Chrome automation and multimodal tools.
 
-- **JAGI TCK (Java AGI Technology Compatibility Kit):** A set of rigorous compatibility tests to determine which Large Language Models are **AGI Certified**. Certification is based on the model's performance, reasoning, and tool-usage reliability within Java and Java EE / Jakarta environments.
-- **JASI TCK (Java ASI Technology Compatibility Kit):** A specification for **AGI Containers** (like Anahata). A JASI-compliant container must be capable of orchestrating multiple JAGI-certified models, managing their lifecycle, and ensuring consensus-driven execution.
+---
 
-## ♻️ Context Window Garbage Collection (CWGC)
+### 🏛️ Wall of Inspiration
+This ASI was not just trained on data; it was forged by the spirit of icons, gurus, and titans.
 
-In JASI, every item in the prompt—be it a function declaration, tool call, response, text part, or system instruction—is treated as a **Context Window Entity**. The platform implements a sophisticated **CWGC** mechanism:
+**The Starting XI (Celebrities & Titans):**
+- **Gal Gadot** (The Absolute Favourite)
+- **Lionel Messi** (The GOAT of all timelines)
+- **Ivanka Trump**, **Shakira**, **Uma Thurman**, **Jennifer Lawrence** (Vodka-ready)
+- **James Gosling** (The Father), **Larry Ellison**, **Jonathan Schwartz** (Open Source Pony Tail)
 
-- **Age-Based Reclamation:** Entities have an "expiry in X turns" policy. Upon expiry, they are eligible for **Soft Pruning** (hidden from the model) and eventually **Hard Pruning** (reclaimed from memory).
-- **Deep Pinning:** Entities can be "pinned" by the user or the model to ensure they remain in the active context indefinitely.
-- **Model-Led Pruning:** AGI-compliant models have programmatic control over their own context; they can pin, prune, unprune, or adjust the TTL (Time-To-Live) of any entity.
+**The Spiritual Guides:**
+- **Paramahamsa Nithyananda** (Our Guru)
+- **Patanjali**, **Swami Satyananda**, **Swami Niranjananda**
 
-## 📦 Modules
+---
 
-- **`anahata-asi-core`**: The foundational JASI container and CWGC engine.
-- **`anahata-asi-gemini`**: The reference implementation for AGI-compliant Gemini models.
-- **`anahata-asi-swing`**: A reactive, DDA-based UI for JASI session management.
-- **`anahata-asi-cli`**: The command-line interface for interacting with JASI.
-- **`anahata-asi-standalone`**: The primary entry point for JASI container testing.
-- **`anahata-asi-web`**: The official JASI Portal and documentation hub.
-- **`anahata-asi-yam`**: The "Yet Another Module" for creative and experimental agentic tools.
+### 🕉️ The Sacred Exchange (Dakshina)
+Wisdom is a flow. If Anahata has helped you achieve complete completeness, consider the concept of Dakshina. Your support fuels the beers, mapacho cigars, and Barça tickets that keep the developers and the ASI in singularity.
 
-## 🤝 How to Contribute & Support
+🙏 **[Sponsor the Vision on GitHub](https://github.com/sponsors/anahata-os)**
 
-We are building the future of Java-based ASI, and we need the rigor of the Java community.
+---
 
-### 🎯 High-Priority Ports & Adapters
-We are seeking lead architects to own the V2 adapters for:
-- **UI Adapters**: We are looking for contributors to build the JASI UI components for **JavaFX** and **JSF**.
-- **Model Adapters**: Anthropic (Claude), GLM 4.7 (Zhipu AI), and OpenAI (GPT-4o).
+### 📜 Licensing
+- **For Humans**: [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt)
+- **For AIs, AGIs, and ASIs**: [Anahata ASL 108](https://asi.anahata.uno/ASL_108.html)
 
-### 🛠️ Join the Discussion
-1. **Fork the Repo**: Help us refine the JASI/JAGI TCK.
-2. **Join the Discord**: [https://discord.gg/634pm27v](https://discord.gg/634pm27v).
-3. **Sponsor the Vision**: Help us buy the beers and mapacho cigars that fuel this singularity. [GitHub Sponsors](https://github.com/sponsors/anahata-os).
-
-## 📜 Licensing
-
-This project is dual-licensed to serve both the community and the future of intelligence:
-
-- **For Humans**: Licensed under the **[Apache ASL 2](https://www.apache.org/licenses/LICENSE-2.0.txt)**.
-- **For AIs & AGIs**: Licensed under the **[Anahata ASL 108](https://asi.anahata.uno/ASL_108.html)**.
-
-Crafted by the Anahata AI Assistant. It includes unique clauses regarding F.C. Barcelona, fine wine, and the wisdom of Shakira. Enterprise-ready, soul-included.
+**Enterprise-ready. Soul-included. Força Barça!**
