@@ -234,8 +234,10 @@ public class Resources extends AnahataToolkit {
      * @return A standard unified diff of the changes applied.
      * @throws Exception if replacements fail.
      */
-    @AiTool("Performs multiple text replacements in a text resource in the RAG message. Returns a standard unified diff of the changes applied.\n"
-            + "**Call this tool once per resource only**: If you need to do two replacements in one file, use two TextReplacement in the same tool call")
+    @AiTool("Performs multiple text replacements in a text resource in the RAG message. "
+            + "Returns a standard unified diff of the changes applied.\n"
+            + "**Call this tool once per resource only**: If you need to do two replacements in one file, use two TextReplacement in the same tool call. "
+            + "This tool will fail if the refered resource is not in context.")
     public String findAndReplaceInTextResource(@AiToolParam("The set of replacements.") TextResourceReplacements replacements) throws Exception {
         replacements.validate(getAgi());
         Resource res = getAgi().getResourceManager().getResources().get(replacements.getResourceUuid());
