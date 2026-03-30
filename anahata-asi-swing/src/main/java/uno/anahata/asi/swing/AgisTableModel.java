@@ -6,6 +6,7 @@ package uno.anahata.asi.swing;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import javax.swing.table.AbstractTableModel;
 import lombok.NonNull;
@@ -16,9 +17,9 @@ import uno.anahata.asi.agi.status.AgiStatus;
 /**
  * A reusable table model for displaying active AI agi sessions.
  * This model tracks the {@link AbstractAsiContainer} and provides real-time updates
- * on session status, message count, and context usage.
+ * on session status, message count, and context usage through reactive listeners.
  * 
- * @author gemini-3-flash-preview
+ * @author anahata
  */
 public class AgisTableModel extends AbstractTableModel {
 
@@ -26,6 +27,9 @@ public class AgisTableModel extends AbstractTableModel {
     private final List<Agi> sessions = new ArrayList<>();
     /** The localized column names for the table. */
     private final String[] columnNames = {"Nickname", "ID", "Status", "Msgs", "Res", "Context %", "Summary"};
+    
+    /** The listener for metric changes in individual sessions. */
+    private final PropertyChangeListener metricsListener = this::handleMetricsChange;
     /** The container configuration providing session data. */
     private final AbstractAsiContainer asiConfig;
     /** The listener for changes in the container's session list. */
@@ -59,16 +63,16 @@ public class AgisTableModel extends AbstractTableModel {
 
     /** 
      * {@inheritDoc} 
-     * <p>Returns the number of active sessions in the tracked container.</p> 
      */
     @Override
     public int getRowCount() {
-        return sessions.size();
+        synchronized (sessions) {
+            return sessions.size();
+        }
     }
 
     /** 
      * {@inheritDoc} 
-     * <p>Returns the number of columns defined in the columnNames array.</p> 
      */
     @Override
     public int getColumnCount() {
@@ -77,7 +81,6 @@ public class AgisTableModel extends AbstractTableModel {
 
     /** 
      * {@inheritDoc} 
-     * <p>Returns the localized name for the specified column.</p> 
      */
     @Override
     public String getColumnName(int column) {
@@ -86,7 +89,6 @@ public class AgisTableModel extends AbstractTableModel {
 
     /** 
      * {@inheritDoc} 
-     * <p>Returns the appropriate class for each column to enable specialized renderers (e.g., status colors).</p> 
      */
     @Override
     public Class<?> getColumnClass(int columnIndex) {
@@ -105,14 +107,16 @@ public class AgisTableModel extends AbstractTableModel {
 
     /** 
      * {@inheritDoc} 
-     * <p>Extracts session data based on the column index (nickname, id, status, messages, usage).</p> 
      */
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
-        if (rowIndex < 0 || rowIndex >= sessions.size()) {
-            return null;
+        Agi agi;
+        synchronized (sessions) {
+            if (rowIndex < 0 || rowIndex >= sessions.size()) {
+                return null;
+            }
+            agi = sessions.get(rowIndex);
         }
-        Agi agi = sessions.get(rowIndex);
 
         switch (columnIndex) {
             case SESSION_COL:
@@ -136,30 +140,83 @@ public class AgisTableModel extends AbstractTableModel {
 
     /**
      * Refreshes the table model by synchronizing with the {@link AbstractAsiContainer}.
+     * This method manages the attachment and detachment of per-session listeners.
      */
     public final void refresh() {
         List<Agi> activeAgis = asiConfig.getActiveAgis();
         
-        // Identify removed sessions
-        for (int i = sessions.size() - 1; i >= 0; i--) {
-            if (!activeAgis.contains(sessions.get(i))) {
-                sessions.remove(i);
-                fireTableRowsDeleted(i, i);
+        synchronized (sessions) {
+            // 1. Remove sessions that are no longer active
+            for (int i = sessions.size() - 1; i >= 0; i--) {
+                Agi agi = sessions.get(i);
+                if (!activeAgis.contains(agi)) {
+                    detachListeners(agi);
+                    sessions.remove(i);
+                    fireTableRowsDeleted(i, i);
+                }
+            }
+
+            // 2. Add new active sessions
+            for (int i = 0; i < activeAgis.size(); i++) {
+                Agi agi = activeAgis.get(i);
+                if (!sessions.contains(agi)) {
+                    attachListeners(agi);
+                    sessions.add(i, agi);
+                    fireTableRowsInserted(i, i);
+                }
+            }
+
+            // 3. Update existing rows to reflect order or potential non-reactive changes
+            if (!sessions.isEmpty()) {
+                fireTableRowsUpdated(0, sessions.size() - 1);
             }
         }
+    }
 
-        // Identify added sessions
-        for (int i = 0; i < activeAgis.size(); i++) {
-            Agi agi = activeAgis.get(i);
-            if (!sessions.contains(agi)) {
-                sessions.add(i, agi);
-                fireTableRowsInserted(i, i);
-            }
+    private void attachListeners(Agi agi) {
+        agi.addPropertyChangeListener("nickname", metricsListener);
+        agi.addPropertyChangeListener("summary", metricsListener);
+        agi.addPropertyChangeListener("open", metricsListener);
+        agi.getContextManager().addPropertyChangeListener("history", metricsListener);
+        agi.getResourceManager().addPropertyChangeListener("resources", metricsListener);
+        agi.getStatusManager().addPropertyChangeListener("currentStatus", metricsListener);
+    }
+
+    private void detachListeners(Agi agi) {
+        agi.removePropertyChangeListener("nickname", metricsListener);
+        agi.removePropertyChangeListener("summary", metricsListener);
+        agi.removePropertyChangeListener("open", metricsListener);
+        agi.getContextManager().removePropertyChangeListener("history", metricsListener);
+        agi.getResourceManager().removePropertyChangeListener("resources", metricsListener);
+        agi.getStatusManager().removePropertyChangeListener("currentStatus", metricsListener);
+    }
+
+    /** 
+     * Handles property change events from individual sessions to update specific rows.
+     * 
+     * @param evt The property change event.
+     */
+    private void handleMetricsChange(PropertyChangeEvent evt) {
+        Object source = evt.getSource();
+        Agi targetAgi = null;
+        
+        if (source instanceof Agi a) {
+            targetAgi = a;
+        } else if (source instanceof uno.anahata.asi.agi.context.ContextManager cm) {
+            targetAgi = cm.getAgi();
+        } else if (source instanceof uno.anahata.asi.agi.resource.ResourceManager rm) {
+            targetAgi = rm.getAgi();
+        } else if (source instanceof uno.anahata.asi.agi.status.StatusManager sm) {
+            targetAgi = sm.getAgi();
         }
-
-        // Identify updated rows
-        if (!sessions.isEmpty()) {
-            fireTableRowsUpdated(0, sessions.size() - 1);
+        
+        if (targetAgi != null) {
+            synchronized (sessions) {
+                int row = sessions.indexOf(targetAgi);
+                if (row >= 0) {
+                    fireTableRowsUpdated(row, row);
+                }
+            }
         }
     }
 
@@ -170,8 +227,10 @@ public class AgisTableModel extends AbstractTableModel {
      * @return The session, or null if the index is out of bounds.
      */
     public Agi getAgiAt(int row) {
-        if (row >= 0 && row < sessions.size()) {
-            return sessions.get(row);
+        synchronized (sessions) {
+            if (row >= 0 && row < sessions.size()) {
+                return sessions.get(row);
+            }
         }
         return null;
     }
@@ -192,5 +251,10 @@ public class AgisTableModel extends AbstractTableModel {
      */
     public void dispose() {
         asiConfig.removePropertyChangeListener(asiListener);
+        synchronized (sessions) {
+            for (Agi agi : sessions) {
+                detachListeners(agi);
+            }
+        }
     }
 }

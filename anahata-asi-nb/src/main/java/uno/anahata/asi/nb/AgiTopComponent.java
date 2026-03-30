@@ -1,4 +1,4 @@
-/* Licensed under the Apache License, Version 2.0 */
+/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb;
 
 import java.awt.BorderLayout;
@@ -38,7 +38,7 @@ import uno.anahata.asi.swing.internal.SwingUtils;
         preferredID = "agi",
         iconBase = "icons/anahata_16.png",
         persistenceType = TopComponent.PERSISTENCE_ONLY_OPENED)
-@TopComponent.Registration(mode = "output", openAtStartup = false, position = 102)
+@TopComponent.Registration(mode = "editor", openAtStartup = false, position = 102)
 @Slf4j
 public final class AgiTopComponent extends TopComponent {
 

@@ -112,10 +112,43 @@ public abstract class AbstractAgiProvider {
     public abstract String getCurrentApiKey();
     
     /**
-     * Reloads the keys from the api_keys.txt file
+     * Gets the URI where users can acquire API keys for this provider.
+     * 
+     * @return The acquisition URI.
+     */
+    public abstract java.net.URI getKeysAcquisitionUri();
+    
+    /**
+     * Gets a template or hint string to display when the API keys file is empty.
+     * 
+     * @return The API key hint text.
+     */
+    public abstract String getApiKeyHint();
+    
+    /**
+     * Checks if there are any valid (non-comment, non-empty) API keys 
+     * configured for this provider.
+     * 
+     * @return true if at least one key exists.
+     */
+    public boolean hasKeys() {
+        return !readApiKeysFile().isEmpty();
+    }
+
+    /**
+     * Reloads the keys from the api_keys.txt file and triggers a hokusPocus.
      */
     public void reloadKeyPool() {
         keyPool = readApiKeysFile();
+        hokusPocus();
+    }
+    
+    /**
+     * Hook to reset the provider-specific API client (e.g., when keys change).
+     * Subclasses should override this to set their native client to null.
+     */
+    public void hokusPocus() {
+        // Default implementation does nothing
     }
     
     /**

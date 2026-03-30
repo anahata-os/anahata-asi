@@ -53,6 +53,8 @@ public class AgiCard extends JPanel {
     private final JLabel statusLabel;
     /** The label displaying the total number of messages in the conversation. */
     private final JLabel messageCountLabel;
+    /** The label displaying the total number of active resources. */
+    private final JLabel resourceCountLabel;
     /** The label displaying the context window usage percentage. */
     private final JLabel usageLabel;
     /** The button to close the session's tab/window. */
@@ -101,19 +103,20 @@ public class AgiCard extends JPanel {
 
         closeBtn = new JButton(new CancelIcon(14));
         closeBtn.setToolTipText("Close Session Tab");
-        closeBtn.setBorderPainted(false);
-        closeBtn.setContentAreaFilled(false);
         closeBtn.setFocusable(false);
+        closeBtn.setMargin(new Insets(2, 2, 2, 2));
+        // Ensure the button looks like a standard button (with borders/fill)
+        closeBtn.putClientProperty("JButton.buttonType", "square");
         closeBtn.addActionListener(e -> container.close(agi));
-        header.add(closeBtn, "w 20!, h 20!");
+        header.add(closeBtn, "w 24!, h 24!");
         
         JButton disposeBtn = new JButton(new DeleteIcon(14));
         disposeBtn.setToolTipText("Permanently Dispose Session");
-        disposeBtn.setBorderPainted(false);
-        disposeBtn.setContentAreaFilled(false);
         disposeBtn.setFocusable(false);
+        disposeBtn.setMargin(new Insets(2, 2, 2, 2));
+        disposeBtn.putClientProperty("JButton.buttonType", "square");
         disposeBtn.addActionListener(e -> container.dispose(agi));
-        header.add(disposeBtn, "w 20!, h 20!");
+        header.add(disposeBtn, "w 24!, h 24!");
 
         add(header, "growx, wrap");
 
@@ -141,12 +144,18 @@ public class AgiCard extends JPanel {
 
         content.add(summaryArea, "growx, wrap, gapbottom 10");
 
-        messageCountLabel = new JLabel("Messages: " + agi.getContextManager().getHistory().size());
+        messageCountLabel = new JLabel();
+        messageCountLabel.setFont(messageCountLabel.getFont().deriveFont(10f));
+        messageCountLabel.setForeground(Color.GRAY);
         content.add(messageCountLabel, "wrap");
+
+        resourceCountLabel = new JLabel();
+        resourceCountLabel.setFont(resourceCountLabel.getFont().deriveFont(10f));
+        resourceCountLabel.setForeground(Color.GRAY);
+        content.add(resourceCountLabel, "wrap");
         
-        double usage = agi.getContextWindowUsage();
-        usageLabel = new JLabel("Context: " + String.format("%.1f%%", usage * 100));
-        usageLabel.setForeground(SwingAgiConfig.getColorForContextUsage(usage));
+        usageLabel = new JLabel();
+        usageLabel.setFont(usageLabel.getFont().deriveFont(10f));
         content.add(usageLabel, "wrap");
 
         add(content, "growx, wrap");
@@ -195,6 +204,7 @@ public class AgiCard extends JPanel {
         this.historyListener = new EdtPropertyChangeListener(this, agi.getContextManager(), "history", this::handleHistoryChange);
         this.resourceListener = new EdtPropertyChangeListener(this, agi.getResourceManager(), "resources", this::handleResourceChange);
         
+        updateMetrics();
         syncState();
     }
 
@@ -292,7 +302,6 @@ public class AgiCard extends JPanel {
      * @param evt The property change event.
      */
     private void handleHistoryChange(PropertyChangeEvent evt) {
-        messageCountLabel.setText("Messages: " + agi.getContextManager().getHistory().size());
         updateMetrics();
     }
 
@@ -309,6 +318,9 @@ public class AgiCard extends JPanel {
      * Recalculates and updates the labels for message count and context usage.
      */
     private void updateMetrics() {
+        messageCountLabel.setText("Messages: " + agi.getContextManager().getHistory().size());
+        resourceCountLabel.setText("Resources: " + agi.getResourceManager().getResources().size());
+        
         double usage = agi.getContextWindowUsage();
         usageLabel.setText("Context: " + String.format("%.1f%%", usage * 100));
         usageLabel.setForeground(SwingAgiConfig.getColorForContextUsage(usage));

@@ -12,6 +12,7 @@ import java.awt.BorderLayout;
 import java.awt.event.HierarchyEvent;
 import javax.swing.Box;
 import javax.swing.JButton;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
 import javax.swing.Timer;
@@ -26,6 +27,7 @@ import uno.anahata.asi.swing.icons.CancelIcon;
 import uno.anahata.asi.swing.icons.LoadSessionIcon;
 
 import uno.anahata.asi.swing.icons.RestartIcon;
+import uno.anahata.asi.swing.icons.SettingsIcon;
 
 /**
  * A base abstract class for panels that manage a collection of AI agi sessions.
@@ -73,6 +75,12 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
         importButton.addActionListener(e -> importSession());
         toolBar.add(importButton);
 
+        toolBar.add(Box.createHorizontalGlue());
+        
+        JButton settingsBtn = new JButton("Preferences", new SettingsIcon(16));
+        settingsBtn.setToolTipText("Configure global ASI settings and API keys");
+        settingsBtn.addActionListener(e -> showPreferences());
+        toolBar.add(settingsBtn);
 
         toolBar.add(Box.createHorizontalGlue());
 
@@ -145,8 +153,22 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
 
     /** 
      * Authoritatively creates a new agi session via the container.
+     * <p>
+     * <b>Operational Guard:</b> If no API keys are configured, this method 
+     * alerts the user and opens the Preferences dashboard instead of 
+     * spawning a non-functional session.
+     * </p>
      */
     public void createNew() {
+        if (!asiContainer.hasAnyApiKeysConfigured()) {
+            JOptionPane.showMessageDialog(this, 
+                    "<html>Welcome to the Anahata Java Renaissance!<br><br>" +
+                    "To begin, you need to configure at least one API key for an AI provider.<br>" +
+                    "I am opening the <b>Preferences</b> dashboard for you now.</html>", 
+                    "Setup Required", JOptionPane.INFORMATION_MESSAGE);
+            showPreferences();
+            return;
+        }
         asiContainer.createNewAgi();
     }
 
@@ -155,6 +177,16 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
      */
     public void importSession() {
         asiContainer.importSessionWithUI(this);
+    }
+
+    /**
+     * Displays the global ASI preferences dashboard in a modal dialog.
+     */
+    public void showPreferences() {
+        AsiContainerPreferencesPanel prefsPanel = new AsiContainerPreferencesPanel(asiContainer);
+        JOptionPane.showOptionDialog(this, prefsPanel, "ASI Container Preferences", 
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, 
+                new SettingsIcon(32), new Object[]{"Close"}, "Close");
     }
 
 

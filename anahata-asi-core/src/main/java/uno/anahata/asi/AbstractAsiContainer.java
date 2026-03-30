@@ -22,6 +22,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
+import uno.anahata.asi.agi.provider.AbstractAgiProvider;
 import uno.anahata.asi.agi.status.AgiStatus;
 import uno.anahata.asi.persistence.kryo.KryoUtils;
 import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
@@ -121,6 +122,27 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
      * @return The new agi configuration.
      */
     public abstract AgiConfig createNewAgiConfig();
+
+    /**
+     * Checks if any of the AI providers configured in the global template 
+     * have at least one valid API key.
+     * 
+     * @return true if keys are configured, false otherwise.
+     */
+    public boolean hasAnyApiKeysConfigured() {
+        AgiConfig template = preferences.createAgiConfig(this);
+        for (Class<? extends AbstractAgiProvider> providerClass : template.getProviderClasses()) {
+            try {
+                AbstractAgiProvider provider = providerClass.getDeclaredConstructor().newInstance();
+                if (provider.hasKeys()) {
+                    return true;
+                }
+            } catch (Exception e) {
+                log.error("Failed to check keys for provider: {}", providerClass.getName(), e);
+            }
+        }
+        return false;
+    }
 
     /**
      * Authoritatively creates, configures, registers, and opens a brand-new 

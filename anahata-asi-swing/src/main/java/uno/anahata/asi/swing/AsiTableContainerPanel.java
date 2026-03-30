@@ -104,9 +104,17 @@ public class AsiTableContainerPanel extends AbstractAsiContainerPanel {
         msgColumn.setMinWidth(60);
         msgColumn.setMaxWidth(80);
 
+        TableColumn resColumn = table.getColumnModel().getColumn(AgisTableModel.RESOURCES_COL);
+        resColumn.setMinWidth(60);
+        resColumn.setMaxWidth(80);
+
         TableColumn ctxColumn = table.getColumnModel().getColumn(AgisTableModel.CONTEXT_COL);
         ctxColumn.setMinWidth(80);
         ctxColumn.setMaxWidth(100);
+        
+        TableColumn summaryColumn = table.getColumnModel().getColumn(AgisTableModel.SUMMARY_COL);
+        summaryColumn.setPreferredWidth(500);
+        summaryColumn.setMinWidth(200);
     }
 
     /**
