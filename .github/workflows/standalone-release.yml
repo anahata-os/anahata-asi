@@ -34,7 +34,11 @@ jobs:
         shell: bash
         run: |
           VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          # jpackage on macOS is strict: version must be 1-3 integers separated by dots.
+          # Strip any -SNAPSHOT or other suffixes for the installer metadata.
+          JPACKAGE_VERSION=$(echo $VERSION | sed 's/-.*//')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "JPACKAGE_VERSION=$JPACKAGE_VERSION" >> $GITHUB_ENV
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Build Project
@@ -51,7 +55,7 @@ jobs:
         shell: bash
         run: |
           jpackage --name "Anahata-ASI-Desktop" \
-                   --app-version "${{ env.VERSION }}" \
+                   --app-version "${{ env.JPACKAGE_VERSION }}" \
                    --input package-input \
                    --main-jar "anahata-asi-desktop-${{ env.VERSION }}.jar" \
                    --main-class uno.anahata.asi.standalone.SwingMain \
