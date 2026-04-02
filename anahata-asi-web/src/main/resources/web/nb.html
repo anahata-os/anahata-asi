@@ -50,14 +50,24 @@
         .main-content h1 { font-size: 2.2rem; margin-bottom: 0.4rem; margin-top: -5rem; }
         .main-content .subtitle { font-size: 1rem; color: var(--text-muted); margin-bottom: 1.5rem; max-width: 900px; line-height: 1.5; }
 
-        /* Feature Bullets & Tags */
+        /* Feature List for USPs */
         .usp-list { list-style: none; padding: 0; margin-bottom: 2rem; }
-        .usp-list li { margin-bottom: 0.8rem; display: flex; align-items: flex-start; gap: 1rem; color: var(--white); font-size: 0.95rem; line-height: 1.4; }
-        .usp-list li i { color: var(--barca-gold); margin-top: 4px; font-size: 0.9rem; }
+        .usp-item { display: flex; align-items: flex-start; gap: 0.8rem; color: var(--white); font-size: 0.95rem; line-height: 1.5; margin-bottom: 1.2rem; }
+        .usp-item i { color: var(--barca-gold); margin-top: 5px; font-size: 0.85rem; flex-shrink: 0; }
         
+        /* Deep Integration Box */
+        .integration-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; margin: 3rem 0; background: rgba(255, 255, 255, 0.02); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .integration-item { display: flex; align-items: flex-start; gap: 1rem; color: var(--text-main); font-size: 1rem; line-height: 1.5; }
+        .integration-item i { color: var(--primary-light); margin-top: 5px; font-size: 1rem; flex-shrink: 0; }
+
         .tag-row { display: flex; gap: 0.8rem; margin-bottom: 2rem; flex-wrap: wrap; }
         .tag { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-muted); padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
         .tag-gold { border-color: var(--barca-gold); color: var(--barca-gold); background: rgba(237, 187, 0, 0.05); }
+
+        /* Toolkit Highlight Lists */
+        .toolkit-highlights { list-style: none; padding: 0; margin: 1rem 0 1.5rem; border-left: 2px solid rgba(237, 187, 0, 0.2); padding-left: 1.5rem; }
+        .toolkit-highlights li { font-size: 0.85rem; color: var(--text-main); margin-bottom: 0.6rem; position: relative; }
+        .toolkit-highlights li::before { content: "\f058"; font-family: "Font Awesome 6 Free"; font-weight: 900; position: absolute; left: -1.2rem; color: var(--barca-gold); font-size: 0.75rem; }
 
         /* Provider Specific Styles */
         .provider-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
@@ -102,15 +112,13 @@
                 <h1>Anahata <span style="color: var(--barca-gold)">ASI Studio - NetBeans</span></h1>
                 <p class="subtitle">The best Java AI Coding assistant on earth and SDK for developing custom Anahata ASI Containers, Agi Toolkits and Context Providers</p>
                 
-                <ul class="usp-list">
-                    <li><i class="fas fa-check-circle"></i> Anahata ASI Container 1.0.0 Reference Implementation</li>
-                    <li><i class="fas fa-check-circle"></i> The best Java AI Coding assistant on the market.</li>
-                    <li><i class="fas fa-check-circle"></i> Fully Observable, Fully Autonomous JVM Agent with JIT compilation and Dynamic classpath extension to execute any LLM-generated code using any Java library directly on the NetBeans JVM.</li>
-                    <li><i class="fas fa-check-circle"></i> SDK for developing custom Anahata ASI Containers, AGI Toolkits, and Context Providers.</li>
-                    <li><i class="fas fa-check-circle"></i> Autobackups - Context Window Flight Recorder - Fully Auditable Agentic Execution - Persists the AgiContainer on every turn and after each executed tool.</li>
-                    <li><i class="fas fa-check-circle"></i> Context Window Garbage Collector with per-part, per-tool, depth-based, two stage context window item reclamation.</li>
-                    <li><i class="fas fa-check-circle"></i> Unified Resource Management - Local And Remote Resources</li>
-                </ul>
+                <div class="usp-list">
+                    <div class="usp-item"><i class="fas fa-check-circle"></i> Anahata ASI Container 1.0.0 Reference Implementation - SDK for developing custom Anahata ASI Containers, AGI Toolkits, and Context Providers.</div>
+                    <div class="usp-item"><i class="fas fa-check-circle"></i> The best Java AI Coding assistant on the market. - Model Thinks in Java - High-fidelity awareness of all types, hierarchies, and members across all open projects leveraging NetBeans refactoring APIs</div>
+                    <div class="usp-item"><i class="fas fa-check-circle"></i> Fully Autonomous, Fully Observable, Fully Auditable JVM Agent with per-tool security configuration. Flight Recorder, Autobackups. Editable, re-runnable tool calls.</div>
+                    <div class="usp-item"><i class="fas fa-check-circle"></i> JIT compilation and execution of LLM generated java code against project sources, dependencies, netbeans apis or any Java library on the internet directly on the NetBeans JVM.</div>
+                    <div class="usp-item"><i class="fas fa-check-circle"></i> CwGC - Two-stage Context Window Garbage Collector with configurable per-part type and per-tool depth based reclamation. Both model and user can Prune / Unprune or Pin </div>
+                </div>
 
                 <div class="tag-row">
                     <span class="tag">Apache Licensed</span>
@@ -148,6 +156,14 @@
                     <a class="next" onclick="plusSlides(1)">&#10095;</a>
                 </div>
 
+                <div class="integration-grid">
+                    <div class="integration-item"><i class="fas fa-terminal"></i> Natural Language control of NetBeans - Open and close projects, open and close files, clean, build, shut down, select in projects, files or favourites, hundreds of NetBeans APIs available to the model.</div>
+                    <div class="integration-item"><i class="fas fa-shield-alt"></i> NetBeans Problem Provider, Compiler Alerts and Hint Integration - Automatic, On-the-turn compiler alerts. If you see an error badge the model will get the detailed compile error, project warnings or problems. Fetch and fix editor hints like 'remove unused imports' across all files and projects.</div>
+                    <div class="integration-item"><i class="fas fa-search"></i> NetBeans Maven index integration - Ultra fast artifact search across all public or private maven repositories listed in settings.xml</div>
+                    <div class="integration-item"><i class="fas fa-link"></i> Unified Resource Management - Multimodal Local And Remote Resources, Custom NbHandle for FileObject integration - Ctrol + O tools for the model to "Single-Shot" fetch any dependency sources.</div>
+                    <div class="integration-item"><i class="fas fa-history"></i> Autobackups - Context Window Flight Recorder - Fully Auditable Agentic Execution - Persists the AgiContainer on every turn and after each executed tool.</div>
+                </div>
+
                 <div class="info-box">
                     <p style="margin: 0; font-size: 1rem; color: var(--white);">
                         It contains all the tools of the <a href="desktop.html" style="color: var(--barca-gold); text-decoration: underline;">standalone version</a>, plus these toolkits (the ones that are only available in NetBeans):
@@ -159,6 +175,11 @@
             <section id="refactor" class="toolkit-section">
                 <div class="toolkit-header"><i class="fas fa-magic"></i><h2>Refactor Toolkit (17 Tools)</h2></div>
                 <p>Transactional refactoring tools that maintain integrity across the entire project graph by leveraging the industry-standard NetBeans Refactoring engine.</p>
+                <ul class="toolkit-highlights">
+                    <li><b>Cross-Project Integrity</b>: Rename members or relocate types with automatic import correction across the whole workspace.</li>
+                    <li><b>Surgical Safety</b>: Use <code>safeDelete</code> to verify usages before any code removal, preventing broken builds.</li>
+                    <li><b>Architectural Evolution</b>: Extract interfaces, pull up members to superclasses, or invert boolean logic via natural language.</li>
+                </ul>
                 <div class="tool-grid">
                     <div class="tool-card"><span class="tool-sig">rename(path, newName) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Safe rename updating all references in the workspace.</p></div>
                     <div class="tool-card"><span class="tool-sig">renameMember(path, member, newName) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Renames a class member across all open projects.</p></div>
@@ -184,6 +205,11 @@
             <section id="codemodel" class="toolkit-section">
                 <div class="toolkit-header"><i class="fas fa-sitemap"></i><h2>CodeModel Toolkit (16 Tools)</h2></div>
                 <p>Powered by the NetBeans Java Index, enabling high-performance type exploration and one-shot FQN resolution.</p>
+                <ul class="toolkit-highlights">
+                    <li><b>Ctrl+O Mastery</b>: The model uses the same binary index as the IDE to find types across the entire project graph instantly.</li>
+                    <li><b>Hierarchy Exploration</b>: Recursively build implementation and inheritance trees for any type in the classpath.</li>
+                    <li><b>Dependency Inspecter</b>: Fetch source code and Javadoc for project dependencies in a single shot without manual navigation.</li>
+                </ul>
                 <div class="tool-grid">
                     <div class="tool-card"><span class="tool-sig">findTypes(query, ...) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Index-based search across all projects (Ctrl+O).</p></div>
                     <div class="tool-card"><span class="tool-sig">loadTypeSources(javaType) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Registers a type's source file as a resource.</p></div>
@@ -208,6 +234,11 @@
             <section id="maven" class="toolkit-section">
                 <div class="toolkit-header"><i class="fas fa-hammer"></i><h2>Maven Toolkit (7 Tools)</h2></div>
                 <p>Leverages the host IDE's internal Maven engine for synchronous build goal execution and recursive dependency resolution.</p>
+                <ul class="toolkit-highlights">
+                    <li><b>Native Execution</b>: Runs <code>clean</code>, <code>install</code>, or <code>prime</code> goals using the NetBeans Maven embedder.</li>
+                    <li><b>Transitive Awareness</b>: The model fetches the full runtime classpath, including all hidden transitive dependencies.</li>
+                    <li><b>Fast Artifact Search</b>: Connects to the local and central Maven indexes for ultra-fast GAV coordinate discovery.</li>
+                </ul>
                 <div class="tool-grid">
                     <div class="tool-card"><span class="tool-sig">runGoals(projectId, goals, ...) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Executes Maven goals (clean, install) synchronously.</p></div>
                     <div class="tool-card"><span class="tool-sig">addDependency(path, g, a, v, ...) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Surgically adds a dependency to the project POM.</p></div>
@@ -223,6 +254,11 @@
             <section id="projects" class="toolkit-section">
                 <div class="toolkit-header"><i class="fas fa-project-diagram"></i><h2>Projects Toolkit (7 Tools)</h2></div>
                 <p>Provides the ASI with deep structural awareness of the IDE workspace and project metadata.</p>
+                <ul class="toolkit-highlights">
+                    <li><b>Lifecycle Control</b>: Programmatically open/close projects or set the Main Project via natural language.</li>
+                    <li><b>Multi-Module Strategy</b>: Open all subprojects of a parent POM in a single tool call.</li>
+                    <li><b>Config Management</b>: Toggle "Compile on Save" overrides directly in <code>nb-configuration.xml</code>.</li>
+                </ul>
                 <div class="tool-grid">
                     <div class="tool-card"><span class="tool-sig">openProject(path, subprojects) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Opens a project in the IDE workspace.</p></div>
                     <div class="tool-card"><span class="tool-sig">setMainProject(path) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Sets the authoritative main project for the IDE.</p></div>
@@ -238,6 +274,11 @@
             <section id="hints" class="toolkit-section">
                 <div class="toolkit-header"><i class="fas fa-lightbulb"></i><h2>Hints Toolkit (3 Tools)</h2></div>
                 <p>Programmatic access to the NetBeans Hint engine for automated code quality and surgical fixes.</p>
+                <ul class="toolkit-highlights">
+                    <li><b>Global Quality Monitor</b>: Retrieve all warnings, performance suggestions, and potential bugs for a project.</li>
+                    <li><b>Automated Cleanup</b>: Surgically remove unused imports or fix naming conventions across multiple files.</li>
+                    <li><b>AI Surgical Patching</b>: The model applies NetBeans "Quick Fixes" directly to the source code without user intervention.</li>
+                </ul>
                 <div class="tool-grid">
                     <div class="tool-card"><span class="tool-sig">getAllHints(projectPath, ...) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Retrieves all warnings and suggestions for a project.</p></div>
                     <div class="tool-card"><span class="tool-sig">applyHintFix(filePath, hintId) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Executes the suggested quick-fix for a specific hint.</p></div>
@@ -249,6 +290,10 @@
             <section id="editor" class="toolkit-section">
                 <div class="toolkit-header"><i class="fas fa-edit"></i><h2>Editor Toolkit (3 Tools)</h2></div>
                 <p>Direct interaction with the active NetBeans editor tabs and document buffers.</p>
+                <ul class="toolkit-highlights">
+                    <li><b>Visual Synchronization</b>: The model can open a file and scroll to a specific line to "show" you its thought process.</li>
+                    <li><b>Workspace Observability</b>: Knows which files you are looking at and their current modification status.</li>
+                </ul>
                 <div class="tool-grid">
                     <div class="tool-card"><span class="tool-sig">openFile(path, scrollToLine) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Opens and focuses a file in the IDE editor.</p></div>
                     <div class="tool-card"><span class="tool-sig">getOpenFiles() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Lists all currently open editor tabs and status.</p></div>
@@ -260,6 +305,11 @@
             <section id="ide" class="toolkit-section">
                 <div class="toolkit-header"><i class="fas fa-laptop-code"></i><h2>IDE Toolkit (4 Tools)</h2></div>
                 <p>Generic IDE orchestration, observability, and navigation tools.</p>
+                <ul class="toolkit-highlights">
+                    <li><b>Deep Navigation</b>: Select and highlight elements in the Projects, Files, or Favorites tabs via the model.</li>
+                    <li><b>Log Monitoring</b>: Tails <code>messages.log</code> to help the model debug IDE internal issues or plugin failures.</li>
+                    <li><b>Visual Layout Awareness</b>: Reports on the state of all docked windows and TopComponents.</li>
+                </ul>
                 <div class="tool-grid">
                     <div class="tool-card"><span class="tool-sig">monitorLogs(pattern, tail) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Tails the IDE messages.log for real-time debugging.</p></div>
                     <div class="tool-card"><span class="tool-sig">selectIn(path, target) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Highlights elements in Projects, Files, or Favorites.</p></div>
@@ -272,6 +322,11 @@
             <section id="nbjava" class="toolkit-section">
                 <div class="toolkit-header"><i class="fab fa-java"></i><h2>NbJava Toolkit (2 Tools)</h2></div>
                 <p>NetBeans-aware Java execution engine that manages NBM-specific classpath isolation and hot-reloading.</p>
+                <ul class="toolkit-highlights">
+                    <li><b>Visual Library API</b>: The model can programmatically generate and display interactive architecture diagrams or custom UI components.</li>
+                    <li><b>Progress API Hooks</b>: Model tasks hook directly into the native NetBeans progress bar for real-time visual feedback.</li>
+                    <li><b>Diff Engine Access</b>: Leverage high-fidelity IDE diff viewers for AI-to-Code comparison directly on the JVM.</li>
+                </ul>
                 <div class="tool-grid">
                     <div class="tool-card"><span class="tool-sig">compileAndExecuteInProject(...) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Executes model code using the project's own target/classes.</p></div>
                     <div class="tool-card"><span class="tool-sig">compileAndExecute(code, ...) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Inherited: Executes code in the application's JVM.</p></div>
@@ -289,7 +344,7 @@
                     </div>
                     <div class="provider-card">
                         <h4><i class="fas fa-sitemap"></i> Project Structure</h4>
-                        <p>Provides a unified, architecturally-aware view of the project, including logical Java packages, physical resources, and inner class hierarchies.</p>
+                        <p>Provides a unified, architecturally-aware view of the project, including logical Java packages, physical resources, versioning info, and inner class hierarchies.</p>
                     </div>
                     <div class="provider-card">
                         <h4><i class="fas fa-folder-open"></i> Project Files</h4>
