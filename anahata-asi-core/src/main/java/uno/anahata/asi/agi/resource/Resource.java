@@ -18,6 +18,7 @@ import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.persistence.Rebindable;
 import uno.anahata.asi.internal.TimeUtils;
+import uno.anahata.asi.internal.TokenizerUtils;
 
 /**
  * The Universal Resource Orchestrator.
@@ -355,10 +356,11 @@ public class Resource extends BasicPropertyChangeSource implements Rebindable, C
     @Override
     public int getInstructionsTokenCount() {
         try {
+            int tokens = TokenizerUtils.countTokens(getHeader());
             if (contextPosition == ContextPosition.SYSTEM_INSTRUCTIONS && view != null) {
-                return view.getTokenCount();
+                tokens += view.getTokenCount();
             }
-            return 0;
+            return tokens;
         } catch (Exception e) {
             return 0;
         }
@@ -370,10 +372,11 @@ public class Resource extends BasicPropertyChangeSource implements Rebindable, C
     @Override
     public int getRagTokenCount() {
         try {
+            int tokens = TokenizerUtils.countTokens(getHeader());
             if (contextPosition == ContextPosition.PROMPT_AUGMENTATION && view != null) {
-                return view.getTokenCount();
+                tokens += view.getTokenCount();
             }
-            return 0;
+            return tokens;
         } catch (Exception e) {
             return 0;
         }
