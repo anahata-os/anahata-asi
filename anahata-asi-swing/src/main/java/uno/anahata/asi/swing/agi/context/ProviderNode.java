@@ -77,8 +77,14 @@ public class ProviderNode extends AbstractContextNode<ContextProvider> {
     /** {@inheritDoc} */
     @Override
     protected void calculateLocalTokens() {
-        this.instructionsTokens = userObject.getInstructionsTokenCount();
-        this.ragTokens = userObject.getRagTokenCount();
+        if (userObject.isEffectivelyProviding()) {
+            this.instructionsTokens = userObject.getInstructionsTokenCount();
+            this.ragTokens = userObject.getRagTokenCount();
+        } else {
+            this.instructionsTokens = 0;
+            this.ragTokens = 0;
+        }
+        
     }
 
     /** {@inheritDoc} */
