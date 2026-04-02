@@ -17,6 +17,7 @@ public class PartNode extends AbstractContextNode<AbstractPart> {
 
     /**
      * Constructs a new PartNode.
+     *
      * @param agiPanel The parent agi panel.
      * @param userObject The part to wrap.
      */
@@ -24,10 +25,10 @@ public class PartNode extends AbstractContextNode<AbstractPart> {
         super(agiPanel, userObject);
     }
 
-    /** 
-     * {@inheritDoc} 
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details: Returns the simple class name of the part (e.g., 
+     * Implementation details: Returns the simple class name of the part (e.g.,
      * TextPart, BlobPart) along with its sequential ID.
      * </p>
      */
@@ -36,10 +37,10 @@ public class PartNode extends AbstractContextNode<AbstractPart> {
         return userObject.getClass().getSimpleName() + " #" + userObject.getSequentialId();
     }
 
-    /** 
-     * {@inheritDoc} 
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details: Returns a basic description including the 
+     * Implementation details: Returns a basic description including the
      * concrete type of the message part.
      * </p>
      */
@@ -48,10 +49,11 @@ public class PartNode extends AbstractContextNode<AbstractPart> {
         return "A " + userObject.getClass().getSimpleName() + " part.";
     }
 
-    /** 
-     * {@inheritDoc} 
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details: Parts are leaf nodes and do not have child objects.
+     * Implementation details: Parts are leaf nodes and do not have child
+     * objects.
      * </p>
      */
     @Override
@@ -59,29 +61,30 @@ public class PartNode extends AbstractContextNode<AbstractPart> {
         return Collections.emptyList();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected AbstractContextNode<?> createChildNode(Object obj) {
         return null;
     }
 
-    /** 
-     * {@inheritDoc} 
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details: Retrieves the token count directly from the 
+     * Implementation details: Retrieves the token count directly from the
      * underlying domain part for history metrics.
      * </p>
      */
     @Override
     protected void calculateLocalTokens() {
-        this.historyTokens = userObject.getTokenCount();
+        this.historyTokens = userObject.isEffectivelyPruned() ? 0 : userObject.getTokenCount();
     }
 
-    /** {@inheritDoc} */
-    /** 
-     * {@inheritDoc} 
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details: Includes the remaining depth metric in the status 
+     * Implementation details: Includes the remaining depth metric in the status
      * string to visualize the Context Window Garbage Collection (CwGC) state.
      * </p>
      */
