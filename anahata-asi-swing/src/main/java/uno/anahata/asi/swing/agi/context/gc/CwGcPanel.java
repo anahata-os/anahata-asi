@@ -7,6 +7,7 @@ import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -108,17 +109,21 @@ public class CwGcPanel extends JPanel {
      * and the historical recycling log.
      */
     private void initComponents() {
-        JPanel headerPanel = new JPanel(new MigLayout("insets 10, fillx", "[grow][]", "[]"));
+        JPanel headerPanel = new JPanel(new MigLayout("insets 10, fillx", "[grow]", "[]0[]5[]"));
         headerPanel.setBackground(new Color(245, 245, 245));
         headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY));
         JLabel titleLabel = new JLabel("Context Window Garbage Collector");
         titleLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
-        headerPanel.add(titleLabel, "growx");
+        headerPanel.add(titleLabel, "wrap");
 
-        strategyLabel = new JLabel("Strategy: Unknown");
-        strategyLabel.setFont(new Font("SansSerif", Font.ITALIC, 11));
-        strategyLabel.setForeground(Color.GRAY);
-        headerPanel.add(strategyLabel, "right");
+        strategyLabel = new JLabel();
+        strategyLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        headerPanel.add(strategyLabel, "wrap");
+
+        JLabel engineLabel = new JLabel("<html><b>Metabolism Engine:</b> A hint about all <i>Effectively Pruned</i> parts is included in the prompt. "
+                + "Message garbage collection occurs when all parts in a message are <i>Effectively Pruned</i>.</html>");
+        engineLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        headerPanel.add(engineLabel);
 
         add(headerPanel, BorderLayout.NORTH);
 
@@ -177,6 +182,16 @@ public class CwGcPanel extends JPanel {
         JPanel logPanel = new JPanel(new BorderLayout());
         logPanel.setBorder(BorderFactory.createTitledBorder("Recycling Log (Hard Pruning Events)"));
 
+        JButton clearBtn = new JButton("Clear GC Logs", new DeleteIcon(16));
+        clearBtn.addActionListener(e -> {
+            agi.getContextManager().getGarbageCollector().clearLog();
+            refreshLogTable();
+        });
+        JPanel topLogActions = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
+        topLogActions.setOpaque(false);
+        topLogActions.add(clearBtn);
+        logPanel.add(topLogActions, BorderLayout.NORTH);
+
         logModel = new DefaultTableModel(new Object[]{"Timestamp", "Msg ID", "Type", "Tokens Recycled"}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -187,26 +202,11 @@ public class CwGcPanel extends JPanel {
         logTable.setColumnControlVisible(true);
         logPanel.add(new JScrollPane(logTable), BorderLayout.CENTER);
 
-        JPanel logActions = new JPanel(new MigLayout("insets 5", "[grow][]"));
-        JButton clearBtn = new JButton("Clear GC Logs", new DeleteIcon(16));
-        clearBtn.addActionListener(e -> {
-            agi.getContextManager().getGarbageCollector().clearLog();
-            refreshLogTable();
-        });
-        logActions.add(new JLabel("Turn recycling occurs when a message is fully pruned."), "growx");
-        logActions.add(clearBtn);
-        logPanel.add(logActions, BorderLayout.SOUTH);
-
         mainContent.add(logPanel, "grow");
 
         add(mainContent, BorderLayout.CENTER);
         
-        JPanel infoPanel = new JPanel(new BorderLayout());
-        infoPanel.setBorder(BorderFactory.createEmptyBorder(0, 15, 10, 15));
-        JLabel info = new JLabel("<html><b>Metabolism Engine:</b> The <font color='#2ecc71'><b>Active Content</b></font> is the direct context window payload. "
-                + "Pruned turns are stored as compressed hints in metadata.</html>");
-        infoPanel.add(info, BorderLayout.NORTH);
-        add(infoPanel, BorderLayout.SOUTH);
+
     }
 
     /**
@@ -254,7 +254,8 @@ public class CwGcPanel extends JPanel {
             int threshold = cm.getTokenThreshold();
             
             boolean inject = agi.getRequestConfig().isInjectInbandMetadata();
-            strategyLabel.setText("Metadata Strategy: " + (inject ? "In-Band Injection" : "Consolidated Index"));
+            String strategyName = inject ? "In-Band Injection" : "Consolidated Index";
+            strategyLabel.setText("<html><font color='#666666'>Strategy:</font> <font color='#333333'><b>" + strategyName + "</b></font></html>");
 
             systemTokensLabel.setText(NUMBER_FORMAT.format(stats.getSystemInstructionsTokens()));
             toolTokensLabel.setText(NUMBER_FORMAT.format(stats.getToolDeclarationsTokens()));
