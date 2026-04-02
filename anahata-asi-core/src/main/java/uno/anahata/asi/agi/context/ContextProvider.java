@@ -181,7 +181,7 @@ public interface ContextProvider {
             if (instructions.isEmpty()) {
                 return 0;
             }
-            int count = TokenizerUtils.countTokens(getHeader());
+            int count = 0;
             for (String s : instructions) {
                 count += TokenizerUtils.countTokens(s);
             }
@@ -197,11 +197,11 @@ public interface ContextProvider {
      * @return The estimated token count.
      */
     default int getRagTokenCount() {
+        RagMessage rm = new RagMessage(null);
+        
         try {
-            // Note: This is a rough estimation. Concrete implementations should 
-            // override this if they can provide a more accurate count without 
-            // side effects.
-            return 0; 
+            populateMessage(rm);
+            return rm.getTokenCount(true); 
         } catch (Exception e) {
             return 0;
         }
@@ -216,25 +216,4 @@ public interface ContextProvider {
     default String getIconId() {
         return null;
     }
-
-    /**
-     * Calculates the effective token count for system instructions.
-     * 
-     * @return The effective instructions token count.
-     */
-    default int getEffectiveInstructionsTokenCount() {
-        return isEffectivelyProviding() ? getInstructionsTokenCount() : 0;
-    }
-
-    /**
-     * Calculates the effective token count for RAG content.
-     * This includes the header overhead which is always injected by the manager.
-     * 
-     * @return The effective RAG token count.
-     */
-    default int getEffectiveRagTokenCount() {
-        int headerTokens = TokenizerUtils.countTokens(getHeader());
-        return isEffectivelyProviding() ? (headerTokens + getRagTokenCount()) : headerTokens;
-    }
-
 }
