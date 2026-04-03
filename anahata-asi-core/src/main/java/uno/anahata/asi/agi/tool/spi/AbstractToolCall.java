@@ -89,7 +89,7 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
      * @param rawArgs The original JSON arguments from the provider.
      * @param args The enriched arguments (POJOs).
      */
-    public AbstractToolCall(AbstractModelMessage message, @NonNull String id, @NonNull T tool, @NonNull Map<String, Object> rawArgs, @NonNull Map<String, Object> args) {
+    public AbstractToolCall(AbstractModelMessage message, String id, @NonNull T tool, @NonNull Map<String, Object> rawArgs, @NonNull Map<String, Object> args) {
         super(message);
         this.id = id;
         this.tool = tool;

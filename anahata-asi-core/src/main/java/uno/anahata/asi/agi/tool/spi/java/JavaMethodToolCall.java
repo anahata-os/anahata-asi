@@ -17,7 +17,7 @@ import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 @Getter
 public class JavaMethodToolCall extends AbstractToolCall<JavaMethodTool, JavaMethodToolResponse> {
     
-    public JavaMethodToolCall(AbstractModelMessage modelMessage, @NonNull String id, @NonNull JavaMethodTool tool, @NonNull Map<String, Object> rawArgs, @NonNull Map<String, Object> args) {
+    public JavaMethodToolCall(AbstractModelMessage modelMessage, String id, @NonNull JavaMethodTool tool, @NonNull Map<String, Object> rawArgs, @NonNull Map<String, Object> args) {
         super(modelMessage, id, tool, rawArgs, args);
     }
 

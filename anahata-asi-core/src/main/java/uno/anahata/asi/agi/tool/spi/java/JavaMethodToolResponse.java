@@ -81,6 +81,7 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
         }
         
         long startTime = System.currentTimeMillis();
+        setExpanded(true);
         setCurrent(this); // Establish the thread-local context
         setStatus(ToolExecutionStatus.EXECUTING);
         setThread(Thread.currentThread());

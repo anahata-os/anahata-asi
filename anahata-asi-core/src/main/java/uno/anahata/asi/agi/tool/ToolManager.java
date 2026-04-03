@@ -168,7 +168,8 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
      * pre-rejected, response.
      */
     public AbstractToolCall createToolCall(AbstractModelMessage amm, String id, String name, Map<String, Object> jsonArgs) {
-        String callId = (id == null || id.isEmpty()) ? String.valueOf(callIdGenerator.incrementAndGet()) : id;
+        //String callId = (id == null || id.isEmpty()) ? String.valueOf(callIdGenerator.incrementAndGet()) : id;
+        String callId = null;
 
         Optional<? extends AbstractTool> toolOpt = findToolByName(name);
         log.info("Found tool: " + toolOpt);

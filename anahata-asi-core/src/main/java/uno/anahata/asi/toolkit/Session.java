@@ -143,15 +143,15 @@ public class Session extends AnahataToolkit {
      * @param toolCallIds The unique IDs of the tool calls to stop.
      * @return A detailed report of the stopping operations.
      */
-    @AgiTool(value = "Stops one or more currently executing tools by their IDs.", permission = ToolPermission.APPROVE_ALWAYS)
-    public String stopRunningTools(@AgiToolParam("The unique IDs of the tool calls to stop.") List<String> toolCallIds) {
+    @AgiTool(value = "Kills one or more currently executing tools by their [x-anahata-part-id].", permission = ToolPermission.APPROVE_ALWAYS)
+    public String killRunningTools(@AgiToolParam("The [x-anahata-part-id] of the tool calls to kill.") List<Long> toolCallIds) {
         List<AbstractToolCall<?, ?>> executing = getAgi().getToolManager().getExecutingCalls();
         int stoppedCount = 0;
         StringBuilder logBuilder = new StringBuilder();
 
-        for (String id : toolCallIds) {
+        for (Long id : toolCallIds) {
             AbstractToolCall<?, ?> call = executing.stream()
-                    .filter(tc -> tc.getId().equals(id))
+                    .filter(tc -> tc.getSequentialId() == id)
                     .findFirst()
                     .orElse(null);
 
