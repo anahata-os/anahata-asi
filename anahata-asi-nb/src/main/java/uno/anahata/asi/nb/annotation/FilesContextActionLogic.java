@@ -174,7 +174,8 @@ public class FilesContextActionLogic {
      * @return A map of open sessions to their respective resource counts.
      */
     public static Map<Agi, Integer> getSessionFileCounts(FileObject fo, boolean recursive) {
-        Map<Agi, Integer> counts = new TreeMap<>((c1, c2) -> c1.getDisplayName().compareTo(c2.getDisplayName()));
+        // IDENTITY OVER ORDER: Use HashMap to prevent TreeMap corruption when nicknames change
+        Map<Agi, Integer> counts = new HashMap<>();
         for (Agi agi : AnahataInstaller.getContainer().getOpenAgis()) {
             int count = countFilesInContext(fo, agi, recursive);
             if (count > 0) {
@@ -197,25 +198,32 @@ public class FilesContextActionLogic {
         if (file == null) {
             return 0;
         }
-        String absolutePath = file.getAbsolutePath();
-
+        
+        // SEMANTIC ALIGNMENT: Convert OS path to URI-style path for cross-platform comparison
+        String absolutePath = file.getAbsolutePath().replace("\\", "/");
         if (fo.isData()) {
             return agi.getResourceManager().findByPath(absolutePath).isPresent() ? 1 : 0;
         }
 
-        String folderPrefix = absolutePath.endsWith(File.separator) ? absolutePath : absolutePath + File.separator;
-
-        return (int) agi.getResourceManager().getResourcesList().stream()
+        // Authority: ensure trailing separator for semantic folder matching
+        String folderPrefix = absolutePath.endsWith("/") ? absolutePath : absolutePath + "/";
+        
+        List<uno.anahata.asi.agi.resource.Resource> resources = agi.getResourceManager().getResourcesList();
+        return (int) resources.stream()
                 .filter(r -> {
                     String path = r.getHandle().getUri().getPath();
-                    if (path == null || !path.startsWith(folderPrefix)) {
-                        return false;
+                    if (path == null) return false;
+                    
+                    // Leading Slash Normalization: handle both /home and home
+                    String normalizedPath = path.startsWith("/") ? path : "/" + path;
+                    String normalizedPrefix = folderPrefix.startsWith("/") ? folderPrefix : "/" + folderPrefix;
+                    
+                    if (normalizedPath.startsWith(normalizedPrefix)) {
+                        if (recursive) return true;
+                        String remainder = normalizedPath.substring(normalizedPrefix.length());
+                        return !remainder.contains("/");
                     }
-                    if (recursive) {
-                        return true;
-                    }
-                    String remainder = path.substring(folderPrefix.length());
-                    return !remainder.contains(File.separator);
+                    return false;
                 })
                 .count();
     }
