@@ -10,10 +10,8 @@
     <artifactId>anahata-asi-nb</artifactId>
     <packaging>nbm</packaging>
     
-    <name>Anahata ASI NetBeans</name>
-    <description>Elevate your coding experience with an ASI partner that understands your workflow. 
-        Anahata ASI provides deep IDE integration, enabling intuitive interaction with your projects, code, and development environment. 
-        It's more than a tool; it's a harmonious extension of your creative process, designed to bring flow and intelligence to your work.</description>
+    <name>Anahata ASI Studio - NetBeans</name>
+    <description>The Best Java AI Assistant On Earth.</description>
 
     <dependencies>
         <!-- External Libraries -->
