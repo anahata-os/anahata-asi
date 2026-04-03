@@ -68,7 +68,7 @@ public class AnahataContextActionPresenter extends AbstractAction implements Pre
      */
     @Override
     public JMenuItem getPopupPresenter() {
-        JMenu main = new JMenu("AI Context");
+        JMenu main = new JMenu("AGI Context");
         main.setIcon(new ImageIcon(ImageUtilities.loadImage("icons/anahata_16.png")));
 
         List<Agi> activeAgis = AnahataInstaller.getContainer().getActiveAgis();
