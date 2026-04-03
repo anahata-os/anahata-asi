@@ -22,13 +22,26 @@ import org.netbeans.modules.java.source.ElementHandleAccessor;
  */
 public class ElementHandleModule extends SimpleModule {
 
+    /**
+     * Default constructor for the ElementHandleModule.
+     * Registers serializers and deserializers for {@link ElementHandle}.
+     */
     public ElementHandleModule() {
         super("ElementHandleModule");
         addSerializer(ElementHandle.class, new ElementHandleSerializer());
         addDeserializer(ElementHandle.class, new ElementHandleDeserializer());
     }
 
+    /**
+     * Custom serializer for NetBeans {@link ElementHandle}.
+     * Extracts kind and JVM signatures to facilitate JSON interoperability.
+     */
     private static class ElementHandleSerializer extends JsonSerializer<ElementHandle> {
+        /**
+         * {@inheritDoc}
+         * <p>Serializes the {@link ElementHandle} by writing its kind and JVM signatures 
+         * obtained through the {@link ElementHandleAccessor}.</p>
+         */
         @Override
         public void serialize(ElementHandle value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
             gen.writeStartObject();
@@ -42,7 +55,17 @@ public class ElementHandleModule extends SimpleModule {
         }
     }
 
+    /**
+     * Custom deserializer for NetBeans {@link ElementHandle}.
+     * Reconstructs handles from kind and signature information using 
+     * {@link ElementHandleAccessor}.
+     */
     private static class ElementHandleDeserializer extends JsonDeserializer<ElementHandle> {
+        /**
+         * {@inheritDoc}
+         * <p>Deserializes the {@link ElementHandle} by reconstructing it from kind 
+         * and signature information using the {@link ElementHandleAccessor}.</p>
+         */
         @Override
         public ElementHandle deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
             JsonNode node = p.getCodec().readTree(p);
