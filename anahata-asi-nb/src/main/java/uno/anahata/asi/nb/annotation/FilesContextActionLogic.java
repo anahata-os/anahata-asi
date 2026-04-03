@@ -136,6 +136,10 @@ public class FilesContextActionLogic {
 
     /**
      * Checks if a specific file is currently present in a session's V2 context.
+     * 
+     * @param fo The file to check.
+     * @param agi The session to query.
+     * @return true if the file is in context.
      */
     public static boolean isInContext(FileObject fo, Agi agi) {
         if (fo.isData()) {
@@ -146,11 +150,15 @@ public class FilesContextActionLogic {
     }
 
     /**
-     * Counts how many active sessions contain the specified file in their V2 context.
+     * Counts how many logically open sessions contain the specified file in 
+     * their V2 context.
+     * 
+     * @param fo The file to check.
+     * @return The number of open sessions containing the file.
      */
     public static int countAgisInContext(FileObject fo) {
         int count = 0;
-        for (Agi agi : AnahataInstaller.getContainer().getActiveAgis()) {
+        for (Agi agi : AnahataInstaller.getContainer().getOpenAgis()) {
             if (isInContext(fo, agi)) {
                 count++;
             }
@@ -159,11 +167,15 @@ public class FilesContextActionLogic {
     }
 
     /**
-     * Returns V2 resource counts for each session within a folder or package.
+     * Returns V2 resource counts for each open session within a folder or package.
+     * 
+     * @param fo The container to scan.
+     * @param recursive Whether to count recursively.
+     * @return A map of open sessions to their respective resource counts.
      */
     public static Map<Agi, Integer> getSessionFileCounts(FileObject fo, boolean recursive) {
         Map<Agi, Integer> counts = new TreeMap<>((c1, c2) -> c1.getDisplayName().compareTo(c2.getDisplayName()));
-        for (Agi agi : AnahataInstaller.getContainer().getActiveAgis()) {
+        for (Agi agi : AnahataInstaller.getContainer().getOpenAgis()) {
             int count = countFilesInContext(fo, agi, recursive);
             if (count > 0) {
                 counts.put(agi, count);
@@ -182,7 +194,9 @@ public class FilesContextActionLogic {
      */
     private static int countFilesInContext(FileObject fo, Agi agi, boolean recursive) {
         File file = FileUtil.toFile(fo);
-        if (file == null) return 0;
+        if (file == null) {
+            return 0;
+        }
         String absolutePath = file.getAbsolutePath();
 
         if (fo.isData()) {
@@ -194,8 +208,12 @@ public class FilesContextActionLogic {
         return (int) agi.getResourceManager().getResourcesList().stream()
                 .filter(r -> {
                     String path = r.getHandle().getUri().getPath();
-                    if (path == null || !path.startsWith(folderPrefix)) return false;
-                    if (recursive) return true;
+                    if (path == null || !path.startsWith(folderPrefix)) {
+                        return false;
+                    }
+                    if (recursive) {
+                        return true;
+                    }
                     String remainder = path.substring(folderPrefix.length());
                     return !remainder.contains(File.separator);
                 })
@@ -215,7 +233,9 @@ public class FilesContextActionLogic {
                 try {
                     FileSystem fs = current.getFileSystem();
                     toRefreshByFs.computeIfAbsent(fs, k -> new HashSet<>()).add(current);
-                } catch (Exception ex) {}
+                } catch (Exception ex) {
+                    log.warn("Failed to resolve filesystem for refresh: {}", current.getPath(), ex);
+                }
                 current = current.getParent();
             }
         }
