@@ -2,6 +2,7 @@
 package uno.anahata.asi.nb.tools.project.alerts;
 
 import lombok.extern.slf4j.Slf4j;
+import org.netbeans.api.java.source.SourceUtils;
 import uno.anahata.asi.agi.context.BasicContextProvider;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.nb.tools.project.Projects;
@@ -50,6 +51,8 @@ public class ProjectAlertsContextProvider extends BasicContextProvider {
      */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
+        SourceUtils.waitScanFinished();
+        
         ProjectDiagnostics diags = projectsToolkit.getProjectAlerts(projectPath);
         
         StringBuilder sb = new StringBuilder();
