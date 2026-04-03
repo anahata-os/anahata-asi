@@ -21,7 +21,7 @@ import uno.anahata.asi.nb.module.NetBeansModuleUtils;
  * @author anahata
  */
 @ActionID(category = "Tools", id = "uno.anahata.asi.ShowAsiClasspathAction")
-@ActionRegistration(displayName = "Show ASI Classpath", iconBase = "icons/anahata_16.png")
+@ActionRegistration(displayName = "Show Default ASI Classpath", iconBase = "icons/anahata_16.png")
 @ActionReference(path = "Menu/Tools", position = 11)
 public final class ShowAsiClasspathAction implements ActionListener {
 
@@ -33,14 +33,14 @@ public final class ShowAsiClasspathAction implements ActionListener {
      */
     @Override
     public void actionPerformed(ActionEvent e) {
-        InputOutput io = IOProvider.getDefault().getIO("Anahata ASI Classpath", true);
+        InputOutput io = IOProvider.getDefault().getIO("Default Anahata ASI Classpath", true);
         io.select();
         try (OutputWriter out = io.getOut()) {
             String cp = NetBeansModuleUtils.getNetBeansClasspath();
             String[] entries = cp.split(File.pathSeparator);
             
             out.println("-----------------------------------------------------------------------");
-            out.println("Anahata ASI Classpath Summary");
+            out.println("Default Anahata ASI Classpath Summary");
             out.println("-----------------------------------------------------------------------");
             out.println("Total JARs/Entries: " + entries.length);
             out.println("-----------------------------------------------------------------------");
