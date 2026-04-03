@@ -65,7 +65,7 @@
         <dependency>
             <groupId>com.fifesoft</groupId>
             <artifactId>rsyntaxtextarea</artifactId>
-            <version>3.6.0</version>
+            <version>3.6.2</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
