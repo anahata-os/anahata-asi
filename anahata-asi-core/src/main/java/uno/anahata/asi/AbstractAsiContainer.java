@@ -308,6 +308,20 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
             return Collections.unmodifiableList(new ArrayList<>(activeAgis));
         }
     }
+
+    /**
+     * Gets an unmodifiable list of all agi sessions that are currently 
+     * logically open in the host UI.
+     * 
+     * @return The list of open agis.
+     */
+    public List<Agi> getOpenAgis() {
+        synchronized (activeAgis) {
+            return activeAgis.stream()
+                    .filter(Agi::isOpen)
+                    .toList();
+        }
+    }
     
     /**
      * Hook invoked whenever a session enters the active pool.
@@ -548,7 +562,9 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
      */
     public int loadSessions() {
         Path sessionsDir = getSessionsDir();
-        if (!Files.exists(sessionsDir)) return 0;
+        if (!Files.exists(sessionsDir)) {
+            return 0;
+        }
 
         AtomicInteger failedCount = new AtomicInteger(0);
         try (Stream<Path> stream = Files.list(sessionsDir)) {
