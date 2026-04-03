@@ -140,6 +140,9 @@ public class AnahataAnnotationLogic {
         if (nodeType == NodeType.PROJECT) {
             Project p = FileOwnerQuery.getOwner(res);
             FileObject projectDir = (p != null) ? p.getProjectDirectory() : res;
+            
+            LOG.info("DIAGNOSTIC: Annotating PROJECT node: " + fo.getName() + " (Resolved Dir: " + projectDir.getPath() + ")");
+            
             Map<Agi, Integer> fileCounts = FilesContextActionLogic.getSessionFileCounts(projectDir, true);
             for (Agi agi : activeAgis) {
                 int providerCount = getProvidingProviders(agi, res).size();
