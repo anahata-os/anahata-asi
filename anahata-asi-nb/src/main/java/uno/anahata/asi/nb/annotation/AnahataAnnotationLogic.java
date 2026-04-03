@@ -138,8 +138,13 @@ public class AnahataAnnotationLogic {
         }
         
         if (nodeType == NodeType.PROJECT) {
+            Project p = FileOwnerQuery.getOwner(res);
+            FileObject projectDir = (p != null) ? p.getProjectDirectory() : res;
+            Map<Agi, Integer> fileCounts = FilesContextActionLogic.getSessionFileCounts(projectDir, true);
             for (Agi agi : activeAgis) {
-                totals.add(getProvidingProviders(agi, res).size());
+                int providerCount = getProvidingProviders(agi, res).size();
+                int resourceCount = fileCounts.getOrDefault(agi, 0);
+                totals.add(providerCount + resourceCount);
             }
         } else {
             boolean recursive = (nodeType == NodeType.FOLDER);
@@ -200,11 +205,21 @@ public class AnahataAnnotationLogic {
         sb.append("<b>In context in:</b><br>");
         
         if (nodeType == NodeType.PROJECT) {
+            Project p = FileOwnerQuery.getOwner(fo);
+            FileObject projectDir = (p != null) ? p.getProjectDirectory() : fo;
+            Map<Agi, Integer> fileCounts = FilesContextActionLogic.getSessionFileCounts(projectDir, true);
             for (Agi agi : activeAgis) {
                 List<String> providers = getProvidingProviders(agi, fo);
-                if (!providers.isEmpty()) {
+                int resourceCount = fileCounts.getOrDefault(agi, 0);
+                
+                if (!providers.isEmpty() || resourceCount > 0) {
                     sb.append("&nbsp;&nbsp;&bull;&nbsp;<b>").append(agi.getDisplayName()).append("</b><br>");
-                    sb.append("&nbsp;&nbsp;&nbsp;&nbsp;Providers: ").append(String.join(", ", providers)).append("<br>");
+                    if (!providers.isEmpty()) {
+                        sb.append("&nbsp;&nbsp;&nbsp;&nbsp;Providers: ").append(String.join(", ", providers)).append("<br>");
+                    }
+                    if (resourceCount > 0) {
+                        sb.append("&nbsp;&nbsp;&nbsp;&nbsp;Resources: ").append(resourceCount).append("<br>");
+                    }
                 }
             }
         } else {
