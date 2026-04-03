@@ -34,7 +34,6 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
     /**
      * A unique, immutable identifier for this specific invocation request.
      */
-    @NonNull
     private final String id;
 
     /**
