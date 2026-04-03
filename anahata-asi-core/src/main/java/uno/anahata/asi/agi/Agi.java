@@ -282,10 +282,9 @@ public class Agi extends BasicPropertyChangeSource {
         if (old != open) {
             this.open = open;
             propertyChangeSupport.firePropertyChange("open", old, open);
-            // Selective Persistence: only auto-save when closing to remember state
-            if (!open) {
-                autoSave();
-            }
+            // Authoritative Persistence: always auto-save on visibility changes 
+            // to ensure UI layout is remembered across restarts.
+            autoSave();
         }
     }
 
