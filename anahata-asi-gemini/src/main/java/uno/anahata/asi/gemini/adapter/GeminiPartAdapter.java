@@ -8,6 +8,7 @@ import com.google.genai.types.Part;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.internal.JacksonUtils;
@@ -82,8 +83,12 @@ public class GeminiPartAdapter {
             
             FunctionCall.Builder fcBuilder = FunctionCall.builder()
                 .name(toolCall.getToolName())
-                .args(safeArgs)
-                .id(toolCall.getId());
+                .args(safeArgs)/*
+                .id(toolCall.getId())*/;
+            
+            if (toolCall.getId() != null) {
+                fcBuilder.id(toolCall.getId());
+            }
             
             return partBuilder.functionCall(fcBuilder.build()).build();
         }
@@ -110,15 +115,18 @@ public class GeminiPartAdapter {
             attachmentParts.add(toGoogleAttachmentPart(attachment));
         }
 
-        // 3. Build the FunctionResponse
-        FunctionResponse fr = FunctionResponse.builder()
-            .name(anahataResponse.getCall().getToolName())
-            .id(anahataResponse.getCall().getId())
-            .response(responseMap)
-            .parts(attachmentParts)
-            .build();
         
-        return Part.builder().functionResponse(fr).build();
+        // 3. Build the FunctionResponse
+        FunctionResponse.Builder frb = FunctionResponse.builder()
+            .name(anahataResponse.getCall().getToolName())
+            .response(responseMap)
+            .parts(attachmentParts);
+        
+        if (anahataResponse.getCall().getId() != null) {
+            frb.id(anahataResponse.getCall().getId());
+        }
+        
+        return Part.builder().functionResponse(frb.build()).build();
     }
     
     private static FunctionResponsePart toGoogleAttachmentPart(ToolResponseAttachment attachment) {
