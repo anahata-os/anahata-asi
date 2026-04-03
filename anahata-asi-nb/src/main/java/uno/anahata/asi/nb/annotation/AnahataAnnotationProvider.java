@@ -125,8 +125,8 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
                 return baseIcon;
             }
 
-            // 4. Calculate Context Presence across active sessions.
-            List<Agi> activeAgis = AnahataInstaller.getContainer().getActiveAgis();
+            // 4. Calculate Context Presence across open sessions.
+            List<Agi> activeAgis = AnahataInstaller.getContainer().getOpenAgis();
             List<Integer> totals = AnahataAnnotationLogic.calculateSessionTotals(resolved, nodeType, activeAgis);
             
             boolean anyInContext = totals.stream().anyMatch(i -> i > 0);
@@ -168,10 +168,15 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
             String baseHtml = delegateNameHtml(name, files);
             String currentHtml = (baseHtml != null) ? baseHtml : (name != null ? name : "");
 
-            // 2. Classify node and calculate totals via logic engine.
+            // 2. Classify node and calculate totals via logic engine for open sessions.
             FileObject fo = files.iterator().next();
             AnahataAnnotationLogic.NodeType nodeType = AnahataAnnotationLogic.classify(fo);
-            List<Agi> activeAgis = AnahataInstaller.getContainer().getActiveAgis();
+            
+            if (nodeType == AnahataAnnotationLogic.NodeType.PROJECT) {
+                log.info("Annotating PROJECT node: {} (Resolved: {})", fo.getNameExt(), AnahataAnnotationLogic.resolve(fo).getPath());
+            }
+
+            List<Agi> activeAgis = AnahataInstaller.getContainer().getOpenAgis();
             List<Integer> totals = AnahataAnnotationLogic.calculateSessionTotals(fo, nodeType, activeAgis);
             
             boolean anyInContext = totals.stream().anyMatch(i -> i > 0);
@@ -337,8 +342,8 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
                             log.warn("Failed to resolve filesystem for project: {}", p.getProjectDirectory().getName(), ex);
                         }
                     }
-                    // 2. All filesystems containing active AI resources (covers JARs, etc.)
-                    for (Agi agi : AnahataInstaller.getContainer().getActiveAgis()) {
+                    // 2. All filesystems containing active AI resources in OPEN sessions
+                    for (Agi agi : AnahataInstaller.getContainer().getOpenAgis()) {
                         for (Resource res : agi.getResourceManager().getResourcesList()) {
                             if (res.getHandle() instanceof NbHandle nbh) {
                                 FileObject fo = nbh.getFileObject();
