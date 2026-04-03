@@ -74,14 +74,18 @@ public class TextResourceReplacementsRenderer extends AbstractTextResourceWriteR
         return comments;
     }
 
-    /** {@inheritDoc} */
+    /** {@inheritDoc} 
+     * <p>Creates a new DTO representing the user's manual edits. This effectively 
+     * treats the manual edit as a full-content replacement of the original 
+     * state to ensure validation passes.</p>
+     */
     @Override
     protected TextResourceReplacements createUpdatedDto(String newContent) {
         TextResourceReplacements dto = new TextResourceReplacements(
                 update.getResourceUuid(),
                 update.getLastModified(),
                 List.of(TextReplacement.builder()
-                        .target(newContent) 
+                        .target(update.getOriginalContent()) 
                         .replacement(newContent)
                         .reason("User manual edit")
                         .expectedCount(1)
