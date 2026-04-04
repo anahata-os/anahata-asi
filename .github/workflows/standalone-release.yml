@@ -56,15 +56,29 @@ jobs:
           cp anahata-asi-desktop/src/main/resources/icon.png .
           cp anahata-asi-desktop/src/main/resources/splash.png .
 
+      - name: Set OS Specific Variables
+        shell: bash
+        run: |
+          if [ "${{ matrix.os }}" == "macos-latest" ]; then
+            echo "ICON_FILE=icon.icns" >> $GITHUB_ENV
+          else
+            echo "ICON_FILE=icon.png" >> $GITHUB_ENV
+          fi
+
       - name: Package Native App (jpackage)
         shell: bash
         run: |
+          # Copy resources to build root for jpackage flags
+          cp anahata-asi-desktop/src/main/resources/icon.png .
+          cp anahata-asi-desktop/src/main/resources/icon.icns .
+          cp anahata-asi-desktop/src/main/resources/splash.png .
+          
           jpackage --name "Anahata-ASI-Desktop" \
                    --app-version "${{ env.JPACKAGE_VERSION }}" \
                    --input package-input \
                    --main-jar "anahata-asi-desktop-${{ env.VERSION }}.jar" \
                    --main-class uno.anahata.asi.standalone.SwingMain \
-                   --icon icon.png \
+                   --icon "${{ env.ICON_FILE }}" \
                    --java-options "-splash:splash.png" \
                    --type app-image \
                    --dest dist \
