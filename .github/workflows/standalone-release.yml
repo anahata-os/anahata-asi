@@ -50,8 +50,11 @@ jobs:
           mkdir -p package-input/lib
           # Copy the main executable jar to the root
           cp anahata-asi-desktop/target/anahata-asi-desktop-${{ env.VERSION }}.jar package-input/
-          # Copy all runtime dependencies to the lib folder
-          mvn -f anahata-asi-desktop/pom.xml dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=package-input/lib
+          # Copy all runtime dependencies to the lib folder. Use absolute path to avoid sub-module relative path confusion.
+          mvn -f anahata-asi-desktop/pom.xml dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=${{ github.workspace }}/package-input/lib
+          
+          # Debug: List contents to verify preparation
+          ls -R package-input/
           # Copy assets for jpackage flags
           cp anahata-asi-desktop/src/main/resources/icon.* .
           cp anahata-asi-desktop/src/main/resources/splash.png package-input/
