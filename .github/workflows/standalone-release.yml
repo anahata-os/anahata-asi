@@ -50,6 +50,9 @@ jobs:
           mkdir -p package-input
           cp anahata-asi-desktop/target/anahata-asi-desktop-${{ env.VERSION }}.jar package-input/
           mvn -f anahata-asi-desktop/pom.xml dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=package-input
+          # Copy assets for jpackage flags
+          cp anahata-asi-desktop/src/main/resources/icon.png .
+          cp anahata-asi-desktop/src/main/resources/splash.png .
 
       - name: Package Native App (jpackage)
         shell: bash
@@ -59,6 +62,9 @@ jobs:
                    --input package-input \
                    --main-jar "anahata-asi-desktop-${{ env.VERSION }}.jar" \
                    --main-class uno.anahata.asi.standalone.SwingMain \
+                   --class-path "package-input/*" \
+                   --icon icon.png \
+                   --java-options "-splash:splash.png" \
                    --type app-image \
                    --dest dist \
                    --verbose
