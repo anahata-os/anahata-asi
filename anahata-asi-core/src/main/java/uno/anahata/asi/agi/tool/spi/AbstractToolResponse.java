@@ -209,6 +209,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
      * @param reason The reason for the rejection.
      */
     public void fail(String reason) {
+        setExpanded(true);
         setErrors(reason);
         setStatus(ToolExecutionStatus.FAILED);
     }
@@ -221,11 +222,9 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
      */
     public void fail(String reason, String details) {
         if (details != null && !details.isBlank()) {
-            setErrors(reason + "\n\nDetails:\n" + details);
-        } else {
-            setErrors(reason);
+            reason = reason + "\n\nDetails:\n" + details;
         }
-        setStatus(ToolExecutionStatus.FAILED);
+        fail(reason);
     }
 
     /**
