@@ -53,8 +53,8 @@ jobs:
           # Copy all runtime dependencies to the lib folder
           mvn -f anahata-asi-desktop/pom.xml dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=package-input/lib
           # Copy assets for jpackage flags
-          cp anahata-asi-desktop/src/main/resources/icon.png .
-          cp anahata-asi-desktop/src/main/resources/splash.png .
+          cp anahata-asi-desktop/src/main/resources/icon.* .
+          cp anahata-asi-desktop/src/main/resources/splash.png package-input/
 
       - name: Set OS Specific Variables
         shell: bash
@@ -70,20 +70,15 @@ jobs:
       - name: Package Native App (jpackage)
         shell: bash
         run: |
-          # Copy resources to build root for jpackage flags
-          cp anahata-asi-desktop/src/main/resources/icon.png .
-          cp anahata-asi-desktop/src/main/resources/icon.icns .
-          cp anahata-asi-desktop/src/main/resources/splash.png .
-          
           jpackage --name "Anahata-ASI-Desktop" \
-                   --app-version "${{ env.JPACKAGE_VERSION }}" \
+--app-version "${{ env.JPACKAGE_VERSION }}" \
                    --input package-input \
                    --main-jar "anahata-asi-desktop-${{ env.VERSION }}.jar" \
                    --main-class uno.anahata.asi.standalone.SwingMain \
                    --icon "${{ env.ICON_FILE }}" \
                    --java-options "-splash:splash.png" \
                    --type app-image \
-                   --dest dist \
+--dest dist \
                    --verbose
           
           # Zip/Tar the result for distribution
