@@ -212,14 +212,18 @@ public class FilesContextActionLogic {
         return (int) resources.stream()
                 .filter(r -> {
                     String path = r.getHandle().getUri().getPath();
-                    if (path == null) return false;
+                    if (path == null) {
+                        return false;
+                    }
                     
                     // Leading Slash Normalization: handle both /home and home
                     String normalizedPath = path.startsWith("/") ? path : "/" + path;
                     String normalizedPrefix = folderPrefix.startsWith("/") ? folderPrefix : "/" + folderPrefix;
                     
                     if (normalizedPath.startsWith(normalizedPrefix)) {
-                        if (recursive) return true;
+                        if (recursive) {
+                            return true;
+                        }
                         String remainder = normalizedPath.substring(normalizedPrefix.length());
                         return !remainder.contains("/");
                     }
