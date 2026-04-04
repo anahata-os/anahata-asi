@@ -61,6 +61,8 @@ jobs:
         run: |
           if [ "${{ matrix.os }}" == "macos-latest" ]; then
             echo "ICON_FILE=icon.icns" >> $GITHUB_ENV
+          elif [ "${{ matrix.os }}" == "windows-latest" ]; then
+            echo "ICON_FILE=icon.ico" >> $GITHUB_ENV
           else
             echo "ICON_FILE=icon.png" >> $GITHUB_ENV
           fi
