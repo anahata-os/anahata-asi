@@ -61,10 +61,10 @@
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
                             <mainClass>uno.anahata.asi.standalone.SwingMain</mainClass>
+                        </manifest>
                             <manifestEntries>
                                 <SplashScreen-Image>splash.png</SplashScreen-Image>
                             </manifestEntries>
-                        </manifest>
                     </archive>
                 </configuration>
             </plugin>
