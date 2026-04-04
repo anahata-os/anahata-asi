@@ -3,11 +3,9 @@ package uno.anahata.asi.nb.tools.project.alerts;
 
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.java.source.SourceUtils;
-import uno.anahata.asi.agi.context.BasicContextProvider;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.nb.tools.project.Projects;
-import uno.anahata.asi.nb.tools.project.context.ProjectContextProvider;
-import uno.anahata.asi.nb.annotation.FilesContextActionLogic;
+import uno.anahata.asi.nb.tools.project.context.AbstractProjectContextProvider;
 
 /**
  * Provides real-time diagnostics for a project, including Java compiler errors
@@ -16,13 +14,7 @@ import uno.anahata.asi.nb.annotation.FilesContextActionLogic;
  * @author anahata-ai
  */
 @Slf4j
-public class ProjectAlertsContextProvider extends BasicContextProvider {
-
-    /** The parent Projects toolkit. */
-    private final Projects projectsToolkit;
-    
-    /** The absolute path to the project directory. */
-    private final String projectPath;
+public class ProjectAlertsContextProvider extends AbstractProjectContextProvider {
 
     /**
      * Constructs a new alerts provider for a specific project.
@@ -31,9 +23,7 @@ public class ProjectAlertsContextProvider extends BasicContextProvider {
      * @param projectPath The absolute path to the project.
      */
     public ProjectAlertsContextProvider(Projects projectsToolkit, String projectPath) {
-        super("alerts", "Alerts", "Compiler errors and project problems");
-        this.projectsToolkit = projectsToolkit;
-        this.projectPath = projectPath;
+        super("alerts", "Alerts", "Compiler errors and project problems", projectsToolkit, projectPath);
         // Enabled by default for better visibility of compile issues
         setProviding(true);
     }
@@ -84,22 +74,5 @@ public class ProjectAlertsContextProvider extends BasicContextProvider {
         ragMessage.addTextPart(sb.toString());
     }
 
-    /**
-     * Toggles providing status and triggers a UI refresh.
-     * <p>
-     * Implementation details:
-     * Notifies the IDE that the project icon should be redrawn to reflect 
-     * the new context state.
-     * </p>
-     * 
-     * @param enabled New state.
-     */
-    @Override
-    public void setProviding(boolean enabled) {
-        boolean old = isProviding();
-        super.setProviding(enabled);
-        if (old != enabled && parent instanceof ProjectContextProvider pcp) {
-            FilesContextActionLogic.fireRefreshRecursive(pcp.getProject().getProjectDirectory());
-        }
-    }
+
 }
