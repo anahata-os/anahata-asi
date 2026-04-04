@@ -42,7 +42,6 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Build Project
-      - name: Build Project
         run: mvn clean install -DskipTests -pl :anahata-asi-desktop -am -ntp
 
       - name: Prepare jpackage Input
