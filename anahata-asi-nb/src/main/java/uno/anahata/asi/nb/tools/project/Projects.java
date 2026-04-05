@@ -412,15 +412,20 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
      * @throws Exception if the parent project is not open.
      */
     @AgiTool("Opens all subprojects of a given project.")
-    public void openSubprojects(@AgiToolParam("The absolute path of the parent project.") String projectPath) throws Exception {
+    public String openSubprojects(@AgiToolParam("The absolute path of the parent project.") String projectPath) throws Exception {
         Project parent = findOpenProject(projectPath);
         SubprojectProvider spp = parent.getLookup().lookup(SubprojectProvider.class);
+        int count = 0;
         if (spp != null) {
             Set<? extends Project> subprojects = spp.getSubprojects();
+            count = subprojects.size();
             if (!subprojects.isEmpty()) {
                 OpenProjects.getDefault().open(subprojects.toArray(new Project[0]), false, true);
             }
         }
+        String msg = "Request to open " + count + " subprojects of '" + projectPath + "' sent successfully.";
+        log.info(msg);
+        return msg;
     }
 
     /**
