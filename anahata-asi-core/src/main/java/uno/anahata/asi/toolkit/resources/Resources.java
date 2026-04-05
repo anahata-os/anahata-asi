@@ -60,7 +60,7 @@ public class Resources extends AnahataToolkit {
                         + "be updated regarless of the position for as long as they are 'writable'. You don't need to re-load a resource positioned as SYSTEM_INSTRUCTIONS "
                         + "to make updates to it. All you need is the uuid and the lastModified timestamp.\n\n "
                 + "*\nVery important rules for working with resources:*\n"
-                + "1. **Context Integrity**: You can only modify resources currently in context. Always use the `lastModified` timestamp from the resource header (either in RAG message or in the system instructions).\n"
+                + "1. **Context Integrity**: You can only modify resources currently in context. Always use the `lastModified` timestamp from the resource header (either in RAG message or in the system instructions). This applies to all tools that modify resources **Do not rely on your internal memory of the previous successful edit**\n"
                 + "2. **Reasoning**: Always provide a meaningful `reason` each time you update a resource; it will be displayed as an AI comment in the UI.\n"
                 + "3. **Updating resources**: All update resource tools flush the changes to disk inmediatly when `EXECUTED`.\n "
                 + "4. **Rag Message**: The Rag Message is the source of truth for resource modifications, it gets freshly generated when the user completes his turn (i.e. after all tools in the batch have been executed or declined). "
@@ -233,7 +233,7 @@ public class Resources extends AnahataToolkit {
             + "All occurrences of all replacements are replaced. "
             + "Returns a standard unified diff of the changes applied.\n"
             + "**On any given turn, you can only use this tool once per resource **: If you need to do two replacements in one file, use two TextReplacement in the same call (Because If you do it in two tool calls, the second one will fail optimsitc locking validation). "
-            + "This tool will fail if the refered resource is not in context, the find fails or the lastModified version does not match the lastModified of this resource in the latest Rag Message.")
+            + "This tool will fail if the refered resource is not in context, the find fails or the lastModified version does not match the lastModified on the resource header (Rag Message or System Instructions). Do not rely on your internal memory of the previous successful edit, always use the latest from the resource header.")
     public String findAndReplaceInTextResource(@AgiToolParam("The set of replacements.") TextResourceReplacements replacements) throws Exception {
         replacements.validate(getAgi());
         Resource res = getAgi().getResourceManager().getResources().get(replacements.getResourceUuid());
