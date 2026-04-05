@@ -131,6 +131,9 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
             
             boolean anyInContext = totals.stream().anyMatch(i -> i > 0);
             if (anyInContext) {
+                if (nodeType == AnahataAnnotationLogic.NodeType.PROJECT) {
+                    LOG.fine("Annotating PROJECT Icon: " + fo.getNameExt() + " | Totals: " + totals);
+                }
                 // 5. Construct tooltip and assign to badge pixels.
                 String tooltip = AnahataAnnotationLogic.buildTooltip(resolved, nodeType, activeAgis, totals);
                 Image taggedBadge = ImageUtilities.assignToolTipToImage(BADGE, tooltip);
@@ -172,15 +175,14 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
             FileObject fo = files.iterator().next();
             AnahataAnnotationLogic.NodeType nodeType = AnahataAnnotationLogic.classify(fo);
             
-            if (nodeType == AnahataAnnotationLogic.NodeType.PROJECT) {
-                log.info("Annotating PROJECT node: {} (Resolved: {})", fo.getNameExt(), AnahataAnnotationLogic.resolve(fo).getPath());
-            }
-
             List<Agi> activeAgis = AnahataInstaller.getContainer().getOpenAgis();
             List<Integer> totals = AnahataAnnotationLogic.calculateSessionTotals(fo, nodeType, activeAgis);
             
             boolean anyInContext = totals.stream().anyMatch(i -> i > 0);
             if (anyInContext) {
+                if (nodeType == AnahataAnnotationLogic.NodeType.PROJECT) {
+                    LOG.fine("Annotating PROJECT Name: " + fo.getNameExt() + " | Totals: " + totals);
+                }
                 // 3. Dispatch to logic engine for the specific annotation string.
                 String annotation = AnahataAnnotationLogic.buildNameAnnotation(nodeType, activeAgis, totals);
                 
