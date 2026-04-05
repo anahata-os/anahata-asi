@@ -85,7 +85,7 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
         this.hostApplicationId = hostApplicationId;
         this.preferences = AsiContainerPreferences.load(this);
         this.preferences.ensureTemplatesInitialized(this);
-        this.executor = AiExecutors.newCachedThreadPoolExecutor(hostApplicationId);
+        this.executor = AsiExecutors.newCachedThreadPoolExecutor(hostApplicationId);
     }
 
     /**

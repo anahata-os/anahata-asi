@@ -16,7 +16,7 @@ import org.apache.commons.lang3.concurrent.BasicThreadFactory;
  * @author anahata
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public final class AiExecutors {
+public final class AsiExecutors {
 
     /**
      * Creates a new cached thread pool specifically for managing the lifecycle of a single agi session.
@@ -27,7 +27,7 @@ public final class AiExecutors {
      */
     public static ExecutorService newCachedThreadPoolExecutor(String threadPreffix) {
         BasicThreadFactory factory = new BasicThreadFactory.Builder()
-                .namingPattern("anahata-ai-" + threadPreffix + "-thread-%d")
+                .namingPattern("anahata-asi-" + threadPreffix + "-thread-%d")
                 .daemon(true)
                 .priority(Thread.NORM_PRIORITY)
                 .build();
@@ -43,7 +43,7 @@ public final class AiExecutors {
      */
     public static ScheduledExecutorService newScheduledThreadPool(String threadPreffix, int corePoolSize) {
         BasicThreadFactory factory = new BasicThreadFactory.Builder()
-                .namingPattern("anahata-ai-" + threadPreffix + "-scheduled-%d")
+                .namingPattern("anahata-asi-" + threadPreffix + "-scheduled-%d")
                 .daemon(true)
                 .priority(Thread.NORM_PRIORITY)
                 .build();

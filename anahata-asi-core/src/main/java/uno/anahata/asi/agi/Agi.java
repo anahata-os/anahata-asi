@@ -19,7 +19,7 @@ import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import uno.anahata.asi.AiExecutors;
+import uno.anahata.asi.AsiExecutors;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.context.ContextManager;
 import uno.anahata.asi.agi.message.AbstractMessage;
@@ -180,7 +180,7 @@ public class Agi extends BasicPropertyChangeSource {
         this.config.setAgi(this);
 
         log.info("Constructing agi with config: " + config);
-        this.executor = AiExecutors.newCachedThreadPoolExecutor(config.getSessionId());
+        this.executor = AsiExecutors.newCachedThreadPoolExecutor(config.getSessionId());
         this.contextManager = new ContextManager(this);
         this.resourceManager = new ResourceManager(this);
         this.statusManager = new StatusManager(this);
@@ -233,7 +233,7 @@ public class Agi extends BasicPropertyChangeSource {
         log.info("Rebinding agi session {} to container {}", config.getSessionId(), container.getHostApplicationId());
         // Re-initialize transient fields that require external context (like the container)
         this.config.setAsiContainer(container);
-        this.executor = AiExecutors.newCachedThreadPoolExecutor(config.getSessionId());
+        this.executor = AsiExecutors.newCachedThreadPoolExecutor(config.getSessionId());
         this.runningLock = new ReentrantLock();
         this.running = false;
         this.currentExecutionThread = null;
