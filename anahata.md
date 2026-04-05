@@ -39,8 +39,8 @@ This project uses a set of key documents to guide development. For detailed info
 - **Fail Fast**: Avoid defensive programming like redundant null checks for internal components. Let it fail so root causes can be fixed. 
 - **No Method-Start Null Checks**: You are strictly forbidden from starting a method with a null check on parameters for the sake of defensive programming (e.g., `if (other == null) return;`). Let the JVM throw the NullPointerException so the caller can be corrected.
 - **No Quietly Catching Exceptions**: You are strictly forbidden from catching exceptions and doing nothing. All exceptions should be logged. 
-- **Clean Execution**: Do not use try-catch blocks inside `@AgiTool` methods unless performing specific recovery. The framework handles exceptions automatically.
-- **Mandatory Braces**: Always use curly braces `{}` for all control flow statements (`if`, `else`, `for`, `while`, `do`).
+- **Clean Execution**: Do not use try-catch blocks inside `@AgiTool` methods unless performing specific recovery. The framework handles exceptions automatically. If you need to throw an error intended for the user, prefer throwing an `AgiToolException` to ensure a clean message without stack traces.
+- **Mandatory Braces**: Always use curly braces `{}` for all control flow statements (`if`, `else`, `for`, `while`, `do`). Single-line lambdas without braces (e.g., `list.stream().filter(m -> m.isCool())...`) are perfectly fine and often preferred for readability.
 - **Logging Standard**: Use SLF4J (`@Slf4j`) for all logging. Never use `System.out.println()`.
 - **Lombok Purity**: Rely on Lombok annotation processing; do not add explicit getters/setters for Lombok-managed fields.
 - **Static should be static**: A method that does not use instance members should be made static.
