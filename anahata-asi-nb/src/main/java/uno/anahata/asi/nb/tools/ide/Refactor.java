@@ -1,7 +1,6 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.tools.ide;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,10 +15,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.netbeans.api.java.source.CompilationController;
 import org.netbeans.api.java.source.ElementHandle;
-import org.netbeans.api.java.source.JavaSource;
-import org.netbeans.api.java.source.Task;
 import org.netbeans.api.java.source.TreePathHandle;
 import org.netbeans.modules.refactoring.api.AbstractRefactoring;
 import org.netbeans.modules.refactoring.api.CopyRefactoring;
@@ -42,7 +38,6 @@ import org.netbeans.modules.refactoring.java.api.PullUpRefactoring;
 import org.netbeans.modules.refactoring.java.api.PushDownRefactoring;
 import org.netbeans.modules.refactoring.java.api.UseSuperTypeRefactoring;
 import org.openide.filesystems.FileObject;
-import org.openide.filesystems.FileUtil;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import uno.anahata.asi.agi.resource.Resource;
@@ -50,6 +45,7 @@ import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiTool;
+import uno.anahata.asi.nb.tools.java.JavaSourceUtils;
 
 /**
  * A toolkit for performing programmatic refactoring operations within the NetBeans IDE.
@@ -63,7 +59,8 @@ import uno.anahata.asi.agi.tool.AgiTool;
  * @author anahata
  */
 @Slf4j
-@AgiToolkit("Programmatic refactoring tools for NetBeans. Use these tools to safely rename, move, copy, or delete code elements while maintaining integrity across all open projects.")
+@AgiToolkit("Programmatic refactoring tools for NetBeans. "
+        + "Use these tools to safely rename, move, copy, or delete code elements while maintaining integrity across all open projects.")
 public class Refactor extends AnahataToolkit{
 
     /**
@@ -95,7 +92,7 @@ public class Refactor extends AnahataToolkit{
     public String rename(
             @AgiToolParam(value = "The absolute path of the file to rename.", rendererId = "path") String filePath, 
             @AgiToolParam("The new name (without extension).") String newName) throws Exception {
-        FileObject fo = getFileObject(filePath);
+        FileObject fo = JavaSourceUtils.getFileObject(filePath);
         RenameRefactoring refactoring = new RenameRefactoring(getLookupForFile(fo));
         refactoring.setNewName(newName);
         
@@ -117,8 +114,8 @@ public class Refactor extends AnahataToolkit{
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The current name of the member.") String memberName,
             @AgiToolParam("The new name for the member.") String newName) throws Exception {
-        FileObject fo = getFileObject(filePath);
-        TreePathHandle handle = getTreePathHandleForMember(fo, memberName);
+        FileObject fo = JavaSourceUtils.getFileObject(filePath);
+        TreePathHandle handle = JavaSourceUtils.getTreePathHandleForMember(fo, memberName);
         if (handle == null) {
             return "Member '" + memberName + "' not found in " + filePath;
         }
@@ -141,8 +138,8 @@ public class Refactor extends AnahataToolkit{
     public String move(
             @AgiToolParam(value = "The absolute path of the file to move.", rendererId = "path") String filePath, 
             @AgiToolParam(value = "The absolute path of the target folder.", rendererId = "path") String targetFolderPath) throws Exception {
-        FileObject sourceFo = getFileObject(filePath);
-        FileObject targetFo = getFileObject(targetFolderPath);
+        FileObject sourceFo = JavaSourceUtils.getFileObject(filePath);
+        FileObject targetFo = JavaSourceUtils.getFileObject(targetFolderPath);
         
         if (!targetFo.isFolder()) {
             throw new IllegalArgumentException("Target path must be a folder: " + targetFolderPath);
@@ -168,8 +165,8 @@ public class Refactor extends AnahataToolkit{
     public String copy(
             @AgiToolParam(value = "The absolute path of the file to copy.", rendererId = "path") String filePath, 
             @AgiToolParam(value = "The absolute path of the target folder.", rendererId = "path") String targetFolderPath) throws Exception {
-        FileObject sourceFo = getFileObject(filePath);
-        FileObject targetFo = getFileObject(targetFolderPath);
+        FileObject sourceFo = JavaSourceUtils.getFileObject(filePath);
+        FileObject targetFo = JavaSourceUtils.getFileObject(targetFolderPath);
         
         if (!targetFo.isFolder()) {
             throw new IllegalArgumentException("Target path must be a folder: " + targetFolderPath);
@@ -194,7 +191,7 @@ public class Refactor extends AnahataToolkit{
     public String safeDelete(
             @AgiToolParam(value = "The absolute path of the file to delete.", rendererId = "path") String filePath,
             @AgiToolParam("Whether to check for usages in comments.") boolean checkInComments) throws Exception {
-        FileObject fo = getFileObject(filePath);
+        FileObject fo = JavaSourceUtils.getFileObject(filePath);
         SafeDeleteRefactoring refactoring = new SafeDeleteRefactoring(getLookupForFile(fo));
         refactoring.setCheckInComments(checkInComments);
         
@@ -202,37 +199,6 @@ public class Refactor extends AnahataToolkit{
         return enrichWithContextInfo(filePath, result, "deleted");
     }
 
-    /**
-     * Enriches the tool output with information about managed resources affected by the refactoring.
-     * <p>
-     * It provides specific instructions on how to purge or recover deleted resource content 
-     * based on whether the action was a deletion or a move.
-     * </p>
-     * 
-     * @param path The path of the resource.
-     * @param result The raw refactoring result.
-     * @param action The type of refactoring action performed (e.g., 'deleted', 'moved').
-     * @return An enriched result string.
-     */
-    private String enrichWithContextInfo(String path, String result, String action) {
-        Optional<Resource> res = getResourceManager().findByPath(path);
-        if (res.isPresent()) {
-            String uuid = res.get().getId();
-            StringBuilder sb = new StringBuilder(result);
-            sb.append("\n--- Context Awareness ---\n");
-            if ("deleted".equals(action)) {
-                sb.append("Resource [").append(uuid).append("] remains in context. Its last known content is cached. ")
-                  .append("Use Resources.unloadResources to remove it from the RAG Message or ")
-                  .append("Session.updateContextProviders(false, List.of(\"").append(uuid).append("\")) to free the cached content from the context window ")
-                  .append("and Session.updateContextProviders(true, List.of(\"").append(uuid).append("\")) if you need to recover its contents.");
-            } else {
-                sb.append("NOTICE: Managed resource (ID: ").append(uuid).append(") has been ").append(action).append(". ")
-                  .append("The internal resource path and name will update automatically to match the new location.");
-            }
-            return sb.toString();
-        }
-        return result;
-    }
 
     /**
      * Inlines a method, constant, or variable.
@@ -248,8 +214,8 @@ public class Refactor extends AnahataToolkit{
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The name of the member to inline.") String memberName,
             @AgiToolParam("The type of inlining (METHOD, TEMP, CONSTANT).") InlineRefactoring.Type type) throws Exception {
-        FileObject fo = getFileObject(filePath);
-        TreePathHandle handle = getTreePathHandleForMember(fo, memberName);
+        FileObject fo = JavaSourceUtils.getFileObject(filePath);
+        TreePathHandle handle = JavaSourceUtils.getTreePathHandleForMember(fo, memberName);
         if (handle == null) {
             return "Member '" + memberName + "' not found in " + filePath;
         }
@@ -274,8 +240,8 @@ public class Refactor extends AnahataToolkit{
             @AgiToolParam("The name of the field to encapsulate.") String fieldName,
             @AgiToolParam("The name for the getter method.") String getterName,
             @AgiToolParam("The name for the setter method.") String setterName) throws Exception {
-        FileObject fo = getFileObject(filePath);
-        TreePathHandle handle = getTreePathHandleForMember(fo, fieldName);
+        FileObject fo = JavaSourceUtils.getFileObject(filePath);
+        TreePathHandle handle = JavaSourceUtils.getTreePathHandleForMember(fo, fieldName);
         if (handle == null) {
             return "Field '" + fieldName + "' not found in " + filePath;
         }
@@ -305,8 +271,8 @@ public class Refactor extends AnahataToolkit{
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The name of the boolean member to invert.") String memberName,
             @AgiToolParam("The new name for the inverted member.") String newName) throws Exception {
-        FileObject fo = getFileObject(filePath);
-        TreePathHandle handle = getTreePathHandleForMember(fo, memberName);
+        FileObject fo = JavaSourceUtils.getFileObject(filePath);
+        TreePathHandle handle = JavaSourceUtils.getTreePathHandleForMember(fo, memberName);
         if (handle == null) {
             return "Member '" + memberName + "' not found in " + filePath;
         }
@@ -330,8 +296,8 @@ public class Refactor extends AnahataToolkit{
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The name of the new interface.") String interfaceName,
             @AgiToolParam("The names of the members to extract.") List<String> memberNames) throws Exception {
-        FileObject fo = getFileObject(filePath);
-        TreePathHandle classHandle = getTreePathHandleForClass(fo);
+        FileObject fo = JavaSourceUtils.getFileObject(filePath);
+        TreePathHandle classHandle = JavaSourceUtils.getTreePathHandleForClass(fo);
         if (classHandle == null) {
             return "Class not found in " + filePath;
         }
@@ -342,7 +308,7 @@ public class Refactor extends AnahataToolkit{
         List<ElementHandle<ExecutableElement>> methods = new ArrayList<>();
         List<ElementHandle<VariableElement>> fields = new ArrayList<>();
         
-        resolveMembers(fo, memberNames, methods, fields);
+        JavaSourceUtils.resolveMembers(fo, memberNames, methods, fields);
         
         refactoring.setMethods(methods);
         refactoring.setFields(fields);
@@ -364,8 +330,8 @@ public class Refactor extends AnahataToolkit{
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The FQN of the target superclass.") String targetClassFqn,
             @AgiToolParam("The names of the members to pull up.") List<String> memberNames) throws Exception {
-        FileObject fo = getFileObject(filePath);
-        TreePathHandle classHandle = getTreePathHandleForClass(fo);
+        FileObject fo = JavaSourceUtils.getFileObject(filePath);
+        TreePathHandle classHandle = JavaSourceUtils.getTreePathHandleForClass(fo);
         if (classHandle == null) {
             return "Class not found in " + filePath;
         }
@@ -378,7 +344,7 @@ public class Refactor extends AnahataToolkit{
         
         // Resolve members to MemberInfo
         List<MemberInfo<ElementHandle<? extends Element>>> members = new ArrayList<>();
-        resolveMemberInfos(fo, memberNames, members);
+        JavaSourceUtils.resolveMemberInfos(fo, memberNames, members);
         
         refactoring.setMembers(members.toArray(new MemberInfo[0]));
         
@@ -397,8 +363,8 @@ public class Refactor extends AnahataToolkit{
     public String pushDown(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The names of the members to push down.") List<String> memberNames) throws Exception {
-        FileObject fo = getFileObject(filePath);
-        TreePathHandle classHandle = getTreePathHandleForClass(fo);
+        FileObject fo = JavaSourceUtils.getFileObject(filePath);
+        TreePathHandle classHandle = JavaSourceUtils.getTreePathHandleForClass(fo);
         if (classHandle == null) {
             return "Class not found in " + filePath;
         }
@@ -407,7 +373,7 @@ public class Refactor extends AnahataToolkit{
         
         // Resolve members to MemberInfo
         List<MemberInfo<ElementHandle<? extends Element>>> members = new ArrayList<>();
-        resolveMemberInfos(fo, memberNames, members);
+        JavaSourceUtils.resolveMemberInfos(fo, memberNames, members);
         
         refactoring.setMembers(members.toArray(new MemberInfo[0]));
         
@@ -432,8 +398,8 @@ public class Refactor extends AnahataToolkit{
             @AgiToolParam("The new name for the method.") String newName,
             @AgiToolParam("The new return type.") String newReturnType,
             @AgiToolParam("The new parameter list.") List<ParameterChange> parameterChanges) throws Exception {
-        FileObject fo = getFileObject(filePath);
-        TreePathHandle handle = getTreePathHandleForMember(fo, methodName);
+        FileObject fo = JavaSourceUtils.getFileObject(filePath);
+        TreePathHandle handle = JavaSourceUtils.getTreePathHandleForMember(fo, methodName);
         if (handle == null) {
             return "Method '" + methodName + "' not found in " + filePath;
         }
@@ -466,8 +432,8 @@ public class Refactor extends AnahataToolkit{
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The name for the new superclass.") String superclassName,
             @AgiToolParam("The names of the members to extract.") List<String> memberNames) throws Exception {
-        FileObject fo = getFileObject(filePath);
-        TreePathHandle classHandle = getTreePathHandleForClass(fo);
+        FileObject fo = JavaSourceUtils.getFileObject(filePath);
+        TreePathHandle classHandle = JavaSourceUtils.getTreePathHandleForClass(fo);
         if (classHandle == null) {
             return "Class not found in " + filePath;
         }
@@ -476,7 +442,7 @@ public class Refactor extends AnahataToolkit{
         refactoring.setSuperClassName(superclassName);
         
         List<MemberInfo<ElementHandle<? extends Element>>> members = new ArrayList<>();
-        resolveMemberInfos(fo, memberNames, members);
+        JavaSourceUtils.resolveMemberInfos(fo, memberNames, members);
         refactoring.setMembers(members.toArray(new MemberInfo[0]));
         
         return executeRefactoring(refactoring, "Extract Superclass " + superclassName);
@@ -494,8 +460,8 @@ public class Refactor extends AnahataToolkit{
     public String useSupertype(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The FQN of the supertype to use.") String supertypeFqn) throws Exception {
-        FileObject fo = getFileObject(filePath);
-        TreePathHandle classHandle = getTreePathHandleForClass(fo);
+        FileObject fo = JavaSourceUtils.getFileObject(filePath);
+        TreePathHandle classHandle = JavaSourceUtils.getTreePathHandleForClass(fo);
         if (classHandle == null) {
             return "Class not found in " + filePath;
         }
@@ -519,8 +485,8 @@ public class Refactor extends AnahataToolkit{
     public String moveInnerToTopLevel(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The name of the inner class to move.") String innerClassName) throws Exception {
-        FileObject fo = getFileObject(filePath);
-        TreePathHandle handle = getTreePathHandleForMember(fo, innerClassName);
+        FileObject fo = JavaSourceUtils.getFileObject(filePath);
+        TreePathHandle handle = JavaSourceUtils.getTreePathHandleForMember(fo, innerClassName);
         if (handle == null) {
             return "Inner class '" + innerClassName + "' not found in " + filePath;
         }
@@ -542,7 +508,7 @@ public class Refactor extends AnahataToolkit{
     public String whereUsed(
             @AgiToolParam(value = "The absolute path of the file to search for.", rendererId = "path") String filePath,
             @AgiToolParam("Whether to search in comments.") boolean searchInComments) throws Exception {
-        FileObject fo = getFileObject(filePath);
+        FileObject fo = JavaSourceUtils.getFileObject(filePath);
         Lookup lookup = getLookupForFile(fo);
 
         WhereUsedQuery query = new WhereUsedQuery(lookup);
@@ -581,12 +547,12 @@ public class Refactor extends AnahataToolkit{
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The name of the member (method or field).") String memberName,
             @AgiToolParam("Whether to search in comments.") boolean searchInComments) throws Exception {
-        FileObject fo = getFileObject(filePath);
+        FileObject fo = JavaSourceUtils.getFileObject(filePath);
         if (!"java".equals(fo.getExt())) {
             throw new IllegalArgumentException("Member search is only supported for Java files.");
         }
 
-        TreePathHandle handle = getTreePathHandleForMember(fo, memberName);
+        TreePathHandle handle = JavaSourceUtils.getTreePathHandleForMember(fo, memberName);
         if (handle == null) {
             return "Member '" + memberName + "' not found in " + filePath;
         }
@@ -636,7 +602,7 @@ public class Refactor extends AnahataToolkit{
             return feedback.append("FAILED: ").append(p.getMessage()).toString();
         }
         feedback.append("OK\n");
-
+ 
         feedback.append("2. Checking parameters... ");
         p = refactoring.checkParameters();
         if (p != null && p.isFatal()) {
@@ -669,24 +635,37 @@ public class Refactor extends AnahataToolkit{
 
         return feedback.toString();
     }
-
-    /**
-     * Helper method to retrieve a FileObject from an absolute path.
+    
+        /**
+     * Enriches the tool output with information about managed resources affected by the refactoring.
+     * <p>
+     * It provides specific instructions on how to purge or recover deleted resource content 
+     * based on whether the action was a deletion or a move.
+     * </p>
      * 
-     * @param filePath The absolute path.
-     * @return The FileObject.
-     * @throws IllegalArgumentException if the file does not exist or cannot be resolved.
+     * @param path The path of the resource.
+     * @param result The raw refactoring result.
+     * @param action The type of refactoring action performed (e.g., 'deleted', 'moved').
+     * @return An enriched result string.
      */
-    private FileObject getFileObject(String filePath) {
-        File f = new File(filePath);
-        if (!f.exists()) {
-            throw new IllegalArgumentException("File does not exist: " + filePath);
+    private String enrichWithContextInfo(String path, String result, String action) {
+        Optional<Resource> res = getResourceManager().findByPath(path);
+        if (res.isPresent()) {
+            String uuid = res.get().getId();
+            StringBuilder sb = new StringBuilder(result);
+            sb.append("\n--- Context Awareness ---\n");
+            if ("deleted".equals(action)) {
+                sb.append("Resource [").append(uuid).append("] remains in context. Its last known content is cached. ")
+                  .append("Use Resources.unloadResources to remove it from the RAG Message or ")
+                  .append("Session.updateContextProviders(false, List.of(\"").append(uuid).append("\")) to free the cached content from the context window ")
+                  .append("and Session.updateContextProviders(true, List.of(\"").append(uuid).append("\")) if you need to recover its contents.");
+            } else {
+                sb.append("NOTICE: Managed resource (ID: ").append(uuid).append(") has been ").append(action).append(". ")
+                  .append("The internal resource path and name will update automatically to match the new location.");
+            }
+            return sb.toString();
         }
-        FileObject fo = FileUtil.toFileObject(f);
-        if (fo == null) {
-            throw new IllegalArgumentException("Could not resolve FileObject for: " + filePath);
-        }
-        return fo;
+        return result;
     }
 
     /**
@@ -698,7 +677,7 @@ public class Refactor extends AnahataToolkit{
     private Lookup getLookupForFile(FileObject fo) {
         if ("java".equals(fo.getExt())) {
             try {
-                TreePathHandle handle = getTreePathHandleForClass(fo);
+                TreePathHandle handle = JavaSourceUtils.getTreePathHandleForClass(fo);
                 if (handle != null) {
                     return Lookups.fixed(fo, handle);
                 }
@@ -707,131 +686,5 @@ public class Refactor extends AnahataToolkit{
             }
         }
         return Lookups.singleton(fo);
-    }
-
-    /**
-     * Helper method to get a TreePathHandle for a specific member in a Java file.
-     * 
-     * @param fo The FileObject.
-     * @param memberName The member name.
-     * @return The TreePathHandle, or null if not found.
-     * @throws IOException if an I/O error occurs.
-     */
-    private TreePathHandle getTreePathHandleForMember(FileObject fo, String memberName) throws IOException {
-        JavaSource js = JavaSource.forFileObject(fo);
-        if (js == null) return null;
-
-        final TreePathHandle[] handle = new TreePathHandle[1];
-        js.runUserActionTask(new Task<CompilationController>() {
-            @Override
-            public void run(CompilationController parameter) throws Exception {
-                parameter.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
-                TypeElement te = parameter.getTopLevelElements().isEmpty() ? null : parameter.getTopLevelElements().get(0);
-                if (te != null) {
-                    for (Element e : te.getEnclosedElements()) {
-                        if (e.getSimpleName().contentEquals(memberName)) {
-                            handle[0] = TreePathHandle.create(e, parameter);
-                            break;
-                        }
-                    }
-                }
-            }
-        }, true);
-        return handle[0];
-    }
-
-    /**
-     * Helper method to get a TreePathHandle for the primary class in a Java file.
-     * 
-     * @param fo The FileObject.
-     * @return The TreePathHandle, or null if not found.
-     * @throws IOException if an I/O error occurs.
-     */
-    private TreePathHandle getTreePathHandleForClass(FileObject fo) throws IOException {
-        JavaSource js = JavaSource.forFileObject(fo);
-        if (js == null) return null;
-
-        final TreePathHandle[] handle = new TreePathHandle[1];
-        js.runUserActionTask(new Task<CompilationController>() {
-            @Override
-            public void run(CompilationController parameter) throws Exception {
-                parameter.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
-                TypeElement te = parameter.getTopLevelElements().isEmpty() ? null : parameter.getTopLevelElements().get(0);
-                if (te != null) {
-                    handle[0] = TreePathHandle.create(te, parameter);
-                }
-            }
-        }, true);
-        return handle[0];
-    }
-
-    /**
-     * Resolves member names to ElementHandles within a specific FileObject.
-     * <p>
-     * Scans the enclosed elements of the top-level type and populates the 
-     * provided method and field lists with matching element handles.
-     * </p>
-     * 
-     * @param fo The target Java FileObject.
-     * @param memberNames The names of the members to resolve.
-     * @param methods The list to populate with method handles.
-     * @param fields The list to populate with field handles.
-     * @throws IOException if the search fails.
-     */
-    private void resolveMembers(FileObject fo, List<String> memberNames, List<ElementHandle<ExecutableElement>> methods, List<ElementHandle<VariableElement>> fields) throws IOException {
-        JavaSource js = JavaSource.forFileObject(fo);
-        if (js == null) return;
-
-        js.runUserActionTask(new Task<CompilationController>() {
-            @Override
-            public void run(CompilationController parameter) throws Exception {
-                parameter.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
-                TypeElement te = parameter.getTopLevelElements().isEmpty() ? null : parameter.getTopLevelElements().get(0);
-                if (te != null) {
-                    for (Element e : te.getEnclosedElements()) {
-                        if (memberNames.contains(e.getSimpleName().toString())) {
-                            if (e instanceof ExecutableElement ee) {
-                                methods.add(ElementHandle.create(ee));
-                            } else if (e instanceof VariableElement ve) {
-                                fields.add(ElementHandle.create(ve));
-                            }
-                        }
-                    }
-                }
-            }
-        }, true);
-    }
-
-    /**
-     * Resolves member names to MemberInfo objects for refactoring operations.
-     * <p>
-     * Identifies elements by name and creates appropriate {@link MemberInfo} 
-     * wrappers using the provided compilation context.
-     * </p>
-     * 
-     * @param fo The target Java FileObject.
-     * @param memberNames The names of the members to resolve.
-     * @param members The list to populate with MemberInfo objects.
-     * @throws IOException if the search fails.
-     */
-    private void resolveMemberInfos(FileObject fo, List<String> memberNames, List<MemberInfo<ElementHandle<? extends Element>>> members) throws IOException {
-        JavaSource js = JavaSource.forFileObject(fo);
-        if (js == null) return;
-
-        js.runUserActionTask(new Task<CompilationController>() {
-            @Override
-            public void run(CompilationController parameter) throws Exception {
-                parameter.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
-                TypeElement te = parameter.getTopLevelElements().isEmpty() ? null : parameter.getTopLevelElements().get(0);
-                if (te != null) {
-                    for (Element e : te.getEnclosedElements()) {
-                        if (memberNames.contains(e.getSimpleName().toString())) {
-                            // Use raw type for the list addition to avoid nested generic mismatch
-                            ((List)members).add(MemberInfo.create(e, parameter));
-                        }
-                    }
-                }
-            }
-        }, true);
     }
 }
