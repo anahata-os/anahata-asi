@@ -158,7 +158,9 @@ public class GeminiContentAdapter {
             // the metadata header must take responsibility for carrying the 
             // thought signature if one exists.
             if (!shouldIncludeContent && part instanceof ThoughtSignature ts && ts.getThoughtSignature() != null) {
-                headerBuilder.thoughtSignature(ts.getThoughtSignature());
+                //if it has been prunned already, its probably many turns old? 
+                //does it really make sense?
+                //headerBuilder.thoughtSignature(ts.getThoughtSignature());
             }
             
             googleParts.add(headerBuilder.build());
