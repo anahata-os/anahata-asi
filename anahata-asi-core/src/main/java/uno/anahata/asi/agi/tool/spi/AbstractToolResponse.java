@@ -245,7 +245,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
      * Resets the response to its initial state, clearing results, errors, logs, and attachments.
      */
     public void decline() {
-        setStatus(ToolExecutionStatus.DECLINED);
+        setStatus(ToolExecutionStatus.DECLINED);        
         setUserFeedback("Declined by user. @AgiTool annotated method did not get invoked.");
         setResult(null);
         setErrors(null);
@@ -259,6 +259,8 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
         clearLogs();
         this.attachments.clear();
         propertyChangeSupport.firePropertyChange("attachments", null, attachments);
+        //collapse response panel
+        setExpanded(false);
     }
 
     /**
