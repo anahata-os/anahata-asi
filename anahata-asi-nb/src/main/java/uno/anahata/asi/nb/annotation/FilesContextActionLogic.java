@@ -144,7 +144,9 @@ public class FilesContextActionLogic {
     public static boolean isInContext(FileObject fo, Agi agi) {
         if (fo.isData()) {
             File file = FileUtil.toFile(fo);
-            return file != null && agi.getResourceManager().findByPath(file.getAbsolutePath()).isPresent();
+            if (file != null) {
+                return agi.getResourceManager().findByPath(file.getAbsolutePath()).isPresent();
+            }
         }
         return false;
     }
