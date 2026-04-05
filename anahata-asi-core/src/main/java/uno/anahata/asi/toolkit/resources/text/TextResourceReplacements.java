@@ -56,10 +56,10 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
                 continue;
             }
 
-            // Create a regex that is lenient with trailing whitespace and line endings
-            // 1. Quote literals 2. Match any newline 3. Allow optional trailing whitespace
+            // Create a regex that is lenient with whitespace and line endings
+            // 1. Strip leading/trailing from target lines 2. Match optional whitespace around each line
             String regex = Stream.of(target.split("\\R", -1))
-                    .map(line -> Pattern.quote(line) + "[ \\t]*")
+                    .map(line -> "[ \\t]*" + Pattern.quote(line.trim()) + "[ \\t]*")
                     .collect(Collectors.joining("\\R"));
 
             newContent = newContent.replaceAll(regex, Matcher.quoteReplacement(replacement.getReplacement()));
@@ -70,7 +70,8 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
     /** {@inheritDoc} */
     @Override
     public void validate(Agi agi) throws Exception {
-        super.validate(agi);
+        // Capture original content before subclass validation
+        captureOriginalContent(agi);
 
         if (replacements == null || replacements.isEmpty()) {
              throw new AgiToolException("No replacements provided.");
@@ -95,11 +96,14 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
                  throw new AgiToolException("Target string not found in file (even after normalization): " + target);
             }
         }
+        
+        // Finally call super.validate to check lastModified and perform identical check
+        super.validate(agi);
     }
 
     /**
      * Normalizes a string for "semantic" comparison by standardizing line 
-     * endings and removing trailing whitespace from all lines.
+     * endings and removing leading and trailing whitespace from all lines.
      * 
      * @param s The string to normalize.
      * @return The normalized string.
@@ -110,7 +114,9 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
         }
         // 1. Standardize line endings to LF
         String result = s.replace("\r\n", "\n").replace("\r", "\n");
-        // 2. Remove trailing whitespace from each line
-        return result.replaceAll("(?m)[ \t]+$", "");
+        // 2. Remove leading and trailing whitespace from each line
+        return Stream.of(result.split("\\R", -1))
+                .map(String::trim)
+                .collect(Collectors.joining("\n"));
     }
 }

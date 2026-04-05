@@ -118,16 +118,16 @@ public abstract class AbstractTextResourceWrite {
         // 1. Authoritative state capture
         captureOriginalContent(agi);
 
-        // 2. Identical Content Check
-        if (Objects.equals(originalContent, calculateResultingContent())) {
-             throw new AgiToolException("Update rejected: The resulting content is identical to the current file content on disk.");
-        }
-
-        // 3. Optimistic Locking Check
+        // 2. Optimistic Locking Check
         Resource res = agi.getResourceManager().getResources().get(resourceUuid);
         long actualLm = res.getHandle().getLastModified();
         if (lastModified > 0 && lastModified != actualLm) {
             throw new AgiToolException("Optimistic locking failure for " + res.getName() + ". The time stamp provided doesn't match the last modified timestamp on disk: " + actualLm + " (provided: " + lastModified + ").");
+        }
+
+        // 3. Identical Content Check (Performed last to avoid masking more specific errors in subclasses)
+        if (Objects.equals(originalContent, calculateResultingContent())) {
+             throw new AgiToolException("Update rejected: The resulting content is identical to the current file content on disk.");
         }
     }
 }

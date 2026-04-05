@@ -143,7 +143,7 @@ public class Resources extends AnahataToolkit {
      * @param settings The new settings.
      * @throws Exception if the resource is not found.
      */
-    @AgiTool("Updates the viewport configuration for a text resource.")
+    @AgiTool("Updates the viewport configuration for a text resource. This is not a resource reload tool. Do not updateViewport without any changes as a means to re-read a resource from disk. This is just to update the viewport settings if the resource is too large, the viewport doesn't include the desired range, toggle line numbers, etc.")
     public void updateViewport(
             @AgiToolParam("The unique resource identifier.") String resourceId,
             @AgiToolParam("The new viewport settings.") TextViewportSettings settings) throws Exception {
