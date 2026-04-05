@@ -56,6 +56,7 @@ import uno.anahata.asi.swing.icons.CancelIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.icons.RunIcon;
+import uno.anahata.asi.swing.icons.StopIcon;
 import uno.anahata.asi.swing.internal.AnyChangeDocumentListener;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingUtils;
@@ -490,7 +491,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
 
         if (response.getStatus() == ToolExecutionStatus.EXECUTING) {
             runButton.setText("Stop");
-            runButton.setIcon(IconUtils.getIcon("delete.png", 16, 16));
+            runButton.setIcon(new StopIcon(16));
             runButton.addActionListener(e -> response.stop());
             runButton.setEnabled(true);
             revertButton.setVisible(false);
