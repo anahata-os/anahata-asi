@@ -9,6 +9,7 @@ import uno.anahata.asi.nb.tools.ide.Refactor;
 import uno.anahata.asi.nb.tools.ide.Editor;
 import uno.anahata.asi.nb.tools.ide.IDE;
 import uno.anahata.asi.swing.toolkit.Screens;
+import uno.anahata.asi.nb.tools.java.CodeRefiner;
 import uno.anahata.asi.nb.tools.java.CodeModel;
 import uno.anahata.asi.nb.tools.java.Hints;
 import uno.anahata.asi.nb.tools.java.NbJava;
@@ -41,6 +42,7 @@ public class NetBeansAgiConfig extends SwingAgiConfig {
         getToolClasses().add(Maven.class);
         getToolClasses().add(Projects.class);
         getToolClasses().add(CodeModel.class);
+        getToolClasses().add(CodeRefiner.class);
         getToolClasses().add(IDE.class);
         getToolClasses().add(Editor.class);
         getToolClasses().add(Hints.class);
