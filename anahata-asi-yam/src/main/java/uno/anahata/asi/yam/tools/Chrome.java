@@ -904,7 +904,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
                 try {
                     Shell shell = getToolkit(Shell.class);
                     if (shell != null) {
-                        ShellExecutionResult res = shell.runAndWait("ps -p " + p.pid() + " -o command=", Shell.ShellType.BASH);
+                        ShellExecutionResult res = shell.runAndWait("ps -p " + p.pid() + " -o command=", Shell.ShellType.BASH, null);
                         if (res.getExitCode() == 0) {
                             return res.getStdOut().trim();
                         }
@@ -917,7 +917,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
                     Shell shell = getToolkit(Shell.class);
                     if (shell != null) {
                         // Use wmic to get the command line on Windows
-                        ShellExecutionResult res = shell.runAndWait("wmic process where ProcessId=" + p.pid() + " get CommandLine", Shell.ShellType.CMD);
+                        ShellExecutionResult res = shell.runAndWait("wmic process where ProcessId=" + p.pid() + " get CommandLine", Shell.ShellType.CMD, null);
                         if (res.getExitCode() == 0) {
                             String out = res.getStdOut();
                             // Skip the header line

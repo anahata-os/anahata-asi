@@ -1,6 +1,7 @@
 /* Licensed under the Apache License, Version 2.0 */
 package uno.anahata.asi.toolkit.shell;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -52,7 +53,7 @@ public class Shell extends AnahataToolkit {
     public List<String> getSystemInstructions() throws Exception {
         StringBuilder sb = new StringBuilder();
         sb.append("## Shell Toolkit\n");
-        sb.append("- **Current Working Directory**: ").append(System.getProperty("user.dir")).append("\n\n");
+        sb.append("- **Current JVM Working Directory**: ").append(System.getProperty("user.dir")).append("\n\n");
         sb.append("- **Host Environment Variables**:\n");
         Map<String, String> sortedEnv = new TreeMap<>(System.getenv());
         sortedEnv.forEach((k, v) -> sb.append("- **").append(k).append("**: ").append(v).append("\n"));
@@ -67,7 +68,7 @@ public class Shell extends AnahataToolkit {
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
         String cwd = System.getProperty("user.dir");
-        ragMessage.addTextPart("## Shell Toolkit Context\n- **Current Working Directory**: " + cwd + "\n");
+        ragMessage.addTextPart("## Shell Toolkit Context\n- **Current JVM Working Directory**: " + cwd + "\n");
     }
 
     /**
@@ -81,7 +82,8 @@ public class Shell extends AnahataToolkit {
     @AgiTool("Runs a shell command using the specified or auto-detected shell and forwards the stdout to the tool's output and the stderr to the tool's error log")
     public ShellExecutionResult runAndWait(
             @AgiToolParam("The command to run") String command,
-            @AgiToolParam("The type of shell to use (BASH, CMD, POWERSHELL, SH). If null, it defaults to POWERSHELL on Windows and BASH on Unix.") ShellType type) throws Exception {
+            @AgiToolParam("The type of shell to use (BASH, CMD, POWERSHELL, SH). If null, it defaults to POWERSHELL on Windows and BASH on Unix.") ShellType type,
+            @AgiToolParam(value = "The working directory for the command. If null, it defaults to the current JVM working directory.", required = false) String workingDirectory) throws Exception {
         
         Thread currentThread = Thread.currentThread();
         log(String.format("[Shell] runAndWait started on thread: %s (ID: %d)", currentThread.getName(), currentThread.getId()));
@@ -120,6 +122,14 @@ public class Shell extends AnahataToolkit {
         }
 
         ProcessBuilder pb = new ProcessBuilder(pbArgs);
+        if (workingDirectory != null && !workingDirectory.isEmpty()) {
+            File dir = new File(workingDirectory);
+            if (dir.exists() && dir.isDirectory()) {
+                pb.directory(dir);
+            } else {
+                log("Warning: Working directory not found or invalid: " + workingDirectory + ". Proceeding with default.");
+            }
+        }
         pb.redirectErrorStream(false);
 
         Process process = pb.start();
