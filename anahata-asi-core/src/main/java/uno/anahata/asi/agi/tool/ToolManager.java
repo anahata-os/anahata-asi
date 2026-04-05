@@ -377,12 +377,13 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
         super.rebind();
         log.info("Rebinding ToolManager...");
         executingCalls = new CopyOnWriteArrayList<>();
-        
+        /*
         for (AbstractToolkit<?> toolkit : toolkits.values()) {
             if (toolkit instanceof Rebindable rebindable) {
                 rebindable.rebind();
             }
         }
+        */
     }
 
     /** {@inheritDoc} */
