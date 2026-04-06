@@ -37,29 +37,49 @@ import uno.anahata.asi.swing.icons.OkIcon;
 @Slf4j
 public class AsiContainerPreferencesPanel extends JPanel {
 
+    /** The parent ASI container instance. */
     private final AbstractSwingAsiContainer container;
+    /** The global ASI preferences being edited. */
     private final AsiContainerPreferences prefs;
     
+    /** Dropdown for selecting the default AI provider for the container. */
     private JComboBox<Class<? extends AbstractAgiProvider>> providerDropdown;
+    /** Dropdown for selecting the default AI model for the container. */
     private JComboBox<String> modelDropdown;
 
+    private final JTabbedPane mainTabs;
+
     /**
-     * Constructs a new preferences Command Center.
+     * Constructs a new preferences Command Center, defaulting to the first tab.
      * 
      * @param container The ASI container instance.
      */
     public AsiContainerPreferencesPanel(AbstractSwingAsiContainer container) {
+        this(container, 0);
+    }
+
+    /**
+     * Constructs a new preferences Command Center with a specific tab selected.
+     * 
+     * @param container The ASI container instance.
+     * @param initialTabIndex The index of the tab to select initially.
+     */
+    public AsiContainerPreferencesPanel(AbstractSwingAsiContainer container, int initialTabIndex) {
         this.container = container;
         this.prefs = container.getPreferences();
         
         setLayout(new BorderLayout());
         setPreferredSize(new Dimension(950, 750));
 
-        JTabbedPane mainTabs = new JTabbedPane();
+        this.mainTabs = new JTabbedPane();
         mainTabs.addTab("General Defaults", createGeneralTab());
         mainTabs.addTab("DNA Templates", createTemplatesTab());
         mainTabs.addTab("Tool Permissions", new ToolkitPermissionsPanel(container));
         mainTabs.addTab("API Key Pools", createApiKeysTab());
+
+        if (initialTabIndex >= 0 && initialTabIndex < mainTabs.getTabCount()) {
+            mainTabs.setSelectedIndex(initialTabIndex);
+        }
 
         add(mainTabs, BorderLayout.CENTER);
         

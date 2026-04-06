@@ -28,11 +28,15 @@ import uno.anahata.asi.AbstractAsiContainer;
 @Getter
 @Slf4j
 public abstract class AbstractAgiProvider {
+    /** The internal cache of loaded API keys, reloaded from disk on change. */
     private volatile List<String> keyPool;
+    /** The human-readable and logical identifier for this provider (e.g., 'Gemini'). */
     private final String providerId;
+    /** Atomic counter for round-robin key selection. */
     private final AtomicInteger round = new AtomicInteger(0);
     
     // Transient cache for the models
+    /** Lazy-loaded cache of models discovered via the provider's API. */
     private transient List<? extends AbstractModel> models;
 
     /**
@@ -185,7 +189,7 @@ public abstract class AbstractAgiProvider {
     public Path getKeysFilePath() {
         Path providerDir = getProviderDirectory();
         Path keysFilePath = providerDir.resolve("api_keys.txt");
-        log.info("Keys File Path: " + keysFilePath);
+        log.info("Keys File Path: {}", keysFilePath);
 
         if (!Files.exists(providerDir)) {
             try {
@@ -195,23 +199,23 @@ public abstract class AbstractAgiProvider {
                 log.error("Failed to create provider directory at: {}", providerDir, e);
             }
         }
-
-        if (!Files.exists(keysFilePath)) {
-            log.warn("API key file not found at {}. Creating a template.", keysFilePath);
-            try {
-                String template = "# These are your API keys for the '" + getProviderId() + "' provider.\n"
-                              + "# Add one key per line.\n"
-                              + "# Lines starting with '#' or '//' are treated as comments and ignored.\n"
-                              + "# Inline comments using '//' are also supported.\n";
-                Files.writeString(keysFilePath, template);
-                //we could do this.
-                //Desktop.getDesktop().open(keysFilePath);                
-            } catch (IOException e) {
-                log.error("Failed to create API key template file at: {}", keysFilePath, e);
-            }
-            
-        }
         return keysFilePath;
+    }
+
+    /**
+     * Ensures the API keys file exists on disk, creating it as a 
+     * completely empty file if missing.
+     */
+    public void ensureKeysFileExists() {
+        Path path = getKeysFilePath();
+        if (!Files.exists(path)) {
+            try {
+                Files.createFile(path);
+                log.info("Created empty API key file at: {}", path);
+            } catch (IOException e) {
+                log.error("Failed to create empty API key file at: {}", path, e);
+            }
+        }
     }
 
     /**
@@ -220,7 +224,7 @@ public abstract class AbstractAgiProvider {
      * @return A list of API keys, or an empty list if the file is missing or empty.
      */
     private List<String> readApiKeysFile() {
-        
+        ensureKeysFileExists();
         Path keysFilePath = getKeysFilePath();
         
         try (Stream<String> lines = Files.lines(keysFilePath)) {

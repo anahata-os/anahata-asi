@@ -34,7 +34,9 @@ import uno.anahata.asi.agi.provider.AbstractAgiProvider;
 @Slf4j
 public class ProviderKeysPanel extends JPanel {
 
+    /** The provider instance whose keys are being managed by this panel. */
     private final AbstractAgiProvider provider;
+    /** The monospace text area for editing the raw api_keys.txt content. */
     private final JTextArea textArea;
 
     /**
@@ -51,7 +53,7 @@ public class ProviderKeysPanel extends JPanel {
         
         // Setup PromptSupport for the template hint
         PromptSupport.setPrompt(provider.getApiKeyHint(), textArea);
-        PromptSupport.setFocusBehavior(PromptSupport.FocusBehavior.SHOW_PROMPT, textArea);
+        PromptSupport.setFocusBehavior(PromptSupport.FocusBehavior.HIDE_PROMPT, textArea);
         PromptSupport.setForeground(java.awt.Color.GRAY, textArea);
         
         // Add acquisition link and Round-Robin explanation

@@ -166,7 +166,7 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
                     "To begin, you need to configure at least one API key for an AI provider.<br>" +
                     "I am opening the <b>Preferences</b> dashboard for you now.</html>", 
                     "Setup Required", JOptionPane.INFORMATION_MESSAGE);
-            showPreferences();
+            showPreferences(3);
             return;
         }
         asiContainer.createNewAgi();
@@ -183,7 +183,16 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
      * Displays the global ASI preferences dashboard in a modal dialog.
      */
     public void showPreferences() {
-        AsiContainerPreferencesPanel prefsPanel = new AsiContainerPreferencesPanel(asiContainer);
+        showPreferences(0);
+    }
+
+    /**
+     * Displays the global ASI preferences dashboard with a specific tab selected.
+     * 
+     * @param initialTabIndex The index of the tab to open.
+     */
+    public void showPreferences(int initialTabIndex) {
+        AsiContainerPreferencesPanel prefsPanel = new AsiContainerPreferencesPanel(asiContainer, initialTabIndex);
         JOptionPane.showOptionDialog(this, prefsPanel, "ASI Container Preferences", 
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, 
                 new SettingsIcon(32), new Object[]{"Close"}, "Close");
