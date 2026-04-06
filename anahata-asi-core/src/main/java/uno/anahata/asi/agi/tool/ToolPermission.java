@@ -18,7 +18,7 @@ public enum ToolPermission {
     /** Approve for this turn and save the preference as ALWAYS. */
     APPROVE_ALWAYS("Approve Always"),
     /** Deny for this turn and save the preference as NEVER. */
-    DENY_NEVER("Deny Never");
+    DENY("Deny");
 
     private final String displayValue;
 }

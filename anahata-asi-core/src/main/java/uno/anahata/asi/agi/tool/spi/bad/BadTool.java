@@ -18,7 +18,7 @@ public class BadTool extends AbstractTool<BadToolParam, BadToolCall> {
     public BadTool(String name) {
         super(name);
         super.description = "Tool not found: " + name;
-        super.permission = ToolPermission.DENY_NEVER;
+        super.permission = ToolPermission.DENY;
         // No parameters are created for a bad tool.
     }
 

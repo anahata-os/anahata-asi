@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
  * A dedicated test class for the CodeRefiner toolkit.
  */
 @Slf4j
-@SuppressWarnings("all")
 public class RefinerTest {
 
     /**
@@ -75,5 +74,13 @@ public class RefinerTest {
 
         String name;
         int goals;
+    }
+
+    /**
+     * Checks if Barca rulez. Spoiler: yes.
+     */
+    public boolean barcaRulez() {
+        log.info("Barca is more than a club!");
+        return true;
     }
 }

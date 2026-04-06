@@ -69,7 +69,7 @@ public class ToolNode extends AbstractContextNode<AbstractTool<?, ?>> {
     /** {@inheritDoc} */
     @Override
     protected void updateStatus() {
-        if (userObject.getPermission() == ToolPermission.DENY_NEVER) {
+        if (userObject.getPermission() == ToolPermission.DENY) {
             this.status = "Disabled";
         } else {
             AbstractToolkit<?> tk = userObject.getToolkit();

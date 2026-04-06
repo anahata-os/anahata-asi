@@ -229,7 +229,7 @@ public abstract class AbstractContextNode<T> {
             return tk.isEnabled() && tk.getToolManager().isEffectivelyProviding();
         } else if (userObject instanceof AbstractTool<?, ?> tool) {
             AbstractToolkit<?> tk = tool.getToolkit();
-            return tool.getPermission() != ToolPermission.DENY_NEVER 
+            return tool.getPermission() != ToolPermission.DENY 
                 && (tk == null || (tk.isEnabled() && tk.getToolManager().isEffectivelyProviding()));
         } else if (userObject instanceof AbstractMessage msg) {
             return !msg.isEffectivelyPruned();

@@ -190,8 +190,8 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
             call.getResponse().fail(reason);
         }
 
-        if (tool.getPermission() == ToolPermission.DENY_NEVER) {
-            String reason = "Tool call rejected: The tool '" + name + "' has a DENY_NEVER permission.";
+        if (tool.getPermission() == ToolPermission.DENY) {
+            String reason = "Tool call rejected: The tool '" + name + "' has a " + ToolPermission.DENY + " permission.";
             log.warn(reason);
             call.getResponse().fail(reason);
         }

@@ -235,7 +235,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
 
         // Row 1: Permission (Left) and Feedback (Right, Large)
         permissionCombo = new JComboBox<>(new ToolPermission[]{
-            ToolPermission.PROMPT, ToolPermission.APPROVE_ALWAYS, ToolPermission.DENY_NEVER
+            ToolPermission.PROMPT, ToolPermission.APPROVE_ALWAYS, ToolPermission.DENY
         });
         permissionCombo.setRenderer(new ToolPermissionRenderer());
         permissionCombo.addActionListener(e -> {

@@ -147,7 +147,7 @@ public class SwingAgiConfig extends AgiConfig {
         return switch (permission) {
             case PROMPT -> new Color(0, 123, 255);        // Blue
             case APPROVE_ALWAYS -> new Color(40, 167, 69); // Green
-            case DENY_NEVER -> new Color(220, 53, 69);     // Red
+            case DENY -> new Color(220, 53, 69);     // Red
         };
     }
 

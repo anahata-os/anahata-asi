@@ -54,7 +54,7 @@ public abstract class AbstractToolkit<T extends AbstractTool<?,?>> {
     
     /**
      * Gets a list of tools that are allowed to be presented to the model.
-     * This filters out tools that have a permanent {@link ToolPermission#DENY_NEVER} permission
+     * This filters out tools that have a permanent {@link ToolPermission#DENY} permission
      * and also returns an empty list if the entire toolkit is disabled.
      * 
      * @return A filtered list of allowed tools.
@@ -64,13 +64,13 @@ public abstract class AbstractToolkit<T extends AbstractTool<?,?>> {
             return Collections.emptyList();
         }
         return getAllTools().stream()
-                .filter(tool -> tool.getPermission() != ToolPermission.DENY_NEVER)
+                .filter(tool -> tool.getPermission() != ToolPermission.DENY)
                 .collect(Collectors.toList());
     }
     
     /**
      * Gets a list of tools that are allowed to be presented to the model.
-     * This filters out tools that have a permanent {@link ToolPermission#DENY_NEVER} permission
+     * This filters out tools that have a permanent {@link ToolPermission#DENY} permission
      * and also returns an empty list if the entire toolkit is disabled.
      * 
      * @return A filtered list of allowed tools.
@@ -80,7 +80,7 @@ public abstract class AbstractToolkit<T extends AbstractTool<?,?>> {
             return getAllTools();
         }
         return getAllTools().stream()
-                .filter(tool -> tool.getPermission() == ToolPermission.DENY_NEVER)
+                .filter(tool -> tool.getPermission() == ToolPermission.DENY)
                 .collect(Collectors.toList());
     }
 

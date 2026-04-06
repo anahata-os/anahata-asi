@@ -269,7 +269,7 @@ public class Resources extends AnahataToolkit {
             //+ "Always make sure that each edit (regardless of wether it is an LineInsertion, a LineReplacement or a LineDeletion correspond to a single 'intent' that the user is going to review. "
             + "\nWhen adding Javadoc or comments, always use LineInsertion unless you are explicitly correcting an existing (and poorly formatted) comment. Replacing a line with 'itself plus more' is a common source of coordinate errors."
             + "\n\n**Tip**: Before submitting, always check the content of startLine - 1 and endLine + 1 in the RAG message to ensure you are not creating redundant syntax (e.g., double brackets, double javadoc markers, or broken indentation).",
-            permission = ToolPermission.DENY_NEVER)
+            permission = ToolPermission.DENY)
     public String editTextResource(
             @AgiToolParam("Contains the resource uuid, the lastModified timestamp and a set of line modifications targeting the absolute 1 based line numbers of a text resource in the RAG message.") TextResourceLineEdits edits) throws Exception {
         edits.validate(getAgi());
