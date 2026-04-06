@@ -1,22 +1,32 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.tools.java;
 
+import com.sun.source.tree.AnnotationTree;
 import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.ModifiersTree;
 import com.sun.source.tree.Tree;
+import com.sun.source.tree.VariableTree;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import org.netbeans.api.java.source.Comment;
 import org.netbeans.api.java.source.CompilationController;
 import org.netbeans.api.java.source.ElementHandle;
-import org.netbeans.api.java.source.GeneratorUtilities;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.Task;
+import org.netbeans.api.java.source.TreeMaker;
 import org.netbeans.api.java.source.TreePathHandle;
+import org.netbeans.api.java.source.TreeUtilities;
 import org.netbeans.api.java.source.WorkingCopy;
 import org.netbeans.modules.refactoring.java.api.MemberInfo;
 import org.openide.filesystems.FileObject;
@@ -26,17 +36,24 @@ import uno.anahata.asi.agi.tool.AgiToolException;
 /**
  * Shared utilities for NetBeans Java Source (AST) operations.
  * <p>
- * Provides surgical helper methods for element resolution, tree handle 
+ * Provides surgical helper methods for element resolution, tree handle
  * management, and Javadoc manipulation using the NetBeans Java Source API.
  * </p>
- * 
+ *
  * @author anahata
  */
 public class JavaSourceUtils {
 
     /**
+     * Defines positions for structural member insertion.
+     */
+    public enum RelativePosition {
+        START, END, BEFORE, AFTER
+    }
+
+    /**
      * Resolves a {@link FileObject} for the given absolute path.
-     * 
+     *
      * @param filePath The absolute path to the file.
      * @return The corresponding FileObject.
      * @throws AgiToolException If the file does not exist or cannot be resolved.
@@ -55,7 +72,7 @@ public class JavaSourceUtils {
 
     /**
      * Creates a {@link TreePathHandle} for a specific member within a file.
-     * 
+     *
      * @param fo The FileObject containing the class.
      * @param memberName The simple name of the member.
      * @return A TreePathHandle or null if the member is not found.
@@ -87,8 +104,9 @@ public class JavaSourceUtils {
     }
 
     /**
-     * Creates a {@link TreePathHandle} for the primary top-level class in a file.
-     * 
+     * Creates a {@link TreePathHandle} for the primary top-level class in a
+     * file.
+     *
      * @param fo The FileObject.
      * @return A TreePathHandle for the class or null.
      * @throws IOException If the source cannot be parsed.
@@ -114,9 +132,10 @@ public class JavaSourceUtils {
     }
 
     /**
-     * Finds a {@link Element} by its fully qualified name within a {@link WorkingCopy}.
-     * Supports both types and members (including basic method signature matching).
-     * 
+     * Finds a {@link Element} by its fully qualified name within a
+     * {@link WorkingCopy}. Supports both types and members (including basic
+     * method signature matching).
+     *
      * @param wc The working copy.
      * @param memberFqn The FQN to search for.
      * @return The resolved Element or null.
@@ -132,20 +151,20 @@ public class JavaSourceUtils {
         if (type != null) {
             return type;
         }
-        
+
         int lastDot = pureFqn.lastIndexOf('.');
         if (lastDot == -1) {
             return null;
         }
-        
+
         String parentFqn = pureFqn.substring(0, lastDot);
         String memberName = pureFqn.substring(lastDot + 1);
-        
+
         TypeElement parent = wc.getElements().getTypeElement(parentFqn);
         if (parent == null) {
             return null;
         }
-        
+
         for (Element e : parent.getEnclosedElements()) {
             if (e.getSimpleName().toString().equals(memberName)) {
                 if (e instanceof ExecutableElement ee && memberFqn.contains("(")) {
@@ -168,12 +187,12 @@ public class JavaSourceUtils {
         if (params.isEmpty()) {
             return ee.getParameters().isEmpty();
         }
-        
+
         String[] expectedTypes = params.split(",");
         if (expectedTypes.length != ee.getParameters().size()) {
             return false;
         }
-        
+
         for (int i = 0; i < expectedTypes.length; i++) {
             String expected = expectedTypes[i].trim();
             String actual = ee.getParameters().get(i).asType().toString();
@@ -186,8 +205,68 @@ public class JavaSourceUtils {
     }
 
     /**
+     * Finds the index of a member by its simple name.
+     *
+     * @param members The list of class members.
+     * @param memberName The name to look for.
+     * @return The index, or -1 if not found.
+     */
+    public static int findMemberIndex(List<? extends Tree> members, String memberName) {
+        for (int i = 0; i < members.size(); i++) {
+            Tree m = members.get(i);
+            String name = null;
+            if (m instanceof MethodTree mt) {
+                name = mt.getName().toString();
+            } else if (m instanceof VariableTree vt) {
+                name = vt.getName().toString();
+            } else if (m instanceof ClassTree ct) {
+                name = ct.getSimpleName().toString();
+            }
+
+            if (memberName.equals(name)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Builds a {@link ModifiersTree} structurally using the NetBeans parser 
+     * to handle complex annotation attributes and modifiers correctly.
+     *
+     * @param make The TreeMaker.
+     * @param utils The TreeUtilities.
+     * @param modifiersStr The space-separated modifiers (e.g., 'public final').
+     * @param annotations List of annotation strings (e.g., ['@NonNull', '@AgiTool(maxDepth=4)']).
+     * @return The constructed ModifiersTree.
+     */
+    public static ModifiersTree buildModifiers(TreeMaker make, TreeUtilities utils, String modifiersStr, List<String> annotations) {
+        Set<Modifier> mods = EnumSet.noneOf(Modifier.class);
+        if (modifiersStr != null && !modifiersStr.isBlank()) {
+            for (String m : modifiersStr.split("\\s+")) {
+                mods.add(Modifier.valueOf(m.toUpperCase()));
+            }
+        }
+
+        List<AnnotationTree> annos = new ArrayList<>();
+        if (annotations != null && !annotations.isEmpty()) {
+            for (String a : annotations) {
+                String clean = a.trim().startsWith("@") ? a.trim().substring(1) : a.trim();
+                if (clean.contains("(")) {
+                    String type = clean.substring(0, clean.indexOf("("));
+                    String args = clean.substring(clean.indexOf("(") + 1, clean.lastIndexOf(")"));
+                    annos.add(make.Annotation(make.Type(type), Collections.singletonList(utils.parseExpression(args, null))));
+                } else {
+                    annos.add(make.Annotation(make.Type(clean), Collections.emptyList()));
+                }
+            }
+        }
+        return make.Modifiers(mods, annos);
+    }
+
+    /**
      * Conveniently finds an {@link ExecutableElement} for a method FQN.
-     * 
+     *
      * @param wc The working copy.
      * @param methodFqn The method FQN.
      * @return The ExecutableElement or null.
@@ -199,7 +278,7 @@ public class JavaSourceUtils {
 
     /**
      * Resolves a set of member names into {@link ElementHandle}s.
-     * 
+     *
      * @param fo The FileObject.
      * @param memberNames The names to resolve.
      * @param methods Output list for resolved methods.
@@ -234,7 +313,7 @@ public class JavaSourceUtils {
 
     /**
      * Resolves member names into {@link MemberInfo} objects for refactoring.
-     * 
+     *
      * @param fo The FileObject.
      * @param memberNames The names to resolve.
      * @param members Output list for MemberInfo objects.
@@ -263,21 +342,4 @@ public class JavaSourceUtils {
         }, true);
     }
 
-    /**
-     * Structurally sets or removes the Javadoc for a given tree.
-     * 
-     * @param wc The working copy.
-     * @param tree The tree to modify.
-     * @param javadocText The Javadoc content (without markers), or null to remove.
-     */
-    public static void setJavadoc(WorkingCopy wc, Tree tree, String javadocText) {
-        if (javadocText == null) {
-            wc.getTreeMaker().removeComment(tree, 0, true);
-            return;
-        }
-        
-        String formatted = "/**\n * " + javadocText.replace("\n", "\n * ") + "\n */";
-        Comment comment = Comment.create(Comment.Style.JAVADOC, -1, -1, -1, formatted);
-        wc.getTreeMaker().addComment(tree, comment, true);
-    }
 }

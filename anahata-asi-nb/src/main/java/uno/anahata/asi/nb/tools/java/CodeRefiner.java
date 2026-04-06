@@ -4,22 +4,27 @@ package uno.anahata.asi.nb.tools.java;
 import com.sun.source.tree.AnnotationTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.ModifiersTree;
 import com.sun.source.tree.Tree;
+import com.sun.source.tree.TypeParameterTree;
 import com.sun.source.tree.VariableTree;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.DeclaredType;
+import javax.lang.model.element.VariableElement;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.java.source.GeneratorUtilities;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.ModificationResult;
 import org.netbeans.api.java.source.TreeMaker;
+import org.netbeans.api.java.source.TreeUtilities;
 import org.netbeans.api.java.source.WorkingCopy;
 import org.netbeans.modules.editor.indent.api.Reformat;
 import org.openide.cookies.SaveCookie;
@@ -30,6 +35,7 @@ import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
+import uno.anahata.asi.nb.tools.java.JavaSourceUtils.RelativePosition;
 
 /**
  * A sophisticated toolkit for structural Java code refinement using the NetBeans 
@@ -44,60 +50,24 @@ import uno.anahata.asi.agi.tool.AnahataToolkit;
 public class CodeRefiner extends AnahataToolkit {
 
     /**
-     * Replaces the body of a specific method using structural AST transformation.
-     * 
-     * @param filePath The absolute path of the Java file.
-     * @param methodFqn The FQN of the method.
-     * @param newBody The new code for the method body.
-     * @param save Whether to save the file after the change.
-     * @return A status message.
-     * @throws Exception If the operation fails.
+     * Initializes the toolkit, enabling it by default to provide high-fidelity
+     * structural Java code refinement capabilities to the ASI.
      */
-    @AgiTool("Replaces the body of a specific method using structural AST transformation. Automatically handles indentation and basic syntax.")
-    public String replaceMethodBody(
-            @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
-            @AgiToolParam("The fully qualified name of the method (e.g., com.foo.Bar.myMethod or myMethod(String,int)).") String methodFqn,
-            @AgiToolParam(value = "The new body of the method (the code inside the braces).", rendererId = "java") String newBody,
-            @AgiToolParam("Whether to save the file after the change.") boolean save) throws Exception {
-        
-        FileObject fo = JavaSourceUtils.getFileObject(filePath);
-        JavaSource js = JavaSource.forFileObject(fo);
-        if (js == null) {
-            return "Error: JavaSource not available for " + filePath;
-        }
+    @Override
+    public void initialize() {
+        getToolkit().setEnabled(true);
+    }
 
-        ModificationResult result = js.runModificationTask(wc -> {
-            wc.toPhase(JavaSource.Phase.RESOLVED);
-            TreeMaker make = wc.getTreeMaker();
-            
-            ExecutableElement methodElement = JavaSourceUtils.findMethodElement(wc, methodFqn);
-            if (methodElement == null) {
-                throw new AgiToolException("Method not found: " + methodFqn);
-            }
-
-            MethodTree oldMethod = (MethodTree) wc.getTrees().getTree(methodElement);
-            String bodyText = newBody.trim();
-            if (!bodyText.startsWith("{")) {
-                bodyText = "{\n" + bodyText + "\n}";
-            }
-            
-            MethodTree newMethod = make.Method(
-                    oldMethod.getModifiers(),
-                    oldMethod.getName(),
-                    oldMethod.getReturnType(),
-                    oldMethod.getTypeParameters(),
-                    oldMethod.getParameters(),
-                    oldMethod.getThrows(),
-                    bodyText,
-                    (AnnotationTree) oldMethod.getDefaultValue()
-            );
-
-            wc.rewrite(oldMethod, newMethod);
-        });
-
-        result.commit();
-        if (save) handleSave(fo);
-        return "Successfully updated body of method: " + methodFqn;
+    /**
+     * Provides system instructions that identify this toolkit as the
+     * authority for AST-based Java source modifications.
+     *
+     * @return A singleton list containing the toolkit's mission statement.
+     * @throws Exception If instruction retrieval fails.
+     */
+    @Override
+    public List<String> getSystemInstructions() throws Exception {
+        return Collections.singletonList(getClass().getName() + " toolkit for high-fidelity structural Java code refinement.");
     }
 
     /**
@@ -152,7 +122,9 @@ public class CodeRefiner extends AnahataToolkit {
         });
 
         result.commit();
-        if (save) handleSave(fo);
+        if (save) {
+            handleSave(fo);
+        }
         return "Added annotation " + annotationSource + " to " + memberFqn;
     }
 
@@ -211,7 +183,9 @@ public class CodeRefiner extends AnahataToolkit {
         });
 
         result.commit();
-        if (save) handleSave(fo);
+        if (save) {
+            handleSave(fo);
+        }
         return "Removed annotation " + annotationName + " from " + memberFqn;
     }
 
@@ -243,11 +217,13 @@ public class CodeRefiner extends AnahataToolkit {
             }
             
             Tree tree = wc.getTrees().getTree(element);
-            JavaSourceUtils.setJavadoc(wc, tree, javadocText);
+            setJavadoc(wc, tree, javadocText);
         });
 
         result.commit();
-        if (save) handleSave(fo);
+        if (save) {
+            handleSave(fo);
+        }
         return "Updated Javadoc for " + memberFqn;
     }
 
@@ -277,11 +253,13 @@ public class CodeRefiner extends AnahataToolkit {
             }
             
             Tree tree = wc.getTrees().getTree(element);
-            JavaSourceUtils.setJavadoc(wc, tree, null);
+            setJavadoc(wc, tree, null);
         });
 
         result.commit();
-        if (save) handleSave(fo);
+        if (save) {
+            handleSave(fo);
+        }
         return "Removed Javadoc from " + memberFqn;
     }
 
@@ -290,50 +268,186 @@ public class CodeRefiner extends AnahataToolkit {
      * 
      * @param filePath The absolute path of the Java file.
      * @param classFqn The FQN of the target class.
-     * @param methodSource The source code of the method.
+     * @param annotations List of annotations (e.g., ['@NonNull', '@Override']).
+     * @param modifiers The access modifiers (e.g., 'public final').
+     * @param typeParameters List of type parameters (e.g., ['T extends Serializable']).
+     * @param returnType The return type string.
+     * @param name The method name.
+     * @param parameters List of parameters (e.g., ['String message', 'int code']).
+     * @param throwsClauses List of exception types.
+     * @param body The method body code (inside braces).
+     * @param javadoc The Javadoc text (without markers).
+     * @param anchorMemberName Optional name of an existing member to use as positioning anchor.
+     * @param position The position relative to the anchor or class.
      * @param save Whether to save the file after the change.
      * @return A status message.
      * @throws Exception If the operation fails.
      */
-    @AgiTool("Inserts a new method into a class structurally.")
+    @AgiTool("Inserts a new method into a class structurally. Handles imports, javadoc, and positioning.")
     public String insertMethod(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The FQN of the target class.") String classFqn,
-            @AgiToolParam(value = "The full source code of the method (including signature and body).", rendererId = "java") String methodSource,
-            @AgiToolParam("Whether to save the file after the change.") boolean save) throws Exception {
-        
+            @AgiToolParam(value = "Annotations to apply.", required = false) List<String> annotations,
+            @AgiToolParam(value = "Access modifiers.", required = false) String modifiers,
+            @AgiToolParam(value = "Type parameters for generics.", required = false) List<String> typeParameters,
+            @AgiToolParam("The return type.") String returnType,
+            @AgiToolParam("The method name.") String name,
+            @AgiToolParam(value = "The method parameters.", required = false) List<String> parameters,
+            @AgiToolParam(value = "Thrown exceptions.", required = false) List<String> throwsClauses,
+            @AgiToolParam(value = "The method body code.", rendererId = "java") String body,
+            @AgiToolParam(value = "The Javadoc content.", required = false) String javadoc,
+            @AgiToolParam(value = "Anchor member name for positioning.", required = false) String anchorMemberName,
+            @AgiToolParam(value = "Position relative to anchor.", required = false) RelativePosition position,
+            @AgiToolParam("Whether to save the file.") boolean save) throws Exception {
+
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         JavaSource js = JavaSource.forFileObject(fo);
-        ModificationResult result = js.runModificationTask(wc-> {
+
+        ModificationResult res = js.runModificationTask(wc -> {
             wc.toPhase(JavaSource.Phase.RESOLVED);
-            TypeElement typeElement = wc.getElements().getTypeElement(classFqn);
-            if (typeElement == null) {
+            TreeMaker make = wc.getTreeMaker();
+            TreeUtilities utils = wc.getTreeUtilities();
+            
+            TypeElement te = wc.getElements().getTypeElement(classFqn);
+            if (te == null) {
                 throw new AgiToolException("Class not found: " + classFqn);
             }
-            ClassTree oldClass = (ClassTree) wc.getTrees().getTree(typeElement);
-            
-            // Fix: Use TypeMirror to parse type, but for Method we construction using TreeMaker
-            // For now, construct a dummy method if parsing fails, but better: 
-            // construct from source using the public parseStatement wrapper
-            String bodyText = "{\n" + methodSource + "\n}";
-            MethodTree newMethod = wc.getTreeMaker().Method(
-                    wc.getTreeMaker().Modifiers(Collections.singleton(Modifier.PUBLIC)),
-                    "tempMethod",
-                    wc.getTreeMaker().Type("void"),
-                    Collections.emptyList(),
-                    Collections.emptyList(),
-                    Collections.emptyList(),
-                    bodyText,
-                    null
-            );
-            
+            ClassTree ct = (ClassTree) wc.getTrees().getTree(te);
+
+            ModifiersTree mods = JavaSourceUtils.buildModifiers(make, utils, modifiers, annotations);
+            List<TypeParameterTree> tps = parseTypeParameters(make, typeParameters);
+            List<VariableTree> params = parseParameters(make, parameters);
+
+            List<ExpressionTree> thrws = new ArrayList<>();
+            if (throwsClauses != null) {
+                for (String t : throwsClauses) {
+                    thrws.add((ExpressionTree) make.Type(t));
+                }
+            }
+
+            String finalBody = body.trim().startsWith("{") ? body : "{" + body + "}";
+            MethodTree newMethod = (MethodTree) make.Method(mods, name, make.Type(returnType), tps, params, thrws, finalBody, null);
+            if (javadoc != null) {
+                setJavadoc(wc, newMethod, javadoc);
+            }
+
             newMethod = GeneratorUtilities.get(wc).importFQNs(newMethod);
-            ClassTree newClass = GeneratorUtilities.get(wc).insertClassMember(oldClass, newMethod);
-            wc.rewrite(oldClass, newClass);
+
+            List<Tree> members = new ArrayList<>(ct.getMembers());
+            int anchorIdx = anchorMemberName != null ? JavaSourceUtils.findMemberIndex(members, anchorMemberName) : -1;
+            int insertIdx = 0;
+            if (position != null) {
+                insertIdx = switch (position) {
+                    case START -> 0;
+                    case END -> members.size();
+                    case BEFORE -> anchorIdx != -1 ? anchorIdx : 0;
+                    case AFTER -> anchorIdx != -1 ? anchorIdx + 1 : members.size();
+                };
+            } else {
+                insertIdx = members.size();
+            }
+            members.add(insertIdx, newMethod);
+
+            ClassTree updatedClass = make.Class(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(),
+                    ct.getExtendsClause(), ct.getImplementsClause(), members);
+            wc.rewrite(ct, updatedClass);
         });
-        result.commit();
-        if (save) handleSave(fo);
-        return "Inserted new method into " + classFqn;
+
+        res.commit();
+        if (save) {
+            handleSave(fo);
+        }
+        return "Inserted method '" + name + "' into " + classFqn;
+    }
+
+    /**
+     * Updates an existing method structurally.
+     * 
+     * @param filePath The absolute path of the Java file.
+     * @param methodFqn The FQN of the method.
+     * @param annotations Optional new list of annotations.
+     * @param modifiers Optional new access modifiers.
+     * @param typeParameters Optional new type parameters.
+     * @param returnType Optional new return type.
+     * @param parameters Optional new parameters.
+     * @param throwsClauses Optional new throws clauses.
+     * @param body Optional new body code.
+     * @param javadoc Optional new Javadoc.
+     * @param save Whether to save.
+     * @return Status message.
+     * @throws Exception If the operation fails.
+     */
+    @AgiTool("Updates an existing method structurally (modifiers, annotations, body, or javadoc).")
+    public String updateMethod(
+            @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
+            @AgiToolParam("The FQN of the method.") String methodFqn,
+            @AgiToolParam(value = "Optional new list of annotations.", required = false) List<String> annotations,
+            @AgiToolParam(value = "Optional new access modifiers.", required = false) String modifiers,
+            @AgiToolParam(value = "Optional new type parameters.", required = false) List<String> typeParameters,
+            @AgiToolParam(value = "Optional new return type.", required = false) String returnType,
+            @AgiToolParam(value = "Optional new parameters.", required = false) List<String> parameters,
+            @AgiToolParam(value = "Optional new throws clauses.", required = false) List<String> throwsClauses,
+            @AgiToolParam(value = "Optional new body code.", rendererId = "java", required = false) String body,
+            @AgiToolParam(value = "Optional new Javadoc.", required = false) String javadoc,
+            @AgiToolParam("Whether to save.") boolean save) throws Exception {
+
+        FileObject fo = JavaSourceUtils.getFileObject(filePath);
+        JavaSource js = JavaSource.forFileObject(fo);
+
+        ModificationResult res = js.runModificationTask(wc -> {
+            wc.toPhase(JavaSource.Phase.RESOLVED);
+            TreeMaker make = wc.getTreeMaker();
+            TreeUtilities utils = wc.getTreeUtilities();
+            ExecutableElement ee = JavaSourceUtils.findMethodElement(wc, methodFqn);
+            if (ee == null) {
+                throw new AgiToolException("Method not found: " + methodFqn);
+            }
+            MethodTree mt = (MethodTree) wc.getTrees().getTree(ee);
+
+            ModifiersTree newMods = (modifiers != null || annotations != null) ?
+                    JavaSourceUtils.buildModifiers(make, utils, 
+                            modifiers != null ? modifiers : mt.getModifiers().toString(), 
+                            annotations) : mt.getModifiers();
+            
+            List<TypeParameterTree> tps = (typeParameters != null) ? parseTypeParameters(make, typeParameters) :
+                    new ArrayList<>(mt.getTypeParameters());
+            
+            List<VariableTree> params = (parameters != null) ? parseParameters(make, parameters) :
+                    new ArrayList<>(mt.getParameters());
+
+            List<ExpressionTree> thrws = new ArrayList<>();
+            if (throwsClauses != null) {
+                for (String t : throwsClauses) {
+                    thrws.add((ExpressionTree) make.Type(t));
+                }
+            } else {
+                thrws.addAll(mt.getThrows());
+            }
+
+            Tree finalBody = (body != null) ? 
+                    utils.parseStatement(body.trim().startsWith("{") ? body : "{" + body + "}", null) : 
+                    mt.getBody();
+
+            MethodTree updated = make.Method(newMods, mt.getName(), 
+                    returnType != null ? make.Type(returnType) : mt.getReturnType(), 
+                    tps, params, thrws, (com.sun.source.tree.BlockTree) finalBody, 
+                    (AnnotationTree) mt.getDefaultValue());
+            
+            if (javadoc != null) {
+                setJavadoc(wc, updated, javadoc);
+            } else {
+                for (org.netbeans.api.java.source.Comment c : utils.getComments(mt, true)) {
+                    make.addComment(updated, c, true);
+                }
+            }
+            wc.rewrite(mt, updated);
+        });
+
+        res.commit();
+        if (save) {
+            handleSave(fo);
+        }
+        return "Updated method '" + methodFqn + "'";
     }
 
     /**
@@ -341,46 +455,245 @@ public class CodeRefiner extends AnahataToolkit {
      * 
      * @param filePath The absolute path of the Java file.
      * @param classFqn The FQN of the target class.
-     * @param fieldSource The source code of the field.
-     * @param save Whether to save the file after the change.
-     * @return A status message.
+     * @param annotations List of annotations.
+     * @param modifiers The access modifiers.
+     * @param type The field type.
+     * @param name The field name.
+     * @param initializer Optional initializer expression.
+     * @param javadoc The Javadoc text.
+     * @param anchorMemberName Positioning anchor.
+     * @param position Relative position.
+     * @param save Whether to save.
+     * @return Status message.
      * @throws Exception If the operation fails.
      */
     @AgiTool("Inserts a new field into a class structurally.")
     public String insertField(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The FQN of the target class.") String classFqn,
-            @AgiToolParam(value = "The full source code of the field (e.g., private String name;).", rendererId = "java") String fieldSource,
-            @AgiToolParam("Whether to save the file after the change.") boolean save) throws Exception {
-        
+            @AgiToolParam(value = "Annotations to apply.", required = false) List<String> annotations,
+            @AgiToolParam(value = "Access modifiers.", required = false) String modifiers,
+            @AgiToolParam("The field type.") String type,
+            @AgiToolParam("The field name.") String name,
+            @AgiToolParam(value = "Optional initializer expression.", required = false) String initializer,
+            @AgiToolParam(value = "The Javadoc content.", required = false) String javadoc,
+            @AgiToolParam(value = "Anchor member name.", required = false) String anchorMemberName,
+            @AgiToolParam(value = "Position relative to anchor.", required = false) RelativePosition position,
+            @AgiToolParam("Whether to save.") boolean save) throws Exception {
+
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         JavaSource js = JavaSource.forFileObject(fo);
 
-        ModificationResult result = js.runModificationTask(wc -> {
+        ModificationResult res = js.runModificationTask(wc -> {
             wc.toPhase(JavaSource.Phase.RESOLVED);
-            TypeElement typeElement = wc.getElements().getTypeElement(classFqn);
-            if (typeElement == null) {
+            TreeMaker make = wc.getTreeMaker();
+            TypeElement te = wc.getElements().getTypeElement(classFqn);
+            if (te == null) {
                 throw new AgiToolException("Class not found: " + classFqn);
             }
-            
-            ClassTree oldClass = (ClassTree) wc.getTrees().getTree(typeElement);
-            
-            // Fix: Construct field manually via TreeMaker to avoid package-private parseType(String)
-            VariableTree newField = wc.getTreeMaker().Variable(
-                    wc.getTreeMaker().Modifiers(Collections.singleton(Modifier.PRIVATE)),
-                    "newField",
-                    wc.getTreeMaker().Type("java.lang.Object"),
-                    null
-            );
-            
+            ClassTree ct = (ClassTree) wc.getTrees().getTree(te);
+
+            ModifiersTree mods = JavaSourceUtils.buildModifiers(make, wc.getTreeUtilities(), modifiers, annotations);
+            ExpressionTree init = (initializer != null && !initializer.isBlank()) ? wc.getTreeUtilities().parseExpression(initializer, null) : null;
+            VariableTree newField = make.Variable(mods, name, make.Type(type), init);
+
+            if (javadoc != null) {
+                setJavadoc(wc, newField, javadoc);
+            }
+
             newField = GeneratorUtilities.get(wc).importFQNs(newField);
-            ClassTree newClass = GeneratorUtilities.get(wc).insertClassMember(oldClass, newField);
-            wc.rewrite(oldClass, newClass);
+
+            List<Tree> members = new ArrayList<>(ct.getMembers());
+            int anchorIdx = anchorMemberName != null ? JavaSourceUtils.findMemberIndex(members, anchorMemberName) : -1;
+            int insertIdx = 0;
+            if (position != null) {
+                insertIdx = switch (position) {
+                    case START -> 0;
+                    case END -> members.size();
+                    case BEFORE -> anchorIdx != -1 ? anchorIdx : 0;
+                    case AFTER -> anchorIdx != -1 ? anchorIdx + 1 : members.size();
+                };
+            } else {
+                insertIdx = members.size();
+            }
+            members.add(insertIdx, newField);
+
+            ClassTree updatedClass = make.Class(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(),
+                    ct.getExtendsClause(), ct.getImplementsClause(), members);
+            wc.rewrite(ct, updatedClass);
         });
 
-        result.commit();
-        if (save) handleSave(fo);
-        return "Inserted new field into " + classFqn;
+        res.commit();
+        if (save) {
+            handleSave(fo);
+        }
+        return "Inserted field '" + name + "' into " + classFqn;
+    }
+
+    /**
+     * Updates an existing field structurally.
+     * 
+     * @param filePath The absolute path of the Java file.
+     * @param fieldFqn The FQN of the field.
+     * @param annotations Optional new list of annotations.
+     * @param modifiers Optional new access modifiers.
+     * @param type Optional new type.
+     * @param initializer Optional new initializer expression.
+     * @param javadoc Optional new Javadoc content.
+     * @param save Whether to save.
+     * @return Status message.
+     * @throws Exception If the operation fails.
+     */
+    @AgiTool("Updates an existing field structurally (modifiers, annotations, type, or initializer).")
+    public String updateField(
+            @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
+            @AgiToolParam("The FQN of the field.") String fieldFqn,
+            @AgiToolParam(value = "Optional new list of annotations.", required = false) List<String> annotations,
+            @AgiToolParam(value = "Optional new access modifiers.", required = false) String modifiers,
+            @AgiToolParam(value = "Optional new type.", required = false) String type,
+            @AgiToolParam(value = "Optional new initializer expression.", required = false) String initializer,
+            @AgiToolParam(value = "Optional new Javadoc content.", required = false) String javadoc,
+            @AgiToolParam("Whether to save.") boolean save) throws Exception {
+
+        FileObject fo = JavaSourceUtils.getFileObject(filePath);
+        JavaSource js = JavaSource.forFileObject(fo);
+
+        ModificationResult res = js.runModificationTask(wc -> {
+            wc.toPhase(JavaSource.Phase.RESOLVED);
+            TreeMaker make = wc.getTreeMaker();
+            Element e = JavaSourceUtils.findElement(wc, fieldFqn);
+            if (!(e instanceof VariableElement ve)) {
+                throw new AgiToolException("Field not found: " + fieldFqn);
+            }
+            VariableTree vt = (VariableTree) wc.getTrees().getTree(ve);
+
+            ModifiersTree newMods = (modifiers != null || annotations != null) ?
+                    JavaSourceUtils.buildModifiers(make, wc.getTreeUtilities(), 
+                            modifiers != null ? modifiers : vt.getModifiers().toString(), 
+                            annotations) : vt.getModifiers();
+            
+            ExpressionTree init = (initializer != null && !initializer.isBlank()) ? 
+                    wc.getTreeUtilities().parseExpression(initializer, null) : vt.getInitializer();
+
+            VariableTree updated = make.Variable(newMods, vt.getName(), 
+                    type != null ? make.Type(type) : vt.getType(), init);
+            
+            if (javadoc != null) {
+                setJavadoc(wc, updated, javadoc);
+            } else {
+                for (org.netbeans.api.java.source.Comment c : wc.getTreeUtilities().getComments(vt, true)) {
+                    make.addComment(updated, c, true);
+                }
+            }
+            wc.rewrite(vt, updated);
+        });
+
+        res.commit();
+        if (save) {
+            handleSave(fo);
+        }
+        return "Updated field '" + fieldFqn + "'";
+    }
+
+    /**
+     * Inserts a new class or inner type structurally.
+     * 
+     * @param filePath The absolute path of the Java file.
+     * @param parentClassFqn Optional FQN of the parent class (for inner types).
+     * @param annotations List of annotations.
+     * @param modifiers The access modifiers.
+     * @param kind The kind of type (CLASS, INTERFACE, ENUM, ANNOTATION_TYPE).
+     * @param name The type name.
+     * @param typeParameters Generics.
+     * @param extendsClause Optional superclass.
+     * @param implementsClauses Optional interfaces.
+     * @param javadoc The Javadoc text.
+     * @param anchorMemberName Positioning anchor.
+     * @param position Relative position.
+     * @param save Whether to save.
+     * @return Status message.
+     * @throws Exception If the operation fails.
+     */
+    @AgiTool("Inserts a new class or inner type structurally.")
+    public String insertClass(
+            @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
+            @AgiToolParam(value = "The FQN of the parent class (null for top-level).", required = false) String parentClassFqn,
+            @AgiToolParam(value = "Annotations to apply.", required = false) List<String> annotations,
+            @AgiToolParam(value = "Access modifiers.", required = false) String modifiers,
+            @AgiToolParam("The type kind (e.g., CLASS, INTERFACE).") com.sun.source.tree.Tree.Kind kind,
+            @AgiToolParam("The type name.") String name,
+            @AgiToolParam(value = "Type parameters for generics.", required = false) List<String> typeParameters,
+            @AgiToolParam(value = "The superclass.", required = false) String extendsClause,
+            @AgiToolParam(value = "List of implemented interfaces.", required = false) List<String> implementsClauses,
+            @AgiToolParam(value = "The Javadoc content.", required = false) String javadoc,
+            @AgiToolParam(value = "Anchor member name for positioning.", required = false) String anchorMemberName,
+            @AgiToolParam(value = "Position relative to anchor.", required = false) RelativePosition position,
+            @AgiToolParam("Whether to save.") boolean save) throws Exception {
+
+        FileObject fo = JavaSourceUtils.getFileObject(filePath);
+        JavaSource js = JavaSource.forFileObject(fo);
+
+        ModificationResult res = js.runModificationTask(wc -> {
+            wc.toPhase(JavaSource.Phase.RESOLVED);
+            TreeMaker make = wc.getTreeMaker();
+            TreeUtilities utils = wc.getTreeUtilities();
+
+            ModifiersTree mods = JavaSourceUtils.buildModifiers(make, utils, modifiers, annotations);
+            List<TypeParameterTree> tps = parseTypeParameters(make, typeParameters);
+
+            Tree ext = (extendsClause != null && !extendsClause.isBlank()) ? make.Type(extendsClause) : null;
+            List<Tree> impls = new ArrayList<>();
+            if (implementsClauses != null) {
+                for (String i : implementsClauses) {
+                    impls.add(make.Type(i));
+                }
+            }
+
+            ClassTree newClass = switch (kind) {
+                case INTERFACE -> make.Interface(mods, name, tps, impls, Collections.<Tree>emptyList());
+                case ENUM -> make.Enum(mods, name, impls, Collections.<Tree>emptyList());
+                case ANNOTATION_TYPE -> make.AnnotationType(mods, name, Collections.<Tree>emptyList());
+                default -> make.Class(mods, name, tps, ext, impls, Collections.<Tree>emptyList());
+            };
+
+            if (javadoc != null) {
+                setJavadoc(wc, newClass, javadoc);
+            }
+            newClass = GeneratorUtilities.get(wc).importFQNs(newClass);
+
+            if (parentClassFqn == null || parentClassFqn.isBlank()) {
+                CompilationUnitTree cut = wc.getCompilationUnit();
+                List<Tree> types = new ArrayList<>(cut.getTypeDecls());
+                types.add(newClass);
+                wc.rewrite(cut, make.CompilationUnit(cut.getPackage(), cut.getImports(), types, cut.getSourceFile()));
+            } else {
+                TypeElement parentTe = wc.getElements().getTypeElement(parentClassFqn);
+                ClassTree parentCt = (ClassTree) wc.getTrees().getTree(parentTe);
+                List<Tree> members = new ArrayList<>(parentCt.getMembers());
+                int anchorIdx = anchorMemberName != null ? JavaSourceUtils.findMemberIndex(members, anchorMemberName) : -1;
+                int insertIdx = 0;
+                if (position != null) {
+                    insertIdx = switch (position) {
+                        case START -> 0;
+                        case END -> members.size();
+                        case BEFORE -> anchorIdx != -1 ? anchorIdx : 0;
+                        case AFTER -> anchorIdx != -1 ? anchorIdx + 1 : members.size();
+                    };
+                } else {
+                    insertIdx = members.size();
+                }
+                members.add(insertIdx, newClass);
+                wc.rewrite(parentCt, make.Class(parentCt.getModifiers(), parentCt.getSimpleName(), 
+                        parentCt.getTypeParameters(), parentCt.getExtendsClause(), 
+                        parentCt.getImplementsClause(), members));
+            }
+        });
+
+        res.commit();
+        if (save) {
+            handleSave(fo);
+        }
+        return "Inserted type '" + name + "' into " + filePath;
     }
 
     /**
@@ -407,7 +720,9 @@ public class CodeRefiner extends AnahataToolkit {
         });
 
         result.commit();
-        if (save) handleSave(fo);
+        if (save) {
+            handleSave(fo);
+        }
         return "Optimized imports for: " + fo.getNameExt();
     }
 
@@ -438,8 +753,37 @@ public class CodeRefiner extends AnahataToolkit {
             }
         }).commit();
 
-        if (save) handleSave(fo);
+        if (save) {
+            handleSave(fo);
+        }
         return "Reformated: " + fo.getNameExt();
+    }
+
+    private List<VariableTree> parseParameters(TreeMaker make, List<String> params) {
+        if (params == null || params.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<VariableTree> result = new ArrayList<>();
+        for (String p : params) {
+            String[] parts = p.trim().split("\\s+");
+            if (parts.length >= 2) {
+                String type = parts[0];
+                String name = parts[1];
+                result.add(make.Variable(make.Modifiers(Collections.emptySet()), name, make.Type(type), null));
+            }
+        }
+        return result;
+    }
+
+    private List<TypeParameterTree> parseTypeParameters(TreeMaker make, List<String> tps) {
+        if (tps == null || tps.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<TypeParameterTree> result = new ArrayList<>();
+        for (String tp : tps) {
+            result.add(make.TypeParameter(tp, Collections.emptyList()));
+        }
+        return result;
     }
 
     private void handleSave(FileObject fo) throws IOException {
@@ -448,5 +792,28 @@ public class CodeRefiner extends AnahataToolkit {
         if (sc != null) {
             sc.save();
         }
+    }
+
+    private void setJavadoc(WorkingCopy wc, Tree tree, String javadocText) {
+        TreeMaker make = wc.getTreeMaker();
+        List<org.netbeans.api.java.source.Comment> comments = new ArrayList<>(wc.getTreeUtilities().getComments(tree, true));
+        List<org.netbeans.api.java.source.Comment> remaining = comments.stream()
+                .filter(c -> c.style() != org.netbeans.api.java.source.Comment.Style.JAVADOC)
+                .collect(Collectors.toCollection(ArrayList::new));
+        
+        for (int i = comments.size() - 1; i >= 0; i--) {
+            make.removeComment(tree, i, true);
+        }
+        
+        for (org.netbeans.api.java.source.Comment c : remaining) {
+            make.addComment(tree, c, true);
+        }
+
+        if (javadocText != null && !javadocText.isBlank()) {
+            String formatted = "/**\n * " + javadocText.replace("\n", "\n * ") + "\n */";
+            org.netbeans.api.java.source.Comment newComment = org.netbeans.api.java.source.Comment.create(org.netbeans.api.java.source.Comment.Style.JAVADOC, -1, -1, -1, formatted);
+            make.addComment(tree, newComment, true);
+        }
+        wc.rewrite(tree, tree);
     }
 }
