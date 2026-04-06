@@ -40,11 +40,11 @@ import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.nb.tools.java.JavaSourceUtils.RelativePosition;
 
 /**
- * A sophisticated toolkit for structural Java code refinement using the NetBeans 
- * Java Source API. Unlike text-based editors, this toolkit manipulates the 
- * Abstract Syntax Tree (AST), ensuring semantic integrity and automatic 
+ * A sophisticated toolkit for structural Java code refinement using the
+ * NetBeans Java Source API. Unlike text-based editors, this toolkit manipulates
+ * the Abstract Syntax Tree (AST), ensuring semantic integrity and automatic
  * management of imports and formatting.
- * 
+ *
  * @author anahata
  */
 @Slf4j
@@ -61,8 +61,8 @@ public class CodeRefiner extends AnahataToolkit {
     }
 
     /**
-     * Provides system instructions that identify this toolkit as the
-     * authority for AST-based Java source modifications.
+     * Provides system instructions that identify this toolkit as the authority
+     * for AST-based Java source modifications.
      *
      * @return A singleton list containing the toolkit's mission statement.
      * @throws Exception If instruction retrieval fails.
@@ -74,7 +74,7 @@ public class CodeRefiner extends AnahataToolkit {
 
     /**
      * Adds an annotation to a class, method, or field.
-     * 
+     *
      * @param filePath The absolute path of the Java file.
      * @param memberFqn The FQN of the target member.
      * @param annotationSource The annotation text (e.g., @Slf4j).
@@ -88,7 +88,7 @@ public class CodeRefiner extends AnahataToolkit {
             @AgiToolParam("The FQN of the member (e.g. com.foo.Bar or com.foo.Bar.myMethod).") String memberFqn,
             @AgiToolParam("The annotation to add (e.g., @Slf4j or @Test).") String annotationSource,
             @AgiToolParam("Whether to save the file after the change.") boolean save) throws Exception {
-        
+
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         JavaSource js = JavaSource.forFileObject(fo);
 
@@ -96,14 +96,14 @@ public class CodeRefiner extends AnahataToolkit {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             TreeMaker make = wc.getTreeMaker();
             GeneratorUtilities genUtils = GeneratorUtilities.get(wc);
-            
+
             Element element = JavaSourceUtils.findElement(wc, memberFqn);
             if (element == null) {
                 throw new AgiToolException("Member not found: " + memberFqn);
             }
-            
+
             Tree tree = wc.getTrees().getTree(element);
-            
+
             ModifiersTree oldModifiers = null;
             if (tree instanceof ClassTree ct) {
                 oldModifiers = ct.getModifiers();
@@ -114,11 +114,29 @@ public class CodeRefiner extends AnahataToolkit {
             }
 
             if (oldModifiers != null) {
-                ModifiersTree newModifiers = JavaSourceUtils.buildModifiers(make, wc.getTreeUtilities(), oldModifiers.getFlags(), Collections.singletonList(annotationSource));
-                wc.rewrite(oldModifiers, newModifiers);
-                
-                CompilationUnitTree cut = genUtils.importFQNs(wc.getCompilationUnit());
-                wc.rewrite(wc.getCompilationUnit(), cut);
+                List<String> annotations = new ArrayList<>();
+                for (AnnotationTree at : oldModifiers.getAnnotations()) {
+                    annotations.add(at.toString());
+                }
+                if (!annotations.contains(annotationSource)) {
+                    annotations.add(annotationSource);
+                }
+
+                ModifiersTree newMods = JavaSourceUtils.buildModifiers(make, wc.getTreeUtilities(), oldModifiers.getFlags(), annotations);
+
+                Tree newTree = null;
+                if (tree instanceof ClassTree ct) {
+                    newTree = make.Class(newMods, ct.getSimpleName(), ct.getTypeParameters(), ct.getExtendsClause(), ct.getImplementsClause(), ct.getMembers());
+                } else if (tree instanceof MethodTree mt) {
+                    newTree = make.Method(newMods, mt.getName(), mt.getReturnType(), mt.getTypeParameters(), mt.getParameters(), mt.getThrows(), mt.getBody(), (AnnotationTree) mt.getDefaultValue());
+                } else if (tree instanceof VariableTree vt) {
+                    newTree = make.Variable(newMods, vt.getName(), vt.getType(), vt.getInitializer());
+                }
+
+                if (newTree != null) {
+                    newTree = genUtils.importFQNs(newTree);
+                    wc.rewrite(tree, newTree);
+                }
             }
         });
 
@@ -131,7 +149,7 @@ public class CodeRefiner extends AnahataToolkit {
 
     /**
      * Removes a specific annotation from a member.
-     * 
+     *
      * @param filePath The absolute path of the Java file.
      * @param memberFqn The FQN of the member.
      * @param annotationName The simple name of the annotation.
@@ -145,19 +163,20 @@ public class CodeRefiner extends AnahataToolkit {
             @AgiToolParam("The FQN of the member.") String memberFqn,
             @AgiToolParam("The simple name of the annotation to remove (e.g., Slf4j).") String annotationName,
             @AgiToolParam("Whether to save the file after the change.") boolean save) throws Exception {
-        
+
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         JavaSource js = JavaSource.forFileObject(fo);
 
         ModificationResult result = js.runModificationTask(wc -> {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             TreeMaker make = wc.getTreeMaker();
-            
+            GeneratorUtilities genUtils = GeneratorUtilities.get(wc);
+
             Element element = JavaSourceUtils.findElement(wc, memberFqn);
             if (element == null) {
                 throw new AgiToolException("Member not found: " + memberFqn);
             }
-            
+
             Tree tree = wc.getTrees().getTree(element);
             ModifiersTree oldModifiers = null;
             if (tree instanceof ClassTree ct) {
@@ -177,8 +196,20 @@ public class CodeRefiner extends AnahataToolkit {
                     }
                 }
                 if (toRemove != null) {
-                    ModifiersTree newModifiers = make.removeModifiersAnnotation(oldModifiers, toRemove);
-                    wc.rewrite(oldModifiers, newModifiers);
+                    ModifiersTree newMods = make.removeModifiersAnnotation(oldModifiers, toRemove);
+                    Tree newTree = null;
+                    if (tree instanceof ClassTree ct) {
+                        newTree = make.Class(newMods, ct.getSimpleName(), ct.getTypeParameters(), ct.getExtendsClause(), ct.getImplementsClause(), ct.getMembers());
+                    } else if (tree instanceof MethodTree mt) {
+                        newTree = make.Method(newMods, mt.getName(), mt.getReturnType(), mt.getTypeParameters(), mt.getParameters(), mt.getThrows(), mt.getBody(), (AnnotationTree) mt.getDefaultValue());
+                    } else if (tree instanceof VariableTree vt) {
+                        newTree = make.Variable(newMods, vt.getName(), vt.getType(), vt.getInitializer());
+                    }
+
+                    if (newTree != null) {
+                        newTree = genUtils.importFQNs(newTree);
+                        wc.rewrite(tree, newTree);
+                    }
                 }
             }
         });
@@ -192,7 +223,7 @@ public class CodeRefiner extends AnahataToolkit {
 
     /**
      * Adds or updates Javadoc for a member.
-     * 
+     *
      * @param filePath The absolute path of the Java file.
      * @param memberFqn The FQN of the member.
      * @param javadocText The text content of the Javadoc.
@@ -206,7 +237,7 @@ public class CodeRefiner extends AnahataToolkit {
             @AgiToolParam("The FQN of the member.") String memberFqn,
             @AgiToolParam("The Javadoc content (without the /** and */ markers).") String javadocText,
             @AgiToolParam("Whether to save the file after the change.") boolean save) throws Exception {
-        
+
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         JavaSource js = JavaSource.forFileObject(fo);
 
@@ -216,7 +247,7 @@ public class CodeRefiner extends AnahataToolkit {
             if (element == null) {
                 throw new AgiToolException("Member not found: " + memberFqn);
             }
-            
+
             Tree tree = wc.getTrees().getTree(element);
             setJavadoc(wc, tree, javadocText);
         });
@@ -230,7 +261,7 @@ public class CodeRefiner extends AnahataToolkit {
 
     /**
      * Removes Javadoc from a member.
-     * 
+     *
      * @param filePath The absolute path of the Java file.
      * @param memberFqn The FQN of the member.
      * @param save Whether to save the file after the change.
@@ -242,7 +273,7 @@ public class CodeRefiner extends AnahataToolkit {
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The FQN of the member.") String memberFqn,
             @AgiToolParam("Whether to save the file after the change.") boolean save) throws Exception {
-        
+
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         JavaSource js = JavaSource.forFileObject(fo);
 
@@ -252,7 +283,7 @@ public class CodeRefiner extends AnahataToolkit {
             if (element == null) {
                 throw new AgiToolException("Member not found: " + memberFqn);
             }
-            
+
             Tree tree = wc.getTrees().getTree(element);
             setJavadoc(wc, tree, null);
         });
@@ -266,19 +297,22 @@ public class CodeRefiner extends AnahataToolkit {
 
     /**
      * Inserts a new method into a class structurally.
-     * 
+     *
      * @param filePath The absolute path of the Java file.
      * @param classFqn The FQN of the target class.
      * @param annotations List of annotations (e.g., ['@NonNull', '@Override']).
      * @param modifiers The access modifiers (e.g., 'public final').
-     * @param typeParameters List of type parameters (e.g., ['T extends Serializable']).
+     * @param typeParameters List of type parameters (e.g., ['T extends
+     * Serializable']).
      * @param returnType The return type string.
      * @param name The method name.
-     * @param parameters List of parameters (e.g., ['String message', 'int code']).
+     * @param parameters List of parameters (e.g., ['String message', 'int
+     * code']).
      * @param throwsClauses List of exception types.
      * @param body The method body code (inside braces).
      * @param javadoc The Javadoc text (without markers).
-     * @param anchorMemberName Optional name of an existing member to use as positioning anchor.
+     * @param anchorMemberName Optional name of an existing member to use as
+     * positioning anchor.
      * @param position The position relative to the anchor or class.
      * @param save Whether to save the file after the change.
      * @return A status message.
@@ -308,7 +342,7 @@ public class CodeRefiner extends AnahataToolkit {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             TreeMaker make = wc.getTreeMaker();
             TreeUtilities utils = wc.getTreeUtilities();
-            
+
             TypeElement te = wc.getElements().getTypeElement(classFqn);
             if (te == null) {
                 throw new AgiToolException("Class not found: " + classFqn);
@@ -340,10 +374,14 @@ public class CodeRefiner extends AnahataToolkit {
             int insertIdx = 0;
             if (position != null) {
                 insertIdx = switch (position) {
-                    case START -> 0;
-                    case END -> members.size();
-                    case BEFORE -> anchorIdx != -1 ? anchorIdx : 0;
-                    case AFTER -> anchorIdx != -1 ? anchorIdx + 1 : members.size();
+                    case START ->
+                        0;
+                    case END ->
+                        members.size();
+                    case BEFORE ->
+                        anchorIdx != -1 ? anchorIdx : 0;
+                    case AFTER ->
+                        anchorIdx != -1 ? anchorIdx + 1 : members.size();
                 };
             } else {
                 insertIdx = members.size();
@@ -364,10 +402,11 @@ public class CodeRefiner extends AnahataToolkit {
 
     /**
      * Updates an existing method structurally.
-     * 
+     *
      * @param filePath The absolute path of the Java file.
      * @param methodFqn The FQN of the method.
-     * @param annotations Optional new list of annotations. (Replaces current list)
+     * @param annotations Optional new list of annotations. (Replaces current
+     * list)
      * @param modifiers Optional new access modifiers.
      * @param typeParameters Optional new type parameters.
      * @param returnType Optional new return type.
@@ -379,7 +418,7 @@ public class CodeRefiner extends AnahataToolkit {
      * @return Status message.
      * @throws Exception If the operation fails.
      */
-    @AgiTool("Updates an existing method structurally (modifiers, annotations, body, or javadoc).")
+    @AgiTool("Updates an existing method structurally. CRITICAL: Only provide parameters you intend to change; pass null for the rest. Passing current values is redundant and may cause parsing errors if they contain annotations.")
     public String updateMethod(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The FQN of the method.") String methodFqn,
@@ -407,14 +446,14 @@ public class CodeRefiner extends AnahataToolkit {
             MethodTree mt = (MethodTree) wc.getTrees().getTree(ee);
 
             Set<Modifier> modsSet = modifiers != null ? JavaSourceUtils.getModifiersSet(modifiers) : mt.getModifiers().getFlags();
-            ModifiersTree newMods = (modifiers != null || annotations != null) ?
-                    JavaSourceUtils.buildModifiers(make, utils, modsSet, annotations) : mt.getModifiers();
-            
-            List<TypeParameterTree> tps = (typeParameters != null) ? parseTypeParameters(make, typeParameters) :
-                    new ArrayList<>(mt.getTypeParameters());
-            
-            List<VariableTree> params = (parameters != null) ? parseParameters(make, parameters) :
-                    new ArrayList<>(mt.getParameters());
+            ModifiersTree newMods = (modifiers != null || annotations != null)
+                    ? JavaSourceUtils.buildModifiers(make, utils, modsSet, annotations) : mt.getModifiers();
+
+            List<TypeParameterTree> tps = (typeParameters != null) ? parseTypeParameters(make, typeParameters)
+                    : new ArrayList<>(mt.getTypeParameters());
+
+            List<VariableTree> params = (parameters != null) ? parseParameters(make, parameters)
+                    : new ArrayList<>(mt.getParameters());
 
             List<ExpressionTree> thrws = new ArrayList<>();
             if (throwsClauses != null) {
@@ -425,15 +464,15 @@ public class CodeRefiner extends AnahataToolkit {
                 thrws.addAll(mt.getThrows());
             }
 
-            Tree finalBody = (body != null) ? 
-                    utils.parseStatement(body.trim().startsWith("{") ? body : "{" + body + "}", null) : 
-                    mt.getBody();
+            Tree finalBody = (body != null)
+                    ? utils.parseStatement(body.trim().startsWith("{") ? body : "{" + body + "}", null)
+                    : mt.getBody();
 
-            MethodTree updated = make.Method(newMods, mt.getName(), 
-                    returnType != null ? make.Type(returnType) : mt.getReturnType(), 
-                    tps, params, thrws, (com.sun.source.tree.BlockTree) finalBody, 
+            MethodTree updated = make.Method(newMods, mt.getName(),
+                    returnType != null ? make.Type(returnType) : mt.getReturnType(),
+                    tps, params, thrws, (com.sun.source.tree.BlockTree) finalBody,
                     (AnnotationTree) mt.getDefaultValue());
-            
+
             if (javadoc != null) {
                 setJavadoc(wc, updated, javadoc);
             } else {
@@ -441,6 +480,7 @@ public class CodeRefiner extends AnahataToolkit {
                     make.addComment(updated, c, true);
                 }
             }
+            updated = GeneratorUtilities.get(wc).importFQNs(updated);
             wc.rewrite(mt, updated);
         });
 
@@ -453,7 +493,7 @@ public class CodeRefiner extends AnahataToolkit {
 
     /**
      * Inserts a new field into a class structurally.
-     * 
+     *
      * @param filePath The absolute path of the Java file.
      * @param classFqn The FQN of the target class.
      * @param annotations List of annotations.
@@ -510,10 +550,14 @@ public class CodeRefiner extends AnahataToolkit {
             int insertIdx = 0;
             if (position != null) {
                 insertIdx = switch (position) {
-                    case START -> 0;
-                    case END -> members.size();
-                    case BEFORE -> anchorIdx != -1 ? anchorIdx : 0;
-                    case AFTER -> anchorIdx != -1 ? anchorIdx + 1 : members.size();
+                    case START ->
+                        0;
+                    case END ->
+                        members.size();
+                    case BEFORE ->
+                        anchorIdx != -1 ? anchorIdx : 0;
+                    case AFTER ->
+                        anchorIdx != -1 ? anchorIdx + 1 : members.size();
                 };
             } else {
                 insertIdx = members.size();
@@ -534,7 +578,7 @@ public class CodeRefiner extends AnahataToolkit {
 
     /**
      * Updates an existing field structurally.
-     * 
+     *
      * @param filePath The absolute path of the Java file.
      * @param fieldFqn The FQN of the field.
      * @param annotations Optional new list of annotations.
@@ -546,7 +590,7 @@ public class CodeRefiner extends AnahataToolkit {
      * @return Status message.
      * @throws Exception If the operation fails.
      */
-    @AgiTool("Updates an existing field structurally (modifiers, annotations, type, or initializer).")
+    @AgiTool("Updates an existing field structurally. CRITICAL: Only provide parameters you intend to change; pass null for the rest.")
     public String updateField(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The FQN of the field.") String fieldFqn,
@@ -570,15 +614,15 @@ public class CodeRefiner extends AnahataToolkit {
             VariableTree vt = (VariableTree) wc.getTrees().getTree(ve);
 
             Set<Modifier> modsSet = modifiers != null ? JavaSourceUtils.getModifiersSet(modifiers) : vt.getModifiers().getFlags();
-            ModifiersTree newMods = (modifiers != null || annotations != null) ?
-                    JavaSourceUtils.buildModifiers(make, wc.getTreeUtilities(), modsSet, annotations) : vt.getModifiers();
-            
-            ExpressionTree init = (initializer != null && !initializer.isBlank()) ? 
-                    wc.getTreeUtilities().parseExpression(initializer, null) : vt.getInitializer();
+            ModifiersTree newMods = (modifiers != null || annotations != null)
+                    ? JavaSourceUtils.buildModifiers(make, wc.getTreeUtilities(), modsSet, annotations) : vt.getModifiers();
 
-            VariableTree updated = make.Variable(newMods, vt.getName(), 
+            ExpressionTree init = (initializer != null && !initializer.isBlank())
+                    ? wc.getTreeUtilities().parseExpression(initializer, null) : vt.getInitializer();
+
+            VariableTree updated = make.Variable(newMods, vt.getName(),
                     type != null ? make.Type(type) : vt.getType(), init);
-            
+
             if (javadoc != null) {
                 setJavadoc(wc, updated, javadoc);
             } else {
@@ -586,6 +630,7 @@ public class CodeRefiner extends AnahataToolkit {
                     make.addComment(updated, c, true);
                 }
             }
+            updated = GeneratorUtilities.get(wc).importFQNs(updated);
             wc.rewrite(vt, updated);
         });
 
@@ -598,12 +643,13 @@ public class CodeRefiner extends AnahataToolkit {
 
     /**
      * Inserts a new class or inner type structurally.
-     * 
+     *
      * @param filePath The absolute path of the Java file.
      * @param parentClassFqn Optional FQN of the parent class (for inner types).
      * @param annotations List of annotations.
      * @param modifiers The access modifiers.
-     * @param kind The kind of type (CLASS, INTERFACE, ENUM, ANNOTATION_TYPE, RECORD).
+     * @param kind The kind of type (CLASS, INTERFACE, ENUM, ANNOTATION_TYPE,
+     * RECORD).
      * @param name The type name.
      * @param typeParameters Generics.
      * @param recordComponents List of record components (for RECORD kind).
@@ -655,11 +701,16 @@ public class CodeRefiner extends AnahataToolkit {
             }
 
             ClassTree newClass = switch (kind) {
-                case INTERFACE -> make.Interface(mods, name, tps, impls, Collections.<Tree>emptyList());
-                case ENUM -> make.Enum(mods, name, impls, Collections.<Tree>emptyList());
-                case ANNOTATION_TYPE -> make.AnnotationType(mods, name, Collections.<Tree>emptyList());
-                case RECORD -> make.Class(mods, name, tps, null, impls, Collections.emptyList(), components);
-                default -> make.Class(mods, name, tps, ext, impls, Collections.<Tree>emptyList());
+                case INTERFACE ->
+                    make.Interface(mods, name, tps, impls, Collections.<Tree>emptyList());
+                case ENUM ->
+                    make.Enum(mods, name, impls, Collections.<Tree>emptyList());
+                case ANNOTATION_TYPE ->
+                    make.AnnotationType(mods, name, Collections.<Tree>emptyList());
+                case RECORD ->
+                    make.Class(mods, name, tps, null, impls, Collections.emptyList(), components);
+                default ->
+                    make.Class(mods, name, tps, ext, impls, Collections.<Tree>emptyList());
             };
 
             if (javadoc != null) {
@@ -680,17 +731,21 @@ public class CodeRefiner extends AnahataToolkit {
                 int insertIdx = 0;
                 if (position != null) {
                     insertIdx = switch (position) {
-                        case START -> 0;
-                        case END -> members.size();
-                        case BEFORE -> anchorIdx != -1 ? anchorIdx : 0;
-                        case AFTER -> anchorIdx != -1 ? anchorIdx + 1 : members.size();
+                        case START ->
+                            0;
+                        case END ->
+                            members.size();
+                        case BEFORE ->
+                            anchorIdx != -1 ? anchorIdx : 0;
+                        case AFTER ->
+                            anchorIdx != -1 ? anchorIdx + 1 : members.size();
                     };
                 } else {
                     insertIdx = members.size();
                 }
                 members.add(insertIdx, newClass);
-                wc.rewrite(parentCt, make.Class(parentCt.getModifiers(), parentCt.getSimpleName(), 
-                        parentCt.getTypeParameters(), parentCt.getExtendsClause(), 
+                wc.rewrite(parentCt, make.Class(parentCt.getModifiers(), parentCt.getSimpleName(),
+                        parentCt.getTypeParameters(), parentCt.getExtendsClause(),
                         parentCt.getImplementsClause(), members));
             }
         });
@@ -704,7 +759,7 @@ public class CodeRefiner extends AnahataToolkit {
 
     /**
      * Structural 'Fix Imports' operation.
-     * 
+     *
      * @param filePath The absolute path of the Java file.
      * @param save Whether to save the file after the change.
      * @return A status message.
@@ -714,7 +769,7 @@ public class CodeRefiner extends AnahataToolkit {
     public String optimizeImports(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("Whether to save the file after the change.") boolean save) throws Exception {
-        
+
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         JavaSource js = JavaSource.forFileObject(fo);
 
@@ -734,7 +789,7 @@ public class CodeRefiner extends AnahataToolkit {
 
     /**
      * Reformats the specified file using the IDE's code style rules.
-     * 
+     *
      * @param filePath The absolute path of the Java file.
      * @param save Whether to save the file after the change.
      * @return A status message.
@@ -744,10 +799,10 @@ public class CodeRefiner extends AnahataToolkit {
     public String reformat(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("Whether to save the file after the change.") boolean save) throws Exception {
-        
+
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         JavaSource js = JavaSource.forFileObject(fo);
-        
+
         js.runModificationTask(wc -> {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             Reformat reformat = Reformat.get(wc.getDocument());
@@ -822,11 +877,11 @@ public class CodeRefiner extends AnahataToolkit {
         List<org.netbeans.api.java.source.Comment> remaining = comments.stream()
                 .filter(c -> c.style() != org.netbeans.api.java.source.Comment.Style.JAVADOC)
                 .collect(Collectors.toCollection(ArrayList::new));
-        
+
         for (int i = comments.size() - 1; i >= 0; i--) {
             make.removeComment(tree, i, true);
         }
-        
+
         for (org.netbeans.api.java.source.Comment c : remaining) {
             make.addComment(tree, c, true);
         }

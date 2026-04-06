@@ -4,6 +4,7 @@ package uno.anahata.asi.nb;
 import java.util.logging.Logger;
 import lombok.Generated;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.LoggerFactory;
 
@@ -11,6 +12,7 @@ import org.slf4j.LoggerFactory;
  * A dedicated test class for the CodeRefiner toolkit.
  */
 @Slf4j
+@SuppressWarnings("all")
 public class RefinerTest {
 
     /**
@@ -20,11 +22,13 @@ public class RefinerTest {
      */
     @NonNull
     @Generated
+    @Deprecated(since = "1.0", forRemoval = true)
     public String viscaBarca(String message) {
         log.info("Visca el Barca! Message: {}", message);
         return "Mes que un club!";
     }
     private static final Logger LOG = Logger.getLogger(RefinerTest.class.getName());
+    @Setter
     private Object newField;
     /**
      * The sacred motto of F.C. Barcelona.
@@ -62,5 +66,14 @@ public class RefinerTest {
     public <T extends Number> T celebrateGoat(T goals, String player) throws IllegalArgumentException {
         log.info(player + " is the GOAT with " + goals + " goals!");
         return goals;
+    }
+
+    /**
+     * A record representing the stats of a player.
+     */
+    class PlayerStats {
+
+        String name;
+        int goals;
     }
 }
