@@ -183,6 +183,7 @@ public class CodeModel extends AnahataToolkit {
     /**
      * Gets a paginated list of all members (fields, constructors, methods) for a given type.
      * @param javaType The keychain DTO for the type to inspect.
+     * @param nameQuery Optional query string to filter members by name.
      * @param startIndex The starting index (0-based) for pagination.
      * @param pageSize The maximum number of results to return per page.
      * @param kindFilters Optional list of member kinds to filter by (e.g., ['METHOD', 'FIELD']).
@@ -192,11 +193,18 @@ public class CodeModel extends AnahataToolkit {
     @AgiTool("Gets a paginated list of all members (fields, constructors, methods) for a given type.")
     public Page<JavaMember> getMembers(
             @AgiToolParam("The keychain DTO for the type to inspect.") JavaType javaType,
+            @AgiToolParam(value = "Optional query string to filter members by name (uses memberName.contains(nameQuery))", required = false) String nameQuery,
             @AgiToolParam(value = "The starting index (0-based) for pagination.", required = false) Integer startIndex,
             @AgiToolParam(value = "The maximum number of results to return per page.", required = false) Integer pageSize,
             @AgiToolParam(value = "Optional list of member kinds to filter by.", required = false) List<ElementKind> kindFilters) throws Exception {
         
         List<JavaMember> allMembers = javaType.getMembers();
+        
+        if (nameQuery != null && !nameQuery.isBlank()) {
+            allMembers = allMembers.stream()
+                    .filter(m -> m.getName() != null && m.getName().contains(nameQuery))
+                    .collect(Collectors.toList());
+        }
         
         if (kindFilters != null && !kindFilters.isEmpty()) {
             allMembers = allMembers.stream()
@@ -213,6 +221,7 @@ public class CodeModel extends AnahataToolkit {
     /**
      * Gets a paginated list of all members for a type specified by its fully qualified name.
      * @param fqn The fully qualified name of the type.
+     * @param nameQuery Optional query string to filter members by name.
      * @param startIndex The starting index (0-based) for pagination.
      * @param pageSize The maximum number of results to return per page.
      * @param kindFilters Optional list of member kinds to filter by.
@@ -222,10 +231,11 @@ public class CodeModel extends AnahataToolkit {
     @AgiTool("Gets a paginated list of all members for a type specified by its fully qualified name. Fails if the FQN is ambiguous.")
     public Page<JavaMember> getMembersByFqn(
             @AgiToolParam("The fully qualified name of the type.") String fqn,
+            @AgiToolParam(value = "Optional query string to filter members by name (uses memberName.contains(nameQuery))", required = false) String nameQuery,
             @AgiToolParam(value = "The starting index (0-based) for pagination.", required = false) Integer startIndex,
             @AgiToolParam(value = "The maximum number of results to return per page.", required = false) Integer pageSize,
             @AgiToolParam(value = "Optional list of member kinds to filter by.", required = false) List<ElementKind> kindFilters) throws Exception {
-        return getMembers(resolveUniqueType(fqn), startIndex, pageSize, kindFilters);
+        return getMembers(resolveUniqueType(fqn), nameQuery, startIndex, pageSize, kindFilters);
     }
 
     /**
