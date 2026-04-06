@@ -76,7 +76,8 @@ public class Session extends AnahataToolkit {
      */
     @AgiTool(value = "Updates the current AGI session's summary. This shows the ASI container's dashboard, update it with a brief summary of what you are doing or what you have just accomplished. "
             + "Usage: Call this if you are calling other real-task tools in the same batch, once per turn max, never as the only toll call in the turn.",
-            permission = ToolPermission.APPROVE_ALWAYS)
+            permission = ToolPermission.APPROVE_ALWAYS,
+            maxDepth = 1)
     public String updateSessionSummary(@AgiToolParam("A concise summary of the conversation's current state.") String summary) {
         uno.anahata.asi.agi.Agi domainAgi = getAgi();
         if (summary != null && !summary.isBlank()) {
