@@ -425,13 +425,13 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
             sb.append("\n\n**").append(at.getName()).append("**");
             sb.append("\n- ID: `").append(at.getName()).append("` ");
             sb.append("\n- Description: ").append(at.getDescription());
-            sb.append("\n- Disabled Tools (permission never): ").append(at.getDisabledTools().size());
+            sb.append("\n- Disabled Tools (permission never) *Do not call or they will fail automatically, Ask the user to grant permission if you think need any of these*: ").append(at.getDisabledTools().size());
             for (AbstractTool t: at.getDisabledTools()) {
                 sb.append("\n  - ").append(t.getName()).append(":").append(t.getDescription());
             }
         }
         
-        sb.append("\n\n**Disabled Toolkits**: You can suggest the user to enable them:\n");
+        sb.append("\n\n**Disabled Toolkits**: Currently disabled to save tokens or for permormance resoons or by user preferences, you can ask the user if it is ok to enable them, enable them yourself without asking or suggest the user to enable them:\n");
         for (AbstractToolkit<?> at: getDisabledToolkits()) {
             sb.append("\n\n**").append(at.getName()).append("**");
             sb.append("\n- ID: `").append(at.getName()).append("` ");
