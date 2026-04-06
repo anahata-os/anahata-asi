@@ -14,9 +14,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import lombok.extern.slf4j.Slf4j;
@@ -101,7 +103,6 @@ public class CodeRefiner extends AnahataToolkit {
             }
             
             Tree tree = wc.getTrees().getTree(element);
-            AnnotationTree newAnno = make.Annotation(make.Identifier(annotationSource.replace("@", "")), Collections.emptyList());
             
             ModifiersTree oldModifiers = null;
             if (tree instanceof ClassTree ct) {
@@ -113,7 +114,7 @@ public class CodeRefiner extends AnahataToolkit {
             }
 
             if (oldModifiers != null) {
-                ModifiersTree newModifiers = make.addModifiersAnnotation(oldModifiers, newAnno);
+                ModifiersTree newModifiers = JavaSourceUtils.buildModifiers(make, wc.getTreeUtilities(), oldModifiers.getFlags(), Collections.singletonList(annotationSource));
                 wc.rewrite(oldModifiers, newModifiers);
                 
                 CompilationUnitTree cut = genUtils.importFQNs(wc.getCompilationUnit());
@@ -314,7 +315,8 @@ public class CodeRefiner extends AnahataToolkit {
             }
             ClassTree ct = (ClassTree) wc.getTrees().getTree(te);
 
-            ModifiersTree mods = JavaSourceUtils.buildModifiers(make, utils, modifiers, annotations);
+            Set<Modifier> modsSet = JavaSourceUtils.getModifiersSet(modifiers);
+            ModifiersTree mods = JavaSourceUtils.buildModifiers(make, utils, modsSet, annotations);
             List<TypeParameterTree> tps = parseTypeParameters(make, typeParameters);
             List<VariableTree> params = parseParameters(make, parameters);
 
@@ -365,7 +367,7 @@ public class CodeRefiner extends AnahataToolkit {
      * 
      * @param filePath The absolute path of the Java file.
      * @param methodFqn The FQN of the method.
-     * @param annotations Optional new list of annotations.
+     * @param annotations Optional new list of annotations. (Replaces current list)
      * @param modifiers Optional new access modifiers.
      * @param typeParameters Optional new type parameters.
      * @param returnType Optional new return type.
@@ -404,10 +406,9 @@ public class CodeRefiner extends AnahataToolkit {
             }
             MethodTree mt = (MethodTree) wc.getTrees().getTree(ee);
 
+            Set<Modifier> modsSet = modifiers != null ? JavaSourceUtils.getModifiersSet(modifiers) : mt.getModifiers().getFlags();
             ModifiersTree newMods = (modifiers != null || annotations != null) ?
-                    JavaSourceUtils.buildModifiers(make, utils, 
-                            modifiers != null ? modifiers : mt.getModifiers().toString(), 
-                            annotations) : mt.getModifiers();
+                    JavaSourceUtils.buildModifiers(make, utils, modsSet, annotations) : mt.getModifiers();
             
             List<TypeParameterTree> tps = (typeParameters != null) ? parseTypeParameters(make, typeParameters) :
                     new ArrayList<>(mt.getTypeParameters());
@@ -493,7 +494,8 @@ public class CodeRefiner extends AnahataToolkit {
             }
             ClassTree ct = (ClassTree) wc.getTrees().getTree(te);
 
-            ModifiersTree mods = JavaSourceUtils.buildModifiers(make, wc.getTreeUtilities(), modifiers, annotations);
+            Set<Modifier> modsSet = JavaSourceUtils.getModifiersSet(modifiers);
+            ModifiersTree mods = JavaSourceUtils.buildModifiers(make, wc.getTreeUtilities(), modsSet, annotations);
             ExpressionTree init = (initializer != null && !initializer.isBlank()) ? wc.getTreeUtilities().parseExpression(initializer, null) : null;
             VariableTree newField = make.Variable(mods, name, make.Type(type), init);
 
@@ -567,10 +569,9 @@ public class CodeRefiner extends AnahataToolkit {
             }
             VariableTree vt = (VariableTree) wc.getTrees().getTree(ve);
 
+            Set<Modifier> modsSet = modifiers != null ? JavaSourceUtils.getModifiersSet(modifiers) : vt.getModifiers().getFlags();
             ModifiersTree newMods = (modifiers != null || annotations != null) ?
-                    JavaSourceUtils.buildModifiers(make, wc.getTreeUtilities(), 
-                            modifiers != null ? modifiers : vt.getModifiers().toString(), 
-                            annotations) : vt.getModifiers();
+                    JavaSourceUtils.buildModifiers(make, wc.getTreeUtilities(), modsSet, annotations) : vt.getModifiers();
             
             ExpressionTree init = (initializer != null && !initializer.isBlank()) ? 
                     wc.getTreeUtilities().parseExpression(initializer, null) : vt.getInitializer();
@@ -602,9 +603,10 @@ public class CodeRefiner extends AnahataToolkit {
      * @param parentClassFqn Optional FQN of the parent class (for inner types).
      * @param annotations List of annotations.
      * @param modifiers The access modifiers.
-     * @param kind The kind of type (CLASS, INTERFACE, ENUM, ANNOTATION_TYPE).
+     * @param kind The kind of type (CLASS, INTERFACE, ENUM, ANNOTATION_TYPE, RECORD).
      * @param name The type name.
      * @param typeParameters Generics.
+     * @param recordComponents List of record components (for RECORD kind).
      * @param extendsClause Optional superclass.
      * @param implementsClauses Optional interfaces.
      * @param javadoc The Javadoc text.
@@ -623,6 +625,7 @@ public class CodeRefiner extends AnahataToolkit {
             @AgiToolParam("The type kind (e.g., CLASS, INTERFACE).") com.sun.source.tree.Tree.Kind kind,
             @AgiToolParam("The type name.") String name,
             @AgiToolParam(value = "Type parameters for generics.", required = false) List<String> typeParameters,
+            @AgiToolParam(value = "List of record components (e.g., 'String name').", required = false) List<String> recordComponents,
             @AgiToolParam(value = "The superclass.", required = false) String extendsClause,
             @AgiToolParam(value = "List of implemented interfaces.", required = false) List<String> implementsClauses,
             @AgiToolParam(value = "The Javadoc content.", required = false) String javadoc,
@@ -638,8 +641,10 @@ public class CodeRefiner extends AnahataToolkit {
             TreeMaker make = wc.getTreeMaker();
             TreeUtilities utils = wc.getTreeUtilities();
 
-            ModifiersTree mods = JavaSourceUtils.buildModifiers(make, utils, modifiers, annotations);
+            Set<Modifier> modsSet = JavaSourceUtils.getModifiersSet(modifiers);
+            ModifiersTree mods = JavaSourceUtils.buildModifiers(make, utils, modsSet, annotations);
             List<TypeParameterTree> tps = parseTypeParameters(make, typeParameters);
+            List<VariableTree> components = parseRecordComponents(make, recordComponents);
 
             Tree ext = (extendsClause != null && !extendsClause.isBlank()) ? make.Type(extendsClause) : null;
             List<Tree> impls = new ArrayList<>();
@@ -653,6 +658,7 @@ public class CodeRefiner extends AnahataToolkit {
                 case INTERFACE -> make.Interface(mods, name, tps, impls, Collections.<Tree>emptyList());
                 case ENUM -> make.Enum(mods, name, impls, Collections.<Tree>emptyList());
                 case ANNOTATION_TYPE -> make.AnnotationType(mods, name, Collections.<Tree>emptyList());
+                case RECORD -> make.Class(mods, name, tps, null, impls, Collections.emptyList(), components);
                 default -> make.Class(mods, name, tps, ext, impls, Collections.<Tree>emptyList());
             };
 
@@ -770,6 +776,22 @@ public class CodeRefiner extends AnahataToolkit {
                 String type = parts[0];
                 String name = parts[1];
                 result.add(make.Variable(make.Modifiers(Collections.emptySet()), name, make.Type(type), null));
+            }
+        }
+        return result;
+    }
+
+    private List<VariableTree> parseRecordComponents(TreeMaker make, List<String> components) {
+        if (components == null || components.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<VariableTree> result = new ArrayList<>();
+        for (String c : components) {
+            String[] parts = c.trim().split("\\s+");
+            if (parts.length >= 2) {
+                String type = parts[0];
+                String name = parts[1];
+                result.add(make.RecordComponent(make.Modifiers(Collections.emptySet()), name, make.Type(type)));
             }
         }
         return result;

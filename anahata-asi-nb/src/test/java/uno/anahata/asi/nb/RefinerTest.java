@@ -49,4 +49,18 @@ public class RefinerTest {
         log.info("Messi scores again!");
         return "Gooooool!";
     }
+
+    /**
+     * Celebrates the GOAT with generics and multiple parameters.
+     * @param <T> The numeric type for goals.
+     * @param goals The number of goals.
+     * @param player The player name.
+     * @return The goal count.
+     * @throws IllegalArgumentException if the player is not Messi.
+     */
+    @Generated
+    public <T extends Number> T celebrateGoat(T goals, String player) throws IllegalArgumentException {
+        log.info(player + " is the GOAT with " + goals + " goals!");
+        return goals;
+    }
 }

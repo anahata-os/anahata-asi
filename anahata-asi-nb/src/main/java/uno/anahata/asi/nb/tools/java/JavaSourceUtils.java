@@ -7,6 +7,7 @@ import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.ModifiersTree;
 import com.sun.source.tree.Tree;
+import com.sun.source.tree.Tree.Kind;
 import com.sun.source.tree.VariableTree;
 import java.io.File;
 import java.io.IOException;
@@ -231,23 +232,15 @@ public class JavaSourceUtils {
     }
 
     /**
-     * Builds a {@link ModifiersTree} structurally using the NetBeans parser 
-     * to handle complex annotation attributes and modifiers correctly.
+     * Builds a {@link ModifiersTree} structurally using the NetBeans parser.
      *
      * @param make The TreeMaker.
      * @param utils The TreeUtilities.
-     * @param modifiersStr The space-separated modifiers (e.g., 'public final').
-     * @param annotations List of annotation strings (e.g., ['@NonNull', '@AgiTool(maxDepth=4)']).
+     * @param modifiers The set of modifiers.
+     * @param annotations List of annotation strings.
      * @return The constructed ModifiersTree.
      */
-    public static ModifiersTree buildModifiers(TreeMaker make, TreeUtilities utils, String modifiersStr, List<String> annotations) {
-        Set<Modifier> mods = EnumSet.noneOf(Modifier.class);
-        if (modifiersStr != null && !modifiersStr.isBlank()) {
-            for (String m : modifiersStr.split("\\s+")) {
-                mods.add(Modifier.valueOf(m.toUpperCase()));
-            }
-        }
-
+    public static ModifiersTree buildModifiers(TreeMaker make, TreeUtilities utils, Set<Modifier> modifiers, List<String> annotations) {
         List<AnnotationTree> annos = new ArrayList<>();
         if (annotations != null && !annotations.isEmpty()) {
             for (String a : annotations) {
@@ -255,13 +248,58 @@ public class JavaSourceUtils {
                 if (clean.contains("(")) {
                     String type = clean.substring(0, clean.indexOf("("));
                     String args = clean.substring(clean.indexOf("(") + 1, clean.lastIndexOf(")"));
-                    annos.add(make.Annotation(make.Type(type), Collections.singletonList(utils.parseExpression(args, null))));
+                    List<String> attrList = splitAttributes(args);
+                    List<ExpressionTree> exprs = new ArrayList<>();
+                    for (String attr : attrList) {
+                        exprs.add(utils.parseExpression(attr, null));
+                    }
+                    annos.add(make.Annotation(make.Type(type), exprs));
                 } else {
                     annos.add(make.Annotation(make.Type(clean), Collections.emptyList()));
                 }
             }
         }
-        return make.Modifiers(mods, annos);
+        return make.Modifiers(modifiers, annos);
+    }
+
+    /**
+     * Parses a space-separated string of modifiers into a set.
+     * 
+     * @param modifiersStr The string (e.g., 'public final').
+     * @return The set of modifiers.
+     */
+    public static Set<Modifier> getModifiersSet(String modifiersStr) {
+        Set<Modifier> mods = EnumSet.noneOf(Modifier.class);
+        if (modifiersStr != null && !modifiersStr.isBlank()) {
+            for (String m : modifiersStr.split("\\s+")) {
+                mods.add(Modifier.valueOf(m.toUpperCase()));
+            }
+        }
+        return mods;
+    }
+
+    private static List<String> splitAttributes(String args) {
+        List<String> result = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        int depth = 0;
+        for (char c : args.toCharArray()) {
+            if (c == '(' || c == '{' || c == '[') {
+                depth++;
+            } else if (c == ')' || c == '}' || c == ']') {
+                depth--;
+            }
+            
+            if (c == ',' && depth == 0) {
+                result.add(current.toString().trim());
+                current = new StringBuilder();
+            } else {
+                current.append(c);
+            }
+        }
+        if (current.length() > 0) {
+            result.add(current.toString().trim());
+        }
+        return result;
     }
 
     /**
