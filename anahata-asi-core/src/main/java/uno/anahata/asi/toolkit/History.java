@@ -77,7 +77,7 @@ public class History extends AnahataToolkit {
         s += "The ASI framework supports two strategys for providing message and part metadata for all entries in the session's history:\n"
                 + "a) **In-Band metadata injection**:"
                 + "\n\t When enabled, Message metadata is injected as a text part at the start of each message and Part metadata headers will be injected as text part right before each original part."
-                + " In this mode, only pruned parts contain the hint about what the part was about."
+                + " In this mode, only pruned parts contain the hint about what the part was about but you have to be **super careful not to include metadata in your response, you have to understand that all metadata is programatically injected by the framework and that your response cannot include metadata.**"
                 + "\nb) **Consolidated Metadata Index in RAG Message**:"
                 + "\n\t All history metadata is consolidated into a single text part in the RAG message. Hints are included for all parts regardless of wether they are pruned or not so it is easier to map them to the original part in the actual history (it uses a bit more tokens than the in-band strategy).";
 
