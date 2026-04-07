@@ -76,15 +76,10 @@ public class History extends AnahataToolkit {
         s += "\n\n**History Metadata Positioning**: \n";
         s += "The ASI framework supports two strategys for providing message and part metadata for all entries in the session's history:\n"
                 + "a) **In-Band metadata injection**:"
-                + "\n\t When enabled, Message metadata is injected as a text part at the start of each message and Part metadata headers will be injected as text before each part."
-                + " In this mode, you will be restricted to only using the tools from the History toolkit so you must disable in-band metadata injection once you are done with the pruning or pining operations. "
+                + "\n\t When enabled, Message metadata is injected as a text part at the start of each message and Part metadata headers will be injected as text part right before each original part."
+                + " In this mode, only pruned parts contain the hint about what the part was about."
                 + "\nb) **Consolidated Metadata Index in RAG Message**:"
-                + "\n\t All history metadata is consolidated into a single text part in the RAG message. No tool calling restrictions in this mode, you can prune, pin or set to auto any time you want.";
-        
-        s += "\n\n**Instructions**: "
-                + "\n1)You must keep context window size within bounds and you should also maximize token usage efficency for the user so prune any parts or messages from the history that are redundant or unneccessary as-you-go (you don't need to wait for the context window usage to be 90%+ or the user to ask you to prune or compress the context, you should always prune anything that you think should be pruned unless the user orders you otherwise)."
-                + "\n2)It is your risponsability to pin any parts or messages that you need to keep in context before they get automatically pruned or garbage collected. While the default max depth policies are a general template, you can't expect the user to pin tool calls manually or any other parts or messages that need to stay in context beyond its default retations turns";
-
+                + "\n\t All history metadata is consolidated into a single text part in the RAG message. Hints are included for all parts regardless of wether they are pruned or not so it is easier to map them to the original part in the actual history (it uses a bit more tokens than the in-band strategy).";
 
         s += "\n\nCurrent History Metadata Positioning Strategy: ";
         if (getAgi().getRequestConfig().isInjectInbandMetadata()) {
@@ -92,7 +87,10 @@ public class History extends AnahataToolkit {
         } else {
             s += "**Consolidated Metadata Index in RAG Message.**";
         }
-        
+
+        s += "\n\n**Instructions**: "
+                + "\n1)You must keep context window size within bounds and you should also maximize token usage efficency for the user so prune any parts or messages from the history that are redundant or unneccessary as-you-go (you don't need to wait for the context window usage to be 90%+ or the user to ask you to prune or compress the context, you should always prune anything that you think should be pruned unless the user orders you otherwise. Also alert the user of any abnormally token heavy parts or resources that seem to be no longer needed."
+                + "\n2)It is your risponsability to pin any parts or messages that you need to keep in context before they get automatically pruned or garbage collected. While the default max depth policies are a general template, you can't expect the user to pin tool calls manually or any other parts or messages that need to stay in context beyond its default retations turns";
 
         return Collections.singletonList(s);
     }
@@ -138,7 +136,7 @@ public class History extends AnahataToolkit {
 
     /**
      * Creates the consolidated history index.
-     * 
+     *
      * @return
      */
     public String createConsolidatedIndex() {

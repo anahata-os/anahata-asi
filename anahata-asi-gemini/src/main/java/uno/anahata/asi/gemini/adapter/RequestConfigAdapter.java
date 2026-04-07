@@ -133,7 +133,7 @@ public final class RequestConfigAdapter {
                 
                 FunctionCallingConfig.Builder fccb = FunctionCallingConfig.builder();
                 
-                if (requestConfig.isInjectInbandMetadata()) {
+                if (/*requestConfig.isInjectInbandMetadata()*/false) {
                     log.info("In-band Metadata injection enabled, only History tools are allowed: " + historyToolNames);
                     fccb.allowedFunctionNames(historyToolNames);
                     fccb.mode(FunctionCallingConfigMode.Known.ANY);
