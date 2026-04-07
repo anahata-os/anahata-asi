@@ -196,7 +196,7 @@ public final class AgiTopComponent extends TopComponent {
     private void showLoading() {
         removeAll();
         JPanel loadingPanel = new JPanel(new BorderLayout());
-        JLabel label = new JLabel("Initializing Blaugrana Brain...", SwingConstants.CENTER);
+        JLabel label = new JLabel("Initializing AGI Container...", SwingConstants.CENTER);
         label.setFont(label.getFont().deriveFont(Font.BOLD, 14f));
         loadingPanel.add(label, BorderLayout.CENTER);
         add(loadingPanel, BorderLayout.CENTER);
