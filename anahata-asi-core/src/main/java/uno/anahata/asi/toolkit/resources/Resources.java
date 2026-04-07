@@ -54,18 +54,18 @@ public class Resources extends AnahataToolkit {
         return Collections.singletonList(
                 "**Resources Toolkit**:\n"
                 + "In The Anahata ASI platform, resources can be local or remote, and they have a ContextPosition attribute that can take the following values:\n"
-                        + "\tSYSTEM_INSTRUCTIONS: They are loaded directly into the system instructions (only the user or the platform can do this).\n"
-                        + "\tPROMPT_AUGMENTATION: Their are included on the RAG message.\n"
+                + "\tSYSTEM_INSTRUCTIONS: They are loaded directly into the system instructions (only the user or the platform can do this).\n"
+                + "\tPROMPT_AUGMENTATION: Their are included on the RAG message.\n"
                 + "Regardless of the position, resources are always preceeded by a beautiful header containing all the metadata about the resource and they can "
-                        + "be updated regarless of the position for as long as they are 'writable'. You don't need to re-load a resource positioned as SYSTEM_INSTRUCTIONS "
-                        + "to make updates to it. All you need is the uuid and the lastModified timestamp.\n\n "
+                + "be updated regarless of the position for as long as they are 'writable'. You don't need to re-load a resource positioned as SYSTEM_INSTRUCTIONS "
+                + "to make updates to it. All you need is the uuid and the lastModified timestamp.\n\n "
                 + "*\nVery important rules for working with resources:*\n"
                 + "1. **Context Integrity**: You can only modify resources currently in context. Always use the `lastModified` timestamp from the resource header (either in RAG message or in the system instructions). This applies to all tools that modify resources **Do not rely on your internal memory of the previous successful edit**\n"
                 + "2. **Reasoning**: Always provide a meaningful `reason` each time you update a resource; it will be displayed as an AI comment in the UI.\n"
                 + "3. **Updating resources**: All update resource tools flush the changes to disk inmediatly when `EXECUTED`.\n "
                 + "4. **Rag Message**: The Rag Message is the source of truth for resource modifications, it gets freshly generated when the user completes his turn (i.e. after all tools in the batch have been executed or declined). "
-                        + "All resources registered with `LIVE` refresh policy are garanteed to be up to date (in sync) with the underlying storage.\n"
-                + "5. **Resources.editTextResource tool**: This is not a git style tool that requires surrounding anchor lines. It is a strict, surgical 1-based line number tool with optimistic locking validation for text resources loaded with includeLineNumbers=true."
+                + "All resources registered with `LIVE` refresh policy are garanteed to be up to date (in sync) with the underlying storage.\n"
+        /*+ "5. **Resources.editTextResource tool**: This is not a git style tool that requires surrounding anchor lines. It is a strict, surgical 1-based line number tool with optimistic locking validation for text resources loaded with includeLineNumbers=true."
                         + " The UI for this tool shows the user a rich graphical diff visualizer with the edits you intend to make to the text resource and overlays comic-style annotations with the reasons for your edits on the right hand side of the diff viewer. "
                         + "\n\tUse this tool **paying careful attention to the line numbers in the RAG message** and use it in a **user-oriented way** choosing the appropiate type of edit (insert / replace / delete) for each logical change you intend to make."
                         + " **\n\tDo not use replacements with existing surrounding lines that need no change when you can perform the edits with pure inserts**. This is very important for the following reasons: "
@@ -74,10 +74,9 @@ public class Resources extends AnahataToolkit {
                         + "\n\tc)Will cause the comic-style bubbles to be offset (on a line that has no changes)."
                         + "\n\tFor these reasons, when using the editTextResource tool, **you MUST always choose 'inserts' over 'replacements' when possible**.\n"
                         + "\n\tWhen adding Javadoc or comments, always use LineInsertion unless you are explicitly correcting an existing (and poorly formatted) comment. Replacing a line with 'itself plus more' is a common source of coordinate errors."
-                        + "\n\tBoundary Syntax Check: Before finalizing a range, check the lines immediately above (startLine - 1) and below (endLine + 1). If they contain syntax markers like /**, */, {, or }, ensure you aren't accidentally orphaning them or creating duplicates."
+                        + "\n\tBoundary Syntax Check: Before finalizing a range, check the lines immediately above (startLine - 1) and below (endLine + 1). If they contain syntax markers like , {, or }, ensure you aren't accidentally orphaning them or creating duplicates.";*/
         );
     }
-
 
     /**
      * Intelligently resolves the actor string for registration heritage.
@@ -244,32 +243,32 @@ public class Resources extends AnahataToolkit {
     }
 
     /**
-     * Performs a set of semantic line edits (insertions, replacements, deletions) 
-     * in an existing file.
+     * Performs a set of semantic line edits (insertions, replacements,
+     * deletions) in an existing file.
      * <p>
-     * This is the next-generation surgical editor that targets absolute 
+     * This is the next-generation surgical editor that targets absolute
      * coordinates from the RAG message without requiring mental arithmetic.
      * </p>
-     * 
+     *
      * @param edits The semantic line edits DTO.
      * @return A standard unified diff of the changes applied.
      * @throws Exception if application fails.
      */
-    @AgiTool(value = "An ultra-precise, surgical text resource editor for text resources in the RAG message with 'includeLineNumbers' enabled.\n\n "
-            + "Targets absolute 1-based line numbers from the RAG message using semantic intent (Insert, Replace, Delete). "
-            + "You must target the static line numbers of the RAG message, **don't calculate line shifts manually** for a batch of edits, the tool does this."
-            + "\n**Vertification**: is based on **otpimistic locking** with the **lastModified** timestamp in the RAG message and  "
-            + "**not based on surrounding anchors like git-patch style tools**. "
-            + "\n**Boundary Syntax Check**: Before finalizing a range, check the lines immediately above (startLine - 1) and below (endLine + 1). If they contain syntax markers like /**, */, {, or }, ensure you aren't accidentally orphaning them or creating duplicates."
-            + "\n**One tool call per resource per turn**: In any given turn, you can only use this tool once for each resource (you can't call this tool twice for the same resource on the same turn) "
-            + "\n**Do not use LineReplacements when you can achvie the same result with LineInserts**: if you can perform a change using pure insertions do it, never use replacements that start with one or two lines of existing 'anchor' content of the above lines or below lines, just the lines that need changing: For example, if you need to add javadoc to two fields and a constructor that are next to each other, always use 3 inserts rather than 1 big replacement."
-            + "\n\n"
-            + "All line numbers you use when calling this tool must correspond to the exact line numbers in the text resource in the RAG message, all changes are performed based on the line numbers of the resource in the RAG message, the tool handles index shifting automatically.\n\n"
-            + "\n\n**UI**:Your intended edits are presented to the user in a graphical diff viewer where the user reviews your proposed changes and sees the lines that have changed highlighted along with comic-style bubbles (annotations) with your comments / resons on the right hand side of the diff (the tool already works out the line numbers where the annotations on the right hand side of the diff are ment to be shown). "
-            //+ "Always make sure that each edit (regardless of wether it is an LineInsertion, a LineReplacement or a LineDeletion correspond to a single 'intent' that the user is going to review. "
-            + "\nWhen adding Javadoc or comments, always use LineInsertion unless you are explicitly correcting an existing (and poorly formatted) comment. Replacing a line with 'itself plus more' is a common source of coordinate errors."
-            + "\n\n**Tip**: Before submitting, always check the content of startLine - 1 and endLine + 1 in the RAG message to ensure you are not creating redundant syntax (e.g., double brackets, double javadoc markers, or broken indentation).",
-            permission = ToolPermission.DENY)
+//    @AgiTool(value = "An ultra-precise, surgical text resource editor for text resources in the RAG message with 'includeLineNumbers' enabled.\n\n "
+//            + "Targets absolute 1-based line numbers from the RAG message using semantic intent (Insert, Replace, Delete). "
+//            + "You must target the static line numbers of the RAG message, **don't calculate line shifts manually** for a batch of edits, the tool does this."
+//            + "\n**Vertification**: is based on **otpimistic locking** with the **lastModified** timestamp in the RAG message and  "
+//            + "**not based on surrounding anchors like git-patch style tools**. "
+//            + "\n**Boundary Syntax Check**: Before finalizing a range, check the lines immediately above (startLine - 1) and below (endLine + 1). If they contain syntax markers like /**, */, {, or }, ensure you aren't accidentally orphaning them or creating duplicates."
+//            + "\n**One tool call per resource per turn**: In any given turn, you can only use this tool once for each resource (you can't call this tool twice for the same resource on the same turn) "
+//            + "\n**Do not use LineReplacements when you can achvie the same result with LineInserts**: if you can perform a change using pure insertions do it, never use replacements that start with one or two lines of existing 'anchor' content of the above lines or below lines, just the lines that need changing: For example, if you need to add javadoc to two fields and a constructor that are next to each other, always use 3 inserts rather than 1 big replacement."
+//            + "\n\n"
+//            + "All line numbers you use when calling this tool must correspond to the exact line numbers in the text resource in the RAG message, all changes are performed based on the line numbers of the resource in the RAG message, the tool handles index shifting automatically.\n\n"
+//            + "\n\n**UI**:Your intended edits are presented to the user in a graphical diff viewer where the user reviews your proposed changes and sees the lines that have changed highlighted along with comic-style bubbles (annotations) with your comments / resons on the right hand side of the diff (the tool already works out the line numbers where the annotations on the right hand side of the diff are ment to be shown). "
+//            //+ "Always make sure that each edit (regardless of wether it is an LineInsertion, a LineReplacement or a LineDeletion correspond to a single 'intent' that the user is going to review. "
+//            + "\nWhen adding Javadoc or comments, always use LineInsertion unless you are explicitly correcting an existing (and poorly formatted) comment. Replacing a line with 'itself plus more' is a common source of coordinate errors."
+//            + "\n\n**Tip**: Before submitting, always check the content of startLine - 1 and endLine + 1 in the RAG message to ensure you are not creating redundant syntax (e.g., double brackets, double javadoc markers, or broken indentation).",
+//            permission = ToolPermission.DENY)
     public String editTextResource(
             @AgiToolParam("Contains the resource uuid, the lastModified timestamp and a set of line modifications targeting the absolute 1 based line numbers of a text resource in the RAG message.") TextResourceLineEdits edits) throws Exception {
         edits.validate(getAgi());
