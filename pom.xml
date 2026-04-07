@@ -85,6 +85,7 @@
         <module>anahata-asi-web</module>
         <module>anahata-asi-nb</module>
         <module>anahata-asi-yam</module>
+        <module>anahata-asi-openai</module>
         <module>anahata-asi-desktop</module>
     </modules>
 
@@ -191,6 +192,11 @@
                 <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-core</artifactId>
                 <version>${swagger.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.module</groupId>
