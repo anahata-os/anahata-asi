@@ -418,7 +418,7 @@ public class CodeRefiner extends AnahataToolkit {
      * @return Status message.
      * @throws Exception If the operation fails.
      */
-    @AgiTool("Updates an existing method structurally. CRITICAL: Only provide parameters you intend to change; pass null for the rest. Passing current values is redundant and may cause parsing errors if they contain annotations.")
+    @AgiTool("Updates an existing method structurally. CRITICAL: Only provide parameters you intend to change; Do not provide the rest. Passing current values is redundant and prone to problems.")
     public String updateMethod(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The FQN of the method.") String methodFqn,
@@ -805,12 +805,15 @@ public class CodeRefiner extends AnahataToolkit {
 
         js.runModificationTask(wc -> {
             wc.toPhase(JavaSource.Phase.RESOLVED);
-            Reformat reformat = Reformat.get(wc.getDocument());
-            reformat.lock();
-            try {
-                reformat.reformat(0, wc.getDocument().getLength());
-            } finally {
-                reformat.unlock();
+            javax.swing.text.Document doc = wc.getDocument();
+            if (doc != null) {
+                Reformat reformat = Reformat.get(doc);
+                reformat.lock();
+                try {
+                    reformat.reformat(0, doc.getLength());
+                } finally {
+                    reformat.unlock();
+                }
             }
         }).commit();
 

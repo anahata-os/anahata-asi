@@ -21,6 +21,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.java.source.CompilationController;
 import org.netbeans.api.java.source.ElementHandle;
 import org.netbeans.api.java.source.JavaSource;
@@ -43,6 +44,7 @@ import uno.anahata.asi.agi.tool.AgiToolException;
  *
  * @author anahata
  */
+@Slf4j
 public class JavaSourceUtils {
 
     /**
@@ -272,7 +274,11 @@ public class JavaSourceUtils {
         Set<Modifier> mods = EnumSet.noneOf(Modifier.class);
         if (modifiersStr != null && !modifiersStr.isBlank()) {
             for (String m : modifiersStr.split("\\s+")) {
-                mods.add(Modifier.valueOf(m.toUpperCase()));
+                try {
+                    mods.add(Modifier.valueOf(m.toUpperCase()));
+                } catch (IllegalArgumentException e) {
+                    log.error("Could not parse modifier {}",m);
+                }
             }
         }
         return mods;
