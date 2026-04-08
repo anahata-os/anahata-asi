@@ -16,7 +16,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import javax.swing.*;
 import javax.swing.undo.UndoManager;
 import lombok.Getter;
@@ -27,6 +26,7 @@ import org.jdesktop.swingx.JXTextArea;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.message.AbstractModelMessage;
 import uno.anahata.asi.agi.message.InputUserMessage;
+import uno.anahata.asi.agi.message.UserMessage;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.resource.handle.ResourceHandle;
 import uno.anahata.asi.agi.resource.ResourceManager;
@@ -37,7 +37,6 @@ import uno.anahata.asi.swing.icons.AttachIcon;
 import uno.anahata.asi.swing.icons.CancelIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.FramesIcon;
-import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.icons.RunAndSendIcon;
 import uno.anahata.asi.swing.icons.StopIcon;
@@ -497,9 +496,9 @@ public class InputPanel extends JPanel {
      * </p>
      */
     private void updateStagedMessageUI() {
-        InputUserMessage staged = agi.getStagedUserMessage();
-        if (staged != null) {
-            String text = staged.getText();
+        UserMessage staged = agi.getStagedUserMessage();
+        if (staged != null && staged instanceof InputUserMessage stagedInputUserMessage) {
+            String text = stagedInputUserMessage.getText();
             if (text.length() > 50) {
                 text = text.substring(0, 47) + "...";
             }
@@ -544,11 +543,11 @@ public class InputPanel extends JPanel {
      * suggested by the ASI before final submission.
      */
     private void revertStagedMessage() {
-        InputUserMessage staged = agi.getStagedUserMessage();
-        if (staged != null) {
+        UserMessage staged = agi.getStagedUserMessage();
+        if (staged != null && staged instanceof InputUserMessage stagedInputUserMessage) {
             agi.setStagedUserMessage(null);
-            this.currentMessage = staged;
-            inputTextArea.setText(staged.getText());
+            this.currentMessage = stagedInputUserMessage;
+            inputTextArea.setText(stagedInputUserMessage.getText());
             InputUserMessagePanel newRenderer = new InputUserMessagePanel(agiPanel, this.currentMessage);
             previewScrollPane.setViewportView(newRenderer);
             this.inputMessagePreview = newRenderer;

@@ -5,8 +5,10 @@ package uno.anahata.asi.toolkit;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.agi.context.ContextManager;
 import uno.anahata.asi.agi.context.ContextProvider;
@@ -246,6 +248,26 @@ public class Session extends AnahataToolkit {
                     .map(tc -> tc.getToolName() + " (ID: " + tc.getId() + ")")
                     .collect(Collectors.joining(", ")));
             sb.append("\n");
+        }
+
+        // Child AGI Status Tracking: Provide visibility into spawned sessions
+        List<Agi> children = domainAgi.getChildren();
+
+        if (!children.isEmpty()) {
+            sb.append("\n### Child AGI Sessions\n");
+            Optional<AsiContainer> acOpt = domainAgi.getToolkit(AsiContainer.class);
+            if (acOpt.isPresent()) {
+                AsiContainer ac = acOpt.get();
+                for (Agi child : children) {
+                    // Leverage the beautiful detailed dump from the AsiContainer toolkit
+                    sb.append(ac.getAgiDetails(child.getConfig().getSessionId())).append("\n");
+                }
+            } else {
+                // Fallback if the toolkit is disabled
+                for (Agi child : children) {
+                    sb.append("- **").append(child.getDisplayName()).append("** (ID: ").append(child.getConfig().getSessionId()).append(")\n");
+                }
+            }
         }
 
         ragMessage.addTextPart(sb.toString());

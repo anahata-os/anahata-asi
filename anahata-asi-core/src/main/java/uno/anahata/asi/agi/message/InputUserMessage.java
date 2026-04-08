@@ -63,16 +63,6 @@ public class InputUserMessage extends UserMessage {
             }
         }
     }
-
-    /**
-     * Checks if the message is empty. A message is considered empty if it
-     * contains no parts.
-     *
-     * @return {@code true} if the message is empty, {@code false} otherwise.
-     */
-    public boolean isEmpty() {
-        return getParts().isEmpty();
-    }
     
     /**
      * Gets a list of all attached {@link BlobPart}s.

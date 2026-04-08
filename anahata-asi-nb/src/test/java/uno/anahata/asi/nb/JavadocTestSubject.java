@@ -1,12 +1,14 @@
 package uno.anahata.asi.nb;
 
-import java.util.List;
-
 /**
- * Testing Javadoc Attachment
+ * This is an updated class Javadoc for testing purposes.
+ * Força Barça!
  */
 public class JavadocTestSubject {
     
+    /**
+     * The name of the test subject.
+     */
     private String name;
     
     /**
@@ -16,6 +18,10 @@ public class JavadocTestSubject {
         return name;
     }
     
+    /**
+     * Sets the name of the test subject.
+     * @param name the name to set
+     */
     public void setName(String name) {
         this.name = name;
     }

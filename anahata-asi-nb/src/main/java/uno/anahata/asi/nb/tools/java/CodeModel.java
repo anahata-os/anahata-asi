@@ -193,23 +193,32 @@ public class CodeModel extends AnahataToolkit {
     @AgiTool("Gets a paginated list of all members (fields, constructors, methods) for a given type.")
     public Page<JavaMember> getMembers(
             @AgiToolParam("The keychain DTO for the type to inspect.") JavaType javaType,
-            @AgiToolParam(value = "Optional query string to filter members by name (uses memberName.contains(nameQuery))", required = false) String nameQuery,
+            @AgiToolParam(value = "Optional query string to filter members by name ignoring casing (uses memberNameLowerCase.contains(nameQueryLowerCase))", required = false) String nameQuery,
             @AgiToolParam(value = "The starting index (0-based) for pagination.", required = false) Integer startIndex,
             @AgiToolParam(value = "The maximum number of results to return per page.", required = false) Integer pageSize,
             @AgiToolParam(value = "Optional list of member kinds to filter by.", required = false) List<ElementKind> kindFilters) throws Exception {
         
+        log("listing members for " + javaType);
+        
         List<JavaMember> allMembers = javaType.getMembers();
         
+        
+        log("Total Members " + allMembers.size());
+        
         if (nameQuery != null && !nameQuery.isBlank()) {
+            log("Name query provided, filtering: " + nameQuery);
             allMembers = allMembers.stream()
-                    .filter(m -> m.getName() != null && m.getName().contains(nameQuery))
+                    .filter(m -> m.getName() != null && m.getName().toLowerCase().contains(nameQuery.toLowerCase()))
                     .collect(Collectors.toList());
+            log("After fildering by name: " + allMembers.size());
         }
         
         if (kindFilters != null && !kindFilters.isEmpty()) {
+            log("Kind filter provided provided, filtering: " + kindFilters);
             allMembers = allMembers.stream()
                     .filter(m -> kindFilters.contains(m.getKind()))
                     .collect(Collectors.toList());
+            log("After fildering by kind: " + allMembers.size());
         }
 
         int start = startIndex != null ? startIndex : 0;

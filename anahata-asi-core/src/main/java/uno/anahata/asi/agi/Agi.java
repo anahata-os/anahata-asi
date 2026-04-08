@@ -9,7 +9,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -27,6 +26,7 @@ import uno.anahata.asi.agi.message.AbstractModelMessage;
 import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
 import uno.anahata.asi.agi.provider.GenerationRequest;
 import uno.anahata.asi.agi.message.InputUserMessage;
+import uno.anahata.asi.agi.message.UserMessage;
 import uno.anahata.asi.agi.provider.RequestConfig;
 import uno.anahata.asi.agi.provider.Response;
 import uno.anahata.asi.agi.provider.StreamObserver;
@@ -120,11 +120,11 @@ public class Agi extends BasicPropertyChangeSource {
 
     /**
      * A message that has been submitted via
-     * {@link #sendMessage(InputUserMessage)} while the agi was busy. It will be
+     * {@link #sendMessage(UserMessage)} while the agi was busy. It will be
      * picked up and processed as soon as the current conversation turn is
      * complete.
      */
-    private InputUserMessage stagedUserMessage;
+    private UserMessage stagedUserMessage;
 
     /**
      * A thread-safe flag indicating if the agi session has been shut down.
@@ -341,8 +341,8 @@ public class Agi extends BasicPropertyChangeSource {
      *
      * @param stagedUserMessage The new staged message.
      */
-    public void setStagedUserMessage(InputUserMessage stagedUserMessage) {
-        InputUserMessage oldMessage = this.stagedUserMessage;
+    public void setStagedUserMessage(UserMessage stagedUserMessage) {
+        UserMessage oldMessage = this.stagedUserMessage;
         this.stagedUserMessage = stagedUserMessage;
         propertyChangeSupport.firePropertyChange("stagedUserMessage", oldMessage, stagedUserMessage);
     }
@@ -362,7 +362,7 @@ public class Agi extends BasicPropertyChangeSource {
      * @param message The user's message. Can be null or empty to trigger a
      * context resend.
      */
-    public void sendMessage(InputUserMessage message) {
+    public void sendMessage(UserMessage message) {
         runningLock.lock();
         try {
             if (running) {
@@ -399,7 +399,7 @@ public class Agi extends BasicPropertyChangeSource {
      * Processes any staged message that arrived while the agi was busy.
      */
     private void processStagedMessage() {
-        InputUserMessage staged;
+        UserMessage staged;
         runningLock.lock();
         try {
             staged = stagedUserMessage;
@@ -474,7 +474,7 @@ public class Agi extends BasicPropertyChangeSource {
         for (int attempt = 0; attempt < maxRetries; attempt++) {
             try {
                 // Just-in-time staged message consumption
-                InputUserMessage staged;
+                UserMessage staged;
                 runningLock.lock();
                 try {
                     staged = stagedUserMessage;
@@ -924,5 +924,29 @@ public class Agi extends BasicPropertyChangeSource {
     public void postActivate() {
         log.info("Post-activating Agi session: {}", config.getSessionId());
         toolManager.postActivate();
+    }
+
+    /**
+     * Retrieves the parent session that spawned this Agi, if any.
+     *
+     * @return An Optional containing the parent session.
+     */
+    public Optional<Agi> getParent() {
+        String parentUuid = config.getParentUuid();
+        if (parentUuid == null) {
+            return Optional.empty();
+        }
+        return config.getAsiContainer().getActiveAgis().stream()
+                .filter(a -> parentUuid.equals(a.getConfig().getSessionId()))
+                .findFirst();
+    }
+
+    /**
+     * Retrieves all active sessions spawned by this Agi.
+     *
+     * @return A list of child sessions.
+     */
+    public List<Agi> getChildren() {
+        return config.getAsiContainer().getChildrenAgis(config.getSessionId());
     }
 }

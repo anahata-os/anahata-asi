@@ -22,9 +22,9 @@ import uno.anahata.asi.internal.TokenizerUtils;
  * The abstract base class for all messages in a conversation, providing common
  * metadata and functionality for the rich, hierarchical V2 domain model.
  * <p>
- * This class ensures each message has a unique identity, timestamp, and full 
- * access to the {@link Agi} context. It supports thread-safe iteration of its 
- * components via a {@code CopyOnWriteArrayList} to facilitate background 
+ * This class ensures each message has a unique identity, timestamp, and full
+ * access to the {@link Agi} context. It supports thread-safe iteration of its
+ * components via a {@code CopyOnWriteArrayList} to facilitate background
  * persistence during active generation.
  * </p>
  *
@@ -53,9 +53,10 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
     private long sequentialId;
 
     /**
-     * The list of parts that make up the message content. Uses CopyOnWriteArrayList 
-     * to allow thread-safe iteration during background serialization (e.g., auto-save) 
-     * while the model is adding parts or appending text to existing parts.
+     * The list of parts that make up the message content. Uses
+     * CopyOnWriteArrayList to allow thread-safe iteration during background
+     * serialization (e.g., auto-save) while the model is adding parts or
+     * appending text to existing parts.
      */
     @Getter(AccessLevel.NONE)
     private final List<AbstractPart> parts = new CopyOnWriteArrayList<>();
@@ -77,28 +78,27 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
     public abstract Role getRole();
 
     /**
-     * Gets the identity of the sender of this message.
-     * For user messages, this is typically the user's name.
-     * For model messages, it's the model ID.
-     * For tool messages, it's the identity of the execution context.
-     * 
+     * Gets the identity of the sender of this message. For user messages, this
+     * is typically the user's name. For model messages, it's the model ID. For
+     * tool messages, it's the identity of the execution context.
+     *
      * @return The sender's identity.
      */
     public abstract String getFrom();
-    
+
     /**
      * Gets the ID of the device where this message was created or processed.
      * This could be a hostname, a JVM ID, or a cloud identifier.
-     * 
+     *
      * @return The device ID.
      */
     public abstract String getDevice();
-    
+
     /**
-     * Checks if this message is eligible for pruning or removal.
-     * A message is prunnable if it is attached to a agi and has been assigned
-     * a sequential ID (i.e., it's not the system message or a transient message).
-     * 
+     * Checks if this message is eligible for pruning or removal. A message is
+     * prunnable if it is attached to a agi and has been assigned a sequential
+     * ID (i.e., it's not the system message or a transient message).
+     *
      * @return {@code true} if the message is prunnable.
      */
     public boolean isPrunnableOrRemovable() {
@@ -111,7 +111,8 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
      * property change events.
      *
      * @param part The part to add.
-     * @throws IllegalArgumentException if the part is already attached to this or another message.
+     * @throws IllegalArgumentException if the part is already attached to this
+     * or another message.
      */
     public void addPart(@NonNull AbstractPart part) {
         if (parts.contains(part)) {
@@ -135,12 +136,13 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
 
         propertyChangeSupport.firePropertyChange("parts", null, parts);
     }
-    
+
     /**
      * Removes a part from this message and severs the bidirectional link.
-     * 
+     *
      * @param part The part to remove.
-     * @throws IllegalArgumentException if the part is not attached to this message.
+     * @throws IllegalArgumentException if the part is not attached to this
+     * message.
      */
     public void removePart(AbstractPart part) {
         Validate.isTrue(parts.contains(part), "Part " + part + " is not a part of this message.");
@@ -148,7 +150,7 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
         part.setMessage(null);
         propertyChangeSupport.firePropertyChange("parts", null, parts);
     }
-    
+
     /**
      * Removes this message from the agi history.
      */
@@ -187,7 +189,7 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
 
     /**
      * Checks if any part in this message is explicitly pinned.
-     * 
+     *
      * @return {@code true} if at least one part is pinned.
      */
     public boolean isAnyPinned() {
@@ -196,7 +198,7 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
 
     /**
      * Checks if all parts in this message are explicitly pinned.
-     * 
+     *
      * @return {@code true} if all parts are pinned.
      */
     public boolean isAllPinned() {
@@ -205,7 +207,7 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
 
     /**
      * Checks if all parts in this message are explicitly pruned.
-     * 
+     *
      * @return {@code true} if all parts are PRUNED.
      */
     public boolean isAllPruned() {
@@ -213,8 +215,8 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
     }
 
     /**
-     * Calculates the EFFECTIVE pruned state of this message. 
-     * A message is effectively pruned ONLY if it contains no visible (un-pruned) parts.
+     * Calculates the EFFECTIVE pruned state of this message. A message is
+     * effectively pruned ONLY if it contains no visible (un-pruned) parts.
      *
      * @return {@code true} if the message is effectively pruned.
      */
@@ -226,9 +228,10 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
     }
 
     /**
-     * Determines if this message is eligible for "hard pruning" (permanent removal from history).
-     * In the atomic model, a message is collectable if it is effectively pruned.
-     * 
+     * Determines if this message is eligible for "hard pruning" (permanent
+     * removal from history). In the atomic model, a message is collectable if
+     * it is effectively pruned.
+     *
      * @return {@code true} if the message can be safely removed from history.
      */
     public boolean isGarbageCollectable() {
@@ -260,9 +263,9 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
     }
 
     /**
-     * Calculates the total number of tokens in this message, summing the
-     * token counts of its visible parts.
-     * 
+     * Calculates the total number of tokens in this message, summing the token
+     * counts of its visible parts.
+     *
      * @param includePruned whether to include pruned parts
      * @return The total token count.
      */
@@ -272,11 +275,10 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
                 .sum();
     }
 
-
     /**
-     * Calculates the total "effective" tokens in this message, summing the 
+     * Calculates the total "effective" tokens in this message, summing the
      * effective counts of its parts plus the message-level metadata header.
-     * 
+     *
      * @return The effective token count.
      */
     public int getEffectiveTokenCount() {
@@ -309,17 +311,17 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
 
     /**
      * Gets an unmodifiable list of all parts in this message.
-     * 
+     *
      * @return The list of parts.
      */
     public List<AbstractPart> getParts() {
         return Collections.unmodifiableList(parts);
     }
-    
+
     /**
-     * Calculates the remaining depth of the message as the maximum remaining 
+     * Calculates the remaining depth of the message as the maximum remaining
      * depth of all its parts.
-     * 
+     *
      * @return The maximum remaining depth.
      */
     public int getRemainingDepth() {
@@ -331,7 +333,7 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
 
     /**
      * Creates and adds a new text part to this message.
-     * 
+     *
      * @param text The text content.
      * @return The created text part.
      */
@@ -339,7 +341,7 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
 
     /**
      * Creates and adds a new binary data part to this message.
-     * 
+     *
      * @param mimeType The MIME type.
      * @param data The binary data.
      * @return The created blob part.
@@ -348,17 +350,19 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
 
     /**
      * Creates and adds a new binary data part from a local file path.
-     * 
+     *
      * @param path The path to the file.
      * @return The created blob part.
-     * @throws Exception if the file cannot be read or the MIME type cannot be detected.
+     * @throws Exception if the file cannot be read or the MIME type cannot be
+     * detected.
      */
     public abstract BlobPart addBlobPart(java.nio.file.Path path) throws Exception;
 
     /**
      * Creates a standardized text header containing metadata for this message.
-     * This is used for in-band metadata injection to improve model self-awareness.
-     * 
+     * This is used for in-band metadata injection to improve model
+     * self-awareness.
+     *
      * @return A formatted metadata header string.
      */
     public String createMetadataHeader() {
@@ -369,23 +373,22 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
             sb.append(identity).append(" | ");
         }
         sb.append(String.format("From: %s | Device: %s | Time: %s | Depth: %d",
-            getFrom(),
-            getDevice(),
-            TimeUtils.formatSmartTimestamp(Instant.ofEpochMilli(getTimestamp())),
-            getDepth()
+                getFrom(),
+                getDevice(),
+                TimeUtils.formatSmartTimestamp(Instant.ofEpochMilli(getTimestamp())),
+                getDepth()
         ));
-        
+
         appendMetadata(sb);
-        
-        
+
         sb.append("]");
         return sb.toString();
     }
 
     /**
-     * Returns the identity label for the metadata header (e.g., "Message ID: 12").
-     * Subclasses can override this to hide or customize the identity.
-     * 
+     * Returns the identity label for the metadata header (e.g., "Message ID:
+     * 12"). Subclasses can override this to hide or customize the identity.
+     *
      * @return The identity label.
      */
     protected String getIdentityLabel() {
@@ -393,8 +396,9 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
     }
 
     /**
-     * Hook for subclasses to inject specialized metadata into the message header.
-     * 
+     * Hook for subclasses to inject specialized metadata into the message
+     * header.
+     *
      * @param sb The StringBuilder building the header.
      */
     protected void appendMetadata(StringBuilder sb) {
@@ -402,11 +406,23 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
     }
 
     /**
-     * Hook for subclasses to declare if they should generate in-band metadata headers.
-     * 
+     * Hook for subclasses to declare if they should generate in-band metadata
+     * headers.
+     *
      * @return {@code true} if metadata headers should be generated.
      */
     public boolean shouldCreateMetadata() {
         return true;
     }
+
+    /**
+     * Checks if the message is empty. A message is considered empty if it
+     * contains no parts.
+     *
+     * @return {@code true} if the message is empty, {@code false} otherwise.
+     */
+    public boolean isEmpty() {
+        return getParts().isEmpty();
+    }
+
 }

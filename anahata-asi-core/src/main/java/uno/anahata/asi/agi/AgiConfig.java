@@ -18,6 +18,7 @@ import uno.anahata.asi.agi.resource.handle.PathHandle;
 import uno.anahata.asi.agi.resource.handle.ResourceHandle;
 import uno.anahata.asi.toolkit.resources.Resources;
 import uno.anahata.asi.agi.resource.handle.UrlHandle;
+import uno.anahata.asi.toolkit.AsiContainer;
 import uno.anahata.asi.toolkit.Audio;
 import uno.anahata.asi.toolkit.History;
 import uno.anahata.asi.toolkit.Session;
@@ -47,6 +48,9 @@ public class AgiConfig extends BasicPropertyChangeSource {
     @NonNull
     private String sessionId;
     
+    /** The UUID of the AGI that spawned this session, if any. */
+    private String parentUuid;
+    
     /** A late-binding reference to the parent Agi. Set during Agi construction. */
     @Setter
     private Agi agi;
@@ -73,6 +77,7 @@ public class AgiConfig extends BasicPropertyChangeSource {
 
     {
         // Pre-populate with core, essential tools.
+        toolClasses.add(AsiContainer.class);
         toolClasses.add(Session.class);
         toolClasses.add(History.class);
         toolClasses.add(Resources.class);

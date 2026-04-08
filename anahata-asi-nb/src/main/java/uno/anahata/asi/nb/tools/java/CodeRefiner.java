@@ -884,14 +884,6 @@ public class CodeRefiner extends AnahataToolkit {
     /**
      * Internal helper to set or remove Javadoc on a tree node.
      * <p>
-     * WARNING: TreeMaker.addComment and removeComment are VOID methods that
-     * modify the node's internal metadata state in-place. Do NOT attempt to
-     * assign their results to a new tree variable.
-     * </p>
-     */
-    /**
-     * Internal helper to set or remove Javadoc on a tree node.
-     * <p>
      * CRITICAL: TreeMaker.addComment and removeComment are VOID methods that modify 
      * the instance. For existing members, you MUST clone the tree first and use 
      * wc.rewrite(old, new), otherwise wc.rewrite(t, t) will ignore the comment change.
@@ -928,11 +920,14 @@ public class CodeRefiner extends AnahataToolkit {
      */
     private Tree cloneTree(TreeMaker make, Tree tree) {
         if (tree instanceof ClassTree ct) {
-            return make.Class(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), ct.getExtendsClause(), ct.getImplementsClause(), ct.getMembers());
+            ModifiersTree modifiers = make.Modifiers(ct.getModifiers().getFlags(), ct.getModifiers().getAnnotations());
+            return make.Class(modifiers, ct.getSimpleName(), ct.getTypeParameters(), ct.getExtendsClause(), ct.getImplementsClause(), ct.getMembers());
         } else if (tree instanceof MethodTree mt) {
-            return make.Method(mt.getModifiers(), mt.getName(), mt.getReturnType(), mt.getTypeParameters(), mt.getParameters(), mt.getThrows(), mt.getBody(), (AnnotationTree) mt.getDefaultValue());
+            ModifiersTree modifiers = make.Modifiers(mt.getModifiers().getFlags(), mt.getModifiers().getAnnotations());
+            return make.Method(modifiers, mt.getName(), mt.getReturnType(), mt.getTypeParameters(), mt.getParameters(), mt.getThrows(), mt.getBody(), (AnnotationTree) mt.getDefaultValue());
         } else if (tree instanceof VariableTree vt) {
-            return make.Variable(vt.getModifiers(), vt.getName(), vt.getType(), vt.getInitializer());
+            ModifiersTree modifiers = make.Modifiers(vt.getModifiers().getFlags(), vt.getModifiers().getAnnotations());
+            return make.Variable(modifiers, vt.getName(), vt.getType(), vt.getInitializer());
         }
         return tree;
     }

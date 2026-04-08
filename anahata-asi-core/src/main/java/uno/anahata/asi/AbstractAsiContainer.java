@@ -315,6 +315,23 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
+     * Retrieves all active Agi sessions spawned by a specific parent.
+     * 
+     * @param parentUuid The UUID of the parent session.
+     * @return A list of child sessions.
+     */
+    public List<Agi> getChildrenAgis(String parentUuid) {
+        if (parentUuid == null) {
+            return Collections.emptyList();
+        }
+        synchronized (activeAgis) {
+            return activeAgis.stream()
+                    .filter(a -> parentUuid.equals(a.getConfig().getParentUuid()))
+                    .toList();
+        }
+    }
+
+    /**
      * Gets an unmodifiable list of all agi sessions that are currently 
      * logically open in the host UI.
      * 
