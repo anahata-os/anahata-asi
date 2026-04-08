@@ -132,4 +132,12 @@ public class StringHandle extends AbstractResourceHandle {
     public String getMimeType() {
         return "text/plain";
     }
+
+    /**
+     * {@inheritDoc}
+     * <p>Returns the length of the in-memory string.</p>
+     */
+    public long length() {
+        return content != null ? content.length() : 0;
+    }
 }
