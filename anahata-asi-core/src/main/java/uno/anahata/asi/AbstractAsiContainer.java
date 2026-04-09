@@ -531,7 +531,10 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     public void dispose(Agi agi) {
         String sessionId = agi.getConfig().getSessionId();
         log.info("Disposing session: {}", sessionId);
-        
+
+        // 0. Authoritatively close the UI if it's open
+        close(agi);
+
         // 1. Shutdown the agi (stops executors, etc.)
         agi.shutdown();
         
