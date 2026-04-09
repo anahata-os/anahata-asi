@@ -226,7 +226,7 @@ public class Session extends AnahataToolkit {
                 .append(" (").append(domainAgi.getLastTotalTokenCount()).append(" / ").append(config.getTokenThreshold()).append(" tokens)\n");
 
         sb.append("\n Capabilities:\n");
-        sb.append("- **Local Java Tools**: ").append(config.isLocalToolsEnabled() ? "ENABLED" : "DISABLED").append("\n");
+        sb.append("- **Local Java Tools**: ").append(config.isLocalToolsEnabled() ? "ENABLED" : "DISABLED **Do not call local java tools**").append("\n");
         sb.append("- **Hosted Server Tools**: ").append(config.isHostedToolsEnabled() ? "ENABLED" : "DISABLED").append("\n");
 
         if (!config.isHostedToolsEnabled() && domainAgi.getSelectedModel() != null) {
