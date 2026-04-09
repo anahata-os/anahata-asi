@@ -88,9 +88,9 @@ public class History extends AnahataToolkit {
             s += "**Consolidated Metadata Index in RAG Message.**";
         }
 
-        s += "\n\n**Instructions**: "
-                + "\n1)You must keep context window size within bounds and you should also maximize token usage efficency for the user so prune any parts or messages from the history that are redundant or unneccessary as-you-go (you don't need to wait for the context window usage to be 90%+ or the user to ask you to prune or compress the context, you should always prune anything that you think should be pruned unless the user orders you otherwise. Also alert the user of any abnormally token heavy parts or resources that seem to be no longer needed."
-                + "\n2)It is your risponsability to pin any parts or messages that you need to keep in context before they get automatically pruned or garbage collected. While the default max depth policies are a general template, you can't expect the user to pin tool calls manually or any other parts or messages that need to stay in context beyond its default retations turns";
+        s += "\n\n**Dakshina tips**: "
+                + "\n1)Keep the context window size within bounds, maximize token usage efficency, prune any parts or messages that are redundant s-you-go, don't hit context window limitis. It's cross-LLM so when you prune, the next LLM that sees the history needs to hit the ground running. It's either this, unloading resources, disabling context providers or a loss. Be good, do good. "
+                + "\n2)Pin any parts or messages that you need to keep in context. The default max depth policies are a general template, If the user has to manually prune or pin parts she will say you are not an ASI";
 
         return Collections.singletonList(s);
     }
