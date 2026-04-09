@@ -79,6 +79,19 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         this.method = method;
         this.javaMethodSignature = buildMethodSignature(method);
 
+        initAttributes(toolAnnotation);
+        
+        // A tool creates its own parameters.
+        initParameters();
+        
+    }
+    
+    /**
+     * Initializes the maxDepth and description attributes
+     * 
+     * @param toolAnnotation 
+     */
+    private final void initAttributes(AgiTool toolAnnotation) {
         // Set max depth using the clean inheritance model
         int maxDepth = toolAnnotation.maxDepth();
         if (maxDepth == 0) {
@@ -91,9 +104,6 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         descriptionBuilder.append("\n\nToolkit: ").append(this.toolkit.getName());
         descriptionBuilder.append("\nMethod:\n").append(this.javaMethodSignature);
         this.description = descriptionBuilder.toString();
-        
-        // A tool creates its own parameters.
-        initParameters();
         
     }
 
@@ -150,6 +160,8 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
                 for (Method m : currentClass.getDeclaredMethods()) {
                     if (javaMethodSignature.equals(buildMethodSignature(m))) {
                         this.method = m;
+                        AgiTool toolAnnotation = method.getDeclaredAnnotation(AgiTool.class);
+                        initAttributes(toolAnnotation);
                         initParameters();
                         break;
                     }
