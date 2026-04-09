@@ -43,8 +43,9 @@ public class UrlHandle extends AbstractResourceHandle {
      * @param mimeType The detected MIME type.
      * @param lastModified The remote last modified timestamp.
      * @param exists Whether the remote source is reachable.
+     * @param contentLength The size of the remote resource in bytes.
      */
-    private record Metadata(String mimeType, long lastModified, boolean exists) {}
+    private record Metadata(String mimeType, long lastModified, boolean exists, long contentLength) {}
 
     /**
      * Refreshes the metadata cache if it is null by performing a HEAD request.
@@ -68,16 +69,18 @@ public class UrlHandle extends AbstractResourceHandle {
             conn.connect();
             String type = conn.getContentType();
             long lm = conn.getLastModified();
+            long cl = conn.getContentLengthLong();
             
             this.cache = new Metadata(
                 (type != null) ? type : "application/octet-stream",
                 lm,
-                true
+                true,
+                cl
             );
-            log.info("Captured metadata for {}: MIME={}, LM={}", urlString, cache.mimeType, cache.lastModified);
+            log.info("Captured metadata for {}: MIME={}, LM={}, CL={}", urlString, cache.mimeType, cache.lastModified, cache.contentLength);
         } catch (IOException e) {
             log.warn("Failed to reach remote resource {}: {}", urlString, e.getMessage());
-            this.cache = new Metadata("application/octet-stream", 0, false);
+            this.cache = new Metadata("application/octet-stream", 0, false, -1L);
         }
     }
 
@@ -165,5 +168,15 @@ public class UrlHandle extends AbstractResourceHandle {
     public void rebind() {
         super.rebind();
         this.cache = null; 
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>Returns the cached content length from the remote server.</p>
+     */
+    @Override
+    public long length() {
+        refreshMetadata();
+        return cache.contentLength();
     }
 }

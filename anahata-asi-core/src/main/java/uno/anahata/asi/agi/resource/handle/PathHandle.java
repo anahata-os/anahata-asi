@@ -121,4 +121,13 @@ public class PathHandle extends AbstractResourceHandle {
     public boolean isVirtual() {
         return false;
     }
+
+    /**
+     * {@inheritDoc}
+     * <p>Returns the physical file size on disk.</p>
+     */
+    @Override
+    public long length() {
+        return new java.io.File(path).length();
+    }
 }

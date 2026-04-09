@@ -293,6 +293,16 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
     public boolean isVirtual() {
         return false;
     }
+    
+    /**
+     * {@inheritDoc}
+     * <p>Returns the size of the NetBeans FileObject.</p>
+     */
+    @Override
+    public long length() {
+        FileObject fo = getFileObject();
+        return (fo != null) ? fo.getSize() : -1L;
+    }
 
     /**
      * {@inheritDoc}

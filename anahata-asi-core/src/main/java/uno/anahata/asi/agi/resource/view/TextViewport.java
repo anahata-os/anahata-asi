@@ -2,9 +2,10 @@
 package uno.anahata.asi.agi.resource.view;
 
 import uno.anahata.asi.agi.resource.handle.ResourceHandle;
-import uno.anahata.asi.agi.resource.handle.PathHandle;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -48,9 +49,6 @@ public class TextViewport {
     /** Total size of the source in characters. */
     private long totalChars;
     
-    /** Total lines in the source, or -1 if unknown/large. */
-    private int totalLines;
-    
     /** Number of matches found if grepping. */
     private Integer matchingLineCount;
     
@@ -75,15 +73,8 @@ public class TextViewport {
     public void process(ResourceHandle handle) throws Exception {
         log.debug("Processing viewport engine for: {}", handle.getUri());
         
-        // 1. Initial metadata update (if physical and small)
-        if (!handle.isVirtual() && handle instanceof PathHandle ph) {
-            java.io.File file = new java.io.File(ph.getPath());
-            this.totalChars = file.length();
-            this.totalLines = (totalChars < 1024 * 1024) ? (int) java.nio.file.Files.lines(file.toPath(), handle.getCharset()).count() : -1;
-        } else {
-            this.totalChars = -1;
-            this.totalLines = -1;
-        }
+        // 1. Initial metadata update
+        this.totalChars = handle.length();
 
         List<String> lines;
         if (settings.isTail()) {
@@ -104,41 +95,65 @@ public class TextViewport {
      * @throws Exception if reading fails.
      */
     private List<String> processTail(ResourceHandle handle) throws Exception {
-        if (!handle.isVirtual() && handle instanceof PathHandle ph) {
+        if (!handle.isVirtual() && "file".equalsIgnoreCase(handle.getUri().getScheme())) {
             // High-performance backward read for local files
             List<String> lines = new ArrayList<>();
             Pattern pattern = (settings.getGrepPattern() != null) ? Pattern.compile(settings.getGrepPattern()) : null;
-            try (ReversedLinesFileReader reader = new ReversedLinesFileReader(new java.io.File(ph.getPath()), handle.getCharset())) {
+            java.io.File file = new java.io.File(handle.getUri());
+            
+            Charset charset = handle.getCharset();
+            // Workaround for commons-io 2.19.0 object identity bug in modular environments
+            if ("UTF-8".equalsIgnoreCase(charset.name())) {
+                charset = StandardCharsets.UTF_8;
+            }
+
+            try (ReversedLinesFileReader reader = ReversedLinesFileReader.builder()
+                    .setFile(file)
+                    .setCharset(charset)
+                    .get()) {
                 String line;
                 while ((line = reader.readLine()) != null && lines.size() < settings.getTailLines()) {
                     if (pattern == null || pattern.matcher(line).find()) {
                         lines.add(line);
                     }
                 }
+            } catch (Throwable e) {
+                log.warn("ReversedLinesFileReader failed for {} ({}). Falling back to forward-buffering tail. Reason: {}", 
+                        handle.getUri(), charset, e.getMessage());
+                return processForwardTail(handle);
             }
             Collections.reverse(lines);
             this.matchingLineCount = (pattern != null) ? lines.size() : null;
             return lines;
         } else {
-            // Forward-buffering tail for remote streams
-            LinkedList<String> buffer = new LinkedList<>();
-            Pattern pattern = (settings.getGrepPattern() != null) ? Pattern.compile(settings.getGrepPattern()) : null;
-            int matched = 0;
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(handle.openStream(), handle.getCharset()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (pattern == null || pattern.matcher(line).find()) {
-                        matched++;
-                        buffer.add(line);
-                        if (buffer.size() > settings.getTailLines()) {
-                            buffer.removeFirst();
-                        }
+            return processForwardTail(handle);
+        }
+    }
+
+    /**
+     * Fallback forward-buffering tail for remote streams or when backward reading fails.
+     * @param handle The source handle.
+     * @return The list of trailing lines.
+     * @throws Exception if reading fails.
+     */
+    private List<String> processForwardTail(ResourceHandle handle) throws Exception {
+        LinkedList<String> buffer = new LinkedList<>();
+        Pattern pattern = (settings.getGrepPattern() != null) ? Pattern.compile(settings.getGrepPattern()) : null;
+        int matched = 0;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(handle.openStream(), handle.getCharset()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (pattern == null || pattern.matcher(line).find()) {
+                    matched++;
+                    buffer.add(line);
+                    if (buffer.size() > settings.getTailLines()) {
+                        buffer.removeFirst();
                     }
                 }
             }
-            this.matchingLineCount = (pattern != null) ? matched : null;
-            return new ArrayList<>(buffer);
         }
+        this.matchingLineCount = (pattern != null) ? matched : null;
+        return new ArrayList<>(buffer);
     }
 
     /** 
@@ -217,6 +232,6 @@ public class TextViewport {
      */
     @Override
     public String toString() {
-        return "TextViewport{" + "settings=" + settings + ", totalChars=" + totalChars + ", totalLines=" + totalLines + ", matchingLineCount=" + matchingLineCount + ", truncatedLinesCount=" + truncatedLinesCount + '}';
+        return "TextViewport{" + "settings=" + settings + ", totalChars=" + totalChars + ", matchingLineCount=" + matchingLineCount + ", truncatedLinesCount=" + truncatedLinesCount + '}';
     }
 }

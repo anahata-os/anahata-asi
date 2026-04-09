@@ -33,6 +33,10 @@ public class TextViewPanel extends AbstractViewPanel<TextView> {
     private final JCheckBox tailCheck;
     /** Spinner to configure the number of lines to tail. */
     private final JSpinner tailLinesSpinner;
+    /** Spinner for start character offset. */
+    private final JSpinner fromSpinner;
+    /** Spinner for page size. */
+    private final JSpinner sizeSpinner;
     /** Field for entering a regex pattern to filter lines (grep). */
     private final JTextField grepField;
     /** Toggle for showing/hiding line numbers in the viewport. */
@@ -47,15 +51,29 @@ public class TextViewPanel extends AbstractViewPanel<TextView> {
      * Constructs a new TextViewPanel with integrated viewport controls.
      */
     public TextViewPanel() {
-        tailCheck = new JCheckBox("Tail");
-        tailCheck.addActionListener(e -> updateViewportSettings());
-
         tailLinesSpinner = new JSpinner(new SpinnerNumberModel(100, 1, 10000, 50));
         tailLinesSpinner.setPreferredSize(new Dimension(70, 22));
         tailLinesSpinner.addChangeListener(e -> updateViewportSettings());
+        tailLinesSpinner.setEnabled(false);
 
+        fromSpinner = new JSpinner(new SpinnerNumberModel(0L, 0L, Long.MAX_VALUE, 1024L));
+        fromSpinner.setPreferredSize(new Dimension(100, 22));
+        fromSpinner.addChangeListener(e -> updateViewportSettings());
+
+        sizeSpinner = new JSpinner(new SpinnerNumberModel(65536, 1, 1024 * 1024, 4096));
+        sizeSpinner.setPreferredSize(new Dimension(80, 22));
+        sizeSpinner.addChangeListener(e -> updateViewportSettings());
+
+        tailCheck = new JCheckBox("Tail");
+        tailCheck.addActionListener(e -> {
+            boolean tailing = tailCheck.isSelected();
+            tailLinesSpinner.setEnabled(tailing);
+            fromSpinner.setEnabled(!tailing);
+            sizeSpinner.setEnabled(!tailing);
+            updateViewportSettings();
+        });
         grepField = new JTextField();
-        grepField.setPreferredSize(new Dimension(150, 22));
+        grepField.setPreferredSize(new Dimension(120, 22));
         grepField.getDocument().addDocumentListener(new AnyChangeDocumentListener(this::updateViewportSettings));
 
         lineNumbersCheck = new JCheckBox("Line Numbers");
@@ -63,17 +81,35 @@ public class TextViewPanel extends AbstractViewPanel<TextView> {
 
         tokenLabel = new JLabel("Tokens: N/A");
 
-        // Layout Assembly
-        JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        // Layout Assembly: Triple-row configuration for professional viewport management
+        JPanel controls = new JPanel(new java.awt.GridBagLayout());
         controls.setOpaque(false);
-        controls.add(tailCheck);
-        controls.add(new JLabel("Lines:"));
-        controls.add(tailLinesSpinner);
-        controls.add(new JLabel("Grep:"));
-        controls.add(grepField);
-        controls.add(lineNumbersCheck);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new java.awt.Insets(2, 0, 2, 8);
 
-        addProperty("Controls:", controls);
+        // Row 1: Pagination (Mutual exclusive with Tail)
+        gbc.gridy = 0; 
+        gbc.gridx = 0; controls.add(new JLabel("From:"), gbc);
+        gbc.gridx = 1; controls.add(fromSpinner, gbc);
+        gbc.gridx = 2; controls.add(new JLabel("Size:"), gbc);
+        gbc.gridx = 3; controls.add(sizeSpinner, gbc);
+
+        // Row 2: Live Tailing
+        gbc.gridy = 1; 
+        gbc.gridx = 0; controls.add(tailCheck, gbc);
+        gbc.gridx = 1; controls.add(new JLabel("Lines:"), gbc);
+        gbc.gridx = 2; controls.add(tailLinesSpinner, gbc);
+
+        // Row 3: Filtering & Display
+        gbc.gridy = 2; 
+        gbc.gridx = 0; controls.add(new JLabel("Grep pattern:"), gbc);
+        gbc.gridx = 1; gbc.gridwidth = 2; gbc.fill = GridBagConstraints.HORIZONTAL;
+        controls.add(grepField, gbc);
+        gbc.gridx = 3; gbc.gridwidth = 1; gbc.fill = GridBagConstraints.NONE;
+        controls.add(lineNumbersCheck, gbc);
+
+        addProperty("Viewport:", controls);
         addProperty("Metrics:", tokenLabel);
     }
 
@@ -91,8 +127,14 @@ public class TextViewPanel extends AbstractViewPanel<TextView> {
         this.syncing = true;
         try {
             TextViewportSettings settings = view.getViewport().getSettings();
-            tailCheck.setSelected(settings.isTail());
+            boolean tailing = settings.isTail();
+            tailCheck.setSelected(tailing);
             tailLinesSpinner.setValue(settings.getTailLines());
+            tailLinesSpinner.setEnabled(tailing);
+            fromSpinner.setValue(settings.getStartChar());
+            fromSpinner.setEnabled(!tailing);
+            sizeSpinner.setValue(settings.getPageSizeInChars());
+            sizeSpinner.setEnabled(!tailing);
             grepField.setText(settings.getGrepPattern());
             lineNumbersCheck.setSelected(settings.isIncludeLineNumbers());
             
@@ -115,6 +157,8 @@ public class TextViewPanel extends AbstractViewPanel<TextView> {
         TextViewportSettings settings = view.getViewport().getSettings();
         settings.setTail(tailCheck.isSelected());
         settings.setTailLines((Integer) tailLinesSpinner.getValue());
+        settings.setStartChar((Long) fromSpinner.getValue());
+        settings.setPageSizeInChars((Integer) sizeSpinner.getValue());
         settings.setGrepPattern(grepField.getText());
         settings.setIncludeLineNumbers(lineNumbersCheck.isSelected());
 
