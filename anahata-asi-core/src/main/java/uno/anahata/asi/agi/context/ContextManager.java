@@ -176,11 +176,13 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
         augmentedMessage.addTextPart("--- **RAG message** ---\n"
                 + "The following is high-salience, just-in-time live context provided by for this turn.\n"                
                 + "It has been dynamically generated and populated by all managed resources with a `PROMPT_AUGMENTATION` context position"
-                + " and by all effectively providing context providers. The RAG message is and will always be the last message in the prompt"
-                + " on every turn and as you can see, it has no message-level or part-level metadata because is not a part of the history of the conversation (its just dinamycally generated on every turn). Instead of message level metadata or part level metadata, it has the id of all registered context providers and the uuid of all registered reources that make the content of this message.\n"
-                + "All resources with a `LIVE` refresh policy have been reloaded from disk and are garanteed to be up to date and in sync with the underlying device regardless of what the last tool calls did.\n"
-                + "Use the `lastModified` timestamp provided on the header of each resource when you need to modify a resource and take the line numbers on the `LIVE` resources as the only source of truth.\n"
-                + "Even though this message has a user role, it is not direct input from the user. As a matter of fact, the user probably doesnt even know what the RAG message is.");
+                + " and by all effectively providing context providers. The RAG message is and will always be the last message in the prompt. "
+                + " It gets genearted on every turn, even during tool call reloops. I is not considered a part of the conversation history (has not x-anahata-message-id)  (its just dinamycally generated on every turn after all tool execution -if any- has finished, after the user pressess send, the last thing before calling the model)."
+                + " It includes all registered ContextProvider(s) and all registered reources (if they are not providing, they will not have the content but the header will still be included).\n"
+                + "All resources with a `LIVE` refresh policy have been reloaded from disk and are garanteed to be up to date and in sync with the underlying storage. "
+                + " Do not rely on your internal memory from previous tool executions to infer the state of a resource. Whatever is contained here is the source of truth for all context providers and all resources with a LIVE refresh policy and PROMPT_AUGMENTATION position. \n"
+                + "Use the `lastModified` timestamp provided on the header of each resource when you need to modify a resource and take the line numbers on the `LIVE` resources that include line numbers as the only, final, ultimate source of truth. \n"
+                + "Even though this message has a user role, it is not direct input from the user. As a matter of fact, the user may not even know what the RAG message is.");
 
         for (ContextProvider rootProvider : providers) {
             for (ContextProvider provider : rootProvider.getFlattenedHierarchy(true)) {
