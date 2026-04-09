@@ -84,7 +84,7 @@ public class NbJava extends SwingJava {
     @AgiTool(
             value = "Compiles and executes Java source code within the context of a specific NetBeans project. "
             + "This tool enables a powerful 'hot-reload' workflow by creating a dynamic classpath that prioritizes the project's own build directories (e.g., 'target/classes') over the plugins classpath. "
-                    + "Use the normal compileAndExecute for general netbeans things or if you are not importing any types from any of the open projects"
+                    + "Usage Rule: Use the normal compileAndExecute **if you are not importing any types from any of the open projects**"
     )
     public Object compileAndExecuteInProject(            
             @AgiToolParam(value = "Source code of a public class named **Anahata** that has **no package declaration** and **extends AnahataTool**.", rendererId = "java") String sourceCode,
