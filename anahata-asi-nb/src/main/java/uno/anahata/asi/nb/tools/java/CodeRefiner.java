@@ -57,7 +57,7 @@ public class CodeRefiner extends AnahataToolkit {
      */
     @Override
     public void initialize() {
-        getToolkit().setEnabled(true);
+        getToolkit().setEnabled(false);
     }
 
     /**
@@ -325,7 +325,7 @@ public class CodeRefiner extends AnahataToolkit {
      * @return A status message.
      * @throws Exception If the operation fails.
      */
-    @AgiTool("Inserts a new method into a class structurally. Handles imports, javadoc, and positioning.")
+    @AgiTool("Inserts a new method into a class structurally. Handles imports, javadoc, and positioning. Do not put javadoc in the body")
     public String insertMethod(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The FQN of the target class.") String classFqn,
