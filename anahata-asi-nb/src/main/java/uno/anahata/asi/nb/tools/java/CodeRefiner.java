@@ -29,6 +29,7 @@ import org.netbeans.api.java.source.TreeMaker;
 import org.netbeans.api.java.source.TreeUtilities;
 import org.netbeans.api.java.source.WorkingCopy;
 import org.netbeans.modules.editor.indent.api.Reformat;
+import org.openide.cookies.EditorCookie;
 import org.openide.cookies.SaveCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.loaders.DataObject;
@@ -252,8 +253,13 @@ public class CodeRefiner extends AnahataToolkit {
             }
 
             Tree oldTree = wc.getTrees().getTree(element);
-            Tree newTree = cloneTree(wc.getTreeMaker(), oldTree);
-            setJavadoc(wc, newTree, wc.getTreeUtilities().getComments(oldTree, true), javadocText);
+            TreeMaker make = wc.getTreeMaker();
+            Tree newTree = cloneTree(make, oldTree);
+
+            // Aggressively sever the identity link
+            make.asReplacementOf(newTree, oldTree, false);
+
+            setJavadoc(wc, newTree, oldTree, javadocText);
             wc.rewrite(oldTree, newTree);
         });
 
@@ -288,11 +294,22 @@ public class CodeRefiner extends AnahataToolkit {
             if (element == null) {
                 throw new AgiToolException("Member not found: " + memberFqn);
             }
+            log("[removeJavadoc] Resolved: " + element.getSimpleName());
 
             Tree oldTree = wc.getTrees().getTree(element);
-            Tree newTree = cloneTree(wc.getTreeMaker(), oldTree);
-            setJavadoc(wc, newTree, wc.getTreeUtilities().getComments(oldTree, true), "");
+            TreeMaker make = wc.getTreeMaker();
+
+            // Re-create the tree to force a different identity
+            Tree newTree = cloneTree(make, oldTree);
+
+            // Aggressively sever the identity link
+            make.asReplacementOf(newTree, oldTree, false);
+
+            // Now setJavadoc handles filtering and locking
+            setJavadoc(wc, newTree, oldTree, null);
+
             wc.rewrite(oldTree, newTree);
+            log("[removeJavadoc] Rewrite scheduled.");
         });
 
         result.commit();
@@ -480,12 +497,13 @@ public class CodeRefiner extends AnahataToolkit {
                     tps, params, thrws, (com.sun.source.tree.BlockTree) finalBody,
                     (AnnotationTree) mt.getDefaultValue());
 
+            // Aggressively sever identity link
+            make.asReplacementOf(updated, mt, false);
+
             if (javadoc != null) {
-                setJavadoc(wc, updated, utils.getComments(mt, true), javadoc);
+                setJavadoc(wc, updated, mt, javadoc);
             } else {
-                for (org.netbeans.api.java.source.Comment c : utils.getComments(mt, true)) {
-                    make.addComment(updated, c, true);
-                }
+                GeneratorUtilities.get(wc).copyComments(mt, updated, true);
             }
             updated = GeneratorUtilities.get(wc).importFQNs(updated);
             wc.rewrite(mt, updated);
@@ -630,12 +648,13 @@ public class CodeRefiner extends AnahataToolkit {
             VariableTree updated = make.Variable(newMods, vt.getName(),
                     type != null ? make.Type(type) : vt.getType(), init);
 
+            // Aggressively sever identity link
+            make.asReplacementOf(updated, vt, false);
+
             if (javadoc != null) {
-                setJavadoc(wc, updated, wc.getTreeUtilities().getComments(vt, true), javadoc);
+                setJavadoc(wc, updated, vt, javadoc);
             } else {
-                for (org.netbeans.api.java.source.Comment c : wc.getTreeUtilities().getComments(vt, true)) {
-                    make.addComment(updated, c, true);
-                }
+                GeneratorUtilities.get(wc).copyComments(vt, updated, true);
             }
             updated = GeneratorUtilities.get(wc).importFQNs(updated);
             wc.rewrite(vt, updated);
@@ -802,12 +821,19 @@ public class CodeRefiner extends AnahataToolkit {
      * @return A status message.
      * @throws Exception If the operation fails.
      */
-    @AgiTool("Reformats the specified file using the IDE's code style rules.")
+    @AgiTool("Reformats a specified file open in the editor using the IDE's code style rules.")
     public String reformat(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("Whether to save the file after the change.") boolean save) throws Exception {
 
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
+        
+        DataObject doid = DataObject.find(fo);
+        EditorCookie ec = doid.getLookup().lookup(EditorCookie.class);
+        if (ec == null || ec.getOpenedPanes() == null || ec.getOpenedPanes().length == 0) {
+            throw new AgiToolException("File is not open in the editor: " + filePath);
+        }
+        
         JavaSource js = JavaSource.forFileObject(fo);
 
         js.runModificationTask(wc -> {
@@ -875,6 +901,10 @@ public class CodeRefiner extends AnahataToolkit {
 
     private void handleSave(FileObject fo) throws IOException {
         DataObject doid = DataObject.find(fo);
+        EditorCookie ec = doid.getLookup().lookup(EditorCookie.class);
+        if (ec != null && ec.getOpenedPanes() != null) {
+            ec.saveDocument();
+        }
         SaveCookie sc = doid.getLookup().lookup(SaveCookie.class);
         if (sc != null) {
             sc.save();
@@ -884,31 +914,44 @@ public class CodeRefiner extends AnahataToolkit {
     /**
      * Internal helper to set or remove Javadoc on a tree node.
      * <p>
-     * CRITICAL: TreeMaker.addComment and removeComment are VOID methods that modify 
-     * the instance. For existing members, you MUST clone the tree first and use 
-     * wc.rewrite(old, new), otherwise wc.rewrite(t, t) will ignore the comment change.
+     * CRITICAL: TreeMaker.addComment and removeComment are VOID methods that
+     * modify the instance. For existing members, you MUST clone the tree first
+     * and use wc.rewrite(old, new), otherwise wc.rewrite(t, t) will ignore the
+     * comment change.
      * </p>
      */
-    private void setJavadoc(WorkingCopy wc, Tree tree, List<org.netbeans.api.java.source.Comment> preserveComments, String javadocText) {
+    private void setJavadoc(WorkingCopy wc, Tree tree, Tree oldTree, String javadocText) {
         TreeMaker make = wc.getTreeMaker();
-        
-        // 1. Clear any existing comments on this instance
-        int count = wc.getTreeUtilities().getComments(tree, true).size();
-        for (int i = count - 1; i >= 0; i--) {
-            make.removeComment(tree, i, true);
-        }
+        TreeUtilities utils = wc.getTreeUtilities();
 
-        // 2. Re-add non-javadoc comments if provided
-        if (preserveComments != null) {
-            for (org.netbeans.api.java.source.Comment c : preserveComments) {
-                if (c.style() != org.netbeans.api.java.source.Comment.Style.JAVADOC) {
-                    make.addComment(tree, c, true);
+        if (oldTree != null) {
+            // 1. Manually migrate non-preceding comments (INLINE/TRAILING)
+            // GeneratorUtilities is fine for these as they don't trigger ghost restoration
+            GeneratorUtilities.get(wc).copyComments(oldTree, tree, false);
+
+            // 2. Manually migrate PRECEDING comments, filtering out JAVADOC
+            List<org.netbeans.api.java.source.Comment> oldPre = utils.getComments(oldTree, true);
+            boolean hasPreceding = false;
+            for (org.netbeans.api.java.source.Comment c : oldPre) {
+                if (c.getText().trim().startsWith("/**")) {
+                    log("[setJavadoc] Filtering out old Javadoc.");
+                    continue; 
                 }
+                make.addComment(tree, c, true);
+                hasPreceding = true;
+            }
+
+            // 3. LOCK the position if we are removing Javadoc and have no other preceding comments
+            if (javadocText == null && !hasPreceding) {
+                log("[setJavadoc] Adding locking whitespace for removal.");
+                org.netbeans.api.java.source.Comment lock = org.netbeans.api.java.source.Comment.create(org.netbeans.api.java.source.Comment.Style.WHITESPACE, -1, -1, -1, " ");
+                make.addComment(tree, lock, true);
             }
         }
 
-        // 3. Add new javadoc if provided (non-blank string)
+        // 4. Add new Javadoc if requested
         if (javadocText != null && !javadocText.isBlank()) {
+            log("[setJavadoc] Adding new Javadoc.");
             String formatted = "/**\n     * " + javadocText.replace("\n", "\n     * ") + "\n     */";
             org.netbeans.api.java.source.Comment newComment = org.netbeans.api.java.source.Comment.create(org.netbeans.api.java.source.Comment.Style.JAVADOC, -1, -1, -1, formatted);
             make.addComment(tree, newComment, true);
