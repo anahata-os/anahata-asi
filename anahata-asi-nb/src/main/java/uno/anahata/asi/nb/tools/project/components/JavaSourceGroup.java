@@ -150,22 +150,26 @@ public final class JavaSourceGroup extends ProjectNode {
         }
     }
 
-    /** 
-     * Calculates the total recursive size of all packages in this group.
-     * 
-     * @return Total byte count.
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details:
+     * Calculates the total recursive size of all logical packages
+     * contained within this group.
+     * </p>
      */
     @Override
     public long getTotalSize() {
         return packages.stream().mapToLong(JavaPackage::getTotalSize).sum();
     }
 
-    /** 
-     * Renders the Java source group header and all constituent packages.
-     * 
-     * @param sb The target StringBuilder.
-     * @param indent The current indentation level.
-     * @param summary If true, renders condensed aggregate views.
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details:
+     * 1. Renders the source group header (display name and relative path).
+     * 2. Recursively triggers rendering for all constituent packages.
+     * </p>
      */
     @Override
     public void renderMarkdown(StringBuilder sb, String indent, boolean summary) {

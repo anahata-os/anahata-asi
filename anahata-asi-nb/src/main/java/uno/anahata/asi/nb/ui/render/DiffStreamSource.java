@@ -26,9 +26,21 @@ import org.openide.util.lookup.Lookups;
  */
 @Slf4j
 public class DiffStreamSource extends StreamSource {
+    /**
+     * The display name of the resource.
+     */
     private final String name;
+    /**
+     * The title to be displayed in the diff viewer pane header.
+     */
     private final String title;
+    /**
+     * The raw string content of the source.
+     */
     private final String content;
+    /**
+     * The MIME type of the content, used to locate the correct {@link javax.swing.text.EditorKit}.
+     */
     private final String mimeType;
     
     /** The live document associated with this source, used for synchronization. */
@@ -39,6 +51,14 @@ public class DiffStreamSource extends StreamSource {
     @Setter
     private boolean editable = false;
 
+    /**
+     * Constructs a new stream source for the NetBeans Diff API.
+     *
+     * @param name The name of the source.
+     * @param title The title for the UI pane.
+     * @param content The initial text content.
+     * @param mimeType The MIME type for syntax highlighting.
+     */
     public DiffStreamSource(String name, String title, String content, String mimeType) {
         this.name = name;
         this.title = title;
@@ -46,21 +66,33 @@ public class DiffStreamSource extends StreamSource {
         this.mimeType = mimeType;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getName() {
         return name;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getTitle() {
         return title;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getMIMEType() {
         return mimeType;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Reader createReader() throws IOException {
         if (document != null) {
@@ -103,14 +135,16 @@ public class DiffStreamSource extends StreamSource {
         };
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isEditable() {
         return editable;
     }
 
     /**
-     * Provides a Lookup containing the Document if available. This is critical 
-     * for the NetBeans Diff visualizer to perform live edits during a merge.
+     * {@inheritDoc}
      */
     @Override
     public Lookup getLookup() {

@@ -12,14 +12,30 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public final class JavacAlert {
+
+    /**
+     * The absolute path to the Java source file.
+     */
     @Schema(description = "The absolute path to the Java source file.")
     private final String filePath;
+    /**
+     * The kind of alert (e.g., ERROR, WARNING).
+     */
     @Schema(description = "The kind of alert (e.g., ERROR, WARNING).")
     private final String kind;
+    /**
+     * The line number (1-based).
+     */
     @Schema(description = "The line number (1-based).")
     private final int lineNumber;
+    /**
+     * The column number (1-based).
+     */
     @Schema(description = "The column number (1-based).")
     private final int columnNumber;
+    /**
+     * The compiler message.
+     */
     @Schema(description = "The compiler message.")
     private final String message;
 }

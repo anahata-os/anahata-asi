@@ -122,10 +122,11 @@ public final class ProjectComponent extends ProjectNode {
         return (fileObject != null) ? fileObject.getNameExt() : null;
     }
 
-    /** 
+    /**
+     * {@inheritDoc}
+     * <p>
      * Returns the physical size of this component plus the size of all nested children.
-     * 
-     * @return Total byte count.
+     * </p>
      */
     @Override
     public long getTotalSize() {
@@ -133,19 +134,13 @@ public final class ProjectComponent extends ProjectNode {
         return baseSize + children.stream().mapToLong(ProjectComponent::getTotalSize).sum();
     }
 
-    /** 
-     * Renders this component as a Markdown list item.
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details:
      * 1. Renders the component name with a 📄 icon if it is a top-level file.
      * 2. Appends the Java kind and any IDE status flags (e.g., Git [M]) to the name.
      * 3. Recursively triggers rendering for any nested children.
      * </p>
-     * 
-     * @param sb The StringBuilder to append to.
-     * @param indent The current indentation string.
-     * @param summary If true, the parent container is handling the aggregation. 
-     *                However, root-level files (parent == null) should still render.
      */
     @Override
     public void renderMarkdown(StringBuilder sb, String indent, boolean summary) {

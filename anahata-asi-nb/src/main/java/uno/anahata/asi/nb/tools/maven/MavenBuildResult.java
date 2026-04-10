@@ -6,6 +6,7 @@ import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 /**
  * Represents the detailed result of a Maven build execution, including status, 
@@ -19,6 +20,7 @@ import lombok.NoArgsConstructor;
  * @author anahata
  */
 @Data
+@ToString
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "Represents the detailed result of a Maven build execution, including status, exit code, and captured output.")

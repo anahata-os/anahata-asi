@@ -4,6 +4,7 @@ package uno.anahata.asi.nb.tools.maven;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.ToString;
 
 /**
  * Represents the detailed, multi-phase result of the {@code Maven.addDependency} "super-tool".
@@ -14,6 +15,7 @@ import lombok.Getter;
  */
 @Getter
 @Builder
+@ToString
 @Schema(description = "Represents the detailed, multi-phase result of the Maven.addDependency tool.")
 public class AddDependencyResult {
 

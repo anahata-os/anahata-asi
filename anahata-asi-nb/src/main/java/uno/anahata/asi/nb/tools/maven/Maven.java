@@ -226,7 +226,7 @@ public class Maven extends AnahataToolkit {
      * @param type The type of the dependency (e.g., 'test-jar'). If null, defaults to 'jar'.
      * @return an AddDependencyResult object containing the outcome of each phase.
      */
-    @AgiTool("The definitive 'super-tool' for adding a Maven dependency. It follows a safe, multi-phase process and returns a structured result object. The model is responsible for interpreting the result.")
+    @AgiTool("The definitive 'super-tool' for adding a Maven dependency. It follows a safe, multi-phase process and returns a structured result object. The model is responsible for interpreting the result. **Doesn't work with ${project.version}. Use the Resources toolkit if you need to add a multimodule project dependency.**")
     public AddDependencyResult addDependency(
             @AgiToolParam("The absolute path of the project to modify.") String projectPath,
             @AgiToolParam("The groupId of the dependency.") String groupId,
@@ -247,6 +247,7 @@ public class Maven extends AnahataToolkit {
 
             if (!preflightSuccess) {
                 summary.append("Result: FAILED. Main artifact could not be resolved. pom.xml was not modified.");
+                error("Result: FAILED. Main artifact could not be resolved. pom.xml was not modified.");
                 return resultBuilder.summary(summary.toString()).build();
             }
             summary.append("Result: SUCCESS. Main artifact found.\n\n");
@@ -257,6 +258,7 @@ public class Maven extends AnahataToolkit {
             FileObject pom = project.getProjectDirectory().getFileObject("pom.xml");
             if (pom == null) {
                 summary.append("Result: FAILED. Could not find pom.xml.");
+                error("Could not find pom.xml");
                 return resultBuilder.pomModificationSuccess(false).summary(summary.toString()).build();
             }
 
@@ -274,6 +276,7 @@ public class Maven extends AnahataToolkit {
             
             MavenBuildResult resolveResult = runGoals(projectPath, Collections.singletonList("dependency:resolve"), null, null, null, null);
             resultBuilder.dependencyResolveResult(resolveResult);
+            log("resolve result: " + resolveResult);
             summary.append("Result: 'dependency:resolve' goal executed. See MavenBuildResult for details.\n\n");
 
             // Phase 4: Asynchronous Source/Javadoc Download
@@ -296,6 +299,7 @@ public class Maven extends AnahataToolkit {
 
         } catch (Exception e) {
             summary.append("\nFATAL ERROR: An unexpected exception occurred: ").append(e.getMessage());
+            error("FATAL ERROR: An unexpected exception occurred " + e.getMessage());            
             LOG.log(Level.SEVERE, "Add dependency failed", e);
             return resultBuilder.summary(summary.toString()).build();
         }

@@ -226,7 +226,9 @@ public class GeminiModel extends AbstractModel {
         return getGenaiModel().topP().orElse(null);
     }
 
-    private record GeminiGenerateContentParameters(List<Content> history, String historyJson, GenerateContentConfig config) {}
+    private record GeminiGenerateContentParameters(List<Content> history, String historyJson, GenerateContentConfig config) {
+
+    }
 
     private GeminiGenerateContentParameters prepareGenerateContentParameters(GenerationRequest request) {
         RequestConfig config = request.config();
@@ -236,7 +238,7 @@ public class GeminiModel extends AbstractModel {
         // 1-to-N Mapping: A single turn-holding ModelMessage expands into multiple API contents.
         List<Content> googleHistory = history.stream()
                 .map(msg -> new GeminiContentAdapter(msg, includePruned).toGoogle())
-                .flatMap(List::stream) 
+                .flatMap(List::stream)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toCollection(ArrayList::new));
 
@@ -267,7 +269,7 @@ public class GeminiModel extends AbstractModel {
     public Response generateContent(GenerationRequest request) {
         Client client = provider.getClient();
         GeminiGenerateContentParameters prepared = prepareGenerateContentParameters(request);
-        
+
         log.info("Sending request to Gemini model: {} {} content elements", getModelId(), prepared.history().size());
         for (int i = 0; i < prepared.history().size(); i++) {
             Content c = prepared.history().get(i);
@@ -291,13 +293,22 @@ public class GeminiModel extends AbstractModel {
             if (isInterruption(e)) {
                 throw new ApiCallInterruptedException(e);
             }
-            if (e.toString().contains("429") || e.toString().contains("503") || e.toString().contains("500") || e.toString().contains("499")) {
+            if (isRetryable(e)) {
                 provider.hokusPocus();
                 throw new RetryableApiException(client.apiKey(), e.toString(), e);
             }
             throw e;
         }
 
+    }
+
+    /**
+     * Serious intelligence to detect whether it is retriable or not.
+     *
+     * @param e the may be retriable.
+     */
+    private boolean isRetryable(Exception e) {
+        return e.toString().contains("429") || e.toString().contains("503") || e.toString().contains("500") || e.toString().contains("499") || e.toString().contains("403");
     }
 
     @Override
@@ -319,20 +330,20 @@ public class GeminiModel extends AbstractModel {
             List<GeminiModelMessage> targets = new ArrayList<>();
             boolean started = false;
             GeminiResponse lastGeminiResponse = null;
-            
+
             // Accumulators for usage metadata
             int totalCandidatesTokens = 0;
 
             for (GenerateContentResponse chunk : stream) {
                 String chunkJson = chunk.toJson();
-                
+
                 if (!started) {
                     List<Candidate> candidates = chunk.candidates().orElse(Collections.emptyList());
                     String modelVersion = chunk.modelVersion().orElse(getModelId());
                     for (int i = 0; i < candidates.size(); i++) {
                         targets.add(new GeminiModelMessage(agi, modelVersion));
                     }
-                    observer.onStart((List)targets);
+                    observer.onStart((List) targets);
                     started = true;
                 }
 
@@ -341,7 +352,7 @@ public class GeminiModel extends AbstractModel {
                 }
 
                 handleChunk(chunk, targets);
-                
+
                 // Accumulate billed tokens if present in the chunk
                 Optional<GenerateContentResponseUsageMetadata> usage = chunk.usageMetadata();
                 if (usage.isPresent()) {
@@ -352,30 +363,30 @@ public class GeminiModel extends AbstractModel {
                         target.setBilledTokenCount(totalCandidatesTokens);
                     }
                 }
-                
+
                 lastGeminiResponse = new GeminiResponse(prepared.config().toJson(), prepared.historyJson(), agi, getModelId(), chunk);
                 observer.onNext(lastGeminiResponse);
             }
-            
+
             if (lastGeminiResponse != null) {
                 for (GeminiModelMessage target : targets) {
                     target.setResponse(lastGeminiResponse);
                     // Ensure the final model version is set
                     target.setModelId(lastGeminiResponse.getModelVersion());
-                    
+
                     // Ensure the finish reason is set if it's still null after the stream
                     if (target.getFinishReason() == null) {
                         target.setFinishReason(uno.anahata.asi.agi.provider.FinishReason.GOD_FUCKING_KNOWS);
                     }
                 }
             }
-            
+
             observer.onComplete();
         } catch (Exception e) {
             log.error("Exception in generateContentStream", e);
             if (isInterruption(e)) {
                 observer.onError(new ApiCallInterruptedException(e));
-            } else if (e.toString().contains("429") || e.toString().contains("503") || e.toString().contains("500")) {
+            } else if (isRetryable(e)) {
                 provider.hokusPocus();
                 observer.onError(new RetryableApiException(client.apiKey(), e.toString(), e));
             } else {
@@ -386,7 +397,7 @@ public class GeminiModel extends AbstractModel {
 
     /**
      * Checks if the given exception or any of its causes is an interruption.
-     * 
+     *
      * @param e The exception to check.
      * @return true if it's an interruption, false otherwise.
      */
@@ -402,28 +413,29 @@ public class GeminiModel extends AbstractModel {
     }
 
     /**
-     * Processes a single streaming chunk by appending its deltas to the corresponding target messages.
-     * 
+     * Processes a single streaming chunk by appending its deltas to the
+     * corresponding target messages.
+     *
      * @param chunk The raw chunk from the Gemini API.
      * @param targets The persistent ModelMessage objects being updated.
      */
     private void handleChunk(GenerateContentResponse chunk, List<GeminiModelMessage> targets) {
         List<Candidate> candidates = chunk.candidates().orElse(Collections.emptyList());
-        
+
         for (int i = 0; i < Math.min(candidates.size(), targets.size()); i++) {
             Candidate c = candidates.get(i);
             GeminiModelMessage target = targets.get(i);
-            
+
             c.content().ifPresent(content -> content.parts().ifPresent(parts -> {
                 for (Part p : parts) {
                     if (p.text().isPresent()) {
                         String text = p.text().get();
                         byte[] sig = p.thoughtSignature().orElse(null);
                         boolean isThought = p.thought().orElse(false);
-                        
+
                         List<AbstractPart> activeParts = target.getParts();
                         AbstractPart lastPart = activeParts.isEmpty() ? null : activeParts.get(activeParts.size() - 1);
-                        
+
                         boolean canAppend = false;
                         if (lastPart instanceof ModelTextPart mtp && mtp.isThought() == isThought) {
                             if (!text.isEmpty()) {
@@ -434,7 +446,7 @@ public class GeminiModel extends AbstractModel {
                             }
                             canAppend = true;
                         }
-                        
+
                         if (!canAppend) {
                             if (!text.isEmpty() || sig != null) {
                                 target.addTextPart(text, sig, isThought);
@@ -445,7 +457,7 @@ public class GeminiModel extends AbstractModel {
                         String callId = p.functionCall().get().id().orElse(null);
                         if (callId != null && target.getToolCalls().stream().anyMatch(tc -> callId.equals(tc.getId()))) {
                             log.warn("Duplicate tool call ID received in stream, skipping: {}", callId);
-                            continue; 
+                            continue;
                         }
                         target.toAnahataPart(p);
                     } else {
@@ -454,14 +466,14 @@ public class GeminiModel extends AbstractModel {
                     }
                 }
             }));
-            
+
             handleResponseMetadata(c, chunk, target, targets.size());
         }
     }
 
     /**
      * Unified handler for response metadata (finish reason, grounding).
-     * 
+     *
      * @param c The candidate object.
      * @param response The full response or chunk.
      * @param target The target Anahata message.
@@ -471,17 +483,17 @@ public class GeminiModel extends AbstractModel {
         // 1. Finish Reason
         c.finishReason().ifPresent(fr -> target.setFinishReason(GeminiModelMessage.toAnahataFinishReason(fr)));
         c.finishMessage().ifPresent(target::setFinishMessage);
-        
+
         // 2. Citations
         c.citationMetadata().ifPresent(cm -> {
             String citations = cm.citations().orElse(List.of()).stream()
-                .map(Citation::uri)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.joining(", "));
+                    .map(Citation::uri)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .collect(Collectors.joining(", "));
             target.setCitationMetadata(citations);
         });
-        
+
         // 3. Grounding
         c.groundingMetadata().ifPresent(gm -> {
             target.setGroundingMetadata(GeminiModelMessage.toAnahataGroundingMetadata(gm));

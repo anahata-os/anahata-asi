@@ -103,27 +103,23 @@ public final class ResourceSourceGroup extends ProjectNode {
         }
     }
 
-    /** 
+    /**
+     * {@inheritDoc}
+     * <p>
      * Calculates the total recursive size of all folders in this group.
-     * 
-     * @return Total byte count.
+     * </p>
      */
     @Override
     public long getTotalSize() {
         return folders.stream().mapToLong(ResourceFolder::getTotalSize).sum();
     }
 
-    /** 
-     * Renders the resource source group header and all constituent folders.
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details:
      * Outputs a level-3 header for the group name and relative path, then 
      * sorts and renders each physical folder.
      * </p>
-     * 
-     * @param sb The target StringBuilder.
-     * @param indent The current indentation level.
-     * @param summary If true, renders condensed aggregate views.
      */
     @Override
     public void renderMarkdown(StringBuilder sb, String indent, boolean summary) {

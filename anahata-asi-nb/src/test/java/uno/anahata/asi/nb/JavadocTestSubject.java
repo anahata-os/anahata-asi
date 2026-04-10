@@ -1,16 +1,17 @@
 package uno.anahata.asi.nb;
 
-/**
- * A test subject for Javadoc manipulation.
- */
+
 public class JavadocTestSubject {
 
-    /**
-     * This is the updated beginning.
-     */
+    
+    @SuppressWarnings("unchecked")
     public int theBeginning(String prefix) {
         return prefix.length();
     }
+    /**
+     * This is a brand new Javadoc that should replace the old one while keeping the annotation.
+     */
+    private int id = 108;
 
     /**
      * The name of the test subject.
@@ -18,27 +19,15 @@ public class JavadocTestSubject {
     private String name;
 
     /**
-     * Gets the name.
-     */
-    @SuppressWarnings("unchecked")
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Sets the name.
+     *
+     * @param name
+     * @deprecated
      */
     @Deprecated(since = "1.0", forRemoval = true)
     public void setName(String name) {
         this.name = name;
     }
 
-    /**
-     * Clears the name field.
-     */
-    public void clearName() {
-        this.name = null;
-    }
 
     @SuppressWarnings("all")
     @Deprecated
@@ -51,11 +40,4 @@ public class JavadocTestSubject {
         }
     }
 
-    /**
-     * The final method of the class.
-     */
-    public void theFinalCountdown() {
-        // Last method logic
-        return;
-    }
 }

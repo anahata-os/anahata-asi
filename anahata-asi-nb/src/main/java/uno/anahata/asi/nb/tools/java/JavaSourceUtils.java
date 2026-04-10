@@ -140,8 +140,7 @@ public class JavaSourceUtils {
 
     /**
      * Finds a {@link Element} by its fully qualified name within a
-     * {@link WorkingCopy}. Supports both types and members (including basic
-     * method signature matching).
+     * {@link WorkingCopy}. Supports types, members, and packages.
      *
      * @param wc The working copy.
      * @param memberFqn The FQN to search for.
@@ -154,9 +153,16 @@ public class JavaSourceUtils {
             pureFqn = memberFqn.substring(0, memberFqn.indexOf('('));
         }
 
+        // Try type first
         TypeElement type = wc.getElements().getTypeElement(pureFqn);
         if (type != null) {
             return type;
+        }
+
+        // Try package
+        javax.lang.model.element.PackageElement pkg = wc.getElements().getPackageElement(pureFqn);
+        if (pkg != null) {
+            return pkg;
         }
 
         int lastDot = pureFqn.lastIndexOf('.');

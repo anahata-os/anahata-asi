@@ -66,8 +66,11 @@ public class ProjectContextProvider extends AbstractProjectContextProvider {
     }
 
     /**
-     * Returns the dynamic display name of the project.
-     * @return The project's display name.
+     * {@inheritDoc}
+     * <p>
+     * Returns the dynamic display name of the NetBeans project as retrieved
+     * from {@link org.netbeans.api.project.ProjectUtils}.
+     * </p>
      */
     @Override
     public String getName() {        
@@ -75,8 +78,11 @@ public class ProjectContextProvider extends AbstractProjectContextProvider {
     }
 
     /**
-     * Toggles the providing state and synchronizes the anahata.md resource.
-     * @param enabled The new state.
+     * {@inheritDoc}
+     * <p>
+     * Toggles the providing state and triggers a synchronization of the
+     * {@code anahata.md} resource with the session's resource manager.
+     * </p>
      */
     @Override
     public void setProviding(boolean enabled) {
@@ -85,9 +91,11 @@ public class ProjectContextProvider extends AbstractProjectContextProvider {
     }
 
     /**
-     * Injects the project's Markdown overview into the RAG message.
-     * @param ragMessage The target RAG message.
-     * @throws Exception if fetching overview fails.
+     * {@inheritDoc}
+     * <p>
+     * Fetches a fresh {@link ProjectOverview} and appends its Markdown
+     * representation to the RAG message.
+     * </p>
      */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
