@@ -160,9 +160,9 @@ public class DiffAnnotationsLayerUI extends LayerUI<JComponent> {
 
     /**
      * Recursively searches for a visible vertical scroll bar that is effectively scrollable.
-     * 
-     * @param c The component to start the search from.
-     * @return The found {@link JScrollBar}, or {@code null} if not found.
+     *      *
+     *      * @param c The component to start the search from.
+     *      * @return The found {@link JScrollBar}, or {@code null} if not found.
      */
     private JScrollBar findVisibleVerticalScrollBar(Component c) {
         if (c instanceof JScrollPane sp) {
@@ -183,12 +183,12 @@ public class DiffAnnotationsLayerUI extends LayerUI<JComponent> {
     }
 
     /**
-     * Determines if the specified component is a descendant of a JScrollPane 
-     * that has an active vertical scroll bar.
-     * 
-     * @param c The component to check.
-     * @param l The current JLayer.
-     * @return {@code true} if inside an internal vertical scroll area.
+     * Determines if the specified component is a descendant of a JScrollPane
+     *      * that has an active vertical scroll bar.
+     *      *
+     *      * @param c The component to check.
+     *      * @param l The current JLayer.
+     *      * @return {@code true} if inside an internal vertical scroll area.
      */
     private boolean isInsideInternalVerticalScrollArea(Component c, JLayer<? extends JComponent> l) {
         Component current = c;
@@ -206,11 +206,11 @@ public class DiffAnnotationsLayerUI extends LayerUI<JComponent> {
     }
 
     /**
-     * Re-dispatches a mouse wheel event to the first ancestor JScrollPane that 
-     * is not part of the internal visualizer.
-     * 
-     * @param e The original wheel event.
-     * @param l The JLayer instance.
+     * Re-dispatches a mouse wheel event to the first ancestor JScrollPane that
+     *      * is not part of the internal visualizer.
+     *      *
+     *      * @param e The original wheel event.
+     *      * @param l The JLayer instance.
      */
     private void redispatchToParent(MouseWheelEvent e, JLayer<? extends JComponent> l) {
         Container parent = l.getParent();
@@ -329,11 +329,11 @@ public class DiffAnnotationsLayerUI extends LayerUI<JComponent> {
     }
 
     /**
-     * Recursively traverses the component hierarchy to find the editor pane on the 
-     * right side of the main split pane.
-     * 
-     * @param root The container to start the search from.
-     * @return The identified {@link JEditorPane}, or {@code null} if not found.
+     * Recursively traverses the component hierarchy to find the editor pane on the
+     *      * right side of the main split pane.
+     *      *
+     *      * @param root The container to start the search from.
+     *      * @return The identified {@link JEditorPane}, or {@code null} if not found.
      */
     private JEditorPane findRightEditor(Container root) {
         JSplitPane sp = findJSplitPane(root);
@@ -343,6 +343,12 @@ public class DiffAnnotationsLayerUI extends LayerUI<JComponent> {
         return findEditorPane(sp.getRightComponent());
     }
 
+    /**
+     * Recursively searches for a {@link JSplitPane} within the component hierarchy.
+     *      *
+     *      * @param c The starting component.
+     *      * @return The found {@link JSplitPane}, or {@code null}.
+     */
     private JSplitPane findJSplitPane(Container c) {
         if (c instanceof JSplitPane sp) {
             return sp;
@@ -358,6 +364,13 @@ public class DiffAnnotationsLayerUI extends LayerUI<JComponent> {
         return null;
     }
 
+    /**
+     * Recursively searches for a {@link JEditorPane} that is specifically an instance
+     *      * of the NetBeans internal {@code DecoratedEditorPane}.
+     *      *
+     *      * @param c The starting component.
+     *      * @return The found {@link JEditorPane}, or {@code null}.
+     */
     private JEditorPane findEditorPane(Component c) {
         if (c instanceof JEditorPane pane && pane.getClass().getName().contains("DecoratedEditorPane")) {
             return pane;

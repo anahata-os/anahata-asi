@@ -72,7 +72,7 @@ public class CodeRefiner extends AnahataToolkit {
         return Collections.singletonList(getClass().getName() + " toolkit is a new under-development toolkit for high-fidelity structural Java code refinement."
                 + "\n- Use className.<init> for constructors fqns."
                 + "\n- Only provide the parameters that are required or need to be changed in the updateXxx methods."
-                + "\n- For package-info.java Javadoc, prefer using the Resources toolkit (updateTextResource) instead of addJavadoc."
+                + "\n- For package-info.java Javadoc, prefer using the Resources toolkit (updateTextResource) instead of setJavadoc."
         );
     }
 
@@ -139,7 +139,7 @@ public class CodeRefiner extends AnahataToolkit {
 
                 if (newTree != null) {
                     make.asReplacementOf(newTree, tree, false);
-                    setJavadoc(wc, newTree, tree, null, false); // Maintain existing Javadoc
+                    applyJavadoc(wc, newTree, tree, null, false); // Maintain existing Javadoc
                     newTree = genUtils.importFQNs(newTree);
                     wc.rewrite(tree, newTree);
                 }
@@ -214,7 +214,7 @@ public class CodeRefiner extends AnahataToolkit {
 
                     if (newTree != null) {
                         make.asReplacementOf(newTree, tree, false);
-                    setJavadoc(wc, newTree, tree, null, false); // Maintain existing Javadoc
+                        applyJavadoc(wc, newTree, tree, null, false); // Maintain existing Javadoc
                         newTree = genUtils.importFQNs(newTree);
                         wc.rewrite(tree, newTree);
                     }
@@ -239,8 +239,8 @@ public class CodeRefiner extends AnahataToolkit {
      * @return A status message.
      * @throws Exception If the operation fails.
      */
-    @AgiTool("Adds or updates Javadoc for a class, method, or field. Note: For package-info.java files, use the Resources toolkit instead.")
-    public String addJavadoc(
+    @AgiTool("Sets or updates Javadoc for a class, method, or field. Note: For package-info.java files, use the Resources toolkit instead.")
+    public String setJavadoc(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The FQN of the member.") String memberFqn,
             @AgiToolParam("The Javadoc content (without the /** and */ markers).") String javadocText,
@@ -263,7 +263,7 @@ public class CodeRefiner extends AnahataToolkit {
 
             // Aggressively sever the identity link
             make.asReplacementOf(newTree, oldTree, false);
-            setJavadoc(wc, newTree, oldTree, javadocText, true);
+            applyJavadoc(wc, newTree, oldTree, javadocText, true);
 
             wc.rewrite(oldTree, newTree);
         });
@@ -272,7 +272,7 @@ public class CodeRefiner extends AnahataToolkit {
         if (save) {
             handleSave(fo);
         }
-        return "Updated Javadoc for " + memberFqn;
+        return "Set Javadoc for " + memberFqn;
     }
 
     /**
@@ -309,7 +309,7 @@ public class CodeRefiner extends AnahataToolkit {
 
             // Aggressively sever the identity link
             make.asReplacementOf(newTree, oldTree, false);
-            setJavadoc(wc, newTree, oldTree, null, true);
+            applyJavadoc(wc, newTree, oldTree, null, true);
 
             wc.rewrite(oldTree, newTree);
         });
@@ -390,7 +390,7 @@ public class CodeRefiner extends AnahataToolkit {
             String finalBody = body.trim().startsWith("{") ? body : "{" + body + "}";
             MethodTree newMethod = (MethodTree) make.Method(mods, name, make.Type(returnType), tps, params, thrws, finalBody, null);
             if (javadoc != null) {
-                setJavadoc(wc, newMethod, null, javadoc, true);
+                applyJavadoc(wc, newMethod, null, javadoc, true);
             }
 
             newMethod = GeneratorUtilities.get(wc).importFQNs(newMethod);
@@ -503,9 +503,9 @@ public class CodeRefiner extends AnahataToolkit {
             make.asReplacementOf(updated, mt, false);
 
             if (javadoc != null) {
-                setJavadoc(wc, updated, mt, javadoc, true);
+                applyJavadoc(wc, updated, mt, javadoc, true);
             } else {
-                setJavadoc(wc, updated, mt, null, false); // Maintain existing
+                applyJavadoc(wc, updated, mt, null, false); // Maintain existing
             }
             updated = GeneratorUtilities.get(wc).importFQNs(updated);
             wc.rewrite(mt, updated);
@@ -554,7 +554,7 @@ public class CodeRefiner extends AnahataToolkit {
             VariableTree newField = make.Variable(mods, name, make.Type(type), init);
 
             if (javadoc != null) {
-                setJavadoc(wc, newField, null, javadoc, true);
+                applyJavadoc(wc, newField, null, javadoc, true);
             }
 
             newField = GeneratorUtilities.get(wc).importFQNs(newField);
@@ -642,9 +642,9 @@ public class CodeRefiner extends AnahataToolkit {
             make.asReplacementOf(updated, vt, false);
 
             if (javadoc != null) {
-                setJavadoc(wc, updated, vt, javadoc, true);
+                applyJavadoc(wc, updated, vt, javadoc, true);
             } else {
-                setJavadoc(wc, updated, vt, null, false); // Maintain existing
+                applyJavadoc(wc, updated, vt, null, false); // Maintain existing
             }
             updated = GeneratorUtilities.get(wc).importFQNs(updated);
             wc.rewrite(vt, updated);
@@ -730,7 +730,7 @@ public class CodeRefiner extends AnahataToolkit {
             };
 
             if (javadoc != null) {
-                setJavadoc(wc, newClass, null, javadoc, true);
+                applyJavadoc(wc, newClass, null, javadoc, true);
             }
             newClass = GeneratorUtilities.get(wc).importFQNs(newClass);
 
@@ -954,7 +954,7 @@ public class CodeRefiner extends AnahataToolkit {
      * comment change.
      * </p>
      */
-    private void setJavadoc(WorkingCopy wc, Tree tree, Tree oldTree, String javadocText, boolean removeExisting) {
+    private void applyJavadoc(WorkingCopy wc, Tree tree, Tree oldTree, String javadocText, boolean removeExisting) {
         TreeMaker make = wc.getTreeMaker();
         TreeUtilities utils = wc.getTreeUtilities();
 
@@ -967,7 +967,7 @@ public class CodeRefiner extends AnahataToolkit {
             for (org.netbeans.api.java.source.Comment c : oldPre) {
                 if (c.isDocComment()) {
                     if (removeExisting || javadocText != null) {
-                        log("[setJavadoc] Filtering out old Javadoc.");
+                        log("[applyJavadoc] Filtering out old Javadoc.");
                         continue;
                     }
                 }
@@ -976,14 +976,14 @@ public class CodeRefiner extends AnahataToolkit {
 
             // 3. LOCK position if removing Javadoc
             if (javadocText == null && removeExisting) {
-                log("[setJavadoc] Adding locking whitespace for removal.");
+                log("[applyJavadoc] Adding locking whitespace for removal.");
                 make.addComment(tree, org.netbeans.api.java.source.Comment.create(org.netbeans.api.java.source.Comment.Style.WHITESPACE, -1, -1, -1, " "), true);
             }
         }
 
         // 4. Add new Javadoc if requested
         if (javadocText != null && !javadocText.isBlank()) {
-            log("[setJavadoc] Adding new Javadoc.");
+            log("[applyJavadoc] Adding new Javadoc.");
             String formatted = "/**\n * " + javadocText.replace("\n", "\n * ") + "\n */";
             make.addComment(tree, org.netbeans.api.java.source.Comment.create(org.netbeans.api.java.source.Comment.Style.JAVADOC, -1, -1, -1, formatted), true);
         }
