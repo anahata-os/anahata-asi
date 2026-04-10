@@ -50,23 +50,21 @@ public final class JavaPackage extends ProjectNode {
         this.components.add(component);
     }
 
-    /** 
-     * Calculates the total recursive size of all components in this package.
+    /**
+     * {@inheritDoc}
      * <p>
      * Implementation details:
      * Iterates through all registered components and sums their results 
      * from {@link ProjectComponent#getTotalSize()}.
      * </p>
-     * 
-     * @return The total byte count for the package.
      */
     @Override
     public long getTotalSize() {
         return components.stream().mapToLong(ProjectComponent::getTotalSize).sum();
     }
 
-    /** 
-     * Renders the package and its contents into a Markdown representation.
+    /**
+     * {@inheritDoc}
      * <p>
      * Implementation details:
      * 1. Renders the package name prefixed with the 📦 icon.
@@ -74,10 +72,6 @@ public final class JavaPackage extends ProjectNode {
      * 3. In standard mode, sorts components (ensuring package-info is first) 
      *    and recursively triggers their rendering logic.
      * </p>
-     * 
-     * @param sb The target StringBuilder.
-     * @param indent The current indentation level.
-     * @param summary If true, renders the condensed aggregate view.
      */
     @Override
     public void renderMarkdown(StringBuilder sb, String indent, boolean summary) {
