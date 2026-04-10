@@ -48,29 +48,25 @@ public final class ResourceFolder extends ProjectNode {
         this.components.add(component);
     }
 
-    /** 
+    /**
+     * {@inheritDoc}
+     * <p>
      * Calculates the total recursive size of all files in this folder.
-     * 
-     * @return Total byte count.
+     * </p>
      */
     @Override
     public long getTotalSize() {
         return components.stream().mapToLong(ProjectComponent::getTotalSize).sum();
     }
 
-    /** 
-     * Renders the folder and its files into a Markdown representation.
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details:
      * 1. Renders the folder path prefixed with the 📂 icon.
      * 2. In 'summary' mode, appends aggregate totals by file extension (e.g. 1 png, 3 md) 
      *    and the total recursive size.
      * 3. In standard mode, recursively triggers rendering for all child components.
      * </p>
-     * 
-     * @param sb The target StringBuilder.
-     * @param indent The current indentation level.
-     * @param summary If true, renders only the condensed aggregate view.
      */
     @Override
     public void renderMarkdown(StringBuilder sb, String indent, boolean summary) {

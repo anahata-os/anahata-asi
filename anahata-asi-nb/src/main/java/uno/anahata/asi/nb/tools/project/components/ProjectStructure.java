@@ -107,16 +107,13 @@ public final class ProjectStructure extends ProjectNode {
         }
     }
 
-    /** 
-     * Calculates the total recursive size of the entire project structure.
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details:
-     * Aggregates sizes from root files, Java groups, and resource groups. 
+     * Aggregates sizes from root files, Java groups, and resource groups.
      * Root folders are not sized individually as they are typically 
      * non-source directories (e.g., target, build).
      * </p>
-     * 
-     * @return Total byte count.
      */
     @Override
     public long getTotalSize() {
@@ -126,18 +123,13 @@ public final class ProjectStructure extends ProjectNode {
         return size;
     }
 
-    /** 
-     * Renders the entire project structure into a Markdown representation.
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details:
      * 1. Outputs a level-2 header with the project name.
      * 2. Renders root-level items (files and folder list).
      * 3. Iteratively triggers rendering for all Java and Resource source groups.
      * </p>
-     * 
-     * @param sb The target StringBuilder.
-     * @param indent The current indentation level.
-     * @param summary If true, renders condensed aggregate views.
      */
     @Override
     public void renderMarkdown(StringBuilder sb, String indent, boolean summary) {
