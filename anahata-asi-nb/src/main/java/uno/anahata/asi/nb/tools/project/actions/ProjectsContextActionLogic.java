@@ -15,6 +15,9 @@ import uno.anahata.asi.nb.tools.project.Projects;
  */
 public class ProjectsContextActionLogic {
 
+    /**
+     * Logger instance for this class.
+     */
     private static final Logger LOG = Logger.getLogger(ProjectsContextActionLogic.class.getName());
 
     /**
