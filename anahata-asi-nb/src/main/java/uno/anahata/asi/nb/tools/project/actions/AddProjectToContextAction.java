@@ -39,6 +39,9 @@ import uno.anahata.asi.swing.icons.IconUtils;
 @ActionReference(path = "Projects/Actions", position = 500)
 public final class AddProjectToContextAction extends AbstractAction implements ContextAwareAction, Presenter.Popup {
 
+    /**
+     * Logger instance for this class.
+     */
     private static final Logger LOG = Logger.getLogger(AddProjectToContextAction.class.getName());
     
     /** The lookup context containing the selected projects. */
