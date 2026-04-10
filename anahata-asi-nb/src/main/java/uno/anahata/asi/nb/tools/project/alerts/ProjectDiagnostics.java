@@ -12,6 +12,9 @@ import lombok.Data;
 @Schema(description = "A container for all diagnostics found during a project scan, including Java compiler alerts and high-level project problems.")
 @Data
 public final class ProjectDiagnostics {
+    /**
+     * The display name of the project associated with these diagnostics.
+     */
     @Schema(description = "The display name of the project.")
     private final String projectName;
     @Schema(description = "A list of Java compiler alerts.")

@@ -29,15 +29,11 @@ public class ProjectAlertsContextProvider extends AbstractProjectContextProvider
     }
 
     /**
-     * Injects project diagnostics into the RAG message.
+     * {@inheritDoc}
      * <p>
-     * Implementation details:
      * Fetches current alerts from the Projects toolkit and appends them to the 
      * RAG message. Alerts are grouped by type (Project vs. Compiler).
      * </p>
-     * 
-     * @param ragMessage The target RAG message.
-     * @throws Exception if diagnostics cannot be retrieved.
      */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
