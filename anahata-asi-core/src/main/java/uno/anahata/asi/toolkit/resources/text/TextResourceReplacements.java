@@ -57,7 +57,6 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
             }
 
             // Create a regex that is lenient with whitespace and line endings
-            // 1. Strip leading/trailing from target lines 2. Match optional whitespace around each line
             String regex = Stream.of(target.split("\\R", -1))
                     .map(line -> "[ \\t]*" + Pattern.quote(line.trim()) + "[ \\t]*")
                     .collect(Collectors.joining("\\R"));
@@ -88,13 +87,17 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
             String normalizedTarget = normalizeForComparison(target);
             int count = StringUtils.countMatches(normalizedOriginal, normalizedTarget);
             
-            if (replacement.getExpectedCount() > 0 && count != replacement.getExpectedCount()) {
-                throw new AgiToolException("Replacement failed for '" + target + "'. Expected " + replacement.getExpectedCount() + " occurrences, but found " + count + " (normalized comparison).");
+            int expected = replacement.getExpectedCount();
+            
+            if (expected >= 0 && count != expected) {
+                throw new AgiToolException("Strict count mismatch for target [" + target.substring(0, Math.min(20, target.length())) + "...]. Expected " + expected + ", but found " + count);
             }
             
-            if (count == 0 && replacement.getExpectedCount() != 0) {
-                 throw new AgiToolException("Target string not found in file (even after normalization): " + target);
+            if (expected == -1 && count == 0) {
+                 throw new AgiToolException("Mandatory target string not found (even after normalization): " + target);
             }
+            
+            // If expected == -2, we proceed even if count is 0.
         }
         
         // Finally call super.validate to check lastModified and perform identical check

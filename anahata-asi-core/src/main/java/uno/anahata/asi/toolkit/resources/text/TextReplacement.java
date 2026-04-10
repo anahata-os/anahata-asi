@@ -39,11 +39,14 @@ public class TextReplacement {
 
     /**
      * The expected number of occurrences of the target string in the file.
-     * If set to a value greater than 0, the operation will fail if the 
-     * actual number of replacements does not match this value.
-     * Use -1 to replace all occurrences without checking the count.
+     * <ul>
+     *   <li><b>n > 0</b>: Must match exactly n occurrences.</li>
+     *   <li><b>0</b>: Must match exactly 0 occurrences (ensures absence).</li>
+     *   <li><b>-1</b>: Default. Match at least 1 occurrence (Strict).</li>
+     *   <li><b>-2</b>: Match 0 or more occurrences (Lenient/Optional).</li>
+     * </ul>
      */
     @Builder.Default
-    @Schema(description = "The expected number of occurrences to replace. Use -1 for all.", defaultValue = "-1")
+    @Schema(description = "The expected number of occurrences to replace. Use -1 for strictly 1+, -2 for 0+.", defaultValue = "-1")
     private int expectedCount = -1;
 }
