@@ -54,7 +54,12 @@ public class RadioRenderer extends AbstractToolkitRenderer<Radio> {
     private JComboBox<AudioDevice> deviceCombo;
 
     /**
-     * Constructs a new RadioRenderer.
+     * Constructs a new RadioRenderer console with a default layout and
+     * uninitialized LED displays.
+     * <p>
+     * The actual initialization and binding to the toolkit state occur during
+     *  the {@link #onBind()} lifecycle phase.
+     * </p>
      */
     public RadioRenderer() {
         super();
