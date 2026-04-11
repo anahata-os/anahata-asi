@@ -33,13 +33,23 @@ import uno.anahata.asi.agi.provider.TokenizerType;
 @Slf4j
 public class OpenAiCompatibleProvider extends AbstractAgiProvider {
 
-    /** 
-     * The base URL of the OpenAI-compatible API (e.g., 'http://localhost:11434/v1'). 
+    /**
+     * The base URL of the OpenAI-compatible API endpoint.
+     * <p>
+     * This allows the provider to target official OpenAI services or
+     * alternative backends like Ollama (http://localhost:11434/v1),
+     * Groq, or DeepSeek.
+     * </p>
      */
     private String baseUrl;
 
     /**
-     * No-arg constructor for Kryo.
+     * Constructs a default OpenAI-compatible provider.
+     * <p>
+     * Initializes the display name to 'Universal' and sets the default
+     * tokenizer to {@link TokenizerType#CL100K_BASE}. Required for Kryo
+     * deserialization.
+     * </p>
      */
     public OpenAiCompatibleProvider() {
         super();
@@ -48,33 +58,37 @@ public class OpenAiCompatibleProvider extends AbstractAgiProvider {
     }
 
     /**
-     * Constructs a new universal provider.
-     * 
-     * @param uuid The unique ID.
-     * @param displayName The display name.
-     * @param baseUrl The API endpoint.
+     * Constructs a new universal provider with basic configuration.
+     * @param uuid The unique provider ID.
+     * @param displayName The user-facing name.
+     * @param baseUrl The API endpoint URL.
      */
     public OpenAiCompatibleProvider(String uuid, String displayName, String baseUrl) {
         this(uuid, displayName, baseUrl, null);
     }
 
     /**
-     * Constructs a new universal provider with a custom folder name.
-     * 
-     * @param uuid The unique ID.
-     * @param displayName The display name.
-     * @param baseUrl The API endpoint.
-     * @param folderName The custom folder name for configuration.
+     * Constructs a new universal provider with a custom storage folder.
+     * @param uuid The unique provider ID.
+     * @param displayName The user-facing name.
+     * @param baseUrl The API endpoint URL.
+     * @param folderName The custom folder name for configuration and key storage.
      */
     public OpenAiCompatibleProvider(String uuid, String displayName, String baseUrl, String folderName) {
         super(uuid);
         setDisplayName(displayName);
-        this.baseUrl = baseUrl;
+        setBaseUrl(baseUrl);
         setFolderName(folderName);
         setTokenizerType(TokenizerType.CL100K_BASE);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Retrieves the next available API key from the
+     * provider's key rotation pool.
+     * </p>
+     */
     @Override
     public String getCurrentApiKey() {
         return getNextKey();
@@ -84,17 +98,29 @@ public class OpenAiCompatibleProvider extends AbstractAgiProvider {
         this.baseUrl = baseUrl != null ? baseUrl.trim() : null;
     }
 
-    /** {@inheritDoc} */
+    public String getBaseUrl() {
+        return baseUrl != null ? baseUrl.trim() : null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Performs a GET request to the {@code /models}
+     * endpoint of the configured {@code baseUrl}. Parses the standard OpenAI
+     * list-response and wraps each ID in an {@link OpenAiModel} instance.
+     * </p>
+     */
     @Override
     public List<? extends AbstractModel> listModels() {
         String apiKey = getCurrentApiKey();
-        if (baseUrl == null || apiKey == null) {
+        String url = getBaseUrl();
+        if (url == null || apiKey == null) {
             log.warn("Cannot list models: baseUrl or API key missing for provider '{}'", getProviderId());
             return Collections.emptyList();
         }
 
         try {
-            String modelsUrl = baseUrl.endsWith("/") ? baseUrl + "models" : baseUrl + "/models";
+            String modelsUrl = url.endsWith("/") ? url + "models" : url + "/models";
             HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(URI.create(modelsUrl))
                     .header("Authorization", "Bearer " + apiKey)
@@ -134,13 +160,25 @@ public class OpenAiCompatibleProvider extends AbstractAgiProvider {
         return Collections.emptyList();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Returns the official OpenAI key management URI as
+     * the default fallback.
+     * </p>
+     */
     @Override
     public URI getKeysAcquisitionUri() {
         return URI.create("https://platform.openai.com/api-keys");
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Provides a standard header hint for the multi-key
+     * configuration file.
+     * </p>
+     */
     @Override
     public String getApiKeyHint() {
         return "# OpenAI-Compatible API Key Configuration\n"

@@ -60,7 +60,10 @@ public class OpenAiModel extends AbstractModel {
             .build();
 
     /**
-     * Constructs a new model reference.
+     * Constructs a new model reference for an OpenAI-compatible endpoint.
+     * @param provider The parent universal provider instance.
+     * @param modelId The unique identifier used in API requests.
+     * @param displayName The human-friendly name for UI display.
      */
     public OpenAiModel(OpenAiCompatibleProvider provider, String modelId, String displayName) {
         this.provider = provider;
@@ -68,106 +71,252 @@ public class OpenAiModel extends AbstractModel {
         this.displayName = displayName;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Returns the parent provider instance for
+     * configuration access.
+     * </p>
+     */
     @Override
     public AbstractAgiProvider getProvider() {
         return provider;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Returns the unique string identifier used in
+     * the OpenAI API payload.
+     * </p>
+     */
     @Override
     public String getModelId() {
         return modelId;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Returns the human-friendly name configured
+     * during discovery.
+     * </p>
+     */
     @Override
     public String getDisplayName() {
         return displayName;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Provides a standard description identifying the
+     * model as OpenAI-compatible.
+     * </p>
+     */
     @Override
     public String getDescription() {
         return "OpenAI-compatible model: " + modelId;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Always returns 'N/A' as the OpenAI API does not
+     * expose a discrete version string separate from the model ID.
+     * </p>
+     */
     @Override
     public String getVersion() {
         return "N/A";
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Returns a safe default of 128K tokens, which is
+     * typical for modern OpenAI-compatible models.
+     * </p>
+     */
     @Override
     public int getMaxInputTokens() {
         return 128000; // Typical default for modern models
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Returns a standard default of 4096 tokens for the
+     * completion response.
+     * </p>
+     */
     @Override
     public int getMaxOutputTokens() {
         return 4096;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Returns a list containing only 'generateContent',
+     * reflecting the primary API capability.
+     * </p>
+     */
     @Override
     public List<String> getSupportedActions() {
         return List.of("generateContent");
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Generates an HTML-formatted snippet displaying the
+     * model ID for the UI selector.
+     * </p>
+     */
     @Override
     public String getRawDescription() {
         return "<html><b>Model ID:</b> " + modelId + "</html>";
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Always returns true, assuming standard function
+     * calling support for universal compatibility.
+     * </p>
+     */
     @Override
     public boolean isSupportsFunctionCalling() {
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Always returns true for the chat completion
+     * endpoint.
+     * </p>
+     */
     @Override
     public boolean isSupportsContentGeneration() {
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Returns false; batch embeddings are not supported
+     * in this universal adapter.
+     * </p>
+     */
     @Override
     public boolean isSupportsBatchEmbeddings() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Returns false; embedding support is handled
+     * separately from chat completion.
+     * </p>
+     */
     @Override
     public boolean isSupportsEmbeddings() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Returns false; prompt caching is not universally
+     * supported across all OpenAI-compatible endpoints.
+     * </p>
+     */
     @Override
     public boolean isSupportsCachedContent() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Returns a list containing only 'TEXT' as the
+     * supported modality.
+     * </p>
+     */
     @Override
     public List<String> getSupportedResponseModalities() {
         return List.of("TEXT");
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Returns an empty list; server-side tools are not
+     * integrated in this adapter.
+     * </p>
+     */
     @Override
     public List<uno.anahata.asi.agi.provider.ServerTool> getAvailableServerTools() {
         return Collections.emptyList();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Returns an empty list as no server tools are enabled
+     * by default.
+     * </p>
+     */
     @Override
     public List<uno.anahata.asi.agi.provider.ServerTool> getDefaultServerTools() {
         return Collections.emptyList();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Returns a standard temperature of 0.7 for creative yet stable output.
+     * </p>
+     */
     @Override
     public Float getDefaultTemperature() {
         return 0.7f;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Returns null; Top-K is not a standard OpenAI
+     * parameter.
+     * </p>
+     */
     @Override
     public Integer getDefaultTopK() {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Returns a standard default of 0.95.
+     * </p>
+     */
     @Override
     public Float getDefaultTopP() {
         return 0.95f;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Orchestrates the HTTP POST request to the
+     * configured endpoint. Synthesizes the payload, manages authentication headers,
+     * and parses the JSON response into an {@link OpenAiResponse}.
+     * </p>
+     */
     @Override
     public Response generateContent(GenerationRequest request) {
         try {
@@ -197,6 +346,13 @@ public class OpenAiModel extends AbstractModel {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Currently unsupported. Universal provider
+     * implementations focus on synchronous completion in this version.
+     * </p>
+     */
     @Override
     public void generateContentStream(GenerationRequest request, StreamObserver<Response<? extends AbstractModelMessage>> observer) {
         // TODO: Implement SSE streaming using HttpClient.sendAsync
@@ -204,6 +360,13 @@ public class OpenAiModel extends AbstractModel {
         observer.onError(new UnsupportedOperationException("Streaming not yet implemented for universal provider."));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Translates the Anahata tool metadata and JSON
+     * schemas into the standard OpenAI 'function' declaration format.
+     * </p>
+     */
     @Override
     public String getToolDeclarationJson(AbstractTool<?, ?> tool, RequestConfig config) {
         // Simplified OpenAI tool declaration
@@ -264,6 +427,13 @@ public class OpenAiModel extends AbstractModel {
         return payload;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Returns the display name or model ID for easy
+     * identification in logs and UI.
+     * </p>
+     */
     @Override
     public String toString() {
         return getDisplayName().isEmpty() ? modelId : getDisplayName();
