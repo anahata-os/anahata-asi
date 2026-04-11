@@ -30,8 +30,11 @@ import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.agi.provider.AbstractAgiProvider;
 import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.swing.agi.config.SessionConfigPanel;
+import uno.anahata.asi.swing.icons.AddIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.OkIcon;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 
 /**
  * A centralized, multi-tabbed Command Center for managing the ASI container.
@@ -228,22 +231,13 @@ public class AsiContainerPreferencesPanel extends JPanel {
 
         panel.add(providerTabs, BorderLayout.CENTER);
 
-        // Toolbar for adding/removing providers
+        // Toolbar for adding providers
         JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JButton addBtn = new JButton("Add OpenAI Compatible Provider");
+        JButton addBtn = new JButton("Add OpenAI Compatible Provider", new AddIcon(16));
         addBtn.addActionListener(e -> {
             showAddOpenAiProviderDialog(providerTabs);
         });
         toolbar.add(addBtn);
-
-        JButton removeBtn = new JButton("Remove Selected Provider", new DeleteIcon(16));
-        removeBtn.addActionListener(e -> {
-            int idx = providerTabs.getSelectedIndex();
-            if (idx != -1) {
-                removeProviderAt(idx, providerTabs);
-            }
-        });
-        toolbar.add(removeBtn);
 
         panel.add(toolbar, BorderLayout.NORTH);
 
@@ -252,9 +246,11 @@ public class AsiContainerPreferencesPanel extends JPanel {
 
     private void refreshProviderTabs(JTabbedPane providerTabs) {
         providerTabs.removeAll();
-        for (AbstractAgiProvider provider : container.getAllProviders()) {
-            ProviderKeysPanel keysPanel = new ProviderKeysPanel(provider);
-            providerTabs.addTab(provider.getDisplayName(), keysPanel);
+        for (AbstractAgiProvider p : container.getAllProviders()) {
+            AiProviderPanel keysPanel = new AiProviderPanel(p, () -> {
+                removeProvider(p, providerTabs);
+            });
+            providerTabs.addTab(p.getDisplayName(), keysPanel);
         }
     }
 
@@ -262,6 +258,16 @@ public class AsiContainerPreferencesPanel extends JPanel {
         JTextField nameField = new JTextField();
         JTextField urlField = new JTextField("https://api.openai.com/v1");
         JTextField folderField = new JTextField();
+        
+        nameField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (folderField.getText().isBlank() && !nameField.getText().isBlank()) {
+                    folderField.setText(nameField.getText().replaceAll("[^a-zA-Z0-9.-]", "_"));
+                }
+            }
+        });
+
         JTextArea keysArea = new JTextArea(5, 20);
 
         JPanel dialogPanel = new JPanel(new MigLayout("fillx", "[right]10[grow,fill]"));
@@ -309,8 +315,7 @@ public class AsiContainerPreferencesPanel extends JPanel {
         }
     }
 
-    private void removeProviderAt(int index, JTabbedPane providerTabs) {
-        AbstractAgiProvider provider = container.getAllProviders().get(index);
+    private void removeProvider(AbstractAgiProvider provider, JTabbedPane providerTabs) {
         String uuid = provider.getUuid();
         String name = provider.getDisplayName();
         
