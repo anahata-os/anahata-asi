@@ -36,6 +36,9 @@ public class CodeRefinerTestSubject {
     public static enum SubjectStatus {
     }
 
+    /**
+     * The name of the test subject. Used to verify field-replacement logic.
+     */
     private String name;
     /**
      * List of achievements.
@@ -51,10 +54,19 @@ public class CodeRefinerTestSubject {
      */
     public static class SubjectMeta {
 
+        /**
+         * Unique identifier for the metadata record.
+         */
         String id;
+        /**
+         * Creation timestamp for this record.
+         */
         long timestamp;
     }
 
+    /**
+     * Default constructor for test instantiation.
+     */
     public CodeRefinerTestSubject() {
     }
 
