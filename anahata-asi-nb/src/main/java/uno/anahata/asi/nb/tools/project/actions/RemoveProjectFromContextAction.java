@@ -47,6 +47,7 @@ public final class RemoveProjectFromContextAction extends AbstractAction impleme
 
     /**
      * Default constructor required by NetBeans action registration.
+     * Initializes the action with an empty lookup context.
      */
     public RemoveProjectFromContextAction() {
         this(Lookup.EMPTY);
