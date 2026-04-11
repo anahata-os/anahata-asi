@@ -12,26 +12,53 @@ import uno.anahata.asi.agi.AgiConfig;
  */
 public class MockAsiContainer extends AbstractAsiContainer {
 
+    /**
+     * Initializes a new mock container with the specified host identifier.
+     * @param hostId The unique identifier for the virtual host.
+     */
     public MockAsiContainer(String hostId) {
         super(hostId);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Creates a standard model-agnostic configuration for unit testing.
+     * </p>
+     */
     @Override
     public AgiConfig createNewAgiConfig() {
         return new AgiConfig(this);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * No-op implementation for mock isolation.
+     * </p>
+     */
     @Override
     protected void onAgiOpened(Agi agi) {
         // No-op for mock
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * No-op implementation for mock isolation.
+     * </p>
+     */
     @Override
     protected void onAgiClosed(Agi agi) {
         // No-op for mock
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns {@code null} as this mock does not provide a visual representation.
+     * </p>
+     */
     @Override
     public Object getUI(Agi agi) {
         return null;
