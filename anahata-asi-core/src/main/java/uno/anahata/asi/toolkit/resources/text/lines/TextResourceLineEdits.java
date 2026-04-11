@@ -14,9 +14,10 @@ import uno.anahata.asi.agi.tool.AgiToolException;
 /**
  * The next-generation surgical line editor for AGI.
  * <p>
- * This DTO replaces arithmetic requirements with semantic intent. It separates
- * insertions, replacements, and deletions into distinct lists to maximize model
- * precision.
+ * This DTO replaces traditional arithmetic patching with a semantic model
+ * that separates insertions, replacements, and deletions into discrete
+ * intent-based lists. This ensures maximum coordinate stability and
+ * minimizes the risk of conflicting updates.
  * </p>
  */
 @Data
@@ -25,12 +26,33 @@ import uno.anahata.asi.agi.tool.AgiToolException;
 @Schema(description = "A set of semantic line edits (insertions, replacements, deletions) targeting 1-based line numbers on a resource in the RAG message.")
 public class TextResourceLineEdits extends AbstractTextResourceWrite {
 
+    /**
+     * The list of atomic point-insertions to be applied.
+     * <p>
+     * Insertions are logically applied "above" the target coordinate, ensuring
+     * that the original line content is pushed downwards.
+     * </p>
+     */
     @Schema(description = "List of insertions (adding code without removal).")
     private List<LineInsertion> insertions = new ArrayList<>();
 
+    /**
+     * The list of range-based replacements to be applied.
+     * <p>
+     * Strictly for replacing existing content; should not be used for pure
+     * insertions where no lines are removed.
+     * </p>
+     */
     @Schema(description = "List of range replacements. Do not use for pure insertions. Strictly for the lines to be replaced. Do not include surrounding context (existing lines).")
     private List<LineReplacement> replacements = new ArrayList<>();
 
+    /**
+     * The list of range-based deletions to be applied.
+     * <p>
+     * Requires explicit coordinate and checksum validation during the
+     * application phase.
+     * </p>
+     */
     @Schema(description = "List of range deletions.")
     private List<LineDeletion> deletions = new ArrayList<>();
 
@@ -38,6 +60,14 @@ public class TextResourceLineEdits extends AbstractTextResourceWrite {
         super(uuid, lastModified);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Aggregates all edits, performs a stable
+     * descending sort, and applies mutations to the line list to generate
+     *  the final resulting content.
+     * </p>
+     */
     @Override
     public String calculateResultingContent() throws Exception {
         if (originalContent == null) {
@@ -73,9 +103,9 @@ public class TextResourceLineEdits extends AbstractTextResourceWrite {
     /**
      * {@inheritDoc}
      * <p>
-     * Implementation details: Performs pre-flight normalization of coordinates.
-     * Specifically, it clips 'Integer.MAX_VALUE' markers to the actual line
-     * count of the resource to prevent visualizer crashes in the IDE.
+     * Implementation details: Performs critical overlap detection across all
+     * discrete edit lists. Ensures that no two operations target the same
+     * coordinate range, protecting file integrity before mutation.
      * </p>
      */
     @Override
