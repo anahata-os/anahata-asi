@@ -38,9 +38,20 @@ import uno.anahata.asi.agi.tool.spi.java.JavaMethodTool;
  * @author anahata
  */
 public class SchemaGenerationTest {
+    /**
+     * A reference to a standard JSON object map, used for parsing and
+     * verifying generated schema strings.
+     */
     private static final TypeReference<Map<String, Object>> MAP_TYPE_REF = new TypeReference<>() {};
+    /**
+     * The tool manager instance used for schema extraction and lookup.
+     */
     private static ToolManager toolManager;
 
+    /**
+     * Initializes a mock AGI environment and registers test toolkits
+     * before running schema assertions.
+     */
     @BeforeAll
     public static void setUp() {
         AbstractAsiContainer container = new MockAsiContainer("test-app");

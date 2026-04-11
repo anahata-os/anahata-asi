@@ -37,6 +37,11 @@ import uno.anahata.asi.agi.tool.spi.java.JavaMethodToolResponse;
 public class SchemaProviderTest {
     private static final TypeReference<Map<String, Object>> MAP_TYPE_REF = new TypeReference<>() {};
 
+    /**
+     * Verifies that basic Java classes (like {@code String}) are correctly
+     * mapped to their primitive OpenAPI types.
+     * @throws Exception If schema generation or parsing fails.
+     */
     @Test
     public void testSimpleTypeSchema() throws Exception {
         String schemaJson = SchemaProvider.generateInlinedSchemaString(String.class);
@@ -46,6 +51,11 @@ public class SchemaProviderTest {
         assertEquals("string", schema.get("type"));
     }
 
+    /**
+     * Ensures that generic {@code Map} types are correctly translated into
+     * JSON objects with {@code additionalProperties} definitions.
+     * @throws Exception If schema generation or parsing fails.
+     */
     @Test
     public void testMapSchema() throws Exception {
         Type mapType = new TypeReference<Map<String, String>>() {}.getType();
@@ -60,6 +70,11 @@ public class SchemaProviderTest {
         assertEquals("java.lang.String", additionalProperties.get("title"));
     }
 
+    /**
+     * Validates the extraction of properties from complex POJOs, including
+     * collections and nested objects.
+     * @throws Exception If schema generation or parsing fails.
+     */
     @Test
     public void testComplexObjectSchema() throws Exception {
         String schemaJson = SchemaProvider.generateInlinedSchemaString(MockComplexObject.class);
@@ -76,6 +91,12 @@ public class SchemaProviderTest {
         assertEquals(String.class.getName(), ((Map<String, Object>) properties.get("stringField")).get("title"));
     }
 
+    /**
+     * Verifies that self-referencing classes (recursive graphs) are handled
+     * deterministically without infinite recursion, using description-based
+     * pointers.
+     * @throws Exception If schema generation or parsing fails.
+     */
     @Test
     public void testRecursiveObjectSchema() throws Exception {
         String schemaJson = SchemaProvider.generateInlinedSchemaString(Tree.class);
@@ -88,6 +109,11 @@ public class SchemaProviderTest {
         assertTrue(((String) items.get("description")).startsWith("Recursive reference to " + TreeNode.class.getName()));
     }
 
+    /**
+     * Ensures that the {@link JavaMethodToolResponse} wrapper correctly
+     * encapsulates recursive types within its {@code result} property.
+     * @throws Exception If schema generation or parsing fails.
+     */
     @Test
     public void testWrappedRecursiveObjectSchema() throws Exception {
         String schemaJson = SchemaProvider.generateInlinedSchemaString(JavaMethodToolResponse.class, "result", Tree.class);
