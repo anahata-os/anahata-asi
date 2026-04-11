@@ -19,6 +19,20 @@ import uno.anahata.asi.swing.icons.IconUtils;
 @Slf4j
 public class SwingMain {
 
+    /**
+     * The main entry point for the standalone Swing application.
+     * <p>
+     * This method performs the following initialization sequence:
+     * <ol>
+     *   <li>Configures the SLF4J simple logger level.</li>
+     *   <li>Initializes the FlatLaf Light Look-and-Feel.</li>
+     *   <li>Instantiates the standalone ASI container.</li>
+     *   <li>Assembles and displays the primary {@code JFrame} on the Event Dispatch Thread (EDT).</li>
+     *   <li>Configures a global uncaught exception handler for background threads.</li>
+     * </ol>
+     * </p>
+     * @param args Command-line arguments (currently unused).
+     */
     public static void main(String[] args) {
         System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "info");
         log.info("Starting Anahata AI Standalone UI...");
