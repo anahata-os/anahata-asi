@@ -23,15 +23,37 @@ import java.util.List;
         + "STRICT RULE: If the first line of your content is identical to the original line at startLine, or the last line is identical to endLine, your range is too wide. Shrink the range to only include lines with actual character changes.")
 public class LineReplacement extends AbstractLineEdit {
 
+    /**
+     * The 1-based line number of the resource in the RAG message where the
+     * replacement starts (Inclusive).
+     */
     @Schema(description = "The 1-based line number of the resource in the RAG message where the replacement starts (Inclusive).", required = true)
     private int startLine;
 
+    /**
+     * The 1-based line number of the resource in the RAG message where the
+     * replacement ends (Inclusive).
+     */
     @Schema(description = "The 1-based line number of the resource in the RAG message where the replacement ends (Inclusive).", required = true)
     private int endLine;
 
+    /**
+     * The new content for the target range.
+     * <p>
+     * This can contain any number of lines. Implementation details: Trailing
+     * newlines are processed structurally to ensure proper absorption.
+     * </p>
+     */
     @Schema(description = "The new content for the [startLine, endLine] range of the resource in the RAG message. It can have as many lines as you want. Do not include surrounding anchors because that is not the way this tool works.", required = true)
     private String content;
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Performs range validation before removing the target lines and splicing
+     * in the new content.
+     * </p>
+     */
     @Override
     public void apply(List<String> lines) throws AgiToolException {
         if (startLine < 1 || endLine < startLine || endLine > lines.size()) {
@@ -57,6 +79,12 @@ public class LineReplacement extends AbstractLineEdit {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns the start line of the replacement range for sorting.
+     * </p>
+     */
     @Override
     public int getSortLine() {
         return startLine;
