@@ -76,6 +76,13 @@ public class AsiDesktopAsiContainer extends AbstractSwingAsiContainer {
         
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Delegates focus to the main UI panel to ensure
+     * the corresponding tab is selected.
+     * </p>
+     */
     @Override
     protected void focusUI(Agi agi) {
         if (mainPanel != null) {
@@ -83,6 +90,13 @@ public class AsiDesktopAsiContainer extends AbstractSwingAsiContainer {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Delegates tab removal to the main UI panel when
+     * a session is closed.
+     * </p>
+     */
     @Override
     protected void closeUI(Agi agi) {
         if (mainPanel != null) {
@@ -90,6 +104,13 @@ public class AsiDesktopAsiContainer extends AbstractSwingAsiContainer {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Lazily creates and caches the {@link AgiPanel}
+     * for the requested session.
+     * </p>
+     */
     @Override
     public AgiPanel getUI(Agi agi) {
         return agiPanels.computeIfAbsent(agi.getConfig().getSessionId(), id -> {
@@ -100,7 +121,13 @@ public class AsiDesktopAsiContainer extends AbstractSwingAsiContainer {
         });
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Instantiates a desktop-specific configuration
+     * pre-registered with standard providers.
+     * </p>
+     */
     @Override
     public AgiConfig createNewAgiConfig() {
         return new AsiDesktopAgiConfig(this);
