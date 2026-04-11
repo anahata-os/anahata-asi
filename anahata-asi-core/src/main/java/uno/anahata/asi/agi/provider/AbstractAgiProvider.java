@@ -233,6 +233,10 @@ public abstract class AbstractAgiProvider {
      */
     public Path getProviderDirectory() {
         String dirName = (folderName != null && !folderName.isBlank()) ? folderName : uuid;
+        Path p = Path.of(dirName);
+        if (p.isAbsolute()) {
+            return p;
+        }
         return AbstractAsiContainer.getWorkDirSubDir(dirName);
     }
 
