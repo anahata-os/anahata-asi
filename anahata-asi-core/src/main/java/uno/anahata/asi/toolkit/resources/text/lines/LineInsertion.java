@@ -9,10 +9,11 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * PURE INSERTION: Places new content BEFORE the specified line.
+ * A pure insertion operation that places new content before a specified line.
  * <p>
- * Zero risk of deleting existing code. If you target line 10, the original 
- * line 10 becomes line 11 (or lower depending on how many lines you insert).
+ * This operation follows a 'push-down' model: the original line at the target
+ * coordinate and all subsequent lines are shifted downwards. This ensures zero
+ * risk of accidentally deleting existing code.
  * </p>
  */
 @Data
@@ -20,12 +21,29 @@ import java.util.List;
 @Schema(description = "Performs a 'push-down' insertion. The original line at 'atLine' and all subsequent lines are pushed down.")
 public class LineInsertion extends AbstractLineEdit {
 
+    /**
+     * The 1-based line number before which the content will be inserted.
+     */
     @Schema(description = "The 1-based line number before which the content will be inserted.", required = true)
     private int atLine;
 
+    /**
+     * The raw text content to be inserted.
+     * <p>
+     * Trailing newlines are treated structurally to ensure proper line-break
+     * absorption during the application phase.
+     * </p>
+     */
     @Schema(description = "The new lines to insert.", required = true)
     private String content;
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Splices the new lines into the list at the
+     * calculated target index, preserving surrounding content.
+     * </p>
+     */
     @Override
     public void apply(List<String> lines) throws AgiToolException {
         if (atLine < 1 || atLine > lines.size() + 1) {
@@ -48,6 +66,12 @@ public class LineInsertion extends AbstractLineEdit {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns the insertion point coordinate for sorting.
+     * </p>
+     */
     @Override
     public int getSortLine() {
         return atLine;
