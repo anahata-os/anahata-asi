@@ -25,6 +25,12 @@ import lombok.Data;
  */
 @Data
 public class MockNestedObject {
+    /**
+     * A boolean flag used to verify logical type mapping.
+     */
     private boolean booleanField;
+    /**
+     * A double-precision field used to verify floating-point mapping.
+     */
     private double doubleField;
 }

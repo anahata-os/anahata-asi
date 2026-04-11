@@ -20,12 +20,24 @@ package uno.anahata.ai.model.tool;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+/**
+ * Represents a tree data structure with a single root node.
+ * Used as a test subject for verifying recursive schema generation and
+ * object-graph traversal.
+ */
 @Data
 @Schema(description = "Represents a tree data structure with a single root node.")
 public class Tree {
+    /**
+     * The name of this tree. Used to verify required-field logic in the schema.
+     */
     @Schema(description = "The name of this tree.", required = true)
     private String name;
     
+    /**
+     * The root node of the tree. Acts as the entry point for recursive
+     * structure verification.
+     */
     @Schema(description = "The root node of the tree.")
     private TreeNode root;
 }

@@ -21,12 +21,23 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.Data;
 
+/**
+ * Represents an individual node within a tree structure.
+ * Used to test the recursive capabilities of the JSON schema generator.
+ */
 @Data
 @Schema(description = "Represents a node in a tree structure.")
 public class TreeNode {
+    /**
+     * The textual data payload held by this node.
+     */
     @Schema(description = "The data held by this node.", required = true)
     private String data;
 
+    /**
+     * A list of child nodes attached to this node, enabling recursive
+     * schema definitions.
+     */
     @Schema(description = "A list of child nodes.")
     private List<TreeNode> children;
 }

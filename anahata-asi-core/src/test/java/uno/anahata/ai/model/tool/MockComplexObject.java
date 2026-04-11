@@ -28,8 +28,21 @@ import lombok.Data;
  */
 @Data
 public class MockComplexObject {
+    /**
+     * A primitive integer field used to verify numeric type mapping.
+     */
     private int primitiveField;
+    /**
+     * A standard string field used to verify basic text property mapping.
+     */
     private String stringField;
+    /**
+     * A list of strings used to verify array/collection mapping in the schema.
+     */
     private List<String> listField;
+    /**
+     * A nested object reference used to verify recursive traversal and
+     * component definitions.
+     */
     private MockNestedObject nestedObject;
 }
