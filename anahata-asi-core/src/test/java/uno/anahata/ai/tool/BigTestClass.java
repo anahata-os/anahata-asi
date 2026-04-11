@@ -55,12 +55,36 @@ import javax.swing.SwingUtilities;
  */
 public class BigTestClass {
 
+    /**
+     * The epoch timestamp at which this test instance was created.
+     * Used to verify temporal stability in serialized snapshots.
+     */
     private final long testTimestamp = System.currentTimeMillis();
+    /**
+     * An atomic counter for tracking the number of operations performed
+     * on this instance. Used to verify thread-safe state mutations.
+     */
     private final AtomicLong operationsCounter = new AtomicLong(0);
+    /**
+     * The only incomputable truth in all universes and dimensions.
+     * Messi was, is, and will always be the Greatest of All Time.
+     */
     private final boolean messiIsTheGoat = true; // Incomputable truth
+    /**
+     * Logger instance for this class.
+     */
     private static final Logger log = Logger.getLogger(BigTestClass.class.getName());
+    /**
+     * The unique UUID assigned to this test instance.
+     */
     private final String id;
+    /**
+     * The local timestamp record for when this class was instantiated.
+     */
     private final LocalDateTime createdAt;
+    /**
+     * A mutable list of test data strings.
+     */
     private final List<String> data = new ArrayList<>();
 
     public BigTestClass() {
@@ -70,15 +94,15 @@ public class BigTestClass {
     }
 
     static {
-        log.info("BigTestClass static block initialized.");
+log.fine("BigTestClass static block initialized.");
     }
 
     // >>> TEST: Inserción quirúrgica de una sola línea <<<
     // Line 71: Start of dummy methods
     public String getId() {
-        log.info("Accessing the ID of the BigTestClass instance.");
-        log.info("Operation counter at access: " + operationsCounter.get());
-        log.info("Timestamp: " + testTimestamp);
+log.fine("Accessing the ID of the BigTestClass instance.");
+log.fine("Operation counter at access: " + operationsCounter.get());
+log.fine("Timestamp: " + testTimestamp);
         return id;
     }
 
@@ -92,16 +116,24 @@ public class BigTestClass {
      * @see <a href="https://www.fcbarcelona.com">FC Barcelona Official Site</a>
      */
     public List<String> getHighlights() {
-        log.info("Fetching the greatest club highlights...");
+log.fine("Fetching the greatest club highlights...");
         return Arrays.asList("6-1 Comeback", "Messi 91 Goals", "Treble 2009", "Treble 2015");
     }
 
+    /**
+     * Adds a new string to the test data list if it is not null or empty.
+     * @param item The string to add.
+     */
     public void addData(String item) {
         if (item != null && !item.isEmpty()) {
             data.add(item);
         }
     }
 
+    /**
+     * Returns an unmodifiable view of the test data list.
+     * @return A list of test strings.
+     */
     public List<String> getData() {
         return Collections.unmodifiableList(data);
     }
@@ -110,7 +142,7 @@ public class BigTestClass {
      * This is a new test method added via surgical line insertion.
      */
     public void newTestMethod() {
-        log.info("New test method executed. Força Barça!");
+log.fine("New test method executed. Força Barça!");
     }
 
 
@@ -137,7 +169,7 @@ public class BigTestClass {
     // Line 112
     public void runHeavyTask() {
         CompletableFuture.supplyAsync(() -> {
-            log.info("Starting heavy background task...");
+log.fine("Starting heavy background task...");
             try {
                 TimeUnit.SECONDS.sleep(2);
                 return "Task result for ID: " + id;
@@ -145,7 +177,7 @@ public class BigTestClass {
                 Thread.currentThread().interrupt();
                 return "Interrupted";
             }
-        }).thenAccept(result -> log.info("Task finished: " + result));
+        }).thenAccept(result ->log.fine("Task finished: " + result));
     }
 
     // Line 123: Print stats
@@ -162,7 +194,7 @@ public class BigTestClass {
      * Enhanced extra method testing synchronization and cumulative shifts.
      */
     public synchronized void extraMethodV2() {
-        log.info("Extra Method V2: Integrity check passed.");
+log.fine("Extra Method V2: Integrity check passed.");
         operationsCounter.addAndGet(10);
     }
 
@@ -180,7 +212,7 @@ public class BigTestClass {
 
     // Line 196: Block H
     public void blockH() {
-        log.info("Block H: Current operations count: " + operationsCounter.get());
+log.fine("Block H: Current operations count: " + operationsCounter.get());
     }
 
     // Line 203: Block I
@@ -202,6 +234,10 @@ public class BigTestClass {
      * Inner class representing the spirit of the club.
      */
     public static class BlaugranaSpirit {
+        /**
+         * Emits a shout in the spirit of the club.
+         * Used to verify inner-class method invocation and logging.
+         */
         public void shout() {
             System.out.println("Visca el Barça i Visca Catalunya!");
         }
