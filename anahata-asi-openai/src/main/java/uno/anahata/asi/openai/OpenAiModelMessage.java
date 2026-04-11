@@ -20,7 +20,12 @@ import uno.anahata.asi.internal.JacksonUtils;
 public class OpenAiModelMessage extends AbstractModelMessage<OpenAiResponse> {
 
     /**
-     * Constructs a message from a choices node.
+     * Constructs a new OpenAI model message by parsing a specific choice
+     * from the API response.
+     * @param agi The parent session.
+     * @param modelId The ID of the model that generated the message.
+     * @param choiceNode The JSON node containing the choice data.
+     * @param response The parent response object.
      */
     public OpenAiModelMessage(Agi agi, String modelId, JsonNode choiceNode, OpenAiResponse response) {
         super(agi, modelId);
@@ -29,7 +34,13 @@ public class OpenAiModelMessage extends AbstractModelMessage<OpenAiResponse> {
     }
 
     /**
-     * Parses the content and tool calls from a choice node.
+     * Extracts text content and tool calls from the OpenAI 'message' node.
+     * <p>
+     * Implementation details: Maps the 'content' field to a text part and
+     * recursively converts each 'tool_calls' entry into a native Anahata
+     * tool call via the {@link uno.anahata.asi.agi.tool.ToolManager}.
+     * </p>
+     * @param choice The choices array element node.
      */
     private void parseChoice(JsonNode choice) {
         JsonNode messageNode = choice.get("message");
@@ -59,6 +70,11 @@ public class OpenAiModelMessage extends AbstractModelMessage<OpenAiResponse> {
         }
     }
 
+    /**
+     * Maps OpenAI's finish reason strings to our internal enum.
+     * @param reason The raw reason string from the API.
+     * @return The corresponding {@link FinishReason}.
+     */
     private FinishReason mapFinishReason(String reason) {
         return switch (reason) {
             case "stop" -> FinishReason.STOP;

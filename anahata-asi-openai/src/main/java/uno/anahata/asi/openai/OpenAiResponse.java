@@ -20,21 +20,40 @@ import java.util.Optional;
 @Getter
 public class OpenAiResponse extends Response<OpenAiModelMessage> {
 
-    /** The final candidates (choices) converted to Anahata messages. */
+    /**
+     * The final candidates (choices) converted to Anahata messages.
+     */
     private final List<OpenAiModelMessage> candidates = new ArrayList<>();
     
-    /** Usage statistics from the API. */
+    /**
+     * Usage statistics from the API, including prompt and completion tokens.
+     */
     private final ResponseUsageMetadata usageMetadata;
     
-    /** The raw request configuration JSON. */
+    /**
+     * The raw request configuration JSON sent to the API.
+     */
     private final String rawRequestConfigJson;
     
-    /** The raw conversation history JSON. */
+    /**
+     * The raw conversation history JSON sent as part of the payload.
+     */
     private final String rawHistoryJson;
     
-    /** The full raw response JSON. */
+    /**
+     * The complete raw response JSON received from the API.
+     */
     private final String rawJson;
 
+    /**
+     * Constructs a new response object by parsing the JSON returned
+     * from an OpenAI-compatible endpoint.
+     * @param agi The parent session.
+     * @param modelId The ID of the model that generated the response.
+     * @param jsonResponse The raw JSON response string.
+     * @param requestPayload The raw payload sent to the API.
+     * @param historyJson The raw history segment of the payload.
+     */
     public OpenAiResponse(Agi agi, String modelId, String jsonResponse, String requestPayload, String historyJson) {
         this.rawJson = jsonResponse;
         this.rawRequestConfigJson = requestPayload;
@@ -64,11 +83,25 @@ public class OpenAiResponse extends Response<OpenAiModelMessage> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: OpenAI does not provide standard prompt feedback
+     * in the completion response; returns empty.
+     * </p>
+     */
     @Override
     public Optional<String> getPromptFeedback() {
         return Optional.empty();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Returns the total token count as reported in
+     * the 'usage' block of the API response.
+     * </p>
+     */
     @Override
     public int getTotalTokenCount() {
         return usageMetadata.getTotalTokenCount();
