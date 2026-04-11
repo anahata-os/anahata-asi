@@ -57,7 +57,7 @@ public class CodeRefiner extends AnahataToolkit {
      */
     @Override
     public void initialize() {
-        getToolkit().setEnabled(false);
+        getToolkit().setEnabled(true);
     }
 
     /**
