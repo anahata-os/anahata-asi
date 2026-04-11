@@ -80,7 +80,7 @@ public class AsiContainerPreferencesPanel extends JPanel {
         mainTabs.addTab("General Defaults", createGeneralTab());
         mainTabs.addTab("DNA Templates", createTemplatesTab());
         mainTabs.addTab("Tool Permissions", new ToolkitPermissionsPanel(container));
-        mainTabs.addTab("API Key Pools", createApiKeysTab());
+        mainTabs.addTab("AGI Providers", createApiKeysTab());
 
         if (initialTabIndex >= 0 && initialTabIndex < mainTabs.getTabCount()) {
             mainTabs.setSelectedIndex(initialTabIndex);

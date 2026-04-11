@@ -29,24 +29,32 @@ import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.openai.adapter.OpenAiContentAdapter;
 
 /**
- * A concrete implementation of {@link AbstractModel} that communicates with 
- * any OpenAI-compatible Chat Completion API using the standard JDK HttpClient.
- * 
+ * A concrete implementation of {@link AbstractModel} that communicates with any
+ * OpenAI-compatible Chat Completion API using the standard JDK HttpClient.
+ *
  * @author anahata
  */
 @Slf4j
 public class OpenAiModel extends AbstractModel {
 
-    /** The parent universal provider. */
+    /**
+     * The parent universal provider.
+     */
     private final OpenAiCompatibleProvider provider;
-    
-    /** The unique model ID used in the API request (e.g., 'gpt-4o'). */
+
+    /**
+     * The unique model ID used in the API request (e.g., 'gpt-4o').
+     */
     private final String modelId;
-    
-    /** The human-friendly display name. */
+
+    /**
+     * The human-friendly display name.
+     */
     private final String displayName;
 
-    /** Shared JDK HttpClient for zero-dependency portability. */
+    /**
+     * Shared JDK HttpClient for zero-dependency portability.
+     */
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(30))
             .build();
@@ -163,19 +171,20 @@ public class OpenAiModel extends AbstractModel {
     @Override
     public Response generateContent(GenerationRequest request) {
         try {
+            String trimmedBaseUrl = provider.getBaseUrl() != null ? provider.getBaseUrl().trim() : "";
             ObjectNode payload = preparePayload(request, false);
             String jsonPayload = payload.toString();
             String historyJson = payload.get("messages").toString();
-            
+
             HttpRequest httpRequest = HttpRequest.newBuilder()
-                    .uri(URI.create(provider.getBaseUrl() + "/chat/completions"))
+                    .uri(URI.create(trimmedBaseUrl.endsWith("/") ? trimmedBaseUrl + "chat/completions" : trimmedBaseUrl + "/chat/completions"))
                     .header("Content-Type", "application/json")
                     .header("Authorization", "Bearer " + provider.getCurrentApiKey())
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                     .build();
 
             HttpResponse<String> httpResponse = HTTP_CLIENT.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            
+
             if (httpResponse.statusCode() != 200) {
                 throw new RuntimeException("API error (" + httpResponse.statusCode() + "): " + httpResponse.body());
             }
@@ -208,14 +217,14 @@ public class OpenAiModel extends AbstractModel {
         paramsNode.put("type", "object");
         ObjectNode propsNode = paramsNode.putObject("properties");
         ArrayNode requiredNode = paramsNode.putArray("required");
-        
+
         tool.getParameters().forEach(p -> {
             propsNode.set(p.getName(), SchemaProvider.OBJECT_MAPPER.valueToTree(p.getJsonSchema()));
             if (p.isRequired()) {
                 requiredNode.add(p.getName());
             }
         });
-        
+
         return toolNode.toPrettyString();
     }
 
@@ -226,10 +235,10 @@ public class OpenAiModel extends AbstractModel {
         ObjectNode payload = SchemaProvider.OBJECT_MAPPER.createObjectNode();
         payload.put("model", modelId);
         payload.put("stream", stream);
-        
+
         ArrayNode messages = payload.putArray("messages");
         boolean includePruned = request.config().isIncludePruned();
-        
+
         for (AbstractMessage msg : request.history()) {
             List<ObjectNode> translated = new OpenAiContentAdapter(msg, includePruned).toOpenAi();
             messages.addAll(translated);
@@ -247,11 +256,16 @@ public class OpenAiModel extends AbstractModel {
                 }
             }
         }
-        
+
         if (request.config().getTemperature() != null) {
             payload.put("temperature", request.config().getTemperature());
         }
-        
+
         return payload;
+    }
+
+    @Override
+    public String toString() {
+        return getDisplayName().isEmpty() ? modelId : getDisplayName();
     }
 }

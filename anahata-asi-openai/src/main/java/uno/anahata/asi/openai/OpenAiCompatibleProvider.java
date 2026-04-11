@@ -4,7 +4,14 @@ package uno.anahata.asi.openai;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collections;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import com.fasterxml.jackson.databind.JsonNode;
+import uno.anahata.asi.internal.JacksonUtils;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import lombok.Setter;
 import uno.anahata.asi.agi.provider.AbstractAgiProvider;
 import uno.anahata.asi.agi.provider.AbstractModel;
@@ -23,6 +30,7 @@ import uno.anahata.asi.agi.provider.TokenizerType;
  */
 @Getter
 @Setter
+@Slf4j
 public class OpenAiCompatibleProvider extends AbstractAgiProvider {
 
     /** 
@@ -72,15 +80,58 @@ public class OpenAiCompatibleProvider extends AbstractAgiProvider {
         return getNextKey();
     }
 
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl != null ? baseUrl.trim() : null;
+    }
+
     /** {@inheritDoc} */
     @Override
     public List<? extends AbstractModel> listModels() {
-        // TODO: Implement /v1/models fetching if baseUrl is set.
-        // For now, we return a small default set or allow manual entry in GUI.
-        List<OpenAiModel> defaults = new ArrayList<>();
-        // Example placeholders
-        defaults.add(new OpenAiModel(this, "gpt-4o", "GPT-4o"));
-        return defaults;
+        String apiKey = getCurrentApiKey();
+        if (baseUrl == null || apiKey == null) {
+            log.warn("Cannot list models: baseUrl or API key missing for provider '{}'", getProviderId());
+            return Collections.emptyList();
+        }
+
+        try {
+            String modelsUrl = baseUrl.endsWith("/") ? baseUrl + "models" : baseUrl + "/models";
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(URI.create(modelsUrl))
+                    .header("Authorization", "Bearer " + apiKey)
+                    .header("Accept", "application/json")
+                    .GET()
+                    .build();
+
+            try (HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(java.time.Duration.ofSeconds(10))
+                    .build()) {
+                
+                HttpResponse<String> httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+                if (httpResponse.statusCode() != 200) {
+                    log.error("Failed to fetch models from {}. Status: {}. Response: {}", modelsUrl, httpResponse.statusCode(), httpResponse.body());
+                    return Collections.emptyList();
+                }
+
+                JsonNode root = JacksonUtils.parse(httpResponse.body(), JsonNode.class);
+                JsonNode data = root.get("data");
+                if (data != null && data.isArray()) {
+                    List<OpenAiModel> models = new ArrayList<>();
+                    for (JsonNode modelNode : data) {
+                        String id = modelNode.path("id").asText();
+                        if (!id.isBlank()) {
+                            models.add(new OpenAiModel(this, id, id));
+                        }
+                    }
+                    log.info("Successfully discovered {} models from {}", models.size(), baseUrl);
+                    return models;
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error fetching models for provider '{}' at {}", getProviderId(), baseUrl, e);
+        }
+
+        return Collections.emptyList();
     }
 
     /** {@inheritDoc} */

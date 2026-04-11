@@ -56,11 +56,24 @@ public class AsiDesktopAsiContainer extends AbstractSwingAsiContainer {
             gemini.setFolderName("Gemini");
             registerProvider(gemini);
         }
-        
-        if (getProvider("Z") == null) {
-            registerProvider(new OpenAiCompatibleProvider(
-                    "Z", "Z", "https://api.z.ai/api/paas/v4/", "Z"));
+        /*
+        if (getProvider("Z_1") == null) {
+            registerProvider(new OpenAiCompatibleProvider(                    
+                    "Z_1", "Z ", " https://api.z.ai/api/paas/v4", "Z"));
         }
+        
+        if (getProvider("Z_2") == null) {
+            registerProvider(new OpenAiCompatibleProvider(                    
+                    "Z_2", "Z Coding (OpenAI)", "https://api.z.ai/api/coding/paas/v4", "Z"));
+        }
+        */
+        
+        if (getProvider("HuggingFace") == null) {
+            registerProvider(new OpenAiCompatibleProvider(                    
+                    "HuggingFace", "Hugging Face", "https://router.huggingface.co/v1", "HuggingFace"));
+        }
+        
+        
     }
 
     @Override
