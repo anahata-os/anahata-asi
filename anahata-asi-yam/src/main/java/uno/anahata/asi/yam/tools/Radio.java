@@ -84,7 +84,14 @@ public class Radio extends AnahataToolkit {
     /** Current playback task future. */
     private transient Future<?> playbackTask;
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Initializes the default hardware routing and
+     * selects a random radio station from the curated list to provide
+     * immediate ambient audio upon first activation.
+     * </p>
+     */
     @Override
     public void initialize() {
         super.initialize();
@@ -99,7 +106,14 @@ public class Radio extends AnahataToolkit {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Restores the hardware output line after
+     * deserialization and automatically resumes playback if the radio was
+     * active when the session was saved.
+     * </p>
+     */
     @Override
     public void postActivate() {
         if (selectedOutputDevice != null) {
@@ -120,6 +134,11 @@ public class Radio extends AnahataToolkit {
         }
     }
 
+    /**
+     * Selects the system's default audio output line and binds it to this
+     * toolkit. This ensures that audio is routed to the user's preferred
+     * device unless explicitly overridden.
+     */
     private void initOutputLineFromDefault() {
         uno.anahata.asi.toolkit.audio.AudioDevice.listAvailableDevices(Type.OUTPUT).stream()
                 .filter(uno.anahata.asi.toolkit.audio.AudioDevice::isDefaultLine)
@@ -145,7 +164,14 @@ public class Radio extends AnahataToolkit {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Injects the current playback status, the active
+     * station metadata, and the full list of available curated streams into
+     * the RAG message for model awareness.
+     * </p>
+     */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
         StringBuilder sb = new StringBuilder("\n## Radio Status\n");
@@ -249,20 +275,46 @@ public class Radio extends AnahataToolkit {
      * Ported from JavaSoundAudioDevice (LGPL) to bypass private field restrictions and rigid hardware discovery.
      */
     private static class BridgedJavaSoundAudioDevice extends AudioDeviceBase {
+        /**
+         * The underlying Anahata hardware abstraction for the target device.
+         */
         private final uno.anahata.asi.toolkit.audio.AudioDevice hardwareDevice;
+        /**
+         * The active JavaSound source data line.
+         */
         private SourceDataLine source = null;
+        /**
+         * The audio format derived from the MP3 decoder.
+         */
         private AudioFormat fmt = null;
+        /**
+         * Reusable buffer for byte conversion.
+         */
         private byte[] byteBuf = new byte[4096];
 
         public BridgedJavaSoundAudioDevice(uno.anahata.asi.toolkit.audio.AudioDevice hardwareDevice) {
             this.hardwareDevice = hardwareDevice;
         }
 
+        /**
+         * {@inheritDoc}
+         * <p>
+         * Implementation details: No-op. Hardware initialization is deferred
+         * until {@code createSource()} to ensure thread-safety during stream
+         * establishment.
+         * </p>
+         */
         @Override
         protected void openImpl() throws JavaLayerException {
             // Lazy initialization handled in createSource()
         }
 
+        /**
+         * Establishes the JavaSound source line matching the decoder's output
+         * frequency and channel count. Opens and starts the line for real-time
+         * playback.
+         * @throws JavaLayerException if the hardware line cannot be obtained.
+         */
         protected void createSource() throws JavaLayerException {
             try {
                 Decoder decoder = getDecoder();
@@ -275,6 +327,13 @@ public class Radio extends AnahataToolkit {
             }
         }
 
+        /**
+         * {@inheritDoc}
+         * <p>
+         * Implementation details: Lazily creates the source line if needed and
+         * writes the decoded PCM samples to the hardware buffer.
+         * </p>
+         */
         @Override
         protected void writeImpl(short[] samples, int offs, int len) throws JavaLayerException {
             if (source == null) {
@@ -284,6 +343,15 @@ public class Radio extends AnahataToolkit {
             source.write(b, 0, len * 2);
         }
 
+        /**
+         * Converts short samples into a little-endian byte array for JavaSound
+         * consumption. Manages internal buffer resizing to prevent allocations
+         * during playback.
+         * @param samples The raw PCM samples.
+         * @param offs Buffer offset.
+         * @param len Number of samples.
+         * @return The converted byte buffer.
+         */
         protected byte[] toByteArray(short[] samples, int offs, int len) {
             int byteLen = len * 2;
             if (byteBuf.length < byteLen) {
@@ -298,6 +366,13 @@ public class Radio extends AnahataToolkit {
             return byteBuf;
         }
 
+        /**
+         * {@inheritDoc}
+         * <p>
+         * Implementation details: Safely stops and releases the hardware line to
+         * allow other applications access to the audio device.
+         * </p>
+         */
         @Override
         protected void closeImpl() {
             if (source != null) {
@@ -306,6 +381,13 @@ public class Radio extends AnahataToolkit {
             }
         }
 
+        /**
+         * {@inheritDoc}
+         * <p>
+         * Implementation details: Drains the remaining audio from the hardware
+         * buffer before finishing.
+         * </p>
+         */
         @Override
         protected void flushImpl() {
             if (source != null) {
@@ -313,6 +395,13 @@ public class Radio extends AnahataToolkit {
             }
         }
 
+        /**
+         * {@inheritDoc}
+         * <p>
+         * Implementation details: Returns the current microsecond position of the
+         * source line converted to milliseconds.
+         * </p>
+         */
         @Override
         public int getPosition() {
             return (source != null) ? (int) (source.getMicrosecondPosition() / 1000) : 0;

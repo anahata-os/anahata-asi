@@ -75,13 +75,29 @@ public class Chrome extends AnahataToolkit implements Rebindable {
     /** The last port used for a successful connection. Persisted for rebind. */
     private int lastConnectedPort = -1;
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Defaults the toolkit to a disabled state upon
+     * initialization to prevent accidental browser activation before
+     * explicit user consent or model connection.
+     * </p>
+     */
     @Override
     public void initialize() {
         getToolkit().setEnabled(false);
     }
 
     
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Clears the transient WebDriver instance and
+     * reset the initialization flag. This ensures that the connection is
+     * restored lazily upon the next tool call using the persisted
+     * {@code lastConnectedPort}.
+     * </p>
+     */
     @Override
     public void rebind() {
         log.info("Rebinding Browser toolkit. Connection will be restored lazily on next tool call. Last known port: {}", lastConnectedPort);
@@ -89,7 +105,14 @@ public class Chrome extends AnahataToolkit implements Rebindable {
         this.initializing = false;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Provides high-salience instructions regarding the
+     * browser connection protocol, profile-selection priorities, and the
+     * extensibility of automation via direct Java access to the WebDriver.
+     * </p>
+     */
     @Override
     public List<String> getSystemInstructions() {
         return Collections.singletonList(
@@ -100,7 +123,14 @@ public class Chrome extends AnahataToolkit implements Rebindable {
         );
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Injects a real-time status report including the
+     * connection state, detected user profile directories, and a list of
+     * running Chrome processes (standard vs. debug).
+     * </p>
+     */
     @Override
     public void populateMessage(RagMessage ragMessage) {
         StringBuilder sb = new StringBuilder(" Browser Environment\n");
