@@ -18,6 +18,20 @@ import uno.anahata.asi.agi.tool.spi.AbstractTool;
 public abstract class AbstractModel {
 
     /**
+     * The optional model-specific tokenizer. If null, the provider's default is used.
+     */
+    protected TokenizerType tokenizerType;
+
+    /**
+     * Gets the effective tokenizer type for this model.
+     * 
+     * @return The model's tokenizer if set, otherwise the parent provider's tokenizer.
+     */
+    public TokenizerType getTokenizerType() {
+        return tokenizerType != null ? tokenizerType : getProvider().getTokenizerType();
+    }
+
+    /**
      * Gets the provider that owns this model.
      * @return The parent AI provider.
      */
