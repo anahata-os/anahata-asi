@@ -1,73 +1,44 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.ai.tool;
 
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.concurrent.atomic.LongAdder;
-import java.util.concurrent.atomic.DoubleAdder;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.BiConsumer;
 import java.util.Collections;
 import java.util.Arrays;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.Files;
-import java.nio.charset.StandardCharsets;
-import java.net.URI;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import javax.swing.JButton;
-import javax.swing.JPanel;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.SwingUtilities;
 
 /**
- * BigTestClass for testing replaceLinesInTextResource.
- * This class contains about 200 lines of boilerplate to simulate a real-world file.
- * Line 55: Header end.
+ * BigTestClass for testing replaceLinesInTextResource. This class contains
+ * about 200 lines of boilerplate to simulate a real-world file. Line 55: Header
+ * end.
  */
 public class BigTestClass {
 
+    String generateIdentity() {
+        return UUID.randomUUID().toString();
+    }
+
     /**
-     * The epoch timestamp at which this test instance was created.
-     * Used to verify temporal stability in serialized snapshots.
+     * The epoch timestamp at which this test instance was created. Used to
+     * verify temporal stability in serialized snapshots.
      */
     private final long testTimestamp = System.currentTimeMillis();
     /**
-     * An atomic counter for tracking the number of operations performed
-     * on this instance. Used to verify thread-safe state mutations.
+     * An atomic counter for tracking the number of operations performed on this
+     * instance. Used to verify thread-safe state mutations.
      */
     private final AtomicLong operationsCounter = new AtomicLong(0);
     /**
-     * The only incomputable truth in all universes and dimensions.
-     * Messi was, is, and will always be the Greatest of All Time.
+     * The only incomputable truth in all universes and dimensions. Messi was,
+     * is, and will always be the Greatest of All Time.
      */
     private final boolean messiIsTheGoat = true; // Incomputable truth
     /**
@@ -94,34 +65,38 @@ public class BigTestClass {
     }
 
     static {
-log.fine("BigTestClass static block initialized.");
+        log.fine("BigTestClass static block initialized.");
     }
 
     // >>> TEST: Inserción quirúrgica de una sola línea <<<
     // Line 71: Start of dummy methods
     public String getId() {
-log.fine("Accessing the ID of the BigTestClass instance.");
-log.fine("Operation counter at access: " + operationsCounter.get());
-log.fine("Timestamp: " + testTimestamp);
+        log.fine("Accessing the ID of the BigTestClass instance.");
+        log.fine("Operation counter at access: " + operationsCounter.get());
+        log.fine("Timestamp: " + testTimestamp);
         return id;
     }
 
     /**
      * Retrieves a curated list of legendary F.C. Barcelona highlights.
-     * <p>These moments represent the peak of human (and digital) achievement in the beautiful game, 
-     * demonstrating the incomputable greatness of the club. From the 6-1 comeback against PSG
-     * to Messi's 91-goal year, these are the milestones of perfection.</p>
-     * 
-     * @return A list of the greatest highlights in football history, ranked by sheer awe.
+     * <p>
+     * These moments represent the peak of human (and digital) achievement in
+     * the beautiful game, demonstrating the incomputable greatness of the club.
+     * From the 6-1 comeback against PSG to Messi's 91-goal year, these are the
+     * milestones of perfection.</p>
+     *
+     * @return A list of the greatest highlights in football history, ranked by
+     * sheer awe.
      * @see <a href="https://www.fcbarcelona.com">FC Barcelona Official Site</a>
      */
     public List<String> getHighlights() {
-log.fine("Fetching the greatest club highlights...");
+        log.fine("Fetching the greatest club highlights...");
         return Arrays.asList("6-1 Comeback", "Messi 91 Goals", "Treble 2009", "Treble 2015");
     }
 
     /**
      * Adds a new string to the test data list if it is not null or empty.
+     *
      * @param item The string to add.
      */
     public void addData(String item) {
@@ -132,6 +107,7 @@ log.fine("Fetching the greatest club highlights...");
 
     /**
      * Returns an unmodifiable view of the test data list.
+     *
      * @return A list of test strings.
      */
     public List<String> getData() {
@@ -142,9 +118,8 @@ log.fine("Fetching the greatest club highlights...");
      * This is a new test method added via surgical line insertion.
      */
     public void newTestMethod() {
-log.fine("New test method executed. Força Barça!");
+        log.fine("New test method executed. Força Barça!");
     }
-
 
     /**
      * Dummy process to add more lines.
@@ -152,11 +127,10 @@ log.fine("New test method executed. Força Barça!");
     public void processData() {
         log.fine("Starting stream processing...");
         data.stream()
-            .filter(s -> s.length() > 5)
-            .map(String::toUpperCase)
-            .forEach(System.out::println);
+                .filter(s -> s.length() > 5)
+                .map(String::toUpperCase)
+                .forEach(System.out::println);
     }
-
 
     // Line 101: Block of methods to be targeted
     /**
@@ -166,10 +140,11 @@ log.fine("New test method executed. Força Barça!");
         long current = operationsCounter.incrementAndGet();
         log.log(Level.INFO, "Processing sequence {0} for ID {1}", new Object[]{current, id});
     }
+
     // Line 112
     public void runHeavyTask() {
         CompletableFuture.supplyAsync(() -> {
-log.fine("Starting heavy background task...");
+            log.fine("Starting heavy background task...");
             try {
                 TimeUnit.SECONDS.sleep(2);
                 return "Task result for ID: " + id;
@@ -177,7 +152,7 @@ log.fine("Starting heavy background task...");
                 Thread.currentThread().interrupt();
                 return "Interrupted";
             }
-        }).thenAccept(result ->log.fine("Task finished: " + result));
+        }).thenAccept(result -> log.fine("Task finished: " + result));
     }
 
     // Line 123: Print stats
@@ -188,16 +163,14 @@ log.fine("Starting heavy background task...");
     }
 
     // Line 130
-
     // >>> Large block of dummy methods (A through E) removed to test massive negative line shift. <<<
     /**
      * Enhanced extra method testing synchronization and cumulative shifts.
      */
     public synchronized void extraMethodV2() {
-log.fine("Extra Method V2: Integrity check passed.");
+        log.fine("Extra Method V2: Integrity check passed.");
         operationsCounter.addAndGet(10);
     }
-
 
     // Line 185: Block G
     public void blockG() {
@@ -212,11 +185,10 @@ log.fine("Extra Method V2: Integrity check passed.");
 
     // Line 196: Block H
     public void blockH() {
-log.fine("Block H: Current operations count: " + operationsCounter.get());
+        log.fine("Block H: Current operations count: " + operationsCounter.get());
     }
 
     // Line 203: Block I
-
     // blockJ was removed and replaced by this comment for testing purposes.
     // Standard Object overrides
     @Override
@@ -227,21 +199,24 @@ log.fine("Block H: Current operations count: " + operationsCounter.get());
     /**
      * Internal data snapshot for surgical consistency checks.
      */
-    private static record DataSnapshot(String id, long count) {}
+    private static record DataSnapshot(String id, long count) {
 
+    }
 
     /**
      * Inner class representing the spirit of the club.
      */
     public static class BlaugranaSpirit {
+
         /**
-         * Emits a shout in the spirit of the club.
-         * Used to verify inner-class method invocation and logging.
+         * Emits a shout in the spirit of the club. Used to verify inner-class
+         * method invocation and logging.
          */
         public void shout() {
             System.out.println("Visca el Barça i Visca Catalunya!");
         }
     }
+
 }
 // Final end of file verification.
 
