@@ -14,7 +14,7 @@ import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
  */
 public class BadToolCall extends AbstractToolCall<BadTool, BadToolResponse> {
 
-    public BadToolCall(AbstractModelMessage amm, @NonNull String id, @NonNull BadTool tool, @NonNull Map<String, Object> args) {
+    public BadToolCall(AbstractModelMessage amm, String id, @NonNull BadTool tool, @NonNull Map<String, Object> args) {
         super(amm, id, tool, args, args); // For bad tools, raw and enriched args are the same.
     }
 
