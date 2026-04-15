@@ -65,7 +65,7 @@ public class OpenAiModel extends AbstractModel {
 
     @Override
     public String getDescription() {
-        return "OpenAI-compatible model: " + modelId;
+        return modelId;
     }
 
     @Override
@@ -157,8 +157,12 @@ public class OpenAiModel extends AbstractModel {
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                     .uri(URI.create(trimmedBaseUrl.endsWith("/") ? trimmedBaseUrl + "chat/completions" : trimmedBaseUrl + "/chat/completions"))
                     .header("Content-Type", "application/json")
-                    .header("Authorization", "Bearer " + provider.getCurrentApiKey())
                     .timeout(Duration.ofSeconds(60));
+            
+            String apiKey = provider.getCurrentApiKey();
+            if (apiKey != null && !apiKey.isBlank()) {
+                requestBuilder.header("Authorization", "Bearer " + apiKey);
+            }
             
             provider.getCustomHeaders().forEach(requestBuilder::header);
             
@@ -187,11 +191,20 @@ public class OpenAiModel extends AbstractModel {
         String jsonPayload = payload.toString();
         String historyJson = payload.get("messages").toString();
         try {
+            if (provider.isApiKeyRequired() && (provider.getCurrentApiKey() == null || provider.getCurrentApiKey().isBlank())) {
+                throw new RuntimeException("API key is required for provider: " + provider.getDisplayName());
+            }
+            
             String trimmedBaseUrl = provider.getBaseUrl() != null ? provider.getBaseUrl().trim() : "";
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder().uri(URI.create(trimmedBaseUrl.endsWith("/") ? trimmedBaseUrl + "chat/completions" : trimmedBaseUrl + "/chat/completions"))
                     .header("Content-Type", "application/json")
-                    .header("Authorization", "Bearer " + provider.getCurrentApiKey())
                     .timeout(Duration.ofSeconds(60));
+            
+            String apiKey = provider.getCurrentApiKey();
+            if (apiKey != null && !apiKey.isBlank()) {
+                requestBuilder.header("Authorization", "Bearer " + apiKey);
+            }
+            
             provider.getCustomHeaders().forEach(requestBuilder::header);
             HttpRequest httpRequest = requestBuilder.POST(HttpRequest.BodyPublishers.ofString(jsonPayload)).build();
             List<OpenAiModelMessage> targets = new ArrayList<>();
@@ -348,8 +361,5 @@ public class OpenAiModel extends AbstractModel {
         return payload;
     }
 
-    @Override
-    public String toString() {
-        return (displayName == null || displayName.isEmpty()) ? modelId : displayName;
-    }
+
 }
