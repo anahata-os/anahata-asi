@@ -87,7 +87,7 @@ public class AiModelTableModel extends AbstractTableModel {
     public Object getValueAt(int rowIndex, int columnIndex) {
         AbstractModel model = models.get(rowIndex);
         switch (columnIndex) {
-            case 0: return model.getProviderId();
+            case 0: return model.getProvider().getDisplayName();
             case 1: return model.getModelId();
             case 2: return model.getDisplayName();
             case 3: return model.getVersion();
