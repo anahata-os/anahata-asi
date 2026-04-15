@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -26,6 +27,7 @@ import uno.anahata.asi.agi.provider.AbstractAgiProvider;
 import uno.anahata.asi.agi.status.AgiStatus;
 import uno.anahata.asi.persistence.kryo.KryoUtils;
 import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
+import uno.anahata.asi.agi.provider.AbstractModel;
 
 /**
  * A hybrid static/instance class for managing global and application-specific configurations.
@@ -425,7 +427,12 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
         // Apply selected model state to the orchestrator if IDs are present
         if (agi.getConfig().getSelectedModelId() != null) {
             log.info("Applying DNA-defined default model ({}) to new session", agi.getConfig().getSelectedModelId());
-            agi.setSelectedModelById(agi.getConfig().getSelectedModelId());
+            AbstractAgiProvider prov = getProvider(agi.getConfig().getSelectedProviderUuid());
+            Optional<? extends AbstractModel> am = prov.findModel(agi.getConfig().getSelectedModelId());
+            if (am.isPresent()) {
+                agi.setSelectedModel(am.get());    
+            }
+            
         }
     }
 

@@ -62,6 +62,12 @@ public abstract class AbstractAgiProvider {
     private TokenizerType tokenizerType = TokenizerType.ESTIMATE;
 
     /**
+     * Whether this provider requires an API key to function.
+     * If false, the ASI will allow requests even if the key pool is empty (e.g. local Ollama).
+     */
+    private boolean apiKeyRequired = true;
+
+    /**
      * Whether this provider is enabled and should be offered to the user.
      */
     private boolean enabled = true;

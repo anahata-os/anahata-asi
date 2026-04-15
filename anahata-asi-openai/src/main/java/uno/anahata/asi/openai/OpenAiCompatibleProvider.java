@@ -125,24 +125,33 @@ public class OpenAiCompatibleProvider extends AbstractAgiProvider {
     public List<? extends AbstractModel> listModels() {
         String apiKey = getCurrentApiKey();
         String url = getBaseUrl();
-        if (url == null || apiKey == null) {
-            log.warn("Cannot list models: baseUrl or API key missing for provider '{}'", getProviderId());
+        log.info("Listing models for {} {}", getDisplayName(), url);
+        if (url == null || (apiKey == null && isApiKeyRequired())) {
+            log.warn("Cannot list models: baseUrl or API key missing (and required) for provider '{}'", getDisplayName());
             return Collections.emptyList();
         }
         try {
             String modelsUrl = url.endsWith("/") ? url + "models" : url + "/models";
             HttpRequest.Builder requestBuilder = HttpRequest
                     .newBuilder()
+                    .timeout(Duration.ofSeconds(9))
                     .uri(URI.create(modelsUrl))
-                    .header("Authorization", "Bearer " + apiKey)
                     .header("Accept", "application/json")
                     .GET();
+            
+            if (apiKey != null) {
+                log.info("listModels for {}", getDisplayName() + " will use apiKey ending with ..." + apiKey.substring(apiKey.length() - 4, apiKey.length()));
+                requestBuilder.header("Authorization", "Bearer " + apiKey);
+            }
+            
             getCustomHeaders().forEach(requestBuilder::header);
             HttpRequest httpRequest = requestBuilder.build();
             HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
             try (client) {
-                
+                log.info("Listing models for {} modelsUrl={} ", getDisplayName(), modelsUrl);
+                Thread.dumpStack();
                 HttpResponse<String> httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+                log.info("Got response from listModels: " + httpResponse);
                 if (httpResponse.statusCode() != 200) {
                     log.error("Failed to fetch models from {}. Status: {}. Response: {}", modelsUrl, httpResponse.statusCode(), httpResponse.body());
                     return Collections.emptyList();
@@ -162,7 +171,7 @@ public class OpenAiCompatibleProvider extends AbstractAgiProvider {
                 }
             }
         } catch (Exception e) {
-            log.error("Error fetching models for provider '{}' at {}", getProviderId(), baseUrl, e);
+            log.error("Error fetching models for provider '{}' at {}", getDisplayName(), baseUrl, e);
         }
         return Collections.emptyList();
     }

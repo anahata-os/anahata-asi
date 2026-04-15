@@ -19,7 +19,7 @@ public class AsiDesktopAgiConfig extends SwingAgiConfig {
     
     {
         setSelectedProviderUuid("Gemini");
-        setSelectedModelId("models/gemini-3-flash-preview");
+        setSelectedModelId("models/gemini-flash-latest");
     }
     
     /**

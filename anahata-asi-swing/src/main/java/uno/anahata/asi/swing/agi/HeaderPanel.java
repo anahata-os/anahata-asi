@@ -3,7 +3,6 @@
  */
 package uno.anahata.asi.swing.agi;
 
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
@@ -27,7 +26,9 @@ import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.swing.icons.SaveIcon;
 import uno.anahata.asi.swing.icons.SearchIcon;
 import uno.anahata.asi.swing.internal.SwingTask;
-import uno.anahata.asi.swing.provider.AgiProviderRegistryViewer;
+import uno.anahata.asi.swing.provider.AiProviderRegistryViewer;
+import uno.anahata.asi.swing.provider.AiProviderRenderer;
+import uno.anahata.asi.swing.provider.ModelRenderer;
 
 /**
  * The header panel for the agi UI, containing the agi nickname, session controls,
@@ -94,7 +95,7 @@ public class HeaderPanel extends JPanel {
         // Provider ComboBox (Right-aligned, skipping the push column)
         providerComboBox = new JComboBox<>();
         providerComboBox.setToolTipText("Select AI Provider");
-        providerComboBox.setRenderer(new ProviderRenderer());
+        providerComboBox.setRenderer(new AiProviderRenderer());
         add(providerComboBox, "skip 1, w 150!");
 
         // Model ComboBox
@@ -197,7 +198,7 @@ public class HeaderPanel extends JPanel {
 
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "AI Provider & Model Registry", JDialog.ModalityType.MODELESS);
         
-        AgiProviderRegistryViewer viewer = new AgiProviderRegistryViewer(allModels, selectedModel -> {
+        AiProviderRegistryViewer viewer = new AiProviderRegistryViewer(allModels, selectedModel -> {
             // Handle model selection: set the model in the combo box and close the dialog
             modelComboBox.setSelectedItem(selectedModel);
             dialog.dispose();
@@ -273,36 +274,4 @@ public class HeaderPanel extends JPanel {
         }).execute();
     }
 
-    /** Custom renderer to display provider's display name. */
-    private static class ProviderRenderer extends DefaultListCellRenderer {
-        /** 
-         * {@inheritDoc} 
-         * <p>Renders the provider's ID in the list.</p> 
-         */
-        @Override
-        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-            if (value instanceof AbstractAgiProvider) {
-                setText(((AbstractAgiProvider) value).getProviderId());
-            }
-            return this;
-        }
-    }
-
-    /** Custom renderer to display model's display name. */
-    private static class ModelRenderer extends DefaultListCellRenderer {
-        /** 
-         * {@inheritDoc} 
-         * <p>Renders the model's display name in the list, ensuring it follows the 
-         * agi's selected model format.</p> 
-         */
-        @Override
-        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-            if (value instanceof AbstractModel) {
-                setText(((AbstractModel) value).getDisplayName());
-            }
-            return this;
-        }
-    }
 }

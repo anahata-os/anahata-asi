@@ -73,6 +73,10 @@ public class AsiDesktopAsiContainer extends AbstractSwingAsiContainer {
                     "HuggingFace", "Hugging Face", "https://router.huggingface.co/v1", "HuggingFace", "https://huggingface.co/settings/tokens"));
         }
         
+        if (getProvider("Anahata") == null) {
+            registerProvider(new OpenAiCompatibleProvider(                    
+                    "Anahata", "Anahata (no SSL)", "http://a.anahata.uno:1234/v1", "Anahata", "https://asi.anahata.uno"));
+        }
         
     }
 

@@ -16,11 +16,11 @@ import uno.anahata.asi.agi.provider.AbstractModel;
  * 
  * @author anahata
  */
-public class AgiModelTableModel extends AbstractTableModel {
+public class AiModelTableModel extends AbstractTableModel {
 
     /** The ordered set of column headers reflecting model specifications. */
     private final String[] columnNames = {
-        "Model ID", "Display Name", "Version", "Description",
+        "AI Provider", "Model ID", "Display Name", "Version", "Description",
         "Supported Actions", "Input Tokens", "Output Tokens",
         "Temperature", "Top P", "Top K"
     };
@@ -32,7 +32,7 @@ public class AgiModelTableModel extends AbstractTableModel {
      * 
      * @param models The list of models to display.
      */
-    public AgiModelTableModel(List<AbstractModel> models) {
+    public AiModelTableModel(List<AbstractModel> models) {
         this.models = models;
     }
 
@@ -87,16 +87,17 @@ public class AgiModelTableModel extends AbstractTableModel {
     public Object getValueAt(int rowIndex, int columnIndex) {
         AbstractModel model = models.get(rowIndex);
         switch (columnIndex) {
-            case 0: return model.getModelId();
-            case 1: return model.getDisplayName();
-            case 2: return model.getVersion();
-            case 3: return model.getDescription();
-            case 4: return String.join(", ", model.getSupportedActions());
-            case 5: return model.getMaxInputTokens();
-            case 6: return model.getMaxOutputTokens();
-            case 7: return model.getDefaultTemperature();
-            case 8: return model.getDefaultTopP();
-            case 9: return model.getDefaultTopK();
+            case 0: return model.getProviderId();
+            case 1: return model.getModelId();
+            case 2: return model.getDisplayName();
+            case 3: return model.getVersion();
+            case 4: return model.getDescription();
+            case 5: return String.join(", ", model.getSupportedActions());
+            case 6: return model.getMaxInputTokens();
+            case 7: return model.getMaxOutputTokens();
+            case 8: return model.getDefaultTemperature();
+            case 9: return model.getDefaultTopP();
+            case 10: return model.getDefaultTopK();
             default: return null;
         }
     }

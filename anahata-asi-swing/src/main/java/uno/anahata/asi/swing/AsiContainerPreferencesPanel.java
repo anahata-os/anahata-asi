@@ -56,6 +56,8 @@ public class AsiContainerPreferencesPanel extends JPanel {
     private JComboBox<String> modelDropdown;
 
     private final JTabbedPane mainTabs;
+    
+    private final List<AbstractAgiProvider> unsavedProviders = new ArrayList<>();
 
     /**
      * Constructs a new preferences Command Center, defaulting to the first tab.
@@ -235,7 +237,7 @@ public class AsiContainerPreferencesPanel extends JPanel {
         JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JButton addBtn = new JButton("Add OpenAI Compatible Provider", new AddIcon(16));
         addBtn.addActionListener(e -> {
-            showAddOpenAiProviderDialog(providerTabs);
+            addDraftOpenAiProvider(providerTabs);
         });
         toolbar.add(addBtn);
 
@@ -246,73 +248,42 @@ public class AsiContainerPreferencesPanel extends JPanel {
 
     private void refreshProviderTabs(JTabbedPane providerTabs) {
         providerTabs.removeAll();
+        // 1. Existing Providers
         for (AbstractAgiProvider p : container.getAllProviders()) {
             AiProviderPanel keysPanel = new AiProviderPanel(p, () -> {
                 removeProvider(p, providerTabs);
+            }, () -> {
+                // On Save Success
+                refreshProviderDropdown();
             });
             providerTabs.addTab(p.getDisplayName(), keysPanel);
         }
+        
+        // 2. Draft/Unsaved Providers
+        for (AbstractAgiProvider p : unsavedProviders) {
+            AiProviderPanel keysPanel = new AiProviderPanel(p, () -> {
+                unsavedProviders.remove(p);
+                refreshProviderTabs(providerTabs);
+            }, () -> {
+                // On Save Success: Register it!
+                container.registerProvider(p);
+                prefs.getAgiTemplate().getProviderUuids().add(p.getUuid());
+                container.savePreferences();
+                unsavedProviders.remove(p);
+                refreshProviderTabs(providerTabs);
+                refreshProviderDropdown();
+            });
+            providerTabs.addTab("<html><b>* " + p.getDisplayName() + "</b></html>", keysPanel);
+        }
     }
 
-    private void showAddOpenAiProviderDialog(JTabbedPane providerTabs) {
-        JTextField nameField = new JTextField();
-        JTextField urlField = new JTextField("https://api.openai.com/v1");
-        JTextField folderField = new JTextField();
-        
-        nameField.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusLost(FocusEvent e) {
-                if (folderField.getText().isBlank() && !nameField.getText().isBlank()) {
-                    folderField.setText(nameField.getText().replaceAll("[^a-zA-Z0-9.-]", "_"));
-                }
-            }
-        });
-
-        JTextArea keysArea = new JTextArea(5, 20);
-
-        JPanel dialogPanel = new JPanel(new MigLayout("fillx", "[right]10[grow,fill]"));
-        dialogPanel.add(new JLabel("Display Name:"));
-        dialogPanel.add(nameField, "wrap");
-        dialogPanel.add(new JLabel("Base URL:"));
-        dialogPanel.add(urlField, "wrap");
-        dialogPanel.add(new JLabel("Folder Name:"));
-        dialogPanel.add(folderField, "wrap");
-        dialogPanel.add(new JLabel("API Keys (one per line):"), "span, wrap");
-        dialogPanel.add(new JScrollPane(keysArea), "span, grow, wrap");
-
-        int result = javax.swing.JOptionPane.showConfirmDialog(this, dialogPanel, 
-                "Add OpenAI Compatible Provider", javax.swing.JOptionPane.OK_CANCEL_OPTION);
-
-        if (result == javax.swing.JOptionPane.OK_OPTION) {
-            String name = nameField.getText().trim();
-            String url = urlField.getText().trim();
-            String folder = folderField.getText().trim();
-            String keys = keysArea.getText().trim();
-
-            if (name.isEmpty() || url.isEmpty()) {
-                javax.swing.JOptionPane.showMessageDialog(this, "Name and URL are required.");
-                return;
-            }
-
-            String uuid = java.util.UUID.randomUUID().toString();
-            uno.anahata.asi.openai.OpenAiCompatibleProvider provider = 
-                    new uno.anahata.asi.openai.OpenAiCompatibleProvider(uuid, name, url, folder, null);
-            
-            // Save keys to the provider's directory
-            try {
-                java.nio.file.Files.createDirectories(provider.getProviderDirectory());
-                java.nio.file.Files.writeString(provider.getKeysFilePath(), keys);
-            } catch (java.io.IOException ex) {
-                log.error("Failed to save provider keys", ex);
-            }
-
-            container.registerProvider(provider);
-            prefs.getAgiTemplate().getProviderUuids().add(uuid);
-            container.savePreferences();
-            
-            refreshProviderTabs(providerTabs);
-            refreshProviderDropdown();
-        }
+    private void addDraftOpenAiProvider(JTabbedPane providerTabs) {
+        String uuid = java.util.UUID.randomUUID().toString();
+        uno.anahata.asi.openai.OpenAiCompatibleProvider draft = 
+                new uno.anahata.asi.openai.OpenAiCompatibleProvider(uuid, "New Provider", "https://api.openai.com/v1", null, null);
+        unsavedProviders.add(draft);
+        refreshProviderTabs(providerTabs);
+        providerTabs.setSelectedIndex(providerTabs.getTabCount() - 1);
     }
 
     private void removeProvider(AbstractAgiProvider provider, JTabbedPane providerTabs) {

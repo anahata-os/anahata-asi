@@ -30,12 +30,12 @@ import uno.anahata.asi.swing.internal.AnyChangeDocumentListener;
  * 
  * @author anahata
  */
-public class AgiProviderRegistryViewer extends JPanel {
+public class AiProviderRegistryViewer extends JPanel {
 
     /** The advanced SwingX table instance for model discovery. */
     private final JXTable table;
     /** The technical data model powering the table. */
-    private final AgiModelTableModel tableModel;
+    private final AiModelTableModel tableModel;
     /** The real-time search and filter input field. */
     private final JTextField filterField;
     /** Reactive callback for notifying the system of a user's model selection. */
@@ -47,7 +47,7 @@ public class AgiProviderRegistryViewer extends JPanel {
      * @param models The list of models to display.
      * @param modelSelectionCallback A callback for when a model is double-clicked.
      */
-    public AgiProviderRegistryViewer(List<AbstractModel> models, Consumer<AbstractModel> modelSelectionCallback) {
+    public AiProviderRegistryViewer(List<AbstractModel> models, Consumer<AbstractModel> modelSelectionCallback) {
         super(new BorderLayout(10, 10));
         this.modelSelectionCallback = modelSelectionCallback;
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -60,7 +60,7 @@ public class AgiProviderRegistryViewer extends JPanel {
         add(filterPanel, BorderLayout.NORTH);
 
         // Table
-        tableModel = new AgiModelTableModel(models);
+        tableModel = new AiModelTableModel(models);
         
         table = new JXTable(tableModel) {
             
@@ -115,13 +115,14 @@ public class AgiProviderRegistryViewer extends JPanel {
         });
         
         // Set preferred column widths
-        table.getColumnModel().getColumn(0).setPreferredWidth(150); // Model ID
-        table.getColumnModel().getColumn(1).setPreferredWidth(150); // Display Name
-        table.getColumnModel().getColumn(2).setPreferredWidth(80);  // Version
-        table.getColumnModel().getColumn(3).setPreferredWidth(250); // Description
-        table.getColumnModel().getColumn(4).setPreferredWidth(200); // Supported Actions
-        table.getColumnModel().getColumn(5).setPreferredWidth(100); // Input Tokens
-        table.getColumnModel().getColumn(6).setPreferredWidth(100); // Output Tokens
+        table.getColumnModel().getColumn(0).setPreferredWidth(120); // AI Provider
+        table.getColumnModel().getColumn(1).setPreferredWidth(150); // Model ID
+        table.getColumnModel().getColumn(2).setPreferredWidth(150); // Display Name
+        table.getColumnModel().getColumn(3).setPreferredWidth(80);  // Version
+        table.getColumnModel().getColumn(4).setPreferredWidth(250); // Description
+        table.getColumnModel().getColumn(5).setPreferredWidth(200); // Supported Actions
+        table.getColumnModel().getColumn(6).setPreferredWidth(100); // Input Tokens
+        table.getColumnModel().getColumn(7).setPreferredWidth(100); // Output Tokens
 
         // Hide columns by default (user can show them via column control)
         // Use column names as identifiers to avoid index shifting issues
