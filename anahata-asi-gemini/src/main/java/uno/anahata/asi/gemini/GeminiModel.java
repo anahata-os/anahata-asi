@@ -58,11 +58,11 @@ import uno.anahata.asi.agi.provider.RetryableApiException;
 @Slf4j
 public class GeminiModel extends AbstractModel {
 
-    private final GeminiAgiProvider provider;
+    private final GeminiAiProvider provider;
     private final String modelId;
     private transient Model genaiModel;
 
-    public GeminiModel(GeminiAgiProvider provider, Model genaiModel) {
+    public GeminiModel(GeminiAiProvider provider, Model genaiModel) {
         this.provider = provider;
         this.genaiModel = genaiModel;
         this.modelId = genaiModel.name().orElseThrow(() -> new IllegalArgumentException("Model name is required"));

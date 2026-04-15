@@ -8,7 +8,7 @@ import java.util.Map;
 import lombok.Setter;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
-import uno.anahata.asi.gemini.GeminiAgiProvider;
+import uno.anahata.asi.gemini.GeminiAiProvider;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.provider.AbstractAgiProvider;
 import uno.anahata.asi.openai.OpenAiCompatibleProvider;
@@ -46,9 +46,9 @@ public class AsiDesktopAsiContainer extends AbstractSwingAsiContainer {
         super("AsiDesktop");
         
         // Ensure Gemini is registered with stable UUID
-        AbstractAgiProvider gemini = getProviderByClass(GeminiAgiProvider.class);
+        AbstractAgiProvider gemini = getProviderByClass(GeminiAiProvider.class);
         if (gemini == null) {
-            registerProvider(new GeminiAgiProvider());
+            registerProvider(new GeminiAiProvider());
         } else if (!"Gemini".equals(gemini.getUuid())) {
             log.info("Migrating legacy Gemini provider ({}) to stable ID", gemini.getUuid());
             unregisterProvider(gemini.getUuid());

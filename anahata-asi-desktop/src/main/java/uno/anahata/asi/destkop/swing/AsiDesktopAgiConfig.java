@@ -5,12 +5,12 @@ package uno.anahata.asi.destkop.swing;
 
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AbstractAsiContainer;
-import uno.anahata.asi.gemini.GeminiAgiProvider;
+import uno.anahata.asi.gemini.GeminiAiProvider;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 
 /**
  * The default {@link uno.anahata.ai.config.AgiConfig} implementation for the 
- * standalone Swing application. It pre-registers the {@link GeminiAgiProvider}.
+ * standalone Swing application. It pre-registers the {@link GeminiAiProvider}.
  * 
  * @author anahata
  */
@@ -39,6 +39,6 @@ public class AsiDesktopAgiConfig extends SwingAgiConfig {
      */
     public AsiDesktopAgiConfig(AbstractAsiContainer asiConfig, String sessionId) {
         super(asiConfig, sessionId);
-        log.info("StandaloneAgiConfig registering: {}", GeminiAgiProvider.class);
+        log.info("StandaloneAgiConfig registering: {}", GeminiAiProvider.class);
     }
 }

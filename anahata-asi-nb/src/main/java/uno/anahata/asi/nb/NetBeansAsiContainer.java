@@ -11,7 +11,7 @@ import org.openide.windows.WindowManager;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.agi.provider.AbstractAgiProvider;
-import uno.anahata.asi.gemini.GeminiAgiProvider;
+import uno.anahata.asi.gemini.GeminiAiProvider;
 import uno.anahata.asi.nb.annotation.AnahataAnnotationProvider;
 import uno.anahata.asi.nb.ui.render.FullTextResourceUpdateRenderer;
 import uno.anahata.asi.nb.ui.render.TextResourceReplacementsRenderer;
@@ -66,9 +66,9 @@ public class NetBeansAsiContainer extends AbstractSwingAsiContainer {
         super("netbeans");
         
         // Ensure Gemini is registered with stable UUID
-        AbstractAgiProvider gemini = getProviderByClass(GeminiAgiProvider.class);
+        AbstractAgiProvider gemini = getProviderByClass(GeminiAiProvider.class);
         if (gemini == null) {
-            registerProvider(new GeminiAgiProvider());
+            registerProvider(new GeminiAiProvider());
         } else if (!"Gemini".equals(gemini.getUuid())) {
             log.info("Migrating legacy Gemini provider ({}) to stable ID", gemini.getUuid());
             unregisterProvider(gemini.getUuid());

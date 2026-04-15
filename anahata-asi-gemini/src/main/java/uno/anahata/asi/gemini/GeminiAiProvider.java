@@ -19,11 +19,11 @@ import uno.anahata.asi.agi.provider.TokenizerType;
  * @author anahata-gemini-pro-2.5
  */
 @Getter
-public class GeminiAgiProvider extends AbstractAgiProvider {
+public class GeminiAiProvider extends AbstractAgiProvider {
 
     private transient Client client;
 
-    public GeminiAgiProvider() {
+    public GeminiAiProvider() {
         super("Gemini");
         setDisplayName("Gemini-genai");
         setTokenizerType(TokenizerType.GEMINI);
