@@ -4,6 +4,7 @@
 package uno.anahata.asi.agi.provider;
 
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 import uno.anahata.asi.agi.message.AbstractModelMessage;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
 
@@ -194,4 +195,13 @@ public abstract class AbstractModel {
      * @return The JSON string representing the tool declaration.
      */
     public abstract String getToolDeclarationJson(AbstractTool<?, ?> tool, RequestConfig config);
+    
+    /**
+     * Returning the display name
+     * @return the display name
+     */
+    @Override
+    public String toString() {
+        return getDisplayName();
+    }
 }
