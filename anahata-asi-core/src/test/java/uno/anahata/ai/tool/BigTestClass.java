@@ -169,6 +169,10 @@ public class BigTestClass {
         }
     }
 
+    public void processNames(List<String> names) {
+        log.info("Updated via raw type match: " + names.size());
+    }
+
 
     // Line 123: Print stats
     public void printStats() {
