@@ -118,10 +118,9 @@ public class Agi extends BasicPropertyChangeSource {
     private transient volatile Thread currentExecutionThread;
 
     /**
-     * A message that has been submitted via
-     * {@link #sendMessage(UserMessage)} while the agi was busy. It will be
-     * picked up and processed as soon as the current conversation turn is
-     * complete.
+     * A message that has been submitted via {@link #sendMessage(UserMessage)}
+     * while the agi was busy. It will be picked up and processed as soon as the
+     * current conversation turn is complete.
      */
     private UserMessage stagedUserMessage;
 
@@ -194,10 +193,11 @@ public class Agi extends BasicPropertyChangeSource {
     /**
      * Gets a list of AI providers available for this session.
      * <p>
-     * Implementation details: This method performs a dynamic lookup against 
-     * the container's master registry for each provider class defined in 
-     * the AgiConfig.
+     * Implementation details: This method performs a dynamic lookup against the
+     * container's master registry for each provider class defined in the
+     * AgiConfig.
      * </p>
+     *
      * @return The list of shared provider instances.
      */
     public List<AbstractAiProvider> getProviders() {
@@ -237,12 +237,20 @@ public class Agi extends BasicPropertyChangeSource {
         this.runningLock = new ReentrantLock();
         this.running = false;
         this.currentExecutionThread = null;
-        
+
         // Late-Binding restoration of the selected model from the master registry
-        String savedId = config.getSelectedModelId();
-        if (savedId != null) {
-            log.info("Restoring transient selected model: {}", savedId);
-            setSelectedModelById(savedId);
+        String providerId = config.getSelectedProviderUuid();
+        String modelId = config.getSelectedModelId();
+        if (providerId != null) {            
+            if (modelId != null) {
+                AbstractAiProvider prov = container.getProvider(providerId);            
+                Optional<? extends AbstractModel> model = prov.findModel(modelId);
+                if (model.isPresent()) {
+                    log.info("Restoring transient selected model: {}", modelId);
+                    setSelectedModel(model.get());
+                }
+                
+            }
         }
 
         log.info("Triggering environmental bootstrapping for agi session {}", config.getSessionId());
@@ -296,7 +304,7 @@ public class Agi extends BasicPropertyChangeSource {
     public void setSelectedModel(AbstractModel selectedModel) {
         AbstractModel oldModel = this.selectedModel;
         this.selectedModel = selectedModel;
-        
+
         // Mirror state to the DNA (AgiConfig)
         if (selectedModel != null) {
             this.config.setSelectedProviderUuid(selectedModel.getProvider().getUuid());
@@ -891,22 +899,6 @@ public class Agi extends BasicPropertyChangeSource {
     }
 
     /**
-     * Finds and sets the active model by its unique ID, searching across all 
-     * registered providers.
-     * 
-     * @param modelId The ID of the model to select.
-     */
-    public void setSelectedModelById(String modelId) {
-        getAllModels().stream()
-                .filter(m -> m.getModelId().equals(modelId))
-                .findFirst()
-                .ifPresentOrElse(
-                        this::setSelectedModel,
-                        () -> log.error("Model not found: {}", modelId)
-                );
-    }
-
-    /**
      * Convenience method to retrieve a toolkit instance from the tool manager.
      *
      * @param <T> The type of the toolkit.
@@ -918,8 +910,8 @@ public class Agi extends BasicPropertyChangeSource {
     }
 
     /**
-     * Performs post-restoration logic, warming up managers and toolkits.
-     * This is called by the container after the session is bound and restored.
+     * Performs post-restoration logic, warming up managers and toolkits. This
+     * is called by the container after the session is bound and restored.
      */
     public void postActivate() {
         log.info("Post-activating Agi session: {}", config.getSessionId());
