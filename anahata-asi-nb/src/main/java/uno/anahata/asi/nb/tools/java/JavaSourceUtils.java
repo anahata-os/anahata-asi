@@ -59,7 +59,8 @@ public class JavaSourceUtils {
      *
      * @param filePath The absolute path to the file.
      * @return The corresponding FileObject.
-     * @throws AgiToolException If the file does not exist or cannot be resolved.
+     * @throws AgiToolException If the file does not exist or cannot be
+     * resolved.
      */
     public static FileObject getFileObject(String filePath) throws AgiToolException {
         File f = new File(filePath);
@@ -194,27 +195,75 @@ public class JavaSourceUtils {
 
     /**
      * Internal helper to match a method element against a string signature.
+     * <p>
+     * This implementation is erasure-aware. If the provided signature does not
+     * contain generics, it will match against the raw AST type.
+     * </p>
      */
     private static boolean matchSignature(ExecutableElement ee, String methodFqn) {
-        String params = methodFqn.substring(methodFqn.indexOf('(') + 1, methodFqn.lastIndexOf(')')).trim();
-        if (params.isEmpty()) {
-            return ee.getParameters().isEmpty();
-        }
+        String paramsPart = methodFqn.substring(methodFqn.indexOf('(') + 1, methodFqn.lastIndexOf(')')).trim();
+        List<String> expectedTypes = splitParameters(paramsPart);
 
-        String[] expectedTypes = params.split(",");
-        if (expectedTypes.length != ee.getParameters().size()) {
+        if (expectedTypes.size() != ee.getParameters().size()) {
             return false;
         }
 
-        for (int i = 0; i < expectedTypes.length; i++) {
-            String expected = expectedTypes[i].trim();
+        for (int i = 0; i < expectedTypes.size(); i++) {
+            String expected = expectedTypes.get(i);
+            // Robust check: if the model passed "int age" or "@NotNull String", we only want the type part
+            if (expected.contains(" ")) {
+                String[] parts = expected.split("\\s+");
+                expected = parts[parts.length - 1]; // Assume the type is the last part if no generic brackets
+                if (expected.endsWith(">")) { // But if it was List<String> names, the last part is names
+                    expected = parts[parts.length - 2];
+                }
+            }
+            
             String actual = ee.getParameters().get(i).asType().toString();
-            // Basic matching (handle simple name vs FQN loosely)
+
+            // Logic: If the user provided a raw type (no <), strip generics from actual for comparison.
+            if (!expected.contains("<") && actual.contains("<")) {
+                actual = actual.substring(0, actual.indexOf('<'));
+            }
+
             if (!actual.endsWith(expected)) {
                 return false;
             }
         }
         return true;
+    }
+
+    /**
+     * Splits a parameter string into individual types, respecting generic
+     * brackets.
+     */
+    private static List<String> splitParameters(String params) {
+        List<String> result = new ArrayList<>();
+        if (params.isEmpty()) {
+            return result;
+        }
+
+        StringBuilder current = new StringBuilder();
+        int depth = 0;
+        for (char c : params.toCharArray()) {
+            if (c == '<') {
+                depth++;
+            }
+            if (c == '>') {
+                depth--;
+            }
+
+            if (c == ',' && depth == 0) {
+                result.add(current.toString().trim());
+                current = new StringBuilder();
+            } else {
+                current.append(c);
+            }
+        }
+        if (current.length() > 0) {
+            result.add(current.toString().trim());
+        }
+        return result;
     }
 
     /**
@@ -287,7 +336,7 @@ public class JavaSourceUtils {
                 try {
                     mods.add(Modifier.valueOf(m.toUpperCase()));
                 } catch (IllegalArgumentException e) {
-                    log.error("Could not parse modifier {}",m);
+                    log.error("Could not parse modifier {}", m);
                 }
             }
         }
@@ -304,7 +353,7 @@ public class JavaSourceUtils {
             } else if (c == ')' || c == '}' || c == ']') {
                 depth--;
             }
-            
+
             if (c == ',' && depth == 0) {
                 result.add(current.toString().trim());
                 current = new StringBuilder();

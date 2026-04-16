@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import javax.lang.model.element.*;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.java.source.*;
@@ -24,9 +25,9 @@ import uno.anahata.asi.agi.tool.*;
 import uno.anahata.asi.nb.tools.java.JavaSourceUtils.RelativePosition;
 
 /**
- * V2.3 of the structural Java code refinement toolkit.
+ * V2.4 of the structural Java code refinement toolkit.
  * High-fidelity structural manipulation using full declarations and AST-based rewriting.
- * This toolkit is a "Clean Room" implementation maximizing reliance on NetBeans public APIs.
+ * Features canonical member identification and smart error reporting with FQN suggestions.
  * 
  * @author anahata
  */
@@ -44,6 +45,9 @@ public class CodeRefiner2 extends AnahataToolkit {
         return Collections.singletonList("CodeRefiner2: The authority for structural Java changes. Força Barça!"
                 + "\n- 'declaration' must be the full signature (e.g., 'public void foo(int a) throws IOException')."
                 + "\n- 'body' is just the logic inside the braces. For methods, if body is null during update, the original body is preserved."
+                + "\n- Identification Standard: 'package.Class.member' (Field) or 'package.Class.method(param1,param2)' (Method)."
+                + "\n- RULES FOR METHOD IDENTIFICATION: Parameter types must be CANONICAL: Fully Qualified, NO Generics, NO Annotations. "
+                + "Example: 'com.foo.Bar.process(java.util.List,int)'."
                 + "\n- RelativePosition is MANDATORY for insertion/move. anchorMemberName is MANDATORY if position is BEFORE/AFTER.");
     }
 
@@ -107,7 +111,8 @@ public class CodeRefiner2 extends AnahataToolkit {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             TreeMaker make = wc.getTreeMaker();
             Element element = JavaSourceUtils.findElement(wc, memberFqn);
-            if (element == null) throw new AgiToolException("Member not found: " + memberFqn);
+            if (element == null) throwMemberNotFound(wc, memberFqn);
+            
             Tree oldTree = wc.getTrees().getTree(element);
 
             Tree newTree = parseMember(wc, declaration, body);
@@ -148,7 +153,7 @@ public class CodeRefiner2 extends AnahataToolkit {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             TreeMaker make = wc.getTreeMaker();
             Element element = JavaSourceUtils.findElement(wc, memberFqn);
-            if (element == null) throw new AgiToolException("Member not found: " + memberFqn);
+            if (element == null) throwMemberNotFound(wc, memberFqn);
 
             Tree memberTree = wc.getTrees().getTree(element);
             Element parentElement = element.getEnclosingElement();
@@ -189,7 +194,7 @@ public class CodeRefiner2 extends AnahataToolkit {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             TreeMaker make = wc.getTreeMaker();
             Element element = JavaSourceUtils.findElement(wc, memberFqn);
-            if (element == null) throw new AgiToolException("Member not found: " + memberFqn);
+            if (element == null) throwMemberNotFound(wc, memberFqn);
             
             Tree memberTree = wc.getTrees().getTree(element);
             Element parentElement = element.getEnclosingElement();
@@ -214,6 +219,41 @@ public class CodeRefiner2 extends AnahataToolkit {
 
         if (save) handleSave(fo);
         return "Moved member '" + memberFqn + "' to " + position;
+    }
+
+    private void throwMemberNotFound(WorkingCopy wc, String memberFqn) throws AgiToolException {
+        int lastDot = memberFqn.contains("(") ? memberFqn.substring(0, memberFqn.indexOf("(")).lastIndexOf(".") : memberFqn.lastIndexOf(".");
+        if (lastDot == -1) throw new AgiToolException("Member not found: " + memberFqn);
+        
+        String parentFqn = memberFqn.substring(0, lastDot);
+        String name = memberFqn.contains("(") ? memberFqn.substring(lastDot + 1, memberFqn.indexOf("(")) : memberFqn.substring(lastDot + 1);
+        
+        TypeElement parent = wc.getElements().getTypeElement(parentFqn);
+        if (parent == null) throw new AgiToolException("Member not found: " + memberFqn + " (Parent class not found: " + parentFqn + ")");
+        
+        List<String> candidates = new ArrayList<>();
+        for (Element e : parent.getEnclosedElements()) {
+            if (e.getSimpleName().contentEquals(name)) {
+                if (e instanceof ExecutableElement ee) {
+                    String params = ee.getParameters().stream()
+                        .map(p -> {
+                            String type = p.asType().toString();
+                            return type.contains("<") ? type.substring(0, type.indexOf("<")) : type;
+                        })
+                        .collect(Collectors.joining(","));
+                    candidates.add(parentFqn + "." + name + "(" + params + ")");
+                } else {
+                    candidates.add(parentFqn + "." + name);
+                }
+            }
+        }
+        
+        if (candidates.isEmpty()) throw new AgiToolException("Member not found: " + memberFqn);
+        
+        StringBuilder sb = new StringBuilder("Member not found: ").append(memberFqn);
+        sb.append("\nDid you mean one of these canonical identification FQNs?\n");
+        for (String c : candidates) sb.append("- ").append(c).append("\n");
+        throw new AgiToolException(sb.toString());
     }
 
     @AgiTool("Reformats a file using IDE rules.")
