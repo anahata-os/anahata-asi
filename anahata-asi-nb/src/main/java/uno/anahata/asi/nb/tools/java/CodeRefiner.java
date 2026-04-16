@@ -852,7 +852,7 @@ public class CodeRefiner extends AnahataToolkit {
             CompilationUnitTree cut = genUtils.importFQNs(wc.getCompilationUnit());
             wc.rewrite(wc.getCompilationUnit(), cut);
             
-            // 2. Remove unused imports using reflection (like Hints tool)
+            // 2. Remove redundant and unused imports
             removeUnusedImportsInternal(wc);
         }).commit();
 
@@ -870,21 +870,34 @@ public class CodeRefiner extends AnahataToolkit {
 
             Class<?>[] declaredClasses = JavaFixAllImports.class.getDeclaredClasses();
             Class<?> importDataClass = null;
-            Class<?> candidateDescClass = null;
             for (Class<?> c : declaredClasses) {
                 if (c.getSimpleName().equals("ImportData")) {
                     importDataClass = c;
-                }
-                if (c.getSimpleName().equals("CandidateDescription")) {
-                    candidateDescClass = c;
+                    break;
                 }
             }
 
-            if (importDataClass != null && candidateDescClass != null) {
-                Object emptyCandidates = Array.newInstance(candidateDescClass, 0);
-                Method performFixImports = JavaFixAllImports.class.getDeclaredMethod("performFixImports", WorkingCopy.class, importDataClass, emptyCandidates.getClass(), boolean.class);
+            if (importDataClass != null) {
+                // Log the decisions being made
+                String[] simpleNames = (String[]) importDataClass.getDeclaredField("simpleNames").get(importData);
+                Object[] defaults = (Object[]) importDataClass.getDeclaredField("defaults").get(importData);
+                
+                for (int i = 0; i < simpleNames.length; i++) {
+                    if (defaults[i] != null) {
+                        String displayName = (String) defaults[i].getClass().getDeclaredField("displayName").get(defaults[i]);
+                        log.info("[optimizeImports] Resolution for '{}': {}", simpleNames[i], displayName);
+                    } else {
+                        log.info("[optimizeImports] Could not resolve ambiguity for '{}'", simpleNames[i]);
+                    }
+                }
+
+                java.lang.reflect.Field defaultsField = importDataClass.getDeclaredField("defaults");
+                defaultsField.setAccessible(true);
+                Object defaultSelections = defaultsField.get(importData);
+
+                Method performFixImports = JavaFixAllImports.class.getDeclaredMethod("performFixImports", WorkingCopy.class, importDataClass, defaultSelections.getClass(), boolean.class);
                 performFixImports.setAccessible(true);
-                performFixImports.invoke(null, copy, importData, emptyCandidates, true);
+                performFixImports.invoke(null, copy, importData, defaultSelections, true);
             }
         } catch (Exception e) {
             log.error("Failed to remove unused imports via reflection", e);
@@ -938,10 +951,11 @@ public class CodeRefiner extends AnahataToolkit {
         }
         List<VariableTree> result = new ArrayList<>();
         for (String p : params) {
-            StatementTree st = utils.parseStatement(p.trim() + ";", null);
-            if (st instanceof VariableTree vt) {
-                // Recreate to ensure it's a parameter (no initializer)
-                result.add(make.Variable(vt.getModifiers(), vt.getName().toString(), vt.getType(), null));
+            // Robust parsing: wrap in a dummy method to handle annotations and modifiers correctly
+            String dummy = "void __method(" + p + ") {}";
+            MethodTree mt = (MethodTree) utils.parseStatement(dummy, null);
+            if (mt != null && !mt.getParameters().isEmpty()) {
+                result.add(mt.getParameters().get(0));
             }
         }
         return result;
@@ -953,9 +967,16 @@ public class CodeRefiner extends AnahataToolkit {
         }
         List<VariableTree> result = new ArrayList<>();
         for (String c : components) {
-            StatementTree st = utils.parseStatement(c.trim() + ";", null);
-            if (st instanceof VariableTree vt) {
-                result.add(make.RecordComponent(vt.getModifiers(), vt.getName().toString(), vt.getType()));
+            // Robust parsing: wrap in a dummy record to handle annotations correctly
+            String dummy = "record __Record(" + c + ") {}";
+            ClassTree ct = (ClassTree) utils.parseType(dummy, null);
+            if (ct != null && ct.getKind() == Tree.Kind.RECORD) {
+                for (Tree member : ct.getMembers()) {
+                    if (member instanceof VariableTree vt) {
+                        result.add(make.RecordComponent(vt.getModifiers(), vt.getName().toString(), vt.getType()));
+                        break;
+                    }
+                }
             }
         }
         return result;
@@ -1078,11 +1099,12 @@ public class CodeRefiner extends AnahataToolkit {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             GeneratorUtilities genUtils = GeneratorUtilities.get(wc);
             CompilationUnitTree cut = wc.getCompilationUnit();
-
             for (String fqn : fqns) {
                 TypeElement te = wc.getElements().getTypeElement(fqn);
                 if (te != null) {
                     cut = genUtils.addImports(cut, Collections.singleton(te));
+                } else {
+                    log.warn("[addImports] Could not resolve type element for: {}", fqn);
                 }
             }
             wc.rewrite(wc.getCompilationUnit(), cut);

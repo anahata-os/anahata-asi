@@ -1,15 +1,14 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb;
 
+import java.nio.file.Files;
 import uno.anahata.asi.AbstractAsiContainer;
-import uno.anahata.asi.gemini.GeminiAiProvider;
 import uno.anahata.asi.nb.mine.NetBeansIconProvider;
 import uno.anahata.asi.nb.tools.ide.Refactor;
 
 import uno.anahata.asi.nb.tools.ide.Editor;
 import uno.anahata.asi.nb.tools.ide.IDE;
 import uno.anahata.asi.swing.toolkit.Screens;
-import uno.anahata.asi.nb.tools.java.CodeRefiner;
 import uno.anahata.asi.nb.tools.java.CodeModel;
 import uno.anahata.asi.nb.tools.java.Hints;
 import uno.anahata.asi.nb.tools.java.NbJava;
@@ -17,6 +16,7 @@ import uno.anahata.asi.nb.tools.maven.Maven;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
 import uno.anahata.asi.agi.resource.handle.ResourceHandle;
+import uno.anahata.asi.nb.tools.java.CodeRefiner2;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.toolkit.Host;
 import uno.anahata.asi.swing.toolkit.SwingJava;
@@ -42,7 +42,7 @@ public class NetBeansAgiConfig extends SwingAgiConfig {
         getToolClasses().add(Maven.class);
         getToolClasses().add(Projects.class);
         getToolClasses().add(CodeModel.class);
-        getToolClasses().add(CodeRefiner.class);
+        getToolClasses().add(CodeRefiner2.class);
         getToolClasses().add(IDE.class);
         getToolClasses().add(Editor.class);
         getToolClasses().add(Hints.class);
@@ -53,7 +53,7 @@ public class NetBeansAgiConfig extends SwingAgiConfig {
         setIconProvider(new NetBeansIconProvider());
         
         setSelectedProviderUuid("Gemini");
-        setSelectedModelId("models/gemini-3-flash-preview");
+        setSelectedModelId("models/gemini-flash-latest");
     }
     
     /**
