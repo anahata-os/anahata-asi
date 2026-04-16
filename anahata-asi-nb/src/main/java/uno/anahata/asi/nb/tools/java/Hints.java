@@ -3,11 +3,10 @@ package uno.anahata.asi.nb.tools.java;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,12 +15,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.java.project.JavaProjectConstants;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.ModificationResult;
-import org.netbeans.api.java.source.WorkingCopy;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectUtils;
 import org.netbeans.api.project.SourceGroup;
 import org.netbeans.api.project.Sources;
-import org.netbeans.modules.java.editor.imports.JavaFixAllImports;
+import org.netbeans.modules.java.hints.spiimpl.RulesManager;
 import org.netbeans.modules.java.hints.spiimpl.hints.HintsInvoker;
 import org.netbeans.modules.java.hints.spiimpl.options.HintsSettings;
 import org.netbeans.spi.editor.hints.ErrorDescription;
@@ -32,8 +30,8 @@ import uno.anahata.asi.agi.tool.Page;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.AgiToolkit;
-import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiTool;
+import uno.anahata.asi.agi.tool.AgiToolParam;
 
 /**
  * A toolkit for managing and applying Java hints and code fixes within the NetBeans IDE.
@@ -47,6 +45,22 @@ import uno.anahata.asi.agi.tool.AgiTool;
 @Slf4j
 @AgiToolkit("A toolkit for managing and applying Java hints and code fixes.")
 public class Hints extends AnahataToolkit {
+    
+    /**
+     * Represents metadata for a registered Java hint type.
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class HintMetadata {
+
+        String id;
+        String displayName;
+        String description;
+        String category;
+        String severity;
+        boolean enabled;
+    }
 
     /**
      * Represents a single Java hint or code fix suggestion.
@@ -86,66 +100,7 @@ public class Hints extends AnahataToolkit {
     public String removeUnusedImports(
             @AgiToolParam(value = "The absolute path of the Java file to clean.", rendererId = "path") String filePath
     ) throws Exception {
-        File file = new File(filePath);
-        if (!file.exists()) {
-            throw new IOException("File does not exist: " + filePath);
-        }
-        FileObject fo = FileUtil.toFileObject(FileUtil.normalizeFile(file));
-        if (fo == null) {
-            throw new IOException("Could not get FileObject for: " + filePath);
-        }
-
-        JavaSource js = JavaSource.forFileObject(fo);
-        if (js == null) {
-            throw new IOException("Could not get JavaSource for: " + filePath);
-        }
-
-        final StringBuilder sb = new StringBuilder();
-        ModificationResult result = js.runModificationTask(copy -> {
-            copy.toPhase(JavaSource.Phase.RESOLVED);
-            try {
-                // 1. Get the private computeImports method
-                Method computeImports = JavaFixAllImports.class.getDeclaredMethod("computeImports", org.netbeans.api.java.source.CompilationInfo.class);
-                computeImports.setAccessible(true);
-
-                // 2. Compute the import data
-                Object importData = computeImports.invoke(null, copy);
-
-                // 3. Get the private performFixImports method
-                // We use reflection to find the internal ImportData and CandidateDescription classes
-                Class<?>[] declaredClasses = JavaFixAllImports.class.getDeclaredClasses();
-                Class<?> importDataClass = null;
-                Class<?> candidateDescClass = null;
-                for (Class<?> c : declaredClasses) {
-                    if (c.getSimpleName().equals("ImportData")) {
-                        importDataClass = c;
-                    }
-                    if (c.getSimpleName().equals("CandidateDescription")) {
-                        candidateDescClass = c;
-                    }
-                }
-                
-                if (importDataClass == null || candidateDescClass == null) {
-                    throw new IllegalStateException("Could not find internal ImportData or CandidateDescription classes.");
-                }
-
-                Object emptyCandidates = Array.newInstance(candidateDescClass, 0);
-
-                Method performFixImports = JavaFixAllImports.class.getDeclaredMethod("performFixImports", WorkingCopy.class, importDataClass, emptyCandidates.getClass(), boolean.class);
-                performFixImports.setAccessible(true);
-
-                // 4. Perform the fix (remove unused = true)
-                performFixImports.invoke(null, copy, importData, emptyCandidates, true);
-                sb.append("Successfully removed unused imports from ").append(file.getName());
-
-            } catch (Exception e) {
-                log.error("Error during removeUnusedImports reflection", e);
-                sb.append("Error: ").append(e.toString());
-            }
-        });
-
-        result.commit();
-        return sb.toString();
+        return applyHintFix(filePath, "Imports_UNUSED");
     }
 
     /**
@@ -215,37 +170,68 @@ public class Hints extends AnahataToolkit {
     }
 
     /**
-     * Gets all Java hints (warnings, suggestions) for a specific project, with pagination.
-     * <p>
-     * This tool performs a comprehensive static analysis of all Java files within 
-     * the project's source groups, using the IDE's internal hint engine.
-     * </p>
+     * Gets all Java hints for a specific file.
+     *
+     * @param filePath The absolute path of the Java file.
+     * @return A list of hints found in the file.
+     * @throws Exception if the file cannot be processed.
+     */
+    @AgiTool("Gets all Java hints for a specific file.")
+    public List<HintInfo> getFileHints(
+            @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath
+    ) throws Exception {
+        File file = new File(filePath);
+        if (!file.exists()) {
+            throw new IOException("File does not exist: " + filePath);
+        }
+        FileObject fo = FileUtil.toFileObject(FileUtil.normalizeFile(file));
+        if (fo == null) {
+            throw new IOException("Could not get FileObject for: " + filePath);
+        }
+        JavaSource js = JavaSource.forFileObject(fo);
+        if (js == null) {
+            throw new IOException("Could not get JavaSource for: " + filePath);
+        }
+        List<HintInfo> fileHints = new ArrayList<>();
+        js.runUserActionTask(info-> {
+            info.toPhase(JavaSource.Phase.RESOLVED);
+            HintsSettings settings = HintsSettings.getSettingsFor(info.getFileObject());
+            HintsInvoker invoker = new HintsInvoker(settings, new AtomicBoolean());
+            List<ErrorDescription> hints = invoker.computeHints(info);
+            if (hints != null) {
+                for (ErrorDescription ed : hints) {
+                    fileHints.add(new HintInfo(fo.getPath(), ed.getDescription(), ed.getSeverity().toString(), ed.getRange().getBegin().getLine(), ed.getRange().getBegin().getColumn(), ed.getId()));
+                }
+            }
+        }, true);
+        return fileHints;
+    }
+
+    /**
+     * Gets all Java hints (warnings, suggestions) for a specific project, with pagination and optional type filtering.
      * 
      * @param projectPath The absolute path of the project to scan.
      * @param startIndex The starting index for pagination.
      * @param pageSize The maximum number of hints to return.
+     * @param hintIds Optional list of hint IDs to filter by.
      * @return A paginated list of all found hints.
      * @throws Exception if the project cannot be found or the scan fails.
      */
-    @AgiTool("Gets all Java hints (warnings, suggestions) for a specific project, with pagination.")
+    @AgiTool("Gets all Java hints (warnings, suggestions) for a specific project, with pagination and optional type filtering.")
     public Page<HintInfo> getAllHints(
             @AgiToolParam(value = "The absolute path of the project.", rendererId = "path") String projectPath,
+            @AgiToolParam(value = "Optional list of hint IDs to filter by.", required = false) List<String> hintIds,
             @AgiToolParam(value = "The starting index for pagination. Defaults to 0 if not provided", required = false) Integer startIndex,
-            @AgiToolParam("The maximum number of hints to return. Defaults to 108 if not provided") Integer pageSize
+            @AgiToolParam(value = "The maximum number of hints to return. Defaults to 108 if not provided", required = false) Integer pageSize
     ) throws Exception {
         if (startIndex == null) {
-            log("defaulting startIndex to 0");
             startIndex = 0;
         }
         if (pageSize == null) {
-            log("defaulting pageSize to 108");
             pageSize = 108;
         }
         Project project = Projects.findOpenProject(projectPath);
         List<HintInfo> allHints = new ArrayList<>();
-        
-        // Find all Java files
-        List<FileObject> javaFiles = new ArrayList<>();
         Sources sources = ProjectUtils.getSources(project);
         SourceGroup[] groups = sources.getSourceGroups(JavaProjectConstants.SOURCES_TYPE_JAVA);
         for (SourceGroup sg : groups) {
@@ -254,33 +240,47 @@ public class Hints extends AnahataToolkit {
             while (children.hasMoreElements()) {
                 FileObject fo = children.nextElement();
                 if (!fo.isFolder() && "text/x-java".equals(fo.getMIMEType())) {
-                    javaFiles.add(fo);
+                    JavaSource js = JavaSource.forFileObject(fo);
+                    if (js != null) {
+                        js.runUserActionTask(info-> {
+                            info.toPhase(JavaSource.Phase.RESOLVED);
+                            HintsSettings settings = HintsSettings.getSettingsFor(info.getFileObject());
+                            HintsInvoker invoker = new HintsInvoker(settings, new AtomicBoolean());
+                            List<ErrorDescription> hints = invoker.computeHints(info);
+                            if (hints != null) {
+                                for (ErrorDescription ed : hints) {
+                                    if (hintIds == null || hintIds.isEmpty() || hintIds.contains(ed.getId())) {
+                                        allHints.add(new HintInfo(fo.getPath(), ed.getDescription(), ed.getSeverity().toString(), ed.getRange().getBegin().getLine(), ed.getRange().getBegin().getColumn(), ed.getId()));
+                                    }
+                                }
+                            }
+                        }, true);
+                    }
                 }
             }
         }
-        
-        for (FileObject fo : javaFiles) {
-            JavaSource js = JavaSource.forFileObject(fo);
-            if (js != null) {
-                js.runUserActionTask(info -> {
-                    info.toPhase(JavaSource.Phase.RESOLVED);
-                    HintsSettings settings = HintsSettings.getSettingsFor(info.getFileObject());
-                    HintsInvoker invoker = new HintsInvoker(settings, new AtomicBoolean());
-                    List<ErrorDescription> hints = invoker.computeHints(info);
-                    if (hints != null) {
-                        for (ErrorDescription ed : hints) {
-                            if (ed != null) {
-                                String desc = ed.getDescription() != null ? ed.getDescription() : "No description";
-                                String severity = ed.getSeverity() != null ? ed.getSeverity().toString() : "UNKNOWN";
-                                String id = ed.getId() != null ? ed.getId() : "unknown";
-                                allHints.add(new HintInfo(fo.getPath(), desc, severity, ed.getRange().getBegin().getLine(), ed.getRange().getBegin().getColumn(), id));
-                            }
-                        }
-                    }                    
-                }, true);
-            }
-        }
-        
         return Page.of(allHints, startIndex, pageSize);
     }
+
+    /**
+     * Returns a list of all unique Hint IDs registered in the NetBeans IDE.
+     *
+     * @return A list of metadata for all registered hints.
+     */
+    @AgiTool("Returns a list of all unique Hint IDs registered in the NetBeans IDE.")
+    public List<HintMetadata> listAvailableHints() {
+        List<HintMetadata> results = new ArrayList<>();
+        try {
+            RulesManager rm = RulesManager.getInstance();
+            Map<org.netbeans.modules.java.hints.providers.spi.HintMetadata, ?> hints = rm.readHints(null, null, null);
+            for (org.netbeans.modules.java.hints.providers.spi.HintMetadata hm : hints.keySet()) {
+                results.add(new HintMetadata(hm.id, hm.displayName, hm.description, hm.category, hm.severity != null ? hm.severity.toString() : null, hm.enabled));
+            }
+        } catch (Exception e) {
+            log.error("Error listing hints", e);
+        }
+        results.sort((a, b) -> a.getId().compareTo(b.getId()));
+        return results;
+    }
+
 }
