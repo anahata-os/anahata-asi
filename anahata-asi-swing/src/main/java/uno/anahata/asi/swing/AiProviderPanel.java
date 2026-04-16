@@ -5,6 +5,7 @@ package uno.anahata.asi.swing;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.FlowLayout;
@@ -34,7 +35,9 @@ import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.agi.provider.TokenizerType;
 import uno.anahata.asi.openai.OpenAiCompatibleProvider;
 import javax.swing.JFileChooser;
+import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
+import uno.anahata.asi.swing.icons.PulseIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.ExternalIcon;
 import uno.anahata.asi.swing.internal.AnyChangeDocumentListener;
@@ -70,7 +73,10 @@ public class AiProviderPanel extends JPanel {
     private final JCheckBox apiKeyRequiredCheck;
     /** Selector for the tokenizer used for pre-flight metabolic estimations. */
     private final JComboBox<TokenizerType> tokenizerCombo;
-    
+
+    /** Toggle for forcing HTTP/1.1 on OpenAI-compatible providers. */
+    private JCheckBox preferHttp11Check;
+
     // --- OpenAI Compatible Extensions ---
     /** The endpoint root for Chat Completion API calls. */
     private JTextField baseUrlField;
@@ -89,63 +95,46 @@ public class AiProviderPanel extends JPanel {
      * @param removeCallback Callback to trigger when the user deletes the provider.
      */
     public AiProviderPanel(AbstractAiProvider provider, Runnable removeCallback) {
-        super(new BorderLayout(5, 5));
         this.provider = provider;
-        this.currentFolderName = provider.getFolderName();
-        
-        // 0. Initialize UI Components
+        this.acquisitionLinkLabel = new JLabel();
         this.folderLabel = new JLabel();
         updateFolderLabel();
-        
-        this.acquisitionLinkLabel = new JLabel();
         updateLinkLabel();
-        
-        this.textArea = new JTextArea();
+this.textArea = new JTextArea();
         this.textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 13));
         PromptSupport.setPrompt(provider.getApiKeyHint(), textArea);
         PromptSupport.setFocusBehavior(PromptSupport.FocusBehavior.HIDE_PROMPT, textArea);
         PromptSupport.setForeground(Color.GRAY, textArea);
-        
-        // --- 1. Config Panel (Header/Metadata) ---
         JPanel configPanel = new JPanel(new MigLayout("fillx, insets 10", "[right]10[grow,fill]5[]"));
-        
-        // Top Row: Delete Button (Top Right)
         JButton removeBtn = new JButton(new DeleteIcon(16));
         removeBtn.setToolTipText("Remove Provider");
         removeBtn.addActionListener(e -> removeCallback.run());
         configPanel.add(removeBtn, "span 3, right, wrap");
-
         configPanel.add(new JLabel("UUID:"));
         JLabel uuidLabel = new JLabel(provider.getUuid());
         uuidLabel.setFont(uuidLabel.getFont().deriveFont(Font.BOLD));
-        configPanel.add(uuidLabel, "span 2, wrap");
-
+        configPanel.add(uuidLabel,"span 2, wrap");
         configPanel.add(new JLabel("Provider Class:"));
         JTextField classField = new JTextField(provider.getClass().getName());
         classField.setEditable(false);
         classField.setBorder(null);
         classField.setOpaque(false);
-        classField.setFont(classField.getFont().deriveFont(Font.ITALIC, 11f));
+        classField.setFont(classField.getFont().deriveFont(Font.ITALIC, 11.0F));
         configPanel.add(classField, "span 2, wrap");
-        
         configPanel.add(new JLabel("Enabled:"));
         enabledCheck = new JCheckBox("", provider.isEnabled());
         configPanel.add(enabledCheck, "span 2, wrap, gapbottom 10");
-
         configPanel.add(new JLabel("Display Name:"));
         displayNameField = new JTextField(provider.getDisplayName());
         displayNameField.getDocument().addDocumentListener(new AnyChangeDocumentListener(() -> {
             updateLinkLabel();
-            
-            // Real-time tab title sync
-            java.awt.Container parent = getParent();
-            if (parent instanceof javax.swing.JTabbedPane tabs) {
+            Container parent = getParent();
+            if (parent instanceof JTabbedPane tabs) {
                 int idx = tabs.indexOfComponent(this);
                 if (idx != -1) {
                     tabs.setTitleAt(idx, displayNameField.getText().trim());
                 }
             }
-            
             if (currentFolderName == null || currentFolderName.isBlank()) {
                 String suggested = displayNameField.getText().trim().replaceAll("[^a-zA-Z0-9.-]", "_");
                 if (!suggested.isEmpty()) {
@@ -156,10 +145,8 @@ public class AiProviderPanel extends JPanel {
             }
         }));
         configPanel.add(displayNameField, "span 2, wrap");
-
         configPanel.add(new JLabel("Storage Folder:"));
         configPanel.add(folderLabel);
-        
         JPanel folderButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
         JButton chooseFolderBtn = new JButton("Choose...");
         chooseFolderBtn.addActionListener(e -> {
@@ -175,7 +162,6 @@ public class AiProviderPanel extends JPanel {
             }
         });
         folderButtons.add(chooseFolderBtn);
-        
         JButton openFolderBtn = new JButton(new ExternalIcon(16));
         openFolderBtn.setToolTipText("Open Provider Folder in Desktop");
         openFolderBtn.addActionListener(e -> {
@@ -188,24 +174,20 @@ public class AiProviderPanel extends JPanel {
         });
         folderButtons.add(openFolderBtn);
         configPanel.add(folderButtons, "wrap");
-
         configPanel.add(new JLabel("Tokenizer Type:"), "gaptop 5");
         tokenizerCombo = new JComboBox<>(TokenizerType.values());
         tokenizerCombo.setSelectedItem(provider.getTokenizerType());
         configPanel.add(tokenizerCombo, "span 2, wrap");
-
         apiKeyRequiredCheck = new JCheckBox("API Key Required", provider.isApiKeyRequired());
         apiKeyRequiredCheck.setHorizontalTextPosition(SwingConstants.LEFT);
         apiKeyRequiredCheck.addActionListener(e -> {
             textArea.setEnabled(apiKeyRequiredCheck.isSelected());
             textArea.setBackground(apiKeyRequiredCheck.isSelected() ? Color.WHITE : new Color(245, 245, 245));
         });
-
         if (provider instanceof OpenAiCompatibleProvider oai) {
             configPanel.add(new JLabel("Base URL:"));
             baseUrlField = new JTextField(oai.getBaseUrl());
             configPanel.add(baseUrlField, "span 2, wrap");
-
             configPanel.add(new JLabel("Custom Headers:"), "top, gaptop 5");
             customHeadersArea = new JTextArea(3, 20);
             customHeadersArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
@@ -217,12 +199,17 @@ public class AiProviderPanel extends JPanel {
             }
             PromptSupport.setPrompt("Header-Name: Header-Value\nOne per line...", customHeadersArea);
             configPanel.add(new JScrollPane(customHeadersArea), "span 2, growx, wrap");
-            
-            testConnectionBtn = new JButton("Test Connection (Discover Models)");
+            configPanel.add(new JLabel("Prefer HTTP/1.1:"), "gaptop 5");
+            preferHttp11Check = new JCheckBox("", oai.isPreferHttp11());
+            preferHttp11Check.setToolTipText("Force HTTP/1.1 to avoid protocol hangs on some local servers/routers.");
+            configPanel.add(preferHttp11Check, "span 2, wrap");
+            testConnectionBtn = new JButton("Test Connection (Discover Models)", new PulseIcon(16));
             testConnectionBtn.addActionListener(e -> testConnection());
             configPanel.add(testConnectionBtn, "skip 1, span 2, wrap, gaptop 10");
         }
 
+        setLayout(new BorderLayout(5, 5));
+        
         // --- 2. Keys Section (High Density Center) ---
         JPanel keysSection = new JPanel(new BorderLayout());
         JPanel keysHeader = new JPanel(new MigLayout("fillx, insets 0", "[left]10[grow,fill]"));
@@ -232,20 +219,20 @@ public class AiProviderPanel extends JPanel {
         
         JLabel tipLabel = new JLabel("<html><font color='#707070'><i><b>Pro Tip:</b> Add multiple api keys to make a <i>Key Pool</i> (one per line) for <i>Round-Robin</> rotation</font></html>");
         keysHeader.add(tipLabel, "wrap");
+
+        if (provider.getKeysAcquisitionUri() != null) {
+            keysHeader.add(acquisitionLinkLabel, "span 2, wrap, gapleft 5");
+        }
         
         keysSection.add(keysHeader, BorderLayout.NORTH);
         
         JScrollPane scrollPane = new JScrollPane(textArea);
         scrollPane.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, Color.LIGHT_GRAY));
         keysSection.add(scrollPane, BorderLayout.CENTER);
-        
-        if (provider.getKeysAcquisitionUri() != null) {
-            keysSection.add(acquisitionLinkLabel, BorderLayout.SOUTH);
-        }
 
         add(configPanel, BorderLayout.NORTH);
         add(keysSection, BorderLayout.CENTER);
-        
+
         // Initial state sync
         textArea.setEnabled(provider.isApiKeyRequired());
         textArea.setBackground(provider.isApiKeyRequired() ? Color.WHITE : new Color(245, 245, 245));
@@ -347,8 +334,9 @@ public class AiProviderPanel extends JPanel {
         provider.setTokenizerType((TokenizerType) tokenizerCombo.getSelectedItem());
         
         if (provider instanceof OpenAiCompatibleProvider oai) {
+            oai.setPreferHttp11(preferHttp11Check.isSelected());
             if (baseUrlField != null) {
-                oai.setBaseUrl(baseUrlField.getText().trim());
+oai.setBaseUrl(baseUrlField.getText().trim());
             }
             if (customHeadersArea != null) {
                 Map<String, String> headers = new HashMap<>();

@@ -147,37 +147,19 @@ public class OpenAiModel extends AbstractModel {
         ObjectNode payload = preparePayload(request, false);
         String jsonPayload = payload.toString();
         String historyJson = payload.get("messages").toString();
-
         try {
-            if (provider.isApiKeyRequired() && (provider.getCurrentApiKey() == null || provider.getCurrentApiKey().isBlank())) {
-                throw new RuntimeException("API key is required for provider: " + provider.getDisplayName());
-            }
-
-            String trimmedBaseUrl = provider.getBaseUrl() != null ? provider.getBaseUrl().trim() : "";
-            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-                    .uri(URI.create(trimmedBaseUrl.endsWith("/") ? trimmedBaseUrl + "chat/completions" : trimmedBaseUrl + "/chat/completions"))
-                    .header("Content-Type", "application/json")
-                    .timeout(Duration.ofSeconds(60));
-
-            String apiKey = provider.getCurrentApiKey();
-            if (apiKey != null && !apiKey.isBlank()) {
-                requestBuilder.header("Authorization", "Bearer " + apiKey);
-            }
-
-            provider.getCustomHeaders().forEach(requestBuilder::header);
-
-            HttpRequest httpRequest = requestBuilder.POST(HttpRequest.BodyPublishers.ofString(jsonPayload)).build();
-            HttpResponse<String> httpResponse = HTTP_CLIENT.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-
-            if (httpResponse.statusCode() != 200) {
-                if (isRetryable(httpResponse.statusCode())) {
-                    provider.hokusPocus();
-                    throw new RetryableApiException(provider.getCurrentApiKey(), "API error (" + httpResponse.statusCode() + "): " + httpResponse.body(), null);
+            HttpRequest httpRequest = provider.createRequestBuilder("chat/completions").header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(jsonPayload)).build();
+            try (HttpClient client = provider.createHttpClient()) {
+                HttpResponse<String> httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+                if (httpResponse.statusCode() != 200) {
+                    if (isRetryable(httpResponse.statusCode())) {
+                        provider.hokusPocus();
+                        throw new RetryableApiException(provider.getCurrentApiKey(), "API error (" + httpResponse.statusCode() + "): " + httpResponse.body(), null);
+                    }
+                    throw new RuntimeException("API error (" + httpResponse.statusCode() + "): " + httpResponse.body());
                 }
-                throw new RuntimeException("API error (" + httpResponse.statusCode() + "): " + httpResponse.body());
+                return new OpenAiResponse(agi, modelId, httpResponse.body(), jsonPayload, historyJson, this);
             }
-
-            return new OpenAiResponse(agi, modelId, httpResponse.body(), jsonPayload, historyJson, this);
         } catch (IOException | InterruptedException e) {
             log.error("Failed to execute OpenAI request", e);
             throw new RuntimeException(e);
@@ -191,76 +173,63 @@ public class OpenAiModel extends AbstractModel {
         String jsonPayload = payload.toString();
         String historyJson = payload.get("messages").toString();
         try {
-            if (provider.isApiKeyRequired() && (provider.getCurrentApiKey() == null || provider.getCurrentApiKey().isBlank())) {
-                throw new RuntimeException("API key is required for provider: " + provider.getDisplayName());
-            }
-
-            String trimmedBaseUrl = provider.getBaseUrl() != null ? provider.getBaseUrl().trim() : "";
-            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder().uri(URI.create(trimmedBaseUrl.endsWith("/") ? trimmedBaseUrl + "chat/completions" : trimmedBaseUrl + "/chat/completions"))
-                    .header("Content-Type", "application/json")
-                    .timeout(Duration.ofSeconds(60));
-
-            String apiKey = provider.getCurrentApiKey();
-            if (apiKey != null && !apiKey.isBlank()) {
-                requestBuilder.header("Authorization", "Bearer " + apiKey);
-            }
-
-            provider.getCustomHeaders().forEach(requestBuilder::header);
-            HttpRequest httpRequest = requestBuilder.POST(HttpRequest.BodyPublishers.ofString(jsonPayload)).build();
-            List<OpenAiModelMessage> targets = new ArrayList<>();
-            AtomicBoolean started = new AtomicBoolean(false);
-            HttpResponse<Stream<String>> response = HTTP_CLIENT.send(httpRequest, HttpResponse.BodyHandlers.ofLines());
-            if (response.statusCode() != 200) {
-                if (isRetryable(response.statusCode())) {
-                    provider.hokusPocus();
-                    observer.onError(new RetryableApiException(provider.getCurrentApiKey(), "OpenAI Stream Error (" + response.statusCode() + ")", null));
-                } else {
-                    observer.onError(new RuntimeException("OpenAI Stream Error (" + response.statusCode() + ")"));
+            HttpRequest httpRequest = provider.createRequestBuilder("chat/completions").header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(jsonPayload)).build();
+            try (HttpClient client = provider.createHttpClient()) {
+                List<OpenAiModelMessage> targets = new ArrayList<>();
+                AtomicBoolean started = new AtomicBoolean(false);
+                HttpResponse<Stream<String>> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofLines());
+                if (response.statusCode() != 200) {
+                    if (isRetryable(response.statusCode())) {
+                        provider.hokusPocus();
+                        observer.onError(new RetryableApiException(provider.getCurrentApiKey(), "OpenAI Stream Error (" + response.statusCode() + ")", null));
+                    } else {
+                        observer.onError(new RuntimeException("OpenAI Stream Error (" + response.statusCode() + ")"));
+                    }
+                    return;
                 }
-                return;
-            }
-            try (Stream<String> lines = response.body()) {
-                var it = lines.iterator();
-                while (it.hasNext()) {
-                    String line = it.next();
-                    if (line == null || line.isBlank()) {
-                        continue;
-                    }
-                    String trimmedLine = line.trim();
-                    if (!trimmedLine.startsWith("data:")) {
-                        continue;
-                    }
-                    String data = trimmedLine.substring(5).trim();
-                    if ("[DONE]".equals(data)) {
-                        targets.forEach(OpenAiModelMessage::flushToolCalls);
-                        observer.onComplete();
-                        break;
-                    }
-                    try {
-                        JsonNode chunk = JacksonUtils.parse(data, JsonNode.class);
-                        if (chunk.has("error")) {
-                            log.error("Error in OpenAI stream chunk: {}", data);
-                            observer.onError(new RuntimeException("OpenAI Stream Chunk Error: " + chunk.get("error").path("message").asText()));
-                            return;
+                try (Stream<String> lines = response.body()) {
+                    var it = lines.iterator();
+                    while (it.hasNext()) {
+                        String line = it.next();
+                        if (line == null || line.isBlank()) {
+                            continue;
                         }
-                        JsonNode choices = chunk.get("choices");
-                        if (choices != null && choices.isArray() && choices.size() > 0) {
-                            if (!started.get()) {
-                                for (int i = 0; i < choices.size(); i++) {
-                                    targets.add(new OpenAiModelMessage(agi, modelId));
+                        String trimmedLine = line.trim();
+                        if (!trimmedLine.startsWith("data:")) {
+                            continue;
+                        }
+                        String data = trimmedLine.substring(5).trim();
+                        if ("[DONE]".equals(data)) {
+                            targets.forEach(OpenAiModelMessage::flushToolCalls);
+                            observer.onComplete();
+                            break;
+                        }
+                        try {
+                            JsonNode chunk = JacksonUtils.parse(data, JsonNode.class);
+                            if (chunk.has("error")) {
+                                log.error("Error in OpenAI stream chunk: {}", data);
+                                observer.onError(new RuntimeException("OpenAI Stream Chunk Error: " + chunk.get("error").path("message").asText()));
+                                return;
+                            }
+                            JsonNode choices = chunk.get("choices");
+                            if (choices != null && choices.isArray() && choices.size() > 0) {
+                                if (!started.get()) {
+                                    for (int i = 0; i < choices.size(); i++) {
+                                        targets.add(new OpenAiModelMessage(agi, modelId));
+                                    }
+                                    observer.onStart((List) targets);
+                                    started.set(true);
                                 }
-                                observer.onStart((List) targets);
-                                started.set(true);
+                                for (int i = 0; i < Math.min(choices.size(), targets.size()); i++) {
+                                    JsonNode choice = choices.get(i);
+                                    OpenAiModelMessage target = targets.get(i);
+                                    routeChunk(choice, target);
+                                }
                             }
-                            for (int i = 0; i < Math.min(choices.size(), targets.size()); i++) {
-                                JsonNode choice = choices.get(i);
-                                OpenAiModelMessage target = targets.get(i);
-                                routeChunk(choice, target);
-                            }
+                            observer.onNext(new OpenAiResponse(agi, modelId, data, jsonPayload, historyJson, this));
+                        } catch (Exception e) {
+                            log.error("Failed to parse OpenAI stream chunk: {}", data, e);
                         }
-                        observer.onNext(new OpenAiResponse(agi, modelId, data, jsonPayload, historyJson, this));
-                    } catch (Exception e) {
-                        log.error("Failed to parse OpenAI stream chunk: {}", data, e);
                     }
                 }
             }

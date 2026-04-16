@@ -87,7 +87,7 @@ public class AsiContainerPreferencesPanel extends JPanel {
         mainTabs.addTab("General Defaults", createGeneralTab());
         mainTabs.addTab("DNA Templates", createTemplatesTab());
         mainTabs.addTab("Tool Permissions", new ToolkitPermissionsPanel(container));
-        mainTabs.addTab("AGI Providers", createAgiProvidersTab());
+        mainTabs.addTab("AI Providers", createAiProvidersTab());
 
         if (initialTabIndex >= 0 && initialTabIndex < mainTabs.getTabCount()) {
             mainTabs.setSelectedIndex(initialTabIndex);
@@ -253,7 +253,7 @@ public class AsiContainerPreferencesPanel extends JPanel {
         return panel;
     }
 
-    private JPanel createAgiProvidersTab() {
+    private JPanel createAiProvidersTab() {
         JPanel panel = new JPanel(new BorderLayout());
         JTabbedPane providerTabs = new JTabbedPane(JTabbedPane.LEFT);
 

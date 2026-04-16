@@ -21,14 +21,14 @@ import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.agi.provider.TokenizerType;
 
 /**
- * A universal AI provider for any API endpoint compatible with the OpenAI 
- * Chat Completion specification.
+ * A universal AI provider for any API endpoint compatible with the OpenAI Chat
+ * Completion specification.
  * <p>
- * This provider allows the user to configure a custom {@code baseUrl}, enabling 
- * seamless integration with services like Groq, DeepSeek, or local inference 
+ * This provider allows the user to configure a custom {@code baseUrl}, enabling
+ * seamless integration with services like Groq, DeepSeek, or local inference
  * servers like Ollama and vLLM.
  * </p>
- * 
+ *
  * @author anahata
  */
 @Getter
@@ -40,16 +40,24 @@ public class OpenAiCompatibleProvider extends AbstractAiProvider {
      * The base URL of the OpenAI-compatible API endpoint.
      * <p>
      * This allows the provider to target official OpenAI services or
-     * alternative backends like Ollama (http://localhost:11434/v1),
-     * Groq, or DeepSeek.
+     * alternative backends like Ollama (http://localhost:11434/v1), Groq, or
+     * DeepSeek.
      * </p>
      */
     private String baseUrl;
+    
     /**
-     * Optional custom HTTP headers to be sent with every request.
-     * Essential for providers requiring specific vendor headers (e.g., 'X-Title', 'OpenAI-Organization').
+     * Optional custom HTTP headers to be sent with every request. Essential for
+     * providers requiring specific vendor headers (e.g., 'X-Title',
+     * 'OpenAI-Organization').
      */
     private Map<String, String> customHeaders = new HashMap<>();
+
+    /**
+     * Whether to prefer HTTP/1.1 over HTTP/2. Essential for some local
+     * inference servers and home routers with port forwarding.
+     */
+    private boolean preferHttp11 = true;
 
     /**
      * Constructs a default OpenAI-compatible provider.
@@ -69,6 +77,7 @@ public class OpenAiCompatibleProvider extends AbstractAiProvider {
 
     /**
      * Constructs a new universal provider with basic configuration.
+     *
      * @param uuid The unique provider ID.
      * @param displayName The user-facing name.
      * @param baseUrl The API endpoint URL.
@@ -79,10 +88,12 @@ public class OpenAiCompatibleProvider extends AbstractAiProvider {
 
     /**
      * Constructs a new universal provider with a custom storage folder.
+     *
      * @param uuid The unique provider ID.
      * @param displayName The user-facing name.
      * @param baseUrl The API endpoint URL.
-     * @param folderName The custom folder name for configuration and key storage.
+     * @param folderName The custom folder name for configuration and key
+     * storage.
      */
     public OpenAiCompatibleProvider(String uuid, String displayName, String baseUrl, String folderName, String apiKeyAdquisitionUri) {
         super(uuid);
@@ -92,6 +103,49 @@ public class OpenAiCompatibleProvider extends AbstractAiProvider {
         setFolderName(folderName);
         setTokenizerType(TokenizerType.CL100K_BASE);
     }
+    
+        /**
+     * Creates a pre-configured HttpClient based on the provider's protocol
+     * preferences.
+     *
+     * @return A new HttpClient instance.
+     */
+    public HttpClient createHttpClient() {
+        HttpClient.Builder builder = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15));
+        if (preferHttp11) {
+            builder.version(HttpClient.Version.HTTP_1_1);
+        }
+        return builder.build();
+    }
+
+    /**
+     * Creates a pre-configured HttpRequest.Builder with Authorization and
+     * custom headers.
+     *
+     * @param endpoint The relative endpoint path (e.g., "models" or
+     * "chat/completions").
+     * @return A new HttpRequest.Builder.
+     */
+    public HttpRequest.Builder createRequestBuilder(String endpoint) {
+        String url = getBaseUrl();
+        if (url == null) {
+            throw new IllegalStateException("Base URL not set for provider: " + getDisplayName());
+        }
+
+        String fullUrl = url.endsWith("/") ? url + endpoint : url + "/" + endpoint;
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .timeout(Duration.ofSeconds(60));
+
+        String apiKey = getCurrentApiKey();
+        if (apiKey != null && !apiKey.isBlank()) {
+            builder.header("Authorization", "Bearer " + apiKey);
+        }
+
+        getCustomHeaders().forEach(builder::header);
+        return builder;
+    }
+
 
     /**
      * {@inheritDoc}
@@ -123,39 +177,14 @@ public class OpenAiCompatibleProvider extends AbstractAiProvider {
      */
     @Override
     public List<? extends AbstractModel> listModels() {
-        String apiKey = getCurrentApiKey();
-        String url = getBaseUrl();
-        log.info("Listing models for {} {}", getDisplayName(), url);
-        if (url == null || (apiKey == null && isApiKeyRequired())) {
-            log.warn("Cannot list models: baseUrl or API key missing (and required) for provider '{}'", getDisplayName());
-            return Collections.emptyList();
-        }
+        log.info("Listing models for {} {}", getDisplayName(), getBaseUrl());
         try {
-            String modelsUrl = url.endsWith("/") ? url + "models" : url + "/models";
-            HttpRequest.Builder requestBuilder = HttpRequest
-                    .newBuilder()
-                    .timeout(Duration.ofSeconds(9))
-                    .uri(URI.create(modelsUrl))
-                    .header("Accept", "application/json")
-                    .GET();
-            
-            if (isApiKeyRequired() && apiKey != null) {
-                log.info("listModels for {}", getDisplayName() + " will use apiKey ending with ..." + apiKey.substring(apiKey.length() - 4, apiKey.length()));
-                requestBuilder.header("Authorization", "Bearer " + apiKey);
-            } else{
-                log.info("listModels for {}", getDisplayName() + " will not use api keys...");
-            }
-            
-            getCustomHeaders().forEach(requestBuilder::header);
-            HttpRequest httpRequest = requestBuilder.build();
-            HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
-            try (client) {
-                log.info("Listing models for {} modelsUrl={}", getDisplayName(), modelsUrl);
-                //Thread.dumpStack();
+            HttpRequest httpRequest = createRequestBuilder("models").header("Accept", "application/json").GET().build();
+            try (HttpClient client = createHttpClient()) {
                 HttpResponse<String> httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
                 log.info("Got response from /models endpoint: " + httpResponse);
                 if (httpResponse.statusCode() != 200) {
-                    log.error("Failed to fetch models from {}. Status: {}. Response: {}", modelsUrl, httpResponse.statusCode(), httpResponse.body());
+                    log.error("Failed to fetch models from {}. Status: {}. Response: {}", httpRequest.uri(), httpResponse.statusCode(), httpResponse.body());
                     return Collections.emptyList();
                 }
                 JsonNode root = JacksonUtils.parse(httpResponse.body(), JsonNode.class);
@@ -173,11 +202,10 @@ public class OpenAiCompatibleProvider extends AbstractAiProvider {
                 }
             }
         } catch (Exception e) {
-            log.error("Error fetching models for provider '{}' baesURL  {}", getDisplayName(), baseUrl, e);
+            log.error("Error fetching models for provider '{}' baseURL {}", getDisplayName(), getBaseUrl(), e);
         }
         return Collections.emptyList();
     }
-
 
     /**
      * {@inheritDoc}
