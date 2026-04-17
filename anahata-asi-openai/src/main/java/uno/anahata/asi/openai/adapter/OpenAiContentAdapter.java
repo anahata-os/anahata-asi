@@ -129,8 +129,9 @@ public class OpenAiContentAdapter {
             responseNode.put("role", "tool");
             responseNode.put("tool_call_id", tr.getCall().getId());
             
-            // Result is serialized as a JSON string for the content field
-            responseNode.put("content", SchemaProvider.OBJECT_MAPPER.valueToTree(tr.getResult()).toString());
+            // Send the entire rich response (Result, Status, Logs, Errors)
+            String fullResponseJson = SchemaProvider.OBJECT_MAPPER.valueToTree(tr).toString();
+            responseNode.put("content", fullResponseJson);
             synthesized.add(responseNode);
         }
         
@@ -219,9 +220,14 @@ public class OpenAiContentAdapter {
                 callNode.put("type", "function");
                 ObjectNode funcNode = callNode.putObject("function");
                 funcNode.put("name", tc.getToolName());
-                JsonNode argsNode = SchemaProvider.OBJECT_MAPPER.valueToTree(tc.getEffectiveArgs());
-                funcNode.set("arguments", argsNode);
-                part.setTokenCount(TokenizerUtils.countTokens(argsNode.toString(), tokenizerType));
+                try {
+                    String argsJson = SchemaProvider.OBJECT_MAPPER.writeValueAsString(tc.getResponse().getExecutedArgs());
+                    funcNode.put("arguments", argsJson);
+                    part.setTokenCount(TokenizerUtils.countTokens(argsJson, tokenizerType));
+                } catch (Exception e) {
+                    log.error("Failed to serialize executed args for tool call {}", tc.getId(), e);
+                    funcNode.put("arguments", "{}");
+                }
             } else if (part instanceof BlobPart bp) {
                  textContent.append(String.format("\n[Output Blob: %s]\n", bp.getMimeType()));
             }

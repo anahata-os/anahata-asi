@@ -303,7 +303,16 @@ public class OpenAiModel extends AbstractModel {
         ArrayNode requiredNode = paramsNode.putArray("required");
 
         tool.getParameters().forEach(p -> {
-            propsNode.set(p.getName(), SchemaProvider.OBJECT_MAPPER.valueToTree(p.getJsonSchema()));
+            try {
+                ObjectNode paramNode = (ObjectNode) SchemaProvider.OBJECT_MAPPER.readTree(p.getJsonSchema());
+                String desc = p.getDescription();
+                if (desc != null && !desc.isBlank()) {
+                    paramNode.put("description", desc);
+                }
+                propsNode.set(p.getName(), paramNode);
+            } catch (Exception e) {
+                log.error("Failed to parse parameter schema for {}", p.getName(), e);
+            }
             if (p.isRequired()) {
                 requiredNode.add(p.getName());
             }
