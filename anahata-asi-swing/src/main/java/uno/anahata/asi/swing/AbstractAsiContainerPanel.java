@@ -24,6 +24,7 @@ import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.CancelIcon;
+import uno.anahata.asi.swing.icons.SaveIcon;
 import uno.anahata.asi.swing.icons.LoadSessionIcon;
 
 import uno.anahata.asi.swing.icons.RestartIcon;
@@ -193,9 +194,29 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
      */
     public void showPreferences(int initialTabIndex) {
         AsiContainerPreferencesPanel prefsPanel = new AsiContainerPreferencesPanel(asiContainer, initialTabIndex);
-        JOptionPane.showOptionDialog(this, prefsPanel, "ASI Container Preferences", 
-                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, 
-                new SettingsIcon(32), new Object[]{"Close"}, "Close");
+        
+        JButton saveBtn = new JButton("Save", new SaveIcon(16));
+        JButton cancelBtn = new JButton("Cancel", new CancelIcon(16));
+        
+        Object[] options = {saveBtn, cancelBtn};
+        
+        JOptionPane pane = new JOptionPane(prefsPanel, JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION, new SettingsIcon(32), options, null);
+        javax.swing.JDialog dialog = pane.createDialog(this, "ASI Container Preferences");
+        
+        saveBtn.addActionListener(e -> {
+            try {
+                prefsPanel.save();
+                dialog.dispose();
+                JOptionPane.showMessageDialog(this, "Global configuration saved and applied.", "Success", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                log.error("Failed to save preferences", ex);
+                JOptionPane.showMessageDialog(dialog, "Failed to save: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        
+        cancelBtn.addActionListener(e -> dialog.dispose());
+        
+        dialog.setVisible(true);
     }
 
 

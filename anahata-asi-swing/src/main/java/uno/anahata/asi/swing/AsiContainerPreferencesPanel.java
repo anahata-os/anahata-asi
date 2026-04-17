@@ -97,52 +97,38 @@ public class AsiContainerPreferencesPanel extends JPanel {
 
         add(mainTabs, BorderLayout.CENTER);
         
-        // Footer: Save & Cancel Buttons
-        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        
-        JButton cancelBtn = new JButton("Cancel", new CancelIcon(16));
-        cancelBtn.addActionListener(e -> {
-            java.awt.Window w = javax.swing.SwingUtilities.getWindowAncestor(this);
-            if (w != null) w.dispose();
-        });
-        footer.add(cancelBtn);
-        
-        JButton saveBtn = new JButton("Save", new SaveIcon(16));
-        saveBtn.addActionListener(e -> {
-try {
-                // 1. Synchronize all open UI panels to their domain objects and key files
-                for (AiProviderPanel panel : new ArrayList<>(activeProviderPanels)) {
-                    panel.syncToProvider();
-                }
-                
-                // 2. Promote any "Draft" providers to the official container registry
-                if (!unsavedProviders.isEmpty()) {
-                    for (AbstractAiProvider p : new ArrayList<>(unsavedProviders)) {
-                        container.registerProvider(p);
-                        prefs.getAgiTemplate().getProviderUuids().add(p.getUuid());
-                    }
-                    unsavedProviders.clear();
-                }
-
-                // 3. Persist everything to preferences.kryo
-                container.savePreferences();
-                
-                // 4. Refresh UI state (dropdowns, tabs, etc.)
-                //refreshProviderTabs(providerTabs);
-                refreshProviderDropdown();
-                
-                JOptionPane.showMessageDialog(this, "Global configuration saved and applied.", "Success", JOptionPane.INFORMATION_MESSAGE);
-                log.info("Global preferences persisted to disk.");
-            } catch (IOException ex) {
-                log.error("Failed to save preferences", ex);
-                JOptionPane.showMessageDialog(this, "Failed to save: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        });
-        footer.add(saveBtn);
-        add(footer, BorderLayout.SOUTH);
-        
         // Initialize model discovery
         refreshModelDropdown();
+    }
+
+    /**
+     * Synchronizes all internal UI panels to their respective domain providers 
+     * and persists the global container preferences to disk.
+     * 
+     * @throws IOException If the persistence layer fails.
+     */
+    public void save() throws IOException {
+        // 1. Synchronize all open UI panels to their domain objects and key files
+        for (AiProviderPanel panel : new ArrayList<>(activeProviderPanels)) {
+            panel.syncToProvider();
+        }
+
+        // 2. Promote any "Draft" providers to the official container registry
+        if (!unsavedProviders.isEmpty()) {
+            for (AbstractAiProvider p : new ArrayList<>(unsavedProviders)) {
+                container.registerProvider(p);
+                prefs.getAgiTemplate().getProviderUuids().add(p.getUuid());
+            }
+            unsavedProviders.clear();
+        }
+
+        // 3. Persist everything to preferences.kryo
+        container.savePreferences();
+
+        // 4. Refresh UI state
+        refreshProviderDropdown();
+
+        log.info("Global preferences persisted to disk.");
     }
 
     private JPanel createGeneralTab() {
