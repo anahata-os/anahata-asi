@@ -36,6 +36,7 @@ import uno.anahata.asi.swing.icons.CancelIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.SaveIcon;
 import uno.anahata.asi.swing.icons.OkIcon;
+import uno.anahata.asi.swing.icons.RestartIcon;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 
@@ -86,6 +87,18 @@ public class AsiContainerPreferencesPanel extends JPanel {
         setPreferredSize(new Dimension(950, 750));
 
         this.mainTabs = new JTabbedPane();
+        
+        if (prefs.isLoadFailed()) {
+            JPanel alertPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            alertPanel.setBackground(new java.awt.Color(235, 245, 255));
+            JLabel alertLabel = new JLabel("<html><div style='padding: 10px; text-align: center;'><b>Evolutionary Upgrade Detected!</b><br/>" +
+                "Your previous preferences were incompatible with this version of Anahata.<br/>" +
+                "We've archived your old settings and restored the latest high-performance defaults for you.</div></html>");
+            alertLabel.setForeground(new java.awt.Color(0, 102, 204));
+            alertPanel.add(alertLabel);
+            add(alertPanel, BorderLayout.NORTH);
+        }
+
         mainTabs.addTab("General Defaults", createGeneralTab());
         mainTabs.addTab("DNA Templates", createTemplatesTab());
         mainTabs.addTab("Tool Permissions", new ToolkitPermissionsPanel(container));
@@ -117,7 +130,6 @@ public class AsiContainerPreferencesPanel extends JPanel {
         if (!unsavedProviders.isEmpty()) {
             for (AbstractAiProvider p : new ArrayList<>(unsavedProviders)) {
                 container.registerProvider(p);
-                prefs.getAgiTemplate().getProviderUuids().add(p.getUuid());
             }
             unsavedProviders.clear();
         }
@@ -131,6 +143,11 @@ public class AsiContainerPreferencesPanel extends JPanel {
         log.info("Global preferences persisted to disk.");
     }
 
+    /**
+     * Creates and configures the 'General Defaults' tab.
+     * 
+     * @return The populated general settings panel.
+     */
     private JPanel createGeneralTab() {
         JPanel panel = new JPanel(new MigLayout("fillx, insets 20", "[right]15[grow,fill]"));
         
@@ -186,10 +203,16 @@ public class AsiContainerPreferencesPanel extends JPanel {
         return panel;
     }
 
+    /**
+     * Performs a background discovery of available models for the currently 
+     * selected provider in the template.
+     */
     private void refreshModelDropdown() {
         AgiConfig template = prefs.getAgiTemplate();
         String providerUuid = template.getSelectedProviderUuid();
-        if (providerUuid == null) return;
+        if (providerUuid == null) {
+            return;
+        }
 
         modelDropdown.setEnabled(false);
         modelDropdown.setToolTipText("Discovering models...");
@@ -198,7 +221,9 @@ public class AsiContainerPreferencesPanel extends JPanel {
             @Override
             protected List<String> doInBackground() throws Exception {
                 AbstractAiProvider provider = container.getProvider(providerUuid);
-                if (provider == null) return new ArrayList<>();
+                if (provider == null) {
+                    return new ArrayList<>();
+                }
                 return provider.getModels().stream()
                         .map(AbstractModel::getModelId)
                         .toList();
@@ -231,9 +256,45 @@ public class AsiContainerPreferencesPanel extends JPanel {
         }.execute();
     }
 
+    /**
+     * Creates the 'DNA Templates' tab for managing global session blueprints.
+     * 
+     * @return The templates management panel.
+     */
     private JPanel createTemplatesTab() {
         JPanel panel = new JPanel(new BorderLayout());
         
+        boolean outdated = prefs.isAgiTemplateOutdated(container);
+        
+        // Toolbar for template actions
+        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        if (outdated) {
+            JLabel warn = new JLabel("<html><font color='#e67e22'><b>DNA Evolution Detected!</b> Stored template toolset is out of sync with this version.</font></html>");
+            toolbar.add(warn);
+        }
+        
+        JButton resetBtn = new JButton("Reset DNA to Defaults", new RestartIcon(16));
+        if (outdated) {
+            resetBtn.setForeground(java.awt.Color.RED);
+        }
+        resetBtn.setToolTipText("Wipe current template and restore from Anahata factory defaults. Existing sessions are not affected.");
+        resetBtn.addActionListener(e -> {
+            int choice = JOptionPane.showConfirmDialog(this, 
+                "Are you sure you want to reset the DNA template to factory defaults?\n" +
+                "This will restore the default toolkits and policies for this version of Anahata.\n" +
+                "Your API keys and Providers will NOT be affected.", 
+                "Reset Template", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            
+            if (choice == JOptionPane.YES_OPTION) {
+                prefs.resetAgiTemplate(container);
+                mainTabs.setComponentAt(mainTabs.indexOfTab("DNA Templates"), createTemplatesTab());
+                mainTabs.setSelectedIndex(mainTabs.indexOfTab("DNA Templates"));
+                JOptionPane.showMessageDialog(this, "DNA Template reset successfully. Please click Save to persist.");
+            }
+        });
+        toolbar.add(resetBtn);
+        panel.add(toolbar, BorderLayout.SOUTH);
+
         // DNA Templates use the SessionConfigPanel aggregator bound to the global templates
         SessionConfigPanel templatesPanel = new SessionConfigPanel(
                 prefs.getAgiTemplate(), 
@@ -249,6 +310,11 @@ public class AsiContainerPreferencesPanel extends JPanel {
         return panel;
     }
 
+    /**
+     * Creates the 'AI Providers' tab for configuring endpoint-specific settings.
+     * 
+     * @return The provider configuration panel.
+     */
     private JPanel createAiProvidersTab() {
         JPanel panel = new JPanel(new BorderLayout());
         JTabbedPane providerTabs = new JTabbedPane(JTabbedPane.LEFT);
@@ -270,6 +336,11 @@ public class AsiContainerPreferencesPanel extends JPanel {
         return panel;
     }
 
+    /**
+     * Refreshes the provider sub-tabs to reflect newly added or removed providers.
+     * 
+     * @param providerTabs The tabbed pane containing individual provider panels.
+     */
     private void refreshProviderTabs(JTabbedPane providerTabs) {
         providerTabs.removeAll();
         activeProviderPanels.clear();
@@ -293,6 +364,11 @@ public class AsiContainerPreferencesPanel extends JPanel {
         }
     }
 
+    /**
+     * Adds a new, unsaved OpenAI-compatible provider to the temporary draft list.
+     * 
+     * @param providerTabs The tabbed pane to select the new provider in.
+     */
     private void addDraftOpenAiProvider(JTabbedPane providerTabs) {
         String uuid = java.util.UUID.randomUUID().toString();
         uno.anahata.asi.openai.OpenAiCompatibleProvider draft = 
@@ -302,6 +378,12 @@ public class AsiContainerPreferencesPanel extends JPanel {
         providerTabs.setSelectedIndex(providerTabs.getTabCount() - 1);
     }
 
+    /**
+     * Removes a provider from both the container and the template.
+     * 
+     * @param provider The provider instance to remove.
+     * @param providerTabs The UI container to refresh after removal.
+     */
     private void removeProvider(AbstractAiProvider provider, JTabbedPane providerTabs) {
         String uuid = provider.getUuid();
         String name = provider.getDisplayName();
@@ -321,6 +403,9 @@ public class AsiContainerPreferencesPanel extends JPanel {
         }
     }
 
+    /**
+     * Refreshes the primary provider selection dropdown in the General tab.
+     */
     private void refreshProviderDropdown() {
         AgiConfig template = prefs.getAgiTemplate();
         DefaultComboBoxModel<String> providerModel = new DefaultComboBoxModel<>();

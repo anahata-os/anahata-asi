@@ -38,6 +38,26 @@ public class AsiContainerPreferences extends BasicPropertyChangeSource {
     private static final String PREFERENCES_FILE_NAME = "preferences.kryo";
 
     /**
+     * The current authoritative version of the AgiConfig DNA.
+     * Increment this whenever default policies or configurations are refined in the codebase
+     * to trigger a 'Metabolic Drift' detection in the UI.
+     */
+    public static final int CURRENT_DNA_VERSION = 1;
+
+    /**
+     * The version of the DNA template currently stored on disk.
+     * Used to detect if the saved defaults are from an older version of Anahata.
+     */
+    private int dnaVersion = 0;
+
+    /**
+     * Flag indicating if the last attempt to load preferences from disk failed.
+     * This is transient and used to notify the UI of an 'Evolutionary Wipe' 
+     * or structural mismatch during a version upgrade.
+     */
+    private transient boolean loadFailed = false;
+
+    /**
      * A map where the key is the tool name (e.g., "LocalFiles.readFile") and the value
      * is the user's stored preference for that tool.
      */
@@ -71,6 +91,47 @@ public class AsiContainerPreferences extends BasicPropertyChangeSource {
      */
     public AsiContainerPreferences() {
         // Templates are initialized lazily by the container when first accessed
+    }
+
+    /**
+     * Resets the AgiConfig template to the current runtime defaults.
+     * This is useful when the application version changes and new toolkits 
+     * or default policies are introduced.
+     * 
+     * @param container The ASI container to provide the new defaults.
+     */
+    public void resetAgiTemplate(AbstractAsiContainer container) {
+        log.info("Resetting AgiConfig template to factory defaults (Version {})...", CURRENT_DNA_VERSION);
+        this.agiTemplate = container.createNewAgiConfig();
+        this.agiTemplate.setSessionId("TEMPLATE");
+        this.dnaVersion = CURRENT_DNA_VERSION;
+        propertyChangeSupport.firePropertyChange("agiTemplate", null, agiTemplate);
+    }
+
+    /**
+     * Detects if the saved AgiConfig template is out of sync with the 
+     * current runtime's factory defaults (e.g. toolkits added or removed).
+     * 
+     * @param container The ASI container.
+     * @return true if a DNA mismatch is detected.
+     */
+    public boolean isAgiTemplateOutdated(AbstractAsiContainer container) {
+        if (agiTemplate == null) {
+            return false;
+        }
+        
+        // 1. Version-based detection (for subtle tweaks to defaults)
+        if (this.dnaVersion < CURRENT_DNA_VERSION) {
+            return true;
+        }
+        
+        // 2. Structural detection (for changes in available toolkits)
+        AgiConfig defaults = container.createNewAgiConfig();
+        
+        java.util.Set<Class<?>> templateTools = new java.util.HashSet<>(agiTemplate.getToolClasses());
+        java.util.Set<Class<?>> defaultTools = new java.util.HashSet<>(defaults.getToolClasses());
+        
+        return !templateTools.equals(defaultTools);
     }
 
     /**
@@ -180,8 +241,18 @@ public class AsiContainerPreferences extends BasicPropertyChangeSource {
             try (InputStream is = Files.newInputStream(preferencesFile)) {
                 byte[] bytes = is.readAllBytes();
                 return KryoUtils.deserialize(bytes, AsiContainerPreferences.class);
-            } catch (Exception e) {
-                log.error("Error loading preferences from {}", preferencesFile, e);
+            } catch (Throwable t) {
+                log.error("Error loading preferences from {}. An evolutionary mismatch or corruption was detected.", preferencesFile, t);
+                try {
+                    Path backup = preferencesFile.resolveSibling(PREFERENCES_FILE_NAME + ".broken." + System.currentTimeMillis());
+                    Files.move(preferencesFile, backup, StandardCopyOption.REPLACE_EXISTING);
+                    log.info("Moved incompatible preferences to: {}", backup);
+                } catch (IOException ex) {
+                    log.error("Failed to backup broken preferences", ex);
+                }
+                AsiContainerPreferences prefs = new AsiContainerPreferences();
+                prefs.setLoadFailed(true);
+                return prefs;
             }
         } else {
             log.info("Preferences file not found at {}, creating new preferences.", preferencesFile);
