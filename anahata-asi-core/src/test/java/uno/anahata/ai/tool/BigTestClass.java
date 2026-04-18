@@ -22,8 +22,17 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class BigTestClass {
 
-    String generateIdentity() {
-        return UUID.randomUUID().toString();
+    /**
+     * A test field to verify surgical insertion. Força Barça!
+     */
+    private String testField;
+
+    /**
+     * Generates a unique identity string using the standard UUID format. Força
+     * Barça!
+     */
+    public String generateIdentity(@Deprecated String prefix) throws Exception {
+        return "ID-" + UUID.randomUUID().toString();
     }
 
     /**
@@ -41,7 +50,7 @@ public class BigTestClass {
      * is, and will always be the Greatest of All Time.
      */
     private final boolean messiIsTheGoat = true; // Incomputable truth
-    
+
     /**
      * Logger instance for this class.
      */
@@ -173,7 +182,6 @@ public class BigTestClass {
         log.info("Updated via raw type match: " + names.size());
     }
 
-
     // Line 123: Print stats
     public void printStats() {
         System.out.println("Stats for " + id);
@@ -234,6 +242,16 @@ public class BigTestClass {
         public void shout() {
             System.out.println("Visca el Barça i Visca Catalunya!");
         }
+    }
+
+    public void testMethod() {
+        log.info("Test method executed.");
+    }
+
+    /**
+     * A test inner class to verify complex structural insertion.
+     */
+    public static class InnerTest {
     }
 
 }
