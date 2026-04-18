@@ -2,12 +2,14 @@
 package uno.anahata.asi.nb.tools.java;
 
 import com.sun.source.tree.*;
+import com.sun.source.util.TreePathScanner;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import javax.lang.model.element.*;
+import javax.lang.model.type.TypeKind;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.java.source.*;
 import org.netbeans.modules.editor.indent.api.Reformat;
@@ -320,6 +322,33 @@ public class CodeRefiner2 extends AnahataToolkit {
         throw new AgiToolException(sb.toString());
     }
 
+    /**
+     * Adds one or more imports to a file structurally.
+     */
+    @AgiTool("Adds one or more imports to a file structurally.")
+    public String addImports(@AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath, @AgiToolParam("List of FQNs to import.") List<String> imports, @AgiToolParam("Whether to save.") boolean save) throws Exception {
+        FileObject fo = JavaSourceUtils.getFileObject(filePath);
+        JavaSource js = JavaSource.forFileObject(fo);
+        js.runModificationTask(wc -> {
+            wc.toPhase(JavaSource.Phase.RESOLVED);
+            TreeMaker make = wc.getTreeMaker();
+            CompilationUnitTree cut = wc.getCompilationUnit();
+            List<ImportTree> currentImports = new ArrayList<>(cut.getImports());
+            for (String imp : imports) {
+                boolean exists = currentImports.stream().anyMatch(i -> i.getQualifiedIdentifier().toString().equals(imp));
+                if (!exists) {
+                    currentImports.add(make.Import(make.Identifier(imp), false));
+                }
+            }
+            CompilationUnitTree updated = make.CompilationUnit(cut.getPackage(), currentImports, cut.getTypeDecls(), cut.getSourceFile());
+            wc.rewrite(cut, updated);
+        }).commit();
+        if (save) {
+            handleSave(fo);
+        }
+        return "Added " + imports.size() + " import(s) to " + fo.getNameExt();
+    }
+
     @AgiTool("Reformats a file using IDE rules.")
     public String reformat(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
@@ -353,59 +382,56 @@ public class CodeRefiner2 extends AnahataToolkit {
         return "Reformated: " + fo.getNameExt();
     }
 
+    /**
+     * Optimizes imports (converts FQNs to simple names, removes unused).
+     */
     @AgiTool("Optimizes imports (converts FQNs to simple names, removes unused).")
     public String optimizeImports(
-            @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
-            @AgiToolParam("Whether to save.") boolean save) throws Exception {
+            @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath, @AgiToolParam(value = "Whether to remove unused imports.", required = false) Boolean removeUnused, @AgiToolParam("Whether to save.") boolean save) throws Exception {
 
+        final boolean doRemove = removeUnused == null || removeUnused;
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         JavaSource js = JavaSource.forFileObject(fo);
-
         final List<String> logLines = new ArrayList<>();
-        final List<String> diagnostics = new ArrayList<>();
-
+        final Set<String> diagnostics = new LinkedHashSet<>();
         js.runModificationTask(wc -> {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             CompilationUnitTree oldCut = wc.getCompilationUnit();
             Set<String> oldImports = oldCut.getImports().stream()
                     .map(it -> it.getQualifiedIdentifier().toString())
                     .collect(Collectors.toSet());
-
             CompilationUnitTree newCut = GeneratorUtilities.get(wc).importFQNs(oldCut);
             wc.rewrite(oldCut, newCut);
-
             Set<String> newImports = newCut.getImports().stream()
                     .map(it -> it.getQualifiedIdentifier().toString())
                     .collect(Collectors.toSet());
-
             Set<String> added = new HashSet<>(newImports);
             added.removeAll(oldImports);
             Set<String> removed = new HashSet<>(oldImports);
             removed.removeAll(newImports);
-
             added.forEach(i -> logLines.add("Added import: " + i));
             removed.forEach(i -> logLines.add("Removed import: " + i));
-
-            removeUnusedImportsInternal(wc);
-
-            // Diagnostic: Check for unresolved symbols that might be causing 'No changes'
-            new com.sun.source.util.TreePathScanner<Void, WorkingCopy>() {
+            if (doRemove) {
+                removeUnusedImportsInternal(wc);
+            }
+            new TreePathScanner<Void, WorkingCopy>() {
                 @Override
                 public Void visitIdentifier(IdentifierTree node, WorkingCopy wc) {
                     Element e = wc.getTrees().getElement(getCurrentPath());
-                    if (e == null || e.asType().getKind() == javax.lang.model.type.TypeKind.ERROR) {
+                    if (e == null || (e.asType() != null && e.asType().getKind() == TypeKind.ERROR)) {
                         String name = node.getName().toString();
                         if (Character.isUpperCase(name.charAt(0))) {
-                            diagnostics.add("Unresolved type detected: " + name + ". Searching for candidates...");
-                            try {
-                                Set<? extends javax.lang.model.element.TypeElement> candidates = wc.getElements().getAllTypeElements(name);
-                                if (!candidates.isEmpty()) {
-                                    diagnostics.add("Found " + candidates.size() + " candidates for " + name + ":");
-                                    candidates.forEach(c -> diagnostics.add(" - " + c.getQualifiedName()));
-                                } else {
-                                    diagnostics.add("No candidates found in classpath for " + name);
+                            if (diagnostics.add("Unresolved type: " + name)) {
+                                try {
+                                    Set<? extends TypeElement> candidates = wc.getElements().getAllTypeElements(name);
+                                    if (!candidates.isEmpty()) {
+                                        diagnostics.add("Candidates for " + name + ":");
+                                        candidates.forEach(c -> diagnostics.add(" - " + c.getQualifiedName()));
+                                    } else {
+                                        diagnostics.add("No candidates found in classpath for " + name);
+                                    }
+                                } catch (Exception ex) {
                                 }
-                            } catch (Exception ex) {
                             }
                         }
                     }
@@ -414,10 +440,8 @@ public class CodeRefiner2 extends AnahataToolkit {
             }.scan(wc.getCompilationUnit(), wc);
 
         }).commit();
-
         logLines.forEach(this::log);
         diagnostics.forEach(this::log);
-
         if (save) {
             handleSave(fo);
         }
