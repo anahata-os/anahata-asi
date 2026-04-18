@@ -28,30 +28,38 @@ import uno.anahata.asi.toolkit.shell.Shell;
 /**
  * The definitive configuration blueprint for an individual Agi session.
  * <p>
- * Defines the operational parameters, enabled toolkits, AI providers, 
- * and context management policies. This class serves as the 'DNA' of 
- * an Agi, ensuring architectural consistency and facilitating model-agnostic 
+ * Defines the operational parameters, enabled toolkits, AI providers, and
+ * context management policies. This class serves as the 'DNA' of an Agi,
+ * ensuring architectural consistency and facilitating model-agnostic
  * orchestration across session restarts.
  * </p>
- * 
+ *
  * @author anahata
  */
 @Getter
 @Setter
 public class AgiConfig extends BasicPropertyChangeSource {
 
-    /** A reference to the global, application-wide configuration. */
+    /**
+     * A reference to the global, application-wide configuration.
+     */
     @NonNull
     private transient AbstractAsiContainer asiContainer;
 
-    /** The unique identifier for this specific agi session. */
+    /**
+     * The unique identifier for this specific agi session.
+     */
     @NonNull
     private String sessionId;
-    
-    /** The UUID of the AGI that spawned this session, if any. */
+
+    /**
+     * The UUID of the AGI that spawned this session, if any.
+     */
     private String parentUuid;
-    
-    /** A late-binding reference to the parent Agi. Set during Agi construction. */
+
+    /**
+     * A late-binding reference to the parent Agi. Set during Agi construction.
+     */
     @Setter
     private Agi agi;
 
@@ -59,7 +67,7 @@ public class AgiConfig extends BasicPropertyChangeSource {
      * The UUID of the AI provider currently selected for this session.
      */
     private String selectedProviderUuid;
-    
+
     /**
      * The ID of the AI model currently selected for this session.
      */
@@ -69,7 +77,7 @@ public class AgiConfig extends BasicPropertyChangeSource {
      * The list of AI provider UUIDs available for this agi session.
      */
     private List<String> providerUuids = new ArrayList<>();
-    
+
     /**
      * The list of tool classes to be used in this agi session.
      */
@@ -81,14 +89,14 @@ public class AgiConfig extends BasicPropertyChangeSource {
         toolClasses.add(Session.class);
         toolClasses.add(History.class);
         toolClasses.add(Resources.class);
-        toolClasses.add(Java.class);        
+        toolClasses.add(Java.class);
         toolClasses.add(Shell.class);
         toolClasses.add(Audio.class);
     }
 
     /**
      * Constructs a new AgiConfig with a randomly generated session ID.
-     * 
+     *
      * @param asiConfig The global AI configuration.
      */
     public AgiConfig(@NonNull AbstractAsiContainer asiConfig) {
@@ -97,14 +105,14 @@ public class AgiConfig extends BasicPropertyChangeSource {
 
     /**
      * Constructs a new AgiConfig with a specific session ID.
-     * 
+     *
      * @param asiConfig The global AI configuration.
      * @param sessionId The unique session ID.
      */
     public AgiConfig(@NonNull AbstractAsiContainer asiConfig, @NonNull String sessionId) {
         this.asiContainer = asiConfig;
         this.sessionId = sessionId;
-        
+
         // Populate available providers from the container's registry
         for (AbstractAiProvider provider : asiConfig.getAllProviders()) {
             if (provider.isEnabled()) {
@@ -114,54 +122,86 @@ public class AgiConfig extends BasicPropertyChangeSource {
     }
 
     //<editor-fold defaultstate="collapsed" desc="Session Loop">
-    /** If true, local Java tools are enabled. */
+    /**
+     * If true, local Java tools are enabled.
+     */
     @Setter(AccessLevel.NONE)
     private boolean localToolsEnabled = true;
 
-    /** If true, server-side tools (like Google Search) are enabled. */
+    /**
+     * If true, server-side tools (like Google Search) are enabled.
+     */
     @Setter(AccessLevel.NONE)
     private boolean hostedToolsEnabled = false;
 
-    /** If true, the agi loop will automatically re-prompt the model after executing tools. */
+    /**
+     * If true, the agi loop will automatically re-prompt the model after
+     * executing tools.
+     */
     private boolean autoReplyTools = true;
 
-    /** If true, token streaming is enabled for model responses. */
+    /**
+     * If true, token streaming is enabled for model responses.
+     */
     private boolean streaming = true;
-    
-    /** If true, the model is requested to include its internal thought process in the response. */
+
+    /**
+     * If true, the model is requested to include its internal thought process
+     * in the response.
+     */
     private boolean includeThoughts = true;
 
-    /** If true, thought parts are initially expanded in the UI. */
+    /**
+     * If true, thought parts are initially expanded in the UI.
+     */
     private boolean expandThoughts = false;
 
-    /** The maximum number of times to retry an API call on failure. */
+    /**
+     * The maximum number of times to retry an API call on failure.
+     */
     private int apiMaxRetries = 5;
 
-    /** The initial delay in milliseconds before the first retry. */
+    /**
+     * The initial delay in milliseconds before the first retry.
+     */
     private long apiInitialDelayMillis = 2000;
 
-    /** The maximum delay in milliseconds between retries. */
+    /**
+     * The maximum delay in milliseconds between retries.
+     */
     private long apiMaxDelayMillis = 30000;
     //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Context Management">
-    /** The maximum number of tokens allowed in the context window. */
-    private int tokenThreshold = 250000; 
-    
-    /** The default maximum depth a TextPart should be kept in context. */
-    private int defaultTextPartMaxDepth = 108;
-    
-    /** The default maximum depth a ToolResponse should be kept in context. */
-    private int defaultToolMaxDepth = 12;
-    
-    /** The default maximum depth a BlobPart should be kept in context. */
+    /**
+     * The maximum number of tokens allowed in the context window.
+     */
+    private int tokenThreshold = 250000;
+
+    /**
+     * The default maximum depth a BlobPart should be kept in context.
+     */
     private int defaultBlobPartMaxDepth = 4;
 
-    /** The default maximum depth a model thought should be kept in context. */
-    private int defaultThoughtPartMaxDepth = 12;
-    //</editor-fold>
+    /**
+     * The default maximum depth a ToolResponse should be kept in context.
+     */
+    private int defaultToolMaxDepth = 8;
 
-    /** The default response modalities for this agi session. */
+    /**
+     * The default maximum depth a model thought should be kept in context.
+     */
+    private int defaultThoughtPartMaxDepth = 6;
+
+    /**
+     * The default maximum depth a TextPart should be kept in context.
+     */
+    private int defaultTextPartMaxDepth = 108;
+
+    //</editor-fold>
+    /**
+     * The default response modalities for this agi session.
+     */
     private List<String> defaultResponseModalities = new ArrayList<>(List.of("TEXT"));
 
     public void setSelectedProviderUuid(String selectedProviderUuid) {
@@ -275,14 +315,14 @@ public class AgiConfig extends BasicPropertyChangeSource {
             propertyChangeSupport.firePropertyChange("defaultThoughtPartMaxDepth", old, defaultThoughtPartMaxDepth);
         }
     }
-    
+
     /**
      * Configures the session to utilize local Java-based toolkits.
      * <p>
-     * Enabling local tools automatically disables hosted server tools to 
+     * Enabling local tools automatically disables hosted server tools to
      * maintain environmental consistency.
      * </p>
-     * 
+     *
      * @param enabled true to enable local toolkits.
      */
     public void setLocalToolsEnabled(boolean enabled) {
@@ -295,12 +335,13 @@ public class AgiConfig extends BasicPropertyChangeSource {
     }
 
     /**
-     * Configures the session to utilize hosted server-side tools (e.g., Google Search).
+     * Configures the session to utilize hosted server-side tools (e.g., Google
+     * Search).
      * <p>
-     * Enabling hosted tools automatically disables local Java toolkits to 
+     * Enabling hosted tools automatically disables local Java toolkits to
      * prevent capability conflicts.
      * </p>
-     * 
+     *
      * @param enabled true to enable server-side tools.
      */
     public void setHostedToolsEnabled(boolean enabled) {
@@ -324,10 +365,10 @@ public class AgiConfig extends BasicPropertyChangeSource {
     /**
      * Creates a specialized {@link ResourceHandle} based on the URI scheme.
      * <p>
-     * Supports 'file' schemes via {@link PathHandle} and fallbacks to 
+     * Supports 'file' schemes via {@link PathHandle} and fallbacks to
      * {@link UrlHandle} for remote resources.
      * </p>
-     * 
+     *
      * @param uri The resource URI to wrap.
      * @return A concrete handle implementation for the specified URI.
      */
@@ -337,9 +378,11 @@ public class AgiConfig extends BasicPropertyChangeSource {
         }
         return new UrlHandle(uri.toString());
     }
-    
+
     /**
-     * Convenience method to get the host application ID from the parent AsiContainer.
+     * Convenience method to get the host application ID from the parent
+     * AsiContainer.
+     *
      * @return The host application ID.
      */
     public String getHostApplicationId() {

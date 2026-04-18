@@ -20,7 +20,6 @@ import org.netbeans.spi.editor.hints.Fix;
 import org.openide.cookies.EditorCookie;
 import org.openide.cookies.SaveCookie;
 import org.openide.filesystems.FileObject;
-import org.openide.filesystems.FileSystem;
 import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
 import uno.anahata.asi.agi.tool.*;
@@ -28,7 +27,6 @@ import uno.anahata.asi.nb.tools.java.JavaSourceUtils.RelativePosition;
 import org.netbeans.api.java.source.ClassIndex;
 import org.netbeans.api.java.source.ElementHandle;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.ElementKind;
 import com.sun.source.util.TreePath;
 import org.netbeans.api.java.source.support.ReferencesCount;
 import org.netbeans.modules.editor.java.Utilities;
@@ -51,31 +49,37 @@ public class CodeRefiner2 extends AnahataToolkit {
 
     @Override
     public List<String> getSystemInstructions() throws Exception {
-        return Collections.singletonList("CodeRefiner2: The authority for structural Java changes. For\u00e7a Bar\u00e7a!" + "\n- 'declaration' must be the full signature (e.g., 'public void foo(int a) throws IOException')."
+        return Collections.singletonList("CodeRefiner2: The authority for structural Java changes. For\u00e7a Bar\u00e7a!"
+                + "\n- 'declaration' must be the full signature (e.g., '@Override public void foo(int a) throws IOException'). It MUST include any annotations (e.g., @Override, @Deprecated) you want to preserve or add."
                 + "\n- If 'declaration' is null/omitted in updateMember, the existing signature is preserved (Surgical Mode)."
                 + "\n- 'body' is just the logic inside the braces. For methods, if body is null or not given during update, the original body is preserved."
-                + "\n- 'javadoc' is what good java developers want in all members. To just add javadoc to an existing member do not pass 'declaration' or 'body'."
-                + "\n- Identification Standard: 'memberFqn' must be ABSOLUTE (e.g. 'package.Class.member' or 'package.Class.method(param1,param2)')."
-                + "\n- RULES FOR METHOD IDENTIFICATION: Parameter types must be CANONICAL: Fully Qualified, NO Generics, NO Annotations. "
-                + "Example: 'com.foo.Bar.process(java.util.List,int)'."
+                + "\n- 'javadoc' content MUST NOT include the /** and */ markers. The tool adds them automatically."
+                + "\n- Identification Standard: 'memberFqn' must be ABSOLUTE (e.g. 'com.foo.MyClass.myField', 'com.foo.MyClass.myMethod(java.lang.String,int)', 'com.foo.MyClass$InnerClass.member', 'com.foo.MyClass.<clinit>#1()' or 'com.foo.MyClass.<init-block>#2()')."
+                + "\n- METHODS/CONSTRUCTORS: Parentheses '()' are MANDATORY, even if there are no parameters (e.g. 'myMethod()')."
+                + "\n- OVERLOADS: You MUST provide the canonical FQN of all parameters to disambiguate (e.g. 'java.lang.String,com.foo.MyClass$Inner')."
+                + "\n- ARRAYS: Use '[]' for array parameters (e.g. 'java.lang.String[]', 'int[]')."
+                + "\n- INITIALIZERS: Use <clinit>#n() for static blocks and <init-block>#n() for instance blocks, where n is the 1-based occurrence index in the class."
+                + "\n- RULES FOR METHOD IDENTIFICATION: Parameter types must be CANONICAL: Fully Qualified, NO Generics, NO Annotations. Example: 'com.foo.Bar.process(java.util.List,int)'."
                 + "\n- RelativePosition is MANDATORY for insertion/move. anchorMemberName is MANDATORY if position is BEFORE/AFTER."
-                + "\n- ANCHORS: anchorMemberName must be RELATIVE to the class (e.g. 'myField', 'myMethod(int,java.lang.String)', '<clinit>()' or '<init-block>()').");
+                + "\n- ANCHORS: anchorMemberName must be RELATIVE to the class (e.g. 'myField', 'myMethod()', '<clinit>#1()' or '<init-block>#1()').");
     }
 
+    @AgiTool("Inserts a new member into a class.")
     public String insertMember(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
-            @AgiToolParam("The FQN of the target class.") String classFqn,
-            @AgiToolParam("The full member declaration (e.g. 'private String name;' or 'public void foo(String s)').") String declaration, 
-            @AgiToolParam(value = "Optional body code (logic inside braces).", rendererId = "java", required = false) String body, 
-            @AgiToolParam(value = "The Javadoc content (without markers).", required = false) String javadoc, 
-            @AgiToolParam("Position relative to anchor. (START, END, BEFORE, AFTER)") RelativePosition position, 
-            @AgiToolParam(value = "Anchor member name relative to class (e.g. 'myField' or 'foo(int)'). Mandatory for BEFORE/AFTER.", required = false) String anchorMemberName, 
+            @AgiToolParam("The FQN of the target class. Use '$' for nested types (e.g. 'com.foo.Outer$Inner').") String classFqn,
+            @AgiToolParam(value = "The full member declaration/signature (e.g. '@Deprecated private String name;' or '@Override public void foo(String s) throws IOException'). It MUST include all annotations you wish to apply. Do NOT include the body code here.", rendererId = "java") String declaration,
+            @AgiToolParam(value = "The WHOLE body code (logic inside the braces). Do NOT include the signature or the outer braces. This must be the entire content for the new member.", rendererId = "java", required = false) String body,
+            @AgiToolParam(value = "The Javadoc content (WITHOUT /** and */ markers). The tool adds the markers automatically.", required = false) String javadoc,
+            @AgiToolParam("Position relative to anchor.") RelativePosition position,
+            @AgiToolParam(value = "Anchor member name relative to class (e.g. 'myField', 'myMethod()', 'foo(java.lang.String[])', '<clinit>#1()').", required = false) String anchorMemberName,
+            @AgiToolParam(value = "Whether to optimize imports after insertion. Defaults to true.", required = false) Boolean optimize,
             @AgiToolParam("Whether to save the file.") boolean save) throws Exception {
 
         validatePosition(position, anchorMemberName);
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         JavaSource js = JavaSource.forFileObject(fo);
-
+        final Set<String> diagnostics = new LinkedHashSet<>();
         ModificationResult res = js.runModificationTask(wc -> {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             TreeMaker make = wc.getTreeMaker();
@@ -84,11 +88,9 @@ public class CodeRefiner2 extends AnahataToolkit {
                 throw new AgiToolException("Class not found: " + classFqn);
             }
             ClassTree ct = (ClassTree) wc.getTrees().getTree(te);
-
             Tree newMember = parseMember(wc, declaration, body);
             applyJavadoc(wc, newMember, null, javadoc, true);
             newMember = GeneratorUtilities.get(wc).importFQNs(newMember);
-
             List<Tree> members = new ArrayList<>(ct.getMembers());
             int anchorIdx = anchorMemberName != null ? JavaSourceUtils.findMemberIndex(wc, members, anchorMemberName) : -1;
             if (anchorMemberName != null && anchorIdx == -1) {
@@ -104,41 +106,45 @@ public class CodeRefiner2 extends AnahataToolkit {
                 case AFTER ->
                     anchorIdx + 1;
             };
-
             members.add(insertIdx, newMember);
             wc.rewrite(ct, make.Class(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), ct.getExtendsClause(), ct.getImplementsClause(), members));
+            if (optimize == null || optimize) {
+                optimizeImportsInternal(wc, true, diagnostics);
+            }
         });
-
         res.commit();
         if (save) {
             handleSave(fo);
         }
-        return "Inserted member into " + classFqn;
+        StringBuilder sb = new StringBuilder("Inserted member into ").append(classFqn);
+        if (!diagnostics.isEmpty()) {
+            sb.append(". Import diagnostics:\n");
+            diagnostics.forEach(d -> sb.append(" - ").append(d).append("\n"));
+        }
+        return sb.toString();
     }
 
-    @AgiTool("Updates an existing member structurally using a new declaration.")
+    @AgiTool("Updates an existing member structurally (Signature, Body, or Javadoc).")
     public String updateMember(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
-            @AgiToolParam("The FQN of the member to update.") String memberFqn,
-            @AgiToolParam(value = "The new member declaration/signature. If null, existing signature is kept.", required = false) String declaration,
-            @AgiToolParam(value = "Optional new body code. If null, existing body is kept.", rendererId = "java", required = false) String body,
-            @AgiToolParam(value = "Optional new Javadoc.", required = false) String javadoc,
+            @AgiToolParam("The ABSOLUTE FQN of the member. Use 'package.Class.method(param1,param2)' or 'package.Class.method()' for no-arg methods. You MUST provide all parameter FQNs (e.g. 'java.lang.String,com.foo.MyClass$Inner'). Use 'package.Class$Inner' for types and 'package.Class.<clinit>#1()' for blocks.") String memberFqn,
+            @AgiToolParam(value = "The new member declaration (signature). If null, existing signature is kept. NEVER include the body here. If provided, it MUST include all annotations you wish to preserve (e.g., @Override, @Deprecated).", required = false, rendererId = "java") String declaration,
+            @AgiToolParam(value = "The WHOLE body code (logic inside the braces). Do NOT include the signature or outer braces. To surgically change a fragment, use the Resources toolkit instead.", rendererId = "java", required = false) String body,
+            @AgiToolParam(value = "Optional new Javadoc (WITHOUT /** and */ markers). Do not provide it if it doesn't need to change. The tool adds markers automatically.", required = false) String javadoc,
+            @AgiToolParam(value = "Whether to optimize imports after update. Defaults to true.", required = false) Boolean optimize,
             @AgiToolParam("Whether to save.") boolean save) throws Exception {
 
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         JavaSource js = JavaSource.forFileObject(fo);
-
+        final Set<String> diagnostics = new LinkedHashSet<>();
         ModificationResult res = js.runModificationTask(wc -> {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             TreeMaker make = wc.getTreeMaker();
-            Element element = JavaSourceUtils.findElement(wc, memberFqn);
-            if (element == null) {
+            Tree oldTree = JavaSourceUtils.findTree(wc, memberFqn);
+            if (oldTree == null) {
                 throwMemberNotFound(wc, memberFqn);
             }
-
-            Tree oldTree = wc.getTrees().getTree(element);
             Tree newTree;
-
             if (declaration == null) {
                 if (oldTree instanceof MethodTree mt) {
                     BlockTree finalBody = mt.getBody();
@@ -146,51 +152,45 @@ public class CodeRefiner2 extends AnahataToolkit {
                         String b = body.trim().startsWith("{") ? body : "{" + body + "}";
                         finalBody = (BlockTree) wc.getTreeUtilities().parseStatement(b, null);
                     }
-                    newTree = make.Method(mt.getModifiers(), mt.getName(), mt.getReturnType(),
-                            mt.getTypeParameters(), mt.getParameters(), mt.getThrows(),
-                            finalBody, (AnnotationTree) mt.getDefaultValue());
+                    newTree = make.Method(mt.getModifiers(), mt.getName(), mt.getReturnType(), mt.getTypeParameters(), mt.getParameters(), mt.getThrows(), finalBody, (AnnotationTree) mt.getDefaultValue());
                 } else if (oldTree instanceof ClassTree ct) {
-                    newTree = make.Class(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(),
-                            ct.getExtendsClause(), ct.getImplementsClause(), ct.getMembers());
+                    newTree = make.Class(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), ct.getExtendsClause(), ct.getImplementsClause(), ct.getMembers());
                 } else if (oldTree instanceof VariableTree vt) {
                     newTree = make.Variable(vt.getModifiers(), vt.getName(), vt.getType(), vt.getInitializer());
+                } else if (oldTree instanceof BlockTree bt) {
+                    String b = body.trim().startsWith("{") ? body : "{" + body + "}";
+                    newTree = wc.getTreeUtilities().parseStatement(b, null);
                 } else {
                     throw new AgiToolException("Surgical mode (declaration=null) is not supported for " + oldTree.getKind());
                 }
                 applyJavadoc(wc, newTree, oldTree, javadoc, javadoc != null);
             } else {
                 newTree = parseMember(wc, declaration, body);
-                if (oldTree instanceof MethodTree oldMt && newTree instanceof MethodTree newMt) {
-                    if (body == null && (newMt.getBody() == null || newMt.getBody().getStatements().isEmpty())) {
-                        newTree = make.Method(newMt.getModifiers(), newMt.getName(), newMt.getReturnType(),
-                                newMt.getTypeParameters(), newMt.getParameters(), newMt.getThrows(),
-                                oldMt.getBody(), (AnnotationTree) newMt.getDefaultValue());
-                    }
-                } else if (oldTree instanceof ClassTree oldCt && newTree instanceof ClassTree newCt) {
-                    if (body == null && (newCt.getMembers() == null || newCt.getMembers().isEmpty())) {
-                        newTree = make.Class(newCt.getModifiers(), newCt.getSimpleName(), newCt.getTypeParameters(),
-                                newCt.getExtendsClause(), newCt.getImplementsClause(), oldCt.getMembers());
-                    }
-                }
                 applyJavadoc(wc, newTree, oldTree, javadoc, javadoc != null);
             }
-
             make.asReplacementOf(newTree, oldTree, false);
             newTree = GeneratorUtilities.get(wc).importFQNs(newTree);
             wc.rewrite(oldTree, newTree);
+            if (optimize == null || optimize) {
+                optimizeImportsInternal(wc, true, diagnostics);
+            }
         });
-
         res.commit();
         if (save) {
             handleSave(fo);
         }
-        return "Updated member " + memberFqn;
+        StringBuilder sb = new StringBuilder("Updated member ").append(memberFqn);
+        if (!diagnostics.isEmpty()) {
+            sb.append(". Import diagnostics:\n");
+            diagnostics.forEach(d -> sb.append(" - ").append(d).append("\n"));
+        }
+        return sb.toString();
     }
 
     @AgiTool("Removes a member structurally.")
     public String deleteMember(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
-            @AgiToolParam("The FQN of the member to remove.") String memberFqn,
+            @AgiToolParam("The ABSOLUTE FQN of the member (e.g. 'package.Class.method(java.lang.String,int)', 'package.Class$Inner', 'package.Class.<clinit>#1()'). Parentheses '()' are mandatory for executables.") String memberFqn,
             @AgiToolParam("Whether to save the file.") boolean save) throws Exception {
 
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
@@ -199,13 +199,18 @@ public class CodeRefiner2 extends AnahataToolkit {
         js.runModificationTask(wc -> {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             TreeMaker make = wc.getTreeMaker();
-            Element element = JavaSourceUtils.findElement(wc, memberFqn);
-            if (element == null) {
+            Tree memberTree = JavaSourceUtils.findTree(wc, memberFqn);
+            if (memberTree == null) {
                 throwMemberNotFound(wc, memberFqn);
             }
 
-            Tree memberTree = wc.getTrees().getTree(element);
-            Element parentElement = element.getEnclosingElement();
+            Element element = wc.getTrees().getElement(TreePath.getPath(wc.getCompilationUnit(), memberTree));
+            Element parentElement = element != null ? element.getEnclosingElement() : null;
+
+            if (parentElement == null && memberTree instanceof ClassTree) {
+                // Might be a top level class deletion or we need to find parent via AST
+                // ... handle appropriately
+            }
 
             if (parentElement instanceof TypeElement te) {
                 ClassTree parentTree = (ClassTree) wc.getTrees().getTree(te);
@@ -229,8 +234,13 @@ public class CodeRefiner2 extends AnahataToolkit {
         return "Removed member '" + memberFqn + "' structurally.";
     }
 
+    @AgiTool("Moves a member to a new position within the same class.")
     public String moveMember(
-            @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath, @AgiToolParam("The ABSOLUTE FQN of the member to move.") String memberFqn, @AgiToolParam("Position relative to anchor. (START, END, BEFORE, AFTER)") RelativePosition position, @AgiToolParam(value = "Anchor member name relative to class (e.g. 'myField' or 'foo(int)'). Mandatory for BEFORE/AFTER.", required = false) String anchorMemberName, @AgiToolParam("Whether to save.") boolean save) throws Exception {
+            @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
+            @AgiToolParam("The ABSOLUTE FQN of the member to move (e.g. 'package.Class.method(java.lang.String,int)', 'package.Class$Inner', 'package.Class.<clinit>#1()'). Parentheses '()' are mandatory for executables.") String memberFqn,
+            @AgiToolParam("Position relative to anchor. (START, END, BEFORE, AFTER)") RelativePosition position,
+            @AgiToolParam(value = "Anchor member name relative to class (e.g. 'myField', 'myMethod(int)', '<clinit>#1()').", required = false) String anchorMemberName,
+            @AgiToolParam("Whether to save.") boolean save) throws Exception {
 
         validatePosition(position, anchorMemberName);
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
@@ -239,13 +249,20 @@ public class CodeRefiner2 extends AnahataToolkit {
         js.runModificationTask(wc -> {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             TreeMaker make = wc.getTreeMaker();
-            Element element = JavaSourceUtils.findElement(wc, memberFqn);
-            if (element == null) {
+            Tree memberTree = JavaSourceUtils.findTree(wc, memberFqn);
+            if (memberTree == null) {
                 throwMemberNotFound(wc, memberFqn);
             }
 
-            Tree memberTree = wc.getTrees().getTree(element);
-            Element parentElement = element.getEnclosingElement();
+            Element element = wc.getTrees().getElement(TreePath.getPath(wc.getCompilationUnit(), memberTree));
+            Element parentElement = element != null ? element.getEnclosingElement() : null;
+            if (parentElement == null) {
+                // Try to find parent via TreePath
+                TreePath path = TreePath.getPath(wc.getCompilationUnit(), memberTree);
+                if (path != null && path.getParentPath() != null) {
+                    parentElement = wc.getTrees().getElement(path.getParentPath());
+                }
+            }
             if (!(parentElement instanceof TypeElement te)) {
                 throw new AgiToolException("Only members of a class can be moved.");
             }
@@ -281,13 +298,15 @@ public class CodeRefiner2 extends AnahataToolkit {
     }
 
     private void throwMemberNotFound(WorkingCopy wc, String memberFqn) throws AgiToolException {
-        int lastDot = memberFqn.contains("(") ? memberFqn.substring(0, memberFqn.indexOf("(")).lastIndexOf(".") : memberFqn.lastIndexOf(".");
-        if (lastDot == -1) {
+        int paren = memberFqn.indexOf("(");
+        String namePart = paren != -1 ? memberFqn.substring(0, paren) : memberFqn;
+        int lastSeparator = Math.max(namePart.lastIndexOf("."), namePart.lastIndexOf("$"));
+        if (lastSeparator == -1) {
             throw new AgiToolException("Member not found: " + memberFqn);
         }
 
-        String parentFqn = memberFqn.substring(0, lastDot);
-        String name = memberFqn.contains("(") ? memberFqn.substring(lastDot + 1, memberFqn.indexOf("(")) : memberFqn.substring(lastDot + 1);
+        String parentFqn = namePart.substring(0, lastSeparator);
+        String name = namePart.substring(lastSeparator + 1);
 
         TypeElement parent = wc.getElements().getTypeElement(parentFqn);
         if (parent == null) {
@@ -396,62 +415,7 @@ public class CodeRefiner2 extends AnahataToolkit {
         final Set<String> diagnostics = new LinkedHashSet<>();
         js.runModificationTask(wc -> {
             wc.toPhase(JavaSource.Phase.RESOLVED);
-            ReferencesCount rc = ReferencesCount.get(wc.getClasspathInfo());
-            CompilationUnitTree oldCut = wc
-                    .getCompilationUnit();
-            CompilationUnitTree newCut = GeneratorUtilities.get(wc).importFQNs(oldCut);
-            wc.rewrite(oldCut, newCut);
-            if (doRemove) {
-                removeUnusedImportsInternal(wc);
-            }
-            new TreePathScanner<Void, WorkingCopy>() {
-                @Override
-                public Void visitIdentifier(IdentifierTree node, WorkingCopy wc) {
-                    TreePath path = getCurrentPath();
-                    if (path != null) {
-                        Element e = wc.getTrees().getElement(path);
-                        if (e == null || (e.asType() != null && e.asType().getKind() == TypeKind.ERROR)) {
-                            String name = node.getName().toString();
-                            if (Character.isUpperCase(name.charAt(0))) {
-                                if (diagnostics.add("Unresolved type: " + name)) {
-                                    try {
-                                        ClassIndex index = wc.getClasspathInfo().getClassIndex();
-                                        Set<ClassIndex.SearchScope> scopes = EnumSet.allOf(ClassIndex.SearchScope.class);
-                                        Set<ElementHandle<TypeElement>> handles = index.getDeclaredTypes(name, ClassIndex.NameKind.SIMPLE_NAME, scopes);
-                                        if (!handles.isEmpty()) {
-                                            class Candidate {
-
-                                                final String fqn;
-                                                final int score;
-
-                                                Candidate(String fqn, int score) {
-                                                    this.fqn = fqn;
-                                                    this.score = score;
-                                                }
-                                            }
-                                            List<Candidate> candidates = new ArrayList<>();
-                                            for (ElementHandle<TypeElement> handle : handles) {
-                                                TypeElement te = handle.resolve(wc);
-                                                int score = te != null ? Utilities.getImportanceLevel(wc, rc, te) : Utilities.getImportanceLevel(handle.getQualifiedName());
-                                                candidates.add(new Candidate(handle.getQualifiedName(), score));
-                                            }
-                                            candidates.sort(Comparator.comparingInt(c -> c.score));
-                                            diagnostics.add("Found " + candidates.size() + " candidates for " + name + " (NetBeans Importance sort):");
-                                            candidates.forEach(c -> diagnostics.add(" - " + c.fqn));
-                                        } else {
-                                            diagnostics.add("No candidates found in index for " + name);
-                                        }
-                                    } catch (Exception ex) {
-                                        diagnostics.add("Error searching index for " + name + ": " + ex.getMessage());
-                                        log.error("OptimizeImports: Index search failed for " + name, ex);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    return super.visitIdentifier(node, wc);
-                }
-            }.scan(new TreePath(wc.getCompilationUnit()), wc);
+            optimizeImportsInternal(wc, doRemove, diagnostics);
 
         }).commit();
         diagnostics.forEach(this::log);
@@ -459,6 +423,67 @@ public class CodeRefiner2 extends AnahataToolkit {
             handleSave(fo);
         }
         return "Optimized imports for: " + fo.getNameExt() + ". Check logs for details.";
+    }
+
+    /**
+     * Internal logic for import optimization, reusable across structural tools.
+     */
+    private void optimizeImportsInternal(WorkingCopy wc, boolean removeUnused, Set<String> diagnostics) {
+        ReferencesCount rc = ReferencesCount.get(wc.getClasspathInfo());
+        CompilationUnitTree oldCut = wc.getCompilationUnit();
+        CompilationUnitTree newCut = GeneratorUtilities.get(wc).importFQNs(oldCut);
+        wc.rewrite(oldCut, newCut);
+        if (removeUnused) {
+            removeUnusedImportsInternal(wc);
+        }
+        new TreePathScanner<Void, WorkingCopy>() {
+            @Override
+            public Void visitIdentifier(IdentifierTree node, WorkingCopy wc) {
+                TreePath path = getCurrentPath();
+                if (path != null) {
+                    Element e = wc.getTrees().getElement(path);
+                    if (e == null || (e.asType() != null && e.asType().getKind() == TypeKind.ERROR)) {
+                        String name = node.getName().toString();
+                        if (Character.isUpperCase(name.charAt(0))) {
+                            if (diagnostics.add("Unresolved type: " + name)) {
+                                try {
+                                    ClassIndex index = wc.getClasspathInfo().getClassIndex();
+                                    Set<ClassIndex.SearchScope> scopes = EnumSet.allOf(ClassIndex.SearchScope.class);
+                                    Set<ElementHandle<TypeElement>> handles = index.getDeclaredTypes(name, ClassIndex.NameKind.SIMPLE_NAME, scopes);
+                                    if (!handles.isEmpty()) {
+                                        class Candidate {
+
+                                            final String fqn;
+                                            final int score;
+
+                                            Candidate(String fqn, int score) {
+                                                this.fqn = fqn;
+                                                this.score = score;
+                                            }
+                                        }
+                                        List<Candidate> candidates = new ArrayList<>();
+                                        for (ElementHandle<TypeElement> handle : handles) {
+                                            TypeElement te = handle.resolve(wc);
+                                            int score = te != null ? Utilities.getImportanceLevel(wc, rc, te) : Utilities.getImportanceLevel(handle.getQualifiedName());
+                                            candidates.add(new Candidate(handle.getQualifiedName(), score));
+                                        }
+                                        candidates.sort(Comparator.comparingInt(c -> c.score));
+                                        diagnostics.add("Found " + candidates.size() + " candidates for " + name + " (NetBeans Importance sort):");
+                                        candidates.forEach(c -> diagnostics.add(" - " + c.fqn));
+                                    } else {
+                                        diagnostics.add("No candidates found in index for " + name);
+                                    }
+                                } catch (Exception ex) {
+                                    diagnostics.add("Error searching index for " + name + ": " + ex.getMessage());
+                                    log.error("OptimizeImports: Index search failed for " + name, ex);
+                                }
+                            }
+                        }
+                    }
+                }
+                return super.visitIdentifier(node, wc);
+            }
+        }.scan(new TreePath(wc.getCompilationUnit()), wc);
     }
 
     private void validatePosition(RelativePosition position, String anchor) throws AgiToolException {
@@ -470,58 +495,47 @@ public class CodeRefiner2 extends AnahataToolkit {
         }
     }
 
-    private Tree parseMember(WorkingCopy wc, String declaration, String body) throws AgiToolException {
-        try {
-            FileSystem fs = FileUtil.createMemoryFileSystem();
-            FileObject fo = fs.getRoot().createData("Dummy.java");
-
-            String decl = declaration.trim();
-            if (!decl.endsWith(";") && !decl.endsWith("}")) {
-                if (decl.contains("(")) {
-                    decl += " {}";
-                } else {
-                    decl += ";";
-                }
+    private Tree parseMember(WorkingCopy wc, String declaration, String body) throws Exception {
+        String decl = declaration.trim();
+        if (!decl.endsWith(";") && !decl.endsWith("}")) {
+            if (decl.contains("(")) {
+                decl += " {}";
+            } else {
+                decl += ";";
             }
-
-            String dummyCode = "class __Dummy { " + decl + " }";
-            try (OutputStream os = fo.getOutputStream()) {
-                os.write(dummyCode.getBytes());
+        }
+        final String finalDecl = decl;
+        String dummyClassName = "__Dummy";
+        if (decl.contains("(") && !decl.contains(" ")) {
+            String firstPart = decl.substring(0, decl.indexOf('(')).trim();
+            if (firstPart.matches("[a-zA-Z0-9_]+")) {
+                dummyClassName = firstPart;
             }
-
-            JavaSource js = JavaSource.forFileObject(fo);
-            final Tree[] result = new Tree[1];
-            js.runUserActionTask(cc -> {
-                cc.toPhase(JavaSource.Phase.PARSED);
-                CompilationUnitTree cut = cc.getCompilationUnit();
-                if (!cut.getTypeDecls().isEmpty()) {
-                    ClassTree ct = (ClassTree) cut.getTypeDecls().get(0);
-                    for (Tree member : ct.getMembers()) {
-                        if (member instanceof MethodTree mt && mt.getName().contentEquals("<init>")) {
+        }
+        FileObject tempFo = FileUtil.createMemoryFileSystem().getRoot().createData(dummyClassName, "java");
+        String dummyCode = "class " + dummyClassName + " { " + finalDecl + " }";
+        try (OutputStream os = tempFo.getOutputStream()) {
+            os.write(dummyCode.getBytes());
+        }
+        JavaSource js = JavaSource.forFileObject(tempFo);
+        final Tree[] result = new Tree[1];
+        js.runUserActionTask(cc -> {
+            cc.toPhase(JavaSource.Phase.PARSED);
+            CompilationUnitTree cut = cc.getCompilationUnit();
+            if (!cut.getTypeDecls().isEmpty()) {
+                ClassTree ct = (ClassTree) cut.getTypeDecls().get(0);
+                for (Tree member : ct.getMembers()) {
+                    if (member instanceof MethodTree mt && mt.getName().contentEquals("<init>") && !finalDecl.contains("<init>")) {
+                        if (ct.getMembers().size() > 1) {
                             continue;
                         }
-                        result[0] = member;
-                        break;
                     }
+                    result[0] = member;
+                    break;
                 }
-            }, true);
-
-            if (result[0] == null) {
-                throw new AgiToolException("Failed to parse: " + declaration);
             }
-
-            Tree member = result[0];
-            if (body != null && member instanceof MethodTree mt) {
-                String b = body.trim().startsWith("{") ? body : "{" + body + "}";
-                member = wc.getTreeMaker().Method(mt.getModifiers(), mt.getName(), mt.getReturnType(),
-                        mt.getTypeParameters(), mt.getParameters(), mt.getThrows(),
-                        (BlockTree) wc.getTreeUtilities().parseStatement(b, null),
-                        (AnnotationTree) mt.getDefaultValue());
-            }
-            return member;
-        } catch (IOException ex) {
-            throw new AgiToolException("Parsing infrastructure failure", ex);
-        }
+        }, true);
+        return result[0];
     }
 
     private void applyJavadoc(WorkingCopy wc, Tree tree, Tree oldTree, String javadocText, boolean removeExisting) {

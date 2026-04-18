@@ -42,11 +42,16 @@ public class CodeModel extends AnahataToolkit {
      */
     @Override
     public List<String> getSystemInstructions() throws Exception {
-        String instructions = "CodeModel Toolkit Instructions:\n" + "- **One Shot Methods (`loadXxxxByFqn` or `getXxxxByFqn`)**: If you already know or can work out the fully qualified name (FQN) of a type or member, you can use the `xxxByFqn` methods to skip the discovery turn. These methods will fail if the FQN is ambiguous (e.g., exists in the classpath of multiple open projects).\n" + "- **Member FQNs**: \n" + "  - Fields: `package.Class.fieldName` \n" + "  - Methods: `package.Class.methodName(ParamType1,ParamType2,...)`. Use canonical types (no generics/annotations).\n"
+        String instructions = "CodeModel Toolkit Instructions:\n" 
+                + "- **One Shot Methods (`loadXxxxByFqn` or `getXxxxByFqn`)**: If you already know or can work out the fully qualified name (FQN) of a type or member, you can use the `xxxByFqn` methods to skip the discovery turn.\n" 
+                + "- **Member FQNs**: \n" 
+                + "  - Fields: `package.Class.fieldName` \n" 
+                + "  - Methods: `package.Class.methodName(ParamType1,ParamType2,...)`. Parentheses '()' are MANDATORY, even for no-arg methods (e.g. 'method()'). Use canonical types (no generics/annotations).\n"
                 + "  - Constructors: `package.Class.<init>(ParamType1,...)` \n"
-                + "  - Initializers: `package.Class.<clinit>()` (static) or `package.Class.<init-block>()` (instance) \n"
+                + "  - Initializers: `package.Class.<clinit>#n()` (static) or `package.Class.<init-block>#n()` (instance) where n is the 1-based index.\n"
+                + "  - Arrays: Use '[]' for array parameters (e.g. 'java.lang.String[]').\n"
                 + "- **Disambiguation**: If a `xxxxByFqn` method fails due to ambiguity, use `CodeModel.findTypes` or `getMembers` to get the explicit high-precision FQN.\n"
-                + "- **Hierarchy**: Use `getSubtypes` and `getSupertypes` to explore the inheritance tree. These return a recursive `JavaHierarchyNode` structure.\n";
+                + "- **Hierarchy**: Use `getSubtypes` and `getSupertypes` to explore the inheritance tree.\n";
         return Collections.singletonList(instructions);
     }
 
@@ -208,40 +213,26 @@ public class CodeModel extends AnahataToolkit {
      * @return a paginated result of JavaMember objects.
      * @throws Exception if the members cannot be retrieved.
      */
-    @AgiTool("Gets a paginated list of all members (fields, constructors, methods) for a given type.")
-    public Page<JavaMember> getMembers(
-            @AgiToolParam("The keychain DTO for the type to inspect.") JavaType javaType,
-            @AgiToolParam(value = "Optional query string to filter members by name ignoring casing (uses memberNameLowerCase.contains(nameQueryLowerCase))", required = false) String nameQuery,
-            @AgiToolParam(value = "The starting index (0-based) for pagination.", required = false) Integer startIndex,
-            @AgiToolParam(value = "The maximum number of results to return per page.", required = false) Integer pageSize,
+    @AgiTool("Gets a paginated list of all members (fields, constructors, methods) for a given type. The returned JavaMember objects will not contain a url as they all have the same url, use the returned 'urlOfAllMembers' if you intend to use the returned JavaMember in further calls to getMemberSources(JavaMember) or getMemberJavadocs(JavaMember).")
+    public JavaMemberPage getMembers(
+            @AgiToolParam("The keychain DTO for the type to inspect.") JavaType javaType, 
+            @AgiToolParam(value = "Optional query string to filter members by name ignoring casing (uses memberNameLowerCase.contains(nameQueryLowerCase))", required = false) String nameQuery, 
+            @AgiToolParam(value = "The starting index (0-based) for pagination.", required = false) Integer startIndex, 
+            @AgiToolParam(value = "The maximum number of results to return per page. Defaults to 108 if not provided.", required = false) Integer pageSize, 
             @AgiToolParam(value = "Optional list of member kinds to filter by.", required = false) List<ElementKind> kindFilters) throws Exception {
 
         log("listing members for " + javaType);
-
         List<JavaMember> allMembers = javaType.getMembers();
-
         log("Total Members " + allMembers.size());
-
         if (nameQuery != null && !nameQuery.isBlank()) {
-            log("Name query provided, filtering: " + nameQuery);
-            allMembers = allMembers.stream()
-                    .filter(m -> m.getName() != null && m.getName().toLowerCase().contains(nameQuery.toLowerCase()))
-                    .collect(Collectors.toList());
-            log("After fildering by name: " + allMembers.size());
+            allMembers = allMembers.stream().filter(m -> m.getName() != null && m.getName().toLowerCase().contains(nameQuery.toLowerCase())).collect(Collectors.toList());
         }
-
         if (kindFilters != null && !kindFilters.isEmpty()) {
-            log("Kind filter provided provided, filtering: " + kindFilters);
-            allMembers = allMembers.stream()
-                    .filter(m -> kindFilters.contains(m.getKind()))
-                    .collect(Collectors.toList());
-            log("After fildering by kind: " + allMembers.size());
+            allMembers = allMembers.stream().filter(m -> kindFilters.contains(m.getKind())).collect(Collectors.toList());
         }
-
         int start = startIndex != null ? startIndex : 0;
         int size = pageSize != null ? pageSize : 108;
-
-        return new Page<>(allMembers, start, size);
+        return new JavaMemberPage(allMembers, start, size, javaType.getUrl());
     }
 
     /**
@@ -256,13 +247,9 @@ public class CodeModel extends AnahataToolkit {
      * @return a paginated result of JavaMember objects.
      * @throws Exception if the type is not found or ambiguous.
      */
-    @AgiTool(value = "Gets a paginated list of all members for a type specified by its fully qualified name. Fails if the FQN is ambiguous.", permission = ToolPermission.APPROVE_ALWAYS)
-    public Page<JavaMember> getMembersByFqn(
-            @AgiToolParam("The fully qualified name of the type.") String fqn,
-            @AgiToolParam(value = "Optional query string to filter members by name (uses memberName.contains(nameQuery))", required = false) String nameQuery,
-            @AgiToolParam(value = "The starting index (0-based) for pagination.", required = false) Integer startIndex,
-            @AgiToolParam(value = "The maximum number of results to return per page.", required = false) Integer pageSize,
-            @AgiToolParam(value = "Optional list of member kinds to filter by.", required = false) List<ElementKind> kindFilters) throws Exception {
+    @AgiTool(value = "Gets a paginated list of all members for a type specified by its fully qualified name. Fails if the FQN is ambiguous. The returned JavaMember objects will not contain a url as they all have the same url, use the returned 'urlOfAllMembers' if you intend to use the returned JavaMember in further calls to getMemberSources(JavaMember) or getMemberJavadocs(JavaMember).", permission = ToolPermission.APPROVE_ALWAYS)
+    public JavaMemberPage getMembersByFqn(
+            @AgiToolParam("The fully qualified name of the type.") String fqn, @AgiToolParam(value = "Optional query string to filter members by name (uses memberName.contains(nameQuery))", required = false) String nameQuery, @AgiToolParam(value = "The starting index (0-based) for pagination.", required = false) Integer startIndex, @AgiToolParam(value = "The maximum number of results to return per page.", required = false) Integer pageSize, @AgiToolParam(value = "Optional list of member kinds to filter by.", required = false) List<ElementKind> kindFilters) throws Exception {
         return getMembers(resolveUniqueType(fqn), nameQuery, startIndex, pageSize, kindFilters);
     }
 
@@ -454,12 +441,13 @@ public class CodeModel extends AnahataToolkit {
      */
     private JavaMember resolveUniqueMember(String memberFqn) throws Exception {
         int paren = memberFqn.indexOf('(');
-        int lastDot = paren != -1 ? memberFqn.substring(0, paren).lastIndexOf('.') : memberFqn.lastIndexOf('.');
-        if (lastDot == -1) {
-            throw new AgiToolException("Invalid member FQN: " + memberFqn + ". Expected format: className.memberName");
+        String namePart = paren != -1 ? memberFqn.substring(0, paren) : memberFqn;
+        int lastSeparator = Math.max(namePart.lastIndexOf('.'), namePart.lastIndexOf('$'));
+        if (lastSeparator == -1) {
+            throw new AgiToolException("Invalid member FQN: " + memberFqn + ". Expected format: Type.member or Type$NestedType");
         }
-        String typeFqn = memberFqn.substring(0, lastDot);
-        String memberNameOnly = paren != -1 ? memberFqn.substring(lastDot + 1, paren) : memberFqn.substring(lastDot + 1);
+        String typeFqn = namePart.substring(0, lastSeparator);
+        String memberNameOnly = namePart.substring(lastSeparator + 1);
         JavaType type = resolveUniqueType(typeFqn);
         List<JavaMember> matches = type.getMembers().stream().filter(m -> memberFqn.equals(m.getFqn())).collect(Collectors.toList());
         if (matches.isEmpty()) {

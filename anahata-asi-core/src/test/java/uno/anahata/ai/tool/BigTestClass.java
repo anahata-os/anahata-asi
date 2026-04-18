@@ -82,7 +82,25 @@ public class BigTestClass {
     }
 
     static {
-        log.fine("BigTestClass static block initialized.");
+        log.fine("Static block 1");
+    }
+
+    {
+        log.fine("Instance initializer 1");
+    }
+
+    static {
+        log.fine("Static block 2");
+    }
+
+    {
+        log.fine("Instance initializer 2");
+    }
+
+    public static class NestedA {
+        public static class NestedB {
+            public void deepMethod() {}
+        }
     }
 
     // >>> TEST: Inserción quirúrgica de una sola línea <<<

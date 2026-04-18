@@ -52,10 +52,10 @@ public class Page<T> {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Page Metadata: [totalCount=").append(totalCount).append(", startIndex=").append(startIndex).append(", pageSize=").append(pageSize).append("]\n");
+        sb.append(getClass().getSimpleName()).append(" Metadata: [totalCount=").append(totalCount).append(", startIndex=").append(startIndex).append(", pageSize=").append(pageSize).append("]\n");
         if (page != null) {
             for (T item : page) {
-                sb.append(" - ").append(item).append("\n");
+                sb.append(item).append("\n");
             }
         }
         return sb.toString();

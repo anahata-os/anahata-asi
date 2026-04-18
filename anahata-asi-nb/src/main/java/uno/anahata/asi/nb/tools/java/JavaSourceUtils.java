@@ -2,13 +2,16 @@
 package uno.anahata.asi.nb.tools.java;
 
 import com.sun.source.tree.AnnotationTree;
+import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.ModifiersTree;
+import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePath;
+import com.sun.source.util.TreePathScanner;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -16,12 +19,13 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
-import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeMirror;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.java.source.CompilationController;
 import org.netbeans.api.java.source.ElementHandle;
@@ -90,7 +94,7 @@ public class JavaSourceUtils {
         }
 
         final TreePathHandle[] handle = new TreePathHandle[1];
-        js.runUserActionTask(new Task<CompilationController>() {
+        js.runUserActionTask(new Task<>() {
             @Override
             public void run(CompilationController parameter) throws Exception {
                 parameter.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
@@ -122,7 +126,7 @@ public class JavaSourceUtils {
         }
 
         final TreePathHandle[] handle = new TreePathHandle[1];
-        js.runUserActionTask(new Task<CompilationController>() {
+        js.runUserActionTask(new Task<>() {
             @Override
             public void run(CompilationController parameter) throws Exception {
                 parameter.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
@@ -140,6 +144,92 @@ public class JavaSourceUtils {
         return handle[0];
     }
 
+    public static Tree findTree(WorkingCopy wc, String memberFqn) {
+        String pureFqn = memberFqn;
+        String indexPart = null;
+        if (memberFqn.contains("#")) {
+            indexPart = memberFqn.substring(memberFqn.indexOf('#') + 1, memberFqn.indexOf('('));
+            pureFqn = memberFqn.substring(0, memberFqn.indexOf('#'));
+        } else if (memberFqn.contains("(")) {
+            pureFqn = memberFqn.substring(0, memberFqn.indexOf('('));
+        }
+        TypeElement type = wc.getElements().getTypeElement(pureFqn);
+        if (type != null) {
+            if (pureFqn.equals(memberFqn) || memberFqn.equals(type.getQualifiedName().toString())) {
+                return wc.getTrees().getTree(type);
+            }
+        }
+        int lastSeparator = Math.max(pureFqn.lastIndexOf('.'), pureFqn.lastIndexOf('$'));
+        if (lastSeparator == -1) {
+            return null;
+        }
+        String parentFqn = pureFqn.substring(0, lastSeparator);
+        String memberName = pureFqn.substring(lastSeparator + 1);
+        Tree parentTree = findTree(wc, parentFqn);
+        if (!(parentTree instanceof ClassTree ct)) {
+            return null;
+        }
+        if (indexPart != null) {
+            int targetIndex = Integer.parseInt(indexPart);
+            int currentCount = 0;
+            for (Tree member : ct.getMembers()) {
+                if (member.getKind() == Tree.Kind.BLOCK) {
+                    BlockTree bt = (BlockTree) member;
+                    String blockName = bt.isStatic() ? "<clinit>" : "<init-block>";
+                    if (blockName.equals(memberName)) {
+                        if (++currentCount == targetIndex) {
+                            return member;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+        for (Tree member : ct.getMembers()) {
+            String name = null;
+            if (member instanceof MethodTree mt) {
+                name = mt.getName().toString();
+                if (name.equals(memberName) || (name.equals("<init>") && memberName.equals("<init>"))) {
+                    if (memberFqn.contains("(")) {
+                        Element e = wc.getTrees().getElement(TreePath.getPath(wc.getCompilationUnit(), member));
+                        if (e instanceof ExecutableElement ee && matchSignature(wc, ee, memberFqn)) {
+                            return member;
+                        }
+                    } else {
+                        return member;
+                    }
+                }
+            } else if (member instanceof VariableTree vt) {
+                name = vt.getName().toString();
+            } else if (member instanceof ClassTree innerCt) {
+                name = innerCt.getSimpleName().toString();
+            }
+            if (memberName.equals(name)) {
+                return member;
+            }
+        }
+        if (memberName.matches("\\d+")) {
+            final Tree[] found = new Tree[1];
+            final String targetBinaryName = pureFqn;
+            new TreePathScanner<Void, Void>() {
+                @Override
+                public Void visitNewClass(NewClassTree node, Void p) {
+                    if (node.getClassBody() != null) {
+                        Element e = wc.getTrees().getElement(new TreePath(getCurrentPath(), node.getClassBody()));
+                        if (e instanceof TypeElement te && ElementHandle.create(te).getBinaryName().equals(targetBinaryName)) {
+                            found[0] = node.getClassBody();
+                        }
+                    }
+                    return super.visitNewClass(node, p);
+                }
+            }.scan(TreePath.getPath(wc.getCompilationUnit(), parentTree), null);
+            if (found[0] != null) {
+                return found[0];
+            }
+        }
+        return null;
+    }
+
     /**
      * Finds a {@link Element} by its fully qualified name within a
      * {@link WorkingCopy}. Supports types, members, and packages.
@@ -149,49 +239,8 @@ public class JavaSourceUtils {
      * @return The resolved Element or null.
      */
     public static Element findElement(WorkingCopy wc, String memberFqn) {
-        // Handle method signature if present
-        String pureFqn = memberFqn;
-        if (memberFqn.contains("(")) {
-            pureFqn = memberFqn.substring(0, memberFqn.indexOf('('));
-        }
-
-        // Try type first
-        TypeElement type = wc.getElements().getTypeElement(pureFqn);
-        if (type != null) {
-            return type;
-        }
-
-        // Try package
-        PackageElement pkg = wc.getElements().getPackageElement(pureFqn);
-        if (pkg != null) {
-            return pkg;
-        }
-
-        int lastDot = pureFqn.lastIndexOf('.');
-        if (lastDot == -1) {
-            return null;
-        }
-
-        String parentFqn = pureFqn.substring(0, lastDot);
-        String memberName = pureFqn.substring(lastDot + 1);
-
-        TypeElement parent = wc.getElements().getTypeElement(parentFqn);
-        if (parent == null) {
-            return null;
-        }
-
-        for (Element e : parent.getEnclosedElements()) {
-            if (e.getSimpleName().toString().equals(memberName)) {
-                if (e instanceof ExecutableElement ee && memberFqn.contains("(")) {
-                    if (matchSignature(ee, memberFqn)) {
-                        return ee;
-                    }
-                } else {
-                    return e;
-                }
-            }
-        }
-        return null;
+        Tree tree = findTree(wc, memberFqn);
+        return tree == null ? null : wc.getTrees().getElement(TreePath.getPath(wc.getCompilationUnit(), tree));
     }
 
     /**
@@ -201,32 +250,29 @@ public class JavaSourceUtils {
      * contain generics, it will match against the raw AST type.
      * </p>
      */
-    private static boolean matchSignature(ExecutableElement ee, String methodFqn) {
+    private static boolean matchSignature(WorkingCopy wc, ExecutableElement ee, String methodFqn) {
         String paramsPart = methodFqn.substring(methodFqn.indexOf('(') + 1, methodFqn.lastIndexOf(')')).trim();
         List<String> expectedTypes = splitParameters(paramsPart);
-
         if (expectedTypes.size() != ee.getParameters().size()) {
             return false;
         }
-
         for (int i = 0; i < expectedTypes.size(); i++) {
             String expected = expectedTypes.get(i);
-            // Robust check: if the model passed "int age" or "@NotNull String", we only want the type part
             if (expected.contains(" ")) {
                 String[] parts = expected.split("\\s+");
-                expected = parts[parts.length - 1]; // Assume the type is the last part if no generic brackets
-                if (expected.endsWith(">")) { // But if it was List<String> names, the last part is names
+                expected = parts[parts.length - 1];
+                if (expected.endsWith(">")) {
                     expected = parts[parts.length - 2];
                 }
             }
-
-            String actual = ee.getParameters().get(i).asType().toString();
-
-            // Logic: If the user provided a raw type (no <), strip generics from actual for comparison.
+            TypeMirror actualMirror = ee.getParameters().get(i).asType();
+            Element actualEl = wc.getTypes().asElement(actualMirror);
+            String actual = (actualEl instanceof TypeElement te) 
+                    ? ElementHandle.create(te).getBinaryName() 
+                    : actualMirror.toString();
             if (!expected.contains("<") && actual.contains("<")) {
                 actual = actual.substring(0, actual.indexOf('<'));
             }
-
             if (!actual.endsWith(expected)) {
                 return false;
             }
@@ -290,22 +336,46 @@ public class JavaSourceUtils {
         for (int i = 0; i < members.size(); i++) {
             Tree m = members.get(i);
             String name = null;
+            String signature = null;
             if (m instanceof MethodTree mt) {
                 name = mt.getName().toString();
-                if (wc != null && memberName.contains("(") && memberName.startsWith(name)) {
+                if (wc != null) {
                     TreePath path = TreePath.getPath(wc.getCompilationUnit(), m);
                     Element e = wc.getTrees().getElement(path);
-                    if (e instanceof ExecutableElement ee && matchSignature(ee, memberName)) {
-                        return i;
+                    if (e instanceof ExecutableElement ee) {
+                        String params = ee.getParameters().stream().map(p -> {
+                            String t = p.asType().toString();
+                            int bracket = t.indexOf('<');
+                            return bracket != -1 ? t.substring(0, bracket) : t;
+                        }).collect(Collectors.joining(","));
+                        signature = (name.equals("<init>") ? "<init>" : name) + "(" + params + ")";
                     }
                 }
             } else if (m instanceof VariableTree vt) {
                 name = vt.getName().toString();
             } else if (m instanceof ClassTree ct) {
                 name = ct.getSimpleName().toString();
+            } else if (m.getKind() == Tree.Kind.BLOCK) {
+                name = ((BlockTree) m).isStatic() ? "<clinit>" : "<init-block>";
             }
-            if (memberName.equals(name)) {
+            if (memberName.equals(name) || memberName.equals(signature)) {
                 return i;
+            }
+            if (memberName.contains("#")) {
+                String typePart = memberName.substring(0, memberName.indexOf('#'));
+                int targetIndex = Integer.parseInt(memberName.substring(memberName.indexOf('#') + 1, memberName.indexOf('(')));
+                int currentCount = 0;
+                for (Tree prev : members) {
+                    String prevName = null;
+                    if (prev.getKind() == Tree.Kind.BLOCK) {
+                        prevName = ((BlockTree) prev).isStatic() ? "<clinit>" : "<init-block>";
+                    }
+                    if (typePart.equals(prevName)) {
+                        if (++currentCount == targetIndex && prev == m) {
+                            return i;
+                        }
+                    }
+                }
             }
         }
         return -1;
@@ -412,7 +482,7 @@ public class JavaSourceUtils {
         if (js == null) {
             return;
         }
-        js.runUserActionTask(new Task<CompilationController>() {
+        js.runUserActionTask(new Task<>() {
             @Override
             public void run(CompilationController parameter) throws Exception {
                 parameter.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
@@ -439,14 +509,13 @@ public class JavaSourceUtils {
      * @param members Output list for MemberInfo objects.
      * @throws IOException If the source cannot be parsed.
      */
-    @SuppressWarnings("unchecked")
     public static void resolveMemberInfos(FileObject fo, List<String> memberNames, List<MemberInfo<ElementHandle<? extends Element>>> members) throws IOException {
         JavaSource js = JavaSource.forFileObject(fo);
         if (js == null) {
             return;
         }
 
-        js.runUserActionTask(new Task<CompilationController>() {
+        js.runUserActionTask(new Task<>() {
             @Override
             public void run(CompilationController parameter) throws Exception {
                 parameter.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
