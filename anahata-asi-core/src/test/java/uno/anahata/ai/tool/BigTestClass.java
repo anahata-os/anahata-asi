@@ -9,7 +9,6 @@ import java.util.concurrent.TimeUnit;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -33,6 +32,13 @@ public class BigTestClass {
      */
     public String generateIdentity(@Deprecated String prefix) throws Exception {
         return "ID-" + UUID.randomUUID().toString();
+    }
+
+    /**
+     * Post-processes results. Força Barça!
+     */
+    public void postProcess(int count) {
+        log.info("Post-processing: " + count);
     }
 
     /**

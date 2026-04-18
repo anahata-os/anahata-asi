@@ -53,7 +53,7 @@ import uno.anahata.asi.nb.tools.java.JavaSourceUtils.RelativePosition;
  */
 @Slf4j
 @AgiToolkit("Structural Java code refinement tools using NetBeans AST (JavaSource API). Use these for precise code modifications that require automatic import handling or brace-safe transformations.")
-public class CodeRefiner extends AnahataToolkit {
+public class DeprecatedCodeRefiner extends AnahataToolkit {
 
     /**
      * Initializes the toolkit, enabling it by default to provide high-fidelity

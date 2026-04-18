@@ -392,16 +392,13 @@ public class CodeRefiner2 extends AnahataToolkit {
      */
     @AgiTool("Optimizes imports (converts FQNs to simple names, removes unused).")
     public String optimizeImports(
-            @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path")
-    String filePath, @AgiToolParam(value = "Whether to remove unused imports.", required = false)
-    Boolean removeUnused, @AgiToolParam("Whether to save.")
-    boolean save) throws Exception {
+            @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath, @AgiToolParam(value = "Whether to remove unused imports.", required = false) Boolean removeUnused, @AgiToolParam("Whether to save.") boolean save) throws Exception {
 
         final boolean doRemove = removeUnused == null || removeUnused;
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         JavaSource js = JavaSource.forFileObject(fo);
         final Set<String> diagnostics = new LinkedHashSet<>();
-        js.runModificationTask(wc-> {
+        js.runModificationTask(wc -> {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             CompilationUnitTree oldCut = wc.getCompilationUnit();
             CompilationUnitTree newCut = GeneratorUtilities
@@ -432,6 +429,8 @@ public class CodeRefiner2 extends AnahataToolkit {
                                             diagnostics.add("No candidates found in index for " + name);
                                         }
                                     } catch (Exception ex) {
+                                        diagnostics.add("Error searching index for " + name + ": " + ex.getMessage());
+                                        log.error("OptimizeImports: Index search failed for " + name, ex);
                                     }
                                 }
                             }
@@ -439,11 +438,13 @@ public class CodeRefiner2 extends AnahataToolkit {
                     }
                     return super.visitIdentifier(node, wc);
                 }
-            }.scan(new TreePath(wc.getCompilationUnit()),wc);
+            }.scan(new TreePath(wc.getCompilationUnit()), wc);
 
         }).commit();
         diagnostics.forEach(this::log);
-        if (save) handleSave(fo);
+        if (save) {
+            handleSave(fo);
+        }
         return "Optimized imports for: " + fo.getNameExt() + ". Check logs for details.";
     }
 
