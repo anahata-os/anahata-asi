@@ -252,6 +252,13 @@ public class BigTestClass {
     }
 
     public void testMethod() {
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                log.info("Running in an anonymous class!");
+            }
+        };
+        r.run();
         log.info("Test method executed.");
     }
 

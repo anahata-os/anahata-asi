@@ -51,26 +51,25 @@ public class CodeRefiner2 extends AnahataToolkit {
 
     @Override
     public List<String> getSystemInstructions() throws Exception {
-        return Collections.singletonList("CodeRefiner2: The authority for structural Java changes. Força Barça!"
-                + "\n- 'declaration' must be the full signature (e.g., 'public void foo(int a) throws IOException')."
+        return Collections.singletonList("CodeRefiner2: The authority for structural Java changes. For\u00e7a Bar\u00e7a!" + "\n- 'declaration' must be the full signature (e.g., 'public void foo(int a) throws IOException')."
                 + "\n- If 'declaration' is null/omitted in updateMember, the existing signature is preserved (Surgical Mode)."
                 + "\n- 'body' is just the logic inside the braces. For methods, if body is null or not given during update, the original body is preserved."
                 + "\n- 'javadoc' is what good java developers want in all members. To just add javadoc to an existing member do not pass 'declaration' or 'body'."
-                + "\n- Identification Standard: 'package.Class.member' (Field) or 'package.Class.method(param1,param2)' (Method)."
+                + "\n- Identification Standard: 'memberFqn' must be ABSOLUTE (e.g. 'package.Class.member' or 'package.Class.method(param1,param2)')."
                 + "\n- RULES FOR METHOD IDENTIFICATION: Parameter types must be CANONICAL: Fully Qualified, NO Generics, NO Annotations. "
                 + "Example: 'com.foo.Bar.process(java.util.List,int)'."
-                + "\n- RelativePosition is MANDATORY for insertion/move. anchorMemberName is MANDATORY if position is BEFORE/AFTER.");
+                + "\n- RelativePosition is MANDATORY for insertion/move. anchorMemberName is MANDATORY if position is BEFORE/AFTER."
+                + "\n- ANCHORS: anchorMemberName must be RELATIVE to the class (e.g. 'myField', 'myMethod(int,java.lang.String)', '<clinit>()' or '<init-block>()').");
     }
 
-    @AgiTool("Inserts a new member structurally into a class.")
     public String insertMember(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The FQN of the target class.") String classFqn,
-            @AgiToolParam("The full member declaration (e.g. 'private String name;' or 'public void foo(String s)').") String declaration,
-            @AgiToolParam(value = "Optional body code (logic inside braces).", rendererId = "java", required = false) String body,
-            @AgiToolParam(value = "The Javadoc content (without markers).", required = false) String javadoc,
-            @AgiToolParam(value = "Anchor member name for positioning. Mandatory for BEFORE/AFTER.", required = false) String anchorMemberName,
-            @AgiToolParam("Position relative to anchor. (START, END, BEFORE, AFTER)") RelativePosition position,
+            @AgiToolParam("The full member declaration (e.g. 'private String name;' or 'public void foo(String s)').") String declaration, 
+            @AgiToolParam(value = "Optional body code (logic inside braces).", rendererId = "java", required = false) String body, 
+            @AgiToolParam(value = "The Javadoc content (without markers).", required = false) String javadoc, 
+            @AgiToolParam("Position relative to anchor. (START, END, BEFORE, AFTER)") RelativePosition position, 
+            @AgiToolParam(value = "Anchor member name relative to class (e.g. 'myField' or 'foo(int)'). Mandatory for BEFORE/AFTER.", required = false) String anchorMemberName, 
             @AgiToolParam("Whether to save the file.") boolean save) throws Exception {
 
         validatePosition(position, anchorMemberName);
@@ -230,13 +229,8 @@ public class CodeRefiner2 extends AnahataToolkit {
         return "Removed member '" + memberFqn + "' structurally.";
     }
 
-    @AgiTool("Moves a member to a new position.")
     public String moveMember(
-            @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
-            @AgiToolParam("The FQN of the member to move.") String memberFqn,
-            @AgiToolParam(value = "Anchor member name. Mandatory for BEFORE/AFTER.", required = false) String anchorMemberName,
-            @AgiToolParam("Position relative to anchor. (START, END, BEFORE, AFTER)") RelativePosition position,
-            @AgiToolParam("Whether to save.") boolean save) throws Exception {
+            @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath, @AgiToolParam("The ABSOLUTE FQN of the member to move.") String memberFqn, @AgiToolParam("Position relative to anchor. (START, END, BEFORE, AFTER)") RelativePosition position, @AgiToolParam(value = "Anchor member name relative to class (e.g. 'myField' or 'foo(int)'). Mandatory for BEFORE/AFTER.", required = false) String anchorMemberName, @AgiToolParam("Whether to save.") boolean save) throws Exception {
 
         validatePosition(position, anchorMemberName);
         FileObject fo = JavaSourceUtils.getFileObject(filePath);

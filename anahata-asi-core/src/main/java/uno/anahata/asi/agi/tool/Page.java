@@ -51,7 +51,14 @@ public class Page<T> {
 
     @Override
     public String toString() {
-        return "Page{" + "startIndex=" + startIndex + ", totalCount=" + totalCount + ", pageSize=" + pageSize + ", page=" + page + '}';
+        StringBuilder sb = new StringBuilder();
+        sb.append("Page Metadata: [totalCount=").append(totalCount).append(", startIndex=").append(startIndex).append(", pageSize=").append(pageSize).append("]\n");
+        if (page != null) {
+            for (T item : page) {
+                sb.append(" - ").append(item).append("\n");
+            }
+        }
+        return sb.toString();
     }
     
 }

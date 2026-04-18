@@ -27,33 +27,38 @@ import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.ToolPermission;
 
 /**
- * Provides tools for interacting with the Java code model in NetBeans.
- * This includes finding types, getting members, and retrieving source code.
+ * Provides tools for interacting with the Java code model in NetBeans. This
+ * includes finding types, getting members, and retrieving source code.
  */
 @Slf4j
 @AgiToolkit("A toolkit for browsing types, members, sources and javadocs.")
 public class CodeModel extends AnahataToolkit {
 
-    /** 
-     * {@inheritDoc} 
-     * <p>Provides context-aware instructions for the CodeModel toolkit, 
-     * detailing the usage of one-shot FQN methods versus discovery-based searches.</p> 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Provides context-aware instructions for the CodeModel toolkit, detailing
+     * the usage of one-shot FQN methods versus discovery-based searches.</p>
      */
     @Override
     public List<String> getSystemInstructions() throws Exception {
-        String instructions = "CodeModel Toolkit Instructions:\n"                
-                + "- **One Shot Methods (`loadXxxxByFqn` or `getXxxxByFqn`)**: If you already know or can work out the fully qualified name (FQN) of a type or member, you can use the `xxxByFqn` methods to skip the discovery turn. These methods will fail if the FQN is ambiguous (e.g., exists in the classpath of multiple open projects).\n"
-                + "- **Member FQNs**: Members are identified by an FQN following the pattern `className.memberName` (e.g., `com.foo.MyClass.myMethod`).\n"
-                + "- **Disambiguation**: If a `xxxxByFqn` method fails due to ambiguity, use `CodeModel.findTypes` to get the explicit `JavaType` or `JavaMember` DTO and use the standard methods instead.\n"
+        String instructions = "CodeModel Toolkit Instructions:\n" + "- **One Shot Methods (`loadXxxxByFqn` or `getXxxxByFqn`)**: If you already know or can work out the fully qualified name (FQN) of a type or member, you can use the `xxxByFqn` methods to skip the discovery turn. These methods will fail if the FQN is ambiguous (e.g., exists in the classpath of multiple open projects).\n" + "- **Member FQNs**: \n" + "  - Fields: `package.Class.fieldName` \n" + "  - Methods: `package.Class.methodName(ParamType1,ParamType2,...)`. Use canonical types (no generics/annotations).\n"
+                + "  - Constructors: `package.Class.<init>(ParamType1,...)` \n"
+                + "  - Initializers: `package.Class.<clinit>()` (static) or `package.Class.<init-block>()` (instance) \n"
+                + "- **Disambiguation**: If a `xxxxByFqn` method fails due to ambiguity, use `CodeModel.findTypes` or `getMembers` to get the explicit high-precision FQN.\n"
                 + "- **Hierarchy**: Use `getSubtypes` and `getSupertypes` to explore the inheritance tree. These return a recursive `JavaHierarchyNode` structure.\n";
         return Collections.singletonList(instructions);
     }
 
     /**
-     * Finds multiple Java types matching a query and returns a paginated result of minimalist, machine-readable keys.
-     * @param query The search query for the types (e.g., simple name, FQN, wildcards).
+     * Finds multiple Java types matching a query and returns a paginated result
+     * of minimalist, machine-readable keys.
+     *
+     * @param query The search query for the types (e.g., simple name, FQN,
+     * wildcards).
      * @param caseSensitive Whether the search should be case-sensitive.
-     * @param preferOpenProjects Whether to prioritize results from open projects.
+     * @param preferOpenProjects Whether to prioritize results from open
+     * projects.
      * @param startIndex The starting index (0-based) for pagination.
      * @param pageSize The maximum number of results to return per page.
      * @return a paginated result of JavaType objects.
@@ -76,7 +81,9 @@ public class CodeModel extends AnahataToolkit {
     }
 
     /**
-     * Gets the source file for a given JavaType and automatically registers it as a resource.
+     * Gets the source file for a given JavaType and automatically registers it
+     * as a resource.
+     *
      * @param javaType The minimalist keychain DTO from a findTypes call.
      * @return a confirmation message.
      * @throws Exception if the source cannot be retrieved.
@@ -97,7 +104,9 @@ public class CodeModel extends AnahataToolkit {
     }
 
     /**
-     * Gets the source file for a type specified by its fully qualified name and registers it as a resource.
+     * Gets the source file for a type specified by its fully qualified name and
+     * registers it as a resource.
+     *
      * @param fqn The fully qualified name of the type.
      * @return a confirmation message.
      * @throws Exception if the type is not found or ambiguous.
@@ -107,9 +116,10 @@ public class CodeModel extends AnahataToolkit {
             @AgiToolParam("The fully qualified name of the type.") String fqn) throws Exception {
         return loadTypeSources(resolveUniqueType(fqn));
     }
-    
+
     /**
      * Gets the Javadoc for a given JavaType.
+     *
      * @param javaType The keychain DTO for the type to inspect.
      * @return the Javadoc comment.
      * @throws Exception if the Javadoc cannot be retrieved.
@@ -122,6 +132,7 @@ public class CodeModel extends AnahataToolkit {
 
     /**
      * Gets the Javadoc for a type specified by its fully qualified name.
+     *
      * @param fqn The fully qualified name of the type.
      * @return the Javadoc comment.
      * @throws Exception if the Javadoc cannot be found or ambiguous.
@@ -134,6 +145,7 @@ public class CodeModel extends AnahataToolkit {
 
     /**
      * Gets the source code for a specific JavaMember.
+     *
      * @param member The keychain DTO for the member to inspect.
      * @return the source code of the member.
      * @throws Exception if the source cannot be retrieved.
@@ -146,6 +158,7 @@ public class CodeModel extends AnahataToolkit {
 
     /**
      * Gets the source code for a member specified by its fully qualified name.
+     *
      * @param memberFqn The FQN of the member (e.g., 'com.foo.Class.method').
      * @return the source code of the member.
      * @throws Exception if the member is not found or ambiguous.
@@ -158,6 +171,7 @@ public class CodeModel extends AnahataToolkit {
 
     /**
      * Gets the Javadoc for a specific JavaMember.
+     *
      * @param member The keychain DTO for the member to inspect.
      * @return the Javadoc comment.
      * @throws Exception if the Javadoc cannot be retrieved.
@@ -170,6 +184,7 @@ public class CodeModel extends AnahataToolkit {
 
     /**
      * Gets the Javadoc for a member specified by its fully qualified name.
+     *
      * @param memberFqn The FQN of the member (e.g., 'com.foo.Class.method').
      * @return the Javadoc comment.
      * @throws Exception if the Javadoc cannot be found or ambiguous.
@@ -181,12 +196,15 @@ public class CodeModel extends AnahataToolkit {
     }
 
     /**
-     * Gets a paginated list of all members (fields, constructors, methods) for a given type.
+     * Gets a paginated list of all members (fields, constructors, methods) for
+     * a given type.
+     *
      * @param javaType The keychain DTO for the type to inspect.
      * @param nameQuery Optional query string to filter members by name.
      * @param startIndex The starting index (0-based) for pagination.
      * @param pageSize The maximum number of results to return per page.
-     * @param kindFilters Optional list of member kinds to filter by (e.g., ['METHOD', 'FIELD']).
+     * @param kindFilters Optional list of member kinds to filter by (e.g.,
+     * ['METHOD', 'FIELD']).
      * @return a paginated result of JavaMember objects.
      * @throws Exception if the members cannot be retrieved.
      */
@@ -197,14 +215,13 @@ public class CodeModel extends AnahataToolkit {
             @AgiToolParam(value = "The starting index (0-based) for pagination.", required = false) Integer startIndex,
             @AgiToolParam(value = "The maximum number of results to return per page.", required = false) Integer pageSize,
             @AgiToolParam(value = "Optional list of member kinds to filter by.", required = false) List<ElementKind> kindFilters) throws Exception {
-        
+
         log("listing members for " + javaType);
-        
+
         List<JavaMember> allMembers = javaType.getMembers();
-        
-        
+
         log("Total Members " + allMembers.size());
-        
+
         if (nameQuery != null && !nameQuery.isBlank()) {
             log("Name query provided, filtering: " + nameQuery);
             allMembers = allMembers.stream()
@@ -212,7 +229,7 @@ public class CodeModel extends AnahataToolkit {
                     .collect(Collectors.toList());
             log("After fildering by name: " + allMembers.size());
         }
-        
+
         if (kindFilters != null && !kindFilters.isEmpty()) {
             log("Kind filter provided provided, filtering: " + kindFilters);
             allMembers = allMembers.stream()
@@ -228,7 +245,9 @@ public class CodeModel extends AnahataToolkit {
     }
 
     /**
-     * Gets a paginated list of all members for a type specified by its fully qualified name.
+     * Gets a paginated list of all members for a type specified by its fully
+     * qualified name.
+     *
      * @param fqn The fully qualified name of the type.
      * @param nameQuery Optional query string to filter members by name.
      * @param startIndex The starting index (0-based) for pagination.
@@ -248,9 +267,13 @@ public class CodeModel extends AnahataToolkit {
     }
 
     /**
-     * Finds all types within a given package, with an option for recursive search.
-     * @param packageName The fully qualified name of the package to search (e.g., 'java.util').
-     * @param kindFilter Optional kind of type to search for (CLASS, INTERFACE, etc.).
+     * Finds all types within a given package, with an option for recursive
+     * search.
+     *
+     * @param packageName The fully qualified name of the package to search
+     * (e.g., 'java.util').
+     * @param kindFilter Optional kind of type to search for (CLASS, INTERFACE,
+     * etc.).
      * @param recursive If true, the search will include all subpackages.
      * @param startIndex The starting index (0-based) for pagination.
      * @param pageSize The maximum number of results to return per page.
@@ -285,7 +308,9 @@ public class CodeModel extends AnahataToolkit {
                     FileObject fo = SourceUtils.getFile(handle, cpInfo);
                     URL url = null;
                     try {
-                        if (fo != null) url = fo.toURL();
+                        if (fo != null) {
+                            url = fo.toURL();
+                        }
                     } catch (Exception e) {
                         log.warn("Failed to resolve URL for handle: {}", handle.getQualifiedName());
                     }
@@ -301,8 +326,9 @@ public class CodeModel extends AnahataToolkit {
     }
 
     /**
-     * Recursively searches for all subtypes (implementations and subclasses) of a given JavaType.
-     * 
+     * Recursively searches for all subtypes (implementations and subclasses) of
+     * a given JavaType.
+     *
      * @param javaType The starting type.
      * @param maxDepth The maximum depth to recurse. Defaults to 3 if null.
      * @return A recursive JavaHierarchyNode structure.
@@ -316,8 +342,9 @@ public class CodeModel extends AnahataToolkit {
     }
 
     /**
-     * Recursively searches for all subtypes of a type specified by its fully qualified name.
-     * 
+     * Recursively searches for all subtypes of a type specified by its fully
+     * qualified name.
+     *
      * @param fqn The fully qualified name of the type.
      * @param maxDepth The maximum depth to recurse. Defaults to 3 if null.
      * @return A recursive JavaHierarchyNode structure.
@@ -331,8 +358,9 @@ public class CodeModel extends AnahataToolkit {
     }
 
     /**
-     * Recursively searches for all supertypes (base classes and interfaces) of a given JavaType.
-     * 
+     * Recursively searches for all supertypes (base classes and interfaces) of
+     * a given JavaType.
+     *
      * @param javaType The starting type.
      * @param maxDepth The maximum depth to recurse up. Defaults to 3 if null.
      * @return A recursive JavaHierarchyNode structure.
@@ -346,8 +374,9 @@ public class CodeModel extends AnahataToolkit {
     }
 
     /**
-     * Recursively searches for all supertypes of a type specified by its fully qualified name.
-     * 
+     * Recursively searches for all supertypes of a type specified by its fully
+     * qualified name.
+     *
      * @param fqn The fully qualified name of the type.
      * @param maxDepth The maximum depth to recurse up. Defaults to 3 if null.
      * @return A recursive JavaHierarchyNode structure.
@@ -361,9 +390,10 @@ public class CodeModel extends AnahataToolkit {
     }
 
     /**
-     * Builds a global ClasspathInfo of all SOURCE, COMPILE and BOOT classpaths of all open projects.
-     * 
-     * @return All classpaths of all open projects 
+     * Builds a global ClasspathInfo of all SOURCE, COMPILE and BOOT classpaths
+     * of all open projects.
+     *
+     * @return All classpaths of all open projects
      */
     private static ClasspathInfo getGlobalClasspathInfo() {
         Set<ClassPath> sourcePaths = GlobalPathRegistry.getDefault().getPaths(ClassPath.SOURCE);
@@ -377,13 +407,14 @@ public class CodeModel extends AnahataToolkit {
 
     /**
      * Resolves a fully qualified name to a unique JavaType.
+     *
      * @param fqn The fully qualified name.
      * @return the unique JavaType.
      * @throws AgiToolException if the type is not found or ambiguous.
      */
     private JavaType resolveUniqueType(String fqn) throws AgiToolException {
         log.info("Resolving unique type for FQN: {}", fqn);
-        
+
         // 1. Try exact FQN search
         JavaTypeSearch search = new JavaTypeSearch(fqn, true, true);
         List<JavaType> results = search.getResults().stream()
@@ -416,31 +447,35 @@ public class CodeModel extends AnahataToolkit {
 
     /**
      * Resolves a member FQN to a unique JavaMember.
+     *
      * @param memberFqn The member FQN (e.g., 'com.foo.Class.method').
      * @return the unique JavaMember.
      * @throws Exception if the member is not found or ambiguous.
      */
     private JavaMember resolveUniqueMember(String memberFqn) throws Exception {
-        int lastDot = memberFqn.lastIndexOf('.');
+        int paren = memberFqn.indexOf('(');
+        int lastDot = paren != -1 ? memberFqn.substring(0, paren).lastIndexOf('.') : memberFqn.lastIndexOf('.');
         if (lastDot == -1) {
             throw new AgiToolException("Invalid member FQN: " + memberFqn + ". Expected format: className.memberName");
         }
         String typeFqn = memberFqn.substring(0, lastDot);
-        String memberName = memberFqn.substring(lastDot + 1);
-        
+        String memberNameOnly = paren != -1 ? memberFqn.substring(lastDot + 1, paren) : memberFqn.substring(lastDot + 1);
         JavaType type = resolveUniqueType(typeFqn);
-        List<JavaMember> matches = type.getMembers().stream()
-                .filter(m -> memberName.equals(m.getName()))
-                .collect(Collectors.toList());
-
+        List<JavaMember> matches = type.getMembers().stream().filter(m -> memberFqn.equals(m.getFqn())).collect(Collectors.toList());
         if (matches.isEmpty()) {
-            throw new AgiToolException("Member not found: " + memberName + " in type " + typeFqn);
+            matches = type.getMembers().stream().filter(m -> memberNameOnly.equals(m.getName())).collect(Collectors.toList());
         }
-
+        if (matches.isEmpty()) {
+            throw new AgiToolException("Member not found: " + memberFqn + " in type " + typeFqn);
+        }
         if (matches.size() > 1) {
-            throw new AgiToolException("Multiple members found for name: " + memberName + " in type " + typeFqn + " (overloads). Please use getMembers to select the correct one.");
+            StringBuilder sb = new StringBuilder("Ambiguous member: ").append(memberFqn);
+            sb.append("\nMultiple matches found (overloads). Please use one of these high-precision FQNs:\n");
+            for (JavaMember m : matches) {
+                sb.append("- ").append(m.getFqn()).append("\n");
+            }
+            throw new AgiToolException(sb.toString());
         }
-
         return matches.get(0);
     }
 }
