@@ -400,7 +400,7 @@ public class CodeRefiner2 extends AnahataToolkit {
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         JavaSource js = JavaSource.forFileObject(fo);
         final Set<String> diagnostics = new LinkedHashSet<>();
-        js.runModificationTask(wc-> {
+        js.runModificationTask(wc -> {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             ReferencesCount rc = ReferencesCount.get(wc.getClasspathInfo());
             CompilationUnitTree oldCut = wc
@@ -442,8 +442,8 @@ public class CodeRefiner2 extends AnahataToolkit {
                                                 candidates.add(new Candidate(handle.getQualifiedName(), score));
                                             }
                                             candidates.sort(Comparator.comparingInt(c -> c.score));
-                                            diagnostics.add("Found " + candidates.size() + " candidates for " + name + " (sorted by NetBeans Importance):");
-                                            candidates.forEach(c-> diagnostics.add(String.format(" - %-40s [Score: %d]", c.fqn, c.score)));
+                                            diagnostics.add("Found " + candidates.size() + " candidates for " + name + " (NetBeans Importance sort):");
+                                            candidates.forEach(c -> diagnostics.add(" - " + c.fqn));
                                         } else {
                                             diagnostics.add("No candidates found in index for " + name);
                                         }
