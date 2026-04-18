@@ -87,7 +87,7 @@ public class NbJava extends SwingJava {
                     + "Usage Rule: Use the normal compileAndExecute **if you are not importing any types from any of the open projects**"
     )
     public Object compileAndExecuteInProject(            
-            @AgiToolParam(value = "Source code of a public class named **Anahata** that has **no package declaration** and **extends AnahataTool**.", rendererId = "java") String sourceCode,
+            @AgiToolParam(value = "Source code of a public class named **Anahata** that is **public** has **no package declaration**, **extends SwingAgiTool** (or whatever is indicated in the system instructions) and implements the call() method of java.util.concurrent.Callable", rendererId = "java") String sourceCode,
             @AgiToolParam("The absolute path of the NetBeans project to run in.") String projectPath,
             @AgiToolParam("Whether to include the project's COMPILE and EXECUTE **dependencies**.") boolean includeDependencies,
             @AgiToolParam("Whether to include the project's test source folders and test dependencies.") boolean includeTestDependencies,
