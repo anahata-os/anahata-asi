@@ -8,6 +8,8 @@ import java.awt.Component;
 import javax.swing.Icon;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeCellRenderer;
+import uno.anahata.asi.agi.tool.ToolManager;
+import uno.anahata.asi.swing.icons.AtomsIcon;
 import uno.anahata.asi.swing.icons.DoubleToolIconRefined;
 import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.icons.ToolIcon;
@@ -35,6 +37,7 @@ public class ContextTreeCellRenderer extends DefaultTreeCellRenderer {
     private final Icon toolIcon = new ToolIcon(16);
     /** Refined programmatic icon for tool containers. */
     private final Icon toolsIcon = new DoubleToolIconRefined(16);
+    private final Icon toolManagerIcon = new AtomsIcon(16);
     /** Default icon for individual messages. */
     private final Icon messageIcon = IconUtils.getIcon("email.png", 16); 
     /** Default icon for individual message parts. */
@@ -64,6 +67,8 @@ public class ContextTreeCellRenderer extends DefaultTreeCellRenderer {
                     icon = toolkitIcon;
                 } else if (node instanceof ToolsNode) {
                     icon = toolsIcon;
+                } else if (node instanceof ProviderNode pn && pn.getUserObject() instanceof ToolManager) {
+                    icon = toolManagerIcon;
                 } else if (node instanceof ToolNode) {
                     icon = toolIcon;
                 } else if (node instanceof MessageNode) {

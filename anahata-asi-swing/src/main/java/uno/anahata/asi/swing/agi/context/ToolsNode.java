@@ -12,13 +12,12 @@ import uno.anahata.asi.swing.icons.AtomsIcon;
 
 /**
  * A context tree node that acts as a container for all tools within a toolkit.
- * It uses the AtomsIcon to represent the modular capabilities of the ASI.
+ * It uses the DoubleToolIconRefined to represent the modular capabilities of the ASI.
  * 
  * @author anahata
  */
 public class ToolsNode extends AbstractContextNode<AbstractToolkit<?>> {
 
-    private static final Icon ICON = new AtomsIcon(16);
 
     /**
      * Constructs a new ToolsNode.
@@ -35,11 +34,6 @@ public class ToolsNode extends AbstractContextNode<AbstractToolkit<?>> {
         return "Tools";
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public Icon getIcon() {
-        return ICON;
-    }
 
     /** {@inheritDoc} */
     @Override
