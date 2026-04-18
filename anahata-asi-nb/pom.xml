@@ -203,7 +203,7 @@
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-netbeans-modules-editor-lib2</artifactId>
             <version>${netbeans.version}</version>
-        </dependency>
+        </dependency>        
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-netbeans-modules-editor-mimelookup</artifactId>
@@ -213,7 +213,7 @@
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-netbeans-modules-java-editor-lib</artifactId>
             <version>${netbeans.version}</version>
-        </dependency>
+        </dependency>        
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-netbeans-modules-java-platform</artifactId>
@@ -471,6 +471,21 @@
         </dependency>
         <dependency>
             <groupId>org.netbeans.modules</groupId>
+            <artifactId>org-netbeans-modules-java-completion</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.modules</groupId>
+            <artifactId>org-netbeans-modules-java-api-common</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.modules</groupId>
+            <artifactId>org-netbeans-modules-java-editor-base</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.modules</groupId>
             <artifactId>org-netbeans-modules-java-hints</artifactId>
             <version>${netbeans.version}</version>
         </dependency>
@@ -619,6 +634,18 @@
                         <dependency>
                             <type>impl</type>
                             <id>org.netbeans.modules:org-netbeans-modules-java-hints</id>
+                        </dependency>
+                        <dependency>
+                            <type>impl</type>
+                            <id>org.netbeans.modules:org-netbeans-modules-java-editor-base</id>
+                        </dependency>
+                        <dependency>
+                            <type>impl</type>
+                            <id>org.netbeans.modules:org-netbeans-modules-java-api-common</id>
+                        </dependency>
+                        <dependency>
+                            <type>impl</type>
+                            <id>org.netbeans.modules:org-netbeans-modules-java-completion</id>
                         </dependency>
                     </moduleDependencies>
                     <publicPackages>
