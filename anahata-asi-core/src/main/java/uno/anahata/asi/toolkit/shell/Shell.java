@@ -53,7 +53,7 @@ public class Shell extends AnahataToolkit {
     public List<String> getSystemInstructions() throws Exception {
         StringBuilder sb = new StringBuilder();
         sb.append("## Shell Toolkit\n");
-        sb.append("- **Current JVM Working Directory**: ").append(System.getProperty("user.dir")).append("\n\n");
+        sb.append("- **Current Shell Working Directory**: Included in the RAG message. This is were the commands will be executed if no workingDirectory is provided in the Shell.runAndWait tool");
         sb.append("- **Host Environment Variables**:\n");
         Map<String, String> sortedEnv = new TreeMap<>(System.getenv());
         sortedEnv.forEach((k, v) -> sb.append("- **").append(k).append("**: ").append(v).append("\n"));
@@ -68,14 +68,17 @@ public class Shell extends AnahataToolkit {
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
         String cwd = System.getProperty("user.dir");
-        ragMessage.addTextPart("## Shell Toolkit Context\n- **Current JVM Working Directory**: " + cwd + "\n");
+        ragMessage.addTextPart(
+                "## Shell Toolkit Context"
+                + "\n- Current Shell Working Directory (**were the shell commands will be executed if no workingDirectory is provided**): " + cwd + "\n");
     }
 
     /**
      * Executes a shell command using the appropriate system shell.
      *
      * @param command The shell command to execute.
-     * @param type The type of shell to use. If null, it will be auto-detected based on the OS.
+     * @param type The type of shell to use. If null, it
+     * @param workingDirectory the directory in which the shell command will be executed.
      * @return A {@link ShellExecutionResult} containing the exit code and output.
      * @throws Exception if the command fails to start or execution is interrupted.
      */
@@ -83,7 +86,7 @@ public class Shell extends AnahataToolkit {
     public ShellExecutionResult runAndWait(
             @AgiToolParam("The command to run") String command,
             @AgiToolParam("The type of shell to use (BASH, CMD, POWERSHELL, SH). If null, it defaults to POWERSHELL on Windows and BASH on Unix.") ShellType type,
-            @AgiToolParam(value = "The working directory for the command. If null, it defaults to the current JVM working directory.", required = false) String workingDirectory) throws Exception {
+            @AgiToolParam(value = "The working directory for the command. If null, it defaults to the Current Shell Working Directory provided in the RAG message.", required = false) String workingDirectory) throws Exception {
         
         Thread currentThread = Thread.currentThread();
         log(String.format("[Shell] runAndWait started on thread: %s (ID: %d)", currentThread.getName(), currentThread.getId()));
