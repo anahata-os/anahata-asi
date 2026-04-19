@@ -100,7 +100,7 @@ public class CodeRefiner2 extends AnahataToolkit {
             }
 
             Tree newMember = parseMember(wc, declaration, body);
-            applyJavadoc(wc, newMember, null, javadoc, true);
+            applyJavadoc(wc, newMember, null, javadoc);
             newMember = GeneratorUtilities.get(wc).importFQNs(newMember);
 
             int anchorIdx = anchorMemberName != null ? JavaSourceUtils.findMemberIndex(wc, members, anchorMemberName) : -1;
@@ -164,7 +164,7 @@ public class CodeRefiner2 extends AnahataToolkit {
             }
 
             Tree newTree;
-            if (declaration == null) {                
+            if (declaration == null) {
                 if (oldTree instanceof MethodTree mt) {
                     String b = (body == null) ? (mt.getBody() == null ? "{}" : mt.getBody().toString()) : (body.trim().startsWith("{") ? body : "{" + body + "}");
                     BlockTree finalBody = (BlockTree) wc.getTreeUtilities().parseStatement(b, null);
@@ -179,11 +179,11 @@ public class CodeRefiner2 extends AnahataToolkit {
                     newTree = make.Block(newBlock.getStatements(), bt.isStatic());
                 } else {
                     throw new AgiToolException("Surgical mode (declaration=null) is not supported for " + oldTree.getKind());
-                }                
-                applyJavadoc(wc, newTree, oldTree, javadoc, javadoc != null);
+                }
+                applyJavadoc(wc, newTree, oldTree, javadoc);
             } else {
                 newTree = parseMember(wc, declaration, body);
-                applyJavadoc(wc, newTree, oldTree, javadoc, javadoc != null);
+                applyJavadoc(wc, newTree, oldTree, javadoc);
             }
 
             TreePath path = TreePath.getPath(wc.getCompilationUnit(), oldTree);
@@ -257,11 +257,11 @@ public class CodeRefiner2 extends AnahataToolkit {
                     wc.rewrite(cut, updated);
                 }
             }
-            
+
             if (optimize != null && optimize) {
                 removeUnusedImportsInternal(wc);
             }
-            
+
         }).commit();
 
         if (save) {
@@ -333,51 +333,6 @@ public class CodeRefiner2 extends AnahataToolkit {
         return "Moved member '" + memberFqn + "' to " + position;
     }
 
-    private void throwMemberNotFound(WorkingCopy wc, String memberFqn) throws AgiToolException {
-        int paren = memberFqn.indexOf("(");
-        String namePart = paren != -1 ? memberFqn.substring(0, paren) : memberFqn;
-        int lastSeparator = Math.max(namePart.lastIndexOf("."), namePart.lastIndexOf("$"));
-        if (lastSeparator == -1) {
-            throw new AgiToolException("Member not found: " + memberFqn);
-        }
-
-        String parentFqn = namePart.substring(0, lastSeparator);
-        String name = namePart.substring(lastSeparator + 1);
-
-        TypeElement parent = wc.getElements().getTypeElement(parentFqn);
-        if (parent == null) {
-            throw new AgiToolException("Member not found: " + memberFqn + " (Parent class not found: " + parentFqn + ")");
-        }
-
-        List<String> candidates = new ArrayList<>();
-        for (Element e : parent.getEnclosedElements()) {
-            if (e.getSimpleName().contentEquals(name)) {
-                if (e instanceof ExecutableElement ee) {
-                    String params = ee.getParameters().stream()
-                            .map(p -> {
-                                String type = p.asType().toString();
-                                return type.contains("<") ? type.substring(0, type.indexOf("<")) : type;
-                            })
-                            .collect(Collectors.joining(","));
-                    candidates.add(parentFqn + "." + name + "(" + params + ")");
-                } else {
-                    candidates.add(parentFqn + "." + name);
-                }
-            }
-        }
-
-        if (candidates.isEmpty()) {
-            throw new AgiToolException("Member not found: " + memberFqn);
-        }
-
-        StringBuilder sb = new StringBuilder("Member not found: ").append(memberFqn);
-        sb.append("\nDid you mean one of these canonical identification FQNs?\n");
-        for (String c : candidates) {
-            sb.append("- ").append(c).append("\n");
-        }
-        throw new AgiToolException(sb.toString());
-    }
-
     /**
      * Adds one or more imports to a file structurally.
      */
@@ -405,7 +360,7 @@ public class CodeRefiner2 extends AnahataToolkit {
         return "Added " + imports.size() + " import(s) to " + fo.getNameExt();
     }
 
-    @AgiTool("Reformats a file using IDE rules.")
+    @AgiTool("Reformats a file using IDE rules. Only works if the file is open in the editor")
     public String reformat(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("Whether to save.") boolean save) throws Exception {
@@ -590,42 +545,34 @@ public class CodeRefiner2 extends AnahataToolkit {
         return result[0];
     }
 
-    private void applyJavadoc(WorkingCopy wc, Tree tree, Tree oldTree, String javadocText, boolean removeExisting) {
-        log("applyJavadoc: '" + javadocText + "' removeExisting=" + removeExisting + " oldTree=" + oldTree + " tree=" + tree + " workingCopy=" + wc);
+    private void applyJavadoc(WorkingCopy wc, Tree tree, Tree oldTree, String javadocText) {
         TreeMaker make = wc.getTreeMaker();
+        TreeUtilities utils = wc.getTreeUtilities();
 
-        // 1. If we are replacing, explicitly suppress old Javadocs on the original tree
-        if (oldTree != null && removeExisting) {
-            List<org.netbeans.api.java.source.Comment> comments = wc.getTreeUtilities().getComments(oldTree, true);
-            // Iterate in reverse so removing by index doesn't shift subsequent indices
-            for (int i = comments.size() - 1; i >= 0; i--) {
-                Comment c = comments.get(i);
-                boolean isDoc = c.isDocComment() || c.style() == Comment.Style.JAVADOC;
-                if (isDoc) {
-                    log("Removing comment from oldTree. before:" + wc.getTreeUtilities().getComments(oldTree, true).size());
-                    make.removeComment(oldTree, i, true);
-                    log("AFter Removing comment from oldTree. before:" + wc.getTreeUtilities().getComments(oldTree, true).size());
-                }
-            }
-        }
-
-        // 2. Add the brand new Javadoc to the new tree
-        if (javadocText != null && !javadocText.isBlank()) {
-            String formatted = "/**\n * " + javadocText.replace("\n", "\n * ") + "\n */";
-            log(" - Adding new Javadoc to new tree: " + formatted);
-            make.addComment(tree, org.netbeans.api.java.source.Comment.create(org.netbeans.api.java.source.Comment.Style.JAVADOC, -1, -1, -1, formatted), true);
-        }
-
-        // 3. Transfer non-Javadoc leading comments from old tree to new tree
         if (oldTree != null) {
-            List<org.netbeans.api.java.source.Comment> comments = wc.getTreeUtilities().getComments(oldTree, true);
-            for (org.netbeans.api.java.source.Comment c : comments) {
-                boolean isDoc = c.isDocComment() || c.style() == org.netbeans.api.java.source.Comment.Style.JAVADOC;
-                if (!isDoc) {
-                    log(" - Transferring non-Javadoc comment: " + c.getText().trim());
-                    make.addComment(tree, c, true);
+            // 1. Manually migrate non-preceding comments (trailing)
+            GeneratorUtilities.get(wc).copyComments(oldTree, tree, false);
+
+            // 2. Manually migrate PRECEDING comments
+            List<Comment> oldPre = utils.getComments(oldTree, true);
+            for (Comment c : oldPre) {
+                if (c.isDocComment() && javadocText != null) {
+                    continue; // Skip old doc if we are providing a new one
                 }
+                make.addComment(tree, c, true);
             }
+        }
+
+        // 3. Add new Javadoc if requested
+        if (javadocText != null && !javadocText.isBlank()) {
+            int indent = (oldTree != null)
+                    ? (int) wc.getTrees().getSourcePositions().getStartPosition(wc.getCompilationUnit(), oldTree)
+                    : 0;
+            if (indent < 0) {
+                indent = 0;
+            }
+            String formatted = "/**\n * " + javadocText.replace("\n", "\n * ") + "\n */";
+            make.addComment(tree, Comment.create(Comment.Style.JAVADOC, -1, -1, indent, formatted), true);
         }
     }
 
@@ -662,4 +609,50 @@ public class CodeRefiner2 extends AnahataToolkit {
         }
         fo.refresh();
     }
+
+    private void throwMemberNotFound(WorkingCopy wc, String memberFqn) throws AgiToolException {
+        int paren = memberFqn.indexOf("(");
+        String namePart = paren != -1 ? memberFqn.substring(0, paren) : memberFqn;
+        int lastSeparator = Math.max(namePart.lastIndexOf("."), namePart.lastIndexOf("$"));
+        if (lastSeparator == -1) {
+            throw new AgiToolException("Member not found: " + memberFqn);
+        }
+
+        String parentFqn = namePart.substring(0, lastSeparator);
+        String name = namePart.substring(lastSeparator + 1);
+
+        TypeElement parent = wc.getElements().getTypeElement(parentFqn);
+        if (parent == null) {
+            throw new AgiToolException("Member not found: " + memberFqn + " (Parent class not found: " + parentFqn + ")");
+        }
+
+        List<String> candidates = new ArrayList<>();
+        for (Element e : parent.getEnclosedElements()) {
+            if (e.getSimpleName().contentEquals(name)) {
+                if (e instanceof ExecutableElement ee) {
+                    String params = ee.getParameters().stream()
+                            .map(p -> {
+                                String type = p.asType().toString();
+                                return type.contains("<") ? type.substring(0, type.indexOf("<")) : type;
+                            })
+                            .collect(Collectors.joining(","));
+                    candidates.add(parentFqn + "." + name + "(" + params + ")");
+                } else {
+                    candidates.add(parentFqn + "." + name);
+                }
+            }
+        }
+
+        if (candidates.isEmpty()) {
+            throw new AgiToolException("Member not found: " + memberFqn);
+        }
+
+        StringBuilder sb = new StringBuilder("Member not found: ").append(memberFqn);
+        sb.append("\nDid you mean one of these canonical identification FQNs?\n");
+        for (String c : candidates) {
+            sb.append("- ").append(c).append("\n");
+        }
+        throw new AgiToolException(sb.toString());
+    }
+
 }
