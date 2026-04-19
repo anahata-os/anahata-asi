@@ -143,6 +143,48 @@ public class JavaMemberSearch {
                     }
 
                 }.scan(typePath, null);
+            } else {
+                // Fallback for binaries (JARs) where no AST is available
+                int staticCount = 0;
+                int instanceCount = 0;
+                for (Element element : typeElement.getEnclosedElements()) {
+                    ElementKind kind = element.getKind();
+                    ElementHandle<? extends Element> handle = ElementHandle.create(element);
+                    String name = element.getSimpleName().toString();
+                    String memberName = name;
+                    String simpleName;
+                    String memberFqn;
+                    if (element instanceof ExecutableElement ee) {
+                        String namePart = kind == ElementKind.CONSTRUCTOR ? "<init>" : name;
+                        String params = ee.getParameters().stream().map(p -> {
+                            String t = p.asType().toString();
+                            int bracket = t.indexOf('<');
+                            return bracket != -1 ? t.substring(0, bracket) : t;
+                        }).collect(Collectors.joining(","));
+                        simpleName = namePart + "(" + params + ")";
+                    } else {
+                        simpleName = name;
+                    }
+                    
+                    if (kind == ElementKind.STATIC_INIT) {
+                        int index = ++staticCount;
+                        memberName = "<clinit>";
+                        simpleName = memberName + "#" + index + "()";
+                        memberFqn = type.getFqn() + "." + simpleName;
+                    } else if (kind == ElementKind.INSTANCE_INIT) {
+                        int index = ++instanceCount;
+                        memberName = "<init-block>";
+                        simpleName = memberName + "#" + index + "()";
+                        memberFqn = type.getFqn() + "." + simpleName;
+                    } else if (kind.isClass() || kind.isInterface()) {
+                        memberFqn = type.getFqn() + "$" + name;
+                    } else {
+                        memberFqn = type.getFqn() + "." + simpleName;
+                    }
+                    
+                    Set<String> modifiers = element.getModifiers().stream().map(m -> m.name().toLowerCase()).collect(Collectors.toSet());
+                    foundMembers.add(new JavaMember(handle, memberFqn, memberName, kind, null, modifiers));
+                }
             }
         }, true);
         this.members = Collections.unmodifiableList(foundMembers);
