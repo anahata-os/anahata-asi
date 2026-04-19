@@ -100,6 +100,7 @@
                 <h4>NetBeans Toolkits</h4>
                 <ul>
                     <li><a href="#refactor"><i class="fas fa-magic"></i> Refactor</a></li>
+                    <li><a href="#coderefiner"><i class="fas fa-atom"></i> CodeRefiner</a></li>
                     <li><a href="#codemodel"><i class="fas fa-sitemap"></i> CodeModel</a></li>
                     <li><a href="#maven"><i class="fas fa-hammer"></i> Maven</a></li>
                     <li><a href="#projects"><i class="fas fa-project-diagram"></i> Projects</a></li>
@@ -233,6 +234,27 @@
                     <div class="tool-card"><span class="tool-sig">moveInnerToTopLevel(path, name) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Promotes a nested class to its own file.</p></div>
                     <div class="tool-card"><span class="tool-sig">whereUsed(path, comments) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Finds all references of a file or type.</p></div>
                     <div class="tool-card"><span class="tool-sig">whereUsedMember(path, member, comm) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Finds all usages of a specific class member.</p></div>
+                </div>
+            </section>
+
+            <!-- CodeRefiner Toolkit -->
+            <section id="coderefiner" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-atom"></i><h2>CodeRefiner Toolkit (8 Tools)</h2></div>
+                <p>Advanced structural Java code manipulation that operates directly on the NetBeans Abstract Syntax Tree (AST) rather than simple text buffers. This ensures 100% semantic integrity during code evolution.</p>
+                <ul class="toolkit-highlights">
+                    <li><b>Direct AST Transformation</b>: CodeRefiner manipulates actual Java nodes (Methods, Classes, Initializers), preserving comments and formatting exactly where they belong.</li>
+                    <li><b>Surgical Javadoc Mastery</b>: High-fidelity documentation updates with zero-duplication logic and automatic migration of existing member comments.</li>
+                    <li><b>Integrated Import Singularity</b>: Every structural modification triggers a comprehensive import optimization pass, maintaining a clean, FQN-free source file.</li>
+                </ul>
+                <div class="tool-grid">
+                    <div class="tool-card"><span class="tool-sig">insertMember(path, class, decl, body, ...) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Structurally inserts a new method, field, or inner class.</p></div>
+                    <div class="tool-card"><span class="tool-sig">updateMember(path, fqn, decl, body, ...) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Surgically updates member signature, body, or javadoc.</p></div>
+                    <div class="tool-card"><span class="tool-sig">setJavadoc(path, fqn, javadoc) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">High-fidelity documentation update using AST Rewriting.</p></div>
+                    <div class="tool-card"><span class="tool-sig">deleteMember(path, fqn, optimize) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Removes a member while maintaining structural integrity.</p></div>
+                    <div class="tool-card"><span class="tool-sig">moveMember(path, fqn, pos, anchor) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Relocates members within a class using AST pointers.</p></div>
+                    <div class="tool-card"><span class="tool-sig">optimizeImports(path, removeUnused) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">FQN-to-simple-name conversion and unused removal.</p></div>
+                    <div class="tool-card"><span class="tool-sig">addImports(path, imports) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Explicitly adds multiple FQNs to the import section.</p></div>
+                    <div class="tool-card"><span class="tool-sig">reformat(path, save) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Applies IDE code style rules to the entire file.</p></div>
                 </div>
             </section>
 
