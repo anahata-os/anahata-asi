@@ -51,9 +51,9 @@ public class CodeRefiner2 extends AnahataToolkit {
     public List<String> getSystemInstructions() throws Exception {
         return Collections.singletonList("CodeRefiner2: The authority for structural Java changes."
                 + "\n- 'declaration' must be the full signature (e.g., '@Override public void foo(int a) throws IOException'). It MUST include any annotations (e.g., @Override, @Deprecated) you want to preserve or add."
-                + "\n- If 'declaration' is null/omitted in updateMember, the existing signature is preserved (Surgical Mode)."
-                + "\n- 'body' is just the logic inside the braces. For methods, if body is null or not given during update, the original body is preserved."
-                + "\n- 'javadoc' content MUST NOT include the /** and */ markers. The tool adds them automatically."
+                + "\n- If 'declaration' is omitted in updateMember, the existing signature is preserved (Surgical Mode)."
+                + "\n- 'body' is just the logic inside the braces. For methods, if body is omitted during update, the original body is preserved."
+                + "\n- 'javadoc' content MUST NOT include the /** and */ markers. The tool adds them automatically. If omitted, it remains unchaged."
                 + "\n- Identification Standard: 'memberFqn' must be ABSOLUTE (e.g. 'com.foo.MyClass.myField', 'com.foo.MyClass.myMethod(java.lang.String,int)', 'com.foo.MyClass$InnerClass.member', 'com.foo.MyClass.<clinit>#1()' or 'com.foo.MyClass.<init-block>#2()')."
                 + "\n- METHODS/CONSTRUCTORS: Parentheses '()' are MANDATORY, even if there are no parameters (e.g. 'myMethod()')."
                 + "\n- OVERLOADS: You MUST provide the canonical FQN of all parameters to disambiguate (e.g. 'java.lang.String,com.foo.MyClass$Inner')."
@@ -145,8 +145,8 @@ public class CodeRefiner2 extends AnahataToolkit {
     public String updateMember(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The ABSOLUTE FQN of the member. Use 'package.Class.method(param1,param2)' or 'package.Class.method()' for no-arg methods. You MUST provide all parameter FQNs (e.g. 'java.lang.String,com.foo.MyClass$Inner'). Use 'package.Class$Inner' for types and 'package.Class.<clinit>#1()' for blocks.") String memberFqn,
-            @AgiToolParam(value = "The new member declaration (signature). If null, existing signature is kept. NEVER include the body here. If provided, it MUST include all annotations you wish to preserve (e.g., @Override, @Deprecated).", required = false, rendererId = "java") String declaration,
-            @AgiToolParam(value = "The WHOLE body code (logic inside the braces). Do NOT include the signature or outer braces. To surgically change a fragment, use the Resources toolkit instead.", rendererId = "java", required = false) String body,
+            @AgiToolParam(value = "The new member declaration (signature). Do not provide it if it doesn't need to change. NEVER include the body here. If provided, it MUST include all annotations you wish to preserve (e.g., @Override, @Deprecated).", required = false, rendererId = "java") String declaration,
+            @AgiToolParam(value = "The WHOLE body code (logic inside the braces). Do not provide it if it doesn't need to change. Do NOT include the signature or outer braces. To surgically change a fragment, use the Resources toolkit instead.", rendererId = "java", required = false) String body,
             @AgiToolParam(value = "Optional new Javadoc (WITHOUT /** and */ markers). Do not provide it if it doesn't need to change. The tool adds markers automatically.", required = false) String javadoc,
             @AgiToolParam(value = "Whether to optimize imports after update. Defaults to true.", required = false) Boolean optimize,
             @AgiToolParam("Whether to save.") boolean save) throws Exception {
@@ -475,6 +475,12 @@ public class CodeRefiner2 extends AnahataToolkit {
         }.scan(new TreePath(wc.getCompilationUnit()), wc);
     }
 
+    /**
+     * Validates the consistency of the relative position and anchor member name for insertion and move operations.
+     * @param position the relative position
+     * @param anchor the anchor member name
+     * @throws AgiToolException if the position and anchor are inconsistent
+     */
     private void validatePosition(RelativePosition position, String anchor) throws AgiToolException {
         if (position == null) {
             throw new AgiToolException("RelativePosition is mandatory.");
