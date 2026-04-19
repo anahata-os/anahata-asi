@@ -13,8 +13,8 @@ import java.nio.file.Paths;
 /**
  * A Kryo serializer for {@link java.nio.file.Path} objects.
  * <p>
- * This serializer avoids JPMS access issues by serializing the path as a 
- * simple String and reconstructing it using {@link Paths#get(String)}.
+ * This serializer avoids JPMS access issues by serializing the path as a
+ * simple String and reconstructing it using {@link java.nio.file.Path#of(String, String...)}.
  * </p>
  * 
  * @author anahata
