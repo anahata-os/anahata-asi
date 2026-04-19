@@ -58,9 +58,8 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
      */
     private final Map<String, AbstractAiProvider> providerRegistry = new ConcurrentHashMap<>();
 
-    /** 
-     * A shared executor for container-level background tasks. 
-     * @return the container executor service.
+    /**
+     * A shared executor for container-level background tasks.
      */
     private final ExecutorService executor;
 
