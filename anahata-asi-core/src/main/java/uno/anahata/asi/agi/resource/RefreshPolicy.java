@@ -5,7 +5,7 @@ package uno.anahata.asi.agi.resource;
 
 
 /**
- * Defines the refresh policy for a {@link AbstractResource} when its content
+ * Defines the refresh policy for a {@link Resource} when its content
  * is provided to the model via the Augmented Workspace.
  *
  * @author anahata-gemini-pro-2.5
