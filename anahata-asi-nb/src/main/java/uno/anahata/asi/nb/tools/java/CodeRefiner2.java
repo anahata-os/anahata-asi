@@ -552,6 +552,7 @@ public class CodeRefiner2 extends AnahataToolkit {
                 }
             }
         } catch (Exception e) {
+            error("Failed to remove unused imports using HintsInvoker");
             log.error("Failed to remove unused imports using HintsInvoker", e);
         }
     }
@@ -698,6 +699,17 @@ public class CodeRefiner2 extends AnahataToolkit {
         throw new AgiToolException(sb.toString());
     }
 
+    /**
+     * Calculates the insertion index for a new member based on the requested
+     * relative position and an optional anchor member name.
+     *
+     * @param wc the working copy for element lookup
+     * @param members the list of existing members in the parent tree
+     * @param position the relative position (START, END, BEFORE, AFTER)
+     * @param anchorMemberName the name of the member to anchor against
+     * @return the 0-based insertion index
+     * @throws AgiToolException if the anchor member is specified but not found
+     */
     private int getInsertIndex(WorkingCopy wc, List<? extends Tree> members, RelativePosition position, String anchorMemberName) throws AgiToolException {
         int anchorIdx = anchorMemberName != null ? JavaSourceUtils.findMemberIndex(wc, members, anchorMemberName) : -1;
         if (anchorMemberName != null && anchorIdx == -1) {
@@ -715,11 +727,26 @@ public class CodeRefiner2 extends AnahataToolkit {
         };
     }
 
+    /**
+     * Parses a string-based member body into a BlockTree.
+     * Ensures the body is wrapped in curly braces if not already present.
+     *
+     * @param wc the working copy
+     * @param body the raw body text
+     * @return the parsed BlockTree node
+     */
     private BlockTree parseBody(WorkingCopy wc, String body) {
         String b = body.trim().startsWith("{") ? body : "{" + body + "}";
         return (BlockTree) wc.getTreeUtilities().parseStatement(b, null);
     }
 
+    /**
+     * Logs import diagnostics directly to the tool's output stream.
+     * These diagnostics typically include unresolved types and ranked candidates
+     * found in the project index.
+     *
+     * @param diagnostics the set of diagnostic strings to log
+     */
     private void logDiagnostics(Set<String> diagnostics) {
         if (!diagnostics.isEmpty()) {
             log("Import diagnostics:");

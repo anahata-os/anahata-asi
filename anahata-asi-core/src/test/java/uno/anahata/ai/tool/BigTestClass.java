@@ -22,10 +22,22 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class BigTestClass {
 
+    private String firstField;
+
     /**
      * A test field to verify surgical insertion. Força Barça!
      */
     private String testField;
+    
+    /**
+     * Verified Final Logic.
+     * No duplicates guaranteed.
+     * Força Barça!
+     */
+    public void methodAfterTestField() {
+        System.out.println("Replacement logic fully operational.");
+        log.info("No more double Javadocs.");
+    }
 
     /**
      * Generates a unique identity string using the standard UUID format. Força
@@ -98,13 +110,15 @@ public class BigTestClass {
     }
 
     public static class NestedA {
+
         public static class NestedB {
+
             private static class TacticalSnapshot {
 
-             
             }
+
             public void deepMethod() {
-                System.out.println("Deep tactical analysis complete: For\u00e7a Bar\u00e7a!");
+                System.out.println("Deep tactical analysis complete: The GOAT has scored! For\u00e7a Bar\u00e7a!");
             }
         }
     }
@@ -276,14 +290,6 @@ public class BigTestClass {
     }
 
     public void testMethod() {
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                log.info("Running in an anonymous class!");
-            }
-        };
-        r.run();
-        log.info("Test method executed.");
     }
 
     /**
@@ -292,6 +298,31 @@ public class BigTestClass {
     public static class InnerTest {
     }
 
+    public static class TestRecord {
+
+        String name;
+        int value;
+    }
+
+    private static class ProgrammaticRecord {
+
+        String status;
+    }
+
+    public static class BitFlagRecord {
+
+        boolean verified;
+    }
+
+    private static class InsertedInner {
+    }
+
+}
+
+class TopLevelTestClass {
+
+    public void greet() {
+    }
 }
 // Final end of file verification.
 
