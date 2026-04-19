@@ -411,6 +411,16 @@ public class CodeRefiner2 extends AnahataToolkit {
         }
     }
 
+    /**
+     * Rebuilds a ClassTree with a new list of members, preserving the original
+     * modifiers, name, and clauses (extends, implements, permits).
+     * Supports Class, Interface, Enum, and Annotation types.
+     *
+     * @param make the tree maker
+     * @param ct the original class tree
+     * @param members the new list of member trees
+     * @return the newly constructed ClassTree
+     */
     private ClassTree rebuildClassTree(TreeMaker make, ClassTree ct, List<Tree> members) {
         return switch (ct.getKind()) {
             case INTERFACE ->
@@ -522,6 +532,15 @@ public class CodeRefiner2 extends AnahataToolkit {
         }
     }
 
+    /**
+     * Clones a tree node for structural rewrite, ensuring a new memory identity
+     * while preserving the original structure. This is critical for triggering
+     * the Rewriter to process comments and metadata attached to the node.
+     *
+     * @param make the tree maker
+     * @param tree the original tree to clone
+     * @return a new tree instance with the same structure
+     */
     private Tree cloneTree(TreeMaker make, Tree tree) {
         if (tree instanceof ClassTree ct) {
             return rebuildClassTree(make, ct, new ArrayList<>(ct.getMembers()));
