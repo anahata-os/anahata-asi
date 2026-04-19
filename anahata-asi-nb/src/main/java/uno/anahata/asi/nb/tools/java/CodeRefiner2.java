@@ -28,7 +28,6 @@ import org.netbeans.api.java.source.ClassIndex;
 import org.netbeans.api.java.source.ElementHandle;
 import javax.lang.model.element.TypeElement;
 import com.sun.source.util.TreePath;
-import org.eclipse.tm4e.core.internal.parser.PropertySettable;
 import org.netbeans.api.java.source.support.ReferencesCount;
 import org.netbeans.modules.editor.java.Utilities;
 
@@ -127,7 +126,7 @@ public class CodeRefiner2 extends AnahataToolkit {
             }
 
             if (optimize != null && optimize) {
-                removeUnusedImportsInternal(wc);
+                optimizeImportsInternal(wc, true, diagnostics);
             }
         });
         res.commit();
@@ -209,7 +208,7 @@ public class CodeRefiner2 extends AnahataToolkit {
             }
 
             if (optimize != null && optimize) {
-                removeUnusedImportsInternal(wc);
+                optimizeImportsInternal(wc, true, diagnostics);
             }
         });
         res.commit();
@@ -233,7 +232,7 @@ public class CodeRefiner2 extends AnahataToolkit {
 
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         JavaSource js = JavaSource.forFileObject(fo);
-
+        final Set<String> diagnostics = new LinkedHashSet<>();
         js.runModificationTask(wc -> {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             TreeMaker make = wc.getTreeMaker();
@@ -259,7 +258,7 @@ public class CodeRefiner2 extends AnahataToolkit {
             }
 
             if (optimize != null && optimize) {
-                removeUnusedImportsInternal(wc);
+                optimizeImportsInternal(wc, true, diagnostics);
             }
 
         }).commit();
@@ -267,7 +266,12 @@ public class CodeRefiner2 extends AnahataToolkit {
         if (save) {
             handleSave(fo);
         }
-        return "Removed member '" + memberFqn + "' structurally.";
+        StringBuilder sb = new StringBuilder("Removed member '").append(memberFqn).append("' structurally.");
+        if (!diagnostics.isEmpty()) {
+            sb.append(". Import diagnostics:\n");
+            diagnostics.forEach(d -> sb.append(" - ").append(d).append("\n"));
+        }
+        return sb.toString();
     }
 
     @AgiTool("Moves a member to a new position within the same class.")
@@ -565,14 +569,8 @@ public class CodeRefiner2 extends AnahataToolkit {
 
         // 3. Add new Javadoc if requested
         if (javadocText != null && !javadocText.isBlank()) {
-            int indent = (oldTree != null)
-                    ? (int) wc.getTrees().getSourcePositions().getStartPosition(wc.getCompilationUnit(), oldTree)
-                    : 0;
-            if (indent < 0) {
-                indent = 0;
-            }
             String formatted = "/**\n * " + javadocText.replace("\n", "\n * ") + "\n */";
-            make.addComment(tree, Comment.create(Comment.Style.JAVADOC, -1, -1, indent, formatted), true);
+            make.addComment(tree, Comment.create(Comment.Style.JAVADOC, -1, -1, -1, formatted), true);
         }
     }
 
