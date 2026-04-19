@@ -32,6 +32,9 @@ We use a non-intrusive annotation system to provide visual feedback and context 
 
 ## 5. Reloading and Lifecycle
 
+- **NbJava.compileAndExecuteInProject**: 
+    - To test changes to toolkits without reloading, just do NbJava.compileAndExecuteInProject with the plugin projects path and both test and compile dependencies set to false, instantiate the toolkit (e.g. CodeRefiner2 cr = new CodeRefiner2(); cr.updateMember(param,param,param,param); 
+    - To test changes to code in any an other anahata-asi-modules, same thing NbJava.compileAndExecuteInProject with whatever project you want to test and also do not include compile or transitive either
 - **nbmreload**: The preferred way to test changes to tools or dependencies.
 - **CRITICAL**: Changing files in this project or its dependencies requires a manual `nbmreload` (or `build-with-dependencies` followed by `nbmreload`) for changes to take effect.
 - **Turn Sequencing**: Never batch `nbmreload` with write operations. Wait for a successful compilation before reloading.
