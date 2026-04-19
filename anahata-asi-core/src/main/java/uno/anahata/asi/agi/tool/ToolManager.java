@@ -115,7 +115,7 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
     }
 
     /**
-     * Scans the given classes for methods annotated with {@link AiTool},
+     * Scans the given classes for methods annotated with {@link AgiTool},
      * creates the corresponding toolkits, and applies any application-wide
      * preferences.
      * <p>
