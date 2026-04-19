@@ -368,7 +368,7 @@ public class SchemaProvider {
     }
 
     /**
-     * Builds a JSON schema for a Map<String, T> type.
+     * Builds a JSON schema for a Map&lt;String, T&gt; type.
      * 
      * @param mapType The map type.
      * @param valueSchemaJson The JSON schema for the values.
