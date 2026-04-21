@@ -29,14 +29,14 @@ import org.netbeans.api.java.source.ElementHandle;
 import javax.lang.model.element.TypeElement;
 import com.sun.source.util.TreePath;
 import javax.swing.text.Document;
-import lombok.Generated;
 import org.netbeans.api.java.source.support.ReferencesCount;
 import org.netbeans.modules.editor.java.Utilities;
 
 /**
- * V2.5 of the structural Java code refinement toolkit. High-fidelity structural
- * manipulation using full declarations and AST-based rewriting. Features
- * canonical member identification and surgical updates (optional signatures).
+ * V2.7 of the structural Java code refinement toolkit. High-fidelity structural
+ * manipulation using full declarations and AST-based rewriting. Fixes the AST
+ * duplication poltergeist by avoiding overlapping rewrites and stripping
+ * comment offsets during migration.
  *
  * @author anahata
  */
@@ -46,7 +46,7 @@ public class CodeRefiner2 extends AnahataToolkit {
 
     @Override
     public void initialize() {
-        getToolkit().setEnabled(true);
+        getToolkit().setEnabled(false);
     }
 
     @Override
@@ -102,7 +102,10 @@ public class CodeRefiner2 extends AnahataToolkit {
 
             Tree newMember = parseMember(wc, declaration, body);
             applyJavadoc(wc, newMember, null, javadoc);
-            newMember = GeneratorUtilities.get(wc).importFQNs(newMember);
+
+            if (optimize != null && optimize) {
+                newMember = GeneratorUtilities.get(wc).importFQNs(newMember);
+            }
 
             int insertIdx = getInsertIndex(wc, members, position, anchorMemberName);
             members.add(insertIdx, newMember);
@@ -113,16 +116,16 @@ public class CodeRefiner2 extends AnahataToolkit {
                 CompilationUnitTree updated = make.CompilationUnit(cut.getPackage(), cut.getImports(), (List<Tree>) (List<?>) members, cut.getSourceFile());
                 wc.rewrite(cut, updated);
             }
-
-            if (optimize != null && optimize) {
-                optimizeImportsInternal(wc, true, diagnostics);
-            }
         });
         res.commit();
+
+        if (optimize == null || optimize) {
+            optimizeImportsInternal(js, true);
+        }
+
         if (save) {
             handleSave(fo);
         }
-        logDiagnostics(diagnostics);
         return "Inserted member into " + (classFqn == null || classFqn.isBlank() ? "file level" : classFqn);
     }
 
@@ -169,19 +172,19 @@ public class CodeRefiner2 extends AnahataToolkit {
                 newTree = parseMember(wc, declaration, body);
             }
 
-            make.asReplacementOf(newTree, oldTree, false);
             applyJavadoc(wc, newTree, oldTree, javadoc);
-            wc.rewrite(oldTree, newTree);
 
-            if (optimize != null && optimize) {
-                optimizeImportsInternal(wc, true, diagnostics);
-            }
+            rewriteMember(wc, oldTree, newTree);
         });
         res.commit();
+
+        if (optimize == null || optimize) {
+            optimizeImportsInternal(js, true);
+        }
+
         if (save) {
             handleSave(fo);
         }
-        logDiagnostics(diagnostics);
         return "Updated member " + memberFqn;
     }
 
@@ -219,16 +222,15 @@ public class CodeRefiner2 extends AnahataToolkit {
                 }
             }
 
-            if (optimize != null && optimize) {
-                optimizeImportsInternal(wc, true, diagnostics);
-            }
-
         }).commit();
+        
+        if (optimize == null || optimize) {
+            optimizeImportsInternal(js, true);
+        }
 
         if (save) {
             handleSave(fo);
         }
-        logDiagnostics(diagnostics);
         return "Removed member '" + memberFqn + "' structurally.";
     }
 
@@ -295,9 +297,15 @@ public class CodeRefiner2 extends AnahataToolkit {
             CompilationUnitTree cut = wc.getCompilationUnit();
             List<ImportTree> currentImports = new ArrayList<>(cut.getImports());
             for (String imp : imports) {
-                boolean exists = currentImports.stream().anyMatch(i -> i.getQualifiedIdentifier().toString().equals(imp));
+                String cleanImp = imp.trim();
+                boolean isStatic = cleanImp.startsWith("static ");
+                if (isStatic) {
+                    cleanImp = cleanImp.substring(7).trim();
+                }
+                final String finalImp = cleanImp;
+                boolean exists = currentImports.stream().anyMatch(i -> i.isStatic() == isStatic && i.getQualifiedIdentifier().toString().equals(finalImp));
                 if (!exists) {
-                    currentImports.add(make.Import(make.Identifier(imp), false));
+                    currentImports.add(make.Import(make.Identifier(finalImp), isStatic));
                 }
             }
             CompilationUnitTree updated = make.CompilationUnit(cut.getPackage(), currentImports, cut.getTypeDecls(), cut.getSourceFile());
@@ -349,13 +357,9 @@ public class CodeRefiner2 extends AnahataToolkit {
         final boolean doRemove = removeUnused == null || removeUnused;
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         JavaSource js = JavaSource.forFileObject(fo);
-        final Set<String> diagnostics = new LinkedHashSet<>();
-        js.runModificationTask(wc -> {
-            wc.toPhase(JavaSource.Phase.RESOLVED);
-            optimizeImportsInternal(wc, doRemove, diagnostics);
 
-        }).commit();
-        diagnostics.forEach(this::log);
+        optimizeImportsInternal(js, doRemove);
+
         if (save) {
             handleSave(fo);
         }
@@ -382,10 +386,13 @@ public class CodeRefiner2 extends AnahataToolkit {
             }
 
             Tree newTree = cloneTree(make, oldTree);
-            make.asReplacementOf(newTree, oldTree, false);
+            
+            log("Cloned tree: " + newTree);
             applyJavadoc(wc, newTree, oldTree, javadoc);
+            log("CLoned tree applyJavadoc:" + newTree);
 
-            wc.rewrite(oldTree, newTree);
+            rewriteMember(wc, oldTree, newTree);
+            log("CLoned tree after rewriteMember:" + newTree);
         }).commit();
 
         if (save) {
@@ -413,8 +420,8 @@ public class CodeRefiner2 extends AnahataToolkit {
 
     /**
      * Rebuilds a ClassTree with a new list of members, preserving the original
-     * modifiers, name, and clauses (extends, implements, permits).
-     * Supports Class, Interface, Enum, and Annotation types.
+     * modifiers, name, and clauses (extends, implements, permits). Supports
+     * Class, Interface, Enum, and Annotation types.
      *
      * @param make the tree maker
      * @param ct the original class tree
@@ -430,7 +437,7 @@ public class CodeRefiner2 extends AnahataToolkit {
             case ANNOTATION_TYPE ->
                 make.AnnotationType(ct.getModifiers(), ct.getSimpleName(), members);
             case RECORD ->
-                make.Class(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), ct.getExtendsClause(), (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), (List<ExpressionTree>) (List<?>) ct.getPermitsClause(), members);
+                make.Class(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), null, (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), (List<ExpressionTree>) (List<?>) ct.getPermitsClause(), members);
             default ->
                 make.Class(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), ct.getExtendsClause(), (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), (List<ExpressionTree>) (List<?>) ct.getPermitsClause(), members);
         };
@@ -501,6 +508,9 @@ public class CodeRefiner2 extends AnahataToolkit {
      * from an old tree and ensures that existing preceding comments are
      * preserved unless a new Javadoc is being applied.
      *
+     * To prevent AST duplication issues, all migrated comments are stripped of
+     * their absolute offsets before being attached to the new tree.
+     *
      * @param wc the working copy
      * @param tree the target tree
      * @param oldTree the original tree to migrate comments from (optional)
@@ -511,24 +521,76 @@ public class CodeRefiner2 extends AnahataToolkit {
         TreeUtilities utils = wc.getTreeUtilities();
 
         if (oldTree != null) {
-            // 1. Manually migrate non-preceding comments (trailing)
-            GeneratorUtilities.get(wc).copyComments(oldTree, tree, false);
+            // 1. Manually migrate non-preceding comments (trailing) - Stripping offsets
+            for (Comment c : utils.getComments(oldTree, false)) {
+                log("applyJavadoc manually preserving trailing comment: " + c.getText());
+                make.addComment(tree, Comment.create(c.style(), -1, -1, -1, c.getText()), false);
+            }
 
-            // 2. Manually migrate PRECEDING comments
-            List<Comment> oldPre = utils.getComments(oldTree, true);
-            for (Comment c : oldPre) {
-                if (c.isDocComment() && javadocText != null) {
-                    continue; // Skip old doc if we are providing a new one
+            // 2. Manually migrate PRECEDING comments - Stripping offsets & Stacking Fix
+            for (Comment c : utils.getComments(oldTree, true)) {
+                String text = c.getText();
+                // If we are providing a new Javadoc, skip any existing Javadoc blocks
+                if (javadocText != null && text.trim().startsWith("/**")) {
+                    log("applyJavadoc skipping existing preceeding javadoc comment: " + c.getText());
+                    continue;
                 }
-                make.addComment(tree, c, true);
+                log("applyJavadoc adding existing preceeding non-javadoc comment to ne tree: " + c.getText());
+                make.addComment(tree, Comment.create(c.style(), -1, -1, -1, text), true);
             }
         }
 
         // 3. Add new Javadoc if requested
         if (javadocText != null && !javadocText.isBlank()) {
             String formatted = "/**\n * " + javadocText.replace("\n", "\n * ") + "\n */";
-            log("Adding javadoc " + formatted + " to " + tree);
+            log("adding the given javadoc text as preceeding javadoc style comment to new tree: " + formatted);
             make.addComment(tree, Comment.create(Comment.Style.JAVADOC, -1, -1, -1, formatted), true);
+        }
+    }
+
+    /**
+     * Performs a structural rewrite of a member by rewriting its parent (Class
+     * or CU). This linearizes the rewrite instructions and prevents
+     * 'Overlapping Rewrite' conflicts when GeneratorUtilities.importFQNs has
+     * already registered a global rewrite.
+     *
+     * @param wc the working copy
+     * @param oldMember the member to replace
+     * @param newMember the new member version
+     */
+    private void rewriteMember(WorkingCopy wc, Tree oldMember, Tree newMember) {
+        TreePath path = TreePath.getPath(wc.getCompilationUnit(), oldMember);
+        if (path == null) {
+            log("rewriteMember could not determine path ");
+            wc.rewrite(oldMember, newMember); // Fallback
+            return;
+        }
+        log("rewriteMember found TreePath " + path);
+        Tree parent = path.getParentPath().getLeaf();
+        TreeMaker make = wc.getTreeMaker();
+
+        if (parent instanceof ClassTree ct) {
+            List<Tree> members = new ArrayList<>(ct.getMembers());
+            int idx = members.indexOf(oldMember);
+            if (idx == -1) {
+                // Identity mismatch, use surgical rewrite as fallback
+                wc.rewrite(oldMember, newMember);
+            } else {
+                members.set(idx, newMember);
+                wc.rewrite(ct, rebuildClassTree(make, ct, members));
+            }
+        } else if (parent instanceof CompilationUnitTree cut) {
+            List<Tree> types = new ArrayList<>(cut.getTypeDecls());
+            int idx = types.indexOf(oldMember);
+            if (idx == -1) {
+                wc.rewrite(oldMember, newMember);
+            } else {
+                types.set(idx, newMember);
+                CompilationUnitTree updated = make.CompilationUnit(cut.getPackage(), cut.getImports(), types, cut.getSourceFile());
+                wc.rewrite(cut, updated);
+            }
+        } else {
+            wc.rewrite(oldMember, newMember);
         }
     }
 
@@ -581,29 +643,27 @@ public class CodeRefiner2 extends AnahataToolkit {
      * two-phase process: converting FQNs to simple names via GeneratorUtilities
      * and scanning for unresolved identifiers to provide ranked candidates
      * based on NetBeans importance levels.
-     *
-     * @param wc the working copy
-     * @param removeUnused whether to remove unused imports
-     * @param diagnostics set to populate with unresolved type information
      */
-    private void optimizeImportsInternal(WorkingCopy wc, boolean removeUnused, Set<String> diagnostics) {
-        ReferencesCount rc = ReferencesCount.get(wc.getClasspathInfo());
-        CompilationUnitTree oldCut = wc.getCompilationUnit();
-        CompilationUnitTree newCut = GeneratorUtilities.get(wc).importFQNs(oldCut);
-        wc.rewrite(oldCut, newCut);
-        if (removeUnused) {
-            removeUnusedImportsInternal(wc);
-        }
-        new TreePathScanner<Void, WorkingCopy>() {
-            @Override
-            public Void visitIdentifier(IdentifierTree node, WorkingCopy wc) {
-                TreePath path = getCurrentPath();
-                if (path != null) {
-                    Element e = wc.getTrees().getElement(path);
-                    if (e == null || (e.asType() != null && e.asType().getKind() == TypeKind.ERROR)) {
-                        String name = node.getName().toString();
-                        if (Character.isUpperCase(name.charAt(0))) {
-                            if (diagnostics.add("Unresolved type: " + name)) {
+    private void optimizeImportsInternal(JavaSource js, boolean removeUnused) throws Exception {
+        js.runModificationTask(wc -> {
+            wc.toPhase(JavaSource.Phase.RESOLVED);
+            ReferencesCount rc = ReferencesCount.get(wc.getClasspathInfo());
+            CompilationUnitTree oldCut = wc.getCompilationUnit();
+            CompilationUnitTree newCut = GeneratorUtilities.get(wc).importFQNs(oldCut);
+            wc.rewrite(oldCut, newCut);
+            if (removeUnused) {
+                removeUnusedImportsInternal(wc);
+            }
+            new TreePathScanner<Void, WorkingCopy>() {
+                @Override
+                public Void visitIdentifier(IdentifierTree node, WorkingCopy wc) {
+                    TreePath path = getCurrentPath();
+                    if (path != null) {
+                        Element e = wc.getTrees().getElement(path);
+                        if (e == null || (e.asType() != null && e.asType().getKind() == TypeKind.ERROR)) {
+                            String name = node.getName().toString();
+                            if (Character.isUpperCase(name.charAt(0))) {
+                                CodeRefiner2.this.log("Unresolved type: " + name);
                                 try {
                                     ClassIndex index = wc.getClasspathInfo().getClassIndex();
                                     Set<ClassIndex.SearchScope> scopes = EnumSet.allOf(ClassIndex.SearchScope.class);
@@ -626,22 +686,19 @@ public class CodeRefiner2 extends AnahataToolkit {
                                             candidates.add(new Candidate(handle.getQualifiedName(), score));
                                         }
                                         candidates.sort(Comparator.comparingInt(c -> c.score));
-                                        diagnostics.add("Found " + candidates.size() + " candidates for " + name + " (NetBeans Importance sort):");
-                                        candidates.forEach(c -> diagnostics.add(" - " + c.fqn));
-                                    } else {
-                                        diagnostics.add("No candidates found in index for " + name);
+                                        CodeRefiner2.this.log("Found " + candidates.size() + " candidates for " + name + " (NetBeans Importance sort):");
+                                        candidates.forEach(c -> CodeRefiner2.this.log(" - " + c.fqn));
                                     }
                                 } catch (Exception ex) {
-                                    diagnostics.add("Error searching index for " + name + ": " + ex.getMessage());
                                     log.error("OptimizeImports: Index search failed for " + name, ex);
                                 }
                             }
                         }
                     }
+                    return super.visitIdentifier(node, wc);
                 }
-                return super.visitIdentifier(node, wc);
-            }
-        }.scan(new TreePath(wc.getCompilationUnit()), wc);
+            }.scan(new TreePath(wc.getCompilationUnit()), wc);
+        }).commit();
     }
 
     /**
@@ -747,8 +804,8 @@ public class CodeRefiner2 extends AnahataToolkit {
     }
 
     /**
-     * Parses a string-based member body into a BlockTree.
-     * Ensures the body is wrapped in curly braces if not already present.
+     * Parses a string-based member body into a BlockTree. Ensures the body is
+     * wrapped in curly braces if not already present.
      *
      * @param wc the working copy
      * @param body the raw body text
@@ -760,8 +817,8 @@ public class CodeRefiner2 extends AnahataToolkit {
     }
 
     /**
-     * Logs import diagnostics directly to the tool's output stream.
-     * These diagnostics typically include unresolved types and ranked candidates
+     * Logs import diagnostics directly to the tool's output stream. These
+     * diagnostics typically include unresolved types and ranked candidates
      * found in the project index.
      *
      * @param diagnostics the set of diagnostic strings to log
