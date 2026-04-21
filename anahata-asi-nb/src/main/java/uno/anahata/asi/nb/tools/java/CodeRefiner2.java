@@ -101,7 +101,7 @@ public class CodeRefiner2 extends AnahataToolkit {
             }
 
             Tree newMember = parseMember(wc, declaration, body);
-            applyJavadoc(wc, newMember, null, javadoc);
+            applyJavadocStructural(wc, newMember, javadoc, null);
 
             if (optimize != null && optimize) {
                 newMember = GeneratorUtilities.get(wc).importFQNs(newMember);
@@ -154,28 +154,29 @@ public class CodeRefiner2 extends AnahataToolkit {
                 throwMemberNotFound(wc, memberFqn);
             }
 
-            Tree newTree;
-            if (declaration == null) {
-                newTree = cloneTree(make, oldTree);
-                if (body != null) {
-                    if (newTree instanceof MethodTree mt) {
-                        newTree = make.Method(mt.getModifiers(), mt.getName(), mt.getReturnType(), mt.getTypeParameters(), mt.getParameters(), mt.getThrows(), parseBody(wc, body), (AnnotationTree) mt.getDefaultValue());
-                    } else if (newTree instanceof VariableTree vt) {
-                        ExpressionTree finalInit = wc.getTreeUtilities().parseExpression(body, null);
-                        newTree = make.Variable(vt.getModifiers(), vt.getName(), vt.getType(), finalInit);
-                    } else if (newTree instanceof BlockTree bt) {
-                        BlockTree parsed = parseBody(wc, body);
-                        newTree = make.Block(parsed.getStatements(), bt.isStatic());
+            applyJavadocStructural(wc, oldTree, javadoc, null);
+
+            if (declaration != null || body != null) {
+                Tree newTree;
+                if (declaration == null) {
+                    newTree = cloneTree(make, oldTree);
+                    if (body != null) {
+                        if (newTree instanceof MethodTree mt) {
+                            newTree = make.Method(mt.getModifiers(), mt.getName(), mt.getReturnType(), mt.getTypeParameters(), mt.getParameters(), mt.getThrows(), parseBody(wc, body), (AnnotationTree) mt.getDefaultValue());
+                        } else if (newTree instanceof VariableTree vt) {
+                            ExpressionTree finalInit = wc.getTreeUtilities().parseExpression(body, null);
+                            newTree = make.Variable(vt.getModifiers(), vt.getName(), vt.getType(), finalInit);
+                        } else if (newTree instanceof BlockTree bt) {
+                            BlockTree parsed = parseBody(wc, body);
+                            newTree = make.Block(parsed.getStatements(), bt.isStatic());
+                        }
                     }
+                } else {
+                    newTree = parseMember(wc, declaration, body);
                 }
-            } else {
-                newTree = parseMember(wc, declaration, body);
+                rewriteMember(wc, oldTree, newTree);
             }
-
-            applyJavadoc(wc, newTree, oldTree, javadoc);
-
-            rewriteMember(wc, oldTree, newTree);
-        });
+});
         res.commit();
 
         if (optimize == null || optimize) {
@@ -370,7 +371,8 @@ public class CodeRefiner2 extends AnahataToolkit {
     public String setJavadoc(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The ABSOLUTE FQN of the member.") String memberFqn,
-            @AgiToolParam("The Javadoc content (without the /** and */ markers).") String javadoc,
+            @AgiToolParam(value = "The main Javadoc description.", required = false) String javadoc,
+            @AgiToolParam(value = "Optional list of block tags (e.g. ['author Pablo', 'since 2026']).", required = false) List<String> tags,
             @AgiToolParam("Whether to save.") boolean save) throws Exception {
 
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
@@ -385,20 +387,60 @@ public class CodeRefiner2 extends AnahataToolkit {
                 throwMemberNotFound(wc, memberFqn);
             }
 
-            Tree newTree = cloneTree(make, oldTree);
-            
-            log("Cloned tree: " + newTree);
-            applyJavadoc(wc, newTree, oldTree, javadoc);
-            log("CLoned tree applyJavadoc:" + newTree);
-
-            rewriteMember(wc, oldTree, newTree);
-            log("CLoned tree after rewriteMember:" + newTree);
+            // For setJavadoc tool, we perform a structural Javadoc rewrite directly
+            applyJavadocStructural(wc, oldTree, javadoc, tags);
         }).commit();
 
         if (save) {
             handleSave(fo);
         }
         return "Set Javadoc for " + memberFqn;
+    }
+
+    /**
+     * Applies Javadoc content to a target tree using the high-level structural DocTree API.
+     * This ensures perfect asterisk alignment and IDE-compliant formatting.
+     */
+    private void applyJavadocStructural(WorkingCopy wc, Tree tree, String description, List<String> tagInputs) {
+        TreeMaker make = wc.getTreeMaker();
+        com.sun.source.util.DocTrees docTrees = wc.getDocTrees();
+        CompilationUnitTree cut = wc.getCompilationUnit();
+        com.sun.source.util.TreePath path = wc.getTrees().getPath(cut, tree);
+        
+        com.sun.source.doctree.DocCommentTree oldDoc = docTrees.getDocCommentTree(path);
+
+        List<com.sun.source.doctree.DocTree> body = new ArrayList<>();
+        if (description != null && !description.isBlank()) {
+            body.add(make.Text(description));
+        }
+
+        List<com.sun.source.doctree.DocTree> tags = new ArrayList<>();
+        if (tagInputs != null) {
+            for (String input : tagInputs) {
+                int firstSpace = input.indexOf(' ');
+                String tagName = (firstSpace != -1) ? input.substring(0, firstSpace) : input;
+                String content = (firstSpace != -1) ? input.substring(firstSpace + 1) : "";
+
+                switch (tagName.toLowerCase()) {
+                    case "author" -> tags.add(make.Author(Collections.singletonList(make.Text(content))));
+                    case "since" -> tags.add(make.Since(Collections.singletonList(make.Text(content))));
+                    case "version" -> tags.add(make.Version(Collections.singletonList(make.Text(content))));
+                    case "param" -> {
+                        int nameSpace = content.indexOf(' ');
+                        String pName = (nameSpace != -1) ? content.substring(0, nameSpace) : content;
+                        String pDesc = (nameSpace != -1) ? content.substring(nameSpace + 1) : "";
+                        boolean isType = pName.startsWith("<") && pName.endsWith(">");
+                        tags.add(make.Param(isType, make.DocIdentifier(pName), Collections.singletonList(make.Text(pDesc))));
+                    }
+                    case "return" -> tags.add(make.DocReturn(Collections.singletonList(make.Text(content))));
+                    case "throws", "exception" -> tags.add(make.Throws(make.Reference(null, content, null), Collections.singletonList(make.Text(""))));
+                    default -> tags.add(make.UnknownBlockTag(tagName, Collections.singletonList(make.Text(content))));
+                }
+            }
+        }
+
+        com.sun.source.doctree.DocCommentTree newDoc = make.DocComment(body, tags);
+        wc.rewrite(tree, oldDoc, newDoc);
     }
 
     /**
@@ -503,50 +545,6 @@ public class CodeRefiner2 extends AnahataToolkit {
         return result[0];
     }
 
-    /**
-     * Applies Javadoc content to a target tree. It can also migrate comments
-     * from an old tree and ensures that existing preceding comments are
-     * preserved unless a new Javadoc is being applied.
-     *
-     * To prevent AST duplication issues, all migrated comments are stripped of
-     * their absolute offsets before being attached to the new tree.
-     *
-     * @param wc the working copy
-     * @param tree the target tree
-     * @param oldTree the original tree to migrate comments from (optional)
-     * @param javadocText the new Javadoc text (optional)
-     */
-    private void applyJavadoc(WorkingCopy wc, Tree tree, Tree oldTree, String javadocText) {
-        TreeMaker make = wc.getTreeMaker();
-        TreeUtilities utils = wc.getTreeUtilities();
-
-        if (oldTree != null) {
-            // 1. Manually migrate non-preceding comments (trailing) - Stripping offsets
-            for (Comment c : utils.getComments(oldTree, false)) {
-                log("applyJavadoc manually preserving trailing comment: " + c.getText());
-                make.addComment(tree, Comment.create(c.style(), -1, -1, -1, c.getText()), false);
-            }
-
-            // 2. Manually migrate PRECEDING comments - Stripping offsets & Stacking Fix
-            for (Comment c : utils.getComments(oldTree, true)) {
-                String text = c.getText();
-                // If we are providing a new Javadoc, skip any existing Javadoc blocks
-                if (javadocText != null && text.trim().startsWith("/**")) {
-                    log("applyJavadoc skipping existing preceeding javadoc comment: " + c.getText());
-                    continue;
-                }
-                log("applyJavadoc adding existing preceeding non-javadoc comment to ne tree: " + c.getText());
-                make.addComment(tree, Comment.create(c.style(), -1, -1, -1, text), true);
-            }
-        }
-
-        // 3. Add new Javadoc if requested
-        if (javadocText != null && !javadocText.isBlank()) {
-            String formatted = "/**\n * " + javadocText.replace("\n", "\n * ") + "\n */";
-            log("adding the given javadoc text as preceeding javadoc style comment to new tree: " + formatted);
-            make.addComment(tree, Comment.create(Comment.Style.JAVADOC, -1, -1, -1, formatted), true);
-        }
-    }
 
     /**
      * Performs a structural rewrite of a member by rewriting its parent (Class
