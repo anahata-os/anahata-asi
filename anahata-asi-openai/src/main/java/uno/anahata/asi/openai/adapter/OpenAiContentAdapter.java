@@ -229,7 +229,20 @@ public class OpenAiContentAdapter {
                     funcNode.put("arguments", "{}");
                 }
             } else if (part instanceof BlobPart bp) {
-                 textContent.append(String.format("\n[Output Blob: %s]\n", bp.getMimeType()));
+                // Estimate tokens for blobs: use a heuristic based on data size
+                // For images: ~85 tokens per 512x512 tile is a common approximation
+                // For other files: use data length / 4 as rough estimate
+                int estimatedTokens;
+                if (bp.getMimeType().startsWith("image/")) {
+                    // Image token estimation: roughly 85 tokens per 512x512 tile
+                    // This is a rough heuristic; actual tokenization depends on the model
+                    estimatedTokens = Math.max(85, bp.getData().length / 768); // ~768 bytes per 85 tokens
+                } else {
+                    // For other blobs, estimate based on data length
+                    estimatedTokens = bp.getData().length / 4;
+                }
+                part.setTokenCount(estimatedTokens);
+                textContent.append(String.format("\n[Output Blob: %s]\n", bp.getMimeType()));
             }
         }
     }

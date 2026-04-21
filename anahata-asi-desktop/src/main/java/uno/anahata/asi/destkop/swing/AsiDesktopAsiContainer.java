@@ -71,6 +71,11 @@ public class AsiDesktopAsiContainer extends AbstractSwingAsiContainer {
                     "Z_2", "Z Coding (OpenAI)", "https://api.z.ai/api/coding/paas/v4", "Z"));
         }
         */
+        log.info("Registering Modal");
+        if (getProvider("Modal") == null) {
+            registerProvider(new uno.anahata.asi.modal.ModalProvider());
+        }
+        
         log.info("Registering HF");
         if (getProvider("HuggingFace") == null) {
             registerProvider(new HuggingFaceProvider());

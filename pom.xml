@@ -87,6 +87,7 @@
         <module>anahata-asi-yam</module>
         <module>anahata-asi-openai</module>
         <module>anahata-asi-huggingface</module>
+        <module>anahata-asi-modal</module>
         <module>anahata-asi-desktop</module>
     </modules>
 

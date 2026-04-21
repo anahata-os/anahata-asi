@@ -46,6 +46,18 @@ public class OpenAiResponse extends Response<OpenAiModelMessage> {
     private final String rawJson;
 
     /**
+     * Constructs a new response object with pre-calculated usage metadata.
+     * Used for client-side estimation when the API doesn't provide usage data.
+     */
+    public OpenAiResponse(Agi agi, String modelId, String jsonResponse, String requestPayload, String historyJson, OpenAiModel model, ResponseUsageMetadata estimatedUsage) {
+        this.rawJson = jsonResponse;
+        this.rawRequestConfigJson = requestPayload;
+        this.rawHistoryJson = historyJson;
+        this.usageMetadata = estimatedUsage;
+        parseChoices(agi, modelId, model);
+    }
+
+    /**
      * Constructs a new response object by parsing the JSON returned
      * from an OpenAI-compatible endpoint.
      * @param agi The parent session.
@@ -69,6 +81,7 @@ public class OpenAiResponse extends Response<OpenAiModelMessage> {
                     .promptTokenCount(usage.path("prompt_tokens").asInt())
                     .candidatesTokenCount(usage.path("completion_tokens").asInt())
                     .totalTokenCount(usage.path("total_tokens").asInt())
+                    .thoughtsTokenCount(usage.path("reasoning_tokens").asInt())
                     .rawJson(usage.toString())
                     .build();
         } else {
@@ -76,6 +89,14 @@ public class OpenAiResponse extends Response<OpenAiModelMessage> {
         }
         
         // 2. Choices
+        parseChoices(agi, modelId, model);
+    }
+
+    /**
+     * Parses the response choices from the raw JSON and populates the candidates list.
+     */
+    private void parseChoices(Agi agi, String modelId, OpenAiModel model) {
+        JsonNode root = JacksonUtils.parse(rawJson, JsonNode.class);
         JsonNode choices = root.get("choices");
         if (choices != null && choices.isArray()) {
             for (JsonNode choice : choices) {

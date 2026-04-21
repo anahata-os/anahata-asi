@@ -12,22 +12,28 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import lombok.Generated;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.message.AbstractMessage;
 import uno.anahata.asi.agi.message.AbstractModelMessage;
+import uno.anahata.asi.agi.message.ResponseUsageMetadata;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.agi.provider.GenerationRequest;
 import uno.anahata.asi.agi.provider.RequestConfig;
 import uno.anahata.asi.agi.provider.Response;
 import uno.anahata.asi.agi.provider.RetryableApiException;
+import uno.anahata.asi.agi.provider.ServerTool;
 import uno.anahata.asi.agi.provider.StreamObserver;
 import uno.anahata.asi.agi.tool.schema.SchemaProvider;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
@@ -47,8 +53,8 @@ public class OpenAiModel extends AbstractModel {
     private final String modelId;
     private final String displayName;
     private String version = "";
-    private int maxInputTokens = 128000;
-    private int maxOutputTokens = 4096;
+    private int maxInputTokens = 200000;
+    private int maxOutputTokens = 32000;
 
     private ReasoningStyle reasoningStyle = ReasoningStyle.NONE;
     private String reasoningFieldName;
@@ -120,12 +126,12 @@ public class OpenAiModel extends AbstractModel {
     }
 
     @Override
-    public List<uno.anahata.asi.agi.provider.ServerTool> getAvailableServerTools() {
+    public List<ServerTool> getAvailableServerTools() {
         return Collections.emptyList();
     }
 
     @Override
-    public List<uno.anahata.asi.agi.provider.ServerTool> getDefaultServerTools() {
+    public List<ServerTool> getDefaultServerTools() {
         return Collections.emptyList();
     }
 
@@ -199,7 +205,7 @@ public class OpenAiModel extends AbstractModel {
                     return;
                 }
                 try (Stream<String> lines = response.body()) {
-                    var it = lines.iterator();
+                    Iterator<String> it = lines.iterator();
                     while (it.hasNext()) {
                         String line = it.next();
                         if (line == null || line.isBlank()) {
@@ -237,10 +243,75 @@ public class OpenAiModel extends AbstractModel {
                                     routeChunk(choice, target);
                                 }
                             }
-                            observer.onNext(new OpenAiResponse(agi, modelId, data, jsonPayload, historyJson, this));
+                            // Accumulate raw JSON chunk to the target messages (like Gemini does)
+                            for (OpenAiModelMessage target : targets) {
+                                target.appendRawJson(data);
+                            }
+
+                            OpenAiResponse chunkResponse = new OpenAiResponse(agi, modelId, data, jsonPayload, historyJson, this);
+                            
+                            // Accumulate usage metadata if present in this chunk (like Gemini does)
+                            // OpenAI typically sends usage only in the final chunk
+                            if (chunkResponse.getUsageMetadata() != null 
+                                    && chunkResponse.getUsageMetadata().getTotalTokenCount() > 0) {
+                                for (OpenAiModelMessage target : targets) {
+                                    target.setBilledTokenCount(chunkResponse.getUsageMetadata().getCandidatesTokenCount());
+                                }
+                            }
+                            
+                            observer.onNext(chunkResponse);
                         } catch (Exception e) {
                             log.error("Failed to parse OpenAI stream chunk: {}", data, e);
                         }
+                    }
+                }
+
+                // Set the final response on each target message (like Gemini does)
+                if (!targets.isEmpty()) {
+                    // Check if we ever received usage from the API during streaming
+                    // Modal's GLM-5 returns usage: null in all streaming chunks
+                    boolean usageProvided = targets.stream()
+                            .anyMatch(t -> t.getBilledTokenCount() > 0);
+                    
+                    OpenAiResponse finalResponse;
+                    
+                    if (!usageProvided) {
+                        // No usage provided by API - estimate tokens ourselves
+                        log.info("No usage metadata provided by API, estimating tokens using {} tokenizer", getTokenizerType());
+                        
+                        // Estimate prompt tokens from the payload
+                        int estimatedPromptTokens = uno.anahata.asi.internal.TokenizerUtils.countTokens(
+                                jsonPayload, getTokenizerType());
+                        
+                        // Estimate completion tokens from accumulated content per target
+                        int totalCompletionTokens = 0;
+                        for (OpenAiModelMessage target : targets) {
+                            // Get accumulated text content from parts
+                            StringBuilder contentBuilder = new StringBuilder();
+                            for (uno.anahata.asi.agi.message.AbstractPart part : target.getParts()) {
+                                if (part instanceof uno.anahata.asi.agi.message.ModelTextPart mtp) {
+                                    contentBuilder.append(mtp.getText());
+                                }
+                            }
+                            int estimatedCompletionTokens = uno.anahata.asi.internal.TokenizerUtils.countTokens(
+                                    contentBuilder.toString(), getTokenizerType());
+                            totalCompletionTokens += estimatedCompletionTokens;
+                            target.setBilledTokenCount(estimatedCompletionTokens);
+                        }
+                        
+                        // Create response with estimated usage metadata
+                        finalResponse = createResponseWithEstimatedUsage(
+                                agi, modelId, jsonPayload, historyJson, 
+                                estimatedPromptTokens, totalCompletionTokens, getTokenizerType());
+                    } else {
+                        finalResponse = new OpenAiResponse(agi, modelId,
+                                targets.get(0).getRawJson() != null ? targets.get(0).getRawJson() : "{}",
+                                jsonPayload, historyJson, this);
+                    }
+                    
+                    for (OpenAiModelMessage target : targets) {
+                        target.setResponse(finalResponse);
+                        target.setStreaming(false);
                     }
                 }
             }
@@ -260,19 +331,28 @@ public class OpenAiModel extends AbstractModel {
             return;
         }
 
-        // 1. Handle Reasoning (Field style - e.g. DeepSeek)
-        if (reasoningStyle == ReasoningStyle.FIELD && reasoningFieldName != null
-                && delta.has(reasoningFieldName) && !delta.get(reasoningFieldName).isNull()) {
+        // AUTODETECT: Check for reasoning_content field on first chunk if not explicitly configured
+        if (reasoningStyle == ReasoningStyle.NONE
+                && delta.has("reasoning_content") && !delta.get("reasoning_content").isNull()) {
+            log.info("Auto-detected FIELD reasoning style with field 'reasoning_content' for model {}", modelId);
+            this.reasoningStyle = ReasoningStyle.FIELD;
+            this.reasoningFieldName = "reasoning_content";
+        }
+
+        if (reasoningStyle == ReasoningStyle.FIELD && reasoningFieldName != null && delta.has(reasoningFieldName) && !delta.get(reasoningFieldName).isNull()) {
             target.appendThoughts(delta.get(reasoningFieldName).asText());
         }
 
         // 2. Handle Content (might contain TAGS style reasoning)
         if (delta.has("content") && !delta.get("content").isNull()) {
             String text = delta.get("content").asText();
-            if (reasoningStyle == ReasoningStyle.TAGS && reasoningTags != null && reasoningTags.size() >= 2) {
-                target.appendTaggedContent(text, reasoningTags.get(0), reasoningTags.get(1));
-            } else {
-                target.appendContent(text);
+            // Only append if text is not empty (avoid empty text parts before thoughts)
+            if (!text.isEmpty()) {
+                if (reasoningStyle == ReasoningStyle.TAGS && reasoningTags != null && reasoningTags.size() >= 2) {
+                    target.appendTaggedContent(text, reasoningTags.get(0), reasoningTags.get(1));
+                } else {
+                    target.appendContent(text);
+                }
             }
         }
 
@@ -321,13 +401,55 @@ public class OpenAiModel extends AbstractModel {
         return toolNode.toPrettyString();
     }
 
+    /**
+     * Creates an OpenAiResponse with estimated usage metadata when the API doesn't provide it.
+     * This is used for providers like Modal's GLM-5 that return usage: null in streaming mode.
+     * 
+     * @param agi The parent session.
+     * @param modelId The model ID.
+     * @param jsonPayload The request payload JSON.
+     * @param historyJson The history JSON.
+     * @param estimatedPromptTokens Estimated prompt tokens.
+     * @param estimatedCompletionTokens Estimated completion tokens.
+     * @param tokenizerType The tokenizer used for estimation.
+     * @return A new OpenAiResponse with estimated usage metadata.
+     */
+    private OpenAiResponse createResponseWithEstimatedUsage(
+            Agi agi, String modelId, String jsonPayload, String historyJson,
+            int estimatedPromptTokens, int estimatedCompletionTokens, 
+            uno.anahata.asi.agi.provider.TokenizerType tokenizerType) {
+        
+        // Create estimated usage metadata with a descriptive rawJson
+        String estimatedRawJson = String.format(
+                "{\"estimated\":true,\"prompt_tokens\":%d,\"completion_tokens\":%d,\"total_tokens\":%d,\"note\":\"No usage JSON was provided or detected when parsing the response. This usage has been calculated by Anahata using the %s tokenizer.\"}",
+                estimatedPromptTokens, estimatedCompletionTokens, 
+                estimatedPromptTokens + estimatedCompletionTokens,
+                tokenizerType);
+        
+        ResponseUsageMetadata estimatedUsage = ResponseUsageMetadata.builder()
+                .promptTokenCount(estimatedPromptTokens)
+                .candidatesTokenCount(estimatedCompletionTokens)
+                .totalTokenCount(estimatedPromptTokens + estimatedCompletionTokens)
+                .rawJson(estimatedRawJson)
+                .build();
+        
+        // Create a minimal response JSON with estimated usage
+        String estimatedResponseJson = String.format(
+                "{\"id\":\"estimated-%s\",\"object\":\"chat.completion\",\"model\":\"%s\",\"usage\":%s,\"choices\":[]}",
+                java.util.UUID.randomUUID().toString().substring(0, 8),
+                modelId,
+                estimatedRawJson);
+        
+        return new OpenAiResponse(agi, modelId, estimatedResponseJson, jsonPayload, historyJson, this, estimatedUsage);
+    }
+
     private ObjectNode preparePayload(GenerationRequest request, boolean stream) {
         ObjectNode payload = SchemaProvider.OBJECT_MAPPER.createObjectNode();
         payload.put("model", modelId);
         payload.put("stream", stream);
 
         ArrayNode messages = payload.putArray("messages");
-        
+
         // 1. Inject System Instructions if present in config
         if (!request.config().getSystemInstructions().isEmpty()) {
             for (String si : request.config().getSystemInstructions()) {
@@ -363,13 +485,42 @@ public class OpenAiModel extends AbstractModel {
         }
 
         if (request.config().getTemperature() != null) {
+            log.info("setting temperature {}" + request.config().getTemperature());
             payload.put("temperature", request.config().getTemperature());
         }
         if (request.config().getTopP() != null) {
+            log.info("setting top_p {}" + request.config().getTopP());
             payload.put("top_p", request.config().getTopP());
         }
+        // Dynamic max_tokens calculation to prevent context overflow
         if (request.config().getMaxOutputTokens() != null) {
-            payload.put("max_tokens", request.config().getMaxOutputTokens());
+            int requestedMaxOutput = request.config().getMaxOutputTokens();
+            int userThreshold = request.config().getAgi().getConfig().getTokenThreshold();
+            
+            // Calculate effective limit: min of model's max input and user's threshold
+            int effectiveLimit = Math.min(maxInputTokens, userThreshold > 0 ? userThreshold : maxInputTokens);
+            
+            // Estimate payload tokens using the tokenizer
+            String payloadStr = payload.toString();
+            int estimatedPayloadTokens = uno.anahata.asi.internal.TokenizerUtils.countTokens(payloadStr, getTokenizerType());
+            
+            // Calculate available tokens for output
+            int availableForOutput = effectiveLimit - estimatedPayloadTokens;
+            
+            // Final max_tokens is the minimum of requested and available
+            int actualMaxOutput = Math.min(requestedMaxOutput, availableForOutput);
+            
+            if (actualMaxOutput < requestedMaxOutput) {
+                log.warn("Reducing max_tokens from {} to {} due to context limit (payload: {} tokens, effective limit: {})",
+                        requestedMaxOutput, actualMaxOutput, estimatedPayloadTokens, effectiveLimit);
+            }
+            
+            // Ensure at least 1 token for output
+            actualMaxOutput = Math.max(actualMaxOutput, 1);
+            
+            log.info("Setting max_tokens: {} (requested: {}, payload: {}, effective limit: {})",
+                    actualMaxOutput, requestedMaxOutput, estimatedPayloadTokens, effectiveLimit);
+            payload.put("max_tokens", actualMaxOutput);
         }
 
         return payload;

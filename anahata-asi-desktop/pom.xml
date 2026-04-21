@@ -39,6 +39,12 @@
         </dependency>
         
         <dependency>
+            <groupId>uno.anahata</groupId>
+            <artifactId>anahata-asi-modal</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        
+        <dependency>
             <groupId>com.formdev</groupId>
             <artifactId>flatlaf</artifactId>
         </dependency>
