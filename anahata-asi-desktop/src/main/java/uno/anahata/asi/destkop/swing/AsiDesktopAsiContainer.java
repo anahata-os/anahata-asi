@@ -54,11 +54,6 @@ public class AsiDesktopAsiContainer extends AbstractSwingAsiContainer {
             log.info("Migrating legacy Gemini provider ({}) to stable ID", gemini.getUuid());
             unregisterProvider(gemini.getUuid());
             registerProvider(new GeminiAiProvider());
-            /*
-            gemini.setUuid("Gemini");
-            gemini.setFolderName("Gemini");
-            registerProvider(gemini);
-            */
         }
         /*
         if (getProvider("Z_1") == null) {
@@ -71,20 +66,22 @@ public class AsiDesktopAsiContainer extends AbstractSwingAsiContainer {
                     "Z_2", "Z Coding (OpenAI)", "https://api.z.ai/api/coding/paas/v4", "Z"));
         }
         */
-        log.info("Registering Modal");
+        
         if (getProvider("Modal") == null) {
+            log.info("Registering Modal");
             registerProvider(new uno.anahata.asi.modal.ModalProvider());
         }
         
-        log.info("Registering HF");
+        
         if (getProvider("HuggingFace") == null) {
+            log.info("Registering HF");
             registerProvider(new HuggingFaceProvider());
         }
         
-        log.info("Registering Anahata");
         if (getProvider("Anahata") == null) {
+            log.info("Registering Anahata");
             registerProvider(new OpenAiCompatibleProvider(                    
-                    "Anahata", "Anahata (no SSL)", "http://a.anahata.uno:1234/v1", "Anahata", "https://asi.anahata.uno"));
+                    "Anahata", "Anahata (no SSL)", "http://a.anahata.uno:1234/v1", "Anahata", "https://discord.com/invite/gwGWWxPUXE"));
         }
         
     }

@@ -22,6 +22,9 @@ import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
 import uno.anahata.asi.agi.tool.schema.SchemaProvider;
+import uno.anahata.asi.huggingface.HuggingFaceProvider;
+import uno.anahata.asi.modal.ModalProvider;
+import uno.anahata.asi.openai.OpenAiCompatibleProvider;
 import uno.anahata.asi.toolkit.resources.text.FullTextResourceUpdate;
 import uno.anahata.asi.toolkit.resources.text.TextResourceReplacements;
 import uno.anahata.asi.toolkit.resources.text.lines.TextResourceLineEdits;
@@ -76,11 +79,22 @@ public class NetBeansAsiContainer extends AbstractSwingAsiContainer {
             gemini.setFolderName("Gemini");
             registerProvider(gemini);
         }
-        /*
-        if (getProvider("Z") == null) {
-            registerProvider(new OpenAiCompatibleProvider(
-                    "Z", "Z", "https://api.z.ai/api/paas/v4/", "Z"));
-        }*/
+        if (getProvider("Modal") == null) {
+            log.info("Registering Modal");
+            registerProvider(new ModalProvider());
+        }
+        
+        
+        if (getProvider("HuggingFace") == null) {
+            log.info("Registering HF");
+            registerProvider(new HuggingFaceProvider());
+        }
+        
+        if (getProvider("Anahata") == null) {
+            log.info("Registering Anahata");
+            registerProvider(new OpenAiCompatibleProvider(                    
+                    "Anahata", "Anahata (no SSL)", "http://a.anahata.uno:1234/v1", "Anahata", "https://discord.com/invite/gwGWWxPUXE"));
+        }
     }
 
     /**
