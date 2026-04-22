@@ -86,9 +86,14 @@ public final class RequestConfigAdapter {
 
         ThinkingLevel ourLevel = requestConfig.getThinkingLevel();
         if (ourLevel != null && ourLevel != ThinkingLevel.THINKING_LEVEL_UNSPECIFIED) {
-            thinkingBuilder.thinkingLevel(new com.google.genai.types.ThinkingLevel(
-                    com.google.genai.types.ThinkingLevel.Known.valueOf(ourLevel.name())
-            ));
+            com.google.genai.types.ThinkingLevel.Known googleLevel = switch (ourLevel) {
+                case NONE, MINIMAL -> com.google.genai.types.ThinkingLevel.Known.MINIMAL;
+                case LOW -> com.google.genai.types.ThinkingLevel.Known.LOW;
+                case MEDIUM -> com.google.genai.types.ThinkingLevel.Known.MEDIUM;
+                case HIGH, XHIGH -> com.google.genai.types.ThinkingLevel.Known.HIGH;
+                default -> com.google.genai.types.ThinkingLevel.Known.THINKING_LEVEL_UNSPECIFIED;
+            };
+            thinkingBuilder.thinkingLevel(new com.google.genai.types.ThinkingLevel(googleLevel));
         }
 
         builder.thinkingConfig(thinkingBuilder.includeThoughts(includeThoughts).build());
