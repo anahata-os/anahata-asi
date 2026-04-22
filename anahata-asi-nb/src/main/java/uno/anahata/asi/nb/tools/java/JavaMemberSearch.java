@@ -118,7 +118,7 @@ public class JavaMemberSearch {
                         modifiers = e.getModifiers().stream().map(m -> m.name().toLowerCase()).collect(Collectors.toSet());
                         handle = ElementHandle.create(e);
                     }
-                    foundMembers.add(new JavaMember(handle, memberFqn, memberName, kind, null, modifiers));
+                    foundMembers.add(new JavaMember(handle, memberFqn, memberName, kind, javaType.getUrl(), modifiers));
                 }
                 new TreePathScanner<Void, Void>() {
 
@@ -131,7 +131,7 @@ public class JavaMemberSearch {
                                 ElementHandle<TypeElement> handle = ElementHandle.create(anonTe);
                                 String binaryName = handle.getBinaryName();
                                 Set<String> modifiers = anonTe.getModifiers().stream().map(m-> m.name().toLowerCase()).collect(Collectors.toSet());
-                                foundMembers.add(new JavaMember(handle, binaryName, binaryName.substring(binaryName.lastIndexOf('$')), anonTe.getKind(), null, modifiers));
+                                foundMembers.add(new JavaMember(handle, binaryName, binaryName.substring(binaryName.lastIndexOf('$')), anonTe.getKind(), javaType.getUrl(), modifiers));
                             }
                         }
                         return super.visitNewClass(node, p);
@@ -183,7 +183,7 @@ public class JavaMemberSearch {
                     }
                     
                     Set<String> modifiers = element.getModifiers().stream().map(m -> m.name().toLowerCase()).collect(Collectors.toSet());
-                    foundMembers.add(new JavaMember(handle, memberFqn, memberName, kind, null, modifiers));
+                    foundMembers.add(new JavaMember(handle, memberFqn, memberName, kind, javaType.getUrl(), modifiers));
                 }
             }
         }, true);
