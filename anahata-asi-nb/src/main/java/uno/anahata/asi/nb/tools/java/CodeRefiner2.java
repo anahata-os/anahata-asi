@@ -34,9 +34,9 @@ import org.netbeans.api.java.source.support.ReferencesCount;
 import org.netbeans.modules.editor.java.Utilities;
 
 /**
- * V2.9.5 of the structural Java code refinement toolkit. 
- * High-precision structural manipulation with full AST comment preservation.
- * Javadoc implementation is now "razor-sharp" with multi-line asterisk support.
+ * V2.9.5 of the structural Java code refinement toolkit. High-precision
+ * structural manipulation with full AST comment preservation. Javadoc
+ * implementation is now "razor-sharp" with multi-line asterisk support.
  *
  * @author anahata
  */
@@ -153,8 +153,9 @@ public class CodeRefiner2 extends AnahataToolkit {
                     newTree = cloneTree(make, oldTree);
                     if (body != null) {
                         if (newTree instanceof MethodTree mt) {
-                            newTree = make.Method(mt.getModifiers(), mt.getName(), mt.getReturnType(), mt.getTypeParameters(), mt.getParameters(), mt.getThrows(), make.createMethodBody(mt, body), (AnnotationTree) mt.getDefaultValue());
-                        } else if (newTree instanceof VariableTree vt) {
+                            String wrappedBody = body.trim().startsWith("{") ? body : "{" + body + "\n}";
+                            newTree = make.Method(mt.getModifiers(), mt.getName(), mt.getReturnType(), mt.getTypeParameters(), mt.getParameters(), mt.getThrows(), make.createMethodBody((MethodTree) oldTree, wrappedBody), (AnnotationTree) mt.getDefaultValue());
+                        }else if (newTree instanceof VariableTree vt) {
                             ExpressionTree finalInit = wc.getTreeUtilities().parseExpression(body, null);
                             newTree = make.Variable(vt.getModifiers(), vt.getName(), vt.getType(), finalInit);
                         } else if (newTree instanceof BlockTree bt) {
@@ -172,13 +173,13 @@ public class CodeRefiner2 extends AnahataToolkit {
                         } else if (oldTree instanceof VariableTree oldVt && newTree instanceof VariableTree newVt) {
                             newTree = make.Variable(newVt.getModifiers(), newVt.getName(), newVt.getType(), oldVt.getInitializer());
                         }
-                    }  
+                    }
                 }
-                
+
                 // CRITICAL: Preserve surrounding and internal comments using GeneratorUtilities
                 gu.copyComments(oldTree, newTree, true);
                 gu.copyComments(oldTree, newTree, false);
-                
+
                 make.asReplacementOf(newTree, oldTree);
                 rewriteMember(wc, oldTree, newTree);
             }
@@ -408,10 +409,10 @@ public class CodeRefiner2 extends AnahataToolkit {
      * Applies Javadoc content to a target tree using the high-level structural
      * DocTree API.
      */
-    private void applyJavadocStructural(WorkingCopy wc, Tree tree, String description, 
-            List<String> authors, List<String> since, Map<String, String> params, 
+    private void applyJavadocStructural(WorkingCopy wc, Tree tree, String description,
+            List<String> authors, List<String> since, Map<String, String> params,
             String returns, Map<String, String> throwsList, List<String> tags) {
-        
+
         TreeMaker make = wc.getTreeMaker();
         com.sun.source.util.DocTrees docTrees = wc.getDocTrees();
         CompilationUnitTree cut = wc.getCompilationUnit();
@@ -426,36 +427,36 @@ public class CodeRefiner2 extends AnahataToolkit {
             for (int i = 0; i < lines.length; i++) {
                 body.addAll(parseInlineTags(make, lines[i]));
                 if (i < lines.length - 1) {
-                    body.add(make.Text("\n")); 
+                    body.add(make.Text("\n"));
                 }
             }
         }
 
         List<com.sun.source.doctree.DocTree> docTags = new ArrayList<>();
-        
+
         if (authors != null) {
             for (String author : authors) {
                 docTags.add(make.Author(Collections.singletonList(make.Text(author))));
             }
         }
-        
+
         if (since != null) {
             for (String s : since) {
                 docTags.add(make.Since(Collections.singletonList(make.Text(s))));
             }
         }
-        
+
         if (params != null) {
             params.forEach((name, desc) -> {
                 // Workaround for double-escaping bug: isType=false, brackets in name
                 docTags.add(make.Param(false, make.DocIdentifier(name), parseInlineTags(make, desc)));
             });
         }
-        
+
         if (returns != null && !returns.isBlank()) {
             docTags.add(make.DocReturn(parseInlineTags(make, returns)));
         }
-        
+
         if (throwsList != null) {
             throwsList.forEach((ex, desc) -> {
                 docTags.add(make.Throws(make.Reference(null, ex, null), parseInlineTags(make, desc)));
@@ -467,11 +468,14 @@ public class CodeRefiner2 extends AnahataToolkit {
                 int firstSpace = input.indexOf(' ');
                 String tagName = (firstSpace != -1) ? input.substring(0, firstSpace) : input;
                 String content = (firstSpace != -1) ? input.substring(firstSpace + 1) : "";
-                
+
                 switch (tagName) {
-                    case "see" -> docTags.add(make.See(parseInlineTags(make, content)));
-                    case "version" -> docTags.add(make.Version(parseInlineTags(make, content)));
-                    default -> docTags.add(make.UnknownBlockTag(tagName, parseInlineTags(make, content)));
+                    case "see" ->
+                        docTags.add(make.See(parseInlineTags(make, content)));
+                    case "version" ->
+                        docTags.add(make.Version(parseInlineTags(make, content)));
+                    default ->
+                        docTags.add(make.UnknownBlockTag(tagName, parseInlineTags(make, content)));
                 }
             }
         }
@@ -482,7 +486,9 @@ public class CodeRefiner2 extends AnahataToolkit {
 
     private List<DocTree> parseInlineTags(TreeMaker make, String text) {
         List<DocTree> nodes = new ArrayList<>();
-        if (text == null) return nodes;
+        if (text == null) {
+            return nodes;
+        }
         parseInlineTags(make, text, nodes);
         return nodes;
     }
@@ -493,11 +499,15 @@ public class CodeRefiner2 extends AnahataToolkit {
             int tagStart = text.indexOf("{@", start);
             if (tagStart == -1) {
                 String remainder = text.substring(start);
-                if (!remainder.isEmpty()) nodes.add(make.Text(remainder));
+                if (!remainder.isEmpty()) {
+                    nodes.add(make.Text(remainder));
+                }
                 break;
             }
             String prefix = text.substring(start, tagStart);
-            if (!prefix.isEmpty()) nodes.add(make.Text(prefix));
+            if (!prefix.isEmpty()) {
+                nodes.add(make.Text(prefix));
+            }
 
             int tagEnd = text.indexOf("}", tagStart);
             if (tagEnd == -1) {
@@ -511,8 +521,10 @@ public class CodeRefiner2 extends AnahataToolkit {
             String tagContent = (firstSpace != -1) ? fullTag.substring(firstSpace + 1) : "";
 
             switch (tagName) {
-                case "inheritDoc" -> nodes.add(make.InheritDoc());
-                case "code" -> nodes.add(make.Code(make.Text(tagContent)));
+                case "inheritDoc" ->
+                    nodes.add(make.InheritDoc());
+                case "code" ->
+                    nodes.add(make.Code(make.Text(tagContent)));
                 case "link", "linkplain" -> {
                     boolean plain = "linkplain".equals(tagName);
                     int labelSpace = tagContent.indexOf(' ');
@@ -522,7 +534,8 @@ public class CodeRefiner2 extends AnahataToolkit {
                     List<DocTree> labelNodes = label.isEmpty() ? Collections.emptyList() : Collections.singletonList(make.Text(label));
                     nodes.add(plain ? make.LinkPlain(refTree, labelNodes) : make.Link(refTree, labelNodes));
                 }
-                default -> nodes.add(make.UnknownInlineTag(tagName, Collections.singletonList(make.Text(tagContent))));
+                default ->
+                    nodes.add(make.UnknownInlineTag(tagName, Collections.singletonList(make.Text(tagContent))));
             }
             start = tagEnd + 1;
         }
@@ -585,7 +598,7 @@ public class CodeRefiner2 extends AnahataToolkit {
         String decl = declaration.trim();
         boolean isStandaloneType = decl.startsWith("record ") || decl.contains(" record ") || decl.startsWith("class ") || decl.contains(" class ") || decl.startsWith("interface ") || decl.contains(" interface ") || decl.startsWith("enum ") || decl.contains(" enum ");
         if (!decl.endsWith(";") && !decl.endsWith("}")) {
-            if (decl.contains("(")) {
+            if (decl.contains("(") || isStandaloneType) {
                 String b = (body == null) ? "{}" : (body.trim().startsWith("{") ? body : "{" + body + "}");
                 decl += " " + b;
             } else {
