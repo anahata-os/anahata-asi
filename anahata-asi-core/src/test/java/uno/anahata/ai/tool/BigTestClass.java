@@ -53,10 +53,25 @@ public class BigTestClass {
         System.out.println("The Poltergeist is dead. For\u00e7a Bar\u00e7a!");
     }
 
-    public void helloWorld() {
-        System.out.println("Hello World!");
+    public void helloWorldRenamed(String message) {
+        // 1. This is an internal comment from the NEW body
+        System.out.println("Logic execution...");
+        // 2. Another internal comment
+        System.out.println("Refinement complete!");
     }
+    // This body was generated manually via a script!
 
+    public static class InnerTestClass {
+
+        public void testMethod() {
+            System.out.println("Inner class method execution - Version 2.0");
+        }
+
+        public void newUtilityMethod() {
+            System.out.println("This method was added during a body update.");
+        }
+    }
+    
 }
 // Final end of file verification.
 
