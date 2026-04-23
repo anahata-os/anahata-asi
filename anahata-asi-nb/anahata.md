@@ -31,13 +31,13 @@ We use a non-intrusive annotation system to provide visual feedback and context 
 > When using `NbJava.compileAndExecuteInProject`, the tool automatically detects the NBM packaging and filters out NetBeans Platform/Stub JARs to prevent `LinkageError`s.
 
 ## 5. Reloading and Lifecycle
-
+    If you change the code of a toolkit, you can't expect the changes to the toolkit to be reflected inmediatly. You can update let's say CodeRefiner in one turn and just call it via standard tool calling on the next turn because the plugin's runtime hasn't changed since the last nbmreload. 
 - **NbJava.compileAndExecuteIn**: 
     - To test netbeans apis or the plugins runtime code (the code that makes the plugins runtime, i.e. since the last time the plugin was nbmreloaded)
 - **NbJava.compileAndExecuteInProject**: 
     - To test changes to toolkits or project classess without reloading, just do NbJava.compileAndExecuteInProject with the plugin projects path or the project path of the module you need to test and both test and compile dependencies set to false, instantiate the toolkit (e.g. CodeRefiner cr = new CodeRefiner(); cr.updateMember(pim,pam,pum,blah,blah,blah); 
     - To test changes to code in any an other anahata-asi modules, same thing NbJava.compileAndExecuteInProject with whatever project you want to test and also do not include compile or transitive either or otherwise you will end with dependent modules twice on the classpath (the plugins runtime + target classess of the dependant modules).
-- **nbmreload**: The preferred way to test changes to tools or dependencies.
+- **nbmreload**: Needed to test changes to toolkits via tool calling.
 - **CRITICAL**: Changing files in this project or its dependencies requires a manual `nbmreload` (or `build-with-dependencies` followed by `nbmreload`) for changes to take effect.
 - **Turn Sequencing**: Never batch `nbmreload` with write operations. Wait for a successful compilation before reloading.
 

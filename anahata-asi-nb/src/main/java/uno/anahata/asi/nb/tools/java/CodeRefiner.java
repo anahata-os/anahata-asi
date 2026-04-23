@@ -31,7 +31,7 @@ import org.netbeans.api.java.source.TreePathHandle;
  * @author anahata
  */
 @Slf4j
-@AgiToolkit("Structural Java code refinement (V2). Uses full declarations for high-fidelity AST-based updates.")
+@AgiToolkit("AST-based updates of java code.")
 public class CodeRefiner extends AnahataToolkit {
 
     @Override
@@ -41,7 +41,7 @@ public class CodeRefiner extends AnahataToolkit {
 
     @Override
     public List<String> getSystemInstructions() throws Exception {
-        return Collections.singletonList("CodeRefiner: The authority for structural Java changes."
+        return Collections.singletonList("CodeRefiner: The AST option for structural Java changes. Use when more appropiate/efficient than the Resources Toolkit."
                 + "\n- 'declaration' must be the full signature (e.g., '@Override public void foo(int a) throws IOException'). It MUST include any annotations (e.g., @Override, @Deprecated) you want to preserve or add."
                 + "\n- If 'declaration' is omitted in updateMember, the existing signature is preserved (Surgical Mode)."
                 + "\n- 'body' is the content for the member: for methods/blocks, it's the logic inside the braces; for fields, it's the initializer expression. If omitted during update, the original content is preserved."
@@ -55,7 +55,7 @@ public class CodeRefiner extends AnahataToolkit {
                 + "\n- RelativePosition is MANDATORY for insertion/move. anchorMemberName is MANDATORY if position is BEFORE/AFTER."
                 + "\n- ANCHORS: anchorMemberName must be RELATIVE to the class (e.g. 'myField', 'myMethod()', '<clinit>#1()' or '<init-block>#1()')."
                 + "\n- records: insertMember and updateMember do not work with records due to a known nb bugs. Use the resources toolkit for records."
-                + "\n- **DISCLAIMER**: Due to a known issue in the NetBeans AST parser, when inserting or updating the body of inner types (e.g. Classes, Enums, or Interfaces), internal comments within that body are lost. Javadocs are preserved. To add internal comments to nested types, use updateMember on individual members of the nested type or use the Resources toolkit.");
+                + "\n- **DISCLAIMER**: Due to a known issue in the NetBeans AST parser, when inserting or updating the body of inner types (e.g. Classes, Enums, or Interfaces), internal comments within the members of the body of the inner type are lost. Javadocs are preserved. To add internal comments to nested types, use updateMember on individual members of the nested type or use the Resources toolkit. Otherwise, if you are inserting a new method or field, you can safely pass both declaration and body at once. ");
     }
 
     /**
@@ -72,7 +72,7 @@ public class CodeRefiner extends AnahataToolkit {
      * @return a success message
      * @throws Exception if insertion fails
      */
-    @AgiTool("Inserts a new member into a class. Does not work with Records.")
+    @AgiTool("Inserts a new member into a class. Does not work with Records. When inserting innner types (like inner classess) the comments on members of the inner class can be lost due to a known issue)")
     public String insertMember(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The FQN of the target class. Use '$' for nested types (e.g. 'com.foo.Outer$Inner'). If empty, targets the file level.") String classFqn,
@@ -86,7 +86,7 @@ public class CodeRefiner extends AnahataToolkit {
         validatePosition(position, anchorMemberName);
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         JavaSource js = JavaSource.forFileObject(fo);
-        ModificationResult res = js.runModificationTask(wc-> {
+        ModificationResult res = js.runModificationTask(wc -> {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             TreeMaker make = wc.getTreeMaker();
             Tree parentTree;
@@ -149,7 +149,7 @@ public class CodeRefiner extends AnahataToolkit {
 
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         JavaSource js = JavaSource.forFileObject(fo);
-        ModificationResult res = js.runModificationTask(wc-> {
+        ModificationResult res = js.runModificationTask(wc -> {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             TreeMaker make = wc.getTreeMaker();
             GeneratorUtilities gu = GeneratorUtilities.get(wc);
@@ -232,7 +232,7 @@ public class CodeRefiner extends AnahataToolkit {
 
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         JavaSource js = JavaSource.forFileObject(fo);
-        js.runModificationTask(wc-> {
+        js.runModificationTask(wc -> {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             TreeMaker make = wc.getTreeMaker();
             Tree memberTree = JavaSourceUtils.findTree(wc, memberFqn);
@@ -286,7 +286,7 @@ public class CodeRefiner extends AnahataToolkit {
         validatePosition(position, anchorMemberName);
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         JavaSource js = JavaSource.forFileObject(fo);
-        js.runModificationTask(wc-> {
+        js.runModificationTask(wc -> {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             TreeMaker make = wc.getTreeMaker();
             Tree memberTree = JavaSourceUtils.findTree(wc, memberFqn);
@@ -310,7 +310,7 @@ public class CodeRefiner extends AnahataToolkit {
             int insertIdx = getInsertIndex(wc, members, position, anchorMemberName);
             members.add(insertIdx, memberTree);
             // FIX: Use asReplacementOf to preserve Javadocs and comments of the class itself
-            ClassTree updatedParent = make.asReplacementOf(rebuildClassTree(make, parentTree, members),parentTree);
+            ClassTree updatedParent = make.asReplacementOf(rebuildClassTree(make, parentTree, members), parentTree);
             wc.rewrite(parentTree, updatedParent);
         }).commit();
         if (save) {
@@ -335,7 +335,7 @@ public class CodeRefiner extends AnahataToolkit {
             @AgiToolParam("Whether to save.") boolean save) throws Exception {
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         JavaSource js = JavaSource.forFileObject(fo);
-        js.runModificationTask(wc-> {
+        js.runModificationTask(wc -> {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             TreeMaker make = wc.getTreeMaker();
             CompilationUnitTree cut = wc.getCompilationUnit();
@@ -347,7 +347,7 @@ public class CodeRefiner extends AnahataToolkit {
                     cleanImp = cleanImp.substring(7).trim();
                 }
                 final String finalImp = cleanImp;
-                boolean exists = currentImports.stream().anyMatch(i-> i.isStatic() == isStatic && i.getQualifiedIdentifier().toString().equals(finalImp));
+                boolean exists = currentImports.stream().anyMatch(i -> i.isStatic() == isStatic && i.getQualifiedIdentifier().toString().equals(finalImp));
                 if (!exists) {
                     currentImports.add(make.Import(make.Identifier(finalImp), isStatic));
                 }
@@ -372,8 +372,8 @@ public class CodeRefiner extends AnahataToolkit {
      */
     @AgiTool("Optimizes imports (converts FQNs to simple names, removes unused).")
     public String optimizeImports(
-            @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath, 
-            @AgiToolParam(value = "Whether to remove unused imports.", required = false) Boolean removeUnused, 
+            @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
+            @AgiToolParam(value = "Whether to remove unused imports.", required = false) Boolean removeUnused,
             @AgiToolParam("Whether to save.") boolean save) throws Exception {
 
         final boolean doRemove = removeUnused == null || removeUnused;
@@ -402,11 +402,11 @@ public class CodeRefiner extends AnahataToolkit {
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         DataObject doid = DataObject.find(fo);
         EditorCookie ec = doid.getLookup().lookup(EditorCookie.class);
-        if (ec != null || ec.getOpenedPanes() != null || ec.getOpenedPanes().length == 0) {
+        if (ec == null || ec.getOpenedPanes() == null || ec.getOpenedPanes().length == 0) {
             throw new AgiToolException("File is not open in the editor: " + filePath);
         }
         JavaSource js = JavaSource.forFileObject(fo);
-        js.runModificationTask(wc-> {
+        js.runModificationTask(wc -> {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             Document doc = wc.getDocument();
             if (doc != null) {
@@ -425,10 +425,6 @@ public class CodeRefiner extends AnahataToolkit {
         return "Reformated: " + fo.getNameExt();
     }
 
-
-
-
-
     /**
      * Validates the consistency of the relative position and anchor member
      * name.
@@ -437,7 +433,7 @@ public class CodeRefiner extends AnahataToolkit {
      * @param anchor the anchor member name
      * @throws AgiToolException if validation fails
      */
-    private void validatePosition(RelativePosition position, String anchor) throws AgiToolException {
+    private static void validatePosition(RelativePosition position, String anchor) throws AgiToolException {
         if (position == null) {
             throw new AgiToolException("RelativePosition is mandatory.");
         }
@@ -455,7 +451,7 @@ public class CodeRefiner extends AnahataToolkit {
      * @param members the new member list
      * @return the reconstructed class tree
      */
-    private ClassTree rebuildClassTree(TreeMaker make, ClassTree ct, List<Tree> members) {
+    private static ClassTree rebuildClassTree(TreeMaker make, ClassTree ct, List<Tree> members) {
         return switch (ct.getKind()) {
             case INTERFACE ->
                 make.Interface(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), (List<ExpressionTree>) (List<?>) ct.getPermitsClause(), members);
@@ -479,7 +475,7 @@ public class CodeRefiner extends AnahataToolkit {
      * @return the parsed tree
      * @throws Exception if parsing fails
      */
-    private Tree parseMember(WorkingCopy wc, String declaration, String body) throws Exception {
+    private static Tree parseMember(WorkingCopy wc, String declaration, String body) throws Exception {
         String decl = declaration.trim();
         boolean isStandaloneType = decl.startsWith("record ") || decl.contains(" record ") || decl.startsWith("class ") || decl.contains(" class ") || decl.startsWith("interface ") || decl.contains(" interface ") || decl.startsWith("enum ") || decl.contains(" enum ");
         if (!decl.endsWith(";") && !decl.endsWith("}")) {
@@ -530,7 +526,7 @@ public class CodeRefiner extends AnahataToolkit {
      * @param body the body string
      * @return the parsed block tree
      */
-    private BlockTree parseBody(WorkingCopy wc, String body) {
+    private static BlockTree parseBody(WorkingCopy wc, String body) {
         String b = body.trim().startsWith("{") ? body : "{" + body + "}";
         return (BlockTree) wc.getTreeUtilities().parseStatement(b, null);
     }
@@ -604,7 +600,7 @@ public class CodeRefiner extends AnahataToolkit {
      *
      * @param copy the working copy
      */
-    private void removeUnusedImportsInternal(WorkingCopy copy) {
+    private static void removeUnusedImportsInternal(WorkingCopy copy) {
         try {
             List<TreePathHandle> unused = UnusedImports.computeUnusedImports(copy);
             if (!unused.isEmpty()) {
@@ -622,7 +618,6 @@ public class CodeRefiner extends AnahataToolkit {
         }
     }
 
-
     /**
      * Throws an AgiToolException when a requested member cannot be found.
      *
@@ -630,7 +625,7 @@ public class CodeRefiner extends AnahataToolkit {
      * @param memberFqn the FQN that was not found
      * @throws AgiToolException always
      */
-    private void throwMemberNotFound(WorkingCopy wc, String memberFqn) throws AgiToolException {
+    private static void throwMemberNotFound(WorkingCopy wc, String memberFqn) throws AgiToolException {
         int paren = memberFqn.indexOf("(");
         String namePart = paren != -1 ? memberFqn.substring(0, paren) : memberFqn;
         int lastSeparator = Math.max(namePart.lastIndexOf("."), namePart.lastIndexOf("$"));
@@ -680,7 +675,7 @@ public class CodeRefiner extends AnahataToolkit {
      * @return the insertion index
      * @throws AgiToolException if anchor not found
      */
-    private int getInsertIndex(WorkingCopy wc, List<? extends Tree> members, RelativePosition position, String anchorMemberName) throws AgiToolException {
+    private static int getInsertIndex(WorkingCopy wc, List<? extends Tree> members, RelativePosition position, String anchorMemberName) throws AgiToolException {
         int anchorIdx = anchorMemberName != null ? JavaSourceUtils.findMemberIndex(wc, members, anchorMemberName) : -1;
         if (anchorMemberName != null && anchorIdx == -1) {
             throw new AgiToolException("Anchor member not found: " + anchorMemberName);
@@ -704,7 +699,7 @@ public class CodeRefiner extends AnahataToolkit {
      * @param tree the tree to clone
      * @return the cloned tree
      */
-    private Tree cloneTree(TreeMaker make, Tree tree) {
+    private static Tree cloneTree(TreeMaker make, Tree tree) {
         if (tree instanceof ClassTree ct) {
             return rebuildClassTree(make, ct, new ArrayList<>(ct.getMembers()));
         } else if (tree instanceof MethodTree mt) {
