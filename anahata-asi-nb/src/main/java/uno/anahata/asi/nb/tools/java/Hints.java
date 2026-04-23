@@ -10,14 +10,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Generated;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.netbeans.api.java.project.JavaProjectConstants;
-import org.netbeans.api.java.source.CompilationController;
-import org.netbeans.api.java.source.JavaSource;
-import org.netbeans.api.java.source.ModificationResult;
-import org.netbeans.api.java.source.WorkingCopy;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectUtils;
 import org.netbeans.api.project.SourceGroup;
@@ -27,30 +21,35 @@ import org.netbeans.modules.java.hints.spiimpl.hints.HintsInvoker;
 import org.netbeans.modules.java.hints.spiimpl.options.HintsSettings;
 import org.netbeans.spi.editor.hints.ErrorDescription;
 import org.netbeans.spi.editor.hints.Fix;
-import org.openide.filesystems.FileObject;
-import org.openide.filesystems.FileUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import uno.anahata.asi.agi.tool.Page;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.AgiToolParam;
+import org.netbeans.api.java.project.JavaProjectConstants;
+import org.netbeans.api.java.source.JavaSource;
+import org.openide.cookies.EditorCookie;
+import org.openide.cookies.SaveCookie;
+import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
+import org.openide.loaders.DataObject;
+import uno.anahata.asi.agi.tool.Page;
 
 /**
- * A toolkit for managing and applying Java hints and code fixes within the NetBeans IDE.
+ * A toolkit for managing and applying Java hints and code fixes within the
+ * NetBeans IDE.
  * <p>
- * This toolkit provides tools for automated code cleanup, such as removing unused imports, 
- * based on the IDE's internal static analysis and AST-aware transformation engines.
+ * This toolkit provides tools for automated code cleanup, such as removing
+ * unused imports, based on the IDE's internal static analysis and AST-aware
+ * transformation engines.
  * </p>
- * 
+ *
  * @author anahata
  */
 @Slf4j
 @AgiToolkit("A toolkit for managing and applying Java hints and code fixes.")
 public class Hints extends AnahataToolkit {
-    
+
     /**
      * Represents metadata for a registered Java hint type.
      */
@@ -74,99 +73,113 @@ public class Hints extends AnahataToolkit {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class HintInfo {
-        /** The absolute path of the file containing the hint. */
+
+        /**
+         * The absolute path of the file containing the hint.
+         */
         private String filePath;
-        /** A human-readable description of the hint. */
+        /**
+         * A human-readable description of the hint.
+         */
         private String description;
-        /** The severity of the hint (e.g., VERIFY, WARNING, ERROR). */
+        /**
+         * The severity of the hint (e.g., VERIFY, WARNING, ERROR).
+         */
         private String severity;
-        /** The 1-based line number where the hint starts. */
+        /**
+         * The 1-based line number where the hint starts.
+         */
         private int line;
-        /** The 1-based column number where the hint starts. */
+        /**
+         * The 1-based column number where the hint starts.
+         */
         private int column;
-        /** The unique identifier for the hint type. */
+        /**
+         * The unique identifier for the hint type.
+         */
         private String id;
     }
 
     /**
      * Surgically removes all unused imports from a Java source file.
      * <p>
-     * This tool uses the NetBeans 'JavaFixAllImports' API to identify and remove 
-     * import statements that are not referenced within the file's scope (including 
-     * nested and anonymous classes). The operation is performed synchronously 
-     * within a modification task.
+     * This tool uses the NetBeans 'JavaFixAllImports' API to identify and
+     * remove import statements that are not referenced within the file's scope
+     * (including nested and anonymous classes). The operation is performed
+     * synchronously within a modification task.
      * </p>
-     * 
+     *
      * @param filePath The absolute path of the Java file to clean.
      * @return A message indicating the result of the operation.
-     * @throws Exception if the operation fails or the file is not a valid Java source.
+     * @throws Exception if the operation fails or the file is not a valid Java
+     * source.
      */
     @AgiTool("Surgically removes all unused imports from a Java source file.")
     public String removeUnusedImports(
             @AgiToolParam(value = "The absolute path of the Java file to clean.", rendererId = "path") String filePath
     ) throws Exception {
-        return applyHintFix(filePath, "Imports_UNUSED");
+        return applyHintFix(filePath, "text/x-java:Imports_UNUSED");
     }
 
     /**
-     * Applies the first available fix for a specific Java hint identified by its ID.
+     * Applies the first available fix for a specific Java hint identified by
+     * its ID.
      * <p>
-     * This tool computes all hints for the given file, searches for the one matching 
-     * the provided {@code hintId}, and invokes its primary fix implementation. 
-     * The operation is performed within a modification task to ensure atomic 
-     * application of changes to the underlying source.
+     * This tool computes all hints for the given file, searches for the one
+     * matching the provided {@code hintId}, and invokes its primary fix
+     * implementation. The operation is performed within a modification task to
+     * ensure atomic application of changes to the underlying source.
      * </p>
-     * 
+     *
      * @param filePath The absolute path of the Java file.
-     * @param hintId The unique identifier of the hint whose fix should be applied.
-     * @return A descriptive message indicating whether the fix was successfully applied or if the hint/fix was not found.
-     * @throws Exception if the Java source cannot be resolved or the modification task fails.
+     * @param hintId The unique identifier of the hint whose fix should be
+     * applied.
+     * @return A descriptive message indicating whether the fix was successfully
+     * applied or if the hint/fix was not found.
+     * @throws Exception if the Java source cannot be resolved or the
+     * modification task fails.
      */
     @AgiTool("Applies a specific netbeans hint fix to a file.")
     public String applyHintFix(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The ID of the hint to fix.") String hintId
     ) throws Exception {
-        File file = new File(filePath);
-        if (!file.exists()) {
-            throw new IOException("File does not exist: " + filePath);
-        }
-        FileObject fo = FileUtil.toFileObject(FileUtil.normalizeFile(file));
-        if (fo == null) {
-            throw new IOException("Could not resolve FileObject for: " + filePath);
-        }
+        FileObject fo = JavaSourceUtils.getFileObject(filePath);
         JavaSource js = JavaSource.forFileObject(fo);
         if (js == null) {
             throw new IOException("Could not get JavaSource for: " + filePath);
         }
         StringBuilder sb = new StringBuilder();
-        js.runModificationTask(copy -> {
-            copy.toPhase(JavaSource.Phase.RESOLVED);
-            try {
+        boolean applied;
+        do {
+            applied = false;
+            final boolean[] appliedRef = new boolean[1];
+            js.runModificationTask(copy -> {
+                copy.toPhase(JavaSource.Phase.RESOLVED);
                 HintsSettings settings = HintsSettings.getSettingsFor(copy.getFileObject());
                 HintsInvoker invoker = new HintsInvoker(settings, new AtomicBoolean());
                 List<ErrorDescription> hints = invoker.computeHints(copy);
-                boolean found = false;
                 if (hints != null) {
                     for (ErrorDescription ed : hints) {
                         if (hintId.equals(ed.getId())) {
                             List<Fix> fixes = ed.getFixes().getFixes();
                             if (fixes != null && !fixes.isEmpty()) {
                                 fixes.get(0).implement();
-                                sb.append("Applied fix ").append(hintId).append(" at line ").append(ed.getRange().getBegin().getLine()).append("\n");
-                                found = true;
+                                sb.append("Applied fix ").append(hintId).append(" at line ").append(ed.getRange().getBegin().getLine() + 1).append("\n");
+                                appliedRef[0] = true;
+                                break; // Exit inner loop to re-scan fresh AST
                             }
                         }
                     }
                 }
-                if (!found) {
-                    sb.append("Hint not found or no fix available for: ").append(hintId);
-                }
-            } catch (Exception e) {
-                log.error("Error during applyHintFix", e);
-                sb.append("Error: ").append(e.toString());
-            }
-        }).commit();
+            }).commit();
+            applied = appliedRef[0];
+        } while (applied);
+        if (sb.length() == 0) {
+            return "No hints found or no fix available for: " + hintId;
+        }
+        
+        handleSave(fo);
         return sb.toString();
     }
 
@@ -194,7 +207,7 @@ public class Hints extends AnahataToolkit {
             throw new IOException("Could not get JavaSource for: " + filePath);
         }
         List<HintInfo> fileHints = new ArrayList<>();
-        js.runUserActionTask(info-> {
+        js.runUserActionTask(info -> {
             info.toPhase(JavaSource.Phase.RESOLVED);
             HintsSettings settings = HintsSettings.getSettingsFor(info.getFileObject());
             HintsInvoker invoker = new HintsInvoker(settings, new AtomicBoolean());
@@ -209,8 +222,9 @@ public class Hints extends AnahataToolkit {
     }
 
     /**
-     * Gets all Java hints (warnings, suggestions) for a specific project, with pagination and optional type filtering.
-     * 
+     * Gets all Java hints (warnings, suggestions) for a specific project, with
+     * pagination and optional type filtering.
+     *
      * @param projectPath The absolute path of the project to scan.
      * @param startIndex The starting index for pagination.
      * @param pageSize The maximum number of hints to return.
@@ -243,7 +257,7 @@ public class Hints extends AnahataToolkit {
                 if (!fo.isFolder() && "text/x-java".equals(fo.getMIMEType())) {
                     JavaSource js = JavaSource.forFileObject(fo);
                     if (js != null) {
-                        js.runUserActionTask(info-> {
+                        js.runUserActionTask(info -> {
                             info.toPhase(JavaSource.Phase.RESOLVED);
                             HintsSettings settings = HintsSettings.getSettingsFor(info.getFileObject());
                             HintsInvoker invoker = new HintsInvoker(settings, new AtomicBoolean());
@@ -282,6 +296,19 @@ public class Hints extends AnahataToolkit {
         }
         results.sort((a, b) -> a.getId().compareTo(b.getId()));
         return results;
+    }
+
+    private void handleSave(FileObject fo) throws IOException {
+        DataObject doid = DataObject.find(fo);
+        EditorCookie ec = doid.getLookup().lookup(EditorCookie.class);
+        if (ec != null && ec.getOpenedPanes() != null) {
+            ec.saveDocument();
+        }
+        SaveCookie sc = doid.getLookup().lookup(SaveCookie.class);
+        if (sc != null) {
+            sc.save();
+        }
+        fo.refresh();
     }
 
 }
