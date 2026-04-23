@@ -32,7 +32,7 @@ import org.netbeans.api.java.source.TreePathHandle;
  */
 @Slf4j
 @AgiToolkit("Structural Java code refinement (V2). Uses full declarations for high-fidelity AST-based updates.")
-public class CodeRefiner2 extends AnahataToolkit {
+public class CodeRefiner extends AnahataToolkit {
 
     @Override
     public void initialize() {
@@ -41,7 +41,7 @@ public class CodeRefiner2 extends AnahataToolkit {
 
     @Override
     public List<String> getSystemInstructions() throws Exception {
-        return Collections.singletonList("CodeRefiner2: The authority for structural Java changes."
+        return Collections.singletonList("CodeRefiner: The authority for structural Java changes."
                 + "\n- 'declaration' must be the full signature (e.g., '@Override public void foo(int a) throws IOException'). It MUST include any annotations (e.g., @Override, @Deprecated) you want to preserve or add."
                 + "\n- If 'declaration' is omitted in updateMember, the existing signature is preserved (Surgical Mode)."
                 + "\n- 'body' is the content for the member: for methods/blocks, it's the logic inside the braces; for fields, it's the initializer expression. If omitted during update, the original content is preserved."
@@ -55,7 +55,7 @@ public class CodeRefiner2 extends AnahataToolkit {
                 + "\n- RelativePosition is MANDATORY for insertion/move. anchorMemberName is MANDATORY if position is BEFORE/AFTER."
                 + "\n- ANCHORS: anchorMemberName must be RELATIVE to the class (e.g. 'myField', 'myMethod()', '<clinit>#1()' or '<init-block>#1()')."
                 + "\n- records: insertMember and updateMember do not work with records due to a known nb bugs. Use the resources toolkit for records."
-                + "\n- **DISCLAIMER**: Due to a known issue in the NetBeans AST parser, when inserting or updating the body of inner Classes, Enums, or Interfaces, internal comments within that body are lost. Javadocs are preserved. To add internal comments to nested types, use updateMember on individual members of the nested type or use the Resources toolkit.");
+                + "\n- **DISCLAIMER**: Due to a known issue in the NetBeans AST parser, when inserting or updating the body of inner types (e.g. Classes, Enums, or Interfaces), internal comments within that body are lost. Javadocs are preserved. To add internal comments to nested types, use updateMember on individual members of the nested type or use the Resources toolkit.");
     }
 
     /**
@@ -561,7 +561,7 @@ public class CodeRefiner2 extends AnahataToolkit {
                         if (e == null || (e.asType() != null && e.asType().getKind() == TypeKind.ERROR)) {
                             String name = node.getName().toString();
                             if (Character.isUpperCase(name.charAt(0))) {
-                                CodeRefiner2.this.log("Unresolved type: " + name);
+                                CodeRefiner.this.log("Unresolved type: " + name);
                                 try {
                                     ClassIndex index = wc.getClasspathInfo().getClassIndex();
                                     Set<ClassIndex.SearchScope> scopes = EnumSet.allOf(ClassIndex.SearchScope.class);
@@ -584,8 +584,8 @@ public class CodeRefiner2 extends AnahataToolkit {
                                             candidates.add(new Candidate(handle.getQualifiedName(), score));
                                         }
                                         candidates.sort(Comparator.comparingInt(c -> c.score));
-                                        CodeRefiner2.this.log("Found " + candidates.size() + " candidates for " + name + " (NetBeans Importance sort):");
-                                        candidates.forEach(c -> CodeRefiner2.this.log(" - " + c.fqn));
+                                        CodeRefiner.this.log("Found " + candidates.size() + " candidates for " + name + " (NetBeans Importance sort):");
+                                        candidates.forEach(c -> CodeRefiner.this.log(" - " + c.fqn));
                                     }
                                 } catch (Exception ex) {
                                     log.error("OptimizeImports: Index search failed for " + name, ex);
