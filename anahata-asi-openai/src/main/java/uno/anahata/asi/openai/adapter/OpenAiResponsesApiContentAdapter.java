@@ -49,34 +49,34 @@ public class OpenAiResponsesApiContentAdapter {
      * @return A list of ObjectNodes representing the items.
      */
     public List<ObjectNode> toItems() {
-        // Persistent Reasoning: If this is a previous model message from the Responses API,
-        // we MUST pass back the original items (including reasoning) to keep the model smart.
-        if (anahataMessage instanceof OpenAiResponsesApiMessage omm && !omm.getPersistentItems().isEmpty()) {
-            log.info("Injecting {} original Responses API items for persistent reasoning", omm.getPersistentItems().size());
-            return omm.getPersistentItems().stream()
-                    .map(node -> (ObjectNode) node)
-                    .collect(Collectors.toList());
-        }
-
-        Role role = anahataMessage.getRole();
         List<ObjectNode> results = new ArrayList<>();
         
-        if (role == Role.MODEL && anahataMessage instanceof AbstractModelMessage<?> modelMsg) {
-            results.addAll(toModelItems(modelMsg));
+        // 1. Model turn (either persistent items or synthesized)
+        if (anahataMessage instanceof OpenAiResponsesApiMessage omm && !omm.getPersistentItems().isEmpty()) {
+            log.info("Injecting {} original Responses API items for persistent reasoning", omm.getPersistentItems().size());
+            // Deep copy to prevent mutation during payload construction
+            for (com.fasterxml.jackson.databind.JsonNode item : omm.getPersistentItems()) {
+                results.add((ObjectNode) item.deepCopy());
+            }
+        } else if (anahataMessage.getRole() == Role.MODEL && anahataMessage instanceof AbstractModelMessage<?> modelMsg) {
+            results.addAll(toModelTurnItems(modelMsg));
         } else {
             ObjectNode item = toUserOrSystemItem();
-            if (item != null) {
-                results.add(item);
-            }
+            if (item != null) results.add(item);
+        }
+
+        // 2. Tool Responses (ALWAYS append these to the turn if they exist)
+        if (anahataMessage instanceof AbstractModelMessage<?> modelMsg) {
+            results.addAll(toToolResponseItems(modelMsg));
         }
         
         return results;
     }
 
-    private List<ObjectNode> toModelItems(AbstractModelMessage<?> modelMsg) {
+    private List<ObjectNode> toModelTurnItems(AbstractModelMessage<?> modelMsg) {
         List<ObjectNode> items = new ArrayList<>();
         
-        // 1. Assistant Message Item
+        // 1. Assistant Message Item (Text only)
         ObjectNode assistantItem = SchemaProvider.OBJECT_MAPPER.createObjectNode();
         assistantItem.put("type", "message");
         assistantItem.put("role", "assistant");
@@ -90,21 +90,36 @@ public class OpenAiResponsesApiContentAdapter {
                     .put("text", anahataMessage.createMetadataHeader() + "\n");
         }
         
-        ArrayNode toolCalls = SchemaProvider.OBJECT_MAPPER.createArrayNode();
-        
         for (AbstractPart part : anahataMessage.getParts(true)) {
-            addPartToContent(contentArray, toolCalls, part);
+            if (part instanceof AbstractToolCall<?, ?> tc) {
+                // V2 Architecture: Tool calls are separate items in the output array!
+                ObjectNode callItem = SchemaProvider.OBJECT_MAPPER.createObjectNode();
+                callItem.put("type", "function_call");
+                callItem.put("id", tc.getId()); // Item ID
+                callItem.put("call_id", tc.getId()); // Action ID
+                callItem.put("name", tc.getToolName());
+                try {
+                    String argsJson = SchemaProvider.OBJECT_MAPPER.writeValueAsString(tc.getResponse().getExecutedArgs());
+                    callItem.put("arguments", argsJson);
+                } catch (Exception e) {
+                    log.error("Failed to serialize executed args for tool call {}", tc.getId(), e);
+                    callItem.put("arguments", "{}");
+                }
+                items.add(callItem);
+            } else {
+                addPartToContent(contentArray, null, part);
+            }
         }
         
-        if (toolCalls.size() > 0) {
-            assistantItem.set("tool_calls", toolCalls);
+        if (!contentArray.isEmpty()) {
+            items.add(0, assistantItem); // Text message goes first
         }
         
-        if (!contentArray.isEmpty() || toolCalls.size() > 0) {
-            items.add(assistantItem);
-        }
-        
-        // 2. Tool Response Items
+        return items;
+    }
+
+    private List<ObjectNode> toToolResponseItems(AbstractModelMessage<?> modelMsg) {
+        List<ObjectNode> items = new ArrayList<>();
         List<AbstractToolResponse<?>> executedResponses = modelMsg.getToolResponses().stream()
                 .filter(tr -> includePruned || !tr.getCall().isEffectivelyPruned())
                 .filter(Objects::nonNull)
@@ -113,13 +128,12 @@ public class OpenAiResponsesApiContentAdapter {
         for (AbstractToolResponse<?> tr : executedResponses) {
             ObjectNode responseItem = SchemaProvider.OBJECT_MAPPER.createObjectNode();
             responseItem.put("type", "tool_call_output");
-            responseItem.put("tool_call_id", tr.getCall().getId());
+            responseItem.put("call_id", tr.getCall().getId());
             
             String fullResponseJson = SchemaProvider.OBJECT_MAPPER.valueToTree(tr).toString();
             responseItem.put("output", fullResponseJson);
             items.add(responseItem);
         }
-        
         return items;
     }
 

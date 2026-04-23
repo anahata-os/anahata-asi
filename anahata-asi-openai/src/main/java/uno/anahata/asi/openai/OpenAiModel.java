@@ -19,9 +19,9 @@ import uno.anahata.asi.openai.adapter.OpenAiChatCompletionsResponseAdapter;
 import uno.anahata.asi.openai.adapter.OpenAiResponsesApiContentAdapter;
 
 /**
- * Specialized model implementation for official OpenAI services.
- * Handles legacy completion endpoints, stream options, and specific usage parsing.
- * 
+ * Specialized model implementation for official OpenAI services. Handles legacy
+ * completion endpoints, stream options, and specific usage parsing.
+ *
  * @author anahata
  */
 @Slf4j
@@ -51,7 +51,7 @@ public class OpenAiModel extends OpenAiCompatibleModel {
         }
         return super.getSupportedResponseModalities();
     }
-    
+
     @Override
     public List<ServerTool> getAvailableServerTools() {
         if (prefersResponsesApi()) {
@@ -67,20 +67,22 @@ public class OpenAiModel extends OpenAiCompatibleModel {
     @Override
     public String getToolDeclarationJson(AbstractTool<?, ?> tool, RequestConfig config) {
         if (prefersResponsesApi()) {
-            return getResponsesToolDeclaration(tool, config);
+            String fullName = tool.getName();
+            String shortName = fullName.contains(".") ? fullName.substring(fullName.lastIndexOf(".") + 1) : fullName;
+            return getResponsesToolDeclaration(tool, config, shortName);
         }
         return super.getToolDeclarationJson(tool, config);
     }
 
-    private String getResponsesToolDeclaration(AbstractTool<?, ?> tool, RequestConfig config) {
+    private String getResponsesToolDeclaration(AbstractTool<?, ?> tool, RequestConfig config, String name) {
         ObjectNode toolNode = SchemaProvider.OBJECT_MAPPER.createObjectNode();
         toolNode.put("type", "function");
-        toolNode.put("name", tool.getName());
+        toolNode.put("name", name.replaceAll("[^a-zA-Z0-9_-]", "_"));
         toolNode.put("description", tool.getDescription());
 
         // We disable 'strict' mode by default to support optional parameters 
         // and dynamic Maps (which require additionalProperties: true).
-        boolean strict = false; 
+        boolean strict = false;
         toolNode.put("strict", strict);
 
         ObjectNode paramsNode = buildParametersNode(tool, strict);
@@ -105,7 +107,7 @@ public class OpenAiModel extends OpenAiCompatibleModel {
         if (prefersResponsesApi()) {
             return prepareResponsesPayload(request, stream);
         }
-        
+
         ObjectNode payload = super.preparePayload(request, stream);
 
         // 1. Handle Stream Options (OpenAI specific for chat/completions)
@@ -117,7 +119,7 @@ public class OpenAiModel extends OpenAiCompatibleModel {
         if (isLegacyModel()) {
             log.info("Transforming payload for legacy completion model: {}", getModelId());
             payload.remove("messages");
-            
+
             // Flatten history to a single prompt string
             StringBuilder prompt = new StringBuilder();
             if (!request.config().getSystemInstructions().isEmpty()) {
@@ -130,7 +132,7 @@ public class OpenAiModel extends OpenAiCompatibleModel {
 
             for (AbstractMessage msg : request.history()) {
                 prompt.append(msg.getRole().name()).append(": ");
-                List<ObjectNode> parts = new OpenAiChatCompletionsResponseAdapter(msg, request.config().isIncludePruned(), getTokenizerType(), 
+                List<ObjectNode> parts = new OpenAiChatCompletionsResponseAdapter(msg, request.config().isIncludePruned(), getTokenizerType(),
                         getReasoningStyle(), getReasoningTags()).toOpenAi();
                 for (ObjectNode part : parts) {
                     if (part.has("content")) {
@@ -153,13 +155,20 @@ public class OpenAiModel extends OpenAiCompatibleModel {
             // Only send reasoning effort if explicitly specified and not 'unspecified'
             if (level != null && level != ThinkingLevel.THINKING_LEVEL_UNSPECIFIED) {
                 String effort = switch (level) {
-                    case NONE -> "none";
-                    case MINIMAL -> "minimal";
-                    case LOW -> "low";
-                    case MEDIUM -> "medium";
-                    case HIGH -> "high";
-                    case XHIGH -> "xhigh";
-                    default -> null;
+                    case NONE ->
+                        "none";
+                    case MINIMAL ->
+                        "minimal";
+                    case LOW ->
+                        "low";
+                    case MEDIUM ->
+                        "medium";
+                    case HIGH ->
+                        "high";
+                    case XHIGH ->
+                        "xhigh";
+                    default ->
+                        null;
                 };
 
                 if (effort != null) {
@@ -172,8 +181,8 @@ public class OpenAiModel extends OpenAiCompatibleModel {
     }
 
     /**
-     * Prepares the payload for the newer /v1/responses endpoint.
-     * Uses 'input' items instead of 'messages'.
+     * Prepares the payload for the newer /v1/responses endpoint. Uses 'input'
+     * items instead of 'messages'.
      */
     private ObjectNode prepareResponsesPayload(GenerationRequest request, boolean stream) {
         ObjectNode payload = SchemaProvider.OBJECT_MAPPER.createObjectNode();
@@ -198,7 +207,7 @@ public class OpenAiModel extends OpenAiCompatibleModel {
         List<String> requested = request.config().getResponseModalities();
         boolean audioRequested = false;
         boolean nonDefaultRequested = false;
-        
+
         if (requested != null && !requested.isEmpty()) {
             for (String mod : requested) {
                 String lowerMod = mod.toLowerCase();
@@ -210,7 +219,7 @@ public class OpenAiModel extends OpenAiCompatibleModel {
                 }
             }
         }
-        
+
         if (nonDefaultRequested) {
             ArrayNode modalities = payload.putArray("modalities");
             for (String mod : requested) {
@@ -219,7 +228,7 @@ public class OpenAiModel extends OpenAiCompatibleModel {
                     modalities.add(lowerMod);
                 }
             }
-            
+
             if (audioRequested) {
                 ObjectNode audioConfig = payload.putObject("audio");
                 audioConfig.put("voice", "alloy");
@@ -229,11 +238,11 @@ public class OpenAiModel extends OpenAiCompatibleModel {
 
         // 3. Tools (Local & Server)
         ArrayNode toolsArray = null;
-        
+
         List<? extends AbstractTool> localTools = request.config().getLocalTools();
         if (localTools != null && !localTools.isEmpty()) {
             toolsArray = payload.putArray("tools");
-            
+
             // Map tools to their toolkits for Namespacing
             Map<AbstractToolkit, List<AbstractTool>> grouped = localTools.stream()
                     .collect(Collectors.groupingBy(AbstractTool::getToolkit));
@@ -244,13 +253,15 @@ public class OpenAiModel extends OpenAiCompatibleModel {
 
                 ObjectNode namespaceNode = toolsArray.addObject();
                 namespaceNode.put("type", "namespace");
-                namespaceNode.put("name", toolkit.getName().toLowerCase().replace(" ", "_"));
+                namespaceNode.put("name", toolkit.getName());
                 namespaceNode.put("description", toolkit.getDescription());
-                
+
                 ArrayNode nsTools = namespaceNode.putArray("tools");
                 for (AbstractTool<?, ?> tool : tools) {
                     try {
-                        nsTools.add(SchemaProvider.OBJECT_MAPPER.readTree(getToolDeclarationJson(tool, request.config())));
+                        String fullName = tool.getName();
+                        String shortName = fullName.contains(".") ? fullName.substring(fullName.lastIndexOf(".") + 1) : fullName;
+                        nsTools.add(SchemaProvider.OBJECT_MAPPER.readTree(getResponsesToolDeclaration(tool, request.config(), shortName)));
                     } catch (Exception e) {
                         log.error("Failed to parse tool declaration for {}", tool.getName(), e);
                     }
@@ -261,7 +272,9 @@ public class OpenAiModel extends OpenAiCompatibleModel {
         if (request.config().isServerToolsEnabled()) {
             List<ServerTool> enabled = request.config().getEnabledServerTools();
             if (enabled != null && !enabled.isEmpty()) {
-                if (toolsArray == null) toolsArray = payload.putArray("tools");
+                if (toolsArray == null) {
+                    toolsArray = payload.putArray("tools");
+                }
                 for (ServerTool st : enabled) {
                     if (st.getId() instanceof OpenAiHostedTool ht) {
                         toolsArray.addObject().put("type", ht.getId());
@@ -286,7 +299,7 @@ public class OpenAiModel extends OpenAiCompatibleModel {
         // 2. History (Messages and Tool Calls)
         boolean includePruned = request.config().isIncludePruned();
         for (AbstractMessage msg : request.history()) {
-            input.addAll(new OpenAiResponsesApiContentAdapter(msg, includePruned, getTokenizerType(), 
+            input.addAll(new OpenAiResponsesApiContentAdapter(msg, includePruned, getTokenizerType(),
                     getReasoningStyle(), getReasoningTags()).toItems());
         }
 

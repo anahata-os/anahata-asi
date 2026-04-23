@@ -13,9 +13,10 @@ import uno.anahata.asi.agi.provider.FinishReason;
 import uno.anahata.asi.internal.JacksonUtils;
 
 /**
- * Implementation of {@link OpenAiModelMessage} for the newer OpenAI Responses API (/v1/responses).
- * Handles the "Items" architecture (message, reasoning, tool_call) and provides persistent reasoning support.
- * 
+ * Implementation of {@link OpenAiModelMessage} for the newer OpenAI Responses
+ * API (/v1/responses). Handles the "Items" architecture (message, reasoning,
+ * tool_call) and provides persistent reasoning support.
+ *
  * @author anahata
  */
 @Slf4j
@@ -27,10 +28,11 @@ public class OpenAiResponsesApiMessage extends OpenAiModelMessage {
      */
     @Getter
     private final List<JsonNode> persistentItems = new ArrayList<>();
+    private final java.util.Set<String> createdItemIds = new java.util.HashSet<>();
 
-    private transient Map<Integer, StringBuilder> callArgsBuffers;
-    private transient Map<Integer, String> callIds;
-    private transient Map<Integer, String> callNames;
+    private transient Map<String, StringBuilder> callArgsBuffers;
+    private transient Map<String, String> callIds; // Stores the 'call_id' (call_...)
+    private transient Map<String, String> callNames;
 
     public OpenAiResponsesApiMessage(Agi agi, String modelId) {
         super(agi, modelId);
@@ -41,7 +43,9 @@ public class OpenAiResponsesApiMessage extends OpenAiModelMessage {
 
     /**
      * {@inheritDoc}
-     * <p>Handles streaming events (response.*), authorative response objects, and static items.</p>
+     * <p>
+     * Handles streaming events (response.*), authorative response objects, and
+     * static items.</p>
      */
     @Override
     public void updateFromNode(JsonNode node, ReasoningStyle reasoningStyle, String reasoningFieldName, List<String> reasoningTags) {
@@ -72,19 +76,33 @@ public class OpenAiResponsesApiMessage extends OpenAiModelMessage {
                 appendThoughts(node.path("delta").asText());
             } else if ("response.reasoning_text.delta".equals(type)) {
                 appendThoughts(node.path("delta").asText());
+            } else if ("response.output_item.added".equals(type)) {
+                JsonNode item = node.get("item");
+                if (item != null && "function_call".equals(item.path("type").asText())) {
+                    String itemId = item.path("id").asText();
+                    callIds.put(itemId, item.path("call_id").asText());
+                    
+                    String ns = item.path("namespace").asText(null);
+                    String name = item.path("name").asText();
+                    String qualifiedName = (ns != null) ? ns + "." + name : name;
+                    callNames.put(itemId, qualifiedName);
+                }
             } else if ("response.function_call_arguments.delta".equals(type)) {
+                String itemId = node.path("item_id").asText();
                 String delta = node.path("delta").asText();
-                callArgsBuffers.computeIfAbsent(0, k -> new StringBuilder()).append(delta);
-                callIds.put(0, node.path("item_id").asText());
+                callArgsBuffers.computeIfAbsent(itemId, k -> new StringBuilder()).append(delta);
             } else if ("response.output_item.done".equals(type)) {
                 JsonNode item = node.get("item");
                 if (item != null) {
                     addItemIfMissing(item);
                     if ("function_call".equals(item.path("type").asText())) {
-                        JsonNode fc = item.get("function_call");
-                        if (fc != null) {
-                            callNames.put(0, fc.path("name").asText());
+                        String itemId = item.path("id").asText();
+                        callIds.put(itemId, item.path("call_id").asText());
+                        callNames.put(itemId, item.path("name").asText());
+                        if (item.has("arguments")) {
+                            callArgsBuffers.put(itemId, new StringBuilder(item.get("arguments").asText()));
                         }
+                        createToolCallImmediately(itemId);
                     }
                 }
             } else if ("response.done".equals(type)) {
@@ -107,7 +125,7 @@ public class OpenAiResponsesApiMessage extends OpenAiModelMessage {
         }
 
         // 3. Handle Responses API Static Items (non-streaming or full response)
-        if ("message".equals(type) || "reasoning".equals(type) || "tool_call".equals(type)) {
+        if ("message".equals(type) || "reasoning".equals(type) || "function_call".equals(type)) {
             addItemIfMissing(node);
         }
 
@@ -123,11 +141,6 @@ public class OpenAiResponsesApiMessage extends OpenAiModelMessage {
                     }
                 }
             }
-            if (node.has("tool_calls")) {
-                for (JsonNode callNode : node.get("tool_calls")) {
-                    updateToolCall(callNode);
-                }
-            }
         } else if ("reasoning".equals(type)) {
             JsonNode summary = node.get("summary");
             if (summary != null && summary.isArray()) {
@@ -137,8 +150,18 @@ public class OpenAiResponsesApiMessage extends OpenAiModelMessage {
                     }
                 }
             }
-        } else if ("tool_call".equals(type)) {
-            updateToolCall(node.get("tool_call"));
+        } else if ("function_call".equals(type)) {
+            // In V2, the function call details are at the top level of the item
+            String itemId = node.path("id").asText();
+            String callId = node.path("call_id").asText();
+            String name = node.path("name").asText();
+            String args = node.path("arguments").asText();
+
+            if (callId != null && name != null) {
+                callIds.put(itemId, callId);
+                callNames.put(itemId, name);
+                callArgsBuffers.put(itemId, new StringBuilder(args));
+            }
         }
 
         // 4. Finish Reason / Status
@@ -165,51 +188,66 @@ public class OpenAiResponsesApiMessage extends OpenAiModelMessage {
 
     @Override
     public void updateToolCall(JsonNode callNode) {
-        if (callArgsBuffers == null) callArgsBuffers = new HashMap<>();
-        if (callIds == null) callIds = new HashMap<>();
-        if (callNames == null) callNames = new HashMap<>();
-
-        String callId = callNode.path("id").asText(null);
-        int index = callNode.path("index").asInt(0); 
-        JsonNode funcNode = callNode.get("function");
-
-        if (callId != null) {
-            callIds.put(index, callId);
-            if (funcNode != null && funcNode.has("name")) {
-                callNames.put(index, funcNode.get("name").asText());
-            }
+        if (callArgsBuffers == null) {
+            callArgsBuffers = new HashMap<>();
+        }
+        if (callIds == null) {
+            callIds = new HashMap<>();
+        }
+        if (callNames == null) {
+            callNames = new HashMap<>();
         }
 
-        if (funcNode != null && funcNode.has("arguments")) {
-            String argsFragment = funcNode.get("arguments").asText("");
+        String itemId = callNode.path("id").asText(null);
+        String callId = callNode.path("call_id").asText(null);
+
+        // Support both V1 (nested) and V2 (flat) structures
+        JsonNode funcNode = callNode.get("function");
+        String name = (funcNode != null && funcNode.has("name")) ? funcNode.get("name").asText() : callNode.path("name").asText(null);
+        String argsFragment = (funcNode != null && funcNode.has("arguments")) ? funcNode.get("arguments").asText("") : callNode.path("arguments").asText("");
+
+        if (itemId != null) {
+            if (callId != null) {
+                callIds.put(itemId, callId);
+            }
+            if (name != null) {
+                callNames.put(itemId, name);
+            }
             if (!argsFragment.isEmpty()) {
-                callArgsBuffers.computeIfAbsent(index, k -> new StringBuilder()).append(argsFragment);
+                callArgsBuffers.computeIfAbsent(itemId, k -> new StringBuilder()).append(argsFragment);
             }
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void flushToolCalls() {
-        if (callArgsBuffers == null) return;
-        for (Integer index : callArgsBuffers.keySet()) {
-            String id = callIds.get(index);
-            String name = callNames.get(index);
-            String fullJson = callArgsBuffers.get(index).toString();
+    private void createToolCallImmediately(String itemId) {
+        if (createdItemIds.contains(itemId)) {
+            return;
+        }
 
-            if (id != null && name != null && !fullJson.isEmpty()) {
-                try {
-                    Map<String, Object> args = JacksonUtils.parse(fullJson, Map.class);
-                    getAgi().getToolManager().createToolCall(this, id, name, args);
-                } catch (Exception e) {
-                    log.error("Failed to parse buffered tool call arguments for index {}: {}", index, fullJson, e);
-                }
+        String callId = callIds.get(itemId);
+        String name = callNames.get(itemId);
+        StringBuilder buffer = callArgsBuffers.get(itemId);
+
+        if (callId != null && name != null && buffer != null) {
+            String fullJson = buffer.toString();
+            if (!fullJson.isEmpty()) {
+                Map<String, Object> args = JacksonUtils.parse(fullJson, Map.class);
+                getAgi().getToolManager().createToolCall(this, callId, name, args);
+                createdItemIds.add(itemId);
             }
         }
-        callArgsBuffers = null;
-        callIds = null;
-        callNames = null;
+    }
+
+    @Override
+    public void flushToolCalls() {
+        if (callArgsBuffers == null) {
+            return;
+        }
+        for (String itemId : callArgsBuffers.keySet()) {
+            createToolCallImmediately(itemId);
+        }
+        callArgsBuffers = new HashMap<>();
+        callIds = new HashMap<>();
+        callNames = new HashMap<>();
     }
 }
