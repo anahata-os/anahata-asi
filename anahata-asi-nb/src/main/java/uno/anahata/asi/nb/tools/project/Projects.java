@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -23,9 +22,6 @@ import javax.tools.Diagnostic;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.java.project.JavaProjectConstants;
 import org.netbeans.api.java.queries.SourceLevelQuery;
-import org.netbeans.api.java.source.ClassIndex;
-import org.netbeans.api.java.source.ClasspathInfo;
-import org.netbeans.api.java.source.ElementHandle;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectInformation;
@@ -45,7 +41,6 @@ import org.openide.filesystems.FileStateInvalidException;
 import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.URLMapper;
 import org.openide.util.Lookup;
-import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.context.ContextProvider;
 import uno.anahata.asi.nb.tools.project.context.ProjectContextProvider;
 import uno.anahata.asi.nb.tools.maven.Maven;
@@ -55,7 +50,6 @@ import uno.anahata.asi.nb.tools.project.alerts.JavacAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectDiagnostics;
 import uno.anahata.asi.nb.annotation.FilesContextActionLogic;
-import uno.anahata.asi.nb.tools.project.context.ProjectStructureContextProvider;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiTool;
@@ -732,7 +726,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
      * @param projectPath The absolute path of the project.
      * @param enabled Whether to enable the context provider.
      */
-    @AgiTool("Enables or disables the project context provider (overview and anahata.md) for a specific project.")
+    @AgiTool("Enables or disables the top level project context provider (overview and anahata.md) for a specific project.")
     public void setProjectProviderEnabled(
             @AgiToolParam("The absolute path of the project.") String projectPath,
             @AgiToolParam("Whether to enable the context provider.") boolean enabled) {
