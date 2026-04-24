@@ -131,11 +131,11 @@ public class DefaultResourceUI implements ResourceUI {
     @Override
     public JPanel createViewPanel(Resource resource, AgiPanel agiPanel) {
         if (resource.getView() instanceof TextView tv) {
-            TextViewPanel tvp = new TextViewPanel();
+            TextViewPanel tvp = new TextViewPanel(agiPanel);
             tvp.setView(tv);
             return tvp;
         } else if (resource.getView() instanceof MediaView mv) {
-            MediaViewPanel mvp = new MediaViewPanel();
+            MediaViewPanel mvp = new MediaViewPanel(agiPanel);
             mvp.setView(mv);
             return mvp;
         }
