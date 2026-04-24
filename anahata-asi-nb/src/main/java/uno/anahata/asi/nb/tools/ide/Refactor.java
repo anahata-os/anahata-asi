@@ -60,7 +60,8 @@ import uno.anahata.asi.nb.tools.java.JavaSourceUtils;
  */
 @Slf4j
 @AgiToolkit("Programmatic refactoring tools for NetBeans. "
-        + "Use these tools to safely rename, move, copy, or delete code elements while maintaining integrity across all open projects.")
+        + "All member-based tools require the Anahata Canonical Member FQN (e.g., 'com.foo.Bar.myMethod(int,java.lang.String)'). "
+        + "Parentheses are mandatory for methods/constructors even if no-args. Parameters must be fully qualified.")
 public class Refactor extends AnahataToolkit{
 
     /**
@@ -112,18 +113,15 @@ public class Refactor extends AnahataToolkit{
     @AgiTool("Renames a class member (method or field) across all open projects.")
     public String renameMember(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
-            @AgiToolParam("The current name of the member.") String memberName,
-            @AgiToolParam("The new name for the member.") String newName) throws Exception {
+            @AgiToolParam("The ABSOLUTE FQN of the member (e.g. 'com.foo.Bar.myMethod(int)').") String memberFqn,
+            @AgiToolParam("The new name for the member (simple name only).") String newName) throws Exception {
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
-        TreePathHandle handle = JavaSourceUtils.getTreePathHandleForMember(fo, memberName);
-        if (handle == null) {
-            return "Member '" + memberName + "' not found in " + filePath;
-        }
+        TreePathHandle handle = JavaSourceUtils.resolveMember(fo, memberFqn);
 
         RenameRefactoring refactoring = new RenameRefactoring(Lookups.fixed(handle));
         refactoring.setNewName(newName);
 
-        return executeRefactoring(refactoring, "Rename Member " + memberName + " to " + newName);
+        return executeRefactoring(refactoring, "Rename Member " + memberFqn + " to " + newName);
     }
 
     /**
@@ -212,16 +210,13 @@ public class Refactor extends AnahataToolkit{
     @AgiTool("Inlines a method, constant, or variable, replacing all usages with its body/value.")
     public String inline(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
-            @AgiToolParam("The name of the member to inline.") String memberName,
+            @AgiToolParam("The ABSOLUTE FQN of the member to inline.") String memberFqn,
             @AgiToolParam("The type of inlining (METHOD, TEMP, CONSTANT).") InlineRefactoring.Type type) throws Exception {
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
-        TreePathHandle handle = JavaSourceUtils.getTreePathHandleForMember(fo, memberName);
-        if (handle == null) {
-            return "Member '" + memberName + "' not found in " + filePath;
-        }
+        TreePathHandle handle = JavaSourceUtils.resolveMember(fo, memberFqn);
 
         InlineRefactoring refactoring = new InlineRefactoring(handle, type);
-        return executeRefactoring(refactoring, "Inline " + memberName);
+        return executeRefactoring(refactoring, "Inline " + memberFqn);
     }
 
     /**
@@ -237,24 +232,22 @@ public class Refactor extends AnahataToolkit{
     @AgiTool("Encapsulates a field by creating a getter and setter and updating all references to use them.")
     public String encapsulateField(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
-            @AgiToolParam("The name of the field to encapsulate.") String fieldName,
+            @AgiToolParam("The ABSOLUTE FQN of the field to encapsulate.") String fieldFqn,
             @AgiToolParam("The name for the getter method.") String getterName,
             @AgiToolParam("The name for the setter method.") String setterName) throws Exception {
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
-        TreePathHandle handle = JavaSourceUtils.getTreePathHandleForMember(fo, fieldName);
-        if (handle == null) {
-            return "Field '" + fieldName + "' not found in " + filePath;
-        }
+        TreePathHandle handle = JavaSourceUtils.resolveMember(fo, fieldFqn);
 
         EncapsulateFieldRefactoring refactoring = new EncapsulateFieldRefactoring(handle);
         
+        String fieldName = JavaSourceUtils.getMemberSimpleName(fieldFqn);
         String gName = (getterName != null && !getterName.isEmpty()) ? getterName : "get" + StringUtils.capitalize(fieldName);
-        String sName = (setterName != null && !setterName.isEmpty()) ? setterName : "set" + StringUtils.capitalize(fieldName);
+String sName = (setterName != null && !setterName.isEmpty()) ? setterName : "set" + StringUtils.capitalize(fieldName);
         
         refactoring.setGetterName(gName);
         refactoring.setSetterName(sName);
         
-        return executeRefactoring(refactoring, "Encapsulate Field " + fieldName);
+        return executeRefactoring(refactoring, "Encapsulate Field " + fieldFqn);
     }
 
     /**
@@ -269,17 +262,14 @@ public class Refactor extends AnahataToolkit{
     @AgiTool("Inverts the logic of a boolean method or variable and updates all call sites accordingly.")
     public String invertBoolean(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
-            @AgiToolParam("The name of the boolean member to invert.") String memberName,
+            @AgiToolParam("The ABSOLUTE FQN of the boolean member to invert.") String memberFqn,
             @AgiToolParam("The new name for the inverted member.") String newName) throws Exception {
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
-        TreePathHandle handle = JavaSourceUtils.getTreePathHandleForMember(fo, memberName);
-        if (handle == null) {
-            return "Member '" + memberName + "' not found in " + filePath;
-        }
+        TreePathHandle handle = JavaSourceUtils.resolveMember(fo, memberFqn);
 
         InvertBooleanRefactoring refactoring = new InvertBooleanRefactoring(handle);
         refactoring.setNewName(newName);
-        return executeRefactoring(refactoring, "Invert Boolean " + memberName);
+        return executeRefactoring(refactoring, "Invert Boolean " + memberFqn);
     }
 
     /**
@@ -295,7 +285,7 @@ public class Refactor extends AnahataToolkit{
     public String extractInterface(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The name of the new interface.") String interfaceName,
-            @AgiToolParam("The names of the members to extract.") List<String> memberNames) throws Exception {
+            @AgiToolParam("The ABSOLUTE FQNs of the members to extract.") List<String> memberFqns) throws Exception {
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         TreePathHandle classHandle = JavaSourceUtils.getTreePathHandleForClass(fo);
         if (classHandle == null) {
@@ -308,7 +298,7 @@ public class Refactor extends AnahataToolkit{
         List<ElementHandle<ExecutableElement>> methods = new ArrayList<>();
         List<ElementHandle<VariableElement>> fields = new ArrayList<>();
         
-        JavaSourceUtils.resolveMembers(fo, memberNames, methods, fields);
+        JavaSourceUtils.resolveMembers(fo, memberFqns, methods, fields);
         
         refactoring.setMethods(methods);
         refactoring.setFields(fields);
@@ -327,9 +317,9 @@ public class Refactor extends AnahataToolkit{
      */
     @AgiTool("Pulls up selected members from a class to one of its superclasses.")
     public String pullUp(
-            @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
+            @AgiToolParam(value = "The absolute path of the Java file containing the subclass.", rendererId = "path") String filePath,
             @AgiToolParam("The FQN of the target superclass.") String targetClassFqn,
-            @AgiToolParam("The names of the members to pull up.") List<String> memberNames) throws Exception {
+            @AgiToolParam("The ABSOLUTE FQNs of the members to pull up.") List<String> memberFqns) throws Exception {
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         TreePathHandle classHandle = JavaSourceUtils.getTreePathHandleForClass(fo);
         if (classHandle == null) {
@@ -344,7 +334,7 @@ public class Refactor extends AnahataToolkit{
         
         // Resolve members to MemberInfo
         List<MemberInfo<ElementHandle<? extends Element>>> members = new ArrayList<>();
-        JavaSourceUtils.resolveMemberInfos(fo, memberNames, members);
+        JavaSourceUtils.resolveMemberInfos(fo, memberFqns, members);
         
         refactoring.setMembers(members.toArray(new MemberInfo[0]));
         
@@ -361,8 +351,8 @@ public class Refactor extends AnahataToolkit{
      */
     @AgiTool("Pushes down selected members from a class to its subclasses.")
     public String pushDown(
-            @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
-            @AgiToolParam("The names of the members to push down.") List<String> memberNames) throws Exception {
+            @AgiToolParam(value = "The absolute path of the Java file containing the superclass.", rendererId = "path") String filePath,
+            @AgiToolParam("The ABSOLUTE FQNs of the members to push down.") List<String> memberFqns) throws Exception {
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         TreePathHandle classHandle = JavaSourceUtils.getTreePathHandleForClass(fo);
         if (classHandle == null) {
@@ -373,7 +363,7 @@ public class Refactor extends AnahataToolkit{
         
         // Resolve members to MemberInfo
         List<MemberInfo<ElementHandle<? extends Element>>> members = new ArrayList<>();
-        JavaSourceUtils.resolveMemberInfos(fo, memberNames, members);
+        JavaSourceUtils.resolveMemberInfos(fo, memberFqns, members);
         
         refactoring.setMembers(members.toArray(new MemberInfo[0]));
         
@@ -394,15 +384,12 @@ public class Refactor extends AnahataToolkit{
     @AgiTool("Changes a method's signature (name, return type, parameters) and updates all call sites in all open projects.")
     public String changeMethodSignature(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
-            @AgiToolParam("The current name of the method.") String methodName,
+            @AgiToolParam("The ABSOLUTE FQN of the method (e.g. 'com.foo.Bar.myMethod(int)').") String memberFqn,
             @AgiToolParam("The new name for the method.") String newName,
             @AgiToolParam("The new return type.") String newReturnType,
             @AgiToolParam("The new parameter list.") List<ParameterChange> parameterChanges) throws Exception {
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
-        TreePathHandle handle = JavaSourceUtils.getTreePathHandleForMember(fo, methodName);
-        if (handle == null) {
-            return "Method '" + methodName + "' not found in " + filePath;
-        }
+        TreePathHandle handle = JavaSourceUtils.resolveMember(fo, memberFqn);
 
         ChangeParametersRefactoring refactoring = new ChangeParametersRefactoring(handle);
         refactoring.setMethodName(newName);
@@ -415,7 +402,7 @@ public class Refactor extends AnahataToolkit{
         }
         refactoring.setParameterInfo(infos);
         
-        return executeRefactoring(refactoring, "Change Method Signature: " + methodName);
+        return executeRefactoring(refactoring, "Change Method Signature: " + memberFqn);
     }
 
     /**
@@ -431,7 +418,7 @@ public class Refactor extends AnahataToolkit{
     public String extractSuperclass(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The name for the new superclass.") String superclassName,
-            @AgiToolParam("The names of the members to extract.") List<String> memberNames) throws Exception {
+            @AgiToolParam("The ABSOLUTE FQNs of the members to extract.") List<String> memberFqns) throws Exception {
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         TreePathHandle classHandle = JavaSourceUtils.getTreePathHandleForClass(fo);
         if (classHandle == null) {
@@ -442,7 +429,7 @@ public class Refactor extends AnahataToolkit{
         refactoring.setSuperClassName(superclassName);
         
         List<MemberInfo<ElementHandle<? extends Element>>> members = new ArrayList<>();
-        JavaSourceUtils.resolveMemberInfos(fo, memberNames, members);
+        JavaSourceUtils.resolveMemberInfos(fo, memberFqns, members);
         refactoring.setMembers(members.toArray(new MemberInfo[0]));
         
         return executeRefactoring(refactoring, "Extract Superclass " + superclassName);
@@ -483,17 +470,16 @@ public class Refactor extends AnahataToolkit{
      */
     @AgiTool("Moves a nested (inner) class to its own top-level file, updating all references.")
     public String moveInnerToTopLevel(
-            @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
-            @AgiToolParam("The name of the inner class to move.") String innerClassName) throws Exception {
+            @AgiToolParam(value = "The absolute path of the Java file containing the inner class.", rendererId = "path") String filePath,
+            @AgiToolParam("The ABSOLUTE FQN of the inner class to move.") String memberFqn) throws Exception {
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
-        TreePathHandle handle = JavaSourceUtils.getTreePathHandleForMember(fo, innerClassName);
-        if (handle == null) {
-            return "Inner class '" + innerClassName + "' not found in " + filePath;
-        }
+        TreePathHandle handle = JavaSourceUtils.resolveMember(fo, memberFqn);
+        
+        String innerClassName = JavaSourceUtils.getMemberSimpleName(memberFqn);
 
         InnerToOuterRefactoring refactoring = new InnerToOuterRefactoring(handle);
-        refactoring.setClassName(innerClassName);
-        return executeRefactoring(refactoring, "Move Inner to Top Level: " + innerClassName);
+refactoring.setClassName(innerClassName);
+        return executeRefactoring(refactoring, "Move Inner to Top Level: " + memberFqn);
     }
 
     /**
@@ -545,24 +531,21 @@ public class Refactor extends AnahataToolkit{
     @AgiTool("Finds all references/usages of a specific class member (method or field) in all open projects.")
     public String whereUsedMember(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
-            @AgiToolParam("The name of the member (method or field).") String memberName,
+            @AgiToolParam("The ABSOLUTE FQN of the member (e.g. 'com.foo.Bar.myMethod(int)').") String memberFqn,
             @AgiToolParam("Whether to search in comments.") boolean searchInComments) throws Exception {
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         if (!"java".equals(fo.getExt())) {
             throw new IllegalArgumentException("Member search is only supported for Java files.");
         }
 
-        TreePathHandle handle = JavaSourceUtils.getTreePathHandleForMember(fo, memberName);
-        if (handle == null) {
-            return "Member '" + memberName + "' not found in " + filePath;
-        }
+        TreePathHandle handle = JavaSourceUtils.resolveMember(fo, memberFqn);
 
         // CRITICAL: For Java elements, the query lookup MUST contain a TreePathHandle
         WhereUsedQuery query = new WhereUsedQuery(Lookups.fixed(handle));
         query.putValue(WhereUsedQuery.FIND_REFERENCES, true);
         query.putValue(WhereUsedQuery.SEARCH_IN_COMMENTS, searchInComments);
 
-        RefactoringSession session = RefactoringSession.create("Where Used Member: " + memberName);
+        RefactoringSession session = RefactoringSession.create("Where Used Member: " + memberFqn);
         Problem p = query.prepare(session);
         if (p != null && p.isFatal()) {
             return "Fatal error during query preparation: " + p.getMessage();
@@ -570,10 +553,10 @@ public class Refactor extends AnahataToolkit{
 
         Collection<RefactoringElement> elements = session.getRefactoringElements();
         if (elements.isEmpty()) {
-            return "No usages found for member " + memberName + " in " + filePath;
+            return "No usages found for member " + memberFqn + " in " + filePath;
         }
 
-        StringBuilder sb = new StringBuilder("Found ").append(elements.size()).append(" usages of ").append(memberName).append(":\n");
+        StringBuilder sb = new StringBuilder("Found ").append(elements.size()).append(" usages of ").append(memberFqn).append(":\n");
         for (RefactoringElement element : elements) {
             sb.append("- ").append(element.getDisplayText()).append(" (").append(element.getParentFile().getPath()).append(")\n");
         }
@@ -657,10 +640,10 @@ public class Refactor extends AnahataToolkit{
             if ("deleted".equals(action)) {
                 sb.append("Resource [").append(uuid).append("] remains in context. Its last known content is cached. ")
                   .append("Use Resources.unloadResources to remove it from the RAG Message or ")
-                  .append("Session.updateContextProviders(false, List.of(\"").append(uuid).append("\")) to free the cached content from the context window ")
-                  .append("and Session.updateContextProviders(true, List.of(\"").append(uuid).append("\")) if you need to recover its contents.");
+                  .append("Session.setContextProviderProviding(false, List.of(\"").append(uuid).append("\")) to free the cached content from the context window ")
+                  .append("and Session.setContextProviderProviding(true, List.of(\"").append(uuid).append("\")) if you need to recover its contents.");
             } else {
-                sb.append("NOTICE: Managed resource (ID: ").append(uuid).append(") has been ").append(action).append(". ")
+sb.append("NOTICE: Managed resource (ID: ").append(uuid).append(") has been ").append(action).append(". ")
                   .append("The internal resource path and name will update automatically to match the new location.");
             }
             return sb.toString();

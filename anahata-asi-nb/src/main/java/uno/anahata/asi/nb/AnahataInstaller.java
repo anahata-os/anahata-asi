@@ -7,11 +7,21 @@ import java.util.logging.Logger;
 import org.openide.modules.ModuleInstall;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
-import uno.anahata.asi.AbstractAsiContainer;
+import uno.anahata.asi.agi.tool.schema.SchemaProvider;
+import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementBatch;
+import uno.anahata.asi.nb.ui.render.CodeRefinementBatchRenderer;
+import uno.anahata.asi.nb.ui.render.FullTextResourceUpdateRenderer;
+import uno.anahata.asi.nb.ui.render.TextResourceReplacementsRenderer;
+import uno.anahata.asi.nb.ui.resources.NbResourceUI;
+import uno.anahata.asi.nb.util.ElementHandleModule;
+import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory;
+import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
 import uno.anahata.asi.swing.internal.SwingUtils;
+import uno.anahata.asi.toolkit.resources.text.FullTextResourceUpdate;
+import uno.anahata.asi.toolkit.resources.text.TextResourceReplacements;
 
 /**
- * Installer for the Anahata ASI V2 module.
+ * Installer for the Anahata ASI NetBeans module.
  * Handles lifecycle management and global UI synchronization.
  * <p>
  * This class leverages NetBeans' native window system persistence for 
@@ -44,18 +54,19 @@ public class AnahataInstaller extends ModuleInstall {
      */
     @Override
     public void restored() {
-        log.info("Anahata ASI V2 Module Restored");
-        /*
+        log.info("Anahata ASI NetBeans Module Restored");
+        
         // Register the NetBeans-native resource UI strategy
         ResourceUiRegistry.getInstance().setResourceUI(new NbResourceUI());
         
         // Register specialized parameter renderers for file operations
         ParameterRendererFactory.register(FullTextResourceUpdate.class, FullTextResourceUpdateRenderer.class);        
         ParameterRendererFactory.register(TextResourceReplacements.class, TextResourceReplacementsRenderer.class);
+        ParameterRendererFactory.register(CodeRefinementBatch.class, CodeRefinementBatchRenderer.class);
         
         // Register the ElementHandle module for global JSON support in the IDE
         SchemaProvider.OBJECT_MAPPER.registerModule(new ElementHandleModule());
-        */
+        
         // Load active sessions from disk. This must happen before TopComponents are restored.
         int failed = getContainer().loadSessions();
         if (failed > 0) {

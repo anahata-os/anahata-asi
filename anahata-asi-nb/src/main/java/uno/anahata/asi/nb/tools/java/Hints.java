@@ -127,6 +127,53 @@ public class Hints extends AnahataToolkit {
     }
 
     /**
+     * Gets all Java hints for a specific class member.
+     *
+     * @param filePath the absolute path of the Java file
+     * @param memberFqn the ABSOLUTE FQN of the member
+     * @return a list of hints located within the member's source range
+     * @throws Exception if resolution fails
+     */
+    @AgiTool("Gets all Java hints for a specific class member (method, field, etc.)")
+    public List<HintInfo> getMemberHints(
+            @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
+            @AgiToolParam("The ABSOLUTE FQN of the member.") String memberFqn
+    ) throws Exception {
+        FileObject fo = JavaSourceUtils.getFileObject(filePath);
+        JavaSource js = JavaSource.forFileObject(fo);
+        if (js == null) {
+            throw new IOException("Could not get JavaSource for: " + filePath);
+        }
+
+        List<HintInfo> results = new ArrayList<>();
+        js.runUserActionTask(info -> {
+            info.toPhase(JavaSource.Phase.RESOLVED);
+            com.sun.source.tree.Tree tree = JavaSourceUtils.findTree(info, memberFqn);
+            if (tree == null) {
+                return;
+            }
+
+            com.sun.source.util.SourcePositions sp = info.getTrees().getSourcePositions();
+            long start = sp.getStartPosition(info.getCompilationUnit(), tree);
+            long end = sp.getEndPosition(info.getCompilationUnit(), tree);
+
+            HintsSettings settings = HintsSettings.getSettingsFor(info.getFileObject());
+            HintsInvoker invoker = new HintsInvoker(settings, new AtomicBoolean());
+            List<ErrorDescription> hints = invoker.computeHints(info);
+            if (hints != null) {
+                for (ErrorDescription ed : hints) {
+                    long hintStart = ed.getRange().getBegin().getOffset();
+                    if (hintStart >= start && hintStart <= end) {
+                        results.add(new HintInfo(fo.getPath(), ed.getDescription(), ed.getSeverity().toString(), ed.getRange().getBegin().getLine(), ed.getRange().getBegin().getColumn(), ed.getId()));
+                    }
+                }
+            }
+        }, true);
+
+        return results;
+    }
+
+    /**
      * Applies the first available fix for a specific Java hint identified by
      * its ID.
      * <p>

@@ -23,6 +23,7 @@ import uno.anahata.asi.internal.AnahataDiffUtils;
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Setter
 @EqualsAndHashCode
 public abstract class AbstractTextResourceWrite {
     

@@ -26,9 +26,9 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
-import lombok.Generated;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.java.source.CompilationController;
+import org.netbeans.api.java.source.CompilationInfo;
 import org.netbeans.api.java.source.ElementHandle;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.Task;
@@ -43,8 +43,6 @@ import uno.anahata.asi.agi.tool.AgiToolException;
 import org.openide.loaders.DataObject;
 import org.openide.cookies.EditorCookie;
 import org.openide.cookies.SaveCookie;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Shared utilities for NetBeans Java Source (AST) operations.
@@ -63,6 +61,36 @@ public class JavaSourceUtils {
      */
     public enum RelativePosition {
         START, END, BEFORE, AFTER
+    }
+
+    /**
+     * Extracts the parent FQN (Class or Outer Class) from a member or nested
+     * type FQN.
+     *
+     * @param memberFqn The FQN to parse.
+     * @return The parent FQN.
+     */
+    public static String getParentFqn(String memberFqn) {
+        int paren = memberFqn.indexOf('(');
+        String namePart = paren != -1 ? memberFqn.substring(0, paren) : memberFqn;
+        int lastSeparator = Math.max(namePart.lastIndexOf('.'), namePart.lastIndexOf('$'));
+        if (lastSeparator == -1) {
+            return "";
+        }
+        return namePart.substring(0, lastSeparator);
+    }
+
+    /**
+     * Extracts the simple name of a member or nested type from an FQN.
+     *
+     * @param memberFqn The FQN to parse.
+     * @return The simple name (e.g., 'myMethod' or 'InnerClass').
+     */
+    public static String getMemberSimpleName(String memberFqn) {
+        int paren = memberFqn.indexOf('(');
+        String namePart = paren != -1 ? memberFqn.substring(0, paren) : memberFqn;
+        int lastSeparator = Math.max(namePart.lastIndexOf('.'), namePart.lastIndexOf('$'));
+        return namePart.substring(lastSeparator + 1);
     }
 
     /**
@@ -86,13 +114,10 @@ public class JavaSourceUtils {
     }
 
     /**
-     * Creates a {@link TreePathHandle} for a specific member within a file.
-     *
-     * @param fo The FileObject containing the class.
-     * @param memberName The simple name of the member.
-     * @return A TreePathHandle or null if the member is not found.
-     * @throws IOException If the source cannot be parsed.
+     * @deprecated Use {@link #resolveMember(FileObject, String)} for
+     * high-precision FQN resolution.
      */
+    @Deprecated
     public static TreePathHandle getTreePathHandleForMember(FileObject fo, String memberName) throws IOException {
         JavaSource js = JavaSource.forFileObject(fo);
         if (js == null) {
@@ -150,7 +175,7 @@ public class JavaSourceUtils {
         return handle[0];
     }
 
-    public static Tree findTree(WorkingCopy wc, String memberFqn) {
+    public static Tree findTree(CompilationInfo wc, String memberFqn) {
         String pureFqn = memberFqn;
         String indexPart = null;
         if (memberFqn.contains("#")) {
@@ -244,7 +269,7 @@ public class JavaSourceUtils {
      * @param memberFqn The FQN to search for.
      * @return The resolved Element or null.
      */
-    public static Element findElement(WorkingCopy wc, String memberFqn) {
+    public static Element findElement(CompilationInfo wc, String memberFqn) {
         Tree tree = findTree(wc, memberFqn);
         return tree == null ? null : wc.getTrees().getElement(TreePath.getPath(wc.getCompilationUnit(), tree));
     }
@@ -256,7 +281,7 @@ public class JavaSourceUtils {
      * contain generics, it will match against the raw AST type.
      * </p>
      */
-    private static boolean matchSignature(WorkingCopy wc, ExecutableElement ee, String methodFqn) {
+    private static boolean matchSignature(CompilationInfo wc, ExecutableElement ee, String methodFqn) {
         String paramsPart = methodFqn.substring(methodFqn.indexOf('(') + 1, methodFqn.lastIndexOf(')')).trim();
         List<String> expectedTypes = splitParameters(paramsPart);
         if (expectedTypes.size() != ee.getParameters().size()) {
@@ -273,8 +298,8 @@ public class JavaSourceUtils {
             }
             TypeMirror actualMirror = ee.getParameters().get(i).asType();
             Element actualEl = wc.getTypes().asElement(actualMirror);
-            String actual = (actualEl instanceof TypeElement te) 
-                    ? ElementHandle.create(te).getBinaryName() 
+            String actual = (actualEl instanceof TypeElement te)
+                    ? ElementHandle.create(te).getBinaryName()
                     : actualMirror.toString();
             if (!expected.contains("<") && actual.contains("<")) {
                 actual = actual.substring(0, actual.indexOf('<'));
@@ -320,12 +345,14 @@ public class JavaSourceUtils {
     }
 
     /**
-     * Finds the index of a member by its simple name.
      *
-     * @param members The list of class members.
-     * @param memberName The name to look for.
-     * @return The index, or -1 if not found.
+     * /
+     *
+     **
+     * @deprecated Use the signature-aware
+     * {@link #findMemberIndex(WorkingCopy, List, String)}
      */
+    @Deprecated
     public static int findMemberIndex(List<? extends Tree> members, String memberName) {
         return findMemberIndex(null, members, memberName);
     }
@@ -388,14 +415,9 @@ public class JavaSourceUtils {
     }
 
     /**
-     * Builds a {@link ModifiersTree} structurally using the NetBeans parser.
-     *
-     * @param make The TreeMaker.
-     * @param utils The TreeUtilities.
-     * @param modifiers The set of modifiers.
-     * @param annotations List of annotation strings.
-     * @return The constructed ModifiersTree.
+     * @deprecated Used only by DeprecatedCodeRefiner.
      */
+    @Deprecated
     public static ModifiersTree buildModifiers(TreeMaker make, TreeUtilities utils, Set<Modifier> modifiers, List<String> annotations) {
         List<AnnotationTree> annos = new ArrayList<>();
         if (annotations != null && !annotations.isEmpty()) {
@@ -419,11 +441,9 @@ public class JavaSourceUtils {
     }
 
     /**
-     * Parses a space-separated string of modifiers into a set.
-     *
-     * @param modifiersStr The string (e.g., 'public final').
-     * @return The set of modifiers.
+     * @deprecated Used only by DeprecatedCodeRefiner.
      */
+    @Deprecated
     public static Set<Modifier> getModifiersSet(String modifiersStr) {
         Set<Modifier> mods = EnumSet.noneOf(Modifier.class);
         if (modifiersStr != null && !modifiersStr.isBlank()) {
@@ -463,12 +483,9 @@ public class JavaSourceUtils {
     }
 
     /**
-     * Conveniently finds an {@link ExecutableElement} for a method FQN.
-     *
-     * @param wc The working copy.
-     * @param methodFqn The method FQN.
-     * @return The ExecutableElement or null.
+     * @deprecated Used only by DeprecatedCodeRefiner.
      */
+    @Deprecated
     public static ExecutableElement findMethodElement(WorkingCopy wc, String methodFqn) {
         Element e = findElement(wc, methodFqn);
         return (e instanceof ExecutableElement ee) ? ee : null;
@@ -483,7 +500,7 @@ public class JavaSourceUtils {
      * @param fields Output list for resolved fields.
      * @throws IOException If the source cannot be parsed.
      */
-    public static void resolveMembers(FileObject fo, List<String> memberNames, List<ElementHandle<ExecutableElement>> methods, List<ElementHandle<VariableElement>> fields) throws IOException {
+    public static void resolveMembers(FileObject fo, List<String> memberFqns, List<ElementHandle<ExecutableElement>> methods, List<ElementHandle<VariableElement>> fields) throws IOException {
         JavaSource js = JavaSource.forFileObject(fo);
         if (js == null) {
             return;
@@ -491,15 +508,15 @@ public class JavaSourceUtils {
         js.runUserActionTask(new Task<>() {
             @Override
             public void run(CompilationController parameter) throws Exception {
-                parameter.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
-                for (TypeElement te : parameter.getTopLevelElements()) {
-                    for (Element e : te.getEnclosedElements()) {
-                        if (memberNames.contains(e.getSimpleName().toString())) {
-                            if (e instanceof ExecutableElement ee) {
-                                methods.add(ElementHandle.create(ee));
-                            } else if (e instanceof VariableElement ve) {
-                                fields.add(ElementHandle.create(ve));
-                            }
+                parameter.toPhase(JavaSource.Phase.RESOLVED);
+                for (String fqn : memberFqns) {
+                    Tree tree = findTree(parameter, fqn);
+                    if (tree != null) {
+                        Element e = parameter.getTrees().getElement(TreePath.getPath(parameter.getCompilationUnit(), tree));
+                        if (e instanceof ExecutableElement ee) {
+                            methods.add(ElementHandle.create(ee));
+                        } else if (e instanceof VariableElement ve) {
+                            fields.add(ElementHandle.create(ve));
                         }
                     }
                 }
@@ -515,7 +532,7 @@ public class JavaSourceUtils {
      * @param members Output list for MemberInfo objects.
      * @throws IOException If the source cannot be parsed.
      */
-    public static void resolveMemberInfos(FileObject fo, List<String> memberNames, List<MemberInfo<ElementHandle<? extends Element>>> members) throws IOException {
+    public static void resolveMemberInfos(FileObject fo, List<String> memberFqns, List<MemberInfo<ElementHandle<? extends Element>>> members) throws IOException {
         JavaSource js = JavaSource.forFileObject(fo);
         if (js == null) {
             return;
@@ -524,16 +541,118 @@ public class JavaSourceUtils {
         js.runUserActionTask(new Task<>() {
             @Override
             public void run(CompilationController parameter) throws Exception {
-                parameter.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
-                for (TypeElement te : parameter.getTopLevelElements()) {
-                    for (Element e : te.getEnclosedElements()) {
-                        if (memberNames.contains(e.getSimpleName().toString())) {
+                parameter.toPhase(JavaSource.Phase.RESOLVED);
+                for (String fqn : memberFqns) {
+                    Tree tree = findTree(parameter, fqn);
+                    if (tree != null) {
+                        Element e = parameter.getTrees().getElement(TreePath.getPath(parameter.getCompilationUnit(), tree));
+                        if (e != null) {
                             members.add((MemberInfo) MemberInfo.create(e, parameter));
                         }
                     }
                 }
             }
         }, true);
+    }
+
+    /**
+     * Generates a list of canonical candidate FQNs for a given partial member
+     * name. Use this when a resolution fails to provide helpful feedback.
+     *
+     * @param info CompilationInfo.
+     * @param memberFqn The FQN that failed resolution.
+     * @return A list of valid canonical FQNs that share the same base name.
+     */
+    public static List<String> findMemberCandidates(CompilationInfo info, String memberFqn) {
+        int paren = memberFqn.indexOf("(");
+        String namePart = paren != -1 ? memberFqn.substring(0, paren) : memberFqn;
+        int lastSeparator = Math.max(namePart.lastIndexOf("."), namePart.lastIndexOf("$"));
+        if (lastSeparator == -1) {
+            return Collections.emptyList();
+        }
+        String parentFqn = namePart.substring(0, lastSeparator);
+        String name = namePart.substring(lastSeparator + 1);
+        TypeElement parent = info.getElements().getTypeElement(parentFqn);
+        if (parent == null) {
+            return Collections.emptyList();
+        }
+        List<String> candidates = new ArrayList<>();
+        for (Element e : parent.getEnclosedElements()) {
+            if (e.getSimpleName().contentEquals(name)) {
+                if (e instanceof ExecutableElement ee) {
+                    String params = ee.getParameters().stream()
+                            .map(p -> {
+                                String type = p.asType().toString();
+                                return type.contains("<") ? type.substring(0, type.indexOf("<")) : type;
+                            })
+                            .collect(Collectors.joining(","));
+                    String namePrefix = (e.getKind() == javax.lang.model.element.ElementKind.CONSTRUCTOR) ? "<init>" : name;
+                    candidates.add(parentFqn + "." + namePrefix + "(" + params + ")");
+                } else {
+                    candidates.add(parentFqn + "." + name);
+                }
+            }
+        }
+        return candidates;
+    }
+
+    public static String getMemberNotFoundMessage(CompilationInfo info, String memberFqn) {
+        List<String> candidates = findMemberCandidates(info, memberFqn);
+        if (!candidates.isEmpty()) {
+            StringBuilder sb = new StringBuilder("Member not found: ").append(memberFqn);
+            sb.append("\nDid you mean one of these canonical identification FQNs?\n");
+            for (String c : candidates) {
+                sb.append("- ").append(c).append("\n");
+            }
+            return sb.toString();
+        }
+        return "Member not found: " + memberFqn;
+    }
+
+    /**
+     * Authoritatively resolves a member FQN to a TreePathHandle, throwing a
+     * detailed exception with candidates if not found.
+     *
+     * @param fo The file object.
+     * @param memberFqn The member FQN.
+     * @return The handle.
+     * @throws Exception if not found or parsing fails.
+     */
+    public static TreePathHandle resolveMember(FileObject fo, String memberFqn) throws Exception {
+        JavaSource js = JavaSource.forFileObject(fo);
+        if (js == null) {
+            throw new AgiToolException("Could not get JavaSource for: " + fo.getPath());
+        }
+        final TreePathHandle[] result = new TreePathHandle[1];
+        final String[] candidatesMsg = new String[1];
+
+        js.runUserActionTask(info -> {
+            info.toPhase(JavaSource.Phase.RESOLVED);
+            Tree tree = findTree(info, memberFqn);
+            if (tree != null) {
+                result[0] = TreePathHandle.create(TreePath.getPath(info.getCompilationUnit(), tree), info);
+            } else {
+                List<String> candidates = findMemberCandidates(info, memberFqn);
+                if (!candidates.isEmpty()) {
+                    StringBuilder sb = new StringBuilder("Member not found: ").append(memberFqn);
+                    sb.append("\nDid you mean one of these canonical identification FQNs?\n");
+                    for (String c : candidates) {
+                        sb.append("- ").append(c).append("\n");
+                    }
+                    candidatesMsg[0] = sb.toString();
+                }
+            }
+        }, true);
+
+        if (result[0] != null) {
+            return result[0];
+        }
+
+        if (candidatesMsg[0] != null) {
+            throw new AgiToolException(candidatesMsg[0]);
+        }
+
+        throw new AgiToolException("Member not found: " + memberFqn);
     }
 
     public static void handleSave(FileObject fo) throws IOException {

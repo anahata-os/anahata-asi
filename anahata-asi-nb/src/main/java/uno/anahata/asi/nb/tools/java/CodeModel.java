@@ -14,6 +14,7 @@ import org.netbeans.api.java.classpath.GlobalPathRegistry;
 import org.netbeans.api.java.source.ClassIndex;
 import org.netbeans.api.java.source.ClasspathInfo;
 import org.netbeans.api.java.source.ElementHandle;
+import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.SourceUtils;
 import org.netbeans.spi.java.classpath.support.ClassPathSupport;
 import org.openide.filesystems.FileObject;
@@ -68,9 +69,9 @@ public class CodeModel extends AnahataToolkit {
      * @param pageSize The maximum number of results to return per page.
      * @return a paginated result of JavaType objects.
      */
-    @AgiTool("Finds any Java types matching a query within the aggregated classpath of all open projects (exactly like NetBeans `Ctrl+O`) and returns a paginated result of minimalist, machine-readable keys. Use only for discovery or disambigutation of fqns (as when there are two types with the same fqn available on the classpath). Don't use it if you aready know the fqn of a type is or you can work it out from the project's `Structure` context provider. Use only if the `CodeModel.loadXxxByFqn` fails due to multiple types with the same fqn, you dont'know the fqn or you are in a discovery adventure.")
+    @AgiTool("Finds any Java types matching a query within the aggregated classpath of all open projects (exactly like NetBeans `Ctrl+O`) and returns a paginated result of minimalist, machine-readable keys. Use only for discovery or disambigutation of fqns (as when there are two types with the same fqn available on the classpath). Don't use it if you aready know the fqn of a type is or you can work it out from the project's `Structure` context provider. **Use only if** a) the `CodeModel.loadXxxByFqn` fails due to multiple types with the same fqn, b) you dont'know the fqn or c) you are in a discovery adventure.")
     public Page<JavaType> findTypes(
-            @AgiToolParam("The search query for the types (e.g., simple name, FQN, wildcards).") String query,
+            @AgiToolParam("The search query for the types (e.g., simple name, FQN, wildcards). Never include the file extension.") String query,
             @AgiToolParam("Whether the search should be case-sensitive.") boolean caseSensitive,
             @AgiToolParam("Whether to prioritize results from open projects.") boolean preferOpenProjects,
             @AgiToolParam(value = "The starting index (0-based) for pagination.", required = false) Integer startIndex,
@@ -249,7 +250,8 @@ public class CodeModel extends AnahataToolkit {
      */
     @AgiTool(value = "Gets a paginated list of all members for a type specified by its fully qualified name. Fails if the FQN is ambiguous. The returned JavaMember objects will not contain a url as they all have the same url, use the returned 'urlOfAllMembers' if you intend to use the returned JavaMember in further calls to getMemberSources(JavaMember) or getMemberJavadocs(JavaMember).", permission = ToolPermission.APPROVE_ALWAYS)
     public JavaMemberPage getMembersByFqn(
-            @AgiToolParam("The fully qualified name of the type.") String fqn, @AgiToolParam(value = "Optional query string to filter members by name (uses memberName.contains(nameQuery))", required = false) String nameQuery, @AgiToolParam(value = "The starting index (0-based) for pagination.", required = false) Integer startIndex, @AgiToolParam(value = "The maximum number of results to return per page.", required = false) Integer pageSize, @AgiToolParam(value = "Optional list of member kinds to filter by.", required = false) List<ElementKind> kindFilters) throws Exception {
+            @AgiToolParam("The fully qualified name of the type.") String fqn, 
+            @AgiToolParam(value = "Optional query string to filter members by name (uses memberName.contains(nameQuery))", required = false) String nameQuery, @AgiToolParam(value = "The starting index (0-based) for pagination.", required = false) Integer startIndex, @AgiToolParam(value = "The maximum number of results to return per page.", required = false) Integer pageSize, @AgiToolParam(value = "Optional list of member kinds to filter by.", required = false) List<ElementKind> kindFilters) throws Exception {
         return getMembers(resolveUniqueType(fqn), nameQuery, startIndex, pageSize, kindFilters);
     }
 
@@ -440,30 +442,29 @@ public class CodeModel extends AnahataToolkit {
      * @throws Exception if the member is not found or ambiguous.
      */
     private JavaMember resolveUniqueMember(String memberFqn) throws Exception {
-        int paren = memberFqn.indexOf('(');
-        String namePart = paren != -1 ? memberFqn.substring(0, paren) : memberFqn;
-        int lastSeparator = Math.max(namePart.lastIndexOf('.'), namePart.lastIndexOf('$'));
-        if (lastSeparator == -1) {
+        String typeFqn = JavaSourceUtils.getParentFqn(memberFqn);
+        if (typeFqn.isEmpty()) {
             throw new AgiToolException("Invalid member FQN: " + memberFqn + ". Expected format: Type.member or Type$NestedType");
         }
-        String typeFqn = namePart.substring(0, lastSeparator);
-        String memberNameOnly = namePart.substring(lastSeparator + 1);
+        
         JavaType type = resolveUniqueType(typeFqn);
         List<JavaMember> matches = type.getMembers().stream().filter(m -> memberFqn.equals(m.getFqn())).collect(Collectors.toList());
-        if (matches.isEmpty()) {
-            matches = type.getMembers().stream().filter(m -> memberNameOnly.equals(m.getName())).collect(Collectors.toList());
+        if (matches.size() == 1) {
+            return matches.get(0);
         }
-        if (matches.isEmpty()) {
-            throw new AgiToolException("Member not found: " + memberFqn + " in type " + typeFqn);
+
+        // Fallback to high-fidelity candidate discovery for source-based types
+        FileObject fo = type.getSource().getSourceFile();
+        if (fo != null) {
+            JavaSource js = JavaSource.forFileObject(fo);
+            final String[] msg = new String[1];
+            js.runUserActionTask(info -> {
+                info.toPhase(JavaSource.Phase.RESOLVED);
+                msg[0] = JavaSourceUtils.getMemberNotFoundMessage(info, memberFqn);
+            }, true);
+            throw new AgiToolException(msg[0]);
         }
-        if (matches.size() > 1) {
-            StringBuilder sb = new StringBuilder("Ambiguous member: ").append(memberFqn);
-            sb.append("\nMultiple matches found (overloads). Please use one of these high-precision FQNs:\n");
-            for (JavaMember m : matches) {
-                sb.append("- ").append(m.getFqn()).append("\n");
-            }
-            throw new AgiToolException(sb.toString());
-        }
-        return matches.get(0);
+        
+        throw new AgiToolException("Member not found: " + memberFqn + " in type " + typeFqn);
     }
 }

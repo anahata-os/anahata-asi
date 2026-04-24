@@ -72,7 +72,7 @@ public class CodeRefiner extends AnahataToolkit {
      * @return a success message
      * @throws Exception if insertion fails
      */
-    @AgiTool("Inserts a new member into a class. Does not work with Records. When inserting innner types (like inner classess) the comments on members of the inner class can be lost due to a known issue)")
+    @AgiTool("Inserts a new member into a class. Does not work with Records. When inserting innner types (like inner classess) the comments on members of the body of the inner class can be lost due to a known parsing issue). Other than that, if you are inserting a member that has a body, always include the body.")
     public String insertMember(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The FQN of the target class. Use '$' for nested types (e.g. 'com.foo.Outer$Inner'). If empty, targets the file level.") String classFqn,
@@ -626,43 +626,7 @@ public class CodeRefiner extends AnahataToolkit {
      * @throws AgiToolException always
      */
     private static void throwMemberNotFound(WorkingCopy wc, String memberFqn) throws AgiToolException {
-        int paren = memberFqn.indexOf("(");
-        String namePart = paren != -1 ? memberFqn.substring(0, paren) : memberFqn;
-        int lastSeparator = Math.max(namePart.lastIndexOf("."), namePart.lastIndexOf("$"));
-        if (lastSeparator == -1) {
-            throw new AgiToolException("Member not found: " + memberFqn);
-        }
-        String parentFqn = namePart.substring(0, lastSeparator);
-        String name = namePart.substring(lastSeparator + 1);
-        TypeElement parent = wc.getElements().getTypeElement(parentFqn);
-        if (parent == null) {
-            throw new AgiToolException("Member not found: " + memberFqn + " (Parent class not found: " + parentFqn + ")");
-        }
-        List<String> candidates = new ArrayList<>();
-        for (Element e : parent.getEnclosedElements()) {
-            if (e.getSimpleName().contentEquals(name)) {
-                if (e instanceof ExecutableElement ee) {
-                    String params = ee.getParameters().stream()
-                            .map(p -> {
-                                String type = p.asType().toString();
-                                return type.contains("<") ? type.substring(0, type.indexOf("<")) : type;
-                            })
-                            .collect(Collectors.joining(","));
-                    candidates.add(parentFqn + "." + name + "(" + params + ")");
-                } else {
-                    candidates.add(parentFqn + "." + name);
-                }
-            }
-        }
-        if (candidates.isEmpty()) {
-            throw new AgiToolException("Member not found: " + memberFqn);
-        }
-        StringBuilder sb = new StringBuilder("Member not found: ").append(memberFqn);
-        sb.append("\nDid you mean one of these canonical identification FQNs?\n");
-        for (String c : candidates) {
-            sb.append("- ").append(c).append("\n");
-        }
-        throw new AgiToolException(sb.toString());
+        throw new AgiToolException(JavaSourceUtils.getMemberNotFoundMessage(wc, memberFqn));
     }
 
     /**
