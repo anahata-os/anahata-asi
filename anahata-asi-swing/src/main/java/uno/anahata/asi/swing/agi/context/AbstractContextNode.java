@@ -109,7 +109,7 @@ public abstract class AbstractContextNode<T> {
      * </p>
      */
     public final void refresh() {
-        // 1. Sync Children
+        // 1. Sync Children (Identity-preserving structure sync)
         List<?> newChildObjects = fetchChildObjects();
         if (newChildObjects == null || newChildObjects.isEmpty()) {
             this.children = java.util.Collections.emptyList();
@@ -124,29 +124,42 @@ public abstract class AbstractContextNode<T> {
                     node = createChildNode(obj);
                 }
                 if (node != null) {
-                    node.refresh(); // Recursive refresh
+                    node.refresh(); // Recursive structure refresh
                     syncedChildren.add(node);
                 }
             }
             this.children = syncedChildren;
         }
 
-        // 2. Update Local State
+        updateStatus();
+    }
+
+    /**
+     * Recursively recalculates token counts and status for this node and its descendants.
+     * This method is designed to be called from a background thread via SwingTask.
+     */
+    public final void refreshData() {
+        // 1. Refresh children first (Post-order traversal for correct aggregation)
+        for (AbstractContextNode<?> child : getChildren()) {
+            child.refreshData();
+        }
+
+        // 2. Reset and Calculate Local State
         this.instructionsTokens = 0;
         this.declarationsTokens = 0;
         this.historyTokens = 0;
         this.ragTokens = 0;
-        
+
         calculateLocalTokens();
-        
+
         // 3. Aggregate Child Tokens
-        for (AbstractContextNode<?> child : children) {
+        for (AbstractContextNode<?> child : getChildren()) {
             this.instructionsTokens += child.getInstructionsTokens();
             this.declarationsTokens += child.getDeclarationsTokens();
             this.historyTokens += child.getHistoryTokens();
             this.ragTokens += child.getRagTokens();
         }
-        
+
         updateStatus();
     }
 
