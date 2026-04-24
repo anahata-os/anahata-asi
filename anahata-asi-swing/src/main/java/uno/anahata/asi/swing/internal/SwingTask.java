@@ -4,21 +4,34 @@ package uno.anahata.asi.swing.internal;
 import java.awt.Component;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.CancellationException;
 import java.util.function.Consumer;
-import javax.swing.SwingWorker;
+import javax.swing.SwingUtilities;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.AbstractAsiContainer;
+import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.swing.AbstractAsiContainerPanel;
+import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.components.ExceptionDialog;
 
 /**
- * A robust, specialized {@link SwingWorker} implementation for executing 
- * background tasks with integrated lifecycle management and UI feedback.
- * 
- * <p>SwingTask provides a clean, functional API for handling the transition 
- * between the background execution thread and the Event Dispatch Thread (EDT), 
- * with built-in support for success/error callbacks and automatic error 
- * dialog presentation.</p>
+ * A robust, high-performance background task execution unit for the Anahata ASI.
+ * <p>
+ * Unlike standard {@code SwingWorker}, {@code SwingTask} executes on the 
+ * professional, named thread pools managed by the {@link Agi} or 
+ * {@link AbstractAsiContainer}. This ensures perfect isolation, diagnostic 
+ * clarity (thread names match sessions), and eliminates contention with 
+ * generic JDK background tasks.
+ * </p>
+ * <p>
+ * <b>Lifecycle:</b> Call {@link #start()} to register the task and begin 
+ * execution. Success and error callbacks are guaranteed to run on the 
+ * Event Dispatch Thread (EDT).
+ * </p>
  * 
  * @param <T> The result type produced by the background task.
  * @author anahata
@@ -26,33 +39,46 @@ import uno.anahata.asi.swing.components.ExceptionDialog;
 @Slf4j
 @Getter
 @Setter
-public class SwingTask<T> extends SwingWorker<T, Void> {
+public class SwingTask<T> {
     
-    /** The parent component used as a reference for positioning modal dialogs. */
+    /** The parent component for positioning modal dialogs. */
     private Component owner;
-    /** A human-readable identifier for the task, displayed in progress and error reports. */
+    /** The Agi session this task belongs to, if any. */
+    private Agi agi;
+    /** The container this task belongs to. */
+    private AbstractAsiContainer container;
+    /** The executor service used for background execution. */
+    private final ExecutorService executor;
+    /** A human-readable identifier for the task. */
     private String taskName;
-    /** The functional core of the task, to be executed on a background worker thread. */
+    /** The functional core of the task. */
     private Callable<T> backgroundTask;
-    /** The EDT callback for handling successful results. */
+    /** The EDT callback for successful results. */
     private Consumer<T> onDone;
-    /** The EDT callback for handling execution failures. */
+    /** The EDT callback for failures. */
     private Consumer<Exception> onError;    
-    /** Flag to enable/disable the automatic presentation of a modal ExceptionDialog. */
+    /** Flag for automatic ExceptionDialog presentation. */
     private boolean showError;
+    
+    /** Internal future managing the task state. */
+    private FutureTask<T> futureTask;
 
     /**
-     * Constructs a fully configured SwingTask.
+     * Constructs a SwingTask bound to a specific Agi session.
+     * Uses the Agi's dedicated thread pool.
      * 
-     * @param owner The parent component.
-     * @param taskName The task name.
-     * @param backgroundTask The background logic.
-     * @param onDone Success callback.
-     * @param onError Error callback.
-     * @param showError Whether to show dialog on error.
+     * @param agiPanel The parent Agi UI.
+     * @param taskName Descriptive name.
+     * @param backgroundTask Logic to run in background.
+     * @param onDone Success callback (EDT).
+     * @param onError Error callback (EDT).
+     * @param showError Whether to show error dialog.
      */
-    public SwingTask(Component owner, String taskName, Callable<T> backgroundTask, Consumer<T> onDone, Consumer<Exception> onError, boolean showError) {
-        this.owner = owner;
+    public SwingTask(AgiPanel agiPanel, String taskName, Callable<T> backgroundTask, Consumer<T> onDone, Consumer<Exception> onError, boolean showError) {
+        this.owner = agiPanel;
+        this.agi = agiPanel.getAgi();
+        this.container = agi.getConfig().getAsiContainer();
+        this.executor = agi.getExecutor();
         this.taskName = taskName;
         this.backgroundTask = backgroundTask;
         this.onDone = onDone;
@@ -61,72 +87,157 @@ public class SwingTask<T> extends SwingWorker<T, Void> {
     }
 
     /**
-     * Constructs a SwingTask with default error dialog visibility enabled.
+     * Constructs a SwingTask bound to a specific Agi session with default settings.
      * 
-     * @param owner The parent component.
-     * @param taskName The task name.
-     * @param backgroundTask The background logic.
-     * @param onDone Success callback.
-     * @param onError Error callback.
+     * @param agiPanel The parent Agi UI.
+     * @param taskName Descriptive name.
+     * @param backgroundTask Logic to run in background.
+     * @param onDone Success callback (EDT).
+     * @param onError Error callback (EDT).
      */
-    public SwingTask(Component owner, String taskName, Callable<T> backgroundTask, Consumer<T> onDone, Consumer<Exception> onError) {
-        this(owner, taskName, backgroundTask, onDone, onError, true);
+    public SwingTask(AgiPanel agiPanel, String taskName, Callable<T> backgroundTask, Consumer<T> onDone, Consumer<Exception> onError) {
+        this(agiPanel, taskName, backgroundTask, onDone, onError, true);
     }
 
     /**
-     * Constructs a SwingTask with only a success callback.
+     * Constructs a SwingTask bound to a specific Agi session with only a success callback.
      * 
-     * @param owner The parent component.
-     * @param taskName The task name.
-     * @param backgroundTask The background logic.
-     * @param onDone Success callback.
+     * @param agiPanel The parent Agi UI.
+     * @param taskName Descriptive name.
+     * @param backgroundTask Logic to run in background.
+     * @param onDone Success callback (EDT).
      */
-    public SwingTask(Component owner, String taskName, Callable<T> backgroundTask, Consumer<T> onDone) {
-        this(owner, taskName, backgroundTask, onDone, null, true);
+    public SwingTask(AgiPanel agiPanel, String taskName, Callable<T> backgroundTask, Consumer<T> onDone) {
+        this(agiPanel, taskName, backgroundTask, onDone, null, true);
     }
 
     /**
-     * Constructs a SwingTask with no explicit callbacks.
+     * Constructs a minimal SwingTask bound to a specific Agi session.
      * 
-     * @param owner The parent component.
-     * @param taskName The task name.
-     * @param backgroundTask The background logic.
+     * @param agiPanel The parent Agi UI.
+     * @param taskName Descriptive name.
+     * @param backgroundTask Logic to run in background.
      */
-    public SwingTask(Component owner, String taskName, Callable<T> backgroundTask) {
-        this(owner, taskName, backgroundTask, null, null, true);
+    public SwingTask(AgiPanel agiPanel, String taskName, Callable<T> backgroundTask) {
+        this(agiPanel, taskName, backgroundTask, null, null, true);
+    }
+
+    /**
+     * Constructs a SwingTask bound to the global Container dashboard.
+     * Uses the container's shared infrastructure thread pool.
+     * 
+     * @param containerPanel The parent container dashboard UI.
+     * @param taskName Descriptive name.
+     * @param backgroundTask Logic to run in background.
+     * @param onDone Success callback (EDT).
+     * @param onError Error callback (EDT).
+     * @param showError Whether to show error dialog.
+     */
+    public SwingTask(AbstractAsiContainerPanel containerPanel, String taskName, Callable<T> backgroundTask, Consumer<T> onDone, Consumer<Exception> onError, boolean showError) {
+        this.owner = containerPanel;
+        this.container = containerPanel.getAsiContainer();
+        this.executor = container.getExecutor();
+        this.taskName = taskName;
+        this.backgroundTask = backgroundTask;
+        this.onDone = onDone;
+        this.onError = onError;
+        this.showError = showError;
+    }
+
+    /**
+     * Constructs a SwingTask bound to the global Container dashboard.
+     * 
+     * @param containerPanel The parent container dashboard UI.
+     * @param taskName Descriptive name.
+     * @param backgroundTask Logic to run in background.
+     * @param onDone Success callback (EDT).
+     * @param onError Error callback (EDT).
+     */
+    public SwingTask(AbstractAsiContainerPanel containerPanel, String taskName, Callable<T> backgroundTask, Consumer<T> onDone, Consumer<Exception> onError) {
+        this(containerPanel, taskName, backgroundTask, onDone, onError, true);
+    }
+
+    /**
+     * Constructs a SwingTask bound to the global Container dashboard with only a success callback.
+     * 
+     * @param containerPanel The parent container dashboard UI.
+     * @param taskName Descriptive name.
+     * @param backgroundTask Logic to run in background.
+     * @param onDone Success callback (EDT).
+     */
+    public SwingTask(AbstractAsiContainerPanel containerPanel, String taskName, Callable<T> backgroundTask, Consumer<T> onDone) {
+        this(containerPanel, taskName, backgroundTask, onDone, null, true);
+    }
+
+    /**
+     * Constructs a SwingTask bound to the global Container dashboard with default settings.
+     * 
+     * @param containerPanel The parent container dashboard UI.
+     * @param taskName Descriptive name.
+     * @param backgroundTask Logic to run in background.
+     */
+    public SwingTask(AbstractAsiContainerPanel containerPanel, String taskName, Callable<T> backgroundTask) {
+        this(containerPanel, taskName, backgroundTask, null, null, true);
     }
 
     /** 
-     * {@inheritDoc} 
-     * <p>Delegates execution to the provided {@code backgroundTask} callable.</p> 
+     * Starts the task execution on the designated professional executor.
+     * Registers with {@link SwingTaskManager} for UI observability.
      */
-    @Override
-    protected T doInBackground() throws Exception {
-        return backgroundTask.call();
+    public void start() {
+        SwingTaskManager.getInstance().taskStarted(this);
+        
+        this.futureTask = new FutureTask<>(backgroundTask) {
+            @Override
+            protected void done() {
+                SwingUtilities.invokeLater(() -> handleCompletion());
+            }
+        };
+        
+        executor.submit(futureTask);
     }
 
     /** 
-     * {@inheritDoc} 
-     * <p>
-     * Performs clean-up and result propagation on the EDT. This method 
-     * centralizes the logic for unwrapping {@code ExecutionException}s and 
-     * triggering the appropriate success or error callbacks.
-     * </p> 
+     * Propagates results or errors to the EDT callbacks.
      */
-    @Override
-    protected void done() {
+    private void handleCompletion() {
         try {
-            T result = get();
+            T result = futureTask.get();
             if (onDone != null) {
                 onDone.accept(result);
             }
+        } catch (CancellationException ce) {
+            log.info("Task '{}' was cancelled.", taskName);
         } catch (InterruptedException | ExecutionException e) {
+            log.error("Execution error in task: {}", taskName, e);
             if (showError) {
-                ExceptionDialog.show(owner, taskName, "An error occurred during background task " + taskName, e);
+                ExceptionDialog.show(owner, taskName, "An error occurred during background task: " + taskName, e);
             }
             if (onError != null) {
-                onError.accept(e);
+                onError.accept(e instanceof ExecutionException ? (Exception) e.getCause() : e);
             }
+        } finally {
+            SwingTaskManager.getInstance().taskFinished(this);
         }
+    }
+
+    /** 
+     * Cancels the background task.
+     * @param mayInterruptIfRunning whether to interrupt the thread.
+     */
+    public void cancel(boolean mayInterruptIfRunning) {
+        if (futureTask != null) {
+            futureTask.cancel(mayInterruptIfRunning);
+        }
+    }
+    
+    /** @return true if the task was cancelled. */
+    public boolean isCancelled() {
+        return futureTask != null && futureTask.isCancelled();
+    }
+    
+    /** @return true if the task has completed. */
+    public boolean isDone() {
+        return futureTask != null && futureTask.isDone();
     }
 }
