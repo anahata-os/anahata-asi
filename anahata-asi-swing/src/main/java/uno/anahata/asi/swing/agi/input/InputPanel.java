@@ -576,11 +576,11 @@ public class InputPanel extends JPanel {
      * @param backgroundTask The actual logic to execute on a background thread.
      */
     private <T> void executeTask(String taskName, Callable<T> backgroundTask) {
-        new SwingTask<>(this, taskName, backgroundTask).execute();
+        new SwingTask<>(agiPanel, taskName, backgroundTask).start();
     }
 
     private <T> void executeTask(String taskName, Callable<T> backgroundTask, Consumer<T> onDone, Consumer<Exception> onError) {
-        new SwingTask<>(this, taskName, backgroundTask, onDone, onError).execute();
+        new SwingTask<>(agiPanel, taskName, backgroundTask, onDone, onError, true).start();
     }
 
     /**
