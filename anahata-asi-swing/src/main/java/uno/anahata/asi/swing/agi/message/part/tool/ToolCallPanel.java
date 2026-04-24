@@ -9,7 +9,6 @@ import uno.anahata.asi.swing.agi.message.part.AbstractPartPanel;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -54,11 +53,11 @@ import uno.anahata.asi.swing.agi.SwingAgiConfig.UITheme;
 import uno.anahata.asi.swing.components.CodeHyperlink;
 import uno.anahata.asi.swing.icons.CancelIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
-import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.icons.RunIcon;
 import uno.anahata.asi.swing.icons.StopIcon;
 import uno.anahata.asi.swing.internal.AnyChangeDocumentListener;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
+import uno.anahata.asi.swing.internal.SwingTask;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
@@ -545,12 +544,14 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
      * the Agi's dedicated executor.
      */
     private void executeTool() {
-        agiPanel.getAgi().getExecutor().execute(() -> {
+        new SwingTask<Void>(agiPanel, "Executing " + getPart().getToolName(), () -> {
             getPart().getResponse().execute();
+            return null;
+        }, done -> {
             if (getPart().getResponse().getStatus() == ToolExecutionStatus.EXECUTED) {
                 getPart().setExpanded(false);
             }
-        });
+        }).start();
     }
 
     /**
