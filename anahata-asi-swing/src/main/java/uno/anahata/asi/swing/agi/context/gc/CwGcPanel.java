@@ -3,25 +3,17 @@
  */
 package uno.anahata.asi.swing.agi.context.gc;
 
-import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.geom.Arc2D;
 import java.text.NumberFormat;
 import java.time.Instant;
 import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
-import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.table.DefaultTableModel;
 import lombok.NonNull;
 import net.miginfocom.swing.MigLayout;
@@ -261,7 +253,7 @@ public class CwGcPanel extends JPanel {
         ContextManager cm = agi.getContextManager();
         ContextWindowGarbageCollector gc = cm.getGarbageCollector();
         
-        new SwingTask<ContextWindowGarbageCollector.Stats>(this, "CwGC Metabolism Check", () -> {
+        new SwingTask<ContextWindowGarbageCollector.Stats>(agiPanel, "CwGC Metabolism Check", () -> {
             gc.calculate();
             return gc.getStats();
         }, stats -> {
@@ -292,7 +284,7 @@ public class CwGcPanel extends JPanel {
                 refreshBtn.setEnabled(true);
                 refreshBtn.setText("Refresh Now");
             }
-        }).execute();
+        }).start();
     }
 
     /**
