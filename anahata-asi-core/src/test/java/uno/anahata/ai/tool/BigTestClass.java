@@ -1,38 +1,27 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.ai.tool;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Arrays;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.net.URL;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.UUID;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * Benchmark class for Anahata ASI AST testing. This update verifies the structural DocCommentTree implementation.
-It ensures that asterisk alignment is maintained even with line returns.
-
+ * The ultimate benchmark class for ASI structural testing. Now with enhanced
+ * Javadoc capabilities!
  *
- * @author Pablo (Anahata ASI)
- * @since 2026.04.21
- * @version 3.0
- * @param <<T>> A generic type parameter for testing
+ *
+ * @author Anahata ASI
+ * @author Pablo
+ * @since V3.1
+ * @see CodeRefiner
+ * @version 1.08
  */
+@Slf4j
 public class BigTestClass {
-
-    private String firstField;
-
     /**
-     * A test field to verify surgical insertion. Força Barça!
+     * test
      */
     private String testField;
+
 
     /**
      * This is a programmatically generated Javadoc via Anahata ASI. Força
@@ -57,7 +46,7 @@ public class BigTestClass {
             // 3. Nested comment
             System.out.println("Method update successful");
         }
-}
+    }
 
     public void helloWorldRenamed(String message) {
         // 1. This is an internal comment from the NEW body
@@ -66,13 +55,35 @@ public class BigTestClass {
         System.out.println("Refinement complete!");
     }
     // This body was generated manually via a script!
+// 3. Inline
+    // 4. Field comment
 
-    /**
-     * existing javadoc
-     */
+    // 3. Inline
+    // 4. Field comment
     public static class InnerTestClass {
+
+        public void ultimateMethod() // 2. Internal logic
+        {
+            System.out.println("Total Success");
+        }
+        private int ultimateField = 108;
+
     }
-    
+
+    public enum TestEnum {
+        VAL1, VAL2;
+
+        public void enumMethod() {
+            System.out.println("Enum Success");
+        }
+    }
+
+    public interface TestInterface {
+
+        void interfaceMethod();
+    }
+    private String firstField;
+
 }
 // Final end of file verification.
 
