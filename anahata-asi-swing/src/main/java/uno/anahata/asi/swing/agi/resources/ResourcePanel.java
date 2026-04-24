@@ -248,14 +248,14 @@ public class ResourcePanel extends ScrollablePanel {
      * Atomically saves the content back to the resource.
      */
     private void saveContent(String content) {
-        new SwingTask<>(this, "Saving Resource", () -> {
+        new SwingTask<Void>(agiPanel, "Saving Resource", () -> {
             log.info("Saving content to {}", currentResource);
             currentResource.write(content);
             currentResource.reloadIfNeeded();
             return null;
         }, done -> {
             syncUiWithResource();
-        }).execute();
+        }).start();
     }
 
     /**
@@ -285,7 +285,7 @@ public class ResourcePanel extends ScrollablePanel {
         }
 
         // 2. Background Reload & UI Assembly
-        new SwingTask<>(this, "Loading Resource", () -> {
+        new SwingTask<Void>(agiPanel, "Loading Resource", () -> {
             res.reloadIfNeeded();
             return null;
         }, done -> {
@@ -299,7 +299,7 @@ public class ResourcePanel extends ScrollablePanel {
         }, error -> {
             viewerContainer.add(new JLabel("<html><font color='red'><b>Failed to load resource:</b><br>" + error.getMessage() + "</font></html>"), BorderLayout.CENTER);
             updatePerspectives();
-        }).execute();
+        }).start();
 
         // 3. Show Placeholder
         JLabel loadingLabel = new JLabel("Sensing Resource...", SwingConstants.CENTER);
