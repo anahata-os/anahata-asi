@@ -3,15 +3,20 @@ package uno.anahata.asi.nb;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.beans.PropertyChangeEvent;
 import java.io.Serializable;
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.SwingConstants;
-import javax.swing.SwingWorker;
+import javax.swing.SwingUtilities;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import net.miginfocom.swing.MigLayout;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.windows.TopComponent;
@@ -81,6 +86,8 @@ public final class AgiTopComponent extends TopComponent {
 
     /**
      * Initializes the agi panel and adds it to the component.
+     * This method is called on the EDT after the session brain has been 
+     * initialized in the background.
      * 
      * @param agi The agi session.
      */
@@ -140,32 +147,27 @@ public final class AgiTopComponent extends TopComponent {
     /**
      * {@inheritDoc}
      * Ensures the agi panel is initialized when the component is opened.
-     * Uses a SwingWorker to avoid blocking the EDT during heavy initialization.
+     * Uses the professional Container executor to avoid blocking the EDT.
      */
     @Override
     public void componentOpened() {
         if (agiPanel == null) {
             showLoading();
             
-            new SwingWorker<Agi, Void>() {
-                @Override
-                protected Agi doInBackground() throws Exception {
+            // Professional "Birthing Room" Load using the Container's Executor
+            AnahataInstaller.getContainer().getExecutor().submit(() -> {
+                try {
                     log.info("Initializing session brain in background: {}", sessionId);
-                    return AnahataInstaller.getContainer().findOrCreateAgi(sessionId);
-                }
-
-                @Override
-                protected void done() {
-                    try {
-                        Agi agi = get();
+                    final Agi agi = AnahataInstaller.getContainer().findOrCreateAgi(sessionId);
+                    SwingUtilities.invokeLater(() -> {
                         initPanel(agi);
                         log.info("Session brain initialized OK: {}", agi.getShortId());
-                    } catch (Exception e) {
-                        log.error("Failed to initialize session brain", e);
-                        showError(e.getMessage());
-                    }
+                    });
+                } catch (Exception e) {
+                    log.error("Failed to initialize session brain", e);
+                    SwingUtilities.invokeLater(() -> showError(e.getMessage()));
                 }
-            }.execute();
+            });
         } else {
             Agi agi = getAgi();
             if (agi != null && !agi.isOpen()) {
@@ -191,14 +193,39 @@ public final class AgiTopComponent extends TopComponent {
     }
 
     /**
-     * Displays a loading message in the component while the session brain is being initialized.
+     * Displays a professional loading screen with the Anahata logo and progress bar.
      */
     private void showLoading() {
         removeAll();
-        JPanel loadingPanel = new JPanel(new BorderLayout());
+        JPanel loadingPanel = new JPanel(new MigLayout("fill, insets 20", "[center, grow]", "[center, grow]"));
+        loadingPanel.setBackground(Color.WHITE);
+        
+        JPanel content = new JPanel(new MigLayout("ins 0, wrap 1", "[center]", "[]20[]10[]"));
+        content.setOpaque(false);
+        
+        // 1. The Anahata Logo
+        try {
+            ImageIcon logo = new ImageIcon(ImageUtilities.loadImage("images/splash.png"));
+            content.add(new JLabel(logo));
+        } catch (Exception e) {
+             JLabel fallback = new JLabel("Anahata ASI");
+             fallback.setFont(new Font("SansSerif", Font.BOLD, 24));
+             content.add(fallback);
+        }
+        
+        // 2. The Progress Bar
+        JProgressBar pb = new JProgressBar();
+        pb.setIndeterminate(true);
+        pb.setPreferredSize(new Dimension(300, 4));
+        content.add(pb, "w 300!");
+        
+        // 3. The Status Label
         JLabel label = new JLabel("Initializing AGI Container...", SwingConstants.CENTER);
         label.setFont(label.getFont().deriveFont(Font.BOLD, 14f));
-        loadingPanel.add(label, BorderLayout.CENTER);
+        label.setForeground(new Color(100, 100, 100));
+        content.add(label);
+        
+        loadingPanel.add(content);
         add(loadingPanel, BorderLayout.CENTER);
         revalidate();
         repaint();
