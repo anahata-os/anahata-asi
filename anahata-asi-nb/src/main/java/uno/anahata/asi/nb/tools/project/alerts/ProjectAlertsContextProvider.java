@@ -38,9 +38,16 @@ public class ProjectAlertsContextProvider extends AbstractProjectContextProvider
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
         
-        while(SourceUtils.isScanInProgress()) {
-            log.info("Waiting 500 ms. for NetBeans source scaneer to finish");
-            Thread.sleep(500);
+        if (javax.swing.SwingUtilities.isEventDispatchThread()) {
+            if (SourceUtils.isScanInProgress()) {
+                ragMessage.addTextPart("\n**Project Alerts**: Scanning in progress (UI refresh)...\n");
+                return;
+            }
+        } else {
+            while (SourceUtils.isScanInProgress()) {
+                log.info("Waiting 500 ms. for NetBeans source scanner to finish");
+                Thread.sleep(500);
+            }
         }
         
         ProjectDiagnostics diags = projectsToolkit.getProjectAlerts(projectPath);
