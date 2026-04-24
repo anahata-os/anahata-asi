@@ -7,6 +7,7 @@ import javax.swing.tree.TreePath;
 import lombok.extern.slf4j.Slf4j;
 import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.internal.SwingTask;
 
 /**
  * A TreeTableModel that provides a hierarchical, JNDI-style view of the entire 
@@ -63,12 +64,22 @@ public class ContextTreeTableModel extends AbstractTreeTableModel {
     }
     
     /**
-     * Triggers an explicit recalculation of token counts for all nodes in the tree.
+     * Triggers an asynchronous recalculation of token counts for all nodes in the tree.
+     * Uses SwingTask to run the calculation pass on a background thread.
+     * 
+     * @param onDone An optional callback to run on the EDT after the refresh is complete.
      */
-    public void refreshTokens() {
+    public void refreshTokens(Runnable onDone) {
         if (root instanceof AbstractContextNode<?> node) {
-            node.refresh();
-            javax.swing.SwingUtilities.invokeLater(() -> modelSupport.fireTreeStructureChanged(new TreePath(root)));
+            new SwingTask<Void>(agiPanel, "Calculating Tokens", () -> {
+                node.refreshData();
+                return null;
+            }, (v) -> {
+                modelSupport.fireTreeStructureChanged(new TreePath(root));
+                if (onDone != null) {
+                    onDone.run();
+                }
+            }, null, false).start();
         }
     }
 
