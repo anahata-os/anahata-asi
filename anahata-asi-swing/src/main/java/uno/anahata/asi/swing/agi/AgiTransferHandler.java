@@ -82,7 +82,7 @@ public class AgiTransferHandler extends TransferHandler {
                     new SwingTask<>(agiPanel, "Drop Files", () -> {
                         agiPanel.getInputPanel().registerPathsAsResources(paths, "dropped into the chat by user via drag and drop");
                         return null;
-                    }).execute();
+                    }).start();
 
                     return true;
                 }
