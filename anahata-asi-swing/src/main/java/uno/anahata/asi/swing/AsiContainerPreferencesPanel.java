@@ -21,7 +21,6 @@ import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
-import javax.swing.SwingWorker;
 import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
 import uno.anahata.asi.AsiContainerPreferences;
@@ -31,6 +30,7 @@ import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.swing.agi.config.SessionConfigPanel;
 import uno.anahata.asi.swing.icons.AddIcon;
 import uno.anahata.asi.swing.icons.RestartIcon;
+import uno.anahata.asi.swing.internal.SwingTask;
 
 /**
  * A centralized, multi-tabbed Command Center for managing the ASI container.
@@ -40,7 +40,9 @@ import uno.anahata.asi.swing.icons.RestartIcon;
  */
 @Slf4j
 public class AsiContainerPreferencesPanel extends JPanel {
-
+ 
+    /** The parent container panel providing access to the global executor. */
+    private final AbstractAsiContainerPanel containerPanel;
     /** The parent ASI container instance. */
     private final AbstractSwingAsiContainer container;
     /** The global ASI preferences being edited. */
@@ -50,29 +52,30 @@ public class AsiContainerPreferencesPanel extends JPanel {
     private JComboBox<String> providerDropdown;
     /** Dropdown for selecting the default AI model for the container. */
     private JComboBox<String> modelDropdown;
-
+ 
     private final JTabbedPane mainTabs;
     
     private final List<AbstractAiProvider> unsavedProviders = new ArrayList<>();
     private final List<AiProviderPanel> activeProviderPanels = new ArrayList<>();
-
+ 
     /**
      * Constructs a new preferences Command Center, defaulting to the first tab.
      * 
-     * @param container The ASI container instance.
+     * @param containerPanel The parent container dashboard panel.
      */
-    public AsiContainerPreferencesPanel(AbstractSwingAsiContainer container) {
-        this(container, 0);
+    public AsiContainerPreferencesPanel(AbstractAsiContainerPanel containerPanel) {
+        this(containerPanel, 0);
     }
-
+ 
     /**
      * Constructs a new preferences Command Center with a specific tab selected.
      * 
-     * @param container The ASI container instance.
+     * @param containerPanel The parent container dashboard panel.
      * @param initialTabIndex The index of the tab to select initially.
      */
-    public AsiContainerPreferencesPanel(AbstractSwingAsiContainer container, int initialTabIndex) {
-        this.container = container;
+    public AsiContainerPreferencesPanel(AbstractAsiContainerPanel containerPanel, int initialTabIndex) {
+        this.containerPanel = containerPanel;
+        this.container = containerPanel.getAsiContainer();
         this.prefs = container.getPreferences();
         
         setLayout(new BorderLayout());
@@ -210,44 +213,36 @@ public class AsiContainerPreferencesPanel extends JPanel {
 
         modelDropdown.setEnabled(false);
         modelDropdown.setToolTipText("Discovering models...");
-
-        new SwingWorker<List<String>, Void>() {
-            @Override
-            protected List<String> doInBackground() throws Exception {
-                AbstractAiProvider provider = container.getProvider(providerUuid);
-                if (provider == null) {
-                    return new ArrayList<>();
-                }
-                return provider.getModels().stream()
-                        .map(AbstractModel::getModelId)
-                        .toList();
+ 
+        new SwingTask<List<String>>(containerPanel, "Model Discovery", () -> {
+            AbstractAiProvider provider = container.getProvider(providerUuid);
+            if (provider == null) {
+                return new ArrayList<>();
             }
-
-            @Override
-            protected void done() {
-                try {
-                    List<String> models = get();
-                    DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
-                    models.forEach(model::addElement);
-                    modelDropdown.setModel(model);
-                    
-                    if (template.getSelectedModelId() != null) {
-                        modelDropdown.setSelectedItem(template.getSelectedModelId());
-                    }
-                    
-                    // Fallback: If previous selection is invalid for the new provider, pick the first one.
-                    if (modelDropdown.getSelectedIndex() == -1 && model.getSize() > 0) {
-                        modelDropdown.setSelectedIndex(0);
-                    }
-                    
-                    modelDropdown.setEnabled(true);
-                    modelDropdown.setToolTipText(null);
-                } catch (Exception e) {
-                    log.error("Failed to discover models for preferences", e);
-                    modelDropdown.setModel(new DefaultComboBoxModel<>(new String[]{"Discovery Failed"}));
-                }
+            return provider.getModels().stream()
+                    .map(AbstractModel::getModelId)
+                    .toList();
+        }, models -> {
+            DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
+            models.forEach(model::addElement);
+            modelDropdown.setModel(model);
+ 
+            if (template.getSelectedModelId() != null) {
+                modelDropdown.setSelectedItem(template.getSelectedModelId());
             }
-        }.execute();
+ 
+            // Fallback: If previous selection is invalid for the new provider, pick the first one.
+            if (modelDropdown.getSelectedIndex() == -1 && model.getSize() > 0) {
+                modelDropdown.setSelectedIndex(0);
+            }
+ 
+            modelDropdown.setEnabled(true);
+            modelDropdown.setToolTipText(null);
+        }, error -> {
+            log.error("Failed to discover models for preferences", error);
+            modelDropdown.setModel(new DefaultComboBoxModel<>(new String[]{"Discovery Failed"}));
+            modelDropdown.setEnabled(true);
+        }).start();
     }
 
     /**
@@ -340,7 +335,7 @@ public class AsiContainerPreferencesPanel extends JPanel {
         activeProviderPanels.clear();
         // 1. Existing Providers
         for (AbstractAiProvider p : container.getAllProviders()) {
-            AiProviderPanel keysPanel = new AiProviderPanel(p, () -> {
+            AiProviderPanel keysPanel = new AiProviderPanel(containerPanel, p, () -> {
                 removeProvider(p, providerTabs);
             });
             providerTabs.addTab(p.getDisplayName(), keysPanel);
@@ -349,7 +344,7 @@ public class AsiContainerPreferencesPanel extends JPanel {
         
         // 2. Draft/Unsaved Providers
         for (AbstractAiProvider p : unsavedProviders) {
-            AiProviderPanel keysPanel = new AiProviderPanel(p, () -> {
+            AiProviderPanel keysPanel = new AiProviderPanel(containerPanel, p, () -> {
                 unsavedProviders.remove(p);
                 refreshProviderTabs(providerTabs);
             });
