@@ -3,30 +3,28 @@
  */
 package uno.anahata.asi.swing;
 
-import java.io.File;
-import java.nio.file.Path;
-import javax.swing.JFileChooser;
-import javax.swing.filechooser.FileNameExtensionFilter;
 
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 import java.awt.event.HierarchyEvent;
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
+import net.miginfocom.swing.MigLayout;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.CancelIcon;
 import uno.anahata.asi.swing.icons.SaveIcon;
 import uno.anahata.asi.swing.icons.LoadSessionIcon;
 
+import uno.anahata.asi.swing.agi.status.TaskStatusComponent;
 import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.icons.SettingsIcon;
 
@@ -76,8 +74,6 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
         importButton.addActionListener(e -> importSession());
         toolBar.add(importButton);
 
-        toolBar.add(Box.createHorizontalGlue());
-        
         JButton settingsBtn = new JButton("Preferences", new SettingsIcon(16));
         settingsBtn.setToolTipText("Configure global ASI settings and API keys");
         settingsBtn.addActionListener(e -> showPreferences());
@@ -102,7 +98,15 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
         });
         toolBar.add(disposeButton);
 
-        // 2. Setup Refresh Timer
+        // 2. Setup Header Wrapper (Toolbar + Status Row)
+        JPanel headerWrapper = new JPanel(new MigLayout("ins 0, fillx, gap 0", "[grow, fill]", "[][]"));
+        headerWrapper.setOpaque(false);
+        headerWrapper.add(toolBar, "wrap");
+        
+        TaskStatusComponent taskMonitor = new TaskStatusComponent(asiContainer);
+        headerWrapper.add(taskMonitor, "center, gaptop 2, gapbottom 2");
+
+        // 3. Setup Refresh Timer
         this.refreshTimer = new Timer(1000, e -> {
             if (isShowing()) {
                 refreshView();
@@ -111,7 +115,7 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
         });
 
         setLayout(new BorderLayout());
-        add(toolBar, BorderLayout.NORTH);
+        add(headerWrapper, BorderLayout.NORTH);
         
         // Auto-start/stop refresh based on visibility
         addHierarchyListener(e -> {
@@ -193,7 +197,7 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
      * @param initialTabIndex The index of the tab to open.
      */
     public void showPreferences(int initialTabIndex) {
-        AsiContainerPreferencesPanel prefsPanel = new AsiContainerPreferencesPanel(asiContainer, initialTabIndex);
+        AsiContainerPreferencesPanel prefsPanel = new AsiContainerPreferencesPanel(this, initialTabIndex);
         
         JButton saveBtn = new JButton("Save", new SaveIcon(16));
         JButton cancelBtn = new JButton("Cancel", new CancelIcon(16));
@@ -201,7 +205,8 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
         Object[] options = {saveBtn, cancelBtn};
         
         JOptionPane pane = new JOptionPane(prefsPanel, JOptionPane.PLAIN_MESSAGE, JOptionPane.DEFAULT_OPTION, new SettingsIcon(32), options, null);
-        javax.swing.JDialog dialog = pane.createDialog(this, "ASI Container Preferences");
+        javax.swing.JDialog dialog = pane.createDialog(SwingUtilities.getWindowAncestor(this), "ASI Container Preferences");
+        dialog.setLocationRelativeTo(SwingUtilities.getWindowAncestor(this));
         
         saveBtn.addActionListener(e -> {
             try {

@@ -23,65 +23,86 @@ import uno.anahata.asi.swing.internal.SwingTaskManager;
 /**
  * A high-density status bar component for monitoring background activities.
  * <p>
- * This component displays the most recent active {@link SwingTask} with an 
- * indeterminate progress bar and a summary count of other active tasks. It 
- * provides a hand-cursor interaction to reveal the full {@link SwingTaskMonitor} popup.
+ * This component displays the most recent active {@link SwingTask} with an
+ * indeterminate progress bar and a summary count of other active tasks. It
+ * provides a hand-cursor interaction to reveal the full
+ * {@link SwingTaskMonitor} popup.
  * <p>
- * <b>Global Mode:</b> If constructed with a {@code null} Agi, this component 
+ * <b>Global Mode:</b> If constructed with a {@code null} Agi, this component
  * monitors only container-level infrastructure tasks.
  * </p>
- * 
+ *
  * @author anahata
  */
 public class TaskStatusComponent extends JPanel {
 
-    /** The Agi session to monitor, if any. */
+    /**
+     * The Agi session to monitor, if any.
+     */
     private final Agi agi;
-    /** The container to monitor. */
+    /**
+     * The container to monitor.
+     */
     private final AbstractAsiContainer container;
     private final JProgressBar progressBar;
     private final JButton quickKillButton;
     private final EdtPropertyChangeListener taskListener;
 
     /**
-     * Constructs a monitor for a specific Agi session.
-     * Shows tasks for this session and global tasks for its parent container.
+     * Constructs a monitor for a specific Agi session. Shows tasks for this agi
+     * .
+     *
+     * @param agi the agi whose task will be rendering
      */
     public TaskStatusComponent(Agi agi) {
         this(agi, agi.getConfig().getAsiContainer());
     }
 
     /**
-     * Constructs a monitor for a specific container dashboard.
-     * Shows all tasks belonging to this container.
+     * Constructs a monitor for a specific asi container. Shows all tasks
+     * belonging to this container.
+     *
+     * @param container the asi container this component is for.
      */
     public TaskStatusComponent(AbstractAsiContainer container) {
         this(null, container);
     }
 
+    /**
+     * Private constructor for either one or the other.
+     * 
+     * @param agi the one 
+     * @param container the other
+     */
     private TaskStatusComponent(Agi agi, AbstractAsiContainer container) {
         super(new MigLayout("ins 0, fillx, gap 5", "[grow, fill]5[pref!]", "[]"));
         this.agi = agi;
         this.container = container;
         setOpaque(false);
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        
+
         progressBar = new JProgressBar();
         progressBar.setIndeterminate(true);
-        progressBar.setStringPainted(true);
-        progressBar.setPreferredSize(new Dimension(120, 18));
-        progressBar.setFont(progressBar.getFont().deriveFont(Font.BOLD, 10f));
+        progressBar.setStringPainted(true);        
+        progressBar.setPreferredSize(new Dimension(210, 22));
+        progressBar.setMinimumSize(new Dimension(32, 22));
+        //progressBar.setFont(progressBar.getFont().deriveFont(Font.BOLD, 10f));
         progressBar.setForeground(new Color(0, 102, 204));
-        
+
         quickKillButton = new JButton(new CancelIcon(14));
         quickKillButton.setBorder(BorderFactory.createEmptyBorder());
         quickKillButton.setContentAreaFilled(false);
         quickKillButton.setToolTipText("Stop most recent task");
-        
+
         add(progressBar, "growx");
         add(quickKillButton);
-        setVisible(false);
         
+        setPreferredSize(new Dimension(240, 26));
+        setMinimumSize(new Dimension(240, 26));
+        setMaximumSize(new Dimension(240, 26));
+        
+        setVisible(false);
+
         // Ensure clicks on sub-components also trigger the popup
         MouseAdapter popupTrigger = new MouseAdapter() {
             @Override
@@ -91,7 +112,7 @@ public class TaskStatusComponent extends JPanel {
         };
         addMouseListener(popupTrigger);
         progressBar.addMouseListener(popupTrigger);
-        
+
         this.taskListener = new EdtPropertyChangeListener(this, SwingTaskManager.getInstance(), "activeTasks", evt -> refresh());
         refresh();
     }
@@ -109,7 +130,7 @@ public class TaskStatusComponent extends JPanel {
                     }
                 })
                 .toList();
-                
+
         if (!activeTasks.isEmpty()) {
             SwingTask<?> latest = activeTasks.get(activeTasks.size() - 1);
             String summary = latest.getTaskName();
@@ -117,13 +138,13 @@ public class TaskStatusComponent extends JPanel {
                 summary += " (+" + (activeTasks.size() - 1) + " more)";
             }
             progressBar.setString(summary);
-            
+
             // Wire quick-kill button to latest task
             for (java.awt.event.ActionListener al : quickKillButton.getActionListeners()) {
                 quickKillButton.removeActionListener(al);
             }
             quickKillButton.addActionListener(e -> latest.cancel(true));
-            
+
             setVisible(true);
         } else {
             setVisible(false);

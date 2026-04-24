@@ -24,6 +24,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
 import javax.swing.Timer;
+import net.miginfocom.swing.MigLayout;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.jdesktop.swingx.JXHyperlink;
@@ -102,6 +103,9 @@ public class StatusPanel extends JPanel {
     /** Label for displaying prompt blocking reasons. */
     private JLabel blockReasonLabel; 
     
+    /** High-density background task monitor. */
+    private TaskStatusComponent taskStatusComponent;
+
     /** Reactive listener for tool execution status changes to trigger panel refreshes. */
     private EdtPropertyChangeListener executingCallsListener;
 
@@ -161,10 +165,12 @@ public class StatusPanel extends JPanel {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
         // --- Row 1 (Top) --- 
-        JPanel row1Panel = new JPanel(new BorderLayout(10, 0));
+        JPanel row1Panel = new JPanel(new MigLayout("ins 0, fillx", "[grow, fill]push[pref!]", "[]"));
         row1Panel.setAlignmentX(LEFT_ALIGNMENT);
+        row1Panel.setOpaque(false);
         
         JPanel agiStatusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        agiStatusPanel.setOpaque(false);
         statusIndicator = new StatusIndicator();
         statusLabel = new JLabel("Initializing...");
         soundToggle = new JToggleButton(IconUtils.getIcon("bell.png"));
@@ -181,19 +187,21 @@ public class StatusPanel extends JPanel {
         executingToolsLabel.setFont(executingToolsLabel.getFont().deriveFont(java.awt.Font.BOLD));
         agiStatusPanel.add(executingToolsLabel);
         
-        row1Panel.add(agiStatusPanel, BorderLayout.WEST);
-        
+        row1Panel.add(agiStatusPanel);
+ 
         contextUsageBar = new ContextUsageBar(agiPanel); 
-        row1Panel.add(contextUsageBar, BorderLayout.EAST);
+        row1Panel.add(contextUsageBar, "right");
         
         add(row1Panel);
 
-        // --- Row 2 (Links) --- 
-        JPanel row2Panel = new JPanel(new BorderLayout(10, 0));
+        // --- Row 2 (Links & Task Monitor) --- 
+        JPanel row2Panel = new JPanel(new MigLayout("ins 0, fillx", "[pref]push[240!, center]push[pref!]", "[]"));
         row2Panel.setAlignmentX(LEFT_ALIGNMENT);
+        row2Panel.setOpaque(false);
         row2Panel.setBorder(BorderFactory.createEmptyBorder(2, 0, 2, 0));
 
         JPanel linksPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        linksPanel.setOpaque(false);
         
         rawJsonRequestConfigLink = new CodeHyperlink("Request", 
                 () -> "Raw JSON Request", 
@@ -213,8 +221,12 @@ public class StatusPanel extends JPanel {
                 "json");
         linksPanel.add(rawJsonResponseLink);
 
-        row2Panel.add(linksPanel, BorderLayout.WEST);
-        row2Panel.add(audioPlaybackPanel, BorderLayout.EAST);
+        row2Panel.add(linksPanel, "left");
+        
+        taskStatusComponent = new TaskStatusComponent(agi);
+        row2Panel.add(taskStatusComponent, "center");
+        
+        row2Panel.add(audioPlaybackPanel, "right");
         
         add(row2Panel);
 
