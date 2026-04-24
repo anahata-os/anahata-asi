@@ -57,46 +57,49 @@ import uno.anahata.asi.agi.tool.AgiTool;
 /**
  * A toolkit for interacting with the NetBeans Project APIs.
  * <p>
- * This toolkit acts as a global ContextProvider that manages a hierarchy of 
- * ProjectContextProviders, one for each open project in the IDE. It uses 
- * Canonical Paths for all registrations and lookups to ensure consistency 
+ * This toolkit acts as a global ContextProvider that manages a hierarchy of
+ * ProjectContextProviders, one for each open project in the IDE. It uses
+ * Canonical Paths for all registrations and lookups to ensure consistency
  * across physical and virtual (MasterFS) FileObject proxies.
  * </p>
- * 
+ *
  * @author anahata
  */
 @Slf4j
 @AgiToolkit("A toolkit for using netbeans project apis.")
 public class Projects extends AnahataToolkit implements PropertyChangeListener {
 
-    /** Flag indicating if the toolkit is currently listening for global IDE project changes. */
+    /**
+     * Flag indicating if the toolkit is currently listening for global IDE
+     * project changes.
+     */
     private transient boolean listening = false;
 
-    /** 
-     * {@inheritDoc} 
-     * <p>Registers project providers and ensures the hierarchical context 
-     * is synchronized with the current IDE state.</p> 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Registers project providers and ensures the hierarchical context is
+     * synchronized with the current IDE state.</p>
      */
     @Override
     public void initialize() {
         getChildrenProviders();
     }
-    
-    
-    
-    /** 
-     * {@inheritDoc} 
-     * <p>Overrides the base rebind logic to trigger a lazy initialization of all 
-     * project child providers and fires a UI refresh for all open projects. 
-     * This ensures that IDE annotations and context status are correctly 
-     * reflected immediately upon session start or restoration.</p> 
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Overrides the base rebind logic to trigger a lazy initialization of all
+     * project child providers and fires a UI refresh for all open projects.
+     * This ensures that IDE annotations and context status are correctly
+     * reflected immediately upon session start or restoration.</p>
      */
     @Override
     public void rebind() {
         super.rebind();
         // Force initialization of children to ensure UI annotations reflect context immediately
         //getChildrenProviders();
-        
+
         // Trigger UI refresh for all open projects to show context badges immediately
         for (String path : getOpenProjects()) {
             try {
@@ -107,40 +110,50 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
             }
         }
     }
-    
-    /** 
-     * {@inheritDoc} 
-     * <p>Provides a Markdown-formatted guide on how to handle Compile On Save 
-     * (CoS) project property overrides, explaining the priority of IDE 
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Provides a Markdown-formatted guide on how to handle Compile On Save
+     * (CoS) project property overrides, explaining the priority of IDE
      * configuration over POM properties and detailing FQN/path resolution
-     * strategies for loading java types by fqn or path.</p> 
-     * 
+     * strategies for loading java types by fqn or path.</p>
+     *
      * @return A list containing the project management instructions.
      * @throws Exception on internal error.
      */
     @Override
     public List<String> getSystemInstructions() throws Exception {
-        return Collections.singletonList(
-            "**Fqn / path resulutions**: use the Structure context provider of each project to work out fqns of all project types and the paths of all project files. Load project types with 'CodeModel.getTypeSourcesByFqn' and any other project files with the Resources toolkit. "
-                    + "By default, there is a Structure context provider for each open project so you should be able to see /workout the fqns of all types in all open projects and if you have no reason to believe that there could be another type with the same fqn then there is no need to do CodeModel.findTypes, just go straight for the getXxxxbyFqn methods \n."
-                    + "If you see an open project but it has no Structure context provider or it is not providing, then you can also assume there isn't any other type with the same fqn in that project." +
-            "\n\nCompile on Save (CoS) Management:\n" +
-            "NetBeans Maven projects determine the 'Compile on Save' status using a tiered priority system. " +
-            "When a user asks to change this setting, you should offer these options:\n" +
-            "1. **Project POM**: Add/update `<netbeans.compile.on.save>all</netbeans.compile.on.save>` in the project's `pom.xml` properties.\n" +
-            "2. **Parent POM**: If it's a multi-module project, you can set it in the parent POM to apply it to all modules.\n" +
-            "3. **IDE Override**: Use the `setCompileOnSaveOverride` tool. This writes to `nb-configuration.xml` and is the same as using the IDE's 'Project Properties' dialog. " +
-            "This override ALWAYS wins over POM properties.\n\n" +
-            "**Strategy**: If the project is currently 'Disabled' via an override, changing the POM will have no effect until the override is removed or changed."
+        return Collections.singletonList("The Projects toolkit and its associated context providers allows you to interact with the netbeans projects api."
+                + ""
+                + "Besides from the tools, this toolkit automaticall registers three context providers for each open project and registers/unregisters these project-level context providers whenever the user opens or closes a project in this running instanc of NetBeans during the course of the session."
+                + "\na)Project Overview - has basic info about the project and loads the anahata.md file on the root of the project's folder as a managed Resource with SYSTEM_INSTRUCTIONS position."
+                + " These anahata.md files.are the project-level system instructions so **Don't unload these anahata.md resources without the users consent**. You can update the anahata.md file if the user asks you to using the Resources toolkit. "
+                + "This context provider has 2 child context providers:"
+                + "\n\tb)Project Structure (directory tree, file inf(type, size, version controls, sessions in context) "
+                + "\n\tc)Project Alerts: Project level problems and javac alerts. "
+                + "\n\n"
+                + "**Fqn / path resulutions**: use the Structure context provider of each project to work out fqns of all project types and the paths of all project files. Load project types with 'CodeModel.getTypeSourcesByFqn' and any other project files with the Resources toolkit. "
+                + "By default, there is a Structure context provider for each open project so you should be able to see /workout the fqns of all types in all open projects and if you have no reason to believe that there could be another type with the same fqn then there is no need to do CodeModel.findTypes, just go straight for the getXxxxbyFqn methods \n."
+                + "If you see an open project but it has no Structure context provider or it is not providing, then you can also assume there isn't any other type with the same fqn in that project."
+                + "\n\nCompile on Save (CoS) Management:\n"
+                + "NetBeans Maven projects determine the 'Compile on Save' status using a tiered priority system. "
+                + "When a user asks to change this setting, you should offer these options:\n"
+                + "1. **Project POM**: Add/update `<netbeans.compile.on.save>all</netbeans.compile.on.save>` in the project's `pom.xml` properties.\n"
+                + "2. **Parent POM**: If it's a multi-module project, you can set it in the parent POM to apply it to all modules.\n"
+                + "3. **IDE Override**: Use the `setCompileOnSaveOverride` tool. This writes to `nb-configuration.xml` and is the same as using the IDE's 'Project Properties' dialog. "
+                + "This override ALWAYS wins over POM properties.\n\n"
+                + "**Strategy**: If the project is currently 'Disabled' via an override, changing the POM will have no effect until the override is removed or changed."
         );
     }
 
-
-    /** 
-     * {@inheritDoc} 
-     * <p>Populates the RAG message with a high-level overview of the IDE environment, 
-     * including project folders, open projects, and the main project selection.</p> 
-     * 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Populates the RAG message with a high-level overview of the IDE
+     * environment, including project folders, open projects, and the main
+     * project selection.</p>
+     *
      * @param ragMessage The target RAG message.
      */
     @Override
@@ -149,27 +162,27 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         StringBuilder sb = new StringBuilder();
         sb.append("## IDE Project Environment\n");
         sb.append("- **NetBeansProjects Folder**: ").append(projectsFolder).append("\n");
-        
+
         List<String> folderNames = listAvailableProjectFolders();
         sb.append("- **Available Project Folders**: ").append(folderNames).append("\n");
-        
+
         List<String> openProjects = getOpenProjects();
         sb.append("- **Current Open Projects**: ").append(openProjects).append("\n");
-        
+
         String mainProject = getMainProject();
         sb.append("- **Current Main Project**: ").append(mainProject != null ? mainProject : "None").append("\n");
-        
+
         ragMessage.addTextPart(sb.toString());
     }
 
     /**
      * Ensures that the anahata.md file exists in the project root.
      * <p>
-     * If the file is missing, it creates a default template. The template 
-     * logic is aware of Maven multi-module structures and injects appropriate 
+     * If the file is missing, it creates a default template. The template logic
+     * is aware of Maven multi-module structures and injects appropriate
      * architectural notes for parent and sub-module projects.
      * </p>
-     * 
+     *
      * @param project The project to check.
      * @return The FileObject for anahata.md.
      * @throws IOException if creation fails.
@@ -186,7 +199,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         try (Writer writer = new OutputStreamWriter(md.getOutputStream())) {
             writer.write("# Project Instructions: " + info.getDisplayName() + "\n\n");
             writer.write("This file contains project-specific system instructions for the **" + info.getDisplayName() + "** project.\n");
-            
+
             NbMavenProject mvn = project.getLookup().lookup(NbMavenProject.class);
             if (mvn != null) {
                 org.apache.maven.project.MavenProject raw = mvn.getMavenProject();
@@ -203,10 +216,10 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     /**
      * Lists all directories within the user's NetBeansProjects folder.
      * <p>
-     * Scans the system's project folder and returns a sorted list of 
-     * names for all subdirectories.
+     * Scans the system's project folder and returns a sorted list of names for
+     * all subdirectories.
      * </p>
-     * 
+     *
      * @return A list of directory names.
      */
     public List<String> listAvailableProjectFolders() {
@@ -227,10 +240,11 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     /**
      * Locates an open project instance by its directory path.
      * <p>
-     * Performs a lookup across all currently open projects in the IDE using 
-     * canonical path comparison to avoid issues with symlinks or virtual file proxies.
+     * Performs a lookup across all currently open projects in the IDE using
+     * canonical path comparison to avoid issues with symlinks or virtual file
+     * proxies.
      * </p>
-     * 
+     *
      * @param projectDirectoryPath The absolute path to the project.
      * @return The Project instance.
      * @throws Exception if the project is not found or is closed.
@@ -249,12 +263,13 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     }
 
     /**
-     * Returns a list of absolute paths for all projects currently open in the IDE.
+     * Returns a list of absolute paths for all projects currently open in the
+     * IDE.
      * <p>
-     * Iterates through the IDE's open project list and captures the canonical 
+     * Iterates through the IDE's open project list and captures the canonical
      * path for each project's root directory.
      * </p>
-     * 
+     *
      * @return A list of canonical project paths.
      */
     public List<String> getOpenProjects() {
@@ -268,10 +283,10 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     /**
      * Returns the canonical path of the current NetBeans Main Project.
      * <p>
-     * Queries the IDE for the main project and resolves its directory to 
-     * an absolute canonical path.
+     * Queries the IDE for the main project and resolves its directory to an
+     * absolute canonical path.
      * </p>
-     * 
+     *
      * @return The main project path, or null if none is set.
      */
     public String getMainProject() {
@@ -282,10 +297,10 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     /**
      * Sets the specified open project as the IDE's 'Main Project'.
      * <p>
-     * Resolves the project by its path and updates the NetBeans project 
+     * Resolves the project by its path and updates the NetBeans project
      * management UI state.
      * </p>
-     * 
+     *
      * @param projectPath The absolute path of the project to set as main.
      * @throws Exception if the project is not open.
      */
@@ -298,10 +313,10 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     /**
      * Closes the specified projects in the IDE.
      * <p>
-     * Resolves multiple paths to project instances and performs a bulk 
-     * close operation through the IDE controller.
+     * Resolves multiple paths to project instances and performs a bulk close
+     * operation through the IDE controller.
      * </p>
-     * 
+     *
      * @param projectPaths A list of absolute paths of the projects to close.
      * @throws Exception if any path does not resolve to an open project.
      */
@@ -317,12 +332,12 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     /**
      * Opens a NetBeans project and optionally its subprojects.
      * <p>
-     * Handles both absolute and relative paths. It uses a CountDownLatch and 
-     * an IDE property listener to synchronize the asynchronous open operation 
-     * with the tool execution, ensuring the project is fully loaded before 
+     * Handles both absolute and relative paths. It uses a CountDownLatch and an
+     * IDE property listener to synchronize the asynchronous open operation with
+     * the tool execution, ensuring the project is fully loaded before
      * returning.
      * </p>
-     * 
+     *
      * @param projectPath The path to the project directory.
      * @param openSubprojects Whether to automatically open all subprojects.
      * @return A status message indicating success or timeout.
@@ -398,10 +413,10 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     /**
      * Opens all sub-modules for a given parent project.
      * <p>
-     * Queries the project's {@link SubprojectProvider} and initiates the 
+     * Queries the project's {@link SubprojectProvider} and initiates the
      * opening of all discovered subprojects in a single batch.
      * </p>
-     * 
+     *
      * @param projectPath The absolute path of the parent project.
      * @throws Exception if the parent project is not open.
      */
@@ -425,11 +440,11 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     /**
      * Generates a structured overview of a project's metadata and environment.
      * <p>
-     * Collects comprehensive data including packaging type, supported actions, 
-     * Java versions, source encoding, and 'Compile on Save' status. It also 
+     * Collects comprehensive data including packaging type, supported actions,
+     * Java versions, source encoding, and 'Compile on Save' status. It also
      * fetches a list of declared Maven dependencies.
      * </p>
-     * 
+     *
      * @param projectPath The absolute path of the project.
      * @return A {@link ProjectOverview} DTO.
      * @throws Exception if the project is not found or is closed.
@@ -501,10 +516,10 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     /**
      * Determines the effective 'Compile on Save' status for a project.
      * <p>
-     * Follows the NetBeans priority hierarchy: 1. IDE Configuration overrides, 
+     * Follows the NetBeans priority hierarchy: 1. IDE Configuration overrides,
      * 2. Maven properties in the POM, 3. Maven default settings.
      * </p>
-     * 
+     *
      * @param project The project to check.
      * @return A status string indicating the value and its source.
      */
@@ -537,13 +552,14 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     /**
      * Configures a permanent 'Compile on Save' override for a project.
      * <p>
-     * Writes the netbeans.compile.on.save property to the project's 
-     * nb-configuration.xml file. This ensures the setting persists across 
-     * IDE restarts and takes precedence over POM properties.
+     * Writes the netbeans.compile.on.save property to the project's
+     * nb-configuration.xml file. This ensures the setting persists across IDE
+     * restarts and takes precedence over POM properties.
      * </p>
-     * 
+     *
      * @param projectPath The absolute path of the project.
-     * @param enabled Whether to enable ('all') or disable ('none') Compile on Save.
+     * @param enabled Whether to enable ('all') or disable ('none') Compile on
+     * Save.
      * @throws Exception on internal write error.
      */
     @AgiTool("Sets the 'Compile on Save' override in nb-configuration.xml. This 'shared' configuration is what the IDE's Properties dialog manages and it overrides values in the pom.xml.")
@@ -557,7 +573,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         if (aux != null) {
             String ns = "http://www.netbeans.org/ns/maven-properties-data/1";
             org.w3c.dom.Element props = aux.getConfigurationFragment("properties", ns, true);
-            
+
             if (props == null) {
                 props = org.openide.xml.XMLUtil.createDocument("properties", ns, null, null).getDocumentElement();
             }
@@ -578,12 +594,13 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     }
 
     /**
-     * Generates a structural overview of all files and source folders in a project.
+     * Generates a structural overview of all files and source folders in a
+     * project.
      * <p>
-     * Scans the project root for files and traverses all registered Java 
-     * and Resource source groups to build a detailed DTO tree.
+     * Scans the project root for files and traverses all registered Java and
+     * Resource source groups to build a detailed DTO tree.
      * </p>
-     * 
+     *
      * @param projectPath The absolute path of the project.
      * @return A {@link ProjectFiles} DTO.
      * @throws Exception if project not open.
@@ -620,11 +637,11 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     /**
      * Performs a comprehensive diagnostic scan of a project.
      * <p>
-     * Aggregates compilation errors from the NetBeans ErrorsCache and high-level 
-     * IDE project problems (like missing SDKs or broken dependencies) into a 
-     * single diagnostic report.
+     * Aggregates compilation errors from the NetBeans ErrorsCache and
+     * high-level IDE project problems (like missing SDKs or broken
+     * dependencies) into a single diagnostic report.
      * </p>
-     * 
+     *
      * @param projectPath The absolute path of the project to scan.
      * @return A {@link ProjectDiagnostics} report.
      * @throws Exception if project not open.
@@ -684,10 +701,10 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     /**
      * Locates all Java source files with compilation errors in the project.
      * <p>
-     * Scans all Java source groups and uses the parsing cache to identify 
-     * files currently flagged with errors.
+     * Scans all Java source groups and uses the parsing cache to identify files
+     * currently flagged with errors.
      * </p>
-     * 
+     *
      * @param project The target project.
      * @return A list of FileObjects in error.
      */
@@ -718,11 +735,11 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     /**
      * Toggles the context provider state for a specific project.
      * <p>
-     * Locates the appropriate provider by its canonical path and updates its 
-     * activation state. Triggers a recursive visual refresh of project icons 
-     * in the NetBeans UI.
+     * Locates the appropriate provider by its canonical path and updates its
+     * activation state. Triggers a recursive visual refresh of project icons in
+     * the NetBeans UI.
      * </p>
-     * 
+     *
      * @param projectPath The absolute path of the project.
      * @param enabled Whether to enable the context provider.
      */
@@ -745,13 +762,14 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     /**
      * Executes a project-level action.
      * <p>
-     * Uses the project's action provider to trigger an asynchronous task. 
-     * This is suitable for actions like 'run', 'clean', or 'build'.
+     * Uses the project's action provider to trigger an asynchronous task. This
+     * is suitable for actions like 'run', 'clean', or 'build'.
      * </p>
-     * 
+     *
      * @param projectPath The absolute path of the project.
      * @param action The action to invoke.
-     * @throws Exception if the project is not open or the action is unsupported.
+     * @throws Exception if the project is not open or the action is
+     * unsupported.
      */
     @AgiTool("Invokes ('Fires and forgets') a NetBeans Project supported Action (like 'run' or 'build')  on a given open Project (via ActionProvider).\n"
             + "\n\nThis method is always asynchronous by design. (regardless of whether you specify the asynchronous parameter or not)"
@@ -773,12 +791,13 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         }
     }
 
-    /** 
-     * {@inheritDoc} 
-     * <p>Returns the list of active project child providers, implementing a 
-     * lazy-initialization pattern that registers a global IDE project 
-     * state listener on the first call.</p> 
-     * 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns the list of active project child providers, implementing a
+     * lazy-initialization pattern that registers a global IDE project state
+     * listener on the first call.</p>
+     *
      * @return A list of context providers.
      */
     @Override
@@ -794,9 +813,9 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     /**
      * Synchronizes project context providers with currently open IDE projects.
      * <p>
-     * Uses canonical paths to detect newly opened projects and stale 
-     * providers for closed projects. It maintains the hierarchical context 
-     * structure by adding or pruning providers as needed.
+     * Uses canonical paths to detect newly opened projects and stale providers
+     * for closed projects. It maintains the hierarchical context structure by
+     * adding or pruning providers as needed.
      * </p>
      */
     private synchronized void syncProjects() {
@@ -826,10 +845,10 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     /**
      * Returns a project context provider by path.
      * <p>
-     * Filters the active provider hierarchy for a project context provider 
-     * that matches the specified canonical path.
+     * Filters the active provider hierarchy for a project context provider that
+     * matches the specified canonical path.
      * </p>
-     * 
+     *
      * @param projectPath The canonical path.
      * @return An Optional containing the provider.
      */
@@ -844,11 +863,11 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     /**
      * Resolves a FileObject to its canonical physical path.
      * <p>
-     * Attempts to normalize the file and resolve it via standard Java NIO 
-     * canonical path resolution. Falls back to the standard path string if 
-     * the resolution fails.
+     * Attempts to normalize the file and resolve it via standard Java NIO
+     * canonical path resolution. Falls back to the standard path string if the
+     * resolution fails.
      * </p>
-     * 
+     *
      * @param fo The FileObject.
      * @return The canonical path string.
      */
@@ -858,8 +877,8 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         }
         File f = FileUtil.toFile(fo);
         if (f != null) {
-            try { 
-                return f.getCanonicalPath(); 
+            try {
+                return f.getCanonicalPath();
             } catch (IOException e) {
                 log.debug("Canonical path resolution failed for: {}", f.getPath());
             }
@@ -867,12 +886,13 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         return fo.getPath();
     }
 
-    /** 
-     * {@inheritDoc} 
-     * <p>Listens for IDE global project state changes and triggers a 
-     * synchronization of the context provider hierarchy whenever 
-     * projects are opened or closed.</p> 
-     * 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Listens for IDE global project state changes and triggers a
+     * synchronization of the context provider hierarchy whenever projects are
+     * opened or closed.</p>
+     *
      * @param evt The property change event from the IDE.
      */
     @Override
@@ -885,10 +905,10 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     /**
      * Recursively builds a structural tree for a source folder.
      * <p>
-     * Traverses children, classifying subfolders as SourceFolders and 
-     * files as ProjectFiles, while calculating the recursive directory size.
+     * Traverses children, classifying subfolders as SourceFolders and files as
+     * ProjectFiles, while calculating the recursive directory size.
      * </p>
-     * 
+     *
      * @param folder The target folder.
      * @param displayName The display name (from SourceGroup).
      * @return A {@link SourceFolder} DTO.
@@ -916,11 +936,11 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     /**
      * Creates a {@link ProjectFile} DTO with IDE-specific name annotations.
      * <p>
-     * Captures file metadata and attempts to extract HTML display names 
-     * from the IDE's node delegate, stripping HTML tags to provide a 
-     * clean annotated name.
+     * Captures file metadata and attempts to extract HTML display names from
+     * the IDE's node delegate, stripping HTML tags to provide a clean annotated
+     * name.
      * </p>
-     * 
+     *
      * @param fo The target file.
      * @return A {@link ProjectFile} DTO.
      * @throws FileStateInvalidException if the filesystem is invalid.
@@ -942,10 +962,10 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     /**
      * Returns the root NetBeansProjects directory.
      * <p>
-     * Queries the NetBeans project chooser for the standardized projects 
-     * folder location, falling back to a default folder in the user's home directory.
+     * Queries the NetBeans project chooser for the standardized projects folder
+     * location, falling back to a default folder in the user's home directory.
      * </p>
-     * 
+     *
      * @return Absolute path to the projects folder.
      */
     private String getNetBeansProjectsFolder() {
