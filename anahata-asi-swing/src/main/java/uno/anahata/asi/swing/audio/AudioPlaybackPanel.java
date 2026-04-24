@@ -163,8 +163,7 @@ public final class AudioPlaybackPanel extends JPanel {
         Audio toolkit = getAudioToolkit();
         AudioDevice device = (toolkit != null) ? toolkit.getSelectedOutputDevice() : null;
 
-        AtomicBoolean taskPlaying = new AtomicBoolean(true);
-        Future<?> future = agiPanel.getAgi().getExecutor().submit(() -> {
+        SwingTask<Void> playbackTask = new SwingTask<>(agiPanel, "Playing Audio", () -> {
             playing.set(true);
             SwingUtilities.invokeLater(() -> {
                 playbackLevelBar.setVisible(true);
@@ -181,7 +180,7 @@ public final class AudioPlaybackPanel extends JPanel {
 
                 byte[] buffer = new byte[4096];
                 int read;
-                while (taskPlaying.get() && (read = ais.read(buffer, 0, buffer.length)) != -1) {
+                while (!Thread.currentThread().isInterrupted() && (read = ais.read(buffer, 0, buffer.length)) != -1) {
                     line.write(buffer, 0, read);
                     double rms = AudioUtils.calculateRMS(buffer, read);
                     SwingUtilities.invokeLater(() -> playbackLevelBar.setValue((int) (rms * 100)));
@@ -199,12 +198,12 @@ public final class AudioPlaybackPanel extends JPanel {
                     }
                 });
             }
-        });
+            return null;
+        }, null, null, false);
         
-        return () -> {
-            taskPlaying.set(false);
-            future.cancel(true);
-        };
+        playbackTask.start();
+        
+        return () -> playbackTask.cancel(true);
     }
 
     /** 
@@ -230,7 +229,7 @@ public final class AudioPlaybackPanel extends JPanel {
      */
     private void initPlaybackLineComboBox() {
         new SwingTask<List<AudioDevice>>(
-            this,
+            agiPanel,
             "Load Playback Devices",
             () -> AudioDevice.listAvailableDevices(AudioDevice.Type.OUTPUT),
             (devices) -> {
@@ -250,6 +249,6 @@ public final class AudioPlaybackPanel extends JPanel {
                 playbackLineComboBox.setEnabled(false);
                 playbackLineComboBox.setToolTipText("Error: " + ((Exception) error).getMessage());
             }
-        ).execute();
+        ).start();
     }
 }
