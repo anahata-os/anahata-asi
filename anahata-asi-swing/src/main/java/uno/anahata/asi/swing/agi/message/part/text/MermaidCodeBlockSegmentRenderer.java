@@ -148,7 +148,7 @@ public class MermaidCodeBlockSegmentRenderer extends CodeBlockSegmentRenderer {
         }
         
         // Use standard SwingTask with showError=false to prevent popups during transient failures
-        new SwingTask<Image>(null, "Mermaid Renderer", () -> {
+        new SwingTask<Image>(agiPanel, "Mermaid Renderer", () -> {
             String encoded = Base64.getEncoder().encodeToString(currentContent.getBytes(StandardCharsets.UTF_8));
             String urlString = "https://mermaid.ink/img/" + encoded;
             URL url = new URL(urlString);
@@ -174,7 +174,7 @@ public class MermaidCodeBlockSegmentRenderer extends CodeBlockSegmentRenderer {
             if (copyImageButton != null) {
                 copyImageButton.setEnabled(false);
             }
-        }, false).execute();
+        }, false).start();
     }
 
     /** 
