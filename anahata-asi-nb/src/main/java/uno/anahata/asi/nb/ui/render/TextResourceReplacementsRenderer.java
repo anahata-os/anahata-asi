@@ -40,9 +40,16 @@ public class TextResourceReplacementsRenderer extends AbstractTextResourceWriteR
                 continue;
             }
             
+            List<Integer> targetIndexes = tr.getOccurrenceIndexes();
+            int currentOccurrence = 0;
             int idx = content.indexOf(target);
             while (idx != -1) {
-                events.add(new ReplacementEvent(tr, idx));
+                currentOccurrence++;
+                // If occurrenceIndexes is null/empty, we assume all occurrences are targeted
+                if (targetIndexes == null || targetIndexes.isEmpty() || targetIndexes.contains(currentOccurrence)) {
+                    events.add(new ReplacementEvent(tr, idx));
+                }
+                
                 idx = content.indexOf(target, idx + target.length());
                 // Avoid infinite loops if replacement contains target
                 if (tr.getReplacement() != null && tr.getReplacement().contains(target)) {
@@ -88,7 +95,8 @@ public class TextResourceReplacementsRenderer extends AbstractTextResourceWriteR
                         .target(update.getOriginalContent()) 
                         .replacement(newContent)
                         .reason("User manual edit")
-                        .expectedCount(1)
+                        .totalOccurrences(1)
+                        .occurrenceIndexes(List.of(1))
                         .build())
         );
         dto.setOriginalContent(update.getOriginalContent());
