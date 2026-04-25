@@ -89,22 +89,24 @@ public abstract class AbstractTextResourceWrite {
     /**
      * Calculates the resulting content of the resource based on the captured {@code originalContent}.
      * 
+     * @param agi The parent agi session.
      * @return The resulting content.
      * @throws Exception if the calculation fails or original content is missing.
      */
-    public abstract String calculateResultingContent() throws Exception;
+    public abstract String calculateResultingContent(Agi agi) throws Exception;
 
     /**
      * Generates a unified diff of the proposed changes against the captured original content.
      * 
+     * @param agi The parent agi session.
      * @return The unified diff string.
      * @throws Exception if original content is missing or diff generation fails.
      */
-    public String getUnifiedDiff() throws Exception {
+    public String getUnifiedDiff(Agi agi) throws Exception {
         if (originalContent == null) {
             throw new AgiToolException("Logic Error: getUnifiedDiff called before captureOriginalContent");
         }
-        String proposed = calculateResultingContent();
+        String proposed = calculateResultingContent(agi);
         return AnahataDiffUtils.generateUnifiedDiff(originalResourceName, originalContent, proposed);
     }
 
@@ -136,7 +138,7 @@ public abstract class AbstractTextResourceWrite {
         }
 
         // 3. Identical Content Check (Performed last to avoid masking more specific errors in subclasses)
-        if (Objects.equals(originalContent, calculateResultingContent())) {
+        if (Objects.equals(originalContent, calculateResultingContent(agi))) {
              throw new AgiToolException("Update rejected: The resulting content is identical to the current file content on disk.");
         }
     }

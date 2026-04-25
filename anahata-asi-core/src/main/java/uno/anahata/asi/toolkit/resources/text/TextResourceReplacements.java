@@ -45,7 +45,7 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
 
     /** {@inheritDoc} */
     @Override
-    public String calculateResultingContent() throws Exception {
+    public String calculateResultingContent(Agi agi) throws Exception {
         if (originalContent == null) {
             throw new AgiToolException("Logic Error: calculateResultingContent called before captureOriginalContent");
         }

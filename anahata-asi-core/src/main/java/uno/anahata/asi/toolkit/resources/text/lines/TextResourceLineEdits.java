@@ -9,6 +9,7 @@ import uno.anahata.asi.toolkit.resources.text.AbstractTextResourceWrite;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.tool.AgiToolException;
 
 /**
@@ -69,7 +70,7 @@ public class TextResourceLineEdits extends AbstractTextResourceWrite {
      * </p>
      */
     @Override
-    public String calculateResultingContent() throws Exception {
+    public String calculateResultingContent(Agi agi) throws Exception {
         if (originalContent == null) {
             throw new AgiToolException("Logic Error: calculateResultingContent called before captureOriginalContent");
         }
