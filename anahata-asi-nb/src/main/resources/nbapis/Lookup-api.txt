@@ -1,0 +1,19 @@
+========================================
+ API Bible: org.openide.util.Lookup
+========================================
+
+INNER TYPES:
+ - org.openide.util.Lookup$Provider (Interface)
+ - org.openide.util.Lookup$DefLookup (Class)
+ - org.openide.util.Lookup$Template (Class)
+ - org.openide.util.Lookup$Result (Class)
+ - org.openide.util.Lookup$Item (Class)
+ - org.openide.util.Lookup$Empty (Class)
+
+METHODS:
+public static synchronized Lookup getDefault()
+public abstract Result lookup(Template)
+public abstract Object lookup(Class)
+public Collection lookupAll(Class)
+public Item lookupItem(Template)
+public Result lookupResult(Class)

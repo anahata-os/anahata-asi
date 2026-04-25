@@ -1,0 +1,15 @@
+========================================
+ API Bible: com.sun.source.tree.Tree$Kind
+========================================
+
+METHODS:
+public Class asInterface()
+public volatile int compareTo(Object)
+public final int compareTo(Enum)
+public final Optional describeConstable()
+public final Class getDeclaringClass()
+public final String name()
+public final int ordinal()
+public static Kind valueOf(String)
+public static Enum valueOf(Class, String)
+public static Kind[] values()

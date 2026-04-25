@@ -1,0 +1,19 @@
+========================================
+ API Bible: org.netbeans.api.java.source.ElementHandle
+========================================
+
+INNER TYPES:
+ - org.netbeans.api.java.source.ElementHandle$ElementHandleAccessorImpl (Class)
+
+METHODS:
+public static ElementHandle create(Element)
+public static ElementHandle createModuleElementHandle(String)
+public static ElementHandle createPackageElementHandle(String)
+public static ElementHandle createTypeElementHandle(ElementKind, String)
+public static ElementHandle from(TypeMirrorHandle)
+public String getBinaryName()
+public ElementKind getKind()
+public String getQualifiedName()
+public Element resolve(CompilationInfo)
+public boolean signatureEquals(Element)
+public boolean signatureEquals(ElementHandle)

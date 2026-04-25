@@ -1,0 +1,21 @@
+========================================
+ API Bible: org.netbeans.api.java.source.JavaSource
+========================================
+
+INNER TYPES:
+ - org.netbeans.api.java.source.JavaSource$MultiTask (Class)
+ - org.netbeans.api.java.source.JavaSource$JavaSourceAccessorImpl (Class)
+ - org.netbeans.api.java.source.JavaSource$InsufficientMemoryException (Class)
+ - org.netbeans.api.java.source.JavaSource$Priority (Class)
+ - org.netbeans.api.java.source.JavaSource$Phase (Class)
+
+METHODS:
+public static transient JavaSource create(ClasspathInfo, FileObject[])
+public static JavaSource create(ClasspathInfo, Collection)
+public static JavaSource forDocument(Document)
+public static JavaSource forFileObject(FileObject)
+public ClasspathInfo getClasspathInfo()
+public Collection getFileObjects()
+public ModificationResult runModificationTask(Task)
+public void runUserActionTask(Task, boolean)
+public Future runWhenScanFinished(Task, boolean)

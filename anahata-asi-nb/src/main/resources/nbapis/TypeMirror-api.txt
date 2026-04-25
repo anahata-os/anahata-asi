@@ -1,0 +1,10 @@
+========================================
+ API Bible: javax.lang.model.type.TypeMirror
+========================================
+
+METHODS:
+public abstract Object accept(TypeVisitor, Object)
+public abstract Annotation getAnnotation(Class)
+public abstract List getAnnotationMirrors()
+public abstract Annotation[] getAnnotationsByType(Class)
+public abstract TypeKind getKind()

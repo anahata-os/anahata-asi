@@ -1,0 +1,26 @@
+========================================
+ API Bible: com.sun.source.util.Trees
+========================================
+
+METHODS:
+public abstract String getDocComment(TreePath)
+public abstract Element getElement(TreePath)
+public abstract TypeMirror getLub(CatchTree)
+public abstract TypeMirror getOriginalType(ErrorType)
+public abstract TreePath getPath(CompilationUnitTree, Tree)
+public abstract TreePath getPath(Element)
+public abstract TreePath getPath(Element, AnnotationMirror)
+public abstract TreePath getPath(Element, AnnotationMirror, AnnotationValue)
+public abstract Scope getScope(TreePath)
+public abstract SourcePositions getSourcePositions()
+public abstract Tree getTree(Element, AnnotationMirror)
+public abstract Tree getTree(Element)
+public abstract Tree getTree(Element, AnnotationMirror, AnnotationValue)
+public abstract MethodTree getTree(ExecutableElement)
+public abstract ClassTree getTree(TypeElement)
+public abstract TypeMirror getTypeMirror(TreePath)
+public static Trees instance(ProcessingEnvironment)
+public static Trees instance(CompilationTask)
+public abstract boolean isAccessible(Scope, TypeElement)
+public abstract boolean isAccessible(Scope, Element, DeclaredType)
+public abstract void printMessage(Kind, CharSequence, Tree, CompilationUnitTree)

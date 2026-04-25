@@ -1,0 +1,22 @@
+========================================
+ API Bible: javax.lang.model.element.TypeElement
+========================================
+
+METHODS:
+public abstract Object accept(ElementVisitor, Object)
+public abstract TypeMirror asType()
+public abstract Annotation getAnnotation(Class)
+public abstract List getAnnotationMirrors()
+public abstract Annotation[] getAnnotationsByType(Class)
+public abstract List getEnclosedElements()
+public abstract Element getEnclosingElement()
+public abstract List getInterfaces()
+public abstract ElementKind getKind()
+public abstract Set getModifiers()
+public abstract NestingKind getNestingKind()
+public List getPermittedSubclasses()
+public abstract Name getQualifiedName()
+public List getRecordComponents()
+public abstract Name getSimpleName()
+public abstract TypeMirror getSuperclass()
+public abstract List getTypeParameters()

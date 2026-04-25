@@ -1,0 +1,37 @@
+========================================
+ API Bible: org.netbeans.api.java.source.GeneratorUtilities
+========================================
+
+INNER TYPES:
+ - org.netbeans.api.java.source.GeneratorUtilities$ClassMemberComparator (Class)
+ - org.netbeans.api.java.source.GeneratorUtilities$FieldRefVisitor (Class)
+ - org.netbeans.api.java.source.GeneratorUtilities$ImportsComparator (Class)
+
+METHODS:
+public CompilationUnitTree addImports(CompilationUnitTree, Set)
+public transient ModifiersTree appendToAnnotationValue(ModifiersTree, TypeElement, String, ExpressionTree[])
+public transient CompilationUnitTree appendToAnnotationValue(CompilationUnitTree, TypeElement, String, ExpressionTree[])
+public void copyComments(Tree, Tree, boolean)
+public MethodTree createAbstractMethodImplementation(TypeElement, ExecutableElement)
+public List createAbstractMethodImplementations(TypeElement, Iterable)
+public List createAllAbstractMethodImplementations(TypeElement)
+public MethodTree createConstructor(TypeElement, Iterable, ExecutableElement)
+public MethodTree createConstructor(ClassTree, Iterable)
+public MethodTree createDefaultConstructor(TypeElement, Iterable, ExecutableElement)
+public BlockTree createDefaultLambdaBody(LambdaExpressionTree, ExecutableElement)
+public ExpressionTree createDefaultLambdaExpression(LambdaExpressionTree, ExecutableElement)
+public CompilationUnitTree createFromTemplate(FileObject, String, ElementKind)
+public MethodTree createGetter(TypeElement, VariableElement)
+public MethodTree createGetter(VariableTree)
+public MethodTree createMethod(DeclaredType, ExecutableElement)
+public MethodTree createOverridingMethod(TypeElement, ExecutableElement)
+public List createOverridingMethods(TypeElement, Iterable)
+public MethodTree createSetter(ClassTree, VariableTree)
+public MethodTree createSetter(TypeElement, VariableElement)
+public static GeneratorUtilities get(WorkingCopy)
+public Tree importComments(Tree, CompilationUnitTree)
+public Tree importFQNs(Tree)
+public ClassTree insertClassMember(ClassTree, Tree, int)
+public ClassTree insertClassMember(ClassTree, Tree)
+public ClassTree insertClassMembers(ClassTree, Iterable)
+public ClassTree insertClassMembers(ClassTree, List, int)

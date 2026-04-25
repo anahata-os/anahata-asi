@@ -1,0 +1,10 @@
+========================================
+ API Bible: com.sun.source.tree.Tree
+========================================
+
+INNER TYPES:
+ - com.sun.source.tree.Tree$Kind (Class)
+
+METHODS:
+public abstract Object accept(TreeVisitor, Object)
+public abstract Kind getKind()

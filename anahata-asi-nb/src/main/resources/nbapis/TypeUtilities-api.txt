@@ -1,0 +1,14 @@
+========================================
+ API Bible: org.netbeans.api.java.source.TypeUtilities
+========================================
+
+INNER TYPES:
+ - org.netbeans.api.java.source.TypeUtilities$TypeNameOptions (Class)
+ - org.netbeans.api.java.source.TypeUtilities$TypeNameVisitor (Class)
+
+METHODS:
+public TypeMirror getDenotableType(TypeMirror)
+public ExecutableType getDescriptorType(DeclaredType)
+public transient CharSequence getTypeName(TypeMirror, TypeNameOptions[])
+public boolean isCastable(TypeMirror, TypeMirror)
+public TypeMirror substitute(TypeMirror, List, List)

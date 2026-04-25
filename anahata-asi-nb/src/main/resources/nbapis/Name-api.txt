@@ -1,0 +1,13 @@
+========================================
+ API Bible: javax.lang.model.element.Name
+========================================
+
+METHODS:
+public abstract char charAt(int)
+public IntStream chars()
+public IntStream codePoints()
+public abstract boolean contentEquals(CharSequence)
+public void getChars(int, int, char[], int)
+public boolean isEmpty()
+public abstract int length()
+public abstract CharSequence subSequence(int, int)

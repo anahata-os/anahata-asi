@@ -1,0 +1,13 @@
+========================================
+ API Bible: com.sun.source.util.TreePath
+========================================
+
+METHODS:
+public void forEach(Consumer)
+public CompilationUnitTree getCompilationUnit()
+public Tree getLeaf()
+public TreePath getParentPath()
+public static TreePath getPath(CompilationUnitTree, Tree)
+public static TreePath getPath(TreePath, Tree)
+public Iterator iterator()
+public Spliterator spliterator()

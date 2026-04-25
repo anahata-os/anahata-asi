@@ -1,0 +1,32 @@
+========================================
+ API Bible: org.netbeans.api.java.source.CompilationInfo
+========================================
+
+INNER TYPES:
+ - org.netbeans.api.java.source.CompilationInfo$CacheClearPolicy (Class)
+
+METHODS:
+public static CompilationInfo get(Result)
+public Object getCachedValue(Object)
+public TreePath getChangedTree()
+public ClasspathInfo getClasspathInfo()
+public CompilationUnitTree getCompilationUnit()
+public List getDiagnostics()
+public DocTrees getDocTrees()
+public Document getDocument()
+public synchronized ElementUtilities getElementUtilities()
+public Elements getElements()
+public FileObject getFileObject()
+public JavaSource getJavaSource()
+public Phase getPhase()
+public PositionConverter getPositionConverter()
+public Snapshot getSnapshot()
+public SourceVersion getSourceVersion()
+public String getText()
+public TokenHierarchy getTokenHierarchy()
+public List getTopLevelElements()
+public synchronized TreeUtilities getTreeUtilities()
+public synchronized Trees getTrees()
+public synchronized TypeUtilities getTypeUtilities()
+public Types getTypes()
+public void putCachedValue(Object, Object, CacheClearPolicy)

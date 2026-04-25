@@ -1,0 +1,20 @@
+========================================
+ API Bible: org.netbeans.api.java.source.TreePathHandle
+========================================
+
+INNER TYPES:
+ - org.netbeans.api.java.source.TreePathHandle$Delegate (Interface)
+ - org.netbeans.api.java.source.TreePathHandle$EmptyDelegate (Class)
+ - org.netbeans.api.java.source.TreePathHandle$CountingDelegate (Class)
+ - org.netbeans.api.java.source.TreePathHandle$TreeDelegate (Class)
+ - org.netbeans.api.java.source.TreePathHandle$ElementDelegate (Class)
+
+METHODS:
+public static TreePathHandle create(TreePath, CompilationInfo)
+public static TreePathHandle create(Element, CompilationInfo)
+public static TreePathHandle from(ElementHandle, ClasspathInfo)
+public ElementHandle getElementHandle()
+public FileObject getFileObject()
+public Kind getKind()
+public TreePath resolve(CompilationInfo)
+public Element resolveElement(CompilationInfo)

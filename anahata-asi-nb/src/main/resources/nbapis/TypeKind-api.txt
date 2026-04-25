@@ -1,0 +1,15 @@
+========================================
+ API Bible: javax.lang.model.type.TypeKind
+========================================
+
+METHODS:
+public volatile int compareTo(Object)
+public final int compareTo(Enum)
+public final Optional describeConstable()
+public final Class getDeclaringClass()
+public boolean isPrimitive()
+public final String name()
+public final int ordinal()
+public static TypeKind valueOf(String)
+public static Enum valueOf(Class, String)
+public static TypeKind[] values()

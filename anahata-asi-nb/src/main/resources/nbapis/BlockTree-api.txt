@@ -1,0 +1,9 @@
+========================================
+ API Bible: com.sun.source.tree.BlockTree
+========================================
+
+METHODS:
+public abstract Object accept(TreeVisitor, Object)
+public abstract Kind getKind()
+public abstract List getStatements()
+public abstract boolean isStatic()

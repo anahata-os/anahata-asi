@@ -1,0 +1,15 @@
+========================================
+ API Bible: javax.lang.model.type.ExecutableType
+========================================
+
+METHODS:
+public abstract Object accept(TypeVisitor, Object)
+public abstract Annotation getAnnotation(Class)
+public abstract List getAnnotationMirrors()
+public abstract Annotation[] getAnnotationsByType(Class)
+public abstract TypeKind getKind()
+public abstract List getParameterTypes()
+public abstract TypeMirror getReceiverType()
+public abstract TypeMirror getReturnType()
+public abstract List getThrownTypes()
+public abstract List getTypeVariables()

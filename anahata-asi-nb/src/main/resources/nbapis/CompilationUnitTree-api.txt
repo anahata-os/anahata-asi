@@ -1,0 +1,15 @@
+========================================
+ API Bible: com.sun.source.tree.CompilationUnitTree
+========================================
+
+METHODS:
+public abstract Object accept(TreeVisitor, Object)
+public abstract List getImports()
+public abstract Kind getKind()
+public abstract LineMap getLineMap()
+public ModuleTree getModule()
+public abstract PackageTree getPackage()
+public abstract List getPackageAnnotations()
+public abstract ExpressionTree getPackageName()
+public abstract JavaFileObject getSourceFile()
+public abstract List getTypeDecls()

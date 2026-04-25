@@ -1,0 +1,17 @@
+========================================
+ API Bible: org.openide.cookies.EditorCookie
+========================================
+
+INNER TYPES:
+ - org.openide.cookies.EditorCookie$Observable (Interface)
+
+METHODS:
+public abstract boolean close()
+public abstract StyledDocument getDocument()
+public abstract Set getLineSet()
+public abstract JEditorPane[] getOpenedPanes()
+public abstract boolean isModified()
+public abstract void open()
+public abstract StyledDocument openDocument()
+public abstract Task prepareDocument()
+public abstract void saveDocument()

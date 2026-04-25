@@ -1,0 +1,13 @@
+========================================
+ API Bible: javax.lang.model.type.DeclaredType
+========================================
+
+METHODS:
+public abstract Object accept(TypeVisitor, Object)
+public abstract Element asElement()
+public abstract Annotation getAnnotation(Class)
+public abstract List getAnnotationMirrors()
+public abstract Annotation[] getAnnotationsByType(Class)
+public abstract TypeMirror getEnclosingType()
+public abstract TypeKind getKind()
+public abstract List getTypeArguments()

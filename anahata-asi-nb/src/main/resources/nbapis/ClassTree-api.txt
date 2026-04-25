@@ -1,0 +1,14 @@
+========================================
+ API Bible: com.sun.source.tree.ClassTree
+========================================
+
+METHODS:
+public abstract Object accept(TreeVisitor, Object)
+public abstract Tree getExtendsClause()
+public abstract List getImplementsClause()
+public abstract Kind getKind()
+public abstract List getMembers()
+public abstract ModifiersTree getModifiers()
+public List getPermitsClause()
+public abstract Name getSimpleName()
+public abstract List getTypeParameters()

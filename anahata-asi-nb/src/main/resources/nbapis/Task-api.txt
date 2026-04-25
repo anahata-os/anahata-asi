@@ -1,0 +1,6 @@
+========================================
+ API Bible: org.netbeans.api.java.source.Task
+========================================
+
+METHODS:
+public abstract void run(Object)

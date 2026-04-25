@@ -1,0 +1,6 @@
+========================================
+ API Bible: org.openide.cookies.SaveCookie
+========================================
+
+METHODS:
+public abstract void save()

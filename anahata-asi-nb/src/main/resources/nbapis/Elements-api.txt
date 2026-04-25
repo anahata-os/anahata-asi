@@ -1,0 +1,43 @@
+========================================
+ API Bible: javax.lang.model.util.Elements
+========================================
+
+INNER TYPES:
+ - javax.lang.model.util.Elements$Origin (Class)
+ - javax.lang.model.util.Elements$DocCommentKind (Class)
+
+METHODS:
+public abstract List getAllAnnotationMirrors(Element)
+public abstract List getAllMembers(TypeElement)
+public Set getAllModuleElements()
+public Set getAllPackageElements(CharSequence)
+public Set getAllTypeElements(CharSequence)
+public abstract Name getBinaryName(TypeElement)
+public abstract String getConstantExpression(Object)
+public abstract String getDocComment(Element)
+public DocCommentKind getDocCommentKind(Element)
+public abstract Map getElementValuesWithDefaults(AnnotationMirror)
+public TypeElement getEnumConstantBody(VariableElement)
+public JavaFileObject getFileObjectOf(Element)
+public ModuleElement getModuleElement(CharSequence)
+public ModuleElement getModuleOf(Element)
+public abstract Name getName(CharSequence)
+public Origin getOrigin(Element)
+public Origin getOrigin(AnnotatedConstruct, AnnotationMirror)
+public Origin getOrigin(ModuleElement, Directive)
+public TypeElement getOutermostTypeElement(Element)
+public PackageElement getPackageElement(ModuleElement, CharSequence)
+public abstract PackageElement getPackageElement(CharSequence)
+public abstract PackageElement getPackageOf(Element)
+public abstract TypeElement getTypeElement(CharSequence)
+public TypeElement getTypeElement(ModuleElement, CharSequence)
+public abstract boolean hides(Element, Element)
+public boolean isAutomaticModule(ModuleElement)
+public boolean isBridge(ExecutableElement)
+public boolean isCanonicalConstructor(ExecutableElement)
+public boolean isCompactConstructor(ExecutableElement)
+public abstract boolean isDeprecated(Element)
+public abstract boolean isFunctionalInterface(TypeElement)
+public abstract boolean overrides(ExecutableElement, ExecutableElement, TypeElement)
+public abstract transient void printElements(Writer, Element[])
+public RecordComponentElement recordComponentFor(ExecutableElement)

@@ -1,0 +1,7 @@
+========================================
+ API Bible: com.sun.source.util.SourcePositions
+========================================
+
+METHODS:
+public abstract long getEndPosition(CompilationUnitTree, Tree)
+public abstract long getStartPosition(CompilationUnitTree, Tree)

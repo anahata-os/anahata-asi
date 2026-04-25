@@ -1,0 +1,12 @@
+========================================
+ API Bible: com.sun.source.tree.VariableTree
+========================================
+
+METHODS:
+public abstract Object accept(TreeVisitor, Object)
+public abstract ExpressionTree getInitializer()
+public abstract Kind getKind()
+public abstract ModifiersTree getModifiers()
+public abstract Name getName()
+public abstract ExpressionTree getNameExpression()
+public abstract Tree getType()

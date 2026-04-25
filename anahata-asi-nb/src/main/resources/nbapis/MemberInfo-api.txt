@@ -1,0 +1,22 @@
+========================================
+ API Bible: org.netbeans.modules.refactoring.java.api.MemberInfo
+========================================
+
+INNER TYPES:
+ - org.netbeans.modules.refactoring.java.api.MemberInfo$Group (Class)
+
+METHODS:
+public static MemberInfo create(TypeMirror, Tree, CompilationInfo)
+public static MemberInfo create(Element, CompilationInfo, Group)
+public static MemberInfo create(TreePath, CompilationInfo)
+public static MemberInfo create(Element, CompilationInfo)
+public static MemberInfo createImplements(TypeMirrorHandle, String, Icon, String)
+public Object getElementHandle()
+public Group getGroup()
+public String getHtmlText()
+public Icon getIcon()
+public Set getModifiers()
+public String getName()
+public boolean isMakeAbstract()
+public void setMakeAbstract(Boolean)
+public void setName(String)

@@ -1,0 +1,18 @@
+========================================
+ API Bible: org.netbeans.api.java.source.ModificationResult
+========================================
+
+INNER TYPES:
+ - org.netbeans.api.java.source.ModificationResult$Difference (Class)
+ - org.netbeans.api.java.source.ModificationResult$CreateChange (Class)
+ - org.netbeans.api.java.source.ModificationResult$FilteringReader (Class)
+ - org.netbeans.api.java.source.ModificationResult$FilteringWriter (Class)
+
+METHODS:
+public void commit()
+public List getDifferences(FileObject)
+public Set getModifiedFileObjects()
+public Set getNewFiles()
+public String getResultingSource(FileObject)
+public int[] getSpan(Object)
+public static ModificationResult runModificationTask(Collection, UserTask)

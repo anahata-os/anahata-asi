@@ -1,0 +1,16 @@
+========================================
+ API Bible: com.sun.source.tree.MethodTree
+========================================
+
+METHODS:
+public abstract Object accept(TreeVisitor, Object)
+public abstract BlockTree getBody()
+public abstract Tree getDefaultValue()
+public abstract Kind getKind()
+public abstract ModifiersTree getModifiers()
+public abstract Name getName()
+public abstract List getParameters()
+public abstract VariableTree getReceiverParameter()
+public abstract Tree getReturnType()
+public abstract List getThrows()
+public abstract List getTypeParameters()

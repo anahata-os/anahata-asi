@@ -1,0 +1,23 @@
+========================================
+ API Bible: javax.lang.model.element.ExecutableElement
+========================================
+
+METHODS:
+public abstract Object accept(ElementVisitor, Object)
+public abstract TypeMirror asType()
+public abstract Annotation getAnnotation(Class)
+public abstract List getAnnotationMirrors()
+public abstract Annotation[] getAnnotationsByType(Class)
+public abstract AnnotationValue getDefaultValue()
+public abstract List getEnclosedElements()
+public abstract Element getEnclosingElement()
+public abstract ElementKind getKind()
+public abstract Set getModifiers()
+public abstract List getParameters()
+public abstract TypeMirror getReceiverType()
+public abstract TypeMirror getReturnType()
+public abstract Name getSimpleName()
+public abstract List getThrownTypes()
+public abstract List getTypeParameters()
+public abstract boolean isDefault()
+public abstract boolean isVarArgs()

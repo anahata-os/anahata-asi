@@ -1,0 +1,21 @@
+========================================
+ API Bible: javax.lang.model.element.ElementKind
+========================================
+
+METHODS:
+public volatile int compareTo(Object)
+public final int compareTo(Enum)
+public final Optional describeConstable()
+public final Class getDeclaringClass()
+public boolean isClass()
+public boolean isDeclaredType()
+public boolean isExecutable()
+public boolean isField()
+public boolean isInitializer()
+public boolean isInterface()
+public boolean isVariable()
+public final String name()
+public final int ordinal()
+public static ElementKind valueOf(String)
+public static Enum valueOf(Class, String)
+public static ElementKind[] values()

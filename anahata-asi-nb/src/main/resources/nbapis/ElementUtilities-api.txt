@@ -1,0 +1,38 @@
+========================================
+ API Bible: org.netbeans.api.java.source.ElementUtilities
+========================================
+
+INNER TYPES:
+ - org.netbeans.api.java.source.ElementUtilities$ElementAcceptor (Interface)
+ - org.netbeans.api.java.source.ElementUtilities$ElementNameVisitor (Class)
+
+METHODS:
+public boolean alreadyDefinedIn(CharSequence, ExecutableType, TypeElement)
+public TypeElement enclosingTypeElement(Element)
+public Element findElement(String)
+public Map findElementsAndOrigins(Scope, ElementAcceptor)
+public List findOverridableMethods(TypeElement)
+public List findUnimplementedMethods(TypeElement)
+public List findUnimplementedMethods(TypeElement, boolean)
+public static String getBinaryName(TypeElement)
+public ExecutableElement getDescriptorElement(TypeElement)
+public CharSequence getElementName(Element, boolean)
+public Iterable getGlobalTypes(ElementAcceptor)
+public Element getImplementationOf(ExecutableElement, TypeElement)
+public Collection getLinkedRecordElements(Element)
+public Iterable getLocalMembersAndVars(Scope, ElementAcceptor)
+public Iterable getLocalVars(Scope, ElementAcceptor)
+public Iterable getMembers(TypeMirror, ElementAcceptor)
+public ExecutableElement getOverriddenMethod(ExecutableElement)
+public boolean hasGetter(TypeElement, VariableElement, CodeStyle)
+public boolean hasSetter(TypeElement, VariableElement, CodeStyle)
+public boolean implementsMethod(ExecutableElement)
+public boolean isEffectivelyFinal(VariableElement)
+public boolean isErroneous(Element)
+public boolean isLocal(Element)
+public boolean isMemberOf(Element, TypeElement)
+public boolean isOpen(ModuleElement)
+public boolean isSynthetic(Element)
+public TypeElement outermostTypeElement(Element)
+public boolean overridesMethod(ExecutableElement)
+public Set transitivelyExportedPackages(ModuleElement)
