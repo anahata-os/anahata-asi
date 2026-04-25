@@ -1,0 +1,8 @@
+========================================
+ API Bible: javax.lang.model.element.AnnotationValue
+========================================
+
+METHODS:
+public abstract Object getValue()
+public abstract String toString()
+public abstract Object accept(AnnotationValueVisitor, Object)

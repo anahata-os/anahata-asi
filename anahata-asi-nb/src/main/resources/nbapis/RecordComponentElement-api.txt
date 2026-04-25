@@ -1,0 +1,9 @@
+========================================
+ API Bible: javax.lang.model.element.RecordComponentElement
+========================================
+
+METHODS:
+public abstract TypeMirror asType()
+public abstract Element getEnclosingElement()
+public abstract Name getSimpleName()
+public abstract ExecutableElement getAccessor()

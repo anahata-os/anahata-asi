@@ -1,0 +1,5 @@
+========================================
+ API Bible: javax.lang.model.type.NoType
+========================================
+
+(Specialization of TypeMirror for pseudo-types like void, none, etc. No unique methods.)

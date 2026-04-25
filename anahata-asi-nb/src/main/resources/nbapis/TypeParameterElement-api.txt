@@ -1,0 +1,9 @@
+========================================
+ API Bible: javax.lang.model.element.TypeParameterElement
+========================================
+
+METHODS:
+public abstract TypeMirror asType()
+public abstract Element getGenericElement()
+public abstract List getBounds()
+public abstract Element getEnclosingElement()

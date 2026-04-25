@@ -1,0 +1,25 @@
+========================================
+ API Bible: javax.lang.model.util.Types
+========================================
+
+METHODS:
+public abstract Element asElement(TypeMirror)
+public abstract boolean isSameType(TypeMirror, TypeMirror)
+public abstract boolean isSubtype(TypeMirror, TypeMirror)
+public abstract boolean isAssignable(TypeMirror, TypeMirror)
+public abstract boolean contains(TypeMirror, TypeMirror)
+public abstract boolean isSubsignature(ExecutableType, ExecutableType)
+public abstract List directSupertypes(TypeMirror)
+public abstract TypeMirror erasure(TypeMirror)
+public abstract TypeElement boxedClass(PrimitiveType)
+public abstract PrimitiveType unboxedType(TypeMirror)
+public abstract TypeMirror capture(TypeMirror)
+public abstract PrimitiveType getPrimitiveType(TypeKind)
+public abstract NullType getNullType()
+public abstract NoType getNoType(TypeKind)
+public abstract ArrayType getArrayType(TypeMirror)
+public abstract WildcardType getWildcardType(TypeMirror, TypeMirror)
+public abstract DeclaredType getDeclaredType(TypeElement, TypeMirror[])
+public abstract DeclaredType getDeclaredType(DeclaredType, TypeElement, TypeMirror[])
+public abstract TypeMirror asMemberOf(DeclaredType, Element)
+public default TypeMirror stripAnnotations(TypeMirror)

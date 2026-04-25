@@ -1,0 +1,5 @@
+========================================
+ API Bible: javax.lang.model.type.PrimitiveType
+========================================
+
+(Specialization of TypeMirror for primitive types. No unique methods beyond inheritance.)

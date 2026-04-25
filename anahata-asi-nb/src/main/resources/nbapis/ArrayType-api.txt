@@ -1,0 +1,6 @@
+========================================
+ API Bible: javax.lang.model.type.ArrayType
+========================================
+
+METHODS:
+public abstract TypeMirror getComponentType()

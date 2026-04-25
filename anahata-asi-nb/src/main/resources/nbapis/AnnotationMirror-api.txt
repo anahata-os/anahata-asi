@@ -1,0 +1,7 @@
+========================================
+ API Bible: javax.lang.model.element.AnnotationMirror
+========================================
+
+METHODS:
+public abstract DeclaredType getAnnotationType()
+public abstract Map getElementValues()

@@ -1,0 +1,11 @@
+========================================
+ API Bible: javax.lang.model.element.PackageElement
+========================================
+
+METHODS:
+public abstract TypeMirror asType()
+public abstract Name getQualifiedName()
+public abstract Name getSimpleName()
+public abstract List getEnclosedElements()
+public abstract boolean isUnnamed()
+public abstract Element getEnclosingElement()

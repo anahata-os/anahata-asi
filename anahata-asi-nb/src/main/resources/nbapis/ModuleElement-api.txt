@@ -1,0 +1,23 @@
+========================================
+ API Bible: javax.lang.model.element.ModuleElement
+========================================
+
+INNER TYPES:
+ - javax.lang.model.element.ModuleElement$UsesDirective (Interface)
+ - javax.lang.model.element.ModuleElement$ProvidesDirective (Interface)
+ - javax.lang.model.element.ModuleElement$OpensDirective (Interface)
+ - javax.lang.model.element.ModuleElement$ExportsDirective (Interface)
+ - javax.lang.model.element.ModuleElement$RequiresDirective (Interface)
+ - javax.lang.model.element.ModuleElement$DirectiveVisitor (Interface)
+ - javax.lang.model.element.ModuleElement$Directive (Interface)
+ - javax.lang.model.element.ModuleElement$DirectiveKind (Enum)
+
+METHODS:
+public abstract TypeMirror asType()
+public abstract Name getQualifiedName()
+public abstract Name getSimpleName()
+public abstract List getEnclosedElements()
+public abstract boolean isOpen()
+public abstract boolean isUnnamed()
+public abstract Element getEnclosingElement()
+public abstract List getDirectives()

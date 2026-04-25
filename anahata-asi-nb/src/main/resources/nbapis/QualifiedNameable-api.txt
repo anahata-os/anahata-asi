@@ -1,0 +1,6 @@
+========================================
+ API Bible: javax.lang.model.element.QualifiedNameable
+========================================
+
+METHODS:
+public abstract Name getQualifiedName()
