@@ -206,7 +206,7 @@ public abstract class AbstractTextResourceWriteRenderer<T extends AbstractTextRe
         try {
             update.validate(agiPanel.getAgi());
             
-            String diff = update.getUnifiedDiff();
+            String diff = update.getUnifiedDiff(agiPanel.getAgi());
             
             // Clear previous validation logs and log the current intent
             call.getResponse().getLogs().clear();
@@ -225,7 +225,7 @@ public abstract class AbstractTextResourceWriteRenderer<T extends AbstractTextRe
                 // If validation failed, it might be due to captureOriginalContent or logic.
                 // We try to generate whatever diff we can for context.
                 if (update.getOriginalContent() != null) {
-                    diff = update.getUnifiedDiff();
+                    diff = update.getUnifiedDiff(agiPanel.getAgi());
                 }
             } catch (Exception ex) {
                 log.error("Failed to generate intent diff for failed validation", ex);
@@ -307,7 +307,7 @@ public abstract class AbstractTextResourceWriteRenderer<T extends AbstractTextRe
             String proposedContent;
             
             try {
-                proposedContent = update.calculateResultingContent();
+                proposedContent = update.calculateResultingContent(agiPanel.getAgi());
             } catch (Exception e) {
                 log.error("Failed to calculate resulting content", e);
                 proposedContent = baseContent; // Fallback
