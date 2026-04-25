@@ -20,12 +20,12 @@ public enum PruningState {
     /** 
      * The entity is explicitly pruned (hidden from the AI prompt) regardless of depth. 
      */
-    @Schema(description = "The part is explicitly pruned (hidden from the AI prompt) even if the remaining depth > 0. Can be set back to PINED or AUTO for as long as the message doesnt get Garbage Collected.")
+    @Schema(description = "The part is explicitly pruned (hidden from the AI prompt) even if the remaining depth > 0. Can be set back to PINNED or AUTO for as long as the message doesnt get Garbage Collected.")
     PRUNED,
     /** 
      * The entity is explicitly pinned (kept in the AI prompt) regardless of depth. 
      * It will never be auto-pruned or garbage collected while in this state.
      */
-    @Schema(description = "The part's is explicitly pruned. Will remain in the prompt until unpined. The message containing this part will not get Garbage Collected.")
+    @Schema(description = "The part's is explicitly pruned. Will remain in the prompt until unpinned. The message containing this part will not get Garbage Collected.")
     PINNED
 }
