@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.agi.tool.schema;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
@@ -21,6 +22,7 @@ import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import java.util.*;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.internal.JacksonUtils;
 
 /**
@@ -35,9 +37,12 @@ import uno.anahata.asi.internal.JacksonUtils;
  *
  * @author anahata-gemini-pro-2.5
  */
+@Slf4j
 public class SchemaProvider {
 
-    /** The centrally configured Jackson ObjectMapper for JSON operations. */
+    /**
+     * The centrally configured Jackson ObjectMapper for JSON operations.
+     */
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new ParameterNamesModule())
             .registerModule(new MrBeanModule())
@@ -46,9 +51,10 @@ public class SchemaProvider {
             .setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
             .setVisibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE);
 
-    /** 
-     * A secondary mapper that respects getters, used specifically for 
-     * converting Swagger's internal Schema objects which are not standard POJOs.
+    /**
+     * A secondary mapper that respects getters, used specifically for
+     * converting Swagger's internal Schema objects which are not standard
+     * POJOs.
      */
     private static final ObjectMapper INTERNAL_MAPPER = new ObjectMapper()
             .setSerializationInclusion(JsonInclude.Include.NON_NULL);
@@ -102,11 +108,11 @@ public class SchemaProvider {
             if (properties == null) {
                 properties = mutableRoot.putObject("properties");
             }
-            
+
             ObjectNode wrappedSchemaObject = (ObjectNode) wrappedRootNode.deepCopy();
             wrappedSchemaObject.remove("components");
             properties.set(attributeName, wrappedSchemaObject);
-            
+
             // 6. Ensure the attribute is in the 'required' list for the AI model
             addRequired(mutableRoot, attributeName);
         }
@@ -119,10 +125,10 @@ public class SchemaProvider {
         if (inlinedNode instanceof ObjectNode objectNode) {
             objectNode.remove("components");
         }
-        
+
         // 9. Final Purification: Remove all framework metadata and Swagger-internal fields
         JacksonUtils.purifySchema(inlinedNode);
-        
+
         return OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(inlinedNode);
     }
 
@@ -147,17 +153,17 @@ public class SchemaProvider {
             rootNode.put("type", "object");
             rootNode.put("title", getTypeName(type));
         }
-        
+
         JsonNode definitions = rootNode.path("components").path("schemas");
         JsonNode inlinedNode = inlineDefinitionsRecursive(rootNode, definitions, new HashSet<>());
-        
+
         if (inlinedNode instanceof ObjectNode objectNode) {
             objectNode.remove("components");
         }
-        
+
         // Final Purification: Remove all framework metadata and Swagger-internal fields
         JacksonUtils.purifySchema(inlinedNode);
-        
+
         return OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(inlinedNode);
     }
 
@@ -167,9 +173,9 @@ public class SchemaProvider {
     }
 
     /**
-     * Merges the 'components.schemas' from the source node into the target node.
-     * This method is null-safe and robust against missing nodes.
-     * 
+     * Merges the 'components.schemas' from the source node into the target
+     * node. This method is null-safe and robust against missing nodes.
+     *
      * @param target The target schema node.
      * @param source The source schema node.
      */
@@ -177,15 +183,15 @@ public class SchemaProvider {
         if (target == null || source == null) {
             return;
         }
-        
+
         JsonNode sourceDefinitions = source.path("components").path("schemas");
         if (sourceDefinitions.isObject()) {
             JsonNode componentsNode = target.path("components");
             ObjectNode components = componentsNode.isObject() ? (ObjectNode) componentsNode : target.putObject("components");
-            
+
             JsonNode targetDefsNode = components.path("schemas");
             ObjectNode targetDefinitions = targetDefsNode.isObject() ? (ObjectNode) targetDefsNode : components.putObject("schemas");
-            
+
             ObjectNode finalTargetDefinitions = targetDefinitions;
             sourceDefinitions.fields().forEachRemaining(entry -> {
                 finalTargetDefinitions.set(entry.getKey(), entry.getValue());
@@ -204,7 +210,7 @@ public class SchemaProvider {
         } else {
             required = (ArrayNode) requiredNode;
         }
-        
+
         boolean exists = false;
         for (JsonNode item : required) {
             if (item.asText().equals(propertyName)) {
@@ -238,7 +244,7 @@ public class SchemaProvider {
 
     /**
      * Generates a standard, non-inlined JSON schema for a given Java type.
-     * 
+     *
      * @param type The Java type.
      * @return The JSON schema string.
      * @throws JsonProcessingException if generation fails.
@@ -278,16 +284,28 @@ public class SchemaProvider {
             return simpleSchema;
         }
 
+        // 1. Discover all reachable types (including polymorphic subtypes)
+        Map<String, Type> discoveredTypes = new HashMap<>();
+        Map<Type, List<Type>> polymorphismMap = new HashMap<>();
+        findAllTypesRecursive(type, discoveredTypes, polymorphismMap, new HashSet<>());
+
         ModelConverters converters = new ModelConverters();
         // CRITICAL: Use OBJECT_MAPPER (getters disabled) for type discovery.
         converters.addConverter(new ModelResolver(OBJECT_MAPPER));
-        Map<String, Schema> swaggerSchemas = converters.readAll(new AnnotatedType(type));
+        
+        // 2. Generate schemas for ALL discovered types to ensure polymorphic branches are in the components map
+        Map<String, Schema> swaggerSchemas = new HashMap<>();
+        for (Type t : discoveredTypes.values()) {
+            swaggerSchemas.putAll(converters.readAll(new AnnotatedType(t)));
+        }
+        
         if (swaggerSchemas.isEmpty()) {
             return null;
         }
-        postProcessAndEnrichSchemas(type, swaggerSchemas);
-        Schema rootSchema = createRootSchema(type, swaggerSchemas);
         
+        postProcessAndEnrichSchemas(type, swaggerSchemas, discoveredTypes, polymorphismMap);
+        Schema rootSchema = createRootSchema(type, swaggerSchemas);
+
         // CRITICAL: Use INTERNAL_MAPPER to convert Swagger objects to Map, 
         // as they rely on getters which are disabled in OBJECT_MAPPER.
         Map<String, Object> finalSchemaMap = new LinkedHashMap<>(INTERNAL_MAPPER.convertValue(rootSchema, Map.class));
@@ -296,13 +314,14 @@ public class SchemaProvider {
         swaggerSchemas.forEach((key, schema) -> componentSchemas.put(key, INTERNAL_MAPPER.convertValue(schema, Map.class)));
         components.put("schemas", componentSchemas);
         finalSchemaMap.put("components", components);
-        
+
         return INTERNAL_MAPPER.writeValueAsString(finalSchemaMap);
     }
 
     /**
-     * Handles schema generation for simple Java types (String, Number, Boolean, Enum).
-     * 
+     * Handles schema generation for simple Java types (String, Number, Boolean,
+     * Enum).
+     *
      * @param type The Java type.
      * @return The JSON schema string, or null if not a simple type.
      * @throws JsonProcessingException if generation fails.
@@ -328,9 +347,34 @@ public class SchemaProvider {
             schemaMap.put("type", "boolean");
         } else if (clazz.isEnum()) {
             schemaMap.put("type", "string");
-            List<String> enumValues = Arrays.stream(clazz.getEnumConstants()).map(Object::toString).collect(Collectors.toList());
+            Object[] constants = clazz.getEnumConstants();
+            List<String> enumValues = new ArrayList<>();
+            StringBuilder descBuilder = new StringBuilder();
+            
+            String existingDesc = (String) schemaMap.get("description");
+            if (existingDesc != null && !existingDesc.isBlank()) {
+                descBuilder.append(existingDesc).append("\n\nAvailable Values:");
+            } else {
+                descBuilder.append("Values:");
+            }
+
+            for (Object obj : constants) {
+                String name = obj.toString();
+                enumValues.add(name);
+                descBuilder.append("\n- `").append(name).append("` ");
+                try {
+                    Field field = clazz.getField(name);
+                    io.swagger.v3.oas.annotations.media.Schema fieldAnnos = field.getAnnotation(io.swagger.v3.oas.annotations.media.Schema.class);
+                    if (fieldAnnos != null && !fieldAnnos.description().isEmpty()) {
+                        descBuilder.append(": ").append(fieldAnnos.description());
+                    }
+                } catch (Exception e) {
+                    // Fallback to name if field reflection fails
+                }
+            }
             schemaMap.put("enum", enumValues);
-        } else {
+            schemaMap.put("description", descBuilder.toString());
+        }else {
             return null;
         }
 
@@ -339,7 +383,7 @@ public class SchemaProvider {
 
     /**
      * Builds a JSON schema for an array or collection type.
-     * 
+     *
      * @param arrayType The array or collection type.
      * @param itemSchemaJson The JSON schema for the items.
      * @return The JSON schema string for the array.
@@ -369,7 +413,7 @@ public class SchemaProvider {
 
     /**
      * Builds a JSON schema for a Map&lt;String, T&gt; type.
-     * 
+     *
      * @param mapType The map type.
      * @param valueSchemaJson The JSON schema for the values.
      * @return The JSON schema string for the map.
@@ -399,7 +443,7 @@ public class SchemaProvider {
 
     /**
      * Creates the root schema object for a given type.
-     * 
+     *
      * @param type The Java type.
      * @param swaggerSchemas The map of generated schemas.
      * @return The root Schema object.
@@ -423,31 +467,44 @@ public class SchemaProvider {
 
     /**
      * Post-processes and enriches the generated schemas with type information.
-     * 
+     *
      * @param rootType The root Java type.
      * @param allSchemas The map of all generated schemas.
+     * @param discoveredTypes The map of all discovered Java types.
      */
-    private static void postProcessAndEnrichSchemas(Type rootType, Map<String, Schema> allSchemas) {
-        Map<String, Type> discoveredTypes = new HashMap<>();
-        findAllTypesRecursive(rootType, discoveredTypes, new HashSet<>());
+    private static void postProcessAndEnrichSchemas(Type rootType, Map<String, Schema> allSchemas, Map<String, Type> discoveredTypes, Map<Type, List<Type>> polymorphismMap) {
         for (Map.Entry<String, Schema> entry : allSchemas.entrySet()) {
             String schemaName = entry.getKey();
             Schema schema = entry.getValue();
             Type type = discoveredTypes.get(schemaName);
             if (type != null) {
-                addTitleToSchemaRecursive(schema, type, allSchemas, new HashSet<>());
+                // Manual Polymorphism Linkage: 
+                // If Swagger didn't create a oneOf, but we know this type has subtypes, force it.
+                List<Type> subtypes = polymorphismMap.get(type);
+                if (subtypes != null && !subtypes.isEmpty() && schema.getOneOf() == null) {
+                    List<Schema> oneOf = new ArrayList<>();
+                    for (Type st : subtypes) {
+                        Class<?> rawSt = getRawClass(st);
+                        if (rawSt != null) {
+                            oneOf.add(new Schema().$ref("#/components/schemas/" + rawSt.getSimpleName()));
+                        }
+                    }
+                    schema.setOneOf(oneOf);
+                }
+                
+                addTitleToSchemaRecursive(schema, type, allSchemas, discoveredTypes, new HashSet<>());
             }
         }
     }
 
     /**
      * Recursively finds all types reachable from a given type.
-     * 
+     *
      * @param type The starting type.
      * @param foundTypes The map to store found types.
      * @param visited The set of visited types.
      */
-    private static void findAllTypesRecursive(Type type, Map<String, Type> foundTypes, Set<Type> visited) {
+    private static void findAllTypesRecursive(Type type, Map<String, Type> foundTypes, Map<Type, List<Type>> polymorphismMap, Set<Type> visited) {
         if (type == null || !visited.add(type)) {
             return;
         }
@@ -455,76 +512,129 @@ public class SchemaProvider {
             Class<?> clazz = (Class<?>) type;
             if (!isJdkClass(clazz)) {
                 foundTypes.put(clazz.getSimpleName(), clazz);
+
+                // Polymorphism support: Discover subclasses from Jackson annotations
+                JsonSubTypes subTypes = clazz.getAnnotation(JsonSubTypes.class);
+                if (subTypes != null) {
+                    List<Type> children = new ArrayList<>();
+                    for (JsonSubTypes.Type subType : subTypes.value()) {
+                        children.add(subType.value());
+                        findAllTypesRecursive(subType.value(), foundTypes, polymorphismMap, visited);
+                    }
+                    polymorphismMap.put(type, children);
+                }
+
                 for (Field field : getAllFields(clazz)) {
-                    findAllTypesRecursive(field.getGenericType(), foundTypes, visited);
+                    findAllTypesRecursive(field.getGenericType(), foundTypes, polymorphismMap, visited);
                 }
             }
         } else if (type instanceof ParameterizedType) {
             ParameterizedType pt = (ParameterizedType) type;
-            findAllTypesRecursive(pt.getRawType(), foundTypes, visited);
+            findAllTypesRecursive(pt.getRawType(), foundTypes, polymorphismMap, visited);
             for (Type arg : pt.getActualTypeArguments()) {
-                findAllTypesRecursive(arg, foundTypes, visited);
+                findAllTypesRecursive(arg, foundTypes, polymorphismMap, visited);
             }
         } else if (type instanceof WildcardType) {
             WildcardType wt = (WildcardType) type;
-            Arrays.stream(wt.getUpperBounds()).forEach(b -> findAllTypesRecursive(b, foundTypes, visited));
-            Arrays.stream(wt.getLowerBounds()).forEach(b -> findAllTypesRecursive(b, foundTypes, visited));
+            Arrays.stream(wt.getUpperBounds()).forEach(b -> findAllTypesRecursive(b, foundTypes, polymorphismMap, visited));
+            Arrays.stream(wt.getLowerBounds()).forEach(b -> findAllTypesRecursive(b, foundTypes, polymorphismMap, visited));
         }
     }
 
     /**
      * Recursively adds titles (FQN) to schemas and their properties.
-     * 
+     *
      * @param schema The schema to enrich.
      * @param type The corresponding Java type.
      * @param allSchemas The map of all schemas.
+     * @param discoveredTypes The map of all discovered Java types.
      * @param visited The set of visited types.
      */
-    private static void addTitleToSchemaRecursive(Schema schema, Type type, Map<String, Schema> allSchemas, Set<Type> visited) {
-        if (schema == null || type == null || !visited.add(type)) {
+    private static void addTitleToSchemaRecursive(Schema schema, Type type, Map<String, Schema> allSchemas, Map<String, Type> discoveredTypes, Set<Type> visited) {
+        if (schema == null || !visited.add(type)) {
             return;
         }
         try {
-            if (schema.getTitle() == null) {
+            if (type != null && schema.getTitle() == null) {
                 schema.setTitle(getTypeName(type));
             }
+            
+            // Handle Polymorphic branches
+            if (schema.getOneOf() != null) {
+                for (Object sub : schema.getOneOf()) {
+                    Schema subSchema = (Schema) sub;
+                    Type subType = resolveTypeFromSchema(subSchema, discoveredTypes);
+                    addTitleToSchemaRecursive(subSchema, subType, allSchemas, discoveredTypes, visited);
+                }
+            }
+            if (schema.getAnyOf() != null) {
+                for (Object sub : schema.getAnyOf()) {
+                    Schema subSchema = (Schema) sub;
+                    Type subType = resolveTypeFromSchema(subSchema, discoveredTypes);
+                    addTitleToSchemaRecursive(subSchema, subType, allSchemas, discoveredTypes, visited);
+                }
+            }
+            if (schema.getAllOf() != null) {
+                for (Object sub : schema.getAllOf()) {
+                    Schema subSchema = (Schema) sub;
+                    Type subType = resolveTypeFromSchema(subSchema, discoveredTypes);
+                    addTitleToSchemaRecursive(subSchema, subType, allSchemas, discoveredTypes, visited);
+                }
+            }
+
             Class<?> rawClass = getRawClass(type);
-            if (rawClass == null || isJdkClass(rawClass) || schema.getProperties() == null) {
+            if (rawClass == null || isJdkClass(rawClass)) {
                 return;
             }
-            for (Map.Entry<String, Schema> propEntry : (Set<Map.Entry<String, Schema>>) schema.getProperties().entrySet()) {
-                Field field = findField(rawClass, propEntry.getKey());
-                if (field != null) {
-                    Schema propSchema = propEntry.getValue();
-                    Type fieldType = field.getGenericType();
-                    if (propSchema.get$ref() != null) {
-                        String refName = propSchema.get$ref().substring(propSchema.get$ref().lastIndexOf('/') + 1);
-                        addTitleToSchemaRecursive(allSchemas.get(refName), fieldType, allSchemas, visited);
-                    } else if ("array".equals(propSchema.getType()) && propSchema.getItems() != null) {
-                        propSchema.setTitle(getTypeName(fieldType));
-                        Type itemType = null;
-                        if (fieldType instanceof ParameterizedType) {
-                            itemType = ((ParameterizedType) fieldType).getActualTypeArguments()[0];
-                        } else if (fieldType instanceof Class && ((Class<?>) fieldType).isArray()) {
-                            itemType = ((Class<?>) fieldType).getComponentType();
+
+            if (schema.getProperties() != null) {
+                for (Map.Entry<String, Schema> propEntry : (Set<Map.Entry<String, Schema>>) schema.getProperties().entrySet()) {
+                    Field field = findField(rawClass, propEntry.getKey());
+                    if (field != null) {
+                        Schema propSchema = propEntry.getValue();
+                        Type fieldType = field.getGenericType();
+                        if (propSchema.get$ref() != null) {
+                            String refName = propSchema.get$ref().substring(propSchema.get$ref().lastIndexOf('/') + 1);
+                            addTitleToSchemaRecursive(allSchemas.get(refName), fieldType, allSchemas, discoveredTypes, visited);
+                        } else if ("array".equals(propSchema.getType()) && propSchema.getItems() != null) {
+                            propSchema.setTitle(getTypeName(fieldType));
+                            Type itemType = null;
+                            if (fieldType instanceof ParameterizedType) {
+                                itemType = ((ParameterizedType) fieldType).getActualTypeArguments()[0];
+                            } else if (fieldType instanceof Class && ((Class<?>) fieldType).isArray()) {
+                                itemType = ((Class<?>) fieldType).getComponentType();
+                            }
+
+                            if (itemType != null) {
+                                addTitleToSchemaRecursive(propSchema.getItems(), itemType, allSchemas, discoveredTypes, visited);
+                            }
+                        } else {
+                            propSchema.setTitle(getTypeName(fieldType));
                         }
-                        
-                        if (itemType != null) {
-                            addTitleToSchemaRecursive(propSchema.getItems(), itemType, allSchemas, visited);
-                        }
-                    } else {
-                        propSchema.setTitle(getTypeName(fieldType));
                     }
                 }
             }
         } finally {
-            visited.remove(type);
+            if (type != null) {
+                visited.remove(type);
+            }
         }
     }
 
     /**
+     * Attempts to resolve a Java type from a Schema branch, usually via $ref.
+     */
+    private static Type resolveTypeFromSchema(Schema schema, Map<String, Type> discoveredTypes) {
+        if (schema.get$ref() != null) {
+            String refName = schema.get$ref().substring(schema.get$ref().lastIndexOf('/') + 1);
+            return discoveredTypes.get(refName);
+        }
+        return null;
+    }
+
+    /**
      * Recursively inlines definitions into the schema.
-     * 
+     *
      * @param currentNode The current node in the schema tree.
      * @param definitions The map of definitions.
      * @param visitedRefs The set of visited references.
@@ -567,7 +677,7 @@ public class SchemaProvider {
 
     /**
      * Creates a node representing a recursive reference.
-     * 
+     *
      * @param refPath The reference path.
      * @param definitions The map of definitions.
      * @return The recursive reference ObjectNode.
@@ -587,7 +697,7 @@ public class SchemaProvider {
 
     /**
      * Finds the name of the root schema for a given type.
-     * 
+     *
      * @param schemas The map of generated schemas.
      * @param type The Java type.
      * @return The name of the root schema.
@@ -609,7 +719,7 @@ public class SchemaProvider {
 
     /**
      * Gets the fully qualified name of a Java type.
-     * 
+     *
      * @param type The Java type.
      * @return The FQN string.
      */
@@ -627,7 +737,7 @@ public class SchemaProvider {
 
     /**
      * Finds a field in a class or its superclasses.
-     * 
+     *
      * @param clazz The class to search.
      * @param name The name of the field.
      * @return The Field object, or null if not found.
@@ -644,7 +754,7 @@ public class SchemaProvider {
 
     /**
      * Gets all fields of a class, including those from superclasses.
-     * 
+     *
      * @param clazz The class to inspect.
      * @return A list of all fields.
      */
@@ -658,7 +768,7 @@ public class SchemaProvider {
 
     /**
      * Gets the raw Class object for a given Type.
-     * 
+     *
      * @param type The Java type.
      * @return The raw Class object, or null if not applicable.
      */
@@ -674,7 +784,7 @@ public class SchemaProvider {
 
     /**
      * Checks if a class belongs to the JDK (java.* package or primitive).
-     * 
+     *
      * @param clazz The class to check.
      * @return true if it's a JDK class.
      */

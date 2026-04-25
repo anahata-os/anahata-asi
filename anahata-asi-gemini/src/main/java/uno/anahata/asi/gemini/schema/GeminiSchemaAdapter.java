@@ -112,6 +112,14 @@ public class GeminiSchemaAdapter {
             builder.items(itemsSchema);
         }
 
+        if (map.containsKey("oneOf") || map.containsKey("anyOf")) {
+            List<Map<String, Object>> branches = (List<Map<String, Object>>) (map.containsKey("oneOf") ? map.get("oneOf") : map.get("anyOf"));
+            List<Schema> anyOf = branches.stream()
+                    .map(GeminiSchemaAdapter::buildSchemaFromMap)
+                    .collect(Collectors.toList());
+            builder.anyOf(anyOf);
+        }
+
         return builder.build();
     }
 
