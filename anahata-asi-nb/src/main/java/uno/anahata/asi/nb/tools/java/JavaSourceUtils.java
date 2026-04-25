@@ -7,11 +7,10 @@ import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.ModifiersTree;
-import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePath;
-import com.sun.source.util.TreePathScanner;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -60,7 +59,14 @@ public class JavaSourceUtils {
      * Defines positions for structural member insertion.
      */
     public enum RelativePosition {
-        START, END, BEFORE, AFTER
+        @Schema(description = "Insert at the very beginning of the class or file.")
+        START, 
+        @Schema(description = "Insert at the very end of the class or file.")
+        END, 
+        @Schema(description = "Insert immediately before the specified anchor member.")
+        BEFORE, 
+        @Schema(description = "Insert immediately after the specified anchor member.")
+        AFTER
     }
 
     /**
@@ -175,90 +181,82 @@ public class JavaSourceUtils {
         return handle[0];
     }
 
-    public static Tree findTree(CompilationInfo wc, String memberFqn) {
-        String pureFqn = memberFqn;
-        String indexPart = null;
+    public static Tree findTree(CompilationInfo info, final String memberFqn) {
+        final String pureFqn;
+        final String indexPart;
         if (memberFqn.contains("#")) {
-            indexPart = memberFqn.substring(memberFqn.indexOf('#') + 1, memberFqn.indexOf('('));
-            pureFqn = memberFqn.substring(0, memberFqn.indexOf('#'));
+            int hash = memberFqn.indexOf('#');
+            int paren = memberFqn.indexOf('(', hash);
+            if (paren != -1) {
+                indexPart = memberFqn.substring(hash + 1, paren);
+                pureFqn = memberFqn.substring(0, hash);
+            } else {
+                indexPart = memberFqn.substring(hash + 1);
+                pureFqn = memberFqn.substring(0, hash);
+            }
         } else if (memberFqn.contains("(")) {
+            indexPart = null;
             pureFqn = memberFqn.substring(0, memberFqn.indexOf('('));
+        } else {
+            indexPart = null;
+            pureFqn = memberFqn;
         }
-        TypeElement type = wc.getElements().getTypeElement(pureFqn);
-        if (type != null) {
-            if (pureFqn.equals(memberFqn) || memberFqn.equals(type.getQualifiedName().toString())) {
-                return wc.getTrees().getTree(type);
-            }
-        }
-        int lastSeparator = Math.max(pureFqn.lastIndexOf('.'), pureFqn.lastIndexOf('$'));
-        if (lastSeparator == -1) {
-            return null;
-        }
-        String parentFqn = pureFqn.substring(0, lastSeparator);
-        String memberName = pureFqn.substring(lastSeparator + 1);
-        Tree parentTree = findTree(wc, parentFqn);
-        if (!(parentTree instanceof ClassTree ct)) {
-            return null;
-        }
-        if (indexPart != null) {
-            int targetIndex = Integer.parseInt(indexPart);
-            int currentCount = 0;
-            for (Tree member : ct.getMembers()) {
-                if (member.getKind() == Tree.Kind.BLOCK) {
-                    BlockTree bt = (BlockTree) member;
-                    String blockName = bt.isStatic() ? "<clinit>" : "<init-block>";
-                    if (blockName.equals(memberName)) {
-                        if (++currentCount == targetIndex) {
-                            return member;
+        
+        final Tree[] found = new Tree[1];
+        new com.sun.source.util.TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitClass(ClassTree node, Void p) {
+                if (found[0] != null) return null;
+                Element el = info.getTrees().getElement(getCurrentPath());
+                if (el instanceof TypeElement te) {
+                    String currentFqn = te.getQualifiedName().toString();
+                    if (currentFqn.equals(pureFqn) && !memberFqn.contains("(") && indexPart == null) {
+                        found[0] = node;
+                        return null;
+                    }
+                    
+                    if (pureFqn.startsWith(currentFqn)) {
+                        int currentBlockCount = 0;
+                        for (Tree member : node.getMembers()) {
+                            if (indexPart != null && member.getKind() == Tree.Kind.BLOCK) {
+                                String blockName = ((BlockTree)member).isStatic() ? "<clinit>" : "<init-block>";
+                                if (blockName.equals(getMemberSimpleName(pureFqn))) {
+                                    if (++currentBlockCount == Integer.parseInt(indexPart)) {
+                                        found[0] = member;
+                                        return null;
+                                    }
+                                }
+                            }
+                            if (member instanceof MethodTree mt) {
+                                String name = mt.getName().toString();
+                                String targetName = getMemberSimpleName(pureFqn);
+                                if (name.equals(targetName) || (name.equals("<init>") && targetName.equals("<init>"))) {
+                                    if (memberFqn.contains("(")) {
+                                        Element e = info.getTrees().getElement(new TreePath(getCurrentPath(), member));
+                                        if (e instanceof ExecutableElement ee && matchSignature(info, ee, memberFqn)) {
+                                            found[0] = member;
+                                            return null;
+                                        }
+                                    } else if (!memberFqn.contains("#")) {
+                                        found[0] = member;
+                                        return null;
+                                    }
+                                }
+                            }
+                            if (member instanceof VariableTree vt && vt.getName().contentEquals(getMemberSimpleName(pureFqn))) {
+                                if (currentFqn.equals(getParentFqn(pureFqn))) {
+                                    found[0] = member;
+                                    return null;
+                                }
+                            }
                         }
                     }
                 }
+                return super.visitClass(node, p);
             }
-            return null;
-        }
-        for (Tree member : ct.getMembers()) {
-            String name = null;
-            if (member instanceof MethodTree mt) {
-                name = mt.getName().toString();
-                if (name.equals(memberName) || (name.equals("<init>") && memberName.equals("<init>"))) {
-                    if (memberFqn.contains("(")) {
-                        Element e = wc.getTrees().getElement(TreePath.getPath(wc.getCompilationUnit(), member));
-                        if (e instanceof ExecutableElement ee && matchSignature(wc, ee, memberFqn)) {
-                            return member;
-                        }
-                    } else {
-                        return member;
-                    }
-                }
-            } else if (member instanceof VariableTree vt) {
-                name = vt.getName().toString();
-            } else if (member instanceof ClassTree innerCt) {
-                name = innerCt.getSimpleName().toString();
-            }
-            if (memberName.equals(name)) {
-                return member;
-            }
-        }
-        if (memberName.matches("\\d+")) {
-            final Tree[] found = new Tree[1];
-            final String targetBinaryName = pureFqn;
-            new TreePathScanner<Void, Void>() {
-                @Override
-                public Void visitNewClass(NewClassTree node, Void p) {
-                    if (node.getClassBody() != null) {
-                        Element e = wc.getTrees().getElement(new TreePath(getCurrentPath(), node.getClassBody()));
-                        if (e instanceof TypeElement te && ElementHandle.create(te).getBinaryName().equals(targetBinaryName)) {
-                            found[0] = node.getClassBody();
-                        }
-                    }
-                    return super.visitNewClass(node, p);
-                }
-            }.scan(TreePath.getPath(wc.getCompilationUnit(), parentTree), null);
-            if (found[0] != null) {
-                return found[0];
-            }
-        }
-        return null;
+        }.scan(new TreePath(info.getCompilationUnit()), null);
+        
+        return found[0];
     }
 
     /**
