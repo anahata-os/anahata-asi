@@ -218,10 +218,10 @@ public class Resources extends AnahataToolkit {
     public String updateTextResource(@AgiToolParam("The update details.") FullTextResourceUpdate update) throws Exception {
         update.validate(getAgi());
         Resource res = getAgi().getResourceManager().getResources().get(update.getResourceUuid());
-        String revised = update.calculateResultingContent();
+        String revised = update.calculateResultingContent(getAgi());
         res.write(revised);
         log("Updated text file: " + res.getName());
-        return update.getUnifiedDiff();
+        return update.getUnifiedDiff(getAgi());
     }
 
     /**
@@ -239,10 +239,10 @@ public class Resources extends AnahataToolkit {
     public String findAndReplaceInTextResource(@AgiToolParam("The set of replacements.") TextResourceReplacements replacements) throws Exception {
         replacements.validate(getAgi());
         Resource res = getAgi().getResourceManager().getResources().get(replacements.getResourceUuid());
-        String revised = replacements.calculateResultingContent();
+        String revised = replacements.calculateResultingContent(getAgi());
         res.write(revised);
         log("Performed replacements in: " + res.getName());
-        return replacements.getUnifiedDiff();
+        return replacements.getUnifiedDiff(getAgi());
     }
 
     /**
@@ -276,9 +276,9 @@ public class Resources extends AnahataToolkit {
             @AgiToolParam("Contains the resource uuid, the lastModified timestamp and a set of line modifications targeting the absolute 1 based line numbers of a text resource in the RAG message.") TextResourceLineEdits edits) throws Exception {
         edits.validate(getAgi());
         Resource res = getAgi().getResourceManager().getResources().get(edits.getResourceUuid());
-        String revised = edits.calculateResultingContent();
+        String revised = edits.calculateResultingContent(getAgi());
         res.write(revised);
         log("Applied semantic line edits to: " + res.getName());
-        return edits.getUnifiedDiff();
+        return edits.getUnifiedDiff(getAgi());
     }
 }
