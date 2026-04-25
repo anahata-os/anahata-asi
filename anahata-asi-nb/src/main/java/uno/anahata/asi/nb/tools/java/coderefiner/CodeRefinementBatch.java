@@ -2,6 +2,7 @@
 package uno.anahata.asi.nb.tools.java.coderefiner;
 
 import com.sun.source.tree.*;
+import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.OutputStream;
@@ -26,11 +27,11 @@ import uno.anahata.asi.toolkit.resources.text.AbstractTextResourceWrite;
 /**
  * A container for a batch of structural Java refinement operations.
  * <p>
- * This class orchestrates multiple {@link CodeRefinementIntent}s targeted at a 
- * single source file. It extends {@link AbstractTextResourceWrite} to leverage 
+ * This class orchestrates multiple {@link CodeRefinementIntent}s targeted at a
+ * single source file. It extends {@link AbstractTextResourceWrite} to leverage
  * the platform's high-fidelity diff rendering and resource-locking mechanisms.
  * </p>
- * 
+ *
  * @author anahata
  */
 @Data
@@ -53,181 +54,121 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
     private boolean save = true;
 
     /**
-     * {@inheritDoc} 
-     * <p>Calculates the resulting source code by simulating the AST modifications 
-     * defined in the batch. This is used by the UI to show a unified side-by-side 
-     * diff before execution.</p>
+     * {@inheritDoc}
+     * <p>
+     * Calculates the resulting source code by simulating the AST modifications
+     * defined in the batch. This is used by the UI to show a unified
+     * side-by-side diff before execution.</p>
      */
     @Override
-    public String calculateResultingContent() throws Exception {
+    public String calculateResultingContent(Agi agi) throws Exception {
+        if (agi == null) {
+            throw new AgiToolException("agi is required");
+        }
+
+        // 1. Authoritative state capture (if not already done by validate)
         if (originalContent == null) {
-            return null;
+             captureOriginalContent(agi);
+        }
+        
+        uno.anahata.asi.agi.resource.Resource res = agi.getResourceManager().get(resourceUuid);
+        if (res == null) {
+            throw new AgiToolException("no resource found for uuid " + resourceUuid);
+        }
+        
+        if (!(res.getHandle() instanceof uno.anahata.asi.nb.resources.handle.NbHandle nbh)) {
+            throw new AgiToolException("Resource handle is not a NbHandle " + res.getHandle());
         }
 
-        // 1. Create a memory-backed FileObject for the simulation
-        FileObject tempFo = FileUtil.createMemoryFileSystem().getRoot().createData("Simulation", "java");
-        try (OutputStream os = tempFo.getOutputStream()) {
-            os.write(originalContent.getBytes());
-        }
+        FileObject realFo = nbh.getFileObject();
+        log.info("Calculating resulting content for: {}", realFo);
 
-        // 2. Perform sequential AST replay
-        JavaSource js = JavaSource.forFileObject(tempFo);
-        ModificationResult res = js.runModificationTask(wc -> {
+        // 2. Perform sequential AST replay directly on the real FileObject
+        JavaSource js = JavaSource.forFileObject(realFo);
+        ModificationResult mRes = js.runModificationTask(wc -> {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             applyTo(wc);
         });
 
-        // 3. Extract the resulting source without touching the real disk
-        return res.getResultingSource(tempFo);
+        // 3. Extract the resulting source string
+        String ret = mRes.getResultingSource(realFo);
+        return ret;
     }
 
     /**
-     * Authoritatively applies all intents in this batch to the provided working copy.
-     * 
+     * Authoritatively applies all intents in this batch to the provided working
+     * copy using a single-shot atomic rewrite strategy.
+     *
      * @param wc The working copy to modify.
      * @throws Exception if any intent application fails.
      */
     public void applyTo(WorkingCopy wc) throws Exception {
-        for (CodeRefinementIntent intent : intents) {
-            applyIntent(wc, intent);
-        }
-        if (optimize) {
-            CompilationUnitTree cut = GeneratorUtilities.get(wc).importFQNs(wc.getCompilationUnit());
-            wc.rewrite(wc.getCompilationUnit(), cut);
-        }
-    }
-
-    /**
-     * Internal dispatcher that applies a single intent to the working copy.
-     */
-    private void applyIntent(WorkingCopy wc, CodeRefinementIntent intent) throws Exception {
-        if (intent instanceof InsertMemberIntent ins) {
-            applyInsert(wc, ins);
-        } else if (intent instanceof UpdateMemberIntent upd) {
-            applyUpdate(wc, upd);
-        } else if (intent instanceof DeleteMemberIntent del) {
-            applyDelete(wc, del);
-        } else if (intent instanceof MoveMemberIntent mov) {
-            applyMove(wc, mov);
-        }
-    }
-
-    private void applyInsert(WorkingCopy wc, InsertMemberIntent intent) throws Exception {
-        TreeMaker make = wc.getTreeMaker();
-        Tree parentTree;
-        List<Tree> members;
-        String classFqn = intent.getClassFqn();
-
-        if (classFqn == null || classFqn.isBlank()) {
-            parentTree = wc.getCompilationUnit();
-            members = new ArrayList<>(((CompilationUnitTree) parentTree).getTypeDecls());
-        } else {
-            Element resolved = JavaSourceUtils.findElement(wc, classFqn);
-            if (!(resolved instanceof TypeElement te)) {
-                throw new AgiToolException("Target class not found: " + classFqn);
-            }
-            parentTree = wc.getTrees().getTree(te);
-            members = new ArrayList<>(((ClassTree) parentTree).getMembers());
-        }
-
-        Tree newMember = parseMember(wc, intent.getDeclaration(), intent.getBody());
-        int insertIdx = getInsertIndex(wc, members, intent.getPosition(), intent.getAnchorMemberName());
-        members.add(insertIdx, newMember);
-
-        if (parentTree instanceof ClassTree ct) {
-            wc.rewrite(ct, rebuildClassTree(make, ct, members));
-        } else if (parentTree instanceof CompilationUnitTree cut) {
-            CompilationUnitTree updated = make.CompilationUnit(cut.getPackage(), cut.getImports(), (List<Tree>) (List<?>) members, cut.getSourceFile());
-            wc.rewrite(cut, updated);
-        }
-    }
-
-    private void applyUpdate(WorkingCopy wc, UpdateMemberIntent intent) throws Exception {
-        TreeMaker make = wc.getTreeMaker();
-        GeneratorUtilities gu = GeneratorUtilities.get(wc);
-        Tree oldTree = JavaSourceUtils.findTree(wc, intent.getMemberFqn());
+        log.info("[V3-STRATEGY] Starting batch application. Intents: {}", intents.size());
         
-        if (oldTree == null) {
-            throwMemberNotFound(wc, intent.getMemberFqn());
+        // Accumulate changes by parent type to ensure atomic rewrites
+        Map<Tree, List<Tree>> modifiedMembers = new LinkedHashMap<>();
+
+        for (CodeRefinementIntent intent : intents) {
+            log.info("Processing intent: {}", intent.getClass().getSimpleName());
+            intent.apply(wc, modifiedMembers, optimize);
         }
 
-        String dec = intent.getDeclaration();
-        String body = intent.getBody();
-
-        if (dec != null || body != null) {
-            Tree newTree;
-            if (dec == null) {
-                newTree = cloneTree(make, oldTree);
-                if (body != null) {
-                    if (newTree instanceof MethodTree mt) {
-                        String wrappedBody = body.trim().startsWith("{") ? body : "{" + body + "\n}";
-                        newTree = make.Method(mt.getModifiers(), mt.getName(), mt.getReturnType(), mt.getTypeParameters(), mt.getParameters(), mt.getThrows(), make.createMethodBody((MethodTree) oldTree, wrappedBody), (AnnotationTree) mt.getDefaultValue());
-                    } else if (newTree instanceof VariableTree vt) {
-                        ExpressionTree finalInit = wc.getTreeUtilities().parseExpression(body, null);
-                        newTree = make.Variable(vt.getModifiers(), vt.getName(), vt.getType(), finalInit);
-                    }
-                }
-            } else {
-                newTree = parseMember(wc, dec, body);
-                if (body == null) {
-                    if (oldTree instanceof MethodTree oldMt && newTree instanceof MethodTree newMt) {
-                        newTree = make.Method(newMt.getModifiers(), newMt.getName(), newMt.getReturnType(), newMt.getTypeParameters(), newMt.getParameters(), newMt.getThrows(), oldMt.getBody(), (AnnotationTree) newMt.getDefaultValue());
-                    } else if (oldTree instanceof VariableTree oldVt && newTree instanceof VariableTree newVt) {
-                        newTree = make.Variable(newVt.getModifiers(), newVt.getName(), newVt.getType(), oldVt.getInitializer());
-                    }
-                }
-            }
-            gu.copyComments(oldTree, newTree, true);
-            if (body == null) {
-                gu.copyComments(oldTree, newTree, false);
-            }
-            wc.rewrite(oldTree, make.asReplacementOf(newTree, oldTree));
-        }
-    }
-
-    private void applyDelete(WorkingCopy wc, DeleteMemberIntent intent) throws AgiToolException {
-        Tree memberTree = JavaSourceUtils.findTree(wc, intent.getMemberFqn());
-        if (memberTree == null) {
-            throwMemberNotFound(wc, intent.getMemberFqn());
-        }
-        TreePath path = TreePath.getPath(wc.getCompilationUnit(), memberTree);
-        Tree parent = path.getParentPath().getLeaf();
+        // Perform single-shot atomic rewrites for each modified container
         TreeMaker make = wc.getTreeMaker();
+        for (Map.Entry<Tree, List<Tree>> entry : modifiedMembers.entrySet()) {
+            Tree parent = entry.getKey();
+            List<Tree> members = entry.getValue();
 
-        if (parent instanceof ClassTree ct) {
-            List<Tree> members = new ArrayList<>(ct.getMembers());
-            if (members.remove(memberTree)) {
+            if (parent instanceof ClassTree ct) {
+                log.info("Commiting rewrite for ClassTree: {} (Members: {})", ct.getSimpleName(), members.size());
                 wc.rewrite(ct, rebuildClassTree(make, ct, members));
-            }
-        } else if (parent instanceof CompilationUnitTree cut) {
-            List<Tree> types = new ArrayList<>(cut.getTypeDecls());
-            if (types.remove(memberTree)) {
-                CompilationUnitTree updated = make.CompilationUnit(cut.getPackage(), cut.getImports(), types, cut.getSourceFile());
+            } else if (parent instanceof CompilationUnitTree cut) {
+                log.info("Commiting rewrite for CompilationUnitTree");
+                CompilationUnitTree updated = make.CompilationUnit(cut.getPackage(), cut.getImports(), (List<? extends Tree>) members, cut.getSourceFile());
                 wc.rewrite(cut, updated);
             }
         }
     }
 
-    private void applyMove(WorkingCopy wc, MoveMemberIntent intent) throws Exception {
-        TreeMaker make = wc.getTreeMaker();
-        Tree memberTree = JavaSourceUtils.findTree(wc, intent.getMemberFqn());
-        if (memberTree == null) {
-            throwMemberNotFound(wc, intent.getMemberFqn());
+    /**
+     * Internal utility to find a member in the working copy context.
+     * 
+     * @param wc WorkingCopy
+     * @param memberFqn Member FQN
+     * @return The leaf Tree node or null.
+     */
+    public static Tree findMemberInWorkingCopy(WorkingCopy wc, String memberFqn) {
+        Tree found = JavaSourceUtils.findTree(wc, memberFqn);
+        if (found == null) {
+            return null;
         }
-        TreePath path = TreePath.getPath(wc.getCompilationUnit(), memberTree);
-        if (!(path.getParentPath().getLeaf() instanceof ClassTree ct)) {
-            throw new AgiToolException("Only members of a class can be moved.");
-        }
-        List<Tree> members = new ArrayList<>(ct.getMembers());
-        members.remove(memberTree);
-        int insertIdx = getInsertIndex(wc, members, intent.getPosition(), intent.getAnchorMemberName());
-        members.add(insertIdx, memberTree);
-        wc.rewrite(ct, make.asReplacementOf(rebuildClassTree(make, ct, members), ct));
+        TreePath path = TreePath.getPath(wc.getCompilationUnit(), found);
+        return path != null ? path.getLeaf() : null;
     }
 
-    // --- Inlined AST Helpers ---
+    /**
+     * Internal utility to find the index of a specific tree node within a list 
+     * of members based on source positions.
+     */
+    public static int findMemberIndex(WorkingCopy wc, List<? extends Tree> members, Tree target) {
+        if (wc == null || members == null || target == null) {
+            return -1;
+        }
+        SourcePositions sp = wc.getTrees().getSourcePositions();
+        CompilationUnitTree cut = wc.getCompilationUnit();
+        long targetStart = sp.getStartPosition(cut, target);
+        for (int i = 0; i < members.size(); i++) {
+            if (sp.getStartPosition(cut, members.get(i)) == targetStart) {
+                return i;
+            }
+        }
+        return -1;
+    }
 
-    private static Tree parseMember(WorkingCopy wc, String declaration, String body) throws Exception {
+    /**
+     * Internal utility to parse a member declaration and optional body.
+     */
+    public static Tree parseMember(WorkingCopy wc, String declaration, String body) throws Exception {
         if (declaration == null || declaration.isBlank()) {
             throw new AgiToolException("Member declaration cannot be null or empty.");
         }
@@ -254,24 +195,33 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
             innerWc.toPhase(JavaSource.Phase.PARSED);
             CompilationUnitTree cut = innerWc.getCompilationUnit();
             if (!cut.getTypeDecls().isEmpty()) {
+                Tree t = null;
                 if (isStandaloneType) {
-                    result[0] = cut.getTypeDecls().get(0);
+                    t = cut.getTypeDecls().get(0);
                 } else {
                     ClassTree ct = (ClassTree) cut.getTypeDecls().get(0);
                     for (Tree member : ct.getMembers()) {
                         if (member instanceof MethodTree mt && mt.getName().contentEquals("<init>") && !finalDecl.contains("<init>")) {
-                            if (ct.getMembers().size() > 1) continue;
+                            if (ct.getMembers().size() > 1) {
+                                continue;
+                            }
                         }
-                        result[0] = member;
+                        t = member;
                         break;
                     }
+                }
+                if (t != null) {
+                    result[0] = wc.getTreeMaker().asNew(t);
                 }
             }
         }, true);
         return result[0];
     }
 
-    private static int getInsertIndex(WorkingCopy wc, List<? extends Tree> members, RelativePosition position, String anchor) throws AgiToolException {
+    /**
+     * Resolves the insertion index relative to anchors.
+     */
+    public static int getInsertIndex(WorkingCopy wc, List<? extends Tree> members, RelativePosition position, String anchor) throws AgiToolException {
         int anchorIdx = anchor != null ? JavaSourceUtils.findMemberIndex(wc, members, anchor) : -1;
         if (anchor != null && anchorIdx == -1) {
             throw new AgiToolException("Anchor member not found: " + anchor);
@@ -284,17 +234,29 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
         };
     }
 
-    private static ClassTree rebuildClassTree(TreeMaker make, ClassTree ct, List<Tree> members) {
+    /**
+     * Rebuilds a ClassTree container with a new list of members.
+     */
+    public static ClassTree rebuildClassTree(TreeMaker make, ClassTree ct, List<Tree> members) {
         return switch (ct.getKind()) {
-            case INTERFACE -> make.Interface(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), (List<ExpressionTree>)(List<?>)ct.getImplementsClause(), (List<ExpressionTree>)(List<?>)ct.getPermitsClause(), members);
-            case ENUM -> make.Enum(ct.getModifiers(), ct.getSimpleName(), (List<ExpressionTree>)(List<?>)ct.getImplementsClause(), members);
-            case ANNOTATION_TYPE -> make.AnnotationType(ct.getModifiers(), ct.getSimpleName(), members);
-            case RECORD -> make.Class(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), null, (List<ExpressionTree>)(List<?>)ct.getImplementsClause(), (List<ExpressionTree>)(List<?>)ct.getPermitsClause(), members);
-            default -> make.Class(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), ct.getExtendsClause(), (List<ExpressionTree>)(List<?>)ct.getImplementsClause(), (List<ExpressionTree>)(List<?>)ct.getPermitsClause(), members);
+            case INTERFACE ->
+                make.Interface(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), (List<ExpressionTree>) (List<?>) ct.getPermitsClause(), members);
+            case ENUM ->
+                make.Enum(ct.getModifiers(), ct.getSimpleName(), (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), members);
+            case ANNOTATION_TYPE ->
+                make.AnnotationType(ct.getModifiers(), ct.getSimpleName(), members);
+            case RECORD ->
+                // NOTE: NetBeans TreeMaker lacks make.Record. Using Class with bit 61 is the current workaround.
+                make.Class(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), null, (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), (List<ExpressionTree>) (List<?>) ct.getPermitsClause(), members);
+            default ->
+                make.Class(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), ct.getExtendsClause(), (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), (List<ExpressionTree>) (List<?>) ct.getPermitsClause(), members);
         };
     }
 
-    private static Tree cloneTree(TreeMaker make, Tree tree) {
+    /**
+     * Clones a tree node into the current WorkingCopy context.
+     */
+    public static Tree cloneTree(TreeMaker make, Tree tree) {
         if (tree instanceof ClassTree ct) {
             return rebuildClassTree(make, ct, new ArrayList<>(ct.getMembers()));
         } else if (tree instanceof MethodTree mt) {
@@ -305,17 +267,24 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
         return tree;
     }
 
-    private static void throwMemberNotFound(WorkingCopy wc, String memberFqn) throws AgiToolException {
+    /**
+     * Throws a detailed exception if a member is not found, providing candidate suggestions.
+     */
+    public static void throwMemberNotFound(WorkingCopy wc, String memberFqn) throws AgiToolException {
         int paren = memberFqn.indexOf("(");
         String namePart = paren != -1 ? memberFqn.substring(0, paren) : memberFqn;
         int lastSeparator = Math.max(namePart.lastIndexOf("."), namePart.lastIndexOf("$"));
-        if (lastSeparator == -1) throw new AgiToolException("Member not found: " + memberFqn);
-        
+        if (lastSeparator == -1) {
+            throw new AgiToolException("Member not found: " + memberFqn);
+        }
+
         String parentFqn = namePart.substring(0, lastSeparator);
         String name = namePart.substring(lastSeparator + 1);
         TypeElement parent = wc.getElements().getTypeElement(parentFqn);
-        if (parent == null) throw new AgiToolException("Member not found: " + memberFqn + " (Parent class not found: " + parentFqn + ")");
-        
+        if (parent == null) {
+            throw new AgiToolException("Member not found: " + memberFqn + " (Parent class not found: " + parentFqn + ")");
+        }
+
         List<String> candidates = new ArrayList<>();
         for (Element e : parent.getEnclosedElements()) {
             if (e.getSimpleName().contentEquals(name)) {
@@ -323,7 +292,7 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
                     String params = ee.getParameters().stream()
                             .map(p -> p.asType().toString().replaceAll("<.*>", ""))
                             .collect(Collectors.joining(","));
-                    candidates.add(parentFqn + "." + name + "(" + params + ")");
+                    candidates.add(parentFqn + "." + (e.getKind() == javax.lang.model.element.ElementKind.CONSTRUCTOR ? "<init>" : name) + "(" + params + ")");
                 } else {
                     candidates.add(parentFqn + "." + name);
                 }
@@ -338,8 +307,9 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
     }
 
     /**
-     * {@inheritDoc} 
-     * <p>Validates that the resource is in context and is a valid Java source.</p>
+     * {@inheritDoc}
+     * <p>
+     * Validates that the resource is in context and is a valid Java source.</p>
      */
     @Override
     public void validate(Agi agi) throws Exception {

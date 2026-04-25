@@ -3,10 +3,14 @@ package uno.anahata.asi.nb.tools.java.coderefiner;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.sun.source.tree.Tree;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
+import java.util.List;
+import java.util.Map;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.netbeans.api.java.source.WorkingCopy;
 
 /**
  * Abstract base class for all structural Java refinement intents.
@@ -40,4 +44,18 @@ public abstract class CodeRefinementIntent implements Serializable {
     @Schema(description = "The FQN of the target class (e.g. 'com.foo.Bar'). Use '$' for nested types. Leave empty for file-level.")
     private String classFqn;
 
+    /**
+     * Authoritatively applies this intent to the provided working copy.
+     * <p>
+     * Instead of rewriting the WorkingCopy directly, intents update the 
+     * {@code modifiedMembers} map. This map acts as a "Surgery Table" where 
+     * structural containers (ClassTree, CompilationUnitTree) are mapped to 
+     * their modified list of child Trees.
+     * </p>
+     * 
+     * @param wc The active working copy.
+     * @param modifiedMembers The accumulator for all changes in the batch.
+     * @throws Exception if resolution or AST creation fails.
+     */
+    public abstract void apply(WorkingCopy wc, Map<Tree, List<Tree>> modifiedMembers, boolean optimize) throws Exception;
 }
