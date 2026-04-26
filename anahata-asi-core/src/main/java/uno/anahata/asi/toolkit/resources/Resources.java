@@ -214,7 +214,7 @@ public class Resources extends AnahataToolkit {
      * @return A standard unified diff of the changes applied.
      * @throws Exception if the update fails.
      */
-    @AgiTool(value = "Updates an existing text resource in the RAG message using full content replacement. Returns a standard unified diff of the changes applied. Do not quietly remove inline comments or javadocs when using this tool.", maxDepth = 4)
+    @AgiTool(value = "Updates an existing text resource in the RAG message using full content replacement. Returns a standard unified diff of the changes applied. Use only in emergency scenarios if findAndReaplceInTextResource can't do. If you do, Do not quietly remove inline comments or javadocs when using this tool.", maxDepth = 4)
     public String updateTextResource(@AgiToolParam("The update details.") FullTextResourceUpdate update) throws Exception {
         update.validate(getAgi());
         Resource res = getAgi().getResourceManager().getResources().get(update.getResourceUuid());
