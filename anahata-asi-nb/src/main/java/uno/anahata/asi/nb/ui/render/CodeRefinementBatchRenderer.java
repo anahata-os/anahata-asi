@@ -47,25 +47,7 @@ public class CodeRefinementBatchRenderer extends AbstractTextResourceWriteRender
         if (update.getIntents() != null) {
             for (CodeRefinementIntent intent : update.getIntents()) {
                 log.info("Creating intent panel for " + intent);
-                String desc = "Structural Modification";
-                String icon = "🛠️";                
-                if (intent instanceof InsertMemberIntent ins) {
-                    String decl = ins.getDeclaration();
-                    String memberType = (decl != null && decl.contains("(")) ? "Method" : "Field";
-                    desc = "<b>Insert " + memberType + "</b> " + ins.getPosition() + " " + ins.getAnchorMemberName();
-                    icon = "<font color='#4CAF50'>[+]</font>";
-                } else if (intent instanceof UpdateMemberIntent upd) {
-                    desc = "<b>Update</b> " + getSimpleName(upd.getMemberFqn());
-                    icon = "<font color='#2196F3'>[*]</font>";
-                } else if (intent instanceof DeleteMemberIntent del) {
-                    desc = "<b>Delete</b> " + getSimpleName(del.getMemberFqn());
-                    icon = "<font color='#F44336'>[-]</font>";
-                } else if (intent instanceof MoveMemberIntent mov) {
-                    desc = "<b>Move</b> " + getSimpleName(mov.getMemberFqn()) + " " + mov.getPosition() + " " + mov.getAnchorMemberName();
-                    icon = "<font color='#FF9800'>[M]</font>";
-                }
-                
-                JLabel label = new JLabel("<html>" + icon + " " + desc + " " + "</html>");
+                JLabel label = new JLabel("<html>" + intent.getHtmlDisplay() + "</html>");
                 label.setToolTipText(intent.toString());
                 panel.add(label, "gapleft 15, wrap");
             }
@@ -85,15 +67,5 @@ public class CodeRefinementBatchRenderer extends AbstractTextResourceWriteRender
         batch.setOptimize(update.isOptimize());
         batch.setSave(update.isSave());
         return batch;
-    }
-    
-    private static String getSimpleName(String fqn) {
-        if (fqn == null || fqn.isBlank()) {
-            return "Unknown Member";
-        }
-        int paren = fqn.indexOf('(');
-        String namePart = paren == -1 ? fqn : fqn.substring(0, paren);
-        int lastDot = namePart.lastIndexOf('.');
-        return lastDot == -1 ? namePart : namePart.substring(lastDot + 1);
     }
 }
