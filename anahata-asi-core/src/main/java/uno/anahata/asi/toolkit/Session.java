@@ -188,9 +188,9 @@ public class Session extends AnahataToolkit {
      *
      * @return Confirmation message describing the impact.
      */
-    @AgiTool(value = "Disables local Java tools and enables hosted server tools (e.g., Google Search, Maps). "
-            + "CRITICAL: After calling this, you will lose access to all local tools until the user manually reenables them "
-            + "by clicking the Java icon in the toolbar. Use this only if you specifically need a server-side capability.")
+    @AgiTool(value = "Disables local Java tools (if enabled) and enables hosted server tools (e.g., Google Search, Maps, etc.). "
+            + "CRITICAL: After calling this, you will loose access to local tools until the user manually "
+            + "clicking the Java Tools icon in the toolbar. Use this only if you specifically need a server-side capability.")
     public String enableHostedTools() {
         getAgi().getConfig().setHostedToolsEnabled(true);
         return "Server tools have been enabled. Local tools are now disabled. "
