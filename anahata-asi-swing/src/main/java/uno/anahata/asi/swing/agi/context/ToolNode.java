@@ -73,10 +73,10 @@ public class ToolNode extends AbstractContextNode<AbstractTool<?, ?>> {
             this.status = "Disabled";
         } else {
             AbstractToolkit<?> tk = userObject.getToolkit();
-            if (tk != null && (!tk.isEnabled() || !tk.getToolManager().isEffectivelyProviding())) {
-                this.status = "Disabled (Inherited)";
+            if (tk != null && !tk.isEnabled()) {
+                this.status = "Toolkit Disabled";
             } else {
-                this.status = userObject.getPermission().name();
+                this.status = userObject.getPermission().getDisplayValue();
             }
         }
     }
