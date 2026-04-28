@@ -442,11 +442,11 @@ public class Java extends AnahataToolkit {
 
         if (!success) {
             StringBuilder error = new StringBuilder("Compiler: " + compiler + "\n");
-            error.append("Task:" + task + "\n");
-            error.append("Diagnostics:\n");
-            for (Diagnostic<? extends JavaFileObject> diagnostic : diagnostics.getDiagnostics()) {
-                error.append(diagnostic.toString()).append("\n");
-                log.info("Compiler Diagnostic: {}", diagnostic.toString());
+            error.append("Task:").append(task).append("\n");
+            error.append("Diagnostics: \n");
+            for (Diagnostic<? extends JavaFileObject> d : new ArrayList<>(diagnostics.getDiagnostics())) {
+                log.warn("Compiler Diagnostic: {}", d);
+                error.append(d.toString()).append("\n");
             }
             System.out.println(error);
             throw new java.lang.RuntimeException("Compilation error:\n" + error.toString());
