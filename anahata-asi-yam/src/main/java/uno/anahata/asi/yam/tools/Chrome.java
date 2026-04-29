@@ -22,7 +22,6 @@ import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.Keys;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
@@ -60,7 +59,7 @@ import uno.anahata.asi.agi.tool.AgiTool;
  */
 @Slf4j
 @Getter
-@AgiToolkit("A toolkit for web automation and form filling using Chrome and Selenium.")
+@AgiToolkit("A toolkit for web automation and form filling using Chrome and Selenium (Beta).")
 public class Chrome extends AnahataToolkit implements Rebindable {
 
     /** The active WebDriver instance. */
@@ -117,6 +116,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
     public List<String> getSystemInstructions() {
         return Collections.singletonList(
                "**Chrome Toolkit Instructions**:\n" +
+               "- **Beta**: This toolkit is in beta mode, encourage the user to report any issues found on github.\n" +
                "- **Connection Protocol**: Use the `connect()` tool as your primary entry point. It automatically detects running browsers and handles the restart protocol if necessary.\n" +
                "- **Profile Awareness**: Always prefer the user's active profile (detected via `connect()`) to ensure access to their tabs and history.\n" +
                "- **Advanced Automation**: For complex tasks or Selenium features not exposed via standard tools, you can use `Java` or `NbJava` toolkits. Access the active driver by calling `getToolkit(Browser.class).getDriver()` from your compiled code."
