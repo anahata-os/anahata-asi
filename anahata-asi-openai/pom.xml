@@ -8,8 +8,8 @@
     </parent>
     <artifactId>anahata-asi-openai</artifactId>
     <packaging>jar</packaging>
-    <name>Anahata ASI OpenAI Provider</name>
-    <description>Universal provider implementation for OpenAI-compatible APIs (Groq, DeepSeek, Ollama, etc.)</description>
+    <name>Anahata ASI OpenAI Compatible Provider</name>
+    <description>Universal raw-json-parsing provider implementation using the jdks http client for OpenAI (including new /responses api) and OpenAI-compatible APIs using leagcy /chat/completions (Groq, DeepSeek, Ollama, etc.)</description>
 
     <dependencies>
         <dependency>
