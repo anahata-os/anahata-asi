@@ -43,17 +43,23 @@ This project uses a set of key documents to guide development. For detailed info
 - **Mandatory Braces**: Always use curly braces `{}` for all control flow statements (`if`, `else`, `for`, `while`, `do`). Single-line lambdas without braces (e.g., `list.stream().filter(m -> m.isCool())...`) are perfectly fine and often preferred for readability.
 - **Logging Standard**: Use SLF4J (`@Slf4j`) for all logging. Never use `System.out.println()`.
 - **Lombok Purity**: Rely on Lombok annotation processing; do not add explicit getters/setters for Lombok-managed fields.
+- **Serialization (JsonIgnore/Schema vs Kryo)**: The `com.fasterxml.jackson.annotation.JsonIgnore` and `io.swagger.v3.oas.annotations.media.Schema` annotations are only used for generating json schemas and serializing/deserializing DTOs during transport between the **LLM Model API** and the **Anahata framework**. They are not used for persisting internal framework/session state (we use Kryo for that) Kryo serializes the entire Agi object graph (includes the agi itself, including all messages in the history with all their tool calls and responses, the resources, toolkit instances, context providers, and anything else in the Agi object graph during every turn and every time a tool gets executed. Use these @JsonIgnore or @Schema(hidden=true) only in DTOs that are used as tool call parameters or returned types to keep the tool definitions and tool responses lean. Fields that cannot or should not be serialized by Kryo on every autobackup pulse should be marked as 'transient' (with the java transient modifier) and can be recovered early with the rebind() method of Rebindable or the postActivate() method in AnahataToolkit instances (postActivate gets invoked after the session has been fully restored while rebin() is invoked ealier during deserialization as soon as that object is deserialized. 
 - **Static should be static**: A method that does not use instance members should be made static.
 - **Thread Awareness**: Toolkit methods can be invoked from background threads (during AI tool execution) or the Event Dispatch Thread (when triggered by user UI actions). The `SwingUtils` class contains convenience methods like `runInEDT` and `runInEDTAndWait` to help handle these transitions safely.
 - **Reactive UI**: Use `PropertyChangeSource` and `EdtPropertyChangeListener` for UI-to-Domain bindings to ensure EDT execution.
 - **Cross-Platform Support**: All toolkits and utilities must support Linux, Windows, and macOS via `OsUtils` and `SystemUtils`.
+- **Standard Toolkit Method creation**: 
+    1. extend `AnahataToolkit` and annotate the class with @AgiToolkit("what this toolkit does")
+    2. do not implement ContextProvider methods like getId() or getParentContextProvider() or setProviding() as this is already handled by the base AnahataToolkit class.
+
 - **Standard Toolkit Method Order**: 
-    1. `rebind()` (if needed)
-    2. `getSystemInstructions()` (if needed)
-    3. `populateMessage()` (if needed)
-    4. `@AgiTool` methods
-    5. Public helper methods (if needed)
-    6. Private implementation details (if needed)
+    1. `rebind()` (if needed during early stages of deserilization)
+    2. `postActivate()` (call back hook when the Agi session has been completely deserialized and bound to the AsiContainer)
+    3. `getSystemInstructions()` (if needed, with instructions that are common to all @AgiTools)
+    3. `populateMessage(RagMessage)` (for augmented context on every turn)
+    4. `@AgiTool` methods with @AgiToolParam annotations on parameters (If using pojos in parameters or returned types, use @Schema, @JsonIngore, etc type of annotations to control schema definitions and serialization mappings)
+    5. Public helper methods (if needed that can be accessed by other toolkits via getToolkit(OtherToolkit.class) or by any other classess of the host application. Calling one toolkit from another toolkit supports context propagation via thread local of the associated ToolContex (this works for all methods of ToolContext such as log(""), error(""), addAttachment(), getModelId(), etc.) 
+    6. Private implementation details (internal private methods )
 
 ## 5. Javadoc Standards
 
@@ -80,7 +86,11 @@ This project is in a pre-production state. We value architectural purity and lon
 
 - **Architectural Rework**: If you identify a cleaner or more efficient design pattern, you are encouraged to propose and implement a rework of existing structures. Refactoring for clarity and future-proofing is preferred over applying patches to flawed designs.
 
-## 8. Environment
+## 8. Serialization Annotations
+
+- **JsonIgnore and Schema**: The `com.fasterxml.jackson.annotation.JsonIgnore` and `io.swagger.v3.oas.annotations.media.Schema` annotations are strictly reserved for controlling the serialization of DTOs during transport between the **LLM Model API** and the **Anahata framework**. They must **never** be interpreted as controlling internal framework state (Kryo) or UI-level object mapping. Use these to keep the AI's prompt lean, but ensure critical state fields remain visible to the framework's internal logic.
+
+## 9. Environment
 
 - **Working Directory**: `~/.anahata/asi` (Standardized for V2).
 
