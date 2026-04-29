@@ -220,6 +220,7 @@ public class Resources extends AnahataToolkit {
         Resource res = getAgi().getResourceManager().getResources().get(update.getResourceUuid());
         String revised = update.calculateResultingContent(getAgi());
         res.write(revised);
+        update.setResultingContent(res.asText());
         log("Updated text file: " + res.getName());
         return update.getUnifiedDiff(getAgi());
     }
@@ -232,7 +233,7 @@ public class Resources extends AnahataToolkit {
      * @throws Exception if replacements fail.
      */
     @AgiTool("Performs surgical text replacements in a text resource. "
-            + "\n**1. Mandatory Checksum**: You MUST provide the exact `totalOccurrences` of the `target` string found in the file. If the count doesn't match, the tool fails (prevents working on stale context). "
+            + "\n**1. Mandatory Checksum**: You MUST provide the exact `totalOccurrences` of the `target` string found in the file to prove that you know how many occurrences are in the file. If you don't provide it, provide 0 or the provided value doesn't match, the tool will automatically get declined. "
             + "\n**2. Surgical Targeting**: Use `occurrenceIndexes` (a list of 1-based indices) to replace specific matches (e.g., [1, 3]). If the list is null or empty, ALL occurrences are replaced. "
             + "\n**3. Turn Sequencing**: On any given turn, you can only use this tool ONCE per resource. Batch multiple replacements into a single call. "
             + "\n**4. Validation**: Requires `resourceUuid` and the latest `lastModified` timestamp from the RAG message.")
@@ -241,6 +242,7 @@ public class Resources extends AnahataToolkit {
         Resource res = getAgi().getResourceManager().getResources().get(replacements.getResourceUuid());
         String revised = replacements.calculateResultingContent(getAgi());
         res.write(revised);
+        replacements.setResultingContent(res.asText());
         log("Performed replacements in: " + res.getName());
         return replacements.getUnifiedDiff(getAgi());
     }
@@ -278,6 +280,7 @@ public class Resources extends AnahataToolkit {
         Resource res = getAgi().getResourceManager().getResources().get(edits.getResourceUuid());
         String revised = edits.calculateResultingContent(getAgi());
         res.write(revised);
+        edits.setResultingContent(res.asText());
         log("Applied semantic line edits to: " + res.getName());
         return edits.getUnifiedDiff(getAgi());
     }
