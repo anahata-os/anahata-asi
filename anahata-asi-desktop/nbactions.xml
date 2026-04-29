@@ -10,9 +10,8 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:3.5.1:exec</goal>
             </goals>
             <properties>
-                <exec.vmArgs>-Xms1g</exec.vmArgs>
+                <exec.vmArgs>-Xms1g --enable-native-access=ALL-UNNAMED</exec.vmArgs>
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
-                <exec.appArgs>Gemini/models/gemini-3-flash-preview</exec.appArgs>
                 <exec.mainClass>uno.anahata.asi.desktop.Main</exec.mainClass>
                 <exec.executable>java</exec.executable>
             </properties>
@@ -29,7 +28,6 @@
             <properties>
                 <exec.vmArgs>-Xms1g -agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
-                <exec.appArgs>Gemini/models/gemini-3-flash-preview</exec.appArgs>
                 <exec.mainClass>uno.anahata.asi.desktop.Main</exec.mainClass>
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
