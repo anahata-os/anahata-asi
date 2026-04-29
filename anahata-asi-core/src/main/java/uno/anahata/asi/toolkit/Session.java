@@ -12,15 +12,11 @@ import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.agi.context.ContextManager;
 import uno.anahata.asi.agi.context.ContextProvider;
-import uno.anahata.asi.agi.message.AbstractMessage;
-import uno.anahata.asi.agi.message.AbstractPart;
-import uno.anahata.asi.agi.message.PruningState;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.tool.ToolPermission;
 import uno.anahata.asi.agi.provider.ServerTool;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.agi.tool.ToolExecutionStatus;
-import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiToolParam;
@@ -45,20 +41,39 @@ public class Session extends AnahataToolkit {
      * The time when the session started.
      */
     private Date sessionStart = new Date();
-    
+
     /**
      * The last time the session got deserialized.
      */
     private Date sessionRestored;
-    
+
     /**
      * Captures the sessionRestored time during deserialization;
      */
     @Override
     public void postActivate() {
         sessionRestored = new Date();
+        log.info("Session toolkit postActivate. sessionRestored timestamp: " + sessionRestored);
     }
-    
+
+    /**
+     * Updates the AGIs nickname.
+     *
+     * @param nickName the new nickname
+     * @return a confirmation message
+     */
+    @AgiTool(value = "Updates the current AGI nickname. This shows on the ASI container's dashboard. "
+            + "Only call this tool if a) the session doesn't have one (because it has just been created) or the topic has changed to the point that it is worth changing and the user hasn't updated the nickname manually on the UI to reflect this change. Keep it as short as possible. Two words or 20 characters max.",
+            permission = ToolPermission.PROMPT, maxDepth = 2)
+    public String updateSessionNickname(@AgiToolParam("A concise summary of the conversation's current state.") String nickName) {
+        uno.anahata.asi.agi.Agi domainAgi = getAgi();
+        if (nickName != null && !nickName.isBlank()) {
+            domainAgi.setNickname(nickName);
+        }
+        log.info("Session nickname updated: {}", nickName);
+        return "Session nickname updated successfully to " + nickName;
+    }
+
     /**
      * Updates the human-readable summary of the current session.
      * <p>
@@ -68,8 +83,8 @@ public class Session extends AnahataToolkit {
      * sole tool in a turn.
      * </p>
      * <p>
-     * The summary is visible to the user in the container dashboard and helps
-     * maintain continuity across session reloads.
+     * The summary is visible to the user in the container dashboard and the
+     * parent agi if spawned by another agi.
      * </p>
      *
      * @param summary A concise summary of the conversation's current state or
@@ -181,7 +196,6 @@ public class Session extends AnahataToolkit {
         return stoppedCount + " tool(s) have been signaled to stop.\n" + result;
     }
 
-
     /**
      * Switches the session to server-side tool mode.
      * <p>
@@ -226,9 +240,9 @@ public class Session extends AnahataToolkit {
         sb.append("- **Selected Model**: ").append(domainAgi.getSelectedModel() != null ? domainAgi.getSelectedModel().getModelId() : "None").append("\n");
         sb.append("- **Thinking Level**: ").append(domainAgi.getRequestConfig().getThinkingLevel()).append("\n");
         sb.append("- **Auto-reply tools enabled**: ").append(config.isAutoReplyTools()).append(
-                config.isAutoReplyTools()? 
-                        " (If all the tools you propose in a batch have ALWAYS permission, the tool calls will be automatically executed and the responses will be sent to you inmediatly without user intervention )"
-                        : " (User has to click 'Run pending and send' for you to get the results.)");
+                config.isAutoReplyTools()
+                ? " (If all the tools you propose in a batch have ALWAYS permission, the tool calls will be automatically executed and the responses will be sent to you inmediatly without user intervention )"
+                : " (User has to click 'Run pending and send' for you to get the results.)");
         sb.append("- **Expand Thoughts**: ").append(config.isExpandThoughts()).append(config.isExpandThoughts() ? " (user's ui expands the thought parts with your reasoning when a new part arrives)" : "(**reasonig not showing**)\n");
         sb.append("- **Context Window Usage (Last turn)**: ").append(String.format("%.1f%%", domainAgi.getContextWindowUsage() * 100))
                 .append(" (").append(domainAgi.getLastTotalTokenCount()).append(" / ").append(config.getTokenThreshold()).append(" tokens)\n");
