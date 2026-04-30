@@ -2,16 +2,12 @@
 package uno.anahata.asi.nb.tools.java;
 
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.TypeElement;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.java.classpath.ClassPath;
 import org.netbeans.api.java.classpath.GlobalPathRegistry;
@@ -473,55 +469,8 @@ public class CodeModel extends AnahataToolkit {
         throw new AgiToolException("Member not found: " + memberFqn + " in type " + typeFqn);
     }
 
-    /**
-     * Generates a list of canonical candidate FQNs for a given partial member
-     * name. Use this when a resolution fails to provide helpful feedback.
-     *
-     * @param info CompilationInfo.
-     * @param memberFqn The FQN that failed resolution.
-     * @return A list of valid canonical FQNs that share the same base name.
-     */
-    private List<String> findMemberCandidates(CompilationInfo info, String memberFqn) {
-        int paren = memberFqn.indexOf("(");
-        String namePart = paren != -1 ? memberFqn.substring(0, paren) : memberFqn;
-        int lastSeparator = Math.max(namePart.lastIndexOf("."), namePart.lastIndexOf("$"));
-        if (lastSeparator == -1) {
-            return Collections.emptyList();
-        }
-        String parentFqn = namePart.substring(0, lastSeparator);
-        String name = namePart.substring(lastSeparator + 1);
-        TypeElement parent = info.getElements().getTypeElement(JavaSourceUtils.normalizeFqn(parentFqn));
-        if (parent == null) {
-            return Collections.emptyList();
-        }
-        List<String> candidates = new ArrayList<>();
-        for (Element e : parent.getEnclosedElements()) {
-            if (e.getSimpleName().contentEquals(name)) {
-                if (e instanceof ExecutableElement ee) {
-                    String params = ee.getParameters().stream().map(p -> {
-                        String type = p.asType().toString();
-                        return type.contains("<") ? type.substring(0, type.indexOf("<")) : type;
-                    }).collect(Collectors.joining(","));
-                    String namePrefix = (e.getKind() == ElementKind.CONSTRUCTOR) ? "<init>" : name;
-                    candidates.add(parentFqn + "." + namePrefix + "(" + params + ")");
-                } else {
-                    candidates.add(parentFqn + "." + name);
-                }
-            }
-        }
-        return candidates;
-    }
-
-    /**
-     * Formats a detailed error message when a member is not found, including
-     * suggested candidates if available.
-     * 
-     * @param info CompilationInfo.
-     * @param memberFqn The FQN that failed.
-     * @return A formatted error string.
-     */
-    private String getMemberNotFoundMessage(CompilationInfo info, String memberFqn) {
-        List<String> candidates = findMemberCandidates(info, memberFqn);
+    private static String getMemberNotFoundMessage(CompilationInfo info, String memberFqn) {
+        List<String> candidates = JavaSourceUtils.findMemberCandidates(info, memberFqn);
         if (!candidates.isEmpty()) {
             StringBuilder sb = new StringBuilder("Member not found: ").append(memberFqn);
             sb.append("\nDid you mean one of these canonical identification FQNs?\n");
@@ -532,4 +481,5 @@ public class CodeModel extends AnahataToolkit {
         }
         return "Member not found: " + memberFqn;
     }
+    
 }
