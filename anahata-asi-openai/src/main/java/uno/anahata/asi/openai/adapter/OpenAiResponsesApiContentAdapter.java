@@ -21,7 +21,7 @@ import uno.anahata.asi.agi.provider.TokenizerType;
 import uno.anahata.asi.agi.tool.schema.SchemaProvider;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
-import uno.anahata.asi.openai.OpenAiResponsesApiMessage;
+import uno.anahata.asi.openai.OpenAiResponsesModelMessage;
 
 /**
  * A specialized content adapter for the OpenAI Responses API (/v1/responses).
@@ -52,7 +52,7 @@ public class OpenAiResponsesApiContentAdapter {
         List<ObjectNode> results = new ArrayList<>();
         
         // 1. Model turn (either persistent items or synthesized)
-        if (anahataMessage instanceof OpenAiResponsesApiMessage omm && !omm.getPersistentItems().isEmpty()) {
+        if (anahataMessage instanceof OpenAiResponsesModelMessage omm && !omm.getPersistentItems().isEmpty()) {
             log.info("Injecting {} original Responses API items for persistent reasoning", omm.getPersistentItems().size());
             // Deep copy to prevent mutation during payload construction
             for (com.fasterxml.jackson.databind.JsonNode item : omm.getPersistentItems()) {

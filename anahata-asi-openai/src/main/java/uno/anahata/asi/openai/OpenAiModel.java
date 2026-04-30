@@ -38,7 +38,7 @@ public class OpenAiModel extends OpenAiCompatibleModel {
     @Override
     public OpenAiModelMessage createModelMessage(uno.anahata.asi.agi.Agi agi) {
         if (prefersResponsesApi()) {
-            return new OpenAiResponsesApiMessage(agi, getModelId());
+            return new OpenAiResponsesModelMessage(agi, getModelId());
         }
         return super.createModelMessage(agi);
     }
