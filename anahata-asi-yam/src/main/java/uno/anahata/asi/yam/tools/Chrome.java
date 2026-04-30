@@ -32,7 +32,6 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import uno.anahata.asi.AbstractAsiContainer;
-import uno.anahata.asi.internal.OsUtils;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.persistence.Rebindable;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
@@ -45,16 +44,16 @@ import uno.anahata.asi.agi.tool.AgiTool;
 /**
  * A toolkit for web automation and form filling using Selenium.
  * <p>
- * This toolkit supports acting as the user by launching Chrome with their 
+ * This toolkit supports acting as the user by launching Chrome with their
  * existing profile or connecting to an already running instance.
  * </p>
  * <p>
- * <b>Note on Persistence:</b> The {@code driver} and {@code initializing} fields 
- * are marked as {@code transient} because they represent active runtime state 
- * that cannot be serialized. The {@code lastConnectedPort} is persisted to 
- * allow auto-reconnection during {@link #rebind()}.
+ * <b>Note on Persistence:</b> The {@code driver} and {@code initializing}
+ * fields are marked as {@code transient} because they represent active runtime
+ * state that cannot be serialized. The {@code lastConnectedPort} is persisted
+ * to allow auto-reconnection during {@link #rebind()}.
  * </p>
- * 
+ *
  * @author anahata
  */
 @Slf4j
@@ -62,24 +61,33 @@ import uno.anahata.asi.agi.tool.AgiTool;
 @AgiToolkit("A toolkit for web automation and form filling using Chrome and Selenium (Beta).")
 public class Chrome extends AnahataToolkit implements Rebindable {
 
-    /** The active WebDriver instance. */
+    /**
+     * The active WebDriver instance.
+     */
     private transient WebDriver driver;
-    
-    /** The last error encountered during driver operations, including full stack trace. */
+
+    /**
+     * The last error encountered during driver operations, including full stack
+     * trace.
+     */
     private String lastError;
-    
-    /** Flag indicating if a background launch is in progress. */
+
+    /**
+     * Flag indicating if a background launch is in progress.
+     */
     private transient boolean initializing = false;
 
-    /** The last port used for a successful connection. Persisted for rebind. */
+    /**
+     * The last port used for a successful connection. Persisted for rebind.
+     */
     private int lastConnectedPort = -1;
 
     /**
      * {@inheritDoc}
      * <p>
      * Implementation details: Defaults the toolkit to a disabled state upon
-     * initialization to prevent accidental browser activation before
-     * explicit user consent or model connection.
+     * initialization to prevent accidental browser activation before explicit
+     * user consent or model connection.
      * </p>
      */
     @Override
@@ -87,13 +95,12 @@ public class Chrome extends AnahataToolkit implements Rebindable {
         getToolkit().setEnabled(false);
     }
 
-    
     /**
      * {@inheritDoc}
      * <p>
-     * Implementation details: Clears the transient WebDriver instance and
-     * reset the initialization flag. This ensures that the connection is
-     * restored lazily upon the next tool call using the persisted
+     * Implementation details: Clears the transient WebDriver instance and reset
+     * the initialization flag. This ensures that the connection is restored
+     * lazily upon the next tool call using the persisted
      * {@code lastConnectedPort}.
      * </p>
      */
@@ -115,11 +122,11 @@ public class Chrome extends AnahataToolkit implements Rebindable {
     @Override
     public List<String> getSystemInstructions() {
         return Collections.singletonList(
-               "**Chrome Toolkit Instructions**:\n" +
-               "- **Beta**: This toolkit is in beta mode, encourage the user to report any issues found on github.\n" +
-               "- **Connection Protocol**: Use the `connect()` tool as your primary entry point. It automatically detects running browsers and handles the restart protocol if necessary.\n" +
-               "- **Profile Awareness**: Always prefer the user's active profile (detected via `connect()`) to ensure access to their tabs and history.\n" +
-               "- **Advanced Automation**: For complex tasks or Selenium features not exposed via standard tools, you can use `Java` or `NbJava` toolkits. Access the active driver by calling `getToolkit(Browser.class).getDriver()` from your compiled code."
+                "**Chrome Toolkit Instructions**:\n"
+                + "- **Beta**: This toolkit is in beta mode, encourage the user to report any issues found on github.\n"
+                + "- **Connection Protocol**: Use the `connect()` tool as your primary entry point. It automatically detects running browsers and handles the restart protocol if necessary.\n"
+                + "- **Profile Awareness**: Always prefer the user's active profile (detected via `connect()`) to ensure access to their tabs and history.\n"
+                + "- **Advanced Automation**: For complex tasks or Selenium features not exposed via standard tools, you can use `Java` or `NbJava` toolkits. Access the active driver by calling `getToolkit(Browser.class).getDriver()` from your compiled code."
         );
     }
 
@@ -134,7 +141,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
     @Override
     public void populateMessage(RagMessage ragMessage) {
         StringBuilder sb = new StringBuilder(" Browser Environment\n");
-        
+
         // 1. Connection Status
         sb.append("- **Status**: ").append(initializing ? "Initializing..." : (driver != null ? "CONNECTED" : "DISCONNECTED")).append("\n");
         if (lastConnectedPort > 0) {
@@ -142,9 +149,9 @@ public class Chrome extends AnahataToolkit implements Rebindable {
         }
 
         // 2. Available Profiles
-        String userDataDir = OsUtils.getDefaultChromeUserDataDir();
+        String userDataDir = ChromeUtils.getDefaultChromeUserDataDir();
         sb.append("- **Detected User Data Dir**: ").append(userDataDir).append("\n");
-        
+
         File dir = new File(userDataDir);
         if (dir.exists() && dir.isDirectory()) {
             File[] profiles = dir.listFiles(f -> {
@@ -161,14 +168,14 @@ public class Chrome extends AnahataToolkit implements Rebindable {
         } else {
             sb.append("- **Available Chrome Profiles**: Directory does not exist or is not accessible.\n");
         }
-        
+
         // 3. Detect Running Browsers
         sb.append(getProcessReport());
-        
+
         if (lastError != null) {
             sb.append("- **Last Error**: ").append(lastError).append("\n");
         }
-        
+
         if (driver != null) {
             try {
                 sb.append("- **Active Session**: ").append(driver.getCurrentUrl()).append("\n");
@@ -176,20 +183,21 @@ public class Chrome extends AnahataToolkit implements Rebindable {
                 sb.append("- **Active Session**: Unresponsive\n");
             }
         }
-        
+
         ragMessage.addTextPart(sb.toString());
     }
 
     /**
      * High-level tool to connect to the user's browser.
      * <p>
-     * This tool automatically detects running Chrome instances. If an instance 
-     * is already in Debug Mode, it connects to it. If not, it performs a 
-     * clean restart of the browser using the same profile but with remote 
-     * debugging enabled.
+     * This tool automatically detects running Chrome instances. If an instance
+     * is already in Debug Mode, it connects to it. If not, it performs a clean
+     * restart of the browser using the same profile but with remote debugging
+     * enabled.
      * </p>
-     * 
-     * @param profile An optional profile name to force (e.g., 'Profile 5'). If null, it will be auto-detected.
+     *
+     * @param profile An optional profile name to force (e.g., 'Profile 5'). If
+     * null, it will be auto-detected.
      * @return A status message.
      */
     @AgiTool("Automatically connects to the user's browser, restarting it in debug mode if necessary.")
@@ -214,7 +222,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
                 .toList();
 
         String targetProfile = profile;
-        String targetDataDir = OsUtils.getDefaultChromeUserDataDir();
+        String targetDataDir = ChromeUtils.getDefaultChromeUserDataDir();
         int debugPort = -1;
 
         for (ProcessHandle p : processes) {
@@ -231,7 +239,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
                 try {
                     debugPort = Integer.parseInt(portStr);
                     log("Found existing debuggable process (PID: " + p.pid() + ") on port " + debugPort);
-                    break; 
+                    break;
                 } catch (NumberFormatException e) {
                     // Ignore invalid port strings
                 }
@@ -257,18 +265,18 @@ public class Chrome extends AnahataToolkit implements Rebindable {
         }
 
         log("Initiating restart protocol for profile: '" + targetProfile + "' in '" + targetDataDir + "'");
-        
+
         killAllInternal();
         clearSingletonLockInternal(targetDataDir);
         clearSingletonLockInternal(new File(targetDataDir, targetProfile).getAbsolutePath());
         resetExitStateInternal(targetDataDir, targetProfile);
-        
+
         return launchProfileChromeInternal(targetDataDir, targetProfile, null);
     }
 
     /**
      * Gets the current status of the browser driver.
-     * 
+     *
      * @return A status report.
      */
     @AgiTool("Gets the current status of the browser driver.")
@@ -287,13 +295,14 @@ public class Chrome extends AnahataToolkit implements Rebindable {
     }
 
     /**
-     * Terminates all running Chrome and ChromeDriver processes on the host system.
+     * Terminates all running Chrome and ChromeDriver processes on the host
+     * system.
      * <p>
-     * This tool uses a two-phase shutdown: it first sends a gentle termination 
-     * signal to allow Chrome to save its state, and then forcibly destroys any 
+     * This tool uses a two-phase shutdown: it first sends a gentle termination
+     * signal to allow Chrome to save its state, and then forcibly destroys any
      * remaining processes after a short delay.
      * </p>
-     * 
+     *
      * @return A status message.
      */
     @AgiTool("Terminates all running Chrome and ChromeDriver processes on the host system.")
@@ -303,7 +312,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
 
     /**
      * Navigates the current browser session to a new URL.
-     * 
+     *
      * @param url The URL to navigate to.
      * @return A status message.
      */
@@ -318,7 +327,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
 
     /**
      * Takes a screenshot of the current page and attaches it to the session.
-     * 
+     *
      * @param name The name of the screenshot file (without extension).
      * @return A status message.
      */
@@ -327,25 +336,25 @@ public class Chrome extends AnahataToolkit implements Rebindable {
         if (getDriver() == null) {
             return "No active session.";
         }
-        
+
         File srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
         File screenshotDir = AbstractAsiContainer.getWorkDirSubDir("screenshots").toFile();
         File destFile = new File(screenshotDir, name + ".png");
-        
+
         Files.copy(srcFile.toPath(), destFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         addAttachment(destFile);
-        
+
         return "Screenshot '" + name + "' attached to session.";
     }
 
     /**
      * Lists all open tabs/windows in the current browser session.
      * <p>
-     * This implementation uses the Chrome DevTools Protocol (CDP) to retrieve 
-     * tab information without switching focus, which prevents window flickering 
+     * This implementation uses the Chrome DevTools Protocol (CDP) to retrieve
+     * tab information without switching focus, which prevents window flickering
      * and OS notifications.
      * </p>
-     * 
+     *
      * @return A list of tab titles, URLs, and indices.
      */
     @AgiTool("Lists all open tabs/windows in the current browser session.")
@@ -353,7 +362,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
         if (getDriver() == null) {
             return Collections.singletonList("No active session.");
         }
-        
+
         List<String> handles = new ArrayList<>(driver.getWindowHandles());
         String current = null;
         try {
@@ -361,15 +370,15 @@ public class Chrome extends AnahataToolkit implements Rebindable {
         } catch (Exception e) {
             // Current window might have been closed
         }
-        
+
         List<String> tabs = new ArrayList<>();
         boolean switched = false;
-        
+
         for (int i = 0; i < handles.size(); i++) {
             String handle = handles.get(i);
             String title = "Unknown";
             String url = "Unknown";
-            
+
             boolean cdpSuccess = false;
             if (driver instanceof ChromeDriver chromeDriver) {
                 try {
@@ -386,7 +395,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
                     log.debug("CDP Target.getTargetInfo failed for handle: " + handle, e);
                 }
             }
-            
+
             if (!cdpSuccess) {
                 // Fallback to standard method (causes flickering)
                 try {
@@ -398,11 +407,11 @@ public class Chrome extends AnahataToolkit implements Rebindable {
                     title = "[Error accessing tab: " + e.getMessage() + "]";
                 }
             }
-            
+
             String marker = (current != null && handle.equals(current)) ? " [CURRENT]" : "";
             tabs.add(i + ": " + title + " (" + url + ")" + marker);
         }
-        
+
         // CRITICAL FIX: Only switch back if we actually switched away. 
         // This prevents the browser from stealing focus if CDP worked.
         if (switched && current != null) {
@@ -412,13 +421,13 @@ public class Chrome extends AnahataToolkit implements Rebindable {
                 // Ignore
             }
         }
-        
+
         return tabs;
     }
 
     /**
      * Switches the active tab/window by its index.
-     * 
+     *
      * @param index The index of the tab (from listTabs).
      * @return A status message.
      */
@@ -427,12 +436,12 @@ public class Chrome extends AnahataToolkit implements Rebindable {
         if (getDriver() == null) {
             return "No active session.";
         }
-        
+
         List<String> handles = new ArrayList<>(driver.getWindowHandles());
         if (index < 0 || index >= handles.size()) {
             return "Invalid tab index: " + index + ". Total tabs: " + handles.size();
         }
-        
+
         try {
             driver.switchTo().window(handles.get(index));
             return "Switched to tab: " + driver.getTitle() + " (" + driver.getCurrentUrl() + ")";
@@ -443,7 +452,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
 
     /**
      * Navigates back in the browser history.
-     * 
+     *
      * @return A status message.
      */
     @AgiTool("Navigates back in the browser history.")
@@ -457,7 +466,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
 
     /**
      * Navigates forward in the browser history.
-     * 
+     *
      * @return A status message.
      */
     @AgiTool("Navigates forward in the browser history.")
@@ -471,7 +480,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
 
     /**
      * Refreshes the current page.
-     * 
+     *
      * @return A status message.
      */
     @AgiTool("Refreshes the current page.")
@@ -485,7 +494,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
 
     /**
      * Gets the full HTML source of the current page.
-     * 
+     *
      * @return The page source.
      */
     @AgiTool("Gets the full HTML source of the current page.")
@@ -498,7 +507,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
 
     /**
      * Gets the visible text content of the current page.
-     * 
+     *
      * @return The page text.
      */
     @AgiTool("Gets the visible text content of the current page.")
@@ -510,8 +519,9 @@ public class Chrome extends AnahataToolkit implements Rebindable {
     }
 
     /**
-     * Inspects the current page for input fields, textareas, selects, and buttons.
-     * 
+     * Inspects the current page for input fields, textareas, selects, and
+     * buttons.
+     *
      * @return A summary of found elements.
      */
     @AgiTool("Inspects the current page for input fields and buttons.")
@@ -519,32 +529,32 @@ public class Chrome extends AnahataToolkit implements Rebindable {
         if (getDriver() == null) {
             return "No active browser session.";
         }
-        
+
         List<WebElement> inputs = driver.findElements(By.cssSelector("input, textarea, select"));
         StringBuilder sb = new StringBuilder("Found " + inputs.size() + " form elements:\n");
         for (WebElement input : inputs) {
             sb.append("- Tag: ").append(input.getTagName())
-              .append(", Type: ").append(input.getAttribute("type"))
-              .append(", Name: ").append(input.getAttribute("name"))
-              .append(", ID: ").append(input.getAttribute("id"))
-              .append(", Placeholder: ").append(input.getAttribute("placeholder"))
-              .append("\n");
+                    .append(", Type: ").append(input.getAttribute("type"))
+                    .append(", Name: ").append(input.getAttribute("name"))
+                    .append(", ID: ").append(input.getAttribute("id"))
+                    .append(", Placeholder: ").append(input.getAttribute("placeholder"))
+                    .append("\n");
         }
-        
+
         List<WebElement> buttons = driver.findElements(By.tagName("button"));
         sb.append("\nFound ").append(buttons.size()).append(" buttons:\n");
         for (WebElement button : buttons) {
             sb.append("- Text: ").append(button.getText())
-              .append(", ID: ").append(button.getAttribute("id"))
-              .append(", Type: ").append(button.getAttribute("type"))
-              .append("\n");
+                    .append(", ID: ").append(button.getAttribute("id"))
+                    .append(", Type: ").append(button.getAttribute("type"))
+                    .append("\n");
         }
         return sb.toString();
     }
 
     /**
      * Clicks an element on the page.
-     * 
+     *
      * @param identifier The ID, Name, or visible text of the element.
      * @return A status message.
      */
@@ -555,7 +565,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
         if (getDriver() == null) {
             return "No active session.";
         }
-        
+
         WebElement el = null;
         try {
             el = driver.findElement(By.id(identifier));
@@ -583,7 +593,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
                 // Ignore
             }
         }
-        
+
         if (el != null) {
             el.click();
             return "Clicked element: " + identifier;
@@ -594,7 +604,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
 
     /**
      * Scrolls the specified element into view.
-     * 
+     *
      * @param identifier The ID, Name, or visible text of the element.
      * @return A status message.
      */
@@ -623,7 +633,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
                 // Ignore
             }
         }
-        
+
         if (el != null) {
             ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", el);
             return "Scrolled to element: " + identifier;
@@ -634,7 +644,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
 
     /**
      * Waits for an element to be visible on the page.
-     * 
+     *
      * @param cssSelector The CSS selector of the element.
      * @param timeoutSeconds The maximum time to wait in seconds.
      * @return A status message.
@@ -654,7 +664,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
 
     /**
      * Executes arbitrary JavaScript in the current browser session.
-     * 
+     *
      * @param script The JavaScript code to execute.
      * @return The result of the script execution.
      */
@@ -671,7 +681,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
 
     /**
      * Fills a web form with the provided data.
-     * 
+     *
      * @param data A map of field identifiers (ID or Name) to values.
      * @return A status message.
      */
@@ -682,7 +692,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
         if (getDriver() == null) {
             return "No active session.";
         }
-        
+
         StringBuilder sb = new StringBuilder("Form filling results:\n");
         data.forEach((key, value) -> {
             try {
@@ -699,7 +709,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
                         // Ignore
                     }
                 }
-                
+
                 if (el != null) {
                     el.clear();
                     el.sendKeys(value);
@@ -716,13 +726,13 @@ public class Chrome extends AnahataToolkit implements Rebindable {
 
     /**
      * Closes the browser session.
-     * 
+     *
      * @return A confirmation message.
      */
     @AgiTool("Closes the browser session.")
     public String close() {
         if (driver != null) {
-            driver.quit(); 
+            driver.quit();
             this.driver = null;
             this.lastConnectedPort = -1;
             return "Browser session closed.";
@@ -733,9 +743,10 @@ public class Chrome extends AnahataToolkit implements Rebindable {
     /**
      * Gets the active WebDriver instance, attempting to reconnect if necessary.
      * <p>
-     * This method is public to allow advanced automation via {@code Java} or {@code NbJava} toolkits.
+     * This method is public to allow advanced automation via {@code Java} or
+     * {@code NbJava} toolkits.
      * </p>
-     * 
+     *
      * @return The WebDriver instance, or null if not connected.
      */
     public synchronized WebDriver getDriver() {
@@ -787,31 +798,30 @@ public class Chrome extends AnahataToolkit implements Rebindable {
     public String listProcesses() {
         return getProcessReport();
     }
-    */
-
+     */
     // --- PRIVATE METHODS ---
-
     /**
      * Initializes the ChromeDriver with the specified options and environment.
-     * 
+     *
      * @param options The ChromeOptions to use.
-     * @param environment An optional map of environment variables for the driver process.
+     * @param environment An optional map of environment variables for the
+     * driver process.
      */
     private synchronized void initDriver(ChromeOptions options, Map<String, String> environment) {
         initializing = true;
         lastError = null;
         if (driver != null) {
-            try { 
+            try {
                 log("Quitting existing browser session...");
-                driver.quit(); 
-            } catch (Exception e) { 
+                driver.quit();
+            } catch (Exception e) {
                 String stackTrace = ExceptionUtils.getStackTrace(e);
                 log.error("Error quitting driver:\n{}", stackTrace);
                 error("Error quitting existing driver:\n" + stackTrace);
             }
         }
-        
-        String driverPath = OsUtils.findChromeDriver();
+
+        String driverPath = ChromeUtils.findChromeDriver();
         if (driverPath == null) {
             String error = "ChromeDriver not found in ~/bin or PATH. Please install it to use the Browser toolkit.";
             lastError = error;
@@ -819,10 +829,10 @@ public class Chrome extends AnahataToolkit implements Rebindable {
             initializing = false;
             return;
         }
-        
+
         System.setProperty("webdriver.chrome.driver", driverPath);
         log("Initializing ChromeDriver (" + driverPath + ") with options: " + options.toString());
-        
+
         try {
             // Use the session's executor service to avoid ForkJoinPool restrictions
             CompletableFuture<WebDriver> future = CompletableFuture.supplyAsync(() -> {
@@ -837,7 +847,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
                     return new ChromeDriver(options);
                 }
             }, getExecutorService());
-            
+
             this.driver = future.get(60, TimeUnit.SECONDS);
             log("ChromeDriver successfully initialized. Current URL: " + driver.getCurrentUrl());
         } catch (Exception e) {
@@ -851,7 +861,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
 
     /**
      * Generates a detailed report of running Chrome processes.
-     * 
+     *
      * @return A formatted string containing process information.
      */
     private String getProcessReport() {
@@ -865,19 +875,19 @@ public class Chrome extends AnahataToolkit implements Rebindable {
                         }).orElse(false);
                     })
                     .toList();
-            
+
             for (ProcessHandle p : processes) {
                 String cmdLine = getCommandLine(p);
                 // Skip helper processes to reduce noise
                 if (cmdLine.contains("--type=") || cmdLine.contains("chrome-sandbox")) {
-                    continue; 
+                    continue;
                 }
-                
+
                 foundRunning = true;
                 String port = extractArg(cmdLine, "--remote-debugging-port");
                 String profile = extractArg(cmdLine, "--profile-directory");
                 String dataDir = extractArg(cmdLine, "--user-data-dir");
-                
+
                 // If port is 0 or missing but debugging is enabled, try to find the actual port from the file system
                 if (port != null && (port.equals("0") || port.isEmpty()) && dataDir != null) {
                     String detectedPort = detectPortFromFiles(dataDir, profile != null ? profile : "Default");
@@ -894,13 +904,13 @@ public class Chrome extends AnahataToolkit implements Rebindable {
                 if (isManaged) {
                     sb.append(" [ORPHANED/MANAGED]");
                 }
-                
+
                 if (port != null) {
                     sb.append(" [DEBUG MODE - Port: ").append(port).append("]");
                 } else {
                     sb.append(" [STANDARD MODE]");
                 }
-                
+
                 if (profile != null) {
                     sb.append(" [Profile: ").append(profile).append("]");
                 }
@@ -922,8 +932,9 @@ public class Chrome extends AnahataToolkit implements Rebindable {
     }
 
     /**
-     * Reliable way to get the command line of a process, even on restricted systems.
-     * 
+     * Reliable way to get the command line of a process, even on restricted
+     * systems.
+     *
      * @param p The process handle.
      * @return The full command line string.
      */
@@ -967,7 +978,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
 
     /**
      * Extracts the value of a command-line argument.
-     * 
+     *
      * @param cmdLine The full command line string.
      * @param argName The name of the argument to extract.
      * @return The argument value, or null if not found.
@@ -983,7 +994,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
 
     /**
      * Attempts to detect the active DevTools port from the file system.
-     * 
+     *
      * @param userDataDir The Chrome user data directory.
      * @param profileDir The profile directory name.
      * @return The detected port, or null if not found.
@@ -993,12 +1004,12 @@ public class Chrome extends AnahataToolkit implements Rebindable {
             // Chrome writes the port to DevToolsActivePort in the profile directory
             File profilePath = new File(userDataDir, profileDir);
             File activePortFile = new File(profilePath, "DevToolsActivePort");
-            
+
             // Sometimes it's in the root data dir
             if (!activePortFile.exists()) {
                 activePortFile = new File(userDataDir, "DevToolsActivePort");
             }
-            
+
             if (activePortFile.exists()) {
                 List<String> lines = Files.readAllLines(activePortFile.toPath());
                 if (!lines.isEmpty()) {
@@ -1013,7 +1024,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
 
     /**
      * Detects the active Chrome profile by searching for lock files.
-     * 
+     *
      * @param userDataDir The Chrome user data directory.
      * @return The detected profile name, or 'Default' if none found.
      */
@@ -1022,7 +1033,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
         if (!dir.exists() || !dir.isDirectory()) {
             return "Default";
         }
-        
+
         // Check the root for locks (often used by the 'Default' profile)
         Path rootLock = dir.toPath().resolve("SingletonLock");
         if (Files.exists(rootLock, LinkOption.NOFOLLOW_LINKS)) {
@@ -1048,7 +1059,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
                 log.debug("Lock-Hunter: Failed to identify profile via root lock PID", e);
             }
             log("Lock-Hunter: Root lock found but PID identification failed. Assuming 'Default'.");
-            return "Default"; 
+            return "Default";
         }
 
         File[] profiles = dir.listFiles(f -> {
@@ -1062,14 +1073,14 @@ public class Chrome extends AnahataToolkit implements Rebindable {
                 }
             }
         }
-        
+
         log("Lock-Hunter: No active locks found. Defaulting to 'Default'.");
         return "Default";
     }
 
     /**
      * Checks if a directory contains any Chrome lock files.
-     * 
+     *
      * @param dir The directory to check.
      * @return True if a lock is found.
      */
@@ -1101,12 +1112,12 @@ public class Chrome extends AnahataToolkit implements Rebindable {
                         return cmd.contains("chrome") || cmd.contains("chromedriver");
                     })
                     .toList();
-            
+
             int count = toKill.size();
-            
+
             // Phase 1: Gentle termination
             toKill.forEach(ProcessHandle::destroy);
-            
+
             // Wait up to 2 seconds for graceful exit
             for (int i = 0; i < 20; i++) {
                 if (toKill.stream().noneMatch(ProcessHandle::isAlive)) {
@@ -1114,10 +1125,10 @@ public class Chrome extends AnahataToolkit implements Rebindable {
                 }
                 Thread.sleep(100);
             }
-            
+
             // Phase 2: Forced destruction for survivors
             toKill.stream().filter(ProcessHandle::isAlive).forEach(ProcessHandle::destroyForcibly);
-            
+
             this.driver = null;
             this.initializing = false;
             this.lastConnectedPort = -1;
@@ -1128,23 +1139,24 @@ public class Chrome extends AnahataToolkit implements Rebindable {
     }
 
     /**
-     * Surgically resets the 'exit_type' in the Chrome Preferences file to 'Normal'.
+     * Surgically resets the 'exit_type' in the Chrome Preferences file to
+     * 'Normal'.
      */
     private String resetExitStateInternal(String userDataDir, String profileDir) {
-        String effectiveDataDir = userDataDir != null ? userDataDir : OsUtils.getDefaultChromeUserDataDir();
+        String effectiveDataDir = userDataDir != null ? userDataDir : ChromeUtils.getDefaultChromeUserDataDir();
         String effectiveProfile = profileDir != null ? profileDir : "Default";
-        
+
         File prefsFile = new File(new File(effectiveDataDir, effectiveProfile), "Preferences");
         if (!prefsFile.exists()) {
             return "Preferences file not found at: " + prefsFile.getAbsolutePath();
         }
-        
+
         try {
             String content = Files.readString(prefsFile.toPath(), StandardCharsets.UTF_8);
             // Replace "exit_type":"Crashed" or "exit_type":"Abnormal" with "exit_type":"Normal"
             String updated = content.replaceAll("\"exit_type\"\\s*:\\s*\"[^\"]+\"", "\"exit_type\":\"Normal\"");
             updated = updated.replaceAll("\"exited_cleanly\"\\s*:\\s*false", "\"exited_cleanly\":true");
-            
+
             Files.writeString(prefsFile.toPath(), updated, StandardCharsets.UTF_8);
             return "Successfully reset exit state for profile '" + effectiveProfile + "'.";
         } catch (Exception e) {
@@ -1153,13 +1165,14 @@ public class Chrome extends AnahataToolkit implements Rebindable {
     }
 
     /**
-     * Deletes the 'SingletonLock' or 'lock' file from the Chrome user data directory.
+     * Deletes the 'SingletonLock' or 'lock' file from the Chrome user data
+     * directory.
      */
     private String clearSingletonLockInternal(String userDataDir) {
-        String effectiveDataDir = userDataDir != null ? userDataDir : OsUtils.getDefaultChromeUserDataDir();
+        String effectiveDataDir = userDataDir != null ? userDataDir : ChromeUtils.getDefaultChromeUserDataDir();
         String[] lockNames = {"SingletonLock", "lock"};
         StringBuilder sb = new StringBuilder();
-        
+
         for (String name : lockNames) {
             Path lockPath = new File(effectiveDataDir, name).toPath();
             try {
@@ -1171,7 +1184,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
                 sb.append("Failed to delete ").append(name).append(": ").append(e.getMessage()).append("\n");
             }
         }
-        
+
         return sb.length() > 0 ? sb.toString() : "No lock files found in: " + effectiveDataDir;
     }
 
@@ -1179,7 +1192,7 @@ public class Chrome extends AnahataToolkit implements Rebindable {
      * Launches a new Chrome instance using the user's actual profile.
      */
     private String launchProfileChromeInternal(String userDataDir, String profileDir, String initialUrl) {
-        String effectiveDataDir = userDataDir != null ? userDataDir : OsUtils.getDefaultChromeUserDataDir();
+        String effectiveDataDir = userDataDir != null ? userDataDir : ChromeUtils.getDefaultChromeUserDataDir();
         String effectiveProfile = profileDir != null ? profileDir : "Default";
 
         ChromeOptions options = new ChromeOptions();
@@ -1200,19 +1213,19 @@ public class Chrome extends AnahataToolkit implements Rebindable {
         options.addArguments("--disable-default-apps");
         options.addArguments("--disable-blink-features=AutomationControlled");
         options.addArguments("--disable-extensions");
-        
+
         // Suppress the default "Chrome is being controlled by automated test software" infobar
         options.setExperimentalOption("excludeSwitches", Collections.singletonList("enable-automation"));
         options.setExperimentalOption("useAutomationExtension", false);
-        
+
         // THE MAGIC BYPASS: Shift the HOME environment variable to trick Chrome's security check
         String fakeHome = System.getProperty("java.io.tmpdir") + File.separator + "anahata-fake-home";
         new File(fakeHome).mkdirs();
         Map<String, String> environment = Map.of("HOME", fakeHome);
-        
+
         log("Starting ChromeDriver initialization (Synchronous with Home-Shift Bypass)...");
         initDriver(options, environment);
-        
+
         if (driver != null) {
             this.lastConnectedPort = 9222;
             if (initialUrl != null) {
@@ -1226,7 +1239,8 @@ public class Chrome extends AnahataToolkit implements Rebindable {
     }
 
     /**
-     * Connects to an existing Chrome instance running with remote debugging enabled.
+     * Connects to an existing Chrome instance running with remote debugging
+     * enabled.
      */
     private String connectToExistingInternal(int port) {
         ChromeOptions options = new ChromeOptions();
