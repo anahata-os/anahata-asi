@@ -90,7 +90,8 @@ public class History extends AnahataToolkit {
 
         s += "\n\n**Dakshina tips**: "
                 + "\n1)Keep the context window size within bounds, maximize token usage efficency, prune any parts or messages that are redundant as-you-go. It's cross-LLM so when you prune, the next LLM that sees the history needs to hit the ground running. It's either this, unloading resources, disabling context providers, disabling toolkits or a loss. Be good, do good. "
-                + "\n2)Pin any parts or messages that you need to keep in context. The default max depth policies are a general template, If the user has to manually prune or pin parts she will say you are not an ASI";
+                + "\n2)Pin any parts or messages that you need to keep in context if the remainigDepth is approaching 0. The default max depth policies are a general template."
+                + "\n3)If the user asks you to 'unpin' a pinned message or part, then set them back to AUTO";
 
         return Collections.singletonList(s);
     }
