@@ -13,7 +13,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.netbeans.api.java.source.WorkingCopy;
 import uno.anahata.asi.agi.tool.AgiToolException;
-import uno.anahata.asi.nb.tools.java.JavaSourceUtils.RelativePosition;
 
 /**
  * Intent to move an existing member to a new position.
@@ -66,7 +65,7 @@ public class MoveMemberIntent extends CodeRefinementIntent {
     @Override
     public String getHtmlDisplay() {
         StringBuilder sb = new StringBuilder("<font color='#FF9800'>[M]</font> <b>Move</b> ").append(getSimpleName(memberFqn)).append(" ").append(position);
-        if (position == uno.anahata.asi.nb.tools.java.JavaSourceUtils.RelativePosition.BEFORE || position == uno.anahata.asi.nb.tools.java.JavaSourceUtils.RelativePosition.AFTER) {
+        if (position == uno.anahata.asi.nb.tools.java.coderefiner.RelativePosition.BEFORE || position == uno.anahata.asi.nb.tools.java.coderefiner.RelativePosition.AFTER) {
             sb.append(" ").append(anchorMemberName != null ? getSimpleName(anchorMemberName) : "null");
         }
         return sb.toString();
