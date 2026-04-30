@@ -117,7 +117,7 @@ public class GeminiModel extends AbstractModel {
 
     @Override
     public int getMaxOutputTokens() {
-        return getGenaiModel().outputTokenLimit().orElse(0);
+        return getGenaiModel().outputTokenLimit().orElse(8192);
     }
 
     @Override
@@ -208,7 +208,7 @@ public class GeminiModel extends AbstractModel {
     public List<ServerTool> getDefaultServerTools() {
         return getAvailableServerTools().stream()
                 .filter(st -> st.getId().equals(GoogleSearch.class))
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()); 
     }
 
     @Override
