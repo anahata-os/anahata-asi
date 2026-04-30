@@ -20,7 +20,7 @@ import uno.anahata.asi.internal.JacksonUtils;
  * @author anahata
  */
 @Slf4j
-public class OpenAiResponsesApiMessage extends OpenAiModelMessage {
+public class OpenAiResponsesModelMessage extends OpenAiModelMessage {
 
     /**
      * Stores the raw items from the Responses API to support persistent
@@ -34,7 +34,7 @@ public class OpenAiResponsesApiMessage extends OpenAiModelMessage {
     private transient Map<String, String> callIds; // Stores the 'call_id' (call_...)
     private transient Map<String, String> callNames;
 
-    public OpenAiResponsesApiMessage(Agi agi, String modelId) {
+    public OpenAiResponsesModelMessage(Agi agi, String modelId) {
         super(agi, modelId);
         this.callArgsBuffers = new HashMap<>();
         this.callIds = new HashMap<>();
@@ -202,8 +202,18 @@ public class OpenAiResponsesApiMessage extends OpenAiModelMessage {
         String callId = callNode.path("call_id").asText(null);
 
         // Support both V1 (nested) and V2 (flat) structures
+        //this is totally wrong, we have a different ModelMessage implementation for this.
         JsonNode funcNode = callNode.get("function");
+        
         String name = (funcNode != null && funcNode.has("name")) ? funcNode.get("name").asText() : callNode.path("name").asText(null);
+        String fqToolName;
+        String nameSpace = (funcNode != null && funcNode.has("namespace")) ? funcNode.get("namespace").asText() : callNode.path("namespace").asText(null);
+        if (nameSpace != null) {
+            fqToolName = nameSpace + "." + name;
+        } else {
+            log.warn("No namespace found for: " + callNode.toPrettyString());
+            fqToolName = name;
+        }
         String argsFragment = (funcNode != null && funcNode.has("arguments")) ? funcNode.get("arguments").asText("") : callNode.path("arguments").asText("");
 
         if (itemId != null) {
@@ -211,7 +221,7 @@ public class OpenAiResponsesApiMessage extends OpenAiModelMessage {
                 callIds.put(itemId, callId);
             }
             if (name != null) {
-                callNames.put(itemId, name);
+                callNames.put(itemId, fqToolName);
             }
             if (!argsFragment.isEmpty()) {
                 callArgsBuffers.computeIfAbsent(itemId, k -> new StringBuilder()).append(argsFragment);
