@@ -81,6 +81,7 @@ jobs:
                    --main-class uno.anahata.asi.standalone.SwingMain \
                    --icon "${{ env.ICON_FILE }}" \
                    --java-options "-splash:splash.png" \
+                   --java-options "--enable-native-access=ALL-UNNAMED" \
                    --type app-image \
                    --dest dist \
                    --verbose
