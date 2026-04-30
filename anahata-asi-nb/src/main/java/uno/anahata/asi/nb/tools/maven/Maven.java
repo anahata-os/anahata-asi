@@ -47,11 +47,11 @@ import org.openide.execution.ExecutorTask;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.modules.InstalledFileLocator;
+import org.openide.util.Utilities;
 import org.openide.util.NbPreferences;
+import uno.anahata.asi.agi.message.RagMessage;
 import org.openide.util.Task;
 import org.openide.util.TaskListener;
-import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.nb.util.TeeInputOutput;
@@ -110,19 +110,61 @@ public class Maven extends AnahataToolkit {
             Preferences prefs = NbPreferences.root().node("org/netbeans/modules/maven");
             String path = prefs.get("commandLineMavenPath", null);
             if (path != null && !path.isBlank()) {
-                return path +" (User Configured)";
+                return path + " (User Configured)";
             }
 
             // Fallback to bundled maven detection
             File mavenHome = InstalledFileLocator.getDefault().locate("maven", "org.netbeans.modules.maven", false);
             if (mavenHome != null && mavenHome.exists()) {
-                return mavenHome.getAbsolutePath() + " (Bundled)";
+                String binPath = "bin/mvn";
+                if (Utilities.isWindows()) {
+                    binPath = "bin\\mvn.cmd";
+                }
+                File mvnBin = new File(mavenHome, binPath);
+                if (mvnBin.exists()) {
+                    return mvnBin.getAbsolutePath() + " (Bundled)";
+                } else {
+                    return "Couldn't find the mvn executable in NetBeans Maven module's home: " + mavenHome.getAbsolutePath();
+                }
             }
 
             return "PREFERENCE_NOT_FOUND";
         } catch (Throwable t) {
             return "EXECUTION_FAILED: " + t.toString();
         }
+    }
+
+    /** 
+     * {@inheritDoc} 
+     * <p>Populates the RAG message with current NetBeans Maven preferences and detected paths.</p> 
+     */
+    @Override
+    public void populateMessage(RagMessage ragMessage) {
+        StringBuilder sb = new StringBuilder(" Nb Preferences for org/netbeans/modules/maven:\n");
+        sb.append("(These are the preferences the NetBeans Maven module uses when doing Maven stuff. Anahata's Maven toolkit uses the NetBeans Maven module.\n\n");
+        
+        Preferences node = NbPreferences.root().node("org/netbeans/modules/maven");
+        try {
+            String[] keys = node.keys();
+            if (keys.length == 0) {
+                sb.append("- No preferences set for this node.\n");
+            } else {
+                for (String key : keys) {
+                    sb.append("- **").append(key).append("**: ").append(node.get(key, null)).append("\n");
+                }
+            }
+            
+            String cmdPath = node.get("commandLineMavenPath", null);
+            if (cmdPath == null || cmdPath.isBlank()) {
+                sb.append("\n> [!NOTE]\n");
+                sb.append("> `commandLineMavenPath` not set. User is using the mvn version bundled with NetBeans, which is located at: `")
+                  .append(getNbCommandLineMavenPath()).append("`\n");
+            }
+        } catch (Exception ex) {
+            sb.append("- Error reading preferences: ").append(ex.getMessage()).append("\n");
+        }
+        
+        ragMessage.addTextPart(sb.toString());
     }
     
     //<editor-fold defaultstate="collapsed" desc="From MavenSearch.java">
