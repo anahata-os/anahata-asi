@@ -148,12 +148,13 @@ public class Refactor extends AnahataToolkit {
     /**
      * Moves a Java class to a new package or integrates it into another class.
      * <p>
-     * For package moves, use a folder path as target. For member integration, 
+     * For package moves, use a folder path as target. For member integration,
      * use the path of the target .java file.
      * </p>
      *
      * @param sourcePath The absolute path of the .java file to move.
-     * @param targetPath The absolute path of the destination folder or .java file.
+     * @param targetPath The absolute path of the destination folder or .java
+     * file.
      * @return A detailed log of the refactoring process.
      * @throws Exception if the operation fails.
      */
@@ -607,6 +608,12 @@ public class Refactor extends AnahataToolkit {
             @AgiToolParam("Whether to search in comments.") boolean searchInComments) throws Exception {
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         Lookup lookup = getLookupForFile(fo);
+        // CRITICAL: For WhereUsedQuery on Java files, we must use ONLY the TreePathHandle
+        // to ensure NetBeans performs a symbolic search instead of a generic file search.
+        TreePathHandle handle = lookup.lookup(TreePathHandle.class);
+        if (handle != null) {
+            lookup = Lookups.fixed(handle);
+        }
 
         WhereUsedQuery query = new WhereUsedQuery(lookup);
         query.putValue(WhereUsedQuery.FIND_REFERENCES, true);
@@ -801,7 +808,7 @@ public class Refactor extends AnahataToolkit {
             try {
                 TreePathHandle handle = getTreePathHandleForClass(fo);
                 if (handle != null) {
-                    return Lookups.singleton(handle);
+                    return Lookups.fixed(fo, handle);
                 }
             } catch (IOException e) {
                 log.error("Failed to resolve TreePathHandle for: " + fo.getPath(), e);
