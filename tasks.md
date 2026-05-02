@@ -12,15 +12,19 @@ This file tracks the actionable tasks and tactical goals for the Anahata ASI (V2
 - [ ] line comments on top of diff viewer are not aligned to the right
 - [ ] test javadoc toolkit and see what would it take to allow InsertIntent or UpdateIntent to take a Javadoc object but this could take a long time
 - [ ] Tool turns to expire doesn't have a field in context details panel
+- [ ] add a string parameter to autobackup to log what is triggering it, check all places that trigger an autobackup and update the docos to reflect that
+- [ ] change all log.info to log.debug
 
 
 ## 1. Have to do before Go Live: 
-- [ ] merge helders branch
-- [ ] chatgpt responses api with files, images, audio on responses and completions
+- [ ] merge helders database branch
+- [ ] chatgpt responses api and chat completions api with files, images, audio on responses and completions
+- [ ] test one hf model with the chat completions api and put (Beta) 
 - [ ] test minimax provider
-- [ ] path param renderer / resource param renderer?
+- [ ] path parameter renderer in netbeans and resource param renderer?
     
 ## 2. Post Go Live (v1.1)
+- [ ] **[CORE] Generic "TOO LARGE" Response Handling**: Implement a mechanism to detect when a `JavaMethodToolResponse` (including logs, errors, and result) exceeds a safe token/size threshold. If too large, the status should be set to `TOO_LARGE` and the content truncated or replaced with a summary to prevent context window exhaustion.
 - [ ] Error highlighting and code folds on diff viewer and java tool
 - [ ] Rework system instructions to be more natural
 - [ ] **ContextPanel**: Still some flickers when i have a node selected in the tree and a resource changes or a message arrives the right hand side disappears
@@ -37,9 +41,13 @@ This file tracks the actionable tasks and tactical goals for the Anahata ASI (V2
     Include maven phases similar to mavne action runner nb plugin
 
 - [ ] **Hierarchical Agent Management**:
-    - [ ] **Subagent API**: Improve API for the model to spawn subagents with fine-grained control over `AgiConfig` `RequestConfig` Tool permissions.
-    - [ ] **Reporting Mechanism**: Implement a way for subagents to report task completion and results back to the "Boss" agent.
-    - [ ] **Parent/Child Chats**: Establish a formal parent-child relationship between `Chat` instances to support complex agentic hierarchies.
+    - [ ] **Subagent API**: Improve API for the model to spawn subagents with 
+            - fine-grained control over `AgiConfig` `RequestConfig` and Tool permissions, 
+            - something to approve pending tool calls as well and to simply send messages as the user or a sendContext
+            - get the full details of any part or message
+            - get the consolidated metadata index or always include it in the rag message of the parent
+    - [ ] **Reporting Mechanism**: Implement a way for subagents to report task completion and results back to the "Boss" agent via shared dashboard or messaging system or something like that.
+    
 
 ## 3. Post Go Live Go Live (v1.2)
 - [ ] **CwQL**: Create a Context Window Query Language spec and implementation. So if the model spawans subagents or wants to peek into saved or disposed sessions. A simple query language can be used like 
