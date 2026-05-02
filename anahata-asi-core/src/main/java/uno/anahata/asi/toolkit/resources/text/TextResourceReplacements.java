@@ -89,7 +89,7 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
     @Override
     public void validate(Agi agi) throws Exception {
         // 1. Authoritative state capture and locking check
-        super.validate(agi);
+        validateStructuralState(agi);
 
         if (replacements == null || replacements.isEmpty()) {
              throw new AgiToolException("No replacements provided.");
@@ -123,6 +123,9 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
                 }
             }
         }
+        
+        // 3. Final check for identical content
+        validateIdenticalContent(agi);
     }
 
     /**

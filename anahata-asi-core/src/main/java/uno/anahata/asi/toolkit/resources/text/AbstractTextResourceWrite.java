@@ -168,7 +168,17 @@ public abstract class AbstractTextResourceWrite {
      * @throws Exception if validation fails.
      */
     public void validate(Agi agi) throws Exception {
+        validateStructuralState(agi);
+        validateIdenticalContent(agi);
+    }
 
+    /**
+     * Validates the basic structural requirements and optimistic locking.
+     *
+     * @param agi The parent agi session.
+     * @throws Exception if validation fails.
+     */
+    protected void validateStructuralState(Agi agi) throws Exception {
         if (resourceUuid == null) {
             throw new AgiToolException("Resource uuid not provided");
         }
@@ -186,8 +196,15 @@ public abstract class AbstractTextResourceWrite {
         if (lastModified > 0 && lastModified != actualLm) {
             throw new AgiToolException("Optimistic locking failure for " + res.getName() + ". The time stamp provided doesn't match the last modified timestamp on disk: " + actualLm + " (provided: " + lastModified + ").");
         }
+    }
 
-        // 3. Identical Content Check (Performed last to avoid masking more specific errors in subclasses)
+    /**
+     * Validates that the resulting content is not identical to the original.
+     *
+     * @param agi The parent agi session.
+     * @throws Exception if the content is identical.
+     */
+    protected void validateIdenticalContent(Agi agi) throws Exception {
         if (Objects.equals(originalContent, calculateResultingContent(agi))) {
             throw new AgiToolException("Update rejected: The resulting content is identical to the current file content on disk.");
         }

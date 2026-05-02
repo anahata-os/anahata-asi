@@ -379,9 +379,10 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
      */
     @Override
     public void validate(Agi agi) throws Exception {
-        super.validate(agi);
+        validateStructuralState(agi);
         if (intents == null || intents.isEmpty()) {
             throw new AgiToolException("Refinement batch must contain at least one intent.");
         }
+        validateIdenticalContent(agi);
     }
 }
