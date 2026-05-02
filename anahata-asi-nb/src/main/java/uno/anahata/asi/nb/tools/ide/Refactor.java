@@ -289,7 +289,7 @@ public class Refactor extends AnahataToolkit {
      * @return A detailed log of the refactoring process.
      * @throws Exception if there is an error invoking the operation.
      */
-    @AgiTool("Deletes a file or class only if it is safe to do so (i.e., no active usages).")
+    @AgiTool("Deletes a file or class if it is safe to do so (i.e., no active usages) or returns a beautiful list of references to the file from any other files across all open projects (references that would need to be updated before deleting it)")
     public String safeDelete(
             @AgiToolParam(value = "The absolute path of the file to delete.", rendererId = "path") String filePath,
             @AgiToolParam("Whether to check for usages in comments.") boolean checkInComments) throws Exception {
