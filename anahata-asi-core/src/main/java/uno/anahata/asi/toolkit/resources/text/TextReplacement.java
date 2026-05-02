@@ -30,7 +30,7 @@ public class TextReplacement {
     /**
      * The replacement string.
      */
-    @Schema(description = "The replacement string.", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "The replacement string.", required= true, requiredMode = Schema.RequiredMode.REQUIRED)
     private String replacement;
 
     /**
@@ -43,7 +43,7 @@ public class TextReplacement {
      * The total number of times the target string must appear in the file.
      * This acts as a checksum to ensure context integrity.
      */
-    @Schema(description = "The MANDATORY total count of matches for the target string in the file. Must be provided and it must match exactly the total occurrences of the target string in the file, even if it is only 1.", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "The MANDATORY total count of matches for the target string in the file. Must be provided and it must match exactly the total occurrences of the target string in the file, even if it is only 1.", required = true, requiredMode = Schema.RequiredMode.REQUIRED)
     private int totalOccurrences;
 
     /**

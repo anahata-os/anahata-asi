@@ -44,7 +44,7 @@ public class NetBeansAgiConfig extends SwingAgiConfig {
         getToolClasses().add(Maven.class);
         getToolClasses().add(Projects.class);
         getToolClasses().add(CodeModel.class);
-        //getToolClasses().add(CodeRefiner.class);
+        getToolClasses().add(CodeRefiner.class);
         getToolClasses().add(BatchCodeRefiner.class);
         getToolClasses().add(Javadocs.class);
         getToolClasses().add(IDE.class);

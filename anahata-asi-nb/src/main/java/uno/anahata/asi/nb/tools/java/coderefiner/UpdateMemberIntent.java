@@ -29,7 +29,7 @@ import org.netbeans.api.java.source.WorkingCopy;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "Instruction to update an existing structural member.")
-public class UpdateMemberIntent extends CodeRefinementIntent {
+public class UpdateMemberIntent extends CodeRefinementIntentPolymorphic {
 
     @Schema(description = "The ABSOLUTE FQN of the member to update (e.g. 'com.foo.Bar.myMethod()').", required = true)
     private String memberFqn;
@@ -50,10 +50,10 @@ public class UpdateMemberIntent extends CodeRefinementIntent {
     public void apply(WorkingCopy wc, Map<Tree, List<Tree>> modifiedMembers, boolean optimize) throws Exception {
         TreeMaker make = wc.getTreeMaker();
         GeneratorUtilities gu = GeneratorUtilities.get(wc);
-        Tree oldTree = CodeRefinementBatch.findMemberInWorkingCopy(wc, memberFqn);
+        Tree oldTree = CodeRefinementBatchPolymorphic.findMemberInWorkingCopy(wc, memberFqn);
 
         if (oldTree == null) {
-            CodeRefinementBatch.throwMemberNotFound(wc, memberFqn);
+            CodeRefinementBatchPolymorphic.throwMemberNotFound(wc, memberFqn);
         }
 
         TreePath path = TreePath.getPath(wc.getCompilationUnit(), oldTree);
@@ -69,7 +69,7 @@ public class UpdateMemberIntent extends CodeRefinementIntent {
         if (declaration != null || body != null) {
             Tree newTree;
             if (declaration == null) {
-                newTree = CodeRefinementBatch.cloneTree(make, oldTree);
+                newTree = CodeRefinementBatchPolymorphic.cloneTree(make, oldTree);
                 if (body != null) {
                     if (newTree instanceof MethodTree mt) {
                         String wrappedBody = body.trim().startsWith("{") ? body : "{" + body + "\n}";
@@ -80,7 +80,7 @@ public class UpdateMemberIntent extends CodeRefinementIntent {
                     }
                 }
             } else {
-                newTree = CodeRefinementBatch.parseMember(wc, declaration, body);
+                newTree = CodeRefinementBatchPolymorphic.parseMember(wc, declaration, body);
                 if (body == null) {
                     if (oldTree instanceof MethodTree oldMt && newTree instanceof MethodTree newMt) {
                         newTree = make.Method(newMt.getModifiers(), newMt.getName(), newMt.getReturnType(), newMt.getTypeParameters(), newMt.getParameters(), newMt.getThrows(), oldMt.getBody(), (AnnotationTree) newMt.getDefaultValue());
@@ -100,7 +100,7 @@ public class UpdateMemberIntent extends CodeRefinementIntent {
             }
 
             // RE-RESOLVE parent and oldTree index after potential CU mutation
-            Tree latestOldTree = CodeRefinementBatch.findMemberInWorkingCopy(wc, memberFqn);
+            Tree latestOldTree = CodeRefinementBatchPolymorphic.findMemberInWorkingCopy(wc, memberFqn);
             TreePath latestPath = TreePath.getPath(wc.getCompilationUnit(), latestOldTree);
             Tree latestParent = latestPath.getParentPath().getLeaf();
             
@@ -112,7 +112,7 @@ public class UpdateMemberIntent extends CodeRefinementIntent {
                 }
             });
 
-            int idx = CodeRefinementBatch.findMemberIndex(wc, members, latestOldTree);
+            int idx = CodeRefinementBatchPolymorphic.findMemberIndex(wc, members, latestOldTree);
             if (idx != -1) {
                 members.set(idx, make.asReplacementOf(newTree, members.get(idx)));
             }

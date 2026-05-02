@@ -13,8 +13,8 @@ import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.gemini.GeminiAiProvider;
 import uno.anahata.asi.nb.annotation.AnahataAnnotationProvider;
+import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementBatchPolymorphic;
 import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementBatch;
-import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementBatch2;
 import uno.anahata.asi.nb.ui.render.CodeRefinementBatchRenderer;
 import uno.anahata.asi.nb.ui.render.CodeRefinementBatch2Renderer;
 import uno.anahata.asi.nb.ui.render.FullTextResourceUpdateRenderer;
@@ -54,8 +54,8 @@ public class NetBeansAsiContainer extends AbstractSwingAsiContainer {
         ParameterRendererFactory.register(FullTextResourceUpdate.class, FullTextResourceUpdateRenderer.class);        
         ParameterRendererFactory.register(TextResourceReplacements.class, TextResourceReplacementsRenderer.class);
         ParameterRendererFactory.register(TextResourceLineEdits.class, TextResourceLineEditsRenderer.class);
-        ParameterRendererFactory.register(CodeRefinementBatch.class, CodeRefinementBatchRenderer.class);
-        ParameterRendererFactory.register(CodeRefinementBatch2.class, CodeRefinementBatch2Renderer.class);
+        ParameterRendererFactory.register(CodeRefinementBatchPolymorphic.class, CodeRefinementBatchRenderer.class);
+        ParameterRendererFactory.register(CodeRefinementBatch.class, CodeRefinementBatch2Renderer.class);
         
         // 2. Register the ElementHandle module for global JSON support in the IDE
         SchemaProvider.OBJECT_MAPPER.registerModule(new ElementHandleModule());

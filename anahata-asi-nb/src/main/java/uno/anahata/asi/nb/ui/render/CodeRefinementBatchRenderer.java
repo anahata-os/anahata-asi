@@ -8,8 +8,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
-import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementBatch;
-import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementIntent;
+import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementBatchPolymorphic;
+import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementIntentPolymorphic;
 import uno.anahata.asi.nb.tools.java.coderefiner.DeleteMemberIntent;
 import uno.anahata.asi.nb.tools.java.coderefiner.InsertMemberIntent;
 import uno.anahata.asi.nb.tools.java.coderefiner.MoveMemberIntent;
@@ -27,7 +27,7 @@ import uno.anahata.asi.toolkit.resources.text.LineComment;
  * @author anahata
  */
 @Slf4j
-public class CodeRefinementBatchRenderer extends AbstractTextResourceWriteRenderer<CodeRefinementBatch> {
+public class CodeRefinementBatchRenderer extends AbstractTextResourceWriteRenderer<CodeRefinementBatchPolymorphic> {
 
     @Override
     protected List<LineComment> getLineComments() {
@@ -45,7 +45,7 @@ public class CodeRefinementBatchRenderer extends AbstractTextResourceWriteRender
         panel.add(title, "wrap");
         
         if (update.getIntents() != null) {
-            for (CodeRefinementIntent intent : update.getIntents()) {
+            for (CodeRefinementIntentPolymorphic intent : update.getIntents()) {
                 log.info("Creating intent panel for " + intent);
                 JLabel label = new JLabel("<html>" + intent.getHtmlDisplay() + "</html>");
                 label.setToolTipText(intent.toString());
@@ -57,8 +57,8 @@ public class CodeRefinementBatchRenderer extends AbstractTextResourceWriteRender
     }
 
     @Override
-    protected CodeRefinementBatch createUpdatedDto(String newContent) {
-        CodeRefinementBatch batch = new CodeRefinementBatch();
+    protected CodeRefinementBatchPolymorphic createUpdatedDto(String newContent) {
+        CodeRefinementBatchPolymorphic batch = new CodeRefinementBatchPolymorphic();
         batch.setResourceUuid(update.getResourceUuid());
         batch.setLastModified(update.getLastModified());
         batch.setManualOverride(newContent);

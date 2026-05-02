@@ -24,7 +24,7 @@ import uno.anahata.asi.agi.tool.AgiToolException;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "Instruction to insert a new structural member.")
-public class InsertMemberIntent extends CodeRefinementIntent {
+public class InsertMemberIntent extends CodeRefinementIntentPolymorphic {
 
     @Schema(description = "The full member declaration (e.g. '@Override public void foo()' or 'private String name').", required = true)
     private String declaration;
@@ -50,7 +50,7 @@ public class InsertMemberIntent extends CodeRefinementIntent {
         
         // 1. Parse and optionally optimize the new member FIRST.
         // This may add imports to the CompilationUnit.
-        Tree newMember = CodeRefinementBatch.parseMember(wc, declaration, body);
+        Tree newMember = CodeRefinementBatchPolymorphic.parseMember(wc, declaration, body);
         if (optimize) {
             newMember = gu.importFQNs(newMember);
         }
@@ -62,7 +62,7 @@ public class InsertMemberIntent extends CodeRefinementIntent {
         if (classFqn == null || classFqn.isBlank()) {
             parentTree = wc.getCompilationUnit();
         } else {
-            parentTree = CodeRefinementBatch.findMemberInWorkingCopy(wc, classFqn);
+            parentTree = CodeRefinementBatchPolymorphic.findMemberInWorkingCopy(wc, classFqn);
             if (parentTree == null) {
                 throw new AgiToolException("Target class not found in current source: " + classFqn);
             }
@@ -77,7 +77,7 @@ public class InsertMemberIntent extends CodeRefinementIntent {
             }
         });
 
-        int insertIdx = CodeRefinementBatch.getInsertIndex(wc, members, position, anchorMemberName);
+        int insertIdx = CodeRefinementBatchPolymorphic.getInsertIndex(wc, members, position, anchorMemberName);
         members.add(insertIdx, newMember);
     }
 

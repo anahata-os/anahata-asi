@@ -4,6 +4,7 @@ package uno.anahata.asi.gemini.schema;
 import com.google.genai.types.Schema;
 import com.google.genai.types.Type;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -98,8 +99,10 @@ public class GeminiSchemaAdapter {
 
         if (map.containsKey("properties")) {
             Map<String, Map<String, Object>> propertiesMap = (Map<String, Map<String, Object>>) map.get("properties");
-            Map<String, Schema> schemaProperties = propertiesMap.entrySet().stream()
-                    .collect(Collectors.toMap(Map.Entry::getKey, e -> buildSchemaFromMap(e.getValue())));
+            Map<String, Schema> schemaProperties = new LinkedHashMap<>();
+            for (Map.Entry<String, Map<String, Object>> entry : propertiesMap.entrySet()) {
+                schemaProperties.put(entry.getKey(), buildSchemaFromMap(entry.getValue()));
+            }
             builder.properties(schemaProperties);
         }
 

@@ -23,7 +23,7 @@ import uno.anahata.asi.agi.tool.AgiToolException;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "Instruction to move a member within its enclosing type.")
-public class MoveMemberIntent extends CodeRefinementIntent {
+public class MoveMemberIntent extends CodeRefinementIntentPolymorphic {
 
     @Schema(description = "The ABSOLUTE FQN of the member to move.", required = true)
     private String memberFqn;
@@ -41,9 +41,9 @@ public class MoveMemberIntent extends CodeRefinementIntent {
      */
     @Override
     public void apply(WorkingCopy wc, Map<Tree, List<Tree>> modifiedMembers, boolean optimize) throws Exception {
-        Tree memberTree = CodeRefinementBatch.findMemberInWorkingCopy(wc, memberFqn);
+        Tree memberTree = CodeRefinementBatchPolymorphic.findMemberInWorkingCopy(wc, memberFqn);
         if (memberTree == null) {
-            CodeRefinementBatch.throwMemberNotFound(wc, memberFqn);
+            CodeRefinementBatchPolymorphic.throwMemberNotFound(wc, memberFqn);
         }
         TreePath path = TreePath.getPath(wc.getCompilationUnit(), memberTree);
         if (!(path.getParentPath().getLeaf() instanceof ClassTree ct)) {
@@ -54,11 +54,11 @@ public class MoveMemberIntent extends CodeRefinementIntent {
             return new ArrayList<>(((ClassTree) p).getMembers());
         });
 
-        int idx = CodeRefinementBatch.findMemberIndex(wc, members, memberTree);
+        int idx = CodeRefinementBatchPolymorphic.findMemberIndex(wc, members, memberTree);
         if (idx != -1) {
             members.remove(idx);
         }
-        int insertIdx = CodeRefinementBatch.getInsertIndex(wc, members, position, anchorMemberName);
+        int insertIdx = CodeRefinementBatchPolymorphic.getInsertIndex(wc, members, position, anchorMemberName);
         members.add(insertIdx, memberTree);
     }
 

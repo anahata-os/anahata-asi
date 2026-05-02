@@ -23,7 +23,7 @@ import org.netbeans.api.java.source.WorkingCopy;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "Instruction to delete a structural member.")
-public class DeleteMemberIntent extends CodeRefinementIntent {
+public class DeleteMemberIntent extends CodeRefinementIntentPolymorphic {
 
     @Schema(description = "The ABSOLUTE FQN of the member to delete.", required = true)
     private String memberFqn;
@@ -36,9 +36,9 @@ public class DeleteMemberIntent extends CodeRefinementIntent {
      */
     @Override
     public void apply(WorkingCopy wc, Map<Tree, List<Tree>> modifiedMembers, boolean optimize) throws Exception {
-        Tree memberTree = CodeRefinementBatch.findMemberInWorkingCopy(wc, memberFqn);
+        Tree memberTree = CodeRefinementBatchPolymorphic.findMemberInWorkingCopy(wc, memberFqn);
         if (memberTree == null) {
-            CodeRefinementBatch.throwMemberNotFound(wc, memberFqn);
+            CodeRefinementBatchPolymorphic.throwMemberNotFound(wc, memberFqn);
         }
         TreePath path = TreePath.getPath(wc.getCompilationUnit(), memberTree);
         Tree parent = path.getParentPath().getLeaf();
@@ -51,7 +51,7 @@ public class DeleteMemberIntent extends CodeRefinementIntent {
             }
         });
 
-        int idx = CodeRefinementBatch.findMemberIndex(wc, members, memberTree);
+        int idx = CodeRefinementBatchPolymorphic.findMemberIndex(wc, members, memberTree);
         if (idx != -1) {
             members.remove(idx);
         }

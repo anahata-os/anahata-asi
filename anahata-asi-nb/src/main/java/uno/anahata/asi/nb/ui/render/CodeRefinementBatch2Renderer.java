@@ -8,12 +8,12 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
-import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementBatch2;
-import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementIntent2;
+import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementBatch;
+import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementIntent;
 import uno.anahata.asi.toolkit.resources.text.LineComment;
 
 /**
- * Specialized renderer for the robust {@link CodeRefinementBatch2}.
+ * Specialized renderer for the robust {@link CodeRefinementBatch}.
  * <p>
  * This renderer provides a surgical dashboard at the top of the diff viewer 
  * that lists all structural intents in their flattened format, ensuring 
@@ -23,7 +23,7 @@ import uno.anahata.asi.toolkit.resources.text.LineComment;
  * @author anahata
  */
 @Slf4j
-public class CodeRefinementBatch2Renderer extends AbstractTextResourceWriteRenderer<CodeRefinementBatch2> {
+public class CodeRefinementBatch2Renderer extends AbstractTextResourceWriteRenderer<CodeRefinementBatch> {
 
     /** {@inheritDoc} */
     @Override
@@ -44,7 +44,7 @@ public class CodeRefinementBatch2Renderer extends AbstractTextResourceWriteRende
         panel.add(title, "wrap");
         
         if (update.getIntents() != null) {
-            for (CodeRefinementIntent2 intent : update.getIntents()) {
+            for (CodeRefinementIntent intent : update.getIntents()) {
                 JLabel label = new JLabel("<html>" + intent.getHtmlDisplay() + "</html>");
                 label.setToolTipText("Structural Modification: " + intent.getType());
                 panel.add(label, "gapleft 15, wrap");
@@ -56,8 +56,8 @@ public class CodeRefinementBatch2Renderer extends AbstractTextResourceWriteRende
 
     /** {@inheritDoc} */
     @Override
-    protected CodeRefinementBatch2 createUpdatedDto(String newContent) {
-        CodeRefinementBatch2 batch = new CodeRefinementBatch2();
+    protected CodeRefinementBatch createUpdatedDto(String newContent) {
+        CodeRefinementBatch batch = new CodeRefinementBatch();
         batch.setResourceUuid(update.getResourceUuid());
         batch.setLastModified(update.getLastModified());
         batch.setManualOverride(newContent);

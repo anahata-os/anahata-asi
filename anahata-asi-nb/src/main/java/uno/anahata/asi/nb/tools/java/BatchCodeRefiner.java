@@ -15,8 +15,8 @@ import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
+import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementBatchPolymorphic;
 import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementBatch;
-import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementBatch2;
 
 /**
  * The authoritative toolkit for structural Java refinement.
@@ -54,9 +54,9 @@ public class BatchCodeRefiner extends AnahataToolkit {
      * @return The effectively applied changes as a unified diff.
      * @throws Exception if validation or execution fails.
      */
-    @AgiTool("The definitive structural Java refiner. Applies a batch of modifications using a stable, flattened schema.")
-    public String refine2(
-            @AgiToolParam("The robust refinement batch.") CodeRefinementBatch2 batch
+    @AgiTool("The definitive structural Java refiner. Applies a batch of modifications to a java file. Does not support javadoc on the declaration")
+    public String refine(
+            @AgiToolParam("The robust refinement batch.") CodeRefinementBatch batch
     ) throws Exception {
         batch.validate(getAgi());
 
@@ -105,7 +105,8 @@ public class BatchCodeRefiner extends AnahataToolkit {
      * @throws Exception if validation or execution fails.
      */
     //Commenting this out until models are capable of doing polymorphic / oneOf
-    @AgiTool("Refines a Java source file using a batch of structural AST modifications and returns the effectively applied changes (after user review)")
+    //@AgiTool("Refines a Java source file using a batch of structural AST modifications and returns the effectively applied changes (after user review)")
+    /*
     public String refine(
             @AgiToolParam("The refinement batch.") CodeRefinementBatch batch
     ) throws Exception {
@@ -150,4 +151,5 @@ public class BatchCodeRefiner extends AnahataToolkit {
 
         return batch.getUnifiedDiff(getAgi());
     }
+    */
 }

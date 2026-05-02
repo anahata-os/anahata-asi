@@ -12,7 +12,7 @@ import org.openide.modules.ModuleInstall;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 import uno.anahata.asi.agi.tool.schema.SchemaProvider;
-import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementBatch;
+import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementBatchPolymorphic;
 import uno.anahata.asi.nb.ui.render.CodeRefinementBatchRenderer;
 import uno.anahata.asi.nb.ui.render.FullTextResourceUpdateRenderer;
 import uno.anahata.asi.nb.ui.render.TextResourceReplacementsRenderer;
