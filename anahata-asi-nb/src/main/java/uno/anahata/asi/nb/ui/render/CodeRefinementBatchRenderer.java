@@ -8,47 +8,45 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
-import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementBatchPolymorphic;
-import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementIntentPolymorphic;
-import uno.anahata.asi.nb.tools.java.coderefiner.DeleteMemberIntent;
-import uno.anahata.asi.nb.tools.java.coderefiner.InsertMemberIntent;
-import uno.anahata.asi.nb.tools.java.coderefiner.MoveMemberIntent;
-import uno.anahata.asi.nb.tools.java.coderefiner.UpdateMemberIntent;
+import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementBatch;
+import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementIntent;
 import uno.anahata.asi.toolkit.resources.text.LineComment;
 
 /**
- * Specialized renderer for Java refinement batches.
+ * Specialized renderer for the robust {@link CodeRefinementBatch}.
  * <p>
- * Provides a surgical dashboard at the top of the diff viewer that lists 
- * all structural intents (Insert, Update, Delete, Move) before showing 
- * the unified code diff.
+ * This renderer provides a surgical dashboard at the top of the diff viewer 
+ * that lists all structural intents in their flattened format, ensuring 
+ * clear feedback for the user before committing the AST changes.
  * </p>
  * 
  * @author anahata
  */
 @Slf4j
-public class CodeRefinementBatchRenderer extends AbstractTextResourceWriteRenderer<CodeRefinementBatchPolymorphic> {
+public class CodeRefinementBatchRenderer extends AbstractTextResourceWriteRenderer<CodeRefinementBatch> {
 
+    /** {@inheritDoc} */
     @Override
     protected List<LineComment> getLineComments() {
-        // Structural AST changes don't produce static line comments in the same way 
-        // full text replacements do. We rely on the Intent Panel for semantic context.
-        return new ArrayList<>();
+        // We rely on the Intent Panel for semantic context of structural changes.
+        // mapping AST trees back to static line numbers for bubbles is non-trivial 
+        // without replaying the full surgery.
+         return update.getCalculatedComments();
     }
 
+    /** {@inheritDoc} */
     @Override
     protected JComponent createIntentPanel() {
         JPanel panel = new JPanel(new MigLayout("fillx, insets 0", "[grow]", "[]"));
         panel.setOpaque(false);
         
-        JLabel title = new JLabel("<html><b>Surgical AST Intents:</b></html>");
+        JLabel title = new JLabel("<html><b>Surgical AST Intents (V2-Flattened):</b></html>");
         panel.add(title, "wrap");
         
         if (update.getIntents() != null) {
-            for (CodeRefinementIntentPolymorphic intent : update.getIntents()) {
-                log.info("Creating intent panel for " + intent);
+            for (CodeRefinementIntent intent : update.getIntents()) {
                 JLabel label = new JLabel("<html>" + intent.getHtmlDisplay() + "</html>");
-                label.setToolTipText(intent.toString());
+                label.setToolTipText("Structural Modification: " + intent.getType());
                 panel.add(label, "gapleft 15, wrap");
             }
         }
@@ -56,9 +54,10 @@ public class CodeRefinementBatchRenderer extends AbstractTextResourceWriteRender
         return panel;
     }
 
+    /** {@inheritDoc} */
     @Override
-    protected CodeRefinementBatchPolymorphic createUpdatedDto(String newContent) {
-        CodeRefinementBatchPolymorphic batch = new CodeRefinementBatchPolymorphic();
+    protected CodeRefinementBatch createUpdatedDto(String newContent) {
+        CodeRefinementBatch batch = new CodeRefinementBatch();
         batch.setResourceUuid(update.getResourceUuid());
         batch.setLastModified(update.getLastModified());
         batch.setManualOverride(newContent);
