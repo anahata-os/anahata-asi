@@ -38,11 +38,8 @@ public class JavaSupertypeSearch {
     public JavaSupertypeSearch(JavaType rootType, int maxDepth) throws Exception {
         this.rootNode = JavaHierarchyNode.builder().type(rootType).build();
         
-        FileObject fo = rootType.getClassFileObject();
-        JavaSource js = JavaSource.forFileObject(fo);
-        if (js == null) {
-            js = JavaSource.create(ClasspathInfo.create(fo));
-        }
+        ClasspathInfo cpInfo = CodeModel.getGlobalClasspathInfo();
+        JavaSource js = JavaSource.create(cpInfo);
 
         js.runUserActionTask(cc -> {
             cc.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
