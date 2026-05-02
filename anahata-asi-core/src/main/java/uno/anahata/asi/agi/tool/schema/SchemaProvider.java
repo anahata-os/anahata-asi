@@ -345,7 +345,9 @@ public class SchemaProvider {
 
         if (clazz.equals(String.class) || clazz.equals(Class.class)) {
             schemaMap.put("type", "string");
-        } else if (Number.class.isAssignableFrom(clazz) || clazz.isPrimitive() && (clazz.equals(int.class) || clazz.equals(long.class) || clazz.equals(float.class) || clazz.equals(double.class))) {
+        } else if (clazz.equals(Integer.class) || clazz.equals(int.class) || clazz.equals(Long.class) || clazz.equals(long.class)) {
+            schemaMap.put("type", "integer");
+        } else if (Number.class.isAssignableFrom(clazz) || (clazz.isPrimitive() && (clazz.equals(float.class) || clazz.equals(double.class)))) {
             schemaMap.put("type", "number");
         } else if (clazz.equals(Boolean.class) || clazz.equals(boolean.class)) {
             schemaMap.put("type", "boolean");
@@ -631,6 +633,23 @@ public class SchemaProvider {
                     if (field != null) {
                         Schema propSchema = propEntry.getValue();
                         Type fieldType = field.getGenericType();
+
+                        // Manually capture 'required' status from @Schema annotation 
+                        // as ModelConverters might miss it due to Visibility settings.
+                        io.swagger.v3.oas.annotations.media.Schema fieldAnno = field.getAnnotation(io.swagger.v3.oas.annotations.media.Schema.class);
+                        if (fieldAnno != null) {
+                            boolean isReq = fieldAnno.required()
+                                    || fieldAnno.requiredMode() == io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
+                            if (isReq) {
+                                if (schema.getRequired() == null) {
+                                    schema.setRequired(new ArrayList<>());
+                                }
+                                if (!schema.getRequired().contains(propEntry.getKey())) {
+                                    schema.getRequired().add(propEntry.getKey());
+                                }
+                            }
+                        }
+
                         if (propSchema.get$ref() != null) {
                             String refName = propSchema.get$ref().substring(propSchema.get$ref().lastIndexOf('/') + 1);
                             addTitleToSchemaRecursive(allSchemas.get(refName), fieldType, allSchemas, discoveredTypes, visited);
