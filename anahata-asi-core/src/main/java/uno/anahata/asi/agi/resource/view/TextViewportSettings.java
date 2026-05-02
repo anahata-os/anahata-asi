@@ -31,7 +31,7 @@ public class TextViewportSettings extends BasicPropertyChangeSource {
 
     /** The starting character offset for pagination. */
     @Builder.Default
-    private long startChar = 0;
+    private int startChar = 0;
 
     /** The maximum number of characters to load in a single page. */
     @Builder.Default
@@ -60,7 +60,7 @@ public class TextViewportSettings extends BasicPropertyChangeSource {
      * Sets the start character and fires a change event if the value is different.
      * @param startChar The new character offset.
      */
-    public void setStartChar(long startChar) {
+    public void setStartChar(int startChar) {
         if (this.startChar != startChar) {
             long old = this.startChar;
             this.startChar = startChar;
