@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import org.openide.filesystems.FileObject;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.tool.AgiToolException;
+import uno.anahata.asi.nb.tools.java.BatchCodeRefiner;
 import uno.anahata.asi.nb.tools.java.JavaSourceUtils;
 import uno.anahata.asi.toolkit.resources.text.AbstractTextResourceWrite;
 import uno.anahata.asi.toolkit.resources.text.LineComment;
@@ -114,7 +115,7 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
             List<Tree> members = entry.getValue();
 
             if (parent instanceof ClassTree ct) {
-                wc.rewrite(ct, CodeRefinementBatchPolymorphic.rebuildClassTree(make, ct, members));
+                wc.rewrite(ct, BatchCodeRefiner.rebuildClassTree(make, ct, members));
             } else if (parent instanceof CompilationUnitTree cut) {
                 CompilationUnitTree updated = make.CompilationUnit(cut.getPackage(), cut.getImports(), (List<? extends Tree>) members, cut.getSourceFile());
                 wc.rewrite(cut, updated);

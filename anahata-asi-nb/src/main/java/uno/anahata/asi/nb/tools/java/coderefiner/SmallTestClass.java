@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.tools.java.coderefiner;
 
+import uno.anahata.asi.nb.tools.java.FinalRenamedMediumClass;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.slf4j.Slf4j;
@@ -10,15 +11,21 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class SmallTestClass {
+
+    private long lastSurgeryTime;
+
+    private boolean singularityAchieved;
     
     private String testStatus;
+    private FinalRenamedMediumClass mediumTestClass;
     private AtomicLong testCounter;
 
     /**
      * Logs the current ASI status.
      */
     public void logStatus() {
-        log.info("ASI Status: {}", testStatus);
+        //Anahata
+        log.info("ASI Status: {}, Singularity achieved: {}, Last Surgery: {}", testStatus, singularityAchieved, lastSurgeryTime);
     }
     
     private AtomicInteger v3Counter;
@@ -58,6 +65,7 @@ public class SmallTestClass {
         }
     }
     // Final end of file verification.
+    private int anahataScore;
     
 
 }

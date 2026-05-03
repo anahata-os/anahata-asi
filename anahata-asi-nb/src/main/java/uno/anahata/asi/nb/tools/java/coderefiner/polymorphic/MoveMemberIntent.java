@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.nb.tools.java.coderefiner;
+package uno.anahata.asi.nb.tools.java.coderefiner.polymorphic;
 
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.Tree;
@@ -13,6 +13,8 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.netbeans.api.java.source.WorkingCopy;
 import uno.anahata.asi.agi.tool.AgiToolException;
+import uno.anahata.asi.nb.tools.java.BatchCodeRefiner;
+import uno.anahata.asi.nb.tools.java.coderefiner.RelativePosition;
 
 /**
  * Intent to move an existing member to a new position.
@@ -41,9 +43,9 @@ public class MoveMemberIntent extends CodeRefinementIntentPolymorphic {
      */
     @Override
     public void apply(WorkingCopy wc, Map<Tree, List<Tree>> modifiedMembers, boolean optimize) throws Exception {
-        Tree memberTree = CodeRefinementBatchPolymorphic.findMemberInWorkingCopy(wc, memberFqn);
+        Tree memberTree = BatchCodeRefiner.findMemberInWorkingCopy(wc, memberFqn);
         if (memberTree == null) {
-            CodeRefinementBatchPolymorphic.throwMemberNotFound(wc, memberFqn);
+            BatchCodeRefiner.throwMemberNotFound(wc, memberFqn);
         }
         TreePath path = TreePath.getPath(wc.getCompilationUnit(), memberTree);
         if (!(path.getParentPath().getLeaf() instanceof ClassTree ct)) {
@@ -54,11 +56,11 @@ public class MoveMemberIntent extends CodeRefinementIntentPolymorphic {
             return new ArrayList<>(((ClassTree) p).getMembers());
         });
 
-        int idx = CodeRefinementBatchPolymorphic.findMemberIndex(wc, members, memberTree);
+        int idx = BatchCodeRefiner.findMemberIndex(wc, members, memberTree);
         if (idx != -1) {
             members.remove(idx);
         }
-        int insertIdx = CodeRefinementBatchPolymorphic.getInsertIndex(wc, members, position, anchorMemberName);
+        int insertIdx = BatchCodeRefiner.getInsertIndex(wc, members, position, anchorMemberName);
         members.add(insertIdx, memberTree);
     }
 

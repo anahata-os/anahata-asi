@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.nb.tools.java.coderefiner;
+package uno.anahata.asi.nb.tools.java.coderefiner.polymorphic;
 
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
@@ -14,6 +14,8 @@ import lombok.NoArgsConstructor;
 import org.netbeans.api.java.source.GeneratorUtilities;
 import org.netbeans.api.java.source.WorkingCopy;
 import uno.anahata.asi.agi.tool.AgiToolException;
+import uno.anahata.asi.nb.tools.java.BatchCodeRefiner;
+import uno.anahata.asi.nb.tools.java.coderefiner.RelativePosition;
 
 /**
  * Intent to insert a new member (method, field, inner type) into a class or file.
@@ -50,7 +52,7 @@ public class InsertMemberIntent extends CodeRefinementIntentPolymorphic {
         
         // 1. Parse and optionally optimize the new member FIRST.
         // This may add imports to the CompilationUnit.
-        Tree newMember = CodeRefinementBatchPolymorphic.parseMember(wc, declaration, body);
+        Tree newMember = BatchCodeRefiner.parseMember(wc, declaration, body);
         if (optimize) {
             newMember = gu.importFQNs(newMember);
         }
@@ -62,7 +64,7 @@ public class InsertMemberIntent extends CodeRefinementIntentPolymorphic {
         if (classFqn == null || classFqn.isBlank()) {
             parentTree = wc.getCompilationUnit();
         } else {
-            parentTree = CodeRefinementBatchPolymorphic.findMemberInWorkingCopy(wc, classFqn);
+            parentTree = BatchCodeRefiner.findMemberInWorkingCopy(wc, classFqn);
             if (parentTree == null) {
                 throw new AgiToolException("Target class not found in current source: " + classFqn);
             }
@@ -77,7 +79,7 @@ public class InsertMemberIntent extends CodeRefinementIntentPolymorphic {
             }
         });
 
-        int insertIdx = CodeRefinementBatchPolymorphic.getInsertIndex(wc, members, position, anchorMemberName);
+        int insertIdx = BatchCodeRefiner.getInsertIndex(wc, members, position, anchorMemberName);
         members.add(insertIdx, newMember);
     }
 

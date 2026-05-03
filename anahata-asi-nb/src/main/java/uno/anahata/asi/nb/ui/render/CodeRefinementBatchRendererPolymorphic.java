@@ -8,12 +8,12 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
-import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementBatchPolymorphic;
-import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementIntentPolymorphic;
-import uno.anahata.asi.nb.tools.java.coderefiner.DeleteMemberIntent;
-import uno.anahata.asi.nb.tools.java.coderefiner.InsertMemberIntent;
-import uno.anahata.asi.nb.tools.java.coderefiner.MoveMemberIntent;
-import uno.anahata.asi.nb.tools.java.coderefiner.UpdateMemberIntent;
+import uno.anahata.asi.nb.tools.java.coderefiner.polymorphic.CodeRefinementBatchPolymorphic;
+import uno.anahata.asi.nb.tools.java.coderefiner.polymorphic.CodeRefinementIntentPolymorphic;
+import uno.anahata.asi.nb.tools.java.coderefiner.polymorphic.DeleteMemberIntent;
+import uno.anahata.asi.nb.tools.java.coderefiner.polymorphic.InsertMemberIntent;
+import uno.anahata.asi.nb.tools.java.coderefiner.polymorphic.MoveMemberIntent;
+import uno.anahata.asi.nb.tools.java.coderefiner.polymorphic.UpdateMemberIntent;
 import uno.anahata.asi.toolkit.resources.text.LineComment;
 
 /**

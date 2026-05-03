@@ -14,6 +14,7 @@ import org.netbeans.api.java.source.GeneratorUtilities;
 import org.netbeans.api.java.source.TreeMaker;
 import org.netbeans.api.java.source.WorkingCopy;
 import uno.anahata.asi.agi.tool.AgiToolException;
+import uno.anahata.asi.nb.tools.java.BatchCodeRefiner;
 
 /**
  * A robust, flattened version of structural Java refinement intents.
@@ -53,10 +54,10 @@ public class CodeRefinementIntent implements Serializable {
     @Schema(description = "The FQN of the target class (e.g. 'com.foo.Bar'). Mandatory for 'insert' inside a class. Use '$' for nested types. Leave empty for file-level.")
     private String classFqn;
 
-    @Schema(description = "The ABSOLUTE FQN of the member to operation on (e.g. 'com.foo.Bar.myMethod()'). Mandatory for 'update', 'delete', and 'move'.")
+    @Schema(description = "The ABSOLUTE FQN of the member to operation on (e.g. 'com.foo.Bar.myMethod(java.util.List)'). FQNs are preferred for parameters. Generic brackets '<...>' are not required and will be ignored during matching.")
     private String memberFqn;
 
-    @Schema(description = "The member signature (e.g. 'public void foo()'). Mandatory for 'insert', optional for 'update'.")
+    @Schema(description = "The member signature (e.g. 'public void foo(List<String> items)'). Mandatory for 'insert', optional for 'update'. Javadocs are not supported here.")
     private String declaration;
 
     @Schema(description = "The WHOLE body code. For methods, logic inside braces. For fields, the initializer expression (part after '='). Optional for 'insert' and 'update'.")
@@ -94,7 +95,7 @@ public class CodeRefinementIntent implements Serializable {
 
     private void applyInsert(WorkingCopy wc, Map<Tree, List<Tree>> modifiedMembers, boolean optimize) throws Exception {
         GeneratorUtilities gu = GeneratorUtilities.get(wc);
-        Tree newMember = CodeRefinementBatchPolymorphic.parseMember(wc, declaration, body);
+        Tree newMember = BatchCodeRefiner.parseMember(wc, declaration, body);
         if (optimize) {
             newMember = gu.importFQNs(newMember);
         }
@@ -103,24 +104,24 @@ public class CodeRefinementIntent implements Serializable {
         if (classFqn == null || classFqn.isBlank()) {
             parentTree = wc.getCompilationUnit();
         } else {
-            parentTree = CodeRefinementBatchPolymorphic.findMemberInWorkingCopy(wc, classFqn);
+            parentTree = BatchCodeRefiner.findMemberInWorkingCopy(wc, classFqn);
             if (parentTree == null) {
                 throw new AgiToolException("Target class not found in current source: " + classFqn);
             }
         }
 
         List<Tree> members = getContainerMembers(parentTree, modifiedMembers);
-        int insertIdx = CodeRefinementBatchPolymorphic.getInsertIndex(wc, members, position, anchorMemberName);
+        int insertIdx = BatchCodeRefiner.getInsertIndex(wc, members, position, anchorMemberName);
         members.add(insertIdx, newMember);
     }
 
     private void applyUpdate(WorkingCopy wc, Map<Tree, List<Tree>> modifiedMembers, boolean optimize) throws Exception {
         TreeMaker make = wc.getTreeMaker();
         GeneratorUtilities gu = GeneratorUtilities.get(wc);
-        Tree oldTree = CodeRefinementBatchPolymorphic.findMemberInWorkingCopy(wc, memberFqn);
+        Tree oldTree = BatchCodeRefiner.findMemberInWorkingCopy(wc, memberFqn);
 
         if (oldTree == null) {
-            CodeRefinementBatchPolymorphic.throwMemberNotFound(wc, memberFqn);
+            BatchCodeRefiner.throwMemberNotFound(wc, memberFqn);
         }
 
         TreePath path = TreePath.getPath(wc.getCompilationUnit(), oldTree);
@@ -130,7 +131,7 @@ public class CodeRefinementIntent implements Serializable {
         if (declaration != null || body != null) {
             Tree newTree;
             if (declaration == null) {
-                newTree = CodeRefinementBatchPolymorphic.cloneTree(make, oldTree);
+                newTree = BatchCodeRefiner.cloneTree(make, oldTree);
                 if (body != null) {
                     if (newTree instanceof MethodTree mt) {
                         String wrappedBody = body.trim().startsWith("{") ? body : "{" + body + "\n}";
@@ -141,7 +142,7 @@ public class CodeRefinementIntent implements Serializable {
                     }
                 }
             } else {
-                newTree = CodeRefinementBatchPolymorphic.parseMember(wc, declaration, body);
+                newTree = BatchCodeRefiner.parseMember(wc, declaration, body);
                 if (body == null) {
                     if (oldTree instanceof MethodTree oldMt && newTree instanceof MethodTree newMt) {
                         newTree = make.Method(newMt.getModifiers(), newMt.getName(), newMt.getReturnType(), newMt.getTypeParameters(), newMt.getParameters(), newMt.getThrows(), oldMt.getBody(), (AnnotationTree) newMt.getDefaultValue());
@@ -161,12 +162,12 @@ public class CodeRefinementIntent implements Serializable {
             }
 
             // Re-resolve positions after potential CU mutation
-            Tree latestOldTree = CodeRefinementBatchPolymorphic.findMemberInWorkingCopy(wc, memberFqn);
+            Tree latestOldTree = BatchCodeRefiner.findMemberInWorkingCopy(wc, memberFqn);
             TreePath latestPath = TreePath.getPath(wc.getCompilationUnit(), latestOldTree);
             Tree latestParent = latestPath.getParentPath().getLeaf();
             List<Tree> latestMembers = getContainerMembers(latestParent, modifiedMembers);
 
-            int idx = CodeRefinementBatchPolymorphic.findMemberIndex(wc, latestMembers, latestOldTree);
+            int idx = BatchCodeRefiner.findMemberIndex(wc, latestMembers, latestOldTree);
             if (idx != -1) {
                 latestMembers.set(idx, make.asReplacementOf(newTree, latestMembers.get(idx)));
             }
@@ -174,24 +175,24 @@ public class CodeRefinementIntent implements Serializable {
     }
 
     private void applyDelete(WorkingCopy wc, Map<Tree, List<Tree>> modifiedMembers, boolean optimize) throws Exception {
-        Tree memberTree = CodeRefinementBatchPolymorphic.findMemberInWorkingCopy(wc, memberFqn);
+        Tree memberTree = BatchCodeRefiner.findMemberInWorkingCopy(wc, memberFqn);
         if (memberTree == null) {
-            CodeRefinementBatchPolymorphic.throwMemberNotFound(wc, memberFqn);
+            BatchCodeRefiner.throwMemberNotFound(wc, memberFqn);
         }
         TreePath path = TreePath.getPath(wc.getCompilationUnit(), memberTree);
         Tree parent = path.getParentPath().getLeaf();
 
         List<Tree> members = getContainerMembers(parent, modifiedMembers);
-        int idx = CodeRefinementBatchPolymorphic.findMemberIndex(wc, members, memberTree);
+        int idx = BatchCodeRefiner.findMemberIndex(wc, members, memberTree);
         if (idx != -1) {
             members.remove(idx);
         }
     }
 
     private void applyMove(WorkingCopy wc, Map<Tree, List<Tree>> modifiedMembers, boolean optimize) throws Exception {
-        Tree memberTree = CodeRefinementBatchPolymorphic.findMemberInWorkingCopy(wc, memberFqn);
+        Tree memberTree = BatchCodeRefiner.findMemberInWorkingCopy(wc, memberFqn);
         if (memberTree == null) {
-            CodeRefinementBatchPolymorphic.throwMemberNotFound(wc, memberFqn);
+            BatchCodeRefiner.throwMemberNotFound(wc, memberFqn);
         }
         TreePath path = TreePath.getPath(wc.getCompilationUnit(), memberTree);
         if (!(path.getParentPath().getLeaf() instanceof ClassTree ct)) {
@@ -199,11 +200,11 @@ public class CodeRefinementIntent implements Serializable {
         }
 
         List<Tree> members = getContainerMembers(ct, modifiedMembers);
-        int idx = CodeRefinementBatchPolymorphic.findMemberIndex(wc, members, memberTree);
+        int idx = BatchCodeRefiner.findMemberIndex(wc, members, memberTree);
         if (idx != -1) {
             members.remove(idx);
         }
-        int insertIdx = CodeRefinementBatchPolymorphic.getInsertIndex(wc, members, position, anchorMemberName);
+        int insertIdx = BatchCodeRefiner.getInsertIndex(wc, members, position, anchorMemberName);
         members.add(insertIdx, memberTree);
     }
 

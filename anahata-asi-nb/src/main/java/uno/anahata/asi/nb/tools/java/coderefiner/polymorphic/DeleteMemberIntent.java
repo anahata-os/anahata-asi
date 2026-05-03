@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.nb.tools.java.coderefiner;
+package uno.anahata.asi.nb.tools.java.coderefiner.polymorphic;
 
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
@@ -13,6 +13,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.netbeans.api.java.source.WorkingCopy;
+import uno.anahata.asi.nb.tools.java.BatchCodeRefiner;
 
 /**
  * Intent to delete an existing structural member.
@@ -36,9 +37,9 @@ public class DeleteMemberIntent extends CodeRefinementIntentPolymorphic {
      */
     @Override
     public void apply(WorkingCopy wc, Map<Tree, List<Tree>> modifiedMembers, boolean optimize) throws Exception {
-        Tree memberTree = CodeRefinementBatchPolymorphic.findMemberInWorkingCopy(wc, memberFqn);
+        Tree memberTree = BatchCodeRefiner.findMemberInWorkingCopy(wc, memberFqn);
         if (memberTree == null) {
-            CodeRefinementBatchPolymorphic.throwMemberNotFound(wc, memberFqn);
+            BatchCodeRefiner.throwMemberNotFound(wc, memberFqn);
         }
         TreePath path = TreePath.getPath(wc.getCompilationUnit(), memberTree);
         Tree parent = path.getParentPath().getLeaf();
@@ -51,7 +52,7 @@ public class DeleteMemberIntent extends CodeRefinementIntentPolymorphic {
             }
         });
 
-        int idx = CodeRefinementBatchPolymorphic.findMemberIndex(wc, members, memberTree);
+        int idx = BatchCodeRefiner.findMemberIndex(wc, members, memberTree);
         if (idx != -1) {
             members.remove(idx);
         }

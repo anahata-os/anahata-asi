@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.nb.tools.java.coderefiner;
+package uno.anahata.asi.nb.tools.java.coderefiner.polymorphic;
 
 import com.sun.source.tree.AnnotationTree;
 import com.sun.source.tree.ClassTree;
@@ -19,6 +19,7 @@ import lombok.NoArgsConstructor;
 import org.netbeans.api.java.source.GeneratorUtilities;
 import org.netbeans.api.java.source.TreeMaker;
 import org.netbeans.api.java.source.WorkingCopy;
+import uno.anahata.asi.nb.tools.java.BatchCodeRefiner;
 
 /**
  * Intent to update an existing structural member.
@@ -50,10 +51,10 @@ public class UpdateMemberIntent extends CodeRefinementIntentPolymorphic {
     public void apply(WorkingCopy wc, Map<Tree, List<Tree>> modifiedMembers, boolean optimize) throws Exception {
         TreeMaker make = wc.getTreeMaker();
         GeneratorUtilities gu = GeneratorUtilities.get(wc);
-        Tree oldTree = CodeRefinementBatchPolymorphic.findMemberInWorkingCopy(wc, memberFqn);
+        Tree oldTree = BatchCodeRefiner.findMemberInWorkingCopy(wc, memberFqn);
 
         if (oldTree == null) {
-            CodeRefinementBatchPolymorphic.throwMemberNotFound(wc, memberFqn);
+            BatchCodeRefiner.throwMemberNotFound(wc, memberFqn);
         }
 
         TreePath path = TreePath.getPath(wc.getCompilationUnit(), oldTree);
@@ -69,7 +70,7 @@ public class UpdateMemberIntent extends CodeRefinementIntentPolymorphic {
         if (declaration != null || body != null) {
             Tree newTree;
             if (declaration == null) {
-                newTree = CodeRefinementBatchPolymorphic.cloneTree(make, oldTree);
+                newTree = BatchCodeRefiner.cloneTree(make, oldTree);
                 if (body != null) {
                     if (newTree instanceof MethodTree mt) {
                         String wrappedBody = body.trim().startsWith("{") ? body : "{" + body + "\n}";
@@ -80,7 +81,7 @@ public class UpdateMemberIntent extends CodeRefinementIntentPolymorphic {
                     }
                 }
             } else {
-                newTree = CodeRefinementBatchPolymorphic.parseMember(wc, declaration, body);
+                newTree = BatchCodeRefiner.parseMember(wc, declaration, body);
                 if (body == null) {
                     if (oldTree instanceof MethodTree oldMt && newTree instanceof MethodTree newMt) {
                         newTree = make.Method(newMt.getModifiers(), newMt.getName(), newMt.getReturnType(), newMt.getTypeParameters(), newMt.getParameters(), newMt.getThrows(), oldMt.getBody(), (AnnotationTree) newMt.getDefaultValue());
@@ -100,7 +101,7 @@ public class UpdateMemberIntent extends CodeRefinementIntentPolymorphic {
             }
 
             // RE-RESOLVE parent and oldTree index after potential CU mutation
-            Tree latestOldTree = CodeRefinementBatchPolymorphic.findMemberInWorkingCopy(wc, memberFqn);
+            Tree latestOldTree = BatchCodeRefiner.findMemberInWorkingCopy(wc, memberFqn);
             TreePath latestPath = TreePath.getPath(wc.getCompilationUnit(), latestOldTree);
             Tree latestParent = latestPath.getParentPath().getLeaf();
             
@@ -112,7 +113,7 @@ public class UpdateMemberIntent extends CodeRefinementIntentPolymorphic {
                 }
             });
 
-            int idx = CodeRefinementBatchPolymorphic.findMemberIndex(wc, members, latestOldTree);
+            int idx = BatchCodeRefiner.findMemberIndex(wc, members, latestOldTree);
             if (idx != -1) {
                 members.set(idx, make.asReplacementOf(newTree, members.get(idx)));
             }
