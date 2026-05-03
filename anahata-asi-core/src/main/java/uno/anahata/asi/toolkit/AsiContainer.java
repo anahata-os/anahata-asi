@@ -2,20 +2,17 @@
 package uno.anahata.asi.toolkit;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
-import uno.anahata.asi.agi.context.ContextProvider;
 import uno.anahata.asi.agi.message.AgiUserMessage;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.AgiToolParam;
-import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
 
 /**
  * The definitive toolkit for managing and inspecting the ASI container and its 
@@ -129,10 +126,10 @@ public class AsiContainer extends AnahataToolkit {
     @AgiTool("Creates a brand new AGI session with comprehensive configuration options.")
     public String createNewAgi(
             @AgiToolParam("Whether to open the new AGI session in the UI.") boolean open,
-            @AgiToolParam(value = "The UUID of the AI provider to use.", required = false) String agiProviderUUID,
-            @AgiToolParam(value = "The ID of the AI model to use.", required = false) String modelID,
-            @AgiToolParam(value = "List of toolkit fully qualified class names to enable.", required = false) List<String> toolkitFqns,
-            @AgiToolParam(value = "List of resource URIs to register.", required = false) List<String> resourceURIs,
+            @AgiToolParam(value = "The UUID of the AI provider to use. Will use the Asi Container default if not provided.", required = false) String agiProviderUUID,
+            @AgiToolParam(value = "The ID of the AI model to use. Leave emtpy for default. Will use the Asi Container default if not provided", required = false) String modelID,
+            @AgiToolParam(value = "List of toolkit fully qualified class names to enable. If not provided, will use all toolkits in the Asi Container preferences.", required = false) List<String> toolkitFqns,
+            @AgiToolParam(value = "Optional List of resource URIs to register.", required = false) List<String> resourceURIs,
             @AgiToolParam(value = "An optional initial message to send to the new AGI.", required = false) String initialMessage
     ) {
         AbstractAsiContainer container = getAsiContainer();
@@ -150,7 +147,7 @@ public class AsiContainer extends AnahataToolkit {
         }
         
         // 3. Toolkit Customization
-        if (toolkitFqns != null) {
+        if (toolkitFqns != null && !toolkitFqns.isEmpty()) {
             config.getToolClasses().clear();
             for (String fqn : toolkitFqns) {
                 try {
