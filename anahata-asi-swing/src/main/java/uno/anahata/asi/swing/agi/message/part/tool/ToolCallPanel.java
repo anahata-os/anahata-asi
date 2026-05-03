@@ -264,9 +264,9 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         });
 
         declineButton = new JButton("Decline", new CancelIcon(16));
-        declineButton.setToolTipText("Set status to FAILED");
+        declineButton.setToolTipText("Set status to DECLINED and collapses the tool call");
         declineButton.addActionListener(e -> {
-            getPart().getResponse().fail("Rejected by user");
+            getPart().getResponse().decline();
             getPart().setExpanded(false);
         });
                 ;
