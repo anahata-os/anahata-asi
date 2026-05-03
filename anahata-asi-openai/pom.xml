@@ -8,33 +8,68 @@
     </parent>
     <artifactId>anahata-asi-openai</artifactId>
     <packaging>jar</packaging>
-    <name>Anahata ASI OpenAI Compatible Provider</name>
-    <description>Universal raw-json-parsing provider implementation using the jdks http client for OpenAI (including new /responses api) and OpenAI-compatible APIs using leagcy /chat/completions (Groq, DeepSeek, Ollama, etc.)</description>
+    <name>Anahata ASI OpenAI Provider</name>
+    <description>Pre-configured provider for OpenAI using OpenAI's responses api</description>
 
     <dependencies>
+        <!-- Core Anahata ASI API -->
         <dependency>
             <groupId>uno.anahata</groupId>
             <artifactId>anahata-asi-core</artifactId>
             <version>${project.version}</version>
         </dependency>
+        
+        <!-- Core Test Utilities for MockAsiContainer -->
+        <dependency>
+            <groupId>uno.anahata</groupId>
+            <artifactId>anahata-asi-core</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
+        
+        <!-- Standard Dependencies -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
+        
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-        </dependency>
-        <!-- Testing -->
+        
+        
+        <!-- Testing Dependencies -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        
+        <!-- Added for testing to enable console logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        
     </dependencies>
+
+    
+    <!--
+    <dependencies>
+    <dependency>
+        <groupId>com.openai</groupId>
+        <artifactId>openai-java</artifactId>
+        <version>4.33.0</version>
+    </dependency>
+    </dependencies>
+    -->
 </project>

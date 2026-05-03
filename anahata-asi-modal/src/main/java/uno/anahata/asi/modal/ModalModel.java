@@ -1,9 +1,10 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.modal;
 
-import uno.anahata.asi.openai.OpenAiCompatibleModel;
-import uno.anahata.asi.openai.OpenAiCompatibleProvider;
-import uno.anahata.asi.openai.ReasoningStyle;
+import uno.anahata.asi.openai.compatible.OpenAiCompatibleModel;
+import uno.anahata.asi.openai.compatible.OpenAiCompatibleProvider;
+import uno.anahata.asi.openai.compatible.ReasoningStyle;
+
 
 /**
  * Specialized model implementation for Modal's GLM-5 endpoint.

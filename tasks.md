@@ -3,15 +3,18 @@
 This file tracks the actionable tasks and tactical goals for the Anahata ASI (V2) project.
 
 ## 0. Zero Day Go Live: 
-- [ ] findAndReplace with wrong totalOccurrences gives a bad error message (resulting content is identical)
+- [ ] remove duplicates of CodeModel.findTypes for reloaded nbms
+- [X] findAndReplace with wrong totalOccurrences gives a bad error message (resulting content is identical)
 - [ ] change resource and session uuids to be way smaller or consider using atomicLong for resourceuids
 - [ ] check if stop providing on a resource makes it actually stop providing
 - [ ] check if updating the text viewport manually does update it
 - [ ] model changing session nickname doesnt work or maybe the ui is not updating it
-- [ ] test BatchCodeRefiner and see about adding comments to each intent to show in the ui like the other bubbles
-- [ ] line comments on top of diff viewer are not aligned to the right
+- [ ] check fileobject moves do move
+- [X] BatchCodeRefiner adding line number comments to each intent to show in the ui like the other bubbles
+- [X] line comments on top of diff viewer are not aligned to the right
 - [ ] test javadoc toolkit and see what would it take to allow InsertIntent or UpdateIntent to take a Javadoc object but this could take a long time
-- [ ] Tool turns to expire doesn't have a field in context details panel
+- [ ] Tool's turns to expire doesn't have a field in context details panel
+- [ ] Change AbstractMessagePanel and AbstractPartPanel and ToolCallPanel to show a different mouse point when hovering over the JXTitledPane headers
 - [ ] add a string parameter to autobackup to log what is triggering it, check all places that trigger an autobackup and update the docos to reflect that
 - [ ] change all log.info to log.debug
 

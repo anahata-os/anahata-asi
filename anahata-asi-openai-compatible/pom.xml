@@ -6,9 +6,10 @@
         <artifactId>anahata-asi-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
-    <artifactId>anahata-asi-huggingface</artifactId>
-    <name>Anahata ASI Hugging Face Provider</name>
-    <description>Deep Model Inspection and integration with Hugging Face Hub.</description>
+    <artifactId>anahata-asi-openai-compatible</artifactId>
+    <packaging>jar</packaging>
+    <name>Anahata ASI OpenAI Compatible Provider</name>
+    <description>Universal raw-json-parsing provider implementation using the jdks http client for OpenAI (including new /responses api) and OpenAI-compatible APIs using leagcy /chat/completions (Groq, DeepSeek, Ollama, etc.)</description>
 
     <dependencies>
         <dependency>
@@ -17,9 +18,8 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>uno.anahata</groupId>
-            <artifactId>anahata-asi-openai-compatible</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -27,8 +27,14 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <!-- Testing -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

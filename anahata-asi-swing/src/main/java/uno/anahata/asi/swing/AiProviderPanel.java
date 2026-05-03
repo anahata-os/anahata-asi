@@ -33,7 +33,7 @@ import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.prompt.PromptSupport;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.agi.provider.TokenizerType;
-import uno.anahata.asi.openai.OpenAiCompatibleProvider;
+import uno.anahata.asi.openai.compatible.OpenAiCompatibleProvider;
 import javax.swing.JFileChooser;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;

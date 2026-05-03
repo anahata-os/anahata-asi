@@ -47,6 +47,12 @@
         
         <dependency>
             <groupId>uno.anahata</groupId>
+            <artifactId>anahata-asi-openai-compatible</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>uno.anahata</groupId>
             <artifactId>anahata-asi-modal</artifactId>
             <version>${project.version}</version>
         </dependency>

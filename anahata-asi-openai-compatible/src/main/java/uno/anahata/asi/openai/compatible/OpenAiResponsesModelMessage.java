@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.openai;
+package uno.anahata.asi.openai.compatible;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
@@ -51,21 +51,21 @@ public class OpenAiResponsesModelMessage extends OpenAiModelMessage {
     public void updateFromNode(JsonNode node, ReasoningStyle reasoningStyle, String reasoningFieldName, List<String> reasoningTags) {
         String type = node.path("type").asText();
         String object = node.path("object").asText();
-
-        // 1. Handle Response Object (Root or inside Event)
+        // 1. Handle Response Object (Full or from completed event)
         if ("response".equals(object)) {
             JsonNode output = node.get("output");
             if (output != null && output.isArray()) {
-                // IMPORTANT: When receiving a full response object, we clear existing persistent items
-                // to avoid duplication if we were previously streaming.
                 persistentItems.clear();
                 for (JsonNode item : output) {
                     updateFromNode(item, reasoningStyle, reasoningFieldName, reasoningTags);
                 }
             }
+            JsonNode usage = node.get("usage");
+            if (usage != null && getResponse() != null) {
+                setBilledTokenCount(usage.path("completion_tokens").asInt());
+            }
             return;
         }
-
         // 2. Handle Responses API Streaming Events (response.*)
         if (type.startsWith("response.")) {
             if ("response.output_text.delta".equals(type)) {
@@ -81,7 +81,6 @@ public class OpenAiResponsesModelMessage extends OpenAiModelMessage {
                 if (item != null && "function_call".equals(item.path("type").asText())) {
                     String itemId = item.path("id").asText();
                     callIds.put(itemId, item.path("call_id").asText());
-                    
                     String ns = item.path("namespace").asText(null);
                     String name = item.path("name").asText();
                     String qualifiedName = (ns != null) ? ns + "." + name : name;
@@ -90,7 +89,7 @@ public class OpenAiResponsesModelMessage extends OpenAiModelMessage {
             } else if ("response.function_call_arguments.delta".equals(type)) {
                 String itemId = node.path("item_id").asText();
                 String delta = node.path("delta").asText();
-                callArgsBuffers.computeIfAbsent(itemId, k -> new StringBuilder()).append(delta);
+                callArgsBuffers.computeIfAbsent(itemId, k-> new StringBuilder()).append(delta);
             } else if ("response.output_item.done".equals(type)) {
                 JsonNode item = node.get("item");
                 if (item != null) {
@@ -98,7 +97,10 @@ public class OpenAiResponsesModelMessage extends OpenAiModelMessage {
                     if ("function_call".equals(item.path("type").asText())) {
                         String itemId = item.path("id").asText();
                         callIds.put(itemId, item.path("call_id").asText());
-                        callNames.put(itemId, item.path("name").asText());
+                        String ns = item.path("namespace").asText(null);
+                        String name = item.path("name").asText();
+                        String qualifiedName = (ns != null) ? ns + "." + name : name;
+                        callNames.put(itemId, qualifiedName);
                         if (item.has("arguments")) {
                             callArgsBuffers.put(itemId, new StringBuilder(item.get("arguments").asText()));
                         }
@@ -113,22 +115,17 @@ public class OpenAiResponsesModelMessage extends OpenAiModelMessage {
                     } else if ("incomplete".equals(resp.path("status").asText())) {
                         setFinishReasonFromOpenAi(resp.path("incomplete_details").path("reason").asText());
                     }
-                }
-                flushToolCalls();
-            } else if ("response.completed".equals(type)) {
-                JsonNode resp = node.get("response");
-                if (resp != null) {
+                    // IMPORTANT: We do NOT append the full 'done' response object to avoid echoed instructions/tools in message state
                     updateFromNode(resp, reasoningStyle, reasoningFieldName, reasoningTags);
                 }
+                flushToolCalls();
             }
             return;
         }
-
-        // 3. Handle Responses API Static Items (non-streaming or full response)
+        // 3. Handle Static Items
         if ("message".equals(type) || "reasoning".equals(type) || "function_call".equals(type)) {
             addItemIfMissing(node);
         }
-
         if ("message".equals(type)) {
             JsonNode content = node.get("content");
             if (content != null && content.isArray()) {
@@ -151,25 +148,21 @@ public class OpenAiResponsesModelMessage extends OpenAiModelMessage {
                 }
             }
         } else if ("function_call".equals(type)) {
-            // In V2, the function call details are at the top level of the item
             String itemId = node.path("id").asText();
             String callId = node.path("call_id").asText();
+            String ns = node.path("namespace").asText(null);
             String name = node.path("name").asText();
+            String qualifiedName = (ns != null) ? ns + "." + name : name;
             String args = node.path("arguments").asText();
-
             if (callId != null && name != null) {
                 callIds.put(itemId, callId);
-                callNames.put(itemId, name);
+                callNames.put(itemId, qualifiedName);
                 callArgsBuffers.put(itemId, new StringBuilder(args));
             }
         }
-
-        // 4. Finish Reason / Status
         if (node.has("status") && "completed".equals(node.path("status").asText())) {
             setFinishReason(FinishReason.STOP);
             flushToolCalls();
-        } else if (node.has("finish_reason") && !node.get("finish_reason").isNull()) {
-            setFinishReasonFromOpenAi(node.get("finish_reason").asText());
         }
     }
 
@@ -188,47 +181,28 @@ public class OpenAiResponsesModelMessage extends OpenAiModelMessage {
 
     @Override
     public void updateToolCall(JsonNode callNode) {
-        if (callArgsBuffers == null) {
-            callArgsBuffers = new HashMap<>();
-        }
-        if (callIds == null) {
-            callIds = new HashMap<>();
-        }
-        if (callNames == null) {
-            callNames = new HashMap<>();
-        }
-
+        if (callArgsBuffers == null) callArgsBuffers = new HashMap<>();
+        if (callIds == null) callIds = new HashMap<>();
+        if (callNames == null) callNames = new HashMap<>();
         String itemId = callNode.path("id").asText(null);
         String callId = callNode.path("call_id").asText(null);
-
-        // Support both V1 (nested) and V2 (flat) structures
-        //this is totally wrong, we have a different ModelMessage implementation for this.
-        JsonNode funcNode = callNode.get("function");
-        
-        String name = (funcNode != null && funcNode.has("name")) ? funcNode.get("name").asText() : callNode.path("name").asText(null);
-        String fqToolName;
-        String nameSpace = (funcNode != null && funcNode.has("namespace")) ? funcNode.get("namespace").asText() : callNode.path("namespace").asText(null);
-        if (nameSpace != null) {
-            fqToolName = nameSpace + "." + name;
-        } else {
-            log.warn("No namespace found for: " + callNode.toPrettyString());
-            fqToolName = name;
-        }
-        String argsFragment = (funcNode != null && funcNode.has("arguments")) ? funcNode.get("arguments").asText("") : callNode.path("arguments").asText("");
-
+        // Strictly V2 Responses API: flat structure.
+        String name = callNode.path("name").asText(null);
+        String ns = callNode.path("namespace").asText(null);
+        String qualifiedName = (ns != null) ? ns + "." + name : name;
+        String argsFragment = callNode.path("arguments").asText("");
         if (itemId != null) {
-            if (callId != null) {
-                callIds.put(itemId, callId);
-            }
-            if (name != null) {
-                callNames.put(itemId, fqToolName);
-            }
+            if (callId != null) callIds.put(itemId, callId);
+            if (name != null) callNames.put(itemId, qualifiedName);
             if (!argsFragment.isEmpty()) {
-                callArgsBuffers.computeIfAbsent(itemId, k -> new StringBuilder()).append(argsFragment);
+                callArgsBuffers.computeIfAbsent(itemId, k-> new StringBuilder()).append(argsFragment);
             }
         }
     }
-
+    // Removed V1 compatibility checks. In V2, the structure is flat.
+        // Support both V1 (nested) and V2 (flat) structures
+    //this is totally wrong, we have a different ModelMessage implementation for this.
+    
     private void createToolCallImmediately(String itemId) {
         if (createdItemIds.contains(itemId)) {
             return;

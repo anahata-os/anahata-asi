@@ -85,13 +85,14 @@
         <module>anahata-asi-desktop</module>
         <module>anahata-asi-nb</module>
         <!-- AI Providers -->
-        <module>anahata-asi-gemini</module>
-        <module>anahata-asi-openai</module>
-        <module>anahata-asi-openai-java</module>
-        <module>anahata-asi-huggingface</module>
-        <module>anahata-asi-modal</module>
+        <module>anahata-asi-gemini</module>        
         <!-- AI Providers -->
         <module>anahata-asi-web</module>
+        <module>anahata-asi-openai</module>
+        <module>anahata-asi-openai-compatible</module>
+        <module>anahata-asi-huggingface</module>
+        <module>anahata-asi-modal</module>
+        
     </modules>
 
     <properties>

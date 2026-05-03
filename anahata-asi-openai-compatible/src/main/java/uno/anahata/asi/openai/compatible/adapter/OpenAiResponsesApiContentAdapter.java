@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.openai.adapter;
+package uno.anahata.asi.openai.compatible.adapter;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -21,7 +21,7 @@ import uno.anahata.asi.agi.provider.TokenizerType;
 import uno.anahata.asi.agi.tool.schema.SchemaProvider;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
-import uno.anahata.asi.openai.OpenAiResponsesModelMessage;
+import uno.anahata.asi.openai.compatible.OpenAiResponsesModelMessage;
 
 /**
  * A specialized content adapter for the OpenAI Responses API (/v1/responses).
@@ -38,7 +38,7 @@ public class OpenAiResponsesApiContentAdapter {
     private final TokenizerType tokenizerType;
     
     /** Reasoning style of the target model. */
-    private final uno.anahata.asi.openai.ReasoningStyle reasoningStyle;
+    private final uno.anahata.asi.openai.compatible.ReasoningStyle reasoningStyle;
     /** Tags used for reasoning (e.g., ["<think>", "</think>"]). */
     private final List<String> reasoningTags;
 
@@ -75,21 +75,17 @@ public class OpenAiResponsesApiContentAdapter {
 
     private List<ObjectNode> toModelTurnItems(AbstractModelMessage<?> modelMsg) {
         List<ObjectNode> items = new ArrayList<>();
-        
         // 1. Assistant Message Item (Text only)
         ObjectNode assistantItem = SchemaProvider.OBJECT_MAPPER.createObjectNode();
         assistantItem.put("type", "message");
         assistantItem.put("role", "assistant");
-        
         ArrayNode contentArray = assistantItem.putArray("content");
-        
         // Handle metadata header for the message
         if (shouldInjectInbandMetadata()) {
             contentArray.addObject()
                     .put("type", "input_text")
                     .put("text", anahataMessage.createMetadataHeader() + "\n");
         }
-        
         for (AbstractPart part : anahataMessage.getParts(true)) {
             if (part instanceof AbstractToolCall<?, ?> tc) {
                 // V2 Architecture: Tool calls are separate items in the output array!
@@ -97,7 +93,15 @@ public class OpenAiResponsesApiContentAdapter {
                 callItem.put("type", "function_call");
                 callItem.put("id", tc.getId()); // Item ID
                 callItem.put("call_id", tc.getId()); // Action ID
-                callItem.put("name", tc.getToolName());
+                // Split qualified tool name back into namespace and name for history synthesis
+                String fullName = tc.getToolName();
+                int dotIdx = fullName.lastIndexOf(".");
+                if (dotIdx > 0) {
+                    callItem.put("namespace", fullName.substring(0, dotIdx));
+                    callItem.put("name", fullName.substring(dotIdx + 1));
+                } else {
+                    callItem.put("name", fullName);
+                }
                 try {
                     String argsJson = SchemaProvider.OBJECT_MAPPER.writeValueAsString(tc.getResponse().getExecutedArgs());
                     callItem.put("arguments", argsJson);
@@ -110,33 +114,34 @@ public class OpenAiResponsesApiContentAdapter {
                 addPartToContent(contentArray, null, part);
             }
         }
-        
         if (!contentArray.isEmpty()) {
             items.add(0, assistantItem); // Text message goes first
         }
-        
         return items;
     }
-
+    // 1. Assistant Message Item (Text only)
+    // Handle metadata header for the message
+    // V2 Architecture: Tool calls are separate items in the output array!
+    // Item ID
+    // Action ID
+    // Text message goes first
+    
     private List<ObjectNode> toToolResponseItems(AbstractModelMessage<?> modelMsg) {
+        List<AbstractToolResponse<?>> executedResponses = modelMsg.getToolResponses().stream().filter(tr-> includePruned || !tr.getCall().isEffectivelyPruned()).filter(Objects::nonNull).collect(Collectors.toList());
         List<ObjectNode> items = new ArrayList<>();
-        List<AbstractToolResponse<?>> executedResponses = modelMsg.getToolResponses().stream()
-                .filter(tr -> includePruned || !tr.getCall().isEffectivelyPruned())
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-
         for (AbstractToolResponse<?> tr : executedResponses) {
             ObjectNode responseItem = SchemaProvider.OBJECT_MAPPER.createObjectNode();
-            responseItem.put("type", "tool_call_output");
+            // Fix: The Responses API requires 'function_call_output', not 'tool_call_output'.
+            responseItem.put("type", "function_call_output");
             responseItem.put("call_id", tr.getCall().getId());
-            
             String fullResponseJson = SchemaProvider.OBJECT_MAPPER.valueToTree(tr).toString();
             responseItem.put("output", fullResponseJson);
             items.add(responseItem);
         }
         return items;
     }
-
+    // Fix: The Responses API requires 'function_call_output', not 'tool_call_output'.
+    
     private ObjectNode toUserOrSystemItem() {
         ObjectNode item = SchemaProvider.OBJECT_MAPPER.createObjectNode();
         item.put("type", "message");
@@ -177,7 +182,7 @@ public class OpenAiResponsesApiContentAdapter {
                 
                 // Thought Tagging: If this is a thought part and the model uses TAGS style,
                 // we wrap the text in the appropriate tags to preserve the model's "flow".
-                if (mtp.isThought() && reasoningStyle == uno.anahata.asi.openai.ReasoningStyle.TAGS 
+                if (mtp.isThought() && reasoningStyle == uno.anahata.asi.openai.compatible.ReasoningStyle.TAGS 
                         && reasoningTags != null && reasoningTags.size() >= 2) {
                     text = reasoningTags.get(0) + text + reasoningTags.get(1);
                 }

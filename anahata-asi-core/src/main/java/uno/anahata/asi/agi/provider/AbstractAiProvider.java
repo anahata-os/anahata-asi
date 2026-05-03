@@ -19,7 +19,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AbstractAsiContainer;
-
 import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
 
 /**
@@ -79,6 +78,11 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      * Whether this provider is enabled and should be offered to the user.
      */
     private boolean enabled = true;
+
+    /**
+     * The API key currently in use by this provider. Captured during key rotation.
+     */
+    private transient String currentApiKey;
 
     /**
      * The internal cache of loaded API keys, reloaded from disk on change. */
@@ -177,13 +181,6 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
     }
 
     /**
-     * Gets the current api key this provider is using.
-     * 
-     * @return The current API key.
-     */
-    public abstract String getCurrentApiKey();
-
-    /**
      * Gets the URI where users can acquire API keys for this provider.
      * 
      * @return The acquisition URI, or null if not set.
@@ -208,7 +205,7 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
     public abstract String getApiKeyHint();
 
     /**
-     * Checks if there are any valid (non-comment, non-empty) API keys 
+     * Checks if there are any valid (non-comment, non-empty) API keys
      * configured for this provider.
      * 
      * @return true if at least one key exists.
@@ -226,24 +223,39 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
     }
 
     /**
-     * Hook to reset the provider-specific API client (e.g., when keys change).
-     * Subclasses should override this to set their native client to null.
+     * Returns the API key currently in use by this provider.
+     * If no key is set, it initializes it by calling {@link #getNextKey()}.
+     * 
+     * @return The current API key, or null if none available.
      */
-    public void hokusPocus() {
-        // Default implementation does nothing
+    public synchronized String getCurrentKey() {
+        if (currentApiKey == null) {
+            getNextKey();
+        }
+        return currentApiKey;
     }
 
     /**
-     * Gets the next API key for the specific provider implementation using a round-robin selection from the loaded key pool.
+     * Hook to reset the provider-specific API client (e.g., when keys change).
+     * Subclasses should override this to set their native client to null.
+     * <p>
+     * Implementation detail: Triggers a key rotation by calling {@link #getNextKey()}.
+     * </p>
+     */
+    public synchronized void hokusPocus() {
+        getNextKey();
+    }
+
+    /**
+     * Gets the next API key for the specific provider implementation using a 
+     * round-robin selection from the loaded key pool.
      * 
-     * The key pool is reloaded from the file system on every call.
      * @return The API key.
      */
     protected String getNextKey() {
         if (keyPool == null) {
             keyPool = readApiKeysFile();
         }
-
         if (keyPool.isEmpty()) {
             return null;
         }
@@ -251,15 +263,11 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
         // Round-robin key selection
         int nextIdx = round.getAndIncrement() % keyPool.size();
         String key = keyPool.get(nextIdx);
+        this.currentApiKey = key;
         log.info("Hocus Pocus.... Using API key from pool (index {}). Key ends with: {}", nextIdx, key.substring(key.length() - 5));
         return key;
     }
 
-    /**
-     * Gets the provider-specific global storage directory within the main AI work directory.
-     * 
-     * @return The path to the provider's directory.
-     */
     public Path getProviderDirectory() {
         String dirName = (folderName != null && !folderName.isBlank()) ? folderName : uuid;
         Path p = Path.of(dirName);
@@ -269,11 +277,15 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
         return AbstractAsiContainer.getWorkDirSubDir(dirName);
     }
 
+    /**
+     * Gets the provider-specific global storage directory within the main AI work directory.
+     * 
+     * @return The path to the provider's directory.
+     */
     public Path getKeysFilePath() {
         Path providerDir = getProviderDirectory();
         Path keysFilePath = providerDir.resolve("api_keys.txt");
         log.info("Keys File Path: {}", keysFilePath);
-
         if (!Files.exists(providerDir)) {
             try {
                 log.info("Creating provider directory: {}", providerDir);
@@ -285,16 +297,12 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
         return keysFilePath;
     }
 
-    /**
-     * Ensures the API keys file exists on disk, creating it as a 
-     * completely empty file if missing.
-     */
     public void ensureKeysFileExists() {
         Path path = getKeysFilePath();
         if (!Files.exists(path)) {
             try {
                 Files.createFile(path);
-                log.info("Created empty API key file at: {}", path);
+                log.info("Created empty API key file at: {}",path);
             } catch (IOException e) {
                 log.error("Failed to create empty API key file at: {}", path, e);
             }
@@ -302,37 +310,28 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
     }
 
     /**
-     * Reads the API keys from the provider-specific 'api_keys.txt' file.
-     * 
-     * @return A list of API keys, or an empty list if the file is missing or empty.
+     * Ensures the API keys file exists on disk, creating it as a 
+     * completely empty file if missing.
      */
     private List<String> readApiKeysFile() {
         ensureKeysFileExists();
         Path keysFilePath = getKeysFilePath();
-
         try (Stream<String> lines = Files.lines(keysFilePath)) {
-            List<String> keys = lines
-                    .map(String::trim)
-                    .filter(line -> !line.isEmpty() && !line.startsWith("#") && !line.startsWith("//"))
-                    .map(line -> {
-                        int commentIndex = line.indexOf("//");
-                        return (commentIndex != -1) ? line.substring(0, commentIndex).trim() : line;
-                    })
-                    .filter(key -> !key.isEmpty())
-                    .collect(Collectors.toList());
+            List<String> keys = lines.map(String::trim).filter(line -> !line.isEmpty() && !line.startsWith("#") && !line.startsWith("//")).map(line -> {
+                int commentIndex = line.indexOf("//");
+                return (commentIndex != -1) ? line.substring(0, commentIndex).trim() : line;
+            }).filter(key -> !key.isEmpty()).collect(Collectors.toList());
             Collections.shuffle(keys);
-
             if (keys.isEmpty()) {
                 log.error("No active API keys found in {}. Please add your keys to the file.", keysFilePath);
                 return Collections.emptyList();
             }
-
             log.debug("Loaded {} API key(s) for provider '{}' from {}.", keys.size(), getProviderId(), keysFilePath);
             return keys;
-
         } catch (IOException e) {
             log.error("Failed to load API keys from {}. Cannot initialize provider.", keysFilePath, e);
             return Collections.emptyList();
         }
     }
+
 }

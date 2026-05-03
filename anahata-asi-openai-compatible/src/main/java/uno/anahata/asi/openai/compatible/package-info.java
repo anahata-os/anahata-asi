@@ -27,4 +27,4 @@
  * 
  * @author anahata
  */
-package uno.anahata.asi.openai;
+package uno.anahata.asi.openai.compatible;

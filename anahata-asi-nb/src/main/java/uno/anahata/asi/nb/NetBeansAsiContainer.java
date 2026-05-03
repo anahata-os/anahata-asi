@@ -26,7 +26,6 @@ import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
 import uno.anahata.asi.agi.tool.schema.SchemaProvider;
 import uno.anahata.asi.huggingface.HuggingFaceProvider;
 import uno.anahata.asi.modal.ModalProvider;
-import uno.anahata.asi.openai.OpenAiProvider;
 import uno.anahata.asi.toolkit.resources.text.FullTextResourceUpdate;
 import uno.anahata.asi.toolkit.resources.text.TextResourceReplacements;
 import uno.anahata.asi.toolkit.resources.text.lines.TextResourceLineEdits;
@@ -84,15 +83,15 @@ public class NetBeansAsiContainer extends AbstractSwingAsiContainer {
             gemini.setFolderName("Gemini");
             registerProvider(gemini);
         }
+        /*
+        if (getProvider("OpenAI") == null) {
+            log.info("Registering OpenAI");
+            registerProvider(new OpenAiProvider());
+        }*/
         
         if (getProvider("Modal") == null) {
             log.info("Registering Modal");
             registerProvider(new ModalProvider());
-        }
-
-        if (getProvider("OpenAI") == null) {
-            log.info("Registering OpenAI");
-            registerProvider(new OpenAiProvider());
         }
         
         if (getProvider("HuggingFace") == null) {

@@ -360,8 +360,8 @@ public class AsiContainerPreferencesPanel extends JPanel {
      */
     private void addDraftOpenAiProvider(JTabbedPane providerTabs) {
         String uuid = java.util.UUID.randomUUID().toString();
-        uno.anahata.asi.openai.OpenAiCompatibleProvider draft = 
-                new uno.anahata.asi.openai.OpenAiCompatibleProvider(uuid, "New Provider", "https://api.openai.com/v1", null, null);
+        uno.anahata.asi.openai.compatible.OpenAiCompatibleProvider draft = 
+                new uno.anahata.asi.openai.compatible.OpenAiCompatibleProvider(uuid, "New Provider", "https://api.openai.com/v1", null, null);
         unsavedProviders.add(draft);
         refreshProviderTabs(providerTabs);
         providerTabs.setSelectedIndex(providerTabs.getTabCount() - 1);

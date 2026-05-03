@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.openai.adapter;
+package uno.anahata.asi.openai.compatible.adapter;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -61,7 +61,7 @@ public class OpenAiChatCompletionsResponseAdapter {
     private final TokenizerType tokenizerType;
 
     /** Reasoning style of the target model. */
-    private final uno.anahata.asi.openai.ReasoningStyle reasoningStyle;
+    private final uno.anahata.asi.openai.compatible.ReasoningStyle reasoningStyle;
     /** Tags used for reasoning (e.g., ["<think>", "</think>"]). */
     private final List<String> reasoningTags;
 
@@ -220,7 +220,7 @@ public class OpenAiChatCompletionsResponseAdapter {
                 
                 // Thought Tagging: If this is a thought part and the model uses TAGS style,
                 // we wrap the text in the appropriate tags to preserve the model's "flow".
-                if (mtp.isThought() && reasoningStyle == uno.anahata.asi.openai.ReasoningStyle.TAGS 
+                if (mtp.isThought() && reasoningStyle == uno.anahata.asi.openai.compatible.ReasoningStyle.TAGS 
                         && reasoningTags != null && reasoningTags.size() >= 2) {
                     text = reasoningTags.get(0) + text + reasoningTags.get(1);
                 }

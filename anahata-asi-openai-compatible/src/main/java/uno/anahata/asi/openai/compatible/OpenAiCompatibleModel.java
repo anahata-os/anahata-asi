@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.openai;
+package uno.anahata.asi.openai.compatible;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -22,6 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.message.AbstractMessage;
 import uno.anahata.asi.agi.message.AbstractModelMessage;
+import uno.anahata.asi.agi.message.AbstractPart;
+import uno.anahata.asi.agi.message.ModelTextPart;
 import uno.anahata.asi.agi.message.ResponseUsageMetadata;
 import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.agi.provider.GenerationRequest;
@@ -33,7 +35,8 @@ import uno.anahata.asi.agi.provider.StreamObserver;
 import uno.anahata.asi.agi.tool.schema.SchemaProvider;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.internal.JacksonUtils;
-import uno.anahata.asi.openai.adapter.OpenAiChatCompletionsResponseAdapter;
+import uno.anahata.asi.internal.TokenizerUtils;
+import uno.anahata.asi.openai.compatible.adapter.OpenAiChatCompletionsResponseAdapter;
 
 /**
  * A concrete implementation of {@link AbstractModel} that communicates with any
@@ -179,45 +182,68 @@ public class OpenAiCompatibleModel extends AbstractModel {
     public Response generateContent(GenerationRequest request) {
         Agi agi = request.config().getAgi();
         ObjectNode payload = preparePayload(request, false);
-        String jsonPayload = payload.toString();
-
-        JsonNode historyNode = payload.get("messages");
-        if (historyNode == null) {
-            historyNode = payload.get("input");
+        // --- Refined Partitioning ---
+        // 1. Request Config JSON: Everything except history/input items
+        ObjectNode configNode = payload.deepCopy();
+        JsonNode messagesNode = configNode.remove("messages");
+        JsonNode inputNode = configNode.remove("input");
+        JsonNode promptNode = configNode.remove("prompt");
+        // Always include consolidated SI in the Config partition for visibility
+        if (!request.config().getSystemInstructions().isEmpty()) {
+            configNode.put("consolidated_system_instructions", String.join("\n\n", request.config().getSystemInstructions()));
         }
-        if (historyNode == null) {
-            historyNode = payload.get("prompt");
+        String configJson = configNode.toPrettyString();
+        // 2. History JSON: Only the conversational items (User/Assistant/Tool)
+        JsonNode rawHistoryNode = messagesNode != null ? messagesNode : (inputNode != null ? inputNode : promptNode);
+        String historyJson = "[]";
+        if (rawHistoryNode != null && rawHistoryNode.isArray()) {
+            ArrayNode historyArray = SchemaProvider.OBJECT_MAPPER.createArrayNode();
+            for (JsonNode m : rawHistoryNode) {
+                // Strictly filter out system messages to avoid cluttering the History view
+                // In V2, the role is inside the item: {"type": "message", "role": "system"}
+                boolean isSystem = "system".equals(m.path("role").asText()) || "system".equals(m.path("type").asText());
+                if (!isSystem) {
+                    historyArray.add(m);
+                }
+            }
+            historyJson = historyArray.toPrettyString();
+        } else if (rawHistoryNode != null) {
+            historyJson = rawHistoryNode.toPrettyString();
         }
-        String historyJson = historyNode != null ? historyNode.toString() : "[]";
-
         log.info("Executing OpenAI request to endpoint: {}", getEndpoint());
         try {
-            HttpRequest httpRequest = provider.createRequestBuilder(getEndpoint()).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(jsonPayload)).build();
+            HttpRequest httpRequest = provider.createRequestBuilder(getEndpoint()).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(payload.toString())).build();
             try (HttpClient client = provider.createHttpClient()) {
                 HttpResponse<String> httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
                 if (httpResponse.statusCode() != 200) {
                     String errorBody = httpResponse.body();
                     if (provider.isRetryable(httpResponse.statusCode(), errorBody)) {
-                        log.info("Retryable error detected ({}). Rotating key and retrying...", httpResponse.statusCode());
                         provider.hokusPocus();
                         throw new RetryableApiException(provider.getCurrentApiKey(), "API error (" + httpResponse.statusCode() + "): " + errorBody, null);
                     }
                     throw new RuntimeException("API error (" + httpResponse.statusCode() + "): " + errorBody);
                 }
-                return new OpenAiResponse(agi, modelId, httpResponse.body(), jsonPayload, historyJson, this);
+                return new OpenAiResponse(agi, modelId, httpResponse.body(), configJson, historyJson, this);
             }
         } catch (IOException | InterruptedException e) {
             log.error("Failed to execute OpenAI request", e);
             throw new RuntimeException(e);
         }
     }
-
+    // --- Refined Partitioning ---
+    // Include consolidated SI in Config view for better clarity
+    // Filter out system roles from history JSON as they are now in the Config partition
+        // --- Refined Partitioning ---
+    // Include consolidated SI in Config view for better clarity
+    // Filter out system roles from history JSON as they are now in the Config partition
+        // Partition JSON: History vs Config (Gemini-style partitioning for status panel)
+    
     @Override
     public void generateContentStream(GenerationRequest request, StreamObserver<Response<? extends AbstractModelMessage>> observer) {
         Agi agi = request.config().getAgi();
         ObjectNode payload = preparePayload(request, true);
         String jsonPayload = payload.toString();
-
+        // Partition JSON: History vs Config
         JsonNode historyNode = payload.get("messages");
         if (historyNode == null) {
             historyNode = payload.get("input");
@@ -226,7 +252,11 @@ public class OpenAiCompatibleModel extends AbstractModel {
             historyNode = payload.get("prompt");
         }
         String historyJson = historyNode != null ? historyNode.toString() : "[]";
-
+        ObjectNode configNode = payload.deepCopy();
+        configNode.remove("messages");
+        configNode.remove("input");
+        configNode.remove("prompt");
+        String configJson = configNode.toString();
         log.info("Executing OpenAI streaming request to endpoint: {}", getEndpoint());
         try {
             HttpRequest httpRequest = provider.createRequestBuilder(getEndpoint()).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(jsonPayload)).build();
@@ -239,7 +269,6 @@ public class OpenAiCompatibleModel extends AbstractModel {
                     try (Stream<String> bodyStream = response.body()) {
                         errorMsg = bodyStream.collect(Collectors.joining("\n"));
                     }
-
                     if (provider.isRetryable(response.statusCode(), errorMsg)) {
                         log.info("Retryable streaming error detected ({}). Rotating key and retrying...", response.statusCode());
                         provider.hokusPocus();
@@ -273,7 +302,6 @@ public class OpenAiCompatibleModel extends AbstractModel {
                                 observer.onError(new RuntimeException("OpenAI Stream Chunk Error: " + chunk.get("error").path("message").asText()));
                                 return;
                             }
-
                             // 1. Handle Responses API Events (response.*)
                             if (chunk.has("type") && chunk.get("type").asText().startsWith("response.")) {
                                 if (!started.get()) {
@@ -302,14 +330,11 @@ public class OpenAiCompatibleModel extends AbstractModel {
                                     }
                                 }
                             }
-
                             // Accumulate raw JSON chunk
                             for (OpenAiModelMessage target : targets) {
                                 target.appendRawJson(data);
                             }
-
-                            OpenAiResponse chunkResponse = new OpenAiResponse(agi, modelId, data, jsonPayload, historyJson, this);
-
+                            OpenAiResponse chunkResponse = new OpenAiResponse(agi, modelId, data, configJson, historyJson, this);
                             // Accumulate usage metadata if present in this chunk (like Gemini does)
                             // OpenAI typically sends usage only in the final chunk
                             if (chunkResponse.getUsageMetadata() != null
@@ -318,57 +343,48 @@ public class OpenAiCompatibleModel extends AbstractModel {
                                     target.setBilledTokenCount(chunkResponse.getUsageMetadata().getCandidatesTokenCount());
                                 }
                             }
-
                             observer.onNext(chunkResponse);
                         } catch (Exception e) {
                             log.error("Failed to parse OpenAI stream chunk: {}", data, e);
                         }
                     }
                 }
-
                 // Set the final response on each target message (like Gemini does)
                 if (!targets.isEmpty()) {
                     // Check if we ever received usage from the API during streaming
                     // Modal's GLM-5 returns usage: null in all streaming chunks
                     boolean usageProvided = targets.stream()
-                            .anyMatch(t -> t.getBilledTokenCount() > 0);
-
+                            .anyMatch(t-> t.getBilledTokenCount() > 0);
                     OpenAiResponse finalResponse;
-
                     if (!usageProvided) {
                         // No usage provided by API - estimate tokens ourselves
                         log.info("No usage metadata provided by API, estimating tokens using {} tokenizer", getTokenizerType());
-
                         // Estimate prompt tokens from the payload
-                        int estimatedPromptTokens = uno.anahata.asi.internal.TokenizerUtils.countTokens(
+                        int estimatedPromptTokens = TokenizerUtils.countTokens(
                                 jsonPayload, getTokenizerType());
-
                         // Estimate completion tokens from accumulated content per target
                         int totalCompletionTokens = 0;
                         for (OpenAiModelMessage target : targets) {
                             // Get accumulated text content from parts
                             StringBuilder contentBuilder = new StringBuilder();
-                            for (uno.anahata.asi.agi.message.AbstractPart part : target.getParts()) {
-                                if (part instanceof uno.anahata.asi.agi.message.ModelTextPart mtp) {
+                            for (AbstractPart part : target.getParts()) {
+                                if (part instanceof ModelTextPart mtp) {
                                     contentBuilder.append(mtp.getText());
                                 }
                             }
-                            int estimatedCompletionTokens = uno.anahata.asi.internal.TokenizerUtils.countTokens(
+                            int estimatedCompletionTokens = TokenizerUtils.countTokens(
                                     contentBuilder.toString(), getTokenizerType());
                             totalCompletionTokens += estimatedCompletionTokens;
                             target.setBilledTokenCount(estimatedCompletionTokens);
                         }
-
                         // Create response with estimated usage metadata
-                        finalResponse = createResponseWithEstimatedUsage(
-                                agi, modelId, jsonPayload, historyJson,
+                        finalResponse = createResponseWithEstimatedUsage(agi, modelId, configJson, historyJson,
                                 estimatedPromptTokens, totalCompletionTokens, getTokenizerType());
                     } else {
                         finalResponse = new OpenAiResponse(agi, modelId,
                                 targets.get(0).getRawJson() != null ? targets.get(0).getRawJson() : "{}",
-                                jsonPayload, historyJson, this);
+                                configJson, historyJson, this);
                     }
-
                     for (OpenAiModelMessage target : targets) {
                         target.setResponse(finalResponse);
                         target.setStreaming(false);
@@ -381,7 +397,20 @@ public class OpenAiCompatibleModel extends AbstractModel {
             observer.onError(e);
         }
     }
-
+    // 1. Handle Responses API Events (response.*)
+    // 2. Handle standard Chat Completions Choices
+    // Accumulate raw JSON chunk
+    // Accumulate usage metadata if present in this chunk (like Gemini does)
+    // OpenAI typically sends usage only in the final chunk
+    // Set the final response on each target message (like Gemini does)
+    // Check if we ever received usage from the API during streaming
+    // Modal's GLM-5 returns usage: null in all streaming chunks
+    // No usage provided by API - estimate tokens ourselves
+    // Estimate prompt tokens from the payload
+    // Estimate completion tokens from accumulated content per target
+    // Get accumulated text content from parts
+    // Create response with estimated usage metadata
+    
     private void routeChunk(JsonNode choice, OpenAiModelMessage target) {
         JsonNode delta = choice.get("delta");
         if (delta == null) {
@@ -526,18 +555,15 @@ public class OpenAiCompatibleModel extends AbstractModel {
         ObjectNode payload = SchemaProvider.OBJECT_MAPPER.createObjectNode();
         payload.put("model", modelId);
         payload.put("stream", stream);
-
-        ArrayNode messages = payload.putArray("messages");
-
-        // 1. Inject System Instructions if present in config
-        if (!request.config().getSystemInstructions().isEmpty()) {
-            for (String si : request.config().getSystemInstructions()) {
-                messages.addObject()
-                        .put("role", "system")
-                        .put("content", si);
-            }
+        if (stream) {
+            payload.putObject("stream_options").put("include_usage", true);
         }
-
+        ArrayNode messages = payload.putArray("messages");
+        // 1. Consolidated System Instructions
+        if (!request.config().getSystemInstructions().isEmpty()) {
+            String si = String.join("\n\n", request.config().getSystemInstructions());
+            messages.addObject().put("role", "system").put("content", si);
+        }
         // 2. Inject Conversation History
         boolean includePruned = request.config().isIncludePruned();
         for (AbstractMessage msg : request.history()) {
@@ -545,7 +571,6 @@ public class OpenAiCompatibleModel extends AbstractModel {
                     reasoningStyle, reasoningTags).toOpenAi();
             messages.addAll(translated);
         }
-
         // 3. Local Tools
         List<? extends AbstractTool> localTools = request.config().getLocalTools();
         if (localTools != null && !localTools.isEmpty()) {
@@ -558,52 +583,54 @@ public class OpenAiCompatibleModel extends AbstractModel {
                 }
             }
         }
-
         if (request.config().getTemperature() != null) {
-            log.info("setting temperature {}" + request.config().getTemperature());
             payload.put("temperature", request.config().getTemperature());
         }
         if (request.config().getTopP() != null) {
-            log.info("setting top_p {}" + request.config().getTopP());
             payload.put("top_p", request.config().getTopP());
         }
-
-        // 4. Dynamic max_tokens calculation to prevent context overflow
+        // 4. Dynamic max_tokens calculation
         if (request.config().getMaxOutputTokens() != null) {
             int requestedMaxOutput = request.config().getMaxOutputTokens();
             int userThreshold = request.config().getAgi().getConfig().getTokenThreshold();
-
-            // Calculate effective limit: min of model's max input and user's threshold
             int effectiveLimit = Math.min(maxInputTokens, userThreshold > 0 ? userThreshold : maxInputTokens);
-
-            // Estimate payload tokens using the tokenizer
             String payloadStr = payload.toString();
-            int estimatedPayloadTokens = uno.anahata.asi.internal.TokenizerUtils.countTokens(payloadStr, getTokenizerType());
-
-            // Calculate available tokens for output
+            int estimatedPayloadTokens = TokenizerUtils.countTokens(payloadStr, getTokenizerType());
             int availableForOutput = effectiveLimit - estimatedPayloadTokens;
-
-            // Final max_tokens is the minimum of requested and available
             int actualMaxOutput = Math.min(requestedMaxOutput, availableForOutput);
-
             if (actualMaxOutput < requestedMaxOutput) {
-                log.warn("Reducing max_tokens from {} to {} due to context limit (payload: {} tokens, effective limit: {})",
-                        requestedMaxOutput, actualMaxOutput, estimatedPayloadTokens, effectiveLimit);
+                log.warn("Reducing max_tokens from {} to {} due to context limit", requestedMaxOutput, actualMaxOutput);
             }
-
-            // Ensure at least 1 token for output
             actualMaxOutput = Math.max(actualMaxOutput, 1);
-
-            log.info("Setting max_tokens: {} (requested: {}, payload: {}, effective limit: {})",
-                    actualMaxOutput, requestedMaxOutput, estimatedPayloadTokens, effectiveLimit);
             payload.put("max_tokens", actualMaxOutput);
         }
-
         enrichPayload(payload, request);
-
         return payload;
     }
-
+    // 1. Consolidated System Instructions
+    // 2. Inject Conversation History
+    // 3. Local Tools
+    // 4. Dynamic max_tokens calculation
+        // Standard OpenAI include_usage for compatible providers
+    // 1. Inject System Instructions if present in config
+    // 2. Inject Conversation History
+    // 3. Local Tools
+    // 4. Dynamic max_tokens calculation to prevent context overflow
+    // Calculate effective limit: min of model's max input and user's threshold
+    // Estimate payload tokens using the tokenizer
+    // Calculate available tokens for output
+    // Final max_tokens is the minimum of requested and available
+    // Ensure at least 1 token for output
+        // 1. Inject System Instructions if present in config
+    // 2. Inject Conversation History
+    // 3. Local Tools
+    // 4. Dynamic max_tokens calculation to prevent context overflow
+    // Calculate effective limit: min of model's max input and user's threshold
+    // Estimate payload tokens using the tokenizer
+    // Calculate available tokens for output
+    // Final max_tokens is the minimum of requested and available
+    // Ensure at least 1 token for output
+    
     /**
      * Hook for subclasses to add or modify payload parameters before sending
      * the request.

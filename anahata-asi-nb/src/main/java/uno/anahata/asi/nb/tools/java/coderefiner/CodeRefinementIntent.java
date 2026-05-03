@@ -51,7 +51,7 @@ public class CodeRefinementIntent implements Serializable {
     @Schema(description = "The operation type.", required = true)
     private Type type;
 
-    @Schema(description = "The FQN of the target class (e.g. 'com.foo.Bar'). Mandatory for 'insert' inside a class. Use '$' for nested types. Leave empty for file-level.")
+    @Schema(description = "The FQN of the target class (e.g. 'com.foo.Bar'). Mandatory for 'INSERT' inside a class. Use '$' for nested types. Leave empty for file-level.")
     private String classFqn;
 
     @Schema(description = "The ABSOLUTE FQN of the member to operation on (e.g. 'com.foo.Bar.myMethod(java.util.List)'). FQNs are preferred for parameters. Generic brackets '<...>' are not required and will be ignored during matching.")
@@ -60,10 +60,10 @@ public class CodeRefinementIntent implements Serializable {
     @Schema(description = "The member signature (e.g. 'public void foo(List<String> items)'). Mandatory for 'INSERT', optional for 'UPDATE'. Javadocs are not supported here.")
     private String declaration;
 
-    @Schema(description = "The WHOLE body code. For methods, logic inside braces. For fields, the initializer expression (part after '=') so leave it blank if there is no initializer expression. Can be used with 'INSERT' and 'UPDATE'.")
+    @Schema(description = "For methods, The WHOLE body code, the logic inside the braces. For fields, the initializer expression (part after '=') or can be blank if there is no initializer expression. Use with 'INSERT' and 'UPDATE'.")
     private String body;
 
-    @Schema(description = "Position relative to the anchor member. Mandatory for 'insert' and 'move'.")
+    @Schema(description = "Position relative to the anchor member. **Mandatory for 'INSERT' and 'MOVE'**.")
     private RelativePosition position;
 
     @Schema(description = "Anchor member name relative to class (e.g. 'myMethod()'). Mandatory for BEFORE/AFTER positions in 'INSERT' and 'MOVE'.")

@@ -55,6 +55,9 @@ public final class RequestConfigAdapter {
 
         GenerateContentConfig.Builder builder = GenerateContentConfig.builder();
         
+        builder.shouldReturnHttpResponse(false);
+        builder.clearHttpOptions();
+        
         if (!requestConfig.getSystemInstructions().isEmpty()) {
             List<Part> parts = new ArrayList<>();
             for (String si : requestConfig.getSystemInstructions()) {

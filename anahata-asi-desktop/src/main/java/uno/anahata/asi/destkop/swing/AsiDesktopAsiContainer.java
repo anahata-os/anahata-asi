@@ -12,7 +12,6 @@ import uno.anahata.asi.gemini.GeminiAiProvider;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.huggingface.HuggingFaceProvider;
-import uno.anahata.asi.openai.OpenAiCompatibleProvider;
 import uno.anahata.asi.openai.OpenAiProvider;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.agi.AgiPanel;
@@ -83,11 +82,13 @@ public class AsiDesktopAsiContainer extends AbstractSwingAsiContainer {
             registerProvider(new HuggingFaceProvider());
         }
         
+        /*
+        
         if (getProvider("Anahata") == null) {
             log.info("Registering Anahata");
             registerProvider(new OpenAiCompatibleProvider(                    
                     "Anahata", "Anahata (no SSL)", "http://a.anahata.uno:1234/v1", "Anahata", "https://discord.com/invite/gwGWWxPUXE"));
-        }
+        }*/
         
     }
 
