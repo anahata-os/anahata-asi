@@ -68,9 +68,12 @@ public class BatchCodeRefiner extends AnahataToolkit {
                 + "### BatchCodeRefiner Toolkit Instructions\n"
                 + "1. **Context Locked**: You MUST have the resource in your RAG message (context) to propose a refinement.\n"
                 + "2. **Batch Intents**: You can combine multiple structural changes (INSERT, UPDATE, DELETE, MOVE) in one call.\n"
-                + "3. **Optimistic Locking**: Always use the `lastModified` timestamp from the RAG message.\n"
+                + "3. **Optimistic Locking**: Always use the `lastModified` timestamp from the RAG message. "
+                        + "\n\tNote: You can't update the same file twice in the same turn otherwise the first one will change the lastModified and the second one will fail with an optimistic locking exception but you can do as many inserts and updates as you want in a single tool call\n"
                 + "4. **Field Initializers**: Put the expression (code after '=') in the `body` field or leave the body empty for fields if you don't want any initialzier expression.\n"
                 + "5. **Javadocs**: Use the specialized Javadocs toolkit for updating documentation.\n"
+                + "6. **No imports**: Do not use this tookit to add imports, use CodeRefiner..\n"
+                + "6. **No records**: Do not use this tookit to inser or update records, there is a bug in netbeans when adding or updating records using the AST apis, use the Resources toolkit for records.\n"
         );
     }
 
@@ -86,8 +89,9 @@ public class BatchCodeRefiner extends AnahataToolkit {
     @AgiTool("The definitive structural Java refiner. "
             + "Applies a batch of member lvel modifications to a java file. "
             + "Does not support javadoc on the declaration. "
-            + "For fields, declaration is what goes to the left of the '=', body is the initializer expression to the right of the '=', leave 'body' empty if you just want to insert a field without initializer expression. "
-            + "Do not attempt to insert imports using this tool, just put the fully qualified types and optimize true and the tool will import them automatically. Use 'CodeRefiner.addImports' to simply add imports.")
+            + "Does not support java records due to a bug in netbeans. "
+            + "You can't use this tool to add imports, just use the fqn of any types not in the imports list with optimize=true to let netbeans import them automatically or use CodeRefiner.addImports to surgically add imports. "
+            + "For fields, declaration is what goes to the left of the '=', body is the initializer expression to the right of the '=', leave 'body' empty if you just want to insert a field without initializer expression. ")
     public String refine(
             @AgiToolParam("The robust refinement batch.") CodeRefinementBatch batch
     ) throws Exception {
@@ -433,3 +437,4 @@ public class BatchCodeRefiner extends AnahataToolkit {
     }
 
 }
+
