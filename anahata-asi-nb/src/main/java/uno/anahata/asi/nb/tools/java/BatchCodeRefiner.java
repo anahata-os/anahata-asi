@@ -73,7 +73,8 @@ public class BatchCodeRefiner extends AnahataToolkit {
                 + "4. **Field Initializers**: Put the expression (code after '=') in the `body` field or leave the body empty for fields if you don't want any initialzier expression.\n"
                 + "5. **Javadocs**: Use the specialized Javadocs toolkit for updating documentation.\n"
                 + "6. **No imports**: Do not use this tookit to add imports, use CodeRefiner..\n"
-                + "6. **No records**: Do not use this tookit to inser or update records, there is a bug in netbeans when adding or updating records using the AST apis, use the Resources toolkit for records.\n"
+                + "7. **No records**: Do not use this tookit to inser or update records, there is a bug in netbeans when adding or updating records using the AST apis, use the Resources toolkit for records.\n"
+                + "8. **No training knowledge**: Do not use your training knoweldge, this toolkit is unique to Anahata you have to pay very close attention to the tool definition and the paramters schema.\n"
         );
     }
 
@@ -88,10 +89,16 @@ public class BatchCodeRefiner extends AnahataToolkit {
      */
     @AgiTool("The definitive structural Java refiner. "
             + "Applies a batch of member lvel modifications to a java file. "
-            + "Does not support javadoc on the declaration. "
+            + "RelativePosition is mandatory for all INSERT and MOVE. "
+            + "When updating a member, you can update both the declaration and the body in the same UPDATE intent or you can just do the body or just the declaration. "
+            + "Don't put the delcaration a field or a method in the 'body' attribute, the declaration (signature) must be in the declaration field only. "
+            + "If you update the declaration of a method, you must include the full delcaration with all annotations and all throws clauses. "
+            + "Does not support member level javadocs on the 'declaration' (and obvioulsy not in the 'body'). "
+            + "Use the javadocs toolkit for adding javadoc in a separate tool call because 1) this tool does not support javadocs and 2) Javadocs.setJavadoc also changes the latModified timestamp on disk"
             + "Does not support java records due to a bug in netbeans. "
+            + "It's not a find-and-replace tool, use the Resources toolkit for that. "
             + "You can't use this tool to add imports, just use the fqn of any types not in the imports list with optimize=true to let netbeans import them automatically or use CodeRefiner.addImports to surgically add imports. "
-            + "For fields, declaration is what goes to the left of the '=', body is the initializer expression to the right of the '=', leave 'body' empty if you just want to insert a field without initializer expression. ")
+            + "For fields, declaration is what goes to the left of the '=', body is the initializer expression to the right of the '=', leave 'body' empty if you just want to insert a field without initializer expression. You cannot add javadocs to the declaration and you cannot put the field")
     public String refine(
             @AgiToolParam("The robust refinement batch.") CodeRefinementBatch batch
     ) throws Exception {
