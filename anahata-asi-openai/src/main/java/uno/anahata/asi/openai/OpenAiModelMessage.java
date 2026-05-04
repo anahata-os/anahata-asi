@@ -65,10 +65,14 @@ public class OpenAiModelMessage extends AbstractModelMessage<OpenAiResponse> {
                 for (JsonNode part : content) {
                     String partType = part.path("type").asText();
                     String text = part.path("text").asText();
+                    TextPart tp = null;
                     if ("output_text".equals(partType)) {
-                        addTextPart(text, null, false);
+                        tp = addTextPart(text, null, false);
                     } else if ("reasoning_content".equals(partType)) {
-                        addTextPart(text, null, true);
+                        tp = addTextPart(text, null, true);
+                    }
+                    if (tp != null) {
+                        tp.setProviderId(id);
                     }
                 }
             }
@@ -93,7 +97,7 @@ public class OpenAiModelMessage extends AbstractModelMessage<OpenAiResponse> {
             }
         } else if ("function_call".equals(type)) {
             String callId = item.path("call_id").asText();
-            String ns = item.path("namespace").asText();
+            String ns = item.path("namespace").asText(null);
             String name = item.path("name").asText();
             String argsJson = item.path("arguments").asText("{}");
             // Reconstruct the Canonical FQN for Anahata tool lookup
