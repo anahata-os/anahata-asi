@@ -20,11 +20,11 @@ import uno.anahata.asi.agi.provider.Response;
  * @author anahata
  */
 @Getter
-public class OpenAiResponse extends Response<OpenAiMessage> {
+public class OpenAiResponse extends Response<OpenAiModelMessage> {
 
     private static final ObjectMapper API_MAPPER = new ObjectMapper();
 
-    private final List<OpenAiMessage> candidates;
+    private final List<OpenAiModelMessage> candidates;
     private final ResponseUsageMetadata usageMetadata;
     private final String rawJson;
     private final String rawRequestConfigJson;
@@ -53,7 +53,7 @@ public class OpenAiResponse extends Response<OpenAiMessage> {
         }
 
         // 2. Aggregate all output items into ONE turn message
-        OpenAiMessage turnMessage = new OpenAiMessage(agi, modelVersion);
+        OpenAiModelMessage turnMessage = new OpenAiModelMessage(agi, modelVersion);
         turnMessage.setResponse(this);
         turnMessage.setRawJson(responseBody);
         

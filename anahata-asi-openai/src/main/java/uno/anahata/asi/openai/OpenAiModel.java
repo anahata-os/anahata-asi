@@ -24,15 +24,16 @@ import uno.anahata.asi.agi.provider.Response;
 import uno.anahata.asi.agi.provider.RetryableApiException;
 import uno.anahata.asi.agi.provider.ServerTool;
 import uno.anahata.asi.agi.provider.StreamObserver;
+import uno.anahata.asi.agi.provider.ThinkingLevel;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.agi.tool.spi.AbstractToolParameter;
 
 /**
  * Native implementation for OpenAI models using the Responses API (/v1/responses).
  * 
- * <p>This implementation performs "Partitioned Construction" of the request payload,
- * explicitly building the Identity (Config) and Memory (History) JSON strings 
- * during assembly to ensure perfect synchronization with the UI raw JSON viewers.</p>
+ * <p>This implementation performs "Partitioned Construction" of the request payload
+ * by assembling the full API body and then extracting the Identity (Config) 
+ * and Memory (History) JSON strings from it for UI visibility.</p>
  * 
  * @author anahata
  */
@@ -156,110 +157,111 @@ public class OpenAiModel extends AbstractModel {
      */
     public record PreparedPayload(String fullPayload, String configJson, String historyJson) {}
 
-    private PreparedPayload preparePayload(GenerationRequest request) throws Exception {
+    @SneakyThrows
+    private PreparedPayload preparePayload(GenerationRequest request) {
         ObjectNode root = API_MAPPER.createObjectNode();
         root.put("model", modelId);
+        root.put("store", false); // Stateless ASI mode
         
-        // 1. Config Partition (Identity: SI and Tools)
-        ObjectNode configNode = API_MAPPER.createObjectNode();
-        configNode.put("model", modelId);
-        
+        ArrayNode include = root.putArray("include");
+        include.add("reasoning.encrypted_content");
+
+        // 1. Identity / Behavioral Params
+        ThinkingLevel level = request.config().getThinkingLevel();
+        if (level != null && level != ThinkingLevel.THINKING_LEVEL_UNSPECIFIED) {
+            String effort = switch (level) {
+                case NONE -> "none";
+                case MINIMAL, LOW -> "low";
+                case MEDIUM -> "medium";
+                case HIGH -> "high";
+                case XHIGH -> "xhigh";
+                default -> null;
+            };
+            if (effort != null) {
+                ObjectNode reasoning = root.putObject("reasoning");
+                reasoning.put("effort", effort);
+                if (request.config().getAgi().getConfig().isIncludeThoughts()) {
+                    reasoning.put("generate_summary", "auto");
+                }
+            }
+        }
+
         List<String> si = request.config().getSystemInstructions();
         if (!si.isEmpty()) {
-            String consolidatedSi = String.join("\n\n", si);
-            root.put("instructions", consolidatedSi);
-            configNode.put("consolidated_system_instructions", consolidatedSi);
+            root.put("instructions", String.join("\n\n", si));
         }
 
         // Tools
         if (request.config().getLocalTools() != null && !request.config().getLocalTools().isEmpty()) {
             ArrayNode toolsArray = root.putArray("tools");
-            ArrayNode configTools = configNode.putArray("tools");
-            
-            // Group tools by toolkit to create namespaces
             Map<uno.anahata.asi.agi.tool.spi.AbstractToolkit, List<AbstractTool>> grouped = (Map) request.config().getLocalTools().stream()
                     .collect(java.util.stream.Collectors.groupingBy(AbstractTool::getToolkit));
 
             for (var entry : grouped.entrySet()) {
-                var toolkit = entry.getKey();
-                var tools = entry.getValue();
-
-                ObjectNode namespaceNode = API_MAPPER.createObjectNode();
+                ObjectNode namespaceNode = toolsArray.addObject();
                 namespaceNode.put("type", "namespace");
-                namespaceNode.put("name", toolkit.getName());
-                namespaceNode.put("description", toolkit.getDescription());
+                namespaceNode.put("name", entry.getKey().getName());
+                namespaceNode.put("description", entry.getKey().getDescription());
                 ArrayNode nsTools = namespaceNode.putArray("tools");
 
-                for (AbstractTool<?, ?> tool : tools) {
-                    String decl = getToolDeclarationJson(tool, request.config());
-                    nsTools.add(API_MAPPER.readTree(decl));
+                for (AbstractTool<?, ?> tool : entry.getValue()) {
+                    nsTools.add(API_MAPPER.readTree(getToolDeclarationJson(tool, request.config())));
                 }
-                toolsArray.add(namespaceNode);
-                configTools.add(namespaceNode);
             }
         }
         
-        // 2. History Partition (Memory: User/Model items)
+        // 2. Memory / History
         ArrayNode input = root.putArray("input");
-        ArrayNode historyNode = API_MAPPER.createArrayNode();
-        
         boolean includePruned = request.config().isIncludePruned();
         for (AbstractMessage msg : request.history()) {
-            List<ObjectNode> items = new OpenAiItemAdapter(msg, includePruned, getModelId()).toItems();
-            for (ObjectNode item : items) {
-                input.add(item);
-                historyNode.add(item);
-            }
+            input.addAll(new OpenAiItemAdapter(msg, includePruned, getModelId()).toItems());
         }
 
-        return new PreparedPayload(
-            root.toString(),
-            configNode.toPrettyString(),
-            historyNode.toPrettyString()
-        );
+        // Partitioning: Extract for the UI
+        String historyJson = input.toPrettyString();
+        ObjectNode configNode = root.deepCopy();
+        configNode.remove("input");
+        if (root.has("instructions")) {
+            configNode.put("consolidated_system_instructions", root.get("instructions").asText());
+        }
+
+        return new PreparedPayload(root.toString(), configNode.toPrettyString(), historyJson);
     }
 
     @Override
+    @SneakyThrows
     public Response generateContent(GenerationRequest request) {
-        try {
-            PreparedPayload prepared = preparePayload(request);
-            String apiKey = provider.getCurrentKey();
-            
-            System.out.println("--- Request Config JSON (SI & Tools) ---");
-            System.out.println(prepared.configJson());
-            System.out.println("--- History JSON (User & Model) ---");
-            System.out.println(prepared.historyJson());
+        PreparedPayload prepared = preparePayload(request);
+        String apiKey = provider.getCurrentKey();
 
-            HttpRequest httpRequest = HttpRequest.newBuilder()
-                    .uri(URI.create("https://api.openai.com/v1/responses"))
-                    .header("Authorization", "Bearer " + apiKey)
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(prepared.fullPayload()))
-                    .build();
+        System.out.println("--- Request Config JSON (SI & Tools) ---");
+        System.out.println(prepared.configJson());
+        System.out.println("--- History JSON (User & Model) ---");
+        System.out.println(prepared.historyJson());
 
-            HttpResponse<String> httpResponse = provider.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            
-            System.out.println("--- Entire Response JSON ---");
-            System.out.println(httpResponse.body());
+        HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.openai.com/v1/responses"))
+                .header("Authorization", "Bearer " + apiKey)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(prepared.fullPayload()))
+                .build();
 
-            if (httpResponse.statusCode() == 429 || httpResponse.statusCode() == 503) {
-                provider.hokusPocus();
-                throw new RetryableApiException(apiKey, "OpenAI API " + httpResponse.statusCode() + ": " + httpResponse.body(), null);
-            }
+        HttpResponse<String> httpResponse = provider.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
-            if (httpResponse.statusCode() != 200) {
-                throw new RuntimeException("OpenAI API error: " + httpResponse.statusCode() + " - " + httpResponse.body());
-            }
+        System.out.println("--- Entire Response JSON ---");
+        System.out.println(httpResponse.body());
 
-            return new OpenAiResponse(prepared.configJson(), prepared.historyJson(), 
-                    request.config().getAgi(), modelId, httpResponse.body());
-            
-        } catch (RetryableApiException rae) {
-            throw rae;
-        } catch (Exception e) {
-            log.error("Generation failed", e);
-            throw new RuntimeException(e);
+        if (httpResponse.statusCode() == 429 || httpResponse.statusCode() == 503) {
+            provider.hokusPocus();
+            throw new RetryableApiException(apiKey, "OpenAI API " + httpResponse.statusCode() + ": " + httpResponse.body(), null);
         }
+
+        if (httpResponse.statusCode() != 200) {
+            throw new RuntimeException("OpenAI API error: " + httpResponse.statusCode() + " - " + httpResponse.body());
+        }
+
+        return new OpenAiResponse(prepared.configJson(), prepared.historyJson(), 
+                request.config().getAgi(), modelId, httpResponse.body());
     }
 
     @Override
@@ -272,9 +274,7 @@ public class OpenAiModel extends AbstractModel {
     public String getToolDeclarationJson(AbstractTool<?, ?> tool, RequestConfig config) {
         Map<String, Object> decl = new HashMap<>();
         decl.put("type", "function");
-        // Use simple name since it is already scoped within a namespace item
         
-        // Use simple name since it is already scoped within a namespace item
         String fullName = tool.getName();
         String simpleName = fullName.contains(".") ? fullName.substring(fullName.lastIndexOf(".") + 1) : fullName;
         decl.put("name", simpleName);
@@ -287,8 +287,7 @@ public class OpenAiModel extends AbstractModel {
         List<String> required = new ArrayList<>();
         
         for (AbstractToolParameter param : tool.getParameters()) {
-            JsonNode pSchema = API_MAPPER.readTree(param.getJsonSchema());
-            properties.put(param.getName(), pSchema);
+            properties.put(param.getName(), API_MAPPER.readTree(param.getJsonSchema()));
             if (param.isRequired()) {
                 required.add(param.getName());
             }
@@ -301,10 +300,6 @@ public class OpenAiModel extends AbstractModel {
         decl.put("parameters", parameters);
         decl.put("strict", false);
         
-        try {
-            return API_MAPPER.writeValueAsString(decl);
-        } catch (Exception e) {
-            return "{}";
-        }
+        return API_MAPPER.writeValueAsString(decl);
     }
 }
