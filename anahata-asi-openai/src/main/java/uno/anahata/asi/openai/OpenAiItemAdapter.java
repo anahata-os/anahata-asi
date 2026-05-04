@@ -124,8 +124,8 @@ public class OpenAiItemAdapter {
                     if (partProviderId != null) {
                          currentMessageItem.put("id", partProviderId);
                     } else {
-                         // If model changed, we squash all text parts into a single turn message
-currentMessageItem.put("id", "msg_" + part.getSequentialId());
+                         // If model changed, we use the part ID to ensure uniqueness in interleaved turns
+                         currentMessageItem.put("id", "msg_" + part.getSequentialId());
                     }
                     
                     if (modelMsg instanceof OpenAiModelMessage oam && oam.getPhase() != null) {
@@ -203,34 +203,38 @@ currentMessageItem.put("id", "msg_" + part.getSequentialId());
             return;
         }
 
-        // Assistant items in history must use 'output_text'. 
-        // User and System items must use 'input_text'.
-        String typePrefix = "assistant".equals(role) ? "output_text" : "input_text";
-
         if (part instanceof TextPart tp) {
+            // Assistant items in history must use 'output_text'. 
+            // User and System items must use 'input_text'.
+            String typePrefix = "assistant".equals(role) ? "output_text" : "input_text";
             contentArray.addObject().put("type", typePrefix).put("text", tp.getText());
         } else if (part instanceof ModelTextPart mtp) {
+            String typePrefix = "assistant".equals(role) ? "output_text" : "input_text";
             contentArray.addObject().put("type", typePrefix).put("text", mtp.getText());
         } else if (part instanceof BlobPart bp) {
             String mime = bp.getMimeType();
             String b64 = Base64.getEncoder().encodeToString(bp.getData());
-            
+            String format = mime.contains("/") ? mime.substring(mime.indexOf("/") + 1) : mime;
+
             if (mime.startsWith("image/")) {
-                ObjectNode node = contentArray.addObject();
-                node.put("type", "input_image");
-                node.putObject("input_image").put("data", b64).put("format", mime.substring(mime.indexOf("/") + 1));
+                // OpenAI Responses API: Images in message content use 'image_url' with data URI format
+                contentArray.addObject()
+                        .put("type", "input_image")
+                        .put("image_url", "data:" + mime + ";base64," + b64);
             } else if (mime.startsWith("audio/")) {
-                ObjectNode node = contentArray.addObject();
-                node.put("type", "input_audio");
-                node.putObject("audio").put("data", b64).put("format", mime.substring(mime.indexOf("/") + 1));
+                // OpenAI Responses API: Audio in message content uses an 'input_audio' nested object
+                contentArray.addObject()
+                        .put("type", "input_audio")
+                        .putObject("input_audio")
+                        .put("data", b64)
+                        .put("format", format);
             } else {
-                ObjectNode node = contentArray.addObject();
-                node.put("type", "input_file");
-                node.put("file_data", b64);
-                node.put("mime_type", mime);
-                if (bp.getSourcePath() != null) {
-                    node.put("filename", bp.getSourcePath().getFileName().toString());
-                }
+                // OpenAI Responses API: Generic files use an 'input_file' nested object
+                contentArray.addObject()
+                        .put("type", "input_file")
+                        .putObject("input_file")
+                        .put("data", b64)
+                        .put("format", format);
             }
         }
     }
