@@ -23,10 +23,11 @@ import uno.anahata.asi.agi.tool.ToolPermission;
 import uno.anahata.asi.agi.status.AgiStatus;
 
 /**
- * Represents a message originating from the AI model. It extends {@link AbstractMessage},
- * sets its role to {@code MODEL}, and provides convenience methods for accessing tool calls.
- * In the V2 simplified architecture, this class acts as the atomic unit of a "turn", 
- * containing both model content and any resulting tool calls/responses.
+ * Represents a message originating from the AI model. It extends
+ * {@link AbstractMessage}, sets its role to {@code MODEL}, and provides
+ * convenience methods for accessing tool calls. In the V2 simplified
+ * architecture, this class acts as the atomic unit of a "turn", containing both
+ * model content and any resulting tool calls/responses.
  *
  * @author anahata-gemini-pro-2.5
  * @param <R> The type of the model response.
@@ -34,49 +35,77 @@ import uno.anahata.asi.agi.status.AgiStatus;
 @Getter
 @Setter
 public abstract class AbstractModelMessage<R extends Response> extends AbstractMessage {
-    
-    /** The ID of the model that generated this message. */
+
+    /**
+     * If an AI provider produced this part and assigned an Id to it (e.g. an
+     * openai message id).
+     *
+     */
+    private String providerId;
+
+    /**
+     * The ID of the model that generated this message.
+     */
     private String modelId;
-    
-    /** The reason why the model stopped generating content for this candidate. */
+
+    /**
+     * The reason why the model stopped generating content for this candidate.
+     */
     @Setter(AccessLevel.NONE)
-    private FinishReason finishReason; 
-    
-    /** The message explaining why the model stopped generating content for this candidate. */
+    private FinishReason finishReason;
+
+    /**
+     * The message explaining why the model stopped generating content for this
+     * candidate.
+     */
     private String finishMessage;
-    
-    /** The grounding metadata for the response. */
+
+    /**
+     * The grounding metadata for the response.
+     */
     @Setter(AccessLevel.NONE)
     private GroundingMetadata groundingMetadata;
-    
-    /** The safety ratings for the response, summarized as a string. */
+
+    /**
+     * The safety ratings for the response, summarized as a string.
+     */
     private String safetyRatings;
-    
-    /** The number of billed tokens for this candidate, as reported by the API. */
+
+    /**
+     * The number of billed tokens for this candidate, as reported by the API.
+     */
     private int billedTokenCount;
-    
-    /** The raw JSON response from the model. */
+
+    /**
+     * The raw JSON response from the model.
+     */
     @Setter(AccessLevel.NONE)
     private String rawJson;
-    
-    /** The citation metadata for the response, summarized as a string. */
+
+    /**
+     * The citation metadata for the response, summarized as a string.
+     */
     private String citationMetadata;
-    
-    /** The response that returned this message. */
+
+    /**
+     * The response that returned this message.
+     */
     private R response;
-    
-    /** Whether the model is currently streaming content for this message. */
+
+    /**
+     * Whether the model is currently streaming content for this message.
+     */
     private boolean streaming = false;
-    
+
     /**
      * A turn scoped map for tools to store turn-scoped attributes.
      */
     @Setter(AccessLevel.NONE)
     private final Map turnAttributes = new HashMap();
-    
+
     /**
      * Constructs a new AbstractModelMessage.
-     * 
+     *
      * @param agi The parent agi session.
      * @param modelId The ID of the model.
      */
@@ -84,29 +113,35 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
         super(agi);
         this.modelId = modelId;
     }
-    
-    /** {@inheritDoc} */
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Role getRole() {
         return Role.MODEL;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getFrom() {
         return modelId;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getDevice() {
         return "Cloud";
     }
 
     /**
-     * Sets the raw JSON representation of the model's response and fires a property change event.
-     * This method replaces any existing content.
-     * 
+     * Sets the raw JSON representation of the model's response and fires a
+     * property change event. This method replaces any existing content.
+     *
      * @param rawJson The raw JSON string.
      */
     public void setRawJson(String rawJson) {
@@ -119,7 +154,7 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
      * Appends a raw JSON chunk to the existing content. If multiple chunks are
      * appended, they are automatically wrapped in a JSON array to maintain
      * validity for pretty-printing.
-     * 
+     *
      * @param chunk The JSON chunk to append.
      */
     public void appendRawJson(String chunk) {
@@ -148,6 +183,7 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
 
     /**
      * Sets the billed token count and fires a property change event.
+     *
      * @param billedTokenCount The new billed token count.
      */
     public void setBilledTokenCount(int billedTokenCount) {
@@ -158,6 +194,7 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
 
     /**
      * Sets the finish reason and fires a property change event.
+     *
      * @param finishReason The new finish reason.
      */
     public void setFinishReason(FinishReason finishReason) {
@@ -168,6 +205,7 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
 
     /**
      * Sets the grounding metadata and fires a property change event.
+     *
      * @param groundingMetadata The new grounding metadata.
      */
     public void setGroundingMetadata(GroundingMetadata groundingMetadata) {
@@ -177,23 +215,24 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
     }
 
     /**
-     * {@inheritDoc}
-     * A model message is never effectively pruned while it is streaming.
+     * {@inheritDoc} A model message is never effectively pruned while it is
+     * streaming.
      */
     @Override
     public boolean isEffectivelyPruned() {
         return !streaming && super.isEffectivelyPruned();
     }
-    
+
     /**
-     * Checks if this model message is the current tool prompt message for the agi.
-     * 
+     * Checks if this model message is the current tool prompt message for the
+     * agi.
+     *
      * @return {@code true} if this message is the tool prompt message.
      */
     public boolean isToolPromptMessage() {
         return getAgi() != null && getAgi().getToolPromptMessage() == this;
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -204,7 +243,7 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
             getAgi().checkToolPromptCompletion();
         }
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -215,10 +254,12 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
             getAgi().clearToolPrompt();
         }
     }
-    
+
     /**
      * Filters and returns only the tool call parts from this message.
-     * @return A list of {@link AbstractToolCall} parts, or an empty list if none exist.
+     *
+     * @return A list of {@link AbstractToolCall} parts, or an empty list if
+     * none exist.
      */
     public List<AbstractToolCall<?, ?>> getToolCalls() {
         return getParts().stream()
@@ -226,10 +267,11 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
                 .map(p -> (AbstractToolCall<?, ?>) p)
                 .collect(Collectors.toList());
     }
-    
+
     /**
-     * Returns all tool responses associated with the tool calls in this message.
-     * 
+     * Returns all tool responses associated with the tool calls in this
+     * message.
+     *
      * @return A list of tool responses.
      */
     public List<AbstractToolResponse<?>> getToolResponses() {
@@ -239,70 +281,74 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
     }
 
     /**
-     * Determines if this entire batch of tool calls can be executed automatically
-     * without user intervention.
+     * Determines if this entire batch of tool calls can be executed
+     * automatically without user intervention.
+     *
      * @return {@code true} if all conditions for automatic execution are met.
      */
     public boolean isAutoRunnable() {
         if (isStreaming()) {
             return false;
         }
-        
+
         if (!getAgi().getConfig().isLocalToolsEnabled()) {
             return false;
         }
-        
+
         List<AbstractToolCall<?, ?>> calls = getToolCalls();
         if (calls.isEmpty()) {
             return false;
         }
-        
+
         for (AbstractToolCall<?, ?> call : calls) {
             if (call.getTool().getPermission() != ToolPermission.APPROVE_ALWAYS || call.getResponse().getStatus() != ToolExecutionStatus.PENDING) {
                 return false;
             }
         }
-        
+
         return true;
     }
 
     /**
      * Checks if there are any tool calls with responses in a PENDING state.
+     *
      * @return {@code true} if at least one tool is pending.
      */
     public boolean hasPendingTools() {
         return getToolCalls().stream()
                 .anyMatch(call -> call.getResponse().getStatus() == ToolExecutionStatus.PENDING);
     }
-    
+
     /**
-     * Executes all tool calls in this message that are currently in a PENDING state.
+     * Executes all tool calls in this message that are currently in a PENDING
+     * state.
      */
     public void executeAllPending() {
         getToolCalls().stream()
-            .map(AbstractToolCall::getResponse)
-            .filter(response -> response.getStatus() == ToolExecutionStatus.PENDING)
-            .forEach(AbstractToolResponse::execute);
+                .map(AbstractToolCall::getResponse)
+                .filter(response -> response.getStatus() == ToolExecutionStatus.PENDING)
+                .forEach(AbstractToolResponse::execute);
         // Collapse after execution
         getToolCalls().forEach(tc -> tc.setExpanded(false));
     }
 
-    
     /**
-     * Sets all tool calls in this message that are currently in a PENDING state to DECLINED.
+     * Sets all tool calls in this message that are currently in a PENDING state
+     * to DECLINED.
      */
     public void declineAllPending() {
         getToolCalls().stream()
-            .map(AbstractToolCall::getResponse)
-            .filter(response -> response.getStatus() == ToolExecutionStatus.PENDING)
-            .forEach(response -> response.setStatus(ToolExecutionStatus.DECLINED));
+                .map(AbstractToolCall::getResponse)
+                .filter(response -> response.getStatus() == ToolExecutionStatus.PENDING)
+                .forEach(response -> response.setStatus(ToolExecutionStatus.DECLINED));
         // Collapse after declining
         getToolCalls().forEach(tc -> tc.setExpanded(false));
     }
 
     /**
-     * Processes all tool responses associated with this message that are currently in a PENDING state.
-     * Tools with APPROVE_ALWAYS permission are executed, while others are rolled to DECLINED.
+     * Processes all tool responses associated with this message that are
+     * currently in a PENDING state. Tools with APPROVE_ALWAYS permission are
+     * executed, while others are rolled to DECLINED.
      */
     public void processPendingTools() {
         if (hasPendingTools()) {
@@ -312,10 +358,10 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
             getToolCalls().forEach(tc -> tc.setExpanded(false));
         }
     }
-    
+
     /**
-     * {@inheritDoc}
-     * Creates and adds a {@link ModelTextPart} without thought metadata.
+     * {@inheritDoc} Creates and adds a {@link ModelTextPart} without thought
+     * metadata.
      */
     @Override
     public final TextPart addTextPart(String text) {
@@ -323,8 +369,8 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
     }
 
     /**
-     * {@inheritDoc}
-     * Creates and adds a {@link ModelBlobPart} without thought metadata.
+     * {@inheritDoc} Creates and adds a {@link ModelBlobPart} without thought
+     * metadata.
      */
     @Override
     public final BlobPart addBlobPart(String mimeType, byte[] data) {
@@ -332,8 +378,8 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
     }
 
     /**
-     * {@inheritDoc}
-     * Creates and adds a {@link ModelBlobPart} from a file path, without thought metadata.
+     * {@inheritDoc} Creates and adds a {@link ModelBlobPart} from a file path,
+     * without thought metadata.
      */
     @Override
     public final ModelBlobPart addBlobPart(Path path) throws Exception {
@@ -344,7 +390,7 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
 
     /**
      * Creates and adds a new model text part with thought process metadata.
-     * 
+     *
      * @param text The text content.
      * @param thoughtSignature The thought signature.
      * @param thought Whether this is a thought part.
@@ -356,7 +402,7 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
 
     /**
      * Creates and adds a new model blob part with thought process metadata.
-     * 
+     *
      * @param mimeType The MIME type.
      * @param data The binary data.
      * @param thoughtSignature The thought signature.
@@ -366,7 +412,9 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
         return new ModelBlobPart(this, mimeType, data, thoughtSignature);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void appendMetadata(StringBuilder sb) {
         // No additional metadata needed at the message level.
