@@ -5,7 +5,7 @@ package uno.anahata.asi.openai.compatible;
  * Defines the strategy for extracting reasoning/thought content from an 
  * OpenAI-compatible response.
  */
-public enum ReasoningStyle {
+public enum OpenAiCompatibleReasoningStyle {
     /** No specialized reasoning extraction. All content is treated as final output. */
     NONE,
     /** Reasoning is provided in a dedicated top-level field (e.g., 'reasoning_content'). */

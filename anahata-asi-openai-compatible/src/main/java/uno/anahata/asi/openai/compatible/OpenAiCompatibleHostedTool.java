@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor
-public enum OpenAiHostedTool {
+public enum OpenAiCompatibleHostedTool {
     WEB_SEARCH("web_search", "Search the web using OpenAI's native tool."),
     CODE_INTERPRETER("code_interpreter", "Execute Python code in a sandboxed environment."),
     COMPUTER_USE("computer_use", "Interact with a virtual computer environment."),

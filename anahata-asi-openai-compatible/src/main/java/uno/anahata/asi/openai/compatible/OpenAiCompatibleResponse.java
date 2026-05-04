@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * @author anahata
  */
 @Getter
-public class OpenAiResponse extends Response<OpenAiModelMessage> {
+public class OpenAiCompatibleResponse extends Response<OpenAiCompatibleModelMessage> {
 
     /**
      * The unique identifier for the response (e.g., chatcmpl-..., resp_...).
@@ -31,7 +31,7 @@ public class OpenAiResponse extends Response<OpenAiModelMessage> {
     /**
      * The final candidates (choices) converted to Anahata messages.
      */
-    private final List<OpenAiModelMessage> candidates = new ArrayList<>();
+    private final List<OpenAiCompatibleModelMessage> candidates = new ArrayList<>();
     
     /**
      * Usage statistics from the API, including prompt and completion tokens.
@@ -65,7 +65,7 @@ public class OpenAiResponse extends Response<OpenAiModelMessage> {
      * @param model The model instance.
      * @param estimatedUsage The pre-calculated usage metadata.
      */
-    public OpenAiResponse(Agi agi, String modelId, String jsonResponse, String requestPayload, String historyJson, OpenAiCompatibleModel model, ResponseUsageMetadata estimatedUsage) {
+    public OpenAiCompatibleResponse(Agi agi, String modelId, String jsonResponse, String requestPayload, String historyJson, OpenAiCompatibleModel model, ResponseUsageMetadata estimatedUsage) {
         JsonNode root = JacksonUtils.parse(jsonResponse, JsonNode.class);
         JsonNode responseNode = root.has("response") ? root.get("response") : root;
         this.id = responseNode.path("id").asText("estimated-id");
@@ -87,7 +87,7 @@ public class OpenAiResponse extends Response<OpenAiModelMessage> {
      * @param historyJson The raw history segment of the payload.
      * @param model The model instance to retrieve reasoning configuration from.
      */
-    public OpenAiResponse(Agi agi, String modelId, String jsonResponse, String requestPayload, String historyJson, OpenAiCompatibleModel model) {
+    public OpenAiCompatibleResponse(Agi agi, String modelId, String jsonResponse, String requestPayload, String historyJson, OpenAiCompatibleModel model) {
         this.rawRequestConfigJson = requestPayload;
         this.rawHistoryJson = historyJson;
         JsonNode root = JacksonUtils.parse(jsonResponse, JsonNode.class);
@@ -127,7 +127,7 @@ public class OpenAiResponse extends Response<OpenAiModelMessage> {
             JsonNode choices = responseNode.get("choices");
             if (choices != null && choices.isArray()) {
                 for (JsonNode choice : choices) {
-                    OpenAiChatCompletionMessage msg = new OpenAiChatCompletionMessage(agi, modelId, choice, this, 
+                    OpenAiCompatibleMessage msg = new OpenAiCompatibleMessage(agi, modelId, choice, this, 
                             model.getReasoningStyle(), model.getReasoningFieldName(), model.getReasoningTags());
                     candidates.add(msg);
                 }
@@ -135,7 +135,7 @@ public class OpenAiResponse extends Response<OpenAiModelMessage> {
         } else if (responseNode.has("output")) {
             JsonNode output = responseNode.get("output");
             if (output != null && output.isArray()) {
-                OpenAiModelMessage message = model.createModelMessage(agi);
+                OpenAiCompatibleModelMessage message = model.createModelMessage(agi);
                 message.setResponse(this);
                 // Set candidate-specific rawJson to the output items array JSON
                 message.setRawJson(output.toPrettyString());

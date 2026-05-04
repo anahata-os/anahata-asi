@@ -22,11 +22,11 @@ import uno.anahata.asi.agi.provider.FinishReason;
  * @author anahata
  */
 @Slf4j
-public abstract class OpenAiModelMessage extends AbstractModelMessage<OpenAiResponse> {
+public abstract class OpenAiCompatibleModelMessage extends AbstractModelMessage<OpenAiCompatibleResponse> {
 
     private boolean insideReasoningTags = false;
 
-    public OpenAiModelMessage(Agi agi, String modelId) {
+    public OpenAiCompatibleModelMessage(Agi agi, String modelId) {
         super(agi, modelId);
     }
 
@@ -38,7 +38,7 @@ public abstract class OpenAiModelMessage extends AbstractModelMessage<OpenAiResp
      * @param reasoningFieldName The field name for reasoning content (if using FIELD style).
      * @param reasoningTags The tags for reasoning content (if using TAGS style).
      */
-    public abstract void updateFromNode(JsonNode node, ReasoningStyle reasoningStyle, String reasoningFieldName, List<String> reasoningTags);
+    public abstract void updateFromNode(JsonNode node, OpenAiCompatibleReasoningStyle reasoningStyle, String reasoningFieldName, List<String> reasoningTags);
     
     /**
      * Updates a single tool call from a JSON node.

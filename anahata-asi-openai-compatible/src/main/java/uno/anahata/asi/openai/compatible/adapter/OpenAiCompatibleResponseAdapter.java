@@ -49,7 +49,7 @@ import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class OpenAiChatCompletionsResponseAdapter {
+public class OpenAiCompatibleResponseAdapter {
 
     /** The Anahata message to be translated. */
     private final AbstractMessage anahataMessage;
@@ -61,7 +61,7 @@ public class OpenAiChatCompletionsResponseAdapter {
     private final TokenizerType tokenizerType;
 
     /** Reasoning style of the target model. */
-    private final uno.anahata.asi.openai.compatible.ReasoningStyle reasoningStyle;
+    private final uno.anahata.asi.openai.compatible.OpenAiCompatibleReasoningStyle reasoningStyle;
     /** Tags used for reasoning (e.g., ["<think>", "</think>"]). */
     private final List<String> reasoningTags;
 
@@ -220,7 +220,7 @@ public class OpenAiChatCompletionsResponseAdapter {
                 
                 // Thought Tagging: If this is a thought part and the model uses TAGS style,
                 // we wrap the text in the appropriate tags to preserve the model's "flow".
-                if (mtp.isThought() && reasoningStyle == uno.anahata.asi.openai.compatible.ReasoningStyle.TAGS 
+                if (mtp.isThought() && reasoningStyle == uno.anahata.asi.openai.compatible.OpenAiCompatibleReasoningStyle.TAGS 
                         && reasoningTags != null && reasoningTags.size() >= 2) {
                     text = reasoningTags.get(0) + text + reasoningTags.get(1);
                 }

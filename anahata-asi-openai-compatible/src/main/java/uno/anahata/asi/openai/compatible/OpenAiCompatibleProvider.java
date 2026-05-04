@@ -137,7 +137,7 @@ public class OpenAiCompatibleProvider extends AbstractAiProvider {
         String fullUrl = url.endsWith("/") ? url + endpoint : url + "/" + endpoint;
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(fullUrl))
-                .timeout(Duration.ofSeconds(60));
+                .timeout(Duration.ofSeconds(120));
 
         if (super.isApiKeyRequired()) {
             String apiKey = getCurrentApiKey();

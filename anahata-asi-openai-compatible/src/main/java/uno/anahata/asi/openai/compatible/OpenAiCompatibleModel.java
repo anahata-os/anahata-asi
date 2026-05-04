@@ -36,7 +36,7 @@ import uno.anahata.asi.agi.tool.schema.SchemaProvider;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.internal.TokenizerUtils;
-import uno.anahata.asi.openai.compatible.adapter.OpenAiChatCompletionsResponseAdapter;
+import uno.anahata.asi.openai.compatible.adapter.OpenAiCompatibleResponseAdapter;
 
 /**
  * A concrete implementation of {@link AbstractModel} that communicates with any
@@ -54,7 +54,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
     private int maxInputTokens = 200000;
     private int maxOutputTokens = 32000;
 
-    private ReasoningStyle reasoningStyle = ReasoningStyle.NONE;
+    private OpenAiCompatibleReasoningStyle reasoningStyle = OpenAiCompatibleReasoningStyle.NONE;
     private String reasoningFieldName;
     private List<String> reasoningTags;
 
@@ -174,8 +174,8 @@ public class OpenAiCompatibleModel extends AbstractModel {
         return "chat/completions";
     }
 
-    public OpenAiModelMessage createModelMessage(Agi agi) {
-        return new OpenAiChatCompletionMessage(agi, modelId);
+    public OpenAiCompatibleModelMessage createModelMessage(Agi agi) {
+        return new OpenAiCompatibleMessage(agi, modelId);
     }
 
     @Override
@@ -223,7 +223,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
                     }
                     throw new RuntimeException("API error (" + httpResponse.statusCode() + "): " + errorBody);
                 }
-                return new OpenAiResponse(agi, modelId, httpResponse.body(), configJson, historyJson, this);
+                return new OpenAiCompatibleResponse(agi, modelId, httpResponse.body(), configJson, historyJson, this);
             }
         } catch (IOException | InterruptedException e) {
             log.error("Failed to execute OpenAI request", e);
@@ -261,7 +261,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
         try {
             HttpRequest httpRequest = provider.createRequestBuilder(getEndpoint()).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(jsonPayload)).build();
             try (HttpClient client = provider.createHttpClient()) {
-                List<OpenAiModelMessage> targets = new ArrayList<>();
+                List<OpenAiCompatibleModelMessage> targets = new ArrayList<>();
                 AtomicBoolean started = new AtomicBoolean(false);
                 HttpResponse<Stream<String>> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofLines());
                 if (response.statusCode() != 200) {
@@ -291,7 +291,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
                         }
                         String data = trimmedLine.substring(5).trim();
                         if ("[DONE]".equals(data)) {
-                            targets.forEach(OpenAiModelMessage::flushToolCalls);
+                            targets.forEach(OpenAiCompatibleModelMessage::flushToolCalls);
                             observer.onComplete();
                             break;
                         }
@@ -309,7 +309,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
                                     observer.onStart((List) targets);
                                     started.set(true);
                                 }
-                                for (OpenAiModelMessage target : targets) {
+                                for (OpenAiCompatibleModelMessage target : targets) {
                                     target.updateFromNode(chunk, reasoningStyle, reasoningFieldName, reasoningTags);
                                 }
                             } // 2. Handle standard Chat Completions Choices
@@ -325,21 +325,21 @@ public class OpenAiCompatibleModel extends AbstractModel {
                                     }
                                     for (int i = 0; i < Math.min(choices.size(), targets.size()); i++) {
                                         JsonNode choice = choices.get(i);
-                                        OpenAiModelMessage target = targets.get(i);
+                                        OpenAiCompatibleModelMessage target = targets.get(i);
                                         routeChunk(choice, target);
                                     }
                                 }
                             }
                             // Accumulate raw JSON chunk
-                            for (OpenAiModelMessage target : targets) {
+                            for (OpenAiCompatibleModelMessage target : targets) {
                                 target.appendRawJson(data);
                             }
-                            OpenAiResponse chunkResponse = new OpenAiResponse(agi, modelId, data, configJson, historyJson, this);
+                            OpenAiCompatibleResponse chunkResponse = new OpenAiCompatibleResponse(agi, modelId, data, configJson, historyJson, this);
                             // Accumulate usage metadata if present in this chunk (like Gemini does)
                             // OpenAI typically sends usage only in the final chunk
                             if (chunkResponse.getUsageMetadata() != null
                                     && chunkResponse.getUsageMetadata().getTotalTokenCount() > 0) {
-                                for (OpenAiModelMessage target : targets) {
+                                for (OpenAiCompatibleModelMessage target : targets) {
                                     target.setBilledTokenCount(chunkResponse.getUsageMetadata().getCandidatesTokenCount());
                                 }
                             }
@@ -355,7 +355,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
                     // Modal's GLM-5 returns usage: null in all streaming chunks
                     boolean usageProvided = targets.stream()
                             .anyMatch(t-> t.getBilledTokenCount() > 0);
-                    OpenAiResponse finalResponse;
+                    OpenAiCompatibleResponse finalResponse;
                     if (!usageProvided) {
                         // No usage provided by API - estimate tokens ourselves
                         log.info("No usage metadata provided by API, estimating tokens using {} tokenizer", getTokenizerType());
@@ -364,7 +364,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
                                 jsonPayload, getTokenizerType());
                         // Estimate completion tokens from accumulated content per target
                         int totalCompletionTokens = 0;
-                        for (OpenAiModelMessage target : targets) {
+                        for (OpenAiCompatibleModelMessage target : targets) {
                             // Get accumulated text content from parts
                             StringBuilder contentBuilder = new StringBuilder();
                             for (AbstractPart part : target.getParts()) {
@@ -381,11 +381,11 @@ public class OpenAiCompatibleModel extends AbstractModel {
                         finalResponse = createResponseWithEstimatedUsage(agi, modelId, configJson, historyJson,
                                 estimatedPromptTokens, totalCompletionTokens, getTokenizerType());
                     } else {
-                        finalResponse = new OpenAiResponse(agi, modelId,
+                        finalResponse = new OpenAiCompatibleResponse(agi, modelId,
                                 targets.get(0).getRawJson() != null ? targets.get(0).getRawJson() : "{}",
                                 configJson, historyJson, this);
                     }
-                    for (OpenAiModelMessage target : targets) {
+                    for (OpenAiCompatibleModelMessage target : targets) {
                         target.setResponse(finalResponse);
                         target.setStreaming(false);
                     }
@@ -411,7 +411,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
     // Get accumulated text content from parts
     // Create response with estimated usage metadata
     
-    private void routeChunk(JsonNode choice, OpenAiModelMessage target) {
+    private void routeChunk(JsonNode choice, OpenAiCompatibleModelMessage target) {
         JsonNode delta = choice.get("delta");
         if (delta == null) {
             delta = choice.get("message");
@@ -421,14 +421,14 @@ public class OpenAiCompatibleModel extends AbstractModel {
         }
 
         // AUTODETECT: Check for reasoning_content field on first chunk if not explicitly configured
-        if (reasoningStyle == ReasoningStyle.NONE
+        if (reasoningStyle == OpenAiCompatibleReasoningStyle.NONE
                 && delta.has("reasoning_content") && !delta.get("reasoning_content").isNull()) {
             log.info("Auto-detected FIELD reasoning style with field 'reasoning_content' for model {}", modelId);
-            this.reasoningStyle = ReasoningStyle.FIELD;
+            this.reasoningStyle = OpenAiCompatibleReasoningStyle.FIELD;
             this.reasoningFieldName = "reasoning_content";
         }
 
-        if (reasoningStyle == ReasoningStyle.FIELD && reasoningFieldName != null && delta.has(reasoningFieldName) && !delta.get(reasoningFieldName).isNull()) {
+        if (reasoningStyle == OpenAiCompatibleReasoningStyle.FIELD && reasoningFieldName != null && delta.has(reasoningFieldName) && !delta.get(reasoningFieldName).isNull()) {
             target.appendThoughts(delta.get(reasoningFieldName).asText());
         }
 
@@ -437,7 +437,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
             String text = delta.get("content").asText();
             // Only append if text is not empty (avoid empty text parts before thoughts)
             if (!text.isEmpty()) {
-                if (reasoningStyle == ReasoningStyle.TAGS && reasoningTags != null && reasoningTags.size() >= 2) {
+                if (reasoningStyle == OpenAiCompatibleReasoningStyle.TAGS && reasoningTags != null && reasoningTags.size() >= 2) {
                     target.appendTaggedContent(text, reasoningTags.get(0), reasoningTags.get(1));
                 } else {
                     target.appendContent(text);
@@ -522,7 +522,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
      * @param tokenizerType The tokenizer used for estimation.
      * @return A new OpenAiResponse with estimated usage metadata.
      */
-    protected OpenAiResponse createResponseWithEstimatedUsage(
+    protected OpenAiCompatibleResponse createResponseWithEstimatedUsage(
             Agi agi, String modelId, String jsonPayload, String historyJson,
             int estimatedPromptTokens, int estimatedCompletionTokens,
             uno.anahata.asi.agi.provider.TokenizerType tokenizerType) {
@@ -548,7 +548,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
                 modelId,
                 estimatedRawJson);
 
-        return new OpenAiResponse(agi, modelId, estimatedResponseJson, jsonPayload, historyJson, this, estimatedUsage);
+        return new OpenAiCompatibleResponse(agi, modelId, estimatedResponseJson, jsonPayload, historyJson, this, estimatedUsage);
     }
 
     protected ObjectNode preparePayload(GenerationRequest request, boolean stream) {
@@ -567,7 +567,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
         // 2. Inject Conversation History
         boolean includePruned = request.config().isIncludePruned();
         for (AbstractMessage msg : request.history()) {
-            List<ObjectNode> translated = new OpenAiChatCompletionsResponseAdapter(msg, includePruned, getTokenizerType(),
+            List<ObjectNode> translated = new OpenAiCompatibleResponseAdapter(msg, includePruned, getTokenizerType(),
                     reasoningStyle, reasoningTags).toOpenAi();
             messages.addAll(translated);
         }

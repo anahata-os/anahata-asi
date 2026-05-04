@@ -28,7 +28,7 @@ import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
  * Pure content adapter for the OpenAI Responses API, strictly translating 
  * Anahata's domain model into the "Items" architecture.
  * 
- * <p>Supports text, images, audio, and generic files.</p>
+ * <p>Supports text, images, and generic files (including audio fallback).</p>
  */
 @Slf4j
 @RequiredArgsConstructor
@@ -120,7 +120,7 @@ public class OpenAiItemAdapter {
                     currentMessageItem.put("type", "message");
                     currentMessageItem.put("role", "assistant");
                     
-                    // Identification Logic: use part's providerId OR turn's sequential ID if model changed
+                    // Identification Logic: use part's providerId OR part's sequential ID if model changed
                     if (partProviderId != null) {
                          currentMessageItem.put("id", partProviderId);
                     } else {
@@ -157,7 +157,7 @@ public class OpenAiItemAdapter {
         for (AbstractToolResponse<?> tr : executedResponses) {
             ObjectNode responseItem = API_MAPPER.createObjectNode();
             responseItem.put("type", "function_call_output");
-            // Identification Logic: Use fco_ prefix + the tool call's unique session ID
+            // Identification Logic: Always use fco_ prefix + the tool call's unique session ID
             responseItem.put("id", "fco_" + tr.getCall().getSequentialId());
             responseItem.put("call_id", tr.getCall().getId());
             
@@ -221,15 +221,10 @@ public class OpenAiItemAdapter {
                 contentArray.addObject()
                         .put("type", "input_image")
                         .put("image_url", "data:" + mime + ";base64," + b64);
-            } else if (mime.startsWith("audio/")) {
-                // OpenAI Responses API: Audio in message content uses an 'input_audio' nested object
-                contentArray.addObject()
-                        .put("type", "input_audio")
-                        .putObject("input_audio")
-                        .put("data", b64)
-                        .put("format", format);
             } else {
-                // OpenAI Responses API: Generic files use an 'input_file' nested object
+                // OpenAI Responses API: Generic files use an 'input_file' nested object.
+                // Note: 'input_audio' is currently not supported in the Responses API, 
+                // so we fall back to 'input_file' for all non-image blobs (including audio).
                 contentArray.addObject()
                         .put("type", "input_file")
                         .putObject("input_file")
