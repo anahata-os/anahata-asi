@@ -10,7 +10,6 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.message.AbstractModelMessage;
-import uno.anahata.asi.agi.message.ModelTextPart;
 import uno.anahata.asi.agi.message.TextPart;
 import uno.anahata.asi.agi.provider.FinishReason;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
@@ -50,6 +49,7 @@ public class OpenAiModelMessage extends AbstractModelMessage<OpenAiResponse> {
     public void processItem(JsonNode item) {
         String type = item.path("type").asText();
         String id = item.path("id").asText(null);
+        
         // 1. Map Status to FinishReason (updates as we process items)
         String status = item.path("status").asText();
         if ("completed".equals(status)) {
@@ -57,14 +57,15 @@ public class OpenAiModelMessage extends AbstractModelMessage<OpenAiResponse> {
         } else if ("incomplete".equals(status)) {
             setFinishReason(FinishReason.MAX_TOKENS);
         }
+
         if ("message".equals(type)) {
             setProviderId(id);
             this.phase = item.path("phase").asText(null);
             JsonNode content = item.get("content");
             if (content != null && content.isArray()) {
-                for (JsonNode part : content) {
-                    String partType = part.path("type").asText();
-                    String text = part.path("text").asText();
+                for (JsonNode partNode : content) {
+                    String partType = partNode.path("type").asText();
+                    String text = partNode.path("text").asText();
                     TextPart tp = null;
                     if ("output_text".equals(partType)) {
                         tp = addTextPart(text, null, false);
@@ -103,7 +104,7 @@ public class OpenAiModelMessage extends AbstractModelMessage<OpenAiResponse> {
             // Reconstruct the Canonical FQN for Anahata tool lookup
             String fullToolName = (ns != null && !ns.isEmpty()) ? ns + "." + name : name;
             Map<String, Object> args = API_MAPPER.readValue(argsJson, Map.class);
-            AbstractToolCall tc = getAgi().getToolManager().createToolCall(this, callId, fullToolName, args);
+            AbstractToolCall<?, ?> tc = getAgi().getToolManager().createToolCall(this, callId, fullToolName, args);
             if (tc != null) {
                 tc.setProviderId(id);
             }

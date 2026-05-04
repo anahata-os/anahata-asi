@@ -16,6 +16,7 @@ import uno.anahata.asi.agi.message.AbstractModelMessage;
 import uno.anahata.asi.agi.message.AbstractPart;
 import uno.anahata.asi.agi.message.BlobPart;
 import uno.anahata.asi.agi.message.ModelTextPart;
+import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.message.Role;
 import uno.anahata.asi.agi.message.TextPart;
 import uno.anahata.asi.agi.message.ThoughtSignature;
@@ -45,7 +46,10 @@ public class OpenAiItemAdapter {
      * @throws Exception on serialization errors.
      */
     public List<ObjectNode> toItems() throws Exception {
-        if (anahataMessage.getRole() == Role.MODEL && anahataMessage instanceof AbstractModelMessage<?> modelMsg) {
+        if (anahataMessage instanceof RagMessage rag) {
+            ObjectNode item = toRagItem();
+            return item != null ? List.of(item) : List.of();
+        } else if (anahataMessage.getRole() == Role.MODEL && anahataMessage instanceof AbstractModelMessage<?> modelMsg) {
             List<ObjectNode> items = toModelTurnItems(modelMsg);
             items.addAll(toToolResponseItems(modelMsg));
             return items;
@@ -87,7 +91,8 @@ public class OpenAiItemAdapter {
                 } else {
                     callItem.put("name", fullName);
                 }
-                String argsJson = SchemaProvider.OBJECT_MAPPER.writeValueAsString(tc.getResponse().getExecutedArgs());
+                // Fidelity: Replay original rawArgs to the model
+                String argsJson = SchemaProvider.OBJECT_MAPPER.writeValueAsString(tc.getRawArgs());
                 callItem.put("arguments", argsJson);
                 items.add(callItem);
                 
@@ -115,8 +120,13 @@ public class OpenAiItemAdapter {
                     currentMessageItem.put("type", "message");
                     currentMessageItem.put("role", "assistant");
                     
-                    // Identification Logic: use part's providerId or synthetic from its unique session ID
-                    currentMessageItem.put("id", partProviderId != null ? partProviderId : "msg_" + part.getSequentialId());
+                    // Identification Logic: use part's providerId OR turn's sequential ID if model changed
+                    if (partProviderId != null) {
+                         currentMessageItem.put("id", partProviderId);
+                    } else {
+                         // If model changed, we squash all text parts into a single turn message
+currentMessageItem.put("id", "msg_" + part.getSequentialId());
+                    }
                     
                     if (modelMsg instanceof OpenAiModelMessage oam && oam.getPhase() != null) {
                         currentMessageItem.put("phase", oam.getPhase());
@@ -169,6 +179,20 @@ public class OpenAiItemAdapter {
         
         for (AbstractPart part : anahataMessage.getParts(true)) {
             addPartToContent(contentArray, part, role);
+        }
+        
+        return contentArray.isEmpty() ? null : item;
+    }
+
+    private ObjectNode toRagItem() {
+        ObjectNode item = API_MAPPER.createObjectNode();
+        item.put("type", "message");
+        item.put("role", "user");
+        item.put("id", "msg_rag");
+        ArrayNode contentArray = item.putArray("content");
+        
+        for (AbstractPart part : anahataMessage.getParts(true)) {
+            addPartToContent(contentArray, part, "user");
         }
         
         return contentArray.isEmpty() ? null : item;
