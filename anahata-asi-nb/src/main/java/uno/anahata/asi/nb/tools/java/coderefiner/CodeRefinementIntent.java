@@ -57,10 +57,10 @@ public class CodeRefinementIntent implements Serializable {
     @Schema(description = "The ABSOLUTE FQN of the member to operation on (e.g. 'com.foo.Bar.myMethod(java.util.List)'). FQNs are preferred for parameters. Generic brackets '<...>' are not required and will be ignored during matching.")
     private String memberFqn;
 
-    @Schema(description = "The member signature (e.g. 'public void foo(List<String> items)'). Mandatory for 'INSERT', optional for 'UPDATE'. Javadocs are not supported here.")
+    @Schema(description = "The member signature or header (everything to the LEFT of the first '{' or '=')' without javadoc. (e.g. '@Override public void setItems(List<String> items)'). Mandatory for 'INSERT', optional for 'UPDATE' (only if you want to change the declaration). Do not provide Javadocs here. Will cause the tool to fail or corrupt the java source file.")
     private String declaration;
 
-    @Schema(description = "For methods, The WHOLE body code, the logic inside the braces. For fields, the initializer expression (part after '=') or can be blank if there is no initializer expression. Use with 'INSERT' and 'UPDATE'.")
+    @Schema(description = "For methods, The WHOLE body code, the logic inside the braces. For fields, the initializer expression (part after '=') or can be blank if there is no initializer expression. FOr use with 'INSERT' and 'UPDATE'. Do not include the method signature or field declaration in this field or the enitre batch of intents will fail.")
     private String body;
 
     @Schema(description = "Position relative to the anchor member. **Mandatory for 'INSERT' and 'MOVE'**.")

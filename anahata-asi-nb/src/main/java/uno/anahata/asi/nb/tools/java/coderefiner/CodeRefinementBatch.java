@@ -37,7 +37,7 @@ import uno.anahata.asi.toolkit.resources.text.LineComment;
 @Schema(description = "A robust, agent-friendly batch of structural AST modifications for a single Java file.")
 public class CodeRefinementBatch extends AbstractTextResourceWrite {
 
-    @Schema(description = "The linear list of structural changes to apply. Uses a flattened DTO to ensure schema compatibility.", required = true)
+    @Schema(description = "The linear list of structural changes to apply.", required = true)
     private List<CodeRefinementIntent> intents = new ArrayList<>();
 
     @Schema(description = "Whether to optimize imports after applying all changes. Defaults to true.")
