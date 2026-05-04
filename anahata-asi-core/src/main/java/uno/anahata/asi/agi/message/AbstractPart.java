@@ -30,6 +30,12 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      * A unique, sequential identifier assigned to this part when it is added to a agi.
      */
     private long sequentialId;
+    
+    /**
+     * If an AI provider produced this part and assigned an Id to it (e.g. an openai item id).
+     * 
+     */
+    private String providerId;
 
     /**
      * A backward reference to the Message that contains this part.

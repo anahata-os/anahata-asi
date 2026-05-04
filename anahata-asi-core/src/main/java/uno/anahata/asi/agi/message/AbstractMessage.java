@@ -4,7 +4,6 @@ package uno.anahata.asi.agi.message;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
@@ -31,13 +30,9 @@ import uno.anahata.asi.internal.TokenizerUtils;
  * @author anahata
  */
 @Getter
+@Setter
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class AbstractMessage extends BasicPropertyChangeSource {
-
-    /**
-     * A unique, immutable identifier for this message.
-     */
-    private final String id = UUID.randomUUID().toString();
 
     /**
      * The timestamp when this message was created, in milliseconds since the
@@ -51,7 +46,7 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
      */
     @Setter
     private long sequentialId;
-
+    
     /**
      * The list of parts that make up the message content. Uses
      * CopyOnWriteArrayList to allow thread-safe iteration during background
