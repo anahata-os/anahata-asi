@@ -11,6 +11,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.agi.provider.AiProviderException;
 import uno.anahata.asi.agi.message.AbstractMessage;
 import uno.anahata.asi.agi.message.AbstractModelMessage;
 import uno.anahata.asi.agi.message.AbstractPart;
@@ -25,10 +26,11 @@ import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
 
 /**
- * Pure content adapter for the OpenAI Responses API, strictly translating 
+ * Pure content adapter for the OpenAI Responses API, strictly translating
  * Anahata's domain model into the "Items" architecture.
- * 
- * <p>Supports text, images, and generic files (including audio fallback).</p>
+ *
+ * <p>
+ * Supports text, images, and generic files (including audio fallback).</p>
  */
 @Slf4j
 @RequiredArgsConstructor
@@ -41,7 +43,7 @@ public class OpenAiItemAdapter {
 
     /**
      * Translates the message into a list of Responses API "Items".
-     * 
+     *
      * @return A list of ObjectNodes representing the items.
      * @throws Exception on serialization errors.
      */
@@ -74,11 +76,11 @@ public class OpenAiItemAdapter {
 
             // High Fidelity: Reuse captured ID if same model, otherwise generate synthetic
             String partProviderId = sameModel ? part.getProviderId() : null;
-            
+
             if (part instanceof AbstractToolCall<?, ?> tc) {
                 flushMessageItem(items, currentMessageItem);
                 currentMessageItem = null;
-                
+
                 ObjectNode callItem = API_MAPPER.createObjectNode();
                 callItem.put("type", "function_call");
                 callItem.put("id", partProviderId != null ? partProviderId : "fc_" + tc.getSequentialId());
@@ -95,7 +97,7 @@ public class OpenAiItemAdapter {
                 String argsJson = SchemaProvider.OBJECT_MAPPER.writeValueAsString(tc.getRawArgs());
                 callItem.put("arguments", argsJson);
                 items.add(callItem);
-                
+
             } else if (sameModel && part instanceof ThoughtSignature ts && ts.getThoughtSignature() != null) {
                 flushMessageItem(items, currentMessageItem);
                 currentMessageItem = null;
@@ -105,7 +107,7 @@ public class OpenAiItemAdapter {
                 reasoningItem.put("id", partProviderId != null ? partProviderId : "rs_" + part.getSequentialId());
                 reasoningItem.put("encrypted_content", new String(ts.getThoughtSignature()));
                 items.add(reasoningItem);
-                
+
                 // Ghosting: If this part's text is just our placeholder, don't add it to a following message item
                 if (part instanceof TextPart tp && OpenAiModelMessage.ENCRYPTED_REASONING_PLACEHOLDER.equals(tp.getText())) {
                     continue;
@@ -113,27 +115,27 @@ public class OpenAiItemAdapter {
             } else {
                 // Assistant speech (batched into message items based on original providerId grouping)
                 if (currentMessageItem != null && Objects.equals(partProviderId, currentProviderId)) {
-                    addPartToContent(currentContentArray, part, "assistant");
+                    addPartToContentArray(currentContentArray, part, "assistant");
                 } else {
                     flushMessageItem(items, currentMessageItem);
                     currentMessageItem = API_MAPPER.createObjectNode();
                     currentMessageItem.put("type", "message");
                     currentMessageItem.put("role", "assistant");
-                    
+
                     // Identification Logic: use part's providerId OR part's sequential ID if model changed
                     if (partProviderId != null) {
-                         currentMessageItem.put("id", partProviderId);
+                        currentMessageItem.put("id", partProviderId);
                     } else {
-                         // If model changed, we use the part ID to ensure uniqueness in interleaved turns
-                         currentMessageItem.put("id", "msg_" + part.getSequentialId());
+                        // If model changed, we use the part ID to ensure uniqueness in interleaved turns
+                        currentMessageItem.put("id", "msg_" + part.getSequentialId());
                     }
-                    
+
                     if (modelMsg instanceof OpenAiModelMessage oam && oam.getPhase() != null) {
                         currentMessageItem.put("phase", oam.getPhase());
                     }
                     currentContentArray = currentMessageItem.putArray("content");
                     currentProviderId = partProviderId;
-                    addPartToContent(currentContentArray, part, "assistant");
+                    addPartToContentArray(currentContentArray, part, "assistant");
                 }
             }
         }
@@ -146,13 +148,13 @@ public class OpenAiItemAdapter {
             items.add(item);
         }
     }
-    
+
     private List<ObjectNode> toToolResponseItems(AbstractModelMessage<?> modelMsg) {
         List<AbstractToolResponse<?>> executedResponses = modelMsg.getToolResponses().stream()
                 .filter(tr -> includePruned || !tr.getCall().isEffectivelyPruned())
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        
+
         List<ObjectNode> items = new ArrayList<>();
         for (AbstractToolResponse<?> tr : executedResponses) {
             ObjectNode responseItem = API_MAPPER.createObjectNode();
@@ -160,10 +162,29 @@ public class OpenAiItemAdapter {
             // Identification Logic: Always use fco_ prefix + the tool call's unique session ID
             responseItem.put("id", "fco_" + tr.getCall().getSequentialId());
             responseItem.put("call_id", tr.getCall().getId());
-            
+
             String fullResponseJson = SchemaProvider.OBJECT_MAPPER.valueToTree(tr).toString();
             responseItem.put("output", fullResponseJson);
             items.add(responseItem);
+
+            // Multimodal Tool Support: OpenAI Responses API doesn't support attachments in fco items.
+            // We follow up with a dedicated message item containing the attachments.
+            if (!tr.getAttachments().isEmpty()) {
+                ObjectNode attachmentItem = API_MAPPER.createObjectNode();
+                attachmentItem.put("type", "message");
+                attachmentItem.put("role", "developer");
+                attachmentItem.put("id", "msg_fco_att_" + tr.getCall().getSequentialId());
+                ArrayNode contentArray = attachmentItem.putArray("content");
+
+                contentArray.addObject()
+                        .put("type", "input_text")
+                        .put("text", "The following are multimodal attachments generated by the tool '" + tr.getToolName() + "':");
+
+                for (var att : tr.getAttachments()) {
+                    addBlobToContentArray(contentArray, att.getMimeType(), att.getData());
+                }
+                items.add(attachmentItem);
+            }
         }
         return items;
     }
@@ -176,11 +197,11 @@ public class OpenAiItemAdapter {
         // Turn-level ID is sufficient for User/System messages as they map 1:1 to items
         item.put("id", "msg_" + anahataMessage.getSequentialId());
         ArrayNode contentArray = item.putArray("content");
-        
+
         for (AbstractPart part : anahataMessage.getParts(true)) {
-            addPartToContent(contentArray, part, role);
+            addPartToContentArray(contentArray, part, role);
         }
-        
+
         return contentArray.isEmpty() ? null : item;
     }
 
@@ -190,15 +211,15 @@ public class OpenAiItemAdapter {
         item.put("role", "user");
         item.put("id", "msg_rag");
         ArrayNode contentArray = item.putArray("content");
-        
+
         for (AbstractPart part : anahataMessage.getParts(true)) {
-            addPartToContent(contentArray, part, "user");
+            addPartToContentArray(contentArray, part, "user");
         }
-        
+
         return contentArray.isEmpty() ? null : item;
     }
 
-    private void addPartToContent(ArrayNode contentArray, AbstractPart part, String role) {
+    private void addPartToContentArray(ArrayNode contentArray, AbstractPart part, String role) {
         if (part.isEffectivelyPruned() && !includePruned) {
             return;
         }
@@ -212,25 +233,41 @@ public class OpenAiItemAdapter {
             String typePrefix = "assistant".equals(role) ? "output_text" : "input_text";
             contentArray.addObject().put("type", typePrefix).put("text", mtp.getText());
         } else if (part instanceof BlobPart bp) {
-            String mime = bp.getMimeType();
-            String b64 = Base64.getEncoder().encodeToString(bp.getData());
-            String format = mime.contains("/") ? mime.substring(mime.indexOf("/") + 1) : mime;
+            addBlobToContentArray(contentArray, bp.getMimeType(), bp.getData());
+        }
+    }
 
-            if (mime.startsWith("image/")) {
-                // OpenAI Responses API: Images in message content use 'image_url' with data URI format
-                contentArray.addObject()
-                        .put("type", "input_image")
-                        .put("image_url", "data:" + mime + ";base64," + b64);
-            } else {
-                // OpenAI Responses API: Generic files use an 'input_file' nested object.
-                // Note: 'input_audio' is currently not supported in the Responses API, 
-                // so we fall back to 'input_file' for all non-image blobs (including audio).
-                contentArray.addObject()
-                        .put("type", "input_file")
-                        .putObject("input_file")
-                        .put("data", b64)
-                        .put("format", format);
-            }
+    private void addBlobToContentArray(ArrayNode contentArray, String mimeType, byte[] data) {
+        String b64 = Base64.getEncoder().encodeToString(data);
+        String format = mimeType.contains("/") ? mimeType.substring(mimeType.indexOf("/") + 1) : mimeType;
+
+        if (mimeType.startsWith("image/")) {
+            // OpenAI Responses API: Images in message content use 'image_url' with data URI format
+            contentArray.addObject()
+                    .put("type", "input_image")
+                    .put("image_url", "data:" + mimeType + ";base64," + b64);
+        }
+        if (mimeType.startsWith("audio/")) {
+            // OpenAI Responses API: Images in message content use 'image_url' with data URI format
+            contentArray.addObject()
+                    .put("type", "input_audio")
+                    .putObject("input_audio")
+                    .put("audio", b64)
+                    .put("format", format);
+        } else {
+            throw new AiProviderException("Image and audio only today");
+
+            // OpenAI Responses API: Generic files use an 'input_file' nested object.
+            // Note: 'input_audio' is currently not supported in the Responses API, 
+            // so we fall back to 'input_file' for all non-image blobs (including audio).
+            //with input_file 
+            /*
+            ObjectNode filePart = contentArray.addObject();
+            filePart.put("type", "input_file");
+            filePart.putObject("input_file")
+                    .put("data", b64)
+                    .put("format", format);
+             */
         }
     }
 }
