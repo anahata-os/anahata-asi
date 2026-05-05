@@ -16,6 +16,9 @@ import uno.anahata.asi.agi.message.AbstractMessage;
 import uno.anahata.asi.agi.message.AbstractModelMessage;
 import uno.anahata.asi.agi.message.AbstractPart;
 import uno.anahata.asi.agi.message.BlobPart;
+import uno.anahata.asi.agi.message.ModelCodeCallPart;
+import uno.anahata.asi.agi.message.ModelCodeOutputPart;
+import uno.anahata.asi.agi.message.ModelSearchCallPart;
 import uno.anahata.asi.agi.message.ModelTextPart;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.message.Role;
@@ -83,6 +86,7 @@ public class OpenAiItemAdapter {
 
                 ObjectNode callItem = API_MAPPER.createObjectNode();
                 callItem.put("type", "function_call");
+                // Identification Logic: use part's providerId OR part's sequential ID if model changed
                 callItem.put("id", partProviderId != null ? partProviderId : "fc_" + tc.getSequentialId());
                 callItem.put("call_id", tc.getId());
                 String fullName = tc.getToolName();
@@ -98,6 +102,31 @@ public class OpenAiItemAdapter {
                 callItem.put("arguments", argsJson);
                 items.add(callItem);
 
+            } else if (sameModel && part instanceof ModelCodeCallPart mccp) {
+                flushMessageItem(items, currentMessageItem);
+                currentMessageItem = null;
+                ObjectNode ciCall = API_MAPPER.createObjectNode();
+                items.add(ciCall);
+                ciCall.put("type", "code_interpreter_call");
+                ciCall.put("id", partProviderId != null ? partProviderId : "ci_" + part.getSequentialId());
+                ciCall.putObject("action").put("code", mccp.getText());
+            } else if (sameModel && part instanceof ModelCodeOutputPart mcop) {
+                flushMessageItem(items, currentMessageItem);
+                currentMessageItem = null;
+                ObjectNode ciOutput = API_MAPPER.createObjectNode();
+                items.add(ciOutput);
+                ciOutput.put("type", "code_interpreter_output");
+                ciOutput.put("id", partProviderId != null ? partProviderId : "cio_" + part.getSequentialId());
+                ciOutput.put("logs", mcop.getText());
+                // Note: Binary output harvesting in replay is complex if session is stateless.
+            } else if (sameModel && part instanceof ModelSearchCallPart mscp) {
+                flushMessageItem(items, currentMessageItem);
+                currentMessageItem = null;
+                ObjectNode searchCall = API_MAPPER.createObjectNode();
+                items.add(searchCall);
+                searchCall.put("type", "web_search_call");
+                searchCall.put("id", partProviderId != null ? partProviderId : "ws_" + part.getSequentialId());
+                searchCall.putObject("action").put("query", mscp.getQueries().isEmpty() ? "" : mscp.getQueries().get(0));
             } else if (sameModel && part instanceof ThoughtSignature ts && ts.getThoughtSignature() != null) {
                 flushMessageItem(items, currentMessageItem);
                 currentMessageItem = null;
@@ -230,6 +259,8 @@ public class OpenAiItemAdapter {
             String typePrefix = "assistant".equals(role) ? "output_text" : "input_text";
             contentArray.addObject().put("type", typePrefix).put("text", tp.getText());
         } else if (part instanceof ModelTextPart mtp) {
+            // Assistant items in history must use 'output_text'. 
+            // User and System items must use 'input_text'.
             String typePrefix = "assistant".equals(role) ? "output_text" : "input_text";
             contentArray.addObject().put("type", typePrefix).put("text", mtp.getText());
         } else if (part instanceof BlobPart bp) {
@@ -248,7 +279,8 @@ public class OpenAiItemAdapter {
                     .put("image_url", "data:" + mimeType + ";base64," + b64);
         }
         if (mimeType.startsWith("audio/")) {
-            // OpenAI Responses API: Images in message content use 'image_url' with data URI format
+            // OpenAI Responses API: Audio data is sent base64 encoded with a specified format
+            // Note: 'input_audio' is currently not supported in the Responses API, 
             contentArray.addObject()
                     .put("type", "input_audio")
                     .putObject("input_audio")
@@ -257,14 +289,15 @@ public class OpenAiItemAdapter {
         } else {
             throw new AiProviderException("Image and audio only today. Will not add this " + mimeType + " blob " + data.length + " to: " + contentArray);
 
-            // OpenAI Responses API: Generic files use an 'input_file' nested object.
-            // Note: 'input_audio' is currently not supported in the Responses API, 
+             // OpenAI Responses API: Generic files use an 'input_file' nested object.
             // so we fall back to 'input_file' for all non-image blobs (including audio).
             //with input_file 
+            //This doesn't work, to do this, you have to upload the file first using the files api, and then reference the file id.
+            //leave it commented out, don't delete
             /*
-            ObjectNode filePart = contentArray.addObject();
-            filePart.put("type", "input_file");
-            filePart.putObject("input_file")
+             ObjectNode filePart = contentArray.addObject();
+             filePart.put("type", "input_file");
+             filePart.putObject("input_file")
                     .put("data", b64)
                     .put("format", format);
              */

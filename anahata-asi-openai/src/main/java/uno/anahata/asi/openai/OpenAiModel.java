@@ -29,12 +29,14 @@ import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.agi.tool.spi.AbstractToolParameter;
 
 /**
- * Native implementation for OpenAI models using the Responses API (/v1/responses).
- * 
- * <p>This implementation performs "Partitioned Construction" of the request payload
- * by assembling the full API body and then extracting the Identity (Config) 
- * and Memory (History) JSON strings from it for UI visibility.</p>
- * 
+ * Native implementation for OpenAI models using the Responses API
+ * (/v1/responses).
+ * <p>
+ * This implementation performs "Partitioned Construction" of the request
+ * payload by assembling the full API body and then extracting the Identity
+ * (Config) and Memory (History) JSON strings from it for UI visibility.
+ * Supports built-in hosted tools like Web Search and Code Interpreter.</p>
+ *
  * @author anahata
  */
 @Slf4j
@@ -158,14 +160,16 @@ public class OpenAiModel extends AbstractModel {
     /**
      * Record holding the three distinct partitions of a request payload.
      */
-    public record PreparedPayload(String fullPayload, String configJson, String historyJson) {}
+    public record PreparedPayload(String fullPayload, String configJson, String historyJson) {
+
+    }
 
     @SneakyThrows
     private PreparedPayload preparePayload(GenerationRequest request) {
         ObjectNode root = API_MAPPER.createObjectNode();
         root.put("model", modelId);
         root.put("store", false); // Stateless ASI mode
-        
+
         ArrayNode include = root.putArray("include");
         include.add("reasoning.encrypted_content");
 
@@ -173,12 +177,18 @@ public class OpenAiModel extends AbstractModel {
         ThinkingLevel level = request.config().getThinkingLevel();
         if (level != null && level != ThinkingLevel.THINKING_LEVEL_UNSPECIFIED) {
             String effort = switch (level) {
-                case NONE -> "none";
-                case MINIMAL, LOW -> "low";
-                case MEDIUM -> "medium";
-                case HIGH -> "high";
-                case XHIGH -> "xhigh";
-                default -> null;
+                case NONE ->
+                    "none";
+                case MINIMAL, LOW ->
+                    "low";
+                case MEDIUM ->
+                    "medium";
+                case HIGH ->
+                    "high";
+                case XHIGH ->
+                    "xhigh";
+                default ->
+                    null;
             };
             if (effort != null) {
                 ObjectNode reasoning = root.putObject("reasoning");
@@ -212,7 +222,7 @@ public class OpenAiModel extends AbstractModel {
                 }
             }
         }
-        
+
         // Hosted Server Tools
         if (request.config().isServerToolsEnabled()) {
             for (ServerTool st : request.config().getEnabledServerTools()) {
@@ -220,10 +230,11 @@ public class OpenAiModel extends AbstractModel {
                     toolsArray.addObject().put("type", "web_search");
                 } else if ("code_interpreter".equals(st.getId())) {
                     toolsArray.addObject().put("type", "code_interpreter");
+                    include.add("output.code_interpreter_output.files.data");
                 }
             }
         }
-        
+
         // If no tools added, remove the array to keep the payload clean
         if (toolsArray.isEmpty()) {
             root.remove("tools");
@@ -247,6 +258,12 @@ public class OpenAiModel extends AbstractModel {
         return new PreparedPayload(root.toString(), configNode.toPrettyString(), historyJson);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Executes a synchronous content generation request using the Responses API.
+     * Performs automated partitioning of the request for clear history and 
+     * configuration separation in the UI.</p>
+     */
     @Override
     @SneakyThrows
     public Response generateContent(GenerationRequest request) {
@@ -279,7 +296,7 @@ public class OpenAiModel extends AbstractModel {
             throw new RuntimeException("OpenAI API error: " + httpResponse.statusCode() + " - " + httpResponse.body());
         }
 
-        return new OpenAiResponse(prepared.configJson(), prepared.historyJson(), 
+        return new OpenAiResponse(prepared.configJson(), prepared.historyJson(),
                 request.config().getAgi(), modelId, httpResponse.body());
     }
 
@@ -293,32 +310,32 @@ public class OpenAiModel extends AbstractModel {
     public String getToolDeclarationJson(AbstractTool<?, ?> tool, RequestConfig config) {
         Map<String, Object> decl = new HashMap<>();
         decl.put("type", "function");
-        
+
         String fullName = tool.getName();
         String simpleName = fullName.contains(".") ? fullName.substring(fullName.lastIndexOf(".") + 1) : fullName;
         decl.put("name", simpleName);
         decl.put("description", tool.getDescription());
-        
+
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("type", "object");
-        
+
         Map<String, Object> properties = new HashMap<>();
         List<String> required = new ArrayList<>();
-        
+
         for (AbstractToolParameter param : tool.getParameters()) {
             properties.put(param.getName(), API_MAPPER.readTree(param.getJsonSchema()));
             if (param.isRequired()) {
                 required.add(param.getName());
             }
         }
-        
+
         parameters.put("properties", properties);
         parameters.put("required", required);
         parameters.put("additionalProperties", false);
-        
+
         decl.put("parameters", parameters);
         decl.put("strict", false);
-        
+
         return API_MAPPER.writeValueAsString(decl);
     }
 }

@@ -17,12 +17,13 @@ import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.agi.provider.TokenizerType;
 
 /**
- * Clean-room provider for OpenAI, strictly utilizing the modern Responses API (/v1/responses).
- * 
- * <p>This provider is designed for native agentic workflows, supporting built-in 
- * tools and stateful item-based history. It completely bypasses the legacy 
- * Chat Completions infrastructure.</p>
- * 
+ * Clean-room provider for OpenAI, strictly utilizing the modern Responses API
+ * (/v1/responses).
+ * <p>
+ * This provider is designed for native agentic workflows, supporting built-in
+ * tools and stateful item-based history. It handles model discovery and API key
+ * management for the OpenAI platform.</p>
+ *
  * @author anahata
  */
 @Slf4j
@@ -74,7 +75,7 @@ public class OpenAiProvider extends AbstractAiProvider {
             JsonNode root = API_MAPPER.readTree(response.body());
             JsonNode data = root.get("data");
             List<OpenAiModel> models = new ArrayList<>();
-            
+
             if (data != null && data.isArray()) {
                 for (JsonNode modelNode : data) {
                     String id = modelNode.get("id").asText();

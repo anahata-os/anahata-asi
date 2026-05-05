@@ -13,10 +13,11 @@ import uno.anahata.asi.agi.provider.Response;
 
 /**
  * Specialized Response implementation for the OpenAI Responses API.
- * 
- * <p>Aggregates the entire 'output' array from a Responses API call into 
- * a single turn (one OpenAiMessage).</p>
- * 
+ * <p>
+ * Aggregates the entire 'output' array from a Responses API call into a single
+ * turn (one OpenAiModelMessage). Maps API usage metadata and orchestrates the
+ * item-by-item processing of the model's output.</p>
+ *
  * @author anahata
  */
 @Getter
@@ -35,7 +36,7 @@ public class OpenAiResponse extends Response<OpenAiModelMessage> {
         this.rawRequestConfigJson = requestConfigJson;
         this.rawHistoryJson = historyJson;
         this.rawJson = responseBody;
-        
+
         JsonNode root = API_MAPPER.readTree(responseBody);
         this.modelVersion = root.path("model").asText(modelId);
 
@@ -43,11 +44,11 @@ public class OpenAiResponse extends Response<OpenAiModelMessage> {
         JsonNode usage = root.get("usage");
         if (usage != null) {
             this.usageMetadata = ResponseUsageMetadata.builder()
-                .promptTokenCount(usage.path("input_tokens").asInt())
-                .candidatesTokenCount(usage.path("output_tokens").asInt())
-                .totalTokenCount(usage.path("total_tokens").asInt())
-                .rawJson(usage.toString())
-                .build();
+                    .promptTokenCount(usage.path("input_tokens").asInt())
+                    .candidatesTokenCount(usage.path("output_tokens").asInt())
+                    .totalTokenCount(usage.path("total_tokens").asInt())
+                    .rawJson(usage.toString())
+                    .build();
         } else {
             this.usageMetadata = ResponseUsageMetadata.builder().build();
         }
@@ -56,14 +57,14 @@ public class OpenAiResponse extends Response<OpenAiModelMessage> {
         OpenAiModelMessage turnMessage = new OpenAiModelMessage(agi, modelVersion);
         turnMessage.setResponse(this);
         turnMessage.setRawJson(responseBody);
-        
+
         JsonNode output = root.get("output");
         if (output != null && output.isArray()) {
             for (JsonNode item : output) {
                 turnMessage.processItem(item);
             }
         }
-        
+
         // OpenAI Responses API always generates exactly one turn (no candidate count parameter)
         this.candidates = List.of(turnMessage);
     }
