@@ -195,12 +195,12 @@ public class GeminiModel extends AbstractModel {
     public List<ServerTool> getAvailableServerTools() {
         List<ServerTool> tools = new ArrayList<>();
         tools.add(new ServerTool(GoogleSearch.class, "Google Search", "Search the web using Google."));
-        tools.add(new ServerTool(GoogleSearchRetrieval.class, "Google Search Retrieval", "Specialized retrieval tool powered by Google Search."));
+        //tools.add(new ServerTool(GoogleSearchRetrieval.class, "Google Search Retrieval", "Specialized retrieval tool powered by Google Search."));
         tools.add(new ServerTool(ToolCodeExecution.class, "Code Execution", "Enables the model to execute Python code as part of generation."));
-        tools.add(new ServerTool(GoogleMaps.class, "Google Maps", "Tool to support Google Maps in Model."));
-        tools.add(new ServerTool(EnterpriseWebSearch.class, "Enterprise Web Search", "Search the web using Enterprise Search."));
-        tools.add(new ServerTool(FileSearch.class, "File Search", "Search through uploaded files."));
-        tools.add(new ServerTool(ComputerUse.class, "Computer Use", "Enables the model to interact with a computer."));
+        //tools.add(new ServerTool(GoogleMaps.class, "Google Maps", "Tool to support Google Maps in Model."));
+        //tools.add(new ServerTool(EnterpriseWebSearch.class, "Enterprise Web Search", "Search the web using Enterprise Search."));
+        //tools.add(new ServerTool(FileSearch.class, "File Search", "Search through uploaded files."));
+        //tools.add(new ServerTool(ComputerUse.class, "Computer Use", "Enables the model to interact with a computer."));
         return tools;
     }
 
