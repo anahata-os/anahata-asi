@@ -162,7 +162,9 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
 
         // 4. Expand/Collapse Logic on Header Click
         if (getComponentCount() > 0) {
-            getComponent(0).addMouseListener(new MouseAdapter() {
+            Component header = getComponent(0);
+            header.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+            header.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
                     toggleExpanded();
