@@ -16,8 +16,9 @@ import uno.anahata.asi.agi.message.AbstractMessage;
 import uno.anahata.asi.agi.message.AbstractModelMessage;
 import uno.anahata.asi.agi.message.AbstractPart;
 import uno.anahata.asi.agi.message.BlobPart;
-import uno.anahata.asi.agi.message.ModelCodeCallPart;
-import uno.anahata.asi.agi.message.ModelCodeOutputPart;
+import uno.anahata.asi.agi.message.ModelBlobPart;
+import uno.anahata.asi.agi.message.ModelCodeExecutionCallPart;
+import uno.anahata.asi.agi.message.ModelCodeExecutionResultPart;
 import uno.anahata.asi.agi.message.ModelSearchCallPart;
 import uno.anahata.asi.agi.message.ModelTextPart;
 import uno.anahata.asi.agi.message.RagMessage;
@@ -72,8 +73,17 @@ public class OpenAiItemAdapter {
         ArrayNode currentContentArray = null;
         String currentProviderId = null;
 
-        for (AbstractPart part : anahataMessage.getParts(true)) {
+        java.util.Set<AbstractPart> bundledParts = new java.util.HashSet<>();
+
+        List<AbstractPart> parts = anahataMessage.getParts(true);
+        for (int i = 0; i < parts.size(); i++) {
+            AbstractPart part = parts.get(i);
+            
             if (part.isEffectivelyPruned() && !includePruned) {
+                continue;
+            }
+            
+            if (bundledParts.contains(part)) {
                 continue;
             }
 
@@ -86,7 +96,6 @@ public class OpenAiItemAdapter {
 
                 ObjectNode callItem = API_MAPPER.createObjectNode();
                 callItem.put("type", "function_call");
-                // Identification Logic: use part's providerId OR part's sequential ID if model changed
                 callItem.put("id", partProviderId != null ? partProviderId : "fc_" + tc.getSequentialId());
                 callItem.put("call_id", tc.getId());
                 String fullName = tc.getToolName();
@@ -97,28 +106,38 @@ public class OpenAiItemAdapter {
                 } else {
                     callItem.put("name", fullName);
                 }
-                // Fidelity: Replay original rawArgs to the model
                 String argsJson = SchemaProvider.OBJECT_MAPPER.writeValueAsString(tc.getRawArgs());
                 callItem.put("arguments", argsJson);
                 items.add(callItem);
 
-            } else if (sameModel && part instanceof ModelCodeCallPart mccp) {
+            } else if (sameModel && part instanceof ModelCodeExecutionCallPart mccp) {
                 flushMessageItem(items, currentMessageItem);
                 currentMessageItem = null;
+                
                 ObjectNode ciCall = API_MAPPER.createObjectNode();
-                items.add(ciCall);
                 ciCall.put("type", "code_interpreter_call");
                 ciCall.put("id", partProviderId != null ? partProviderId : "ci_" + part.getSequentialId());
-                ciCall.putObject("action").put("code", mccp.getText());
-            } else if (sameModel && part instanceof ModelCodeOutputPart mcop) {
-                flushMessageItem(items, currentMessageItem);
-                currentMessageItem = null;
-                ObjectNode ciOutput = API_MAPPER.createObjectNode();
-                items.add(ciOutput);
-                ciOutput.put("type", "code_interpreter_output");
-                ciOutput.put("id", partProviderId != null ? partProviderId : "cio_" + part.getSequentialId());
-                ciOutput.put("logs", mcop.getText());
-                // Note: Binary output harvesting in replay is complex if session is stateless.
+                ciCall.put("code", mccp.getText());
+                
+                // Bundling: Look ahead for associated logs and images in the same turn
+                ArrayNode outputs = ciCall.putArray("outputs");
+                for (int j = i + 1; j < parts.size(); j++) {
+                    AbstractPart next = parts.get(j);
+                    if (Objects.equals(next.getProviderId(), part.getProviderId())) {
+                        if (next instanceof ModelCodeExecutionResultPart mcop) {
+                            outputs.addObject().put("type", "logs").put("logs", mcop.getText());
+                            bundledParts.add(next);
+                        } else if (next instanceof ModelBlobPart mbp && mbp.getMimeType().startsWith("image/")) {
+                            ObjectNode imgNode = outputs.addObject();
+                            imgNode.put("type", "image");
+                            imgNode.putObject("image")
+                                    .put("data", Base64.getEncoder().encodeToString(mbp.getData()))
+                                    .put("format", "png"); // Fallback to png for CI outputs
+                            bundledParts.add(next);
+                        }
+                    }
+                }
+                items.add(ciCall);
             } else if (sameModel && part instanceof ModelSearchCallPart mscp) {
                 flushMessageItem(items, currentMessageItem);
                 currentMessageItem = null;
@@ -137,7 +156,6 @@ public class OpenAiItemAdapter {
                 reasoningItem.put("encrypted_content", new String(ts.getThoughtSignature()));
                 items.add(reasoningItem);
 
-                // Ghosting: If this part's text is just our placeholder, don't add it to a following message item
                 if (part instanceof TextPart tp && OpenAiModelMessage.ENCRYPTED_REASONING_PLACEHOLDER.equals(tp.getText())) {
                     continue;
                 }
@@ -151,11 +169,9 @@ public class OpenAiItemAdapter {
                     currentMessageItem.put("type", "message");
                     currentMessageItem.put("role", "assistant");
 
-                    // Identification Logic: use part's providerId OR part's sequential ID if model changed
                     if (partProviderId != null) {
                         currentMessageItem.put("id", partProviderId);
                     } else {
-                        // If model changed, we use the part ID to ensure uniqueness in interleaved turns
                         currentMessageItem.put("id", "msg_" + part.getSequentialId());
                     }
 

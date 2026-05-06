@@ -139,7 +139,9 @@ public class OpenAiModel extends AbstractModel {
 
     @Override
     public List<ServerTool> getDefaultServerTools() {
-        return Collections.emptyList();
+        return getAvailableServerTools().stream()
+                .filter(st -> "web_search".equals(st.getId()))
+                .collect(java.util.stream.Collectors.toList());
     }
 
     @Override
@@ -228,9 +230,13 @@ public class OpenAiModel extends AbstractModel {
             for (ServerTool st : request.config().getEnabledServerTools()) {
                 if ("web_search".equals(st.getId())) {
                     toolsArray.addObject().put("type", "web_search");
+                    include.add("web_search_call.results");
+                    include.add("web_search_call.action.sources");
                 } else if ("code_interpreter".equals(st.getId())) {
-                    toolsArray.addObject().put("type", "code_interpreter");
-                    include.add("output.code_interpreter_output.files.data");
+                    ObjectNode ciTool = toolsArray.addObject();
+                    ciTool.put("type", "code_interpreter");
+                    ciTool.putObject("container").put("type", "auto");
+                    include.add("code_interpreter_call.outputs");
                 }
             }
         }

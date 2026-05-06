@@ -15,8 +15,9 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.message.AbstractModelMessage;
-import uno.anahata.asi.agi.message.ModelCodeCallPart;
-import uno.anahata.asi.agi.message.ModelCodeOutputPart;
+import uno.anahata.asi.agi.message.ModelBlobPart;
+import uno.anahata.asi.agi.message.ModelCodeExecutionCallPart;
+import uno.anahata.asi.agi.message.ModelCodeExecutionResultPart;
 import uno.anahata.asi.agi.message.ModelSearchCallPart;
 import uno.anahata.asi.agi.message.TextPart;
 import uno.anahata.asi.agi.provider.FinishReason;
@@ -48,12 +49,6 @@ public class OpenAiModelMessage extends AbstractModelMessage<OpenAiResponse> {
         super(agi, modelId);
     }
 
-    /**
-     * Processes a single item from the OpenAI 'output' array and maps it 
-     * to the appropriate Anahata parts.
-     * 
-     * @param item The JSON node representing an OpenAI item.
-     */
     /**
      * Processes a single item from the OpenAI 'output' array and maps it 
      * to the appropriate Anahata parts.
@@ -141,37 +136,63 @@ public class OpenAiModelMessage extends AbstractModelMessage<OpenAiResponse> {
                      queries.add(q.asText());
                  }
              }
+             
+             // Responses API Harvesting: Map action sources and results to GroundingSources
+             List<GroundingSource> sources = new ArrayList<>();
+             JsonNode sourcesNode = action.path("sources");
+             if (sourcesNode.isArray()) {
+                 for (JsonNode s : sourcesNode) {
+                     String url = s.path("url").asText(null);
+                     if (url != null) {
+                         sources.add(GroundingSource.builder()
+                                 .uri(url)
+                                 .title(s.path("title").asText(url))
+                                 .build());
+                     }
+                 }
+             }
+             
+             JsonNode results = item.get("results");
+             if (results != null && results.isArray()) {
+                 for (JsonNode r : results) {
+                     String url = r.path("url").asText(null);
+                     if (url != null) {
+                         sources.add(GroundingSource.builder()
+                                 .uri(url)
+                                 .title(r.path("title").asText(url))
+                                 .build());
+                     }
+                 }
+             }
+             
+             if (!queries.isEmpty() || !sources.isEmpty()) {
+                 updateGroundingMetadata(queries, List.of(), sources, null, item.toString());
+             }
+
              String displayText = String.format("Searching the web for: %s", queries);
-             
-             // Update GroundingMetadata with search queries (suggestions)
-             updateGroundingMetadata(queries, List.of(), List.of(), null, null);
-             
              ModelSearchCallPart part = new ModelSearchCallPart(this, displayText, queries, null);
              part.setProviderId(id);
-        } else if ("web_search_output".equals(type)) {
-             // We'll capture it to maintain the narrative flow.
-             JsonNode results = item.get("results");
-             if (results != null) {
-                  TextPart tp = addTextPart("[Hosted Search Results]\n" + results.toString(), null, false);
-                  tp.setProviderId(id);
-             }
         } else if ("code_interpreter_call".equals(type)) {
-             String code = item.path("action").path("code").asText("");
-             ModelCodeCallPart part = new ModelCodeCallPart(this, code, "python", null);
-             part.setProviderId(id);
-        } else if ("code_interpreter_output".equals(type)) {
-             String logs = item.path("logs").asText("");
-             ModelCodeOutputPart part = new ModelCodeOutputPart(this, logs, null);
-             part.setProviderId(id);
+             String code = item.path("code").asText("");
+             ModelCodeExecutionCallPart callPart = new ModelCodeExecutionCallPart(this, code, "python", null);
+             callPart.setProviderId(id);
              
-             // Capture generated files (visual outputs) as ModelBlobParts
-             JsonNode files = item.get("files");
-             if (files != null && files.isArray()) {
-                 for (JsonNode f : files) {
-                     String b64 = f.path("data").asText(null);
-                     if (b64 != null) {
-                         String mime = "image/png"; // Standard for code interpreter plots
-                         addBlobPart(mime, java.util.Base64.getDecoder().decode(b64), null).setProviderId(id);
+             // Responses API: Outputs (logs, images) are nested in the call item
+             JsonNode outputs = item.get("outputs");
+             if (outputs != null && outputs.isArray()) {
+                 for (JsonNode out : outputs) {
+                     String outType = out.path("type").asText();
+                     if ("logs".equals(outType)) {
+                         ModelCodeExecutionResultPart resultPart = new ModelCodeExecutionResultPart(this, out.path("logs").asText(""), null);
+                         resultPart.setProviderId(id);
+                         resultPart.setParentCall(callPart);
+                     } else if ("image".equals(outType)) {
+                         String b64 = out.path("image").path("data").asText(null);
+                         if (b64 != null) {
+                             ModelBlobPart mbp = addBlobPart("image/png", java.util.Base64.getDecoder().decode(b64), null);
+                             mbp.setProviderId(id);
+                             mbp.setParentCall(callPart);
+                         }
                      }
                  }
              }
