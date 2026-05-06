@@ -15,7 +15,15 @@ import lombok.Setter;
 @Setter
 public class ModelBlobPart extends BlobPart implements ThoughtSignature {
 
+    /**
+     * The thought signature / encrypeted reasoning
+     */
     private byte[] thoughtSignature;
+    
+    /**
+     * If this blob was part of the output a hosted tool call (code_interpreter_call), then 
+     */
+    private ModelCodeExecutionCallPart parentCall;
 
     /**
      * Constructs a ModelBlobPart from raw byte data and a specified MIME type.
