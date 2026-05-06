@@ -5,6 +5,7 @@ package uno.anahata.asi.swing.agi.message;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GradientPaint;
@@ -146,6 +147,8 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
 
         // 4. Expand/Collapse Logic on Header Click
         if (getComponentCount() > 0) {
+            Component header = getComponent(0);
+            header.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
             getComponent(0).addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
