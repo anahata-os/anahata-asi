@@ -1,8 +1,10 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.agi.message;
 
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
+import uno.anahata.asi.agi.tool.ToolResponseAttachment;
 
 /**
  * A specialized part representing the output or logs from a server-side code execution.
@@ -16,8 +18,13 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class ModelCodeOutputPart extends ModelTextPart {
-
+public class ModelCodeExecutionResultPart extends ModelTextPart {
+    
+    /**
+     * If the underlying provider follows a parent / child relationship between the call and the response
+     */
+    private ModelCodeExecutionCallPart parentCall;
+    
     /**
      * Constructs a new ModelCodeOutputPart.
      * 
@@ -25,7 +32,7 @@ public class ModelCodeOutputPart extends ModelTextPart {
      * @param logs The textual output or logs from the execution.
      * @param thoughtSignature The signature of the thought process associated with this output, if any.
      */
-    public ModelCodeOutputPart(AbstractModelMessage message, String logs, byte[] thoughtSignature) {
+    public ModelCodeExecutionResultPart(AbstractModelMessage message, String logs, byte[] thoughtSignature) {
         super(message, logs, thoughtSignature, false);
     }
 
