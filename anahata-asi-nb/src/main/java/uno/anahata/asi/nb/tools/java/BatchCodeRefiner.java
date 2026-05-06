@@ -58,8 +58,17 @@ import static uno.anahata.asi.nb.tools.java.coderefiner.RelativePosition.START;
  * @author anahata
  */
 @Slf4j
-@AgiToolkit("Advanced structural Java refinement (Batch Mode). Currently in Beta.")
+@AgiToolkit("Advanced structural Java refinement (Batch Mode). Currently in Beta. Do not enable it unless the user is an anahata asi developer. Its got major problems with lombok")
 public class BatchCodeRefiner extends AnahataToolkit {
+
+    /**
+     * Leave it disabled for now.
+     */
+    @Override
+    public void initialize() {
+        //don't change it
+        getToolkit().setEnabled(false);
+    }
 
     @Override
     public List<String> getSystemInstructions() throws Exception {
