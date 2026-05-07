@@ -21,9 +21,19 @@ import uno.anahata.asi.agi.tool.ToolResponseAttachment;
 public class ModelCodeExecutionResultPart extends ModelTextPart {
     
     /**
+     * The code execution outcomes.
+     */
+    public static enum ModelCodeExectionOutcome { UNKNOWN, OK, FAILED, TIMEOUT}
+    
+    /**
      * If the underlying provider follows a parent / child relationship between the call and the response
      */
     private ModelCodeExecutionCallPart parentCall;
+    
+    /**
+     * The outcome of the code execution result.
+     */
+    private ModelCodeExectionOutcome outcome;
     
     /**
      * Constructs a new ModelCodeOutputPart.
