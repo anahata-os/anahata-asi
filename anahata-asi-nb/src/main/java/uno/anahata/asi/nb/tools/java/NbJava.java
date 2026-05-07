@@ -200,15 +200,16 @@ public class NbJava extends SwingJava {
      * @throws Exception on error.
      */
     @AgiTool(
-            value = "Compiles and executes Java source code within the context of a specific NetBeans project. "
-            + "This tool enables a powerful 'hot-reload' workflow by creating a dynamic classpath that prioritizes the project's own build directories (e.g., 'target/classes') over the plugins classpath. "
-            + "Usage Rule: Use the normal compileAndExecute **if you are not importing any types from any of the open projects**"
+            value = "Proxy tool for compileAndExecute that aggregates the extraClassPath parameter by including the target/classes directory of the specified NetBeans project and calls compileAndExecute passing this target/classs directory so any types on the specified project can be imported in the Anahata java class. "
+                    + "Additionally, if includeDependencies is true, the target/classess of any open projects that are a dependency of the specified project will be added to the extraClassPath as well as the jar files of all dependencies. "
+            + "This tool enables a powerful 'hot-reload' workflow by creating a dynamic classpath that prioritizes the project's own build directories (e.g., 'target/classes') over the projects artifacts so you can update one or more java files and run a script that uses it in the same turn to test the changes made to the java files. "
+            + "Usage Rule: Use the normal compileAndExecute **if you are need to imort any java types from any of the open projects in the Anahata class. You don't need to do compileAndExecuteInProject to read a file in that project or to use a netbeans api that does anything to that project or to any file in that project. This tool only builds the extraClassPath parameter of compileAndExecute**"
     )
     public Object compileAndExecuteInProject(
             @AgiToolParam(value = "Source code of a public class named **Anahata** that is **public** has **no package declaration**, **extends SwingAgiTool** (or whatever is indicated in the system instructions) and implements the call() method of java.util.concurrent.Callable", rendererId = "java") String sourceCode,
             @AgiToolParam("The absolute path of the NetBeans project to run in.") String projectPath,
-            @AgiToolParam("Whether to include the project's COMPILE and EXECUTE **dependencies**.") boolean includeDependencies,
-            @AgiToolParam("Whether to include the project's test source folders and test dependencies.") boolean includeTestDependencies,
+            @AgiToolParam("Whether to include the project's COMPILE and EXECUTE **dependencies**. If any of the dependencies is an open project, the target/classess of that project will be added to the extraClassPath") boolean includeDependencies,
+            @AgiToolParam("Whether to include the project's test source folders and test dependencies. If any test dependencies is an open project, the target/test-classess of that project will be added to the extraClassPath") boolean includeTestDependencies,
             @AgiToolParam(value = "Optional additional compiler options.", required = false) String[] compilerOptions) throws Exception {
 
         Project project = Projects.findOpenProject(projectPath);
