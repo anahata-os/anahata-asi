@@ -20,6 +20,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
+import java.util.ArrayList;
 
 /**
  * The abstract base class for all AI model providers, now with model caching.
@@ -33,8 +34,14 @@ import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
 public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
 
     /**
+     * An optional whitelist of model IDs. If not empty, only models matching
+     * IDs in this list will be returned by {@link #getModels()}.
+     */
+    private List<String> allowedModels = new ArrayList<>();
+
+    /**
      * A transient reference to the parent container. 
-     * This allows providers to access shared resources like the executor service.
+* This allows providers to access shared resources like the executor service.
      */
     private transient AbstractAsiContainer asiContainer;
 
@@ -131,6 +138,11 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      * Gets the list of models, using a lazy-loaded cache.
      * If the cache is empty, it calls {@link #listModels()} to populate it.
      * If fetching fails, it returns an empty list and caches it to prevent repeated failures.
+     * <p>
+     * Implementation details: This method automatically filters the results of {@link #listModels()} 
+     * against the {@link #allowedModels} whitelist. If the whitelist is empty, all discovered 
+     * models are returned.
+     * </p>
      *
      * @return The cached list of models.
      */
@@ -138,7 +150,14 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
         if (this.models == null) {
             log.info("Model cache is empty for provider '{}'. Loading from API...", getProviderId());
             try {
-                this.models = listModels();
+                List<? extends AbstractModel> discovered = listModels();
+                if (allowedModels != null && !allowedModels.isEmpty()) {
+                    this.models = discovered.stream()
+                            .filter(m -> allowedModels.contains(m.getModelId()))
+                            .collect(Collectors.toList());
+                } else {
+                    this.models = discovered;
+                }
             } catch (Exception e) {
                 log.error("Failed to load models for provider '{}'. Caching empty list to prevent repeated errors.", getProviderId(), e);
                 this.models = Collections.emptyList();
