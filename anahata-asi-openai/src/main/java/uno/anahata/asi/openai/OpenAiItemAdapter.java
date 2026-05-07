@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -73,94 +74,44 @@ public class OpenAiItemAdapter {
         ArrayNode currentContentArray = null;
         String currentProviderId = null;
 
-        java.util.Set<AbstractPart> bundledParts = new java.util.HashSet<>();
+        // Map to track and reuse Code Interpreter items (Call -> JSON Node)
+        Map<ModelCodeExecutionCallPart, ObjectNode> ciNodes = new java.util.LinkedHashMap<>();
 
-        List<AbstractPart> parts = anahataMessage.getParts(true);
-        for (int i = 0; i < parts.size(); i++) {
-            AbstractPart part = parts.get(i);
-            
-            if (part.isEffectivelyPruned() && !includePruned) {
-                continue;
-            }
-            
-            if (bundledParts.contains(part)) {
-                continue;
-            }
-
-            // High Fidelity: Reuse captured ID if same model, otherwise generate synthetic
+        for (AbstractPart part : modelMsg.getParts(includePruned)) {
             String partProviderId = sameModel ? part.getProviderId() : null;
 
+            // 1. OpenAI-Specific Encrypted Reasoning Item
+            if (sameModel && part instanceof ModelTextPart mtp && mtp.isThought() 
+                    && OpenAiModelMessage.ENCRYPTED_REASONING_PLACEHOLDER.equals(mtp.getText())
+                    && mtp.getThoughtSignature() != null) {
+                
+                flushMessageItem(items, currentMessageItem);
+                currentMessageItem = null;
+                items.add(createReasoningNode(part, (ThoughtSignature)part, sameModel));
+                continue; // Skip: already handled as a top-level reasoning item
+            }
+
+            // 2. Code Interpreter Components (Call, Result, or Blob with parentCall)
+            ModelCodeExecutionCallPart ciRoot = getCiRoot(part);
+            if (ciRoot != null) {
+                flushMessageItem(items, currentMessageItem);
+                currentMessageItem = null;
+                ObjectNode ciNode = getOrCreateCiNode(ciNodes, ciRoot, items, sameModel);
+                updateCiNode(ciNode, part);
+                continue;
+            }
+
+            // 3. Independent Items (Functions, Search)
             if (part instanceof AbstractToolCall<?, ?> tc) {
                 flushMessageItem(items, currentMessageItem);
                 currentMessageItem = null;
-
-                ObjectNode callItem = API_MAPPER.createObjectNode();
-                callItem.put("type", "function_call");
-                callItem.put("id", partProviderId != null ? partProviderId : "fc_" + tc.getSequentialId());
-                callItem.put("call_id", tc.getId());
-                String fullName = tc.getToolName();
-                int dotIdx = fullName.lastIndexOf(".");
-                if (dotIdx > 0) {
-                    callItem.put("namespace", fullName.substring(0, dotIdx));
-                    callItem.put("name", fullName.substring(dotIdx + 1));
-                } else {
-                    callItem.put("name", fullName);
-                }
-                String argsJson = SchemaProvider.OBJECT_MAPPER.writeValueAsString(tc.getRawArgs());
-                callItem.put("arguments", argsJson);
-                items.add(callItem);
-
-            } else if (sameModel && part instanceof ModelCodeExecutionCallPart mccp) {
+                items.add(createFunctionCallNode(tc, sameModel));
+            } else if (part instanceof ModelSearchCallPart mscp) {
                 flushMessageItem(items, currentMessageItem);
                 currentMessageItem = null;
-                
-                ObjectNode ciCall = API_MAPPER.createObjectNode();
-                ciCall.put("type", "code_interpreter_call");
-                ciCall.put("id", partProviderId != null ? partProviderId : "ci_" + part.getSequentialId());
-                ciCall.put("code", mccp.getText());
-                
-                // Bundling: Look ahead for associated logs and images in the same turn
-                ArrayNode outputs = ciCall.putArray("outputs");
-                for (int j = i + 1; j < parts.size(); j++) {
-                    AbstractPart next = parts.get(j);
-                    if (Objects.equals(next.getProviderId(), part.getProviderId())) {
-                        if (next instanceof ModelCodeExecutionResultPart mcop) {
-                            outputs.addObject().put("type", "logs").put("logs", mcop.getText());
-                            bundledParts.add(next);
-                        } else if (next instanceof ModelBlobPart mbp && mbp.getMimeType().startsWith("image/")) {
-                            ObjectNode imgNode = outputs.addObject();
-                            imgNode.put("type", "image");
-                            imgNode.putObject("image")
-                                    .put("data", Base64.getEncoder().encodeToString(mbp.getData()))
-                                    .put("format", "png"); // Fallback to png for CI outputs
-                            bundledParts.add(next);
-                        }
-                    }
-                }
-                items.add(ciCall);
-            } else if (sameModel && part instanceof ModelSearchCallPart mscp) {
-                flushMessageItem(items, currentMessageItem);
-                currentMessageItem = null;
-                ObjectNode searchCall = API_MAPPER.createObjectNode();
-                items.add(searchCall);
-                searchCall.put("type", "web_search_call");
-                searchCall.put("id", partProviderId != null ? partProviderId : "ws_" + part.getSequentialId());
-                searchCall.putObject("action").put("query", mscp.getQueries().isEmpty() ? "" : mscp.getQueries().get(0));
-            } else if (sameModel && part instanceof ThoughtSignature ts && ts.getThoughtSignature() != null) {
-                flushMessageItem(items, currentMessageItem);
-                currentMessageItem = null;
-
-                ObjectNode reasoningItem = API_MAPPER.createObjectNode();
-                reasoningItem.put("type", "reasoning");
-                reasoningItem.put("id", partProviderId != null ? partProviderId : "rs_" + part.getSequentialId());
-                reasoningItem.put("encrypted_content", new String(ts.getThoughtSignature()));
-                items.add(reasoningItem);
-
-                if (part instanceof TextPart tp && OpenAiModelMessage.ENCRYPTED_REASONING_PLACEHOLDER.equals(tp.getText())) {
-                    continue;
-                }
+                items.add(createWebSearchCallNode(mscp, sameModel));
             } else {
-                // Assistant speech (batched into message items based on original providerId grouping)
+                // 4. Message Content (Assistant Speech, Visible Thoughts, Blobs without parentCall)
                 if (currentMessageItem != null && Objects.equals(partProviderId, currentProviderId)) {
                     addPartToContentArray(currentContentArray, part, "assistant");
                 } else {
@@ -168,12 +119,7 @@ public class OpenAiItemAdapter {
                     currentMessageItem = API_MAPPER.createObjectNode();
                     currentMessageItem.put("type", "message");
                     currentMessageItem.put("role", "assistant");
-
-                    if (partProviderId != null) {
-                        currentMessageItem.put("id", partProviderId);
-                    } else {
-                        currentMessageItem.put("id", "msg_" + part.getSequentialId());
-                    }
+                    currentMessageItem.put("id", partProviderId != null ? partProviderId : "msg_" + part.getSequentialId());
 
                     if (modelMsg instanceof OpenAiModelMessage oam && oam.getPhase() != null) {
                         currentMessageItem.put("phase", oam.getPhase());
@@ -186,6 +132,86 @@ public class OpenAiItemAdapter {
         }
         flushMessageItem(items, currentMessageItem);
         return items;
+    }
+
+    private ModelCodeExecutionCallPart getCiRoot(AbstractPart part) {
+        if (part instanceof ModelCodeExecutionCallPart mccp) {
+            return mccp;
+        }
+        if (part instanceof ModelCodeExecutionResultPart res) {
+            return res.getParentCall();
+        }
+        if (part instanceof ModelBlobPart blob) {
+            return blob.getParentCall();
+        }
+        return null;
+    }
+
+    private ObjectNode getOrCreateCiNode(Map<ModelCodeExecutionCallPart, ObjectNode> ciNodes, ModelCodeExecutionCallPart root, List<ObjectNode> items, boolean sameModel) {
+        return ciNodes.computeIfAbsent(root, k -> {
+            ObjectNode node = API_MAPPER.createObjectNode();
+            node.put("type", "code_interpreter_call");
+            node.put("status", "completed");
+            String id = (sameModel && k.getProviderId() != null) ? k.getProviderId() : "ci_" + k.getSequentialId();
+            node.put("id", id);
+            node.put("code", "# Source code removed or pruned to save tokens");
+            node.putArray("outputs");
+            items.add(node);
+            return node;
+        });
+    }
+
+    private void updateCiNode(ObjectNode ciNode, AbstractPart part) {
+        if (part instanceof ModelCodeExecutionCallPart mccp) {
+            ciNode.put("code", mccp.getText());
+        } else {
+            ArrayNode outputs = (ArrayNode) ciNode.get("outputs");
+            if (part instanceof ModelCodeExecutionResultPart res) {
+                outputs.addObject().put("type", "logs").put("logs", res.getText());
+            } else if (part instanceof ModelBlobPart mbp && mbp.getMimeType().startsWith("image/")) {
+                ObjectNode imgNode = outputs.addObject();
+                imgNode.put("type", "image");
+                imgNode.put("url", "data:" + mbp.getMimeType() + ";base64," + Base64.getEncoder().encodeToString(mbp.getData()));
+            }
+        }
+    }
+
+    private ObjectNode createFunctionCallNode(AbstractToolCall<?, ?> tc, boolean sameModel) throws Exception {
+        ObjectNode callItem = API_MAPPER.createObjectNode();
+        callItem.put("type", "function_call");
+        String id = (sameModel && tc.getProviderId() != null) ? tc.getProviderId() : "fc_" + tc.getSequentialId();
+        callItem.put("id", id);
+        // Robustness: if no call_id exists (e.g. legacy or cross-provider), use the synthetic ID
+        callItem.put("call_id", tc.getId() != null ? tc.getId() : id);
+        String fullName = tc.getToolName();
+        int dotIdx = fullName.lastIndexOf(".");
+        if (dotIdx > 0) {
+            callItem.put("namespace", fullName.substring(0, dotIdx));
+            callItem.put("name", fullName.substring(dotIdx + 1));
+        } else {
+            callItem.put("name", fullName);
+        }
+        String argsJson = SchemaProvider.OBJECT_MAPPER.writeValueAsString(tc.getRawArgs());
+        callItem.put("arguments", argsJson);
+        return callItem;
+    }
+
+    private ObjectNode createWebSearchCallNode(ModelSearchCallPart mscp, boolean sameModel) {
+        ObjectNode searchCall = API_MAPPER.createObjectNode();
+        searchCall.put("type", "web_search_call");
+        String id = (sameModel && mscp.getProviderId() != null) ? mscp.getProviderId() : "ws_" + mscp.getSequentialId();
+        searchCall.put("id", id);
+        searchCall.putObject("action").put("query", mscp.getQueries().isEmpty() ? "" : mscp.getQueries().get(0));
+        return searchCall;
+    }
+
+    private ObjectNode createReasoningNode(AbstractPart part, ThoughtSignature ts, boolean sameModel) {
+        ObjectNode reasoningItem = API_MAPPER.createObjectNode();
+        reasoningItem.put("type", "reasoning");
+        String id = (sameModel && part.getProviderId() != null) ? part.getProviderId() : "rs_" + part.getSequentialId();
+        reasoningItem.put("id", id);
+        reasoningItem.put("encrypted_content", new String(ts.getThoughtSignature()));
+        return reasoningItem;
     }
 
     private void flushMessageItem(List<ObjectNode> items, ObjectNode item) {
@@ -204,16 +230,17 @@ public class OpenAiItemAdapter {
         for (AbstractToolResponse<?> tr : executedResponses) {
             ObjectNode responseItem = API_MAPPER.createObjectNode();
             responseItem.put("type", "function_call_output");
-            // Identification Logic: Always use fco_ prefix + the tool call's unique session ID
+            // Always use fco_ prefix + the tool call's unique session ID
             responseItem.put("id", "fco_" + tr.getCall().getSequentialId());
-            responseItem.put("call_id", tr.getCall().getId());
+            // Robustness fallback: use the synthetic ID if call_id is null
+            String callId = tr.getCall().getId() != null ? tr.getCall().getId() : "fc_" + tr.getCall().getSequentialId();
+            responseItem.put("call_id", callId);
 
             String fullResponseJson = SchemaProvider.OBJECT_MAPPER.valueToTree(tr).toString();
             responseItem.put("output", fullResponseJson);
             items.add(responseItem);
 
-            // Multimodal Tool Support: OpenAI Responses API doesn't support attachments in fco items.
-            // We follow up with a dedicated message item containing the attachments.
+            // Multimodal Tool Support
             if (!tr.getAttachments().isEmpty()) {
                 ObjectNode attachmentItem = API_MAPPER.createObjectNode();
                 attachmentItem.put("type", "message");
@@ -270,15 +297,11 @@ public class OpenAiItemAdapter {
         }
 
         if (part instanceof TextPart tp) {
-            // Assistant items in history must use 'output_text'. 
-            // User and System items must use 'input_text'.
-            String typePrefix = "assistant".equals(role) ? "output_text" : "input_text";
-            contentArray.addObject().put("type", typePrefix).put("text", tp.getText());
-        } else if (part instanceof ModelTextPart mtp) {
-            // Assistant items in history must use 'output_text'. 
-            // User and System items must use 'input_text'.
-            String typePrefix = "assistant".equals(role) ? "output_text" : "input_text";
-            contentArray.addObject().put("type", typePrefix).put("text", mtp.getText());
+            // High Fidelity: Differentiate assistant and user/system text.
+            // Note: 'reasoning_content' is not supported in 'input' history items for Responses API, 
+            // so assistant thoughts are sent as standard 'output_text'.
+            String type = "assistant".equals(role) ? "output_text" : "input_text";
+            contentArray.addObject().put("type", type).put("text", tp.getText());
         } else if (part instanceof BlobPart bp) {
             addBlobToContentArray(contentArray, bp.getMimeType(), bp.getData());
         }
