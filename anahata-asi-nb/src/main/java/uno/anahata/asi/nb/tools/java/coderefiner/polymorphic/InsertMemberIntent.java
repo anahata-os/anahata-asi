@@ -52,7 +52,7 @@ public class InsertMemberIntent extends CodeRefinementIntentPolymorphic {
         
         // 1. Parse and optionally optimize the new member FIRST.
         // This may add imports to the CompilationUnit.
-        Tree newMember = BatchCodeRefiner.parseMember(wc, declaration, body);
+        Tree newMember = BatchCodeRefiner.parseMember(wc, declaration, body, wc.getClasspathInfo());
         if (optimize) {
             newMember = gu.importFQNs(newMember);
         }
