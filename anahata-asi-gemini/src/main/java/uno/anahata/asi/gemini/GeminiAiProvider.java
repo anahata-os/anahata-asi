@@ -1,8 +1,9 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.gemini;
 
-import com.google.auth.oauth2.GoogleCredentials;
+import com.google.genai.Chat;
 import com.google.genai.Client;
+import com.google.genai.types.GenerateContentResponse;
 import com.google.genai.types.ListModelsConfig;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -10,6 +11,7 @@ import java.util.stream.StreamSupport;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.agi.provider.TokenizerType;
@@ -28,19 +30,21 @@ public class GeminiAiProvider extends AbstractAiProvider {
     private transient Client client;
 
     @Setter
-    private boolean enterprise = false;
+    private boolean vertex = false;
 
     /**
      * Craetes a new Gemini Provider using the Official Google Genai Java SDK.
      *
-     * @param enterprise if true will point to vertex express.
+     * @param uuid registration id
+     * @param displayName
+     * @param vertex if true will point to vertex express.
      */
-    public GeminiAiProvider(boolean enterprise) {
-        super("Gemini" + (enterprise ? "Enterprise" : ""));
-        this.enterprise = enterprise;
-        setDisplayName(enterprise ? "Gemini Enterprise" : "Gemini AI Studio");
+    public GeminiAiProvider(String uuid, String displayName, boolean vertex) {
+        super(uuid);
+        this.vertex = vertex;
+        setDisplayName(displayName);
         setTokenizerType(TokenizerType.GEMINI);
-        setKeysAcquisitionUri(enterprise ? "https://console.cloud.google.com/agent-platform/overview" : "https://aistudio.google.com/app/apikey");
+        setKeysAcquisitionUri(vertex ? "https://console.cloud.google.com/agent-platform/overview" : "https://aistudio.google.com/app/apikey");
     }
 
     /**
@@ -50,32 +54,24 @@ public class GeminiAiProvider extends AbstractAiProvider {
      */
     public synchronized Client getClient() {
         if (client == null) {
-            //try GoogleCredentials here?
-            if (enterprise) {
-                try {
-                    log.info("Checking for application default credentials GoogleCredentials.getApplicationDefault()");
-                    GoogleCredentials gc = GoogleCredentials.getApplicationDefault();
-                    if (gc != null) {
-                        client = Client.builder()
-                                .vertexAI(true)
-                                .credentials(gc)
-                                .build();
-                        return client;
-                    }
-                } catch (Exception e) {
-                    log.info("No ApplicationDefault google credentials detected, will attempt api key authentication");
-                }
-            }
 
-            String nextKey = getNextKey();
-            if (nextKey != null) {
-                client = Client.builder()
-                        .vertexAI(enterprise)
-                        .apiKey(nextKey)
-                        .build();
+            if (isApiKeyRequired()) {
+                String nextKey = getNextKey();
+                log.info("Got api key from " + getUuid() + " " + StringUtils.abbreviate(nextKey, 8));
+                if (nextKey != null) {
+                    client = Client.builder()
+                            .vertexAI(vertex)
+                            .apiKey(nextKey)
+                            .build();
+                } else {
+                    throw new IllegalStateException("Could not load an API key for Gemini. Check " + getKeysFilePath());
+                }
             } else {
-                throw new IllegalStateException("Could not load an API key for Gemini. Check " + getKeysFilePath());
+                client = Client.builder()
+                            .vertexAI(vertex)
+                            .build();
             }
+            
 
         }
         return client;
@@ -135,12 +131,16 @@ public class GeminiAiProvider extends AbstractAiProvider {
                 + "# You can put comments after each key using '//'.\n"
                 + "\n"
                 + "AIzaSyB1C2D3E4F5G6H7I8J9K0L1M2N3O4P5Q6R // main_key\n"
-                + "AIzaSyA9B8C7D6E5F4G3H2I1J0K9L8M7N6O5P4Q // backup_key";
+                + "AIzaSyA9B8C7D6E5F4G3H2I1J0K9L8M7N6O5P4Q // backup_key"
+                + "AIzaSyB1C2D3E4F5G6H7I8J9K0L1M2N3O4P5Q6R // secodary_backup_key\n";
     }
+    
+    /*
 
     public static void main(String[] args) {
-        for (Object gm : new GeminiAiProvider(false).listModels()) {
-            log.info("" + gm);
-        }
-    }
+        Client c = new GeminiAiProvider(true).getClient();
+        Chat chat = c.chats.create("gemini-3-flash-preview");
+        GenerateContentResponse resp = chat.sendMessage("hi");
+        System.out.println(resp);
+    }*/
 }
