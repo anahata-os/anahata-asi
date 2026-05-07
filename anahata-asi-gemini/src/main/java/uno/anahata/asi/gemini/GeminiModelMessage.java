@@ -3,6 +3,8 @@ package uno.anahata.asi.gemini;
 
 import com.google.genai.types.Candidate;
 import com.google.genai.types.Citation;
+import com.google.genai.types.CodeExecutionResult;
+import com.google.genai.types.ExecutableCode;
 import com.google.genai.types.FunctionCall;
 import com.google.genai.types.Part;
 import java.util.List;
@@ -15,6 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.message.AbstractModelMessage;
 import uno.anahata.asi.agi.message.AbstractPart;
+import uno.anahata.asi.agi.message.ModelCodeExecutionCallPart;
+import uno.anahata.asi.agi.message.ModelCodeExecutionResultPart;
 import uno.anahata.asi.agi.provider.FinishReason;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.agi.message.web.GroundingMetadata;
@@ -117,6 +121,31 @@ public class GeminiModelMessage extends AbstractModelMessage<GeminiResponse> {
             AbstractToolCall toolCall = toAnahataToolCall(googlePart.functionCall().get());
             toolCall.setThoughtSignature(thoughtSignature); // Directly set, no cast needed
             return toolCall;
+        }
+        
+        if (googlePart.executableCode().isPresent()) {
+            ExecutableCode code = googlePart.executableCode().get();
+            String source = code.code().orElse("");
+            String lang = code.language().map(l -> l.knownEnum().name().toLowerCase()).orElse("python");
+            var ret = new ModelCodeExecutionCallPart(this, source, lang, thoughtSignature);
+            ret.setProviderId(code.id().get());
+            return ret;
+        }
+        
+        if (googlePart.codeExecutionResult().isPresent()) {
+            CodeExecutionResult result = googlePart.codeExecutionResult().get();
+            String output = result.output().orElse("");
+            var ret = new ModelCodeExecutionResultPart(this, output, thoughtSignature);
+            ret.setProviderId(result.id().get());
+            //try to set up the parent child relationship based on matching ids
+            for (AbstractPart p: getParts(true)) {
+                if (p instanceof ModelCodeExecutionCallPart c) {
+                    if (Objects.equals(c.getProviderId(), ret.getProviderId())) {
+                        ret.setParentCall(c);
+                    }
+                }
+            }
+            return ret;
         }
         if (googlePart.inlineData().isPresent()) {
             com.google.genai.types.Blob googleBlob = googlePart.inlineData().get();

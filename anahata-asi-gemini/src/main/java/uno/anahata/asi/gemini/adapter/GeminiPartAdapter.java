@@ -1,20 +1,25 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.gemini.adapter;
 
+import com.google.genai.types.CodeExecutionResult;
+import com.google.genai.types.ExecutableCode;
 import com.google.genai.types.FunctionCall;
 import com.google.genai.types.FunctionResponse;
 import com.google.genai.types.FunctionResponsePart;
+import com.google.genai.types.Language;
+import com.google.genai.types.Outcome;
 import com.google.genai.types.Part;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.agi.message.AbstractPart;
 import uno.anahata.asi.agi.message.BlobPart;
 import uno.anahata.asi.agi.message.ModelBlobPart;
+import uno.anahata.asi.agi.message.ModelCodeExecutionCallPart;
+import uno.anahata.asi.agi.message.ModelCodeExecutionResultPart;
 import uno.anahata.asi.agi.message.ModelTextPart;
 import uno.anahata.asi.agi.message.TextPart;
 import uno.anahata.asi.agi.message.ThoughtSignature;
@@ -58,6 +63,29 @@ public class GeminiPartAdapter {
         }
         if (anahataPart instanceof TextPart) {
             return Part.fromText(((TextPart) anahataPart).getText());
+        }
+        if (anahataPart instanceof ModelCodeExecutionCallPart mccp) {
+            Language.Known l = mccp.getLanguage().toLowerCase().equals("python") ? Language.Known.PYTHON : Language.Known.LANGUAGE_UNSPECIFIED;
+            ExecutableCode.Builder ecb = ExecutableCode.builder()
+                .code(mccp.getText())
+                .language(l); 
+            return partBuilder.executableCode(ecb.build()).build();
+        }
+        if (anahataPart instanceof ModelCodeExecutionResultPart mcop) {
+            //map anahata outcomes to genai outcomes
+            Outcome.Known o = Outcome.Known.OUTCOME_UNSPECIFIED;
+            
+            if (null != mcop.getOutcome()) switch (mcop.getOutcome()) {
+                case FAILED -> o = Outcome.Known.OUTCOME_FAILED;
+                case TIMEOUT -> o = Outcome.Known.OUTCOME_DEADLINE_EXCEEDED;
+                case OK -> o = Outcome.Known.OUTCOME_OK;
+                default -> {
+                }
+            }
+            CodeExecutionResult.Builder cerb = CodeExecutionResult.builder()
+                .outcome(o)
+                .output(mcop.getText());
+            return partBuilder.codeExecutionResult(cerb.build()).build();
         }
         if (anahataPart instanceof ModelBlobPart) {
             ModelBlobPart modelBlob = (ModelBlobPart) anahataPart;
