@@ -11,6 +11,7 @@ import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.gemini.GeminiAiProvider;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
+import uno.anahata.asi.gemini.vertex.GeminiGoogleCloudExpressAIProvider;
 import uno.anahata.asi.huggingface.HuggingFaceProvider;
 import uno.anahata.asi.openai.OpenAiProvider;
 import uno.anahata.asi.openai.compatible.OpenAiCompatibleProvider;
@@ -49,12 +50,16 @@ public class AsiDesktopAsiContainer extends AbstractSwingAsiContainer {
         
         // Ensure Gemini is registered with stable UUID
         //AbstractAiProvider gemini = getProviderByClass(GeminiAiProvider.class);
+        if (getProvider("GeminiGCExpress") == null) {
+            registerProvider(new GeminiGoogleCloudExpressAIProvider());
+        }
+        
         if (getProvider("Gemni") == null) {
-            registerProvider(new GeminiAiProvider(false));
+            registerProvider(new GeminiAiProvider("Gemini", "Gemini AI Studio", false));
         } 
         
-        if (getProvider("GemniEnterprise") == null) {
-            registerProvider(new GeminiAiProvider(true));
+        if (getProvider("GeminiVertex") == null) {
+            registerProvider(new GeminiAiProvider("GeminiVertex", "Gemini Vertex AI", true));
         }
         
         if (getProvider("OpenAI") == null) {
@@ -85,13 +90,13 @@ public class AsiDesktopAsiContainer extends AbstractSwingAsiContainer {
             registerProvider(new HuggingFaceProvider());
         }
         
-        /*
+        
         if (getProvider("Anahata") == null) {
             log.info("Registering Anahata");
             registerProvider(new OpenAiCompatibleProvider(                    
                     "Anahata", "Anahata (no SSL)", "http://a.anahata.uno:1234/v1", "Anahata", "https://discord.com/invite/gwGWWxPUXE"));
         }
-        */
+        
         
     }
 
