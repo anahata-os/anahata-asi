@@ -1,0 +1,106 @@
+
+{
+  "id": "resp_0464b6634205f5a30069fba7de23e881919ae880926ef5eb46",
+  "object": "response",
+  "created_at": 1778100190,
+  "status": "completed",
+  "background": false,
+  "billing": {
+    "payer": "openai"
+  },
+  "completed_at": 1778100227,
+  "error": null,
+  "frequency_penalty": 0.0,
+  "incomplete_details": null,
+  "instructions": null,
+  "max_output_tokens": null,
+  "max_tool_calls": null,
+  "model": "gpt-4o-2024-08-06",
+  "moderation": null,
+  "output": [
+    {
+      "id": "ci_0464b6634205f5a30069fba7e010e48191b5b8260ceea6df26",
+      "type": "code_interpreter_call",
+      "status": "completed",
+      "code": "from PIL import Image\nimport matplotlib.pyplot as plt\n\n# Create a 10x10 red square image\nred_square = Image.new(\"RGB\", (10, 10), (255, 0, 0))\n\n# Save the image\nimage_path = '/mnt/data/red_square.png'\nred_square.save(image_path)\n\n# Display the image\nplt.imshow(red_square)\nplt.axis('off')\nplt.show()",
+      "container_id": "cntr_69fba7de4b008191b20566c4a56b05980e54e173efc9d859",
+      "outputs": [
+        {
+          "type": "logs",
+          "logs": "Matplotlib is building the font cache; this may take a moment.\n"
+        },
+        {
+          "type": "image",
+          "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAYUAAAGFCAYAAAASI+9IAAAAOnRFWHRTb2Z0d2FyZQBNYXRwbG90bGliIHZlcnNpb24zLjEwLjgsIGh0dHBzOi8vbWF0cGxvdGxpYi5vcmcvwVt1zgAAAAlwSFlzAAAPYQAAD2EBqD+naQAABPZJREFUeJzt2yEOxDAMAMHk1P9/2ccWh0QtmMEGZisD75mZBQBrrd/bCwDwHaIAQEQBgIgCABEFACIKAEQUAIgoAJDneHLvi2sAcN3Br7JLAYCIAgARBQAiCgBEFACIKAAQUQAgogBARAGAiAIAEQUAIgoARBQAiCgAEFEAIKIAQEQBgIgCABEFACIKAEQUAIgoABBRACCiAEBEAYCIAgARBQAiCgBEFACIKAAQUQAgogBARAGAiAIAEQUAIgoARBQAiCgAEFEAIKIAQEQBgIgCABEFACIKAEQUAIgoABBRACCiAEBEAYCIAgARBQAiCgBEFACIKAAQUQAgogBARAGAiAIAEQUAIgoARBQAiCgAEFEAIKIAQEQBgIgCABEFACIKAEQUAIgoABBRACCiAEBEAYCIAgARBQAiCgBEFACIKAAQUQAgogBARAGAiAIAEQUAIgoARBQAiCgAEFEAIKIAQEQBgIgCABEFACIKAEQUAIgoABBRACCiAEBEAYCIAgARBQAiCgBEFACIKAAQUQAgogBARAGAiAIAEQUAIgoARBQAiCgAEFEAIKIAQEQBgIgCABEFACIKAEQUAIgoABBRACCiAEBEAYCIAgARBQAiCgBEFACIKAAQUQAgogBARAGAiAIAEQUAIgoARBQAiCgAEFEAIKIAQEQBgIgCABEFACIKAEQUAIgoABBRACCiAEBEAYCIAgARBQAiCgBEFACIKAAQUQAgogBARAGAiAIAEQUAIgoARBQAiCgAEFEAIKIAQEQBgIgCABEFACIKAEQUAIgoABBRACCiAEBEAYCIAgARBQAiCgBEFACIKAAQUQAgogBARAGAiAIAEQUAIgoARBQAiCgAEFEAIKIAQEQBgIgCABEFACIKAEQUAIgoABBRACCiAEBEAYCIAgARBQAiCgBEFACIKAAQUQAgogBARAGAiAIAEQUAIgoARBQAiCgAEFEAIKIAQEQBgIgCABEFACIKAEQUAIgoABBRACCiAEBEAYCIAgARBQAiCgBEFACIKAAQUQAgogBARAGAiAIAEQUAIgoARBQAiCgAEFEAIKIAQEQBgIgCABEFACIKAEQUAIgoABBRACCiAEBEAYCIAgARBQAiCgBEFACIKAAQUQAgogBARAGAiAIAEQUAIgoARBQAiCgAEFEAIKIAQEQBgIgCABEFACIKAEQUAIgoABBRACCiAEBEAYCIAgARBQAiCgBEFACIKAAQUQAgogBARAGAiAIAEQUAIgoARBQAiCgAEFEAIKIAQEQBgIgCABEFACIKAEQUAIgoABBRACCiAEBEAYCIAgARBQAiCgBEFACIKAAQUQAgogBARAGAiAIAEQUAIgoARBQAiCgAEFEAIKIAQEQBgIgCABEFACIKAEQUAIgoABBRACCiAEBEAYCIAgARBQAiCgBEFACIKAAQUQAgogBARAGAiAIAEQUAIgoARBQAiCgAEFEAIKIAQEQBgIgCABEFACIKAEQUAIgoABBRACCiAEBEAYCIAgARBQAiCgBEFACIKAAQUQAgogBARAGAiAIAEQUAIgoARBQAiCgAEFEAIKIAQEQBgIgCABEFACIKAEQUAIgoABBRACCiAEBEAYCIAgARBQAiCgBEFACIKAAQUQAgogBARAGAPMeTMxfXAOALXAoARBQAiCgAEFEAIKIAQEQBgIgCABEFACIKAOQP4aELCE0K+pYAAAAASUVORK5CYII="
+        }
+      ]
+    },
+    {
+      "id": "msg_0464b6634205f5a30069fba802b1c4819180c35b746f10aeb6",
+      "type": "message",
+      "status": "completed",
+      "content": [
+        {
+          "type": "output_text",
+          "annotations": [
+            {
+              "type": "container_file_citation",
+              "container_id": "cntr_69fba7de4b008191b20566c4a56b05980e54e173efc9d859",
+              "end_index": 0,
+              "file_id": "cfile_69fba801a6488191a4384c90cd33cd0d",
+              "filename": "cfile_69fba801a6488191a4384c90cd33cd0d.png",
+              "start_index": 0
+            }
+          ],
+          "logprobs": [],
+          "text": "Here is the 10x10 red square image. If you need to download it, let me know!"
+        }
+      ],
+      "role": "assistant"
+    }
+  ],
+  "parallel_tool_calls": true,
+  "presence_penalty": 0.0,
+  "previous_response_id": null,
+  "prompt_cache_key": null,
+  "prompt_cache_retention": "in_memory",
+  "reasoning": {
+    "effort": null,
+    "summary": null
+  },
+  "safety_identifier": null,
+  "service_tier": "default",
+  "store": true,
+  "temperature": 1.0,
+  "text": {
+    "format": {
+      "type": "text"
+    },
+    "verbosity": "medium"
+  },
+  "tool_choice": "auto",
+  "tools": [
+    {
+      "type": "code_interpreter",
+      "container": {
+        "type": "auto"
+      }
+    }
+  ],
+  "top_logprobs": 0,
+  "top_p": 1.0,
+  "truncation": "disabled",
+  "usage": {
+    "input_tokens": 544,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens": 114,
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "total_tokens": 658
+  },
+  "user": null,
+  "metadata": {}
+}
