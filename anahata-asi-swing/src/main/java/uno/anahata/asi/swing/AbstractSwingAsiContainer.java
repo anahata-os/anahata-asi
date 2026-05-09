@@ -11,6 +11,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
  * A Swing-specific base class for Anahata ASI containers.
@@ -37,25 +38,23 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
     /**
      * {@inheritDoc}
      * <p>
-     * Implementation details: Delegates the logical 'open' intent to the 
-     * environment-specific {@link #focusUI(Agi)} method.
+     * Implementation details: Marshals the logical 'open' intent to the Event Dispatch Thread (EDT) and delegates to the environment-specific {@link #focusUI(Agi)} method. This guarantees safe UI manipulation regardless of the calling thread.
      * </p>
      */
     @Override
     protected void onAgiOpened(Agi agi) {
-        focusUI(agi);
+        SwingUtils.runInEDT(() -> focusUI(agi));
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * Implementation details: Delegates the logical 'close' intent to the 
-     * environment-specific {@link #closeUI(Agi)} method.
+     * Implementation details: Marshals the logical 'close' intent to the Event Dispatch Thread (EDT) and delegates to the environment-specific {@link #closeUI(Agi)} method. This guarantees safe UI manipulation regardless of the calling thread.
      * </p>
      */
     @Override
     protected void onAgiClosed(Agi agi) {
-        closeUI(agi);
+        SwingUtils.runInEDT(() -> closeUI(agi));
     }
 
     /**
