@@ -155,6 +155,10 @@ public class AgiConfig extends BasicPropertyChangeSource {
      * If true, thought parts are initially expanded in the UI.
      */
     private boolean expandThoughts = false;
+    /**
+     * Preference for expanding tool calls in the UI.
+     */
+    private ExpandToolsPreference expandTools = ExpandToolsPreference.NONE;
 
     /**
      * The maximum number of times to retry an API call on failure.
@@ -241,6 +245,14 @@ public class AgiConfig extends BasicPropertyChangeSource {
         if (old != includeThoughts) {
             this.includeThoughts = includeThoughts;
             propertyChangeSupport.firePropertyChange("includeThoughts", old, includeThoughts);
+        }
+    }
+
+    public void setExpandTools(ExpandToolsPreference expandTools) {
+        ExpandToolsPreference old = this.expandTools;
+        if (old != expandTools) {
+            this.expandTools = expandTools;
+            propertyChangeSupport.firePropertyChange("expandTools", old, expandTools);
         }
     }
 
