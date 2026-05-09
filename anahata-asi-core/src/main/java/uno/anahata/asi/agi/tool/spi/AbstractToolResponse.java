@@ -137,7 +137,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
             // Transactional Save Guard: Save on terminal states only.
             if (status != ToolExecutionStatus.PENDING && status != ToolExecutionStatus.EXECUTING) {
                 log.info("Calling autoSave on tool call status changed  " + oldStatus + "->" + status + " (" + this + ")");
-                getAgi().autoSave();
+                getAgi().autoSave(getCall().getToolName() + " " + getCall().getSequentialId() + " changed status to " + status);
             }
         }
     }
