@@ -14,6 +14,7 @@ import javax.swing.JScrollPane;
 import lombok.NonNull;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.swing.components.WrapLayout;
+import uno.anahata.asi.swing.components.ScrollablePanel;
 
 /**
  * A container panel that displays active AI agi sessions as a collection of 
@@ -40,7 +41,8 @@ public class AsiCardsContainerPanel extends AbstractAsiContainerPanel {
         closeButton.setVisible(false);
         disposeButton.setVisible(false);
         
-        this.cardContainer = new JPanel(new WrapLayout(WrapLayout.LEFT, 10, 10));
+        this.cardContainer = new ScrollablePanel();
+        this.cardContainer.setLayout(new WrapLayout(WrapLayout.LEFT, 10, 10));
         cardContainer.setOpaque(false);
         
         // Deselect when clicking on the background
