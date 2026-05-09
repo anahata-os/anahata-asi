@@ -58,10 +58,13 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
                 continue;
             }
 
-            // Create a regex that is lenient with whitespace and line endings
-            String regex = Stream.of(target.split("\\R", -1))
-                    .map(line -> "[ \\t]*" + Pattern.quote(line.trim()) + "[ \\t]*")
-                    .collect(Collectors.joining("\\R"));
+            // Normalize target to LF for regex building
+            String targetLF = target.replace("\r\n", "\n").replace("\r", "\n");
+
+            // Create a regex that matches the exact text but is lenient ONLY with line endings (\r\n vs \n)
+            String regex = Stream.of(targetLF.split("\\n", -1))
+                    .map(Pattern::quote)
+                    .collect(Collectors.joining("\\r?\\n"));
 
             Pattern pattern = Pattern.compile(regex);
             Matcher matcher = pattern.matcher(newContent);
@@ -129,8 +132,8 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
     }
 
     /**
-     * Normalizes a string for "semantic" comparison by standardizing line 
-     * endings and removing leading and trailing whitespace from all lines.
+     * Normalizes a string for comparison by standardizing line endings to LF.
+     * Whitespace is preserved exactly to prevent silent destruction of indentation.
      * 
      * @param s The string to normalize.
      * @return The normalized string.
@@ -139,11 +142,7 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
         if (s == null) {
             return null;
         }
-        // 1. Standardize line endings to LF
-        String result = s.replace("\r\n", "\n").replace("\r", "\n");
-        // 2. Remove leading and trailing whitespace from each line
-        return Stream.of(result.split("\\R", -1))
-                .map(String::trim)
-                .collect(Collectors.joining("\n"));
+        // Standardize line endings to LF
+        return s.replace("\r\n", "\n").replace("\r", "\n");
     }
 }
