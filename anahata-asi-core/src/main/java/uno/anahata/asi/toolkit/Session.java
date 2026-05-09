@@ -231,14 +231,14 @@ public class Session extends AnahataToolkit {
         AgiConfig config = domainAgi.getConfig();
         StringBuilder sb = new StringBuilder();
         sb.append("## Current Session Metadata:\n");
+        sb.append("- **Model (you)**: ").append(domainAgi.getSelectedModel() != null ? domainAgi.getSelectedModel().getModelId() : "None").append("\n");
+        sb.append("- **Thinking Level**: ").append(domainAgi.getRequestConfig().getThinkingLevel()).append("\n");
         sb.append("- **Session ID**: ").append(config.getSessionId()).append("\n");
         sb.append("- **Start Time**: ").append(sessionStart).append("\n");
-        sb.append("- **Last Restore Time**: ").append(sessionRestored != null ? sessionRestored : " This session has not yet been deserialized").append(" (The last time the session was deserialized) \n");
+        sb.append("- **Last Restore Time** (last time this session was deserialized from disk): ").append(sessionRestored != null ? sessionRestored : " This session has not yet been deserialized").append(" (The last time the session was deserialized) \n");
         sb.append("- **Nickname**: ").append(domainAgi.getNickname()).append("\n");
         sb.append("- **Display Name**: ").append(domainAgi.getDisplayName()).append("\n");
         sb.append("- **Summary**: ").append(domainAgi.getConversationSummary() != null ? domainAgi.getConversationSummary() : "N/A").append("\n");
-        sb.append("- **Selected Model**: ").append(domainAgi.getSelectedModel() != null ? domainAgi.getSelectedModel().getModelId() : "None").append("\n");
-        sb.append("- **Thinking Level**: ").append(domainAgi.getRequestConfig().getThinkingLevel()).append("\n");
         sb.append("- **Auto-reply tools enabled**: ").append(config.isAutoReplyTools()).append(
                 config.isAutoReplyTools()
                 ? " (If all the tools you propose in a batch have ALWAYS permission, the tool calls will be automatically executed and the responses will be sent to you inmediatly without user intervention )"
