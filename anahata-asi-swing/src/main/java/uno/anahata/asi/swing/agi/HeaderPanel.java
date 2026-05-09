@@ -9,7 +9,6 @@ import java.awt.event.FocusEvent;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.AgiConfig;
@@ -26,6 +25,7 @@ import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.swing.icons.SaveIcon;
 import uno.anahata.asi.swing.icons.SearchIcon;
+import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingTask;
 import uno.anahata.asi.swing.provider.AiProviderRegistryViewer;
 import uno.anahata.asi.swing.provider.AiProviderRenderer;
@@ -58,8 +58,17 @@ public class HeaderPanel extends JPanel {
     private JXTextField nicknameField;
     /**
      * The button to trigger a manual session save and export to a file.
+     * The button to trigger a manual session save and export to a file.
      */
     private JButton saveSessionButton;
+    /**
+     * The button to clone the current session.
+     */
+    private JButton cloneSessionButton;
+    /**
+     * The button to permanently dispose of the current session.
+     */
+    private JButton disposeSessionButton;
     /**
      * The selector for the AI provider, populates the model selector on change.
      */
@@ -91,7 +100,7 @@ public class HeaderPanel extends JPanel {
      */
     public void initComponents() {
         setLayout(new MigLayout("insets 5, fillx, gap 10",
-                "[][]push[][][]", // Nickname, Save, PUSH, Provider, Model, Search
+                "[][][][]push[][][]", // Nickname, Save, Clone, Dispose, PUSH, Provider, Model, Search
                 "[]")); // Row constraints
 
         // Nickname Field
@@ -110,6 +119,16 @@ public class HeaderPanel extends JPanel {
         saveSessionButton.setToolTipText("Save Session");
         saveSessionButton.addActionListener(e -> saveSession());
         add(saveSessionButton);
+
+        cloneSessionButton = new JButton(new uno.anahata.asi.swing.icons.CloneIcon(ICON_SIZE));
+        cloneSessionButton.setToolTipText("Clone Session");
+        cloneSessionButton.addActionListener(e -> cloneSession());
+        add(cloneSessionButton);
+
+        disposeSessionButton = new JButton(new uno.anahata.asi.swing.icons.DeleteIcon(ICON_SIZE));
+        disposeSessionButton.setToolTipText("Dispose Session");
+        disposeSessionButton.addActionListener(e -> disposeSession());
+        add(disposeSessionButton);
 
         // Provider ComboBox (Right-aligned, skipping the push column)
         providerComboBox = new JComboBox<>();
@@ -179,6 +198,11 @@ public class HeaderPanel extends JPanel {
      * Installs action listeners for provider and model selection.
      */
     private void addListeners() {
+        new EdtPropertyChangeListener(this, agi, "nickname", evt -> {
+            if (!java.util.Objects.equals(nicknameField.getText(), evt.getNewValue())) {
+                nicknameField.setText((String) evt.getNewValue());
+            }
+        });
         providerComboBox.addActionListener(e -> updateModelsForSelectedProvider());
 
         modelComboBox.addActionListener(e -> {
@@ -332,6 +356,29 @@ public class HeaderPanel extends JPanel {
             });
             return null;
         }).start();
+    }
+
+    /**
+     * Clones the current session and opens it in a new tab.
+     */
+    private void cloneSession() {
+        new SwingTask<>(agiPanel, "Clone Session", () -> {
+            agi.getConfig().getAsiContainer().cloneSession(agi);
+            return null;
+        }).start();
+    }
+
+    /**
+     * Disposes the current session.
+     */
+    private void disposeSession() {
+        int result = JOptionPane.showConfirmDialog(this, 
+            "Are you sure you want to permanently dispose this session?", 
+            "Dispose Session", JOptionPane.YES_NO_OPTION);
+
+        if (result == JOptionPane.YES_OPTION) {
+            agi.getConfig().getAsiContainer().dispose(agi);
+        }
     }
 
 }
