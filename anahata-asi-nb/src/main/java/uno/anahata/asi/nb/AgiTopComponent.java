@@ -29,14 +29,14 @@ import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
- * The main TopComponent for Anahata ASI V2.
- * It manages a single agi session and its corresponding UI panel.
+ * The main TopComponent for Anahata ASI V2. It manages a single agi session and
+ * its corresponding UI panel.
  * <p>
  * This component uses the {@code writeReplace} pattern for robust persistence,
  * ensuring that only the session ID is saved and the component is correctly
  * reconstructed after an IDE restart or a module reload.
  * </p>
- * 
+ *
  * @author anahata
  */
 @TopComponent.Description(
@@ -47,25 +47,29 @@ import uno.anahata.asi.swing.internal.SwingUtils;
 @Slf4j
 public final class AgiTopComponent extends TopComponent {
 
-    /** The UI panel for the agi session. */
+    /**
+     * The UI panel for the agi session.
+     */
     @Getter
     private transient AgiPanel agiPanel;
-    
-    /** The unique ID of the session managed by this component. */
+
+    /**
+     * The unique ID of the session managed by this component.
+     */
     private String sessionId;
 
     /**
-     * Default constructor required for NetBeans persistence mechanism.
-     * It creates a component without a session ID, which will be populated
-     * during restoration or initialization.
+     * Default constructor required for NetBeans persistence mechanism. It
+     * creates a component without a session ID, which will be populated during
+     * restoration or initialization.
      */
     public AgiTopComponent() {
-        this((String)null);
+        this((String) null);
     }
-    
+
     /**
      * Constructs a new component for an existing agi session.
-     * 
+     *
      * @param agi The agi session.
      */
     public AgiTopComponent(Agi agi) {
@@ -74,7 +78,7 @@ public final class AgiTopComponent extends TopComponent {
 
     /**
      * Constructs a new component for a specific session ID.
-     * 
+     *
      * @param sessionId The session ID.
      */
     public AgiTopComponent(String sessionId) {
@@ -85,59 +89,62 @@ public final class AgiTopComponent extends TopComponent {
     }
 
     /**
-     * Initializes the agi panel and adds it to the component.
-     * This method is called on the EDT after the session brain has been 
-     * initialized in the background.
-     * 
+     * Initializes the agi panel and adds it to the component. This method is
+     * called on the EDT after the session brain has been initialized in the
+     * background.
+     *
      * @param agi The agi session.
      */
     private void initPanel(Agi agi) {
-        if (agiPanel != null) return;
+        if (agiPanel != null) {
+            return;
+        }
         this.sessionId = agi.getConfig().getSessionId();
         agiPanel = new AgiPanel(agi);
         agiPanel.initComponents();
-        
+
         removeAll();
         add(agiPanel, BorderLayout.CENTER);
         revalidate();
         repaint();
-        
+
         updateTitles();
-        
+
         // Listen for nickname changes to update the TopComponent title
         new EdtPropertyChangeListener(this, agi, "nickname", this::handleNicknameChange);
-        
+
         // Listen for status changes to update the tab color
         new EdtPropertyChangeListener(this, agi.getStatusManager(), "currentStatus", evt -> updateTitles());
     }
 
     /**
-     * Updates the TopComponent's name, display name, and tooltip based on the current agi session.
+     * Updates the TopComponent's name, display name, and tooltip based on the
+     * current agi session.
      */
     private void updateTitles() {
         String displayName = sessionId != null ? "Session: " + sessionId.substring(0, 7) : "Anahata AGI";
         AgiStatus status = AgiStatus.IDLE;
-        
+
         Agi agi = getAgi();
         if (agi != null) {
             displayName = agi.getDisplayName();
             status = agi.getStatusManager().getCurrentStatus();
         }
-        
+
         Color color = SwingAgiConfig.getColor(status);
         String hexColor = SwingUtils.toHtmlColor(color);
-        
+
         setName(displayName);
         setDisplayName(displayName);
         setHtmlDisplayName("<html><font color='" + hexColor + "'>" + displayName + "</font></html>");
-        
+
         String tooltip = sessionId != null ? "Anahata Session: " + sessionId + " [" + status.getDisplayName() + "]" : "Anahata AGI";
         setToolTipText(tooltip);
     }
 
     /**
      * Handles nickname changes by updating the TopComponent titles.
-     * 
+     *
      * @param evt The property change event.
      */
     private void handleNicknameChange(PropertyChangeEvent evt) {
@@ -145,20 +152,25 @@ public final class AgiTopComponent extends TopComponent {
     }
 
     /**
-     * {@inheritDoc}
-     * Ensures the agi panel is initialized when the component is opened.
-     * Uses the professional Container executor to avoid blocking the EDT.
+     * {@inheritDoc} Ensures the agi panel is initialized when the component is
+     * opened. Uses the professional Container executor to avoid blocking the
+     * EDT.
      */
     @Override
     public void componentOpened() {
         if (agiPanel == null) {
             showLoading();
-            
+
             // Professional "Birthing Room" Load using the Container's Executor
             AnahataInstaller.getContainer().getExecutor().submit(() -> {
                 try {
                     log.info("Initializing session brain in background: {}", sessionId);
                     final Agi agi = AnahataInstaller.getContainer().findOrCreateAgi(sessionId);
+
+                    // PREVENT RACE CONDITION: Update our internal ID immediately so 
+                    // findTopComponent() can match us if focusUI executes first on the EDT.
+                    AgiTopComponent.this.sessionId = agi.getConfig().getSessionId();
+
                     SwingUtilities.invokeLater(() -> {
                         initPanel(agi);
                         log.info("Session brain initialized OK: {}", agi.getShortId());
@@ -180,7 +192,8 @@ public final class AgiTopComponent extends TopComponent {
     /**
      * {@inheritDoc}
      * <p>
-     * Authoritatively updates the agi's 'open' status when the component is closed.
+     * Authoritatively updates the agi's 'open' status when the component is
+     * closed.
      * </p>
      */
     @Override
@@ -193,38 +206,39 @@ public final class AgiTopComponent extends TopComponent {
     }
 
     /**
-     * Displays a professional loading screen with the Anahata logo and progress bar.
+     * Displays a professional loading screen with the Anahata logo and progress
+     * bar.
      */
     private void showLoading() {
         removeAll();
         JPanel loadingPanel = new JPanel(new MigLayout("fill, insets 20", "[center, grow]", "[center, grow]"));
         loadingPanel.setBackground(Color.WHITE);
-        
+
         JPanel content = new JPanel(new MigLayout("ins 0, wrap 1", "[center]", "[]20[]10[]"));
         content.setOpaque(false);
-        
+
         // 1. The Anahata Logo
         try {
             ImageIcon logo = new ImageIcon(ImageUtilities.loadImage("images/splash.png"));
             content.add(new JLabel(logo));
         } catch (Exception e) {
-             JLabel fallback = new JLabel("Anahata ASI");
-             fallback.setFont(new Font("SansSerif", Font.BOLD, 24));
-             content.add(fallback);
+            JLabel fallback = new JLabel("Anahata ASI");
+            fallback.setFont(new Font("SansSerif", Font.BOLD, 24));
+            content.add(fallback);
         }
-        
+
         // 2. The Progress Bar
         JProgressBar pb = new JProgressBar();
         pb.setIndeterminate(true);
         pb.setPreferredSize(new Dimension(300, 4));
         content.add(pb, "w 300!");
-        
+
         // 3. The Status Label
         JLabel label = new JLabel("Initializing AGI Container...", SwingConstants.CENTER);
         label.setFont(label.getFont().deriveFont(Font.BOLD, 14f));
         label.setForeground(new Color(100, 100, 100));
         content.add(label);
-        
+
         loadingPanel.add(content);
         add(loadingPanel, BorderLayout.CENTER);
         revalidate();
@@ -232,8 +246,9 @@ public final class AgiTopComponent extends TopComponent {
     }
 
     /**
-     * Displays an error message in the component if session initialization fails.
-     * 
+     * Displays an error message in the component if session initialization
+     * fails.
+     *
      * @param message The error message to display.
      */
     private void showError(String message) {
@@ -248,7 +263,7 @@ public final class AgiTopComponent extends TopComponent {
 
     /**
      * Gets the agi session managed by this component.
-     * 
+     *
      * @return The agi session, or null if not initialized.
      */
     public Agi getAgi() {
@@ -266,7 +281,7 @@ public final class AgiTopComponent extends TopComponent {
 
     /**
      * Returns a stable, session-specific ID for the window system.
-     * 
+     *
      * @return The preferred ID.
      */
     @Override
@@ -275,9 +290,9 @@ public final class AgiTopComponent extends TopComponent {
     }
 
     /**
-     * The standard NetBeans persistence pattern: replace the component with a 
+     * The standard NetBeans persistence pattern: replace the component with a
      * serializable proxy that only holds the essential state (the session ID).
-     * 
+     *
      * @return A serializable Resolvable object.
      */
     @Override
@@ -286,15 +301,17 @@ public final class AgiTopComponent extends TopComponent {
     }
 
     /**
-     * A static inner class used for serializing the state of an AgiTopComponent.
+     * A static inner class used for serializing the state of an
+     * AgiTopComponent.
      */
     private static final class Resolvable implements Serializable {
+
         private static final long serialVersionUID = 1L;
         private final String sessionId;
 
         /**
          * Constructs a new Resolvable proxy for the given session ID.
-         * 
+         *
          * @param sessionId The session ID to preserve.
          */
         Resolvable(String sessionId) {
@@ -303,7 +320,7 @@ public final class AgiTopComponent extends TopComponent {
 
         /**
          * Reconstructs the AgiTopComponent using the saved session ID.
-         * 
+         *
          * @return A new AgiTopComponent instance.
          */
         Object readResolve() throws java.io.ObjectStreamException {
