@@ -10,7 +10,6 @@ import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
-import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.gemini.GeminiAiProvider;
 import uno.anahata.asi.nb.annotation.AnahataAnnotationProvider;
 import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementBatch;
@@ -71,11 +70,10 @@ public class NetBeansAsiContainer extends AbstractSwingAsiContainer {
     public NetBeansAsiContainer() {
         super("netbeans");
         
-        
         //AbstractAiProvider gemini = getProviderByClass(GeminiAiProvider.class);
         if (getProvider("Gemini") == null) {
             registerProvider(new GeminiAiProvider("Gemini", "Gemini", false));
-        } 
+        }
         
         if (getProvider("GeminiEnterprise") == null) {
             registerProvider(new GeminiAiProvider("GeminiEnterprise", "Gemini Enterprise", true));
@@ -85,11 +83,11 @@ public class NetBeansAsiContainer extends AbstractSwingAsiContainer {
             registerProvider(new GeminiGoogleCloudExpressAIProvider());
         }
         
-        
         if (getProvider("OpenAI") == null) {
             log.info("Registering OpenAI");
             registerProvider(new OpenAiProvider());
         }
+        
         /*
         if (getProvider("Modal") == null) {
             log.info("Registering Modal");
@@ -122,20 +120,20 @@ public class NetBeansAsiContainer extends AbstractSwingAsiContainer {
 
     @Override
     protected void focusUI(Agi agi) {
-        AgiTopComponent atc = findTopComponent(agi);
-        if (atc == null) {
-            atc = new AgiTopComponent(agi);
-        }
-        atc.open();
-        atc.requestActive();
+            AgiTopComponent atc = findTopComponent(agi);
+            if (atc == null) {
+                atc = new AgiTopComponent(agi);
+            }
+            atc.open();
+            atc.requestActive();
     }
 
     @Override
     protected void closeUI(Agi agi) {
-        AgiTopComponent atc = findTopComponent(agi);
-        if (atc != null) {
-            atc.close();
-        }
+            AgiTopComponent atc = findTopComponent(agi);
+            if (atc != null) {
+                atc.close();
+            }
     }
 
     @Override
