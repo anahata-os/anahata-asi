@@ -37,8 +37,11 @@ Standard tool calls (the ones that show run buttons in the ui) will not reflect 
 
 
 > [!IMPORTANT]
-> To test changes to toolkits without reloading, do this: NbJava.compileAndExecuteInproject(anahata-asi-nb, no compile deps, no test deps), don't include deps unless you want to test sources in this project as well as the sources of a dependant project like swing or core or an ai provider
-then instantiate the toolkit e.g. Refactor r = new Refactor(); and just use it, **there is no need to do setToolkit or setAgi** or onboard it any other way, instantiation is enough, contextpropagation (e.g. if the toolkit does log("") or error("") it should still work when testing on the nbjava tool should happen automatically as it is based on a thread local, no need for manual/explicit onboarding)
+> **Hot-Testing Toolkits via NbJava**
+> You can test toolkit modifications immediately without triggering an `nbmreload` by using `NbJava.compileAndExecuteInProject`.
+> 
+> - **Dependencies:** Set `includeDependencies` and `includeTestDependencies` to `false` (unless you specifically need to test cross-module changes with `swing`, `core`, etc.).
+> - **Instantiation & Context:** Simply instantiate the toolkit (e.g., `Refactor r = new Refactor();`) and invoke its methods. **Do not call `setAgi()`, `setToolkit()`, or attempt manual onboarding.** The Anahata framework automatically handles context propagation (like `log()`, `error()`, or `getAgi()`) via `ThreadLocal` bindings during the `NbJava` execution.
 
 
 - **Hot Reload Workflow (NbJava.compileAndExecuteInProject)**: 
