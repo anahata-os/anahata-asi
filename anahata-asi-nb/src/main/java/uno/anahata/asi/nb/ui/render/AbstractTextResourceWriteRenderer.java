@@ -612,11 +612,13 @@ dashboard.add(commentsLabel, "aligny top, alignx right");
 
     /**
      * Configures the textual tab by using the JEditorPane's reported preferred size.
+     * 
      * This method also disables internal vertical scrollbars to let the conversation
      * handle the vertical flow.
-     * 
+     * @deprecated NetBeans doesnwont report the correct height.
      * @return The preferred height, or -1 if components are missing.
      */
+    @Deprecated
     private int configureTextualTabWithEditorPrefHeight() {
         if (tabs == null || tabs.getTabCount() < 2) return -1;
         Component textualTab = tabs.getComponentAt(1);
