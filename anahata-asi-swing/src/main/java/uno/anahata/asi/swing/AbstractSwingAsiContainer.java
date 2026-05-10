@@ -8,6 +8,8 @@ import java.io.File;
 import java.nio.file.Path;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.Agi;
@@ -24,7 +26,14 @@ import uno.anahata.asi.swing.internal.SwingUtils;
  * @author anahata
  */
 @Slf4j
+@Getter
+@Setter
 public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
+
+    /**
+     * The single-instance Preferences dashboard frame for this container.
+     */
+    private javax.swing.JFrame preferencesFrame;
 
     /**
      * Constructs a new Swing ASI container.
