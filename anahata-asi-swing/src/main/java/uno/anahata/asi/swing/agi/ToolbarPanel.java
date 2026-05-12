@@ -111,7 +111,7 @@ public class ToolbarPanel extends JPanel {
         // 7. Screen Share Button (Middle)
         screenShareButton = createIconButton(new ScreenShareIcon(ICON_SIZE, false), "Live Screen Sharing");
         screenShareButton.addActionListener(e -> {
-            new SharedScreenEditorFrame(agi).setVisible(true);
+            new SharedScreenEditorFrame(agiPanel).setVisible(true);
         });
         add(screenShareButton);
         

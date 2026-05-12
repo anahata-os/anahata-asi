@@ -6,13 +6,14 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
+import java.util.concurrent.Callable;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.RegionSelectionIcon;
+import uno.anahata.asi.swing.internal.SwingTask;
 import uno.anahata.asi.swing.internal.UICapture;
 import uno.anahata.asi.swing.toolkit.Screens;
 
@@ -21,7 +22,8 @@ import uno.anahata.asi.swing.toolkit.Screens;
  * <p>
  * This frame provides a visual overview of all available graphics devices and 
  * active shared regions, allowing the user to toggle multimodal context in real-time.
- * It uses real-time thumbnails to help the user identify which screen is which.
+ * It uses asynchronous background tasks to capture thumbnails, ensuring the UI 
+ * remains responsive even under display server constraints (Wayland/Pipewire).
  * </p>
  * 
  * @author anahata
@@ -30,6 +32,7 @@ import uno.anahata.asi.swing.toolkit.Screens;
 public class SharedScreenEditorFrame extends JFrame {
 
     /** The active AGI session context. */
+    private final AgiPanel agiPanel;
     private final Agi agi;
     /** The specialized screens toolkit providing hardware access. */
     private final Screens screensToolkit;
@@ -42,29 +45,23 @@ public class SharedScreenEditorFrame extends JFrame {
     private final Map<Integer, Image> monitorThumbnails = new HashMap<>();
     /** The standardized height for monitor and region previews. */
     private final int PREVIEW_HEIGHT = 150;
-    /** The shared Robot instance for capturing thumbnails. */
-    private Robot robot;
 
     /**
      * Constructs a new editor frame for the given AGI session.
      * 
      * @param agi The target AGI session.
      */
-    public SharedScreenEditorFrame(Agi agi) {
-        this.agi = agi;
+    public SharedScreenEditorFrame(AgiPanel agiPanel) {
+        this.agiPanel = agiPanel;
+        this.agi = agiPanel.getAgi();
         this.screensToolkit = agi.getToolkit(Screens.class).orElse(null);
-        try {
-            this.robot = new Robot();
-        } catch (AWTException e) {
-            log.error("Failed to initialize Robot for thumbnails", e);
-        }
         
-        setTitle("Live Screen Sharing - " + agi.getNickname());
+        setTitle("Live Screen Sharing - " + (agi.getNickname() != null ? agi.getNickname() : agi.getShortId()));
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout(10, 10));
         
         initComponents();
-        setSize(1000, 700);
+        setSize(1000, 750);
         setLocationRelativeTo(null);
     }
 
@@ -74,8 +71,7 @@ public class SharedScreenEditorFrame extends JFrame {
     private void initComponents() {
         // 1. Monitors Layout (Top)
         monitorsContainer = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 20));
-        monitorsContainer.setBorder(BorderFactory.createTitledBorder("Available Monitors (Real-time Thumbnails)"));
-        refreshMonitors();
+        monitorsContainer.setBorder(BorderFactory.createTitledBorder("Available Monitors (Hardware Captures)"));
         
         // 2. Regions List (Center)
         regionsListPanel = new JPanel();
@@ -103,14 +99,15 @@ public class SharedScreenEditorFrame extends JFrame {
         add(centerPanel, BorderLayout.CENTER);
         add(closePanel, BorderLayout.SOUTH);
         
+        refreshMonitors();
         refreshRegionsList();
     }
 
     /**
-     * Refreshes the list of available graphics devices and captures new thumbnails.
+     * Refreshes the list of available graphics devices and captures new thumbnails asynchronously.
      * <p>
-     * Iterates through all detected screens and uses {@link Robot} to capture 
-     * their current content, scaling it down for the preview area.
+     * This method triggers a background task for each screen to prevent EDT blocking 
+     * which is critical for Wayland stability.
      * </p>
      */
     private void refreshMonitors() {
@@ -123,17 +120,6 @@ public class SharedScreenEditorFrame extends JFrame {
             GraphicsDevice gd = devices[idx];
             Rectangle bounds = gd.getDefaultConfiguration().getBounds();
             
-            // Capture Thumbnail using Wayland-safe logic
-            try {
-                BufferedImage screenshot = UICapture.getSafeScreenCapture(gd);
-                float aspectRatio = (float) bounds.width / bounds.height;
-                int w = (int) (PREVIEW_HEIGHT * aspectRatio);
-                Image thumb = screenshot.getScaledInstance(w, PREVIEW_HEIGHT, Image.SCALE_SMOOTH);
-                monitorThumbnails.put(idx, thumb);
-            } catch (AWTException e) {
-                log.error("Failed to capture thumbnail for screen {}", idx, e);
-            }
-
             int thumbW = (int) (PREVIEW_HEIGHT * ((float) bounds.width / bounds.height));
             JPanel monitorPanel = new JPanel(new BorderLayout(5, 5));
             monitorPanel.setPreferredSize(new Dimension(thumbW + 30, PREVIEW_HEIGHT + 85));
@@ -147,11 +133,11 @@ public class SharedScreenEditorFrame extends JFrame {
                     
                     boolean isShared = screensToolkit != null && screensToolkit.getSharedDeviceIndexes().contains(idx);
                     
-                    // 1. Outer Frame (The Monitor Plastic)
+                    // 1. Outer Frame
                     g2.setColor(isShared ? new Color(50, 200, 120) : Color.DARK_GRAY);
                     g2.fillRoundRect(5, 5, getWidth() - 10, getHeight() - 25, 12, 12);
                     
-                    // 2. Screen Area (The actual thumbnail)
+                    // 2. Screen Area
                     g2.setColor(Color.BLACK);
                     int sx = 10, sy = 10, sw = getWidth() - 20, sh = getHeight() - 35;
                     g2.fillRect(sx, sy, sw, sh);
@@ -159,6 +145,9 @@ public class SharedScreenEditorFrame extends JFrame {
                     Image thumb = monitorThumbnails.get(idx);
                     if (thumb != null) {
                         g2.drawImage(thumb, sx, sy, sw, sh, null);
+                    } else {
+                        g2.setColor(Color.WHITE);
+                        g2.drawString("Loading...", sx + 10, sy + 25);
                     }
                     
                     // 3. Stand
@@ -166,13 +155,12 @@ public class SharedScreenEditorFrame extends JFrame {
                     g2.fillRect(getWidth() / 2 - 15, getHeight() - 25, 30, 15);
                     g2.fillRect(getWidth() / 2 - 40, getHeight() - 10, 80, 5);
                     
-                    // 4. Glowing highlight if shared
+                    // 4. Highlight
                     if (isShared) {
                         g2.setColor(new Color(50, 200, 120, 180));
                         g2.setStroke(new BasicStroke(4));
                         g2.drawRoundRect(2, 2, getWidth() - 4, getHeight() - 22, 14, 14);
                     }
-                    
                     g2.dispose();
                 }
             };
@@ -201,6 +189,15 @@ public class SharedScreenEditorFrame extends JFrame {
             });
             
             monitorsContainer.add(monitorPanel);
+            
+            // Asynchronous Thumbnail Capture
+            executeCaptureTask("Capture Screen " + idx, () -> UICapture.getSafeScreenCapture(gd), (img) -> {
+                float aspectRatio = (float) bounds.width / bounds.height;
+                int w = (int) (PREVIEW_HEIGHT * aspectRatio);
+                Image thumb = img.getScaledInstance(w, PREVIEW_HEIGHT, Image.SCALE_SMOOTH);
+                monitorThumbnails.put(idx, thumb);
+                screenShape.repaint();
+            });
         }
         
         monitorsContainer.revalidate();
@@ -208,29 +205,27 @@ public class SharedScreenEditorFrame extends JFrame {
     }
 
     /**
-     * Synchronizes the region list with the toolkit state and updates thumbnails.
+     * Synchronizes the region list with the toolkit state and updates thumbnails asynchronously.
      * <p>
-     * For each active shared region, this method performs a hardware capture 
-     * of that specific area and displays it alongside its metadata.
+     * For each active shared region, a background task performs the hardware capture 
+     * to avoid Pipewire context errors.
      * </p>
      */
     private void refreshRegionsList() {
         regionsListPanel.removeAll();
-        if (screensToolkit == null || robot == null) return;
+        if (screensToolkit == null) return;
 
         for (Screens.SharedRegion region : screensToolkit.getSharedRegions()) {
-            // Horizontal container for region info
             JPanel item = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 5));
-            item.setMaximumSize(new Dimension(800, 100));
+            item.setMaximumSize(new Dimension(900, 100));
             item.setBorder(BorderFactory.createCompoundBorder(
                 new EmptyBorder(5, 5, 5, 5),
                 BorderFactory.createLineBorder(Color.LIGHT_GRAY)
             ));
             
-            // Region Thumbnail Capture
-            BufferedImage regCapture = robot.createScreenCapture(region.getBounds());
-            Image regThumb = regCapture.getScaledInstance(140, 80, Image.SCALE_SMOOTH);
-            JLabel thumbLabel = new JLabel(new ImageIcon(regThumb));
+            JLabel thumbLabel = new JLabel("Loading...");
+            thumbLabel.setPreferredSize(new Dimension(140, 80));
+            thumbLabel.setHorizontalAlignment(SwingConstants.CENTER);
             thumbLabel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
             
             JPanel infoPanel = new JPanel(new GridLayout(2, 1));
@@ -258,6 +253,14 @@ public class SharedScreenEditorFrame extends JFrame {
             
             regionsListPanel.add(item);
             regionsListPanel.add(Box.createVerticalStrut(5));
+            
+            // Asynchronous Region Capture
+            executeCaptureTask("Capture Region " + region.getId(), () -> UICapture.getSafeScreenCapture(region.getBounds()), (img) -> {
+                Image regThumb = img.getScaledInstance(140, 80, Image.SCALE_SMOOTH);
+                thumbLabel.setText("");
+                thumbLabel.setIcon(new ImageIcon(regThumb));
+                item.revalidate();
+            });
         }
         
         regionsListPanel.revalidate();
@@ -266,10 +269,6 @@ public class SharedScreenEditorFrame extends JFrame {
 
     /**
      * Initiates the interactive region selection process.
-     * <p>
-     * Displays a full-screen semi-transparent overlay allowing the user 
-     * to drag and select a rectangular area to share.
-     * </p>
      */
     private void startRegionSelection() {
         Window selectionWindow = new JWindow();
@@ -294,11 +293,20 @@ public class SharedScreenEditorFrame extends JFrame {
     }
 
     /**
-     * Overlay panel for the interactive screen region selection.
-     * <p>
-     * Handles mouse drag events to define the selection rectangle and 
-     * provides visual feedback by graying out non-selected areas.
-     * </p>
+     * Executes a hardware capture task on a background thread.
+     * 
+     * @param <T> The task result type.
+     * @param name Task name.
+     * @param backgroundLogic The capture logic.
+     * @param onDone Callback on completion.
+     */
+    private <T> void executeCaptureTask(String name, Callable<T> backgroundLogic, java.util.function.Consumer<T> onDone) {
+        SwingTask<T> task = new SwingTask<>(agiPanel, name, backgroundLogic, onDone, null, true);
+        task.start();
+    }
+
+    /**
+     * Overlay panel for interactive screen region selection.
      */
     private static class SelectionPanel extends JPanel {
         /** The starting point of the selection drag. */
@@ -311,10 +319,10 @@ public class SharedScreenEditorFrame extends JFrame {
         private final java.util.function.Consumer<Rectangle> onSelected;
 
         /**
-         * Constructs a new selection panel covering the specified bounds.
+         * Constructs a new selection panel.
          * 
-         * @param totalBounds The union of all screen bounds.
-         * @param onSelected The callback to execute when a rectangle is defined.
+         * @param totalBounds All screen bounds combined.
+         * @param onSelected Completion callback.
          */
         public SelectionPanel(Rectangle totalBounds, java.util.function.Consumer<Rectangle> onSelected) {
             this.totalBounds = totalBounds;
@@ -347,42 +355,29 @@ public class SharedScreenEditorFrame extends JFrame {
             });
         }
 
-        /**
-         * {@inheritDoc}
-         * <p>
-         * Paints a dimming overlay and clears out the currently selected rectangle 
-         * using {@link AlphaComposite#Clear}.
-         * </p>
-         */
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
-            // Gray out everything
             g2.setColor(new Color(0, 0, 0, 120));
             g2.fillRect(0, 0, getWidth(), getHeight());
 
             if (currentRect != null) {
-                // Clear selection area
                 g2.setComposite(AlphaComposite.Clear);
                 g2.fillRect(currentRect.x, currentRect.y, currentRect.width, currentRect.height);
-                
-                // Draw red border around selection
                 g2.setComposite(AlphaComposite.SrcOver);
                 g2.setColor(Color.RED);
                 g2.setStroke(new BasicStroke(2));
                 g2.draw(currentRect);
             }
             
-            // Instruction Label on each monitor
             g2.setColor(Color.WHITE);
             g2.setFont(new Font("SansSerif", Font.BOLD, 32));
             for (GraphicsDevice gd : GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices()) {
                 Rectangle b = gd.getDefaultConfiguration().getBounds();
                 int lx = b.x - totalBounds.x;
                 int ly = b.y - totalBounds.y;
-                g2.drawString("Select share area...", lx + 100, ly + 100);
+                g2.drawString("Drag to select area...", lx + 100, ly + 100);
             }
-            
             g2.dispose();
         }
     }
