@@ -21,6 +21,7 @@ import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.MouseWheelEvent;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -50,9 +51,9 @@ import uno.anahata.asi.swing.agi.message.part.text.MermaidCodeBlockSegmentRender
  * A collection of general-purpose Swing utility methods, primarily for image
  * manipulation and UI component creation.
  * <p>
- * This utility provides high-fidelity component discovery and specialized 
- * event redispatching to ensure a seamless interaction between nested 
- * host-assembled frames and the core conversation UI.
+ * This utility provides high-fidelity component discovery and specialized event
+ * redispatching to ensure a seamless interaction between nested host-assembled
+ * frames and the core conversation UI.
  * </p>
  *
  * @author anahata
@@ -61,16 +62,16 @@ import uno.anahata.asi.swing.agi.message.part.text.MermaidCodeBlockSegmentRender
 @UtilityClass
 public class SwingUtils {
 
-    /** 
-     * The authoritative maximum dimension (width or height) for generated thumbnails 
-     * to ensure UI responsiveness. 
+    /**
+     * The authoritative maximum dimension (width or height) for generated
+     * thumbnails to ensure UI responsiveness.
      */
     private static final int THUMBNAIL_MAX_SIZE = 250;
 
     /**
-     * Creates a scaled thumbnail image from an original BufferedImage, maintaining
-     * the aspect ratio and ensuring the largest dimension does not exceed
-     * {@code THUMBNAIL_MAX_SIZE}.
+     * Creates a scaled thumbnail image from an original BufferedImage,
+     * maintaining the aspect ratio and ensuring the largest dimension does not
+     * exceed {@code THUMBNAIL_MAX_SIZE}.
      *
      * @param original The original image.
      * @return The scaled thumbnail image.
@@ -89,12 +90,12 @@ public class SwingUtils {
 
         BufferedImage resized = new BufferedImage(newWidth, newHeight, original.getType() == 0 ? BufferedImage.TYPE_INT_ARGB : original.getType());
         Graphics2D g = resized.createGraphics();
-        
+
         // Apply high-quality rendering hints
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
         g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-        
+
         g.drawImage(original, 0, 0, newWidth, newHeight, null);
         g.dispose();
 
@@ -102,7 +103,22 @@ public class SwingUtils {
     }
 
     /**
-     * Converts a Java Color object to its HTML hexadecimal string representation.
+     * Encodes a buffered Image to png
+     * 
+     * @param img the image
+     * @return the png
+     * @throws IOException hopefully not
+     */
+    public static byte[] encodeToPng(BufferedImage img) throws IOException {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            ImageIO.write(img, "png", baos);
+            return baos.toByteArray();
+        }
+    }
+
+    /**
+     * Converts a Java Color object to its HTML hexadecimal string
+     * representation.
      *
      * @param color The Color object to convert.
      * @return The HTML hexadecimal string (e.g., "#RRGGBB").
@@ -111,15 +127,15 @@ public class SwingUtils {
         return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
     }
 
-
     /**
-     * Recursively searches the containment hierarchy for a component of a specific type.
+     * Recursively searches the containment hierarchy for a component of a
+     * specific type.
      * <p>
-     * This is an essential tool for <b>Domain-UI Binding</b>, allowing logic to 
-     * locate deep-nested components (like a specific scroll pane) without 
+     * This is an essential tool for <b>Domain-UI Binding</b>, allowing logic to
+     * locate deep-nested components (like a specific scroll pane) without
      * maintaining explicit references.
      * </p>
-     * 
+     *
      * @param <T> The type of component to find.
      * @param container The container to search.
      * @param type The class of the component type.
@@ -144,10 +160,10 @@ public class SwingUtils {
      * Recursively finds the innermost "leaf" component that is not a container,
      * or a container that specifically doesn't have components.
      * <p>
-     * For high-fidelity frames, this method traverses viewports to find the 
+     * For high-fidelity frames, this method traverses viewports to find the
      * actual text area (RSyntaxTextArea or JEditorPane).
      * </p>
-     * 
+     *
      * @param component The root component to start search from.
      * @return The innermost leaf component.
      */
@@ -179,17 +195,17 @@ public class SwingUtils {
     /**
      * Copies a Java Image to the system clipboard.
      * <p>
-     * Implementation details:
-     * Supports both {@link DataFlavor#imageFlavor} and {@link DataFlavor#javaFileListFlavor}.
-     * The latter is achieved by saving a temporary PNG of the image, allowing it to 
-     * be pasted directly into the OS filesystem (e.g., File Explorer).
+     * Implementation details: Supports both {@link DataFlavor#imageFlavor} and
+     * {@link DataFlavor#javaFileListFlavor}. The latter is achieved by saving a
+     * temporary PNG of the image, allowing it to be pasted directly into the OS
+     * filesystem (e.g., File Explorer).
      * </p>
-     * 
+     *
      * @param image The image to copy. Must not be null.
      */
     public static void copyImageToClipboard(Image image) {
         Objects.requireNonNull(image, "Image to copy cannot be null.");
-        
+
         Transferable transferable = new Transferable() {
             @Override
             public DataFlavor[] getTransferDataFlavors() {
@@ -206,7 +222,7 @@ public class SwingUtils {
                 if (DataFlavor.imageFlavor.equals(flavor)) {
                     return image;
                 }
-                
+
                 if (DataFlavor.javaFileListFlavor.equals(flavor)) {
                     // 1. Convert to BufferedImage if necessary
                     BufferedImage bi;
@@ -218,31 +234,33 @@ public class SwingUtils {
                         g.drawImage(image, 0, 0, null);
                         g.dispose();
                     }
-                    
+
                     // 2. Save to a temporary file
                     File tempFile = File.createTempFile("anahata-diagram-", ".png");
                     tempFile.deleteOnExit();
                     ImageIO.write(bi, "PNG", tempFile);
-                    
+
                     // 3. Return as a list of files
                     return List.of(tempFile);
                 }
-                
+
                 throw new UnsupportedFlavorException(flavor);
             }
         };
-        
+
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(transferable, null);
     }
 
     /**
-     * Redispatches a {@link MouseWheelEvent} to the appropriate ancestor scroll pane.
+     * Redispatches a {@link MouseWheelEvent} to the appropriate ancestor scroll
+     * pane.
      * <p>
-     * <b>Boundary Awareness:</b> If the immediately enclosing scroll pane has vertical 
-     * scrolling enabled, the event is only forwarded if the scroll pane is at its 
-     * boundary (Top while rolling up, or Bottom while rolling down). 
+     * <b>Boundary Awareness:</b> If the immediately enclosing scroll pane has
+     * vertical scrolling enabled, the event is only forwarded if the scroll
+     * pane is at its boundary (Top while rolling up, or Bottom while rolling
+     * down).
      * </p>
-     * 
+     *
      * @param component The component receiving the event.
      * @param e The mouse wheel event.
      */
@@ -254,16 +272,16 @@ public class SwingUtils {
         Container parent = component.getParent();
         while (parent != null) {
             if (parent instanceof JScrollPane sp) {
-                boolean verticalEnabled = sp.getVerticalScrollBarPolicy() != JScrollPane.VERTICAL_SCROLLBAR_NEVER && 
-                                        sp.getVerticalScrollBar().isEnabled();
-                
+                boolean verticalEnabled = sp.getVerticalScrollBarPolicy() != JScrollPane.VERTICAL_SCROLLBAR_NEVER
+                        && sp.getVerticalScrollBar().isEnabled();
+
                 if (verticalEnabled) {
                     JScrollBar vBar = sp.getVerticalScrollBar();
                     int rotation = e.getWheelRotation();
                     // We use small epsilon/inclusive checks for boundary detection
                     boolean atTop = vBar.getValue() <= vBar.getMinimum();
                     boolean atBottom = (vBar.getValue() + vBar.getVisibleAmount()) >= vBar.getMaximum();
-                    
+
                     // If not at boundary, this scroll pane consumes the event
                     if ((rotation < 0 && !atTop) || (rotation > 0 && !atBottom)) {
                         sp.dispatchEvent(SwingUtilities.convertMouseEvent(component, e, sp));
@@ -276,7 +294,7 @@ public class SwingUtils {
             }
             parent = parent.getParent();
         }
-        
+
         // Final fallback: dispatch to the root scroll pane if we reached the top of the hierarchy
         JScrollPane rootScroll = (JScrollPane) SwingUtilities.getAncestorOfClass(JScrollPane.class, component);
         if (rootScroll != null) {
@@ -287,12 +305,12 @@ public class SwingUtils {
     /**
      * Displays a modal dialog with a syntax-highlighted code block.
      * <p>
-     * This method dynamically resolves the appropriate renderer based on the 
-     * provided language. It supports high-fidelity rendering for technical 
-     * content (via RSyntaxTextArea) and the <b>Singularity Path</b> for 
-     * Mermaid diagrams.
+     * This method dynamically resolves the appropriate renderer based on the
+     * provided language. It supports high-fidelity rendering for technical
+     * content (via RSyntaxTextArea) and the <b>Singularity Path</b> for Mermaid
+     * diagrams.
      * </p>
-     * 
+     *
      * @param parent The parent component.
      * @param title The dialog title.
      * @param text The text to display.
@@ -356,11 +374,12 @@ public class SwingUtils {
     /**
      * Executes a task on the EDT.
      * <p>
-     * <b>Optimization:</b> If the current thread is already the EDT, the task 
-     * is executed synchronously to avoid unnecessary event queue overhead. 
-     * Otherwise, it is scheduled via {@link SwingUtilities#invokeLater(Runnable)}.
+     * <b>Optimization:</b> If the current thread is already the EDT, the task
+     * is executed synchronously to avoid unnecessary event queue overhead.
+     * Otherwise, it is scheduled via
+     * {@link SwingUtilities#invokeLater(Runnable)}.
      * </p>
-     * 
+     *
      * @param runnable The code to execute.
      */
     public static void runInEDT(Runnable runnable) {
@@ -372,17 +391,19 @@ public class SwingUtils {
     }
 
     /**
-     * Executes the given runnable on the Event Dispatch Thread (EDT) and waits for it to complete.
+     * Executes the given runnable on the Event Dispatch Thread (EDT) and waits
+     * for it to complete.
      * <p>
-     * <b>Synchronization:</b> This method blocks the calling thread. Use with 
-     * extreme caution inside tools to avoid deadlocks. It is intended for 
-     * scenarios where the tool must wait for user interaction or component 
+     * <b>Synchronization:</b> This method blocks the calling thread. Use with
+     * extreme caution inside tools to avoid deadlocks. It is intended for
+     * scenarios where the tool must wait for user interaction or component
      * validation.
      * </p>
-     * 
+     *
      * @param runnable The code to execute.
      * @throws InterruptedException if the thread is interrupted while waiting.
-     * @throws InvocationTargetException if an exception occurs during execution.
+     * @throws InvocationTargetException if an exception occurs during
+     * execution.
      */
     public static void runInEDTAndWait(Runnable runnable) throws InterruptedException, InvocationTargetException {
         if (SwingUtilities.isEventDispatchThread()) {
