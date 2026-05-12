@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.internal;
 
+import java.awt.AWTException;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
@@ -17,6 +18,7 @@ import java.util.Date;
 import java.util.List;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AbstractAsiContainer;
 
@@ -51,14 +53,41 @@ public class UICapture {
      * @return A list of Paths to the generated PNG artifacts.
      * @throws IOException if the native capture or file write operation fails.
      */
-    public static List<Path> screenshotAllScreens() throws IOException {
+    public static List<Path> screenshotAllScreens() throws Exception {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] screens = ge.getScreenDevices();
         List<Path> paths = new ArrayList<>();
         for (int i = 0; i < screens.length; i++) {
-            paths.add(screenshotScreen(i));
+            paths.add(screenshotToFile(i));
         }
         return paths;
+    }
+
+
+    /**
+     * Performs a hardware screen capture using environment-aware safe bounds.
+     * 
+     * @param bounds The bounds
+     * @return The captured image.
+     * @throws AWTException if the Robot cannot be initialized.
+     */
+    public static BufferedImage getSafeScreenCapture(Rectangle bounds) throws AWTException {
+        
+        if (SwingUtilities.isEventDispatchThread()) {
+            throw new IllegalStateException("Robot().createScreenCapture cannot be called in the EDT");
+        }
+        return new Robot().createScreenCapture(bounds);
+    }
+    
+    /**
+     * Takes a scerenshot of a given screen, must be called on the EDT.
+     * 
+     * @param gd the screen
+     * @return the image
+     * @throws AWTException 
+     */
+    public static BufferedImage getSafeScreenCapture(GraphicsDevice gd) throws AWTException {
+        return getSafeScreenCapture(gd.getDefaultConfiguration().getBounds());
     }
 
     /**
@@ -66,13 +95,14 @@ public class UICapture {
      * <p>
      * This method is the atomic operation for multi-screen capture. It ensures 
      * that the requested display index exists before attempting the hardware scrape.
+     * It uses {@link #getSafeScreenCapture(GraphicsDevice)} to avoid Wayland-specific issues.
      * </p>
      * 
      * @param deviceIdx The 0-based index of the graphics device.
      * @return The Path to the generated PNG artifact.
      * @throws IOException if the capture or disk write operation fails.
      */
-    public static Path screenshotScreen(int deviceIdx) throws IOException {
+    public static Path screenshotToFile(int deviceIdx) throws Exception {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] screens = ge.getScreenDevices();
         if (deviceIdx < 0 || deviceIdx >= screens.length) {
@@ -81,13 +111,10 @@ public class UICapture {
 
         Files.createDirectories(SCREENSHOTS_DIR);
 
-        Rectangle screenBounds = screens[deviceIdx].getDefaultConfiguration().getBounds();
         BufferedImage screenshot;
-        try {
-            screenshot = new Robot().createScreenCapture(screenBounds);
-        } catch (Exception e) {
-            throw new IOException("Failed to capture screen device " + deviceIdx, e);
-        }
+        
+        screenshot = getSafeScreenCapture(screens[deviceIdx].getDefaultConfiguration().getBounds());
+        
 
         String timestamp = TIMESTAMP_FORMAT.format(new Date());
         String filename = "screenshot-" + deviceIdx + "-" + timestamp + ".png";
