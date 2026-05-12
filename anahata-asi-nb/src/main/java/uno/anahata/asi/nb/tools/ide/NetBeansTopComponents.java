@@ -149,7 +149,7 @@ public final class NetBeansTopComponents {
             }
         });
         
-        log.info("Gathered info for {} TopComponents in {}ms (including EDT wait)", results.size(), System.currentTimeMillis() - start);
+        log.debug("Gathered info for {} TopComponents in {}ms (including EDT wait)", results.size(), System.currentTimeMillis() - start);
         return results;
     }
 
