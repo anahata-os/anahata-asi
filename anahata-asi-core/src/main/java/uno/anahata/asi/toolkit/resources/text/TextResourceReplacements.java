@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.tool.AgiToolException;
+import uno.anahata.asi.internal.TextUtils;
 
 /**
  * Represents a set of text replacement operations for a specific file. Extends
@@ -99,8 +100,9 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
         }
 
         String normalizedOriginal = normalizeForComparison(originalContent);
-
+        
         for (TextReplacement replacement : replacements) {
+            int replacementIndex = replacements.indexOf(replacement);
             String target = replacement.getTarget();
             if (target == null || target.isEmpty()) {
                 throw new AgiToolException("Replacement target cannot be null or empty.");
@@ -113,9 +115,13 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
             List<Integer> indexes = replacement.getOccurrenceIndexes();
             
             if (count != expected) {
-                throw new AgiToolException("Surgical Checksum Failed for target [" + target.substring(0, Math.min(20, target.length())) + "...]. "
+                throw new AgiToolException("Surgical Checksum Failed for replacement #"  + replacementIndex 
+                        + " \n-target: [" + StringUtils.abbreviateMiddle(target, "...", 108) + "...]. " 
+                        + " \n-replacement: [" + StringUtils.abbreviateMiddle(target, "...", 108) + "...]. " 
+                        + " \n-reason:" + replacement.getReason()
+                        + " \n-occurrendeIdexes:" + replacement.getOccurrenceIndexes()
                         + "Your 'totalOccurrences' was " + expected + " but I found " + count + " matches in the file. "
-                        + "You have to provide the exact number of 'totalOccurences' in the file.");
+                        + "You have to provide the exact number of 'totalOccurences' in the file for each replacement.");
             }
 
             if (indexes != null) {
