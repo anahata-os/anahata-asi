@@ -119,7 +119,7 @@ public final class RequestConfigAdapter {
             List<FunctionDeclaration> declarations = new ArrayList<>();
             
             boolean useNativeSchemas = requestConfig.isUseNativeSchemas();
-            List<String> historyToolNames = new ArrayList<>();
+            
             for (AbstractTool<?, ?> tool : localTools) {
                 FunctionDeclaration fd = new GeminiFunctionDeclarationAdapter(tool, useNativeSchemas).toGoogle();
                 if (fd != null) {
@@ -129,9 +129,6 @@ public final class RequestConfigAdapter {
                     // but we log it for now. The tool itself should ideally hold its provider-specific count.
                     log.debug("Tool {}: {} tokens", tool.getName(), tokenCount);
                     declarations.add(fd);
-                    if (tool.getName().startsWith(History.class.getSimpleName())) {
-                        historyToolNames.add(fd.name().get());
-                    }
                 }
             }
 
@@ -141,15 +138,7 @@ public final class RequestConfigAdapter {
                 
                 FunctionCallingConfig.Builder fccb = FunctionCallingConfig.builder();
                 
-                if (/*requestConfig.isInjectInbandMetadata()*/false) {
-                    //not allowing gemini for now to use in band 
-                    log.warn("In-band Metadata is not allowed yet for Gemini");
-                    //log.info("In-band Metadata injection enabled, only History tools are allowed: " + historyToolNames);
-                    fccb.allowedFunctionNames(historyToolNames);
-                    fccb.mode(FunctionCallingConfigMode.Known.VALIDATED);
-                } else {
-                    fccb.mode(FunctionCallingConfigMode.Known.AUTO);
-                }
+                fccb.mode(FunctionCallingConfigMode.Known.AUTO);
                 
                 ToolConfig tc = ToolConfig.builder()
                                 .functionCallingConfig(fccb.build())
