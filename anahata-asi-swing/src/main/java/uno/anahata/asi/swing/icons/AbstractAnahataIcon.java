@@ -2,6 +2,7 @@
 package uno.anahata.asi.swing.icons;
 
 import javax.swing.Icon;
+import lombok.Getter;
 
 /**
  * The foundational base class for all programmatically drawn icons in the Anahata ASI ecosystem.
@@ -24,6 +25,7 @@ public abstract class AbstractAnahataIcon implements Icon {
      * This field is protected to allow direct access within the {@code paintIcon} 
      * implementations of subclasses for coordinate calculations.
      */
+    @Getter
     protected final int size;
 
     /**
