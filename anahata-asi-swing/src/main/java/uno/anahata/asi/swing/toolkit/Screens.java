@@ -27,6 +27,8 @@ import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.swing.internal.SwingUtils;
+import java.util.Comparator;
+import java.util.stream.IntStream;
 
 /**
  * A hardware-aware toolkit for capturing high-fidelity screenshots of the host
@@ -90,7 +92,13 @@ public class Screens extends AnahataToolkit {
             StringBuilder status = new StringBuilder("## Display & Pointer Status\n");
             status.append("- **Mouse Position**: X=").append(mouseLoc.x).append(", Y=").append(mouseLoc.y).append("\n");
 
-            for (int i = 0; i < devices.length; i++) {
+            // Sort indices based on physical X coordinate for a natural logical layout
+            List<Integer> sortedIndices = IntStream.range(0, devices.length)
+                    .boxed()
+                    .sorted(Comparator.comparingInt(i -> devices[i].getDefaultConfiguration().getBounds().x))
+                    .toList();
+
+            for (int i : sortedIndices) {
                 GraphicsDevice gd = devices[i];
                 Rectangle bounds = gd.getDefaultConfiguration().getBounds();
                 boolean hasMouse = bounds.contains(mouseLoc);
