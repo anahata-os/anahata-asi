@@ -324,6 +324,11 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
         // Fix: Handle null rawText to avoid "null" string in summary
         String summary = (rawText == null || rawText.isEmpty()) ? "" : TextUtils.formatValue(rawText);
         
+        // Strip HTML tags entirely to prevent raw tags from cluttering the header
+        summary = summary.replaceAll("<[^>]*>", "");
+        // Escape remaining < and > just in case
+        summary = summary.replace("<", "&lt;").replace(">", "&gt;");
+        
         //log.info("Updating header info text for part: {}", summary);
 
         StringBuilder sb = new StringBuilder("<html>");
