@@ -27,8 +27,8 @@ import uno.anahata.asi.yam.tools.browser.BrowserDrone;
 /**
  * A toolkit for web automation and form filling using Firefox and Selenium.
  * <p>
- * This toolkit manages a fleet of {@link BrowserDrone} instances utilizing
- * the GeckoDriver for Firefox automation.
+ * This toolkit manages a fleet of {@link BrowserDrone} instances utilizing the
+ * GeckoDriver for Firefox automation.
  * </p>
  *
  * @author anahata
@@ -39,7 +39,8 @@ public class Firefox extends AbstractBrowser {
 
     /**
      * {@inheritDoc}
-     * <p>Initializes the toolkit, disabling it by default if it is in beta.</p>
+     * <p>
+     * Initializes the toolkit, disabling it by default if it is in beta.</p>
      */
     @Override
     public void initialize() {
@@ -48,7 +49,8 @@ public class Firefox extends AbstractBrowser {
 
     /**
      * {@inheritDoc}
-     * <p>Rebinds the transient driver states after session deserialization.</p>
+     * <p>
+     * Rebinds the transient driver states after session deserialization.</p>
      */
     @Override
     public void rebind() {
@@ -58,7 +60,9 @@ public class Firefox extends AbstractBrowser {
 
     /**
      * {@inheritDoc}
-     * <p>Clears orphaned drones after session deserialization, as Firefox cannot reliably reconnect.</p>
+     * <p>
+     * Clears orphaned drones after session deserialization, as Firefox cannot
+     * reliably reconnect.</p>
      */
     @Override
     public void postActivate() {
@@ -68,7 +72,9 @@ public class Firefox extends AbstractBrowser {
 
     /**
      * {@inheritDoc}
-     * <p>Provides context-specific instructions to the ASI regarding Firefox automation.</p>
+     * <p>
+     * Provides context-specific instructions to the ASI regarding Firefox
+     * automation.</p>
      */
     @Override
     public List<String> getSystemInstructions() {
@@ -81,7 +87,8 @@ public class Firefox extends AbstractBrowser {
 
     /**
      * {@inheritDoc}
-     * <p>Populates the RAG message with current Firefox environment state.</p>
+     * <p>
+     * Populates the RAG message with current Firefox environment state.</p>
      */
     @Override
     public void populateMessage(RagMessage ragMessage) {
@@ -98,7 +105,7 @@ public class Firefox extends AbstractBrowser {
                     state += " (Error)";
                 }
                 String url = d.currentUrl != null ? d.currentUrl : "N/A";
-                sb.append(String.format("| %s | %b | %s | %s | %s | %s |\n", 
+                sb.append(String.format("| %s | %b | %s | %s | %s | %s |\n",
                         d.id, d.headless, d.profile, d.userDataDir, state, url));
             }
         }
@@ -121,19 +128,22 @@ public class Firefox extends AbstractBrowser {
             @AgiToolParam(value = "An optional profile name to force.", required = false) String profile,
             @AgiToolParam(value = "Whether to launch headless. Default false.", required = false) Boolean headless,
             @AgiToolParam(value = "Custom user data dir.", required = false) String dataDir) throws AgiToolException {
-        
+
         if (drones.containsKey(droneId)) {
             throw new AgiToolException("Drone ID '" + droneId + "' already exists. Please choose a different ID or close it first.");
         }
-        
+
         BrowserDrone drone = new BrowserDrone();
         drone.id = droneId;
-        drones.put(droneId, drone);
         drone.profile = profile != null ? profile : "default";
         drone.userDataDir = dataDir != null ? dataDir : System.getProperty("user.home") + "/.mozilla/firefox";
         drone.headless = (headless != null && headless);
 
-        return launchFirefoxInternal(drone);
+        String res = launchFirefoxInternal(drone);
+        if (drone.driver != null) {
+            drones.put(droneId, drone);
+        }
+        return res;
     }
 
     /**
@@ -188,7 +198,7 @@ public class Firefox extends AbstractBrowser {
             String handle = handles.get(i);
             String title = "Unknown";
             String url = "Unknown";
-            
+
             try {
                 driver.switchTo().window(handle);
                 switched = true;
@@ -198,11 +208,11 @@ public class Firefox extends AbstractBrowser {
                 log.error("Failed to switch to window handle {}", handle, e);
                 title = "[Error: " + e.getMessage() + "]";
             }
-            
+
             String marker = (current != null && handle.equals(current)) ? " [CURRENT]" : "";
             tabs.add(i + ": " + title + " (" + url + ")" + marker);
         }
-        
+
         if (switched && current != null) {
             try {
                 driver.switchTo().window(current);
@@ -247,7 +257,7 @@ public class Firefox extends AbstractBrowser {
                 log.error("Error quitting previous driver for drone {}", d.id, e);
             }
         }
-        
+
         FirefoxOptions options = new FirefoxOptions();
         if (d.headless) {
             options.addArguments("-headless");
@@ -260,7 +270,7 @@ public class Firefox extends AbstractBrowser {
             CompletableFuture<WebDriver> future = CompletableFuture.supplyAsync(() -> {
                 return new FirefoxDriver(options);
             }, getExecutorService());
-            
+
             d.driver = future.get(60, TimeUnit.SECONDS);
             log("Drone '" + d.id + "' successfully initialized. URL: " + d.driver.getCurrentUrl());
             return "Firefox drone '" + d.id + "' launched successfully.";
