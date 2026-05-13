@@ -202,6 +202,16 @@ public class AgiConfig extends BasicPropertyChangeSource {
      */
     private int defaultTextPartMaxDepth = 108;
 
+    /**
+     * The default maximum depth a model code execution part should be kept in context.
+     */
+    private int defaultModelCodeExecutionMaxDepth = 8;
+
+    /**
+     * The default maximum depth a web search call part should be kept in context.
+     */
+    private int defaultWebSearchMaxDepth = 8;
+
     //</editor-fold>
     /**
      * The default response modalities for this agi session.
@@ -325,6 +335,22 @@ public class AgiConfig extends BasicPropertyChangeSource {
         if (old != defaultThoughtPartMaxDepth) {
             this.defaultThoughtPartMaxDepth = defaultThoughtPartMaxDepth;
             propertyChangeSupport.firePropertyChange("defaultThoughtPartMaxDepth", old, defaultThoughtPartMaxDepth);
+        }
+    }
+
+    public void setDefaultModelCodeExecutionMaxDepth(int defaultModelCodeExecutionMaxDepth) {
+        int old = this.defaultModelCodeExecutionMaxDepth;
+        if (old != defaultModelCodeExecutionMaxDepth) {
+            this.defaultModelCodeExecutionMaxDepth = defaultModelCodeExecutionMaxDepth;
+            propertyChangeSupport.firePropertyChange("defaultModelCodeExecutionMaxDepth", old, defaultModelCodeExecutionMaxDepth);
+        }
+    }
+
+    public void setDefaultWebSearchMaxDepth(int defaultWebSearchMaxDepth) {
+        int old = this.defaultWebSearchMaxDepth;
+        if (old != defaultWebSearchMaxDepth) {
+            this.defaultWebSearchMaxDepth = defaultWebSearchMaxDepth;
+            propertyChangeSupport.firePropertyChange("defaultWebSearchMaxDepth", old, defaultWebSearchMaxDepth);
         }
     }
 
