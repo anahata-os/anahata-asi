@@ -81,7 +81,8 @@ public class Firefox extends AbstractBrowser {
         return Collections.singletonList(
                 "**Firefox Toolkit Instructions**:\n"
                 + "- **Connection Protocol**: Use the `connect()` tool to launch a Firefox browser instance.\n"
-                + "- **Multi-Drone Routing**: All methods require a `droneId` to target the specific browser session."
+                + "- **Multi-Drone Routing**: All methods require a `droneId` to target the specific browser session.\n"
+                + "- **Missing Binaries**: If Selenium cannot find the browser binary, use the `Shell` toolkit to locate it (e.g., `find /snap -name firefox`) and pass the absolute path to the `binaryPath` parameter."
         );
     }
 
@@ -127,7 +128,8 @@ public class Firefox extends AbstractBrowser {
             @AgiToolParam(value = "A unique ID for this drone.", required = true) String droneId,
             @AgiToolParam(value = "An optional profile name to force.", required = false) String profile,
             @AgiToolParam(value = "Whether to launch headless. Default false.", required = false) Boolean headless,
-            @AgiToolParam(value = "Custom user data dir.", required = false) String dataDir) throws AgiToolException {
+            @AgiToolParam(value = "Custom user data dir.", required = false) String dataDir,
+            @AgiToolParam(value = "Optional path to the Firefox binary (e.g. for Snap installs).", required = false) String binaryPath) throws AgiToolException {
 
         if (drones.containsKey(droneId)) {
             throw new AgiToolException("Drone ID '" + droneId + "' already exists. Please choose a different ID or close it first.");
@@ -138,6 +140,7 @@ public class Firefox extends AbstractBrowser {
         drone.profile = profile != null ? profile : "default";
         drone.userDataDir = dataDir != null ? dataDir : System.getProperty("user.home") + "/.mozilla/firefox";
         drone.headless = (headless != null && headless);
+        drone.binaryPath = binaryPath;
 
         String res = launchFirefoxInternal(drone);
         if (drone.driver != null) {
@@ -264,6 +267,9 @@ public class Firefox extends AbstractBrowser {
         }
         if (d.profile != null && !d.profile.isEmpty() && !d.profile.equals("default")) {
             options.addArguments("-P", d.profile);
+        }
+        if (d.binaryPath != null && !d.binaryPath.isEmpty()) {
+            options.setBinary(d.binaryPath);
         }
 
         try {
