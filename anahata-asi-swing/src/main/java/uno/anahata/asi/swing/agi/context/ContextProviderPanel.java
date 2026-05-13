@@ -15,6 +15,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
+import uno.anahata.asi.swing.components.ScrollablePanel;
 import javax.swing.SwingConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -23,6 +24,7 @@ import uno.anahata.asi.agi.context.ContextProvider;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.swing.agi.context.ContextPanel;
 import uno.anahata.asi.swing.agi.message.RagMessageViewer;
+import uno.anahata.asi.swing.internal.SwingTask;
 
 /**
  * A panel that displays the details and context previews for a {@link ContextProvider}.
@@ -34,7 +36,7 @@ import uno.anahata.asi.swing.agi.message.RagMessageViewer;
  * @author anahata
  */
 @Slf4j
-public class ContextProviderPanel extends JPanel {
+public class ContextProviderPanel extends ScrollablePanel {
 
     private final ContextPanel parentPanel;
     
@@ -48,6 +50,8 @@ public class ContextProviderPanel extends JPanel {
     private final JPanel childrenSysTab;
     private final JPanel thisRagTab;
     private final JPanel childrenRagTab;
+    
+    private ContextProvider currentProvider;
 
     /**
      * Constructs a new ContextProviderPanel.
@@ -107,6 +111,7 @@ public class ContextProviderPanel extends JPanel {
      * @param cp The context provider.
      */
     public void setContextProvider(ContextProvider cp) {
+        this.currentProvider = cp;
         nameLabel.setText("Provider: " + cp.getName());
         descLabel.setText("<html>" + cp.getDescription().replace("\n", "<br>") + "</html>");
         
@@ -144,85 +149,108 @@ public class ContextProviderPanel extends JPanel {
     }
 
     /**
-     * Updates the content previews and manages tab visibility.
+     * Updates the content previews and manages tab visibility asynchronously.
      */
     private void updatePreviews(ContextProvider cp) {
         Agi agi = parentPanel.getAgi();
         tabbedPane.removeAll();
         
-        // 1. System: This Provider
-        RagMessage thisSysMsg = new RagMessage(agi);
-        try {
-            List<String> instructions = cp.getSystemInstructions();
-            if (!instructions.isEmpty()) {
-                thisSysMsg.addTextPart(cp.getHeader());
-                for (String part : instructions) {
-                    thisSysMsg.addTextPart(part);
-                }
-            }
-        } catch (Exception e) {
-            thisSysMsg.addTextPart("**Error generating system instructions:**\n" + ExceptionUtils.getStackTrace(e));
-        }
-        if (!thisSysMsg.getParts().isEmpty()) {
-            renderPreview(thisSysMsg, thisSysTab, "");
-            tabbedPane.addTab("System: This Provider", thisSysTab);
-        }
+        JPanel loadingPanel = new JPanel(new BorderLayout());
+        loadingPanel.add(new JLabel("Sensing Provider Content...", SwingConstants.CENTER), BorderLayout.CENTER);
+        tabbedPane.addTab("Loading...", loadingPanel);
 
-        // 2. System: Children (Aggregated)
-        RagMessage childrenSysMsg = new RagMessage(agi);
-        for (ContextProvider child : cp.getChildrenProviders()) {
-            for (ContextProvider p : child.getFlattenedHierarchy(true)) {
-                try {
-                    List<String> instructions = p.getSystemInstructions();
-                    if (!instructions.isEmpty()) {
-                        childrenSysMsg.addTextPart(p.getHeader());
-                        for (String part : instructions) {
-                            childrenSysMsg.addTextPart(part);
-                        }
+        new SwingTask<RagMessage[]>(parentPanel.getAgiPanel(), "Loading Previews for " + cp.getName(), () -> {
+            // 1. System: This Provider
+            RagMessage thisSysMsg = new RagMessage(agi);
+            try {
+                List<String> instructions = cp.getSystemInstructions();
+                if (!instructions.isEmpty()) {
+                    thisSysMsg.addTextPart(cp.getHeader());
+                    for (String part : instructions) {
+                        thisSysMsg.addTextPart(part);
                     }
-                } catch (Exception e) {
-                    childrenSysMsg.addTextPart("**Error generating system instructions for child:**\n" + ExceptionUtils.getStackTrace(e));
+                }
+            } catch (Exception e) {
+                thisSysMsg.addTextPart("**Error generating system instructions:**\n" + ExceptionUtils.getStackTrace(e));
+            }
+
+            // 2. System: Children (Aggregated)
+            RagMessage childrenSysMsg = new RagMessage(agi);
+            for (ContextProvider child : cp.getChildrenProviders()) {
+                for (ContextProvider p : child.getFlattenedHierarchy(true)) {
+                    try {
+                        List<String> instructions = p.getSystemInstructions();
+                        if (!instructions.isEmpty()) {
+                            childrenSysMsg.addTextPart(p.getHeader());
+                            for (String part : instructions) {
+                                childrenSysMsg.addTextPart(part);
+                            }
+                        }
+                    } catch (Exception e) {
+                        childrenSysMsg.addTextPart("**Error generating system instructions for child:**\n" + ExceptionUtils.getStackTrace(e));
+                    }
                 }
             }
-        }
-        if (!childrenSysMsg.getParts().isEmpty()) {
-            renderPreview(childrenSysMsg, childrenSysTab, "");
-            tabbedPane.addTab("System: Children (Aggregated)", childrenSysTab);
-        }
 
-        // 3. RAG: This Provider
-        RagMessage thisRagMsg = new RagMessage(agi);
-        try {
-            cp.populateMessage(thisRagMsg);
-        } catch (Exception e) {
-            thisRagMsg.addTextPart("**Error populating RAG message:**\n" + ExceptionUtils.getStackTrace(e));
-        }
-        if (!thisRagMsg.getParts().isEmpty()) {
-            renderPreview(thisRagMsg, thisRagTab, "");
-            tabbedPane.addTab("RAG: This Provider", thisRagTab);
-        }
+            // 3. RAG: This Provider
+            RagMessage thisRagMsg = new RagMessage(agi);
+            try {
+                cp.populateMessage(thisRagMsg);
+            } catch (Exception e) {
+                thisRagMsg.addTextPart("**Error populating RAG message:**\n" + ExceptionUtils.getStackTrace(e));
+            }
 
-        // 4. RAG: Children (Aggregated)
-        RagMessage childrenRagMsg = new RagMessage(agi);
-        for (ContextProvider child : cp.getChildrenProviders()) {
-            for (ContextProvider p : child.getFlattenedHierarchy(true)) {
-                try {
-                    p.populateMessage(childrenRagMsg);
-                } catch (Exception e) {
-                    childrenRagMsg.addTextPart("**Error populating RAG message for child:**\n" + ExceptionUtils.getStackTrace(e));
+            // 4. RAG: Children (Aggregated)
+            RagMessage childrenRagMsg = new RagMessage(agi);
+            for (ContextProvider child : cp.getChildrenProviders()) {
+                for (ContextProvider p : child.getFlattenedHierarchy(true)) {
+                    try {
+                        p.populateMessage(childrenRagMsg);
+                    } catch (Exception e) {
+                        childrenRagMsg.addTextPart("**Error populating RAG message for child:**\n" + ExceptionUtils.getStackTrace(e));
+                    }
                 }
             }
-        }
-        if (!childrenRagMsg.getParts().isEmpty()) {
-            renderPreview(childrenRagMsg, childrenRagTab, "");
-            tabbedPane.addTab("RAG: Children (Aggregated)", childrenRagTab);
-        }
-        
-        if (tabbedPane.getTabCount() == 0) {
-            JPanel emptyPanel = new JPanel(new BorderLayout());
-            emptyPanel.add(new JLabel("No context content contributed by this provider.", SwingConstants.CENTER));
-            tabbedPane.addTab("No Content", emptyPanel);
-        }
+            
+            return new RagMessage[] { thisSysMsg, childrenSysMsg, thisRagMsg, childrenRagMsg };
+        }, msgs -> {
+            // Abort UI update if the user clicked away during load
+            if (this.currentProvider != cp) {
+                return;
+            }
+            
+            tabbedPane.removeAll();
+            
+            RagMessage thisSysMsg = msgs[0];
+            if (!thisSysMsg.getParts().isEmpty()) {
+                renderPreview(thisSysMsg, thisSysTab, "");
+                tabbedPane.addTab("System: This Provider", thisSysTab);
+            }
+
+            RagMessage childrenSysMsg = msgs[1];
+            if (!childrenSysMsg.getParts().isEmpty()) {
+                renderPreview(childrenSysMsg, childrenSysTab, "");
+                tabbedPane.addTab("System: Children (Aggregated)", childrenSysTab);
+            }
+
+            RagMessage thisRagMsg = msgs[2];
+            if (!thisRagMsg.getParts().isEmpty()) {
+                renderPreview(thisRagMsg, thisRagTab, "");
+                tabbedPane.addTab("RAG: This Provider", thisRagTab);
+            }
+
+            RagMessage childrenRagMsg = msgs[3];
+            if (!childrenRagMsg.getParts().isEmpty()) {
+                renderPreview(childrenRagMsg, childrenRagTab, "");
+                tabbedPane.addTab("RAG: Children (Aggregated)", childrenRagTab);
+            }
+            
+            if (tabbedPane.getTabCount() == 0) {
+                JPanel emptyPanel = new JPanel(new BorderLayout());
+                emptyPanel.add(new JLabel("No context content contributed by this provider.", SwingConstants.CENTER));
+                tabbedPane.addTab("No Content", emptyPanel);
+            }
+        }).start();
     }
 
     private void renderPreview(RagMessage msg, JPanel tab, String emptyText) {
