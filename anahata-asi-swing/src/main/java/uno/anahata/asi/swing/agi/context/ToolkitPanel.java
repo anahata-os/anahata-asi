@@ -15,6 +15,7 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
+import uno.anahata.asi.swing.components.ScrollablePanel;
 import uno.anahata.asi.swing.toolkit.render.ToolkitUiRegistry;
 
 /**
@@ -25,7 +26,7 @@ import uno.anahata.asi.swing.toolkit.render.ToolkitUiRegistry;
  *
  * @author anahata
  */
-public class ToolkitPanel extends JPanel {
+public class ToolkitPanel extends ScrollablePanel {
 
     private final ContextPanel parentPanel;
     
