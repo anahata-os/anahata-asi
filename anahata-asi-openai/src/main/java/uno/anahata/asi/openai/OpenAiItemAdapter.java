@@ -18,9 +18,9 @@ import uno.anahata.asi.agi.message.AbstractModelMessage;
 import uno.anahata.asi.agi.message.AbstractPart;
 import uno.anahata.asi.agi.message.BlobPart;
 import uno.anahata.asi.agi.message.ModelBlobPart;
-import uno.anahata.asi.agi.message.ModelCodeExecutionCallPart;
-import uno.anahata.asi.agi.message.ModelCodeExecutionResultPart;
-import uno.anahata.asi.agi.message.ModelSearchCallPart;
+import uno.anahata.asi.agi.message.code.HostedCodeExecutionCallPart;
+import uno.anahata.asi.agi.message.code.HostedCodeExecutionResultPart;
+import uno.anahata.asi.agi.message.web.WebSearchCallPart;
 import uno.anahata.asi.agi.message.ModelTextPart;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.message.Role;
@@ -75,7 +75,7 @@ public class OpenAiItemAdapter {
         String currentProviderId = null;
 
         // Map to track and reuse Code Interpreter items (Call -> JSON Node)
-        Map<ModelCodeExecutionCallPart, ObjectNode> ciNodes = new java.util.LinkedHashMap<>();
+        Map<HostedCodeExecutionCallPart, ObjectNode> ciNodes = new java.util.LinkedHashMap<>();
 
         for (AbstractPart part : modelMsg.getParts(includePruned)) {
             String partProviderId = sameModel ? part.getProviderId() : null;
@@ -92,7 +92,7 @@ public class OpenAiItemAdapter {
             }
 
             // 2. Code Interpreter Components (Call, Result, or Blob with parentCall)
-            ModelCodeExecutionCallPart ciRoot = getCiRoot(part);
+            HostedCodeExecutionCallPart ciRoot = getCiRoot(part);
             if (ciRoot != null) {
                 flushMessageItem(items, currentMessageItem);
                 currentMessageItem = null;
@@ -106,7 +106,7 @@ public class OpenAiItemAdapter {
                 flushMessageItem(items, currentMessageItem);
                 currentMessageItem = null;
                 items.add(createFunctionCallNode(tc, sameModel));
-            } else if (part instanceof ModelSearchCallPart mscp) {
+            } else if (part instanceof WebSearchCallPart mscp) {
                 flushMessageItem(items, currentMessageItem);
                 currentMessageItem = null;
                 items.add(createWebSearchCallNode(mscp, sameModel));
@@ -134,11 +134,11 @@ public class OpenAiItemAdapter {
         return items;
     }
 
-    private ModelCodeExecutionCallPart getCiRoot(AbstractPart part) {
-        if (part instanceof ModelCodeExecutionCallPart mccp) {
+    private HostedCodeExecutionCallPart getCiRoot(AbstractPart part) {
+        if (part instanceof HostedCodeExecutionCallPart mccp) {
             return mccp;
         }
-        if (part instanceof ModelCodeExecutionResultPart res) {
+        if (part instanceof HostedCodeExecutionResultPart res) {
             return res.getParentCall();
         }
         if (part instanceof ModelBlobPart blob) {
@@ -147,7 +147,7 @@ public class OpenAiItemAdapter {
         return null;
     }
 
-    private ObjectNode getOrCreateCiNode(Map<ModelCodeExecutionCallPart, ObjectNode> ciNodes, ModelCodeExecutionCallPart root, List<ObjectNode> items, boolean sameModel) {
+    private ObjectNode getOrCreateCiNode(Map<HostedCodeExecutionCallPart, ObjectNode> ciNodes, HostedCodeExecutionCallPart root, List<ObjectNode> items, boolean sameModel) {
         return ciNodes.computeIfAbsent(root, k -> {
             ObjectNode node = API_MAPPER.createObjectNode();
             node.put("type", "code_interpreter_call");
@@ -162,11 +162,11 @@ public class OpenAiItemAdapter {
     }
 
     private void updateCiNode(ObjectNode ciNode, AbstractPart part) {
-        if (part instanceof ModelCodeExecutionCallPart mccp) {
+        if (part instanceof HostedCodeExecutionCallPart mccp) {
             ciNode.put("code", mccp.getText());
         } else {
             ArrayNode outputs = (ArrayNode) ciNode.get("outputs");
-            if (part instanceof ModelCodeExecutionResultPart res) {
+            if (part instanceof HostedCodeExecutionResultPart res) {
                 outputs.addObject().put("type", "logs").put("logs", res.getText());
             } else if (part instanceof ModelBlobPart mbp && mbp.getMimeType().startsWith("image/")) {
                 ObjectNode imgNode = outputs.addObject();
@@ -196,7 +196,7 @@ public class OpenAiItemAdapter {
         return callItem;
     }
 
-    private ObjectNode createWebSearchCallNode(ModelSearchCallPart mscp, boolean sameModel) {
+    private ObjectNode createWebSearchCallNode(WebSearchCallPart mscp, boolean sameModel) {
         ObjectNode searchCall = API_MAPPER.createObjectNode();
         searchCall.put("type", "web_search_call");
         String id = (sameModel && mscp.getProviderId() != null) ? mscp.getProviderId() : "ws_" + mscp.getSequentialId();
