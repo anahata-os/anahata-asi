@@ -187,13 +187,13 @@ public interface ResourceHandle extends Rebindable {
      * @return The header string.
      */
     default String getHeader() {
-        return "Handler fqn: " + getClass().getName() + "\n" +
-               "Handler details: uri=" + getUri() + 
+        return "Handler : lastModified=" + getLastModified() +
+               ", uri=" + getUri() + 
                ", mime=" + getMimeType() + 
                ", exists=" + exists() + 
                ", virtual=" + isVirtual() + 
                ", writable=" + isWritable() + 
-               ", lastModified=" + getLastModified();
+               ", fqn=" + getClass().getName();
     }
 
     /** 
