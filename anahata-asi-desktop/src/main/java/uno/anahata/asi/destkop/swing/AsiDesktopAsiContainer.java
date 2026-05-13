@@ -53,6 +53,12 @@ public class AsiDesktopAsiContainer extends AbstractSwingAsiContainer {
     public AsiDesktopAsiContainer() {
         super("AsiDesktop");
 
+        if (getProvider("MiniMaxOpenAI") == null) {
+            log.info("Registering Anahata");
+            registerProvider(new OpenAiCompatibleProvider(
+                    "MiniMaxOpenAI", "Minimax (OpenAI)", "https://api.minimax.io/v1", "Minimax (OpenAI)", "https://platform.minimax.io/user-center/basic-information/interface-key"));
+        }
+        
         // Ensure Gemini is registered with stable UUID
         //AbstractAiProvider gemini = getProviderByClass(GeminiAiProvider.class);
         if (getProvider("GeminiGCExpress") == null) {
