@@ -65,4 +65,8 @@ public class AnthropicProvider extends AbstractAiProvider {
         return "# Anthropic API Key Configuration\n"
                 + "sk-ant-...\n";
     }
+    
+    public boolean isRetryable(int statusCode, String responseBody) {
+        return statusCode == 429 || statusCode == 503 || statusCode == 500 || statusCode == 499 || statusCode == 408;
+    }
 }
