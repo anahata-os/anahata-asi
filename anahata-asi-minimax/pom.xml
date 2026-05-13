@@ -6,10 +6,10 @@
         <artifactId>anahata-asi-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
-    <artifactId>anahata-asi-openai-compatible</artifactId>
+    <artifactId>anahata-asi-minimax</artifactId>
     <packaging>jar</packaging>
-    <name>Anahata ASI OpenAI Compatible Provider</name>
-    <description>Universal raw-json-parsing provider implementation using the jdks http client for OpenAI using leagcy /chat/completions (Groq, DeepSeek, Ollama, etc.)</description>
+    <name>Anahata ASI Minimax Provider</name>
+    <description>Ai Provider implementations for MiniMax featuring Open Ai v1 compatible provider and Anthropic Compatible provider</description>
 
     <dependencies>
         <dependency>
@@ -18,17 +18,14 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
+            <groupId>uno.anahata</groupId>
+            <artifactId>anahata-asi-openai-compatible</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
         </dependency>
         <!-- Testing -->
         <dependency>

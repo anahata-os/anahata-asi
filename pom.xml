@@ -92,7 +92,8 @@
         <module>anahata-asi-openai-compatible</module>
         <module>anahata-asi-huggingface</module>
         <module>anahata-asi-modal</module>
-        
+        <module>anahata-asi-minimax</module>
+        <module>anahata-asi-anthropic</module>
     </modules>
 
     <properties>

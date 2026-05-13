@@ -8,7 +8,7 @@
     </parent>
     <artifactId>anahata-asi-openai</artifactId>
     <packaging>jar</packaging>
-    <name>Anahata ASI OpenAI Provider</name>
+    <name>Anahata ASI OpenAI Responses Provider</name>
     <description>Pre-configured provider for OpenAI using OpenAI's responses api</description>
 
     <dependencies>
