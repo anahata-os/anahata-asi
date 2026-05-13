@@ -18,8 +18,8 @@ import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.agi.message.AbstractPart;
 import uno.anahata.asi.agi.message.BlobPart;
 import uno.anahata.asi.agi.message.ModelBlobPart;
-import uno.anahata.asi.agi.message.ModelCodeExecutionCallPart;
-import uno.anahata.asi.agi.message.ModelCodeExecutionResultPart;
+import uno.anahata.asi.agi.message.code.HostedCodeExecutionCallPart;
+import uno.anahata.asi.agi.message.code.HostedCodeExecutionResultPart;
 import uno.anahata.asi.agi.message.ModelTextPart;
 import uno.anahata.asi.agi.message.TextPart;
 import uno.anahata.asi.agi.message.ThoughtSignature;
@@ -69,14 +69,14 @@ public class GeminiPartAdapter {
         if (anahataPart instanceof TextPart) {
             return Part.fromText(((TextPart) anahataPart).getText());
         }
-        if (anahataPart instanceof ModelCodeExecutionCallPart mccp) {
+        if (anahataPart instanceof HostedCodeExecutionCallPart mccp) {
             Language.Known l = mccp.getLanguage().toLowerCase().equals("python") ? Language.Known.PYTHON : Language.Known.LANGUAGE_UNSPECIFIED;
             ExecutableCode.Builder ecb = ExecutableCode.builder()
                 .code(mccp.getText())
                 .language(l); 
             return partBuilder.executableCode(ecb.build()).build();
         }
-        if (anahataPart instanceof ModelCodeExecutionResultPart mcop) {
+        if (anahataPart instanceof HostedCodeExecutionResultPart mcop) {
             //map anahata outcomes to genai outcomes
             Outcome.Known o = Outcome.Known.OUTCOME_UNSPECIFIED;
             
