@@ -226,36 +226,47 @@ public class AiProviderPanel extends ScrollablePanel {
         add(tokenizerCombo, "span 2, wrap");
 
         // --- Allowed Models ---
-        JPanel allowedLabelPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        allowedLabelPanel.setOpaque(false);
-        allowedLabelPanel.add(new JLabel("Allowed Models:"));
-        JButton fillModelsBtn = new JButton("Fetch", new PulseIcon(12));
+        add(new JLabel("Allowed Models:"), "top, gaptop 5");
+        
+        JButton fillModelsBtn = new JButton("Fetch Models", new PulseIcon(12));
         fillModelsBtn.setToolTipText("Fetch available models from provider and populate this list.");
         fillModelsBtn.addActionListener(e -> {
-            new SwingTask<>(containerPanel, "Fetching Models", () -> {
-                return provider.listModels().stream().map(uno.anahata.asi.agi.provider.AbstractModel::getModelId).collect(Collectors.toList());
-            }, models -> {
-                if(models.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "No models were discovered. Check API keys and connection.");
-                } else {
-                    allowedModelsArea.setText(String.join("\n", models));
-                }
-            }).start();
+            try {
+                syncToProvider(); // Ensure URL and API keys are synced
+                new SwingTask<>(containerPanel, "Fetching Models", () -> {
+                    return provider.refreshModels().stream().map(uno.anahata.asi.agi.provider.AbstractModel::getModelId).collect(Collectors.toList());
+                }, models -> {
+                    if(models.isEmpty()) {
+                        JOptionPane.showMessageDialog(this, "No models were discovered. Check API keys and connection.");
+                    } else {
+                        allowedModelsArea.setText(String.join("\n", models));
+                    }
+                }).start();
+            } catch (IOException ex) {
+                log.error("Failed to sync before fetching models", ex);
+                JOptionPane.showMessageDialog(this, "Pre-fetch sync failed: " + ex.getMessage());
+            }
         });
-        allowedLabelPanel.add(fillModelsBtn);
-        add(allowedLabelPanel, "top, gaptop 5");
         
         allowedModelsArea.setRows(5);
-        allowedModelsArea.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-        add(allowedModelsArea, "span 2, growx, wrap");
+        allowedModelsArea.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
+        JScrollPane allowedScroll = new JScrollPane(allowedModelsArea);
+        allowedScroll.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        add(allowedScroll, "span 2, growx, wrap");
+        
+        JPanel fetchBtnContainer = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        fetchBtnContainer.setOpaque(false);
+        fetchBtnContainer.add(fillModelsBtn);
+        add(fetchBtnContainer, "skip 1, span 2, wrap");
 
-        apiKeyRequiredCheck = new JCheckBox("API Key Required", provider.isApiKeyRequired());
-        apiKeyRequiredCheck.setHorizontalTextPosition(SwingConstants.LEFT);
+        add(new JLabel("API Key Required:"), "gaptop 5");
+        apiKeyRequiredCheck = new JCheckBox("", provider.isApiKeyRequired());
         apiKeyRequiredCheck.setOpaque(false);
         apiKeyRequiredCheck.addActionListener(e -> {
             textArea.setEnabled(apiKeyRequiredCheck.isSelected());
             textArea.setBackground(apiKeyRequiredCheck.isSelected() ? Color.WHITE : new Color(245, 245, 245));
         });
+        add(apiKeyRequiredCheck, "span 2, wrap");
 
         if (provider instanceof OpenAiCompatibleProvider oai) {
             add(new JLabel("Base URL:"));
@@ -265,7 +276,6 @@ public class AiProviderPanel extends ScrollablePanel {
             add(new JLabel("Custom Headers:"), "top, gaptop 5");
             customHeadersArea = new JTextArea(3, 20);
             customHeadersArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-            customHeadersArea.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
             if (oai.getCustomHeaders() != null) {
                 String headers = oai.getCustomHeaders().entrySet().stream()
                         .map(entry -> entry.getKey() + ": " + entry.getValue())
@@ -273,7 +283,9 @@ public class AiProviderPanel extends ScrollablePanel {
                 customHeadersArea.setText(headers);
             }
             PromptSupport.setPrompt("Header-Name: Header-Value\nOne per line...", customHeadersArea);
-            add(customHeadersArea, "span 2, growx, wrap");
+            JScrollPane headersScroll = new JScrollPane(customHeadersArea);
+            headersScroll.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+            add(headersScroll, "span 2, growx, wrap");
 
             add(new JLabel("Prefer HTTP/1.1:"), "gaptop 5");
             preferHttp11Check = new JCheckBox("", oai.isPreferHttp11());
@@ -287,9 +299,8 @@ public class AiProviderPanel extends ScrollablePanel {
         JPanel keysContainer = new JPanel(new MigLayout("ins 0, fillx", "[grow,fill]"));
         keysContainer.setOpaque(false);
         
-        JPanel keysHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        JPanel keysHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         keysHeader.setOpaque(false);
-        keysHeader.add(apiKeyRequiredCheck);
         JLabel tipLabel = new JLabel("<html><font color='#707070'><i><b>Pro Tip:</b> Add multiple keys (one per line) for Round-Robin rotation.</i></font></html>");
         keysHeader.add(tipLabel);
         keysContainer.add(keysHeader, "wrap");
@@ -299,8 +310,10 @@ public class AiProviderPanel extends ScrollablePanel {
         }
 
         textArea.setRows(10);
-        textArea.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-        keysContainer.add(textArea, "growx, wrap");
+        textArea.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
+        JScrollPane textScroll = new JScrollPane(textArea);
+        textScroll.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        keysContainer.add(textScroll, "growx, wrap");
         
         add(keysContainer, "span 2, growx, wrap");
 
