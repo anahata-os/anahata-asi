@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.agi.message;
 
+import uno.anahata.asi.agi.message.code.HostedCodeExecutionCallPart;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -23,7 +24,7 @@ public class ModelBlobPart extends BlobPart implements ThoughtSignature {
     /**
      * If this blob was part of the output a hosted tool call (code_interpreter_call), then 
      */
-    private ModelCodeExecutionCallPart parentCall;
+    private HostedCodeExecutionCallPart parentCall;
 
     /**
      * Constructs a ModelBlobPart from raw byte data and a specified MIME type.
