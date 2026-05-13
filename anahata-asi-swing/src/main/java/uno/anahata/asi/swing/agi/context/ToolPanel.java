@@ -12,10 +12,13 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.List;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSpinner;
+import javax.swing.SpinnerNumberModel;
 import net.miginfocom.swing.MigLayout;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.message.part.tool.ToolPermissionRenderer;
@@ -60,6 +63,8 @@ public class ToolPanel extends ScrollablePanel {
 
     /** The control for tool permissions. */
     private JComboBox<ToolPermission> permissionCombo;
+    /** The control for default max depth. */
+    private JSpinner maxDepthSpinner;
     /** The active tool listener. */
     private EdtPropertyChangeListener permissionListener;
 
@@ -99,7 +104,22 @@ public class ToolPanel extends ScrollablePanel {
         
         permissionPanel.add(new JLabel("Permission: "));
         permissionPanel.add(permissionCombo);
+        
         headerPanel.add(permissionPanel, "wrap");
+        
+        JPanel maxDepthPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        maxDepthPanel.setOpaque(false);
+        maxDepthPanel.add(new JLabel("Max Depth: "));
+        maxDepthSpinner = new JSpinner(new SpinnerNumberModel(-1, -1, 100, 1));
+        maxDepthSpinner.addChangeListener(e -> {
+            AbstractTool<?, ?> tool = (AbstractTool<?, ?>) permissionCombo.getClientProperty("tool");
+            if (tool != null) {
+                tool.setMaxDepth((Integer) maxDepthSpinner.getValue());
+            }
+        });
+        maxDepthPanel.add(maxDepthSpinner);
+        
+        headerPanel.add(maxDepthPanel, "wrap");
 
         descLabel = new JLabel();
         headerPanel.add(descLabel, "growx");
@@ -133,6 +153,8 @@ public class ToolPanel extends ScrollablePanel {
             permissionCombo.setSelectedItem(newTp);
             permissionCombo.setForeground(SwingAgiConfig.getColor(newTp));
         });
+        
+        maxDepthSpinner.setValue(tool.getMaxDepth());
 
         // Rebuild Tabs
         tabbedPane.removeAll();
