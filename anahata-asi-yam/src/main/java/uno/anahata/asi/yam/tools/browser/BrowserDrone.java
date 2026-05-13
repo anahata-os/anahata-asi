@@ -54,6 +54,11 @@ public class BrowserDrone {
     public boolean headless;
 
     /**
+     * Optional path to the browser binary (e.g. for Snap or custom installs).
+     */
+    public String binaryPath;
+
+    /**
      * Tracks the current URL of the drone's active tab.
      */
     public String currentUrl;
