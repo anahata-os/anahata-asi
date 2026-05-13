@@ -17,8 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.message.AbstractModelMessage;
 import uno.anahata.asi.agi.message.AbstractPart;
-import uno.anahata.asi.agi.message.ModelCodeExecutionCallPart;
-import uno.anahata.asi.agi.message.ModelCodeExecutionResultPart;
+import uno.anahata.asi.agi.message.code.HostedCodeExecutionCallPart;
+import uno.anahata.asi.agi.message.code.HostedCodeExecutionResultPart;
 import uno.anahata.asi.agi.provider.FinishReason;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.agi.message.web.GroundingMetadata;
@@ -127,7 +127,7 @@ public class GeminiModelMessage extends AbstractModelMessage<GeminiResponse> {
             ExecutableCode code = googlePart.executableCode().get();
             String source = code.code().orElse("");
             String lang = code.language().map(l -> l.knownEnum().name().toLowerCase()).orElse("python");
-            var ret = new ModelCodeExecutionCallPart(this, source, lang, thoughtSignature);
+            var ret = new HostedCodeExecutionCallPart(this, source, lang, thoughtSignature);
             ret.setProviderId(code.id().get());
             return ret;
         }
@@ -135,11 +135,11 @@ public class GeminiModelMessage extends AbstractModelMessage<GeminiResponse> {
         if (googlePart.codeExecutionResult().isPresent()) {
             CodeExecutionResult result = googlePart.codeExecutionResult().get();
             String output = result.output().orElse("");
-            var ret = new ModelCodeExecutionResultPart(this, output, thoughtSignature);
+            var ret = new HostedCodeExecutionResultPart(this, output, thoughtSignature);
             ret.setProviderId(result.id().get());
             //try to set up the parent child relationship based on matching ids
             for (AbstractPart p: getParts(true)) {
-                if (p instanceof ModelCodeExecutionCallPart c) {
+                if (p instanceof HostedCodeExecutionCallPart c) {
                     if (Objects.equals(c.getProviderId(), ret.getProviderId())) {
                         ret.setParentCall(c);
                     }
