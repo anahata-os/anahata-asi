@@ -107,6 +107,11 @@ public class OpenAiCompatibleMessage extends OpenAiCompatibleModelMessage {
         
         String callId = callNode.path("id").asText(null);
         int index = callNode.path("index").asInt(-1);
+        
+        if (index == -1 && callId != null) {
+            index = callIds.size();
+        }
+        
         JsonNode funcNode = callNode.get("function");
 
         if (callId != null) {
