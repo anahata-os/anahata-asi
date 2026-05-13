@@ -49,6 +49,8 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
     protected final JButton closeButton;
     /** Button to permanently dispose of the selected session. */
     protected final JButton disposeButton;
+    /** A global warning label indicating if the DNA template loaded cleanly. */
+    protected final JLabel warningLabel;
     
     /** Timer for periodic UI refreshes. */
     private final Timer refreshTimer;
@@ -78,9 +80,9 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
         JButton settingsBtn = new JButton("Preferences", new SettingsIcon(16));
         settingsBtn.setToolTipText("Configure global ASI settings and API keys");
         
-        JLabel warningLabel = new JLabel("<html><font color='yellow'><b>&#9888;</b></font></html>");
-        warningLabel.setToolTipText("Evolutionary leap detected. Previous settings were backed up.");
-        warningLabel.setVisible(asiContainer.getPreferences().isLoadFailed());
+        this.warningLabel = new JLabel("<html><font color='yellow'><b>&#9888;</b></font></html>");
+        this.warningLabel.setToolTipText("Evolutionary leap detected. Previous settings were backed up.");
+        this.warningLabel.setVisible(asiContainer.getPreferences().isLoadFailed());
         
         settingsBtn.addActionListener(e -> {
             if (asiContainer.getPreferences().isLoadFailed()) {
@@ -249,7 +251,8 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
         
         asiContainer.setPreferencesFrame(frame);
         
-        frame.setPreferredSize(new java.awt.Dimension(1000, 800));
+        frame.setMinimumSize(new java.awt.Dimension(800, 600));
+        frame.setPreferredSize(new java.awt.Dimension(900, 650));
         frame.pack();
         frame.setLocationRelativeTo(SwingUtilities.getWindowAncestor(this));
         frame.setVisible(true);
@@ -290,6 +293,10 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
         boolean isSelected = selected != null;
         disposeButton.setEnabled(isSelected);
         closeButton.setEnabled(isSelected);
+        
+        if (warningLabel != null) {
+            warningLabel.setVisible(asiContainer.getPreferences().isLoadFailed());
+        }
     }
 
     /**
