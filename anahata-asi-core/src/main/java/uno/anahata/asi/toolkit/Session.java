@@ -3,6 +3,7 @@
  */
 package uno.anahata.asi.toolkit;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -56,6 +57,29 @@ public class Session extends AnahataToolkit {
         log.info("Session toolkit postActivate. sessionRestored timestamp: " + sessionRestored);
     }
 
+    @Override
+    public List<String> getSystemInstructions() throws Exception {
+        String s = 
+                "The Session toolkit is low-level toolkit to control the most core, low level aspects of this Agi (also known as 'Agi Container' or simply 'session'). "
+                + "This and the History toolkit are absolutely essential for long running agentic workflows."
+                + "\nThe Agi (or session) is in charged of the turn execution and flow control and its primary components are: "
+                + "\n-The ToolManager - has collection of toolkits (set of tools), "
+                + "\n-The ResourceManager - tracks resources in context. Accessible via Resources toolkit, "
+                + "\n-Context Manager: tracks messages (history) and registered ContextProvider(s). (ToolManager and ResourceManager are both registered context providers)."
+                + "\n-Context Window Garbage Collector (TM): Anahata's very own, unique, sinking stack / depth based system to gradually fade different message parts based on their type and preconfigured (max depth / turns to keep)."
+                + "\n\nMost toolkits implement ContextProvider so in many cases you will see a toolkit and a context provider with the toolkit name in its id. "
+                + "All toolkits and context providers are fully stateful java objects and the entire Agi (session) gets 'auto-backedup' (serialized) to a kryo file on the sessions dir of the AsiContainer on every turn."
+                + "Both the user and the model can spawn new Agis sessions on this AsiContainer where you are running in, which in this case is: " + getAsiContainer() + "."
+                + "\n\nThis toolkit (and its associated context provider) are critical for agentic workflow as it provides session-control data and session-control tools to:"
+                + "\n-  See the current metadata for this session "
+                + "\n-  manage the session task dashboard / summary (totally critical for keeping track of completed tasks, tasks in progress, tasks on hold) "
+                + "\n-  enable / disable toolkits (can significally reduce the token bloat)"
+                + "\n-  toggle the 'providing' status of context providers (resources are also context providers and their prompt visibility can be easily toggled with setContextProviderProviding(resourceUuid) to include or not include the content of the resources in the prompt. By setting a resource to 'not providing', the resource header with all its metadata e.g.: size, description, lastModified, uri, etc will always be in the rag message ragardless of whether it is providing or not."
+                + "\n-  kill long running tool calls that are still in EXECUTING state from previous turns (This is pure Anahata ASI Magic, the user can click send whil a tool you proposed is still EXECUTING and you can kill the execution or check the logs/results/errors in subsequent turns).";
+        return Collections.singletonList(s);
+
+    }
+
     /**
      * Updates the AGIs nickname.
      *
@@ -91,9 +115,15 @@ public class Session extends AnahataToolkit {
      * topic.
      * @return A confirmation message.
      */
-    @AgiTool(value = "Updates the current AGI session summary / dasbhoard. This shows on the ASI container's dashboard. You can use it as the session's dashboard to reflect tasks in progress / tasks completed / tasks on hold, etc. "
-            + "Usage: If you have been created by another AGI, then you must update it in every turn as your 'parent agi' (the session that created this ssession) will see it on every turn."
-            + "If this session was manually created by the user, and the tool is in permission ALWAYS state and the user has 'auto-reply-tool-calls' enabled, you should only call this if you are calling other actual user task-related tools in the same batch, once per turn max",
+    @AgiTool(value = "Updates the current AGI session summary / task dasbhoard. This shows on the ASI container's dashboard."
+            + " You must use it as the session's task dashboard to reflect and keep track of tasks in progress / tasks completed / tasks on hold, etc. "
+            + "It is very important hat you use this tool every time a task changes in status or description as other wise, you can suffer from Garbage Collector amnesia"
+            + " (e.g. you update a file, the findAndReplaceInTextResource tool call you used to complete the task gets garbage collected 4 turns later and on the following turn you think it is still pending),"
+            + " always look closely at both: the default 'maxDepth' for parts based on type (thouhts, text, tools, etc) but also the maxDepth of every individual tool as not all tools have the same maxDepth (e.g. some token heavy tools like updateTextResource may have less than the default tool max depth setting)."
+            + "Usage: If you have been created by another AGI, then you must update it in every single turn as your 'parent agi' (the session that created this ssession) will see it on every turn."
+            + "If this session was manually created by the user, you should updated it every time a task that has been discussed througout the course of the session changes in scope, status or  anything else."
+            + "Do not remove completed tasks from this summary / dashboard until the user 'signs off'. If you think you have completed a task, mark it as completed in the session summary but don't remove it until you have direct confirmation from the user (or the user tells you explicitely that there is no need to track tasks). "
+            + "If you are tracking project tasks let's say in a tasks.md file, you still have to keep updating the session summary with the tasks pertaining to this session (e.g. a tasks.md file, tasks in anahata.md or a tasks repo like github are project-level or organization-level tasks, but this summary is for a totally different purpose, it is for you to track 'session level tasks' and improve agentic workflow in the sliding context window the anahata asi framework provides) ",
             permission = ToolPermission.APPROVE_ALWAYS,
             maxDepth = 1)
     public String updateSessionSummary(@AgiToolParam("A concise summary of the conversation's current state.") String summary) {
@@ -147,7 +177,11 @@ public class Session extends AnahataToolkit {
      * @param toolkitNames The names (IDs) of the toolkits to update (e.g.,
      * 'Audio', 'Chrome').
      */
-    @AgiTool("Enables or disables multiple toolkits by their names (IDs).")
+    @AgiTool("Enables or disables multiple toolkits by their names (IDs)."
+            + " Disabling a toolkit, not only removes all its tools from the tools "
+            + "declration section of the next payload but also its associated context "
+            + "provider (so that toolkit's context provider or any of it's children "
+            + "context providers will not be contributing to the rag message)")
     public void setToolkitEnabled(
             @AgiToolParam("Whether to enable or disable.") boolean enabled,
             @AgiToolParam("The names of the toolkits to update (e.g., 'Audio', 'Browser').") List<String> toolkitNames) {
@@ -207,8 +241,12 @@ public class Session extends AnahataToolkit {
      * @return Confirmation message describing the impact.
      */
     @AgiTool(value = "Disables local Java tools (if enabled) and enables hosted server tools (e.g., Google Search, Maps, etc.). "
-            + "CRITICAL: After calling this, you will loose access to local tools until the user manually "
-            + "clicking the Java Tools icon in the toolbar. Use this only if you specifically need a server-side capability.")
+            + "CRITICAL: Local tools and hosted tools are mutually exclusive. After calling this tool, you will loose access to local java tools until the user manually "
+            + "clicks the Cigar icon in the toolbar. Use this only if you specifically need a server-side capability like hosted google search and on your next response "
+            + "ask the user to re-enable local tools ('please click on the cigar icon on the tool bar so i can continue using local tools')"
+            + " (when local tools are enabled the ui shows a java coffee cup logo and when they are disabled, it shows a smoking cigar icon so if the user had local tools"
+            + " enabled when you changed to hosted tools, he would have seen the icon changing from a coffe cup to a cigar) "
+            + " .")
     public String enableHostedTools() {
         getAgi().getConfig().setHostedToolsEnabled(true);
         return "Server tools have been enabled. Local tools are now disabled. "
