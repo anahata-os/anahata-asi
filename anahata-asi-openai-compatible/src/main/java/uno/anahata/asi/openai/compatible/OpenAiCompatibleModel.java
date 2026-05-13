@@ -428,6 +428,14 @@ public class OpenAiCompatibleModel extends AbstractModel {
             this.reasoningFieldName = "reasoning_content";
         }
 
+        if (reasoningStyle == OpenAiCompatibleReasoningStyle.NONE
+                && delta.has("content") && !delta.get("content").isNull()
+                && delta.get("content").asText().contains("<think>")) {
+            log.info("Auto-detected TAGS reasoning style with '<think>' for model {}", modelId);
+            this.reasoningStyle = OpenAiCompatibleReasoningStyle.TAGS;
+            this.reasoningTags = List.of("<think>", "</think>");
+        }
+
         if (reasoningStyle == OpenAiCompatibleReasoningStyle.FIELD && reasoningFieldName != null && delta.has(reasoningFieldName) && !delta.get(reasoningFieldName).isNull()) {
             target.appendThoughts(delta.get(reasoningFieldName).asText());
         }

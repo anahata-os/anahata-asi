@@ -68,6 +68,14 @@ public class OpenAiCompatibleMessage extends OpenAiCompatibleModelMessage {
             reasoningFieldName = "reasoning_content";
         }
 
+        if (reasoningStyle == OpenAiCompatibleReasoningStyle.NONE
+                && messageNode.has("content") && !messageNode.get("content").isNull()
+                && messageNode.get("content").asText().contains("<think>")) {
+            log.info("Auto-detected TAGS reasoning style with '<think>' for model {}", getModelId());
+            reasoningStyle = OpenAiCompatibleReasoningStyle.TAGS;
+            reasoningTags = List.of("<think>", "</think>");
+        }
+
         // 1. Reasoning Content (FIELD style)
         if (reasoningStyle == OpenAiCompatibleReasoningStyle.FIELD && reasoningFieldName != null
                 && messageNode.has(reasoningFieldName) && !messageNode.get(reasoningFieldName).isNull()) {
