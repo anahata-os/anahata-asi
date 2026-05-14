@@ -49,7 +49,7 @@ public class ToolContext {
     public JavaMethodToolResponse getResponse() {
         JavaMethodToolResponse response = peekResponse();
         if (response == null) {
-            throw new IllegalStateException("Cannot access ToolContext outside of a tool execution thread. Capture the context with getToolContext() before entering a subthread.");
+            throw new IllegalStateException("Cannot access ToolContext outside of a tool execution thread. Capture the context with getToolContext() into a final before entering a subthread.");
         }
         return response;
     }
