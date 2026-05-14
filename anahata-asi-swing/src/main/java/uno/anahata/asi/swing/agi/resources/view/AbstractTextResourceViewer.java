@@ -8,10 +8,8 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Insets;
-import java.awt.event.MouseWheelListener;
-import java.io.IOException;
+import java.awt.Point;
 import javax.swing.BorderFactory;
-import javax.swing.event.ChangeListener;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -27,6 +25,7 @@ import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.icons.CancelIcon;
 import uno.anahata.asi.swing.icons.CopyIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
+import uno.anahata.asi.swing.internal.SwingTask;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
@@ -295,12 +294,12 @@ public abstract class AbstractTextResourceViewer extends JPanel {
             if (!verticalScrollEnabled && scroll.getViewport().getView() != null) {
                 // IDEMPOTENT SCROLL LOCK
                 if (scroll.getViewport().getClientProperty("atrv.scroll.lock") == null) {
-                    scroll.getViewport().setViewPosition(new java.awt.Point(scroll.getViewport().getViewPosition().x, 0));
+                    scroll.getViewport().setViewPosition(new Point(scroll.getViewport().getViewPosition().x, 0));
                     scroll.getViewport().addChangeListener(e -> {
                         if (!verticalScrollEnabled) {
-                            java.awt.Point pos = scroll.getViewport().getViewPosition();
+                            Point pos = scroll.getViewport().getViewPosition();
                             if (pos.y != 0) {
-                                scroll.getViewport().setViewPosition(new java.awt.Point(pos.x, 0));
+                                scroll.getViewport().setViewPosition(new Point(pos.x, 0));
                             }
                         }
                     });
@@ -433,23 +432,27 @@ public abstract class AbstractTextResourceViewer extends JPanel {
         }
         
         this.syncing = true;
-        try {
-            // AUTHORITATIVE RESOLUTION: Always pull the full raw content for the User View.
+        new SwingTask<>(agiPanel, "Loading Content", () -> {
+            return resource.asText();
+        }, text -> {
             try {
-                updatePreviewContent(resource.asText());
-            } catch (IOException e) {
-                log.error("Failed to synchronize content from resource: {}", resource.getName(), e);
+                updatePreviewContent(text);
+                if (!verticalScrollEnabled) {
+                    SwingUtilities.invokeLater(this::configureScrollBehavior);
+                }
+            } finally {
+                this.syncing = false;
             }
-
-            // HEIGHT SINGULARITY: Re-trigger scroll configuration whenever content changes in 
-            // passthrough mode. We wrap in invokeLater to ensure the text component has 
-            // updated its own preferred size calculation after the text was set.
-            if (!verticalScrollEnabled) {
-                SwingUtilities.invokeLater(this::configureScrollBehavior);
+        }, error -> {
+            try {
+                log.error("Failed to synchronize content from resource: {}", resource.getName(), error);
+                updatePreviewContent("Error loading content: " + error.getMessage());
+                if (!verticalScrollEnabled) {
+                    SwingUtilities.invokeLater(this::configureScrollBehavior);
+                }
+            } finally {
+                this.syncing = false;
             }
-
-        } finally {
-            this.syncing = false;
-        }
+        }, false).start();
     }
 }
