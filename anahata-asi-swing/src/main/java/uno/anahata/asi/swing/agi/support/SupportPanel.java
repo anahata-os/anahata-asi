@@ -26,6 +26,7 @@ public class SupportPanel extends ScrollablePanel {
      * Constructs a new SupportPanel.
      */
     public SupportPanel() {
+        setScrollableTracksViewportWidth(false);
         initComponents();
     }
 
