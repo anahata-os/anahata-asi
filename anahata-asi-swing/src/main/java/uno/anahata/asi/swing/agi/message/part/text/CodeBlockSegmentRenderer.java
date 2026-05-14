@@ -8,6 +8,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Insets;
 import java.util.Objects;
 import java.util.function.Consumer;
 import javax.swing.BorderFactory;
@@ -133,7 +134,7 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
                 JButton copyButton = new JButton("Copy", new CopyIcon(12));
                 copyButton.setToolTipText("Copy Code to Clipboard");
                 copyButton.setFont(new Font("SansSerif", Font.PLAIN, 11));
-                copyButton.setMargin(new java.awt.Insets(1, 5, 1, 5));
+                copyButton.setMargin(new Insets(1, 5, 1, 5));
                 copyButton.setFocusPainted(false);
                 copyButton.addActionListener(e -> {
                     SwingUtils.copyToClipboard(getCurrentContentFromComponent());
@@ -146,7 +147,7 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
                 if (editable) {
                     cancelButton = new JButton("Cancel", new CancelIcon(12));
                     cancelButton.setFont(new Font("SansSerif", Font.PLAIN, 11));
-                    cancelButton.setMargin(new java.awt.Insets(1, 5, 1, 5));
+                    cancelButton.setMargin(new Insets(1, 5, 1, 5));
                     cancelButton.setFocusPainted(false);
                     cancelButton.setVisible(false);
                     cancelButton.addActionListener(e -> {
@@ -161,7 +162,7 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
                     editButton = new JButton("Edit");
                     editButton.setToolTipText("Toggle Edit Mode");
                     editButton.setFont(new Font("SansSerif", Font.PLAIN, 11));
-                    editButton.setMargin(new java.awt.Insets(1, 5, 1, 5));
+                    editButton.setMargin(new Insets(1, 5, 1, 5));
                     editButton.setFocusPainted(false);
                     editButton.addActionListener(e -> {
                         toggleEdit();
