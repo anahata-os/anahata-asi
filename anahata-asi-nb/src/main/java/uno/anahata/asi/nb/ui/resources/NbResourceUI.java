@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.ui.resources;
 
+import java.io.File;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -95,7 +96,7 @@ public class NbResourceUI extends DefaultResourceUI {
     public void open(Resource resource, AgiPanel agiPanel) {
         String path = getPath(resource);
         if (path != null) {
-            FileObject fo = FileUtil.toFileObject(new java.io.File(path));
+            FileObject fo = FileUtil.toFileObject(new File(path));
             if (fo != null) {
                 try {
                     DataObject dao = DataObject.find(fo);
