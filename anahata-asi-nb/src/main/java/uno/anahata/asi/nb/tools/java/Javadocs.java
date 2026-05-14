@@ -24,11 +24,20 @@ import uno.anahata.asi.nb.tools.java.JavaSourceUtils;
 @AgiToolkit("Structural Javadoc management. Allows updating descriptions, authors, tags, and parameters using the AST.")
 public class Javadocs extends AnahataToolkit {
 
+    /**
+     * Terrible, don't enable it, rewrites the whole class
+     */
+    @Override
+    public void initialize() {
+        getToolkit().setEnabled(false);
+    }
+
+    
     @Override
     public List<String> getSystemInstructions() throws Exception {
         return Collections.singletonList(JavaSourceUtils.CANONICAL_FQN_STANDARD
                 + "\n"
-                + "Javadocs Toolkit Instructions:\n"
+                + "Javadocs Toolkit: Not working, dont enable it.\n"
                 + "- Always use the Anahata Canonical FQN to identify the target member.\n"
                 + "- Descriptions support Markdown and HTML.\n"
         );
