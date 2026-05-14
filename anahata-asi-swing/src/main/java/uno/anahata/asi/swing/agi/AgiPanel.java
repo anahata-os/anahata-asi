@@ -154,6 +154,7 @@ public class AgiPanel extends ScrollablePanel {
         JScrollPane scroller = new JScrollPane(component);
         scroller.setBorder(BorderFactory.createEmptyBorder());
         scroller.setViewportBorder(BorderFactory.createEmptyBorder());
+        scroller.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         scroller.getVerticalScrollBar().setUnitIncrement(16);
         return scroller;
     }
