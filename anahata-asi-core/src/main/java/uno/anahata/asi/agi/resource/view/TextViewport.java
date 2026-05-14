@@ -64,6 +64,22 @@ public class TextViewport {
     }
 
     /**
+     * Expands the viewport settings to fit the entire resource content.
+     * <p>
+     * This adjusts the pagination to start from 0 and include the full 
+     * resource size. It also expands the column width to the maximum integer 
+     * value if any lines were previously truncated, ensuring an unclipped view.
+     * </p>
+     */
+    public void expandToFit() {
+        settings.setStartChar(0);
+        settings.setPageSizeInChars((int) Math.min(Integer.MAX_VALUE, Math.max(1024L, totalChars)));
+        if (truncatedLinesCount > 0) {
+            settings.setColumnWidth(Integer.MAX_VALUE);
+        }
+    }
+
+    /**
      * Processes a resource handle and authoritatively updates the internal 
      * {@code visibleContent} and metrics.
      * 
@@ -192,9 +208,13 @@ public class TextViewport {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(handle.openStream(), handle.getCharset()))) {
             reader.skip(settings.getStartChar());
             char[] buffer = new char[settings.getPageSizeInChars()];
-            int read = reader.read(buffer);
-            if (read <= 0) return Collections.emptyList();
-            String chunk = new String(buffer, 0, read);
+            int totalRead = 0;
+            int charsRead;
+            while (totalRead < buffer.length && (charsRead = reader.read(buffer, totalRead, buffer.length - totalRead)) != -1) {
+                totalRead += charsRead;
+            }
+            if (totalRead <= 0) return Collections.emptyList();
+            String chunk = new String(buffer, 0, totalRead);
             return chunk.lines().collect(Collectors.toList());
         }
     }
@@ -210,17 +230,27 @@ public class TextViewport {
         for (int i = 0; i < lines.size(); i++) {
             String line = lines.get(i);
             
-            // 1. Truncation
+            // 1. Truncation (Now Wrapping)
             if (line.length() > settings.getColumnWidth()) {
                 this.truncatedLinesCount++;
-                line = StringUtils.abbreviateMiddle(line, " ... [truncated] ... ", settings.getColumnWidth());
-            }
-            
-            // 2. Line Numbers
-            if (settings.isIncludeLineNumbers()) {
-                processed.add(String.format("%4d | %s", i + 1, line));
+                int start = 0;
+                while (start < line.length()) {
+                    int end = Math.min(start + settings.getColumnWidth(), line.length());
+                    String chunk = line.substring(start, end);
+                    if (settings.isIncludeLineNumbers()) {
+                        processed.add(String.format("%4d | %s", i + 1, chunk));
+                    } else {
+                        processed.add(chunk);
+                    }
+                    start = end;
+                }
             } else {
-                processed.add(line);
+                // 2. Line Numbers
+                if (settings.isIncludeLineNumbers()) {
+                    processed.add(String.format("%4d | %s", i + 1, line));
+                } else {
+                    processed.add(line);
+                }
             }
         }
         return String.join("\n", processed);
