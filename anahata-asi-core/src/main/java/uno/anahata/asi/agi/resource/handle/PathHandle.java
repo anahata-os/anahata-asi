@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.agi.resource.handle;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -37,7 +38,7 @@ public class PathHandle extends AbstractResourceHandle {
      */
     @Override
     public String getName() {
-        return new java.io.File(path).getName();
+        return new File(path).getName();
     }
 
     /** 
@@ -56,7 +57,7 @@ public class PathHandle extends AbstractResourceHandle {
     @Override
     public String getMimeType() {
         try {
-            return TikaUtils.detectMimeType(new java.io.File(path));
+            return TikaUtils.detectMimeType(new File(path));
         } catch (Exception e) {
             return "application/octet-stream";
         }
@@ -99,7 +100,7 @@ public class PathHandle extends AbstractResourceHandle {
      */
     @Override
     public boolean isWritable() {
-        java.io.File file = new java.io.File(path);
+        java.io.File file = new File(path);
         return file.exists() ? file.canWrite() : (file.getParentFile() != null && file.getParentFile().canWrite());
     }
 
@@ -128,6 +129,6 @@ public class PathHandle extends AbstractResourceHandle {
      */
     @Override
     public long length() {
-        return new java.io.File(path).length();
+        return new File(path).length();
     }
 }
