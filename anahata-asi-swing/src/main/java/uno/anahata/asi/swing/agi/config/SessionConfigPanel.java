@@ -49,6 +49,7 @@ public class SessionConfigPanel extends ScrollablePanel implements PropertyChang
      * @param agi The associated Agi session (can be null for global templates).
      */
     public SessionConfigPanel(AgiConfig agiConfig, RequestConfig requestConfig, Agi agi) {
+        setScrollableTracksViewportWidth(false);
         setLayout(new BorderLayout());
 
         this.agiConfigPanel = new AgiConfigPanel(agiConfig);
