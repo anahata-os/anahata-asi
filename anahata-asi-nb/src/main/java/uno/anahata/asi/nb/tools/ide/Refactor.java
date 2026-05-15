@@ -79,6 +79,7 @@ public class Refactor extends AnahataToolkit {
                 + "Refactor Toolkit Instructions:\n"
                 + "- Use these tools to perform safe, project-wide refactorings.\n"
                 + "- All member-based tools require the Anahata Canonical FQN.\n"
+                + "- **Renaming Java Members**: If you need to rename a Java method or field that is used across multiple files, DO NOT use text replacement tools (like `Resources.findAndReplaceInTextResource`). Instead, use the `Refactor.renameMember` tool to prevent cascading compilation errors.\n"
         );
     }
 
@@ -140,7 +141,7 @@ public class Refactor extends AnahataToolkit {
      * @return A detailed log of the refactoring process.
      * @throws Exception if there is an error invoking the operation.
      */
-    @AgiTool("Renames a class member (method or field) across all open projects.")
+    @AgiTool("Renames a class member (method or field) across all open projects. You must always Use this tool for renaming methods that you think could be called from outside the java file to save the user the cascade of compilation errors that could be derived from renaming a method using the Resources toolkit or any other text based rename.")
     public String renameMember(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The ABSOLUTE FQN of the member (e.g. 'com.foo.Bar.myMethod(int)').") String memberFqn,
