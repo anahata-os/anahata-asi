@@ -13,7 +13,17 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.message.part.tool.param.FullTextFileCreateRenderer;
+import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory;
+import uno.anahata.asi.swing.agi.message.part.tool.param.PathParameterRenderer;
+import uno.anahata.asi.swing.agi.message.part.tool.param.ResourceUUIDParameterRenderer;
+import uno.anahata.asi.swing.agi.message.part.tool.param.UriParameterRenderer;
 import uno.anahata.asi.swing.internal.SwingUtils;
+import uno.anahata.asi.swing.toolkit.radio.RadioRenderer;
+import uno.anahata.asi.swing.toolkit.render.ToolkitUiRegistry;
+import uno.anahata.asi.toolkit.resources.text.FullTextFileCreate;
+import uno.anahata.asi.yam.tools.Radio;
 
 /**
  * A Swing-specific base class for Anahata ASI containers.
@@ -29,6 +39,17 @@ import uno.anahata.asi.swing.internal.SwingUtils;
 @Getter
 @Setter
 public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
+    
+    static {
+        //Legengary Radio toolkit
+        ToolkitUiRegistry.getInstance().register(Radio.class, RadioRenderer.class);
+        
+        //Default parameter renderers
+        ParameterRendererFactory.register(FullTextFileCreate.class, FullTextFileCreateRenderer.class);
+        ParameterRendererFactory.registerById("uri", UriParameterRenderer.class);
+        ParameterRendererFactory.registerById("resource", ResourceUUIDParameterRenderer.class);
+        ParameterRendererFactory.registerById("path", PathParameterRenderer.class);
+    }
 
     /**
      * The single-instance Preferences dashboard frame for this container.
@@ -42,6 +63,20 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
      */
     public AbstractSwingAsiContainer(String hostApplicationId) {
         super(hostApplicationId);
+    }
+
+    /**
+     * Retrieves the AgiPanel associated with a specific Agi session.
+     * 
+     * @param agi The session.
+     * @return The AgiPanel instance.
+     */
+    public AgiPanel getAgiPanel(Agi agi) {
+        Object ui = getUI(agi);
+        if (ui instanceof AgiPanel panel) {
+            return panel;
+        }
+        return null;
     }
 
     /**
