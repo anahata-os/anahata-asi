@@ -9,13 +9,18 @@ import java.awt.datatransfer.Transferable;
 import java.awt.event.InputEvent;
 import java.io.File;
 import java.nio.file.Path;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.imageio.ImageIO;
 import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.TransferHandler;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.swing.internal.SwingTask;
+import uno.anahata.asi.swing.internal.UICapture;
 
 /**
  * A TransferHandler for Anahata ASI panels that automatically registers dropped 
@@ -59,6 +64,7 @@ public class AgiTransferHandler extends TransferHandler {
     @Override
     public boolean canImport(TransferSupport support) {
         return support.isDataFlavorSupported(DataFlavor.javaFileListFlavor) || 
+               support.isDataFlavorSupported(DataFlavor.imageFlavor) ||
                (delegate != null && delegate.canImport(support));
     }
 
@@ -70,6 +76,40 @@ public class AgiTransferHandler extends TransferHandler {
      */
     @Override
     public boolean importData(TransferSupport support) {
+        if (support.isDataFlavorSupported(DataFlavor.imageFlavor)) {
+            try {
+                Transferable t = support.getTransferable();
+                Image img = (Image) t.getTransferData(DataFlavor.imageFlavor);
+                
+                if (img != null) {
+                    new SwingTask<>(agiPanel, "Paste Image", () -> {
+                        BufferedImage bi;
+                        if (img instanceof BufferedImage buff) {
+                            bi = buff;
+                        } else {
+                            bi = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+                            java.awt.Graphics2D g = bi.createGraphics();
+                            g.drawImage(img, 0, 0, null);
+                            g.dispose();
+                        }
+                        
+                        String timestamp = UICapture.TIMESTAMP_FORMAT.format(new java.util.Date());
+                        String filename = "pasted-image-" + timestamp + ".png";
+                        Path file = UICapture.SCREENSHOTS_DIR.resolve(filename);
+                        File ioFile = file.toFile();
+                        ioFile.deleteOnExit();
+                        ImageIO.write(bi, "png", ioFile);
+                        
+                        agiPanel.getInputPanel().attach(file);
+                        return null;
+                    }).start();
+                    return true;
+                }
+            } catch (Exception e) {
+                log.error("Failed to import pasted image", e);
+            }
+        }
+
         if (support.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
             try {
                 Transferable t = support.getTransferable();
