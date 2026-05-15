@@ -31,6 +31,11 @@ public class StringHandle extends AbstractResourceHandle {
     @Getter
     private final String name;
     
+    /** Optional context path to hint IDEs about the project/location this snippet belongs to. */
+    @Getter
+    @Setter
+    private String contextPath;
+    
     /** The actual text content held in memory. */
     @Getter
     @Setter
@@ -38,6 +43,19 @@ public class StringHandle extends AbstractResourceHandle {
     
     /** The last modification timestamp. */
     private long lastModified = System.currentTimeMillis();
+
+    /** Custom attributes for host-aware context propagation (e.g. classpath hints). */
+    @Getter
+    private final java.util.Map<String, Object> attributes = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * Sets a custom attribute on this virtual handle.
+     * @param key the key
+     * @param value the value
+     */
+    public void setAttribute(String key, Object value) {
+        this.attributes.put(key, value);
+    }
 
     /**
      * Constructs a new StringHandle.
