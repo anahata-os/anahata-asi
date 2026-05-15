@@ -177,12 +177,15 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
                 + "The following is high-salience, just-in-time live context provided by for this turn.\n"                
                 + "It has been dynamically generated and populated by all managed resources with a `PROMPT_AUGMENTATION` context position"
                 + " and by all effectively providing context providers. The RAG message is and will always be the last message in the prompt. "
-                + " It gets genearted on every turn, even during tool call reloops. I is not considered a part of the conversation history (has not x-anahata-message-id)  (its just dinamycally generated on every turn after all tool execution -if any- has finished, after the user pressess send, the last thing before calling the model)."
+                + "It gets genearted on every turn, right before the API call to the LLM starts. If you proposed tool calls in your last turn that modified resources, you need to take into consideration that the user could have denied the tool calls or even modified the resource after the tool call. For this reason, you should always prioritize the content of the resource in the rag message (or system instructions) above tool responses (as this rag message ALWAYS gets generated after the tools have finished executing)."
+                + "It is not considered a part of the conversation history (has not x-anahata-message-id)  (its just dinamycally generated on every turn after all tool execution -if any- has finished, after the user pressess send, the last thing before sending the http payload to the model)."
                 + " It includes all registered ContextProvider(s) and all registered reources (if they are not providing, they will not have the content but the header will still be included).\n"
                 + "All resources with a `LIVE` refresh policy have been reloaded from disk and are garanteed to be up to date and in sync with the underlying storage. "
                 + " Do not rely on your internal memory from previous tool executions to infer the state of a resource. Whatever is contained here is the source of truth for all context providers and all resources with a LIVE refresh policy and PROMPT_AUGMENTATION position. \n"
                 + "Use the `lastModified` timestamp provided on the header of each resource when you need to modify a resource and take the line numbers on the `LIVE` resources that include line numbers as the only, final, ultimate source of truth. \n"
                 + "Even though this message has a user role, it is not direct input from the user. As a matter of fact, the user may not even know what the RAG message is.");
+
+        List<String> systemInstructionHeaders = new ArrayList<>();
 
         for (ContextProvider rootProvider : providers) {
             for (ContextProvider provider : rootProvider.getFlattenedHierarchy(true)) {
@@ -191,7 +194,10 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
                     long start = System.currentTimeMillis();
                     try {
                         if (provider instanceof Resource r) {
-                            if (r.getContextPosition() != ContextPosition.PROMPT_AUGMENTATION) {
+                            if (r.getContextPosition() == ContextPosition.SYSTEM_INSTRUCTIONS) {
+                                systemInstructionHeaders.add(r.getHeader());
+                                continue;
+                            } else if (r.getContextPosition() != ContextPosition.PROMPT_AUGMENTATION) {
                                 continue;
                             }
                             r.reloadIfNeeded();
@@ -208,6 +214,18 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
                 }
             }
         }
+        
+        if (!systemInstructionHeaders.isEmpty()) {
+            augmentedMessage.addTextPart("\n--- **SYSTEM INSTRUCTION RESOURCE HEADERS** ---\n"
+                    + "The following resources are loaded with SYSTEM_INSTRUCTIONS position. "
+                    + "These are their corresponding resource headers for your convenience to quickly locate `lastModified` and `resource uuid` values. "
+                    + "The body has been omitted here as the full content of each of these resources is already available to you in the system instructions.\n");
+            
+            for (String header : systemInstructionHeaders) {
+                augmentedMessage.addTextPart(header + "\n");
+            }
+        }
+        
         log.info("buildRagMessage took " + (System.currentTimeMillis() - ts) + " ms.");
         return augmentedMessage;
     }
