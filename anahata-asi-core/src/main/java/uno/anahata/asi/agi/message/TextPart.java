@@ -54,7 +54,7 @@ public abstract class TextPart extends AbstractPart {
         String oldText = this.text;
         this.text = (this.text == null ? "" : this.text) + delta;
         // Incremental estimation to avoid full recalculation on every chunk
-        setTokenCount(getTokenCount() + TokenizerUtils.countTokens(delta));
+        setTokenCount(TokenizerUtils.countTokens(this.text));
         propertyChangeSupport.firePropertyChange("text", oldText, this.text);
     }
 
