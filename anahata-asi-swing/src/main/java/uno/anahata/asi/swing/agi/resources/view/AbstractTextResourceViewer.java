@@ -177,6 +177,23 @@ public abstract class AbstractTextResourceViewer extends JPanel {
         // INITIALIZATION SIGNAL: Force the card layout to show the initial state.
         setEditing(false);
         
+        // Add global Ctrl+S binding for saving without exiting edit mode
+        javax.swing.InputMap im = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        javax.swing.ActionMap am = getActionMap();
+        im.put(javax.swing.KeyStroke.getKeyStroke("control S"), "saveAction");
+        am.put("saveAction", new javax.swing.AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                if (editing && saveAction != null) {
+                    String newContent = getEditorContent();
+                    if (newContent != null) {
+                        saveAction.save(newContent);
+                        // Do NOT call setEditing(false) to allow continuous editing
+                    }
+                }
+            }
+        });
+        
         syncWithResource();
     }
 
