@@ -20,10 +20,16 @@ This file tracks the actionable tasks and tactical goals for the Anahata ASI (V2
 ## 2. Post Go Live (v1.1)
 - [ ] **Investigate editTextResource Diff limitations**: Investigate why in `editTextResource` we cannot edit the right-hand side of the diff or do cherry-picking.
 - [ ] **[CORE] Generic "TOO LARGE" Response Handling**: Implement a mechanism to detect when a `JavaMethodToolResponse` (including logs, errors, and result) exceeds a safe token/size threshold. If too large, the status should be set to `TOO_LARGE` and the content truncated or replaced with a summary to prevent context window exhaustion.
-- [ ] Error highlighting and code folds on diff viewer and java tool
+- [x] Error highlighting and code folds on diff viewer and java tool
 - [ ] Rework system instructions to be more natural
 - [ ] **ContextPanel**: Still some flickers when i have a node selected in the tree and a resource changes or a message arrives the right hand side disappears
 - [x] **ContextPanel Message / part Details**: The messages are not like in the conversation view, the have a massive horizontal scrollbar, see if in the part viewer we can force it to show expanded without changing the expanded attribute on the model
+
+- [x] **ATRV Height Calculation**: Add `public abstract AgiPanel getAgiPanel(Agi)` to `AbstractSwingAsiContainer` to enable hot-reloading tests for the `NetBeansTextResourceViewer` preferred height math.
+- [x] **Resources Toolkit**: Add `unloadResourcesByUri(List<String> uris)` and `setProviding(List<String> uuids, boolean providing)`.
+- [x] **Log Monitoring Popup**: Refactor `IDE.monitorLogs` to use `PathHandle` to bypass the NetBeans VFS and suppress the "File modified externally" dialog.
+- [x] **URI/UUID Renderers**: Split into `UriParameterRenderer` and `ResourceUUIDParameterRenderer` in the core swing module. Update to generically accept `Object` and parse Lists safely without `ClassCastException`.
+- [x] **Editor Shortcuts**: Fix `Ctrl+Z` (UndoManager binding to ancestor) and implement `Ctrl+S` (Save & Continue).
 
 - [ ] **NetBeans Local History File System Integration **:
     - [ ] Local History integration via change messages.
