@@ -10,9 +10,9 @@ import java.lang.annotation.Target;
  * Marks a class as an AI-callable toolkit and provides essential metadata.
  * All public methods within a class annotated with {@code @AgiToolkit}
  * are automatically registered as individual tools, provided they are also
- * annotated with {@code @AgiTool}.
+ * annotated with {@link AgiTool}.
  *
- * @author anahata-gemini-pro-2.5
+ * @author anahata
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
