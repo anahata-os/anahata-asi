@@ -88,6 +88,13 @@ public interface ResourceUI {
     }
 
     /**
+     * Opens a generic URI using the host environment's preferred method.
+     * 
+     * @param uriString The URI string to open.
+     */
+    default void openUri(String uriString) {}
+
+    /**
      * Signals the active viewer component for this resource to enter or exit edit mode.
      * 
      * @param viewer The component returned by {@link #createContent}.
