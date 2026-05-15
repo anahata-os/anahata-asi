@@ -90,7 +90,7 @@ public class CodeModel extends AnahataToolkit {
      * @return a confirmation message.
      * @throws Exception if the source cannot be retrieved.
      */
-    @AgiTool("Loads the source file for a given `JavaType` (as returned by `Codemodel.findTypes`) as a managed text resource.")
+    @AgiTool("Loads the source file for a given `JavaType` (as returned by `Codemodel.findTypes`) as a managed text resource. Works only for outer types (whole java files that can be loaded into context), for inner classess use `getMemberSources` or `getMemberSourcesByFqn`")
     public String loadTypeSources(
             @AgiToolParam("The minimalist keychain DTO from a findTypes call.") JavaType javaType) throws Exception {
         JavaTypeSource source = javaType.getSource();
