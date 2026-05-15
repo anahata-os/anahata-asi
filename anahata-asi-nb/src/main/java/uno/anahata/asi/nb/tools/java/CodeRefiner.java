@@ -59,11 +59,11 @@ public class CodeRefiner extends AnahataToolkit {
      * @return a success message
      * @throws Exception if import fails
      */
-    @AgiTool("Adds one or more imports to a file structurally.")
+    @AgiTool("Adds one or more imports to a file structurally. Use this if adding imports is the only change you need to make in the file. If you need to change any other code also, use other toolkits to do it all in one go as this one would cause the lastModified to change if save is true (save=fales only works for files that are open in the editor).")
     public String addImports(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("List of FQNs to import.") List<String> imports,
-            @AgiToolParam("Whether to save.") boolean save) throws Exception {
+            @AgiToolParam("Whether to save the changes, save=false would only work if the file is open in the editor.") boolean save) throws Exception {
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         JavaSource js = JavaSource.forFileObject(fo);
         js.runModificationTask(wc -> {
