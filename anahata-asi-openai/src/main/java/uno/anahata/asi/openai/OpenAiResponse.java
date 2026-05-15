@@ -25,6 +25,7 @@ public class OpenAiResponse extends Response<OpenAiModelMessage> {
 
     private static final ObjectMapper API_MAPPER = new ObjectMapper();
 
+    private final String id;
     private final List<OpenAiModelMessage> candidates;
     private final ResponseUsageMetadata usageMetadata;
     private final String rawJson;
@@ -32,12 +33,30 @@ public class OpenAiResponse extends Response<OpenAiModelMessage> {
     private final String rawHistoryJson;
     private final String modelVersion;
 
+    /**
+     * Constructs a new response object for a streaming chunk.
+     * 
+     * @param requestConfigJson The raw JSON of the request configuration.
+     * @param historyJson The raw JSON of the conversation history.
+     * @param chunkJson The raw JSON of the stream chunk.
+     */
+    public OpenAiResponse(String requestConfigJson, String historyJson, String chunkJson) {
+        this.id = "stream";
+        this.rawRequestConfigJson = requestConfigJson;
+        this.rawHistoryJson = historyJson;
+        this.rawJson = chunkJson;
+        this.usageMetadata = ResponseUsageMetadata.builder().build();
+        this.modelVersion = "unknown";
+        this.candidates = java.util.List.of();
+    }
+
     public OpenAiResponse(String requestConfigJson, String historyJson, Agi agi, String modelId, String responseBody) throws Exception {
         this.rawRequestConfigJson = requestConfigJson;
         this.rawHistoryJson = historyJson;
         this.rawJson = responseBody;
 
         JsonNode root = API_MAPPER.readTree(responseBody);
+        this.id = root.path("id").asText("openai-response");
         this.modelVersion = root.path("model").asText(modelId);
 
         // 1. Map Usage

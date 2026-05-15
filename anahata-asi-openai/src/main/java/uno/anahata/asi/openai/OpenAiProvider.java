@@ -93,6 +93,10 @@ public class OpenAiProvider extends AbstractAiProvider {
         }
     }
 
+    public boolean isRetryable(int statusCode, String responseBody) {
+        return statusCode == 429 || statusCode == 503 || statusCode == 500 || statusCode == 499 || statusCode == 408;
+    }
+
     @Override
     public String getApiKeyHint() {
         return "# OpenAI API Key Configuration\n"

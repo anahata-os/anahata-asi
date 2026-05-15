@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.message.AbstractMessage;
 import uno.anahata.asi.agi.message.AbstractModelMessage;
 import uno.anahata.asi.agi.provider.AbstractModel;
@@ -167,10 +168,11 @@ public class OpenAiModel extends AbstractModel {
     }
 
     @SneakyThrows
-    private PreparedPayload preparePayload(GenerationRequest request) {
+    private PreparedPayload preparePayload(GenerationRequest request, boolean stream) {
         ObjectNode root = API_MAPPER.createObjectNode();
         root.put("model", modelId);
         root.put("store", false); // Stateless ASI mode
+        if (stream) root.put("stream", true);
 
         ArrayNode include = root.putArray("include");
         include.add("reasoning.encrypted_content");
@@ -273,7 +275,7 @@ public class OpenAiModel extends AbstractModel {
     @Override
     @SneakyThrows
     public Response generateContent(GenerationRequest request) {
-        PreparedPayload prepared = preparePayload(request);
+        PreparedPayload prepared = preparePayload(request, false);
         String apiKey = provider.getCurrentKey();
 
         System.out.println("--- Request Config JSON (SI & Tools) ---");
@@ -306,9 +308,87 @@ public class OpenAiModel extends AbstractModel {
                 request.config().getAgi(), modelId, httpResponse.body());
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Executes an asynchronous content generation request using the Responses API 
+     * with Server-Sent Events (SSE). Streams text and reasoning in real-time, and 
+     * seamlessly processes tool calls upon item completion.</p>
+     */
     @Override
     public void generateContentStream(GenerationRequest request, StreamObserver<Response<? extends AbstractModelMessage>> observer) {
-        throw new UnsupportedOperationException("Streaming not yet implemented in clean-room.");
+        Agi agi = request.config().getAgi();
+        PreparedPayload prepared = preparePayload(request, true);
+        
+        log.info("Executing OpenAI streaming request to Responses API");
+        try {
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.openai.com/v1/responses"))
+                    .header("Authorization", "Bearer " + provider.getCurrentKey())
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "text/event-stream")
+                    .POST(HttpRequest.BodyPublishers.ofString(prepared.fullPayload()))
+                    .build();
+                    
+            java.net.http.HttpClient client = provider.getHttpClient(); {
+                OpenAiModelMessage targetMessage = new OpenAiModelMessage(agi, getModelId());
+                List<OpenAiModelMessage> targets = List.of(targetMessage);
+                java.util.concurrent.atomic.AtomicBoolean started = new java.util.concurrent.atomic.AtomicBoolean(false);
+                
+                HttpResponse<java.util.stream.Stream<String>> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofLines());
+                if (response.statusCode() != 200) {
+                    String errorMsg = "No error body";
+                    try (java.util.stream.Stream<String> bodyStream = response.body()) {
+                        errorMsg = bodyStream.collect(java.util.stream.Collectors.joining("\n"));
+                    }
+                    if (provider.isRetryable(response.statusCode(), errorMsg)) {
+                        provider.hokusPocus();
+                        observer.onError(new RetryableApiException(provider.getCurrentKey(), "Stream Error (" + response.statusCode() + "): " + errorMsg, null));
+                    } else {
+                        observer.onError(new RuntimeException("Stream Error (" + response.statusCode() + "): " + errorMsg));
+                    }
+                    return;
+                }
+                
+                try (java.util.stream.Stream<String> lines = response.body()) {
+                    java.util.Iterator<String> it = lines.iterator();
+                    
+                    while (it.hasNext()) {
+                        String line = it.next();
+                        if (line == null || line.isBlank()) continue;
+                        
+                        if (line.startsWith("data: ")) {
+                            String data = line.substring(6).trim();
+                            if ("[DONE]".equals(data)) {
+                                break;
+                            }
+                            
+                            if (!started.get()) {
+                                observer.onStart((List) targets);
+                                started.set(true);
+                            }
+                            
+                            try {
+                                JsonNode chunk = uno.anahata.asi.internal.JacksonUtils.parse(data, JsonNode.class);
+                                targetMessage.handleStreamEvent(chunk);
+                                targetMessage.appendRawJson(data);
+                                
+                                OpenAiResponse chunkResponse = new OpenAiResponse(prepared.configJson(), prepared.historyJson(), data);
+                                observer.onNext(chunkResponse);
+                                
+                            } catch (Exception e) {
+                                log.error("Failed to parse OpenAI stream chunk: {}", data, e);
+                            }
+                        }
+                    }
+                }
+                targetMessage.setStreaming(false);
+                observer.onComplete();
+            }
+
+        } catch (Exception e) {
+            log.error("Failed to execute OpenAI stream", e);
+            observer.onError(e);
+        }
     }
 
     @Override

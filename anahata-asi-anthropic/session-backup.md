@@ -11,10 +11,9 @@ The `MinimaxProvider` was successfully refactored to `MinimaxAnthropicProvider` 
 4. Explored the OpenAI Responses API docs (`migrate-to-responses.md`, `function_calling.md`, `sample_ci.json`, etc.) in preparation for implementing SSE streaming in `OpenAiModel.java`.
 
 ## Next Steps
-- Implement SSE streaming support for the native OpenAI Responses API in `OpenAiModel.java`. The endpoint is `/v1/responses`. It features server-sent events for `response.*`, `content_block_start`, etc., as well as native reasoning and tools. 
-- Ensure `isRetryable` logic is solid (e.g. added 529 for Anthropic overloaded).
-- The user will restart NetBeans, which will lose history.
-- After restart, **reload this session-backup.md and execute the `loadResources` tool with the URIs listed below to restore the context.**
+- Run and test the new `generateContentStream` implementation for OpenAI Responses.
+- Check if anything else needs adjusting across the MiniMax and Anthropic providers.
+- Keep this session backup updated with any new context additions.
 
 ## URIs Currently In Context
 - `file:///home/pablo/NetBeansProjects/anahata-asi-parent/anahata-asi-anthropic/tasks.md`
