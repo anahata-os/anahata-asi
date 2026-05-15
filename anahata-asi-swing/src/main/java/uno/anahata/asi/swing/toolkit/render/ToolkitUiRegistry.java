@@ -48,11 +48,7 @@ public class ToolkitUiRegistry {
         return INSTANCE;
     }
 
-    static {
-        // Register default toolkit renderers
-        INSTANCE.register(Radio.class, RadioRenderer.class);
-    }
-
+    
     /** 
      * Internal registry mapping toolkit classes to their specialized renderer implementations.
      * <p>
