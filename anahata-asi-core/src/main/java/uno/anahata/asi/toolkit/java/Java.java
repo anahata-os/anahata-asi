@@ -559,8 +559,8 @@ public class Java extends AnahataToolkit {
     )
     public Object compileAndExecute(
             @AgiToolParam(value = "Source code of the 'Anahata' class.", rendererId = "java") String sourceCode,
-            @AgiToolParam(value = "Compiler's additional classpath entries separated with File.pathSeparator. These will be first in the final compiler's and ClassLoader's classpath", required = false) String extraClassPath,
-            @AgiToolParam(value = "Compiler's options.", required = false) String[] compilerOptions) throws Exception {
+            @AgiToolParam(value = "Optional Compiler's additional classpath entries separated with File.pathSeparator. These will be first in the final compiler's classpath and the child-first set of the ClassLoader's classpath", required = false) String extraClassPath,
+            @AgiToolParam(value = "Optional Compiler's options.", required = false) String[] compilerOptions) throws Exception {
 
         log.info("executeJavaCode: \nsource={}", sourceCode);
         log.info("executeJavaCode: \nextraCompilerClassPath={}", extraClassPath);
