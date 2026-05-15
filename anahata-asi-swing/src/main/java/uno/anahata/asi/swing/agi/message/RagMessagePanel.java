@@ -108,6 +108,15 @@ public class RagMessagePanel extends AbstractMessagePanel<AbstractMessage> imple
 
     /** 
      * {@inheritDoc} 
+     * <p>Returns an empty string for the header suffix, as RAG messages are not part of the tracked history depth.</p>
+     */
+    @Override
+    protected String getHeaderSuffix() {
+        return "";
+    }
+
+    /** 
+     * {@inheritDoc} 
      * <p>Returns the header start color from the theme.</p>
      */
     @Override
