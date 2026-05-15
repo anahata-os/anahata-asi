@@ -40,6 +40,10 @@ public class NbResourceUI extends DefaultResourceUI {
     @Override
     public JComponent createContent(Resource resource, AgiPanel agiPanel) {
         if (resource.getHandle().isTextual()) {
+            // Bypass IDE fidelity for log files to prevent 'Modified Externally' popups
+            if (resource.getName().toLowerCase().endsWith(".log")) {
+                return super.createContent(resource, agiPanel);
+            }
             return new NetBeansTextResourceViewer(agiPanel, resource);
         }
         return super.createContent(resource, agiPanel);
@@ -112,6 +116,36 @@ public class NbResourceUI extends DefaultResourceUI {
             }
         }
         super.open(resource, agiPanel);
+    }
+
+    /** 
+     * {@inheritDoc} 
+     */
+    @Override
+    public void openUri(String uriString) {
+        try {
+            java.net.URI uri = java.net.URI.create(uriString);
+            if ("file".equalsIgnoreCase(uri.getScheme())) {
+                File file = new File(uri);
+                FileObject fo = FileUtil.toFileObject(file);
+                if (fo != null) {
+                    try {
+                        DataObject dao = DataObject.find(fo);
+                        OpenCookie oc = dao.getLookup().lookup(OpenCookie.class);
+                        if (oc != null) {
+                            log.info("Opening URI in NetBeans editor: {}", uriString);
+                            oc.open();
+                            return;
+                        }
+                    } catch (Exception e) {
+                        log.warn("Failed to open URI in IDE, falling back to desktop: " + uriString, e);
+                    }
+                }
+            }
+            java.awt.Desktop.getDesktop().browse(uri);
+        } catch (Exception ex) {
+            log.error("Failed to open URI: " + uriString, ex);
+        }
     }
 
     /** 
