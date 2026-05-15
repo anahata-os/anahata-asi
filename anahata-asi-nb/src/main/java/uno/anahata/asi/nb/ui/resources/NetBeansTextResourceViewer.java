@@ -180,6 +180,29 @@ public class NetBeansTextResourceViewer extends AbstractTextResourceViewer {
                 editor.setDocument(editor.getEditorKit().createDefaultDocument());
             }
 
+            // Explicitly attach an UndoManager for Ctrl+Z support since we are outside a TopComponent
+            javax.swing.undo.UndoManager undoManager = new javax.swing.undo.UndoManager();
+            editor.getDocument().addUndoableEditListener(undoManager);
+            editor.getInputMap(javax.swing.JComponent.WHEN_FOCUSED).put(javax.swing.KeyStroke.getKeyStroke("control Z"), "Undo");
+            editor.getActionMap().put("Undo", new javax.swing.AbstractAction() {
+                @Override
+                public void actionPerformed(java.awt.event.ActionEvent e) {
+                    if (undoManager.canUndo()) {
+                        undoManager.undo();
+                    }
+                }
+            });
+            editor.getInputMap(javax.swing.JComponent.WHEN_FOCUSED).put(javax.swing.KeyStroke.getKeyStroke("control Y"), "Redo");
+            editor.getInputMap(javax.swing.JComponent.WHEN_FOCUSED).put(javax.swing.KeyStroke.getKeyStroke("control shift Z"), "Redo");
+            editor.getActionMap().put("Redo", new javax.swing.AbstractAction() {
+                @Override
+                public void actionPerformed(java.awt.event.ActionEvent e) {
+                    if (undoManager.canRedo()) {
+                        undoManager.redo();
+                    }
+                }
+            });
+
             editor.setOpaque(true);
             editor.setEditable(false);
             
@@ -235,28 +258,28 @@ public class NetBeansTextResourceViewer extends AbstractTextResourceViewer {
                     int lineCount = doc.getDefaultRootElement().getElementCount();
                     int lineHeight = eui.getLineHeight();
                     int textHeight = lineCount * lineHeight;
-                    
+                
                     int h = textHeight;
-                    if (controlStrip.isVisible()) {
-                        h += controlStrip.getPreferredSize().height;
-                    }
-                    
-                    if (mainScroller != null) {
-                        // Authoritative Width Sensing: detect if horizontal scrollbar is needed
+                if (controlStrip.isVisible()) {
+                    h += controlStrip.getPreferredSize().height;
+                }
+                
+                if (mainScroller != null) {
+                    // Authoritative Width Sensing: detect if horizontal scrollbar is needed
                         Dimension viewPS = editor.getPreferredSize();
-                        int availableWidth = getWidth();
-                        if (availableWidth <= 0 && getParent() != null) {
-                            availableWidth = getParent().getWidth();
-                        }
-                        if (availableWidth > 0 && viewPS.width > availableWidth) {
-                            h += mainScroller.getHorizontalScrollBar().getPreferredSize().height;
-                        }
+                    int availableWidth = getWidth();
+                    if (availableWidth <= 0 && getParent() != null) {
+                        availableWidth = getParent().getWidth();
                     }
-                    
-                    Insets insets = getInsets();
-                    h += insets.top + insets.bottom + 5; // Respecting the 5px safety buffer
-                    
-                    return new Dimension(ps.width, h);
+                    if (availableWidth > 0 && viewPS.width > availableWidth) {
+                        h += mainScroller.getHorizontalScrollBar().getPreferredSize().height;
+                    }
+                }
+                
+                Insets insets = getInsets();
+                h += insets.top + insets.bottom + 5; // Respecting the 5px safety buffer
+                
+                return new Dimension(ps.width, h);
                 }
             } catch (Exception e) {
                 log.warn("Precision height calculation failed for NetBeans viewer, falling back to base.");
