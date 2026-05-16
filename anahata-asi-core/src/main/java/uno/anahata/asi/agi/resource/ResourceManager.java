@@ -162,9 +162,13 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
     public Optional<Resource> findByUri(@NonNull String uri) {
         String search = normalizeUri(uri);
         synchronized (resources) {
-            return resources.values().stream()
+            List<Resource> matches = resources.values().stream()
                      .filter(r -> normalizeUri(r.getHandle().getUri().toString()).equals(search))
-                     .findFirst();
+                     .collect(Collectors.toList());
+            if (matches.size() > 1) {
+                throw new IllegalStateException("Multiple resources found with the same URI: " + uri + "\nUse the UUID method to disambiguate");
+            }
+            return matches.isEmpty() ? Optional.empty() : Optional.of(matches.get(0));
         }
     }
 
