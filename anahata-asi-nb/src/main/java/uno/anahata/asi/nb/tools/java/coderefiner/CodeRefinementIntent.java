@@ -2,61 +2,32 @@
 package uno.anahata.asi.nb.tools.java.coderefiner;
 
 import com.sun.source.tree.*;
-import com.sun.source.util.TreePath;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.sun.source.util.SourcePositions;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.netbeans.api.java.source.GeneratorUtilities;
-import org.netbeans.api.java.source.TreeMaker;
-import org.netbeans.api.java.source.WorkingCopy;
+import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.util.TreePath;
 import uno.anahata.asi.agi.tool.AgiToolException;
-import uno.anahata.asi.agi.tool.ToolContext;
-import uno.anahata.asi.agi.tool.spi.java.JavaMethodToolResponse;
 import uno.anahata.asi.nb.tools.java.BatchCodeRefiner;
 
-/**
- * A robust, flattened version of structural Java refinement intents.
- * <p>
- * This "Tagged Union" DTO replaces the polymorphic hierarchy to maximize
- * compatibility with LLMs that struggle with 'oneOf' schemas.
- * </p>
- *
- * @author anahata
- */
 @Data
 @Slf4j
 @NoArgsConstructor
 @Schema(description = "Represents a single structural AST modification instruction in a flattened format.")
 public class CodeRefinementIntent implements Serializable {
 
-    /**
-     * The type of structural operation to perform.
-     */
     public enum Type {
-        /**
-         * Inserts a new member.
-         */
         @Schema(description = "Inserts a new member (method, field, or inner type).")
         INSERT,
-        /**
-         * Updates an existing member's signature or body.
-         */
         @Schema(description = "Updates an existing member's signature or body.")
         UPDATE,
-        /**
-         * Deletes an existing member.
-         */
         @Schema(description = "Deletes an existing member.")
         DELETE,
-        /**
-         * Moves an existing member to a new position.
-         */
         @Schema(description = "Moves an existing member to a new position within its class.")
         MOVE
     }
@@ -88,329 +59,439 @@ public class CodeRefinementIntent implements Serializable {
     @Schema(description = "Optional Javadoc to apply to the member. If updating a member and left null, the existing Javadoc is preserved.")
     private JavadocIntent javadoc;
 
-    @JsonIgnore
-    private int calculatedIndex = -1;
+    public String toDiagnosticString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n-type             : ").append(type);
+        sb.append("\n-classFqn         : ").append(classFqn);
+        sb.append("\n-memberFqn        : ").append(memberFqn);
+        sb.append("\n-position         : ").append(position);
+        sb.append("\n-anchorMemberName : ").append(anchorMemberName);
+        sb.append("\n-reason           : ").append(reason);
+        sb.append("\n-declaration      : [").append(abbreviate(declaration, 256)).append("]");
+        sb.append("\n-body             : [").append(abbreviate(body, 256)).append("]");
+        sb.append("\n-javadoc          : ").append(javadoc != null ? "Present" : "null");
+        return sb.toString();
+    }
 
-    /** Internal index of the target member within its parent container. */
-    @JsonIgnore
-    private transient int resolvedIndex = -1;
+    private String abbreviate(String s, int max) {
+        if (s == null) return "null";
+        if (s.length() <= max) return s;
+        int half = max / 2 - 2;
+        return s.substring(0, half) + "..." + s.substring(s.length() - half);
+    }
 
-    /** 
-     * Internal coordinates for the parent container. 
-     * If null, parent is the CompilationUnit. Otherwise, it is the FQN of the parent class.
-     */
-    @JsonIgnore
-    private transient String inferredParentFqn;
-
-    @JsonIgnore
-    private transient String extractedDeclaration;
-
-    @JsonIgnore
-    private transient String extractedBody;
-
-    @JsonIgnore
-    private transient String extractedJavadoc;
-
-    @JsonIgnore
-    private transient com.sun.source.tree.Tree savedTreeForMove;
-
-    /**
-     * Resolves the target member and container coordinates on the REAL project file.
-     * <p>
-     * This is the Reconnaissance Pass of the Singularity Fix. It ensures that
-     * all resolution happens in a context where the project classpath is fully
-     * active. The resulting indices are then used in the simulation passes.
-     * </p>
-     * 
-     * @param info The compilation info of the ORIGINAL project file.
-     */
-    public void resolve(org.netbeans.api.java.source.CompilationInfo info) throws Exception {
-        if (type == null) {
-            return;
-        }
+    public String applyToText(org.netbeans.api.java.source.CompilationController cc, String currentContent) throws Exception {
+        CompilationUnitTree cut = cc.getCompilationUnit();
+        SourcePositions sp = cc.getTrees().getSourcePositions();
 
         Tree member = null;
         if (type != Type.INSERT) {
-            if (memberFqn == null || memberFqn.isBlank()) {
-                throw new AgiToolException("memberFqn is mandatory for " + type + " intents.");
-            }
-            member = BatchCodeRefiner.findMemberInWorkingCopy(info, memberFqn);
+            member = BatchCodeRefiner.findMemberInWorkingCopy(cc, memberFqn);
             if (member == null) {
-                BatchCodeRefiner.throwMemberNotFound(info, memberFqn);
+                BatchCodeRefiner.throwMemberNotFound(cc, memberFqn);
             }
         }
 
-        // 1. Resolve Parent Container
-        if (classFqn != null && !classFqn.isBlank()) {
-            Tree parent = BatchCodeRefiner.findMemberInWorkingCopy(info, classFqn);
-            if (parent == null) {
-                throw new AgiToolException("Target class not found: " + classFqn);
+        if (type == Type.UPDATE) {
+            long startPos = sp.getStartPosition(cut, member);
+            long endPos = sp.getEndPosition(cut, member);
+            
+            long docStart = startPos;
+            for (org.netbeans.api.java.source.Comment comm : cc.getTreeUtilities().getComments(member, true)) {
+                if (comm.isDocComment() && comm.pos() < docStart) {
+                    docStart = comm.pos();
+                }
             }
-            inferredParentFqn = classFqn;
-        } else if (member != null) {
-            // Parent Inference: Determine the container from the member's path
-            TreePath path = TreePath.getPath(info.getCompilationUnit(), member);
-            Tree parent = path.getParentPath().getLeaf();
-            if (parent instanceof CompilationUnitTree) {
-                inferredParentFqn = null;
-            } else {
-                javax.lang.model.element.Element parentElement = info.getTrees().getElement(path.getParentPath());
-                inferredParentFqn = parentElement != null ? uno.anahata.asi.nb.tools.java.JavaSourceUtils.getCanonicalFqn(parentElement) : null;
-            }
-        } else {
-            inferredParentFqn = null; // Default to root CU for inserts without classFqn
-        }
 
-        // 2. Resolve Member Coordinates (for UPDATE, DELETE, MOVE)
-        if (member != null) {
-            List<? extends Tree> members = getContainerMembersByResolvedIndex(info);
-            resolvedIndex = BatchCodeRefiner.findMemberIndex(info, members, member);
-            if (resolvedIndex == -1) {
-                throw new AgiToolException("Logic Error: Member found in CU but not in its inferred container: " + memberFqn);
-            }
-        }
-    }
-
-    private List<Tree> getContainerMembersByResolvedIndex(org.netbeans.api.java.source.CompilationInfo info) {
-        Tree container = (inferredParentFqn == null) ? info.getCompilationUnit() : BatchCodeRefiner.findMemberInWorkingCopy(info, inferredParentFqn);
-        if (container instanceof ClassTree ct) {
-            return new ArrayList<>(ct.getMembers());
-        } else {
-            return new ArrayList<>(info.getCompilationUnit().getTypeDecls());
-        }
-    }
-
-    /**
-     * Authoritatively applies this intent to the provided working copy.
-     * <p>
-     * Implementation Logic Parity: This method merges the logic from all legacy
-     * concrete intent classes into a single, switch-based dispatcher to ensure
-     * 100% functional consistency.
-     * </p>
-     */
-    public void apply(WorkingCopy wc, Map<Tree, List<Tree>> modifiedMembers, boolean optimize, boolean clearance, org.netbeans.api.java.source.ClasspathInfo cpInfo) throws Exception {
-        if (type == null) {
-            throw new AgiToolException("Intent type is mandatory.");
-        }
-
-        switch (type) {
-            case INSERT ->
-                applyInsert(wc, modifiedMembers, optimize, clearance, cpInfo);
-            case UPDATE ->
-                applyUpdate(wc, modifiedMembers, optimize, clearance, cpInfo);
-            case DELETE ->
-                applyDelete(wc, modifiedMembers, optimize, clearance);
-            case MOVE ->
-                applyMove(wc, modifiedMembers, optimize, clearance);
-        }
-    }
-
-    private void applyInsert(WorkingCopy wc, Map<Tree, List<Tree>> modifiedMembers, boolean optimize, boolean clearance, org.netbeans.api.java.source.ClasspathInfo cpInfo) throws Exception {
-        List<Tree> members = getContainerMembersByResolvedIndex(wc, modifiedMembers);
-
-        if (clearance) {
-            // No action during clearance
-        } else {
-            calculatedIndex = BatchCodeRefiner.getInsertIndex(wc, members, position, anchorMemberName);
-            GeneratorUtilities gu = GeneratorUtilities.get(wc);
-            String effectiveDecl = declaration;
-            if (javadoc != null) {
-                effectiveDecl = javadoc.generateString() + "\n" + effectiveDecl;
-            }
-            Tree newMember = BatchCodeRefiner.parseMember(wc, effectiveDecl, body, cpInfo);
-            if (optimize) {
-                newMember = gu.importFQNs(newMember);
-            }
-            members.add(calculatedIndex != -1 ? Math.min(calculatedIndex, members.size()) : members.size(), newMember);
-        }
-    }
-
-    private List<Tree> getContainerMembersByResolvedIndex(WorkingCopy wc, Map<Tree, List<Tree>> modifiedMembers) {
-        Tree container = (inferredParentFqn == null) ? wc.getCompilationUnit() : BatchCodeRefiner.findMemberInWorkingCopy(wc, inferredParentFqn);
-        return getContainerMembers(container, modifiedMembers);
-    }
-
-    private void applyUpdate(WorkingCopy wc, Map<Tree, List<Tree>> modifiedMembers, boolean optimize, boolean clearance, org.netbeans.api.java.source.ClasspathInfo cpInfo) throws Exception {
-        if (clearance) {
-            com.sun.source.tree.Tree oldTreeInSim = BatchCodeRefiner.findMemberInWorkingCopy(wc, memberFqn);
-            if (oldTreeInSim == null) {
-                BatchCodeRefiner.throwMemberNotFound(wc, memberFqn);
-            }
-            if (declaration == null) {
-                extractedDeclaration = getExtractedDeclaration(wc, oldTreeInSim);
-            }
-            if (body == null) {
-                extractedBody = getExtractedBody(wc, oldTreeInSim);
-            }
-            int startPos = (int) wc.getTrees().getSourcePositions().getStartPosition(wc.getCompilationUnit(), oldTreeInSim);
-            if (startPos > 0) {
-                String textBefore = wc.getText().substring(0, startPos);
-                int javadocEnd = textBefore.lastIndexOf("*/");
-                int javadocStart = textBefore.lastIndexOf("/**");
-                if (javadocStart != -1 && javadocEnd != -1 && javadocStart < javadocEnd) {
-                    String inBetween = textBefore.substring(javadocEnd + 2);
-                    if (inBetween.trim().isEmpty()) {
-                        extractedJavadoc = textBefore.substring(javadocStart, javadocEnd + 2);
+            long bodyStart = endPos;
+            long bodyEnd = endPos;
+            if (member instanceof MethodTree mt && mt.getBody() != null) {
+                bodyStart = sp.getStartPosition(cut, mt.getBody());
+                bodyEnd = sp.getEndPosition(cut, mt.getBody());
+            } else if (member instanceof VariableTree vt) {
+                if (vt.getInitializer() != null) {
+                    bodyStart = sp.getStartPosition(cut, vt.getInitializer());
+                    bodyEnd = sp.getEndPosition(cut, vt.getInitializer());
+                    String textToInit = currentContent.substring((int)startPos, (int)bodyStart);
+                    int eq = textToInit.lastIndexOf('=');
+                    if (eq != -1) {
+                        bodyStart = startPos + eq + 1;
+                    }
+                } else {
+                    bodyStart = endPos;
+                    if (currentContent.charAt((int)endPos - 1) == ';') {
+                        bodyStart = endPos - 1;
+                        bodyEnd = endPos - 1;
                     }
                 }
+            } else if (member instanceof BlockTree bt) {
+                bodyStart = sp.getStartPosition(cut, bt);
+                bodyEnd = sp.getEndPosition(cut, bt);
+            } else if (member instanceof MethodTree mt && mt.getBody() == null) {
+                bodyStart = endPos;
+                if (currentContent.charAt((int)endPos - 1) == ';') {
+                    bodyStart = endPos - 1;
+                    bodyEnd = endPos - 1;
+                }
+            } else if (member instanceof ClassTree ct) {
+                long cStart = sp.getStartPosition(cut, ct);
+                int brace = currentContent.indexOf('{', (int)cStart);
+                if (brace != -1) {
+                    bodyStart = brace;
+                    bodyEnd = endPos;
+                }
+            }
+
+            long declEnd = bodyStart;
+
+            String oldDoc = currentContent.substring((int)docStart, (int)startPos);
+            String oldDecl = currentContent.substring((int)startPos, (int)declEnd);
+            String oldBody = currentContent.substring((int)bodyStart, (int)bodyEnd);
+
+            int lsDecl = currentContent.lastIndexOf('\n', (int)startPos);
+            int firstNonWs = lsDecl + 1;
+            while (firstNonWs < currentContent.length() && (currentContent.charAt(firstNonWs) == ' ' || currentContent.charAt(firstNonWs) == '\t')) {
+                firstNonWs++;
+            }
+            String baseIndent = currentContent.substring(lsDecl + 1, firstNonWs);
+
+            String newDocStr = oldDoc;
+            if (javadoc != null) {
+                newDocStr = javadoc.generateString() + "\n";
+                newDocStr = newDocStr.replace("\n", "\n" + baseIndent);
+                if (!newDocStr.endsWith(baseIndent)) newDocStr += baseIndent;
+            }
+
+            String newDeclStr = oldDecl;
+            if (declaration != null) {
+                newDeclStr = declaration.replace("\n", "\n" + baseIndent);
+                if (member instanceof MethodTree || member instanceof ClassTree) {
+                    newDeclStr += " ";
+                }
+            }
+
+            String newBodyStr = oldBody;
+            if (body != null) {
+                if (member instanceof VariableTree) {
+                    if (body.isBlank()) {
+                        newBodyStr = "";
+                        int eq = newDeclStr.lastIndexOf('=');
+                        if (eq != -1) newDeclStr = newDeclStr.substring(0, eq).trim();
+                    } else {
+                        newBodyStr = (newDeclStr.trim().endsWith("=") ? " " : " = ") + body;
+                    }
+                } else if (member instanceof MethodTree || member instanceof ClassTree || member instanceof BlockTree) {
+                    String bodyIndent = baseIndent + "    ";
+                    String[] lines = body.split("\\r?\\n", -1);
+                    boolean hasBraces = body.trim().startsWith("{") && body.trim().endsWith("}");
+                    StringBuilder sb = new StringBuilder();
+                    if (!hasBraces) {
+                        sb.append("{\n");
+                    }
+                    for (int i = 0; i < lines.length; i++) {
+                        String line = lines[i];
+                        if (hasBraces && i == 0) {
+                            sb.append(line.trim()).append("\n");
+                        } else if (hasBraces && i == lines.length - 1) {
+                            sb.append(baseIndent).append(line.trim());
+                        } else {
+                            sb.append(line.isEmpty() ? "" : bodyIndent + line).append("\n");
+                        }
+                    }
+                    if (!hasBraces) {
+                        sb.append(baseIndent).append("}");
+                    } else if (sb.length() > 0 && sb.charAt(sb.length() - 1) == '\n') {
+                        sb.setLength(sb.length() - 1);
+                    }
+                    newBodyStr = sb.toString();
+                }
+            }
+
+            return currentContent.substring(0, (int)docStart) +
+                   newDocStr + newDeclStr + newBodyStr +
+                   currentContent.substring((int)bodyEnd);
+        }
+
+        if (type == Type.DELETE || type == Type.MOVE) {
+            long startPos = sp.getStartPosition(cut, member);
+            long endPos = sp.getEndPosition(cut, member);
+
+            long docStart = startPos;
+            for (org.netbeans.api.java.source.Comment comm : cc.getTreeUtilities().getComments(member, true)) {
+                if (comm.pos() > 0 && comm.pos() < docStart) docStart = comm.pos();
             }
             
-            com.sun.source.util.TreePath path = wc.getTrees().getPath(wc.getCompilationUnit(), oldTreeInSim);
-            if (path != null) {
-                com.sun.source.doctree.DocCommentTree oldDoc = wc.getDocTrees().getDocCommentTree(path);
-                if (oldDoc != null) {
-                    wc.rewrite(oldTreeInSim, oldDoc, null);
-                }
+            int end = (int)endPos;
+            while (end < currentContent.length() && (currentContent.charAt(end) == ' ' || currentContent.charAt(end) == '\t' || currentContent.charAt(end) == ';')) end++;
+            
+            int start = (int)docStart;
+            int lsDel = currentContent.lastIndexOf('\n', start);
+            if (lsDel != -1 && currentContent.substring(lsDel + 1, start).trim().isEmpty()) {
+                start = lsDel + 1;
             }
-        } else {
-            List<com.sun.source.tree.Tree> members = getContainerMembersByResolvedIndex(wc, modifiedMembers);
-            if (declaration != null || body != null || javadoc != null) {
-                String effectiveDecl = declaration != null ? declaration : extractedDeclaration;
-                if (javadoc != null) {
-                    effectiveDecl = javadoc.generateString() + "\n" + effectiveDecl;
-                } else if (extractedJavadoc != null) {
-                    effectiveDecl = extractedJavadoc + "\n" + effectiveDecl;
-                }
-                com.sun.source.tree.Tree newTree = BatchCodeRefiner.parseMember(wc, effectiveDecl, body != null ? body : extractedBody, cpInfo);
+            if (end < currentContent.length() && currentContent.charAt(end) == '\n') end++;
 
-                if (optimize) {
-                    newTree = org.netbeans.api.java.source.GeneratorUtilities.get(wc).importFQNs(newTree);
-                }
+            String memberText = currentContent.substring((int)docStart, (int)endPos);
+            String formattedMemberText = currentContent.substring(start, end);
+            
+            if (type == Type.DELETE) {
+                return currentContent.substring(0, start) + currentContent.substring(end);
+            }
+
+            if (javadoc != null) {
+                String oldDoc = currentContent.substring((int)docStart, (int)startPos);
                 
-                com.sun.source.tree.Tree oldTreeInSim = BatchCodeRefiner.findMemberInWorkingCopy(wc, memberFqn);
-                int idx = oldTreeInSim != null ? BatchCodeRefiner.findMemberIndex(wc, members, oldTreeInSim) : -1;
+                int lsDecl = currentContent.lastIndexOf('\n', (int)startPos);
+                int firstNonWs = lsDecl + 1;
+                while (firstNonWs < currentContent.length() && (currentContent.charAt(firstNonWs) == ' ' || currentContent.charAt(firstNonWs) == '\t')) {
+                    firstNonWs++;
+                }
+                String baseIndent = currentContent.substring(lsDecl + 1, firstNonWs);
 
-                if (idx != -1) {
-                    members.set(idx, newTree);
+                String newDocStr = javadoc.generateString() + "\n";
+                newDocStr = newDocStr.replace("\n", "\n" + baseIndent);
+                if (!newDocStr.endsWith(baseIndent)) newDocStr += baseIndent;
+                
+                formattedMemberText = formattedMemberText.replace(oldDoc, newDocStr);
+            }
+
+            Tree container = (classFqn != null && !classFqn.isBlank()) ? BatchCodeRefiner.findMemberInWorkingCopy(cc, classFqn) : cut;
+            if (container == null) throw new AgiToolException("Target container not found: " + classFqn);
+
+            int insertOffset = -1;
+            if (container instanceof ClassTree ct) {
+                List<Tree> members = new ArrayList<>(ct.getMembers());
+                members.remove(member);
+                int index = BatchCodeRefiner.getInsertIndex(cc, members, position, anchorMemberName);
+                if (members.isEmpty()) {
+                    insertOffset = currentContent.indexOf('{', (int)sp.getStartPosition(cut, ct)) + 1;
+                } else if (index == members.size()) {
+                    insertOffset = (int)sp.getEndPosition(cut, ct) - 1;
                 } else {
-                    idx = BatchCodeRefiner.findMemberIndex(wc, members, BatchCodeRefiner.getMemberSignature(memberFqn));
-                    if (idx != -1) {
-                        members.set(idx, newTree);
+                    Tree anchor = members.get(index);
+                    long aStart = sp.getStartPosition(cut, anchor);
+                    for (org.netbeans.api.java.source.Comment comm : cc.getTreeUtilities().getComments(anchor, true)) {
+                        if (comm.pos() > 0 && comm.pos() < aStart) aStart = comm.pos();
+                    }
+                    int ls = currentContent.lastIndexOf('\n', (int)aStart);
+                    if (ls != -1 && currentContent.substring(ls + 1, (int)aStart).trim().isEmpty()) {
+                        insertOffset = ls + 1;
                     } else {
-                        throw new AgiToolException("Could not locate member for update during reconstruction: " + memberFqn);
+                        insertOffset = (int)aStart;
+                    }
+                }
+            } else if (container instanceof CompilationUnitTree cutContainer) {
+                List<Tree> decls = new ArrayList<>(cutContainer.getTypeDecls());
+                decls.remove(member);
+                int index = BatchCodeRefiner.getInsertIndex(cc, decls, position, anchorMemberName);
+                if (decls.isEmpty() || index == decls.size()) {
+                    insertOffset = currentContent.length();
+                } else {
+                    Tree anchor = decls.get(index);
+                    long aStart = sp.getStartPosition(cut, anchor);
+                    for (org.netbeans.api.java.source.Comment comm : cc.getTreeUtilities().getComments(anchor, true)) {
+                        if (comm.pos() > 0 && comm.pos() < aStart) aStart = comm.pos();
+                    }
+                    int ls = currentContent.lastIndexOf('\n', (int)aStart);
+                    if (ls != -1 && currentContent.substring(ls + 1, (int)aStart).trim().isEmpty()) {
+                        insertOffset = ls + 1;
+                    } else {
+                        insertOffset = (int)aStart;
                     }
                 }
             }
+
+            if (insertOffset > start) {
+                insertOffset -= (end - start);
+            }
+            
+            String textWithoutMember = currentContent.substring(0, start) + currentContent.substring(end);
+            return textWithoutMember.substring(0, insertOffset) + formattedMemberText + textWithoutMember.substring(insertOffset);
         }
+
+        if (type == Type.INSERT) {
+            Tree container = (classFqn != null && !classFqn.isBlank()) ? BatchCodeRefiner.findMemberInWorkingCopy(cc, classFqn) : cut;
+            if (container == null) throw new AgiToolException("Target container not found: " + classFqn);
+
+            int insertOffset = -1;
+            String indent = "";
+            int index = -1;
+
+            if (container instanceof ClassTree ct) {
+                TreePath ctPath = TreePath.getPath(cut, ct);
+                List<Tree> members = new ArrayList<>();
+                for (Tree m : ct.getMembers()) {
+                    if (!cc.getTreeUtilities().isSynthetic(new TreePath(ctPath, m))) members.add(m);
+                }
+                index = BatchCodeRefiner.getInsertIndex(cc, members, position, anchorMemberName);
+                
+                if (members.isEmpty()) {
+                    long cStart = sp.getStartPosition(cut, ct);
+                    int brace = currentContent.indexOf('{', (int)cStart);
+                    int nextNl = currentContent.indexOf('\n', brace);
+                    insertOffset = (nextNl != -1 && nextNl < sp.getEndPosition(cut, ct)) ? nextNl + 1 : brace + 1;
+                    int ls = currentContent.lastIndexOf('\n', (int)cStart);
+                    int firstNonWs = ls + 1;
+                    while (firstNonWs < currentContent.length() && (currentContent.charAt(firstNonWs) == ' ' || currentContent.charAt(firstNonWs) == '\t')) firstNonWs++;
+                    indent = (ls != -1 ? currentContent.substring(ls + 1, firstNonWs) : "") + "    ";
+                } else if (index == members.size()) {
+                    long cEnd = sp.getEndPosition(cut, ct);
+                    int brace = currentContent.lastIndexOf('}', (int)cEnd);
+                    int ls = currentContent.lastIndexOf('\n', brace);
+                    insertOffset = (ls != -1 && currentContent.substring(ls + 1, brace).trim().isEmpty()) ? ls + 1 : brace;
+                    Tree lastMem = members.get(members.size() - 1);
+                    long lastStart = sp.getStartPosition(cut, lastMem);
+                    int lastLs = currentContent.lastIndexOf('\n', (int)lastStart);
+                    int firstNonWs = lastLs + 1;
+                    while (firstNonWs < currentContent.length() && (currentContent.charAt(firstNonWs) == ' ' || currentContent.charAt(firstNonWs) == '\t')) firstNonWs++;
+                    indent = lastLs != -1 ? currentContent.substring(lastLs + 1, firstNonWs) : "    ";
+                } else {
+                    Tree anchor = members.get(index);
+                    long aStart = sp.getStartPosition(cut, anchor);
+                    for (org.netbeans.api.java.source.Comment comm : cc.getTreeUtilities().getComments(anchor, true)) {
+                        if (comm.pos() > 0 && comm.pos() < aStart) aStart = comm.pos();
+                    }
+                    int ls = currentContent.lastIndexOf('\n', (int)aStart);
+                    if (ls != -1 && currentContent.substring(ls + 1, (int)aStart).trim().isEmpty()) {
+                        insertOffset = ls + 1;
+                        indent = currentContent.substring(ls + 1, (int)aStart);
+                    } else {
+                        insertOffset = (int)aStart;
+                        indent = "    ";
+                    }
+                }
+            } else if (container instanceof CompilationUnitTree cutContainer) {
+                List<? extends Tree> decls = cutContainer.getTypeDecls();
+                index = BatchCodeRefiner.getInsertIndex(cc, decls, position, anchorMemberName);
+                if (decls.isEmpty() || index == decls.size()) {
+                    insertOffset = currentContent.length();
+                } else {
+                    Tree anchor = decls.get(index);
+                    long aStart = sp.getStartPosition(cut, anchor);
+                    for (org.netbeans.api.java.source.Comment comm : cc.getTreeUtilities().getComments(anchor, true)) {
+                        if (comm.pos() > 0 && comm.pos() < aStart) aStart = comm.pos();
+                    }
+                    insertOffset = (int)aStart;
+                }
+                indent = "";
+            }
+
+            StringBuilder memberBuilder = new StringBuilder();
+            if (javadoc != null) {
+                String doc = javadoc.generateString() + "\n";
+                memberBuilder.append(doc.replace("\n", "\n" + indent));
+            }
+            memberBuilder.append(declaration.replace("\n", "\n" + indent));
+            
+            if (body != null && !body.isEmpty()) {
+                boolean hasBraces = body.trim().startsWith("{") && body.trim().endsWith("}");
+                String bodyIndent = indent + "    ";
+                String[] lines = body.split("\\r?\\n", -1);
+                if (!hasBraces) {
+                    memberBuilder.append(" {\n");
+                } else {
+                    memberBuilder.append(" ");
+                }
+                for (int i = 0; i < lines.length; i++) {
+                    String line = lines[i];
+                    if (hasBraces && i == 0) {
+                        memberBuilder.append(line.trim()).append("\n");
+                    } else if (hasBraces && i == lines.length - 1) {
+                        memberBuilder.append(indent).append(line.trim());
+                    } else {
+                        memberBuilder.append(line.isEmpty() ? "" : bodyIndent + line).append("\n");
+                    }
+                }
+                if (!hasBraces) {
+                    memberBuilder.append(indent).append("}");
+                } else if (memberBuilder.length() > 0 && memberBuilder.charAt(memberBuilder.length() - 1) == '\n') {
+                    memberBuilder.setLength(memberBuilder.length() - 1);
+                }
+            } else if (!declaration.trim().endsWith(";") && !declaration.trim().endsWith("}")) {
+                memberBuilder.append(";");
+            }
+            
+            int blankLinesBefore = 1;
+            int blankLinesAfter = 1;
+            try {
+                org.netbeans.api.java.source.CodeStyle cs = null;
+                javax.swing.text.Document doc = cc.getDocument();
+                if (doc != null) {
+                    cs = org.netbeans.api.java.source.CodeStyle.getDefault(doc);
+                } else if (cc.getFileObject() != null) {
+                    cs = org.netbeans.api.java.source.CodeStyle.getDefault(cc.getFileObject());
+                }
+                if (cs != null) {
+                    boolean isMethod = declaration.contains("(");
+                    boolean isClass = declaration.contains("class ") || declaration.contains("interface ") || declaration.contains("enum ") || declaration.contains("record ");
+                    if (isMethod) {
+                        blankLinesBefore = cs.getBlankLinesBeforeMethods();
+                        blankLinesAfter = cs.getBlankLinesAfterMethods();
+                    } else if (isClass) {
+                        blankLinesBefore = cs.getBlankLinesBeforeClass();
+                        blankLinesAfter = cs.getBlankLinesAfterClass();
+                    } else {
+                        blankLinesBefore = cs.getBlankLinesBeforeFields();
+                        blankLinesAfter = cs.getBlankLinesAfterFields();
+                    }
+                    if (container instanceof ClassTree ct && index == ct.getMembers().size()) {
+                        blankLinesAfter = cs.getBlankLinesBeforeClassClosingBrace();
+                    }
+                }
+            } catch (Exception e) {
+                // Ignore
+            }
+
+            int existingNewlinesBefore = 0;
+            for (int i = insertOffset - 1; i >= 0; i--) {
+                char c = currentContent.charAt(i);
+                if (c == '\n') existingNewlinesBefore++;
+                else if (c != ' ' && c != '\t' && c != '\r') break;
+            }
+            
+            int neededBefore = Math.max(0, blankLinesBefore + 1 - existingNewlinesBefore);
+            StringBuilder prefixBuilder = new StringBuilder();
+            for (int i = 0; i < neededBefore; i++) {
+                prefixBuilder.append("\n");
+            }
+            String prefix = prefixBuilder.toString();
+            
+            int existingNewlinesAfter = 0;
+            for (int i = insertOffset; i < currentContent.length(); i++) {
+                char c = currentContent.charAt(i);
+                if (c == '\n') existingNewlinesAfter++;
+                else if (c != ' ' && c != '\t' && c != '\r') break;
+            }
+            
+            int neededAfter = Math.max(0, blankLinesAfter + 1 - existingNewlinesAfter);
+            StringBuilder suffixBuilder = new StringBuilder();
+            for (int i = 0; i < neededAfter; i++) {
+                suffixBuilder.append("\n");
+            }
+            String suffix = suffixBuilder.toString();
+            
+            return currentContent.substring(0, insertOffset) +
+                   prefix + indent + memberBuilder.toString() + suffix +
+                   currentContent.substring(insertOffset);
+        }
+
+        return currentContent;
     }
 
-    private String getExtractedDeclaration(WorkingCopy wc, Tree tree) {
-        com.sun.source.util.SourcePositions sp = wc.getTrees().getSourcePositions();
-        CompilationUnitTree cut = wc.getCompilationUnit();
-        long start = sp.getStartPosition(cut, tree);
-        long bodyStart = -1;
-        if (tree instanceof MethodTree mt) {
-            bodyStart = sp.getStartPosition(cut, mt.getBody());
-        } else if (tree instanceof VariableTree vt && vt.getInitializer() != null) {
-            bodyStart = sp.getStartPosition(cut, vt.getInitializer());
-        }
-        if (bodyStart != -1) {
-            String decl = wc.getText().substring((int) start, (int) bodyStart).trim();
-            return (tree instanceof VariableTree && decl.endsWith("=")) ? decl.substring(0, decl.length() - 1).trim() : decl;
-        }
-        String decl = wc.getText().substring((int) start, (int) sp.getEndPosition(cut, tree)).trim();
-        return decl.endsWith(";") ? decl.substring(0, decl.length() - 1).trim() : decl;
-    }
 
-    private String getExtractedBody(WorkingCopy wc, Tree tree) {
-        com.sun.source.util.SourcePositions sp = wc.getTrees().getSourcePositions();
-        CompilationUnitTree cut = wc.getCompilationUnit();
-        if (tree instanceof MethodTree mt) {
-            BlockTree block = mt.getBody();
-            if (block == null) {
-                return null;
-            }
-            int start = (int) sp.getStartPosition(cut, block);
-            int end = (int) sp.getEndPosition(cut, block);
-            String text = wc.getText().substring(start, end).trim();
-            if (text.startsWith("{") && text.endsWith("}")) {
-                return text.substring(1, text.length() - 1).trim();
-            }
-            return text;
-        }
-        if (tree instanceof VariableTree vt && vt.getInitializer() != null) {
-            int start = (int) sp.getStartPosition(cut, vt.getInitializer());
-            int end = (int) sp.getEndPosition(cut, vt.getInitializer());
-            return wc.getText().substring(start, end).trim();
-        }
-        return null;
-    }
 
-    private void applyDelete(WorkingCopy wc, Map<Tree, List<Tree>> modifiedMembers, boolean optimize, boolean clearance) throws Exception {
-        if (!clearance) return;
-        
-        Tree memberTree = BatchCodeRefiner.findMemberInWorkingCopy(wc, memberFqn);
-        if (memberTree == null) {
-            BatchCodeRefiner.throwMemberNotFound(wc, memberFqn);
-        }
-        TreePath path = TreePath.getPath(wc.getCompilationUnit(), memberTree);
-        Tree parent = path.getParentPath().getLeaf();
-
-        List<Tree> members = getContainerMembers(parent, modifiedMembers);
-        int idx = BatchCodeRefiner.findMemberIndex(wc, members, memberTree);
-        if (idx != -1) {
-            members.remove(idx);
-        }
-    }
-
-    private void applyMove(WorkingCopy wc, Map<Tree, List<Tree>> modifiedMembers, boolean optimize, boolean clearance) throws Exception {
-        if (clearance) {
-            com.sun.source.tree.Tree memberTree = BatchCodeRefiner.findMemberInWorkingCopy(wc, memberFqn);
-            if (memberTree == null) {
-                BatchCodeRefiner.throwMemberNotFound(wc, memberFqn);
-            }
-            com.sun.source.util.TreePath path = com.sun.source.util.TreePath.getPath(wc.getCompilationUnit(), memberTree);
-            if (!(path.getParentPath().getLeaf() instanceof com.sun.source.tree.ClassTree ct)) {
-                throw new uno.anahata.asi.agi.tool.AgiToolException("Only members of a class can be moved.");
-            }
-            List<com.sun.source.tree.Tree> members = getContainerMembers(ct, modifiedMembers);
-
-            int idx = BatchCodeRefiner.findMemberIndex(wc, members, memberTree);
-            if (idx != -1) {
-                members.remove(idx);
-            }
-            savedTreeForMove = BatchCodeRefiner.cloneTree(wc.getTreeMaker(), memberTree);
-        } else {
-            List<com.sun.source.tree.Tree> members = getContainerMembersByResolvedIndex(wc, modifiedMembers);
-            calculatedIndex = BatchCodeRefiner.getInsertIndex(wc, members, position, anchorMemberName);
-            members.add(calculatedIndex != -1 ? Math.min(calculatedIndex, members.size()) : members.size(), savedTreeForMove);
-        }
-    }
-
-    private List<Tree> getContainerMembers(Tree container, Map<Tree, List<Tree>> modifiedMembers) {
-        return modifiedMembers.computeIfAbsent(container, p -> {
-            if (p instanceof ClassTree ct) {
-                return new ArrayList<>(ct.getMembers());
-            } else {
-                return new ArrayList<>(((CompilationUnitTree) p).getTypeDecls());
-            }
-        });
-    }
-
-    /**
-     * Returns a human-readable HTML description of the intent for display in
-     * the UI.
-     */
     public String getHtmlDisplay() {
         String color = switch (type) {
-            case INSERT ->
-                "#4CAF50";
-            case UPDATE ->
-                "#2196F3";
-            case DELETE ->
-                "#F44336";
-            case MOVE ->
-                "#FF9800";
+            case INSERT -> "#4CAF50";
+            case UPDATE -> "#2196F3";
+            case DELETE -> "#F44336";
+            case MOVE -> "#FF9800";
         };
         String icon = switch (type) {
-            case INSERT ->
-                "[+]";
-            case UPDATE ->
-                "[*]";
-            case DELETE ->
-                "[-]";
-            case MOVE ->
-                "[M]";
+            case INSERT -> "[+]";
+            case UPDATE -> "[*]";
+            case DELETE -> "[-]";
+            case MOVE -> "[M]";
         };
 
         String targetName = (memberFqn != null) ? getSimpleName(memberFqn) : "New Member";
@@ -435,13 +516,6 @@ public class CodeRefinementIntent implements Serializable {
         return sb.toString();
     }
 
-    /**
-     * Determines the FQN that the target member will have after this intent is
-     * applied. For inserts, it derives the name from the declaration.
-     *
-     * @return The absolute FQN or null if it cannot be determined (e.g.
-     * DELETE).
-     */
     public String getResultingMemberFqn() {
         if (type == Type.DELETE) {
             return null;
@@ -467,6 +541,7 @@ public class CodeRefinementIntent implements Serializable {
     }
 
     private String getSimpleNameFromDeclaration(String decl) {
+        if (decl == null) return "Unknown";
         String clean = decl.trim();
         while (clean.startsWith("@")) {
             int space = clean.indexOf(' ');
@@ -478,6 +553,7 @@ public class CodeRefinementIntent implements Serializable {
         int paren = clean.indexOf('(');
         int end = (paren != -1) ? paren : (clean.endsWith(";") ? clean.length() - 1 : clean.length());
         int start = clean.lastIndexOf(' ', end - 1);
+        if (start == -1) start = 0;
         String name = clean.substring(start + 1, end).trim();
         return (paren != -1) ? name + "()" : name;
     }

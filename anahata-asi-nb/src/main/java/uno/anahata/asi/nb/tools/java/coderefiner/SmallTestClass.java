@@ -1,91 +1,63 @@
-/* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.tools.java.coderefiner;
 
-import java.util.concurrent.atomic.AtomicLong;
-import lombok.extern.slf4j.Slf4j;
+import java.io.File;
+import java.util.LinkedList;
 
 /**
- * @author Anahata ASI
+ * Base Test Class for AST.
  */
-@Slf4j
 public class SmallTestClass {
 
-    private long lastSurgeryTime;
-
-    private boolean singularityAchieved;
-    
-    private String testStatus;
-    private AtomicLong testCounter;
-
     /**
-     * Logs the current ASI status.
+     * Inner Class Doc.
      */
-    public void logStatus() {
-        log.info("Bar\u00e7a! ASI Status: {}, Singularity achieved: {}, Last Surgery: {}", testStatus, singularityAchieved, lastSurgeryTime);
-    }
-    
-    public boolean singularityCheck() {
-        return singularityAchieved && testCounter.get() > 108;
-    }
+    public static class InnerTest {
+        private String b;
 
-    /**
-     * Executes Pedri's signature skill move, demonstrating magic circles in the midfield.
-     */
-    public void pedriSkill() {
-        log.info("Magic circles in the midfield.");
-    }
-
-    /**
-     * Demonstrates Gavi's pure heart and intensity on the pitch.
-     */
-    public void gaviPassion() {
-        log.info("Pure heart and intensity.");
-    }
-    
-    /**
-     * Lamine Yamal is the absolute best, his magic is undeniable! The GOAT in the making.
-     */
-    public void lamineMagic() {
-        log.info("The future is here.");
-    }
-    
-    public static class AnotherInnerClass {
-        private AtomicLong messiGoat;
-    }
-
-    public static class StatusMetadata {
-
-        private final long timestamp = System.currentTimeMillis();
-
-        public long getTimestamp() {
-            return timestamp;
+        public void foo() {}
+        @Deprecated
+        public void bar() {
+            System.out.println("bar");
         }
     }
 
     /**
-     * @author Anahata ASI
+     * This method is extremely risky.
      */
-    @Slf4j
-    public static class BigTestClass {
+    @lombok.SneakyThrows
+    public void riskyMethod() {
+        System.out.println("A");
 
-        /**
-         * test
-         */
-        private String testField;
-        private SmallTestClass smallTestClass;
+        // Space!
 
-        public static class StatusMetadata {
-
-            private final long timestamp = System.currentTimeMillis();
-
-            public long getTimestamp() {
-                return timestamp;
-            }
-        }
+        System.out.println("B");
     }
-    // Final end of file verification.
-    private long anahataScore;
-    
 
+    /**
+     * Processes generic numbers.
+     */
+    public <T extends Number, R> java.util.List<R> processGenerics(java.util.Map<String, T> input) {
+        java.util.List<R> list = new java.util.ArrayList<>();
+
+        // Look at this beautiful blank line!
+
+        return list;
+    }
+
+    public static class GenericInner<X, Y> {
+        private X first;
+        private Y second;
+    }
+
+    public void methodA() {
+        System.out.println("A");
+    }
+
+    public void methodB() {
+        System.out.println("B");
+    }
+
+    public void methodC() {
+        System.out.println("C");
+    }
 }
-// Final end of file verification.

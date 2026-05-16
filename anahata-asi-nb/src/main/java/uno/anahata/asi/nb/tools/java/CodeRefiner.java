@@ -169,9 +169,10 @@ public class CodeRefiner extends AnahataToolkit {
         js.runModificationTask(wc -> {
             wc.toPhase(JavaSource.Phase.RESOLVED);
             ReferencesCount rc = ReferencesCount.get(wc.getClasspathInfo());
-            CompilationUnitTree oldCut = wc.getCompilationUnit();
-            CompilationUnitTree newCut = GeneratorUtilities.get(wc).importFQNs(oldCut);
-            wc.rewrite(oldCut, newCut);
+            
+            // Bypass GeneratorUtilities.importFQNs which rewrites the entire CompilationUnit
+            // and triggers CasualDiff NPEs on generic typings like <T, R>.
+            // Instead, we only remove unused imports and report unresolved types.
             if (removeUnused) {
                 removeUnusedImportsInternal(wc);
             }

@@ -1,17 +1,12 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.tools.java;
 
-import com.sun.source.tree.AnnotationTree;
 import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree;
-import static com.sun.source.tree.Tree.Kind.ANNOTATION_TYPE;
-import static com.sun.source.tree.Tree.Kind.ENUM;
-import static com.sun.source.tree.Tree.Kind.INTERFACE;
-import static com.sun.source.tree.Tree.Kind.RECORD;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
@@ -40,10 +35,6 @@ import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
 import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementBatch;
 import uno.anahata.asi.nb.tools.java.coderefiner.RelativePosition;
-import static uno.anahata.asi.nb.tools.java.coderefiner.RelativePosition.AFTER;
-import static uno.anahata.asi.nb.tools.java.coderefiner.RelativePosition.BEFORE;
-import static uno.anahata.asi.nb.tools.java.coderefiner.RelativePosition.END;
-import static uno.anahata.asi.nb.tools.java.coderefiner.RelativePosition.START;
 
 /**
  * The authoritative toolkit for structural Java refinement.
@@ -60,9 +51,6 @@ import static uno.anahata.asi.nb.tools.java.coderefiner.RelativePosition.START;
 @AgiToolkit("Advanced structural Java refinement (Batch Mode). Too buggy don't use. Not ready, don't try to enable it.")
 public class BatchCodeRefiner extends AnahataToolkit {
 
-    /**
-     * Enabled by default.
-     */
     @Override
     public void initialize() {
         getToolkit().setEnabled(false);
@@ -73,11 +61,11 @@ public class BatchCodeRefiner extends AnahataToolkit {
         return Collections.singletonList(JavaSourceUtils.CANONICAL_FQN_STANDARD
                 + "\n"
                 + "### BatchCodeRefiner Toolkit Instructions\n"
-                + "0. **Do not use unless you are a reasoning model like Gemini 3.1 Pro or more capable**"
+                + "0. **Do not use unless you are a reasoning model like Gemini 3.1 Pro or more capable**\n"
                 + "1. **Context Locked**: You MUST have the resource in your RAG message (context) to propose a refinement.\n"
                 + "2. **Batch Intents**: You can combine multiple structural changes (INSERT, UPDATE, DELETE, MOVE) in one call.\n"
-                + "3. **Optimistic Locking**: Always use the `lastModified` timestamp from the RAG message. "
-                        + "\n\tNote: You can't update the same file twice in the same turn otherwise the first one will change the lastModified and the second one will fail with an optimistic locking exception but you can do as many inserts and updates as you want in a single tool call\n"
+                + "3. **Optimistic Locking**: Always use the `lastModified` timestamp from the RAG message. \n"
+                + "\tNote: You can't update the same file twice in the same turn otherwise the first one will change the lastModified and the second one will fail with an optimistic locking exception but you can do as many inserts and updates as you want in a single tool call\n"
                 + "4. **Field Initializers**: Put the expression (code after '=') in the `body` field or leave the body empty for fields if you don't want any initialzier expression.\n"
                 + "4.1 **Inline Comments**: Natively supported! You can include inline comments directly in the `body` string.\n"
                 + "5. **Javadocs**: Use the structured `javadoc` property (JavadocIntent) in the intent to inject Javadocs on the fly! If omitted during UPDATE, existing Javadoc is preserved.\n"
@@ -87,27 +75,7 @@ public class BatchCodeRefiner extends AnahataToolkit {
         );
     }
 
-    /**
-     * Refines a Java source file using a robust, flattened batch of structural 
-     * AST modifications. This version is recommended for maximum compatibility 
-     * across all AI models.
-     *
-     * @param batch The robust refinement batch.
-     * @return The effectively applied changes as a unified diff.
-     * @throws Exception if validation or execution fails.
-     */
-    @AgiTool("The definitive structural Java refiner. "
-            + "Applies a batch of member lvel modifications to a java file. "
-            + "RelativePosition is mandatory for all INSERT and MOVE. "
-            + "When updating a member, you can update both the declaration and the body in the same UPDATE intent or you can just do the body or just the declaration. "
-            + "Never include the declaration of a field or a method in the 'body' attribute, the member declaration (signature) can only be in the 'declaration' field only. The 'body' can only contain either whats inside the {} or whatever is to the right of the '='. "
-            + "If you update the declaration of a method, you must include the full delcaration with all annotations and all throws clauses. "
-            + "Provides a fully integrated `javadoc` object property so you can document members synchronously with code changes! "
-            + "Inline comments inside the `body` string are also natively preserved!"
-            + "Does not support java records due to a bug in netbeans. "
-            + "It's not a find-and-replace tool, use the Resources toolkit for that. "
-            + "You can't use this tool to add imports, just use the fqn of any types not in the imports list with optimize=true to let netbeans import them automatically or use CodeRefiner.addImports to surgically add imports. "
-            + "For fields, declaration is what goes to the left of the '=', body is the initializer expression to the right of the '=', leave 'body' empty if you just want to insert a field without initializer expression. You cannot add javadocs to the declaration.")
+    @AgiTool("The definitive structural Java refiner. Applies a batch of member lvel modifications to a java file. RelativePosition is mandatory for all INSERT and MOVE. When updating a member, you can update both the declaration and the body in the same UPDATE intent or you can just do the body or just the declaration. Never include the declaration of a field or a method in the 'body' attribute, the member declaration (signature) can only be in the 'declaration' field only. The 'body' can only contain either whats inside the {} or whatever is to the right of the '='. If you update the declaration of a method, you must include the full delcaration with all annotations and all throws clauses. Provides a fully integrated `javadoc` object property so you can document members synchronously with code changes! Inline comments inside the `body` string are also natively preserved!Does not support java records due to a bug in netbeans. It's not a find-and-replace tool, use the Resources toolkit for that. You can't use this tool to add imports, just use the fqn of any types not in the imports list with optimize=true to let netbeans import them automatically or use CodeRefiner.addImports to surgically add imports. For fields, declaration is what goes to the left of the '=', body is the initializer expression to the right of the '=', leave 'body' empty if you just want to insert a field without initializer expression. You cannot add javadocs to the declaration.")
     public String refine(
             @AgiToolParam("The robust refinement batch.") CodeRefinementBatch batch
     ) throws Exception {
@@ -117,16 +85,12 @@ public class BatchCodeRefiner extends AnahataToolkit {
         NbHandle handle = (NbHandle) resource.getHandle();
         FileObject fo = handle.getFileObject();
 
-        // 1. Calculate the 'Simulated Truth' text using multi-stage memory surgery.
-        // This produces a 100% clean result, bypassing the IDE's semantic matcher bug.
         String finalText = batch.calculateResultingContent(getAgi());
 
-        // 2. Singularity Commit: Surgically overwrite the file buffer on disk.
         try (OutputStream os = fo.getOutputStream()) {
             os.write(finalText.getBytes());
         }
 
-        // 3. Sync and Save
         batch.setResultingContent(finalText);
         if (batch.isSave()) {
             JavaSourceUtils.handleSave(fo);
@@ -135,108 +99,10 @@ public class BatchCodeRefiner extends AnahataToolkit {
         return batch.getUnifiedDiff(getAgi());
     }
 
-    /**
-     * Refines a Java source file using a batch of structural
-     * modifications.
-     *
-     * @param batch The refinement batch containing intents and locking
-     * metadata.
-     * @return A confirmation message.
-     * @throws Exception if validation or execution fails.
-     */
-    //Commenting this out until models are capable of doing polymorphic / oneOf
-    //@AgiTool("Refines a Java source file using a batch of structural AST modifications and returns the effectively applied changes (after user review)")
-    /*
-    public String refinePolymorphic(
-            @AgiToolParam("The refinement batch.") CodeRefinementBatch batch
-    ) throws Exception {
-        // 1. Authoritative Validation (Recaptures originalContent and checks locks)
-        batch.validate(getAgi());
-
-        Resource resource = getAgi().getResourceManager().get(batch.getResourceUuid());
-        NbHandle handle = (NbHandle) resource.getHandle();
-        FileObject fo = handle.getFileObject();
-
-        JavaSource js = JavaSource.forFileObject(fo);
-        ModificationResult result = js.runModificationTask(wc -> {
-            wc.toPhase(JavaSource.Phase.RESOLVED);
-
-            String manualOverride = batch.getManualOverride();
-            if (manualOverride != null && !manualOverride.isBlank()) {
-                // Bypass AST: Apply raw text override from the UI via high-fidelity memory parsing
-                log.info("Applying manual text override for {}", fo.getNameExt());
-                FileObject tempFo = FileUtil.createMemoryFileSystem().getRoot().createData("Override", "java");
-                try (OutputStream os = tempFo.getOutputStream()) {
-                    os.write(manualOverride.getBytes());
-                }
-                JavaSource tempJs = JavaSource.forFileObject(tempFo);
-                tempJs.runUserActionTask(info -> {
-                    info.toPhase(JavaSource.Phase.PARSED);
-                    wc.rewrite(wc.getCompilationUnit(), info.getCompilationUnit());
-                }, true);
-            } else {
-                // Standard structural path
-                batch.applyTo(wc);
-            }
-        });
-
-        result.commit();
-
-        // 3. Capture resulting content snapshot after successful commit
-        batch.setResultingContent(resource.asText());
-
-        if (batch.isSave()) {
-            JavaSourceUtils.handleSave(fo);
-        }
-
-        return batch.getUnifiedDiff(getAgi());
-    }
-    */
-    
-    
-    /**
-     * Internal utility to find a member in the working copy context.
-     * 
-     * @param wc WorkingCopy
-     * @param memberFqn Member FQN
-     * @return The leaf Tree node or null.
-     */
     public static Tree findMemberInWorkingCopy(org.netbeans.api.java.source.CompilationInfo info, String memberFqn) {
-        Tree found = JavaSourceUtils.findTree(info, memberFqn);
-        if (found == null) {
-            return null;
-        }
-        TreePath path = TreePath.getPath(info.getCompilationUnit(), found);
-        return path != null ? path.getLeaf() : null;
+        return JavaSourceUtils.findTree(info, memberFqn);
     }
 
-    /**
-     * Internal utility to find the index of a specific tree node within a list 
-     * of members based on source positions.
-     */
-    public static int findMemberIndex(org.netbeans.api.java.source.CompilationInfo info, List<? extends Tree> members, Tree target) {
-        if (info == null || members == null || target == null) {
-            return -1;
-        }
-        SourcePositions sp = info.getTrees().getSourcePositions();
-        CompilationUnitTree cut = info.getCompilationUnit();
-        long targetStart = sp.getStartPosition(cut, target);
-        for (int i = 0; i < members.size(); i++) {
-            if (sp.getStartPosition(cut, members.get(i)) == targetStart) {
-                return i;
-            }
-        }
-        return -1;
-    }
-    
-    /**
-     * Finds the index of a member by its name or canonical signature.
-     *
-     * @param wc The working copy for resolution.
-     * @param members The list of class members.
-     * @param memberName The name or signature to look for.
-     * @return The index, or -1 if not found.
-     */
     public static int findMemberIndex(org.netbeans.api.java.source.CompilationInfo info, List<? extends Tree> members, String memberName) {
         String target = memberName.replaceAll("<[^>]*>", "").replaceAll("\\s+", "");
 
@@ -304,9 +170,6 @@ public class BatchCodeRefiner extends AnahataToolkit {
         return -1;
     }
 
-    /**
-     * Internal utility to parse a member declaration and optional body.
-     */
     public static Tree parseMember(WorkingCopy wc, String declaration, String body, ClasspathInfo cpInfo) throws Exception {
         if (declaration == null || declaration.isBlank()) {
             throw new AgiToolException("Member declaration cannot be null or empty.");
@@ -329,7 +192,6 @@ public class BatchCodeRefiner extends AnahataToolkit {
             os.write(dummyCode.getBytes());
         }
 
-        // Singularity DNA Propagation: Use the provided CP info to ensure type resolution.
         JavaSource js = cpInfo != null ? JavaSource.create(cpInfo, tempFo) : JavaSource.forFileObject(tempFo);
         
         final Tree[] result = new Tree[1];
@@ -364,32 +226,25 @@ public class BatchCodeRefiner extends AnahataToolkit {
         return result[0];
     }
 
-    /**
-     * Resolves the insertion index relative to anchors.
-     */
-    public static int getInsertIndex(org.netbeans.api.java.source.CompilationInfo info, List<? extends Tree> members, RelativePosition position, String anchor) throws AgiToolException {
+    public static int getInsertIndex(org.netbeans.api.java.source.CompilationInfo wc, List<? extends Tree> members, RelativePosition position, String anchor) throws AgiToolException {
         if ((position == RelativePosition.BEFORE || position == RelativePosition.AFTER) && (anchor == null || anchor.isBlank())) {
             throw new AgiToolException("anchorMemberName is mandatory for relative position " + position);
         }
-        int anchorIdx = anchor != null && !anchor.isBlank() ? findMemberIndex(info, members, getMemberSignature(anchor)) : -1;
-        if (anchor != null && !anchor.isBlank() && anchorIdx == -1) {
-            throw new AgiToolException("Anchor member not found: " + anchor);
+        int anchorIdx = -1;
+        if (anchor != null && !anchor.isBlank()) {
+            anchorIdx = findMemberIndex(wc, members, getMemberSignature(anchor));
+            if (anchorIdx == -1) {
+                throw new AgiToolException("Anchor member not found: " + anchor);
+            }
         }
         return switch (position) {
             case START -> 0;
-            case END -> Integer.MAX_VALUE;
+            case END -> members.size();
             case BEFORE -> anchorIdx;
             case AFTER -> anchorIdx + 1;
         };
     }
     
-    /**
-     * Extracts the member signature (name + parameters) from an FQN.
-     * Unlike getMemberSimpleName, this preserves the parameter list for methods.
-     *
-     * @param memberFqn The FQN to parse (e.g. 'com.foo.Bar.method(int)').
-     * @return The signature part (e.g. 'method(int)').
-     */
     public static String getMemberSignature(String memberFqn) {
         if (memberFqn == null || memberFqn.isBlank()) {
             return memberFqn;
@@ -400,42 +255,6 @@ public class BatchCodeRefiner extends AnahataToolkit {
         return memberFqn.substring(lastSeparator + 1);
     }
 
-    /**
-     * Rebuilds a ClassTree container with a new list of members.
-     */
-    public static ClassTree rebuildClassTree(TreeMaker make, ClassTree ct, List<Tree> members) {
-        return switch (ct.getKind()) {
-            case INTERFACE ->
-                make.Interface(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), (List<ExpressionTree>) (List<?>) ct.getPermitsClause(), members);
-            case ENUM ->
-                make.Enum(ct.getModifiers(), ct.getSimpleName(), (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), members);
-            case ANNOTATION_TYPE ->
-                make.AnnotationType(ct.getModifiers(), ct.getSimpleName(), members);
-            case RECORD ->
-                // NOTE: NetBeans TreeMaker lacks make.Record. Using Class with bit 61 is the current workaround.
-                make.Class(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), null, (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), (List<ExpressionTree>) (List<?>) ct.getPermitsClause(), members);
-            default ->
-                make.Class(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), ct.getExtendsClause(), (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), (List<ExpressionTree>) (List<?>) ct.getPermitsClause(), members);
-        };
-    }
-
-    /**
-     * Clones a tree node into the current WorkingCopy context.
-     */
-    public static Tree cloneTree(TreeMaker make, Tree tree) {
-        if (tree instanceof ClassTree ct) {
-            return rebuildClassTree(make, ct, new ArrayList<>(ct.getMembers()));
-        } else if (tree instanceof MethodTree mt) {
-            return make.Method(mt.getModifiers(), mt.getName(), mt.getReturnType(), mt.getTypeParameters(), mt.getParameters(), mt.getThrows(), mt.getBody(), (AnnotationTree) mt.getDefaultValue());
-        } else if (tree instanceof VariableTree vt) {
-            return make.Variable(vt.getModifiers(), vt.getName(), vt.getType(), vt.getInitializer());
-        }
-        return tree;
-    }
-
-    /**
-     * Throws a detailed exception if a member is not found, providing candidate suggestions.
-     */
     public static void throwMemberNotFound(org.netbeans.api.java.source.CompilationInfo info, String memberFqn) {
         int paren = memberFqn.indexOf("(");
         String namePart = paren != -1 ? memberFqn.substring(0, paren) : memberFqn;
@@ -463,5 +282,14 @@ public class BatchCodeRefiner extends AnahataToolkit {
         throw new AgiToolException(sb.toString());
     }
 
-}
+    public static ClassTree rebuildClassTree(TreeMaker make, ClassTree ct, List<Tree> members) {
+        return switch (ct.getKind()) {
+            case INTERFACE -> make.Interface(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), ct.getImplementsClause(), ct.getPermitsClause(), members);
+            case ENUM -> make.Enum(ct.getModifiers(), ct.getSimpleName(), (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), members);
+            case ANNOTATION_TYPE -> make.AnnotationType(ct.getModifiers(), ct.getSimpleName(), members);
+            case RECORD -> make.Class(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), null, (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), (List<ExpressionTree>) (List<?>) ct.getPermitsClause(), members);
+            default -> make.Class(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), ct.getExtendsClause(), (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), (List<ExpressionTree>) (List<?>) ct.getPermitsClause(), members);
+        };
+    }
 
+}
