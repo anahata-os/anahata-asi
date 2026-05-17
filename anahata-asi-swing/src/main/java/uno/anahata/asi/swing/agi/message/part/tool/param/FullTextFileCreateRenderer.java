@@ -198,6 +198,7 @@ public class FullTextFileCreateRenderer implements ParameterRenderer<FullTextFil
             JComponent content = strategy.createContent(ephemeral, agiPanel);
             if (content instanceof AbstractTextResourceViewer atv) {
                 this.viewer = atv;
+                viewer.setVerticalScrollEnabled(false);
                 viewer.setPreviewAsEditor(true); // High-fidelity snippet mode
                 viewer.setEditing(false); // Start in read-only preview mode
                 
