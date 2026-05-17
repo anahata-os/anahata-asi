@@ -18,6 +18,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -383,7 +384,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         }
         
         StringBuilder logsBuilder = new StringBuilder();
-        for (String log : response.getLogs()) {
+        for (String log : new ArrayList<>(response.getLogs())) {//wrapping into arraylist to avoid cme
             logsBuilder.append("• ").append(log).append("\n");
         }
         String logs = logsBuilder.toString();
