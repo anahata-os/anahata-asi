@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @NoArgsConstructor
-@Schema(description = "Structured Javadoc definition for a code refinement intent.")
+@Schema(description = "Structured Javadoc definition for a code refinement intent. WARNING: When used in an UPDATE intent, providing this object will completely replace the existing Javadoc. You MUST provide all @param, @return, and @throws fields if they should be preserved.")
 public class JavadocIntent implements Serializable {
 
     /**
