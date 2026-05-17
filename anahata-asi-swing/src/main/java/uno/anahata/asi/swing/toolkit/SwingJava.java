@@ -9,6 +9,7 @@ import uno.anahata.asi.swing.agi.tool.SwingAgiTool;
 import uno.anahata.asi.toolkit.java.Java;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 
 /**
  * An extension of the {@link Java} toolkit that provides Swing-specific
@@ -29,6 +30,7 @@ public class SwingJava extends Java {
      * Constructs a new instance of the toolkit and adds SwingAgiTool to the list of parentFirstClassess.
      */
     public SwingJava() {
+        registerParentFirstClass(SwingAgiConfig.class);
         registerParentFirstClass(SwingAgiTool.class);
         registerParentFirstClass(AbstractSwingAsiContainer.class);
     }
