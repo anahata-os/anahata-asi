@@ -96,7 +96,7 @@ public class CodeRefinementIntent implements Serializable {
     /**
      * The structured Javadoc configuration to apply.
      */
-    @Schema(description = "Optional Javadoc to apply to the member. If updating a member and left null, the existing Javadoc is preserved.")
+    @Schema(description = "Optional Javadoc to apply to the member. If updating a member and left null, the existing Javadoc is preserved. WARNING: When used in an UPDATE intent, providing this object will completely replace the existing Javadoc. You MUST provide all @param, @return, and @throws fields if they should be preserved.")
     private JavadocIntent javadoc;
 
     /**
