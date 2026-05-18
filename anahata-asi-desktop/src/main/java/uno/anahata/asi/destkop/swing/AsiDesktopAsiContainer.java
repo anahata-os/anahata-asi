@@ -55,44 +55,7 @@ public class AsiDesktopAsiContainer extends AbstractSwingAsiContainer {
     public AsiDesktopAsiContainer() {
         super("AsiDesktop");
         
-        // Ensure Gemini is registered with stable UUID
-        //AbstractAiProvider gemini = getProviderByClass(GeminiAiProvider.class);
-        if (getProvider("GeminiGCExpress") == null) {
-            registerProvider(new GeminiGoogleCloudExpressAIProvider());
-        }
-
-        if (getProvider("Gemni") == null) {
-            registerProvider(new GeminiAiProvider("Gemini", "Google AI Studio", false));
-        }
-
-        if (getProvider("GeminiVertex") == null) {
-            registerProvider(new GeminiAiProvider("GeminiVertex", "Google Cloud (Vertex)", true));
-        }
-
-        if (getProvider("OpenAI") == null) {
-            log.info("Registering OpenAI");
-            registerProvider(new OpenAiProvider());
-        }
         
-        if (getProvider("Anthropic") == null) {
-            log.info("Registering OpenAI");
-            registerProvider(new AnthropicProvider());
-        }
-
-        if (getProvider("Minimax") == null) {
-            log.info("Registering MiniMax (Anthropic)");
-            registerProvider(new MinimaxAnthropicProvider());
-        }
-        
-        if (getProvider("Modal") == null) {
-            log.info("Registering Modal");
-            registerProvider(new ModalProvider());
-        }
-
-        if (getProvider("HuggingFace") == null) {
-            log.info("Registering HF");
-            registerProvider(new HuggingFaceProvider());
-        }
         
         if (getProvider("Anahata") == null) {
             log.info("Registering Anahata");
