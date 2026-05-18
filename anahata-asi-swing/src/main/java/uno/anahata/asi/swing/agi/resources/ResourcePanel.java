@@ -5,6 +5,7 @@ import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -128,105 +129,109 @@ public class ResourcePanel extends ScrollablePanel {
     public ResourcePanel(AgiPanel agiPanel) {
         this.agiPanel = agiPanel;
 
-        setLayout(new BorderLayout());
-        setOpaque(true);
-        setBackground(javax.swing.UIManager.getColor("Panel.background"));
-        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+                setLayout(new BorderLayout());
+                setOpaque(true);
+                setBackground(javax.swing.UIManager.getColor("Panel.background"));
+                setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // 1. GLOBAL HEADER
-        JPanel globalHeader = new JPanel(new BorderLayout());
-        globalHeader.setOpaque(false);
-        globalHeader.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+                // 1. GLOBAL HEADER
+                JPanel globalHeader = new JPanel(new BorderLayout());
+                globalHeader.setOpaque(false);
+                globalHeader.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
 
-        nameLabel = new JLabel("Resource");
-        nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD, 18f));
-        globalHeader.add(nameLabel, BorderLayout.WEST);
+                nameLabel = new JLabel("Resource");
+                nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD, 18f));
+                globalHeader.add(nameLabel, BorderLayout.WEST);
 
-        actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        actionPanel.setOpaque(false);
-        globalHeader.add(actionPanel, BorderLayout.EAST);
+                actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+                actionPanel.setOpaque(false);
+                globalHeader.add(actionPanel, BorderLayout.EAST);
 
-        // 2. METADATA TABS (Identity, Handle, View)
-        metadataTabs = new AdjustingTabPane(50);
+                // 2. METADATA TABS (Identity, Handle, View)
+                metadataTabs = new AdjustingTabPane(50);
 
-        // Identity Tab - Pure JGoodies Implementation
-        JPanel identityTab = new JPanel();
-        identityTab.setOpaque(false);
-        identityTab.setBorder(BorderFactory.createTitledBorder(null, "Identity (Core Metadata)", TitledBorder.LEFT, TitledBorder.TOP, identityTab.getFont().deriveFont(Font.BOLD)));
+                // Identity Tab - Pure JGoodies Implementation
+                JPanel identityTab = new JPanel();
+                identityTab.setOpaque(false);
+                identityTab.setBorder(BorderFactory.createTitledBorder(null, "Identity (Core Metadata)", TitledBorder.LEFT, TitledBorder.TOP, identityTab.getFont().deriveFont(Font.BOLD)));
 
-        FormLayout idLayout = new FormLayout(
-                "pref, 6dlu, pref, 0:grow", // Cols: Label, Gap, Component, Pusher
-                "p, 3dlu, p, 3dlu, p, 3dlu, p" // Rows: UUID, Position, Policy, Providing
-        );
-        identityTab.setLayout(idLayout);
-        CellConstraints cc = new CellConstraints();
+                FormLayout idLayout = new FormLayout(
+                        "pref, 6dlu, pref, 0:grow", // Cols: Label, Gap, Component, Pusher
+                        "p, 3dlu, p, 3dlu, p, 3dlu, p" // Rows: UUID, Position, Policy, Providing
+                );
+                identityTab.setLayout(idLayout);
+                CellConstraints cc = new CellConstraints();
 
-        // ROW 0: UUID
-        identityTab.add(new JLabel("UUID:"), cc.xy(1, 1));
-        idField = createReadOnlyField();
-        identityTab.add(idField, cc.xy(3, 1));
+                // ROW 0: UUID
+                identityTab.add(new JLabel("UUID:"), cc.xy(1, 1));
+                idField = createReadOnlyField();
+                identityTab.add(idField, cc.xy(3, 1));
 
-        // ROW 1: Position
-        identityTab.add(new JLabel("Position:"), cc.xy(1, 3));
-        positionCombo = new JComboBox<>(ContextPosition.values());
-        positionCombo.addActionListener(e -> {
-            if (!syncing && currentResource != null) {
-                currentResource.setContextPosition((ContextPosition) positionCombo.getSelectedItem());
-            }
-        });
-        identityTab.add(positionCombo, cc.xy(3, 3));
+                // ROW 1: Position
+                identityTab.add(new JLabel("Position:"), cc.xy(1, 3));
+                positionCombo = new JComboBox<>(ContextPosition.values());
+                positionCombo.addActionListener(e -> {
+                    if (!syncing && currentResource != null) {
+                        currentResource.setContextPosition((ContextPosition) positionCombo.getSelectedItem());
+                    }
+                });
+                identityTab.add(positionCombo, cc.xy(3, 3));
 
-        // ROW 2: Refresh Policy
-        identityTab.add(new JLabel("Refresh Policy:"), cc.xy(1, 5));
-        policyCombo = new JComboBox<>(RefreshPolicy.values());
-        policyCombo.addActionListener(e -> {
-            if (!syncing && currentResource != null) {
-                currentResource.setRefreshPolicy((RefreshPolicy) policyCombo.getSelectedItem());
-            }
-        });
-        identityTab.add(policyCombo, cc.xy(3, 5));
+                // ROW 2: Refresh Policy
+                identityTab.add(new JLabel("Refresh Policy:"), cc.xy(1, 5));
+                policyCombo = new JComboBox<>(RefreshPolicy.values());
+                policyCombo.addActionListener(e -> {
+                    if (!syncing && currentResource != null) {
+                        currentResource.setRefreshPolicy((RefreshPolicy) policyCombo.getSelectedItem());
+                    }
+                });
+                identityTab.add(policyCombo, cc.xy(3, 5));
 
-        // ROW 3: Providing Context
-        providingBox = new JCheckBox("Providing Context");
-        providingBox.setOpaque(false);
-        providingBox.addActionListener(e -> {
-            if (!syncing && currentResource != null) {
-                currentResource.setProviding(providingBox.isSelected());
-            }
-        });
-        identityTab.add(providingBox, cc.xyw(1, 7, 3));
+                // ROW 3: Providing Context
+                providingBox = new JCheckBox("Providing Context");
+                providingBox.setOpaque(false);
+                providingBox.addActionListener(e -> {
+                    if (!syncing && currentResource != null) {
+                        currentResource.setProviding(providingBox.isSelected());
+                    }
+                });
+                identityTab.add(providingBox, cc.xyw(1, 7, 3));
 
-        metadataTabs.addTab("Identity", createHScrollPane(identityTab));
+                metadataTabs.addTab("Identity", createHScrollPane(identityTab));
 
-        handleSectorContainer = new JPanel(new BorderLayout());
-        handleSectorContainer.setOpaque(false);
-        metadataTabs.addTab("Handle", createHScrollPane(handleSectorContainer));
+                handleSectorContainer = new JPanel(new BorderLayout());
+                handleSectorContainer.setOpaque(false);
+                metadataTabs.addTab("Handle", createHScrollPane(handleSectorContainer));
 
-        viewSectorContainer = new JPanel(new BorderLayout());
-        viewSectorContainer.setOpaque(false);
-        metadataTabs.addTab("View", createHScrollPane(viewSectorContainer));
+                viewSectorContainer = new JPanel(new BorderLayout());
+                viewSectorContainer.setOpaque(false);
+                metadataTabs.addTab("View", createHScrollPane(viewSectorContainer));
 
-        // 3. CONTENT TABS (Capabilities, Model perspective (RAG))
-        contentTabs = new AdjustingTabPane(350);
+                // 3. CONTENT TABS (Capabilities, Model perspective (RAG))
+                contentTabs = new AdjustingTabPane(350);
 
-        viewerContainer = new JPanel(new BorderLayout());
-        viewerContainer.setOpaque(false);
+                viewerContainer = new JPanel(new BorderLayout());
+                viewerContainer.setOpaque(false);
 
-        // 4. VERTICAL STACK ASSEMBLY
-        JPanel contentStack = new JPanel();
-        contentStack.setLayout(new BoxLayout(contentStack, BoxLayout.Y_AXIS));
-        contentStack.setOpaque(false);
+                // 4. VERTICAL STACK ASSEMBLY
+                JPanel topStack = new JPanel();
+                topStack.setLayout(new BoxLayout(topStack, BoxLayout.Y_AXIS));
+                topStack.setOpaque(false);
 
-        contentStack.add(globalHeader);
-        contentStack.add(Box.createVerticalStrut(10));
-        contentStack.add(metadataTabs);
-        contentStack.add(Box.createVerticalStrut(15));
-        contentStack.add(contentTabs);
+                globalHeader.setAlignmentX(Component.LEFT_ALIGNMENT);
+                metadataTabs.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Final glue to push everything up
-        contentStack.add(Box.createVerticalGlue());
+                topStack.add(globalHeader);
+                topStack.add(Box.createVerticalStrut(10));
+                topStack.add(metadataTabs);
+                topStack.add(Box.createVerticalStrut(15));
 
-        add(contentStack, BorderLayout.CENTER);
+                JPanel contentStack = new JPanel(new BorderLayout());
+                contentStack.setOpaque(false);
+                contentStack.add(topStack, BorderLayout.NORTH);
+                contentStack.add(contentTabs, BorderLayout.CENTER);
+
+                add(contentStack, BorderLayout.CENTER);
     }
 
     /**
