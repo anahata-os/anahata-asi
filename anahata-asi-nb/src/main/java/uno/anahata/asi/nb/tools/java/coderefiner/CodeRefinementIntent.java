@@ -464,38 +464,52 @@ public class CodeRefinementIntent implements Serializable {
                 indent = "";
             }
 
+            String declStr = declaration != null ? declaration.trim() : "";
+            boolean isMethod = declStr.contains("(");
+            boolean isClass = declStr.contains("class ") || declStr.contains("interface ") || declStr.contains("enum ") || declStr.contains("record ");
+            boolean isBlock = declStr.equals("static") || declStr.isEmpty();
+            boolean isField = !isMethod && !isClass && !isBlock;
+
+            if (isField && body != null && !body.isEmpty() && declStr.endsWith(";")) {
+                declStr = declStr.substring(0, declStr.length() - 1).trim();
+            }
+
             StringBuilder memberBuilder = new StringBuilder();
             if (javadoc != null) {
                 String doc = javadoc.generateString() + "\n";
                 memberBuilder.append(doc.replace("\n", "\n" + indent));
             }
-            memberBuilder.append(declaration.replace("\n", "\n" + indent));
+            memberBuilder.append(declStr.replace("\n", "\n" + indent));
             
             if (body != null && !body.isEmpty()) {
-                boolean hasBraces = body.trim().startsWith("{") && body.trim().endsWith("}");
-                String bodyIndent = indent + "    ";
-                String[] lines = body.split("\\r?\\n", -1);
-                if (!hasBraces) {
-                    memberBuilder.append(" {\n");
+                if (isField) {
+                    memberBuilder.append(" = ").append(body).append(";");
                 } else {
-                    memberBuilder.append(" ");
-                }
-                for (int i = 0; i < lines.length; i++) {
-                    String line = lines[i];
-                    if (hasBraces && i == 0) {
-                        memberBuilder.append(line.trim()).append("\n");
-                    } else if (hasBraces && i == lines.length - 1) {
-                        memberBuilder.append(indent).append(line.trim());
+                    boolean hasBraces = body.trim().startsWith("{") && body.trim().endsWith("}");
+                    String bodyIndent = indent + "    ";
+                    String[] lines = body.split("\\r?\\n", -1);
+                    if (!hasBraces) {
+                        memberBuilder.append(" {\n");
                     } else {
-                        memberBuilder.append(line.isEmpty() ? "" : bodyIndent + line).append("\n");
+                        memberBuilder.append(" ");
+                    }
+                    for (int i = 0; i < lines.length; i++) {
+                        String line = lines[i];
+                        if (hasBraces && i == 0) {
+                            memberBuilder.append(line.trim()).append("\n");
+                        } else if (hasBraces && i == lines.length - 1) {
+                            memberBuilder.append(indent).append(line.trim());
+                        } else {
+                            memberBuilder.append(line.isEmpty() ? "" : bodyIndent + line).append("\n");
+                        }
+                    }
+                    if (!hasBraces) {
+                        memberBuilder.append(indent).append("}");
+                    } else if (memberBuilder.length() > 0 && memberBuilder.charAt(memberBuilder.length() - 1) == '\n') {
+                        memberBuilder.setLength(memberBuilder.length() - 1);
                     }
                 }
-                if (!hasBraces) {
-                    memberBuilder.append(indent).append("}");
-                } else if (memberBuilder.length() > 0 && memberBuilder.charAt(memberBuilder.length() - 1) == '\n') {
-                    memberBuilder.setLength(memberBuilder.length() - 1);
-                }
-            } else if (!declaration.trim().endsWith(";") && !declaration.trim().endsWith("}")) {
+            } else if (!declStr.endsWith(";") && !declStr.endsWith("}")) {
                 memberBuilder.append(";");
             }
             
@@ -510,8 +524,6 @@ public class CodeRefinementIntent implements Serializable {
                     cs = org.netbeans.api.java.source.CodeStyle.getDefault(cc.getFileObject());
                 }
                 if (cs != null) {
-                    boolean isMethod = declaration.contains("(");
-                    boolean isClass = declaration.contains("class ") || declaration.contains("interface ") || declaration.contains("enum ") || declaration.contains("record ");
                     if (isMethod) {
                         blankLinesBefore = cs.getBlankLinesBeforeMethods();
                         blankLinesAfter = cs.getBlankLinesAfterMethods();

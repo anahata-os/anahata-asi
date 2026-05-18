@@ -14,6 +14,7 @@ public class SmallTestClass {
     public static class InnerTest {
         private String b;
 
+        private String description = "123";
         public void foo() {}
         @Deprecated
         public void bar() {

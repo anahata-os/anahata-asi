@@ -54,7 +54,7 @@ During the development of the V3 Pure AST architecture, we uncovered two signifi
 
 1. **`CasualDiff` NullPointerException on Generics (`GeneratorUtilities.importFQNs`)**
    - **Bug:** When `GeneratorUtilities.importFQNs(CompilationUnitTree)` structurally rewrites a `CompilationUnit` containing complex generics (e.g., `<T, R>`), the AST translation loses synchronization with the Lexer. Later, `CasualDiff.diff()` advances the `TokenSequence` out of bounds during the formatting pass, and blindly calls `tokenSequence.token().id()` without checking if `tokens.token()` is null. This crashes the background parser with an uncatchable `NullPointerException`.
-   - **Workaround:** We bypass `importFQNs` entirely. Instead, we manually resolve FQNs to `TypeElement`s and use `GeneratorUtilities.addImports(...)` to surgically inject explicit imports, leaving the rest of the AST untouched.
+   - **Workaround:** We bypass `importFQNs` entirely. Instead, we manually resolve FQNs to `TypeElement`s and use `GeneratorUtilities.addImports(...)` to surgically inject explicit imports, leaving the rest of the AST untouched. *(Update: Exhaustive standalone testing with heavily nested generics and FQNs failed to reproduce the crash in isolation. The NPE may be a side-effect of mixed AST node identities resulting from aggressive manual `WorkingCopy.rewrite` operations we were doing in V2/V3. Regardless, the V4 Text Splicing approach safely sidesteps the entire issue).*
 
 2. **`CasualDiff` Hard-Copies Preceding Text on Aligned Replacements**
    - **Bug:** When replacing an existing member via `WorkingCopy.rewrite(oldTree, newTree)`, `CasualDiff` aligns the old and new elements based on signature. When traversing into `diffClassDef` or `diffMethodDef`, it uses `copyTo(localPointer, pos)` to hard-copy the raw text *preceding* the modifiers directly from the original source file! This means any new Javadoc injected into `newTree`'s `CommentSet` is completely ignored, and the OLD Javadoc is brutally hard-copied back into the file.
@@ -194,5 +194,9 @@ Because the V4 text-splicing architecture relies heavily on precise character of
 During Test 13 (Updating an Enum Constant Javadoc), we encountered another `StringIndexOutOfBoundsException` (Range [1360, -1)). 
 **Root Cause:** In the Javac AST, Enum Constants are represented as `VariableTree` nodes and are always assigned a synthetic `JCNewClass` initializer, even if they have no explicit arguments. While `SourcePositions` returns a valid start position (the start of the constant), it returns `-1` for the end position if there are no explicit arguments. Our `UPDATE` logic checked `if (initStart >= 0)` (which evaluated to true because the start position was valid) and blindly used the `-1` end position for substring math.
 **The Fix:** We updated `CodeRefinementIntent` to verify both `initStart >= 0 && initEnd >= 0` before assuming the initializer is explicitly declared in the source text. If it lacks a valid end position, it safely falls back to the standard variable extraction logic.
+
+## Turn 354: Field Initializer Support for V4 INSERT
+During field insertion via the `body` parameter, V4's `INSERT` logic mistakenly assumed all members with a `body` were methods or classes and wrapped the initializer in `{ }` braces. 
+**The Fix:** Added heuristic detection (`!isMethod && !isClass && !isBlock`) in `CodeRefinementIntent.java` to detect field declarations during `INSERT`. If a field is detected, the `body` string is appended as an initializer using ` = ` instead of `{ }`.
 
 Força Barça!

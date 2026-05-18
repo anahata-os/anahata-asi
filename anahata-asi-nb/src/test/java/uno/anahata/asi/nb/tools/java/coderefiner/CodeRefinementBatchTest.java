@@ -227,6 +227,16 @@ public class CodeRefinementBatchTest {
         i15.setJavadoc(j15);
         runBatch.accept(buildBatch.apply(List.of(i15)));
 
+        logToToolContext("Test 16: Insert Field with Initializer");
+        CodeRefinementIntent i16 = new CodeRefinementIntent();
+        i16.setType(CodeRefinementIntent.Type.INSERT);
+        i16.setClassFqn("uno.anahata.asi.nb.tools.java.coderefiner.SmallTestClass$InnerTest");
+        i16.setPosition(RelativePosition.AFTER);
+        i16.setAnchorMemberName("b");
+        i16.setDeclaration("private String description");
+        i16.setBody("\"123\"");
+        runBatch.accept(buildBatch.apply(List.of(i16)));
+
         logToToolContext("All tests executed. Verifying AST...");
         
         String finalContent = new String(handle.getFileObject().asBytes(), "UTF-8");
@@ -252,6 +262,9 @@ public class CodeRefinementBatchTest {
         }
         if (!finalContent.contains("* The third constant with args.") || !finalContent.contains("THIRD (\"third\");")) {
             throw new Exception("Test 15 Failed: Enum constant with args Javadoc missing or malformed!");
+        }
+        if (!finalContent.contains("private String description = \"123\";")) {
+            throw new Exception("Test 16 Failed: Field with initializer not correctly inserted!");
         }
         
         logToToolContext("Validation SUCCESS. The AST is perfect.");
