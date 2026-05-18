@@ -346,54 +346,6 @@ public abstract class AbstractTextResourceViewer extends JPanel {
      */
     public abstract JScrollPane getScrollPane();
 
-    /** 
-     * {@inheritDoc} 
-     * <p>
-     * Implementation details:
-     * Calculates the required height based on the viewport content and 
-     * the integrated control strip. This ensures that "passthrough" components 
-     * (like chat snippets) expand to show their full content without internal 
-     * scrolling.
-     * </p>
-     */
-    @Override
-    public Dimension getPreferredSize() {
-        Dimension ps = super.getPreferredSize();
-        if (!verticalScrollEnabled) {
-            JScrollPane scroll = getScrollPane();
-            if (scroll != null && scroll.getViewport().getView() != null) {
-                Component view = scroll.getViewport().getView();
-                Dimension viewPS = view.getPreferredSize();
-                
-                int h = viewPS.height;
-                
-                // Authoritative Width Sension: detect if horizontal scrollbar is needed
-                int availableWidth = getWidth();
-                if (availableWidth <= 0 && getParent() != null) {
-                    availableWidth = getParent().getWidth();
-                }
-                
-                if (availableWidth > 0 && viewPS.width > availableWidth) {
-                    h += scroll.getHorizontalScrollBar().getPreferredSize().height;
-                }
-                
-                if (controlStrip.isVisible()) {
-                    h += controlStrip.getPreferredSize().height;
-                }
-                
-                // Add insets of the viewer itself
-                Insets insets = getInsets();
-                h += insets.top + insets.bottom;
-                
-                // Add 5px safety buffer for line height rounding
-                h += 5; 
-                
-                return new Dimension(ps.width, h);
-            }
-        }
-        return ps;
-    }
-
     /**
      * Creates the read-only preview component for displaying processed resource content.
      * @return The preview component.
