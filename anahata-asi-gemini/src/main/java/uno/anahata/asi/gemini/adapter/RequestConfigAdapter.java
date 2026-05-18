@@ -42,12 +42,18 @@ import uno.anahata.asi.toolkit.History;
 public final class RequestConfigAdapter {
 
     /**
-     * Converts an Anahata RequestConfig to a Google GenAI
+     * Converts an Anahata RequestConfig to a native Google GenAI 
      * GenerateContentConfig.
-     *
+     * <p>Implementation details: This method performs high-fidelity mapping of:
+     * <ul>
+     *   <li>System Instructions (synthesized into a single Content object)</li>
+     *   <li>Thinking Levels (mapped to native Google enums)</li>
+     *   <li>Tool Declarations (both local Java tools and server-side capabilities)</li>
+     *   <li>Candidate counts and sampling parameters (TopK/TopP)</li>
+     * </ul>
+     * </p>
      * @param requestConfig The Anahata config to convert.
-     * @return The corresponding GenerateContentConfig, or null if the input is
-     * null.
+     * @return The corresponding GenerateContentConfig.
      */
     public static GenerateContentConfig toGoogle(RequestConfig requestConfig) {
                 
