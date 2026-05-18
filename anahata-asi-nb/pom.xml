@@ -11,7 +11,7 @@
     <packaging>nbm</packaging>
     
     <name>Anahata ASI Studio - NetBeans</name>
-    <description>The Best Java AI Assistant On Earth.</description>
+    <description>The Best Java AI Assistant On Earth | Anahata ASI RI and SDK.</description>
     <properties>
         <!-- <netbeans.installation>/usr/lib/apache-netbeans</netbeans.installation> -->
     </properties>
@@ -45,34 +45,12 @@
                     <groupId>com.formdev</groupId>
                     <artifactId>flatlaf</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>com.formdev</groupId>
+                    <artifactId>flatlaf-intellij-themes</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
-            <groupId>uno.anahata</groupId>
-            <artifactId>anahata-asi-gemini</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>uno.anahata</groupId>
-            <artifactId>anahata-asi-huggingface</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>uno.anahata</groupId>
-            <artifactId>anahata-asi-openai</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>uno.anahata</groupId>
-            <artifactId>anahata-asi-openai-compatible</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>uno.anahata</groupId>
-            <artifactId>anahata-asi-modal</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        
         
         
         <!-- NetBeans APIs -->
@@ -708,6 +686,8 @@
                         <publicPackage>uno.anahata.asi.nb.ui.render</publicPackage>
                         <publicPackage>uno.anahata.asi.nb.ui.resources</publicPackage>
                         <publicPackage>uno.anahata.asi.nb.util</publicPackage>
+                        <publicPackage>uno.anahata.asi.nb.tools.java.classpath</publicPackage>
+                        <publicPackage>uno.anahata.asi.nb.tools.java.coderefiner</publicPackage>
                     </publicPackages>
                 </configuration>
             </plugin>

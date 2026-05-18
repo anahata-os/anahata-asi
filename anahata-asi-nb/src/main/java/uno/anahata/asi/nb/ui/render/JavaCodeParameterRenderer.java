@@ -18,6 +18,9 @@ import uno.anahata.asi.swing.agi.message.part.tool.param.ObjectToStringParameter
 @Slf4j
 public class JavaCodeParameterRenderer extends ObjectToStringParameterRenderer {
 
+    /**
+     * sets the language to 'java' and 'editable' to true.
+     */
     public JavaCodeParameterRenderer() {
         super();
         setLanguage("java");
