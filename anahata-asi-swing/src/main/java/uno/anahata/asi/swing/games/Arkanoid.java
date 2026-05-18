@@ -16,6 +16,14 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
+/**
+ * A classic Arkanoid (Breakout) clone implemented as a Swing easter egg.
+ * <p>This implementation features a physics engine for ball-paddle 
+ * collisions, responsive keyboard controls, and a multi-colored brick 
+ * layout. It is intended to be launched as a standalone frame from the 
+ * support panel.</p>
+ * @author anahata
+ */
 public class Arkanoid extends JPanel implements ActionListener {
 
     private final int WIDTH = 800;
@@ -49,6 +57,10 @@ public class Arkanoid extends JPanel implements ActionListener {
         initGame();
     }
 
+    /**
+     * Initializes the game environment, setting up the coordinate system, 
+     * keyboard listeners, and the high-frequency animation timer.
+     */
     private void initGame() {
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
         setBackground(Color.BLACK);
@@ -79,6 +91,10 @@ public class Arkanoid extends JPanel implements ActionListener {
         timer.start();
     }
     
+    /**
+     * Generates the brick layout, calculating positions based on rows and 
+     * columns to fill the upper portion of the screen.
+     */
     private void initBricks() {
         bricks = new Rectangle[rows * cols];
         brickActive = new boolean[rows * cols];
@@ -93,6 +109,10 @@ public class Arkanoid extends JPanel implements ActionListener {
         }
     }
     
+    /**
+     * Resets all game state variables (score, positions, bricks) to allow 
+     * for a fresh start after a win or loss.
+     */
     private void resetGame() {
         ballX = WIDTH / 2;
         ballY = HEIGHT / 2;
@@ -106,6 +126,11 @@ public class Arkanoid extends JPanel implements ActionListener {
         timer.start();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Handles the primary rendering loop, drawing the paddle, ball, and 
+     * active bricks. Also renders the Game Over and Victory overlay states.</p>
+     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -153,6 +178,11 @@ public class Arkanoid extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>The core physics and collision loop. Calculates trajectories, wall 
+     * bounces, and brick destruction on every timer pulse.</p>
+     */
     @Override
     public void actionPerformed(ActionEvent e) {
         if (!inGame || won) return;
@@ -216,6 +246,12 @@ public class Arkanoid extends JPanel implements ActionListener {
         repaint();
     }
 
+    /**
+     * Launcher method for the Arkanoid game. 
+     * <p>Creates a new {@link JFrame} and ensures it is disposed on close 
+     * to prevent IDE shutdown when executed in a shared JVM.</p>
+     * @param args Command line arguments (ignored).
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Anahata Arkanoid");

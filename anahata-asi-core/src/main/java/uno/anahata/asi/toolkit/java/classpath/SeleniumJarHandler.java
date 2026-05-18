@@ -4,6 +4,12 @@ import java.io.File;
 import java.io.StringReader;
 import java.util.Properties;
 
+/**
+ * Specialized handler for Selenium libraries.
+ * <p>Implementation detail: It detects Selenium JARs via filename keywords 
+ * and extracts specific version info from {@code selenium-build.properties}.</p>
+ * @author anahata
+ */
 public class SeleniumJarHandler extends AbstractJarHandler {
     @Override
     public boolean canHandle(File jarFile) {
