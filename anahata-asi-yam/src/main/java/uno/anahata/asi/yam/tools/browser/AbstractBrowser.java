@@ -42,14 +42,12 @@ public abstract class AbstractBrowser extends AnahataToolkit implements Rebindab
     protected final Map<String, BrowserDrone> drones = new ConcurrentHashMap<>();
 
     /**
-     * Resolves the active WebDriver for the requested drone.
-     * <p>
-     * If the connection is broken or lost, this method should attempt to
-     * re-establish the connection to the underlying port.
-     * </p>
-     *
+     * Resolves the active WebDriver for the requested drone. 
+     * <p>Implementation details: This is an internal lifecycle method. If the 
+     * connection is lost, concrete implementations should attempt to 
+     * re-establish it using the cached port and profile data.</p>
      * @param droneId The unique ID of the drone.
-     * @return The active WebDriver, or null if it cannot be resolved.
+     * @return The active WebDriver, or {@code null} if it cannot be resolved.
      */
     protected abstract WebDriver getDriver(String droneId);
 
@@ -453,17 +451,13 @@ public abstract class AbstractBrowser extends AnahataToolkit implements Rebindab
     }
 
     /**
-     * Helper method to safely locate elements without throwing raw Selenium
-     * exceptions.
-     * <p>
-     * This avoids empty try-catch blocks and adheres to the Fail Fast
-     * architecture by checking collection boundaries natively.
-     * </p>
-     *
-     * @param driver The WebDriver instance.
-     * @param identifier The element identifier (ID, Name, Link Text, or XPath
-     * text).
-     * @return The WebElement, or null if not found.
+     * Helper method to safely locate elements using a cascading fallback strategy. 
+     * <p>Execution order: ID -> Name -> Link Text -> XPath (text contains). 
+     * This avoids throwing raw {@code NoSuchElementException}s and allows 
+     * the caller to handle missing elements gracefully.</p>
+     * @param driver     The active WebDriver instance.
+     * @param identifier The ID, Name, or visible text to search for.
+     * @return The located {@link WebElement}, or {@code null} if not found.
      */
     protected WebElement locateElementGracefully(WebDriver driver, String identifier) {
         List<WebElement> elements = driver.findElements(By.id(identifier));

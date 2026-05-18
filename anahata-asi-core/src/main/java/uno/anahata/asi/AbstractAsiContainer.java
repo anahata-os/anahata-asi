@@ -47,7 +47,9 @@ import uno.anahata.asi.agi.provider.AbstractModel;
 public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
 
     /**
-     * The unique identifier for the host application (e.g., "netbeans").
+     * The unique identifier for the host application (e.g., "netbeans", "standalone"). 
+     * <p>Used to resolve application-specific subdirectories within the root 
+     * Anahata working directory.</p>
      */
     private final String hostApplicationId;
 
@@ -62,8 +64,9 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     private final List<Agi> activeAgis = new ArrayList<>();
 
     /**
-     * A master registry of AI provider instances. Keyed by the provider's
-     * unique UUID.
+     * A master registry of AI provider instances. 
+     * <p>Keyed by the provider's unique UUID. These instances are shared 
+     * across all sessions managed by this container.</p>
      */
     private final Map<String, AbstractAiProvider> providerRegistry = new ConcurrentHashMap<>();
 
@@ -105,11 +108,11 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Retrieves a shared provider instance from the master registry by its
-     * UUID.
-     *
+     * Retrieves a shared provider instance from the master registry by its UUID. 
+     * <p>Implementation details: This is the authoritative way to resolve 
+     * providers. If the UUID is {@code null}, this method returns {@code null}.</p>
      * @param uuid The unique UUID of the provider instance.
-     * @return The shared provider instance, or null if not found.
+     * @return The shared provider instance, or {@code null} if not found.
      */
     public AbstractAiProvider getProvider(String uuid) {
         if (uuid == null) {
@@ -250,13 +253,11 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Authoritatively creates, configures, registers, and opens a brand-new Agi
-     * session with the provided configuration.
-     * <p>
-     * <b>Lifecycle Authority:</b> This method orchestrates the creation,
-     * initial setup, pooling, and initial opening in one atomic weld.
-     * </p>
-     *
+     * Authoritatively creates, configures, registers, and opens a brand-new Agi 
+     * session with the provided configuration. 
+     * <p>Implementation details: This method orchestrates the creation, 
+     * initial setup, pooling, and initial opening in one atomic weld. It 
+     * is the primary entry point for spawning new intelligence instances.</p>
      * @param config The session configuration.
      * @return The newly created and opened Agi session.
      */
@@ -350,15 +351,11 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Authoritatively clones an existing Agi session.
-     * <p>
-     * This performs a deep clone using Kryo, assigns a new unique session ID,
-     * updates the nickname to indicate it's a clone, binds it to this
-     * container, registers it, saves it to disk, and opens it in the UI. By
-     * placing this logic in the core container, we ensure architectural purity
-     * and reusability across different UI frameworks.
-     * </p>
-     *
+     * Authoritatively clones an existing Agi session. 
+     * <p>Implementation details: Performs a deep clone using Kryo, assigns a 
+     * new unique session ID, and updates the nickname. By placing this logic 
+     * in the core container, we ensure architectural purity across different 
+     * UI frameworks.</p>
      * @param agi The source Agi session to clone.
      * @return The newly cloned and registered Agi session.
      */
@@ -575,13 +572,12 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Performs an automatic backup of the session to the active sessions
-     * directory. Logic: Only proceeds if the agi is in a stable state (IDLE,
-     * TOOL_PROMPT, etc.) to prevent serialization during volatile operations
-     * like streaming.
-     *
-     * @param agi The agi session to save.
-     * @param reason why autoSave
+     * Performs an automatic backup of the session using Kryo serialization. 
+     * <p>Implementation details: Only proceeds if the agi is in a stable state 
+     * (IDLE, TOOL_PROMPT, etc.) to prevent serialization during volatile 
+     * operations like streaming.</p>
+     * @param agi    The agi session to save.
+     * @param reason A description of why the save was triggered.
      */
     public void autoSaveSession(Agi agi, String reason) {
         AgiStatus status = agi.getStatusManager().getCurrentStatus();

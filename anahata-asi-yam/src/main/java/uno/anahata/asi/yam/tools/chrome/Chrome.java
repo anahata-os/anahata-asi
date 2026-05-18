@@ -46,7 +46,8 @@ public class Chrome extends AbstractBrowser {
 
     /**
      * {@inheritDoc}
-     * <p>Initializes the toolkit, disabling it by default if it is in beta.</p>
+     * <p>Implementation details: Disables the toolkit by default to prevent 
+     * accidental drone spawns in environments without local browsers.</p>
      */
     @Override
     public void initialize() {
@@ -233,6 +234,12 @@ public class Chrome extends AbstractBrowser {
 
     /**
      * {@inheritDoc}
+     * <p>Implementation details: Iterates over all window handles and uses 
+     * the Chrome DevTools Protocol (CDP) {@code Target.getTargetInfo} command 
+     * to retrieve titles and URLs without forcing window focus. Falls back 
+     * to standard {@code switchTo().window()} if CDP fails.</p>
+     * @param droneId The ID of the drone to inspect.
+     * @return A list of strings describing each open tab.
      */
     @Override
     public List<String> listTabs(String droneId) {

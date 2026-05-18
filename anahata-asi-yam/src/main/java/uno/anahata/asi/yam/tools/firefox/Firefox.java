@@ -114,14 +114,17 @@ public class Firefox extends AbstractBrowser {
     }
 
     /**
-     * High-level tool to connect to or launch a Firefox browser instance.
-     *
-     * @param droneId A unique ID for this drone.
-     * @param profile An optional profile name to force.
-     * @param headless Whether to launch headless.
-     * @param dataDir Custom user data dir.
-     * @return A status message.
-     * @throws AgiToolException if the drone ID already exists.
+     * {@inheritDoc}
+     * <p>Implementation details: Configures {@link FirefoxOptions} with 
+     * headless and profile flags. Launches the process via the system's 
+     * default {@link GeckoDriverService}.</p>
+     * @param droneId   The unique ID for the drone.
+     * @param profile   The Firefox profile name.
+     * @param headless  Whether to run without a GUI.
+     * @param dataDir   The user data directory.
+     * @param binaryPath The path to the Firefox binary.
+     * @return A status message confirming the launch.
+     * @throws AgiToolException If the drone ID is already in use.
      */
     @AgiTool("Connects to or launches a Firefox browser instance.")
     public String connect(
@@ -250,6 +253,14 @@ public class Firefox extends AbstractBrowser {
         return d.driver;
     }
 
+    /**
+     * Executes the native Firefox launch sequence. 
+     * <p>Implementation details: Uses {@link CompletableFuture} to launch 
+     * the driver in a background thread to prevent blocking the tool 
+     * execution flow. Sets a 60-second timeout for the initial handshake.</p>
+     * @param d The drone to launch.
+     * @return A success or error message.
+     */
     private synchronized String launchFirefoxInternal(BrowserDrone d) {
         d.initializing = true;
         d.lastError = null;

@@ -22,7 +22,7 @@ import uno.anahata.asi.agi.message.ModelTextPart;
 public class HostedCodeExecutionCallPart extends ModelTextPart {
     
     /**
-     * The programming language of the code to be executed (e.g., "python").
+     * The programming language requested for the remote execution (e.g., "python", "javascript").
      */
     private String language;
 

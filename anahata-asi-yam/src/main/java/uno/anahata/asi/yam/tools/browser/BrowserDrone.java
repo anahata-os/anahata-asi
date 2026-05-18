@@ -41,12 +41,14 @@ public class BrowserDrone {
     public int port = -1;
 
     /**
-     * The browser profile directory name (e.g., 'Default', 'Profile 1').
+     * The browser profile directory name (e.g., 'Default', 'Profile 1'). 
+     * <p>Used to maintain consistent cookies and authentication across restarts.</p>
      */
     public String profile;
 
     /**
-     * The absolute path to the user data directory containing the profiles.
+     * The absolute path to the user data directory containing the profiles. 
+     * <p>Required for visual mode to locate existing Chrome/Firefox structures.</p>
      */
     public String userDataDir;
 

@@ -11,19 +11,22 @@ import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 
 /**
- * Centralized factory for creating named, daemon thread pools used by the Anahata ASI framework.
- * 
- * @author anahata
+ * Centralized factory for creating named, daemon thread pools used across the 
+ * Anahata ASI framework. 
+ * <p>Infrastructure Note: These pools serve both the global {@link AbstractAsiContainer} 
+ * (for management tasks) and individual {@link uno.anahata.asi.agi.Agi} 
+ * sessions (for lifecycle and tool execution).</p>
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class AsiExecutors {
 
     /**
-     * Creates a new cached thread pool specifically for managing the lifecycle of a single agi session.
-     * Threads created by this executor are daemon threads to prevent them from blocking application shutdown.
-     *
-     * @param threadPreffix The unique identifier for the agi session, used in the thread name.
-     * @return A new cached thread pool ExecutorService.
+     * Creates a new cached thread pool specifically for managing the 
+     * lifecycle of a single intelligence (Agi) session. 
+     * <p>Implementation details: Threads are marked as daemon to ensure they 
+     * do not block the shutdown of the host application (NetBeans, etc.).</p>
+     * @param threadPreffix The prefix for naming threads in the pool.
+     * @return A new {@link java.util.concurrent.ExecutorService}.
      */
     public static ExecutorService newCachedThreadPoolExecutor(String threadPreffix) {
         BasicThreadFactory factory = new BasicThreadFactory.Builder()
