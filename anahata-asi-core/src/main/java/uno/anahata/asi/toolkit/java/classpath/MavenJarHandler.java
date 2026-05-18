@@ -5,6 +5,13 @@ import java.util.Properties;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+/**
+ * Specialized handler for Maven-packaged JARs.
+ * <p>Implementation detail: It looks for {@code pom.properties} inside the 
+ * {@code META-INF/maven/} directory to extract exact groupIds, 
+ * artifactIds, and versions.</p>
+ * @author anahata
+ */
 public class MavenJarHandler extends AbstractJarHandler {
     @Override
     public boolean canHandle(File jarFile) {

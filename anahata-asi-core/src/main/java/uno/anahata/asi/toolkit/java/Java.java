@@ -85,7 +85,8 @@ public class Java extends AnahataToolkit {
             
     /**
      * The base compiler and classloader classpath. Extra entries can be
-     * provided at execution time.
+     * provided at execution time. This serves as the foundation for both 
+     * dynamic compilation and the child-first classloader logic.
      */
     public String defaultCompilerClasspath;
     
@@ -224,8 +225,9 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * The class the model should extend when generating Agi tools.
-     *
+     * The class the model should extend when generating Agi tools. 
+     * <p>In this base implementation, it returns {@link OnTheFlyAgiTool}, which 
+     * provides the necessary context anchors (log, error, etc.) for the script.</p>
      * @return the base AgiTool class.
      */
     protected Class<? extends ToolContext> getConcreteClassModelShouldExtend() {
@@ -260,7 +262,8 @@ public class Java extends AnahataToolkit {
     /**
      * Returns a token-efficient, pretty-printed version of the default
      * classpath.
-     *
+     * <p>Implementation note: This leverages lexical grouping and version 
+     * promotion to keep the classpath manifest small.</p>
      * @return The pretty-printed classpath string.
      */
     public String getPrettyPrintedDefaultClasspath() {
@@ -269,7 +272,6 @@ public class Java extends AnahataToolkit {
 
     /**
      * Gets the lazily-initialized classpath printer.
-     * 
      * @return The {@link VeryPrettyClassPathPrinter} instance.
      */
     protected final VeryPrettyClassPathPrinter getClasspathPrinter() {
@@ -282,7 +284,6 @@ public class Java extends AnahataToolkit {
 
     /**
      * Factory method to create the specialized classpath printer.
-     * 
      * @return A new {@link VeryPrettyClassPathPrinter} instance.
      */
     protected VeryPrettyClassPathPrinter createClassPathPrinter() {
@@ -291,6 +292,9 @@ public class Java extends AnahataToolkit {
 
     /**
      * {@inheritDoc}
+     * <p>Adds session/container map keys and the abbreviated classpath manifest 
+     * to the RAG message to provide the model with awareness of its persistent 
+     * state and available libraries.</p>
      */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
@@ -304,8 +308,8 @@ public class Java extends AnahataToolkit {
 
     /**
      * Appends the signatures of all declared methods of a class to a
-     * StringBuilder.
-     *
+     * StringBuilder, filtering out standard Object methods and internal lambda/abstract 
+     * cruft.
      * @param sb The StringBuilder to append to.
      * @param clazz The class to inspect.
      */
@@ -531,8 +535,8 @@ public class Java extends AnahataToolkit {
 
     /**
      * A hook for subclasses to provide class bytes if the standard loading flow fails.
-     * Used by NbJava to bridge Multi-Release JAR classes into the loader.
-     * 
+     * <p>This is used by the NetBeans implementation (NbJava) to bridge 
+     * Multi-Release JAR classes into the memory-based loader.</p>
      * @param name The FQN of the class.
      * @return The class bytes, or null if not found.
      */
@@ -635,8 +639,7 @@ public class Java extends AnahataToolkit {
 
     /**
      * Generates a token-efficient, hierarchical representation of all JVM
-     * system properties (excluding the classpath).
-     *
+     * system properties (excluding the classpath itself).
      * @return A formatted string of system properties.
      * @throws Exception if an error occurs.
      */
@@ -674,7 +677,6 @@ public class Java extends AnahataToolkit {
     /**
      * Recursively renders a system property node and its children into a
      * formatted string.
-     *
      * @param sb The StringBuilder to append to.
      * @param node The node to render.
      * @param indent The current indentation level.

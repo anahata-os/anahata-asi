@@ -6,6 +6,14 @@ import java.util.jar.Manifest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * A fallback JAR handler that uses Implementation-Version manifest 
+ * attributes or filename pattern matching to extract metadata.
+ * <p>Implementation detail: This handler acts as the "Last Resort" in the 
+ * pretty-printer chain, ensuring every library has at least a basic 
+ * representation.</p>
+ * @author anahata
+ */
 public class DefaultJarHandler extends AbstractJarHandler {
     
     /**

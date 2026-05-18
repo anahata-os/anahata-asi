@@ -27,6 +27,10 @@ public class AnahataClasspathProvider implements ClassPathProvider {
 
     private ClassPath anahataPluginCp;
 
+    /**
+     * Lazily initializes and returns the ClassPath representing the Anahata plugin's environment.
+     * @return the anahata plugin classpath.
+     */
     private synchronized ClassPath getPluginClassPath() {
         if (anahataPluginCp == null) {
             String rawCp = NetBeansModuleUtils.getNetBeansClasspath();
@@ -45,6 +49,13 @@ public class AnahataClasspathProvider implements ClassPathProvider {
         return anahataPluginCp;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Detects memory-based FileObjects and attempts to resolve their classpath 
+     * by checking for custom attributes (<code>anahata.customClasspath</code> 
+     * or <code>anahata.contextPath</code>). If no specific context is found, 
+     * it falls back to the global plugin classpath.</p>
+     */
     @Override
     public ClassPath findClassPath(FileObject file, String type) {
         try {
