@@ -3,7 +3,6 @@
  */
 package uno.anahata.asi.swing;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Cursor;
@@ -36,7 +35,7 @@ import uno.anahata.asi.agi.provider.TokenizerType;
 import uno.anahata.asi.openai.compatible.OpenAiCompatibleProvider;
 import javax.swing.JFileChooser;
 import javax.swing.JTabbedPane;
-import javax.swing.SwingConstants;
+import uno.anahata.asi.anthropic.AnthropicProvider;
 import uno.anahata.asi.swing.icons.PulseIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.ExternalIcon;
@@ -80,7 +79,11 @@ public class AiProviderPanel extends ScrollablePanel {
      */
     private final JLabel folderLabel;
     /**
-     * The actual folder name, either custom or derived from the UUID.
+     * The pending folder name selected by the user.
+     * <p>
+     * This acts as an edit buffer. Changes are only committed to the provider
+     * domain object when {@link #syncToProvider()} is invoked.
+     * </p>
      */
     private String currentFolderName;
     /**
@@ -110,6 +113,10 @@ public class AiProviderPanel extends ScrollablePanel {
      */
     private JTextField baseUrlField;
     /**
+     * The version header for Anthropic API calls.
+     */
+    private JTextField anthropicVersionField;
+    /**
      * Vendor-specific quirks defined as Key: Value headers.
      */
     private JTextArea customHeadersArea;
@@ -134,6 +141,7 @@ public class AiProviderPanel extends ScrollablePanel {
     public AiProviderPanel(AbstractAsiContainerPanel containerPanel, AbstractAiProvider provider, Runnable removeCallback) {
         this.containerPanel = containerPanel;
         this.provider = provider;
+        this.currentFolderName = provider.getFolderName();
         setOpaque(false);
         this.allowedModelsArea = new JTextArea(3, 20);
         this.allowedModelsArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
@@ -268,11 +276,17 @@ public class AiProviderPanel extends ScrollablePanel {
         });
         add(apiKeyRequiredCheck, "span 2, wrap");
 
-        if (provider instanceof OpenAiCompatibleProvider oai) {
-            add(new JLabel("Base URL:"));
-            baseUrlField = new JTextField(oai.getBaseUrl());
-            add(baseUrlField, "span 2, wrap");
+        add(new JLabel("Base URL:"));
+        baseUrlField = new JTextField(provider.getBaseUrl());
+        add(baseUrlField, "span 2, wrap");
 
+        if (provider instanceof AnthropicProvider anthropic) {
+            add(new JLabel("Anthropic Version:"));
+            anthropicVersionField = new JTextField(anthropic.getAnthropicVersion());
+            add(anthropicVersionField, "span 2, wrap");
+        }
+
+        if (provider instanceof OpenAiCompatibleProvider oai) {
             add(new JLabel("Custom Headers:"), "top, gaptop 5");
             customHeadersArea = new JTextArea(3, 20);
             customHeadersArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
@@ -296,7 +310,7 @@ public class AiProviderPanel extends ScrollablePanel {
 
         // --- Key Pool Section ---
         add(new JLabel("API Key Pool:"), "top, gaptop 10");
-        JPanel keysContainer = new JPanel(new MigLayout("ins 0, fillx", "[grow,fill]"));
+        JPanel keysContainer = new JPanel(new MigLayout("ins 0, fill", "[grow,fill]", "[][][grow,fill]"));
         keysContainer.setOpaque(false);
         
         JPanel keysHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
@@ -309,13 +323,14 @@ public class AiProviderPanel extends ScrollablePanel {
             keysContainer.add(acquisitionLinkLabel, "wrap, gapleft 5");
         }
 
-        textArea.setRows(10);
+        textArea.setRows(7);
+        textArea.addMouseWheelListener(e -> uno.anahata.asi.swing.internal.SwingUtils.redispatchMouseWheelEvent(textArea, e));
         textArea.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
         JScrollPane textScroll = new JScrollPane(textArea);
         textScroll.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-        keysContainer.add(textScroll, "growx, wrap");
+        keysContainer.add(textScroll, "grow, wrap");
         
-        add(keysContainer, "span 2, growx, wrap");
+        add(keysContainer, "span 2, grow, wrap");
 
         testConnectionBtn = new JButton("Test Connection (Discover Models)", new PulseIcon(16));
         testConnectionBtn.addActionListener(e -> testConnection());
@@ -432,11 +447,16 @@ public class AiProviderPanel extends ScrollablePanel {
                     .collect(java.util.stream.Collectors.toList()));
         }
 
+        if (baseUrlField != null) {
+            provider.setBaseUrl(baseUrlField.getText().trim());
+        }
+
+        if (provider instanceof uno.anahata.asi.anthropic.AnthropicProvider anthropic && anthropicVersionField != null) {
+            anthropic.setAnthropicVersion(anthropicVersionField.getText().trim());
+        }
+
         if (provider instanceof OpenAiCompatibleProvider oai) {
             oai.setPreferHttp11(preferHttp11Check.isSelected());
-            if (baseUrlField != null) {
-                oai.setBaseUrl(baseUrlField.getText().trim());
-            }
             if (customHeadersArea != null) {
                 Map<String, String> headers = new HashMap<>();
                 String text = customHeadersArea.getText().trim();
