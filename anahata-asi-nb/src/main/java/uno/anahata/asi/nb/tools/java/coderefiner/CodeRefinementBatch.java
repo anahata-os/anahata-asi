@@ -20,9 +20,12 @@ import uno.anahata.asi.toolkit.resources.text.LineComment;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
 
 /**
- * A robust, agent-friendly batch of structural AST modifications for a single Java file.
+ * A robust, agent-friendly batch of structural AST modifications for a single
+ * Java file.
  * <p>
- * This class extends {@link AbstractTextResourceWrite} to inherit optimistic locking and path resolution, while providing the V4 AST-Guided text replacement engine.
+ * This class extends {@link AbstractTextResourceWrite} to inherit optimistic
+ * locking and path resolution, while providing the V4 AST-Guided text
+ * replacement engine.
  * </p>
  */
 @Data
@@ -70,13 +73,12 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
     private List<LineComment> calculatedComments = new ArrayList<>();
 
     /**
-     * Calculates the resulting text content by sequentially applying the V4 AST-Guided text replacements.
+     * {@inheritDoc}
      * <p>
-     * It resolves explicit imports via {@link org.netbeans.api.java.source.GeneratorUtilities} to bypass `CasualDiff` generics bugs.
-     * </p>
-     * @param agi the active Agi session.
-     * @return the updated text content.
-     * @throws java.lang.Exception if parsing or string replacement fails.
+     * Calculates the resulting text content by sequentially applying the V4
+     * AST-Guided text replacements. It resolves explicit imports via
+     * {@link org.netbeans.api.java.source.GeneratorUtilities} to bypass
+     * CasualDiff generics bugs.</p>
      */
     @Override
     protected String doCalculateResultingContent(Agi agi) throws Exception {
@@ -106,9 +108,9 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
                 try (java.io.OutputStream os = tempFo.getOutputStream()) {
                     os.write(currentContent.getBytes("UTF-8"));
                 }
-                
+
                 JavaSource js = JavaSource.create(cpInfo, tempFo);
-                String[] out = new String[] { currentContent };
+                String[] out = new String[]{currentContent};
                 js.runUserActionTask(cc -> {
                     cc.toPhase(JavaSource.Phase.RESOLVED);
                     out[0] = intent.applyToText(cc, out[0]);
@@ -119,7 +121,7 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
                 throw new AgiToolException("Intent #" + index + " failed: " + e.getMessage() + "\n" + intent.toDiagnosticString(), e);
             }
         }
-        
+
         if ((importsToAdd != null && !importsToAdd.isEmpty()) || (importsToRemove != null && !importsToRemove.isEmpty())) {
             FileObject tempFo = FileUtil.createMemoryFileSystem().getRoot().createData("Temp_Imports", "java");
             try (java.io.OutputStream os = tempFo.getOutputStream()) {
@@ -130,7 +132,7 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
                 wc.toPhase(JavaSource.Phase.RESOLVED);
                 CompilationUnitTree cut = wc.getCompilationUnit();
                 CompilationUnitTree newCut = cut;
-                
+
                 if (importsToAdd != null && !importsToAdd.isEmpty()) {
                     java.util.Set<javax.lang.model.element.Element> toAdd = new java.util.HashSet<>();
                     for (String imp : importsToAdd) {
@@ -143,7 +145,7 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
                         newCut = org.netbeans.api.java.source.GeneratorUtilities.get(wc).addImports(newCut, toAdd);
                     }
                 }
-                
+
                 if (importsToRemove != null && !importsToRemove.isEmpty()) {
                     List<com.sun.source.tree.ImportTree> existingImports = new ArrayList<>(newCut.getImports());
                     boolean changed = false;
@@ -162,15 +164,16 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
                         newCut = wc.getTreeMaker().CompilationUnit(newCut.getPackage(), existingImports, newCut.getTypeDecls(), newCut.getSourceFile());
                     }
                 }
-                
+
                 if (newCut != cut) {
                     wc.rewrite(cut, newCut);
                 }
             });
-            
-            String finalImports = mr.getResultingSource(tempFo);
-            if (finalImports != null) {
-                currentContent = finalImports;
+            if (mr.getModifiedFileObjects().contains(tempFo)) {
+                String finalImports = mr.getResultingSource(tempFo);
+                if (finalImports != null) {
+                    currentContent = finalImports;
+                }
             }
         }
 
@@ -180,14 +183,17 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
 
         List<LineComment> comments = new ArrayList<>();
         this.setCalculatedComments(comments);
-        
+
         return currentContent;
     }
 
     /**
-     * Validates the structural state and optimistic locking constraints before execution.
+     * Validates the structural state and optimistic locking constraints before
+     * execution.
+     *
      * @param agi the active Agi session.
-     * @throws java.lang.Exception if validation fails or no changes were detected.
+     * @throws java.lang.Exception if validation fails or no changes were
+     * detected.
      */
     @Override
     public void validate(Agi agi) throws Exception {
