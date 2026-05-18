@@ -53,6 +53,15 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
     private String uuid;
 
     /**
+     * The base URL of the provider's API endpoint.
+     * <p>
+     * This allows the provider to target official cloud services or alternative
+     * backends like local proxies, Ollama, or specialized vendor endpoints.
+     * </p>
+     */
+    private String baseUrl;
+
+    /**
      * An optional custom folder name for this provider's configuration.
      * If null or empty, the uuid is used as the directory name.
      */
@@ -234,7 +243,11 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
     }
 
     /**
-     * Reloads the keys from the api_keys.txt file and triggers a hokusPocus.
+     * Reloads the API key pool from the provider's specific configuration file.
+     * <p>
+     * This method is typically invoked when the user manually updates the
+     * {@code api_keys.txt} file or when a rotation is forced via {@link #hokusPocus()}.
+     * </p>
      */
     public void reloadKeyPool() {
         keyPool = readApiKeysFile();
@@ -242,10 +255,12 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
     }
 
     /**
-     * Returns the API key currently in use by this provider.
-     * If no key is set, it initializes it by calling {@link #getNextKey()}.
-     * 
-     * @return The current API key, or null if none available.
+     * Returns the API key currently in use by this provider instance.
+     * <p>
+     * If no key is currently active, this method performs an initial selection
+     * from the pool.
+     * </p>
+     * @return The active API key, or {@code null} if the pool is empty.
      */
     public synchronized String getCurrentKey() {
         if (currentApiKey == null) {
@@ -255,10 +270,11 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
     }
 
     /**
-     * Hook to reset the provider-specific API client (e.g., when keys change).
-     * Subclasses should override this to set their native client to null.
+     * Resets the internal state of the provider, typically to force a key rotation.
      * <p>
-     * Implementation detail: Triggers a key rotation by calling {@link #getNextKey()}.
+     * Implementation details: Subclasses should override this method to nullify
+     * their native API clients, ensuring they are reconstructed with the next
+     * available key from the pool.
      * </p>
      */
     public synchronized void hokusPocus() {
@@ -266,10 +282,12 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
     }
 
     /**
-     * Gets the next API key for the specific provider implementation using a 
-     * round-robin selection from the loaded key pool.
-     * 
-     * @return The API key.
+     * Selects the next API key from the pool using a round-robin strategy.
+     * <p>
+     * This method automatically initializes the pool from disk if it hasn't 
+     * been loaded yet.
+     * </p>
+     * @return The selected API key, or {@code null} if no keys are configured.
      */
     protected String getNextKey() {
         if (keyPool == null) {
@@ -287,6 +305,14 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
         return key;
     }
 
+    /**
+     * Resolves the absolute path to the provider's storage directory.
+     * <p>
+     * If a {@link #folderName} is configured, it is used; otherwise, the
+     * directory name defaults to the provider's {@link #uuid}.
+     * </p>
+     * @return The path to the provider's configuration and log directory.
+     */
     public Path getProviderDirectory() {
         String dirName = (folderName != null && !folderName.isBlank()) ? folderName : uuid;
         Path p = Path.of(dirName);
@@ -297,9 +323,11 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
     }
 
     /**
-     * Gets the provider-specific global storage directory within the main AI work directory.
-     * 
-     * @return The path to the provider's directory.
+     * Resolves the path to the {@code api_keys.txt} file for this provider.
+     * <p>
+     * This method ensures the parent directory exists before returning the path.
+     * </p>
+     * @return The path to the API keys configuration file.
      */
     public Path getKeysFilePath() {
         Path providerDir = getProviderDirectory();
@@ -316,6 +344,13 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
         return keysFilePath;
     }
 
+    /**
+     * Ensures that the {@code api_keys.txt} file exists on the host filesystem.
+     * <p>
+     * If the file is missing, a new empty file is created to allow the user
+     * to populate it.
+     * </p>
+     */
     public void ensureKeysFileExists() {
         Path path = getKeysFilePath();
         if (!Files.exists(path)) {
