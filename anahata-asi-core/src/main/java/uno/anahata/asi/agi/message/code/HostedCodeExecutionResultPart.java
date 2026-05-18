@@ -28,12 +28,13 @@ public class HostedCodeExecutionResultPart extends ModelTextPart {
     public static enum ModelCodeExectionOutcome { UNKNOWN, OK, FAILED, TIMEOUT}
     
     /**
-     * If the underlying provider follows a parent / child relationship between the call and the response
+     * The call part that initiated this execution result, used to reconstruct 
+     * parent-child relationships in the conversation tree.
      */
     private HostedCodeExecutionCallPart parentCall;
     
     /**
-     * The outcome of the code execution result.
+     * The final state of the execution (OK, FAILED, etc.) as reported by the provider.
      */
     private ModelCodeExectionOutcome outcome;
     
