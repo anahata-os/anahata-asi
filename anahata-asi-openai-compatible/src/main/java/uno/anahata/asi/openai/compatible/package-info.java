@@ -14,13 +14,13 @@
  * Key Components:
  * </p>
  * <ul>
- *   <li><b>Universal Provider</b>: {@link uno.anahata.asi.openai.OpenAiCompatibleProvider} 
+ *   <li><b>Universal Provider</b>: {@link uno.anahata.asi.openai.compatible.OpenAiCompatibleProvider} 
  *       enables custom base URL configuration for multi-endpoint support.</li>
- *   <li><b>Model Logic</b>: {@link uno.anahata.asi.openai.OpenAiModel} handles 
+ *   <li><b>Model Logic</b>: {@link uno.anahata.asi.openai.compatible.OpenAiCompatibleModel} handles 
  *       payload synthesis, tool declaration mapping, and standard JDK-based 
  *       HTTP communication.</li>
- *   <li><b>Response Mapping</b>: {@link uno.anahata.asi.openai.OpenAiResponse} 
- *       and {@link uno.anahata.asi.openai.OpenAiModelMessage} parse complex 
+ *   <li><b>Response Mapping</b>: {@link uno.anahata.asi.openai.compatible.OpenAiCompatibleResponse} 
+ *       and {@link uno.anahata.asi.openai.compatible.OpenAiCompatibleModelMessage} parse complex 
  *       OpenAI-style JSON responses (including tool calls and usage metadata) 
  *       into the unified Anahata domain model.</li>
  * </ul>

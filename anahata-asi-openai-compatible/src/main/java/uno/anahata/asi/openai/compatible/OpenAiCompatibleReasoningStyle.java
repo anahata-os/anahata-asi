@@ -8,8 +8,14 @@ package uno.anahata.asi.openai.compatible;
 public enum OpenAiCompatibleReasoningStyle {
     /** No specialized reasoning extraction. All content is treated as final output. */
     NONE,
-    /** Reasoning is provided in a dedicated top-level field (e.g., 'reasoning_content'). */
+    /**
+     * Indicates that reasoning/thought content is provided in a dedicated 
+     * top-level field (e.g., 'reasoning_content').
+     */
     FIELD,
-    /** Reasoning is embedded within the main content field wrapped in specific tags (e.g., <think>...</think>). */
+    /**
+     * Indicates that reasoning/thought content is embedded within the 
+     * main content field wrapped in specific tags (e.g., &lt;think&gt;...&lt;/think&gt;).
+     */
     TAGS
 }

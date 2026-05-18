@@ -140,6 +140,14 @@ public class OpenAiCompatibleResponse extends Response<OpenAiCompatibleModelMess
         parseCandidates(agi, modelId, model, responseNode);
     }
 
+    /**
+     * Internal utility to parse the 'choices' or 'output' array from the 
+     * API response.
+     * @param agi The parent session.
+     * @param modelId The model ID.
+     * @param model The model instance.
+     * @param responseNode The root response JSON node.
+     */
     private void parseCandidates(Agi agi, String modelId, OpenAiCompatibleModel model, JsonNode responseNode) {
         if (responseNode.has("choices")) {
             JsonNode choices = responseNode.get("choices");
@@ -168,7 +176,8 @@ public class OpenAiCompatibleResponse extends Response<OpenAiCompatibleModelMess
     
     /**
      * {@inheritDoc}
-     * <p>OpenAI does not provide standard prompt feedback in the completion response; returns empty.</p>
+     * <p>OpenAI does not provide standard prompt feedback in the completion 
+     * response; returns empty.</p>
      */
     @Override
     public Optional<String> getPromptFeedback() {

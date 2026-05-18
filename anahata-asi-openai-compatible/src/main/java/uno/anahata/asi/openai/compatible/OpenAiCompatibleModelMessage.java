@@ -24,8 +24,16 @@ import uno.anahata.asi.agi.provider.FinishReason;
 @Slf4j
 public abstract class OpenAiCompatibleModelMessage extends AbstractModelMessage<OpenAiCompatibleResponse> {
 
+    /**
+     * State flag indicating if the parser is currently inside a reasoning tag.
+     */
     private boolean insideReasoningTags = false;
 
+    /**
+     * Constructs a new base model message.
+     * @param agi The parent session.
+     * @param modelId The model ID.
+     */
     public OpenAiCompatibleModelMessage(Agi agi, String modelId) {
         super(agi, modelId);
     }
@@ -66,6 +74,11 @@ public abstract class OpenAiCompatibleModelMessage extends AbstractModelMessage<
         }
     }
 
+    /**
+     * Maps a standard OpenAI finish reason string to the Anahata enum.
+     * @param reason The raw string from the API.
+     * @return The corresponding FinishReason.
+     */
     private FinishReason mapFinishReason(String reason) {
         if (reason == null) return FinishReason.OTHER;
         return switch (reason) {

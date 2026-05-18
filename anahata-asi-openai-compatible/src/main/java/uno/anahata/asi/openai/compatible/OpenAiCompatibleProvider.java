@@ -37,16 +37,6 @@ import uno.anahata.asi.agi.provider.TokenizerType;
 public class OpenAiCompatibleProvider extends AbstractAiProvider {
 
     /**
-     * The base URL of the OpenAI-compatible API endpoint.
-     * <p>
-     * This allows the provider to target official OpenAI services or
-     * alternative backends like Ollama (http://localhost:11434/v1), Groq, or
-     * DeepSeek.
-     * </p>
-     */
-    private String baseUrl;
-
-    /**
      * Optional custom HTTP headers to be sent with every request. Essential for
      * providers requiring specific vendor headers (e.g., 'X-Title',
      * 'OpenAI-Organization').
@@ -77,7 +67,6 @@ public class OpenAiCompatibleProvider extends AbstractAiProvider {
 
     /**
      * Constructs a new universal provider with basic configuration.
-     *
      * @param uuid The unique provider ID.
      * @param displayName The user-facing name.
      * @param baseUrl The API endpoint URL.
@@ -87,13 +76,12 @@ public class OpenAiCompatibleProvider extends AbstractAiProvider {
     }
 
     /**
-     * Constructs a new universal provider with a custom storage folder.
-     *
+     * Constructs a new universal provider with a custom storage folder and acquisition URI.
      * @param uuid The unique provider ID.
      * @param displayName The user-facing name.
      * @param baseUrl The API endpoint URL.
-     * @param folderName The custom folder name for configuration and key
-     * storage.
+     * @param folderName The custom folder name for configuration and key storage.
+     * @param apiKeyAdquisitionUri The URI where users can obtain API keys for this provider.
      */
     public OpenAiCompatibleProvider(String uuid, String displayName, String baseUrl, String folderName, String apiKeyAdquisitionUri) {
         super(uuid);
@@ -164,14 +152,11 @@ public class OpenAiCompatibleProvider extends AbstractAiProvider {
         return getNextKey();
     }
 
-    public void setBaseUrl(String baseUrl) {
-        this.baseUrl = baseUrl != null ? baseUrl.trim() : null;
-    }
-
-    public String getBaseUrl() {
-        return baseUrl != null ? baseUrl.trim() : null;
-    }
-
+    /**
+     * {@inheritDoc}
+     * <p>Implementation details: Checks for common OpenAI-compatible error codes 
+     * (429, 503, 500, 499, 408).</p>
+     */
     public boolean isRetryable(int statusCode, String responseBody) {
         return statusCode == 429 || statusCode == 503 || statusCode == 500 || statusCode == 499 || statusCode == 408;
     }
@@ -186,7 +171,7 @@ public class OpenAiCompatibleProvider extends AbstractAiProvider {
      * {@inheritDoc}
      * <p>
      * Implementation details: Performs a GET request to the {@code /models}
-     * endpoint of the configured {@code baseUrl}. Parses the standard OpenAI
+     * endpoint of the configured {@link #getBaseUrl()}. Parses the standard OpenAI
      * list-response and wraps each ID in an {@link OpenAiCompatibleModel} instance.
      * </p>
      */
@@ -212,7 +197,7 @@ public class OpenAiCompatibleProvider extends AbstractAiProvider {
                             models.add(createModel(modelNode));
                         }
 }
-                    log.info("Successfully discovered {} models from {}", models.size(), baseUrl);
+                    log.info("Successfully discovered {} models from {}", models.size(), getBaseUrl());
                     return models;
                 }
             }
@@ -222,6 +207,11 @@ public class OpenAiCompatibleProvider extends AbstractAiProvider {
         return Collections.emptyList();
     }
 
+    /**
+     * Constructs a concrete model instance for this provider.
+     * @param node The JSON node containing model metadata.
+     * @return A new model instance.
+     */
     protected OpenAiCompatibleModel createModel(JsonNode node) {
         return new OpenAiCompatibleModel(this, node);
     }
