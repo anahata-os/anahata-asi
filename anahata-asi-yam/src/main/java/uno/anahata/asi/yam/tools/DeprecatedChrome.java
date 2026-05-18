@@ -68,6 +68,7 @@ public class DeprecatedChrome extends AnahataToolkit implements Rebindable {
      * Represents a single Chrome WebDriver connection and its associated state.
      */
     @ToString
+    @Deprecated
     public static class ChromeDrone {
 
         /**

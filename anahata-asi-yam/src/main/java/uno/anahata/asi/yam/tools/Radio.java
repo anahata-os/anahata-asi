@@ -79,9 +79,17 @@ public class Radio extends AnahataToolkit {
     @Getter
     private uno.anahata.asi.toolkit.audio.AudioDevice selectedOutputDevice;
 
-    /** JLayer player instance. */
+    /**
+     * The active JLayer player instance. 
+     * <p>Marked as {@code transient} because the native audio stream and 
+     * decoder state cannot be serialized across sessions.</p>
+     */
     private transient Player player;
-    /** Current playback task future. */
+    /**
+     * The future representing the active background playback task. 
+     * <p>Marked as {@code transient} as the thread state is not persistent. 
+     * Used to monitor and cancel the stream during stop/restart cycles.</p>
+     */
     private transient Future<?> playbackTask;
 
     /**
@@ -108,11 +116,9 @@ public class Radio extends AnahataToolkit {
 
     /**
      * {@inheritDoc}
-     * <p>
-     * Implementation details: Restores the hardware output line after
-     * deserialization and automatically resumes playback if the radio was
-     * active when the session was saved.
-     * </p>
+     * <p>Implementation details: Resumes the audio stream by submitting a new 
+     * playback task to the executor service. This cannot be done in 
+     * {@code rebind()} as the Agi executor might not be ready.</p>
      */
     @Override
     public void postActivate() {

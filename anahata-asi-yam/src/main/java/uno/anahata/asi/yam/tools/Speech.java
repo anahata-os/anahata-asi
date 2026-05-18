@@ -25,12 +25,14 @@ public class Speech extends AnahataToolkit {
     private static final String DEFAULT_VOICE = "kevin16";
 
     /**
-     * Speaks the given text using the internal FreeTTS engine.
-     * This is a pure-Java implementation that works across all platforms.
-     * 
+     * {@inheritDoc}
+     * <p>Implementation details: Dynamically configures the {@code freetts.voices} 
+     * system property to locate the Kevin voice directory. Uses 
+     * {@link com.sun.speech.freetts.audio.JavaStreamingAudioPlayer} for 
+     * OS-independent playback.</p>
      * @param text The text to speak.
-     * @return A status message.
-     * @throws Exception If the speech engine fails or the voice is not found.
+     * @return A status message confirming the speech execution.
+     * @throws Exception If the voice cannot be allocated or the engine fails.
      */
     @AgiTool("Speaks the given text using the internal pure-Java TTS engine.")
     public String speak(@AgiToolParam("The text to speak.") String text) throws Exception {

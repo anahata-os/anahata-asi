@@ -34,7 +34,9 @@ public class BrowserDrone {
     public String id;
 
     /**
-     * The remote debugging port used to connect to the browser.
+     * The remote debugging port used to connect to the browser. 
+     * <p>A value of {@code -1} indicates that no connection has been established 
+     * or the port hasn't been assigned yet.</p>
      */
     public int port = -1;
 
@@ -59,12 +61,16 @@ public class BrowserDrone {
     public String binaryPath;
 
     /**
-     * Tracks the current URL of the drone's active tab.
+     * Tracks the current URL of the drone's active tab. 
+     * <p>This is updated after every navigation event to provide quick context 
+     * without requiring a remote driver query.</p>
      */
     public String currentUrl;
 
     /**
-     * Stores the last error message encountered by this drone, if any.
+     * Stores the last error message encountered by this drone, if any. 
+     * <p>Used by {@link uno.anahata.asi.yam.tools.browser.AbstractBrowser#getStatus(String)} 
+     * to provide diagnostic feedback when a session fails to start.</p>
      */
     public String lastError;
 

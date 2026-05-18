@@ -295,11 +295,13 @@ public abstract class AbstractBrowser extends AnahataToolkit implements Rebindab
     }
 
     /**
-     * Clicks an element on the page.
-     *
-     * @param droneId The ID of the drone.
+     * {@inheritDoc}
+     * <p>Implementation details: Performs a stateful click by first attempting 
+     * to locate the element using a multi-strategy search (ID, Name, Link Text, 
+     * XPath text content).</p>
+     * @param droneId    The ID of the drone.
      * @param identifier The ID, Name, or visible text of the element.
-     * @return A status message.
+     * @return A status message indicating success or failure.
      */
     @AgiTool("Clicks an element on the page.")
     public String clickElement(
@@ -347,12 +349,13 @@ public abstract class AbstractBrowser extends AnahataToolkit implements Rebindab
     }
 
     /**
-     * Waits for an element to be visible on the page.
-     *
-     * @param droneId The ID of the drone.
-     * @param cssSelector The CSS selector.
-     * @param timeoutSeconds The timeout.
-     * @return A status message.
+     * {@inheritDoc}
+     * <p>Implementation details: Safely executes a CSS-based visibility check 
+     * using {@link org.openqa.selenium.support.ui.WebDriverWait}.</p>
+     * @param droneId       The ID of the drone.
+     * @param cssSelector    The CSS selector of the element.
+     * @param timeoutSeconds The maximum time to wait in seconds.
+     * @return A status message confirming visibility.
      */
     @AgiTool("Waits for an element to be visible on the page.")
     public String waitForElement(
