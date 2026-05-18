@@ -284,38 +284,43 @@ public class NetBeansTextResourceViewer extends AbstractTextResourceViewer {
             }
 
             // --- REGISTRY & DIAGNOSTICS ---
-            log.info("Editor height before registration: " + editor.getHeight());
+            if (log.isDebugEnabled()) {
+                log.debug("Editor height before registration: " + editor.getHeight());
 
-            editor.addAncestorListener(new javax.swing.event.AncestorListener() {
-                @Override
-                public void ancestorAdded(javax.swing.event.AncestorEvent event) {
-                    log.info("ancestorAdded for editor: {}", editor);
-                }
-                @Override
-                public void ancestorRemoved(javax.swing.event.AncestorEvent event) {
-                    log.info("ancestorRemoved for editor: {}", editor);
-                }
-                @Override
-                public void ancestorMoved(javax.swing.event.AncestorEvent event) {}
-            });
+                editor.addAncestorListener(new javax.swing.event.AncestorListener() {
+                    @Override
+                    public void ancestorAdded(javax.swing.event.AncestorEvent event) {
+                        log.debug("ancestorAdded for editor: {}", editor);
+                    }
+
+                    @Override
+                    public void ancestorRemoved(javax.swing.event.AncestorEvent event) {
+                        log.debug("ancestorRemoved for editor: {}", editor);
+                    }
+
+                    @Override
+                    public void ancestorMoved(javax.swing.event.AncestorEvent event) {
+                    }
+                });
+            }
 
             editor.addFocusListener(new java.awt.event.FocusAdapter() {
                 @Override
                 public void focusGained(java.awt.event.FocusEvent e) {
                     if (!"text/plain".equals(editor.getContentType())) {
-                        log.info("Focus gained calling ensureRegistered() for editor: {}", editor);
+                        log.debug("Focus gained calling ensureRegistered() for editor: {}", editor);
                         ensureRegistered();
                     } else {
-                        log.info("Skipping EditorRegistry registration for plain text snippet: {}", resource.getName());
+                        log.debug("Skipping EditorRegistry registration for plain text snippet: {}", resource.getName());
                     }
                 }
             });
 
             configureScrollBehavior();
-            log.info("editor.getHeight() Before revalidate " + editor.getHeight() );
-            getWrapper().revalidate();            
+            log.debug("editor.getHeight() Before revalidate " + editor.getHeight());
+            getWrapper().revalidate();
             getWrapper().repaint();
-            log.info("editor.getHeight() after revalidate " + editor.getHeight() );
+            log.debug("editor.getHeight() after revalidate " + editor.getHeight());
 
         } catch (Exception e) {
             log.error("Failed to init NetBeans high-fidelity viewer", e);
@@ -323,10 +328,10 @@ public class NetBeansTextResourceViewer extends AbstractTextResourceViewer {
     }
 
     private void ensureRegistered() {
-        log.info("ensureRegistered() editor.getHeight() " + editor.getHeight() );
+        log.info("ensureRegistered() editor.getHeight() " + editor.getHeight());
         try {
             log.info("registering " + editor);
-            SwingUtilities.invokeLater(()->EditorApiPackageAccessor.get().register(editor));
+            SwingUtilities.invokeLater(() -> EditorApiPackageAccessor.get().register(editor));
             log.info("registered " + editor);
         } catch (Throwable t) {
             log.warn("Failed to register editor with EditorRegistry", t);
@@ -374,7 +379,7 @@ public class NetBeansTextResourceViewer extends AbstractTextResourceViewer {
                 int finalH = h + controlStripH + scrollBarH + insetsH;
 
                 if (finalH != lastLoggedH) {
-                    log.info("Height metrics for {}: modelToView={}, editorPref={}, fontMetrics={}, lines={}, controlStrip={}, scrollBar={}, insets={}, finalH={}",
+                    log.debug("Height metrics for {}: modelToView={}, editorPref={}, fontMetrics={}, lines={}, controlStrip={}, scrollBar={}, insets={}, finalH={}",
                             resource.getName(), modelToViewHeight, editorPrefHeight, fmHeight, lineCount, controlStripH, scrollBarH, insetsH, finalH);
                     lastLoggedH = finalH;
                 }
