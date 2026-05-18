@@ -45,8 +45,9 @@ public class AsiContainerPreferences extends BasicPropertyChangeSource {
     public static final int CURRENT_DNA_VERSION = 1;
 
     /**
-     * The version of the DNA template currently stored on disk.
-     * Used to detect if the saved defaults are from an older version of Anahata.
+     * The version of the DNA template currently stored on disk. 
+     * <p>Implementation details: Used to detect if the saved defaults are 
+     * from an older version of Anahata and trigger an update if necessary.</p>
      */
     private int dnaVersion = 0;
 
@@ -94,11 +95,11 @@ public class AsiContainerPreferences extends BasicPropertyChangeSource {
     }
 
     /**
-     * Resets the AgiConfig template to the current runtime defaults.
-     * This is useful when the application version changes and new toolkits 
-     * or default policies are introduced.
-     * 
-     * @param container The ASI container to provide the new defaults.
+     * Resets the AgiConfig template to the current runtime defaults. 
+     * <p>Implementation details: Invoked when the application version changes 
+     * and new toolkits or default policies are introduced to keep the DNA 
+     * in sync with the codebase.</p>
+     * @param container The ASI container providing the new defaults.
      */
     public void resetAgiTemplate(AbstractAsiContainer container) {
         log.info("Resetting AgiConfig template to factory defaults (Version {})...", CURRENT_DNA_VERSION);
@@ -229,10 +230,13 @@ public class AsiContainerPreferences extends BasicPropertyChangeSource {
     }
 
     /**
-     * Loads the preferences for a given host application from disk.
-     *
-     * @param config The application-wide configuration.
-     * @return The loaded AsiContainerPreferences object, or a new empty one if not found or on error.
+     * Loads the preferences for a given host application from disk. 
+     * <p>Implementation details: Uses {@link uno.anahata.asi.persistence.kryo.KryoUtils} 
+     * to deserialize the preferences. If loading fails due to corruption or 
+     * evolutionary mismatch, the file is backed up and a fresh preferences 
+     * object is returned.</p>
+     * @param config The application-wide container.
+     * @return The loaded preferences or a new instance on failure.
      */
     public static synchronized AsiContainerPreferences load(AbstractAsiContainer config) {
         Path preferencesFile = getPreferencesFile(config);
