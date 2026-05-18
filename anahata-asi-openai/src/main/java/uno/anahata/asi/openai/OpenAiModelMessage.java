@@ -56,7 +56,6 @@ public class OpenAiModelMessage extends AbstractModelMessage<OpenAiResponse> {
      * to the appropriate Anahata parts.
      * <p>This includes handling messages, reasoning chains, function calls, 
      * web searches, and code interpreter executions.</p>
-     * 
      * @param item The JSON node representing an OpenAI item.
      */
     @SneakyThrows
@@ -97,9 +96,24 @@ public class OpenAiModelMessage extends AbstractModelMessage<OpenAiResponse> {
                 }
             }
         } else if ("reasoning".equals(type)) {
-            // Stateless Reasoning: Capture the signature even if text is hidden
             String encrypted = item.path("encrypted_content").asText(null);
-            // Capture optional summary text
+            StringBuilder thoughtsText = new StringBuilder();
+            byte[] signature = null;
+            
+            JsonNode content = item.get("content");
+            if (content != null && content.isArray()) {
+                for (JsonNode block : content) {
+                    if ("thinking".equals(block.path("type").asText())) {
+                        thoughtsText.append(block.path("thinking").asText(""));
+                        String sig = block.path("signature").asText(null);
+                        if (sig != null) signature = sig.getBytes();
+                    } else if ("redacted_thinking".equals(block.path("type").asText())) {
+                        String data = block.path("data").asText(null);
+                        if (data != null) signature = data.getBytes();
+                    }
+                }
+            }
+            
             StringBuilder summaryText = new StringBuilder();
             JsonNode summary = item.get("summary");
             if (summary != null && summary.isArray()) {
@@ -109,11 +123,42 @@ public class OpenAiModelMessage extends AbstractModelMessage<OpenAiResponse> {
                     }
                 }
             }
-            if (encrypted != null) {
-                String label = summaryText.length() > 0 ? summaryText.toString().trim() : ENCRYPTED_REASONING_PLACEHOLDER;
-                // Store signature in a thought part.
-                TextPart tp = addTextPart(label, encrypted.getBytes(), true);
-                tp.setProviderId(id);
+            
+            ModelTextPart existingThought = null;
+            if (isStreaming()) {
+                 List<AbstractPart> parts = getParts();
+                 for (int i = parts.size() - 1; i >= 0; i--) {
+                     if (parts.get(i) instanceof ModelTextPart mtp && mtp.isThought()) {
+                         existingThought = mtp;
+                         break;
+                     }
+                 }
+            }
+
+            if (existingThought != null) {
+                existingThought.setProviderId(id);
+                if (signature != null) {
+                    existingThought.setThoughtSignature(signature);
+                } else if (encrypted != null) {
+                    existingThought.setThoughtSignature(encrypted.getBytes());
+                }
+                if (encrypted != null || signature == null) {
+                    String label = summaryText.length() > 0 ? summaryText.toString().trim() : ENCRYPTED_REASONING_PLACEHOLDER;
+                    existingThought.setText(label);
+                }
+            } else {
+                if (encrypted != null) {
+                    String label = summaryText.length() > 0 ? summaryText.toString().trim() : ENCRYPTED_REASONING_PLACEHOLDER;
+                    TextPart tp = addTextPart(label, encrypted.getBytes(), true);
+                    tp.setProviderId(id);
+                } else if (thoughtsText.length() > 0) {
+                    TextPart tp = addTextPart(thoughtsText.toString(), signature, true);
+                    tp.setProviderId(id);
+                } else if (signature != null) {
+                    String label = summaryText.length() > 0 ? summaryText.toString().trim() : ENCRYPTED_REASONING_PLACEHOLDER;
+                    TextPart tp = addTextPart(label, signature, true);
+                    tp.setProviderId(id);
+                }
             }
         } else if ("function_call".equals(type)) {
             String callId = item.path("call_id").asText();
@@ -265,7 +310,6 @@ public class OpenAiModelMessage extends AbstractModelMessage<OpenAiResponse> {
      * <p>Routes deltas for real-time text and reasoning generation, and defers
      * complex items (function calls, web searches) to the completion of the item
      * where the full JSON structure is guaranteed to be intact.</p>
-     * 
      * @param eventNode The parsed JSON node of the stream event.
      */
     public void handleStreamEvent(JsonNode eventNode) {

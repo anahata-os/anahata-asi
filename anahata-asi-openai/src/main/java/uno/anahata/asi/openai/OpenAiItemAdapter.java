@@ -80,14 +80,13 @@ public class OpenAiItemAdapter {
         for (AbstractPart part : modelMsg.getParts(includePruned)) {
             String partProviderId = sameModel ? part.getProviderId() : null;
 
-            // 1. OpenAI-Specific Encrypted Reasoning Item
+            // 1. OpenAI-Specific Reasoning Item (Encrypted or Unencrypted)
             if (sameModel && part instanceof ModelTextPart mtp && mtp.isThought() 
-                    && OpenAiModelMessage.ENCRYPTED_REASONING_PLACEHOLDER.equals(mtp.getText())
                     && mtp.getThoughtSignature() != null) {
                 
                 flushMessageItem(items, currentMessageItem);
                 currentMessageItem = null;
-                items.add(createReasoningNode(part, (ThoughtSignature)part, sameModel));
+                items.add(createReasoningNode(part, mtp, sameModel));
                 continue; // Skip: already handled as a top-level reasoning item
             }
 
@@ -205,12 +204,25 @@ public class OpenAiItemAdapter {
         return searchCall;
     }
 
-    private ObjectNode createReasoningNode(AbstractPart part, ThoughtSignature ts, boolean sameModel) {
+    private ObjectNode createReasoningNode(AbstractPart part, ModelTextPart mtp, boolean sameModel) {
         ObjectNode reasoningItem = API_MAPPER.createObjectNode();
         reasoningItem.put("type", "reasoning");
         String id = (sameModel && part.getProviderId() != null) ? part.getProviderId() : "rs_" + part.getSequentialId();
         reasoningItem.put("id", id);
-        reasoningItem.put("encrypted_content", new String(ts.getThoughtSignature()));
+        
+        reasoningItem.putArray("summary");
+        ArrayNode contentArray = reasoningItem.putArray("content");
+        
+        String text = mtp.getText();
+        if (text == null || text.equals(OpenAiModelMessage.ENCRYPTED_REASONING_PLACEHOLDER) || text.startsWith("(Encrypted ")) {
+            reasoningItem.put("encrypted_content", new String(mtp.getThoughtSignature()));
+        } else {
+            ObjectNode thinkingBlock = contentArray.addObject();
+            thinkingBlock.put("type", "thinking");
+            thinkingBlock.put("thinking", text);
+            thinkingBlock.put("signature", new String(mtp.getThoughtSignature()));
+        }
+        
         return reasoningItem;
     }
 

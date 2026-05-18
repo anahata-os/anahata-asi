@@ -44,11 +44,28 @@ import uno.anahata.asi.agi.tool.spi.AbstractToolParameter;
 @SuppressWarnings("unchecked")
 public class OpenAiModel extends AbstractModel {
 
+    /**
+     * Internal mapper for Responses API JSON operations.
+     */
     private static final ObjectMapper API_MAPPER = new ObjectMapper();
+    /**
+     * The parent provider for this model.
+     */
     private final OpenAiProvider provider;
+    /**
+     * The unique identifier for the OpenAI model (e.g., 'gpt-4o').
+     */
     private final String modelId;
+    /**
+     * The human-readable name for the model.
+     */
     private final String displayName;
 
+    /**
+     * Constructs a new OpenAiModel from an API model node.
+     * @param provider The parent provider.
+     * @param node The JSON node containing model metadata.
+     */
     public OpenAiModel(OpenAiProvider provider, JsonNode node) {
         this.provider = provider;
         this.modelId = node.get("id").asText();
@@ -167,6 +184,13 @@ public class OpenAiModel extends AbstractModel {
 
     }
 
+    /**
+     * Assembles the full OpenAI Responses API payload and extracts partitions 
+     * for UI visibility.
+     * @param request The generation request.
+     * @param stream Whether to enable SSE streaming.
+     * @return The prepared payload partitions.
+     */
     @SneakyThrows
     private PreparedPayload preparePayload(GenerationRequest request, boolean stream) {
         ObjectNode root = API_MAPPER.createObjectNode();
@@ -391,6 +415,11 @@ public class OpenAiModel extends AbstractModel {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Translates Anahata tool definitions into the OpenAI 'function' 
+     * specification format.</p>
+     */
     @Override
     @SneakyThrows
     public String getToolDeclarationJson(AbstractTool<?, ?> tool, RequestConfig config) {
