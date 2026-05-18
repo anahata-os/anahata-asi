@@ -43,11 +43,17 @@ public class AnthropicModel extends AbstractModel {
     private final AnthropicProvider provider;
     private final String modelId;
     private final String displayName;
+    private final String version;
 
-    public AnthropicModel(AnthropicProvider provider, String modelId, String displayName) {
+    public AnthropicModel(AnthropicProvider provider, String modelId, String displayName, String version) {
         this.provider = provider;
         this.modelId = modelId;
         this.displayName = displayName;
+        this.version = version;
+    }
+
+    public AnthropicModel(AnthropicProvider provider, String modelId, String displayName) {
+        this(provider, modelId, displayName, "");
     }
 
     @Override
@@ -63,7 +69,7 @@ public class AnthropicModel extends AbstractModel {
     public String getDescription() { return "Anthropic Claude Model"; }
 
     @Override
-    public String getVersion() { return null; }
+    public String getVersion() { return version; }
 
     @Override
     public int getMaxInputTokens() { return 200000; }
@@ -75,7 +81,7 @@ public class AnthropicModel extends AbstractModel {
     public List<String> getSupportedActions() { return List.of("messages"); }
 
     @Override
-    public String getRawDescription() { return "<html><b>Model ID:</b> " + modelId + "</html>"; }
+    public String getRawDescription() { return "<html><b>Model ID:</b> " + modelId + "<br><b>Version:</b> " + version + "</html>"; }
 
     @Override
     public boolean isSupportsFunctionCalling() { return true; }
