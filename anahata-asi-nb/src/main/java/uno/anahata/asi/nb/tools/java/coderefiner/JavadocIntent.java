@@ -57,6 +57,10 @@ public class JavadocIntent implements Serializable {
     private List<String> tags;
 
 
+    /**
+     * Generates the multi-line Javadoc comment string from the current state.
+     * @return a standard Javadoc block.
+     */
     public String generateString() {
         StringBuilder sb = new StringBuilder("/**\n");
         if (description != null && !description.isBlank()) {
