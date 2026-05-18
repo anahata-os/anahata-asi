@@ -12,8 +12,9 @@ The `MinimaxProvider` was successfully refactored to `MinimaxAnthropicProvider` 
 
 ## Next Steps
 - Run and test the new `generateContentStream` implementation for OpenAI Responses.
+- Test that unencrypted reasoning works effectively in OpenAI (following the `OpenAiItemAdapter` fix).
 - Check if anything else needs adjusting across the MiniMax and Anthropic providers.
-- Keep this session backup updated with any new context additions.
+- Test the new Anthropic and MiniMax implementation.
 
 ## URIs Currently In Context
 - `file:///home/pablo/NetBeansProjects/anahata-asi-parent/anahata-asi-anthropic/tasks.md`
