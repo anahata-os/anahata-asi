@@ -3,10 +3,7 @@ package uno.anahata.asi.swing.agi.message.part.tool.param;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.FlowLayout;
-import java.awt.Font;
 import javax.swing.BorderFactory;
-import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import lombok.Getter;
@@ -20,10 +17,6 @@ import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
 import uno.anahata.asi.swing.agi.resources.ResourceUI;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
-import uno.anahata.asi.swing.icons.CopyIcon;
-import uno.anahata.asi.swing.icons.CancelIcon;
-import uno.anahata.asi.swing.internal.SwingUtils;
-import uno.anahata.asi.swing.icons.RestartIcon;
 
 /**
  * A specialized parameter renderer that converts any Java object to a string 
@@ -44,7 +37,7 @@ import uno.anahata.asi.swing.icons.RestartIcon;
 public class ObjectToStringParameterRenderer implements ParameterRenderer<Object> {
     
     /** The parent panel. */
-    private AgiPanel agiPanel;
+    protected AgiPanel agiPanel;
     /** The main container panel. */
     private final JPanel container = new JPanel(new BorderLayout());
     /** The high-fidelity viewer. */
@@ -64,6 +57,19 @@ public class ObjectToStringParameterRenderer implements ParameterRenderer<Object
         container.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1, true));
     }
 
+    /**
+     * Creates a String handle calling the file "Anahata" if the extension is "java".
+     * 
+     * @param content the content of the handle
+     * @param call the tool call that is creating it
+     * @param paramName the parameter name in question
+     * @return 
+     */
+    protected StringHandle createHandle(String content, AbstractToolCall<?, ?> call, String paramName) {
+        String fileName = "java".equalsIgnoreCase(language) ? "Anahata.java" : "param." + language;
+        return new StringHandle(fileName, content);
+    }
+
     /** {@inheritDoc} 
      * <p>Implementation details: Initializes the high-fidelity pipeline by resolving the 
      * object to a string, wrapping it in a virtual resource, and requesting a viewer.</p>
@@ -76,18 +82,22 @@ public class ObjectToStringParameterRenderer implements ParameterRenderer<Object
         String content = TextUtils.resolveContentString(value);
         
         // 2. Initialize High-Fidelity Sense (Cero Hardcoding: names trigger host-specific detection)
-        StringHandle handle = new StringHandle("param." + language, content);
+        StringHandle handle = createHandle(content, call, paramName);
         Resource ephemeral = new Resource(handle);
+        try {
+            ephemeral.reloadIfNeeded();
+        } catch (Exception e) {
+            log.error("Failed to perform initial reload on ephemeral resource", e);
+        }
         
         ResourceUI strategy = ResourceUiRegistry.getInstance().getResourceUI();
         if (strategy != null) {
             JComponent contentComp = strategy.createContent(ephemeral, agiPanel);
             if (contentComp instanceof AbstractTextResourceViewer atv) {
                 this.viewer = atv;
-                viewer.setToolbarVisible(false); // Clean UI
                 viewer.setVerticalScrollEnabled(false); // Conversation passthrough
                 viewer.setPreviewAsEditor(true); // Constant IDE fidelity
-                viewer.setEditing(false); // Start read-only
+                viewer.setReadOnly(!editable); // Start read-only
                 
                 // WIRE PERSISTENCE: Save refinements back to the tool call
                 viewer.setSaveAction(contentStr -> {
@@ -99,7 +109,6 @@ public class ObjectToStringParameterRenderer implements ParameterRenderer<Object
 
         // 3. Assemble UI
         container.removeAll();
-        container.add(createActionStrip(content), BorderLayout.NORTH);
         if (viewer != null) {
             container.add(viewer, BorderLayout.CENTER);
         }
@@ -144,60 +153,5 @@ public class ObjectToStringParameterRenderer implements ParameterRenderer<Object
         return true;
     }
 
-    /**
-     * Creates a minimal, faint header with Copy and (if enabled) Edit actions.
-     * @param initialValue The initial string to copy.
-     * @return The header panel.
-     */
-    private JPanel createActionStrip(String initialValue) {
-        JPanel header = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 2));
-        header.setOpaque(true);
-        header.setBackground(new Color(240, 240, 240, 180));
-        header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(210, 210, 210)));
 
-        JButton copyBtn = new JButton("Copy", new CopyIcon(12));
-        copyBtn.setFont(new Font("SansSerif", Font.PLAIN, 11));
-        copyBtn.setMargin(new java.awt.Insets(1, 5, 1, 5));
-        copyBtn.setFocusPainted(false);
-        copyBtn.addActionListener(e -> {
-            String current = (viewer != null) ? viewer.getEditorContent() : initialValue;
-            SwingUtils.copyToClipboard(current);
-        });
-        header.add(copyBtn);
-
-        if (editable) {
-            JButton cancelBtn = new JButton("Cancel", new CancelIcon(12));
-            cancelBtn.setFont(new Font("SansSerif", Font.PLAIN, 11));
-            cancelBtn.setMargin(new java.awt.Insets(1, 5, 1, 5));
-            cancelBtn.setFocusPainted(false);
-            cancelBtn.setVisible(false);
-
-            JButton editBtn = new JButton("Edit");
-            editBtn.setFont(new Font("SansSerif", Font.PLAIN, 11));
-            editBtn.setMargin(new java.awt.Insets(1, 5, 1, 5));
-            editBtn.setFocusPainted(false);
-            
-            cancelBtn.addActionListener(e -> {
-                if (viewer != null) {
-                    viewer.setEditing(false);
-                    editBtn.setText("Edit");
-                    editBtn.setIcon(null);
-                    cancelBtn.setVisible(false);
-                }
-            });
-
-            editBtn.addActionListener(e -> {
-                if (viewer != null) {
-                    viewer.toggleEditMode();
-                    boolean isEditing = viewer.isEditing();
-                    editBtn.setText(isEditing ? "Save" : "Edit");
-                    editBtn.setIcon(isEditing ? new RestartIcon(12) : null);
-                    cancelBtn.setVisible(isEditing);
-                }
-            });
-            header.add(cancelBtn);
-            header.add(editBtn);
-        }
-        return header;
-    }
 }
