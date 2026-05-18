@@ -41,9 +41,21 @@ import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
 @RequiredArgsConstructor
 public class OpenAiItemAdapter {
 
+    /**
+     * Internal mapper for Responses API item JSON generation.
+     */
     private static final ObjectMapper API_MAPPER = new ObjectMapper();
+    /**
+     * The original message to be translated.
+     */
     private final AbstractMessage anahataMessage;
+    /**
+     * Whether to include pruned parts in the generated items list.
+     */
     private final boolean includePruned;
+    /**
+     * The model ID for which this adapter is preparing items.
+     */
     private final String targetModelId;
 
     /**
@@ -66,6 +78,12 @@ public class OpenAiItemAdapter {
         }
     }
 
+    /**
+     * Translates a model turn into a sequence of top-level API items.
+     * @param modelMsg The model message to translate.
+     * @return A list of items (messages, reasoning, etc.).
+     * @throws Exception on translation failures.
+     */
     private List<ObjectNode> toModelTurnItems(AbstractModelMessage<?> modelMsg) throws Exception {
         List<ObjectNode> items = new ArrayList<>();
         boolean sameModel = Objects.equals(modelMsg.getModelId(), targetModelId);
@@ -133,6 +151,11 @@ public class OpenAiItemAdapter {
         return items;
     }
 
+    /**
+     * Resolves the root code interpreter call for a part.
+     * @param part The part to inspect.
+     * @return The parent call, or null.
+     */
     private HostedCodeExecutionCallPart getCiRoot(AbstractPart part) {
         if (part instanceof HostedCodeExecutionCallPart mccp) {
             return mccp;
@@ -146,6 +169,14 @@ public class OpenAiItemAdapter {
         return null;
     }
 
+    /**
+     * Retrieves or initializes a code interpreter item node in the items list.
+     * @param ciNodes The tracking map for active code interpreter items.
+     * @param root The root call part identifying the execution session.
+     * @param items The top-level items list.
+     * @param sameModel Whether the model IDs match for identity preservation.
+     * @return The (possibly new) code interpreter JSON node.
+     */
     private ObjectNode getOrCreateCiNode(Map<HostedCodeExecutionCallPart, ObjectNode> ciNodes, HostedCodeExecutionCallPart root, List<ObjectNode> items, boolean sameModel) {
         return ciNodes.computeIfAbsent(root, k -> {
             ObjectNode node = API_MAPPER.createObjectNode();
@@ -160,6 +191,12 @@ public class OpenAiItemAdapter {
         });
     }
 
+    /**
+     * Appends a part (source code, logs, or generated image) to an existing 
+     * code interpreter item.
+     * @param ciNode The target code interpreter node.
+     * @param part The execution-related part to append.
+     */
     private void updateCiNode(ObjectNode ciNode, AbstractPart part) {
         if (part instanceof HostedCodeExecutionCallPart mccp) {
             ciNode.put("code", mccp.getText());
@@ -175,6 +212,13 @@ public class OpenAiItemAdapter {
         }
     }
 
+    /**
+     * Creates a Responses API 'function_call' item from an Anahata tool call.
+     * @param tc The Anahata tool call part.
+     * @param sameModel Whether to preserve the original provider ID.
+     * @return The formatted JSON node.
+     * @throws Exception on argument serialization failures.
+     */
     private ObjectNode createFunctionCallNode(AbstractToolCall<?, ?> tc, boolean sameModel) throws Exception {
         ObjectNode callItem = API_MAPPER.createObjectNode();
         callItem.put("type", "function_call");
@@ -195,6 +239,12 @@ public class OpenAiItemAdapter {
         return callItem;
     }
 
+    /**
+     * Creates a Responses API 'web_search_call' item.
+     * @param mscp The web search call part.
+     * @param sameModel Whether to preserve the original provider ID.
+     * @return The formatted JSON node.
+     */
     private ObjectNode createWebSearchCallNode(WebSearchCallPart mscp, boolean sameModel) {
         ObjectNode searchCall = API_MAPPER.createObjectNode();
         searchCall.put("type", "web_search_call");
@@ -204,6 +254,13 @@ public class OpenAiItemAdapter {
         return searchCall;
     }
 
+    /**
+     * Creates a Responses API 'reasoning' item for encrypted or unencrypted chains.
+     * @param part The abstract part.
+     * @param mtp The model text part containing reasoning.
+     * @param sameModel Whether to preserve the original provider ID.
+     * @return The formatted JSON node.
+     */
     private ObjectNode createReasoningNode(AbstractPart part, ModelTextPart mtp, boolean sameModel) {
         ObjectNode reasoningItem = API_MAPPER.createObjectNode();
         reasoningItem.put("type", "reasoning");
@@ -226,12 +283,23 @@ public class OpenAiItemAdapter {
         return reasoningItem;
     }
 
+    /**
+     * Commits a pending message item to the items list if it contains content.
+     * @param items The top-level items list.
+     * @param item The pending message node.
+     */
     private void flushMessageItem(List<ObjectNode> items, ObjectNode item) {
         if (item != null) {
             items.add(item);
         }
     }
 
+    /**
+     * Translates tool execution results and multimodal attachments into 
+     * 'function_call_output' and developer messages.
+     * @param modelMsg The model message containing the responses.
+     * @return A list of response and attachment items.
+     */
     private List<ObjectNode> toToolResponseItems(AbstractModelMessage<?> modelMsg) {
         List<AbstractToolResponse<?>> executedResponses = modelMsg.getToolResponses().stream()
                 .filter(tr -> includePruned || !tr.getCall().isEffectivelyPruned())
@@ -273,6 +341,10 @@ public class OpenAiItemAdapter {
         return items;
     }
 
+    /**
+     * Translates a user or system message into a single Responses API 'message' item.
+     * @return The formatted JSON node, or null if empty.
+     */
     private ObjectNode toUserOrSystemItem() {
         ObjectNode item = API_MAPPER.createObjectNode();
         item.put("type", "message");
@@ -289,6 +361,10 @@ public class OpenAiItemAdapter {
         return contentArray.isEmpty() ? null : item;
     }
 
+    /**
+     * Translates the Anahata RAG context into a 'user' role 'message' item.
+     * @return The formatted JSON node, or null if empty.
+     */
     private ObjectNode toRagItem() {
         ObjectNode item = API_MAPPER.createObjectNode();
         item.put("type", "message");
@@ -303,6 +379,12 @@ public class OpenAiItemAdapter {
         return contentArray.isEmpty() ? null : item;
     }
 
+    /**
+     * Maps an Anahata part into the 'content' array of a Responses API message item.
+     * @param contentArray The target JSON array.
+     * @param part The part to translate.
+     * @param role The role of the enclosing message (used for text type selection).
+     */
     private void addPartToContentArray(ArrayNode contentArray, AbstractPart part, String role) {
         if (part.isEffectivelyPruned() && !includePruned) {
             return;
@@ -319,6 +401,14 @@ public class OpenAiItemAdapter {
         }
     }
 
+    /**
+     * Appends a binary part (image or audio) to a content array using 
+     * OpenAI-specific multimodal formats.
+     * @param contentArray The target JSON array.
+     * @param mimeType The MIME type of the data.
+     * @param data The raw bytes.
+     * @throws AiProviderException if the format is unsupported for direct inclusion.
+     */
     private void addBlobToContentArray(ArrayNode contentArray, String mimeType, byte[] data) {
         String b64 = Base64.getEncoder().encodeToString(data);
         String format = mimeType.contains("/") ? mimeType.substring(mimeType.indexOf("/") + 1) : mimeType;

@@ -39,14 +39,25 @@ merging and multimodal data harvesting.</p>
 @Setter
 public class OpenAiModelMessage extends AbstractModelMessage<OpenAiResponse> {
 
+    /**
+     * Internal Jackson mapper for stream event processing.
+     */
     private static final ObjectMapper API_MAPPER = new ObjectMapper();
 
-    /** Placeholder text used for reasoning items in stateless mode when no summary is available. */
+    /**
+     * Placeholder text used for reasoning items in stateless mode when no 
+     * summary is available.
+     */
     public static final String ENCRYPTED_REASONING_PLACEHOLDER = "(Encrypted Reasoning Chain)";
 
     /** The generation phase reported by the model (e.g., 'commentary', 'final_answer'). */
     private String phase;
 
+    /**
+     * Constructs a new OpenAiModelMessage bound to a specific session and model.
+     * @param agi The parent AGI session.
+     * @param modelId The ID of the model that generated this message.
+     */
     public OpenAiModelMessage(Agi agi, String modelId) {
         super(agi, modelId);
     }
@@ -246,6 +257,10 @@ public class OpenAiModelMessage extends AbstractModelMessage<OpenAiResponse> {
         }
     }
 
+    /**
+     * Extracts citations from OpenAI annotations and updates the grounding metadata.
+     * @param annotations The JSON array of annotations from the API.
+     */
     private void processCitations(JsonNode annotations) {
         List<GroundingSource> sources = new ArrayList<>();
         for (JsonNode ann : annotations) {
@@ -363,6 +378,10 @@ public class OpenAiModelMessage extends AbstractModelMessage<OpenAiResponse> {
         }
     }
 
+    /**
+     * Appends text to the current active text part or creates a new one if needed.
+     * @param text The text delta to append.
+     */
     public void appendContent(String text) {
         List<AbstractPart> parts = getParts();
         if (!parts.isEmpty() && parts.get(parts.size() - 1) instanceof ModelTextPart mtp && !mtp.isThought()) {
@@ -372,6 +391,11 @@ public class OpenAiModelMessage extends AbstractModelMessage<OpenAiResponse> {
         }
     }
 
+    /**
+     * Appends text to the current active reasoning part or creates a new 
+     * thought part if needed.
+     * @param text The reasoning delta to append.
+     */
     public void appendThoughts(String text) {
         List<AbstractPart> parts = getParts();
         if (!parts.isEmpty() && parts.get(parts.size() - 1) instanceof ModelTextPart mtp && mtp.isThought()) {
@@ -381,11 +405,17 @@ public class OpenAiModelMessage extends AbstractModelMessage<OpenAiResponse> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getFrom() {
         return getModelId();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getDevice() {
         return "OpenAI-Cloud";

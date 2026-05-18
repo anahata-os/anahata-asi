@@ -9,10 +9,10 @@ import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
@@ -37,11 +37,11 @@ import uno.anahata.asi.agi.tool.spi.AbstractToolParameter;
  * payload by assembling the full API body and then extracting the Identity
  * (Config) and Memory (History) JSON strings from it for UI visibility.
  * Supports built-in hosted tools like Web Search and Code Interpreter.</p>
- *
  * @author anahata
  */
 @Slf4j
 @SuppressWarnings("unchecked")
+@Getter
 public class OpenAiModel extends AbstractModel {
 
     /**
@@ -72,81 +72,112 @@ public class OpenAiModel extends AbstractModel {
         this.displayName = node.path("name").asText(modelId);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Implementation details: Returns the display name or model ID.</p>
+     */
     @Override
-    public OpenAiProvider getProvider() {
-        return provider;
-    }
-
-    @Override
-    public String getModelId() {
-        return modelId;
-    }
-
-    @Override
-    public String getDisplayName() {
+    public String getDescription() {
         return displayName;
     }
 
-    @Override
-    public String getDescription() {
-        return modelId;
-    }
-
+    /**
+     * {@inheritDoc}
+     * <p>Implementation details: Always returns null as Responses API models 
+     * use the base ID for versioning.</p>
+     */
     @Override
     public String getVersion() {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getMaxInputTokens() {
         return 1050000;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getMaxOutputTokens() {
         return 128000;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<String> getSupportedActions() {
         return List.of("generateContent");
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Returns a high-density HTML summary of the model and its specialized 
+     * Responses API provider.</p>
+     */
     @Override
     public String getRawDescription() {
         return "<html><b>Model ID:</b> " + modelId + "<br><b>Provider:</b> OpenAI Responses API</html>";
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isSupportsFunctionCalling() {
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isSupportsContentGeneration() {
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isSupportsBatchEmbeddings() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isSupportsEmbeddings() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isSupportsCachedContent() {
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<String> getSupportedResponseModalities() {
         return List.of("TEXT", "IMAGE", "AUDIO");
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Implementation details: Provides 'web_search' and 'code_interpreter' 
+     * as native server-side tools.</p>
+     */
     @Override
     public List<ServerTool> getAvailableServerTools() {
         List<ServerTool> tools = new ArrayList<>();
@@ -155,6 +186,9 @@ public class OpenAiModel extends AbstractModel {
         return tools;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<ServerTool> getDefaultServerTools() {
         return getAvailableServerTools().stream()
@@ -162,16 +196,25 @@ public class OpenAiModel extends AbstractModel {
                 .collect(java.util.stream.Collectors.toList());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Float getDefaultTemperature() {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Integer getDefaultTopK() {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Float getDefaultTopP() {
         return null;

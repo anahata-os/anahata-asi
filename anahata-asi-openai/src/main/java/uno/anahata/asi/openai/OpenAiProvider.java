@@ -36,7 +36,7 @@ public class OpenAiProvider extends AbstractAiProvider {
     private static final ObjectMapper API_MAPPER = new ObjectMapper();
     /**
      * The HTTP client used for all communication with the OpenAI API.
-     * Marked as transient to prevent serialization of the networking stack.
+     * <p>Marked as transient to prevent serialization of the networking stack.</p>
      */
     private transient HttpClient httpClient;
 

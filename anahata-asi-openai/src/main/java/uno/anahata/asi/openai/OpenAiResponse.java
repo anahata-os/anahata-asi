@@ -23,19 +23,42 @@ import uno.anahata.asi.agi.provider.Response;
 @Getter
 public class OpenAiResponse extends Response<OpenAiModelMessage> {
 
+    /**
+     * Internal mapper for response JSON parsing.
+     */
     private static final ObjectMapper API_MAPPER = new ObjectMapper();
 
+    /**
+     * The unique identifier of the response.
+     */
     private final String id;
+    /**
+     * The list of generated message candidates (exactly one for Responses API).
+     */
     private final List<OpenAiModelMessage> candidates;
+    /**
+     * Metadata describing the API token consumption and reasoning costs.
+     */
     private final ResponseUsageMetadata usageMetadata;
+    /**
+     * The original, unparsed JSON body of the API response.
+     */
     private final String rawJson;
+    /**
+     * The raw JSON string of the request configuration partition.
+     */
     private final String rawRequestConfigJson;
+    /**
+     * The raw JSON string of the history/memory partition.
+     */
     private final String rawHistoryJson;
+    /**
+     * The specific version identifier returned by the model.
+     */
     private final String modelVersion;
 
     /**
      * Constructs a new response object for a streaming chunk.
-     * 
      * @param requestConfigJson The raw JSON of the request configuration.
      * @param historyJson The raw JSON of the conversation history.
      * @param chunkJson The raw JSON of the stream chunk.
@@ -50,6 +73,15 @@ public class OpenAiResponse extends Response<OpenAiModelMessage> {
         this.candidates = java.util.List.of();
     }
 
+    /**
+     * Constructs a new full response by parsing the OpenAI response body.
+     * @param requestConfigJson The configuration partition.
+     * @param historyJson The history partition.
+     * @param agi The parent AGI session.
+     * @param modelId The expected model ID.
+     * @param responseBody The raw API response body.
+     * @throws Exception on parsing failures.
+     */
     public OpenAiResponse(String requestConfigJson, String historyJson, Agi agi, String modelId, String responseBody) throws Exception {
         this.rawRequestConfigJson = requestConfigJson;
         this.rawHistoryJson = historyJson;
@@ -88,11 +120,17 @@ public class OpenAiResponse extends Response<OpenAiModelMessage> {
         this.candidates = List.of(turnMessage);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Optional<String> getPromptFeedback() {
         return Optional.empty();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getTotalTokenCount() {
         return usageMetadata.getTotalTokenCount();
