@@ -70,8 +70,10 @@ public class BatchCodeRefiner extends AnahataToolkit {
                 + "6. **Javadocs**: Use the structured `javadoc` property (JavadocIntent) to inject Javadocs on the fly. To update ONLY the Javadoc of an existing member, provide the `memberFqn` and the new `javadoc`, leaving `declaration` and `body` null. **WARNING**: If you provide a `javadoc` object during an `UPDATE`, it completely replaces the existing Javadoc. You MUST provide all `@param`, `@return`, and `@throws` fields in the JSON if you want them preserved. If `javadoc` is omitted during an UPDATE, the existing Javadoc is preserved.\n"
                 + "7. **Imports**: FQNs provided in `importsToAdd` and `importsToRemove` are safely evaluated and added/removed from the compilation unit.\n"
                 + "8. **Records and Modern Java**: Fully supported. Because V4 uses AST-guided text replacement, all modern Java constructs (Records, Switch Expressions, etc.) are safely refactored without breaking the IDE's formatter.\n"
-                + "9. **package-info**: Use the Resources toolkit for creating and editing package-info.java files.\n"
-                + "10. **No training knowledge**: Do not use your training knowledge, this toolkit is unique to Anahata you have to pay very close attention to the tool definition and the parameters schema.\n"
+                + "9. **Class-Level Updates**: To update a class declaration (e.g. adding `@Getter` or changing the class Javadoc), set `memberFqn` to the class FQN and `type` to `UPDATE`. Provide the new `declaration` and leave `body` empty. The existing class members will be perfectly preserved!\n"
+                + "10. **package-info**: Use the Resources toolkit for creating and editing package-info.java files.\n"
+                + "11. **No training knowledge**: Do not use your training knowledge, this toolkit is unique to Anahata you have to pay very close attention to the tool definition and the parameters schema.\n"
+
         );
     }
 
