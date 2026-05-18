@@ -14,17 +14,49 @@ import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
 import uno.anahata.asi.agi.tool.schema.SchemaProvider;
 
 /**
- * Converts Anahata messages into Anthropic's 'messages' format.
+ * A translation adapter that converts Anahata's unified message model 
+ * into the structured JSON required by the Anthropic Messages API.
+ * <p>
+ * This adapter handles:
+ * </p>
+ * <ul>
+ *   <li>Standard text and multimodal parts (images).</li>
+ *   <li>Outbound tool calls (<code>tool_use</code>).</li>
+ *   <li>Inbound tool results (<code>tool_result</code>).</li>
+ *   <li>Pruning logic based on the session configuration.</li>
+ * </ul>
+ * @author anahata
  */
 public class AnthropicContentAdapter {
+    /**
+     * The source Anahata message to translate.
+     */
     private final AbstractMessage anahataMessage;
+    /**
+     * Whether to include parts that have been marked as effectively pruned 
+     * in the generated payload.
+     */
     private final boolean includePruned;
 
+    /**
+     * Constructs a new adapter for a specific message.
+     * @param anahataMessage The message to translate.
+     * @param includePruned Whether to include pruned content.
+     */
     public AnthropicContentAdapter(AbstractMessage anahataMessage, boolean includePruned) {
         this.anahataMessage = anahataMessage;
         this.includePruned = includePruned;
     }
 
+    /**
+     * Converts the message into a list of Anthropic-compatible JSON objects.
+     * <p>
+     * Note: A single Anahata message may expand into multiple Anthropic 
+     * messages if it contains both tool calls (assistant role) and tool 
+     * responses (user role).
+     * </p>
+     * @return A list of ObjectNodes ready for inclusion in a 'messages' array.
+     */
     public List<ObjectNode> toAnthropic() {
         List<ObjectNode> results = new ArrayList<>();
         Role role = anahataMessage.getRole();
