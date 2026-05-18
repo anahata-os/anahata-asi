@@ -13,6 +13,13 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.anthropic.AnthropicProvider;
+import uno.anahata.asi.gemini.GeminiAiProvider;
+import uno.anahata.asi.gemini.vertex.GeminiGoogleCloudExpressAIProvider;
+import uno.anahata.asi.huggingface.HuggingFaceProvider;
+import uno.anahata.asi.minimax.MinimaxAnthropicProvider;
+import uno.anahata.asi.modal.ModalProvider;
+import uno.anahata.asi.openai.OpenAiProvider;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.message.part.tool.param.FullTextFileCreateRenderer;
 import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory;
@@ -63,6 +70,43 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
      */
     public AbstractSwingAsiContainer(String hostApplicationId) {
         super(hostApplicationId);
+        
+        if (getProvider("GeminiGCExpress") == null) {
+            registerProvider(new GeminiGoogleCloudExpressAIProvider());
+        }
+
+        if (getProvider("Gemni") == null) {
+            registerProvider(new GeminiAiProvider("Gemini", "Google AI Studio", false));
+        }
+
+        if (getProvider("GeminiVertex") == null) {
+            registerProvider(new GeminiAiProvider("GeminiVertex", "Google Cloud (Vertex)", true));
+        }
+
+        if (getProvider("OpenAI") == null) {
+            log.info("Registering OpenAI");
+            registerProvider(new OpenAiProvider());
+        }
+        
+        if (getProvider("Anthropic") == null) {
+            log.info("Registering OpenAI");
+            registerProvider(new AnthropicProvider());
+        }
+
+        if (getProvider("Minimax") == null) {
+            log.info("Registering MiniMax (Anthropic)");
+            registerProvider(new MinimaxAnthropicProvider());
+        }
+        
+        if (getProvider("Modal") == null) {
+            log.info("Registering Modal");
+            registerProvider(new ModalProvider());
+        }
+
+        if (getProvider("HuggingFace") == null) {
+            log.info("Registering HF");
+            registerProvider(new HuggingFaceProvider());
+        }
     }
 
     /**
