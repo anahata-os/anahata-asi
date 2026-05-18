@@ -25,7 +25,13 @@ import uno.anahata.asi.internal.JacksonUtils;
 @Setter
 public class AnthropicProvider extends AbstractAiProvider {
 
+    /**
+     * The forced Anthropic API version header (e.g., '2023-06-01').
+     */
     private String anthropicVersion;
+    /**
+     * The HTTP client used for communication. transient to avoid serialization.
+     */
     private transient HttpClient httpClient;
 
     public AnthropicProvider() {
@@ -41,6 +47,10 @@ public class AnthropicProvider extends AbstractAiProvider {
         setKeysAcquisitionUri(keysAcquisitionUri);
     }
 
+    /**
+     * Lazily initializes and returns the HTTP client.
+     * @return The active HTTP client.
+     */
     public synchronized HttpClient getHttpClient() {
         if (httpClient == null) {
             httpClient = HttpClient.newBuilder()
@@ -50,6 +60,11 @@ public class AnthropicProvider extends AbstractAiProvider {
         return httpClient;
     }
 
+    /**
+     * Creates a pre-configured request builder with standard Anthropic headers.
+     * @param endpoint The API endpoint (e.g., 'messages').
+     * @return A new HttpRequest.Builder.
+     */
     public HttpRequest.Builder createRequestBuilder(String endpoint) {
         String url = getBaseUrl();
         String fullUrl = url.endsWith("/") ? url + endpoint : url + "/" + endpoint;
@@ -120,7 +135,6 @@ public class AnthropicProvider extends AbstractAiProvider {
     
     /**
      * Determines if an HTTP status code represents a retryable error.
-     * 
      * @param statusCode The HTTP status code.
      * @param responseBody The response body.
      * @return true if the request should be retried.

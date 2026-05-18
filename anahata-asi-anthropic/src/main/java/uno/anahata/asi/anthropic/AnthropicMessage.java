@@ -25,14 +25,34 @@ import uno.anahata.asi.internal.JacksonUtils;
 @Setter
 public class AnthropicMessage extends AbstractModelMessage<AnthropicResponse> {
 
+    /**
+     * Buffers for accumulating streaming tool call arguments, keyed by their 
+     * index in the content block array.
+     */
     private transient Map<Integer, StringBuilder> toolArgBuffers = new HashMap<>();
+    /**
+     * Maps content block indices to their stable API-provided unique tool use IDs.
+     */
     private transient Map<Integer, String> toolIds = new HashMap<>();
+    /**
+     * Maps content block indices to the requested tool name.
+     */
     private transient Map<Integer, String> toolNames = new HashMap<>();
 
+    /**
+     * Constructs a new Anthropic message.
+     * @param agi The parent session.
+     * @param modelId The model ID.
+     */
     public AnthropicMessage(Agi agi, String modelId) {
         super(agi, modelId);
     }
 
+    /**
+     * Parses the final (non-streaming) content array from an Anthropic 
+     * response. Handles text, thinking, and tool_use blocks.
+     * @param contentArray The JSON array of content blocks.
+     */
     public void parseFinalContent(JsonNode contentArray) {
         for (JsonNode block : contentArray) {
             String type = block.path("type").asText();
@@ -53,6 +73,11 @@ public class AnthropicMessage extends AbstractModelMessage<AnthropicResponse> {
         }
     }
 
+    /**
+     * Processes a single streaming event from the Anthropic API.
+     * @param eventType The type of event (e.g., 'message_start', 'content_block_delta').
+     * @param data The JSON payload associated with the event.
+     */
     public void handleEvent(String eventType, JsonNode data) {
         switch (eventType) {
             case "message_start":
@@ -104,6 +129,11 @@ public class AnthropicMessage extends AbstractModelMessage<AnthropicResponse> {
         }
     }
 
+    /**
+     * Finalizes a tool call by parsing its buffered JSON arguments and 
+     * registering it with the tool manager.
+     * @param index The content block index for the tool.
+     */
     private void flushToolCall(int index) {
         String id = toolIds.remove(index);
         String name = toolNames.remove(index);
@@ -118,6 +148,11 @@ public class AnthropicMessage extends AbstractModelMessage<AnthropicResponse> {
         }
     }
 
+    /**
+     * Appends text to the last message part if it is a text part, otherwise 
+     * creates a new one.
+     * @param text The text to append.
+     */
     public void appendContent(String text) {
         List<AbstractPart> parts = getParts();
         if (!parts.isEmpty() && parts.get(parts.size() - 1) instanceof ModelTextPart mtp && !mtp.isThought()) {
@@ -153,6 +188,10 @@ public class AnthropicMessage extends AbstractModelMessage<AnthropicResponse> {
         }
     }
 
+    /**
+     * Maps an Anthropic stop reason to the unified Anahata finish reason.
+     * @param reason The raw string from the API.
+     */
     public void setFinishReasonFromAnthropic(String reason) {
         if ("end_turn".equals(reason)) setFinishReason(FinishReason.STOP);
         else if ("max_tokens".equals(reason)) setFinishReason(FinishReason.MAX_TOKENS);

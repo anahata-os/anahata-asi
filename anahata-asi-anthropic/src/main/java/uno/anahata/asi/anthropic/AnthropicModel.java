@@ -40,11 +40,30 @@ import uno.anahata.asi.internal.JacksonUtils;
 @Slf4j
 public class AnthropicModel extends AbstractModel {
 
+    /**
+     * The parent provider instance.
+     */
     private final AnthropicProvider provider;
+    /**
+     * The unique identifier for the model.
+     */
     private final String modelId;
+    /**
+     * The user-friendly name of the model.
+     */
     private final String displayName;
+    /**
+     * The version identifier for the model.
+     */
     private final String version;
 
+    /**
+     * Constructs a new Anthropic model instance with full version details.
+     * @param provider The parent provider.
+     * @param modelId The model ID.
+     * @param displayName The display name.
+     * @param version The model version.
+     */
     public AnthropicModel(AnthropicProvider provider, String modelId, String displayName, String version) {
         this.provider = provider;
         this.modelId = modelId;
@@ -56,63 +75,123 @@ public class AnthropicModel extends AbstractModel {
         this(provider, modelId, displayName, "");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public AnthropicProvider getProvider() { return provider; }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getModelId() { return modelId; }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getDisplayName() { return displayName; }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getDescription() { return "Anthropic Claude Model"; }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getVersion() { return version; }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getMaxInputTokens() { return 200000; }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getMaxOutputTokens() { return 8192; }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<String> getSupportedActions() { return List.of("messages"); }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getRawDescription() { return "<html><b>Model ID:</b> " + modelId + "<br><b>Version:</b> " + version + "</html>"; }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isSupportsFunctionCalling() { return true; }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isSupportsContentGeneration() { return true; }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isSupportsBatchEmbeddings() { return false; }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isSupportsEmbeddings() { return false; }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isSupportsCachedContent() { return true; }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<String> getSupportedResponseModalities() { return List.of("TEXT", "IMAGE"); }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<ServerTool> getAvailableServerTools() { return Collections.emptyList(); }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<ServerTool> getDefaultServerTools() { return Collections.emptyList(); }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Float getDefaultTemperature() { return 0.7f; }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Integer getDefaultTopK() { return null; }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Float getDefaultTopP() { return null; }
 

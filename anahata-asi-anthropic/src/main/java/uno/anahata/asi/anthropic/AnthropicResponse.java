@@ -19,13 +19,39 @@ import uno.anahata.asi.internal.JacksonUtils;
 @Getter
 public class AnthropicResponse extends Response<AnthropicMessage> {
 
+    /**
+     * The unique response ID provided by Anthropic.
+     */
     private final String id;
+    /**
+     * The list of generated messages.
+     */
     private final List<AnthropicMessage> candidates = new ArrayList<>();
+    /**
+     * Token usage metadata.
+     */
     private final ResponseUsageMetadata usageMetadata;
+    /**
+     * The raw JSON response from the API.
+     */
     private final String rawJson;
+    /**
+     * The raw JSON configuration used for the request.
+     */
     private final String rawRequestConfigJson;
+    /**
+     * The raw JSON history sent with the request.
+     */
     private final String rawHistoryJson;
 
+    /**
+     * Constructs a full response from the Anthropic API.
+     * @param rawRequestConfigJson The configuration JSON.
+     * @param rawHistoryJson The history JSON.
+     * @param agi The session.
+     * @param modelId The model ID.
+     * @param responseBody The raw response body.
+     */
     public AnthropicResponse(String rawRequestConfigJson, String rawHistoryJson, Agi agi, String modelId, String responseBody) {
         this.rawRequestConfigJson = rawRequestConfigJson;
         this.rawHistoryJson = rawHistoryJson;
@@ -62,6 +88,12 @@ public class AnthropicResponse extends Response<AnthropicMessage> {
         candidates.add(msg);
     }
     
+    /**
+     * Constructs a stream chunk response.
+     * @param rawRequestConfigJson The configuration JSON.
+     * @param rawHistoryJson The history JSON.
+     * @param chunkJson The raw chunk JSON.
+     */
     public AnthropicResponse(String rawRequestConfigJson, String rawHistoryJson, String chunkJson) {
         this.id = "stream";
         this.rawRequestConfigJson = rawRequestConfigJson;
@@ -70,11 +102,17 @@ public class AnthropicResponse extends Response<AnthropicMessage> {
         this.usageMetadata = ResponseUsageMetadata.builder().build();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Optional<String> getPromptFeedback() {
         return Optional.empty();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getTotalTokenCount() {
         return usageMetadata != null ? usageMetadata.getTotalTokenCount() : 0;
