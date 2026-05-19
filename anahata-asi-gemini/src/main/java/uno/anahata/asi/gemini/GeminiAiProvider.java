@@ -41,6 +41,13 @@ public class GeminiAiProvider extends AbstractAiProvider {
     private boolean vertex = false;
 
     /**
+     * Creates a new Gemini Provider with default settings.
+     */
+    public GeminiAiProvider() {
+        this(java.util.UUID.randomUUID().toString(), "Google Gemini", false);
+    }
+
+    /**
      * Craetes a new Gemini Provider using the Official Google Genai Java SDK.
      *
      * @param uuid registration id
