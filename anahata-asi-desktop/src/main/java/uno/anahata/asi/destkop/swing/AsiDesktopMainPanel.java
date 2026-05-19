@@ -29,13 +29,13 @@ import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 public class AsiDesktopMainPanel extends JPanel {
 
     /** The parent ASI container managing the global state. */
-    private final AsiDesktopAsiContainer asiContainer;
+    protected final AsiDesktopAsiContainer asiContainer;
     
     /** The sidebar panel for switching between active sessions. */
-    private final AsiCardsContainerPanel asiContainerPanel;
+    protected final AsiCardsContainerPanel asiContainerPanel;
     
     /** The central tabbed pane for displaying active agi conversations. */
-    private final JTabbedPane tabbedPane;
+    protected final JTabbedPane tabbedPane;
     
     /** The listener for changes in the container's active agis list. */
     private final EdtPropertyChangeListener asiListener;
