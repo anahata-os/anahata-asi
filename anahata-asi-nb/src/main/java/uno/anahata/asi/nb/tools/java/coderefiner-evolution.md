@@ -199,4 +199,12 @@ During Test 13 (Updating an Enum Constant Javadoc), we encountered another `Stri
 During field insertion via the `body` parameter, V4's `INSERT` logic mistakenly assumed all members with a `body` were methods or classes and wrapped the initializer in `{ }` braces. 
 **The Fix:** Added heuristic detection (`!isMethod && !isClass && !isBlock`) in `CodeRefinementIntent.java` to detect field declarations during `INSERT`. If a field is detected, the `body` string is appended as an initializer using ` = ` instead of `{ }`.
 
-Força Barça!
+## Turn 378 & 379: The Truth About importFQNs
+Following the stabilization of the V4 AST-Guided architecture, we launched a mission to investigate the `GeneratorUtilities.importFQNs` mystery. Did it actually have a bug that crashed `CasualDiff` when handling complex generics, or was it a phantom side-effect of our manual AST mutilation in V3? 
+
+We constructed a bulletproof test case using an in-memory `JavaSource` bound to the real project's `ClasspathInfo`. 
+
+**The Verdict:** `importFQNs` successfully resolved and shortened complex generic FQNs (`<T extends java.lang.Number & java.io.Serializable>`) without throwing a `NullPointerException` in `CasualDiff`! 
+The historical crashes were caused by our V3 architecture handing `importFQNs` a manually hacked, un-attributed AST. Because V4 uses pure text-splicing, we can now safely use `importFQNs` on an isolated memory file to restore the `optimize=true` functionality!
+
+Go Anahata!
