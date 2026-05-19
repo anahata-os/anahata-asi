@@ -52,49 +52,61 @@ public class CodeRefinementIntent implements Serializable {
     private Type type;
 
     /**
-     * The fully qualified name of the target class container. Used for resolving the container during structural inserts.
+     * The fully qualified name of the target class container. 
+     * Used for resolving the container during structural inserts. 
+     * Nested types should use the '$' separator.
      */
     @Schema(description = "The FQN of the target class (e.g. 'com.foo.Bar'). Mandatory for 'INSERT' inside a class. Use '$' for nested types. Leave empty for file-level.")
     private String classFqn;
 
     /**
      * The absolute fully qualified name of the target member to perform the operation on.
+     * Supports methods, fields, and inner classes. 
+     * Method FQNs must include full parameter types (type erasure applied).
      */
     @Schema(description = "The ABSOLUTE FQN of the member to operation on (e.g. 'com.foo.Bar.myMethod(java.util.List)'). FQNs are preferred for parameters. Generic brackets '<...>' are not required and will be ignored during matching.")
     private String memberFqn;
 
     /**
      * The exact string declaration (signature) of the member.
+     * This should include modifiers, return types, and parameter lists 
+     * but NOT the body or Javadoc.
      */
     @Schema(description = "The member signature or header (everything to the LEFT of the first '{' or '=')' without javadoc. (e.g. '@Override public void setItems(List<String> items)'). Mandatory for 'INSERT', optional for 'UPDATE' (only if you want to change the declaration). Do not provide Javadocs here. Will cause the tool to fail or corrupt the java source file.")
     private String declaration;
 
     /**
      * The code body or initializer expression.
+     * For methods, this is the code inside the braces. 
+     * For fields, it is the expression following the assignment operator.
      */
     @Schema(description = "For methods, The WHOLE body code, the logic inside the braces. For fields, the initializer expression (part after '=') or can be blank if there is no initializer expression. FOr use with 'INSERT' and 'UPDATE'. **Do not include the method signature or field declaration in this 'body' field. i.e. ths field cannot start with annotations like @Override or modifiers like 'public void '**")
     private String body;
 
     /**
-     * The relative position constraint for insertion or moving.
+     * The relative position constraint for insertion or moving operations.
+     * Requires an anchor member if using BEFORE or AFTER.
      */
     @Schema(description = "Position relative to the anchor member. **Mandatory for 'INSERT' and 'MOVE'**.")
     private RelativePosition position;
 
     /**
-     * The simple name of the anchor member to position against.
+     * The simple name or signature of the anchor member to position against.
+     * Used in conjunction with {@link RelativePosition}.
      */
     @Schema(description = "Anchor member name relative to class (e.g. 'myMethod()'). Mandatory for BEFORE/AFTER positions in 'INSERT' and 'MOVE'.")
     private String anchorMemberName;
 
     /**
-     * A human-readable reason explaining the intent.
+     * A human-readable reason explaining the intent. 
+     * Visible in the UI during the refinement review phase.
      */
     @Schema(description = "The reason for this structural change. Will be displayed in the UI.")
     private String reason;
 
     /**
-     * The structured Javadoc configuration to apply.
+     * The structured Javadoc configuration to apply to the member.
+     * Allows for synchronous documentation and code updates.
      */
     @Schema(description = "Optional Javadoc to apply to the member. If updating a member and left null, the existing Javadoc is preserved. WARNING: When used in an UPDATE intent, providing this object will completely replace the existing Javadoc. You MUST provide all @param, @return, and @throws fields if they should be preserved.")
     private JavadocIntent javadoc;
