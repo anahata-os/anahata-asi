@@ -286,6 +286,17 @@ public class AiProviderPanel extends ScrollablePanel {
             add(anthropicVersionField, "span 2, wrap");
         }
 
+        if (provider instanceof uno.anahata.asi.openai.OpenAiProvider nativeOai) {
+            add(new JLabel("Verified Organization:"), "gaptop 5");
+            JCheckBox verifiedCheck = new JCheckBox("", nativeOai.isVerifiedOrganization());
+            verifiedCheck.setOpaque(false);
+            verifiedCheck.setToolTipText("Enable if your API key belongs to a verified OpenAI organization. Allows stateful API calls and plain-text reasoning summaries.");
+            verifiedCheck.addActionListener(e -> {
+                nativeOai.setVerifiedOrganization(verifiedCheck.isSelected());
+            });
+            add(verifiedCheck, "span 2, wrap");
+        }
+
         if (provider instanceof OpenAiCompatibleProvider oai) {
             add(new JLabel("Custom Headers:"), "top, gaptop 5");
             customHeadersArea = new JTextArea(3, 20);
