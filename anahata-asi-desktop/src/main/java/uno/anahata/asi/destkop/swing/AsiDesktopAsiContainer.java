@@ -50,10 +50,18 @@ public class AsiDesktopAsiContainer extends AbstractSwingAsiContainer {
     private AsiDesktopMainPanel mainPanel;
 
     /**
-     * Constructs a new StandaloneAsiContainer.
+     * Constructs a new StandaloneAsiContainer with 'AsiDesktop' as hostApplicationId.
      */
     public AsiDesktopAsiContainer() {
-        super("AsiDesktop");
+        this ("AsiDesktop");
+    }
+    
+    /**
+     * Constructs a new StandaloneAsiContainer.
+     * @param hostApplicationId
+     */
+    public AsiDesktopAsiContainer(String hostApplicationId) {
+        super(hostApplicationId);
         
         
         
