@@ -27,12 +27,15 @@
             <scope>provided</scope>
         </dependency>
         
-        <!-- Android ddmlib -->
+        <!-- Android adblib that lives in googles maven repo maven.google.com-->
+        <!--        
         <dependency>
-            <groupId>com.android.tools.ddms</groupId>
-            <artifactId>ddmlib</artifactId>
-            <version>25.3.0</version>
+            <groupId>com.android.tools.adblib</groupId>
+            <artifactId>adblib</artifactId>
+            <version>9.2.1</version>
+            <scope>runtime</scope>
         </dependency>
+        -->
         
         <!-- Modern Fork of FreeTTS for the Singularity's Voice -->
         <dependency>
