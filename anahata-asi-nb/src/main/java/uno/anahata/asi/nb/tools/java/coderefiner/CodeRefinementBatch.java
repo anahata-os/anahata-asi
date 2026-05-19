@@ -66,7 +66,8 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
     private List<String> importsToRemove = new ArrayList<>();
 
     /**
-     * Internal list of calculated line comments.
+     * The list of line-level comments calculated during the AST transformation process. 
+     * These are intended for UI rendering of the changes.
      */
     @JsonIgnore
     @Schema(hidden = true)
@@ -75,10 +76,12 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
     /**
      * {@inheritDoc}
      * <p>
-     * Calculates the resulting text content by sequentially applying the V4
-     * AST-Guided text replacements. It resolves explicit imports via
-     * {@link org.netbeans.api.java.source.GeneratorUtilities} to bypass
-     * CasualDiff generics bugs.</p>
+     * Implementation details: This method executes a multi-stage replay of the modification intents. 
+     * For each intent, it creates a transient virtual file in a {@code MemoryFileSystem}, 
+     * initializes a {@code JavaSource} context, and applies AST-guided text replacements. 
+     * Finally, it performs import management using {@link org.netbeans.api.java.source.GeneratorUtilities} 
+     * to ensure the resulting code is semantically sound.
+     * </p>
      */
     @Override
     protected String doCalculateResultingContent(Agi agi) throws Exception {
@@ -188,12 +191,13 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
     }
 
     /**
-     * Validates the structural state and optimistic locking constraints before
-     * execution.
-     *
-     * @param agi the active Agi session.
-     * @throws java.lang.Exception if validation fails or no changes were
-     * detected.
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Performs an early execution of the AST refinement pipeline 
+     * to verify that the resulting content is not identical to the current file state. 
+     * This prevents redundant disk writes and informs the AI if its proposed changes 
+     * had no effect due to selector mismatches.
+     * </p>
      */
     @Override
     public void validate(Agi agi) throws Exception {
