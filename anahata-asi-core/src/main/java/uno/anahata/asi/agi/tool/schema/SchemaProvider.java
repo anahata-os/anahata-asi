@@ -542,10 +542,10 @@ public class SchemaProvider {
 
     /**
      * Post-processes and enriches the generated schemas with type information.
-     *
-     * @param rootType The root Java type.
      * @param allSchemas The map of all generated schemas.
+     * @param rootType The root Java type.
      * @param discoveredTypes The map of all discovered Java types.
+     * @param polymorphismMap The map detailing polymorphic parent-child relationships.
      */
     private static void postProcessAndEnrichSchemas(Type rootType, Map<String, Schema> allSchemas, Map<String, Type> discoveredTypes, Map<Type, List<Type>> polymorphismMap) {
         for (Map.Entry<String, Schema> entry : allSchemas.entrySet()) {
@@ -574,10 +574,10 @@ public class SchemaProvider {
 
     /**
      * Recursively finds all types reachable from a given type.
-     *
+     * @param visited The set of visited types to prevent infinite loops.
      * @param type The starting type.
+     * @param polymorphismMap The map to populate with discovered polymorphic parent-child relationships.
      * @param foundTypes The map to store found types.
-     * @param visited The set of visited types.
      */
     private static void findAllTypesRecursive(Type type, Map<String, Type> foundTypes, Map<Type, List<Type>> polymorphismMap, Set<Type> visited) {
         if (type == null || !visited.add(type)) {
