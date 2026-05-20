@@ -3,14 +3,17 @@
 This file tracks the actionable tasks and tactical goals for the Anahata ASI (V2) project.
 
 ## 0. Zero Day Go Live: 
-- [ ] make "cached data" in MediaView transient? possibly in text resources too?
 
-- [] ContextPanel -> 
-    - ResourcePanel shows the editors way below for Reformatter.java for example, may be related to resources that don't fit on the default viewport and the issue may occur after doing expand to fit viewport.
+- [ ] Investigate the NPE this was causing in CodeRefiner.optimizeImportsInternal
+      CompilationUnitTree oldCut = wc.getCompilationUnit();
+            CompilationUnitTree newCut = GeneratorUtilities.get(wc).importFQNs(oldCut);
+            wc.rewrite(oldCut, newCut);
+
+- [ ] make "cached data" in MediaView transient? possibly in text resources too?
 
 - [ ] change all log.info to log.debug
 
-- [ ] enums in json schemas dont have description
+- [ ] enums in json schemas dont have description, check JavaMethodToolResponse for ExecutionStatus
 
 - [ ] recording audio on the microphon button default recording device leaves a dangling swing task and doesn't record
 
