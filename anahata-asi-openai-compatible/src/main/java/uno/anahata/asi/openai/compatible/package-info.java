@@ -14,7 +14,7 @@
  * Key Components:
  * </p>
  * <ul>
- *   <li><b>Universal Provider</b>: {@link uno.anahata.asi.openai.compatible.OpenAiCompatibleProvider} 
+ *   <li><b>Universal Provider</b>: {@link uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider} 
  *       enables custom base URL configuration for multi-endpoint support.</li>
  *   <li><b>Model Logic</b>: {@link uno.anahata.asi.openai.compatible.OpenAiCompatibleModel} handles 
  *       payload synthesis, tool declaration mapping, and standard JDK-based 

@@ -143,9 +143,15 @@ public class OpenAiChatCompletionsProvider extends AbstractAiProvider {
     }
 
     /**
-     * {@inheritDoc}
-     * <p>Implementation details: Checks for common OpenAI-compatible error codes 
-     * (429, 503, 500, 499, 408).</p>
+     * Determines if an HTTP status code or response body indicates a transient 
+     * failure that should trigger a retry or rotation.
+     * <p>
+     * Checks for common OpenAI-compatible error codes (429, 503, 500, 499, 408).
+     * </p>
+     * 
+     * @param statusCode The HTTP status code.
+     * @param responseBody The raw response body.
+     * @return true if retryable, false otherwise.
      */
     public boolean isRetryable(int statusCode, String responseBody) {
         return statusCode == 429 || statusCode == 503 || statusCode == 500 || statusCode == 499 || statusCode == 408;
