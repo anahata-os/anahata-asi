@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
 public class JavadocIntent implements Serializable {
 
     /**
-     * The main Javadoc description (Markdown or HTML). Supports inline tags like {@inheritDoc}, {@link}, {@code}.
+     * The main Javadoc description (Markdown or HTML). Supports inline tags like {@code {@inheritDoc}}, {@code {@link}}, {@code {@code}}.
      */
     @Schema(description = "The main Javadoc description.")
     private String description;

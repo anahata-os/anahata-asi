@@ -361,7 +361,7 @@ public class Maven extends AnahataToolkit {
 
     /**
      * Gets the list of dependencies directly declared in the pom.xml.
-     * @param projectId The ID of the project to analyze.
+     * @param projectPath The absolute path of the project to analyze.
      * @return a list of DependencyScope objects.
      * @throws Exception if an error occurs.
      */
@@ -377,7 +377,7 @@ public class Maven extends AnahataToolkit {
 
     /**
      * Gets the final, fully resolved list of transitive dependencies for the project.
-     * @param projectId The ID of the project to analyze.
+     * @param projectPath The absolute path of the project to analyze.
      * @return a list of ResolvedDependencyScope objects.
      * @throws Exception if an error occurs.
      */

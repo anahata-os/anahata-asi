@@ -154,7 +154,7 @@ public class CodeRefiner extends AnahataToolkit {
     /**
      * Internal implementation of the import optimization logic.
      *
-     * @param js the java source
+     * @param fo the file object
      * @param removeUnused whether to remove unused imports
      * @throws Exception if optimization fails
      */
