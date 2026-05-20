@@ -126,11 +126,10 @@ public class Chrome extends AbstractBrowser {
     }
 
     /**
-     * {@inheritDoc}
-     * <p>Implementation details: Scans the OS process table to find running 
+     * Scans the OS process table to find running 
      * Chrome instances bound to the requested {@code dataDir}. If a matching 
      * process is found in debug mode, it attaches to the existing port; 
-     * otherwise, it launches a fresh instance with a dynamic debug port.</p>
+     * otherwise, it launches a fresh instance with a dynamic debug port.
      * @param droneId   A unique ID for this drone.
      * @param profile   An optional profile name (e.g., 'Default', 'Profile 1').
      * @param headless  Whether to launch in an invisible headless mode.

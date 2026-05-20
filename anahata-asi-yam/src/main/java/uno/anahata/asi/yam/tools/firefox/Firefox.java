@@ -114,10 +114,9 @@ public class Firefox extends AbstractBrowser {
     }
 
     /**
-     * {@inheritDoc}
-     * <p>Implementation details: Configures {@link FirefoxOptions} with 
+     * Configures {@link FirefoxOptions} with 
      * headless and profile flags. Launches the process via the system's 
-     * default {@link GeckoDriverService}.</p>
+     * default {@link GeckoDriverService}.
      * @param droneId   The unique ID for the drone.
      * @param profile   The Firefox profile name.
      * @param headless  Whether to run without a GUI.

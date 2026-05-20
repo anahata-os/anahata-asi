@@ -13,7 +13,7 @@
  * Key Functional Tools:
  * </p>
  * <ul>
- *   <li>{@link uno.anahata.asi.yam.tools.Chrome}: A Selenium-powered automation 
+ *   <li>{@link uno.anahata.asi.yam.tools.chrome.Chrome}: A Selenium-powered automation 
  *       engine featuring "Profile Awareness" and the "Lock-Hunter" protocol for 
  *       seamless browser hijacking.</li>
  *   <li>{@link uno.anahata.asi.yam.tools.Radio}: A stateful internet radio 

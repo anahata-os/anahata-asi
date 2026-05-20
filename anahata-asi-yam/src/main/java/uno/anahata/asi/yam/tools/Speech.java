@@ -25,11 +25,10 @@ public class Speech extends AnahataToolkit {
     private static final String DEFAULT_VOICE = "kevin16";
 
     /**
-     * {@inheritDoc}
-     * <p>Implementation details: Dynamically configures the {@code freetts.voices} 
+     * Dynamically configures the {@code freetts.voices} 
      * system property to locate the Kevin voice directory. Uses 
      * {@link com.sun.speech.freetts.audio.JavaStreamingAudioPlayer} for 
-     * OS-independent playback.</p>
+     * OS-independent playback.
      * @param text The text to speak.
      * @return A status message confirming the speech execution.
      * @throws Exception If the voice cannot be allocated or the engine fails.
