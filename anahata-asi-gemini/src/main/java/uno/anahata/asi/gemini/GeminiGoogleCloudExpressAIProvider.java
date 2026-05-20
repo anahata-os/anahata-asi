@@ -1,24 +1,12 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.gemini;
 
-import com.google.auth.oauth2.GoogleCredentials;
-import com.google.genai.Chat;
-import com.google.genai.Client;
-import com.google.genai.types.GenerateContentResponse;
-import com.google.genai.types.ListModelsConfig;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.agi.provider.TokenizerType;
-import uno.anahata.asi.gemini.GeminiAiProvider;
-import uno.anahata.asi.gemini.GeminiModel;
 import java.util.ArrayList;
-import uno.anahata.asi.gemini.HardcodedGeminiModel;
 
 /**
  * The concrete implementation of the {@code AbstractAgiProvider} for the Google
