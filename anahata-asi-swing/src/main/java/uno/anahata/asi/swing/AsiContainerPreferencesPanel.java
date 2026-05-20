@@ -18,6 +18,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.Icon;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
@@ -32,6 +33,7 @@ import uno.anahata.asi.swing.agi.config.AgiConfigPanel;
 import uno.anahata.asi.swing.agi.config.RequestConfigPanel;
 import uno.anahata.asi.swing.icons.AddIcon;
 import uno.anahata.asi.swing.icons.CancelIcon;
+import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.icons.SaveIcon;
 import uno.anahata.asi.swing.icons.SettingsIcon;
@@ -420,9 +422,9 @@ public class AsiContainerPreferencesPanel extends ScrollablePanel {
 
         // Toolbar for adding providers
         JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JButton addBtn = new JButton("Add OpenAI Compatible Provider", new AddIcon(16));
+        JButton addBtn = new JButton("Add New Provider", new AddIcon(16));
         addBtn.addActionListener(e -> {
-            addDraftOpenAiProvider(providerTabs);
+            showAddProviderDialog(providerTabs);
         });
         toolbar.add(addBtn);
 
@@ -444,7 +446,8 @@ public class AsiContainerPreferencesPanel extends ScrollablePanel {
             AiProviderPanel keysPanel = new AiProviderPanel(containerPanel, p, () -> {
                 removeProvider(p, providerTabs);
             });
-            providerTabs.addTab(p.getDisplayName(), createScrollPane(keysPanel));
+            Icon icon = IconUtils.getIcon("aiproviders/" + p.getClass().getName() + ".png", 16, 16);
+            providerTabs.addTab(p.getDisplayName(), icon, createScrollPane(keysPanel));
             activeProviderPanels.add(keysPanel);
         }
         
@@ -454,23 +457,47 @@ public class AsiContainerPreferencesPanel extends ScrollablePanel {
                 unsavedProviders.remove(p);
                 refreshProviderTabs(providerTabs);
             });
-            providerTabs.addTab("<html><b>* " + p.getDisplayName() + "</b></html>", createScrollPane(keysPanel));
+            Icon icon = IconUtils.getIcon("aiproviders/" + p.getClass().getName() + ".png", 16, 16);
+            providerTabs.addTab("<html><b>* " + p.getDisplayName() + "</b></html>", icon, createScrollPane(keysPanel));
             activeProviderPanels.add(keysPanel);
         }
     }
 
-    /**
-     * Adds a new, unsaved OpenAI-compatible provider to the temporary draft list.
-     * 
-     * @param providerTabs The tabbed pane to select the new provider in.
-     */
-    private void addDraftOpenAiProvider(JTabbedPane providerTabs) {
-        String uuid = java.util.UUID.randomUUID().toString();
-        uno.anahata.asi.openai.compatible.OpenAiCompatibleProvider draft = 
-                new uno.anahata.asi.openai.compatible.OpenAiCompatibleProvider(uuid, "New Provider", "https://api.openai.com/v1", null, null);
-        unsavedProviders.add(draft);
-        refreshProviderTabs(providerTabs);
-        providerTabs.setSelectedIndex(providerTabs.getTabCount() - 1);
+    private void showAddProviderDialog(JTabbedPane providerTabs) {
+        List<Class<? extends AbstractAiProvider>> classes = AbstractSwingAsiContainer.AVAILABLE_PROVIDER_CLASSES;
+        JComboBox<ProviderItem> combo = new JComboBox<>();
+        for (Class<? extends AbstractAiProvider> clazz : classes) {
+            try {
+                AbstractAiProvider tempInstance = clazz.getDeclaredConstructor().newInstance();
+                combo.addItem(new ProviderItem(clazz, tempInstance.getDisplayName()));
+            } catch (Exception ex) {
+                combo.addItem(new ProviderItem(clazz, clazz.getSimpleName()));
+            }
+        }
+        
+        int result = JOptionPane.showConfirmDialog(this, combo, "Select Provider Type", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            ProviderItem selected = (ProviderItem) combo.getSelectedItem();
+            if (selected != null) {
+                try {
+                    AbstractAiProvider newProvider = selected.clazz().getDeclaredConstructor().newInstance();
+                    newProvider.setUuid(java.util.UUID.randomUUID().toString());
+                    unsavedProviders.add(newProvider);
+                    refreshProviderTabs(providerTabs);
+                    providerTabs.setSelectedIndex(providerTabs.getTabCount() - 1);
+                } catch (Exception ex) {
+                    log.error("Failed to instantiate provider", ex);
+                    JOptionPane.showMessageDialog(this, "Failed to create provider: " + ex.getMessage());
+                }
+            }
+        }
+    }
+
+    private record ProviderItem(Class<? extends AbstractAiProvider> clazz, String displayName) {
+        @Override
+        public String toString() {
+            return displayName;
+        }
     }
 
     /**
