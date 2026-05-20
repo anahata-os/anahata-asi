@@ -32,11 +32,12 @@ import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.prompt.PromptSupport;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.agi.provider.TokenizerType;
-import uno.anahata.asi.openai.compatible.OpenAiCompatibleProvider;
+import uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider;
 import javax.swing.Icon;
 import javax.swing.JFileChooser;
 import javax.swing.JTabbedPane;
 import uno.anahata.asi.anthropic.AnthropicProvider;
+import uno.anahata.asi.openai.OpenAiResponsesProvider;
 import uno.anahata.asi.swing.icons.PulseIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.ExternalIcon;
@@ -296,7 +297,7 @@ public class AiProviderPanel extends ScrollablePanel {
             add(anthropicVersionField, "span 2, wrap");
         }
 
-        if (provider instanceof uno.anahata.asi.openai.OpenAiProvider nativeOai) {
+        if (provider instanceof OpenAiResponsesProvider nativeOai) {
             add(new JLabel("Verified Organization:"), "gaptop 5");
             JCheckBox verifiedCheck = new JCheckBox("", nativeOai.isVerifiedOrganization());
             verifiedCheck.setOpaque(false);
@@ -307,7 +308,7 @@ public class AiProviderPanel extends ScrollablePanel {
             add(verifiedCheck, "span 2, wrap");
         }
 
-        if (provider instanceof OpenAiCompatibleProvider oai) {
+        if (provider instanceof OpenAiChatCompletionsProvider oai) {
             add(new JLabel("Custom Headers:"), "top, gaptop 5");
             customHeadersArea = new JTextArea(3, 20);
             customHeadersArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
@@ -472,11 +473,11 @@ public class AiProviderPanel extends ScrollablePanel {
             provider.setBaseUrl(baseUrlField.getText().trim());
         }
 
-        if (provider instanceof uno.anahata.asi.anthropic.AnthropicProvider anthropic && anthropicVersionField != null) {
+        if (provider instanceof AnthropicProvider anthropic && anthropicVersionField != null) {
             anthropic.setAnthropicVersion(anthropicVersionField.getText().trim());
         }
 
-        if (provider instanceof OpenAiCompatibleProvider oai) {
+        if (provider instanceof OpenAiChatCompletionsProvider oai) {
             oai.setPreferHttp11(preferHttp11Check.isSelected());
             if (customHeadersArea != null) {
                 Map<String, String> headers = new HashMap<>();
