@@ -33,12 +33,14 @@ import org.jdesktop.swingx.prompt.PromptSupport;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.agi.provider.TokenizerType;
 import uno.anahata.asi.openai.compatible.OpenAiCompatibleProvider;
+import javax.swing.Icon;
 import javax.swing.JFileChooser;
 import javax.swing.JTabbedPane;
 import uno.anahata.asi.anthropic.AnthropicProvider;
 import uno.anahata.asi.swing.icons.PulseIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.ExternalIcon;
+import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.internal.AnyChangeDocumentListener;
 import uno.anahata.asi.swing.internal.SwingTask;
 
@@ -163,7 +165,15 @@ public class AiProviderPanel extends ScrollablePanel {
         JButton removeBtn = new JButton(new DeleteIcon(16));
         removeBtn.setToolTipText("Remove Provider");
         removeBtn.addActionListener(e -> removeCallback.run());
-        add(removeBtn, "span 3, right, wrap");
+        
+        JPanel headerLeft = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        headerLeft.setOpaque(false);
+        Icon providerIcon = IconUtils.getIcon("aiproviders/" + provider.getClass().getName() + ".png", 32, 32);
+        if (providerIcon != null) {
+            headerLeft.add(new JLabel(providerIcon));
+        }
+        add(headerLeft, "span 2, left");
+        add(removeBtn, "right, wrap");
 
         add(new JLabel("UUID:"));
         JLabel uuidLabel = new JLabel(provider.getUuid());
