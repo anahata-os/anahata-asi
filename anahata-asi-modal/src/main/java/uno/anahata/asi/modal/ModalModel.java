@@ -2,7 +2,7 @@
 package uno.anahata.asi.modal;
 
 import uno.anahata.asi.openai.compatible.OpenAiCompatibleModel;
-import uno.anahata.asi.openai.compatible.OpenAiCompatibleProvider;
+import uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider;
 import uno.anahata.asi.openai.compatible.OpenAiCompatibleReasoningStyle;
 
 
@@ -20,7 +20,7 @@ public class ModalModel extends OpenAiCompatibleModel {
      * @param modelId     The stable model ID.
      * @param displayName The user-facing name.
      */
-    public ModalModel(OpenAiCompatibleProvider provider, String modelId, String displayName) {
+    public ModalModel(OpenAiChatCompletionsProvider provider, String modelId, String displayName) {
         super(provider, modelId, displayName);
         configure();
     }
@@ -30,7 +30,7 @@ public class ModalModel extends OpenAiCompatibleModel {
      * @param provider The owning Modal provider.
      * @param node     The JSON metadata for the model.
      */
-    public ModalModel(OpenAiCompatibleProvider provider, com.fasterxml.jackson.databind.JsonNode node) {
+    public ModalModel(OpenAiChatCompletionsProvider provider, com.fasterxml.jackson.databind.JsonNode node) {
         super(provider, node);
         configure();
     }

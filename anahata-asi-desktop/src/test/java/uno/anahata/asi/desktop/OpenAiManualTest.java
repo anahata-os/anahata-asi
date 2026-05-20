@@ -13,7 +13,7 @@ import uno.anahata.asi.agi.provider.GenerationRequest;
 import uno.anahata.asi.agi.provider.Response;
 import uno.anahata.asi.agi.provider.StreamObserver;
 import uno.anahata.asi.destkop.swing.AsiDesktopAsiContainer;
-import uno.anahata.asi.openai.OpenAiProvider;
+import uno.anahata.asi.openai.OpenAiResponsesProvider;
 
 /**
  * A manual test script to verify the OpenAI provider's blocking and streaming 
@@ -29,7 +29,7 @@ public class OpenAiManualTest {
         AsiDesktopAsiContainer container = new AsiDesktopAsiContainer();
         
         // 2. Get the OpenAI Provider
-        OpenAiProvider provider = (OpenAiProvider) container.getProvider("OpenAI");
+        OpenAiResponsesProvider provider = (OpenAiResponsesProvider) container.getProvider("OpenAI");
         if (provider == null) {
             System.err.println("OpenAI Provider not found! Make sure it is registered in the container.");
             return;

@@ -50,7 +50,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
     /**
      * The provider instance managing this model.
      */
-    private final OpenAiCompatibleProvider provider;
+    private final OpenAiChatCompletionsProvider provider;
     /**
      * The unique identifier for the model (e.g., 'gpt-4o', 'claude-3-5-sonnet').
      */
@@ -77,7 +77,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
             .connectTimeout(Duration.ofSeconds(30))
             .build();
 
-    public OpenAiCompatibleModel(OpenAiCompatibleProvider provider, String modelId, String displayName) {
+    public OpenAiCompatibleModel(OpenAiChatCompletionsProvider provider, String modelId, String displayName) {
         this.provider = provider;
         this.modelId = modelId;
         this.displayName = displayName;
@@ -91,7 +91,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
      * @param provider The parent provider.
      * @param node The JSON node containing model metadata.
      */
-    public OpenAiCompatibleModel(OpenAiCompatibleProvider provider, JsonNode node) {
+    public OpenAiCompatibleModel(OpenAiChatCompletionsProvider provider, JsonNode node) {
         this(provider,
                 node.path("id").asText(),
                 String.format("%s (%s)", node.path("id").asText(), node.path("owned_by").asText("unknown")));

@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.internal.JacksonUtils;
-import uno.anahata.asi.openai.compatible.OpenAiCompatibleProvider;
+import uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider;
 import uno.anahata.asi.openai.compatible.OpenAiCompatibleReasoningStyle;
 
 /**
@@ -22,7 +22,7 @@ import uno.anahata.asi.openai.compatible.OpenAiCompatibleReasoningStyle;
  * model inspection by fetching metadata directly from the HF Hub.
  */
 @Slf4j
-public class HuggingFaceProvider extends OpenAiCompatibleProvider {
+public class HuggingFaceProvider extends OpenAiChatCompletionsProvider {
 
     /**
      * The base URL for the Hugging Face Hub metadata API.

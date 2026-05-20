@@ -34,7 +34,7 @@ import uno.anahata.asi.agi.provider.TokenizerType;
 @Getter
 @Setter
 @Slf4j
-public class OpenAiCompatibleProvider extends AbstractAiProvider {
+public class OpenAiChatCompletionsProvider extends AbstractAiProvider {
 
     /**
      * Optional custom HTTP headers to be sent with every request. Essential for
@@ -57,7 +57,7 @@ public class OpenAiCompatibleProvider extends AbstractAiProvider {
      * deserialization.
      * </p>
      */
-    public OpenAiCompatibleProvider() {
+    public OpenAiChatCompletionsProvider() {
         super();
         setDisplayName("OpenAI Compatible (Universal)");
         setTokenizerType(TokenizerType.CL100K_BASE);
@@ -71,7 +71,7 @@ public class OpenAiCompatibleProvider extends AbstractAiProvider {
      * @param displayName The user-facing name.
      * @param baseUrl The API endpoint URL.
      */
-    public OpenAiCompatibleProvider(String uuid, String displayName, String baseUrl) {
+    public OpenAiChatCompletionsProvider(String uuid, String displayName, String baseUrl) {
         this(uuid, displayName, baseUrl, null, null);
     }
 
@@ -83,7 +83,7 @@ public class OpenAiCompatibleProvider extends AbstractAiProvider {
      * @param folderName The custom folder name for configuration and key storage.
      * @param apiKeyAdquisitionUri The URI where users can obtain API keys for this provider.
      */
-    public OpenAiCompatibleProvider(String uuid, String displayName, String baseUrl, String folderName, String apiKeyAdquisitionUri) {
+    public OpenAiChatCompletionsProvider(String uuid, String displayName, String baseUrl, String folderName, String apiKeyAdquisitionUri) {
         super(uuid);
         setDisplayName(displayName);
         setBaseUrl(baseUrl);

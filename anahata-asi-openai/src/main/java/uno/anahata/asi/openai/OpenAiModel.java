@@ -51,7 +51,7 @@ public class OpenAiModel extends AbstractModel {
     /**
      * The parent provider for this model.
      */
-    private final OpenAiProvider provider;
+    private final OpenAiResponsesProvider provider;
     /**
      * The unique identifier for the OpenAI model (e.g., 'gpt-4o').
      */
@@ -66,7 +66,7 @@ public class OpenAiModel extends AbstractModel {
      * @param provider The parent provider.
      * @param node The JSON node containing model metadata.
      */
-    public OpenAiModel(OpenAiProvider provider, JsonNode node) {
+    public OpenAiModel(OpenAiResponsesProvider provider, JsonNode node) {
         this.provider = provider;
         this.modelId = node.get("id").asText();
         this.displayName = node.path("name").asText(modelId);

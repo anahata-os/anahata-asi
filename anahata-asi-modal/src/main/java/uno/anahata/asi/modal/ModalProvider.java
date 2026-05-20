@@ -3,7 +3,7 @@ package uno.anahata.asi.modal;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import uno.anahata.asi.openai.compatible.OpenAiCompatibleModel;
-import uno.anahata.asi.openai.compatible.OpenAiCompatibleProvider;
+import uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider;
 
 /**
  * A pre-configured provider for Modal's GLM-5 inference endpoint.
@@ -25,7 +25,7 @@ import uno.anahata.asi.openai.compatible.OpenAiCompatibleProvider;
  * 
  * @author anahata
  */
-public class ModalProvider extends OpenAiCompatibleProvider {
+public class ModalProvider extends OpenAiChatCompletionsProvider {
 
     /**
      * Constructs a new Modal provider with pre-configured defaults.
