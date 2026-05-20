@@ -159,193 +159,232 @@ public class CodeRefiner extends AnahataToolkit {
      * @throws Exception if optimization fails
      */
     private void optimizeImportsInternal(FileObject fo, boolean removeUnused) throws Exception {
-        JavaSource js1 = JavaSource.forFileObject(fo);
-        js1.runModificationTask(wc -> {
-            wc.toPhase(JavaSource.Phase.RESOLVED);
-            ReferencesCount rc = ReferencesCount.get(wc.getClasspathInfo());
-            CompilationUnitTree originalCut = wc.getCompilationUnit();
+                JavaSource js1 = JavaSource.forFileObject(fo);
+                js1.runModificationTask(wc -> {
+                    wc.toPhase(JavaSource.Phase.RESOLVED);
+                    ReferencesCount rc = ReferencesCount.get(wc.getClasspathInfo());
+                    CompilationUnitTree originalCut = wc.getCompilationUnit();
 
-            final Set<TypeElement> importsToAdd = new LinkedHashSet<>();
+                    final Set<TypeElement> importsToAdd = new LinkedHashSet<>();
 
-            new TreePathScanner<Void, WorkingCopy>() {
-                @Override
-                public Void visitPackage(PackageTree node, WorkingCopy wcSub) {
-                    return null;
-                }
-
-                @Override
-                public Void visitImport(ImportTree node, WorkingCopy wcSub) {
-                    return null;
-                }
-
-                @Override
-                public Void visitMemberSelect(MemberSelectTree node, WorkingCopy wcSub) {
-                    SourcePositions sp = wcSub.getTrees().getSourcePositions();
-                    if (sp.getStartPosition(originalCut, node) == -1) {
-                        return super.visitMemberSelect(node, wcSub);
-                    }
-                    TreePath path = getCurrentPath();
-                    if (path != null) {
-                        Element e = wcSub.getTrees().getElement(path);
-                        if (e instanceof TypeElement te) {
-                            String fqn = te.getQualifiedName().toString();
-                            if (node.toString().contains(".")) {
-                                if (!fqn.startsWith("java.lang.")) {
-                                    importsToAdd.add(te);
-                                }
-                            }
+                    new TreePathScanner<Void, WorkingCopy>() {
+                        @Override
+                        public Void visitPackage(PackageTree node, WorkingCopy wcSub) {
+                            return null;
                         }
-                    }
-                    return super.visitMemberSelect(node, wcSub);
-                }
 
-                @Override
-                public Void visitIdentifier(IdentifierTree node, WorkingCopy wcSub) {
-                    TreePath path = getCurrentPath();
-                    if (path != null) {
-                        Element e = wcSub.getTrees().getElement(path);
-                        if (e == null || (e.asType() != null && e.asType().getKind() == TypeKind.ERROR)) {
-                            String name = node.getName().toString();
-                            if (Character.isUpperCase(name.charAt(0))) {
-                                try {
-                                    ClassIndex index = wcSub.getClasspathInfo().getClassIndex();
-                                    Set<ClassIndex.SearchScope> scopes = EnumSet.allOf(ClassIndex.SearchScope.class);
-                                    Set<ElementHandle<TypeElement>> handles = index.getDeclaredTypes(name, ClassIndex.NameKind.SIMPLE_NAME, scopes);
-                                    if (!handles.isEmpty()) {
-                                        class Candidate {
+                        @Override
+                        public Void visitImport(ImportTree node, WorkingCopy wcSub) {
+                            return null;
+                        }
 
-                                            final String fqn;
-                                            final int score;
-
-                                            Candidate(String fqn, int score) {
-                                                this.fqn = fqn;
-                                                this.score = score;
+                        @Override
+                        public Void visitMemberSelect(MemberSelectTree node, WorkingCopy wcSub) {
+                            SourcePositions sp = wcSub.getTrees().getSourcePositions();
+                            if (sp.getStartPosition(originalCut, node) == -1) {
+                                return super.visitMemberSelect(node, wcSub);
+                            }
+                            TreePath path = getCurrentPath();
+                            if (path != null) {
+                                Element e = wcSub.getTrees().getElement(path);
+                                if (e instanceof TypeElement te) {
+                                    String fqn = te.getQualifiedName().toString();
+                                    String nodeStr = node.toString();
+                                    if (nodeStr.equals(fqn)) {
+                                        if (!fqn.startsWith("java.lang.")) {
+                                            TypeElement outerType = null;
+                                            Element enclosing = te.getEnclosingElement();
+                                            while (enclosing instanceof TypeElement parentType) {
+                                                outerType = parentType;
+                                                enclosing = parentType.getEnclosingElement();
                                             }
-                                        }
-                                        List<Candidate> candidates = new ArrayList<>();
-                                        for (ElementHandle<TypeElement> handle : handles) {
-                                            TypeElement te = handle.resolve(wcSub);
-                                            int score = te != null ? Utilities.getImportanceLevel(wcSub, rc, te) : Utilities.getImportanceLevel(handle.getQualifiedName());
-                                            candidates.add(new Candidate(handle.getQualifiedName(), score));
-                                        }
-
-                                        candidates.sort((c1, c2) -> Integer.compare(c2.score, c1.score));
-
-                                        if (candidates.size() == 1) {
-                                            String bestFqn = candidates.get(0).fqn;
-                                            CodeRefiner.this.log("Auto-resolving single candidate import for '" + name + "': " + bestFqn);
-                                            TypeElement te = wcSub.getElements().getTypeElement(bestFqn);
-                                            if (te != null) {
+                                            if (outerType != null) {
+                                                importsToAdd.add(outerType);
+                                            } else {
                                                 importsToAdd.add(te);
                                             }
-                                        } else if (candidates.size() > 1) {
-                                            StringBuilder sb = new StringBuilder();
-                                            sb.append("Ambiguous candidates found for '").append(name).append("'. Skipping auto-import:\n");
-                                            for (Candidate cand : candidates) {
-                                                sb.append("  - ").append(cand.fqn).append(" (Importance Score: ").append(cand.score).append(")\n");
+                                        }
+                                    }
+                                }
+                            }
+                            return super.visitMemberSelect(node, wcSub);
+                        }
+
+                        @Override
+                        public Void visitIdentifier(IdentifierTree node, WorkingCopy wcSub) {
+                            TreePath path = getCurrentPath();
+                            if (path != null) {
+                                Element e = wcSub.getTrees().getElement(path);
+                                if (e == null || (e.asType() != null && e.asType().getKind() == TypeKind.ERROR)) {
+                                    String name = node.getName().toString();
+                                    if (Character.isUpperCase(name.charAt(0))) {
+                                        try {
+                                            ClassIndex index = wcSub.getClasspathInfo().getClassIndex();
+                                            Set<ClassIndex.SearchScope> scopes = EnumSet.allOf(ClassIndex.SearchScope.class);
+                                            Set<ElementHandle<TypeElement>> handles = index.getDeclaredTypes(name, ClassIndex.NameKind.SIMPLE_NAME, scopes);
+                                            if (!handles.isEmpty()) {
+                                                class Candidate {
+
+                                                    final String fqn;
+                                                    final int score;
+
+                                                    Candidate(String fqn, int score) {
+                                                        this.fqn = fqn;
+                                                        this.score = score;
+                                                    }
+                                                }
+                                                List<Candidate> candidates = new ArrayList<>();
+                                                for (ElementHandle<TypeElement> handle : handles) {
+                                                    TypeElement te = handle.resolve(wcSub);
+                                                    int score = te != null ? Utilities.getImportanceLevel(wcSub, rc, te) : Utilities.getImportanceLevel(handle.getQualifiedName());
+                                                    candidates.add(new Candidate(handle.getQualifiedName(), score));
+                                                }
+
+                                                candidates.sort((c1, c2) -> Integer.compare(c2.score, c1.score));
+
+                                                if (candidates.size() == 1) {
+                                                    String bestFqn = candidates.get(0).fqn;
+                                                    CodeRefiner.this.log("Auto-resolving single candidate import for '" + name + "': " + bestFqn);
+                                                    TypeElement te = wcSub.getElements().getTypeElement(bestFqn);
+                                                    if (te != null) {
+                                                        TypeElement outerType = null;
+                                                        Element enclosing = te.getEnclosingElement();
+                                                        while (enclosing instanceof TypeElement parentType) {
+                                                            outerType = parentType;
+                                                            enclosing = parentType.getEnclosingElement();
+                                                        }
+                                                        if (outerType != null) {
+                                                            importsToAdd.add(outerType);
+                                                        } else {
+                                                            importsToAdd.add(te);
+                                                        }
+                                                    }
+                                                } else if (candidates.size() > 1) {
+                                                    StringBuilder sb = new StringBuilder();
+                                                    sb.append("Ambiguous candidates found for '").append(name).append("'. Skipping auto-import:\n");
+                                                    for (Candidate cand : candidates) {
+                                                        sb.append("  - ").append(cand.fqn).append(" (Importance Score: ").append(cand.score).append(")\n");
+                                                    }
+                                                    CodeRefiner.this.log(sb.toString());
+                                                }
                                             }
-                                            CodeRefiner.this.log(sb.toString());
+                                        } catch (Exception ex) {
+                                            log.error("OptimizeImports: Index search failed for " + name, ex);
                                         }
                                     }
-                                } catch (Exception ex) {
-                                    log.error("OptimizeImports: Index search failed for " + name, ex);
                                 }
                             }
+                            return super.visitIdentifier(node, wcSub);
                         }
-                    }
-                    return super.visitIdentifier(node, wcSub);
-                }
-            }.scan(new TreePath(originalCut), wc);
+                    }.scan(new TreePath(originalCut), wc);
 
-            CompilationUnitTree evolvingCut = originalCut;
-            if (removeUnused) {
-                try {
-                    List<TreePathHandle> unused = UnusedImports.computeUnusedImports(wc);
-                    if (!unused.isEmpty()) {
-                        for (TreePathHandle handle : unused) {
-                            TreePath path = handle.resolve(wc);
-                            if (path != null && path.getLeaf() instanceof ImportTree it) {
-                                evolvingCut = wc.getTreeMaker().removeCompUnitImport(evolvingCut, it);
+                    CompilationUnitTree evolvingCut = originalCut;
+                    if (removeUnused) {
+                        try {
+                            List<TreePathHandle> unused = UnusedImports.computeUnusedImports(wc);
+                            if (!unused.isEmpty()) {
+                                for (TreePathHandle handle : unused) {
+                                    TreePath path = handle.resolve(wc);
+                                    if (path != null && path.getLeaf() instanceof ImportTree it) {
+                                        evolvingCut = wc.getTreeMaker().removeCompUnitImport(evolvingCut, it);
+                                    }
+                                }
                             }
+                        } catch (Exception e) {
+                            log.error("Failed to remove unused imports", e);
                         }
                     }
-                } catch (Exception e) {
-                    log.error("Failed to remove unused imports", e);
-                }
-            }
 
-            if (!importsToAdd.isEmpty()) {
-                evolvingCut = GeneratorUtilities.get(wc).addImports(evolvingCut, importsToAdd);
-            }
-
-            if (originalCut != evolvingCut) {
-                wc.rewrite(originalCut, evolvingCut);
-            }
-        }).commit();
-
-        JavaSourceUtils.handleSave(fo);
-        fo.refresh();
-
-        // CRITICAL BUG FIX: Force a synchronous re-parse of the file so that NetBeans
-        // updates its internally cached character offsets for the next transaction.
-        // Without this, the second transaction is executed with stale offsets, causing
-        // the FQN shortening rewrite to corrupt/duplicate the file.
-        js1.runUserActionTask(cc -> {
-            cc.toPhase(JavaSource.Phase.RESOLVED);
-        }, true);
-
-        JavaSource js2 = JavaSource.forFileObject(fo);
-        js2.runModificationTask(wc -> {
-            wc.toPhase(JavaSource.Phase.RESOLVED);
-            CompilationUnitTree cut = wc.getCompilationUnit();
-            TreeMaker make = wc.getTreeMaker();
-
-            new TreePathScanner<Void, WorkingCopy>() {
-                @Override
-                public Void visitPackage(PackageTree node, WorkingCopy wcSub) {
-                    return null;
-                }
-
-                @Override
-                public Void visitImport(ImportTree node, WorkingCopy wcSub) {
-                    return null;
-                }
-
-                @Override
-                public Void visitMemberSelect(MemberSelectTree node, WorkingCopy wcSub) {
-                    SourcePositions sp = wcSub.getTrees().getSourcePositions();
-                    if (sp.getStartPosition(cut, node) == -1) {
-                        return super.visitMemberSelect(node, wcSub);
+                    if (!importsToAdd.isEmpty()) {
+                        evolvingCut = GeneratorUtilities.get(wc).addImports(evolvingCut, importsToAdd);
                     }
-                    TreePath path = getCurrentPath();
-                    if (path != null) {
-                        Element e = wcSub.getTrees().getElement(path);
-                        if (e instanceof TypeElement te) {
-                            String fqn = te.getQualifiedName().toString();
-                            String simpleName = te.getSimpleName().toString();
-                            if (node.toString().contains(".")) {
-                                boolean isImported = false;
-                                if (fqn.startsWith("java.lang.")) {
-                                    isImported = true;
-                                } else {
-                                    for (ImportTree imp : cut.getImports()) {
-                                        String impStr = imp.getQualifiedIdentifier().toString();
-                                        if (impStr.equals(fqn) || (imp.isStatic() && impStr.endsWith("." + simpleName))) {
+
+                    if (originalCut != evolvingCut) {
+                        wc.rewrite(originalCut, evolvingCut);
+                    }
+                }).commit();
+
+                JavaSourceUtils.handleSave(fo);
+                fo.refresh();
+
+                // CRITICAL BUG FIX: Force a synchronous re-parse of the file so that NetBeans
+                // updates its internally cached character offsets for the next transaction.
+                // Without this, the second transaction is executed with stale offsets, causing
+                // the FQN shortening rewrite to corrupt/duplicate the file.
+                js1.runUserActionTask(cc -> {
+                    cc.toPhase(JavaSource.Phase.RESOLVED);
+                }, true);
+
+                JavaSource js2 = JavaSource.forFileObject(fo);
+                js2.runModificationTask(wc -> {
+                    wc.toPhase(JavaSource.Phase.RESOLVED);
+                    CompilationUnitTree cut = wc.getCompilationUnit();
+                    TreeMaker make = wc.getTreeMaker();
+
+                    new TreePathScanner<Void, WorkingCopy>() {
+                        @Override
+                        public Void visitPackage(PackageTree node, WorkingCopy wcSub) {
+                            return null;
+                        }
+
+                        @Override
+                        public Void visitImport(ImportTree node, WorkingCopy wcSub) {
+                            return null;
+                        }
+
+                        @Override
+                        public Void visitMemberSelect(MemberSelectTree node, WorkingCopy wcSub) {
+                            SourcePositions sp = wcSub.getTrees().getSourcePositions();
+                            if (sp.getStartPosition(cut, node) == -1) {
+                                return super.visitMemberSelect(node, wcSub);
+                            }
+                            TreePath path = getCurrentPath();
+                            if (path != null) {
+                                Element e = wcSub.getTrees().getElement(path);
+                                if (e instanceof TypeElement te) {
+                                    String fqn = te.getQualifiedName().toString();
+                                    String nodeStr = node.toString();
+                                    if (nodeStr.equals(fqn)) {
+                                        TypeElement outerType = null;
+                                        Element enclosing = te.getEnclosingElement();
+                                        while (enclosing instanceof TypeElement parentType) {
+                                            outerType = parentType;
+                                            enclosing = parentType.getEnclosingElement();
+                                        }
+                                        boolean isImported = false;
+                                        if (fqn.startsWith("java.lang.")) {
                                             isImported = true;
-                                            break;
+                                        } else {
+                                            String targetFqn = outerType != null ? outerType.getQualifiedName().toString() : fqn;
+                                            for (ImportTree imp : cut.getImports()) {
+                                                String impStr = imp.getQualifiedIdentifier().toString();
+                                                if (impStr.equals(targetFqn)) {
+                                                    isImported = true;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        if (isImported) {
+                                            String replacementName;
+                                            if (outerType != null) {
+                                                String pkg = wcSub.getElements().getPackageOf(outerType).getQualifiedName().toString();
+                                                if (pkg.isEmpty()) {
+                                                    replacementName = fqn;
+                                                } else {
+                                                    replacementName = fqn.substring(pkg.length() + 1);
+                                                }
+                                            } else {
+                                                replacementName = te.getSimpleName().toString();
+                                            }
+                                            wcSub.rewrite(node, make.Identifier(replacementName));
                                         }
                                     }
                                 }
-                                if (isImported) {
-                                    wcSub.rewrite(node, make.Identifier(simpleName));
-                                }
                             }
+                            return super.visitMemberSelect(node, wcSub);
                         }
-                    }
-                    return super.visitMemberSelect(node, wcSub);
-                }
-            }.scan(new TreePath(cut), wc);
-        }).commit();
+                    }.scan(new TreePath(cut), wc);
+                }).commit();
     }
 
     /**
