@@ -430,7 +430,7 @@ public class OpenAiModel extends AbstractModel {
                     
                     while (it.hasNext()) {
                         String line = it.next();
-                        log.info("Got line " + line);
+                        log.debug("Got line " + line);
                         if (line == null || line.isBlank()) continue;
                         
                         if (line.startsWith("data: ")) {
