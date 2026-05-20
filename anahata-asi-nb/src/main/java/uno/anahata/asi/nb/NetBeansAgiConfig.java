@@ -25,7 +25,7 @@ import uno.anahata.asi.swing.toolkit.SwingJava;
 
 /**
  * NetBeans-specific agi configuration.
- * It replaces the core {@link Files} toolkit with the IDE-integrated {@link NbFiles}
+ * It replaces the core {@link Files} toolkit with the IDE-integrated {@code NbFiles}
  * and adds NetBeans-specific toolkits like {@link Maven}, {@link Projects}, and {@link CodeModel}.
  * <p>
  * It also configures the {@link NetBeansIconProvider} to display authentic IDE icons 

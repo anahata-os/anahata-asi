@@ -136,7 +136,7 @@ public class Refactor extends AnahataToolkit {
      * Renames a class member (method or field) across all open projects.
      *
      * @param filePath The absolute path of the Java file.
-     * @param memberName The current name of the member.
+     * @param memberFqn The ABSOLUTE FQN of the member.
      * @param newName The new name for the member.
      * @return A detailed log of the refactoring process.
      * @throws Exception if there is an error invoking the operation.
@@ -315,7 +315,7 @@ public class Refactor extends AnahataToolkit {
      * Inlines a method, constant, or variable.
      *
      * @param filePath The absolute path of the Java file.
-     * @param memberName The name of the member to inline.
+     * @param memberFqn The FQN of the member to inline.
      * @param type The type of inlining to perform (METHOD, TEMP, CONSTANT).
      * @return A detailed log of the refactoring process.
      * @throws Exception if the operation fails.
@@ -337,7 +337,7 @@ public class Refactor extends AnahataToolkit {
      * usages.
      *
      * @param filePath The absolute path of the Java file.
-     * @param fieldName The name of the field to encapsulate.
+     * @param fieldFqn The ABSOLUTE FQN of the field to encapsulate.
      * @param getterName The name for the getter method (optional, will be
      * generated if null).
      * @param setterName The name for the setter method (optional, will be
@@ -370,7 +370,7 @@ public class Refactor extends AnahataToolkit {
      * Inverts a boolean method or variable.
      *
      * @param filePath The absolute path of the Java file.
-     * @param memberName The name of the boolean member to invert.
+     * @param memberFqn The ABSOLUTE FQN of the boolean member to invert.
      * @param newName The new name for the inverted member.
      * @return A detailed log of the refactoring process.
      * @throws Exception if the operation fails.
@@ -393,7 +393,7 @@ public class Refactor extends AnahataToolkit {
      *
      * @param filePath The absolute path of the Java file containing the class.
      * @param interfaceName The name of the new interface.
-     * @param memberNames The names of the members (methods/fields) to include
+     * @param memberFqns The ABSOLUTE FQNs of the members to extract.
      * in the interface.
      * @return A detailed log of the refactoring process.
      * @throws Exception if the operation fails.
@@ -429,7 +429,7 @@ public class Refactor extends AnahataToolkit {
      * @param filePath The absolute path of the Java file containing the
      * subclass.
      * @param targetClassFqn The fully qualified name of the target superclass.
-     * @param memberNames The names of the members to pull up.
+     * @param memberFqns The ABSOLUTE FQNs of the members to pull up.
      * @return A detailed log of the refactoring process.
      * @throws Exception if the operation fails.
      */
@@ -464,7 +464,7 @@ public class Refactor extends AnahataToolkit {
      *
      * @param filePath The absolute path of the Java file containing the
      * superclass.
-     * @param memberNames The names of the members to push down.
+     * @param memberFqns The ABSOLUTE FQNs of the members to push down.
      * @return A detailed log of the refactoring process.
      * @throws Exception if the operation fails.
      */
@@ -494,7 +494,7 @@ public class Refactor extends AnahataToolkit {
      * parameters.
      *
      * @param filePath The absolute path of the Java file.
-     * @param methodName The current name of the method.
+     * @param memberFqn The ABSOLUTE FQN of the method.
      * @param newName The new name for the method.
      * @param newReturnType The new return type (FQN or simple name).
      * @param parameterChanges The new parameter configuration.
@@ -530,7 +530,7 @@ public class Refactor extends AnahataToolkit {
      *
      * @param filePath The absolute path of the Java file.
      * @param superclassName The name for the new superclass.
-     * @param memberNames The names of the members to move to the superclass.
+     * @param memberFqns The ABSOLUTE FQNs of the members to extract.
      * @return A detailed log of the refactoring process.
      * @throws Exception if the operation fails.
      */
@@ -585,7 +585,7 @@ public class Refactor extends AnahataToolkit {
      *
      * @param filePath The absolute path of the Java file containing the inner
      * class.
-     * @param innerClassName The name of the inner class to move.
+     * @param memberFqn The ABSOLUTE FQN of the inner class to move.
      * @return A detailed log of the refactoring process.
      * @throws Exception if the operation fails.
      */
@@ -652,7 +652,7 @@ public class Refactor extends AnahataToolkit {
      * file.
      *
      * @param filePath The absolute path of the Java file.
-     * @param memberName The name of the member to search for.
+     * @param memberFqn The ABSOLUTE FQN of the member to search for.
      * @param searchInComments Whether to search for usages in comments and
      * strings.
      * @return A formatted list of all found usages.
@@ -831,7 +831,7 @@ public class Refactor extends AnahataToolkit {
      * Resolves a set of member names into {@link ElementHandle}s.
      *
      * @param fo The FileObject.
-     * @param memberNames The names to resolve.
+     * @param memberFqns The FQNs to resolve.
      * @param methods Output list for resolved methods.
      * @param fields Output list for resolved fields.
      * @throws IOException If the source cannot be parsed.
