@@ -11,7 +11,7 @@ import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.gemini.GeminiAiProvider;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.anthropic.AnthropicProvider;
-import uno.anahata.asi.gemini.vertex.GeminiGoogleCloudExpressAIProvider;
+import uno.anahata.asi.gemini.GeminiGoogleCloudExpressAIProvider;
 import uno.anahata.asi.huggingface.HuggingFaceProvider;
 import uno.anahata.asi.minimax.MinimaxAnthropicProvider;
 import uno.anahata.asi.modal.ModalProvider;
