@@ -6,8 +6,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.beans.PropertyChangeEvent;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
-import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -17,8 +17,6 @@ import javax.swing.SwingUtilities;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
-import org.openide.awt.ActionID;
-import org.openide.awt.ActionReference;
 import org.openide.windows.TopComponent;
 import org.openide.util.ImageUtilities;
 import uno.anahata.asi.agi.Agi;
@@ -114,7 +112,7 @@ public final class AgiTopComponent extends TopComponent {
         new EdtPropertyChangeListener(this, agi, "nickname", this::handleNicknameChange);
 
         // Listen for status changes to update the tab color
-        new EdtPropertyChangeListener(this, agi.getStatusManager(), "currentStatus", evt -> updateTitles());
+        new EdtPropertyChangeListener(this, agi.getStatusManager(), "currentStatus", (PropertyChangeEvent evt) -> updateTitles());
     }
 
     /**
@@ -273,7 +271,7 @@ public final class AgiTopComponent extends TopComponent {
         if (sessionId != null) {
             // Try to find the agi in the container even if the panel isn't ready
             return AnahataInstaller.getContainer().getActiveAgis().stream()
-                    .filter(c -> c.getConfig().getSessionId().equals(sessionId))
+                    .filter((Agi c) -> c.getConfig().getSessionId().equals(sessionId))
                     .findFirst().orElse(null);
         }
         return null;
@@ -296,7 +294,7 @@ public final class AgiTopComponent extends TopComponent {
      * @return A serializable Resolvable object.
      */
     @Override
-    protected Object writeReplace() throws java.io.ObjectStreamException {
+    protected Object writeReplace() throws ObjectStreamException {
         return new Resolvable(sessionId);
     }
 
@@ -323,7 +321,7 @@ public final class AgiTopComponent extends TopComponent {
          *
          * @return A new AgiTopComponent instance.
          */
-        Object readResolve() throws java.io.ObjectStreamException {
+        Object readResolve() throws ObjectStreamException {
             return new AgiTopComponent(sessionId);
         }
     }
