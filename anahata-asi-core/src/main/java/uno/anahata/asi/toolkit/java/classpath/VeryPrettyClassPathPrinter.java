@@ -70,7 +70,7 @@ public class VeryPrettyClassPathPrinter {
      * beginning of the list to give it priority over existing handlers.
      * <p>
      * Note: You should call {@link #update()} after adding a handler if you 
-     * want the changes to be reflected immediately in the {@link #getPretty()} string.
+     * want the changes to be reflected immediately in the {@link #pretty} string.
      * </p>
      * 
      * @param handler The handler to add.

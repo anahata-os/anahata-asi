@@ -12,7 +12,7 @@ import uno.anahata.asi.agi.tool.ToolResponseAttachment;
  * A specialized part representing the output or logs from a server-side code execution.
  * <p>
  * This part stores the textual results (stdout/stderr) returned by the execution 
- * environment. Visual outputs (like images) should be captured as {@link ModelBlobPart}s 
+ * environment. Visual outputs (like images) should be captured as {@link uno.anahata.asi.agi.message.ModelBlobPart}s 
  * associated with the same message turn.
  * </p>
  * 

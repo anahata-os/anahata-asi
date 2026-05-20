@@ -118,9 +118,10 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
     }
 
     /**
-     * {@inheritDoc} Implementation details: Dynamically returns either the
-     * wrapped or raw schema based on the {@code wrapResponseSchemas} flag in
-     * the {@code ToolManager}.
+     * Dynamically returns either the wrapped or raw schema based on the
+     * {@code wrapResponseSchemas} flag in the {@code ToolManager}.
+     * 
+     * @return The JSON schema string.
      */
     @Override
     public String getResponseJsonSchema() {
@@ -179,10 +180,9 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
     }
     
     /**
-     * Sets the method and refreshes the parameters
+     * Initializes and populates the parameter list for this tool.
      * 
-     * @param m
-     * @throws Exception if schema generation fails
+     * @throws Exception if parameter mapping or schema generation fails.
      */
     private void initParameters() throws Exception{
         // A tool creates its own parameters.
