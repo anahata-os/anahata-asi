@@ -2,6 +2,7 @@
 package uno.anahata.asi.agi.tool.schema;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
@@ -15,6 +16,7 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import io.swagger.v3.core.converter.AnnotatedType;
 import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.core.jackson.ModelResolver;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import io.swagger.v3.oas.models.media.Schema;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -167,6 +169,14 @@ public class SchemaProvider {
         return OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(inlinedNode);
     }
 
+    /**
+     * Helper that generates a standard, non-inlined OpenAPI Schema as a mutable ObjectNode.
+     * 
+     * This parses the JSON schema string produced by {@link #generateStandardSchema(Type)} into a tree representation that is suitable for structural mutations.
+     * @param type The Java type to generate the schema for.
+     * @return The schema represented as an ObjectNode, or null if the schema cannot be generated.
+     * @throws com.fasterxml.jackson.core.JsonProcessingException If the generated schema JSON string cannot be parsed.
+     */
     private static ObjectNode generateStandardSchemaNode(Type type) throws JsonProcessingException {
         String json = generateStandardSchema(type);
         return json == null ? null : (ObjectNode) OBJECT_MAPPER.readTree(json);
@@ -201,6 +211,10 @@ public class SchemaProvider {
 
     /**
      * Adds a property name to the 'required' array of a schema node.
+     * 
+     * This method is idempotent and ensures that the property name is added to the 'required' array of the node without duplicating existing entries.
+     * @param node The mutable ObjectNode schema representation.
+     * @param propertyName The name of the property to mark as required.
      */
     private static void addRequired(ObjectNode node, String propertyName) {
         JsonNode requiredNode = node.get("required");
@@ -225,6 +239,10 @@ public class SchemaProvider {
 
     /**
      * Removes a property name from the 'required' array of a schema node.
+     * 
+     * If the 'required' array becomes empty as a result of the removal, the 'required' field is completely stripped from the node.
+     * @param node The mutable ObjectNode schema representation.
+     * @param propertyName The name of the property to remove from the required list.
      */
     private static void removeRequired(ObjectNode node, String propertyName) {
         JsonNode requiredNode = node.get("required");
@@ -292,19 +310,19 @@ public class SchemaProvider {
         ModelConverters converters = new ModelConverters();
         // CRITICAL: Use OBJECT_MAPPER (getters disabled) for type discovery.
         converters.addConverter(new ModelResolver(OBJECT_MAPPER));
-        
+
         // 2. Generate schemas for ALL discovered types to ensure polymorphic branches are in the components map
         Map<String, Schema> swaggerSchemas = new HashMap<>();
         for (Type t : discoveredTypes.values()) {
             swaggerSchemas.putAll(converters.readAll(new AnnotatedType(t)));
         }
-        
+
         if (swaggerSchemas.isEmpty()) {
             return null;
         }
-        
+
         postProcessAndEnrichSchemas(type, swaggerSchemas, discoveredTypes, polymorphismMap);
-        
+
         // 3. Inject Discriminator Enums based on Jackson annotations
         injectDiscriminatorEnums(swaggerSchemas, discoveredTypes);
 
@@ -338,7 +356,7 @@ public class SchemaProvider {
         Map<String, Object> schemaMap = new LinkedHashMap<>();
         schemaMap.put("title", getTypeName(type));
 
-        io.swagger.v3.oas.annotations.media.Schema schemaAnnotation = clazz.getAnnotation(io.swagger.v3.oas.annotations.media.Schema.class);
+        var schemaAnnotation = getSchemaAnno(clazz);
         if (schemaAnnotation != null && !schemaAnnotation.description().isEmpty()) {
             schemaMap.put("description", schemaAnnotation.description());
         }
@@ -356,12 +374,27 @@ public class SchemaProvider {
             Object[] constants = clazz.getEnumConstants();
             List<String> enumValues = new ArrayList<>();
             StringBuilder descBuilder = new StringBuilder();
-            
+
             String existingDesc = (String) schemaMap.get("description");
+            var classAnno = getSchemaAnno(clazz);
+            String classDesc = (classAnno != null && !classAnno.description().isEmpty()) ? classAnno.description() : null;
+
             if (existingDesc != null && !existingDesc.isBlank()) {
-                descBuilder.append(existingDesc).append("\n\nAvailable Values:");
-            } else {
-                descBuilder.append("Values:");
+                descBuilder.append(existingDesc);
+                if (classDesc != null && !existingDesc.contains(classDesc)) {
+                    descBuilder.append("\n\n").append(classDesc);
+                }
+            } else if (classDesc != null) {
+                descBuilder.append(classDesc);
+            }
+
+            String currentDescSoFar = descBuilder.toString();
+            if (!currentDescSoFar.contains("(Details: Values:") && !currentDescSoFar.contains("Available Values:") && !currentDescSoFar.contains("Values:")) {
+                if (!currentDescSoFar.isEmpty()) {
+                    descBuilder.append("\n\nAvailable Values:");
+                } else {
+                    descBuilder.append("Available Values:");
+                }
             }
 
             for (Object obj : constants) {
@@ -370,7 +403,7 @@ public class SchemaProvider {
                 descBuilder.append("\n- `").append(name).append("` ");
                 try {
                     Field field = clazz.getField(name);
-                    io.swagger.v3.oas.annotations.media.Schema fieldAnnos = field.getAnnotation(io.swagger.v3.oas.annotations.media.Schema.class);
+                    var fieldAnnos = getSchemaAnno(field);
                     if (fieldAnnos != null && !fieldAnnos.description().isEmpty()) {
                         descBuilder.append(": ").append(fieldAnnos.description());
                     }
@@ -380,7 +413,7 @@ public class SchemaProvider {
             }
             schemaMap.put("enum", enumValues);
             schemaMap.put("description", descBuilder.toString());
-        }else {
+        } else {
             return null;
         }
 
@@ -472,22 +505,24 @@ public class SchemaProvider {
     }
 
     /**
-     * Surgically injects 'enum' constraints into discriminator properties by 
-     * reading Jackson's @JsonSubTypes. This ensures the AI model knows the 
-     * exact string values required for polymorphic dispatch.
+     * Surgically injects 'enum' constraints into discriminator properties by reading Jackson's {@code @JsonSubTypes}. This ensures the AI model knows the exact string values required for polymorphic dispatch.
+     * @param allSchemas The map of all generated schemas across the entire type tree.
+     * @param discoveredTypes The map of discovered Java types indexed by their simple names.
      */
     private static void injectDiscriminatorEnums(Map<String, Schema> allSchemas, Map<String, Type> discoveredTypes) {
         for (Map.Entry<String, Type> entry : discoveredTypes.entrySet()) {
             Class<?> clazz = getRawClass(entry.getValue());
-            if (clazz == null) continue;
+            if (clazz == null) {
+                continue;
+            }
 
             JsonSubTypes subTypesAnno = clazz.getAnnotation(JsonSubTypes.class);
-            com.fasterxml.jackson.annotation.JsonTypeInfo typeInfoAnno = clazz.getAnnotation(com.fasterxml.jackson.annotation.JsonTypeInfo.class);
+            JsonTypeInfo typeInfoAnno = clazz.getAnnotation(JsonTypeInfo.class);
 
-            if (subTypesAnno != null && typeInfoAnno != null && typeInfoAnno.include() == com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY) {
+            if (subTypesAnno != null && typeInfoAnno != null && typeInfoAnno.include() == JsonTypeInfo.As.PROPERTY) {
                 String typePropertyName = typeInfoAnno.property();
                 Schema baseSchema = allSchemas.get(clazz.getSimpleName());
-                
+
                 if (baseSchema != null && baseSchema.getProperties() != null) {
                     Schema typePropSchema = (Schema) baseSchema.getProperties().get(typePropertyName);
                     if (typePropSchema != null) {
@@ -495,7 +530,7 @@ public class SchemaProvider {
                                 .map(JsonSubTypes.Type::name)
                                 .collect(Collectors.toList());
                         typePropSchema.setEnum(validNames);
-                        
+
                         String desc = typePropSchema.getDescription();
                         String enumHint = "Valid values: " + validNames.stream().map(n -> "`" + n + "`").collect(Collectors.joining(", "));
                         typePropSchema.setDescription(desc == null ? enumHint : desc + "\n\n" + enumHint);
@@ -531,7 +566,7 @@ public class SchemaProvider {
                     }
                     schema.setOneOf(oneOf);
                 }
-                
+
                 addTitleToSchemaRecursive(schema, type, allSchemas, discoveredTypes, new HashSet<>());
             }
         }
@@ -598,7 +633,11 @@ public class SchemaProvider {
             if (type != null && schema.getTitle() == null) {
                 schema.setTitle(getTypeName(type));
             }
-            
+
+            if (type instanceof Class<?> clazz && clazz.isEnum()) {
+                enrichEnumDescription(schema, clazz);
+            }
+
             // Handle Polymorphic branches
             if (schema.getOneOf() != null) {
                 for (Object sub : schema.getOneOf()) {
@@ -634,13 +673,14 @@ public class SchemaProvider {
                         Schema propSchema = propEntry.getValue();
                         Type fieldType = field.getGenericType();
 
-                        // Manually capture 'required' status from @Schema annotation 
-                        // as ModelConverters might miss it due to Visibility settings.
-                        io.swagger.v3.oas.annotations.media.Schema fieldAnno = field.getAnnotation(io.swagger.v3.oas.annotations.media.Schema.class);
+                        // Manually capture 'required' and 'description' status from @Schema annotation 
+                        // as ModelConverters might miss it due to Visibility settings or $ref sibling rules.
+                        var fieldAnno = getSchemaAnno(field);
                         if (fieldAnno != null) {
-                            boolean isReq = fieldAnno.required()
-                                    || fieldAnno.requiredMode() == io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
-                            if (isReq) {
+                            if (!fieldAnno.description().isEmpty()) {
+                                propSchema.setDescription(fieldAnno.description());
+                            }
+                            if (isFieldRequired(field)) {
                                 if (schema.getRequired() == null) {
                                     schema.setRequired(new ArrayList<>());
                                 }
@@ -666,7 +706,7 @@ public class SchemaProvider {
                                 addTitleToSchemaRecursive(propSchema.getItems(), itemType, allSchemas, discoveredTypes, visited);
                             }
                         } else {
-                            propSchema.setTitle(getTypeName(fieldType));
+                            addTitleToSchemaRecursive(propSchema, fieldType, allSchemas, discoveredTypes, visited);
                         }
                     }
                 }
@@ -679,7 +719,12 @@ public class SchemaProvider {
     }
 
     /**
-     * Attempts to resolve a Java type from a Schema branch, usually via $ref.
+     * Attempts to resolve a Java type from a Schema branch, usually via its ref pointer.
+     * 
+     * Parses the schema's ref path to extract the simple name, and looks it up in the map of discovered types.
+     * @param schema The Schema object to extract the type ref from.
+     * @param discoveredTypes The map of discovered types reachable from the root.
+     * @return The resolved Java Type, or null if no ref pointer exists.
      */
     private static Type resolveTypeFromSchema(Schema schema, Map<String, Type> discoveredTypes) {
         if (schema.get$ref() != null) {
@@ -714,6 +759,12 @@ public class SchemaProvider {
                     ((ObjectNode) definition).fields().forEachRemaining(entry -> {
                         if (!mergedNode.has(entry.getKey())) {
                             mergedNode.set(entry.getKey(), entry.getValue());
+                        } else if (entry.getKey().equals("description")) {
+                            String parentDesc = mergedNode.get("description").asText();
+                            String childDesc = entry.getValue().asText();
+                            if (!parentDesc.contains(childDesc)) {
+                                mergedNode.put("description", parentDesc + "\n\n" + childDesc);
+                            }
                         }
                     });
                 }
@@ -847,5 +898,84 @@ public class SchemaProvider {
      */
     private static boolean isJdkClass(Class<?> clazz) {
         return clazz != null && (clazz.isPrimitive() || (clazz.getPackage() != null && clazz.getPackage().getName().startsWith("java.")) || clazz.getName().startsWith("java."));
+    }
+
+    /**
+     * Enriches an enum schema's description with detailed information about its constant values.
+     * 
+     * This checks for class-level and constant-level {@code @Schema} annotations and appends a descriptive markdown list detailing every constant alongside its description, providing high-precision context for AI tool-calling.
+     * @param clazz The concrete Java Enum class to inspect.
+     * @param schema The Schema model to enrich.
+     */
+    private static void enrichEnumDescription(Schema schema, Class<?> clazz) {
+        Object[] constants = clazz.getEnumConstants();
+        StringBuilder descBuilder = new StringBuilder();
+        String existingDesc = schema.getDescription();
+
+        var classAnno = getSchemaAnno(clazz);
+        String classDesc = (classAnno != null && !classAnno.description().isEmpty()) ? classAnno.description() : null;
+
+        if (existingDesc != null && !existingDesc.isBlank()) {
+            descBuilder.append(existingDesc);
+            if (classDesc != null && !existingDesc.contains(classDesc)) {
+                descBuilder.append("\n\n").append(classDesc);
+            }
+        } else if (classDesc != null) {
+            descBuilder.append(classDesc);
+        }
+
+        String currentDescSoFar = descBuilder.toString();
+        boolean hasValues = currentDescSoFar.contains("(Details: Values:") || currentDescSoFar.contains("Available Values:");
+        if (!hasValues) {
+            if (!currentDescSoFar.isEmpty()) {
+                descBuilder.append("\n\n(Details: Values:");
+            } else {
+                descBuilder.append("(Details: Values:");
+            }
+            for (Object obj : constants) {
+                String name = obj.toString();
+                descBuilder.append("\n- `").append(name).append("` ");
+                try {
+                    Field field = clazz.getField(name);
+                    var fieldAnnos = getSchemaAnno(field);
+                    if (fieldAnnos != null && !fieldAnnos.description().isEmpty()) {
+                        descBuilder.append(": ").append(fieldAnnos.description());
+                    }
+                } catch (Exception e) {
+                }
+            }
+            descBuilder.append(")");
+            schema.setDescription(descBuilder.toString());
+        }
+    }
+
+    /**
+     * Retrieves the Swagger {@code @Schema} annotation defined at the class level.
+     * @param clazz The class to inspect.
+     * @return The Schema annotation instance, or null if not annotated.
+     */
+    private static io.swagger.v3.oas.annotations.media.Schema getSchemaAnno(Class<?> clazz) {
+        return clazz.getAnnotation(io.swagger.v3.oas.annotations.media.Schema.class);
+    }
+
+    /**
+     * Retrieves the Swagger {@code @Schema} annotation defined on a Field.
+     * @param field The field to inspect.
+     * @return The Schema annotation instance, or null if not annotated.
+     */
+    private static io.swagger.v3.oas.annotations.media.Schema getSchemaAnno(Field field) {
+        return field.getAnnotation(io.swagger.v3.oas.annotations.media.Schema.class);
+    }
+
+    /**
+     * Determines whether a Field is marked as required based on its {@code @Schema} annotation.
+     * 
+     * Checks both the legacy {@code required()} boolean flag and the newer {@code requiredMode()} enum value matching {@code REQUIRED}.
+     * @param field The field to inspect.
+     * @return true if the field is explicitly marked as required, otherwise false.
+     */
+    private static boolean isFieldRequired(Field field) {
+        var anno = getSchemaAnno(field);
+        return anno != null && (anno.required() || anno.requiredMode() == RequiredMode.REQUIRED);
     }
 }
