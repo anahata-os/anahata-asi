@@ -22,6 +22,7 @@ import uno.anahata.asi.nb.tools.java.JavaSourceUtils;
  */
 @Slf4j
 @AgiToolkit("Structural Javadoc management. Allows updating descriptions, authors, tags, and parameters using the AST.")
+@Deprecated
 public class Javadocs extends AnahataToolkit {
 
     /**
