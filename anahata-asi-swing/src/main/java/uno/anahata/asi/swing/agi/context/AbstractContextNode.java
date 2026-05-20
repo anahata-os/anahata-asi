@@ -48,7 +48,6 @@ public abstract class AbstractContextNode<T> {
 
     /** 
      * The underlying domain object. 
-     * @return the wrapped domain object.
      */
     protected final T userObject;
 
