@@ -9,7 +9,7 @@ import lombok.Setter;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.openai.compatible.OpenAiCompatibleProvider;
+import uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.resources.DefaultResourceUI;
@@ -60,7 +60,7 @@ public class AsiDesktopAsiContainer extends AbstractSwingAsiContainer {
         
         if (getProvider("Anahata") == null) {
             log.info("Registering Anahata");
-            registerProvider(new OpenAiCompatibleProvider(
+            registerProvider(new OpenAiChatCompletionsProvider(
                     "Anahata", "Anahata (no SSL)", "http://a.anahata.uno:1234/v1", "Anahata", "https://discord.com/invite/gwGWWxPUXE"));
         }
         
