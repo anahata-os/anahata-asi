@@ -60,10 +60,18 @@ public class BugDefense extends JPanel implements ActionListener {
         ActionMap am = getActionMap();
         im.put(KeyStroke.getKeyStroke("LEFT"), "left");
         im.put(KeyStroke.getKeyStroke("RIGHT"), "right");
-        im.put(KeyStroke.getKeyStroke("SPACE"), "shoot");
+        im.put(KeyStroke.getKeyStroke("SPACE"), "shootOrRestart");
         am.put("left", new AbstractAction() { public void actionPerformed(ActionEvent e) { if (playing) shieldX = Math.max(0, shieldX - 20); } });
         am.put("right", new AbstractAction() { public void actionPerformed(ActionEvent e) { if (playing) shieldX = Math.min(getWidth() - shieldWidth, shieldX + 20); } });
-        am.put("shoot", new AbstractAction() { public void actionPerformed(ActionEvent e) { if (playing) spawnPulse(); } });
+        am.put("shootOrRestart", new AbstractAction() { 
+            public void actionPerformed(ActionEvent e) { 
+                if (playing) {
+                    spawnPulse(); 
+                } else if (lives <= 0) {
+                    startGame();
+                }
+            } 
+        });
     }
 
     private void startGame() {
@@ -104,7 +112,7 @@ public class BugDefense extends JPanel implements ActionListener {
                 if (lives <= 0) {
                     playing = false;
                     timer.stop();
-                    JOptionPane.showMessageDialog(this, "Production environment crashed!\nFinal Score: " + score);
+                    // Custom Game Over overlay handles the rest
                 }
             }
         }
@@ -135,6 +143,12 @@ public class BugDefense extends JPanel implements ActionListener {
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         if (!playing && lives > 0) return;
+
+        if (lives <= 0) {
+            renderGameOver(g2d);
+            return;
+        }
+
         g2d.setColor(new Color(165, 0, 68, 100));
         g2d.fillRect(0, 580, getWidth(), 20);
         g2d.setColor(new Color(0, 77, 152));
@@ -145,6 +159,26 @@ public class BugDefense extends JPanel implements ActionListener {
         for (Rectangle b : bugs) g2d.fillRoundRect(b.x, b.y, b.width, b.height, 5, 5);
         g2d.setColor(Color.WHITE);
         g2d.drawString("Score: " + score + " | Lives: " + lives, 10, 30);
+    }
+
+    private void renderGameOver(Graphics2D g2d) {
+        g2d.setColor(new Color(165, 0, 68)); // Barça Red
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 36));
+        FontMetrics fm = g2d.getFontMetrics();
+        String msg = "PRODUCTION CRASHED";
+        g2d.drawString(msg, (getWidth() - fm.stringWidth(msg)) / 2, getHeight() / 2 - 40);
+
+        g2d.setColor(Color.WHITE);
+        g2d.setFont(new Font("SansSerif", Font.PLAIN, 20));
+        fm = g2d.getFontMetrics();
+        String scoreMsg = "Final Score: " + score;
+        g2d.drawString(scoreMsg, (getWidth() - fm.stringWidth(scoreMsg)) / 2, getHeight() / 2 + 10);
+
+        g2d.setColor(Color.LIGHT_GRAY);
+        g2d.setFont(new Font("SansSerif", Font.ITALIC, 16));
+        fm = g2d.getFontMetrics();
+        String restartMsg = "Press SPACE to Hot-Reload";
+        g2d.drawString(restartMsg, (getWidth() - fm.stringWidth(restartMsg)) / 2, getHeight() / 2 + 50);
     }
 
     public static void main(String[] args) {
