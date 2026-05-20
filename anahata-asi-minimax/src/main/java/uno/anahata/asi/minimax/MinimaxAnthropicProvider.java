@@ -23,7 +23,7 @@ public class MinimaxAnthropicProvider extends AnthropicProvider {
      * the appropriate documentation URI for API key acquisition.</p>
      */
     public MinimaxAnthropicProvider() {
-        super("Minimax", "MiniMax (Antropic)", "https://api.minimax.io/anthropic/v1", "2023-06-01", "https://platform.minimax.io/user-center/basic-information/interface-key");
+        super("Minimax", "MiniMax (Anthropic)", "https://api.minimax.io/anthropic/v1", "2023-06-01", "https://platform.minimax.io/user-center/basic-information/interface-key");
         setFolderName(AbstractAsiContainer.getWorkDirSubDir("Minimax").toString());
     }
 

@@ -38,6 +38,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JTabbedPane;
 import uno.anahata.asi.anthropic.AnthropicProvider;
 import uno.anahata.asi.openai.OpenAiResponsesProvider;
+import uno.anahata.asi.gemini.GeminiAiProvider;
 import uno.anahata.asi.swing.icons.PulseIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.ExternalIcon;
@@ -104,6 +105,8 @@ public class AiProviderPanel extends ScrollablePanel {
     private final JComboBox<TokenizerType> tokenizerCombo;
 
     private final JTextArea allowedModelsArea;
+
+    private JCheckBox vertexCheck;
 
     /**
      * Toggle for forcing HTTP/1.1 on OpenAI-compatible providers.
@@ -291,6 +294,14 @@ public class AiProviderPanel extends ScrollablePanel {
         baseUrlField = new JTextField(provider.getBaseUrl());
         add(baseUrlField, "span 2, wrap");
 
+        if (provider instanceof GeminiAiProvider gemini) {
+            add(new JLabel("Use Vertex AI:"), "gaptop 5");
+            vertexCheck = new JCheckBox("", gemini.isVertex());
+            vertexCheck.setOpaque(false);
+            vertexCheck.setToolTipText("Use Google Cloud Vertex AI endpoint instead of the standard Google AI Studio.");
+            add(vertexCheck, "span 2, wrap");
+        }
+
         if (provider instanceof AnthropicProvider anthropic) {
             add(new JLabel("Anthropic Version:"));
             anthropicVersionField = new JTextField(anthropic.getAnthropicVersion());
@@ -471,6 +482,10 @@ public class AiProviderPanel extends ScrollablePanel {
 
         if (baseUrlField != null) {
             provider.setBaseUrl(baseUrlField.getText().trim());
+        }
+
+        if (provider instanceof GeminiAiProvider gemini && vertexCheck != null) {
+            gemini.setVertex(vertexCheck.isSelected());
         }
 
         if (provider instanceof AnthropicProvider anthropic && anthropicVersionField != null) {
