@@ -58,6 +58,7 @@ public class GeminiAiProvider extends AbstractAiProvider {
         super(uuid);
         this.vertex = vertex;
         setDisplayName(displayName);
+        setDescription(vertex ? "Official Google Cloud Vertex AI client." : "Official Google Gemini API client supporting Flash, Pro, and Ultra.");
         setTokenizerType(TokenizerType.GEMINI);
         setKeysAcquisitionUri(vertex ? "https://console.cloud.google.com/agent-platform/overview" : "https://aistudio.google.com/app/apikey");
     }

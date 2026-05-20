@@ -26,6 +26,7 @@ public class GeminiGoogleCloudExpressAIProvider extends GeminiAiProvider {
      */
     public GeminiGoogleCloudExpressAIProvider() {
         super("GeminiGCExpress", "Google Cloud Express Mode", true);
+        setDescription("Google Vertex AI Express Mode. 90 days free trial on pro models 2M tokens context window.");
         setTokenizerType(TokenizerType.GEMINI);
         setKeysAcquisitionUri("https://console.cloud.google.com/expressmode");
     }

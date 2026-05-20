@@ -71,6 +71,11 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      * The user-facing display name for this instance (e.g., 'Groq Cloud').
      */
     private String displayName;
+    
+    /**
+     * The user-facing description of this instance.
+     */
+    private String description;
 
     /**
      * The URI where users can acquire API keys for this provider.

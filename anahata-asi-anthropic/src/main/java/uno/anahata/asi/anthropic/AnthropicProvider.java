@@ -42,6 +42,7 @@ public class AnthropicProvider extends AbstractAiProvider {
         super(uuid);
         setDisplayName(displayName);
         setBaseUrl(baseUrl);
+        setDescription("Anthropic Claude API client supporting Claude, Sonnet and Mythos.");
         this.anthropicVersion = anthropicVersion;
         setTokenizerType(TokenizerType.CL100K_BASE); // Change when Claude tokenizer is available
         setKeysAcquisitionUri(keysAcquisitionUri);

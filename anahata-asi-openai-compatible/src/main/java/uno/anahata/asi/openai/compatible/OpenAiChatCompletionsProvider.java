@@ -60,6 +60,7 @@ public class OpenAiChatCompletionsProvider extends AbstractAiProvider {
     public OpenAiChatCompletionsProvider() {
         super();
         setDisplayName("OpenAI Compatible (Universal)");
+        setDescription("Universal OpenAI-compatible client for Groq, DeepSeek, Ollama, etc.");
         setTokenizerType(TokenizerType.CL100K_BASE);
         setKeysAcquisitionUri("https://platform.openai.com/api-keys");
         this.customHeaders = new HashMap<>();
@@ -89,6 +90,7 @@ public class OpenAiChatCompletionsProvider extends AbstractAiProvider {
         setBaseUrl(baseUrl);
         setKeysAcquisitionUri(apiKeyAdquisitionUri);
         setFolderName(folderName);
+        setDescription("Universal OpenAI-compatible client for Groq, DeepSeek, Ollama, etc.");
         setTokenizerType(TokenizerType.CL100K_BASE);
     }
 

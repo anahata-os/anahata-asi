@@ -81,6 +81,7 @@ public class OpenAiResponsesProvider extends AbstractAiProvider {
         super(uuid);
         setBaseUrl("https://api.openai.com/v1/");
         setDisplayName("OpenAI (Responses)");
+        setDescription("Modern OpenAI Responses API with stateful history and reasoning.");
         setTokenizerType(TokenizerType.CL100K_BASE);
         setKeysAcquisitionUri("https://platform.openai.com/api-keys");
     }
