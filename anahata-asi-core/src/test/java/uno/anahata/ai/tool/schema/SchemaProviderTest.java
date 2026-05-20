@@ -18,6 +18,7 @@
 package uno.anahata.ai.tool.schema;
 
 import uno.anahata.asi.agi.tool.schema.SchemaProvider;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -127,5 +128,52 @@ public class SchemaProviderTest {
         Map<String, Object> children = (Map<String, Object>) ((Map<String, Object>) root.get("properties")).get("children");
         Map<String, Object> items = (Map<String, Object>) children.get("items");
         assertTrue(((String) items.get("description")).startsWith("Recursive reference to " + TreeNode.class.getName()));
+    }
+
+    @Schema(description = "Represents class level enum description")
+    private enum TestEnumWithSchema {
+        @Schema(description = "Description for VAL1")
+        VAL1,
+        @Schema(description = "Description for VAL2")
+        VAL2
+    }
+
+    private static class TestPojo {
+        @Schema(description = "Attribute level description")
+        private TestEnumWithSchema myEnum;
+    }
+
+    /**
+     * Verifies that enum values and constant descriptions are correctly propagated to the schema description.
+     */
+    @Test
+    public void testEnumValuesPropagateToSchema() throws Exception {
+        String schemaJson = SchemaProvider.generateInlinedSchemaString(TestEnumWithSchema.class);
+        assertNotNull(schemaJson);
+        Map<String, Object> schema = SchemaProvider.OBJECT_MAPPER.readValue(schemaJson, MAP_TYPE_REF);
+        String desc = (String) schema.get("description");
+        assertNotNull(desc);
+        assertTrue(desc.contains("Represents class level enum description"), "Missing class level enum description: " + desc);
+        assertTrue(desc.contains("Description for VAL1"), "Missing constant VAL1 description: " + desc);
+        assertTrue(desc.contains("Description for VAL2"), "Missing constant VAL2 description: " + desc);
+    }
+
+    /**
+     * Verifies that attribute-level @Schema descriptions are merged with class-level
+     * @Schema descriptions of the attribute's type.
+     */
+    @Test
+    public void testSchemaAnnotationsOnAttributesMergeWithClassLevel() throws Exception {
+        String schemaJson = SchemaProvider.generateInlinedSchemaString(TestPojo.class);
+        assertNotNull(schemaJson);
+        Map<String, Object> schema = SchemaProvider.OBJECT_MAPPER.readValue(schemaJson, MAP_TYPE_REF);
+        Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
+        Map<String, Object> myEnumProp = (Map<String, Object>) properties.get("myEnum");
+        String desc = (String) myEnumProp.get("description");
+        assertNotNull(desc);
+        assertTrue(desc.contains("Attribute level description"), "Missing attribute level description: " + desc);
+        assertTrue(desc.contains("Represents class level enum description"), "Missing class level enum description: " + desc);
+        assertTrue(desc.contains("Description for VAL1"), "Missing constant VAL1 description: " + desc);
+        assertTrue(desc.contains("Description for VAL2"), "Missing constant VAL2 description: " + desc);
     }
 }
