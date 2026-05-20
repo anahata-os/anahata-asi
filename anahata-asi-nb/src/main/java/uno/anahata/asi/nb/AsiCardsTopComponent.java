@@ -2,15 +2,10 @@
 package uno.anahata.asi.nb;
 
 import java.awt.BorderLayout;
-import java.util.Set;
-import lombok.Generated;
 import lombok.extern.slf4j.Slf4j;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.windows.TopComponent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.AsiCardsContainerPanel;
 
 /**
