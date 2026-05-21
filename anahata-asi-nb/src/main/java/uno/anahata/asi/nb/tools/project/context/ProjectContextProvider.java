@@ -148,6 +148,9 @@ public class ProjectContextProvider extends AbstractProjectContextProvider {
 
     /**
      * Generates a Markdown string representing the project overview.
+     *
+     * @param overview The project overview model snapshot.
+     * @return A pretty Markdown representation.
      */
     private String generateMarkdown(ProjectOverview overview) {
         StringBuilder sb = new StringBuilder();
@@ -170,6 +173,13 @@ public class ProjectContextProvider extends AbstractProjectContextProvider {
         return sb.toString();
     }
 
+    /**
+     * Formats a declared Maven dependency scope structure into a Markdown listing.
+     *
+     * @param scope The dependency scope to format.
+     * @param indent The string indentation format prefix.
+     * @return A pretty Markdown listing of group-artifacts.
+     */
     private String formatDependencyScope(DependencyScope scope, String indent) {
         StringBuilder sb = new StringBuilder();
         sb.append(indent).append("- Scope: `").append(scope.getScope()).append("`\n");

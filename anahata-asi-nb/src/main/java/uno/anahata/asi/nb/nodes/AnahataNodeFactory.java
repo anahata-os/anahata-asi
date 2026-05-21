@@ -36,6 +36,7 @@ import uno.anahata.asi.nb.tools.project.Projects;
 @NodeFactory.Registration(projectType = {"org-netbeans-modules-maven", "org-netbeans-modules-java-j2seproject"}, position = 108)
 public class AnahataNodeFactory implements NodeFactory {
 
+    /** Logger instance for projects view nodes creation. */
     private static final Logger log = Logger.getLogger(AnahataNodeFactory.class.getName());
 
     /**

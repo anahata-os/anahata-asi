@@ -22,9 +22,10 @@ import uno.anahata.asi.toolkit.resources.text.AbstractTextResourceWrite;
 /**
  * A container for a batch of structural Java refinement operations.
  * <p>
- * This class orchestrates multiple {@link CodeRefinementIntentPolymorphic}s targeted at a
- * single source file. It extends {@link AbstractTextResourceWrite} to leverage
- * the platform's high-fidelity diff rendering and resource-locking mechanisms.
+ * This class orchestrates multiple {@link CodeRefinementIntentPolymorphic}s
+ * targeted at a single source file. It extends
+ * {@link AbstractTextResourceWrite} to leverage the platform's high-fidelity
+ * diff rendering and resource-locking mechanisms.
  * </p>
  *
  * @author anahata
@@ -36,12 +37,21 @@ import uno.anahata.asi.toolkit.resources.text.AbstractTextResourceWrite;
 @Schema(description = "A batch of structural AST modifications for a single Java file.")
 public class CodeRefinementBatchPolymorphic extends AbstractTextResourceWrite {
 
+    /**
+     * The structural change intents.
+     */
     @Schema(description = "The list of structural changes to apply, in order. Note the intents will be mapped to one of the listed java types", required = true)
     private List<CodeRefinementIntentPolymorphic> intents = new ArrayList<>();
 
+    /**
+     * Whether to run import optimization.
+     */
     @Schema(description = "Whether to optimize imports after applying all changes. Defaults to true.")
     private boolean optimize = true;
 
+    /**
+     * Whether to save changes to disk.
+     */
     @Schema(description = "Whether to save the file to disk after refinement. Defaults to true.")
     private boolean save = true;
 
@@ -56,14 +66,14 @@ public class CodeRefinementBatchPolymorphic extends AbstractTextResourceWrite {
     protected String doCalculateResultingContent(Agi agi) throws Exception {
         // 1. Authoritative state capture (if not already done by validate)
         if (originalContent == null) {
-             captureOriginalContent(agi);
+            captureOriginalContent(agi);
         }
-        
+
         uno.anahata.asi.agi.resource.Resource res = agi.getResourceManager().get(resourceUuid);
         if (res == null) {
             throw new AgiToolException("no resource found for uuid " + resourceUuid);
         }
-        
+
         if (!(res.getHandle() instanceof uno.anahata.asi.nb.resources.handle.NbHandle nbh)) {
             throw new AgiToolException("Resource handle is not a NbHandle " + res.getHandle());
         }
@@ -92,7 +102,7 @@ public class CodeRefinementBatchPolymorphic extends AbstractTextResourceWrite {
      */
     public void applyTo(WorkingCopy wc) throws Exception {
         log.info("[V3-STRATEGY] Starting batch application. Intents: {}", intents.size());
-        
+
         // Accumulate changes by parent type to ensure atomic rewrites
         Map<Tree, List<Tree>> modifiedMembers = new LinkedHashMap<>();
 
@@ -131,8 +141,16 @@ public class CodeRefinementBatchPolymorphic extends AbstractTextResourceWrite {
         }
         //alidateIdenticalContent(agi);
     }
-    
-     public static int findMemberIndex(org.netbeans.api.java.source.CompilationInfo info, List<? extends Tree> members, Tree target) {
+
+    /**
+     * Finds the 0-based index of a member tree inside a list of members.
+     *
+     * @param info The compilation context info.
+     * @param members The list of siblings.
+     * @param target The member to locate.
+     * @return The 0-based index of the target, or -1 if not found.
+     */
+    public static int findMemberIndex(org.netbeans.api.java.source.CompilationInfo info, List<? extends Tree> members, Tree target) {
         if (info == null || members == null || target == null) {
             return -1;
         }
@@ -146,8 +164,16 @@ public class CodeRefinementBatchPolymorphic extends AbstractTextResourceWrite {
         }
         return -1;
     }
-     
-     public static ClassTree rebuildClassTree(TreeMaker make, ClassTree ct, List<Tree> members) {
+
+    /**
+     * Rebuilds a class tree with the specified list of members.
+     *
+     * @param make The IDE tree maker.
+     * @param ct The original class tree.
+     * @param members The new list of members.
+     * @return The rebuilt class tree node.
+     */
+    public static ClassTree rebuildClassTree(TreeMaker make, ClassTree ct, List<Tree> members) {
         return switch (ct.getKind()) {
             case INTERFACE ->
                 make.Interface(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), (List<ExpressionTree>) (List<?>) ct.getPermitsClause(), members);
@@ -162,9 +188,13 @@ public class CodeRefinementBatchPolymorphic extends AbstractTextResourceWrite {
                 make.Class(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), ct.getExtendsClause(), (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), (List<ExpressionTree>) (List<?>) ct.getPermitsClause(), members);
         };
     }
-     
-        /**
+
+    /**
      * Clones a tree node into the current WorkingCopy context.
+     *
+     * @param make The IDE tree maker.
+     * @param tree The original tree node to clone.
+     * @return The cloned tree node.
      */
     public static Tree cloneTree(TreeMaker make, Tree tree) {
         if (tree instanceof ClassTree ct) {

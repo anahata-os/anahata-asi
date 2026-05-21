@@ -41,10 +41,13 @@ public class IDE extends AnahataToolkit {
      * Defines the supported targets for programmatic selection in the IDE.
      */
     public enum SelectInTarget {
+        /** The logical Projects view (Ctrl+Shift+1). */
         @Schema(description = "The logical Projects view (Ctrl+Shift+1).")
         PROJECTS,
+        /** The physical Files view (Ctrl+Shift+2). */
         @Schema(description = "The physical Files view (Ctrl+Shift+2).")
         FILES,
+        /** The Favorites view (Ctrl+Shift+3). */
         @Schema(description = "The Favorites view (Ctrl+Shift+3).")
         FAVORITES
     }

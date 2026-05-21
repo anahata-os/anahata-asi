@@ -65,11 +65,17 @@ public class Hints extends AnahataToolkit {
     @AllArgsConstructor
     public static class HintMetadata {
 
+        /** The unique identifier of the hint. */
         String id;
+        /** The user-visible display name of the hint. */
         String displayName;
+        /** The description of what this hint checks. */
         String description;
+        /** The category folder where the hint belongs. */
         String category;
+        /** The severity level of this hint. */
         String severity;
+        /** Whether this hint is active in the IDE settings. */
         boolean enabled;
     }
 

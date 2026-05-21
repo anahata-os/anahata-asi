@@ -200,7 +200,10 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
 
     /**
      * Currently unsued. Prioritizes the active NetBeans Document 
-     * content if the file is open in the editor, use this to show unsaved changes to the model.</p>
+     * content if the file is open in the editor, use this to show unsaved changes to the model.
+     *
+     * @return The text content of the active document in the editor, or file content if not open.
+     * @throws IOException If reading the document or stream fails.
      */
     public String asTextFromEditorIfOpenInEditor() throws IOException {
         FileObject fo = getFileObject();

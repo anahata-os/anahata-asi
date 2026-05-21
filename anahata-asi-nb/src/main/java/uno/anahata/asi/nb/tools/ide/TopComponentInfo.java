@@ -16,17 +16,30 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public final class TopComponentInfo {
+    /** The unique identifier of the TopComponent window. */
     private final String id;
+    /** The basic name of the window. */
     private final String name;
+    /** Whether this window is currently selected and active. */
     private final boolean selected;
+    /** The user-visible display name of the window. */
     private final String displayName;
+    /** The HTML-enhanced display name of the window (if configured). */
     private final String htmlDisplayName;
+    /** The tooltip description text associated with the window. */
     private final String tooltip;
+    /** The fully qualified class name of this TopComponent implementation. */
     private final String className;
+    /** The display mode (e.g. editor, explorer, output) where the window resides. */
     private final String mode;
+    /** Summarized list of nodes currently selected/activated within this window. */
     private final String activatedNodes;
+    /** Actions supported by this window as a comma-separated list. */
     private final String supportedActions;
+    /** The absolute path of the primary file represented by this window (if any). */
     private final String filePath;
+    /** The primary file path representation for multi-view or grouped editors. */
     private final String primaryFilePath;
+    /** The size in bytes of the file represented by this window. */
     private final long sizeInBytes;
 }

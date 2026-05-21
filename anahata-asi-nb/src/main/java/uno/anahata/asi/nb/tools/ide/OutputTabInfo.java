@@ -16,9 +16,14 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public final class OutputTabInfo {
+    /** The unique identifier of the output tab. */
     private final long id;
+    /** The user-visible display name of the output tab. */
     private final String displayName;
+    /** The size of the captured output content in characters. */
     private final int contentSize;
+    /** The total line count of the output stream. */
     private final int totalLines;
+    /** Whether the associated Maven or system process is still running. */
     private final boolean isRunning;
 }

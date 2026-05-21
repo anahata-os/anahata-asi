@@ -28,15 +28,19 @@ import uno.anahata.asi.nb.tools.java.coderefiner.RelativePosition;
 @Schema(description = "Instruction to insert a new structural member.")
 public class InsertMemberIntent extends CodeRefinementIntentPolymorphic {
 
+    /** The full member declaration signature. */
     @Schema(description = "The full member declaration (e.g. '@Override public void foo()' or 'private String name').", required = true)
     private String declaration;
 
+    /** The body code or initializer expression. */
     @Schema(description = "The WHOLE body code. For methods, logic inside braces. For fields, the initializer expression (the part after the '=').")
     private String body;
 
+    /** The relative position of insertion. */
     @Schema(description = "Position relative to the anchor member.", required = true)
     private RelativePosition position;
 
+    /** The anchor member name for relative positions. */
     @Schema(description = "Anchor member name relative to class (e.g. 'myMethod()'). Mandatory for BEFORE/AFTER.")
     private String anchorMemberName;
 

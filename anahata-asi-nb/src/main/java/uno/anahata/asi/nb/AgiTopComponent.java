@@ -304,7 +304,9 @@ public final class AgiTopComponent extends TopComponent {
      */
     private static final class Resolvable implements Serializable {
 
+        /** The serializable version UID. */
         private static final long serialVersionUID = 1L;
+        /** The unique identifier of the preserved session. */
         private final String sessionId;
 
         /**
@@ -320,6 +322,7 @@ public final class AgiTopComponent extends TopComponent {
          * Reconstructs the AgiTopComponent using the saved session ID.
          *
          * @return A new AgiTopComponent instance.
+         * @throws ObjectStreamException if restoration fails.
          */
         Object readResolve() throws ObjectStreamException {
             return new AgiTopComponent(sessionId);

@@ -21,10 +21,15 @@ import org.openide.windows.OutputWriter;
 @Slf4j
 public class TeeInputOutput implements InputOutput {
 
+    /** The delegated NetBeans InputOutput instance being decorated. */
     private final InputOutput delegate;
+    /** Internal buffer capturing standard output characters. */
     private final StringWriter capturedOutWriter = new StringWriter();
+    /** Internal buffer capturing error output characters. */
     private final StringWriter capturedErrWriter = new StringWriter();
+    /** Specialized OutputWriter mirroring standard output streams. */
     private final OutputWriter teeOut;
+    /** Specialized OutputWriter mirroring error output streams. */
     private final OutputWriter teeErr;
 
     /**
@@ -194,8 +199,11 @@ public class TeeInputOutput implements InputOutput {
      */
     @Slf4j
     private static class TeeOutputWriter extends OutputWriter {
+        /** The primary destination writer (typically delegate.getOut() or getErr()). */
         private final Writer w1;
+        /** The secondary destination writer (the internal string buffer). */
         private final Writer w2;
+        /** Flag indicating if an IOException occurred during write operations. */
         private volatile boolean errorOccurred = false;
 
         /**

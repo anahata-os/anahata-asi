@@ -23,10 +23,15 @@ import uno.anahata.asi.nb.AnahataInstaller;
  */
 public final class NetBeansModuleUtils {
 
+    /** Logger instance for module utility operations. */
     private static final Logger logger = Logger.getLogger(NetBeansModuleUtils.class.getName());
     
+    /** Cached classpath string for the NetBeans environment. */
     private static String cachedNetBeansClasspath;
 
+    /**
+     * Private constructor to prevent instantiation of this utility class.
+     */
     private NetBeansModuleUtils() {
     }
 

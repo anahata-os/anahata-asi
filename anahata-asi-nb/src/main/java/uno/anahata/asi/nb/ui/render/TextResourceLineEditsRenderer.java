@@ -47,6 +47,12 @@ public class TextResourceLineEditsRenderer extends AbstractTextResourceWriteRend
 
     /**
      * Helper to add a group of edits to the intent panel with a semantic header.
+     *
+     * @param <E> The type of edit operation being listed (insertion, replacement, deletion).
+     * @param panel The swing panel container to populate.
+     * @param title The semantic header label for this group of edits.
+     * @param edits The list of edits belonging to this group.
+     * @param formatter The mapping function to stringify each edit element.
      */
     private <E> void addEditsToPanel(JPanel panel, String title, List<E> edits, java.util.function.Function<E, String> formatter) {
         if (edits == null || edits.isEmpty()) {

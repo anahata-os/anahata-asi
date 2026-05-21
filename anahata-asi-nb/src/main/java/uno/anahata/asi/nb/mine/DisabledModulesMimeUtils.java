@@ -25,8 +25,12 @@ import uno.anahata.asi.nb.module.NetBeansModuleUtils;
  */
 public final class DisabledModulesMimeUtils {
 
+    /** Logger instance for disabled module MIME scanning events. */
     private static final Logger logger = Logger.getLogger(DisabledModulesMimeUtils.class.getName());
 
+    /**
+     * Private constructor to prevent instantiation of this utility class.
+     */
     private DisabledModulesMimeUtils() {
         // Utility class
     }

@@ -28,6 +28,8 @@ import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.io.IOException;
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.project.MavenProject;
 import uno.anahata.asi.nb.module.NetBeansModuleUtils;
 
 import uno.anahata.asi.nb.tools.project.Projects;
@@ -38,7 +40,6 @@ import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.nb.NetBeansAsiContainer;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
-import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.toolkit.java.classpath.VeryPrettyClassPathPrinter;
 
 /**
@@ -217,7 +218,7 @@ public class NbJava extends SwingJava {
             if (cosStatus.startsWith("all") || cosStatus.equalsIgnoreCase("Enabled")) {
                 NbMavenProject nmp = p.getLookup().lookup(NbMavenProject.class);
                 if (nmp != null) {
-                    org.apache.maven.project.MavenProject mp = nmp.getMavenProject();
+                    MavenProject mp = nmp.getMavenProject();
                     String key = mp.getGroupId() + ":" + mp.getArtifactId();
                     FileObject targetClasses = p.getProjectDirectory().getFileObject("target/classes");
                     if (targetClasses != null && targetClasses.isFolder()) {
@@ -230,7 +231,7 @@ public class NbJava extends SwingJava {
         // Map JAR paths to artifact keys for the current project
         Map<String, String> jarToArtifactKey = new HashMap<>();
         if (nbMavenProject != null) {
-            for (org.apache.maven.artifact.Artifact art : nbMavenProject.getMavenProject().getArtifacts()) {
+            for (Artifact art : nbMavenProject.getMavenProject().getArtifacts()) {
                 File f = art.getFile();
                 if (f != null) {
                     jarToArtifactKey.put(f.getAbsolutePath(), art.getGroupId() + ":" + art.getArtifactId());

@@ -56,6 +56,7 @@ public abstract class CodeRefinementIntentPolymorphic implements Serializable {
      * 
      * @param wc The active working copy.
      * @param modifiedMembers The accumulator for all changes in the batch.
+     * @param optimize Whether to optimize imports during this batch.
      * @throws Exception if resolution or AST creation fails.
      */
     public abstract void apply(WorkingCopy wc, Map<Tree, List<Tree>> modifiedMembers, boolean optimize) throws Exception;
@@ -69,6 +70,9 @@ public abstract class CodeRefinementIntentPolymorphic implements Serializable {
 
     /**
      * Helper to extract the simple name from a potentially complex FQN.
+     *
+     * @param fqn The FQN to extract the simple name from.
+     * @return The simple name of the FQN.
      */
     protected String getSimpleName(String fqn) {
         if (fqn == null || fqn.isBlank()) {

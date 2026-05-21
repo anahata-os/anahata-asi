@@ -27,12 +27,15 @@ import uno.anahata.asi.nb.tools.java.coderefiner.RelativePosition;
 @Schema(description = "Instruction to move a member within its enclosing type.")
 public class MoveMemberIntent extends CodeRefinementIntentPolymorphic {
 
+    /** The FQN of the member to move. */
     @Schema(description = "The ABSOLUTE FQN of the member to move.", required = true)
     private String memberFqn;
 
+    /** The relative position of insertion. */
     @Schema(description = "The new position relative to the anchor.", required = true)
     private RelativePosition position;
 
+    /** The anchor member name for relative position placement. */
     @Schema(description = "The anchor member name. Mandatory for BEFORE/AFTER.")
     private String anchorMemberName;
 

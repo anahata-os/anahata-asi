@@ -64,10 +64,14 @@ public class NetBeansTextResourceViewer extends AbstractTextResourceViewer {
      */
     private static FileSystem sharedMemFS;
 
+    /** Cleaner instance for resource garbage collection sweeps. */
     private static final Cleaner CLEANER = Cleaner.create();
 
     /**
      * Lazily gets the shared MemoryFileSystem.
+     *
+     * @return The shared MemoryFileSystem instance.
+     * @throws IOException if memory filesystem creation fails.
      */
     private static synchronized FileSystem getSharedMemFS() throws IOException {
         if (sharedMemFS == null) {
@@ -327,6 +331,9 @@ public class NetBeansTextResourceViewer extends AbstractTextResourceViewer {
         }
     }
 
+    /**
+     * Registers the active JEditorPane instance with the NetBeans EditorRegistry.
+     */
     private void ensureRegistered() {
         log.info("ensureRegistered() editor.getHeight() " + editor.getHeight());
         try {
@@ -346,6 +353,7 @@ public class NetBeansTextResourceViewer extends AbstractTextResourceViewer {
         return mainScroller;
     }
 
+    /** The last logged height dimension value to prevent logging floods. */
     private transient int lastLoggedH = -1;
 
     /**

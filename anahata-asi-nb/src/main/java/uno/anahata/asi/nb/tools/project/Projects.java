@@ -418,6 +418,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
      * </p>
      *
      * @param projectPath The absolute path of the parent project.
+     * @return A status message summarizing the subprojects open request status.
      * @throws Exception if the parent project is not open.
      */
     @AgiTool("Opens all subprojects of a given project.")

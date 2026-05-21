@@ -1,15 +1,25 @@
 package uno.anahata.asi.nb;
 
-import java.lang.Long;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import lombok.SneakyThrows;
 
-public class CodeRefinerTestSubject<T extends java.lang.Number & java.io.Serializable, R> {
-    private java.util.Map<java.lang.String, java.util.List<T>> complexMap;
+public class CodeRefinerTestSubject<T extends Number, 
+      Serializabl, R> {
+    private Map<String, List<T>> complexMap;
     
-    @lombok.SneakyThrows
-    public <X> java.util.Set<R> process(java.util.function.Function<T, R> mapper, java.util.List<X> extra) {
-        java.util.function.Supplier<java.util.List<java.lang.Integer>> supplier = java.util.ArrayList<java.lang.Integer>::new;
-        return new java.util.HashSet<R>();
+    @SneakyThrows
+    public <X> Set<R> process(Function<T, R> mapper, List<X> extra) {
+        Supplier<List<Integer>> supplier = ArrayList<Integer>::new;
+        return new HashSet<R>();
     }
     
-    public record ComplexRecord<Z>(java.util.Optional<Z> opt) {}
+    public record ComplexRecord<Z>(Optional<Z> opt) {}
 }

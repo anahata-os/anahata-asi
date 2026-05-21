@@ -6,7 +6,6 @@ import lombok.Generated;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.LoggerFactory;
 
 /**
  * A dedicated test class for the CodeRefiner toolkit.

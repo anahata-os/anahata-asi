@@ -129,6 +129,12 @@ public class NetBeansAsiContainer extends AbstractSwingAsiContainer {
         return atc != null ? atc.getAgiPanel() : null;
     }
 
+    /**
+     * Locates the active AgiTopComponent window for the given session.
+     *
+     * @param agi The AGI session to find the window for.
+     * @return The matching AgiTopComponent instance, or {@code null} if not open.
+     */
     private AgiTopComponent findTopComponent(Agi agi) {
         Set<TopComponent> opened = WindowManager.getDefault().getRegistry().getOpened();
         for (TopComponent tc : opened) {

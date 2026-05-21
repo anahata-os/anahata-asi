@@ -7,10 +7,10 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Font;
 import java.awt.Image;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
+import java.beans.BeanInfo;
 import java.util.List;
 import java.util.Objects;
 import javax.swing.BorderFactory;
@@ -574,7 +574,7 @@ public abstract class AbstractTextResourceWriteRenderer<T extends AbstractTextRe
             if (fo != null) {
                 try {
                     DataObject dobj = DataObject.find(fo);
-                    Image img = dobj.getNodeDelegate().getIcon(java.beans.BeanInfo.ICON_COLOR_16x16);
+                    Image img = dobj.getNodeDelegate().getIcon(BeanInfo.ICON_COLOR_16x16);
                     if (img != null) {
                         htmlDisplayName.setIcon(ImageUtilities.image2Icon(img));
                     }

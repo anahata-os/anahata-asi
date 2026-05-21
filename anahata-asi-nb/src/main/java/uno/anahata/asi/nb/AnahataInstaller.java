@@ -25,6 +25,7 @@ import uno.anahata.asi.swing.internal.SwingUtils;
  */
 public class AnahataInstaller extends ModuleInstall {
 
+    /** Logger instance for module lifecycle events. */
     private static final Logger log = Logger.getLogger(AnahataInstaller.class.getName());
 
     /**

@@ -6,6 +6,9 @@ import java.util.jar.Manifest;
 import uno.anahata.asi.toolkit.java.classpath.AbstractJarHandler;
 import uno.anahata.asi.toolkit.java.classpath.JarMetadata;
 
+/**
+ * Specialized JAR handler for parsing NetBeans Platform module manifests and metadata.
+ */
 public class NetBeansJarHandler extends AbstractJarHandler {
     @Override
     public boolean canHandle(File jarFile) {

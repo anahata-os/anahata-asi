@@ -121,6 +121,12 @@ public final class JavaSourceGroup extends ProjectNode {
 
     /**
      * Recursively walks the directory structure to identify Java packages and their contents.
+     *
+     * @param root The source root folder.
+     * @param current The current folder being walked.
+     * @param fileToComponents The mapping of file objects to logical components.
+     * @param pkgMap The package accumulator map.
+     * @throws Exception if filesystem operations fail.
      */
     private void walkJavaPackages(FileObject root, FileObject current, Map<FileObject, List<ProjectComponent>> fileToComponents, Map<String, JavaPackage> pkgMap) throws Exception {
         String relPkgPath = FileUtil.getRelativePath(root, current);

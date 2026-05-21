@@ -31,6 +31,7 @@ import uno.anahata.asi.agi.resource.Resource;
 @Slf4j
 public class FilesContextActionLogic {
 
+    /** Logger instance for physical context actions logic. */
     private static final Logger LOG = Logger.getLogger(FilesContextActionLogic.class.getName());
 
     /**

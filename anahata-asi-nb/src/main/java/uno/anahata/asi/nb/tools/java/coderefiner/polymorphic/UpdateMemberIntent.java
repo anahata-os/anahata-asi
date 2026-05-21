@@ -32,12 +32,15 @@ import uno.anahata.asi.nb.tools.java.BatchCodeRefiner;
 @Schema(description = "Instruction to update an existing structural member.")
 public class UpdateMemberIntent extends CodeRefinementIntentPolymorphic {
 
+    /** The absolute FQN of the structural member to target for the update. */
     @Schema(description = "The ABSOLUTE FQN of the member to update (e.g. 'com.foo.Bar.myMethod()').", required = true)
     private String memberFqn;
 
+    /** The optional new member declaration/signature to replace the old signature. */
     @Schema(description = "The new member declaration (signature). If omitted, the existing signature is preserved.")
     private String declaration;
 
+    /** The optional new whole body code or field initializer to apply. */
     @Schema(description = "The new WHOLE body code. For methods, logic inside braces. For fields, the initializer expression (part after '='). If omitted, existing body is preserved.")
     private String body;
 

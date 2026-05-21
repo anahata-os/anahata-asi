@@ -464,6 +464,13 @@ public class CodeModel extends AnahataToolkit {
         throw new AgiToolException("Member not found: " + memberFqn + " in type " + typeFqn);
     }
 
+    /**
+     * Generates a descriptive error message with closest candidates when a member is not found.
+     *
+     * @param info The compilation context info.
+     * @param memberFqn The FQN of the missing member.
+     * @return A detailed error message listing candidate names.
+     */
     private static String getMemberNotFoundMessage(CompilationInfo info, String memberFqn) {
         List<String> candidates = JavaSourceUtils.findMemberCandidates(info, memberFqn);
         if (!candidates.isEmpty()) {

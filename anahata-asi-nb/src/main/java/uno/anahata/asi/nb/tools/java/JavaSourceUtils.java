@@ -1,46 +1,30 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.tools.java;
 
-import com.sun.source.tree.AnnotationTree;
 import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.ClassTree;
-import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodTree;
-import com.sun.source.tree.ModifiersTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
-import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import lombok.extern.slf4j.Slf4j;
-import org.netbeans.api.java.source.CompilationController;
 import org.netbeans.api.java.source.CompilationInfo;
-import org.netbeans.api.java.source.ElementHandle;
-import org.netbeans.api.java.source.JavaSource;
-import org.netbeans.api.java.source.Task;
-import org.netbeans.api.java.source.TreeMaker;
-import org.netbeans.api.java.source.TreePathHandle;
-import org.netbeans.api.java.source.TreeUtilities;
-import org.netbeans.api.java.source.WorkingCopy;
-import org.netbeans.modules.refactoring.java.api.MemberInfo;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import uno.anahata.asi.agi.tool.AgiToolException;
@@ -86,12 +70,14 @@ public class JavaSourceUtils {
 
     /**
      * Generates the Anahata Canonical FQN for a given element.
+     * @param e The element to resolve.
+     * @return The canonical FQN string.
      */
     public static String getCanonicalFqn(Element e) {
         if (e == null) {
             return null;
         }
-        if (e instanceof javax.lang.model.element.PackageElement pe) {
+        if (e instanceof PackageElement pe) {
             return pe.getQualifiedName().toString();
         }
         Element enclosing = e.getEnclosingElement();
@@ -117,6 +103,8 @@ public class JavaSourceUtils {
 
     /**
      * Generates the Anahata Canonical FQN for a given type mirror.
+     * @param m The type mirror to resolve.
+     * @return The canonical FQN string.
      */
     public static String getCanonicalFqn(TypeMirror m) {
         if (m == null) {
@@ -204,6 +192,12 @@ public class JavaSourceUtils {
 
     
 
+    /**
+     * Locates a syntax tree node inside the compilation context matching the given FQN.
+     * @param memberFqn The canonical FQN of the member to find.
+     * @param info The compilation context.
+     * @return The matching Tree node, or null if not found.
+     */
     public static Tree findTree(CompilationInfo info, final String memberFqn) {
         
         final String pureFqn;
@@ -296,10 +290,12 @@ public class JavaSourceUtils {
         
     /**
      * Internal helper to match a method element against a string signature.
-     * <p>
-     * This implementation is erasure-aware. If the provided signature does not
-     * contain generics, it will match against the raw AST type.
-     * </p>
+     * <p>This implementation is erasure-aware. If the provided signature does not
+     * contain generics, it will match against the raw AST type.</p>
+     * @param methodFqn The signature to compare against.
+     * @param ee The executable element to match.
+     * @param info The compilation context.
+     * @return true if the signature matches, false otherwise.
      */
     private static boolean matchSignature(CompilationInfo info, ExecutableElement ee, String methodFqn) {
         String actualFqn = getCanonicalFqn(ee).replaceAll("\\s+", "");
@@ -323,8 +319,9 @@ public class JavaSourceUtils {
     }
 
     /**
-     * Splits a parameter string into individual types, respecting generic
-     * brackets.
+     * Splits a parameter string into individual types, respecting generic brackets.
+     * @param params The raw parameters string.
+     * @return A list of individual parameter types.
      */
     private static List<String> splitParameters(String params) {
         List<String> result = new ArrayList<>();
@@ -396,6 +393,11 @@ public class JavaSourceUtils {
     
     
 
+    /**
+     * Forces the IDE to save and flush any open document buffers for the given file.
+     * @param fo The NetBeans file object to save.
+     * @throws java.io.IOException If saving fails.
+     */
     public static void handleSave(FileObject fo) throws IOException {
         DataObject doid = DataObject.find(fo);
         EditorCookie ec = doid.getLookup().lookup(EditorCookie.class);

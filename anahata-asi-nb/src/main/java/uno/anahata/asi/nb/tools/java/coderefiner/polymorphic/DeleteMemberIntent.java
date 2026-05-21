@@ -26,6 +26,7 @@ import uno.anahata.asi.nb.tools.java.BatchCodeRefiner;
 @Schema(description = "Instruction to delete a structural member.")
 public class DeleteMemberIntent extends CodeRefinementIntentPolymorphic {
 
+    /** The target member FQN. */
     @Schema(description = "The ABSOLUTE FQN of the member to delete.", required = true)
     private String memberFqn;
 

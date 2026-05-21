@@ -2,15 +2,13 @@
 /**
  * Provides NetBeans Node factories and implementations for representing 
  * Anahata-related entities in the IDE's project and file explorers.
- * <p>
- * This package integrates with the NetBeans {@code Node} API to provide 
- * visual representations, icons, and context menus for:
+ * <p>This package integrates with the NetBeans {@code Node} API to provide 
+ * visual representations, icons, and context menus for:</p>
  * <ul>
  *     <li>Anahata Project nodes</li>
  *     <li>Managed Markdown documentation</li>
  *     <li>Logical project groupings</li>
  * </ul>
- * </p>
  * 
  * @author anahata
  */

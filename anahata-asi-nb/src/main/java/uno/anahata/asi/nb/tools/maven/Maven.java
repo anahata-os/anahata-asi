@@ -11,8 +11,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
@@ -41,7 +41,6 @@ import org.netbeans.modules.maven.indexer.api.NBVersionInfo;
 import org.netbeans.modules.maven.indexer.api.QueryField;
 import org.netbeans.modules.maven.indexer.api.RepositoryPreferences;
 import org.netbeans.modules.maven.indexer.api.RepositoryQueries;
-import org.netbeans.api.project.ui.OpenProjects;
 import org.openide.execution.ExecutionEngine;
 import org.openide.execution.ExecutorTask;
 import org.openide.filesystems.FileObject;
@@ -52,6 +51,7 @@ import org.openide.util.NbPreferences;
 import uno.anahata.asi.agi.message.RagMessage;
 import org.openide.util.Task;
 import org.openide.util.TaskListener;
+import org.openide.windows.IOProvider;
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.nb.util.TeeInputOutput;
@@ -260,16 +260,14 @@ public class Maven extends AnahataToolkit {
     //<editor-fold defaultstate="collapsed" desc="From MavenPom.java">
     /**
      * The definitive 'super-tool' for adding a Maven dependency.
-     * <p>
-     * This tool follows a safe, multi-phase process:
+     * <p>This tool follows a safe, multi-phase process:</p>
      * <ol>
      *   <li><b>Pre-flight:</b> Verifies artifact existence in remote repositories.</li>
      *   <li><b>Modification:</b> Atomically adds the dependency to the project's {@code pom.xml}.</li>
      *   <li><b>Resolution:</b> Runs {@code dependency:resolve} to ensure transitive dependencies are satisfied.</li>
      *   <li><b>Background:</b> Triggers asynchronous download of sources and javadocs.</li>
      * </ol>
-     * Finally, it triggers a NetBeans project reload to reflect changes in the IDE.
-     * </p>
+     * <p>Finally, it triggers a NetBeans project reload to reflect changes in the IDE.</p>
      * 
      * @param projectPath The absolute path of the project to modify.
      * @param groupId The groupId of the dependency.
@@ -540,7 +538,7 @@ public class Maven extends AnahataToolkit {
             properties.forEach(config::setProperty);
         }
 
-        TeeInputOutput teeIO = new TeeInputOutput(org.openide.windows.IOProvider.getDefault().getIO(config.getTaskDisplayName(), true));
+        TeeInputOutput teeIO = new TeeInputOutput(IOProvider.getDefault().getIO(config.getTaskDisplayName(), true));
         MavenCommandLineExecutor executor = new MavenCommandLineExecutor(config, teeIO, null);
 
         LOG.info("Executing Maven build via ExecutionEngine to avoid RunUtils deadlock...");
@@ -689,7 +687,7 @@ public class Maven extends AnahataToolkit {
         }
         
         MavenEmbedder onlineEmbedder = EmbedderFactory.getOnlineEmbedder();
-        java.util.Set<Artifact> artifacts = nbMavenProject.getMavenProject().getArtifacts();
+        Set<Artifact> artifacts = nbMavenProject.getMavenProject().getArtifacts();
         int totalSuccessCount = 0;
         int totalFailCount = 0;
         StringBuilder errors = new StringBuilder();
