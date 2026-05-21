@@ -9,7 +9,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.logging.Logger;
 import lombok.extern.slf4j.Slf4j;
 import org.openide.filesystems.FileObject;
@@ -17,6 +16,7 @@ import org.openide.filesystems.FileSystem;
 import org.openide.filesystems.FileUtil;
 import uno.anahata.asi.nb.AnahataInstaller;
 import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.agi.resource.Resource;
 
 /**
  * Logic handler for adding NetBeans files and folders to the V2 AI context.
@@ -120,7 +120,7 @@ public class FilesContextActionLogic {
         if (fo.isData()) {
             File file = FileUtil.toFile(fo);
             if (file != null) {
-                targetAgi.getResourceManager().findByPath(file.getAbsolutePath()).ifPresent(res -> {
+                targetAgi.getResourceManager().findByPath(file.getAbsolutePath()).ifPresent((Resource res) -> {
                     ids.add(res.getId());
                     fos.add(fo);
                 });
@@ -210,9 +210,9 @@ public class FilesContextActionLogic {
         // Authority: ensure trailing separator for semantic folder matching
         String folderPrefix = absolutePath.endsWith("/") ? absolutePath : absolutePath + "/";
         
-        List<uno.anahata.asi.agi.resource.Resource> resources = agi.getResourceManager().getResourcesList();
+        List<Resource> resources = agi.getResourceManager().getResourcesList();
         return (int) resources.stream()
-                .filter(r -> {
+                .filter((Resource r) -> {
                     String path = r.getHandle().getUri().getPath();
                     if (path == null) {
                         return false;
@@ -246,7 +246,7 @@ public class FilesContextActionLogic {
             while (current != null) {
                 try {
                     FileSystem fs = current.getFileSystem();
-                    toRefreshByFs.computeIfAbsent(fs, k -> new HashSet<>()).add(current);
+                    toRefreshByFs.computeIfAbsent(fs, (FileSystem k) -> new HashSet<>()).add(current);
                 } catch (Exception ex) {
                     log.warn("Failed to resolve filesystem for refresh: {}", current.getPath(), ex);
                 }
