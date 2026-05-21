@@ -7,9 +7,11 @@ import uno.anahata.asi.swing.agi.message.AbstractMessagePanel;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GradientPaint;
+import java.awt.Insets;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.Instant;
@@ -21,7 +23,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
-import javax.swing.border.Border;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -118,25 +119,25 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
         // 2. Initialize Header Buttons and Labels
         this.pinButton = new JToggleButton(new PinnedIcon(14));
         this.pinButton.setToolTipText("Pin Part (Keep in context indefinitely)");
-        this.pinButton.setMargin(new java.awt.Insets(0, 2, 0, 2));
+        this.pinButton.setMargin(new Insets(0, 2, 0, 2));
         this.pinButton.addActionListener(e -> {
             part.setPruningState(pinButton.isSelected() ? PruningState.PINNED : PruningState.AUTO);
         });
 
         this.pruneButton = new JToggleButton();
-        this.pruneButton.setMargin(new java.awt.Insets(0, 2, 0, 2));
+        this.pruneButton.setMargin(new Insets(0, 2, 0, 2));
         this.pruneButton.addActionListener(e -> {
             part.setPruningState(pruneButton.isSelected() ? PruningState.PRUNED : PruningState.AUTO);
         });
 
         this.copyButton = new JButton(new CopyIcon(14));
         this.copyButton.setToolTipText("Copy Part Content");
-        this.copyButton.setMargin(new java.awt.Insets(0, 2, 0, 2));
+        this.copyButton.setMargin(new Insets(0, 2, 0, 2));
         this.copyButton.addActionListener(e -> copyToClipboard());
 
         this.removeButton = new JButton(new DeleteIcon(14));
         this.removeButton.setToolTipText("Remove Part");
-        this.removeButton.setMargin(new java.awt.Insets(0, 2, 0, 2));
+        this.removeButton.setMargin(new Insets(0, 2, 0, 2));
         this.removeButton.addActionListener(e -> part.remove());
         
         this.remainingDepthLabel = new JLabel();
@@ -176,7 +177,7 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
         // 4. Expand/Collapse Logic on Header Click
         if (getComponentCount() > 0) {
             Component header = getComponent(0);
-            header.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+            header.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             header.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {

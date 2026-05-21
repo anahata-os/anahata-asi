@@ -1,11 +1,10 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.audio;
 
+import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.sound.sampled.AudioFileFormat;
@@ -87,7 +86,7 @@ public final class MicrophonePanel extends JPanel {
         
         levelBar = new JProgressBar(0, 100);
         levelBar.setStringPainted(false);
-        levelBar.setPreferredSize(new java.awt.Dimension(100, 20));
+        levelBar.setPreferredSize(new Dimension(100, 20));
         levelBar.setVisible(false);
 
         add(micButton);

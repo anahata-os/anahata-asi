@@ -8,12 +8,12 @@
  * </p>
  * <p>
  * Key features include:
+ * </p>
  * <ul>
  *   <li>Real-time microphone capture and WAVE packaging.</li>
  *   <li>Provider-agnostic notification sound management.</li>
  *   <li>Dynamic hardware line synchronization across the AGI session.</li>
  * </ul>
- * </p>
  * 
  * @author anahata
  */

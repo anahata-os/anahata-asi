@@ -1,11 +1,11 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.audio;
 
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.util.List;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import javax.sound.sampled.AudioInputStream;
@@ -77,7 +77,7 @@ public final class AudioPlaybackPanel extends JPanel {
 
         playbackLevelBar = new JProgressBar(0, 100);
         playbackLevelBar.setStringPainted(false);
-        playbackLevelBar.setPreferredSize(new java.awt.Dimension(100, 20));
+        playbackLevelBar.setPreferredSize(new Dimension(100, 20));
         playbackLevelBar.setVisible(false);
 
         add(playbackLineComboBox);

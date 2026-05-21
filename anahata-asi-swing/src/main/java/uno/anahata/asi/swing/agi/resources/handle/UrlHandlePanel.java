@@ -1,11 +1,9 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.agi.resources.handle;
 
-import java.time.Instant;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.internal.TimeUtils;
 import uno.anahata.asi.agi.resource.handle.UrlHandle;
 
 /**

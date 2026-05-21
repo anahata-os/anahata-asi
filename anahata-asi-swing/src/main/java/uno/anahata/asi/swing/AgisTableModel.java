@@ -6,13 +6,15 @@ package uno.anahata.asi.swing;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import javax.swing.table.AbstractTableModel;
 import lombok.NonNull;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.agi.context.ContextManager;
+import uno.anahata.asi.agi.resource.ResourceManager;
 import uno.anahata.asi.agi.status.AgiStatus;
+import uno.anahata.asi.agi.status.StatusManager;
 
 /**
  * A reusable table model for displaying active AI agi sessions.
@@ -202,11 +204,11 @@ public class AgisTableModel extends AbstractTableModel {
         
         if (source instanceof Agi a) {
             targetAgi = a;
-        } else if (source instanceof uno.anahata.asi.agi.context.ContextManager cm) {
+        } else if (source instanceof ContextManager cm) {
             targetAgi = cm.getAgi();
-        } else if (source instanceof uno.anahata.asi.agi.resource.ResourceManager rm) {
+        } else if (source instanceof ResourceManager rm) {
             targetAgi = rm.getAgi();
-        } else if (source instanceof uno.anahata.asi.agi.status.StatusManager sm) {
+        } else if (source instanceof StatusManager sm) {
             targetAgi = sm.getAgi();
         }
         

@@ -5,16 +5,19 @@ import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Insets;
 import java.awt.Point;
+import java.awt.event.ActionEvent;
+import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
+import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JToolBar;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import lombok.Getter;
 import lombok.Setter;
@@ -178,12 +181,12 @@ public abstract class AbstractTextResourceViewer extends JPanel {
         setEditing(false);
         
         // Add global Ctrl+S binding for saving without exiting edit mode
-        javax.swing.InputMap im = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
-        javax.swing.ActionMap am = getActionMap();
-        im.put(javax.swing.KeyStroke.getKeyStroke("control S"), "saveAction");
-        am.put("saveAction", new javax.swing.AbstractAction() {
+        InputMap im = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        ActionMap am = getActionMap();
+        im.put(KeyStroke.getKeyStroke("control S"), "saveAction");
+        am.put("saveAction", new AbstractAction() {
             @Override
-            public void actionPerformed(java.awt.event.ActionEvent e) {
+            public void actionPerformed(ActionEvent e) {
                 if (editing && saveAction != null) {
                     String newContent = getEditorContent();
                     if (newContent != null) {

@@ -3,16 +3,15 @@
  */
 package uno.anahata.asi.swing.agi.message.part.tool;
 
-import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Desktop;
-import java.awt.FlowLayout;
+import java.awt.Insets;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -115,7 +114,7 @@ public class ToolResponseAttachmentsPanel extends JPanel {
     private JPanel createAttachmentPanel(ToolResponseAttachment attachment) {
         JPanel itemPanel = new JPanel(new MigLayout("fillx, insets 5, gap 0", "[grow]", "[]0[]"));
         itemPanel.setOpaque(false);
-        itemPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, java.awt.Color.LIGHT_GRAY));
+        itemPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY));
 
         String mimeType = attachment.getMimeType();
         byte[] data = attachment.getData();
@@ -125,13 +124,13 @@ public class ToolResponseAttachmentsPanel extends JPanel {
         
         JButton viewButton = new JButton(new SearchIcon(14));
         viewButton.setToolTipText("View Attachment");
-        viewButton.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        viewButton.setMargin(new Insets(0, 0, 0, 0));
         viewButton.setFocusable(false);
         viewButton.addActionListener(e -> viewAttachment(attachment));
 
         JButton deleteButton = new JButton(new DeleteIcon(14));
         deleteButton.setToolTipText("Remove Attachment");
-        deleteButton.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        deleteButton.setMargin(new Insets(0, 0, 0, 0));
         deleteButton.setFocusable(false);
         deleteButton.addActionListener(e -> response.removeAttachment(attachment));
 

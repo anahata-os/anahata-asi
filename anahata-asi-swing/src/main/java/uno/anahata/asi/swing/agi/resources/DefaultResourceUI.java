@@ -8,9 +8,11 @@ import uno.anahata.asi.swing.agi.resources.handle.UrlHandlePanel;
 import uno.anahata.asi.swing.agi.resources.handle.PathHandlePanel;
 import uno.anahata.asi.swing.agi.resources.handle.StringHandlePanel;
 import java.awt.BorderLayout;
-import java.awt.Cursor;
 import java.awt.Desktop;
+import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -150,7 +152,7 @@ public class DefaultResourceUI implements ResourceUI {
     public void open(Resource resource, AgiPanel agiPanel) {
         try {
             if (resource.getHandle() instanceof PathHandle ph) {
-                Desktop.getDesktop().open(new java.io.File(ph.getPath()));
+                Desktop.getDesktop().open(new File(ph.getPath()));
             } else if (resource.getHandle() instanceof UrlHandle uh) {
                 Desktop.getDesktop().browse(uh.getUri());
             }
@@ -165,7 +167,7 @@ public class DefaultResourceUI implements ResourceUI {
     @Override
     public void openUri(String uriString) {
         try {
-            Desktop.getDesktop().browse(java.net.URI.create(uriString));
+            Desktop.getDesktop().browse(URI.create(uriString));
         } catch (Exception ex) {
             log.error("Failed to open URI: " + uriString, ex);
         }
@@ -187,7 +189,7 @@ public class DefaultResourceUI implements ResourceUI {
      * @param icon The icon.
      * @return The configured JButton.
      */
-    protected JButton createLinkButton(String text, String tooltip, javax.swing.Icon icon) {
+    protected JButton createLinkButton(String text, String tooltip, Icon icon) {
         JButton btn = new JButton(text, icon);
         btn.setToolTipText(tooltip);
         //btn.setBorderPainted(false);

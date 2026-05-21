@@ -3,7 +3,6 @@
  */
 package uno.anahata.asi.swing.agi.message.part.text;
 
-import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Font;

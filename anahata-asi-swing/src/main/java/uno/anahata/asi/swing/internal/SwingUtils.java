@@ -1,14 +1,12 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.internal;
 
-import uno.anahata.asi.swing.components.ExceptionDialog;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dialog;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
@@ -37,14 +35,12 @@ import javax.swing.SwingUtilities;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import javax.swing.JComponent;
-import javax.swing.JPanel;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.resource.handle.StringHandle;
 import uno.anahata.asi.swing.agi.resources.ResourceUI;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
 import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
 import uno.anahata.asi.swing.agi.AgiPanel;
-import uno.anahata.asi.swing.agi.message.part.text.CodeBlockSegmentRenderer;
 import uno.anahata.asi.swing.agi.message.part.text.MermaidCodeBlockSegmentRenderer;
 
 /**

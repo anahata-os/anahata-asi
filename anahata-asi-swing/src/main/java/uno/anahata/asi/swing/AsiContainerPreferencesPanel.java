@@ -9,7 +9,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.io.IOException;
@@ -35,6 +34,7 @@ import uno.anahata.asi.AsiContainerPreferences;
 import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.agi.provider.AbstractModel;
+import uno.anahata.asi.agi.provider.RequestConfig;
 import uno.anahata.asi.swing.agi.config.AgiConfigPanel;
 import uno.anahata.asi.swing.agi.config.RequestConfigPanel;
 import uno.anahata.asi.swing.icons.AddIcon;
@@ -42,7 +42,6 @@ import uno.anahata.asi.swing.icons.CancelIcon;
 import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.icons.SaveIcon;
-import uno.anahata.asi.swing.icons.SettingsIcon;
 import uno.anahata.asi.swing.internal.SwingTask;
 
 import uno.anahata.asi.swing.components.ScrollablePanel;
@@ -238,7 +237,7 @@ public class AsiContainerPreferencesPanel extends ScrollablePanel {
 
         if (choice == JOptionPane.YES_OPTION) {
             prefs.resetAgiTemplate(container);
-            prefs.setRequestTemplate(new uno.anahata.asi.agi.provider.RequestConfig(null));
+            prefs.setRequestTemplate(new RequestConfig(null));
 
             // UI Hot-Reload: Re-initialize the tabs to reflect new template
             int selected = mainTabs.getSelectedIndex();

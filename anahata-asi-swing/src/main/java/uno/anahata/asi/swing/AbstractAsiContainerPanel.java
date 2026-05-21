@@ -5,10 +5,10 @@ package uno.anahata.asi.swing;
 
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.event.HierarchyEvent;
 import javax.swing.Box;
 import javax.swing.JButton;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -251,8 +251,8 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
         
         asiContainer.setPreferencesFrame(frame);
         
-        frame.setMinimumSize(new java.awt.Dimension(800, 600));
-        frame.setPreferredSize(new java.awt.Dimension(900, 650));
+        frame.setMinimumSize(new Dimension(800, 600));
+        frame.setPreferredSize(new Dimension(900, 650));
         frame.pack();
         frame.setLocationRelativeTo(SwingUtilities.getWindowAncestor(this));
         frame.setVisible(true);

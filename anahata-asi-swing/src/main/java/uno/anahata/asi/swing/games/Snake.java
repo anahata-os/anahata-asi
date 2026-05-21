@@ -3,7 +3,6 @@ package uno.anahata.asi.swing.games;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
 import java.util.Random;
 import javax.swing.*;
 

@@ -7,7 +7,6 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Ellipse2D;
-import javax.swing.Icon;
 
 /**
  * A programmatically drawn Icon representing Toolkits (Atoms).

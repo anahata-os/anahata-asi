@@ -4,7 +4,7 @@ package uno.anahata.asi.swing.agi.status;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
-import java.awt.Font;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
@@ -140,7 +140,7 @@ public class TaskStatusComponent extends JPanel {
             progressBar.setString(summary);
 
             // Wire quick-kill button to latest task
-            for (java.awt.event.ActionListener al : quickKillButton.getActionListeners()) {
+            for (ActionListener al : quickKillButton.getActionListeners()) {
                 quickKillButton.removeActionListener(al);
             }
             quickKillButton.addActionListener(e -> latest.cancel(true));

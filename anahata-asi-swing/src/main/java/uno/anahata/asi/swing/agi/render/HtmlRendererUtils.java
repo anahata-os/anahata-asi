@@ -20,7 +20,6 @@ import lombok.experimental.UtilityClass;
 import uno.anahata.asi.swing.agi.SwingAgiConfig.UITheme;
 import uno.anahata.asi.swing.components.WrappingEditorPane;
 import com.vladsch.flexmark.ext.tables.TablesExtension; // Added import
-import com.vladsch.flexmark.util.misc.Extension; // Corrected import for Extension
 
 /**
  * Centralized utility for rendering Markdown and HTML content within the ASI Swing UI.

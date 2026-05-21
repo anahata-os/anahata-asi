@@ -4,6 +4,7 @@
 package uno.anahata.asi.swing.agi.context;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -22,7 +23,6 @@ import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.icons.IconProvider;
-import uno.anahata.asi.swing.icons.IconUtils;
 
 /**
  * The base class for all nodes in the hierarchical context tree.
@@ -111,9 +111,9 @@ public abstract class AbstractContextNode<T> {
         // 1. Sync Children (Identity-preserving structure sync)
         List<?> newChildObjects = fetchChildObjects();
         if (newChildObjects == null || newChildObjects.isEmpty()) {
-            this.children = java.util.Collections.emptyList();
+            this.children = Collections.emptyList();
         } else {
-            Map<Object, AbstractContextNode<?>> currentNodes = (children == null) ? java.util.Collections.emptyMap() :
+            Map<Object, AbstractContextNode<?>> currentNodes = (children == null) ? Collections.emptyMap() :
                     children.stream().collect(Collectors.toMap(AbstractContextNode::getUserObject, Function.identity(), (a, b) -> a));
 
             List<AbstractContextNode<?>> syncedChildren = new ArrayList<>();

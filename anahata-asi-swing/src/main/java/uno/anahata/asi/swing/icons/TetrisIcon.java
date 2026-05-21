@@ -2,7 +2,6 @@
 package uno.anahata.asi.swing.icons;
 
 import java.awt.*;
-import javax.swing.Icon;
 
 /**
  * A programmatically drawn Icon representing the Tetris game.

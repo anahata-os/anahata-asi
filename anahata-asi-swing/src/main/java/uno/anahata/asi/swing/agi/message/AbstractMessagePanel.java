@@ -6,9 +6,11 @@ package uno.anahata.asi.swing.agi.message;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GradientPaint;
+import java.awt.Insets;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.Instant;
@@ -17,9 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
-import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
@@ -112,7 +112,7 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
         // 2. Initialize Header Buttons
         this.pinButton = new JToggleButton(new PinnedIcon(16));
         this.pinButton.setToolTipText("Pin Interaction (Keep all parts in context)");
-        this.pinButton.setMargin(new java.awt.Insets(0, 4, 0, 4));
+        this.pinButton.setMargin(new Insets(0, 4, 0, 4));
         this.pinButton.addActionListener(e -> {
             if (pinButton.isSelected()) {
                 message.pinAllParts();
@@ -123,12 +123,12 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
         
         this.copyButton = new JButton(new CopyIcon(16));
         this.copyButton.setToolTipText("Copy Message Content");
-        this.copyButton.setMargin(new java.awt.Insets(0, 4, 0, 4));
+        this.copyButton.setMargin(new Insets(0, 4, 0, 4));
         this.copyButton.addActionListener(e -> SwingUtils.copyToClipboard(message.asText(false)));
 
         this.removeButton = new JButton(new DeleteIcon(16));
         this.removeButton.setToolTipText("Remove Message");
-        this.removeButton.setMargin(new java.awt.Insets(0, 4, 0, 4));
+        this.removeButton.setMargin(new Insets(0, 4, 0, 4));
         this.removeButton.addActionListener(e -> message.remove());
 
         // Copy button on the left
@@ -166,7 +166,7 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
         // 4. Expand/Collapse Logic on Header Click
         if (getComponentCount() > 0) {
             Component header = getComponent(0);
-            header.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+            header.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             getComponent(0).addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {

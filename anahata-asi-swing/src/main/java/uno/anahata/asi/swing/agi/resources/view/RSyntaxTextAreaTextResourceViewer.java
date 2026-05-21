@@ -1,10 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.agi.resources.view;
 
-import java.awt.Color;
-import java.awt.Component;
 import java.awt.Font;
-import java.io.IOException;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -13,7 +10,6 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import uno.anahata.asi.agi.resource.Resource;
-import uno.anahata.asi.agi.resource.view.TextView;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.internal.SwingUtils;
 

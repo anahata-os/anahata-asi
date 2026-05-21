@@ -5,6 +5,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -18,7 +19,6 @@ import net.miginfocom.swing.MigLayout;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.swing.icons.CancelIcon;
-import uno.anahata.asi.swing.icons.PulseIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingTask;
 import uno.anahata.asi.swing.internal.SwingTaskManager;
@@ -138,7 +138,7 @@ public class SwingTaskMonitor extends JPanel {
         pb.setIndeterminate(true);
         pb.setStringPainted(true);
         pb.setString(task.getTaskName());
-        pb.setFont(pb.getFont().deriveFont(java.awt.Font.BOLD, 11f));
+        pb.setFont(pb.getFont().deriveFont(Font.BOLD, 11f));
         panel.add(pb, "growx");
 
         JButton killButton = new JButton(new CancelIcon(16));

@@ -13,7 +13,6 @@ import java.awt.RenderingHints;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import javax.swing.JPanel;
-import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.context.ContextManager;
 import uno.anahata.asi.agi.status.AgiStatus;
 import uno.anahata.asi.agi.status.StatusManager;

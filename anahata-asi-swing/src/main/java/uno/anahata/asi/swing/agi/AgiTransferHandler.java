@@ -3,6 +3,7 @@
  */
 package uno.anahata.asi.swing.agi;
 
+import java.awt.Graphics2D;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -11,7 +12,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.nio.file.Files;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
@@ -88,12 +89,12 @@ public class AgiTransferHandler extends TransferHandler {
                             bi = buff;
                         } else {
                             bi = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-                            java.awt.Graphics2D g = bi.createGraphics();
+                            Graphics2D g = bi.createGraphics();
                             g.drawImage(img, 0, 0, null);
                             g.dispose();
                         }
                         
-                        String timestamp = UICapture.TIMESTAMP_FORMAT.format(new java.util.Date());
+                        String timestamp = UICapture.TIMESTAMP_FORMAT.format(new Date());
                         String filename = "pasted-image-" + timestamp + ".png";
                         Path file = UICapture.SCREENSHOTS_DIR.resolve(filename);
                         File ioFile = file.toFile();

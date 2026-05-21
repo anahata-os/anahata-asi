@@ -14,10 +14,10 @@ import javax.swing.JToggleButton;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import java.util.Optional;
+import javax.swing.Icon;
 import uno.anahata.asi.swing.icons.AutoReplyIcon;
 import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.icons.ScreenShareIcon;
@@ -148,7 +148,7 @@ public class ToolbarPanel extends JPanel {
      * @param tooltip The tooltip text.
      * @return The created JButton.
      */
-    private JButton createIconButton(javax.swing.Icon icon, String tooltip) {
+    private JButton createIconButton(Icon icon, String tooltip) {
         JButton button = new JButton(icon);
         button.setToolTipText(tooltip);
         button.setAlignmentX(CENTER_ALIGNMENT);
@@ -164,7 +164,7 @@ public class ToolbarPanel extends JPanel {
      * @param selected The initial selected state.
      * @return The created JToggleButton.
      */
-    private JToggleButton createIconToggleButton(javax.swing.Icon icon, String tooltip, boolean selected) {
+    private JToggleButton createIconToggleButton(Icon icon, String tooltip, boolean selected) {
         JToggleButton button = new JToggleButton(icon, selected);
         button.setToolTipText(tooltip);
         button.setAlignmentX(CENTER_ALIGNMENT);
