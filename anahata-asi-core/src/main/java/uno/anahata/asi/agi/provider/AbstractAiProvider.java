@@ -371,6 +371,8 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
     /**
      * Ensures the API keys file exists on disk, creating it as a 
      * completely empty file if missing.
+     * 
+     * @return A list of cleaned, non-empty, non-comment API key strings read from the file.
      */
     private List<String> readApiKeysFile() {
         ensureKeysFileExists();

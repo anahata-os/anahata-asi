@@ -140,6 +140,10 @@ public abstract class AbstractTextResourceWrite {
 
     /**
      * Performs the actual, tool-specific calculation of the resulting content.
+     *
+     * @param agi The parent agi session.
+     * @return The calculated resulting content as a String.
+     * @throws Exception if the calculation logic fails.
      */
     protected abstract String doCalculateResultingContent(Agi agi) throws Exception;
 

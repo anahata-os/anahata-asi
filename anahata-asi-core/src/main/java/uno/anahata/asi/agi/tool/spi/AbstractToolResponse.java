@@ -62,9 +62,11 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     @Schema(description = "The execution time in milliseconds")
     private long executionTimeMillis;
     
+    /** The name of the thread that executed this tool. */
     @Schema(description = "The name of the thread that executed this tool")
     private String threadName;
     
+    /** The physical executing Thread instance, marked transient to prevent Kryo serialization. */
     @Schema(hidden = true)
     @JsonIgnore    
     private transient Thread thread;
