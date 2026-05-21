@@ -66,8 +66,8 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
     private List<String> importsToRemove = new ArrayList<>();
 
     /**
-     * The list of line-level comments calculated during the AST transformation process. 
-     * These are intended for UI rendering of the changes.
+     * The list of line-level comments calculated during the AST transformation
+     * process. These are intended for UI rendering of the changes.
      */
     @JsonIgnore
     @Schema(hidden = true)
@@ -76,11 +76,13 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
     /**
      * {@inheritDoc}
      * <p>
-     * Implementation details: This method executes a multi-stage replay of the modification intents. 
-     * For each intent, it creates a transient virtual file in a {@code MemoryFileSystem}, 
-     * initializes a {@code JavaSource} context, and applies AST-guided text replacements. 
-     * Finally, it performs import management using {@link org.netbeans.api.java.source.GeneratorUtilities} 
-     * to ensure the resulting code is semantically sound.
+     * Implementation details: This method executes a multi-stage replay of the
+     * modification intents. For each intent, it creates a transient virtual
+     * file in a {@code MemoryFileSystem}, initializes a {@code JavaSource}
+     * context, and applies AST-guided text replacements. Finally, it performs
+     * import management using
+     * {@link org.netbeans.api.java.source.GeneratorUtilities} to ensure the
+     * resulting code is semantically sound.
      * </p>
      */
     @Override
@@ -193,10 +195,10 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
     /**
      * {@inheritDoc}
      * <p>
-     * Implementation details: Performs an early execution of the AST refinement pipeline 
-     * to verify that the resulting content is not identical to the current file state. 
-     * This prevents redundant disk writes and informs the AI if its proposed changes 
-     * had no effect due to selector mismatches.
+     * Implementation details: Performs an early execution of the AST refinement
+     * pipeline to verify that the resulting content is not identical to the
+     * current file state. This prevents redundant disk writes and informs the
+     * AI if its proposed changes had no effect due to selector mismatches.
      * </p>
      */
     @Override
@@ -207,12 +209,19 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
         }
         captureOriginalContent(agi);
 
-        if (intents == null || intents.isEmpty()) {
-            throw new AgiToolException("Refinement batch must contain at least one intent.");
+        boolean hasIntents = intents != null && !intents.isEmpty();
+        boolean hasImportsToAdd = importsToAdd != null && !importsToAdd.isEmpty();
+        boolean hasImportsToRemove = importsToRemove != null && !importsToRemove.isEmpty();
+
+        if (!hasIntents && !hasImportsToAdd && !hasImportsToRemove) {
+            throw new AgiToolException("Refinement batch is empty. "
+                    + "You must provide at least one structural member intent "
+                    + "or an import modification (importsToAdd/importsToRemove).");
         }
 
         if (java.util.Objects.equals(originalContent, calculateResultingContent(agi))) {
             throw new AgiToolException("Update rejected: The resulting content is identical to the current file content on disk.");
         }
+
     }
 }
