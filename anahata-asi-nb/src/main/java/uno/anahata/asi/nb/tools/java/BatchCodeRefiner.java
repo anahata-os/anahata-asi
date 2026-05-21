@@ -8,7 +8,6 @@ import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
-import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -19,8 +18,12 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeMirror;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.java.source.ClasspathInfo;
+import org.netbeans.api.java.source.CompilationController;
+import org.netbeans.api.java.source.CompilationInfo;
+import org.netbeans.api.java.source.GeneratorUtilities;
 import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.TreeMaker;
 import org.netbeans.api.java.source.WorkingCopy;
@@ -111,14 +114,14 @@ public class BatchCodeRefiner extends AnahataToolkit {
     /**
      * Locates a member tree within a working copy by its canonical FQN.
      */
-    public static Tree findMemberInWorkingCopy(org.netbeans.api.java.source.CompilationInfo info, String memberFqn) {
+    public static Tree findMemberInWorkingCopy(CompilationInfo info, String memberFqn) {
         return JavaSourceUtils.findTree(info, memberFqn);
     }
 
     /**
      * Finds the index of a member within a list of trees by its signature.
      */
-    public static int findMemberIndex(org.netbeans.api.java.source.CompilationInfo info, List<? extends Tree> members, String memberName) {
+    public static int findMemberIndex(CompilationInfo info, List<? extends Tree> members, String memberName) {
         String target = memberName.replaceAll("<[^>]*>", "").replaceAll("\\s+", "");
 
         for (int i = 0; i < members.size(); i++) {
@@ -133,7 +136,7 @@ public class BatchCodeRefiner extends AnahataToolkit {
                         Element e = info.getTrees().getElement(path);
                         if (e instanceof ExecutableElement ee) {
                             String params = ee.getParameters().stream().map(p -> {
-                                javax.lang.model.type.TypeMirror tm = p.asType();
+                                TypeMirror tm = p.asType();
                                 return tm != null ? JavaSourceUtils.getCanonicalFqn(tm) : "Unknown";
                             }).collect(Collectors.joining(","));
                             signature = (name.equals("<init>") ? "<init>" : name) + "(" + params + ")";
@@ -213,7 +216,7 @@ public class BatchCodeRefiner extends AnahataToolkit {
         JavaSource js = cpInfo != null ? JavaSource.create(cpInfo, tempFo) : JavaSource.forFileObject(tempFo);
         
         final Tree[] result = new Tree[1];
-        js.runUserActionTask(innerWc -> {
+        js.runUserActionTask((CompilationController innerWc) -> {
             innerWc.toPhase(JavaSource.Phase.PARSED);
             CompilationUnitTree cut = innerWc.getCompilationUnit();
             if (!cut.getTypeDecls().isEmpty()) {
@@ -233,9 +236,9 @@ public class BatchCodeRefiner extends AnahataToolkit {
                     }
                 }
                 if (t != null) {
-                    org.netbeans.api.java.source.GeneratorUtilities gu = org.netbeans.api.java.source.GeneratorUtilities.get(wc);
-                    com.sun.source.tree.Tree importedTree = gu.importComments(t, innerWc.getCompilationUnit());
-                    com.sun.source.tree.Tree newTree = wc.getTreeMaker().asNew(importedTree);
+                    GeneratorUtilities gu = GeneratorUtilities.get(wc);
+                    Tree importedTree = gu.importComments(t, innerWc.getCompilationUnit());
+                    Tree newTree = wc.getTreeMaker().asNew(importedTree);
                     gu.copyComments(importedTree, newTree, true);
                     result[0] = newTree;
                 }
@@ -247,7 +250,7 @@ public class BatchCodeRefiner extends AnahataToolkit {
     /**
      * Calculates the insertion index for a new member based on a relative position and an anchor.
      */
-    public static int getInsertIndex(org.netbeans.api.java.source.CompilationInfo wc, List<? extends Tree> members, RelativePosition position, String anchor) throws AgiToolException {
+    public static int getInsertIndex(CompilationInfo wc, List<? extends Tree> members, RelativePosition position, String anchor) throws AgiToolException {
         if ((position == RelativePosition.BEFORE || position == RelativePosition.AFTER) && (anchor == null || anchor.isBlank())) {
             throw new AgiToolException("anchorMemberName is mandatory for relative position " + position);
         }
@@ -282,7 +285,7 @@ public class BatchCodeRefiner extends AnahataToolkit {
     /**
      * Throws a highly descriptive AgiToolException with available candidates when a member is not found.
      */
-    public static void throwMemberNotFound(org.netbeans.api.java.source.CompilationInfo info, String memberFqn) {
+    public static void throwMemberNotFound(CompilationInfo info, String memberFqn) {
         int paren = memberFqn.indexOf("(");
         String namePart = paren != -1 ? memberFqn.substring(0, paren) : memberFqn;
         int lastSeparator = Math.max(namePart.lastIndexOf("."), namePart.lastIndexOf("$"));
@@ -304,7 +307,7 @@ public class BatchCodeRefiner extends AnahataToolkit {
         StringBuilder sb = new StringBuilder("Member not found: ").append(memberFqn);
         if (!candidates.isEmpty()) {
             sb.append("\nDid you mean one of these canonical identification FQNs?\n");
-            candidates.forEach(c-> sb.append("- ").append(c).append("\n"));
+            candidates.forEach((String c)-> sb.append("- ").append(c).append("\n"));
         }
         throw new AgiToolException(sb.toString());
     }
