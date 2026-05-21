@@ -2,16 +2,15 @@
 package uno.anahata.asi.nb.tools.java;
 
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import javax.lang.model.element.TypeElement;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.java.source.ClassIndex;
 import org.netbeans.api.java.source.ClasspathInfo;
+import org.netbeans.api.java.source.CompilationController;
 import org.netbeans.api.java.source.CompilationInfo;
 import org.netbeans.api.java.source.ElementHandle;
 import org.netbeans.api.java.source.JavaSource;
@@ -42,7 +41,7 @@ public class JavaSubtypeSearch {
         ClasspathInfo cpInfo = CodeModel.getGlobalClasspathInfo();
         JavaSource js = JavaSource.create(cpInfo);
 
-        js.runUserActionTask(cc -> {
+        js.runUserActionTask((CompilationController cc) -> {
             cc.toPhase(JavaSource.Phase.ELEMENTS_RESOLVED);
             TypeElement te = (TypeElement) rootType.getHandle().resolve(cc);
             if (te != null) {
