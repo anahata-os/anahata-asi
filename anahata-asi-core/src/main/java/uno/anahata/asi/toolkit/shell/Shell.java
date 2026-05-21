@@ -16,7 +16,6 @@ import lombok.AllArgsConstructor;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.tool.spi.java.JavaMethodToolResponse;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
-import uno.anahata.asi.toolkit.shell.ShellExecutionResult;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiTool;
