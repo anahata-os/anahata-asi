@@ -38,6 +38,7 @@ import uno.anahata.asi.agi.tool.ToolPermission;
 @Setter
 @Slf4j
 public class AsiContainerPreferences extends BasicPropertyChangeSource {
+    /** The standard filename used to persist the container's preference file on disk. */
     private static final String PREFERENCES_FILE_NAME = "preferences.kryo";
 
     /**
@@ -267,6 +268,12 @@ public class AsiContainerPreferences extends BasicPropertyChangeSource {
         return new AsiContainerPreferences();
     }
 
+    /**
+     * Resolves the absolute path to the persistent preferences file for a given container.
+     *
+     * @param config The active container instance.
+     * @return The absolute path to the preferences file.
+     */
     private static Path getPreferencesFile(AbstractAsiContainer config) {
         Path appWorkDir = config.getAppDir();
         return appWorkDir.resolve(PREFERENCES_FILE_NAME);
