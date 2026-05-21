@@ -39,7 +39,7 @@ public class ApiErrorRecord {
     long backoffAmount;
 
     /**
-     * 
+     * The full, serialized string of the stack trace associated with this API error.
      */
     String stackTrace;
 
