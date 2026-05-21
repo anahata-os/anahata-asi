@@ -107,7 +107,9 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
         
         if (getProvider("Anthropic") == null) {
             log.info("Registering OpenAI");
-            registerProvider(new AnthropicProvider());
+            AnthropicProvider anthropic = new AnthropicProvider();
+            anthropic.setEnabled(false);
+            registerProvider(anthropic);
         }
 
         if (getProvider("Minimax") == null) {

@@ -20,9 +20,17 @@ import uno.anahata.asi.swing.icons.IconUtils;
 public class Main {
 
     /**
+     * Private constructor to prevent instantiation of this main entry class.
+     */
+    private Main() {
+        // Utility class entry point
+    }
+
+    /**
      * The main entry point for the standalone Swing application.
      * <p>
      * This method performs the following initialization sequence:
+     * </p>
      * <ol>
      *   <li>Configures the SLF4J simple logger level.</li>
      *   <li>Initializes the FlatLaf Light Look-and-Feel.</li>
@@ -30,7 +38,6 @@ public class Main {
      *   <li>Assembles and displays the primary {@code JFrame} on the Event Dispatch Thread (EDT).</li>
      *   <li>Configures a global uncaught exception handler for background threads.</li>
      * </ol>
-     * </p>
      * @param args Command-line arguments (currently unused).
      */
     public static void main(String[] args) {

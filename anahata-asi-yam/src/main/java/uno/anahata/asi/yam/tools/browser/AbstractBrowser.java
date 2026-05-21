@@ -37,6 +37,13 @@ import uno.anahata.asi.persistence.Rebindable;
 public abstract class AbstractBrowser extends AnahataToolkit implements Rebindable {
 
     /**
+     * Protected constructor for subclass instantiation.
+     */
+    protected AbstractBrowser() {
+        // Base constructor for toolkits
+    }
+
+    /**
      * The centralized registry mapping drone IDs to their stateful objects.
      */
     protected final Map<String, BrowserDrone> drones = new ConcurrentHashMap<>();

@@ -9,7 +9,6 @@ import lombok.Setter;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.resources.DefaultResourceUI;
@@ -50,8 +49,8 @@ public class AsiDesktopAsiContainer extends AbstractSwingAsiContainer {
     }
     
     /**
-     * Constructs a new StandaloneAsiContainer.
-     * @param hostApplicationId
+     * Constructs a new AsiDesktopAsiContainer.
+     * @param hostApplicationId the unique identifier of the host application
      */
     public AsiDesktopAsiContainer(String hostApplicationId) {
         super(hostApplicationId);

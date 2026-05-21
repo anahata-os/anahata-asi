@@ -6,6 +6,8 @@ This file tracks the actionable tasks and tactical goals for the Anahata ASI (V2
 
 - [ ] Test CodeRefiner.optimizeImports more and if it is good, then integrate it in BCR
 
+- [ ] ToolCallPanel sometimes shows white sspace between the adjustingtabbedpane and the response titled panel
+
 - [ ] make "cached data" in MediaView transient? possibly in text resources too?
 
 - [ ] change all log.info to log.debug
