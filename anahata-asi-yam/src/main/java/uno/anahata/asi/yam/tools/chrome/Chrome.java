@@ -45,6 +45,13 @@ import uno.anahata.asi.yam.tools.browser.BrowserDrone;
 public class Chrome extends AbstractBrowser {
 
     /**
+     * Public constructor to instantiate the Chrome automation toolkit.
+     */
+    public Chrome() {
+        super();
+    }
+
+    /**
      * {@inheritDoc}
      * <p>Implementation details: Disables the toolkit by default to prevent 
      * accidental drone spawns in environments without local browsers.</p>
@@ -331,6 +338,12 @@ public class Chrome extends AbstractBrowser {
 
     // --- PRIVATE METHODS ---
 
+    /**
+     * Initializes the ChromeDriver instance with specified options and environment.
+     * @param d the browser drone to initialize
+     * @param options the ChromeOptions to apply
+     * @param environment custom environment variables for the driver service
+     */
     private synchronized void initDriver(BrowserDrone d, ChromeOptions options, Map<String, String> environment) {
         d.initializing = true;
         d.lastError = null;
@@ -484,6 +497,12 @@ public class Chrome extends AbstractBrowser {
         return cmd;
     }
 
+    /**
+     * Extracts an argument value from the command line string.
+     * @param cmdLine the full command line of the process
+     * @param argName the argument flag to search for
+     * @return the argument value, or {@code null} if not found
+     */
     private String extractArg(String cmdLine, String argName) {
         int idx = cmdLine.indexOf(argName);
         if (idx == -1) return null;
@@ -512,6 +531,12 @@ public class Chrome extends AbstractBrowser {
         return null;
     }
 
+    /**
+     * Detects the remote debugging port from active profile files.
+     * @param userDataDir the Chrome user data directory
+     * @param profileDir the specific profile directory
+     * @return the port string, or {@code null} if undetected
+     */
     private String detectPortFromFiles(String userDataDir, String profileDir) {
         try {
             File activePortFile = new File(new File(userDataDir, profileDir), "DevToolsActivePort");
@@ -530,6 +555,11 @@ public class Chrome extends AbstractBrowser {
         return null;
     }
 
+    /**
+     * Detects which profile is currently active in the user data directory.
+     * @param userDataDir the Chrome user data directory
+     * @return the profile directory name
+     */
     private String detectActiveProfile(String userDataDir) {
         if (userDataDir == null) return "Default";
         File dir = new File(userDataDir);
@@ -568,6 +598,11 @@ public class Chrome extends AbstractBrowser {
         return "Default";
     }
 
+    /**
+     * Checks if a directory contains any active lock files.
+     * @param dir the directory to check
+     * @return {@code true} if a lock is detected, {@code false} otherwise
+     */
     private boolean hasLock(File dir) {
         String[] lockNames = {"SingletonLock", "SingletonCookie", "SingletonSocket", "lock"};
         for (String name : lockNames) {
@@ -578,6 +613,10 @@ public class Chrome extends AbstractBrowser {
         return false;
     }
 
+    /**
+     * Internal implementation to kill all running Chrome and ChromeDriver processes.
+     * @return status message describing the kill count
+     */
     private String killAllInternal() {
         long myPid = ProcessHandle.current().pid();
         try {
@@ -600,6 +639,12 @@ public class Chrome extends AbstractBrowser {
         }
     }
 
+    /**
+     * Internal implementation to reset Chrome's exit state.
+     * @param userDataDir the Chrome user data directory
+     * @param profileDir the specific profile directory
+     * @return status message describing the reset
+     */
     private String resetExitStateInternal(String userDataDir, String profileDir) {
         File prefsFile = new File(new File(userDataDir, profileDir != null ? profileDir : "Default"), "Preferences");
         if (!prefsFile.exists()) {
@@ -617,6 +662,11 @@ public class Chrome extends AbstractBrowser {
         }
     }
 
+    /**
+     * Internal implementation to clear the Chrome Singleton Lock files.
+     * @param userDataDir the user data directory
+     * @return status message describing the operation
+     */
     private String clearSingletonLockInternal(String userDataDir) {
         for (String name : new String[]{"SingletonLock", "lock"}) {
             try {
@@ -628,6 +678,12 @@ public class Chrome extends AbstractBrowser {
         return "Cleared locks.";
     }
 
+    /**
+     * Internal implementation to launch Chrome with a specific profile.
+     * @param d the browser drone
+     * @param initialUrl optional initial URL to navigate to
+     * @return status message describing the launch
+     */
     private String launchProfileChromeInternal(BrowserDrone d, String initialUrl) {
         if (d.headless) {
             ChromeOptions options = new ChromeOptions();
@@ -681,6 +737,12 @@ public class Chrome extends AbstractBrowser {
         }
     }
 
+    /**
+     * Internal implementation to connect to an existing Chrome instance on a port.
+     * @param d the browser drone
+     * @param port the remote debugging port
+     * @return status message of the connection
+     */
     private String connectToExistingInternal(BrowserDrone d, int port) {
         ChromeOptions options = new ChromeOptions();
         options.setExperimentalOption("debuggerAddress", "127.0.0.1:" + port);

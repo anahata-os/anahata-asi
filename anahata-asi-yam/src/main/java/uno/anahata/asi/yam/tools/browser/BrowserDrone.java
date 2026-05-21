@@ -17,6 +17,13 @@ import org.openqa.selenium.WebDriver;
 public class BrowserDrone {
 
     /**
+     * Public constructor to provide documentation and instantiate a new drone.
+     */
+    public BrowserDrone() {
+        // Public constructor for serialization and manual instantiation
+    }
+
+    /**
      * The active WebDriver instance. Marked transient as the live network
      * connection cannot be persisted across session restarts.
      */
