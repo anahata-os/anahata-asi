@@ -37,32 +37,83 @@ import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 @Slf4j
 public class RequestConfigPanel extends ScrollablePanel implements PropertyChangeListener {
 
+    /**
+     * The underlying request execution configuration being edited.
+     */
     private final RequestConfig config;
+    /**
+     * The parent AGI session context used for model metadata discovery.
+     */
     private final Agi agi;
 
     //== Parameter Components ==//
+    /**
+     * Interactive slider for configuring temperature settings.
+     */
     private SliderSpinner temperatureControl;
+    /**
+     * Checkbox to toggle model-default temperature.
+     */
     private JCheckBox temperatureDefaultCheckbox;
     
+    /**
+     * Interactive slider for configuring maximum output tokens.
+     */
     private SliderSpinner maxOutputTokensControl;
+    /**
+     * Checkbox to toggle model-default output tokens limits.
+     */
     private JCheckBox maxOutputTokensDefaultCheckbox;
     
+    /**
+     * Interactive slider for configuring Top-K parameter.
+     */
     private SliderSpinner topKControl;
+    /**
+     * Checkbox to toggle model-default Top-K settings.
+     */
     private JCheckBox topKDefaultCheckbox;
     
+    /**
+     * Interactive slider for configuring Top-P settings.
+     */
     private SliderSpinner topPControl;
+    /**
+     * Checkbox to toggle model-default Top-P parameter.
+     */
     private JCheckBox topPDefaultCheckbox;
     
+    /**
+     * Interactive slider to configure generated candidate response counts.
+     */
     private SliderSpinner candidateCountControl;
+    /**
+     * Dropdown selection component for thinking level configuration.
+     */
     private JComboBox<ThinkingLevel> thinkingLevelDropdown;
+    /**
+     * Checkbox to toggle provider-native tool call schemas.
+     */
     private JCheckBox useNativeSchemasCheckbox;
 
     //== Modalities & Tools ==//
+    /**
+     * Panel hosting dynamic response modality checkboxes.
+     */
     private JPanel modalitiesPanel;
+    /**
+     * Panel hosting dynamic server tools toggle checkboxes.
+     */
     private JPanel serverToolsPanel;
 
     //== Debug/Context Flags ==//
+    /**
+     * Checkbox to toggle including soft-pruned items in payload.
+     */
     private JCheckBox includePrunedCheckbox;
+    /**
+     * Checkbox to toggle in-band prompt metadata injection.
+     */
     private JCheckBox injectInbandMetadataCheckbox;
 
     /**
@@ -82,6 +133,9 @@ public class RequestConfigPanel extends ScrollablePanel implements PropertyChang
         }
     }
 
+    /**
+     * Initializes and arranges Swing layouts and section panels.
+     */
     private void initComponents() {
         setLayout(new MigLayout("fillx, insets 10", "[grow,fill]", "[]10[]10[]"));
 
@@ -170,6 +224,9 @@ public class RequestConfigPanel extends ScrollablePanel implements PropertyChang
         setupListeners();
     }
 
+    /**
+     * Binds action and change events to update the underlying RequestConfig.
+     */
     private void setupListeners() {
         thinkingLevelDropdown.addActionListener(e -> config.setThinkingLevel((ThinkingLevel) thinkingLevelDropdown.getSelectedItem()));
         
@@ -244,6 +301,9 @@ public class RequestConfigPanel extends ScrollablePanel implements PropertyChang
         injectInbandMetadataCheckbox.addActionListener(e -> config.setInjectInbandMetadata(injectInbandMetadataCheckbox.isSelected()));
     }
 
+    /**
+     * Loads configuration states from RequestConfig to UI components.
+     */
     private void loadConfig() {
         thinkingLevelDropdown.setSelectedItem(config.getThinkingLevel());
         useNativeSchemasCheckbox.setSelected(config.isUseNativeSchemas());
@@ -302,6 +362,10 @@ public class RequestConfigPanel extends ScrollablePanel implements PropertyChang
         }
     }
 
+    /**
+     * Dynamically populates modalities toggles supported by the selected model.
+     * @param model The active AI model.
+     */
     private void updateModalities(AbstractModel model) {
         modalitiesPanel.removeAll();
         for (String modality : model.getSupportedResponseModalities()) {
@@ -316,6 +380,10 @@ public class RequestConfigPanel extends ScrollablePanel implements PropertyChang
         }
     }
 
+    /**
+     * Dynamically populates server tool checkboxes based on available model tools.
+     * @param model The active AI model.
+     */
     private void updateServerTools(AbstractModel model) {
         serverToolsPanel.removeAll();
         List<Object> enabledIds = config.getEnabledServerTools().stream().map(ServerTool::getId).collect(Collectors.toList());
@@ -332,6 +400,11 @@ public class RequestConfigPanel extends ScrollablePanel implements PropertyChang
         }
     }
 
+    /**
+     * Helper to create a unified titled border panel with Barça design colors.
+     * @param title The section title.
+     * @return a beautifully styled JPanel container.
+     */
     private JPanel createSectionPanel(String title) {
         JPanel panel = new JPanel();
         panel.setOpaque(false);

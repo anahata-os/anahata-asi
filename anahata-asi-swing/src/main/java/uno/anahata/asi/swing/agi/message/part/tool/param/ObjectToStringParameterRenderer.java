@@ -59,11 +59,10 @@ public class ObjectToStringParameterRenderer implements ParameterRenderer<Object
 
     /**
      * Creates a String handle calling the file "Anahata" if the extension is "java".
-     * 
-     * @param content the content of the handle
-     * @param call the tool call that is creating it
      * @param paramName the parameter name in question
-     * @return 
+     * @param call the tool call that is creating it
+     * @param content the content of the handle
+     * @return a new StringHandle configured for syntax highlighting and name matching.
      */
     protected StringHandle createHandle(String content, AbstractToolCall<?, ?> call, String paramName) {
         String fileName = "java".equalsIgnoreCase(language) ? "Anahata.java" : "param." + language;
