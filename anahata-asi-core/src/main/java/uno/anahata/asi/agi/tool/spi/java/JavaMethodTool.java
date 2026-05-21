@@ -3,6 +3,7 @@ package uno.anahata.asi.agi.tool.spi.java;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,11 +13,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.message.AbstractModelMessage;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
-import uno.anahata.asi.agi.tool.ToolPermission;
 import uno.anahata.asi.agi.tool.schema.SchemaProvider;
 import uno.anahata.asi.agi.tool.AgiTool;
 
@@ -188,7 +187,7 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
         // A tool creates its own parameters.
         
         getParameters().clear();
-        java.lang.reflect.Parameter[] params = method.getParameters();
+        Parameter[] params = method.getParameters();
         for (int i = 0; i < params.length; i++) {
             getParameters().add(JavaMethodToolParameter.of(this, params[i], i));
         }
@@ -224,7 +223,7 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
                 + " " + m.getGenericReturnType().getTypeName()
                 + " " + m.getName() + "("
                 + Arrays.stream(m.getParameters())
-                        .map(p -> p.getParameterizedType().getTypeName() + " " + p.getName())
+                        .map((Parameter p) -> p.getParameterizedType().getTypeName() + " " + p.getName())
                         .collect(Collectors.joining(", "))
                 + ")";
 
