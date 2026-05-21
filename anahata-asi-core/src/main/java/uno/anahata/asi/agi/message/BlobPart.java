@@ -79,6 +79,10 @@ public abstract class BlobPart extends AbstractPart {
         }
     }
 
+    /** 
+     * {@inheritDoc} 
+     * <p>Provides multimodal token accounting with a fixed cost of 258 to prevent binary inflation.</p> 
+     */
     @Override
     public int getTokenCount() {
         // MULTIMODAL ACCOUNTING: Binary parts have a fixed cost in most models 
