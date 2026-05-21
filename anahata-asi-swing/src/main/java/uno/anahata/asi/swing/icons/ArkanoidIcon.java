@@ -17,6 +17,10 @@ import java.awt.RenderingHints;
  */
 public class ArkanoidIcon extends AbstractAnahataIcon {
 
+    /**
+     * Constructs a new ArkanoidIcon of the specified square size.
+     * @param size The size of the icon.
+     */
     public ArkanoidIcon(int size) {
         super(size);
     }

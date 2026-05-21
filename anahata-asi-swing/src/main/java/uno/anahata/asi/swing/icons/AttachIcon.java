@@ -19,6 +19,10 @@ import java.awt.geom.Path2D;
  */
 public class AttachIcon extends AbstractAnahataIcon {
 
+    /**
+     * Constructs a new AttachIcon of the specified square size.
+     * @param size The size of the icon.
+     */
     public AttachIcon(int size) {
         super(size);
     }

@@ -15,6 +15,10 @@ import javax.swing.UIManager;
  */
 public class AddIcon extends AbstractAnahataIcon {
 
+    /**
+     * Constructs a new AddIcon of the specified square size.
+     * @param size The size of the icon.
+     */
     public AddIcon(int size) {
         super(size);
     }

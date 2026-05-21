@@ -18,6 +18,10 @@ import java.awt.RenderingHints;
  */
 public class AutoReplyIcon extends AbstractAnahataIcon {
 
+    /**
+     * Constructs a new AutoReplyIcon of the specified square size.
+     * @param size The size of the icon.
+     */
     public AutoReplyIcon(int size) {
         super(size);
     }

@@ -358,6 +358,9 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
         }
     }
 
+    /**
+     * Internal method to set up and render the footer container, including the thought signature if present.
+     */
     private void renderFooterInternal() {
         if (part instanceof ThoughtSignature ts && ts.getThoughtSignature() != null) {
             String sig = TextUtils.formatValue(ts.getThoughtSignature());

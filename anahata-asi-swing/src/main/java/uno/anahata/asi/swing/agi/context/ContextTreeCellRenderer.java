@@ -37,6 +37,9 @@ public class ContextTreeCellRenderer extends DefaultTreeCellRenderer {
     private final Icon toolIcon = new ToolIcon(16);
     /** Refined programmatic icon for tool containers. */
     private final Icon toolsIcon = new DoubleToolIconRefined(16);
+    /**
+     * Specialized icon for the ToolManager node.
+     */
     private final Icon toolManagerIcon = new AtomsIcon(16);
     /** Default icon for individual messages. */
     private final Icon messageIcon = IconUtils.getIcon("email.png", 16); 

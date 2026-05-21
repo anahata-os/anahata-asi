@@ -18,6 +18,10 @@ import java.awt.RenderingHints;
  */
 public class CancelIcon extends AbstractAnahataIcon {
 
+    /**
+     * Constructs a new CancelIcon of the specified square size.
+     * @param size The size of the icon.
+     */
     public CancelIcon(int size) {
         super(size);
     }

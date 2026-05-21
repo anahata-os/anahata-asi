@@ -16,6 +16,10 @@ import java.awt.RenderingHints;
  */
 public class CardsIcon extends AbstractAnahataIcon {
 
+    /**
+     * Constructs a new CardsIcon of the specified square size.
+     * @param size The size of the icon.
+     */
     public CardsIcon(int size) {
         super(size);
     }

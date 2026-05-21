@@ -14,6 +14,10 @@ import java.awt.*;
  */
 public class BugDefenseIcon extends AbstractAnahataIcon {
 
+    /**
+     * Constructs a new BugDefenseIcon of the specified square size.
+     * @param size The size of the icon.
+     */
     public BugDefenseIcon(int size) {
         super(size);
     }

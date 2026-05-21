@@ -42,23 +42,68 @@ import uno.anahata.asi.swing.internal.SwingTask;
  */
 public class CwGcPanel extends JPanel {
 
+    /**
+     * Number formatter for human-readable token displays.
+     */
     private static final NumberFormat NUMBER_FORMAT = NumberFormat.getInstance();
 
+    /**
+     * The parent AGI dashboard panel.
+     */
     private final AgiPanel agiPanel;
+    /**
+     * The active AGI session.
+     */
     private Agi agi;
 
+    /**
+     * Label displaying token usage for system instructions.
+     */
     private JLabel systemTokensLabel;
+    /**
+     * Label displaying token usage for tool declarations.
+     */
     private JLabel toolTokensLabel;
+    /**
+     * Label displaying token usage for metadata overhead.
+     */
     private JLabel metadataTokensLabel;
+    /**
+     * Label displaying token usage for active (unpruned) history.
+     */
     private JLabel activeHistoryTokensLabel;
+    /**
+     * Label displaying token usage for effectively pruned parts.
+     */
     private JLabel prunedHistoryTokensLabel;
+    /**
+     * Label displaying token usage for active RAG context resources.
+     */
     private JLabel ragTokensLabel;
+    /**
+     * Label displaying the total prompt load against the maximum threshold.
+     */
     private JLabel totalPromptLoadLabel;
     
+    /**
+     * Button to trigger manual metabolic calculation and refresh.
+     */
     private JButton refreshBtn;
+    /**
+     * Table displaying logs of permanently garbage collected messages.
+     */
     private JXTable logTable;
+    /**
+     * Table model for garbage collector logs.
+     */
     private DefaultTableModel logModel;
+    /**
+     * Metabolic donut chart visualization for prompt composition.
+     */
     private MetabolicDonutChart donutChart;
+    /**
+     * Label indicating the current history metadata positioning strategy.
+     */
     private JLabel strategyLabel;
 
     /** Reactive listener for history changes. */
