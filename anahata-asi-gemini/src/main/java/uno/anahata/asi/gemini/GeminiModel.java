@@ -5,21 +5,16 @@ import com.google.genai.Client;
 import com.google.genai.ResponseStream;
 import com.google.genai.types.Candidate;
 import com.google.genai.types.Citation;
-import com.google.genai.types.ComputerUse;
 import com.google.genai.types.Content;
 import com.google.genai.types.FunctionDeclaration;
 import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.GenerateContentResponse;
 import com.google.genai.types.GenerateContentResponseUsageMetadata;
-import com.google.genai.types.GoogleMaps;
 import com.google.genai.types.GoogleSearch;
-import com.google.genai.types.GoogleSearchRetrieval;
 import com.google.genai.types.ListModelsConfig;
 import com.google.genai.types.Model;
 import com.google.genai.types.Part;
 import com.google.genai.types.ToolCodeExecution;
-import com.google.genai.types.EnterpriseWebSearch;
-import com.google.genai.types.FileSearch;
 import java.io.InterruptedIOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,6 +39,7 @@ import uno.anahata.asi.agi.provider.StreamObserver;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.agi.provider.ApiCallInterruptedException;
+import uno.anahata.asi.agi.provider.FinishReason;
 import uno.anahata.asi.agi.provider.ServerTool;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.agi.provider.RetryableApiException;
@@ -475,7 +471,7 @@ public class GeminiModel extends AbstractModel {
 
                     // Ensure the finish reason is set if it's still null after the stream
                     if (target.getFinishReason() == null) {
-                        target.setFinishReason(uno.anahata.asi.agi.provider.FinishReason.GOD_FUCKING_KNOWS);
+                        target.setFinishReason(FinishReason.GOD_FUCKING_KNOWS);
                     }
                 }
             }

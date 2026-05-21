@@ -5,13 +5,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.net.URI;
+import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +32,8 @@ import uno.anahata.asi.agi.provider.StreamObserver;
 import uno.anahata.asi.agi.provider.ThinkingLevel;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.agi.tool.spi.AbstractToolParameter;
+import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
+import uno.anahata.asi.internal.JacksonUtils;
 
 /**
  * Native implementation for OpenAI models using the Responses API
@@ -192,8 +198,8 @@ public class OpenAiModel extends AbstractModel {
     @Override
     public List<ServerTool> getDefaultServerTools() {
         return getAvailableServerTools().stream()
-                .filter(st -> "web_search".equals(st.getId()))
-                .collect(java.util.stream.Collectors.toList());
+                .filter((ServerTool st) -> "web_search".equals(st.getId()))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -290,10 +296,10 @@ public class OpenAiModel extends AbstractModel {
         // Tools (Local and Hosted)
         ArrayNode toolsArray = root.putArray("tools");
         if (request.config().getLocalTools() != null && !request.config().getLocalTools().isEmpty()) {
-            Map<uno.anahata.asi.agi.tool.spi.AbstractToolkit, List<AbstractTool>> grouped = (Map) request.config().getLocalTools().stream()
-                    .collect(java.util.stream.Collectors.groupingBy(AbstractTool::getToolkit));
+            Map<AbstractToolkit, List<AbstractTool>> grouped = (Map) request.config().getLocalTools().stream()
+                    .collect(Collectors.groupingBy(AbstractTool::getToolkit));
 
-            for (var entry : grouped.entrySet()) {
+            for (Map.Entry<AbstractToolkit, List<AbstractTool>> entry : grouped.entrySet()) {
                 ObjectNode namespaceNode = toolsArray.addObject();
                 namespaceNode.put("type", "namespace");
                 namespaceNode.put("name", entry.getKey().getName());
@@ -404,17 +410,17 @@ public class OpenAiModel extends AbstractModel {
                     .POST(HttpRequest.BodyPublishers.ofString(prepared.fullPayload()))
                     .build();
                     
-            java.net.http.HttpClient client = provider.getHttpClient(); {
+            HttpClient client = provider.getHttpClient(); {
                 OpenAiModelMessage targetMessage = new OpenAiModelMessage(agi, getModelId());
                 targetMessage.setStreaming(true);
                 List<OpenAiModelMessage> targets = List.of(targetMessage);
-                java.util.concurrent.atomic.AtomicBoolean started = new java.util.concurrent.atomic.AtomicBoolean(false);
+                AtomicBoolean started = new AtomicBoolean(false);
                 
-                HttpResponse<java.util.stream.Stream<String>> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofLines());
+                HttpResponse<Stream<String>> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofLines());
                 if (response.statusCode() != 200) {
                     String errorMsg = "No error body";
-                    try (java.util.stream.Stream<String> bodyStream = response.body()) {
-                        errorMsg = bodyStream.collect(java.util.stream.Collectors.joining("\n"));
+                    try (Stream<String> bodyStream = response.body()) {
+                        errorMsg = bodyStream.collect(Collectors.joining("\n"));
                     }
                     if (provider.isRetryable(response.statusCode(), errorMsg)) {
                         provider.hokusPocus();
@@ -425,8 +431,8 @@ public class OpenAiModel extends AbstractModel {
                     return;
                 }
                 
-                try (java.util.stream.Stream<String> lines = response.body()) {
-                    java.util.Iterator<String> it = lines.iterator();
+                try (Stream<String> lines = response.body()) {
+                    Iterator<String> it = lines.iterator();
                     
                     while (it.hasNext()) {
                         String line = it.next();
@@ -445,7 +451,7 @@ public class OpenAiModel extends AbstractModel {
                             }
                             
                             try {
-                                JsonNode chunk = uno.anahata.asi.internal.JacksonUtils.parse(data, JsonNode.class);
+                                JsonNode chunk = JacksonUtils.parse(data, JsonNode.class);
                                 targetMessage.handleStreamEvent(chunk);
                                 targetMessage.appendRawJson(data);
                                 

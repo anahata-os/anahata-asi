@@ -1,12 +1,13 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.gemini;
 
-import com.google.genai.Chat;
 import com.google.genai.Client;
-import com.google.genai.types.GenerateContentResponse;
+import com.google.genai.Pager;
 import com.google.genai.types.HttpOptions;
 import com.google.genai.types.ListModelsConfig;
+import com.google.genai.types.Model;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import lombok.Getter;
@@ -44,7 +45,7 @@ public class GeminiAiProvider extends AbstractAiProvider {
      * Creates a new Gemini Provider with default settings.
      */
     public GeminiAiProvider() {
-        this(java.util.UUID.randomUUID().toString(), "Google Gemini", false);
+        this(UUID.randomUUID().toString(), "Google Gemini", false);
     }
 
     /**
@@ -126,9 +127,9 @@ public class GeminiAiProvider extends AbstractAiProvider {
      */
     @Override
     public List<? extends AbstractModel> listModels() {
-        var pager = getClient().models.list(ListModelsConfig.builder().build());
+        Pager<Model> pager = getClient().models.list(ListModelsConfig.builder().build());
         return StreamSupport.stream(pager.spliterator(), false)
-                .map(model -> (AbstractModel) new GeminiModel(this, model))
+                .map((Model model) -> (AbstractModel) new GeminiModel(this, model))
                 .collect(Collectors.toList());
     }
 

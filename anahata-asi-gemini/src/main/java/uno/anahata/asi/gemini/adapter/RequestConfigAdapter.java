@@ -28,8 +28,6 @@ import uno.anahata.asi.agi.provider.RequestConfig;
 import uno.anahata.asi.agi.provider.ThinkingLevel;
 import uno.anahata.asi.agi.provider.ServerTool;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
-import java.util.stream.Collectors;
-import uno.anahata.asi.toolkit.History;
 
 /**
  * A focused adapter responsible for converting our model-agnostic RequestConfig

@@ -3,7 +3,6 @@ package uno.anahata.asi.openai;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.Getter;
@@ -70,7 +69,7 @@ public class OpenAiResponse extends Response<OpenAiModelMessage> {
         this.rawJson = chunkJson;
         this.usageMetadata = ResponseUsageMetadata.builder().build();
         this.modelVersion = "unknown";
-        this.candidates = java.util.List.of();
+        this.candidates = List.of();
     }
 
     /**
