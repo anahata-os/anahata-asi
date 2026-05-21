@@ -7,15 +7,13 @@
  * At its heart is the {@link uno.anahata.asi.agi.message.AbstractMessage}, which acts as a container
  * for multiple {@link uno.anahata.asi.agi.message.AbstractPart} objects.
  * </p>
- * <p>
- * This Domain-Driven model enables sophisticated features like:
+ * <p>This Domain-Driven model enables sophisticated features like:</p>
  * <ul>
  *   <li><b>Context Window Garbage Collection (CwGC):</b> Atomic, depth-based pruning of individual message parts.</li>
  *   <li><b>In-Band Metadata Injection:</b> Improving model self-awareness through interleaved invisible headers.</li>
  *   <li><b>Multi-Modal Context:</b> Support for mixed text and binary content within a single conversation turn.</li>
  *   <li><b>Reactive UI:</b> Event-driven updates via {@link uno.anahata.asi.agi.event.PropertyChangeSource}.</li>
  * </ul>
- * </p>
  * 
  * @author anahata
  */
