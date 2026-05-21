@@ -23,7 +23,19 @@ public class HostedCodeExecutionResultPart extends ModelTextPart {
     /**
      * The code execution outcomes.
      */
-    public static enum ModelCodeExectionOutcome { UNKNOWN, OK, FAILED, TIMEOUT}
+    /**
+     * The possible outcomes of a server-side code execution.
+     */
+    public static enum ModelCodeExectionOutcome {
+        /** The execution outcome is unknown or could not be determined. */
+        UNKNOWN,
+        /** The execution completed successfully with an exit code of 0. */
+        OK,
+        /** The execution failed or exited with a non-zero status. */
+        FAILED,
+        /** The execution exceeded the maximum allotted time. */
+        TIMEOUT
+    }
     
     /**
      * The call part that initiated this execution result, used to reconstruct 

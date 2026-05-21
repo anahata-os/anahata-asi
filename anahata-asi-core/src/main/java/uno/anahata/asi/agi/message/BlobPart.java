@@ -80,8 +80,10 @@ public abstract class BlobPart extends AbstractPart {
     }
 
     /** 
-     * {@inheritDoc} 
+     * Returns the token count for this binary part.
      * <p>Provides multimodal token accounting with a fixed cost of 258 to prevent binary inflation.</p> 
+     *
+     * @return The token count (always 258).
      */
     @Override
     public int getTokenCount() {

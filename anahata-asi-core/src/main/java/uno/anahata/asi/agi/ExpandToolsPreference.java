@@ -26,6 +26,7 @@ public enum ExpandToolsPreference implements Serializable {
      */
     NONE("None (always collapsed)");
 
+    /** The user-friendly descriptive label for this expansion preference. */
     private final String displayValue;
 
     @Override

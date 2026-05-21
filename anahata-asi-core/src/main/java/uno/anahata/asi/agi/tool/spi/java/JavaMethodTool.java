@@ -194,9 +194,10 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
     }
     
     /**
-     * {@inheritDoc}
-     * <p>Returns a rich, formatted description string containing the base description,
-     * current permission status, and effective max depth details.</p>
+     * Returns a rich, formatted description string containing the base description,
+     * current permission status, and effective max depth details.
+     *
+     * @return The formatted tool description.
      */
     @Override
     public String getDescription() {

@@ -18,7 +18,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ModelTextPart extends TextPart implements ThoughtSignature {
+    /** The signature byte array of the thought process, used for verification. */
     private byte[] thoughtSignature;
+    /** Indicates if this part represents internal model reasoning (thoughts). */
     private boolean thought;
 
     /**

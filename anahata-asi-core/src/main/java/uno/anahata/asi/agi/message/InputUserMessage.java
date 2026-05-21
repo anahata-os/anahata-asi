@@ -30,6 +30,11 @@ public class InputUserMessage extends UserMessage {
     @Getter
     private TextPart editableTextPart;
 
+    /**
+     * Constructs a new InputUserMessage bound to an active session context.
+     *
+     * @param agi The active Agi orchestrator.
+     */
     public InputUserMessage(Agi agi) {
         super(agi);
     }
