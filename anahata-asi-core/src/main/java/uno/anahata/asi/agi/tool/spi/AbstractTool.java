@@ -39,6 +39,11 @@ public abstract class AbstractTool<P extends AbstractToolParameter, C extends Ab
     /** The user's configured preference for this tool, determining its execution behavior. */
     protected ToolPermission permission;
     
+    /**
+     * Sets the user's execution permission preference for this tool and fires a property change event.
+     *
+     * @param permission The new permission level to apply.
+     */
     public void setPermission(ToolPermission permission) {
         ToolPermission old = this.permission;
         if (java.util.Objects.equals(old, permission)) {
