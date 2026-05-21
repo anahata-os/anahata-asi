@@ -100,7 +100,13 @@ public class AsiContainerPreferencesPanel extends ScrollablePanel {
      */
     private JButton resetBtn;
 
+    /**
+     * List of draft/newly added AI providers that have not yet been saved/registered with the container.
+     */
     private final List<AbstractAiProvider> unsavedProviders = new ArrayList<>();
+    /**
+     * List of active UI panels representing the AI providers currently being configured.
+     */
     private final List<AiProviderPanel> activeProviderPanels = new ArrayList<>();
 
     /**
@@ -424,6 +430,10 @@ public class AsiContainerPreferencesPanel extends ScrollablePanel {
         return panel;
     }
 
+    /**
+     * Creates and configures the 'Request Config' blueprint template tab.
+     * @return The populated request template panel.
+     */
     private JPanel createRequestTemplateTab() {
         JPanel panel = new JPanel(new BorderLayout());
         RequestConfigPanel reqPanel = new RequestConfigPanel(

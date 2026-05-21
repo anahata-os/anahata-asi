@@ -139,6 +139,9 @@ public class AsiTableContainerPanel extends AbstractAsiContainerPanel {
     private static class ContextUsageCellRenderer extends DefaultTableCellRenderer {
         private final DecimalFormat PERCENT_FORMAT = new DecimalFormat("0.0%");
 
+        /**
+         * Constructs a new ContextUsageCellRenderer and aligns text to the right.
+         */
         public ContextUsageCellRenderer() {
             setHorizontalAlignment(JLabel.RIGHT);
         }

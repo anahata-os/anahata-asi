@@ -25,8 +25,17 @@ import uno.anahata.asi.swing.components.ScrollablePanel;
  */
 public class AsiCardsContainerPanel extends AbstractAsiContainerPanel {
 
+    /**
+     * The panel containing the collection of AgiCard components.
+     */
     private final JPanel cardContainer;
+    /**
+     * Cache mapping AGI sessions to their corresponding AgiCard UI representations.
+     */
     private final Map<Agi, AgiCard> cachedCards = new HashMap<>();
+    /**
+     * The currently selected AGI session within the cards collection.
+     */
     private Agi selectedAgi;
 
     /**
@@ -103,6 +112,10 @@ public class AsiCardsContainerPanel extends AbstractAsiContainerPanel {
         cardContainer.repaint();
     }
 
+    /**
+     * Updates the currently selected AGI session and handles selection highlighting across cards.
+     * @param agi The AGI session to select, or null to clear selection.
+     */
     private void setSelectedAgi(Agi agi) {
         if (this.selectedAgi != null) {
             AgiCard oldCard = cachedCards.get(this.selectedAgi);

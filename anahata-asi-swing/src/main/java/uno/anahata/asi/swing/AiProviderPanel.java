@@ -468,8 +468,7 @@ public class AiProviderPanel extends ScrollablePanel {
 
     /**
      * Synchronizes the UI state back to the provider domain and flushes the key pool to disk. This is called by the parent preferences panel.
-     * @throws value If writing the keys file fails.
-     * @throws javaTarget java.io.IOException
+     * @throws java.io.IOException If writing the keys file or syncing the provider state fails.
      */
     public void syncToProvider() throws IOException {
         provider.setDisplayName(displayNameField.getText().trim());

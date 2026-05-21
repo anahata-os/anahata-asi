@@ -502,6 +502,7 @@ public class ContextPanel extends JPanel {
 
     /**
      * Delegates resource opening to the active ResourceUI strategy.
+     * @param res The resource to open.
      */
     private void openResource(Resource res) {
         ResourceUI ui = ResourceUiRegistry.getInstance().getResourceUI();

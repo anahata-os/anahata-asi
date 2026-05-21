@@ -38,19 +38,52 @@ import uno.anahata.asi.swing.internal.SwingTask;
 @Slf4j
 public class ContextProviderPanel extends ScrollablePanel {
 
+    /**
+     * The parent context management panel.
+     */
     private final ContextPanel parentPanel;
     
+    /**
+     * Label for the provider's friendly name.
+     */
     private final JLabel nameLabel;
+    /**
+     * Label for the provider's description.
+     */
     private final JLabel descLabel;
+    /**
+     * Checkbox to toggle providing status.
+     */
     private final JCheckBox providingCheckbox;
+    /**
+     * Label indicating if the provider is effectively providing context.
+     */
     private final JLabel effectivelyProvidingLabel;
     
+    /**
+     * Tabbed pane containing previews.
+     */
     private final JTabbedPane tabbedPane;
+    /**
+     * Tab for system instructions from this provider.
+     */
     private final JPanel thisSysTab;
+    /**
+     * Tab for aggregated system instructions from children.
+     */
     private final JPanel childrenSysTab;
+    /**
+     * Tab for RAG content from this provider.
+     */
     private final JPanel thisRagTab;
+    /**
+     * Tab for aggregated RAG content from children.
+     */
     private final JPanel childrenRagTab;
     
+    /**
+     * The context provider currently being inspected.
+     */
     private ContextProvider currentProvider;
 
     /**
@@ -136,6 +169,7 @@ public class ContextProviderPanel extends ScrollablePanel {
     
     /**
      * Updates the 'Effectively Providing' label based on the provider's hierarchy.
+     * @param cp The current context provider.
      */
     private void updateEffectivelyProviding(ContextProvider cp) {
         if (cp.getParentProvider() != null) {
@@ -150,6 +184,7 @@ public class ContextProviderPanel extends ScrollablePanel {
 
     /**
      * Updates the content previews and manages tab visibility asynchronously.
+     * @param cp The current context provider.
      */
     private void updatePreviews(ContextProvider cp) {
         Agi agi = parentPanel.getAgi();
@@ -253,6 +288,12 @@ public class ContextProviderPanel extends ScrollablePanel {
         }).start();
     }
 
+    /**
+     * Surgically renders the preview message inside the target tab panel.
+     * @param tab The tab panel to render into.
+     * @param msg The message to render.
+     * @param emptyText Fallback text if the message is empty.
+     */
     private void renderPreview(RagMessage msg, JPanel tab, String emptyText) {
         if (msg.getParts().isEmpty() && !emptyText.isEmpty()) {
             msg.addTextPart(emptyText);
