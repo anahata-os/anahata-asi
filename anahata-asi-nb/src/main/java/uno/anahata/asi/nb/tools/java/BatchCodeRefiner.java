@@ -80,6 +80,12 @@ public class BatchCodeRefiner extends AnahataToolkit {
         );
     }
 
+    /**
+     * Applies a batch of member-level modifications to ONE Java file synchronously, saving and rebuilding the AST.
+     * @param batch The robust refinement batch containing modifications.
+     * @return The generated unified diff string representing changes applied to disk.
+     * @throws java.lang.Exception if validation or file I/O fails.
+     */
     @AgiTool("The definitive structural Java refiner."
             + " Applies a batch of member-level modifications to ONE java file."
             + " RelativePosition is mandatory for all INSERT and MOVE."
@@ -112,14 +118,21 @@ public class BatchCodeRefiner extends AnahataToolkit {
     }
 
     /**
-     * Locates a member tree within a working copy by its canonical FQN.
+     * Locates a member tree within a working copy compilation context by its canonical FQN.
+     * @param info The active compilation context.
+     * @param memberFqn The canonical FQN identifying the target member.
+     * @return The matching Tree node if found, or null otherwise.
      */
     public static Tree findMemberInWorkingCopy(CompilationInfo info, String memberFqn) {
         return JavaSourceUtils.findTree(info, memberFqn);
     }
 
     /**
-     * Finds the index of a member within a list of trees by its signature.
+     * Finds the 0-based index of a member within a list of AST class members by matching its signature.
+     * @param members The list of class member trees to search.
+     * @param memberName The canonical name or signature to match against.
+     * @param info The active compilation context.
+     * @return The 0-based index of the matching member, or -1 if no match is found.
      */
     public static int findMemberIndex(CompilationInfo info, List<? extends Tree> members, String memberName) {
         String target = memberName.replaceAll("<[^>]*>", "").replaceAll("\\s+", "");
@@ -189,7 +202,13 @@ public class BatchCodeRefiner extends AnahataToolkit {
     }
 
     /**
-     * Parses a raw Java string into a detached AST Tree node, capturing inline comments.
+     * Parses a raw Java string into a detached AST Tree node, capturing and importing all inline comments.
+     * @param wc The target working copy context.
+     * @param cpInfo The classpath information for resolution context.
+     * @param declaration The member declaration header string.
+     * @param body The optional member body code block.
+     * @return The successfully parsed and detached AST Tree node.
+     * @throws java.lang.Exception if parsing, compile phase resolution, or compilation fails.
      */
     public static Tree parseMember(WorkingCopy wc, String declaration, String body, ClasspathInfo cpInfo) throws Exception {
         if (declaration == null || declaration.isBlank()) {
@@ -248,7 +267,13 @@ public class BatchCodeRefiner extends AnahataToolkit {
     }
 
     /**
-     * Calculates the insertion index for a new member based on a relative position and an anchor.
+     * Calculates the insertion index for a new member based on a relative position and an anchor name.
+     * @param members The list of existing class members.
+     * @param position The relative position (START, END, BEFORE, AFTER).
+     * @param wc The target working copy or compilation context.
+     * @param anchor The anchor member name, required for BEFORE and AFTER positions.
+     * @return The calculated 0-based insertion index.
+     * @throws uno.anahata.asi.agi.tool.AgiToolException if anchor position rules are violated or the anchor is not found.
      */
     public static int getInsertIndex(CompilationInfo wc, List<? extends Tree> members, RelativePosition position, String anchor) throws AgiToolException {
         if ((position == RelativePosition.BEFORE || position == RelativePosition.AFTER) && (anchor == null || anchor.isBlank())) {
@@ -270,7 +295,9 @@ public class BatchCodeRefiner extends AnahataToolkit {
     }
     
     /**
-     * Extracts the raw signature from a canonical FQN to be used for matching.
+     * Extracts the raw signature from a canonical identification FQN to be used for matching.
+     * @param memberFqn The absolute canonical member FQN.
+     * @return The simple member signature (e.g., 'myMethod(java.lang.String)').
      */
     public static String getMemberSignature(String memberFqn) {
         if (memberFqn == null || memberFqn.isBlank()) {
@@ -283,7 +310,10 @@ public class BatchCodeRefiner extends AnahataToolkit {
     }
 
     /**
-     * Throws a highly descriptive AgiToolException with available candidates when a member is not found.
+     * Throws a highly descriptive exception with available suggestions when a member is not found.
+     * @param info The active compilation context.
+     * @param memberFqn The canonical member FQN that was not resolved.
+     * @throws uno.anahata.asi.agi.tool.AgiToolException always, containing detailed candidate recommendations.
      */
     public static void throwMemberNotFound(CompilationInfo info, String memberFqn) {
         int paren = memberFqn.indexOf("(");
@@ -313,7 +343,11 @@ public class BatchCodeRefiner extends AnahataToolkit {
     }
 
     /**
-     * Rebuilds a ClassTree node with a new list of members.
+     * Rebuilds a ClassTree node with a new, modified list of class members based on class kind.
+     * @param members The new list of member trees.
+     * @param make The TreeMaker utility instance.
+     * @param ct The original class tree to reconstruct.
+     * @return The newly constructed and reconstructed ClassTree node.
      */
     public static ClassTree rebuildClassTree(TreeMaker make, ClassTree ct, List<Tree> members) {
         return switch (ct.getKind()) {
