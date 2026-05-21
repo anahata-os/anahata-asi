@@ -3,10 +3,6 @@ package uno.anahata.asi.openai.compatible;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
-import java.util.Map;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.message.AbstractModelMessage;
@@ -122,8 +118,8 @@ public abstract class OpenAiCompatibleModelMessage extends AbstractModelMessage<
      * Appends text while detecting and extracting reasoning content wrapped in tags.
      * 
      * @param text The text containing potential tags.
-     * @param startTag The opening tag (e.g., "<think>").
-     * @param endTag The closing tag (e.g., "</think>").
+     * @param startTag The opening tag (e.g., {@code <think>}).
+     * @param endTag The closing tag (e.g., {@code </think>}).
      */
     public void appendTaggedContent(String text, String startTag, String endTag) {
         if (!insideReasoningTags && text.contains(startTag)) {

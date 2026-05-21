@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -71,6 +70,12 @@ public class AnthropicModel extends AbstractModel {
         this.version = version;
     }
 
+    /**
+     * Constructs a new Anthropic model instance with default empty version details.
+     * @param provider The parent provider.
+     * @param modelId The model ID.
+     * @param displayName The display name.
+     */
     public AnthropicModel(AnthropicProvider provider, String modelId, String displayName) {
         this(provider, modelId, displayName, "");
     }
@@ -195,6 +200,13 @@ public class AnthropicModel extends AbstractModel {
     @Override
     public Float getDefaultTopP() { return null; }
 
+    /**
+     * Helper to prepare the final JSON payload containing the system instructions,
+     * history items, tools, and generation parameters.
+     * @param request the source generation request details.
+     * @param stream true if the request is streaming.
+     * @return the fully constructed JSON ObjectNode payload.
+     */
     protected ObjectNode preparePayload(GenerationRequest request, boolean stream) {
         ObjectNode payload = SchemaProvider.OBJECT_MAPPER.createObjectNode();
         payload.put("model", modelId);

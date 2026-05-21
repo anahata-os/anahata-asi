@@ -1,7 +1,6 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.openai.compatible.adapter;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
@@ -23,6 +22,7 @@ import uno.anahata.asi.agi.message.TextPart;
 import uno.anahata.asi.agi.tool.schema.SchemaProvider;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
+import uno.anahata.asi.openai.compatible.OpenAiCompatibleReasoningStyle;
 
 /**
  * A specialized content adapter that translates Anahata's domain model into 
@@ -32,14 +32,12 @@ import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
  * ensuring that models remain context-aware by injecting metadata headers 
  * even for effectively pruned parts.
  * </p>
- * <p>
- * <b>Role Mapping:</b>
+ * <p><b>Role Mapping:</b></p>
  * <ul>
  *   <li>{@link Role#USER} &rarr; "user"</li>
  *   <li>{@link Role#MODEL} &rarr; "assistant"</li>
  *   <li>{@link Role#SYSTEM} &rarr; "system"</li>
  * </ul>
- * </p>
  * <p>
  * <b>Turn Synthesis:</b> For Model turns containing tool responses, it generates 
  * an 'assistant' message (calls) followed by one 'tool' message per response.
@@ -61,8 +59,8 @@ public class OpenAiCompatibleResponseAdapter {
     private final TokenizerType tokenizerType;
 
     /** Reasoning style of the target model. */
-    private final uno.anahata.asi.openai.compatible.OpenAiCompatibleReasoningStyle reasoningStyle;
-    /** Tags used for reasoning (e.g., ["<think>", "</think>"]). */
+    private final OpenAiCompatibleReasoningStyle reasoningStyle;
+    /** Tags used for reasoning (e.g., [{@code "<think>"}, {@code "</think>"}]). */
     private final List<String> reasoningTags;
 
     /**
@@ -88,6 +86,8 @@ public class OpenAiCompatibleResponseAdapter {
 
     /**
      * Synthesizes a Model turn into 'assistant' and 'tool' messages.
+     * @param modelMsg the source Anahata model message.
+     * @return a list of synthesized assistant and tool message nodes.
      */
     private List<ObjectNode> toOpenAiModel(AbstractModelMessage<?> modelMsg) {
         List<ObjectNode> synthesized = new ArrayList<>();
@@ -145,6 +145,7 @@ public class OpenAiCompatibleResponseAdapter {
 
     /**
      * Translates USER or SYSTEM messages, supporting multimodal content arrays.
+     * @return the constructed user or system message node.
      */
     private ObjectNode toOpenAiUser() {
         ObjectNode msgNode = SchemaProvider.OBJECT_MAPPER.createObjectNode();
@@ -205,6 +206,9 @@ public class OpenAiCompatibleResponseAdapter {
 
     /**
      * Internal helper for metadata interleaving in the assistant buffer.
+     * @param textContent the text buffer being accumulated.
+     * @param toolCalls the tool calls array node being populated.
+     * @param part the part being processed.
      */
     private void addPartWithMetadata(StringBuilder textContent, ArrayNode toolCalls, AbstractPart part) {
         boolean isEffectivelyPruned = part.isEffectivelyPruned();
@@ -220,7 +224,7 @@ public class OpenAiCompatibleResponseAdapter {
                 
                 // Thought Tagging: If this is a thought part and the model uses TAGS style,
                 // we wrap the text in the appropriate tags to preserve the model's "flow".
-                if (mtp.isThought() && reasoningStyle == uno.anahata.asi.openai.compatible.OpenAiCompatibleReasoningStyle.TAGS 
+                if (mtp.isThought() && reasoningStyle == OpenAiCompatibleReasoningStyle.TAGS 
                         && reasoningTags != null && reasoningTags.size() >= 2) {
                     text = reasoningTags.get(0) + text + reasoningTags.get(1);
                 }

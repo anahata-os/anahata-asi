@@ -59,24 +59,42 @@ public class OpenAiCompatibleModel extends AbstractModel {
      * The user-friendly name of the model.
      */
     private final String displayName;
+    /** The model version. */
     private String version = "";
+    /** The maximum input tokens allowed. */
     private int maxInputTokens = 200000;
+    /** The maximum output tokens allowed. */
     private int maxOutputTokens = 32000;
 
+    /** The reasoning extraction style used by this model. */
     private OpenAiCompatibleReasoningStyle reasoningStyle = OpenAiCompatibleReasoningStyle.NONE;
+    /** The specific field name representing thoughts in the JSON response. */
     private String reasoningFieldName;
+    /** The start and end tags wrapping reasoning content. */
     private List<String> reasoningTags;
 
+    /** Whether the model supports native function calling. */
     private boolean supportsFunctionCalling = true;
+    /** Whether the model supports content generation. */
     private boolean supportsContentGeneration = true;
+    /** Whether the model supports batch embeddings. */
     private boolean supportsBatchEmbeddings = false;
+    /** Whether the model supports simple embeddings. */
     private boolean supportsEmbeddings = false;
+    /** Whether the model supports content caching. */
     private boolean supportsCachedContent = false;
 
+    /** The shared, thread-safe HTTP Client instance. */
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(30))
             .build();
 
+    /**
+     * Constructs an OpenAiCompatibleModel with explicit metadata parameters.
+     * @param provider the parent provider instance.
+     * @param modelId the unique model identifier.
+     * @param displayName the human-readable display name.
+     */
     public OpenAiCompatibleModel(OpenAiChatCompletionsProvider provider, String modelId, String displayName) {
         this.provider = provider;
         this.modelId = modelId;
@@ -221,10 +239,19 @@ public class OpenAiCompatibleModel extends AbstractModel {
         return 0.95f;
     }
 
+    /**
+     * Gets the relative endpoint URL for Chat Completion requests.
+     * @return the sub-resource endpoint string.
+     */
     protected String getEndpoint() {
         return "chat/completions";
     }
 
+    /**
+     * Instantiates an OpenAI-compatible message container.
+     * @param agi the parent AGI session.
+     * @return a new OpenAiCompatibleModelMessage.
+     */
     public OpenAiCompatibleModelMessage createModelMessage(Agi agi) {
         return new OpenAiCompatibleMessage(agi, modelId);
     }
@@ -462,6 +489,12 @@ public class OpenAiCompatibleModel extends AbstractModel {
     // Get accumulated text content from parts
     // Create response with estimated usage metadata
     
+    /**
+     * Routes a streaming JSON choice chunk to the target message, extracting
+     * thoughts or text content dynamically.
+     * @param choice the JSON choice node from the chunk event.
+     * @param target the target message accumulating the content.
+     */
     private void routeChunk(JsonNode choice, OpenAiCompatibleModelMessage target) {
         JsonNode delta = choice.get("delta");
         if (delta == null) {
@@ -610,6 +643,13 @@ public class OpenAiCompatibleModel extends AbstractModel {
         return new OpenAiCompatibleResponse(agi, modelId, estimatedResponseJson, jsonPayload, historyJson, this, estimatedUsage);
     }
 
+    /**
+     * Prepares the final JSON request payload combining system instructions,
+     * history, tools, and temperature.
+     * @param request the current generation request.
+     * @param stream whether the request is streaming.
+     * @return the constructed JSON ObjectNode payload.
+     */
     protected ObjectNode preparePayload(GenerationRequest request, boolean stream) {
         ObjectNode payload = SchemaProvider.OBJECT_MAPPER.createObjectNode();
         payload.put("model", modelId);

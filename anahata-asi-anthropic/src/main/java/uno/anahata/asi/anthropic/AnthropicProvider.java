@@ -34,10 +34,21 @@ public class AnthropicProvider extends AbstractAiProvider {
      */
     private transient HttpClient httpClient;
 
+    /**
+     * Constructs a default AnthropicProvider.
+     */
     public AnthropicProvider() {
         this("Anthropic", "Anthropic", "https://api.anthropic.com/v1", "2023-06-01", "https://console.anthropic.com/settings/keys");
     }
 
+    /**
+     * Constructs an AnthropicProvider with explicit registration metadata.
+     * @param uuid the unique provider identifier.
+     * @param displayName the human-readable display name.
+     * @param baseUrl the target API base URL.
+     * @param anthropicVersion the API version header value.
+     * @param keysAcquisitionUri the console settings keys URI.
+     */
     public AnthropicProvider(String uuid, String displayName, String baseUrl, String anthropicVersion, String keysAcquisitionUri) {
         super(uuid);
         setDisplayName(displayName);
