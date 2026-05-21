@@ -18,21 +18,60 @@ import java.util.Random;
  * @author anahata
  */
 public class BugDefense extends JPanel implements ActionListener {
+    /**
+     * The game loop timer.
+     */
     private Timer timer;
+    /**
+     * The horizontal X position of the player's shield.
+     */
     private int shieldX = 225;
+    /**
+     * The fixed vertical Y position of the player's shield.
+     */
     private final int shieldY = 540;
+    /**
+     * The width of the shield.
+     */
     private final int shieldWidth = 50;
+    /**
+     * The height of the shield.
+     */
     private final int shieldHeight = 20;
     
+    /**
+     * Flag indicating if the game is currently active.
+     */
     private boolean playing = false;
+    /**
+     * The player's current score.
+     */
     private int score = 0;
+    /**
+     * The player's remaining lives.
+     */
     private int lives = 3;
     
+    /**
+     * The list of active projectile pulses fired by the player.
+     */
     private java.util.List<Rectangle> optimizationPulses = new ArrayList<>();
+    /**
+     * The list of descending logic bug obstacles.
+     */
     private java.util.List<Rectangle> bugs = new ArrayList<>();
+    /**
+     * Random number generator for spawning bug coordinates.
+     */
     private final Random rand = new Random();
+    /**
+     * Tick counter to regulate enemy spawning frequency.
+     */
     private int bugSpawnTick = 0;
 
+    /**
+     * Constructs a new BugDefense panel and adds the start button.
+     */
     public BugDefense() {
         setPreferredSize(new Dimension(500, 600));
         setBackground(new Color(20, 20, 25));
@@ -55,6 +94,9 @@ public class BugDefense extends JPanel implements ActionListener {
         setupKeyBindings();
     }
 
+    /**
+     * Installs left/right arrow and spacebar key bindings.
+     */
     private void setupKeyBindings() {
         InputMap im = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap am = getActionMap();
@@ -74,6 +116,9 @@ public class BugDefense extends JPanel implements ActionListener {
         });
     }
 
+    /**
+     * Starts/resets the game state and kicks off the timer.
+     */
     private void startGame() {
         playing = true;
         score = 0;
@@ -84,6 +129,9 @@ public class BugDefense extends JPanel implements ActionListener {
         timer.start();
     }
 
+    /**
+     * Fires a new optimization pulse from the shield's position.
+     */
     private void spawnPulse() {
         optimizationPulses.add(new Rectangle(shieldX + shieldWidth / 2 - 3, shieldY - 10, 6, 12));
     }
@@ -120,6 +168,9 @@ public class BugDefense extends JPanel implements ActionListener {
         repaint();
     }
 
+    /**
+     * Performs collision detection between optimization pulses and bugs, updating scores.
+     */
     private void checkCollisions() {
         Iterator<Rectangle> bIter = bugs.iterator();
         while (bIter.hasNext()) {
@@ -161,6 +212,10 @@ public class BugDefense extends JPanel implements ActionListener {
         g2d.drawString("Score: " + score + " | Lives: " + lives, 10, 30);
     }
 
+    /**
+     * Renders the Barça Red 'PRODUCTION CRASHED' game over screen.
+     * @param g2d The graphics context.
+     */
     private void renderGameOver(Graphics2D g2d) {
         g2d.setColor(new Color(165, 0, 68)); // Barça Red
         g2d.setFont(new Font("SansSerif", Font.BOLD, 36));
@@ -181,6 +236,10 @@ public class BugDefense extends JPanel implements ActionListener {
         g2d.drawString(restartMsg, (getWidth() - fm.stringWidth(restartMsg)) / 2, getHeight() / 2 + 50);
     }
 
+    /**
+     * Launcher method for testing BugDefense as a standalone application.
+     * @param args Command line arguments (ignored).
+     */
     public static void main(String[] args) {
         JFrame frame = new JFrame("Anahata Bug Defense");
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);

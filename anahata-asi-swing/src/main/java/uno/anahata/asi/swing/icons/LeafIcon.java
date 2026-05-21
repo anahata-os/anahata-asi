@@ -31,6 +31,9 @@ public class LeafIcon extends AbstractAnahataIcon {
         DEAD
     }
 
+    /**
+     * The active metabolic lifecycle state of this leaf.
+     */
     @Getter
     private final LeafState state;
 

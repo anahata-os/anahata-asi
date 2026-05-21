@@ -15,6 +15,9 @@ import uno.anahata.asi.swing.icons.PulseIcon;
  */
 public class HistoryNode extends AbstractContextNode<ContextManager> {
 
+    /**
+     * The standard pulse icon to visualize the live conversation feed.
+     */
     private static final Icon ICON = new PulseIcon(16);
 
     /**

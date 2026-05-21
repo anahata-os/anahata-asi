@@ -40,6 +40,9 @@ import uno.anahata.asi.swing.provider.ModelRenderer;
 @Slf4j
 public class HeaderPanel extends JPanel {
 
+    /**
+     * Standard pixel size for header actions buttons.
+     */
     private static final int ICON_SIZE = 24;
 
     /**

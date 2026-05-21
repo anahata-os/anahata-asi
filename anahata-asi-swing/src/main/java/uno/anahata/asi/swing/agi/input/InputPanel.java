@@ -89,6 +89,9 @@ public class InputPanel extends JPanel {
     private JButton screenshotButton;
     /** The button to capture and attach application frames. */
     private JButton captureFramesButton;
+    /**
+     * Button to add a URL-based context resource to the active session.
+     */
     private JButton addUrlButton;
     /** The renderer for the live message preview. */
     private InputUserMessagePanel inputMessagePreview;
@@ -101,16 +104,34 @@ public class InputPanel extends JPanel {
     
     /** Panel to display the staged message. */
     private JPanel stagedMessagePanel;
+    /**
+     * Label displaying summary preview of the staged user message.
+     */
     private JLabel stagedMessageLabel;
+    /**
+     * Button to edit and unstage the staged user message.
+     */
     private JButton revertStagedButton;
+    /**
+     * Button to permanently discard the staged user message.
+     */
     private JButton deleteStagedButton;
     
     /** Label for transient registration notifications. */
     private JLabel notificationLabel;
 
+    /**
+     * Reactive property change listener for staged user messages.
+     */
     private EdtPropertyChangeListener stagedListener;
+    /**
+     * Reactive property change listener for session status changes.
+     */
     private EdtPropertyChangeListener statusListener;
     
+    /**
+     * UndoManager tracking edits within the input text area.
+     */
     private final UndoManager undoManager = new UndoManager();
 
     /**
@@ -412,6 +433,9 @@ public class InputPanel extends JPanel {
         scrollToBottomPreview();
     }
 
+    /**
+     * Triggers a modal dialog prompting for a URL to register as a resource.
+     */
     private void addUrl() {
         String url = JOptionPane.showInputDialog(this, "Enter the URL to add as a resource:", "Add URL Resource", JOptionPane.PLAIN_MESSAGE);
         if (url != null && !url.trim().isEmpty()) {
@@ -610,6 +634,13 @@ public class InputPanel extends JPanel {
         new SwingTask<>(agiPanel, taskName, backgroundTask).start();
     }
 
+    /**
+     * Runs a background task with custom completion and error callbacks on the EDT.
+     * @param backgroundTask The background logic to execute.
+     * @param onError Edted callback when the task fails.
+     * @param taskName The descriptive task name.
+     * @param onDone Edted callback when the task succeeds.
+     */
     private <T> void executeTask(String taskName, Callable<T> backgroundTask, Consumer<T> onDone, Consumer<Exception> onError) {
         new SwingTask<>(agiPanel, taskName, backgroundTask, onDone, onError, true).start();
     }

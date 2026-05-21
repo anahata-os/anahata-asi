@@ -31,7 +31,13 @@ import uno.anahata.asi.swing.agi.SwingAgiConfig;
  */
 public class AsiTableContainerPanel extends AbstractAsiContainerPanel {
 
+    /**
+     * The JTable component displaying the active sessions.
+     */
     private final JTable table;
+    /**
+     * The underlying table model tracking AGI sessions.
+     */
     private final AgisTableModel model;
 
     /**
@@ -95,6 +101,9 @@ public class AsiTableContainerPanel extends AbstractAsiContainerPanel {
         return null;
     }
 
+    /**
+     * Helper method to configure standard column widths and spacing.
+     */
     private void setColumnWidths() {
         TableColumn statusColumn = table.getColumnModel().getColumn(AgisTableModel.STATUS_COL);
         statusColumn.setMinWidth(120);
@@ -137,6 +146,9 @@ public class AsiTableContainerPanel extends AbstractAsiContainerPanel {
      * A cell renderer for displaying context window usage as a percentage.
      */
     private static class ContextUsageCellRenderer extends DefaultTableCellRenderer {
+        /**
+         * The percentage formatter used to display context window usage.
+         */
         private final DecimalFormat PERCENT_FORMAT = new DecimalFormat("0.0%");
 
         /**

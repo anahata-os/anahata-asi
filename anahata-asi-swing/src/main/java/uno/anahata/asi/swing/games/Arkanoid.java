@@ -26,33 +26,102 @@ import javax.swing.Timer;
  */
 public class Arkanoid extends JPanel implements ActionListener {
 
+    /**
+     * The width of the game arena in pixels.
+     */
     private final int WIDTH = 800;
+    /**
+     * The height of the game arena in pixels.
+     */
     private final int HEIGHT = 600;
+    /**
+     * The fixed Y-coordinate position of the paddle.
+     */
     private final int PADDLE_Y = 550;
     
+    /**
+     * The high-frequency game loop timer.
+     */
     private Timer timer;
+    /**
+     * The current X-coordinate of the ball's center.
+     */
     private int ballX = WIDTH / 2;
+    /**
+     * The current Y-coordinate of the ball's center.
+     */
     private int ballY = HEIGHT / 2;
+    /**
+     * The radius of the ball in pixels.
+     */
     private int ballRadius = 8;
+    /**
+     * The horizontal velocity of the ball.
+     */
     private int ballDX = 5;
+    /**
+     * The vertical velocity of the ball.
+     */
     private int ballDY = -5;
     
+    /**
+     * The current X-coordinate of the paddle's left edge.
+     */
     private int paddleX = WIDTH / 2 - 60;
+    /**
+     * The width of the paddle in pixels.
+     */
     private int paddleWidth = 120;
+    /**
+     * The height of the paddle in pixels.
+     */
     private int paddleHeight = 15;
+    /**
+     * The horizontal velocity of the paddle.
+     */
     private int paddleDX = 0;
     
+    /**
+     * Flag indicating if the game is currently active.
+     */
     private boolean inGame = true;
+    /**
+     * Flag indicating if the player has won by destroying all bricks.
+     */
     private boolean won = false;
+    /**
+     * The player's current score.
+     */
     private int score = 0;
     
+    /**
+     * The array of brick bounding boxes.
+     */
     private Rectangle[] bricks;
+    /**
+     * Parallel array tracking the active/broken state of each brick.
+     */
     private boolean[] brickActive;
+    /**
+     * The number of brick rows.
+     */
     private int rows = 6;
+    /**
+     * The number of brick columns.
+     */
     private int cols = 10;
+    /**
+     * The width of a single brick.
+     */
     private int brickWidth = 70;
+    /**
+     * The height of a single brick.
+     */
     private int brickHeight = 25;
 
+    /**
+     * Constructs a new Arkanoid game panel and triggers initialization.
+     */
     public Arkanoid() {
         initGame();
     }

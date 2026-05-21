@@ -15,6 +15,10 @@ import javax.swing.UIManager;
  */
 public class ExternalIcon extends AbstractAnahataIcon {
 
+    /**
+     * Constructs a new ExternalIcon of the specified square size.
+     * @param size The size of the icon.
+     */
     public ExternalIcon(int size) {
         super(size);
     }
