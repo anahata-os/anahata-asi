@@ -38,7 +38,10 @@ public class JavadocIntent implements Serializable {
     /**
      * A map of parameter names to their descriptions for the @param tag.
      */
-    @Schema(description = "Map of parameter names to their descriptions.")
+    @Schema(description = "Map of parameter names to their descriptions. "
+        + "The JSON keys must be the raw parameter names, and the values are their descriptions. "
+        + "DO NOT use generic fields like 'key' or 'value'. "
+        + "Example: { \"items\": \"The list of items to process.\", \"index\": \"The starting offset.\" }")
     private Map<String, String> params;
     /**
      * The description of the return value for the @return tag.
@@ -48,8 +51,12 @@ public class JavadocIntent implements Serializable {
     /**
      * A map of exception FQNs to their descriptions for the @throws tag.
      */
-    @Schema(description = "Map of exception FQNs to their descriptions.")
-    private Map<String, String> throwsList;
+    @Schema(description = "Map of exception class FQNs to their descriptions for the @throws tag. "
+        + "The JSON keys must be the fully qualified exception class names (e.g. 'java.io.IOException'), "
+        + "and the values are the descriptions of when they are thrown. "
+        + "DO NOT use fields like 'javaTarget', 'key', or 'value'. "
+        + "Example: { \"java.io.IOException\": \"If writing the key pool to disk fails.\", \"java.lang.IllegalArgumentException\": \"If the provider is disabled.\" }")
+    private Map<String, String> thrownExceptions;
     /**
      * Optional list of additional block tags (e.g. ['version 1.0', 'see OtherClass']).
      */
@@ -84,8 +91,8 @@ public class JavadocIntent implements Serializable {
         if (returns != null && !returns.isBlank()) {
             sb.append(" * @return ").append(returns).append("\n");
         }
-        if (throwsList != null) {
-            throwsList.forEach((k, v) -> sb.append(" * @throws ").append(k).append(" ").append(v).append("\n"));
+        if (thrownExceptions != null) {
+            thrownExceptions.forEach((k, v) -> sb.append(" * @throws ").append(k).append(" ").append(v).append("\n"));
         }
         if (tags != null) {
             for (String tag : tags) {
