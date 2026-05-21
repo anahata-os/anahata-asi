@@ -5,7 +5,6 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.Getter;
-import uno.anahata.asi.toolkit.java.*;
 
 /**
  * A token-efficient classpath printer that encapsulates both raw and pretty versions.
@@ -107,7 +106,7 @@ public class VeryPrettyClassPathPrinter {
             String dir = f.getParent();
             JarMetadata meta = inspect(f);
             if (meta != null) {
-                dirMap.computeIfAbsent(dir, k -> new ArrayList<>()).add(meta);
+                dirMap.computeIfAbsent(dir, (String k) -> new ArrayList<>()).add(meta);
             }
         }
 
@@ -248,7 +247,7 @@ public class VeryPrettyClassPathPrinter {
                     bestPrefix = common;
                 }
             }
-            groups.computeIfAbsent(bestPrefix, k -> new ArrayList<>()).add(j);
+            groups.computeIfAbsent(bestPrefix, (String k) -> new ArrayList<>()).add(j);
         }
 
         StringBuilder sb = new StringBuilder();
