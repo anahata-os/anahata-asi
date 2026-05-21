@@ -17,7 +17,7 @@
  * <ul>
  *   <li><b>Barça Blue:</b> Used for core navigational and structural elements (e.g., {@link uno.anahata.asi.swing.icons.SendIcon}, {@link uno.anahata.asi.swing.icons.PulseIcon}).</li>
  *   <li><b>Barça Red:</b> Used for high-impact, multimodal, or destructive actions (e.g., {@link uno.anahata.asi.swing.icons.DeleteIcon}, {@link uno.anahata.asi.swing.icons.MicrophoneIcon}).</li>
- *   <li><b>Barça Yellow:</b> Used for state badges, labels, and confirmations (e.g., {@link uno.anahata.asi.swing.icons.OkIcon}, {@link uno.anahata.asi.swing.icons.SaveSessionIcon}).</li>
+ *   <li><b>Barça Yellow:</b> Used for state badges, labels, and confirmations (e.g., {@link uno.anahata.asi.swing.icons.OkIcon}, {@link uno.anahata.asi.swing.icons.SaveIcon}).</li>
  * </ul>
  * 
  * <h2>Key Components</h2>

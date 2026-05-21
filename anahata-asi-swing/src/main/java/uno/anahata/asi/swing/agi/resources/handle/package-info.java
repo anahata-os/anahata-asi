@@ -3,7 +3,7 @@
  * Provides metadata panels for visualizing resource connectivity attributes.
  * <p>
  * This package contains UI components that expose the details of the 
- * {@link ResourceHandle} layer, including URI schemes, MIME detection, 
+ * {@link uno.anahata.asi.agi.resource.handle.ResourceHandle} layer, including URI schemes, MIME detection, 
  * and capability-based status indicators for local and remote resources.
  * </p>
  * 
