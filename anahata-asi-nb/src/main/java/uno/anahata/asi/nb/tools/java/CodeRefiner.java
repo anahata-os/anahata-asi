@@ -191,13 +191,19 @@ public class CodeRefiner extends AnahataToolkit {
                                     String fqn = te.getQualifiedName().toString();
                                     String nodeStr = node.toString();
                                     if (nodeStr.equals(fqn)) {
-                                        if (!fqn.startsWith("java.lang.")) {
-                                            TypeElement outerType = null;
-                                            Element enclosing = te.getEnclosingElement();
-                                            while (enclosing instanceof TypeElement parentType) {
-                                                outerType = parentType;
-                                                enclosing = parentType.getEnclosingElement();
-                                            }
+                                        TypeElement outerType = null;
+                                        Element enclosing = te.getEnclosingElement();
+                                        while (enclosing instanceof TypeElement parentType) {
+                                            outerType = parentType;
+                                            enclosing = parentType.getEnclosingElement();
+                                        }
+                                        
+                                        PackageElement tePkg = wcSub.getElements().getPackageOf(outerType != null ? outerType : te);
+                                        String pkgName = tePkg != null ? tePkg.getQualifiedName().toString() : "";
+                                        String currentPkg = originalCut.getPackage() != null ? originalCut.getPackage().getPackageName().toString() : "";
+                                        boolean isImplicit = "java.lang".equals(pkgName) || currentPkg.equals(pkgName);
+
+                                        if (!isImplicit) {
                                             if (outerType != null) {
                                                 importsToAdd.add(outerType);
                                             } else {
@@ -351,8 +357,14 @@ public class CodeRefiner extends AnahataToolkit {
                                             outerType = parentType;
                                             enclosing = parentType.getEnclosingElement();
                                         }
+                                        
+                                        PackageElement tePkg = wcSub.getElements().getPackageOf(outerType != null ? outerType : te);
+                                        String pkgName = tePkg != null ? tePkg.getQualifiedName().toString() : "";
+                                        String currentPkg = cut.getPackage() != null ? cut.getPackage().getPackageName().toString() : "";
+                                        boolean isImplicit = "java.lang".equals(pkgName) || currentPkg.equals(pkgName);
+
                                         boolean isImported = false;
-                                        if (fqn.startsWith("java.lang.")) {
+                                        if (isImplicit) {
                                             isImported = true;
                                         } else {
                                             String targetFqn = outerType != null ? outerType.getQualifiedName().toString() : fqn;
