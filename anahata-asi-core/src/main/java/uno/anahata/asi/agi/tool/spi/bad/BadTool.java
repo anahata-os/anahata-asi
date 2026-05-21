@@ -15,6 +15,11 @@ import uno.anahata.asi.agi.tool.ToolPermission;
  */
 public class BadTool extends AbstractTool<BadToolParam, BadToolCall> {
 
+    /**
+     * Constructs a new BadTool instance representing an unrecognized tool.
+     *
+     * @param name The unrecognized tool name.
+     */
     public BadTool(String name) {
         super(name);
         super.description = "Tool not found: " + name;

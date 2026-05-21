@@ -15,6 +15,11 @@ import uno.anahata.asi.agi.tool.ToolExecutionStatus;
 @Getter
 public class BadToolResponse extends AbstractToolResponse<BadToolCall> {
 
+    /**
+     * Constructs a new BadToolResponse that immediately fails the unrecognized tool call.
+     *
+     * @param call The unrecognized tool call.
+     */
     public BadToolResponse(@NonNull BadToolCall call) {
         super(call);
         setStatus(ToolExecutionStatus.FAILED);

@@ -14,6 +14,12 @@ import lombok.Getter;
 @Getter
 public class BadToolParam extends AbstractToolParameter<BadTool> {
 
+    /**
+     * Constructs a placeholder BadToolParam bound to a bad tool.
+     *
+     * @param tool The associated BadTool instance.
+     * @param name The name of the placeholder parameter.
+     */
     public BadToolParam(BadTool tool, String name) {
         // The empty strings satisfy the @NonNull constraints in the superclass.
         super(tool, name, "", "", false, null);
