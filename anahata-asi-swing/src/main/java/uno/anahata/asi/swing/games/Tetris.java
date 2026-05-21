@@ -318,7 +318,38 @@ public class Tetris extends JPanel implements ActionListener {
      * Enumeration of all standard tetromino geometry variations.
      */
     enum Tetrominoes {
-        NoShape, ZShape, SShape, LineShape, TShape, SquareShape, LShape, MirroredLShape
+                /**
+                 * Represents an empty grid cell or the absence of a falling piece.
+                 */
+                NoShape,
+                /**
+                 * The Z-shaped red tetromino block.
+                 */
+                ZShape,
+                /**
+                 * The S-shaped green tetromino block.
+                 */
+                SShape,
+                /**
+                 * The straight 1x4 light-blue line tetromino block.
+                 */
+                LineShape,
+                /**
+                 * The T-shaped purple tetromino block.
+                 */
+                TShape,
+                /**
+                 * The 2x2 square yellow tetromino block.
+                 */
+                SquareShape,
+                /**
+                 * The L-shaped orange tetromino block.
+                 */
+                LShape,
+                /**
+                 * The mirrored L-shaped green-blue tetromino block.
+                 */
+                MirroredLShape
     }
 
     /**
