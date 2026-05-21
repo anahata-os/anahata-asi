@@ -374,10 +374,10 @@ public class Tetris extends JPanel implements ActionListener {
          * Randomly assigns a tetromino shape excluding NoShape.
          */
         public void setRandomShape() {
-            Random r = new Random();
-            int x = Math.abs(r.nextInt()) % 7 + 1;
-            Tetrominoes[] values = Tetrominoes.values();
-            setShape(values[x]);
+                        Random r = new Random();
+                        int x = r.nextInt(7) + 1;
+                        Tetrominoes[] values = Tetrominoes.values();
+                        setShape(values[x]);
         }
 
         /**
