@@ -57,6 +57,12 @@ public class TextResourceLineEdits extends AbstractTextResourceWrite {
     @Schema(description = "List of range deletions.")
     private List<LineDeletion> deletions = new ArrayList<>();
 
+    /**
+     * Constructs a new TextResourceLineEdits for a specific text resource.
+     *
+     * @param uuid The unique identifier of the target text resource.
+     * @param lastModified Optimistic locking: the expected last modified timestamp of the file.
+     */
     public TextResourceLineEdits(String uuid, long lastModified) {
         super(uuid, lastModified);
     }

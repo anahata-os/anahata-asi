@@ -26,14 +26,25 @@ import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
 @Getter
 public class StatusManager extends BasicPropertyChangeSource {
 
+    /** The orchestrator session instance managed by this status tracker. */
     private final Agi agi;
+    /** List of all recorded API errors captured during this session. */
     private final List<ApiErrorRecord> apiErrors = new ArrayList<>();
 
+    /** The current real-time operational status of the AGI session. */
     private AgiStatus currentStatus = AgiStatus.IDLE; 
+    /** The epoch timestamp of the most recent status transition. */
     private long statusChangeTime = System.currentTimeMillis();
+    /** The duration of the last completed execution phase, in milliseconds. */
     private long lastOperationDuration;
+    /** The current active backoff duration in milliseconds for transient API retries. */
     private long currentBackoffAmount; 
 
+    /**
+     * Constructs a new StatusManager bound to an active Agi session.
+     *
+     * @param agi The active Agi orchestrator.
+     */
     public StatusManager(@NonNull Agi agi) {
         this.agi = agi;
     }

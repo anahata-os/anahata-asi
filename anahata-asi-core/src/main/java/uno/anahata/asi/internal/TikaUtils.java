@@ -12,8 +12,15 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 
+/**
+ * Utility class wrapping the Apache Tika parser engine for robust file MIME type detection 
+ * and plain text extraction from various binary formats.
+ *
+ * @author anahata
+ */
 public final class TikaUtils {
 
+    /** The static, thread-safe, auto-detecting Tika instance. */
     private static final Tika TIKA = new Tika();
 
     /**

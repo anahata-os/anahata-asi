@@ -14,7 +14,9 @@ import org.apache.commons.lang3.time.DurationFormatUtils;
  */
 public class TimeUtils {
 
+    /** Standard thread-safe formatter for compact hours-minutes-seconds representations. */
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
+    /** Compact thread-safe formatter for month-day representations. */
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd");
 
     /**

@@ -38,6 +38,13 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
     @Schema(description = "The list of replacements to perform in this file.", required = true)
     private List<TextReplacement> replacements;
 
+    /**
+     * Constructs a new TextResourceReplacements using the builder pattern.
+     *
+     * @param resourceUuid The unique identifier of the target text resource.
+     * @param lastModified Optimistic locking: the expected last modified timestamp of the file.
+     * @param replacements The list of text replacements to perform.
+     */
     @Builder
     public TextResourceReplacements(String resourceUuid, long lastModified, List<TextReplacement> replacements) {
         super(resourceUuid, lastModified);
@@ -174,6 +181,9 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
     /**
      * Normalizes a string by standardizing line endings and removing trailing
      * whitespace from each line for lenient diagnostic comparison.
+     *
+     * @param s The string to normalize.
+     * @return The normalized string.
      */
     private String normalizeWhitespaces(String s) {
         if (s == null) {
