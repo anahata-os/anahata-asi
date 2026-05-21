@@ -37,6 +37,14 @@ public class FullTextResourceUpdate extends AbstractTextResourceWrite {
     @Schema(description = "A list of comments for specific lines, intended for UI rendering.")
     private List<LineComment> lineComments;
 
+    /**
+     * Constructs a new FullTextResourceUpdate with explicit properties, utilizing the builder pattern.
+     *
+     * @param resourceUuid The unique identifier of the target text resource.
+     * @param lastModified Optimistic locking: the expected last modified timestamp of the file.
+     * @param newContent The full new content to overwrite the file.
+     * @param lineComments A list of comments associated with specific lines for rendering.
+     */
     @Builder
     public FullTextResourceUpdate(String resourceUuid, long lastModified, String newContent, List<LineComment> lineComments) {
         super(resourceUuid, lastModified);

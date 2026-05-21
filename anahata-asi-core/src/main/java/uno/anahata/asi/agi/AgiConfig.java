@@ -218,6 +218,10 @@ public class AgiConfig extends BasicPropertyChangeSource {
      */
     private List<String> defaultResponseModalities = new ArrayList<>(List.of("TEXT"));
 
+    /**
+     * Sets the selected provider UUID and fires a property change event.
+     * @param selectedProviderUuid The UUID of the selected provider.
+     */
     public void setSelectedProviderUuid(String selectedProviderUuid) {
         String old = this.selectedProviderUuid;
         if (!Objects.equals(old, selectedProviderUuid)) {
@@ -226,6 +230,10 @@ public class AgiConfig extends BasicPropertyChangeSource {
         }
     }
 
+    /**
+     * Sets the selected model ID and fires a property change event.
+     * @param selectedModelId The ID of the selected model.
+     */
     public void setSelectedModelId(String selectedModelId) {
         String old = this.selectedModelId;
         if (!Objects.equals(old, selectedModelId)) {
@@ -234,6 +242,10 @@ public class AgiConfig extends BasicPropertyChangeSource {
         }
     }
 
+    /**
+     * Sets whether tool calls should be auto-replied and fires a property change event.
+     * @param autoReplyTools true to enable auto-reply.
+     */
     public void setAutoReplyTools(boolean autoReplyTools) {
         boolean old = this.autoReplyTools;
         if (old != autoReplyTools) {
@@ -242,6 +254,10 @@ public class AgiConfig extends BasicPropertyChangeSource {
         }
     }
 
+    /**
+     * Sets whether streaming is enabled and fires a property change event.
+     * @param streaming true to enable streaming.
+     */
     public void setStreaming(boolean streaming) {
         boolean old = this.streaming;
         if (old != streaming) {
@@ -250,6 +266,10 @@ public class AgiConfig extends BasicPropertyChangeSource {
         }
     }
 
+    /**
+     * Sets whether thoughts should be included and fires a property change event.
+     * @param includeThoughts true to include thoughts.
+     */
     public void setIncludeThoughts(boolean includeThoughts) {
         boolean old = this.includeThoughts;
         if (old != includeThoughts) {
@@ -258,6 +278,10 @@ public class AgiConfig extends BasicPropertyChangeSource {
         }
     }
 
+    /**
+     * Sets the tool expansion preference and fires a property change event.
+     * @param expandTools The expansion preference.
+     */
     public void setExpandTools(ExpandToolsPreference expandTools) {
         ExpandToolsPreference old = this.expandTools;
         if (old != expandTools) {
@@ -266,6 +290,10 @@ public class AgiConfig extends BasicPropertyChangeSource {
         }
     }
 
+    /**
+     * Sets whether thoughts should be expanded and fires a property change event.
+     * @param expandThoughts true to expand thoughts.
+     */
     public void setExpandThoughts(boolean expandThoughts) {
         boolean old = this.expandThoughts;
         if (old != expandThoughts) {
@@ -274,6 +302,10 @@ public class AgiConfig extends BasicPropertyChangeSource {
         }
     }
 
+    /**
+     * Sets the max API retries and fires a property change event.
+     * @param apiMaxRetries The maximum number of retries.
+     */
     public void setApiMaxRetries(int apiMaxRetries) {
         int old = this.apiMaxRetries;
         if (old != apiMaxRetries) {
@@ -282,6 +314,10 @@ public class AgiConfig extends BasicPropertyChangeSource {
         }
     }
 
+    /**
+     * Sets the initial API retry delay and fires a property change event.
+     * @param apiInitialDelayMillis The initial delay in milliseconds.
+     */
     public void setApiInitialDelayMillis(long apiInitialDelayMillis) {
         long old = this.apiInitialDelayMillis;
         if (old != apiInitialDelayMillis) {
@@ -290,6 +326,10 @@ public class AgiConfig extends BasicPropertyChangeSource {
         }
     }
 
+    /**
+     * Sets the max API retry delay and fires a property change event.
+     * @param apiMaxDelayMillis The maximum delay in milliseconds.
+     */
     public void setApiMaxDelayMillis(long apiMaxDelayMillis) {
         long old = this.apiMaxDelayMillis;
         if (old != apiMaxDelayMillis) {
@@ -298,6 +338,10 @@ public class AgiConfig extends BasicPropertyChangeSource {
         }
     }
 
+    /**
+     * Sets the token threshold and fires a property change event.
+     * @param tokenThreshold The threshold token count.
+     */
     public void setTokenThreshold(int tokenThreshold) {
         int old = this.tokenThreshold;
         if (old != tokenThreshold) {
@@ -306,6 +350,10 @@ public class AgiConfig extends BasicPropertyChangeSource {
         }
     }
 
+    /**
+     * Sets the default text part max depth and fires a property change event.
+     * @param defaultTextPartMaxDepth The default max depth.
+     */
     public void setDefaultTextPartMaxDepth(int defaultTextPartMaxDepth) {
         int old = this.defaultTextPartMaxDepth;
         if (old != defaultTextPartMaxDepth) {
@@ -314,6 +362,10 @@ public class AgiConfig extends BasicPropertyChangeSource {
         }
     }
 
+    /**
+     * Sets the default tool response max depth and fires a property change event.
+     * @param defaultToolMaxDepth The default max depth.
+     */
     public void setDefaultToolMaxDepth(int defaultToolMaxDepth) {
         int old = this.defaultToolMaxDepth;
         if (old != defaultToolMaxDepth) {
@@ -322,6 +374,10 @@ public class AgiConfig extends BasicPropertyChangeSource {
         }
     }
 
+    /**
+     * Sets the default blob part max depth and fires a property change event.
+     * @param defaultBlobPartMaxDepth The default max depth.
+     */
     public void setDefaultBlobPartMaxDepth(int defaultBlobPartMaxDepth) {
         int old = this.defaultBlobPartMaxDepth;
         if (old != defaultBlobPartMaxDepth) {
@@ -330,6 +386,10 @@ public class AgiConfig extends BasicPropertyChangeSource {
         }
     }
 
+    /**
+     * Sets the default thought part max depth and fires a property change event.
+     * @param defaultThoughtPartMaxDepth The default max depth.
+     */
     public void setDefaultThoughtPartMaxDepth(int defaultThoughtPartMaxDepth) {
         int old = this.defaultThoughtPartMaxDepth;
         if (old != defaultThoughtPartMaxDepth) {
@@ -338,6 +398,10 @@ public class AgiConfig extends BasicPropertyChangeSource {
         }
     }
 
+    /**
+     * Sets the default model code execution max depth and fires a property change event.
+     * @param defaultModelCodeExecutionMaxDepth The default max depth.
+     */
     public void setDefaultModelCodeExecutionMaxDepth(int defaultModelCodeExecutionMaxDepth) {
         int old = this.defaultModelCodeExecutionMaxDepth;
         if (old != defaultModelCodeExecutionMaxDepth) {
@@ -346,6 +410,10 @@ public class AgiConfig extends BasicPropertyChangeSource {
         }
     }
 
+    /**
+     * Sets the default web search max depth and fires a property change event.
+     * @param defaultWebSearchMaxDepth The default max depth.
+     */
     public void setDefaultWebSearchMaxDepth(int defaultWebSearchMaxDepth) {
         int old = this.defaultWebSearchMaxDepth;
         if (old != defaultWebSearchMaxDepth) {

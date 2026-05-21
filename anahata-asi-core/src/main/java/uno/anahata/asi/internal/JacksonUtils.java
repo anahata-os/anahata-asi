@@ -19,7 +19,9 @@ import uno.anahata.asi.agi.tool.schema.SchemaProvider;
 @Slf4j
 public final class JacksonUtils {
 
+    /** The primary ObjectMapper instance configured via SchemaProvider for consistent serialization. */
     private static final ObjectMapper MAPPER = SchemaProvider.OBJECT_MAPPER;
+    /** A vanilla, unconfigured ObjectMapper used strictly for parsing raw, standard JSON structures. */
     private static final ObjectMapper DEFAULT_MAPPER = new ObjectMapper();
 
     /**
