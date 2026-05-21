@@ -62,6 +62,11 @@ public class RequestConfig extends BasicPropertyChangeSource {
     /** If true, in-band metadata headers are injected into the prompt for history pruning purposes. */
     private boolean injectInbandMetadata = false;
 
+    /**
+     * Sets whether in-band metadata headers should be injected into the prompt and fires a property change event.
+     *
+     * @param injectInbandMetadata true to enable in-band metadata injection.
+     */
     public void setInjectInbandMetadata(boolean injectInbandMetadata) {
         boolean old = this.injectInbandMetadata;
         if (old != injectInbandMetadata) {

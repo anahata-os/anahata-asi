@@ -60,6 +60,8 @@ public class RebindableSerializerFactory implements SerializerFactory {
     /**
      * Creates a minimal serializer that writes nothing and returns null on read.
      * Used as a safety fallback for problematic classes.
+     *
+     * @return A safe, null-op Kryo Serializer.
      */
     private Serializer createNullSerializer() {
         return new Serializer() {

@@ -6,6 +6,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
+/**
+ * Utility class designed to generate concise, human-readable summaries and truncations 
+ * of complex Java objects, collections, maps, and strings.
+ *
+ * @author anahata
+ */
 public class ObjectSummarizer {
 
     /**
@@ -81,6 +87,13 @@ public class ObjectSummarizer {
         return StringUtils.abbreviateMiddle(lineProcessedString, middle, maxLength);
     }
     
+    /**
+     * Formats and recursively summarizes the entries of a Map.
+     *
+     * @param map The map to format.
+     * @param maxLength The maximum allowed length of the resulting string.
+     * @return A serialized and summarized representation of the map.
+     */
     private static String formatMap(Map<?, ?> map, int maxLength) {
         String summary = map.entrySet().stream()
             .map(entry -> entry.getKey() + "=" + formatValue(entry.getValue(), maxLength, false)) // Recursively call, but don't re-summarize sub-maps
@@ -94,6 +107,13 @@ public class ObjectSummarizer {
         return StringUtils.abbreviateMiddle(summary, middle, maxLength);
     }
 
+    /**
+     * Truncates an individual string line to prevent it from exceeding a maximum length threshold.
+     *
+     * @param line The line of text to truncate.
+     * @param maxLineLength The maximum allowed length for the line.
+     * @return The truncated line, or the original line if it fits within the limit.
+     */
     private static String truncateLine(String line, int maxLineLength) {
         if (maxLineLength > 0 && line.length() > maxLineLength) {
             int originalLength = line.length();

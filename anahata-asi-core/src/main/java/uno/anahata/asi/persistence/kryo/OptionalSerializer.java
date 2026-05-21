@@ -21,6 +21,9 @@ import java.util.Optional;
  */
 public class OptionalSerializer extends Serializer<Optional<?>> {
 
+    /**
+     * Default constructor initializing the OptionalSerializer as immutable.
+     */
     public OptionalSerializer() {
         setImmutable(true);
     }

@@ -175,6 +175,9 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
     /**
      * Normalizes a file URI string to the standard triple-slash format (file:///)
      * while preserving UNC paths (file://host).
+     *
+     * @param uri The URI string to normalize.
+     * @return The normalized URI string.
      */
     private String normalizeUri(String uri) {
         if (uri.startsWith("file://") && !uri.startsWith("file:///")) {
