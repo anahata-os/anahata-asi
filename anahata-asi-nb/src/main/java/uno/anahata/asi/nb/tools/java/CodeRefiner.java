@@ -159,11 +159,50 @@ public class CodeRefiner extends AnahataToolkit {
      * @throws Exception if optimization fails
      */
     private void optimizeImportsInternal(FileObject fo, boolean removeUnused) throws Exception {
+                final Set<String> takenSimpleNames = new HashSet<>();
+
                 JavaSource js1 = JavaSource.forFileObject(fo);
                 js1.runModificationTask(wc -> {
                     wc.toPhase(JavaSource.Phase.RESOLVED);
                     ReferencesCount rc = ReferencesCount.get(wc.getClasspathInfo());
                     CompilationUnitTree originalCut = wc.getCompilationUnit();
+
+                    // Collect all simple names that are already taken in the file's scope
+                    for (ImportTree imp : originalCut.getImports()) {
+                        String impStr = imp.getQualifiedIdentifier().toString();
+                        int lastDot = impStr.lastIndexOf('.');
+                        if (lastDot != -1) {
+                            takenSimpleNames.add(impStr.substring(lastDot + 1));
+                        }
+                    }
+                    new TreePathScanner<Void, Void>() {
+                        @Override
+                        public Void visitMemberSelect(MemberSelectTree node, Void p) {
+                            TreePath path = getCurrentPath();
+                            if (path != null) {
+                                Element e = wc.getTrees().getElement(path);
+                                if (e instanceof TypeElement te) {
+                                    String fqn = te.getQualifiedName().toString();
+                                    if (!node.toString().equals(fqn)) {
+                                        takenSimpleNames.add(te.getSimpleName().toString());
+                                    }
+                                }
+                            }
+                            return super.visitMemberSelect(node, p);
+                        }
+
+                        @Override
+                        public Void visitIdentifier(IdentifierTree node, Void p) {
+                            TreePath path = getCurrentPath();
+                            if (path != null) {
+                                Element e = wc.getTrees().getElement(path);
+                                if (e instanceof TypeElement te) {
+                                    takenSimpleNames.add(te.getSimpleName().toString());
+                                }
+                            }
+                            return super.visitIdentifier(node, p);
+                        }
+                    }.scan(new TreePath(originalCut), null);
 
                     final Set<TypeElement> importsToAdd = new LinkedHashSet<>();
 
@@ -181,7 +220,17 @@ public class CodeRefiner extends AnahataToolkit {
                         @Override
                         public Void visitMemberSelect(MemberSelectTree node, WorkingCopy wcSub) {
                             SourcePositions sp = wcSub.getTrees().getSourcePositions();
-                            if (sp.getStartPosition(originalCut, node) == -1) {
+                            long start = sp.getStartPosition(originalCut, node);
+                            long end = sp.getEndPosition(originalCut, node);
+                            if (start < 0 || end < 0 || start >= end) {
+                                return super.visitMemberSelect(node, wcSub);
+                            }
+                            try {
+                                String actualText = wcSub.getText().substring((int) start, (int) end);
+                                if (!actualText.equals(node.toString())) {
+                                    return super.visitMemberSelect(node, wcSub);
+                                }
+                            } catch (Exception ex) {
                                 return super.visitMemberSelect(node, wcSub);
                             }
                             TreePath path = getCurrentPath();
@@ -198,16 +247,19 @@ public class CodeRefiner extends AnahataToolkit {
                                             enclosing = parentType.getEnclosingElement();
                                         }
                                         
-                                        PackageElement tePkg = wcSub.getElements().getPackageOf(outerType != null ? outerType : te);
-                                        String pkgName = tePkg != null ? tePkg.getQualifiedName().toString() : "";
-                                        String currentPkg = originalCut.getPackage() != null ? originalCut.getPackage().getPackageName().toString() : "";
-                                        boolean isImplicit = "java.lang".equals(pkgName) || currentPkg.equals(pkgName);
+                                        String simpleName = (outerType != null ? outerType : te).getSimpleName().toString();
+                                        if (!takenSimpleNames.contains(simpleName)) {
+                                            PackageElement tePkg = wcSub.getElements().getPackageOf(outerType != null ? outerType : te);
+                                            String pkgName = tePkg != null ? tePkg.getQualifiedName().toString() : "";
+                                            String currentPkg = originalCut.getPackage() != null ? originalCut.getPackage().getPackageName().toString() : "";
+                                            boolean isImplicit = "java.lang".equals(pkgName) || currentPkg.equals(pkgName);
 
-                                        if (!isImplicit) {
-                                            if (outerType != null) {
-                                                importsToAdd.add(outerType);
-                                            } else {
-                                                importsToAdd.add(te);
+                                            if (!isImplicit) {
+                                                if (outerType != null) {
+                                                    importsToAdd.add(outerType);
+                                                } else {
+                                                    importsToAdd.add(te);
+                                                }
                                             }
                                         }
                                     }
@@ -250,7 +302,6 @@ public class CodeRefiner extends AnahataToolkit {
 
                                                 if (candidates.size() == 1) {
                                                     String bestFqn = candidates.get(0).fqn;
-                                                    CodeRefiner.this.log("Auto-resolving single candidate import for '" + name + "': " + bestFqn);
                                                     TypeElement te = wcSub.getElements().getTypeElement(bestFqn);
                                                     if (te != null) {
                                                         TypeElement outerType = null;
@@ -259,10 +310,14 @@ public class CodeRefiner extends AnahataToolkit {
                                                             outerType = parentType;
                                                             enclosing = parentType.getEnclosingElement();
                                                         }
-                                                        if (outerType != null) {
-                                                            importsToAdd.add(outerType);
-                                                        } else {
-                                                            importsToAdd.add(te);
+                                                        String simpleName = (outerType != null ? outerType : te).getSimpleName().toString();
+                                                        if (!takenSimpleNames.contains(simpleName)) {
+                                                            CodeRefiner.this.log("Auto-resolving single candidate import for '" + name + "': " + bestFqn);
+                                                            if (outerType != null) {
+                                                                importsToAdd.add(outerType);
+                                                             } else {
+                                                                importsToAdd.add(te);
+                                                            }
                                                         }
                                                     }
                                                 } else if (candidates.size() > 1) {
@@ -313,10 +368,6 @@ public class CodeRefiner extends AnahataToolkit {
                 JavaSourceUtils.handleSave(fo);
                 fo.refresh();
 
-                // CRITICAL BUG FIX: Force a synchronous re-parse of the file so that NetBeans
-                // updates its internally cached character offsets for the next transaction.
-                // Without this, the second transaction is executed with stale offsets, causing
-                // the FQN shortening rewrite to corrupt/duplicate the file.
                 js1.runUserActionTask(cc -> {
                     cc.toPhase(JavaSource.Phase.RESOLVED);
                 }, true);
@@ -341,7 +392,17 @@ public class CodeRefiner extends AnahataToolkit {
                         @Override
                         public Void visitMemberSelect(MemberSelectTree node, WorkingCopy wcSub) {
                             SourcePositions sp = wcSub.getTrees().getSourcePositions();
-                            if (sp.getStartPosition(cut, node) == -1) {
+                            long start = sp.getStartPosition(cut, node);
+                            long end = sp.getEndPosition(cut, node);
+                            if (start < 0 || end < 0 || start >= end) {
+                                return super.visitMemberSelect(node, wcSub);
+                            }
+                            try {
+                                String actualText = wcSub.getText().substring((int) start, (int) end);
+                                if (!actualText.equals(node.toString())) {
+                                    return super.visitMemberSelect(node, wcSub);
+                                }
+                            } catch (Exception ex) {
                                 return super.visitMemberSelect(node, wcSub);
                             }
                             TreePath path = getCurrentPath();
@@ -358,37 +419,40 @@ public class CodeRefiner extends AnahataToolkit {
                                             enclosing = parentType.getEnclosingElement();
                                         }
                                         
-                                        PackageElement tePkg = wcSub.getElements().getPackageOf(outerType != null ? outerType : te);
-                                        String pkgName = tePkg != null ? tePkg.getQualifiedName().toString() : "";
-                                        String currentPkg = cut.getPackage() != null ? cut.getPackage().getPackageName().toString() : "";
-                                        boolean isImplicit = "java.lang".equals(pkgName) || currentPkg.equals(pkgName);
+                                        String simpleName = (outerType != null ? outerType : te).getSimpleName().toString();
+                                        if (!takenSimpleNames.contains(simpleName)) {
+                                            PackageElement tePkg = wcSub.getElements().getPackageOf(outerType != null ? outerType : te);
+                                            String pkgName = tePkg != null ? tePkg.getQualifiedName().toString() : "";
+                                            String currentPkg = cut.getPackage() != null ? cut.getPackage().getPackageName().toString() : "";
+                                            boolean isImplicit = "java.lang".equals(pkgName) || currentPkg.equals(pkgName);
 
-                                        boolean isImported = false;
-                                        if (isImplicit) {
-                                            isImported = true;
-                                        } else {
-                                            String targetFqn = outerType != null ? outerType.getQualifiedName().toString() : fqn;
-                                            for (ImportTree imp : cut.getImports()) {
-                                                String impStr = imp.getQualifiedIdentifier().toString();
-                                                if (impStr.equals(targetFqn)) {
-                                                    isImported = true;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        if (isImported) {
-                                            String replacementName;
-                                            if (outerType != null) {
-                                                String pkg = wcSub.getElements().getPackageOf(outerType).getQualifiedName().toString();
-                                                if (pkg.isEmpty()) {
-                                                    replacementName = fqn;
-                                                } else {
-                                                    replacementName = fqn.substring(pkg.length() + 1);
-                                                }
+                                            boolean isImported = false;
+                                            if (isImplicit) {
+                                                isImported = true;
                                             } else {
-                                                replacementName = te.getSimpleName().toString();
+                                                String targetFqn = outerType != null ? outerType.getQualifiedName().toString() : fqn;
+                                                for (ImportTree imp : cut.getImports()) {
+                                                    String impStr = imp.getQualifiedIdentifier().toString();
+                                                    if (impStr.equals(targetFqn)) {
+                                                        isImported = true;
+                                                        break;
+                                                    }
+                                                }
                                             }
-                                            wcSub.rewrite(node, make.Identifier(replacementName));
+                                            if (isImported) {
+                                                String replacementName;
+                                                if (outerType != null) {
+                                                    String pkg = wcSub.getElements().getPackageOf(outerType).getQualifiedName().toString();
+                                                    if (pkg.isEmpty()) {
+                                                        replacementName = fqn;
+                                                    } else {
+                                                        replacementName = fqn.substring(pkg.length() + 1);
+                                                    }
+                                                } else {
+                                                    replacementName = te.getSimpleName().toString();
+                                                }
+                                                wcSub.rewrite(node, make.Identifier(replacementName));
+                                            }
                                         }
                                     }
                                 }
