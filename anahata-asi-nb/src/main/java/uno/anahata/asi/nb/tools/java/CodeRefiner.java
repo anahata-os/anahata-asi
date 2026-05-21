@@ -159,295 +159,295 @@ public class CodeRefiner extends AnahataToolkit {
      * @throws Exception if optimization fails
      */
     private void optimizeImportsInternal(FileObject fo, boolean removeUnused) throws Exception {
-                final Set<String> originalTakenSimpleNames = new HashSet<>();
+        final Set<String> originalTakenSimpleNames = new HashSet<>();
 
-                JavaSource js1 = JavaSource.forFileObject(fo);
-                js1.runModificationTask(wc -> {
-                    wc.toPhase(JavaSource.Phase.RESOLVED);
-                    ReferencesCount rc = ReferencesCount.get(wc.getClasspathInfo());
-                    CompilationUnitTree originalCut = wc.getCompilationUnit();
+        JavaSource js1 = JavaSource.forFileObject(fo);
+        js1.runModificationTask(wc -> {
+            wc.toPhase(JavaSource.Phase.RESOLVED);
+            ReferencesCount rc = ReferencesCount.get(wc.getClasspathInfo());
+            CompilationUnitTree originalCut = wc.getCompilationUnit();
 
-                    // Collect all simple names that are already taken in the file's scope
-                    for (ImportTree imp : originalCut.getImports()) {
-                        String impStr = imp.getQualifiedIdentifier().toString();
-                        int lastDot = impStr.lastIndexOf('.');
-                        if (lastDot != -1) {
-                            originalTakenSimpleNames.add(impStr.substring(lastDot + 1));
+            // Collect all simple names that are already taken in the file's scope
+            for (ImportTree imp : originalCut.getImports()) {
+                String impStr = imp.getQualifiedIdentifier().toString();
+                int lastDot = impStr.lastIndexOf('.');
+                if (lastDot != -1) {
+                    originalTakenSimpleNames.add(impStr.substring(lastDot + 1));
+                }
+            }
+            new TreePathScanner<Void, Void>() {
+                @Override
+                public Void visitMemberSelect(MemberSelectTree node, Void p) {
+                    TreePath path = getCurrentPath();
+                    if (path != null) {
+                        Element e = wc.getTrees().getElement(path);
+                        if (e instanceof TypeElement te) {
+                            String fqn = te.getQualifiedName().toString();
+                            if (!node.toString().equals(fqn)) {
+                                originalTakenSimpleNames.add(te.getSimpleName().toString());
+                            }
                         }
                     }
-                    new TreePathScanner<Void, Void>() {
-                        @Override
-                        public Void visitMemberSelect(MemberSelectTree node, Void p) {
-                            TreePath path = getCurrentPath();
-                            if (path != null) {
-                                Element e = wc.getTrees().getElement(path);
-                                if (e instanceof TypeElement te) {
-                                    String fqn = te.getQualifiedName().toString();
-                                    if (!node.toString().equals(fqn)) {
-                                        originalTakenSimpleNames.add(te.getSimpleName().toString());
+                    return super.visitMemberSelect(node, p);
+                }
+
+                @Override
+                public Void visitIdentifier(IdentifierTree node, Void p) {
+                    TreePath path = getCurrentPath();
+                    if (path != null) {
+                        Element e = wc.getTrees().getElement(path);
+                        if (e instanceof TypeElement te) {
+                            originalTakenSimpleNames.add(te.getSimpleName().toString());
+                        }
+                    }
+                    return super.visitIdentifier(node, p);
+                }
+            }.scan(new TreePath(originalCut), null);
+
+            final Set<String> takenSimpleNames = new HashSet<>(originalTakenSimpleNames);
+            final Set<TypeElement> importsToAdd = new LinkedHashSet<>();
+
+            new TreePathScanner<Void, WorkingCopy>() {
+                @Override
+                public Void visitPackage(PackageTree node, WorkingCopy wcSub) {
+                    return null;
+                }
+
+                @Override
+                public Void visitImport(ImportTree node, WorkingCopy wcSub) {
+                    return null;
+                }
+
+                @Override
+                public Void visitMemberSelect(MemberSelectTree node, WorkingCopy wcSub) {
+                    SourcePositions sp = wcSub.getTrees().getSourcePositions();
+                    long start = sp.getStartPosition(originalCut, node);
+                    long end = sp.getEndPosition(originalCut, node);
+                    if (start < 0 || end < 0 || start >= end) {
+                        return super.visitMemberSelect(node, wcSub);
+                    }
+                    TreePath path = getCurrentPath();
+                    if (path != null) {
+                        Element e = wcSub.getTrees().getElement(path);
+                        if (e instanceof TypeElement te) {
+                            String fqn = te.getQualifiedName().toString();
+                            String nodeStr = node.toString();
+                            if (nodeStr.equals(fqn)) {
+                                TypeElement outerType = null;
+                                Element enclosing = te.getEnclosingElement();
+                                while (enclosing instanceof TypeElement parentType) {
+                                    outerType = parentType;
+                                    enclosing = parentType.getEnclosingElement();
+                                }
+
+                                String simpleName = (outerType != null ? outerType : te).getSimpleName().toString();
+                                if (!takenSimpleNames.contains(simpleName)) {
+                                    PackageElement tePkg = wcSub.getElements().getPackageOf(outerType != null ? outerType : te);
+                                    String pkgName = tePkg != null ? tePkg.getQualifiedName().toString() : "";
+                                    String currentPkg = originalCut.getPackage() != null ? originalCut.getPackage().getPackageName().toString() : "";
+                                    boolean isImplicit = "java.lang".equals(pkgName) || currentPkg.equals(pkgName);
+
+                                    if (!isImplicit) {
+                                        if (outerType != null) {
+                                            importsToAdd.add(outerType);
+                                        } else {
+                                            importsToAdd.add(te);
+                                        }
+                                        takenSimpleNames.add(simpleName);
                                     }
                                 }
                             }
-                            return super.visitMemberSelect(node, p);
                         }
+                    }
+                    return super.visitMemberSelect(node, wcSub);
+                }
 
-                        @Override
-                        public Void visitIdentifier(IdentifierTree node, Void p) {
-                            TreePath path = getCurrentPath();
-                            if (path != null) {
-                                Element e = wc.getTrees().getElement(path);
-                                if (e instanceof TypeElement te) {
-                                    originalTakenSimpleNames.add(te.getSimpleName().toString());
-                                }
-                            }
-                            return super.visitIdentifier(node, p);
-                        }
-                    }.scan(new TreePath(originalCut), null);
+                @Override
+                public Void visitIdentifier(IdentifierTree node, WorkingCopy wcSub) {
+                    TreePath path = getCurrentPath();
+                    if (path != null) {
+                        Element e = wcSub.getTrees().getElement(path);
+                        if (e == null || (e.asType() != null && e.asType().getKind() == TypeKind.ERROR)) {
+                            String name = node.getName().toString();
+                            if (Character.isUpperCase(name.charAt(0))) {
+                                try {
+                                    ClassIndex index = wcSub.getClasspathInfo().getClassIndex();
+                                    Set<ClassIndex.SearchScope> scopes = EnumSet.allOf(ClassIndex.SearchScope.class);
+                                    Set<ElementHandle<TypeElement>> handles = index.getDeclaredTypes(name, ClassIndex.NameKind.SIMPLE_NAME, scopes);
+                                    if (!handles.isEmpty()) {
+                                        class Candidate {
 
-                    final Set<String> takenSimpleNames = new HashSet<>(originalTakenSimpleNames);
-                    final Set<TypeElement> importsToAdd = new LinkedHashSet<>();
+                                            final String fqn;
+                                            final int score;
 
-                    new TreePathScanner<Void, WorkingCopy>() {
-                        @Override
-                        public Void visitPackage(PackageTree node, WorkingCopy wcSub) {
-                            return null;
-                        }
-
-                        @Override
-                        public Void visitImport(ImportTree node, WorkingCopy wcSub) {
-                            return null;
-                        }
-
-                        @Override
-                        public Void visitMemberSelect(MemberSelectTree node, WorkingCopy wcSub) {
-                            SourcePositions sp = wcSub.getTrees().getSourcePositions();
-                            long start = sp.getStartPosition(originalCut, node);
-                            long end = sp.getEndPosition(originalCut, node);
-                            if (start < 0 || end < 0 || start >= end) {
-                                return super.visitMemberSelect(node, wcSub);
-                            }
-                            TreePath path = getCurrentPath();
-                            if (path != null) {
-                                Element e = wcSub.getTrees().getElement(path);
-                                if (e instanceof TypeElement te) {
-                                    String fqn = te.getQualifiedName().toString();
-                                    String nodeStr = node.toString();
-                                    if (nodeStr.equals(fqn)) {
-                                        TypeElement outerType = null;
-                                        Element enclosing = te.getEnclosingElement();
-                                        while (enclosing instanceof TypeElement parentType) {
-                                            outerType = parentType;
-                                            enclosing = parentType.getEnclosingElement();
-                                        }
-                                        
-                                        String simpleName = (outerType != null ? outerType : te).getSimpleName().toString();
-                                        if (!takenSimpleNames.contains(simpleName)) {
-                                            PackageElement tePkg = wcSub.getElements().getPackageOf(outerType != null ? outerType : te);
-                                            String pkgName = tePkg != null ? tePkg.getQualifiedName().toString() : "";
-                                            String currentPkg = originalCut.getPackage() != null ? originalCut.getPackage().getPackageName().toString() : "";
-                                            boolean isImplicit = "java.lang".equals(pkgName) || currentPkg.equals(pkgName);
-
-                                            if (!isImplicit) {
-                                                if (outerType != null) {
-                                                    importsToAdd.add(outerType);
-                                                } else {
-                                                    importsToAdd.add(te);
-                                                }
-                                                takenSimpleNames.add(simpleName);
+                                            Candidate(String fqn, int score) {
+                                                this.fqn = fqn;
+                                                this.score = score;
                                             }
                                         }
-                                    }
-                                }
-                            }
-                            return super.visitMemberSelect(node, wcSub);
-                        }
-
-                        @Override
-                        public Void visitIdentifier(IdentifierTree node, WorkingCopy wcSub) {
-                            TreePath path = getCurrentPath();
-                            if (path != null) {
-                                Element e = wcSub.getTrees().getElement(path);
-                                if (e == null || (e.asType() != null && e.asType().getKind() == TypeKind.ERROR)) {
-                                    String name = node.getName().toString();
-                                    if (Character.isUpperCase(name.charAt(0))) {
-                                        try {
-                                            ClassIndex index = wcSub.getClasspathInfo().getClassIndex();
-                                            Set<ClassIndex.SearchScope> scopes = EnumSet.allOf(ClassIndex.SearchScope.class);
-                                            Set<ElementHandle<TypeElement>> handles = index.getDeclaredTypes(name, ClassIndex.NameKind.SIMPLE_NAME, scopes);
-                                            if (!handles.isEmpty()) {
-                                                class Candidate {
-
-                                                    final String fqn;
-                                                    final int score;
-
-                                                    Candidate(String fqn, int score) {
-                                                        this.fqn = fqn;
-                                                        this.score = score;
-                                                    }
-                                                }
-                                                List<Candidate> candidates = new ArrayList<>();
-                                                for (ElementHandle<TypeElement> handle : handles) {
-                                                    TypeElement te = handle.resolve(wcSub);
-                                                    int score = te != null ? Utilities.getImportanceLevel(wcSub, rc, te) : Utilities.getImportanceLevel(handle.getQualifiedName());
-                                                    candidates.add(new Candidate(handle.getQualifiedName(), score));
-                                                }
-
-                                                candidates.sort((c1, c2) -> Integer.compare(c2.score, c1.score));
-
-                                                if (candidates.size() == 1) {
-                                                    String bestFqn = candidates.get(0).fqn;
-                                                    TypeElement te = wcSub.getElements().getTypeElement(bestFqn);
-                                                    if (te != null) {
-                                                        TypeElement outerType = null;
-                                                        Element enclosing = te.getEnclosingElement();
-                                                        while (enclosing instanceof TypeElement parentType) {
-                                                            outerType = parentType;
-                                                            enclosing = parentType.getEnclosingElement();
-                                                        }
-                                                        String simpleName = (outerType != null ? outerType : te).getSimpleName().toString();
-                                                        if (!takenSimpleNames.contains(simpleName)) {
-                                                            CodeRefiner.this.log("Auto-resolving single candidate import for '" + name + "': " + bestFqn);
-                                                            if (outerType != null) {
-                                                                importsToAdd.add(outerType);
-                                                             } else {
-                                                                importsToAdd.add(te);
-                                                            }
-                                                            takenSimpleNames.add(simpleName);
-                                                        }
-                                                    }
-                                                } else if (candidates.size() > 1) {
-                                                    StringBuilder sb = new StringBuilder();
-                                                    sb.append("Ambiguous candidates found for '").append(name).append("'. Skipping auto-import:\n");
-                                                    for (Candidate cand : candidates) {
-                                                        sb.append("  - ").append(cand.fqn).append(" (Importance Score: ").append(cand.score).append(")\n");
-                                                    }
-                                                    CodeRefiner.this.log(sb.toString());
-                                                }
-                                            }
-                                        } catch (Exception ex) {
-                                            log.error("OptimizeImports: Index search failed for " + name, ex);
+                                        List<Candidate> candidates = new ArrayList<>();
+                                        for (ElementHandle<TypeElement> handle : handles) {
+                                            TypeElement te = handle.resolve(wcSub);
+                                            int score = te != null ? Utilities.getImportanceLevel(wcSub, rc, te) : Utilities.getImportanceLevel(handle.getQualifiedName());
+                                            candidates.add(new Candidate(handle.getQualifiedName(), score));
                                         }
-                                    }
-                                }
-                            }
-                            return super.visitIdentifier(node, wcSub);
-                        }
-                    }.scan(new TreePath(originalCut), wc);
 
-                    CompilationUnitTree evolvingCut = originalCut;
-                    if (removeUnused) {
-                        try {
-                            List<TreePathHandle> unused = UnusedImports.computeUnusedImports(wc);
-                            if (!unused.isEmpty()) {
-                                for (TreePathHandle handle : unused) {
-                                    TreePath path = handle.resolve(wc);
-                                    if (path != null && path.getLeaf() instanceof ImportTree it) {
-                                        evolvingCut = wc.getTreeMaker().removeCompUnitImport(evolvingCut, it);
-                                    }
-                                }
-                            }
-                        } catch (Exception e) {
-                            log.error("Failed to remove unused imports", e);
-                        }
-                    }
+                                        candidates.sort((c1, c2) -> Integer.compare(c2.score, c1.score));
 
-                    if (!importsToAdd.isEmpty()) {
-                        evolvingCut = GeneratorUtilities.get(wc).addImports(evolvingCut, importsToAdd);
-                    }
-
-                    if (originalCut != evolvingCut) {
-                        wc.rewrite(originalCut, evolvingCut);
-                    }
-                }).commit();
-
-                JavaSourceUtils.handleSave(fo);
-                fo.refresh();
-
-                js1.runUserActionTask(cc -> {
-                    cc.toPhase(JavaSource.Phase.RESOLVED);
-                }, true);
-
-                JavaSource js2 = JavaSource.forFileObject(fo);
-                js2.runModificationTask(wc -> {
-                    wc.toPhase(JavaSource.Phase.RESOLVED);
-                    CompilationUnitTree cut = wc.getCompilationUnit();
-                    TreeMaker make = wc.getTreeMaker();
-
-                    new TreePathScanner<Void, WorkingCopy>() {
-                        @Override
-                        public Void visitPackage(PackageTree node, WorkingCopy wcSub) {
-                            return null;
-                        }
-
-                        @Override
-                        public Void visitImport(ImportTree node, WorkingCopy wcSub) {
-                            return null;
-                        }
-
-                        @Override
-                        public Void visitMemberSelect(MemberSelectTree node, WorkingCopy wcSub) {
-                            SourcePositions sp = wcSub.getTrees().getSourcePositions();
-                            long start = sp.getStartPosition(cut, node);
-                            long end = sp.getEndPosition(cut, node);
-                            if (start < 0 || end < 0 || start >= end) {
-                                return super.visitMemberSelect(node, wcSub);
-                            }
-                            TreePath path = getCurrentPath();
-                            if (path != null) {
-                                Element e = wcSub.getTrees().getElement(path);
-                                if (e instanceof TypeElement te) {
-                                    String fqn = te.getQualifiedName().toString();
-                                    String nodeStr = node.toString();
-                                    if (nodeStr.equals(fqn)) {
-                                        TypeElement outerType = null;
-                                        Element enclosing = te.getEnclosingElement();
-                                        while (enclosing instanceof TypeElement parentType) {
-                                            outerType = parentType;
-                                            enclosing = parentType.getEnclosingElement();
-                                        }
-                                        
-                                        String simpleName = (outerType != null ? outerType : te).getSimpleName().toString();
-                                        if (!originalTakenSimpleNames.contains(simpleName)) {
-                                            PackageElement tePkg = wcSub.getElements().getPackageOf(outerType != null ? outerType : te);
-                                            String pkgName = tePkg != null ? tePkg.getQualifiedName().toString() : "";
-                                            String currentPkg = cut.getPackage() != null ? cut.getPackage().getPackageName().toString() : "";
-                                            boolean isImplicit = "java.lang".equals(pkgName) || currentPkg.equals(pkgName);
-
-                                            boolean isImported = false;
-                                            if (isImplicit) {
-                                                isImported = true;
-                                            } else {
-                                                String targetFqn = outerType != null ? outerType.getQualifiedName().toString() : fqn;
-                                                for (ImportTree imp : cut.getImports()) {
-                                                    String impStr = imp.getQualifiedIdentifier().toString();
-                                                    if (impStr.equals(targetFqn)) {
-                                                        isImported = true;
-                                                        break;
-                                                    }
+                                        if (candidates.size() == 1) {
+                                            String bestFqn = candidates.get(0).fqn;
+                                            TypeElement te = wcSub.getElements().getTypeElement(bestFqn);
+                                            if (te != null) {
+                                                TypeElement outerType = null;
+                                                Element enclosing = te.getEnclosingElement();
+                                                while (enclosing instanceof TypeElement parentType) {
+                                                    outerType = parentType;
+                                                    enclosing = parentType.getEnclosingElement();
                                                 }
-                                            }
-                                            if (isImported) {
-                                                String replacementName;
-                                                if (outerType != null) {
-                                                    String pkg = wcSub.getElements().getPackageOf(outerType).getQualifiedName().toString();
-                                                    if (pkg.isEmpty()) {
-                                                        replacementName = fqn;
+                                                String simpleName = (outerType != null ? outerType : te).getSimpleName().toString();
+                                                if (!takenSimpleNames.contains(simpleName)) {
+                                                    CodeRefiner.this.log("Auto-resolving single candidate import for '" + name + "': " + bestFqn);
+                                                    if (outerType != null) {
+                                                        importsToAdd.add(outerType);
                                                     } else {
-                                                        replacementName = fqn.substring(pkg.length() + 1);
+                                                        importsToAdd.add(te);
                                                     }
-                                                } else {
-                                                    replacementName = te.getSimpleName().toString();
+                                                    takenSimpleNames.add(simpleName);
                                                 }
-                                                wcSub.rewrite(node, make.Identifier(replacementName));
+                                            }
+                                        } else if (candidates.size() > 1) {
+                                            StringBuilder sb = new StringBuilder();
+                                            sb.append("Ambiguous candidates found for '").append(name).append("'. Skipping auto-import:\n");
+                                            for (Candidate cand : candidates) {
+                                                sb.append("  - ").append(cand.fqn).append(" (Importance Score: ").append(cand.score).append(")\n");
+                                            }
+                                            CodeRefiner.this.log(sb.toString());
+                                        }
+                                    }
+                                } catch (Exception ex) {
+                                    log.error("OptimizeImports: Index search failed for " + name, ex);
+                                }
+                            }
+                        }
+                    }
+                    return super.visitIdentifier(node, wcSub);
+                }
+            }.scan(new TreePath(originalCut), wc);
+
+            CompilationUnitTree evolvingCut = originalCut;
+            if (removeUnused) {
+                try {
+                    List<TreePathHandle> unused = UnusedImports.computeUnusedImports(wc);
+                    if (!unused.isEmpty()) {
+                        for (TreePathHandle handle : unused) {
+                            TreePath path = handle.resolve(wc);
+                            if (path != null && path.getLeaf() instanceof ImportTree it) {
+                                evolvingCut = wc.getTreeMaker().removeCompUnitImport(evolvingCut, it);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error("Failed to remove unused imports", e);
+                }
+            }
+
+            if (!importsToAdd.isEmpty()) {
+                evolvingCut = GeneratorUtilities.get(wc).addImports(evolvingCut, importsToAdd);
+            }
+
+            if (originalCut != evolvingCut) {
+                wc.rewrite(originalCut, evolvingCut);
+            }
+        }).commit();
+
+        JavaSourceUtils.handleSave(fo);
+        fo.refresh();
+
+        js1.runUserActionTask(cc -> {
+            cc.toPhase(JavaSource.Phase.RESOLVED);
+        }, true);
+
+        JavaSource js2 = JavaSource.forFileObject(fo);
+        js2.runModificationTask(wc -> {
+            wc.toPhase(JavaSource.Phase.RESOLVED);
+            CompilationUnitTree cut = wc.getCompilationUnit();
+            TreeMaker make = wc.getTreeMaker();
+
+            new TreePathScanner<Void, WorkingCopy>() {
+                @Override
+                public Void visitPackage(PackageTree node, WorkingCopy wcSub) {
+                    return null;
+                }
+
+                @Override
+                public Void visitImport(ImportTree node, WorkingCopy wcSub) {
+                    return null;
+                }
+
+                @Override
+                public Void visitMemberSelect(MemberSelectTree node, WorkingCopy wcSub) {
+                    SourcePositions sp = wcSub.getTrees().getSourcePositions();
+                    long start = sp.getStartPosition(cut, node);
+                    long end = sp.getEndPosition(cut, node);
+                    if (start < 0 || end < 0 || start >= end) {
+                        return super.visitMemberSelect(node, wcSub);
+                    }
+                    TreePath path = getCurrentPath();
+                    if (path != null) {
+                        Element e = wcSub.getTrees().getElement(path);
+                        if (e instanceof TypeElement te) {
+                            String fqn = te.getQualifiedName().toString();
+                            String nodeStr = node.toString();
+                            if (nodeStr.equals(fqn)) {
+                                TypeElement outerType = null;
+                                Element enclosing = te.getEnclosingElement();
+                                while (enclosing instanceof TypeElement parentType) {
+                                    outerType = parentType;
+                                    enclosing = parentType.getEnclosingElement();
+                                }
+
+                                String simpleName = (outerType != null ? outerType : te).getSimpleName().toString();
+                                if (!originalTakenSimpleNames.contains(simpleName)) {
+                                    PackageElement tePkg = wcSub.getElements().getPackageOf(outerType != null ? outerType : te);
+                                    String pkgName = tePkg != null ? tePkg.getQualifiedName().toString() : "";
+                                    String currentPkg = cut.getPackage() != null ? cut.getPackage().getPackageName().toString() : "";
+                                    boolean isImplicit = "java.lang".equals(pkgName) || currentPkg.equals(pkgName);
+
+                                    boolean isImported = false;
+                                    if (isImplicit) {
+                                        isImported = true;
+                                    } else {
+                                        String targetFqn = outerType != null ? outerType.getQualifiedName().toString() : fqn;
+                                        for (ImportTree imp : cut.getImports()) {
+                                            String impStr = imp.getQualifiedIdentifier().toString();
+                                            if (impStr.equals(targetFqn)) {
+                                                isImported = true;
+                                                break;
                                             }
                                         }
                                     }
+                                    if (isImported) {
+                                        String replacementName;
+                                        if (outerType != null) {
+                                            String pkg = wcSub.getElements().getPackageOf(outerType).getQualifiedName().toString();
+                                            if (pkg.isEmpty()) {
+                                                replacementName = fqn;
+                                            } else {
+                                                replacementName = fqn.substring(pkg.length() + 1);
+                                            }
+                                        } else {
+                                            replacementName = te.getSimpleName().toString();
+                                        }
+                                        wcSub.rewrite(node, make.Identifier(replacementName));
+                                    }
                                 }
                             }
-                            return super.visitMemberSelect(node, wcSub);
                         }
-                    }.scan(new TreePath(cut), wc);
-                }).commit();
+                    }
+                    return super.visitMemberSelect(node, wcSub);
+                }
+            }.scan(new TreePath(cut), wc);
+        }).commit();
     }
 
     /**
