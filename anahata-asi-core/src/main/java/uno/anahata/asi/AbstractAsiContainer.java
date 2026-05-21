@@ -561,6 +561,12 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
         return dir;
     }
 
+    /**
+     * Surgically ensures that a given directory path exists on disk, creating
+     * all necessary parent directories if they are missing.
+     *
+     * @param dir The directory path to verify and create.
+     */
     private void ensureDirectory(Path dir) {
         try {
             if (!Files.exists(dir)) {
