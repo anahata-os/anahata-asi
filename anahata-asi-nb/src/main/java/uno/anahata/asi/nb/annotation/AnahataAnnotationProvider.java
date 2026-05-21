@@ -2,11 +2,9 @@
 package uno.anahata.asi.nb.annotation;
 
 import java.awt.Image;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.Action;
 import javax.swing.SwingUtilities;
@@ -26,7 +24,6 @@ import uno.anahata.asi.nb.AnahataInstaller;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
-import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
  * Master Shell for Anahata context visibility in NetBeans.
@@ -129,7 +126,7 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
             List<Agi> activeAgis = AnahataInstaller.getContainer().getOpenAgis();
             List<Integer> totals = AnahataAnnotationLogic.calculateSessionTotals(resolved, nodeType, activeAgis);
             
-            boolean anyInContext = totals.stream().anyMatch(i -> i > 0);
+            boolean anyInContext = totals.stream().anyMatch((Integer i) -> i > 0);
             if (anyInContext) {
                 if (nodeType == AnahataAnnotationLogic.NodeType.PROJECT) {
                     LOG.fine("Annotating PROJECT Icon: " + fo.getNameExt() + " | Totals: " + totals);
@@ -178,7 +175,7 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
             List<Agi> activeAgis = AnahataInstaller.getContainer().getOpenAgis();
             List<Integer> totals = AnahataAnnotationLogic.calculateSessionTotals(fo, nodeType, activeAgis);
             
-            boolean anyInContext = totals.stream().anyMatch(i -> i > 0);
+            boolean anyInContext = totals.stream().anyMatch((Integer i) -> i > 0);
             if (anyInContext) {
                 if (nodeType == AnahataAnnotationLogic.NodeType.PROJECT) {
                     LOG.fine("Annotating PROJECT Name: " + fo.getNameExt() + " | Totals: " + totals);
