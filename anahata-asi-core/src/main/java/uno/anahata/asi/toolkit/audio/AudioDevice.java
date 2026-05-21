@@ -186,6 +186,7 @@ public class AudioDevice {
 
     /**
      * Returns the human-friendly name for UI components.
+     * @return the human-friendly name of this audio device.
      */
     @Override
     public String toString() {
