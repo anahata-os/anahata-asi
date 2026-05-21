@@ -14,6 +14,9 @@ import uno.anahata.asi.swing.icons.PrismIcon;
  */
 public class ResourcesNode extends AbstractContextNode<ResourceManager> {
 
+    /**
+     * The standard icon used for visual identification of resources root node.
+     */
     private static final Icon ICON = new PrismIcon(16);
 
     /**

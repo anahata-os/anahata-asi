@@ -39,6 +39,9 @@ public class SharedScreenEditorFrame extends JFrame {
      * The active AGI session context.
      */
     private final AgiPanel agiPanel;
+    /**
+     * The AGI session orchestrator instance.
+     */
     private final Agi agi;
     /**
      * The specialized screens toolkit providing hardware access.

@@ -636,8 +636,8 @@ public class InputPanel extends JPanel {
 
     /**
      * Runs a background task with custom completion and error callbacks on the EDT.
-     * @param backgroundTask The background logic to execute.
      * @param onError Edted callback when the task fails.
+     * @param backgroundTask The background logic to execute.
      * @param taskName The descriptive task name.
      * @param onDone Edted callback when the task succeeds.
      */

@@ -19,6 +19,10 @@ import java.awt.geom.Path2D;
  */
 public class SnakeIcon extends AbstractAnahataIcon {
 
+    /**
+     * Constructs a new SnakeIcon of the specified square size.
+     * @param size The size of the icon.
+     */
     public SnakeIcon(int size) {
         super(size);
     }

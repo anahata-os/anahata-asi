@@ -18,24 +18,69 @@ import javax.swing.*;
  */
 public class Snake extends JPanel implements ActionListener {
 
+    /**
+     * The size of a single grid square in pixels.
+     */
     private final int TILE_SIZE = 25;
+    /**
+     * The width of the game board in pixels.
+     */
     private final int WIDTH = 800;
+    /**
+     * The height of the game board in pixels.
+     */
     private final int HEIGHT = 600;
+    /**
+     * The maximum possible tiles fitting onto the board.
+     */
     private final int ALL_TILES = (WIDTH * HEIGHT) / (TILE_SIZE * TILE_SIZE);
 
+    /**
+     * Array tracking the horizontal coordinates of all snake segments.
+     */
     private final int x[] = new int[ALL_TILES];
+    /**
+     * Array tracking the vertical coordinates of all snake segments.
+     */
     private final int y[] = new int[ALL_TILES];
 
+    /**
+     * The current length of the snake.
+     */
     private int bodyParts = 6;
+    /**
+     * The number of cigars eaten during this round.
+     */
     private int cigarsEaten;
+    /**
+     * The current grid X coordinate of the cigar target.
+     */
     private int cigarX;
+    /**
+     * The current grid Y coordinate of the cigar target.
+     */
     private int cigarY;
 
+    /**
+     * The active snake movement direction (U, D, L, R).
+     */
     private char direction = 'R';
+    /**
+     * Flag indicating if the game loop is active.
+     */
     private boolean running = false;
+    /**
+     * The animation and tick update timer.
+     */
     private Timer timer;
+    /**
+     * Random generator used to spawn new cigars.
+     */
     private Random random;
 
+    /**
+     * Constructs a new Snake game panel, initializing keyboard events and starting the game.
+     */
     public Snake() {
         random = new Random();
         setPreferredSize(new Dimension(WIDTH, HEIGHT));

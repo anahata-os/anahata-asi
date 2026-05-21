@@ -18,6 +18,9 @@ import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
  */
 public class SwingTaskManager extends BasicPropertyChangeSource {
     
+    /**
+     * The global singleton manager instance.
+     */
     private static final SwingTaskManager INSTANCE = new SwingTaskManager();
 
     /**
@@ -28,8 +31,14 @@ public class SwingTaskManager extends BasicPropertyChangeSource {
         return INSTANCE;
     }
 
+    /**
+     * The thread-safe concurrent list tracking all uncompleted background actions.
+     */
     private final List<SwingTask<?>> activeTasks = new CopyOnWriteArrayList<>();
 
+    /**
+     * Private constructor preventing instantiation from other packages.
+     */
     private SwingTaskManager() {
     }
 

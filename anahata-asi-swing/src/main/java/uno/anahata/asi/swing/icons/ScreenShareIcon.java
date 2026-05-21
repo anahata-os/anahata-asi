@@ -9,6 +9,9 @@ import java.awt.geom.*;
  */
 public class ScreenShareIcon extends AbstractAnahataIcon {
     
+    /**
+     * Flag indicating if active screen sharing is occurring.
+     */
     private final boolean sharing;
 
     /**

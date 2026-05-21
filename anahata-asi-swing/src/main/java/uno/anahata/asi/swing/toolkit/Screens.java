@@ -52,8 +52,17 @@ public class Screens extends AnahataToolkit {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class SharedRegion {
+        /**
+         * The unique UUID identifier of the shared region.
+         */
         private String id;
+        /**
+         * The rectangular coordinates and dimensions of the screen area.
+         */
         private Rectangle bounds;
+        /**
+         * The user-assigned or generated descriptive name for the region.
+         */
         private String name;
     }
 

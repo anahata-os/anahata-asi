@@ -44,8 +44,17 @@ public class TaskStatusComponent extends JPanel {
      * The container to monitor.
      */
     private final AbstractAsiContainer container;
+    /**
+     * The visual indeterminate progress bar display.
+     */
     private final JProgressBar progressBar;
+    /**
+     * Button allowing rapid cancelation of the newest background activity.
+     */
     private final JButton quickKillButton;
+    /**
+     * Binds activeTasks list updates to our EDT redraw loop.
+     */
     private final EdtPropertyChangeListener taskListener;
 
     /**
@@ -117,6 +126,9 @@ public class TaskStatusComponent extends JPanel {
         refresh();
     }
 
+    /**
+     * Queries active tasks from the registry and syncs layout visibility and summaries.
+     */
     private void refresh() {
         List<SwingTask<?>> allTasks = SwingTaskManager.getInstance().getActiveTasks();
         List<SwingTask<?>> activeTasks = allTasks.stream()

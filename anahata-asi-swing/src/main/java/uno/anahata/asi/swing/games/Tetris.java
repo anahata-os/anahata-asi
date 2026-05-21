@@ -19,17 +19,53 @@ import javax.swing.Timer;
  */
 public class Tetris extends JPanel implements ActionListener {
 
+    /**
+     * The grid width of the Tetris play board (10 columns).
+     */
     private final int BOARD_WIDTH = 10;
+    /**
+     * The grid height of the Tetris play board (22 rows).
+     */
     private final int BOARD_HEIGHT = 22;
+    /**
+     * The square dimension of each cell in pixels.
+     */
     private final int TILE_SIZE = 30;
+    /**
+     * Central animation and speed controller tick timer.
+     */
     private final Timer timer;
+    /**
+     * Flag signaling that the current piece has landed and hit-testing is complete.
+     */
     private boolean isFallingFinished = false;
+    /**
+     * Flag signaling whether the current game is active.
+     */
     private boolean isStarted = false;
+    /**
+     * Flag signaling whether game execution is paused.
+     */
     private boolean isPaused = false;
+    /**
+     * Total count of successfully completed rows cleared during the session.
+     */
     private int numLinesRemoved = 0;
+    /**
+     * The active horizontal grid position of the falling piece.
+     */
     private int curX = 0;
+    /**
+     * The active vertical grid position of the falling piece.
+     */
     private int curY = 0;
+    /**
+     * The currently falling geometric block structure.
+     */
     private Shape curPiece;
+    /**
+     * One-dimensional array matching grid coordinates to static landed block colors.
+     */
     private final Color[] board;
 
     /**
@@ -59,6 +95,9 @@ public class Tetris extends JPanel implements ActionListener {
         timer.start();
     }
 
+    /**
+     * Toggles active gameplay state between paused and running.
+     */
     private void pause() {
         isPaused = !isPaused;
         if (isPaused) {
@@ -107,6 +146,13 @@ public class Tetris extends JPanel implements ActionListener {
         if (isPaused) g2d.drawString("PAUSED", 10, 40);
     }
 
+    /**
+     * Renders a high-fidelity glossy vector atom bubble at coordinates.
+     * @param g2d The Graphics context.
+     * @param y Visual Y coordinate.
+     * @param x Visual X coordinate.
+     * @param color The design fill color of the atom.
+     */
     private void drawAtom(Graphics2D g2d, int x, int y, Color color) {
         g2d.setColor(color);
         g2d.fillOval(x + 2, y + 2, TILE_SIZE - 4, TILE_SIZE - 4);
@@ -118,6 +164,9 @@ public class Tetris extends JPanel implements ActionListener {
         g2d.fillOval(x + 8, y + 8, 6, 6);
     }
 
+    /**
+     * Instantly drops the current piece to the lowest possible free grid row.
+     */
     private void dropDown() {
         int newY = curY;
         while (newY > 0) {
@@ -127,18 +176,27 @@ public class Tetris extends JPanel implements ActionListener {
         pieceDropped();
     }
 
+    /**
+     * Moves the falling piece one step downwards if free space exists.
+     */
     private void oneLineDown() {
         if (!tryMove(curPiece, curX, curY - 1)) {
             pieceDropped();
         }
     }
 
+    /**
+     * Resets the active game board grid by filling all indices with null.
+     */
     private void clearBoard() {
         for (int i = 0; i < BOARD_HEIGHT * BOARD_WIDTH; i++) {
             board[i] = null;
         }
     }
 
+    /**
+     * Lamps the falling piece onto the static board, checks cleared rows, and spawns the next piece.
+     */
     private void pieceDropped() {
         for (int i = 0; i < 4; i++) {
             int x = curX + curPiece.x(i);
@@ -149,6 +207,9 @@ public class Tetris extends JPanel implements ActionListener {
         if (!isFallingFinished) newPiece();
     }
 
+    /**
+     * Spawns a new random block, setting initial positions and terminating on overflow.
+     */
     private void newPiece() {
         curPiece.setRandomShape();
         curX = BOARD_WIDTH / 2 + 1;
@@ -161,6 +222,13 @@ public class Tetris extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     * Evaluates prospective coordinates for boundary limits and existing blocks, committing state on success.
+     * @param newX Candidate X coordinate.
+     * @param newPiece The shape to move or rotate.
+     * @param newY Candidate Y coordinate.
+     * @return true if the move is legal and committed.
+     */
     private boolean tryMove(Shape newPiece, int newX, int newY) {
         for (int i = 0; i < 4; i++) {
             int x = newX + newPiece.x(i);
@@ -175,6 +243,9 @@ public class Tetris extends JPanel implements ActionListener {
         return true;
     }
 
+    /**
+     * Scans, identifies, clears, and shifts completed rows downwards with score aggregation.
+     */
     private void removeFullLines() {
         int numFullLines = 0;
         for (int i = BOARD_HEIGHT - 1; i >= 0; i--) {
@@ -202,6 +273,12 @@ public class Tetris extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     * Retrieves the color block at matching column and row coordinates.
+     * @param y Grid row index.
+     * @param x Grid column index.
+     * @return Color of the cell or null if empty.
+     */
     private Color shapeAt(int x, int y) { return board[(y * BOARD_WIDTH) + x]; }
 
     @Override
@@ -214,11 +291,26 @@ public class Tetris extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     * Enumeration of all standard tetromino geometry variations.
+     */
     enum Tetrominoes { NoShape, ZShape, SShape, LineShape, TShape, SquareShape, LShape, MirroredLShape }
 
+    /**
+     * Represents the layout and operations of a single Tetris block geometry.
+     */
     static class Shape {
+        /**
+         * The category of Tetrominoes shape this instance represents.
+         */
         private Tetrominoes pieceShape;
+        /**
+         * The relative coordinates grid of the four child nodes.
+         */
         private final int[][] coords;
+        /**
+         * Global constant mapping ordinal types to physical coordinate patterns.
+         */
         private static final int[][][] coordsTable = new int[][][] {
             { { 0, 0 },   { 0, 0 },   { 0, 0 },   { 0, 0 } },
             { { 0, -1 },  { 0, 0 },   { -1, 0 },  { -1, 1 } },
@@ -230,6 +322,9 @@ public class Tetris extends JPanel implements ActionListener {
             { { 1, -1 },  { 0, -1 },  { 0, 0 },   { 0, 1 } }
         };
 
+        /**
+         * Constructs a new blank shape initialized to NoShape.
+         */
         public Shape() { coords = new int[4][2]; setShape(Tetrominoes.NoShape); }
 
         public void setShape(Tetrominoes shape) {
@@ -246,6 +341,10 @@ public class Tetris extends JPanel implements ActionListener {
             setShape(values[x]);
         }
 
+        /**
+         * Translates active tetromino types to high-salience design colors.
+         * @return The design color of this block.
+         */
         public Color getColor() {
             return switch (pieceShape) {
                 case ZShape -> new Color(220, 53, 69);
@@ -261,6 +360,10 @@ public class Tetris extends JPanel implements ActionListener {
 
         public int x(int index) { return coords[index][0]; }
         public int y(int index) { return coords[index][1]; }
+        /**
+         * Accessor for the underlying tetromino category.
+         * @return The active Tetrominoes ordinal value.
+         */
         public Tetrominoes getShape() { return pieceShape; }
         public int minY() {
             int m = coords[0][1];
@@ -280,6 +383,9 @@ public class Tetris extends JPanel implements ActionListener {
         }
     }
 
+    /**
+     * Custom keyboard listener to capture action keystrokes on the Event Dispatch Thread.
+     */
     class TAdapter extends KeyAdapter {
         @Override
         public void keyPressed(KeyEvent e) {

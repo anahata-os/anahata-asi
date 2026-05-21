@@ -90,6 +90,11 @@ public class ResourceUUIDParameterRenderer implements ParameterRenderer<Object> 
         return true;
     }
 
+    /**
+     * Helper to create a visual JPanel chip representing the resource.
+     * @param resourceUuid The unique identifier of the resource.
+     * @return a styled chip component with open action button.
+     */
     private JPanel createChip(String resourceUuid) {
         JPanel chip = new JPanel(new BorderLayout(10, 0));
         chip.setOpaque(true);

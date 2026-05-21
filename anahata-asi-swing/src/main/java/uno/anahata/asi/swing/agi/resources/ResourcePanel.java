@@ -270,6 +270,7 @@ public class ResourcePanel extends ScrollablePanel {
 
     /**
      * Atomically saves the content back to the resource.
+     * @param content The new text content to save.
      */
     private void saveContent(String content) {
         new SwingTask<Void>(agiPanel, "Saving Resource", () -> {
