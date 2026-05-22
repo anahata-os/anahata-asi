@@ -209,6 +209,12 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
         }
         captureOriginalContent(agi);
 
+        if (intents != null) {
+            for (CodeRefinementIntent intent : intents) {
+                intent.validate();
+            }
+        }
+
         boolean hasIntents = intents != null && !intents.isEmpty();
         boolean hasImportsToAdd = importsToAdd != null && !importsToAdd.isEmpty();
         boolean hasImportsToRemove = importsToRemove != null && !importsToRemove.isEmpty();

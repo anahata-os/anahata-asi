@@ -63,9 +63,10 @@ public class CodeRefinementIntent implements Serializable {
      * Nested types should use the '$' separator.
      */
     @Schema(description = "The FQN of the target class container (e.g. 'com.foo.Bar'). "
-        + "Mandatory for 'INSERT' and 'MOVE'. Nested classes must use the '$' separator (e.g. 'com.foo.Bar$InnerHelper'). "
-        + "Leave empty only for file-level insertions (like declaring a new top-level outer class).")
-    private String classFqn;
+        + "Mandatory for 'INSERT' and 'MOVE' of methods, fields, or constructors. "
+        + "Nested classes must use '$' (e.g. 'com.foo.Bar$InnerHelper'). "
+        + "Leave empty ONLY if you are inserting a brand-new top-level class/interface at the file level.")
+     private String classFqn;
 
     /**
      * The absolute fully qualified name of the target member to perform the operation on.
@@ -133,6 +134,17 @@ public class CodeRefinementIntent implements Serializable {
     @Schema(description = "Optional Javadoc to apply to the member. If updating a member and left null, the existing Javadoc is preserved. WARNING: When used in an UPDATE intent, providing this object will completely replace the existing Javadoc. You MUST provide all @param, @return, and @throws fields if they should be preserved.")
     private JavadocIntent javadoc;
 
+    public void validate() throws AgiToolException {
+        if (type == Type.INSERT || type == Type.MOVE) {
+                    String decl = declaration != null ? declaration.trim() : "";
+                    boolean isTopLevelType = decl.contains("class ") || decl.contains("interface ") || decl.contains("enum ") || decl.contains("record ");
+                    
+                    if (!isTopLevelType && (classFqn == null || classFqn.trim().isEmpty())) {
+                        throw new AgiToolException("Validation Failed: 'classFqn' is mandatory when inserting/moving methods, fields, or constructors. "
+                                + "Leaving 'classFqn' empty is only permitted for top-level types (e.g. inserting 'class Helper' at file-level).");
+                    }
+                }
+    }
     /**
      * Generates a formatted diagnostic string detailing the intent's configuration.
      * @return a multi-line diagnostic string.
