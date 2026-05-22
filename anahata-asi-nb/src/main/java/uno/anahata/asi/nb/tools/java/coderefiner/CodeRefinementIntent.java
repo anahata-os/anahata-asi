@@ -306,7 +306,7 @@ public class CodeRefinementIntent implements Serializable {
                     }
                 } else if (member instanceof MethodTree || member instanceof ClassTree || member instanceof BlockTree) {
                     String bodyIndent = baseIndent + "    ";
-                    String[] lines = innerBlockOrInitializer.split("\\r?\\n", -1);
+                    String[] lines = innerBlockOrInitializer.stripIndent().split("\\r?\\n", -1);
                     boolean hasBraces = innerBlockOrInitializer.trim().startsWith("{") && innerBlockOrInitializer.trim().endsWith("}");
                     StringBuilder sb = new StringBuilder();
                     if (!hasBraces) {
@@ -541,7 +541,7 @@ public class CodeRefinementIntent implements Serializable {
                 } else {
                     boolean hasBraces = innerBlockOrInitializer.trim().startsWith("{") && innerBlockOrInitializer.trim().endsWith("}");
                     String bodyIndent = indent + "    ";
-                    String[] lines = innerBlockOrInitializer.split("\\r?\\n", -1);
+                    String[] lines = innerBlockOrInitializer.stripIndent().split("\\r?\\n", -1);
                     if (!hasBraces) {
                         memberBuilder.append(" {\n");
                     } else {
