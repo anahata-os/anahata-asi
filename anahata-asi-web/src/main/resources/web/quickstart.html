@@ -201,7 +201,8 @@ public class Main {
     &lt;version&gt;1.0.0-SNAPSHOT&lt;/version&gt;
 &lt;/dependency&gt;</code></pre>
                         
-                        <h3 style="margin-top: 2rem; color: var(--white);">Embedded Configuration</h3>
+                        <h3 style="margin-top: 2rem; color: var(--white);">Embedded Configuration & Toolkits</h3>
+                        <p>Define your session DNA and register any custom toolkits you want to expose to the AI.</p>
                         <div class="code-header" style="text-transform: none;">EmbeddedSwingAppAgiConfig.java</div>
                         <pre><code class="language-java">import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.AbstractAsiContainer;
@@ -209,17 +210,36 @@ import uno.anahata.asi.AbstractAsiContainer;
 public class EmbeddedSwingAppAgiConfig extends SwingAgiConfig {
     public EmbeddedSwingAppAgiConfig(AbstractAsiContainer container) {
         super(container);
+        // Register a custom toolkit specific to your embedded app
+        getToolClasses().add(MyCustomBusinessToolkit.class);
     }
 }</code></pre>
+                        
+                        <h3 style="margin-top: 2rem; color: var(--white);">Container & Dashboard (Cards View)</h3>
+                        <p>While <code>AsiDesktopAsiContainer</code> auto-manages tabs, embedding via <code>AbstractSwingAsiContainer</code> directly gives you absolute control over <i>where</i> the AI chat appears (e.g., floating windows, internal frames, or custom tab managers). You provide this integration logic via <code>getUI</code>, <code>focusUI</code>, and <code>closeUI</code>.</p>
+                        <p>To display the session dashboard (like the sticky-note cards), simply instantiate an <code>AsiCardsContainerPanel</code>.</p>
                         <div class="code-header" style="text-transform: none;">EmbeddedSwingAppAsiContainer.java</div>
                         <pre><code class="language-java">import uno.anahata.asi.swing.AbstractSwingAsiContainer;
+import uno.anahata.asi.swing.AsiCardsContainerPanel;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import javax.swing.JTabbedPane;
 
 public class EmbeddedSwingAppAsiContainer extends AbstractSwingAsiContainer {
-    public EmbeddedSwingAppAsiContainer() {
-        super("my-swing-app");
+    private final JTabbedPane appTabs; // Your app's existing tab manager
+    // Cache to ensure we only create one UI panel per session!
+    private final Map&lt;String, AgiPanel&gt; activePanels = new ConcurrentHashMap&lt;&gt;();
+
+    public EmbeddedSwingAppAsiContainer(JTabbedPane appTabs) {
+        super("my-embedded-app");
+        this.appTabs = appTabs;
+        
+        // Render the out-of-the-box Cards Dashboard
+        AsiCardsContainerPanel dashboard = new AsiCardsContainerPanel(this);
+        appTabs.addTab("AI Sessions", dashboard);
     }
 
     @Override
@@ -227,15 +247,41 @@ public class EmbeddedSwingAppAsiContainer extends AbstractSwingAsiContainer {
         return new EmbeddedSwingAppAgiConfig(this);
     }
 
+    // --- The orchestration contract ---
+    // You define exactly how your app displays an individual AI session!
+
     @Override
     public AgiPanel getUI(Agi agi) {
-        AgiPanel panel = new AgiPanel(agi);
-        panel.initComponents();
-        return panel;
+        // CRITICAL: Always cache and return the same panel instance for a given session
+        return activePanels.computeIfAbsent(agi.getConfig().getSessionId(), id -&gt; {
+            AgiPanel panel = new AgiPanel(agi);
+            panel.initComponents();
+            
+            // Customization: Remove the Support and CwGC tabs for a cleaner embedded look
+            panel.getTabbedPane().remove(panel.getSupportPanel());
+            panel.getTabbedPane().remove(panel.getCwGcPanel());
+            
+            return panel;
+        });
     }
     
-    @Override protected void focusUI(Agi agi) { /* Focus your frame/tab */ }
-    @Override protected void closeUI(Agi agi) { /* Close your frame/tab */ }
+    @Override 
+    protected void focusUI(Agi agi) {
+        // E.g., open a new tab in your app for this specific session
+        AgiPanel panel = getAgiPanel(agi);
+        if (appTabs.indexOfComponent(panel) == -1) {
+            appTabs.addTab(agi.getNickname(), panel);
+        }
+        appTabs.setSelectedComponent(panel);
+    }
+    
+    @Override 
+    protected void closeUI(Agi agi) { 
+        AgiPanel panel = activePanels.remove(agi.getConfig().getSessionId());
+        if (panel != null) {
+            appTabs.remove(panel);
+        }
+    }
 }</code></pre>
                     </div>
 

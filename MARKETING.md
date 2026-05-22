@@ -21,13 +21,13 @@ The `README.md` is our primary sales weapon. It leads with the **JASI Container*
 
 ### B. Social Media (X / LinkedIn)
 
-*   **The "JASI" Reveal:**
-    > Autocomplete is dead. Long live the JASI Container. 🏛️
+*   **The "ASI" Reveal:**
+    > Autocomplete is dead. Long live the ASI Container. 🏛️
     > Introducing Anahata V2: The first Java Artificial Super Intelligence platform. Managed tools, shared state, and Context Window Garbage Collection.
     > #Java #JASI #AGI #NetBeans #SoftwareArchitecture
 
 *   **The "Open Code" Contrast:**
-    > Why settle for an AI script when you can have a JASI Container? 🚀
+    > Why settle for an AI script when you can have a ASI Container? 🚀
     > Anahata provides the architectural rigor of the Java ecosystem to the frontier of AI. AGI Compliance TCK included.
     > #OpenSourceAI #JASI #JavaDev #DeepStrike
 
