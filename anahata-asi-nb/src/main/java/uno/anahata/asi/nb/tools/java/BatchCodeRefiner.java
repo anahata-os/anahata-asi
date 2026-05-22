@@ -60,43 +60,45 @@ public class BatchCodeRefiner extends AnahataToolkit {
     }
 
     @Override
-        public List<String> getSystemInstructions() throws Exception {
+    public List<String> getSystemInstructions() throws Exception {
         return Collections.singletonList(JavaSourceUtils.CANONICAL_FQN_STANDARD
-                        + "\n"
-                        + "### BatchCodeRefiner Toolkit Instructions (V4 AST-Guided)\n"
-                        + "1. **Context Locked**: You MUST have the resource in your RAG message (context) to propose a refinement. One resource per tool call.\n"
-                        + "2. **Batch Intents**: You can combine multiple structural changes (INSERT, UPDATE, DELETE, MOVE) in one call for as long as they all belong to the same java file..\n"
-                        + "3. **Optimistic Locking**: Always use the `lastModified` timestamp from the RAG message of the resource (java file) you want to modify. \n"
-                        + "\tNote: You can't update the same java file twice in the same turn using two different BatchCodeRefiner.refine tool calls otherwise the first one will change the lastModified and the second one will fail with an optimistic locking exception but you can do as many inserts and updates as you want in a single tool call\n"
-                        + "4. **Field Initializers**: Put the expression (code after '=') in the `innerBlockOrInitializer` field or leave it empty for fields if you don't want any initializer expression. For Enum Constants, put the constant name in `declaration` and constructor arguments (if any) in `innerBlockOrInitializer`.\n"
-                        + "5. **Auto-Indentation & Formatting**: Natively supported! V4 computes the exact indentation of the target scope. You do not need to manually pad your `innerBlockOrInitializer` with leading spaces. Blank lines and `//` comments within your `innerBlockOrInitializer` string are preserved with 100% fidelity.\n"
-                        + "6. **Javadocs**: Use the structured `javadoc` property (JavadocIntent) to inject Javadocs on the fly. To update ONLY the Javadoc of an existing member, provide the `memberFqn` and the new `javadoc`, leaving `declaration` and `innerBlockOrInitializer` null. **WARNING**: If you provide a `javadoc` object during an `UPDATE`, it completely replaces the existing Javadoc. You MUST provide all `@param`, `@return`, and `@throws` fields in the JSON if you want them preserved. If `javadoc` is omitted during an UPDATE, the existing Javadoc is preserved.\n"
-                        + "7. **Imports**: FQNs provided in `importsToAdd` and `importsToRemove` are safely evaluated and added/removed from the compilation unit.\n"
-                        + "8. **Records and Modern Java**: Fully supported. Because V4 uses AST-guided text replacement, all modern Java constructs (Records, Switch Expressions, etc.) are safely refactored without breaking the IDE's formatter.\n"
-                        + "9. **Class-Level Updates**: To update a class declaration (e.g. adding `@Getter` or changing the class Javadoc), set `memberFqn` to the class FQN and `type` to `UPDATE`. Provide the new `declaration` and leave `innerBlockOrInitializer` empty. The existing class members will be perfectly preserved!\n"
-                        + "10. **package-info**: Use the Resources toolkit for creating and editing package-info.java files.\n"
-                        + "11. **No training knowledge**: Do not use your training knowledge, this toolkit is unique to Anahata you have to pay very close attention to the tool definition and the parameters schema.\n"
-
-                );
+                + "\n"
+                + "### BatchCodeRefiner Toolkit Instructions (V4 AST-Guided)\n"
+                + "1. **Context Locked**: You MUST have the resource in your RAG message (context) to propose a refinement. One resource per tool call.\n"
+                + "2. **Batch Intents**: You can combine multiple structural changes (INSERT, UPDATE, DELETE, MOVE) in one call for as long as they all belong to the same java file..\n"
+                + "3. **Optimistic Locking**: Always use the `lastModified` timestamp from the RAG message of the resource (java file) you want to modify. \n"
+                + "\tNote: You can't update the same java file twice in the same turn using two different BatchCodeRefiner.refine tool calls otherwise the first one will change the lastModified and the second one will fail with an optimistic locking exception but you can do as many inserts and updates as you want in a single tool call\n"
+                + "4. **Field Initializers**: Put the expression (code after '=') in the `innerBlockOrInitializer` field or leave it empty for fields if you don't want any initializer expression. For Enum Constants, put the constant name in `declaration` and constructor arguments (if any) in `innerBlockOrInitializer`.\n"
+                + "5. **Auto-Indentation & Formatting**: Natively supported! V4 computes the exact indentation of the target scope. You do not need to manually pad your `innerBlockOrInitializer` with leading spaces. Blank lines and `//` comments within your `innerBlockOrInitializer` string are preserved with 100% fidelity.\n"
+                + "6. **Javadocs**: Use the structured `javadoc` property (JavadocIntent) to inject Javadocs on the fly. To update ONLY the Javadoc of an existing member, provide the `memberFqn` and the new `javadoc`, leaving `declaration` and `innerBlockOrInitializer` null. **WARNING**: If you provide a `javadoc` object during an `UPDATE`, it completely replaces the existing Javadoc. You MUST provide all `@param`, `@return`, and `@throws` fields in the JSON if you want them preserved. If `javadoc` is omitted during an UPDATE, the existing Javadoc is preserved.\n"
+                + "7. **Imports**: FQNs provided in `importsToAdd` and `importsToRemove` are safely evaluated and added/removed from the compilation unit.\n"
+                + "8. **Records and Modern Java**: Fully supported. Because V4 uses AST-guided text replacement, all modern Java constructs (Records, Switch Expressions, etc.) are safely refactored without breaking the IDE's formatter.\n"
+                + "9. **Class-Level Updates**: To update a class declaration (e.g. adding `@Getter` or changing the class Javadoc), set `memberFqn` to the class FQN and `type` to `UPDATE`. Provide the new `declaration` and leave `innerBlockOrInitializer` empty. The existing class members will be perfectly preserved!\n"
+                + "10. **package-info**: Use the Resources toolkit for creating and editing package-info.java files.\n"
+                + "11. **No training knowledge**: Do not use your training knowledge, this toolkit is unique to Anahata you have to pay very close attention to the tool definition and the parameters schema.\n"
+        );
     }
 
     /**
-     * Applies a batch of member-level modifications to ONE Java file synchronously, saving and rebuilding the AST.
+     * Applies a batch of member-level modifications to ONE Java file
+     * synchronously, saving and rebuilding the AST.
+     *
      * @param batch The robust refinement batch containing modifications.
-     * @return The generated unified diff string representing changes applied to disk.
+     * @return The generated unified diff string representing changes applied to
+     * disk.
      * @throws java.lang.Exception if validation or file I/O fails.
      */
     @AgiTool("The definitive structural Java refiner."
-                + " Applies a batch of member-level modifications to ONE java file."
-                + " RelativePosition is mandatory for all INSERT and MOVE."
-                + " When updating a member, you can update both the declaration and the innerBlockOrInitializer in the same UPDATE intent or you can just do the innerBlockOrInitializer or just the declaration."
-                + " Never include the declaration of a field or a method in the 'innerBlockOrInitializer' attribute, the member declaration (signature) can only be in the 'declaration' field only. The 'innerBlockOrInitializer' can only contain either whats inside the {} or whatever is to the right of the '='. If you update the declaration of a method, you must include the full declaration with all annotations and all throws clauses. Provides a fully integrated `javadoc` object property so you can document members synchronously with code changes! Inline comments inside the `innerBlockOrInitializer` string are natively preserved! It is not a find-and-replace tool, use the Resources toolkit for that. You CAN use this tool to add or remove imports via the importsToAdd and importsToRemove arrays. For fields, declaration is what goes to the left of the '=', innerBlockOrInitializer is the initializer expression to the right of the '=', leave 'innerBlockOrInitializer' empty if you just want to insert a field without initializer expression."
-                + " For Enum Constants, put the constant name in `declaration` and constructor arguments in `innerBlockOrInitializer`."
-                + " Do not put javadoc strings inside the `declaration` field, use the structured `javadoc` parameter instead."
-                + " Follows the Anahata Canonical FQN Standarad (remember, it's package.name.ClassName.<init>(param1Type) for constructors")
-        public String refine(
-                @AgiToolParam("The robust refinement batch.") CodeRefinementBatch batch
-        ) throws Exception {
+            + " Applies a batch of member-level modifications to ONE java file."
+            + " RelativePosition is mandatory for all INSERT and MOVE."
+            + " When updating a member, you can update both the declaration and the innerBlockOrInitializer in the same UPDATE intent or you can just do the innerBlockOrInitializer or just the declaration."
+            + " Never include the declaration of a field or a method in the 'innerBlockOrInitializer' attribute, the member declaration (signature) can only be in the 'declaration' field only. The 'innerBlockOrInitializer' can only contain either whats inside the {} or whatever is to the right of the '='. If you update the declaration of a method, you must include the full declaration with all annotations and all throws clauses. Provides a fully integrated `javadoc` object property so you can document members synchronously with code changes! Inline comments inside the `innerBlockOrInitializer` string are natively preserved! It is not a find-and-replace tool, use the Resources toolkit for that. You CAN use this tool to add or remove imports via the importsToAdd and importsToRemove arrays. For fields, declaration is what goes to the left of the '=', innerBlockOrInitializer is the initializer expression to the right of the '=', leave 'innerBlockOrInitializer' empty if you just want to insert a field without initializer expression."
+            + " For Enum Constants, put the constant name in `declaration` and constructor arguments in `innerBlockOrInitializer`."
+            + " Do not put javadoc strings inside the `declaration` field, use the structured `javadoc` parameter instead."
+            + " Follows the Anahata Canonical FQN Standarad (remember, it's package.name.ClassName.<init>(param1Type) for constructors")
+    public String refine(
+            @AgiToolParam("The robust refinement batch.") CodeRefinementBatch batch
+    ) throws Exception {
         batch.validate(getAgi());
 
         Resource resource = getAgi().getResourceManager().get(batch.getResourceUuid());
@@ -118,7 +120,9 @@ public class BatchCodeRefiner extends AnahataToolkit {
     }
 
     /**
-     * Locates a member tree within a working copy compilation context by its canonical FQN.
+     * Locates a member tree within a working copy compilation context by its
+     * canonical FQN.
+     *
      * @param info The active compilation context.
      * @param memberFqn The canonical FQN identifying the target member.
      * @return The matching Tree node if found, or null otherwise.
@@ -128,11 +132,14 @@ public class BatchCodeRefiner extends AnahataToolkit {
     }
 
     /**
-     * Finds the 0-based index of a member within a list of AST class members by matching its signature.
+     * Finds the 0-based index of a member within a list of AST class members by
+     * matching its signature.
+     *
      * @param members The list of class member trees to search.
      * @param memberName The canonical name or signature to match against.
      * @param info The active compilation context.
-     * @return The 0-based index of the matching member, or -1 if no match is found.
+     * @return The 0-based index of the matching member, or -1 if no match is
+     * found.
      */
     public static int findMemberIndex(CompilationInfo info, List<? extends Tree> members, String memberName) {
         String target = memberName.replaceAll("<[^>]*>", "").replaceAll("\\s+", "");
@@ -202,13 +209,16 @@ public class BatchCodeRefiner extends AnahataToolkit {
     }
 
     /**
-     * Parses a raw Java string into a detached AST Tree node, capturing and importing all inline comments.
+     * Parses a raw Java string into a detached AST Tree node, capturing and
+     * importing all inline comments.
+     *
      * @param wc The target working copy context.
      * @param cpInfo The classpath information for resolution context.
      * @param declaration The member declaration header string.
      * @param body The optional member body code block.
      * @return The successfully parsed and detached AST Tree node.
-     * @throws java.lang.Exception if parsing, compile phase resolution, or compilation fails.
+     * @throws java.lang.Exception if parsing, compile phase resolution, or
+     * compilation fails.
      */
     public static Tree parseMember(WorkingCopy wc, String declaration, String body, ClasspathInfo cpInfo) throws Exception {
         if (declaration == null || declaration.isBlank()) {
@@ -233,7 +243,7 @@ public class BatchCodeRefiner extends AnahataToolkit {
         }
 
         JavaSource js = cpInfo != null ? JavaSource.create(cpInfo, tempFo) : JavaSource.forFileObject(tempFo);
-        
+
         final Tree[] result = new Tree[1];
         js.runUserActionTask((CompilationController innerWc) -> {
             innerWc.toPhase(JavaSource.Phase.PARSED);
@@ -267,13 +277,17 @@ public class BatchCodeRefiner extends AnahataToolkit {
     }
 
     /**
-     * Calculates the insertion index for a new member based on a relative position and an anchor name.
+     * Calculates the insertion index for a new member based on a relative
+     * position and an anchor name.
+     *
      * @param members The list of existing class members.
      * @param position The relative position (START, END, BEFORE, AFTER).
      * @param wc The target working copy or compilation context.
-     * @param anchor The anchor member name, required for BEFORE and AFTER positions.
+     * @param anchor The anchor member name, required for BEFORE and AFTER
+     * positions.
      * @return The calculated 0-based insertion index.
-     * @throws uno.anahata.asi.agi.tool.AgiToolException if anchor position rules are violated or the anchor is not found.
+     * @throws uno.anahata.asi.agi.tool.AgiToolException if anchor position
+     * rules are violated or the anchor is not found.
      */
     public static int getInsertIndex(CompilationInfo wc, List<? extends Tree> members, RelativePosition position, String anchor) throws AgiToolException {
         if ((position == RelativePosition.BEFORE || position == RelativePosition.AFTER) && (anchor == null || anchor.isBlank())) {
@@ -287,15 +301,21 @@ public class BatchCodeRefiner extends AnahataToolkit {
             }
         }
         return switch (position) {
-            case START -> 0;
-            case END -> members.size();
-            case BEFORE -> anchorIdx;
-            case AFTER -> anchorIdx + 1;
+            case START ->
+                0;
+            case END ->
+                members.size();
+            case BEFORE ->
+                anchorIdx;
+            case AFTER ->
+                anchorIdx + 1;
         };
     }
-    
+
     /**
-     * Extracts the raw signature from a canonical identification FQN to be used for matching.
+     * Extracts the raw signature from a canonical identification FQN to be used
+     * for matching.
+     *
      * @param memberFqn The absolute canonical member FQN.
      * @return The simple member signature (e.g., 'myMethod(java.lang.String)').
      */
@@ -310,10 +330,13 @@ public class BatchCodeRefiner extends AnahataToolkit {
     }
 
     /**
-     * Throws a highly descriptive exception with available suggestions when a member is not found.
+     * Throws a highly descriptive exception with available suggestions when a
+     * member is not found.
+     *
      * @param info The active compilation context.
      * @param memberFqn The canonical member FQN that was not resolved.
-     * @throws uno.anahata.asi.agi.tool.AgiToolException always, containing detailed candidate recommendations.
+     * @throws uno.anahata.asi.agi.tool.AgiToolException always, containing
+     * detailed candidate recommendations.
      */
     public static void throwMemberNotFound(CompilationInfo info, String memberFqn) {
         int paren = memberFqn.indexOf("(");
@@ -337,13 +360,15 @@ public class BatchCodeRefiner extends AnahataToolkit {
         StringBuilder sb = new StringBuilder("Member not found: ").append(memberFqn);
         if (!candidates.isEmpty()) {
             sb.append("\nDid you mean one of these canonical identification FQNs?\n");
-            candidates.forEach((String c)-> sb.append("- ").append(c).append("\n"));
+            candidates.forEach((String c) -> sb.append("- ").append(c).append("\n"));
         }
         throw new AgiToolException(sb.toString());
     }
 
     /**
-     * Rebuilds a ClassTree node with a new, modified list of class members based on class kind.
+     * Rebuilds a ClassTree node with a new, modified list of class members
+     * based on class kind.
+     *
      * @param members The new list of member trees.
      * @param make The TreeMaker utility instance.
      * @param ct The original class tree to reconstruct.
@@ -351,11 +376,16 @@ public class BatchCodeRefiner extends AnahataToolkit {
      */
     public static ClassTree rebuildClassTree(TreeMaker make, ClassTree ct, List<Tree> members) {
         return switch (ct.getKind()) {
-            case INTERFACE -> make.Interface(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), ct.getImplementsClause(), ct.getPermitsClause(), members);
-            case ENUM -> make.Enum(ct.getModifiers(), ct.getSimpleName(), (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), members);
-            case ANNOTATION_TYPE -> make.AnnotationType(ct.getModifiers(), ct.getSimpleName(), members);
-            case RECORD -> make.Class(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), null, (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), (List<ExpressionTree>) (List<?>) ct.getPermitsClause(), members);
-            default -> make.Class(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), ct.getExtendsClause(), (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), (List<ExpressionTree>) (List<?>) ct.getPermitsClause(), members);
+            case INTERFACE ->
+                make.Interface(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), ct.getImplementsClause(), ct.getPermitsClause(), members);
+            case ENUM ->
+                make.Enum(ct.getModifiers(), ct.getSimpleName(), (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), members);
+            case ANNOTATION_TYPE ->
+                make.AnnotationType(ct.getModifiers(), ct.getSimpleName(), members);
+            case RECORD ->
+                make.Class(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), null, (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), (List<ExpressionTree>) (List<?>) ct.getPermitsClause(), members);
+            default ->
+                make.Class(ct.getModifiers(), ct.getSimpleName(), ct.getTypeParameters(), ct.getExtendsClause(), (List<ExpressionTree>) (List<?>) ct.getImplementsClause(), (List<ExpressionTree>) (List<?>) ct.getPermitsClause(), members);
         };
     }
 
