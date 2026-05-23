@@ -84,6 +84,7 @@
         .tabs input[type="radio"]:checked + label { background: rgba(237, 187, 0, 0.08); color: var(--barca-gold); border-color: rgba(237, 187, 0, 0.3); border-bottom: 2px solid var(--barca-gold); }
         .tabs input[type="radio"]:checked + label + .tab-content { display: block; }
         .tabs .subtitle { margin-top: 0; margin-bottom: 1.5rem; font-size: 1.1rem; color: var(--white); }
+        #competitor-select option { background-color: #1a202c; color: white; }
     </style>
 </head>
 <body>
@@ -95,10 +96,13 @@
                 <h4>Application</h4>
                 <ul>
                     <li><a href="#overview">Overview</a></li>
+                    <li><a href="#flywheel">The ASI Flywheel</a></li>
+                    <li><a href="#comparison">Industry Comparison</a></li>
                 </ul>
                 
                 <h4>NetBeans Toolkits</h4>
                 <ul>
+                    <li><a href="#nbjava"><i class="fab fa-java"></i> NbJava</a></li>
                     <li><a href="#refactor"><i class="fas fa-magic"></i> Refactor</a></li>
                     <li><a href="#coderefiner"><i class="fas fa-atom"></i> CodeRefiner</a></li>
                     <li><a href="#codemodel"><i class="fas fa-sitemap"></i> CodeModel</a></li>
@@ -107,7 +111,6 @@
                     <li><a href="#hints"><i class="fas fa-lightbulb"></i> Hints</a></li>
                     <li><a href="#editor"><i class="fas fa-edit"></i> Editor</a></li>
                     <li><a href="#ide"><i class="fas fa-laptop-code"></i> IDE</a></li>
-                    <li><a href="#nbjava"><i class="fab fa-java"></i> NbJava</a></li>
                 </ul>
 
                 <h4>Sensory Context</h4>
@@ -131,9 +134,9 @@
                     <label for="tab-assistant"><i class="fas fa-magic"></i> The best Java AI assistant on the market</label>
                     <div class="tab-content">
                         <div class="usp-list">
-                            <div class="usp-item"><i class="fas fa-check-circle"></i> Designed for hihg level Enterprise Architecture, Engineering & Review, not typing assistance. High-fidelity awareness of all types, hierarchies and members across all open projects leveraging NetBeans syntax trees, code analysis, diagnostics, editor hints, refactoring and versioning APIs. Mermaid UML support.</div>
+                            <div class="usp-item"><i class="fas fa-check-circle"></i> Designed for high level Enterprise Architecture, Engineering & Review, not typing assistance. High-fidelity awareness of all types, hierarchies and members across all open projects leveraging NetBeans syntax trees, code analysis, diagnostics, editor hints, refactoring and versioning APIs. Mermaid UML support.</div>
                             <div class="usp-item"><i class="fas fa-check-circle"></i> Fully reviewable, editable changes to multiple source code files with cherry-picking and overlaid comic-style bubbles for AI comments directly in the NetBeans-native Diff Viewer (Graphical side-by-side or textual). One-Shot fetching of any project, dependency or JDK sources. Add remote URIs to context.</div>
-                            <div class="usp-item"><i class="fas fa-check-circle"></i> True self-correcting agentic worflow. When the model creates, deletes or modifies a source file, Anahata holds the reloop until the netbeans source code scanner finishes and reports any compiler errors, warnings or project problems during reloop. No need to build. If you see an error badge, so will the model. Built-in optimstic locking protection.</div>
+                            <div class="usp-item"><i class="fas fa-check-circle"></i> True self-correcting agentic workflow. When the model creates, deletes or modifies a source file, Anahata holds the reloop until the netbeans source code scanner finishes and reports any compiler errors, warnings or project problems during reloop. No need to build. If you see an error badge, so will the model. Built-in optimistic locking protection.</div>
                             <div class="usp-item"><i class="fas fa-check-circle"></i> Real-time visual context awareness — files light up in the Projects, Files or Favourites view the moment the agent or you loads them onto context. Support for multiple active sessions. See which files are in context like you see which files have git changes.</div>
                             <div class="usp-item"><i class="fas fa-check-circle"></i> JIT compilation and execution of LLM generated java code against project sources, dependencies, netbeans apis or any Java library on the internet directly on the NetBeans JVM with Anahata's custom Child-First Classloader. Use your project's classpath or any other.</div>
                         </div>
@@ -152,17 +155,15 @@
                     </div>
                 </div>
 
-                
-
                 <!-- Screenshot Carousel -->
                 <div class="carousel-container">
                     <div class="carousel-slide fade">
-                        <img src="screenshots/netbeans/InContextResourcesVisualization.png" alt="In-Context Resource Visualization" class="clickable-media" data-caption="Atomic Context - Visualizing managed text resources directly within the IDE's augmented workflow.">
-                        <div class="carousel-caption">Real-time visual context awareness — files light up in the Projects view the moment the agent loads them or you add them to context.</div>
-                    </div>
-                    <div class="carousel-slide fade">
                         <img src="screenshots/netbeans/NbJava.png" alt="NbJava JIT Compiler" class="clickable-media" data-caption="Singularity Engine - JIT compilation and execution of LLM generated code.">
                         <div class="carousel-caption">Run, Edit, Re-Run LLM generated Java code against your project sources with Anahata's JIT Compiler</div>
+                    </div>
+                    <div class="carousel-slide fade">
+                        <img src="screenshots/netbeans/InContextResourcesVisualization.png" alt="In-Context Resource Visualization" class="clickable-media" data-caption="Atomic Context - Visualizing managed text resources directly within the IDE's augmented workflow.">
+                        <div class="carousel-caption">Real-time visual context awareness — files light up in the Projects view the moment the agent loads them or you add them to context.</div>
                     </div>
                     <div class="carousel-slide fade">
                         <img src="screenshots/netbeans/InlineAIAnnotations.png" alt="Inline AI Annotations" class="clickable-media" data-caption="Agentic Feedback - Real-time AI suggestions and diagnostics painted directly onto source code lines.">
@@ -207,6 +208,159 @@
                 </div>
             </section>
 
+            <!-- The JASI Flywheel -->
+            <section id="flywheel" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-sync-alt"></i><h2>The Anahata ASI Flywheel (Singularity Loop)</h2></div>
+                <p>The core strategic advantage of Anahata ASI Studio is the <b>Anahata ASI Flywheel</b>—the ultimate, self-sustaining loop of agentic software engineering. Rather than treating code generation as a stateless text-completion task, Anahata orchestrates a continuous cycle of perception, action, and validation directly within the NetBeans compiler.</p>
+                
+                <div class="integration-grid" style="border-left: 4px solid var(--barca-gold); margin-top: 2rem;">
+                    <div class="integration-item"><i class="fas fa-eye"></i> <b>1. Perception (CodeModel & Projects)</b>: The ASI reads the exact Abstract Syntax Tree (AST) and project hierarchy. It understands your Maven dependencies, Java versions, and module structures.</div>
+                    <div class="integration-item"><i class="fas fa-atom"></i> <b>2. Action (BatchCodeRefiner)</b>: The ASI executes surgical, AST-guided modifications using the V4 Text Replacement Engine. It preserves your exact indentation, blank lines, and inline comments without corrupting the surrounding code.</div>
+                    <div class="integration-item"><i class="fas fa-shield-alt"></i> <b>3. Validation (Project Alerts)</b>: The NetBeans background parser scans the modified file immediately. If the AI introduces a compilation error or missing dependency, the <code>ProjectAlertsContextProvider</code> instantly flags the red error badges in the very next turn's RAG message.</div>
+                    <div class="integration-item"><i class="fab fa-java"></i> <b>4. Execution (NbJava)</b>: The ASI compiles and runs the validated logic dynamically inside the NetBeans JVM using the project's own <code>target/classes</code>. The Singularity is achieved as the agent tests its own code in real-time.</div>
+                </div>
+            </section>
+
+            <!-- Comparison Matrix -->
+            <section id="comparison" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-crosshairs"></i><h2>Anahata vs. The 2026 IDE Giants</h2></div>
+                <p>While legacy AI assistants act as surface-level text-completion engines or stateless REST API wrappers, Anahata ASI Studio is a <b>Stateful ASI Container</b>. It doesn't just read your code; it resides inside your JVM, manages its own context metabolism, and executes programmatic refactoring with AST-guided precision.</p>
+                
+                <div style="margin: 2rem 0; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                    <label for="competitor-select" style="color: var(--barca-gold); font-weight: bold; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px;">Target to Compare:</label>
+                    <select id="competitor-select" style="background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--barca-gold); padding: 8px 16px; border-radius: 6px; font-family: inherit; font-size: 0.9rem; outline: none; cursor: pointer;">
+                        <option value="intellij">IntelliJ AI Assistant (JetBrains)</option>
+                        <option value="eclipse">GitHub Copilot for Eclipse (Microsoft)</option>
+                        <option value="watsonx">IBM watsonx Code Assistant (Enterprise)</option>
+                        <option value="cursor">Cursor Enterprise IDE</option>
+                        <option value="antigravity">Google Antigravity AI</option>
+                        <option value="claude">The Claude App (Desktop)</option>
+                    </select>
+                </div>
+
+                <div class="comparison-container" style="overflow-x: auto; margin-bottom: 2rem;">
+                    <table class="comparison-table" style="width: 100%; border-collapse: collapse; text-align: left; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; font-size: 0.9rem;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02);">
+                                <th style="padding: 1rem; color: var(--barca-gold); width: 25%;">Capability Dimension</th>
+                                <th style="padding: 1rem; color: var(--primary-light); width: 37.5%; border-left: 2px solid rgba(44, 122, 123, 0.5);">Anahata ASI Studio</th>
+                                <th id="comp-header" style="padding: 1rem; color: var(--text-main); width: 37.5%; border-left: 1px solid rgba(255,255,255,0.05);">IntelliJ AI Assistant</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comp-body">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <script>
+                    const compData = {
+                        "intellij": {
+                            name: "IntelliJ AI Assistant (JetBrains)",
+                            arch: "Proprietary JetBrains Cloud integration. Deep AST analysis but stateless session persistence.",
+                            context: "<b>The Context Window Disaster (Issue LLM-13992):</b> Heavily limited. Silently truncates context when attachments exceed tiny thresholds. Opaque background context building burns up to 25% of monthly Pro quotas in a single workday of normal coding. Prone to catastrophic <b>413 Content Too Large</b> failures on EKS gateways.",
+                            safety: "Basic chat and auto-complete. Standard click-to-accept autocomplete suggestions. No visual pre-flight reviews, side-by-side graphical diff view, or argument modification states.",
+                            deployment: "Closed-source cloud gateway. Locked entirely to JetBrains' commercial licensing, billing, and proprietary server telemetry.",
+                            agentic: "Completely static. Restricted to pre-compiled inspections. No dynamic self-evolution."
+                        },
+                        "eclipse": {
+                            name: "GitHub Copilot for Eclipse",
+                            arch: "Client-side plugin sending stateless REST calls to Microsoft/GitHub servers.",
+                            context: "<b>The Open-Source Illusion:</b> Released client wrapper as open-source under MIT on May 21, 2026 to bypass enterprise audits, but the actual orchestration, telemetry, and AI service remain closed-source. Wastes up to 40% of its active token window on 'Safety & Policy Scaffolding' (Microsoft's commercial liability filtering).",
+                            safety: "Provides Next Edit Suggestions (NES) but lacks pre-flight AST-aware validation. No interactive local review gates.",
+                            deployment: "Cloud-only telemetry. Requires active Microsoft enterprise account and billing. No native air-gapped or on-premise execution.",
+                            agentic: "Uses static MCP (Model Context Protocol). No dynamic compilation or runtime class loading inside the IDE JVM."
+                        },
+                        "watsonx": {
+                            name: "IBM watsonx Code Assistant",
+                            arch: "Closed-source IBM Cloud integration. Targeted at Enterprise Java Modernization (migrating Java 8 to 17/monolith to Jakarta EE).",
+                            context: "Stores chats locally in a SQLite database (<code>~/.wca/chat.db</code>) for basic enterprise privacy compliance, but completely lacks context window desaturation or metabolic garbage collection.",
+                            safety: "Generates code snippets in chat. No side-by-side IDE diff visualizer with overlaid AI comment bubbles or programmatic 'PENDING' review gates.",
+                            deployment: "<b>Heavy Vendor Lock-In:</b> Tied exclusively to IBM Cloud. Requires a premium, expensive <b>Standard Plan</b> on IBM Cloud. Cannot run offline open-weight models (like DeepSeek or a private Llama).",
+                            agentic: "Completely static. Locked to pre-trained modernization blueprints."
+                        },
+                        "cursor": {
+                            name: "Cursor Enterprise IDE",
+                            arch: "VS Code fork with embedded Electron/TypeScript AI layers.",
+                            context: "Uses codebase embedding vector databases, but struggles with large monorepos, causing Electron thread crashes or extreme memory leaks. Cannot resolve local addresses without public network tunnels.",
+                            safety: "<b>The Ngrok Security Nightmare:</b> Cannot connect to Local Models on <code>localhost</code> directly because its prompts are built on Cursor's cloud. Forces developers to open <b>public ngrok tunnels</b> to route local prompts back to their machine! Absolute blocker for corporate compliance.",
+                            deployment: "Cloud-only routing. No On-Premise, Hybrid, or VPC deployments available for secure environments. Client-side model name validation blocks custom enterprise models.",
+                            agentic: "Restricted to standard OS terminal scripts and VS Code extension boundaries."
+                        },
+                        "antigravity": {
+                            name: "Google Antigravity AI",
+                            arch: "Browser-based or VS Code fork (Electron).",
+                            context: "Standard sliding window with massive token limits, but lacks semantic garbage collection and pinning.",
+                            safety: "Blind 'Auto mode' agentic execution without granular 'PENDING' state approvals.",
+                            deployment: "Tethered completely to Google Cloud / Gemini ecosystems.",
+                            agentic: "Pre-defined agent roles only."
+                        },
+                        "claude": {
+                            name: "The Claude App (Desktop)",
+                            arch: "Electron App + Node.js MCP.",
+                            context: "Basic chat history retention. No IDE or Java project structural awareness.",
+                            safety: "CLI manual approvals. No IDE integration for safe code patching.",
+                            deployment: "Cloud-hosted Anthropic infrastructure.",
+                            agentic: "Relies entirely on external MCP servers. Cannot inject code into a running JVM."
+                        }
+                    };
+
+                    const select = document.getElementById('competitor-select');
+                    const header = document.getElementById('comp-header');
+                    const tbody = document.getElementById('comp-body');
+
+                    function updateTable() {
+                        const val = select.value;
+                        const data = compData[val];
+                        header.innerText = data.name;
+
+                        tbody.innerHTML = 
+                            '<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">' +
+                                '<td style="padding: 1rem; font-weight: 700;">Architectural Paradigm</td>' +
+                                '<td style="padding: 1rem; background: rgba(44, 122, 123, 0.05); border-left: 2px solid rgba(44, 122, 123, 0.5);"><b>Stateful ASI Container</b> directly inside the NetBeans JVM.</td>' +
+                                '<td style="padding: 1rem; border-left: 1px solid rgba(255,255,255,0.05); opacity: 0.8;">' + data.arch + '</td>' +
+                            '</tr>' +
+                            '<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">' +
+                                '<td style="padding: 1rem; font-weight: 700;">Context Window Metabolism</td>' +
+                                '<td style="padding: 1rem; background: rgba(44, 122, 123, 0.05); border-left: 2px solid rgba(44, 122, 123, 0.5);"><b>Context Window Garbage Collector (CwGC)</b> mathematically guarantees you never hit token limits by leaving \'Semantic Ghosts\' in the prompt.</td>' +
+                                '<td style="padding: 1rem; border-left: 1px solid rgba(255,255,255,0.05); opacity: 0.8;">' + data.context + '</td>' +
+                            '</tr>' +
+                            '<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">' +
+                                '<td style="padding: 1rem; font-weight: 700;">Execution Safety & HITL</td>' +
+                                '<td style="padding: 1rem; background: rgba(44, 122, 123, 0.05); border-left: 2px solid rgba(44, 122, 123, 0.5);"><b>Stateful PENDING UI</b>. Visually review changes in a native Diff Viewer with overlaid AI comment bubbles before execution.</td>' +
+                                '<td style="padding: 1rem; border-left: 1px solid rgba(255,255,255,0.05); opacity: 0.8;">' + data.safety + '</td>' +
+                            '</tr>' +
+                            '<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">' +
+                                '<td style="padding: 1rem; font-weight: 700;">Deployment & Privacy</td>' +
+                                '<td style="padding: 1rem; background: rgba(44, 122, 123, 0.05); border-left: 2px solid rgba(44, 122, 123, 0.5);"><b>100% Environment Agnostic</b>. Works fully air-gapped with Ollama/vLLM or routes to any cloud provider.</td>' +
+                                '<td style="padding: 1rem; border-left: 1px solid rgba(255,255,255,0.05); opacity: 0.8;">' + data.deployment + '</td>' +
+                            '</tr>' +
+                            '<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">' +
+                                '<td style="padding: 1rem; font-weight: 700;">Dynamic Self-Evolution</td>' +
+                                '<td style="padding: 1rem; background: rgba(44, 122, 123, 0.05); border-left: 2px solid rgba(44, 122, 123, 0.5);"><b>The Singularity Loop (NbJava)</b>. Downloads Maven JARs and JIT-compiles custom tools on-the-fly inside the IDE JVM.</td>' +
+                                '<td style="padding: 1rem; border-left: 1px solid rgba(255,255,255,0.05); opacity: 0.8;">' + data.agentic + '</td>' +
+                            '</tr>';
+                    }
+
+                    select.addEventListener('change', updateTable);
+                    updateTable(); // init
+                </script>
+            </section>
+
+            <!-- NbJava Toolkit -->
+            <section id="nbjava" class="toolkit-section">
+                <div class="toolkit-header"><i class="fab fa-java"></i><h2>NbJava Toolkit (2 Tools)</h2></div>
+                <p>An On-The-Fly, NetBeans-aware, Swing-aware, User-editable Java compilation and execution engine. This toolkit is the ultimate self-evolution driver, allowing the model to execute raw Java code directly inside the running NetBeans JVM without any external process overhead.</p>
+                <ul class="toolkit-highlights">
+                    <li><b>The Singularity Engine</b>: Executes model-generated class files against NetBeans Platform APIs, the active workspace, and any loaded Java libraries.</li>
+                    <li><b>Hot-Reload Context</b>: Prioritizes <code>target/classes</code> directories, letting the model test, edit, and re-run its own Java code in real-time.</li>
+                </ul>
+                <div class="tool-grid">
+                    <div class="tool-card"><span class="tool-sig">compileAndExecuteInProject(code, path, incDeps, ...) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Executes code by prepending the project's compiled build output to the classpath.</p></div>
+                    <div class="tool-card"><span class="tool-sig">compileAndExecute(code, extraCp, options) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Compiles and runs a transient public class on the host NetBeans JVM.</p></div>
+                </div>
+            </section>
+
             <!-- Refactor Toolkit -->
             <section id="refactor" class="toolkit-section">
                 <div class="toolkit-header"><i class="fas fa-magic"></i><h2>Refactor Toolkit (17 Tools)</h2></div>
@@ -242,9 +396,8 @@
                 <div class="toolkit-header"><i class="fas fa-atom"></i><h2>CodeRefiner Toolkit (8 Tools)</h2></div>
                 <p>Advanced structural Java code manipulation that operates directly on the NetBeans Abstract Syntax Tree (AST) rather than simple text buffers. This ensures 100% semantic integrity during code evolution.</p>
                 <ul class="toolkit-highlights">
-                    <li><b>Direct AST Transformation</b>: CodeRefiner manipulates actual Java nodes (Methods, Classes, Initializers), preserving comments and formatting exactly where they belong.</li>
-                    <li><b>Surgical Javadoc Mastery</b>: High-fidelity documentation updates with zero-duplication logic and automatic migration of existing member comments.</li>
-                    <li><b>Integrated Import Singularity</b>: Every structural modification triggers a comprehensive import optimization pass, maintaining a clean, FQN-free source file.</li>
+                    <li><b>Direct AST Transformation</b>: CodeRefiner treats your Java code as physical semantic nodes, rewriting signatures and doc trees while preserving leading and trailing formatting.</li>
+                    <li><b>Integrated Import Management</b>: Updates automatically trigger an import optimization pass, converting FQNs to simple imports without compile namespace leaks.</li>
                 </ul>
                 <div class="tool-grid">
                     <div class="tool-card"><span class="tool-sig">insertMember(path, class, decl, body, ...) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Structurally inserts a new method, field, or inner class.</p></div>
@@ -375,21 +528,6 @@
                 </div>
             </section>
 
-            <!-- NbJava Toolkit -->
-            <section id="nbjava" class="toolkit-section">
-                <div class="toolkit-header"><i class="fab fa-java"></i><h2>NbJava Toolkit (2 Tools)</h2></div>
-                <p>On-The-Fly, NetBeans-aware, Swing-aware, User-editable, Java execution engine that can execute any java code directly on the NetBeans JVM without any secondary java process.</p>
-                <ul class="toolkit-highlights">
-                    <li><b>Default Classpath</b>: The model can literally execute any java code using 450+ netbeans jars and the ASI platform's jars (e.g. anything you can do with NetBeans apis or creating new AGI containers).</li>
-                    <li><b>Project's classpath</b>: The model can extend the default classpath with your projects compile or test classpaths to prototype and test code on-the-fly</li>
-                    <li><b>Infinity classpath</b>: The model can download any jar on Earth and execute code against it directly on the NetBeans JVM (no restarts, no separate process).</li>
-                </ul>
-                <div class="tool-grid">
-                    <div class="tool-card"><span class="tool-sig">compileAndExecuteInProject(...) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Executes model code using the project's own target/classes.</p></div>
-                    <div class="tool-card"><span class="tool-sig">compileAndExecute(code, ...) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Inherited: Executes code in the application's JVM.</p></div>
-                </div>
-            </section>
-
             <!-- Context Providers Section -->
             <section id="context-providers" class="toolkit-section">
                 <div class="toolkit-header"><i class="fas fa-eye"></i><h2>Context Providers</h2></div>
@@ -424,7 +562,102 @@
         </main>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
     <script src="nav.js"></script>
     <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=f19c44f5-8b2e-458f-beab-96e4f9f8e603" />
+    
+    <script>
+        const compData = {
+            "intellij": {
+                name: "IntelliJ AI Assistant (JetBrains)",
+                arch: "Proprietary JetBrains Cloud integration. Deep AST analysis but stateless session persistence.",
+                context: "<b>The Context Window Disaster (Issue LLM-13992):</b> Heavily limited. Silently truncates context when attachments exceed tiny thresholds. Opaque background context building burns up to 25% of monthly Pro quotas in a single workday of normal coding. Prone to catastrophic <b>413 Content Too Large</b> failures on EKS gateways.",
+                safety: "Basic chat and auto-complete. Standard click-to-accept autocomplete suggestions. No visual pre-flight reviews, side-by-side graphical diff view, or argument modification states.",
+                deployment: "Closed-source cloud gateway. Locked entirely to JetBrains' commercial licensing, billing, and proprietary server telemetry.",
+                agentic: "Completely static. Restricted to pre-compiled inspections. No dynamic self-evolution."
+            },
+            "eclipse": {
+                name: "GitHub Copilot for Eclipse (Microsoft)",
+                arch: "Client-side plugin sending stateless REST calls to Microsoft/GitHub servers.",
+                context: "<b>The Open-Source Illusion:</b> Released client wrapper as open-source under MIT on May 21, 2026 to bypass enterprise audits, but the actual orchestration, telemetry, and AI service remain closed-source. Wastes up to 40% of its active token window on 'Safety & Policy Scaffolding' (Microsoft's commercial liability filtering).",
+                safety: "Provides Next Edit Suggestions (NES) but lacks pre-flight AST-aware validation. No interactive local review gates.",
+                deployment: "Cloud-only telemetry. Requires active Microsoft enterprise account and billing. No native air-gapped or on-premise execution.",
+                agentic: "Uses static MCP (Model Context Protocol). No dynamic compilation or runtime class loading inside the IDE JVM."
+            },
+            "watsonx": {
+                name: "IBM watsonx Code Assistant (Enterprise)",
+                arch: "Closed-source IBM Cloud integration. Targeted at Enterprise Java Modernization (migrating Java 8 to 17/monolith to Jakarta EE).",
+                context: "Stores chats locally in a SQLite database (<code>~/.wca/chat.db</code>) for basic privacy, but completely lacks context window desaturation or metabolic garbage collection.",
+                safety: "Generates code snippets in chat. No side-by-side IDE diff visualizer with overlaid AI comment bubbles or programmatic 'PENDING' review gates.",
+                deployment: "<b>Heavy Vendor Lock-In:</b> Tied exclusively to IBM Cloud. Requires a premium, expensive <b>Standard Plan</b> on IBM Cloud. Cannot run offline open-weight models.",
+                agentic: "Completely static. Locked to pre-trained modernization blueprints."
+            },
+            "cursor": {
+                name: "Cursor Enterprise IDE",
+                arch: "VS Code fork with embedded Electron/TypeScript AI layers.",
+                context: "Uses codebase embedding vector databases, but struggles with large monorepos, causing Electron thread crashes or extreme memory leaks. Cannot resolve local addresses without public network tunnels.",
+                safety: "<b>The Ngrok Security Nightmare:</b> Cannot connect to Local Models on <code>localhost</code> directly because its prompts are built on Cursor's cloud. Forces developers to open <b>public ngrok tunnels</b> to route local prompts back to their machine! Absolute blocker for corporate compliance.",
+                deployment: "Cloud-only routing. No On-Premise, Hybrid, or VPC deployments available for secure environments. Client-side model name validation blocks custom enterprise models.",
+                agentic: "Restricted to standard OS terminal scripts and VS Code extension boundaries."
+            },
+            "antigravity": {
+                name: "Google Antigravity AI",
+                arch: "Browser-based or VS Code fork (Electron).",
+                context: "Standard sliding window with massive token limits, but lacks semantic garbage collection and pinning.",
+                safety: "Blind 'Auto mode' agentic execution without granular 'PENDING' state approvals.",
+                deployment: "Tethered completely to Google Cloud / Gemini ecosystems.",
+                agentic: "Pre-defined agent roles only."
+            },
+            "claude": {
+                name: "The Claude App (Desktop)",
+                arch: "Electron App + Node.js MCP.",
+                context: "Basic chat history retention. No IDE or Java project structural awareness.",
+                safety: "CLI manual approvals. No IDE integration for safe code patching.",
+                deployment: "Cloud-hosted Anthropic infrastructure.",
+                agentic: "Relies entirely on external MCP servers. Cannot inject code into a running JVM."
+            }
+        };
+
+        const select = document.getElementById('competitor-select');
+        const header = document.getElementById('comp-header');
+        const tbody = document.getElementById('comp-body');
+
+        function updateTable() {
+            const val = select.value;
+            const data = compData[val];
+            header.innerText = data.name;
+
+            tbody.innerHTML = 
+                '<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">' +
+                    '<td style="padding: 1rem; font-weight: 700;">Architectural Paradigm</td>' +
+                    '<td style="padding: 1rem; background: rgba(44, 122, 123, 0.05); border-left: 2px solid rgba(44, 122, 123, 0.5);"><b>Stateful ASI Container</b> directly inside the NetBeans JVM.</td>' +
+                    '<td style="padding: 1rem; border-left: 1px solid rgba(255,255,255,0.05); opacity: 0.8;">' + data.arch + '</td>' +
+                '</tr>' +
+                '<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">' +
+                    '<td style="padding: 1rem; font-weight: 700;">Context Window Metabolism</td>' +
+                    '<td style="padding: 1rem; background: rgba(44, 122, 123, 0.05); border-left: 2px solid rgba(44, 122, 123, 0.5);"><b>Context Window Garbage Collector (CwGC)</b> mathematically guarantees you never hit token limits by leaving \'Semantic Ghosts\' in the prompt.</td>' +
+                    '<td style="padding: 1rem; border-left: 1px solid rgba(255,255,255,0.05); opacity: 0.8;">' + data.context + '</td>' +
+                '</tr>' +
+                '<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">' +
+                    '<td style="padding: 1rem; font-weight: 700;">Execution Safety & HITL</td>' +
+                    '<td style="padding: 1rem; background: rgba(44, 122, 123, 0.05); border-left: 2px solid rgba(44, 122, 123, 0.5);"><b>Stateful PENDING UI</b>. Visually review changes in a native Diff Viewer with overlaid AI comment bubbles before execution.</td>' +
+                    '<td style="padding: 1rem; border-left: 1px solid rgba(255,255,255,0.05); opacity: 0.8;">' + data.safety + '</td>' +
+                '</tr>' +
+                '<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">' +
+                    '<td style="padding: 1rem; font-weight: 700;">Deployment & Privacy</td>' +
+                    '<td style="padding: 1rem; background: rgba(44, 122, 123, 0.05); border-left: 2px solid rgba(44, 122, 123, 0.5);"><b>100% Environment Agnostic</b>. Works fully air-gapped with Ollama/vLLM or routes to any cloud provider.</td>' +
+                    '<td style="padding: 1rem; border-left: 1px solid rgba(255,255,255,0.05); opacity: 0.8;">' + data.deployment + '</td>' +
+                '</tr>' +
+                '<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">' +
+                    '<td style="padding: 1rem; font-weight: 700;">Dynamic Self-Evolution</td>' +
+                    '<td style="padding: 1rem; background: rgba(44, 122, 123, 0.05); border-left: 2px solid rgba(44, 122, 123, 0.5);"><b>The Singularity Loop (NbJava)</b>. Downloads Maven JARs and JIT-compiles custom tools on-the-fly inside the IDE JVM.</td>' +
+                    '<td style="padding: 1rem; border-left: 1px solid rgba(255,255,255,0.05); opacity: 0.8;">' + data.agentic + '</td>' +
+                '</tr>';
+        }
+
+        select.addEventListener('change', updateTable);
+        updateTable(); // init
+    </script>
 </body>
 </html>

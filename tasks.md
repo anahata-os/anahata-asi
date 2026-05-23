@@ -14,7 +14,7 @@ This file tracks the actionable tasks and tactical goals for the Anahata ASI (V2
 
 - [ ] change all log.info to log.debug
 
-- [ ] enums in json schemas dont have description, check JavaMethodToolResponse for ExecutionStatus
+- [ ] WrapLayout in unloadResources plays games with horizotnal widths some times
 
 - [ ] recording audio on the microphon button default recording device leaves a dangling swing task and doesn't record
 

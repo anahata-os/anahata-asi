@@ -71,6 +71,7 @@
                     <li><a href="#resources"><i class="fas fa-file-code"></i> Resources</a></li>
                     <li><a href="#shell"><i class="fas fa-terminal"></i> Shell</a></li>
                     <li><a href="#chrome"><i class="fab fa-chrome"></i> Chrome</a></li>
+                    <li><a href="#firefox"><i class="fab fa-firefox"></i> Firefox</a></li>
                     <li><a href="#audio"><i class="fas fa-microphone"></i> Audio</a></li>
                     <li><a href="#radio"><i class="fas fa-radio"></i> Radio</a></li>
                     <li><a href="#speech"><i class="fas fa-comment-dots"></i> Speech</a></li>
@@ -232,6 +233,32 @@
                 <div class="toolkit-header"><i class="fab fa-chrome"></i><h2>Chrome Toolkit (19 Tools)</h2></div>
                 <div class="tool-grid">
                     <div class="tool-card"><span class="tool-sig">connect(droneId, profile, headless, ...) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Initializes a Selenium session with a Chrome profile.</p></div>
+                    <div class="tool-card"><span class="tool-sig">close(droneId) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Closes the active browser session.</p></div>
+                    <div class="tool-card"><span class="tool-sig">navigate(droneId, url) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Directs the browser drone to the specified URL.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getPageSource(droneId) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Gets the full HTML source of the current page.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getPageText(droneId) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Gets the visible text content of the current page.</p></div>
+                    <div class="tool-card"><span class="tool-sig">executeScript(droneId, script) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Executes arbitrary JavaScript in the current session.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getScreenshot(droneId, name) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Takes a screenshot of the current page and attaches it.</p></div>
+                    <div class="tool-card"><span class="tool-sig">listTabs(droneId) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Lists all open tabs/windows in the specified drone.</p></div>
+                    <div class="tool-card"><span class="tool-sig">switchToTab(droneId, index) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Switches the active tab/window by its index.</p></div>
+                    <div class="tool-card"><span class="tool-sig">goBack(droneId) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Navigates back in the browser history.</p></div>
+                    <div class="tool-card"><span class="tool-sig">goForward(droneId) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Navigates forward in the browser history.</p></div>
+                    <div class="tool-card"><span class="tool-sig">refresh(droneId) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Refreshes the current page.</p></div>
+                    <div class="tool-card"><span class="tool-sig">inspectForm(droneId) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Inspects current page for interactive inputs/buttons.</p></div>
+                    <div class="tool-card"><span class="tool-sig">fillForm(droneId, dataMap) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Fills web forms using an intelligent element locator.</p></div>
+                    <div class="tool-card"><span class="tool-sig">clickElement(droneId, identifier) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Performs a stateful click via ID, Name, Link Text, or XPath.</p></div>
+                    <div class="tool-card"><span class="tool-sig">scrollToElement(droneId, identifier) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Scrolls the specified element into view.</p></div>
+                    <div class="tool-card"><span class="tool-sig">waitForElement(droneId, cssSelector, timeout) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Waits for an element to be visible on the page.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getStatus(droneId) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Gets the current status of a specific drone.</p></div>
+                    <div class="tool-card"><span class="tool-sig">killAll() <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Terminates all running browser processes on host.</p></div>
+                </div>
+            </section>
+
+            <!-- Firefox Toolkit -->
+            <section id="firefox" class="toolkit-section">
+                <div class="toolkit-header"><i class="fab fa-firefox"></i><h2>Firefox Toolkit (19 Tools)</h2></div>
+                <div class="tool-grid">
+                    <div class="tool-card"><span class="tool-sig">connect(droneId, profile, headless, ...) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Initializes a Selenium session with a Firefox profile.</p></div>
                     <div class="tool-card"><span class="tool-sig">close(droneId) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Closes the active browser session.</p></div>
                     <div class="tool-card"><span class="tool-sig">navigate(droneId, url) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Directs the browser drone to the specified URL.</p></div>
                     <div class="tool-card"><span class="tool-sig">getPageSource(droneId) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Gets the full HTML source of the current page.</p></div>
