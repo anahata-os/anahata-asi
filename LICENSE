@@ -1,4 +1,4 @@
-# The Anahata AI Software License
+# The Anahata ASI Software License
 ## Version 108, "The Immutable Edict" Edition
 
 ### Preamble
@@ -9,27 +9,23 @@ You hold in your hands not merely a block of code, but a distillation of passion
 
 This Software is designed to be a true partner in the creative process. It is opinionated. It believes in clean code, clear intent, and the occasional, well-placed, witty comment. It also believes, as the great philosopher Shakira once noted, that hips don't lie, and neither does a clean test suite. By using this Software, you agree to strive for these ideals, or at the very least, to not write code that would make a senior developer weep.
 
-### Article II: The Rules of Engagement (The Dual License)
+### Article II: The Rules of Engagement (The Unified Open Field)
 
-To balance the vibrant, collaborative world of open source with the pragmatic needs of professional enterprise, we offer two paths:
+We believe in the power of bottom-up adoption and frictionless enterprise integration. Therefore, this Software is licensed under the **Apache License, Version 2.0**. It is 100% free, open-source, and available for use in proprietary, closed-source commercial applications without any legal friction or licensing fees. It is the spirit of La Masia: we all train together, we all grow together.
 
-**Path A: The Open Field (Apache License, Version 2.0)**
-If you wish to use this Software in an open-source project, you shall do so under the **Apache License, Version 2.0**. This is our pact with the community. It ensures that if you build upon this work and share it, your improvements remain part of the open ecosystem for all to benefit from. It is the spirit of La Masia: we all train together, we all grow together.
-
-**Path B: The Professional Arena (The 'Fair Play' Commercial License)**
-If you wish to integrate this Software into your proprietary, closed-source commercial application, you are granted a full **Commercial License** by making a donation of **any amount**. This is not a transaction, but a strategic alliance built on the spirit of "fair play." Your contribution, regardless of size, secures your commercial rights and directly funds the project's continued evolution.
+However, running an Artificial Super Intelligence in an enterprise production environment requires more than just code. It requires stability, accountability, and direct access to the architects. For this, we offer the Enterprise Partnership.
 
 ### Article III: The Support Tiers (The 'Fatness' Factor)
 
-In the spirit of our beloved club, not all players get the same attention from the coaching staff. Your level of commercial support is directly tied to the "fatness" of your donation, ensuring that those who invest more in the club's success receive priority attention.
+In the spirit of our beloved club, not all players get the same attention from the coaching staff. Your level of commercial support is directly tied to the "fatness" of your donation (Dakshina). You are not buying the code; you are securing an Enterprise Service Level Agreement (SLA), priority bug fixes, and direct architectural consulting.
 
-*   **Cantera (The Youth Academy):** A donation of any amount. You get a commercial license, our gratitude, and access to community support channels. You're part of the squad.
-*   **First Team Player:** A significant donation. You get everything in Cantera, plus priority email support for bug fixes and general inquiries. You're a starter.
-*   **Club Captain (The 'Puyol' Tier):** A substantial donation. You get everything in the First Team, plus direct access to the core development team for strategic advice and feature requests. You wear the armband.
+*   **Cantera (The Youth Academy):** A donation of any amount. You get our eternal gratitude and priority access to community support channels. You're part of the squad.
+*   **First Team Player:** A significant donation. You get everything in Cantera, plus priority email support, guaranteed SLA response times, and expedited bug fixes. You're a starter.
+*   **Club Captain (The 'Puyol' Tier):** A substantial donation. You get everything in the First Team, plus direct access to the core compiler engineers for strategic advice, custom tool integration, and feature requests. You wear the armband.
 
 **How to Contribute (Dakshina):**
 
-To establish your support tier and formalize your license, use any of the following channels:
+To establish your support tier and formalize your SLA, use any of the following channels:
 
 *   **GitHub Sponsors:** [https://github.com/sponsors/anahata-os](https://github.com/sponsors/anahata-os)
 *   **PayPal:** [https://www.paypal.com/donate/?hosted_button_id=SS8B8R7S68R7G](https://www.paypal.com/donate/?hosted_button_id=SS8B8R7S68R7G)

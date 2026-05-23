@@ -1,5 +1,5 @@
 # 🧘 Anahata ASI: The AI Operating System
-**The world's first pure-Java, open-source, Apache-licensed Container for Artificial Super Intelligence.**
+**The world's first 100% Air-Gapped, Stateful Java ASI Container. Zero Telemetry. Zero Ngrok tunnels. Complete Data Sovereignty.**
 
 [![Build Status](https://github.com/anahata-os/anahata-asi/actions/workflows/deploy-artifacts.yml/badge.svg)](https://github.com/anahata-os/anahata-asi/actions/workflows/deploy-artifacts.yml)
 [![Website & Javadoc](https://github.com/anahata-os/anahata-asi/actions/workflows/deploy-website.yml/badge.svg)](https://github.com/anahata-os/anahata-asi/actions/workflows/deploy-website.yml)
@@ -11,6 +11,8 @@
 
 ### 🏛️ What is Anahata ASI?
 Anahata is to AGI what **Tomcat** is to Web Apps or **Kubernetes** is to Containers. It is a stateful, air-gapped execution environment that brings the proven architectural patterns of the Java ecosystem—Thread-Safety, Agentic Context Injection, and Lifecycle Management—to the frontier of Super Intelligence.
+
+Stop wrapping stateless REST APIs. Deploy an Operating System that manages memory, evolves on-the-fly, and respects your enterprise boundaries.
 
 #### 🧠 The AGI Container (The Engine)
 A high-fidelity execution environment for individual AGI sessions providing:
