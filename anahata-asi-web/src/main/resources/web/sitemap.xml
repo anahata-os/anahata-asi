@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://asi.anahata.uno/</loc><priority>1.0</priority></url>
+  <url><loc>https://asi.anahata.uno/index.html</loc><priority>1.0</priority></url>
+  <url><loc>https://asi.anahata.uno/nb.html</loc><priority>0.9</priority></url>
+  <url><loc>https://asi.anahata.uno/desktop.html</loc><priority>0.9</priority></url>
+  <url><loc>https://asi.anahata.uno/core.html</loc><priority>0.8</priority></url>
+  <url><loc>https://asi.anahata.uno/swing.html</loc><priority>0.8</priority></url>
+  <url><loc>https://asi.anahata.uno/quickstart.html</loc><priority>0.8</priority></url>
+  <url><loc>https://asi.anahata.uno/yam.html</loc><priority>0.7</priority></url>
+  <url><loc>https://asi.anahata.uno/openai.html</loc><priority>0.7</priority></url>
+  <url><loc>https://asi.anahata.uno/anthropic.html</loc><priority>0.7</priority></url>
+  <url><loc>https://asi.anahata.uno/gemini.html</loc><priority>0.7</priority></url>
+  <url><loc>https://asi.anahata.uno/compatible.html</loc><priority>0.7</priority></url>
+  <url><loc>https://asi.anahata.uno/apidocs/index.html</loc><priority>0.6</priority></url>
+</urlset>
