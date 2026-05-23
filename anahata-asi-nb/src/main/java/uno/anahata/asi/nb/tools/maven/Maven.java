@@ -491,7 +491,7 @@ public class Maven extends AnahataToolkit {
     
     /**
      * Executes a list of Maven goals on a Project synchronously.
-     * @param projectId The ID of the project to run the goals on.
+     * @param projectPath The ID of the project to run the goals on.
      * @param goals A list of Maven goals to execute.
      * @param profiles A list of profiles to activate.
      * @param properties A map of properties to set.
@@ -502,14 +502,14 @@ public class Maven extends AnahataToolkit {
      */
     @AgiTool(value = "Executes a list of Maven goals on a Project synchronously (waits for the build to finish), capturing the last " + MAX_OUTPUT_LINES + " lines of the output.")
     public MavenBuildResult runGoals(
-            @AgiToolParam("The ID of the project to run the goals on.") String projectId,
+            @AgiToolParam("The full path of the project to run the goals on.") String projectPath,
             @AgiToolParam("A list of Maven goals to execute (e.g., ['clean', 'install']).") List<String> goals,
             @AgiToolParam("A list of profiles to activate.") List<String> profiles,
             @AgiToolParam("A map of properties to set.") Map<String, String> properties,
             @AgiToolParam("A list of additional Maven options.") List<String> options,
             @AgiToolParam("The maximum time to wait for the build to complete, in milliseconds.") Long timeout) throws Exception {
 
-        Project project = Projects.findOpenProject(projectId);
+        Project project = Projects.findOpenProject(projectPath);
         
         long effectiveTimeout = timeout != null ? timeout : DEFAULT_TIMEOUT_MS;
         
@@ -670,32 +670,31 @@ public class Maven extends AnahataToolkit {
     
     /**
      * Downloads all missing dependencies artifacts for a given Maven project.
-     * @param projectId The ID of the project to download dependencies for.
+     * @param projectPath The absolute path of the project to download dependencies for.
      * @param classifiers A list of classifiers to download.
      * @return a message indicating the result of the operation.
-     * @throws Exception if an error occurs.
+     * @throws java_lang_Exception if an error occurs.
      */
     @AgiTool("Downloads all missing dependencies artifacts (e.g., 'sources', 'javadoc') for a given Maven project's dependencies.")
-    public String downloadProjectDependencies(
-            @AgiToolParam("The ID of the project to download dependencies for.") String projectId,
-            @AgiToolParam("A list of classifiers to download (e.g., ['sources', 'javadoc']).") List<String> classifiers) throws Exception {
-        
-        Project project = Projects.findOpenProject(projectId);
+        public String downloadProjectDependencies(
+                @AgiToolParam("The absolute path of the project to download dependencies for.") String projectPath,
+                @AgiToolParam("A list of classifiers to download (e.g., ['sources', 'javadoc']).") List<String> classifiers) throws Exception {
+        Project project = Projects.findOpenProject(projectPath);
         NbMavenProject nbMavenProject = project.getLookup().lookup(NbMavenProject.class);
         if (nbMavenProject == null) {
-            throw new IllegalStateException("Project '" + projectId + "' is not a Maven project or could not be found.");
+            throw new IllegalStateException("Project '" + projectPath + "' is not a Maven project or could not be found.");
         }
-        
+
         MavenEmbedder onlineEmbedder = EmbedderFactory.getOnlineEmbedder();
         Set<Artifact> artifacts = nbMavenProject.getMavenProject().getArtifacts();
         int totalSuccessCount = 0;
         int totalFailCount = 0;
         StringBuilder errors = new StringBuilder();
-        
+
         for (String classifier : classifiers) {
             int successCount = 0;
             int failCount = 0;
-            
+
             for (Artifact art : artifacts) {
                 if (downloadArtifact(onlineEmbedder, nbMavenProject, art, classifier, errors)) {
                     successCount++;
@@ -708,50 +707,49 @@ public class Maven extends AnahataToolkit {
         }
 
         NbMavenProject.fireMavenProjectReload(project);
-        
+
         String artifactTypeNames = classifiers.stream()
                 .map(c -> c.substring(0, 1).toUpperCase() + c.substring(1))
                 .collect(Collectors.joining(" and "));
-        
-        return buildResultString(artifactTypeNames, "Project", projectId, totalSuccessCount, totalFailCount, errors);
+
+        return buildResultString(artifactTypeNames, "Project", projectPath, totalSuccessCount, totalFailCount, errors);
     }
 
     /**
      * Downloads a specific classified artifact for a single dependency.
-     * @param projectId The ID of the project to use for repository context.
-     * @param groupId The groupId of the dependency.
-     * @param artifactId The artifactId of the dependency.
+     * @param type The type of the dependency.
      * @param version The version of the dependency.
      * @param classifier The classifier of the artifact to download.
-     * @param type The type of the dependency.
+     * @param artifactId The artifactId of the dependency.
+     * @param groupId The groupId of the dependency.
+     * @param projectPath The absolute path of the project to use for repository context.
      * @return true on success, false on failure.
-     * @throws Exception if an error occurs.
+     * @throws java_lang_Exception if an error occurs.
      */
     @AgiTool("Downloads a specific classified artifact (e.g., 'sources', 'javadoc', or the main artifact if classifier is null) for a single dependency. This can be used to verify an artifact exists before adding it to a POM. Returns true on success, false on failure.")
-    public boolean downloadDependencyArtifact(
-            @AgiToolParam("The ID of the project to use for repository context.") String projectId,
-            @AgiToolParam("The groupId of the dependency.") String groupId,
-            @AgiToolParam("The artifactId of the dependency.") String artifactId,
-            @AgiToolParam("The version of the dependency (e.g., 'LATEST', '1.0.0').") String version,
-            @AgiToolParam("The classifier of the artifact to download (e.g., 'sources', 'javadoc'). Use null for the main artifact.") String classifier,
-            @AgiToolParam("The type of the dependency (e.g., 'test-jar'). If null, defaults to 'jar'.") String type) throws Exception {
-        
-        Project project = Projects.findOpenProject(projectId);
+        public boolean downloadDependencyArtifact(
+                @AgiToolParam("The absolute path of the project to use for repository context.") String projectPath,
+                @AgiToolParam("The groupId of the dependency.") String groupId,
+                @AgiToolParam("The artifactId of the dependency.") String artifactId,
+                @AgiToolParam("The version of the dependency (e.g., 'LATEST', '1.0.0').") String version,
+                @AgiToolParam("The classifier of the artifact to download (e.g., 'sources', 'javadoc'). Use null for the main artifact.") String classifier,
+                @AgiToolParam("The type of the dependency (e.g., 'test-jar'). If null, defaults to 'jar'.") String type) throws Exception {
+        Project project = Projects.findOpenProject(projectPath);
         NbMavenProject nbMavenProject = project.getLookup().lookup(NbMavenProject.class);
         if (nbMavenProject == null) {
-            throw new IllegalStateException("Project '" + projectId + "' is not a Maven project or could not be found.");
+            throw new IllegalStateException("Project '" + projectPath + "' is not a Maven project or could not be found.");
         }
-        
+
         MavenEmbedder embedder = EmbedderFactory.getOnlineEmbedder();
-        
+
         Artifact temporaryArtifact = embedder.createArtifactWithClassifier(
-                groupId, 
-                artifactId, 
-                version, 
-                type != null ? type : "jar", 
+                groupId,
+                artifactId,
+                version,
+                type != null ? type : "jar",
                 classifier
         );
-        
+
         return downloadArtifact(embedder, nbMavenProject, temporaryArtifact, classifier, new StringBuilder());
     }
     
