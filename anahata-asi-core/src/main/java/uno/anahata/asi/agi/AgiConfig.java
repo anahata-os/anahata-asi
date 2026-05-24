@@ -3,6 +3,7 @@
  */
 package uno.anahata.asi.agi;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -478,7 +479,7 @@ public class AgiConfig extends BasicPropertyChangeSource {
      * @param uri The resource URI to wrap.
      * @return A concrete handle implementation for the specified URI.
      */
-    public ResourceHandle createResourceHandle(java.net.URI uri) {
+    public ResourceHandle createResourceHandle(URI uri) {
         if ("file".equalsIgnoreCase(uri.getScheme())) {
             return new PathHandle(uri.getPath());
         }
