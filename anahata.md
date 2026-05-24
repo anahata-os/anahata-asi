@@ -64,6 +64,9 @@ This project uses a set of key documents to guide development. For detailed info
     5. Public helper methods (if needed that can be accessed by other toolkits via getToolkit(OtherToolkit.class) or by any other classess of the host application. Calling one toolkit from another toolkit supports context propagation via thread local of the associated ToolContex (this works for all methods of ToolContext such as log(""), error(""), addAttachment(), getModelId(), etc.) 
     6. Private implementation details (internal private methods )
 
+- **NO fqns on method bodies**: 
+    1. Never add fqns inside a class, looks terrible. If you are using the resources toolkit, you need to include the imports. 
+
 ## 5. Javadoc Standards
 
 Comprehensive documentation is mandatory for this open-source project. Existing Javadoc and comments must never be removed.
