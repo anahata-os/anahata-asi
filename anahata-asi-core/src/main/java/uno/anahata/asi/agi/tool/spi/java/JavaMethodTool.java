@@ -158,12 +158,14 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
             Class<?> currentClass = instance.getClass();
             while (currentClass != null && currentClass != Object.class) {
                 for (Method m : currentClass.getDeclaredMethods()) {
-                    if (javaMethodSignature.equals(buildMethodSignature(m))) {
-                        this.method = m;
-                        AgiTool toolAnnotation = method.getDeclaredAnnotation(AgiTool.class);
-                        initAttributes(toolAnnotation);
-                        initParameters();
-                        break;
+                    if (javaMethodSignature.equals(buildMethodSignature(m))) {                        
+                        AgiTool toolAnnotation = m.getDeclaredAnnotation(AgiTool.class);
+                        if (toolAnnotation != null) {
+                            this.method = m;
+                            initAttributes(toolAnnotation);
+                            initParameters();
+                            break;
+                        }
                     }
                 }
                 if (method != null) {
