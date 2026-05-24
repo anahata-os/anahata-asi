@@ -20,6 +20,7 @@ import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.internal.TokenizerUtils;
 import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
+import uno.anahata.asi.agi.provider.TokenizerType;
 
 /**
  * Represents the response of a tool call, designed for deferred execution.
@@ -179,7 +180,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
      * Updates the estimated token count based on the current state of the response.
      */
     private void updateTokenCount() {
-        setTokenCount(TokenizerUtils.countTokens(JacksonUtils.prettyPrint(this), getCall() != null && getCall().getMessage() != null ? getCall().getMessage().getActiveTokenizer() : uno.anahata.asi.agi.provider.TokenizerType.CL100K_BASE));
+        setTokenCount(TokenizerUtils.countTokens(JacksonUtils.serialize(this), getCall() != null && getCall().getMessage() != null ? getCall().getMessage().getActiveTokenizer() : TokenizerType.CL100K_BASE));
         // Notify the call that its size has changed.
         if (call != null) {
             call.updateResponseTokenCount();
