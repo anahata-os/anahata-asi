@@ -229,7 +229,7 @@ public class OpenAiCompatibleResponseAdapter {
                     text = reasoningTags.get(0) + text + reasoningTags.get(1);
                 }
                 
-                part.setTokenCount(TokenizerUtils.countTokens(text, tokenizerType));
+                //part.setTokenCount(TokenizerUtils.countTokens(text, tokenizerType));
                 textContent.append(text);
             } else if (part instanceof AbstractToolCall<?, ?> tc) {
                 ObjectNode callNode = toolCalls.addObject();
@@ -240,7 +240,7 @@ public class OpenAiCompatibleResponseAdapter {
                 try {
                     String argsJson = SchemaProvider.OBJECT_MAPPER.writeValueAsString(tc.getResponse().getExecutedArgs());
                     funcNode.put("arguments", argsJson);
-                    part.setTokenCount(TokenizerUtils.countTokens(argsJson, tokenizerType));
+                    //part.setTokenCount(TokenizerUtils.countTokens(argsJson, tokenizerType));
                 } catch (Exception e) {
                     log.error("Failed to serialize executed args for tool call {}", tc.getId(), e);
                     funcNode.put("arguments", "{}");
@@ -248,17 +248,8 @@ public class OpenAiCompatibleResponseAdapter {
             } else if (part instanceof BlobPart bp) {
                 // Estimate tokens for blobs: use a heuristic based on data size
                 // For images: ~85 tokens per 512x512 tile is a common approximation
-                // For other files: use data length / 4 as rough estimate
-                int estimatedTokens;
-                if (bp.getMimeType().startsWith("image/")) {
-                    // Image token estimation: roughly 85 tokens per 512x512 tile
-                    // This is a rough heuristic; actual tokenization depends on the model
-                    estimatedTokens = Math.max(85, bp.getData().length / 768); // ~768 bytes per 85 tokens
-                } else {
-                    // For other blobs, estimate based on data length
-                    estimatedTokens = bp.getData().length / 4;
-                }
-                part.setTokenCount(estimatedTokens);
+                
+                //part.setTokenCount(estimatedTokens);
                 textContent.append(String.format("\n[Output Blob: %s]\n", bp.getMimeType()));
             }
         }
