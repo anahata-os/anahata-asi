@@ -13,6 +13,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JMenuItem;
@@ -157,7 +159,7 @@ public class ContextPanel extends JPanel {
         this.providerPanel = new ContextProviderPanel(this);
         this.resourcePanel = new ResourcePanel(agiPanel);
         this.messagePartDetailPanel = new ScrollablePanel();
-        this.messagePartDetailPanel.setLayout(new javax.swing.BoxLayout(this.messagePartDetailPanel, javax.swing.BoxLayout.Y_AXIS));
+        this.messagePartDetailPanel.setLayout(new BoxLayout(this.messagePartDetailPanel, BoxLayout.Y_AXIS));
 
         detailContainer.add(createScrollPane(toolPanel), "tool");
         detailContainer.add(createScrollPane(toolkitPanel), "toolkit");
@@ -565,7 +567,7 @@ public class ContextPanel extends JPanel {
         messagePartDetailPanel.removeAll();
         if (panel != null) {
             messagePartDetailPanel.add(panel);
-            messagePartDetailPanel.add(javax.swing.Box.createVerticalGlue());
+            messagePartDetailPanel.add(Box.createVerticalGlue());
         }
         messagePartDetailPanel.revalidate();
         messagePartDetailPanel.repaint();

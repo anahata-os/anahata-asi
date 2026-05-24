@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.agi.message;
 
+import java.util.Objects;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -102,7 +103,7 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
      */
     public void setPruningState(PruningState pruningState, String reason) {
         PruningState oldState = this.pruningState;
-        if (oldState == pruningState && java.util.Objects.equals(this.prunedReason, reason)) {
+        if (oldState == pruningState && Objects.equals(this.prunedReason, reason)) {
             return;
         }
         this.pruningState = pruningState;

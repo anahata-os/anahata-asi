@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.agi.message;
 
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -362,7 +363,7 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
      * @throws Exception if the file cannot be read or the MIME type cannot be
      * detected.
      */
-    public abstract BlobPart addBlobPart(java.nio.file.Path path) throws Exception;
+    public abstract BlobPart addBlobPart(Path path) throws Exception;
 
     /**
      * Creates a standardized text header containing metadata for this message.

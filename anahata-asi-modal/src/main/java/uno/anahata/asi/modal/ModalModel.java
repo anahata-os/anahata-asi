@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.modal;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import uno.anahata.asi.openai.compatible.OpenAiCompatibleModel;
 import uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider;
 import uno.anahata.asi.openai.compatible.OpenAiCompatibleReasoningStyle;
@@ -30,7 +31,7 @@ public class ModalModel extends OpenAiCompatibleModel {
      * @param provider The owning Modal provider.
      * @param node     The JSON metadata for the model.
      */
-    public ModalModel(OpenAiChatCompletionsProvider provider, com.fasterxml.jackson.databind.JsonNode node) {
+    public ModalModel(OpenAiChatCompletionsProvider provider, JsonNode node) {
         super(provider, node);
         configure();
     }

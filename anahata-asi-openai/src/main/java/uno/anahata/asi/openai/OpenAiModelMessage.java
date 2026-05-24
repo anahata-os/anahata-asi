@@ -4,6 +4,8 @@ package uno.anahata.asi.openai;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -57,7 +59,7 @@ public class OpenAiModelMessage extends AbstractModelMessage<OpenAiResponse> {
      * Tracks the association between tool calls and their parent reasoning chains.
      * This is required for OpenAI's strict referential integrity.
      */
-    private final Map<AbstractToolCall<?, ?>, ModelTextPart> toolThoughts = new java.util.LinkedHashMap<>();
+    private final Map<AbstractToolCall<?, ?>, ModelTextPart> toolThoughts = new LinkedHashMap<>();
 
     /**
      * Transient tracker for the most recently parsed reasoning item.
@@ -265,7 +267,7 @@ public class OpenAiModelMessage extends AbstractModelMessage<OpenAiResponse> {
                      } else if ("image".equals(outType)) {
                          String b64 = out.path("image").path("data").asText(null);
                          if (b64 != null) {
-                             ModelBlobPart mbp = addBlobPart("image/png", java.util.Base64.getDecoder().decode(b64), null);
+                             ModelBlobPart mbp = addBlobPart("image/png", Base64.getDecoder().decode(b64), null);
                              mbp.setProviderId(id);
                              mbp.setParentCall(callPart);
                          }

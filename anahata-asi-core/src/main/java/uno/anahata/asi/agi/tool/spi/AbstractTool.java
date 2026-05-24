@@ -6,6 +6,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -47,7 +48,7 @@ public abstract class AbstractTool<P extends AbstractToolParameter, C extends Ab
      */
     public void setPermission(ToolPermission permission) {
         ToolPermission old = this.permission;
-        if (java.util.Objects.equals(old, permission)) {
+        if (Objects.equals(old, permission)) {
             return;
         }
         this.permission = permission;

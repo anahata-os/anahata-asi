@@ -4,6 +4,7 @@
 package uno.anahata.asi.agi;
 
 import java.io.InterruptedIOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -522,7 +523,7 @@ public class Agi extends BasicPropertyChangeSource {
                 log.error("Exception in performSingleTurn", e);
                 ApiErrorRecord.ApiErrorRecordBuilder<?, ?> errorRecordBuilder = ApiErrorRecord.builder()
                         .modelId(selectedModel.getModelId())
-                        .timestamp(java.time.Instant.now())
+                        .timestamp(Instant.now())
                         .retryAttempt(attempt)
                         .stackTrace(ExceptionUtils.getStackTrace(e));
 

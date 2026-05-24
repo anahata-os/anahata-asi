@@ -4,6 +4,7 @@
 package uno.anahata.asi.agi.provider;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -218,12 +219,12 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      * 
      * @return The acquisition URI, or null if not set.
      */
-    public java.net.URI getKeysAcquisitionUri() {
+    public URI getKeysAcquisitionUri() {
         if (keysAcquisitionUri == null || keysAcquisitionUri.isBlank()) {
             return null;
         }
         try {
-            return java.net.URI.create(keysAcquisitionUri);
+            return URI.create(keysAcquisitionUri);
         } catch (Exception e) {
             log.error("Invalid keysAcquisitionUri: {}", keysAcquisitionUri);
             return null;

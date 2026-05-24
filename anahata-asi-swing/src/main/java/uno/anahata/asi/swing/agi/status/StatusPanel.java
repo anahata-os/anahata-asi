@@ -7,6 +7,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
@@ -184,7 +185,7 @@ public class StatusPanel extends JPanel {
         
         executingToolsLabel = new JLabel();
         executingToolsLabel.setForeground(new Color(128, 0, 128)); // Purple
-        executingToolsLabel.setFont(executingToolsLabel.getFont().deriveFont(java.awt.Font.BOLD));
+        executingToolsLabel.setFont(executingToolsLabel.getFont().deriveFont(Font.BOLD));
         agiStatusPanel.add(executingToolsLabel);
         
         row1Panel.add(agiStatusPanel);

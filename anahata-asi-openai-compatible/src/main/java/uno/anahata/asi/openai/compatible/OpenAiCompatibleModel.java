@@ -9,10 +9,15 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -32,6 +37,7 @@ import uno.anahata.asi.agi.provider.Response;
 import uno.anahata.asi.agi.provider.RetryableApiException;
 import uno.anahata.asi.agi.provider.ServerTool;
 import uno.anahata.asi.agi.provider.StreamObserver;
+import uno.anahata.asi.agi.provider.TokenizerType;
 import uno.anahata.asi.agi.tool.schema.SchemaProvider;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.internal.JacksonUtils;
@@ -116,10 +122,10 @@ public class OpenAiCompatibleModel extends AbstractModel {
 
         long created = node.path("created").asLong(0);
         if (created > 0) {
-            this.version = java.time.LocalDateTime.ofInstant(
-                    java.time.Instant.ofEpochSecond(created),
-                    java.time.ZoneId.systemDefault()
-            ).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            this.version = LocalDateTime.ofInstant(
+                    Instant.ofEpochSecond(created),
+                    ZoneId.systemDefault()
+            ).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         }
     }
 
@@ -601,7 +607,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
     protected OpenAiCompatibleResponse createResponseWithEstimatedUsage(
             Agi agi, String modelId, String jsonPayload, String historyJson,
             int estimatedPromptTokens, int estimatedCompletionTokens,
-            uno.anahata.asi.agi.provider.TokenizerType tokenizerType) {
+            TokenizerType tokenizerType) {
 
         // Create estimated usage metadata with a descriptive rawJson
         String estimatedRawJson = String.format(
@@ -620,7 +626,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
         // Create a minimal response JSON with estimated usage
         String estimatedResponseJson = String.format(
                 "{\"id\":\"estimated-%s\",\"object\":\"chat.completion\",\"model\":\"%s\",\"usage\":%s,\"choices\":[]}",
-                java.util.UUID.randomUUID().toString().substring(0, 8),
+                UUID.randomUUID().toString().substring(0, 8),
                 modelId,
                 estimatedRawJson);
 
