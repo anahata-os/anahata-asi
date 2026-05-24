@@ -20,6 +20,10 @@
             <groupId>com.knuddels</groupId>
             <artifactId>jtokkit</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.github.eix128</groupId>
+            <artifactId>sentencepiece4j</artifactId>
+        </dependency>
         
         <!-- Core & Logging -->
         <dependency>
