@@ -207,7 +207,7 @@ public class GeminiContentAdapter {
 
             Part googlePart = new GeminiPartAdapter(part, includeThoughtSignature).toGoogle();
             if (googlePart != null) {
-                part.setTokenCount(TokenizerUtils.countTokens(googlePart.toJson(), anahataMessage.getActiveTokenizer()));
+                //part.setTokenCount(TokenizerUtils.countTokens(googlePart.toJson(), anahataMessage.getActiveTokenizer()));
                 googleParts.add(googlePart);
             }
         }
