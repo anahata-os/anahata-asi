@@ -673,7 +673,7 @@ public class Maven extends AnahataToolkit {
      * @param projectPath The absolute path of the project to download dependencies for.
      * @param classifiers A list of classifiers to download.
      * @return a message indicating the result of the operation.
-     * @throws java_lang_Exception if an error occurs.
+     * @throws java.lang.Exception if an error occurs.
      */
     @AgiTool("Downloads all missing dependencies artifacts (e.g., 'sources', 'javadoc') for a given Maven project's dependencies.")
         public String downloadProjectDependencies(
@@ -724,7 +724,7 @@ public class Maven extends AnahataToolkit {
      * @param groupId The groupId of the dependency.
      * @param projectPath The absolute path of the project to use for repository context.
      * @return true on success, false on failure.
-     * @throws java_lang_Exception if an error occurs.
+     * @throws java.lang.Exception if an error occurs.
      */
     @AgiTool("Downloads a specific classified artifact (e.g., 'sources', 'javadoc', or the main artifact if classifier is null) for a single dependency. This can be used to verify an artifact exists before adding it to a POM. Returns true on success, false on failure.")
         public boolean downloadDependencyArtifact(

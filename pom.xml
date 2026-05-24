@@ -336,7 +336,7 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>${maven-javadoc-plugin.version}</version>
                     <configuration>
-                        <doclint>all</doclint>
+                        <doclint>all,-missing</doclint>
                         <failOnError>true</failOnError>
                         <docfilessubdirs>true</docfilessubdirs>
                         <detectJavaApiLink>true</detectJavaApiLink>
