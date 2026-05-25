@@ -44,6 +44,7 @@ import uno.anahata.asi.agi.tool.ToolResponseAttachment;
 import uno.anahata.asi.agi.tool.schema.SchemaProvider;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
+import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
 import uno.anahata.asi.internal.ImageMetadataUtils;
 import uno.anahata.asi.internal.ImageMetadataUtils.ImageMetadata;
 import uno.anahata.asi.internal.JacksonUtils;
@@ -157,7 +158,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
      * @param toolResponse The tool response instance to count.
      * @return The precise, billing-identical token count.
      */
-    @Override public int countTokens(uno.anahata.asi.agi.tool.spi.AbstractToolResponse<?> toolResponse) {
+    @Override public int countTokens(AbstractToolResponse<?> toolResponse) {
         if (toolResponse == null) {
                     return 0;
                 }

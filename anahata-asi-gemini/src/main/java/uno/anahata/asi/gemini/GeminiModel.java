@@ -46,7 +46,6 @@ import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.agi.provider.RetryableApiException;
 import uno.anahata.asi.agi.tool.ToolResponseAttachment;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
-import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
 import uno.anahata.asi.gemini.adapter.GeminiPartAdapter;
 import uno.anahata.asi.internal.ImageMetadataUtils;
 import uno.anahata.asi.internal.ImageMetadataUtils.ImageMetadata;

@@ -5,10 +5,8 @@ package uno.anahata.asi.agi.provider;
 
 import java.util.List;
 import uno.anahata.asi.agi.message.AbstractModelMessage;
-import uno.anahata.asi.agi.message.BlobPart;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
-import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
 
 /**
  * The abstract base class for a specific AI model (e.g., "gemini-1.5-pro-latest").
