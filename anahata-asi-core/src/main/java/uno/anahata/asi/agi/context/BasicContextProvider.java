@@ -11,55 +11,72 @@ import lombok.Setter;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
 
-
 /**
  * A basic, reusable implementation of the {@link ContextProvider} interface
  * that provides the foundational logic for hierarchical context management.
  * <p>
- * It extends {@link BasicPropertyChangeSource} to support reactive UI bindings, 
- * ensuring that changes to the provider's state are immediately reflected 
- * in the context tree and details panels.
+ * It extends {@link BasicPropertyChangeSource} to support reactive UI bindings,
+ * ensuring that changes to the provider's state are immediately reflected in
+ * the context tree and details panels.
  * </p>
- * 
+ *
  * @author anahata
  */
 @Getter
 @RequiredArgsConstructor
 public class BasicContextProvider extends BasicPropertyChangeSource implements ContextProvider {
-    
-    /** The unique identifier for this provider. */
+
+    /**
+     * The unique identifier for this provider.
+     */
     private final String id;
-    
-    /** The human-readable name of this provider. */
+
+    /**
+     * The human-readable name of this provider.
+     */
     private final String name;
-    
-    /** A detailed description of this provider's purpose. */
+
+    /**
+     * A detailed description of this provider's purpose.
+     */
     private final String description;
-    
-    /** Whether this provider is currently active. Defaults to true. */
+
+    /**
+     * Whether this provider is currently active. Defaults to true.
+     */
     @Setter
     private boolean providing = true;
-    
-    /** The parent provider in the hierarchy. */
+
+    /**
+     * The parent provider in the hierarchy.
+     */
     @Setter
     protected ContextProvider parent;
 
-    /** The list of immediate child providers. */
+    /**
+     * The list of immediate child providers.
+     */
     protected final List<ContextProvider> children = new ArrayList<>();
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<ContextProvider> getChildrenProviders() {
         return children;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ContextProvider getParentProvider() {
         return parent;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setParentProvider(ContextProvider parent) {
         this.parent = parent;
@@ -68,11 +85,12 @@ public class BasicContextProvider extends BasicPropertyChangeSource implements C
     /**
      * {@inheritDoc}
      * <p>
-     * Resolves the parent AGI session by delegating up the context provider hierarchy.
+     * Resolves the parent AGI session by delegating up the context provider
+     * hierarchy.
      * </p>
      */
     @Override
-        public Agi getAgi() {
+    public Agi getAgi() {
         return parent != null ? parent.getAgi() : null;
     }
 }
