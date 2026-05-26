@@ -12,9 +12,9 @@ import uno.anahata.asi.swing.agi.AgiPanel;
 /**
  * A context tree node representing an {@link AbstractToolkit}.
  * <p>
- * This node provides a simplified hierarchy with two primary children:
- * 1. "Context": The toolkit's internal context provider (if applicable).
- * 2. "Tools": A container node for all individual tools.
+ * This node provides a simplified hierarchy with two primary children: 1.
+ * "Context": The toolkit's internal context provider (if applicable). 2.
+ * "Tools": A container node for all individual tools.
  * </p>
  *
  * @author anahata
@@ -23,6 +23,7 @@ public class ToolkitNode extends AbstractContextNode<AbstractToolkit<?>> {
 
     /**
      * Constructs a new ToolkitNode.
+     *
      * @param agiPanel The parent agi panel.
      * @param userObject The toolkit to wrap.
      */
@@ -30,40 +31,48 @@ public class ToolkitNode extends AbstractContextNode<AbstractToolkit<?>> {
         super(agiPanel, userObject);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getName() {
         return userObject.getName();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getDescription() {
         return userObject.getDescription();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected List<?> fetchChildObjects() {
         List<Object> objects = new ArrayList<>();
-        
+
         // 1. The toolkit's context provider implementation (if any)
         ContextProvider cp = userObject.getContextProvider();
         if (cp != null) {
             objects.add(cp);
         }
-        
+
         // 2. The tools container (The toolkit itself acts as the domain object for tools)
         objects.add(userObject);
-        
+
         return objects;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected AbstractContextNode<?> createChildNode(Object obj) {
         if (obj instanceof ContextProvider cp) {
-            return new ProviderNode(agiPanel, cp) {
+            return new ContextProviderNode(agiPanel, cp) {
                 @Override
                 public String getName() {
                     return "Context";
@@ -75,13 +84,25 @@ public class ToolkitNode extends AbstractContextNode<AbstractToolkit<?>> {
         return null;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void calculateLocalTokens() {
         // Toolkit tokens are aggregated from ToolsNode and ProviderNode
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isActive() {
+        return userObject.isEnabled() && userObject.getToolManager().isEffectivelyProviding();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void updateStatus() {
         if (!userObject.isEnabled()) {
