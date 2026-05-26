@@ -6,7 +6,9 @@ import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.toolkit.resources.Resources;
 import uno.anahata.asi.agi.tool.spi.java.JavaMethodToolResponse;
 
 @Slf4j
@@ -26,8 +28,14 @@ public class CodeRefinementBatchTest {
         BatchCodeRefiner refiner = new BatchCodeRefiner();
         
         String uri = "file:///home/pablo/NetBeansProjects/anahata-asi-parent/anahata-asi-nb/src/main/java/uno/anahata/asi/nb/tools/java/coderefiner/SmallTestClass.java";
-        java.util.Optional<Resource> found = agi.getResourceManager().findByUri(uri);
-        if (found.isEmpty()) throw new Exception("SmallTestClass.java resource not found by URI.");
+        Resources resTk = agi.getToolManager().getToolkitInstance(Resources.class).orElse(null);
+        if (resTk != null) {
+            resTk.loadResources(List.of(uri), null);
+        }
+        Optional<Resource> found = agi.getResourceManager().findByUri(uri);
+        if (found.isEmpty()) {
+            throw new Exception("SmallTestClass.java resource not found by URI.");
+        }
         Resource res = found.get();
         String uuid = res.getId();
         NbHandle handle = (NbHandle) res.getHandle();

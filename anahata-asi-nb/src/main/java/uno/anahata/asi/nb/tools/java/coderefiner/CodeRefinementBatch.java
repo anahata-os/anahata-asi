@@ -127,59 +127,9 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
             }
         }
 
-        if ((importsToAdd != null && !importsToAdd.isEmpty()) || (importsToRemove != null && !importsToRemove.isEmpty())) {
-            FileObject tempFo = FileUtil.createMemoryFileSystem().getRoot().createData("Temp_Imports", "java");
-            try (java.io.OutputStream os = tempFo.getOutputStream()) {
-                os.write(currentContent.getBytes("UTF-8"));
-            }
-            JavaSource js = JavaSource.create(cpInfo, tempFo);
-            ModificationResult mr = js.runModificationTask(wc -> {
-                wc.toPhase(JavaSource.Phase.RESOLVED);
-                CompilationUnitTree cut = wc.getCompilationUnit();
-                CompilationUnitTree newCut = cut;
-
-                if (importsToAdd != null && !importsToAdd.isEmpty()) {
-                    java.util.Set<javax.lang.model.element.Element> toAdd = new java.util.HashSet<>();
-                    for (String imp : importsToAdd) {
-                        javax.lang.model.element.TypeElement te = wc.getElements().getTypeElement(imp);
-                        if (te != null) {
-                            toAdd.add(te);
-                        }
-                    }
-                    if (!toAdd.isEmpty()) {
-                        newCut = org.netbeans.api.java.source.GeneratorUtilities.get(wc).addImports(newCut, toAdd);
-                    }
-                }
-
-                if (importsToRemove != null && !importsToRemove.isEmpty()) {
-                    List<com.sun.source.tree.ImportTree> existingImports = new ArrayList<>(newCut.getImports());
-                    boolean changed = false;
-                    for (String imp : importsToRemove) {
-                        for (int i = 0; i < existingImports.size(); i++) {
-                            com.sun.source.tree.ImportTree it = existingImports.get(i);
-                            String fqn = it.getQualifiedIdentifier().toString();
-                            if (fqn.equals(imp)) {
-                                existingImports.remove(i);
-                                changed = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (changed) {
-                        newCut = wc.getTreeMaker().CompilationUnit(newCut.getPackage(), existingImports, newCut.getTypeDecls(), newCut.getSourceFile());
-                    }
-                }
-
-                if (newCut != cut) {
-                    wc.rewrite(cut, newCut);
-                }
-            });
-            if (mr.getModifiedFileObjects().contains(tempFo)) {
-                String finalImports = mr.getResultingSource(tempFo);
-                if (finalImports != null) {
-                    currentContent = finalImports;
-                }
-            }
+        boolean hasExplicitImports = (importsToAdd != null && !importsToAdd.isEmpty()) || (importsToRemove != null && !importsToRemove.isEmpty());
+        if (this.optimize || hasExplicitImports) {
+            currentContent = uno.anahata.asi.nb.tools.java.CodeRefiner.optimizeImportsInMemory(cpInfo, currentContent, this.optimize, importsToAdd, importsToRemove);
         }
 
         if (java.util.Objects.equals(originalContent, currentContent)) {
@@ -210,8 +160,14 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
         captureOriginalContent(agi);
 
         if (intents != null) {
+            int idx = 0;
             for (CodeRefinementIntent intent : intents) {
-                intent.validate();
+                try {
+                    intent.validate();
+                } catch (Exception e) {
+                    throw new AgiToolException("Intent #" + idx + " validation failed: " + e.getMessage() + "\n" + intent.toDiagnosticString(), e);
+                }
+                idx++;
             }
         }
 
