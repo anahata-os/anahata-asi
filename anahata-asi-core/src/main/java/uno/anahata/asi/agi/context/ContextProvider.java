@@ -244,7 +244,7 @@ public interface ContextProvider {
         try {
             populateMessage(rm);
             return rm.getTokenCount(true);
-        } catch (Exception e) {
+        } catch (Exception e) {            
             return 0;
         }
     }
