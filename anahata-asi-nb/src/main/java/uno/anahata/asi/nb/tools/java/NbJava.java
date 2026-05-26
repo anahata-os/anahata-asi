@@ -64,7 +64,7 @@ public class NbJava extends SwingJava {
         super.initialize();
         registerParentFirstClass(NbHandle.class);
         registerParentFirstClass(NetBeansAsiContainer.class);
-        setDefaultClasspath(NetBeansModuleUtils.getNetBeansClasspath());
+        setDefaultClasspath(NetBeansModuleUtils.getFullModuleClasspath());
         log.info("initialize() default classPath:" + getDefaultClasspath());
     }
 
@@ -121,7 +121,8 @@ public class NbJava extends SwingJava {
      * <p>
      * Implements the surgical fallback by searching for missing classes within
      * the registered Multi-Release JARs using the current JVM version.
-     * Restricted to "org.lwjgl." as it is just to workaround a netbeans bug in JarClassLoader.</p>
+     * Restricted to "org.lwjgl." as it is just to workaround a netbeans bug in
+     * JarClassLoader.</p>
      */
     @Override
     protected byte[] findClassFallbackBytes(String name) {
@@ -186,14 +187,15 @@ public class NbJava extends SwingJava {
 
     /**
      * Builds the comprehensive execution classpath for a project.
-     * 
+     *
+     * @param includeProjectDependencies Whether to include the project's
+     * dependencies.
+     * @param includeTestContext Whether to include test dependencies.
      * @param projectPath The absolute path of the NetBeans project.
-     * @param includeDependencies Whether to include the project's dependencies.
-     * @param includeTestDependencies Whether to include test dependencies.
      * @return The classpath string.
      * @throws Exception if project resolution fails.
      */
-    public String buildProjectClasspathString(String projectPath, boolean includeDependencies, boolean includeTestDependencies) throws Exception {
+    public String buildProjectClasspathString(String projectPath, boolean includeProjectDependencies, boolean includeTestContext) throws Exception {
         Project project = Projects.findOpenProject(projectPath);
         Projects projectsToolkit = getToolManager().getToolkitInstance(Projects.class).orElseThrow(() -> new IllegalStateException("Projects toolkit not found"));
 
@@ -212,7 +214,6 @@ public class NbJava extends SwingJava {
 
         // Map open projects to their target/classes for hot-reload swapping
         Map<String, String> openProjectArtifacts = new HashMap<>();
-
         for (Project p : OpenProjects.getDefault().getOpenProjects()) {
             String cosStatus = projectsToolkit.isCompileOnSaveEnabled(p);
             if (cosStatus.startsWith("all") || cosStatus.equalsIgnoreCase("Enabled")) {
@@ -228,19 +229,23 @@ public class NbJava extends SwingJava {
             }
         }
 
-        // Map JAR paths to artifact keys for the current project
+        // Map JAR paths to artifact keys for the current project, preserving classifiers and types to prevent duplicate exclusions
         Map<String, String> jarToArtifactKey = new HashMap<>();
         if (nbMavenProject != null) {
             for (Artifact art : nbMavenProject.getMavenProject().getArtifacts()) {
                 File f = art.getFile();
                 if (f != null) {
-                    jarToArtifactKey.put(f.getAbsolutePath(), art.getGroupId() + ":" + art.getArtifactId());
+                    String key = art.getGroupId() + ":" + art.getArtifactId()
+                            + (art.hasClassifier() ? ":" + art.getClassifier() : "")
+                            + ":" + art.getType();
+                    jarToArtifactKey.put(f.getAbsolutePath(), key);
                 }
             }
         }
 
         List<String> internalPaths = new ArrayList<>();
-        List<String> dependencyPaths = new ArrayList<>();
+        Set<String> mainDependencyPaths = new LinkedHashSet<>();
+        Set<String> testDependencyPaths = new LinkedHashSet<>();
 
         // Get the current default classpath to avoid duplication
         String defaultCp = getDefaultClasspath();
@@ -261,9 +266,6 @@ public class NbJava extends SwingJava {
 
         for (SourceGroup sg : allSourceGroups) {
             boolean isTest = sg.getDisplayName().toLowerCase().contains("test");
-            if (isTest && !includeTestDependencies) {
-                continue;
-            }
 
             ClassPath compileCp = cpp.findClassPath(sg.getRootFolder(), ClassPath.COMPILE);
             ClassPath executeCp = cpp.findClassPath(sg.getRootFolder(), ClassPath.EXECUTE);
@@ -284,44 +286,44 @@ public class NbJava extends SwingJava {
                     String absolutePath = f.getAbsolutePath();
 
                     if (f.isDirectory()) {
+                        // target/classes or target/test-classes
+                        if (isTest && !includeTestContext) {
+                            continue;
+                        }
                         if (!internalPaths.contains(absolutePath)) {
                             internalPaths.add(absolutePath);
                         }
                     } else {
-                        // It's a JAR. Check if it's an open project we can swap for source.
+                        // It's a JAR
                         String artifactKey = jarToArtifactKey.get(absolutePath);
                         if (artifactKey != null && openProjectArtifacts.containsKey(artifactKey)) {
                             String sourcePath = openProjectArtifacts.get(artifactKey);
-                            if (!internalPaths.contains(sourcePath)) {
-                                log.info("Swapping dependency JAR for open project source: {} -> {}", artifactKey, sourcePath);
-                                internalPaths.add(sourcePath);
+                            log.info("Swapping dependency JAR for open project source: {} -> {}", artifactKey, sourcePath);
+                            if (isTest) {
+                                testDependencyPaths.add(sourcePath);
+                            } else {
+                                mainDependencyPaths.add(sourcePath);
                             }
                             continue;
                         }
 
-                        if (includeDependencies) {
-                            String jarName = f.getName();
-                            String baseName = getJarBaseName(jarName);
+                        String jarName = f.getName();
+                        String baseName = getJarBaseName(jarName);
 
-                            // Aggressive NetBeans Platform and Stub Filtering
-                            boolean isNetBeansJar = jarName.startsWith("org-netbeans-")
-                                    || jarName.startsWith("org-openide-")
-                                    || jarName.startsWith("org-apache-netbeans-")
-                                    || jarName.contains("nbstubs");
+                        boolean isNetBeansJar = jarName.startsWith("org-netbeans-")
+                                || jarName.startsWith("org-openide-")
+                                || jarName.startsWith("org-apache-netbeans-")
+                                || jarName.contains("nbstubs");
 
-                            if (isNbm && isNetBeansJar) {
-                                log.info("Skipping NetBeans Platform/Stub JAR in NBM project: {}", jarName);
-                                continue;
-                            }
+                        if (isNbm && isNetBeansJar) {
+                            continue;
+                        }
 
-                            boolean isDuplicate = existingPaths.contains(absolutePath) || existingBaseNames.contains(baseName);
-
-                            if (!isDuplicate) {
-                                if (!dependencyPaths.contains(absolutePath)) {
-                                    dependencyPaths.add(absolutePath);
-                                }
+                        if (!existingPaths.contains(absolutePath) && !existingBaseNames.contains(baseName)) {
+                            if (isTest) {
+                                testDependencyPaths.add(absolutePath);
                             } else {
-                                log.info("Skipping duplicate JAR (base name match: {}): {}", baseName, jarName);
+                                mainDependencyPaths.add(absolutePath);
                             }
                         }
                     }
@@ -329,18 +331,26 @@ public class NbJava extends SwingJava {
             }
         }
 
+        // Subtraction Logic: Remove main dependencies from test dependencies to isolate them.
+        testDependencyPaths.removeAll(mainDependencyPaths);
+
+        List<String> finalDependencyPaths = new ArrayList<>();
+        if (includeProjectDependencies) {
+            finalDependencyPaths.addAll(mainDependencyPaths);
+        }
+        if (includeTestContext) {
+            finalDependencyPaths.addAll(testDependencyPaths);
+        }
+
         log.info("Constructing classpath for project '{}' (NBM Mode: {})", projectPath, isNbm);
-        log.info("Found {} internal/open project directories (e.g., target/classes):", internalPaths.size());
+        log.info("Found {} internal/open project directories:", internalPaths.size());
         for (String path : internalPaths) {
             log.info("  - {}", path);
         }
-
-        if (includeDependencies) {
-            log.info("Including {} unique resolved dependency JARs.", dependencyPaths.size());
-        }
+        log.info("Including {} unique resolved dependency JARs.", finalDependencyPaths.size());
 
         List<String> finalPathElements = new ArrayList<>(internalPaths);
-        finalPathElements.addAll(dependencyPaths);
+        finalPathElements.addAll(finalDependencyPaths);
 
         if (finalPathElements.isEmpty()) {
             throw new IllegalStateException("Could not resolve any classpath entries for project: " + projectPath);
@@ -356,36 +366,40 @@ public class NbJava extends SwingJava {
      * directories (e.g., 'target/classes') over the application's default
      * classpath.
      *
-     * @param projectPath The absolute path of the NetBeans project to run in.
      * @param sourceCode Source code of a public class named **Anahata** that
      * has **no package declaration** and **extends AnahataTool**.
-     * @param includeDependencies Whether to include the project's COMPILE and
-     * EXECUTE dependencies.
-     * @param includeTestDependencies Whether to include the project's test
-     * source folders and test dependencies.
      * @param compilerOptions Optional additional compiler options.
+     * @param includeTestContext Whether to include the project's test source
+     * folders and test dependencies.
+     * @param includeProjectDependencies Whether to include the project's
+     * COMPILE and EXECUTE dependencies.
+     * @param projectPath The absolute path of the NetBeans project to run in.
      * @return The result of the execution.
      * @throws Exception on error.
      */
     @AgiTool(
-            value = "Proxy tool for compileAndExecute that aggregates the extraClassPath parameter by including the target/classes directory of the specified NetBeans project and calls compileAndExecute passing this target/classs directory so any types on the specified project can be imported in the Anahata java class. "
-                    + "Additionally, if includeDependencies is true, the target/classess of any open projects that are a dependency of the specified project will be added to the extraClassPath as well as the jar files of all dependencies. "
-            + "This tool enables a powerful 'hot-reload' workflow by creating a dynamic classpath that prioritizes the project's own build directories (e.g., 'target/classes') over the projects artifacts so you can update one or more java files and run a script that uses it in the same turn to test the changes made to the java files. "
-            + "Usage Rule: Use the normal compileAndExecute **if you are need to imort any java types from any of the open projects in the Anahata class. You don't need to do compileAndExecuteInProject to read a file in that project or to use a netbeans api that does anything to that project or to any file in that project. This tool only builds the extraClassPath parameter of compileAndExecute**"
+            value = "Executes a Java script within the context of a specific NetBeans project.\n\n"
+            + "Mechanism: This tool creates a custom child-first URLClassLoader for your script. It automatically includes the target project's main compiled output directory (e.g., 'target/classes'—which contains the compiled bytecode of the project's `ClassPath.SOURCE`) in this classloader so your script can execute the project's local code.\n\n"
+            + "Usage Rule: Do NOT use this tool if you only need to perform file I/O or use libraries already loaded in the IDE. The standard `compileAndExecute` tool already has access to the filesystem and all libraries listed under the 'Default Compiler and ClassLoader Classpath' section of the RAG message (which contains standard NetBeans APIs and bundled libraries that are natively available in the plugin's `OneModuleClassLoader`). "
+            + "Only use this tool (`compileAndExecuteInProject`) if your script explicitly needs to import or instantiate Java types compiled from the target project's local `ClassPath.SOURCE` (its 'target/classes' folder) or types from its project-specific external `.jar` dependencies that are NOT already on the default classpath."
     )
     public Object compileAndExecuteInProject(
-            @AgiToolParam(value = "Source code of a public class named **Anahata** that is **public** has **no package declaration**, **extends SwingAgiTool** (or whatever is indicated in the system instructions) and implements the call() method of java.util.concurrent.Callable", rendererId = "java") String sourceCode,
+            @AgiToolParam(value = "Source code of a public class named **Anahata** that has **no package declaration**, extends **SwingAgiTool**, and implements the call() method of java.util.concurrent.Callable.", rendererId = "java") String sourceCode,
             @AgiToolParam("The absolute path of the NetBeans project to run in.") String projectPath,
-            @AgiToolParam("Whether to include the project's COMPILE and EXECUTE **dependencies**. If any of the dependencies is an open project, the target/classess of that project will be added to the extraClassPath") boolean includeDependencies,
-            @AgiToolParam("Whether to include the project's test source folders and test dependencies. If any test dependencies is an open project, the target/test-classess of that project will be added to the extraClassPath") boolean includeTestDependencies,
-            @AgiToolParam(value = "Optional additional compiler options.", required = false) String[] compilerOptions) throws Exception {
-
+            @AgiToolParam("Controls whether the `.jar` dependencies and open-project dependency outputs from the project's main `ClassPath.COMPILE` and `ClassPath.EXECUTE` are added to the script's custom URLClassLoader.\n"
+                    + "Mechanism: If `true`, it extracts all external `.jar` files and the `target/classes` directories of any open NetBeans projects this project depends on, and adds them to the script's classpath.\n"
+                    + "Set to `true` for standard Java applications (e.g., Spring Boot) so your script can import their external libraries.\n"
+                    + "CRITICAL RULE: Set to `false` when testing NetBeans plugins (NBMs) that share APIs with the host IDE (such as Anahata ASI plugins). The plugin's native NetBeans `OneModuleClassLoader` parent classloader already has these dependency classes loaded in memory. If you set this to `true`, the script's custom URLClassLoader will load duplicate copies of those `.jar` files from the project's `ClassPath.COMPILE`. This breaks JVM type-safety, causing fatal `ClassCastException` and `isInstance()` failures when the script passes objects to or from the live IDE context.") boolean includeProjectDependencies,
+            @AgiToolParam("Controls whether the project's test environment is added to the script's custom URLClassLoader.\n"
+                    + "Mechanism: If `true`, it queries the test source group's `ClassPath.COMPILE` and `ClassPath.EXECUTE`. It extracts the local test output directory (e.g., 'target/test-classes') and any test-exclusive `.jar` files (like JUnit) that are not present in the main dependencies (to prevent duplication), and adds them to the script's classpath.\n"
+                    + "Set to `true` ONLY if your script needs to import, execute, or inspect the project's compiled test classes.") boolean includeTestContext,
+            @AgiToolParam(value = "Optional additional compiler options (e.g., '--release', '21').", required = false) String[] compilerOptions) throws Exception {
         Project project = Projects.findOpenProject(projectPath);
         Projects projectsToolkit = getToolManager().getToolkitInstance(Projects.class).orElseThrow(() -> new IllegalStateException("Projects toolkit not found"));
 
         waitForIde(project, projectsToolkit.isCompileOnSaveEnabled(project));
 
-        String extraClassPath = buildProjectClasspathString(projectPath, includeDependencies, includeTestDependencies);
+        String extraClassPath = buildProjectClasspathString(projectPath, includeProjectDependencies, includeTestContext);
 
         return compileAndExecute(sourceCode, extraClassPath, compilerOptions);
     }
@@ -429,6 +443,7 @@ public class NbJava extends SwingJava {
         if (name.endsWith(".jar")) {
             name = name.substring(0, name.length() - 4);
         }
-        return name.replaceAll("-(?:[0-9]|release|snapshot).*", "");
+        // Non-greedy version replacement to preserve any trailing classifiers (like -tests or -sources)
+        return name.replaceAll("-([0-9]+(\\\\.[0-9]+)*(-snapshot|-release)?|-snapshot|-release)", "");
     }
 }
