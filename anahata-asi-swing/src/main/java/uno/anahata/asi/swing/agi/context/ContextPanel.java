@@ -333,7 +333,7 @@ public class ContextPanel extends JPanel {
                 } else if (cn instanceof ToolsNode tsn) {
                     toolkitPanel.setToolkit(tsn.getUserObject());
                     detailLayout.show(detailContainer, "toolkit");
-                } else if (cn instanceof ProviderNode pn) {
+                } else if (cn instanceof ContextProviderNode pn) {
                     providerPanel.setContextProvider(pn.getUserObject());
                     detailLayout.show(detailContainer, "provider");
                 } else if (cn instanceof MessageNode mn) {
@@ -405,7 +405,7 @@ public class ContextPanel extends JPanel {
         toggleItem.addActionListener(e -> {
             for (int row : treeTable.getSelectedRows()) {
                 Object node = treeTable.getPathForRow(row).getLastPathComponent();
-                if (node instanceof ProviderNode pn) {
+                if (node instanceof ContextProviderNode pn) {
                     pn.getUserObject().setProviding(!pn.getUserObject().isProviding());
                 } else if (node instanceof ToolkitNode tkn) {
                     tkn.getUserObject().setEnabled(!tkn.getUserObject().isEnabled());
@@ -467,7 +467,7 @@ public class ContextPanel extends JPanel {
 
                         boolean isResource = clickedNode instanceof ResourceNode;
                         boolean isToolkit = clickedNode instanceof ToolkitNode;
-                        boolean isProvider = clickedNode instanceof ProviderNode;
+                        boolean isProvider = clickedNode instanceof ContextProviderNode;
 
                         openInEditorItem.setVisible(isResource);
                         removeItem.setVisible(isResource);
