@@ -55,7 +55,6 @@ public class ToolManagerNode extends AbstractContextNode<ToolManager> {
     /**
      * {@inheritDoc}
      * @return A list of registered toolkits as children.
-     * @see ToolManager#getToolkits()
      */
     @Override
     protected List<?> fetchChildObjects() {
