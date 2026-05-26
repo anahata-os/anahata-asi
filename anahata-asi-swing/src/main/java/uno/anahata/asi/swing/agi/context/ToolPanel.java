@@ -34,9 +34,10 @@ import uno.anahata.asi.swing.components.ScrollablePanel;
 import uno.anahata.asi.swing.components.AdjustingTabPane;
 
 /**
- * A panel that displays the details and controls for a specific {@link AbstractTool}.
+ * A panel that displays the details and controls for a specific
+ * {@link AbstractTool}.
  * <p>
- * It provides a dynamic tabbed view for inspecting tool parameters, the return 
+ * It provides a dynamic tabbed view for inspecting tool parameters, the return
  * type schema, and the native declaration string.
  * </p>
  *
@@ -45,48 +46,65 @@ import uno.anahata.asi.swing.components.AdjustingTabPane;
 @Slf4j
 public class ToolPanel extends ScrollablePanel {
 
-    /** The parent context panel. */
+    /**
+     * The parent context panel.
+     */
     private final ContextPanel parentPanel;
-    /** The specialized tabbed pane for schemas. */
+    /**
+     * The specialized tabbed pane for schemas.
+     */
     private final AdjustingTabPane tabbedPane;
-    
-    /** Label for the tool name. */
+
+    /**
+     * Label for the tool name.
+     */
     private final JLabel nameLabel;
-    /** Label for the tool description. */
+    /**
+     * Label for the tool description.
+     */
     private final JLabel descLabel;
-    /** Panel for permission buttons in the header. */
+    /**
+     * Panel for permission buttons in the header.
+     */
     private final JPanel permissionPanel;
 
-    /** The control for tool permissions. */
+    /**
+     * The control for tool permissions.
+     */
     private JComboBox<ToolPermission> permissionCombo;
-    /** The control for default max depth. */
+    /**
+     * The control for default max depth.
+     */
     private JSpinner maxDepthSpinner;
-    /** The active tool listener. */
+    /**
+     * The active tool listener.
+     */
     private EdtPropertyChangeListener permissionListener;
 
     /**
      * Constructs a new ToolPanel.
+     *
      * @param parentPanel The parent context panel.
      */
     public ToolPanel(ContextPanel parentPanel) {
         this.parentPanel = parentPanel;
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
-        
+
         // Ensure the panel can be resized small enough to not squeeze the tree
         setMinimumSize(new Dimension(0, 0));
 
         // 1. Header Panel (Tool Details)
         JPanel headerPanel = new JPanel(new MigLayout("fillx, insets 4 8 4 8", "[grow]", "[]2[]5[]"));
         headerPanel.setBorder(BorderFactory.createTitledBorder("Tool Details"));
-        
+
         nameLabel = new JLabel();
         nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD, 14f));
         headerPanel.add(nameLabel, "wrap");
-        
+
         permissionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         permissionPanel.setOpaque(false);
-        
+
         permissionCombo = new JComboBox<>(ToolPermission.values());
         permissionCombo.setRenderer(new ToolPermissionRenderer());
         permissionCombo.addActionListener(e -> {
@@ -97,12 +115,12 @@ public class ToolPanel extends ScrollablePanel {
                 permissionCombo.setForeground(SwingAgiConfig.getColor(tp));
             }
         });
-        
+
         permissionPanel.add(new JLabel("Permission: "));
         permissionPanel.add(permissionCombo);
-        
+
         headerPanel.add(permissionPanel, "wrap");
-        
+
         JPanel maxDepthPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         maxDepthPanel.setOpaque(false);
         maxDepthPanel.add(new JLabel("Max Depth: "));
@@ -114,7 +132,7 @@ public class ToolPanel extends ScrollablePanel {
             }
         });
         maxDepthPanel.add(maxDepthSpinner);
-        
+
         headerPanel.add(maxDepthPanel, "wrap");
 
         descLabel = new JLabel();
@@ -129,6 +147,7 @@ public class ToolPanel extends ScrollablePanel {
 
     /**
      * Updates the panel to display the details for the given tool.
+     *
      * @param tool The selected tool.
      */
     public void setTool(AbstractTool<?, ?> tool) {
@@ -143,18 +162,18 @@ public class ToolPanel extends ScrollablePanel {
         ToolPermission tp = tool.getPermission();
         permissionCombo.setSelectedItem(tp);
         permissionCombo.setForeground(SwingAgiConfig.getColor(tp));
-        
+
         permissionListener = new EdtPropertyChangeListener(this, tool, "permission", evt -> {
             ToolPermission newTp = (ToolPermission) evt.getNewValue();
             permissionCombo.setSelectedItem(newTp);
             permissionCombo.setForeground(SwingAgiConfig.getColor(newTp));
         });
-        
+
         maxDepthSpinner.setValue(tool.getMaxDepth());
 
         // Rebuild Tabs
         tabbedPane.removeAll();
-        
+
         // 1. Parameter Tabs
         List<? extends AbstractToolParameter> parameters = tool.getParameters();
         for (AbstractToolParameter<?> param : parameters) {
@@ -183,6 +202,7 @@ public class ToolPanel extends ScrollablePanel {
 
     /**
      * Creates a high-fidelity viewer for a JSON schema.
+     *
      * @param name The name for the ephemeral resource.
      * @param json The JSON string to render.
      * @return A JComponent (viewer) wrapped in a padded panel.
@@ -195,12 +215,12 @@ public class ToolPanel extends ScrollablePanel {
         String prettyJson = JacksonUtils.prettyPrintJsonString(json);
         StringHandle handle = new StringHandle(name + ".json", prettyJson);
         Resource ephemeral = new Resource(handle);
-        try { 
-            ephemeral.reloadIfNeeded(); 
-        } catch (Exception e) { 
-            log.error("Failed to reload ephemeral resource for {}", name, e); 
+        try {
+            ephemeral.reloadIfNeeded();
+        } catch (Exception e) {
+            log.error("Failed to reload ephemeral resource for {}", name, e);
         }
-        
+
         ResourceUI strategy = ResourceUiRegistry.getInstance().getResourceUI();
         JComponent viewer = strategy.createContent(ephemeral, parentPanel.getAgiPanel());
         if (viewer instanceof AbstractTextResourceViewer atv) {
@@ -208,13 +228,13 @@ public class ToolPanel extends ScrollablePanel {
             atv.setVerticalScrollEnabled(false);
             atv.setPreviewAsEditor(true);
         }
-        
+
         // Add a small border for padding within the tab
         JPanel wrapper = new JPanel(new BorderLayout());
         wrapper.setOpaque(false);
         wrapper.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         wrapper.add(viewer, BorderLayout.CENTER);
-        
+
         return wrapper;
     }
 
