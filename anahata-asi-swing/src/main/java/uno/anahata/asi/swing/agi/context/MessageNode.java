@@ -85,11 +85,20 @@ public class MessageNode extends AbstractContextNode<AbstractMessage> {
      * tokens from all contained parts.
      * </p>
      */
+    @Override
     protected void calculateLocalTokens() {
         AbstractModel model = getAgi().getSelectedModel();
         this.historyTokens = (userObject.shouldCreateMetadata() && model != null)
                 ? model.countTokens(userObject.createMetadataHeader())
                 : 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isActive() {
+        return !userObject.isEffectivelyPruned();
     }
 
     /**
@@ -104,7 +113,7 @@ public class MessageNode extends AbstractContextNode<AbstractMessage> {
         if (userObject.isAllPinned()) {
             this.status = "All Pinned";
         } else if (userObject.isAnyPinned()) {
-            this.status = "Some Pinned";    
+            this.status = "Some Pinned";
         } else {
             this.status = userObject.isEffectivelyPruned() ? "Pruned" : "Active";
         }
