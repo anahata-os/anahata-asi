@@ -20,7 +20,7 @@ import uno.anahata.asi.agi.provider.AbstractModel;
 public class MediaView extends AbstractResourceView {
 
     /** Cached binary data. */
-    private byte[] cachedData;
+    private transient byte[] cachedData;
 
     /** 
      * {@inheritDoc} 
