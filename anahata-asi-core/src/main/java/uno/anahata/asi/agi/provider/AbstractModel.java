@@ -9,36 +9,51 @@ import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 
 /**
- * The abstract base class for a specific AI model (e.g., "gemini-1.5-pro-latest").
- * In the V2 architecture, this class is the definitive entry point for generating
- * content, creating a clean, object-oriented API where the model itself is the
- * actor.
+ * The abstract base class for a specific AI model (e.g.,
+ * "gemini-1.5-pro-latest"). In the V2 architecture, this class is the
+ * definitive entry point for generating content, creating a clean,
+ * object-oriented API where the model itself is the actor.
  *
  * @author anahata-gemini-pro-2.5
  */
 public abstract class AbstractModel {
 
     /**
-     * The optional model-specific tokenizer. If null, the provider's default is used.
+     * The optional model-specific tokenizer. If null, the provider's default is
+     * used.
      */
     protected TokenizerType tokenizerType;
 
     /**
      * Gets the effective tokenizer type for this model.
-     * 
-     * @return The model's tokenizer if set, otherwise the parent provider's tokenizer.
+     *
+     * @return The model's tokenizer if set, otherwise the parent provider's
+     * tokenizer.
      */
     public TokenizerType getTokenizerType() {
         return tokenizerType != null ? tokenizerType : getProvider().getTokenizerType();
     }
 
     /**
-     * Counts the number of tokens in the given text string using this model's specific tokenizer.
+     * Counts the number of tokens in the given text string using this model's
+     * specific tokenizer.
+     *
      * @param text The text to count tokens for.
      * @return The number of tokens, or 0 if the text is null or empty.
      */
     public abstract int countTokens(java.lang.String text);
 
+    /**
+     * Counts the number of tokens consumed by the given tool call in the
+     * context window.
+     * <p>
+     * Model subclasses override this method to serialize the tool call into its
+     * exact wire-format (JSON, Protobuf, etc.) to ensure 100% accurate billing.
+     * </p>
+     *
+     * @param toolCall The tool call to count tokens for.
+     * @return The precise token count.
+     */
     public abstract int countTokens(AbstractToolCall<?, ?> toolCall);
 
 
@@ -54,128 +69,152 @@ public abstract class AbstractModel {
      * @return The precise token count, or 0 if no model is active or the data is null.
      */
     public abstract int countTokens(byte[] data, String mimeType);
+
     /**
-     * Counts the number of tokens consumed by the given tool execution response.
+     * Counts the number of tokens consumed by the given tool execution
+     * response.
      * <p>
      * Model subclasses override this to serialize the response into its exact
-     * wire-format (Protobuf FunctionResponse, JSON, etc.) to ensure 100% accurate billing.
+     * wire-format (Protobuf FunctionResponse, JSON, etc.) to ensure 100%
+     * accurate billing.
      * </p>
+     *
      * @param toolResponse The tool response to count tokens for.
      * @return The exact number of tokens.
      */
     public abstract int countTokens(uno.anahata.asi.agi.tool.spi.AbstractToolResponse<?> toolResponse);
+
     /**
      * Gets the provider that owns this model.
+     *
      * @return The parent AI provider.
      */
     public abstract AbstractAiProvider getProvider();
 
     /**
-     * Gets the unique identifier for this model (e.g., "models/gemini-1.5-pro").
+     * Gets the unique identifier for this model (e.g.,
+     * "models/gemini-1.5-pro").
+     *
      * @return The model ID.
      */
     public abstract String getModelId();
 
     /**
      * Gets the human-readable display name for this model.
+     *
      * @return The display name.
      */
     public abstract String getDisplayName();
 
     /**
      * Gets a detailed description of the model's capabilities and limitations.
+     *
      * @return The model description.
      */
     public abstract String getDescription();
 
     /**
      * Gets the version string for this model.
+     *
      * @return The version.
      */
     public abstract String getVersion();
 
     /**
      * Gets the maximum number of input tokens supported by this model.
+     *
      * @return The input token limit.
      */
     public abstract int getMaxInputTokens();
 
     /**
-     * Gets the maximum number of output tokens this model can generate in a single turn.
+     * Gets the maximum number of output tokens this model can generate in a
+     * single turn.
+     *
      * @return The output token limit.
      */
     public abstract int getMaxOutputTokens();
 
     /**
-     * Gets the list of supported API actions for this model (e.g., "generateContent").
+     * Gets the list of supported API actions for this model (e.g.,
+     * "generateContent").
+     *
      * @return A list of supported actions.
      */
     public abstract List<String> getSupportedActions();
 
     /**
-     * Gets a rich, potentially HTML-formatted description of the model, 
+     * Gets a rich, potentially HTML-formatted description of the model,
      * including all its metadata.
+     *
      * @return The raw description string.
      */
     public abstract String getRawDescription();
 
     /**
      * Delegate method to get the id of this models provider.
-     * 
+     *
      * @return The unique ID of the provider.
      */
     public final String getProviderId() {
         return getProvider().getProviderId();
     }
-    
+
     // --- Abstract Capability Methods ---
     /**
      * Checks if this model supports native function calling (tools).
+     *
      * @return true if supported.
      */
     public abstract boolean isSupportsFunctionCalling();
 
     /**
      * Checks if this model supports content generation.
+     *
      * @return true if supported.
      */
     public abstract boolean isSupportsContentGeneration();
 
     /**
      * Checks if this model supports batch embedding generation.
+     *
      * @return true if supported.
      */
     public abstract boolean isSupportsBatchEmbeddings();
 
     /**
      * Checks if this model supports single content embedding generation.
+     *
      * @return true if supported.
      */
     public abstract boolean isSupportsEmbeddings();
 
     /**
      * Checks if this model supports content caching.
+     *
      * @return true if supported.
      */
     public abstract boolean isSupportsCachedContent();
 
     /**
-     * Gets the list of response modalities supported by this model (e.g., "TEXT", "IMAGE", "AUDIO").
-     * 
+     * Gets the list of response modalities supported by this model (e.g.,
+     * "TEXT", "IMAGE", "AUDIO").
+     *
      * @return A list of supported response modalities.
      */
     public abstract List<String> getSupportedResponseModalities();
 
     /**
      * Gets the list of server-side tools available for this model.
-     * 
+     *
      * @return A list of available server tools.
      */
     public abstract List<ServerTool> getAvailableServerTools();
-    
+
     /**
-     * Gets the list of server-side tools that should be enabled by default for this model.
-     * 
+     * Gets the list of server-side tools that should be enabled by default for
+     * this model.
+     *
      * @return The list of default server tools.
      */
     public abstract List<ServerTool> getDefaultServerTools();
@@ -183,10 +222,11 @@ public abstract class AbstractModel {
     /**
      * Gets the default temperature for this model.
      * <p>
-     * Temperature controls the randomness of the response. Higher values (e.g., 1.0) 
-     * make the output more random, while lower values (e.g., 0.2) make it more deterministic.
+     * Temperature controls the randomness of the response. Higher values (e.g.,
+     * 1.0) make the output more random, while lower values (e.g., 0.2) make it
+     * more deterministic.
      * </p>
-     * 
+     *
      * @return The default temperature, or null if not specified.
      */
     public abstract Float getDefaultTemperature();
@@ -194,9 +234,10 @@ public abstract class AbstractModel {
     /**
      * Gets the default topK for this model.
      * <p>
-     * Top-K sampling limits the model's choices to the K most likely next tokens.
+     * Top-K sampling limits the model's choices to the K most likely next
+     * tokens.
      * </p>
-     * 
+     *
      * @return The default topK, or null if not specified.
      */
     public abstract Integer getDefaultTopK();
@@ -204,17 +245,18 @@ public abstract class AbstractModel {
     /**
      * Gets the default topP for this model.
      * <p>
-     * Top-P (nucleus) sampling selects tokens whose cumulative probability 
-     * adds up to the threshold P.
+     * Top-P (nucleus) sampling selects tokens whose cumulative probability adds
+     * up to the threshold P.
      * </p>
-     * 
+     *
      * @return The default topP, or null if not specified.
      */
     public abstract Float getDefaultTopP();
 
     /**
-     * The core method for interacting with an AI model. It takes a configuration
-     * object and a list of messages and returns a standardized Response.
+     * The core method for interacting with an AI model. It takes a
+     * configuration object and a list of messages and returns a standardized
+     * Response.
      *
      * @param request The generation request containing config and history.
      * @return A standardized {@link Response} object.
@@ -225,22 +267,24 @@ public abstract class AbstractModel {
      * Generates content asynchronously using token streaming.
      *
      * @param request The generation request containing config and history.
-     * @param observer The observer that will receive the streaming response chunks.
+     * @param observer The observer that will receive the streaming response
+     * chunks.
      */
     public abstract void generateContentStream(GenerationRequest request, StreamObserver<Response<? extends AbstractModelMessage>> observer);
 
     /**
      * Gets the provider-specific JSON representation of a tool's declaration.
      * This is used by the UI to show exactly what is being sent to the model.
-     * 
+     *
      * @param tool The tool to inspect.
      * @param config The request configuration (e.g. to check useNativeSchemas).
      * @return The JSON string representing the tool declaration.
      */
     public abstract String getToolDeclarationJson(AbstractTool<?, ?> tool, RequestConfig config);
-    
+
     /**
      * Returning the display name
+     *
      * @return the display name
      */
     @Override
