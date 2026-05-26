@@ -22,6 +22,7 @@ public class HistoryNode extends AbstractContextNode<ContextManager> {
 
     /**
      * Constructs a new HistoryNode.
+     *
      * @param agiPanel The parent agi panel.
      * @param userObject The context manager to wrap.
      */
@@ -29,11 +30,11 @@ public class HistoryNode extends AbstractContextNode<ContextManager> {
         super(agiPanel, userObject);
     }
 
-    /** 
-     * {@inheritDoc} 
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details: Returns the localized "History" label for 
-     * the conversation branch.
+     * Implementation details: Returns the localized "History" label for the
+     * conversation branch.
      * </p>
      */
     @Override
@@ -41,10 +42,10 @@ public class HistoryNode extends AbstractContextNode<ContextManager> {
         return "History";
     }
 
-    /** 
-     * {@inheritDoc} 
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details: Returns the standard {@link PulseIcon} to 
+     * Implementation details: Returns the standard {@link PulseIcon} to
      * visualize the live conversation feed.
      * </p>
      */
@@ -53,10 +54,10 @@ public class HistoryNode extends AbstractContextNode<ContextManager> {
         return ICON;
     }
 
-    /** 
-     * {@inheritDoc} 
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details: Explains the contents of the history branch, 
+     * Implementation details: Explains the contents of the history branch,
      * spanning messages from all actors and tool interactions.
      * </p>
      */
@@ -65,11 +66,11 @@ public class HistoryNode extends AbstractContextNode<ContextManager> {
         return "The persistent conversation history, including user messages, model responses, and tool calls.";
     }
 
-    /** 
-     * {@inheritDoc} 
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details: Retrieves the full list of {@link AbstractMessage}s 
-     * from the context manager's memory.
+     * Implementation details: Retrieves the full list of
+     * {@link AbstractMessage}s from the context manager's memory.
      * </p>
      */
     @Override
@@ -77,10 +78,10 @@ public class HistoryNode extends AbstractContextNode<ContextManager> {
         return userObject.getHistory();
     }
 
-    /** 
-     * {@inheritDoc} 
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details: Transforms each {@link AbstractMessage} in the 
+     * Implementation details: Transforms each {@link AbstractMessage} in the
      * timeline into a navigable {@link MessageNode}.
      * </p>
      */
@@ -92,10 +93,10 @@ public class HistoryNode extends AbstractContextNode<ContextManager> {
         return null;
     }
 
-    /** 
-     * {@inheritDoc} 
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details: Token counts for history are entirely aggregated 
+     * Implementation details: Token counts for history are entirely aggregated
      * from the constituent message nodes.
      * </p>
      */
@@ -104,10 +105,18 @@ public class HistoryNode extends AbstractContextNode<ContextManager> {
         // History tokens are aggregated from MessageNodes
     }
 
-    /** 
-     * {@inheritDoc} 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isActive() {
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details: Updates the status with a count of the current 
+     * Implementation details: Updates the status with a count of the current
      * message stack depth.
      * </p>
      */
