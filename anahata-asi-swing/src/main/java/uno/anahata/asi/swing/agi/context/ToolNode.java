@@ -5,6 +5,7 @@ package uno.anahata.asi.swing.agi.context;
 
 import java.util.Collections;
 import java.util.List;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
 import uno.anahata.asi.agi.tool.ToolPermission;
@@ -13,9 +14,9 @@ import uno.anahata.asi.swing.agi.AgiPanel;
 /**
  * A context tree node representing an {@link AbstractTool}.
  * <p>
- * This is a leaf node in the context hierarchy, representing an individual 
- * executable function. It displays the tool's declaration token count and 
- * its current permission status.
+ * This is a leaf node in the context hierarchy, representing an individual
+ * executable function. It displays the tool's declaration token count and its
+ * current permission status.
  * </p>
  *
  * @author anahata
@@ -24,6 +25,7 @@ public class ToolNode extends AbstractContextNode<AbstractTool<?, ?>> {
 
     /**
      * Constructs a new ToolNode.
+     *
      * @param agiPanel The parent agi panel.
      * @param userObject The tool to wrap.
      */
@@ -31,9 +33,9 @@ public class ToolNode extends AbstractContextNode<AbstractTool<?, ?>> {
         super(agiPanel, userObject);
     }
 
-    /** 
-     * {@inheritDoc} 
-     * Returns the simple name of the tool, removing any toolkit prefix.
+    /**
+     * {@inheritDoc} Returns the simple name of the tool, removing any toolkit
+     * prefix.
      */
     @Override
     public String getName() {
@@ -42,30 +44,58 @@ public class ToolNode extends AbstractContextNode<AbstractTool<?, ?>> {
         return lastDot != -1 ? fullName.substring(lastDot + 1) : fullName;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getDescription() {
         return userObject.getDescription();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected List<?> fetchChildObjects() {
         return Collections.emptyList();
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected AbstractContextNode<?> createChildNode(Object obj) {
         return null;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     protected void calculateLocalTokens() {
-        this.declarationsTokens = userObject.getTokenCount();
+        if (isActive()) {
+            this.declarationsTokens = userObject.getTokenCount();
+        } else {
+            this.declarationsTokens = 0;
+        }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
+    @Override public boolean isActive() {
+        AbstractToolkit<?> tk = userObject.getToolkit();
+        Agi agi = getAgi();
+        return agi != null
+                && agi.getConfig().isLocalToolsEnabled()
+                && userObject.getPermission() != ToolPermission.DENY
+                && tk.isEnabled()
+                && tk.getToolManager().isEffectivelyProviding();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void updateStatus() {
         if (userObject.getPermission() == ToolPermission.DENY) {
