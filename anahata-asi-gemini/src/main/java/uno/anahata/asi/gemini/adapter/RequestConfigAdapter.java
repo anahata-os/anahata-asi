@@ -23,6 +23,7 @@ import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.internal.TokenizerUtils;
 import uno.anahata.asi.agi.provider.RequestConfig;
 import uno.anahata.asi.agi.provider.ThinkingLevel;
@@ -49,7 +50,7 @@ public final class RequestConfigAdapter {
      * @param requestConfig The Anahata config to convert.
      * @return The corresponding GenerateContentConfig.
      */
-    public static GenerateContentConfig toGoogle(RequestConfig requestConfig) {
+        public static GenerateContentConfig toGoogle(RequestConfig requestConfig) {
         log.info("Generating GenerateContentConfig for " + requestConfig);
 
         GenerateContentConfig.Builder builder = GenerateContentConfig.builder();
@@ -57,7 +58,8 @@ public final class RequestConfigAdapter {
         builder.shouldReturnHttpResponse(false);
         builder.clearHttpOptions();
 
-        TokenizerType tokenizerType = requestConfig.getAgi() != null && requestConfig.getAgi().getSelectedModel() != null ? requestConfig.getAgi().getSelectedModel().getTokenizerType() : TokenizerType.GEMINI;
+        AbstractModel model = requestConfig.getAgi() != null ? requestConfig.getAgi().getSelectedModel() : null;
+        TokenizerType tokenizerType = model != null ? model.getTokenizerType() : TokenizerType.GEMINI;
 
         if (!requestConfig.getSystemInstructions().isEmpty()) {
             List<Part> parts = new ArrayList<>();
@@ -67,7 +69,7 @@ public final class RequestConfigAdapter {
 
             Content sysInstContent = Content.builder().role("system").parts(parts).build();
             String rawJson = sysInstContent.toJson();
-            int tokenCount = TokenizerUtils.countTokens(rawJson, tokenizerType);
+            int tokenCount = model != null ? model.countTokens(rawJson) : TokenizerUtils.countTokens(rawJson, tokenizerType);
 
             requestConfig.setSystemInstructionsRawJson(rawJson);
             requestConfig.setSystemInstructionsTokenCount(tokenCount);
@@ -124,11 +126,11 @@ public final class RequestConfigAdapter {
             for (AbstractTool<?, ?> tool : localTools) {
                 FunctionDeclaration fd = new GeminiFunctionDeclarationAdapter(tool, useNativeSchemas).toGoogle();
                 if (fd != null) {
-                    String rawJson = fd.toJson();
-                    int tokenCount = TokenizerUtils.countTokens(rawJson, tokenizerType);
+                    //String rawJson = fd.toJson();
+                    //int tokenCount = model != null ? model.countTokens(rawJson) : TokenizerUtils.countTokens(rawJson, tokenizerType);
                     // Note: We don't have a direct way to set this back on the tool here without casting,
                     // but we log it for now. The tool itself should ideally hold its provider-specific count.
-                    log.debug("Tool {}: {} tokens", tool.getName(), tokenCount);
+                    //log.debug("Tool {}: {} tokens", tool.getName(), tokenCount);
                     declarations.add(fd);
                 }
             }
