@@ -157,6 +157,12 @@ public class OpenAiChatCompletionsProvider extends AbstractAiProvider {
         return statusCode == 429 || statusCode == 503 || statusCode == 500 || statusCode == 499 || statusCode == 408;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Triggers a hokus-pocus rotation to the next API key in the pool, rebinding any active clients.
+     * </p>
+     */
     @Override
     public void hokusPocus() {
         super.hokusPocus(); 

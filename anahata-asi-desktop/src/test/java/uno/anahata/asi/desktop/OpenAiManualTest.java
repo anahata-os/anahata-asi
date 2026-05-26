@@ -22,6 +22,11 @@ import uno.anahata.asi.openai.OpenAiResponsesProvider;
 @Slf4j
 public class OpenAiManualTest {
 
+    /**
+     * The main entry point to execute the manual OpenAI integration test suite.
+     * @param args The command line arguments.
+     * @throws java.lang.Exception if any connection, execution, or streaming error occurs.
+     */
     public static void main(String[] args) throws Exception {
         System.out.println("--- Starting OpenAI Manual Test ---");
 

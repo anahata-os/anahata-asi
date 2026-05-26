@@ -34,6 +34,15 @@ import uno.anahata.asi.agi.tool.AgiTool;
 @AgiToolkit("A toolkit for managing the 'pruningState' flag of any items in the conversation history.")
 public class History extends AnahataToolkit {
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Provides context-aware system instructions for the History toolkit,
+     * detailing CwGC operational parameters, pruningStates, and metadata strategies.
+     * </p>
+     * @return A singleton list containing the detailed history system prompt.
+     * @throws java.lang.Exception if metadata serialization or context lookup fails.
+     */
     @Override
     public List<String> getSystemInstructions() throws Exception {
         String s = "\n\n**Context Window Garbage Collector(CwGC)**:\n"

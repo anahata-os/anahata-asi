@@ -417,6 +417,14 @@ public class RequestConfigPanel extends ScrollablePanel implements PropertyChang
         return panel;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Listens to model configuration changes and triggers a refresh of the effective
+     * defaults displayed in the UI panel.
+     * </p>
+     * @param evt The property change event containing the old/new values.
+     */
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         if ("selectedModel".equals(evt.getPropertyName())) {

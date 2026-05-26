@@ -30,6 +30,10 @@ public class JavaToolContextTest {
     private Agi agi;
     private JavaObjectToolkit toolkit;
 
+    /**
+     * Initializes the MockAsiContainer, configures the session, and prepares
+     * the mock toolkit before each test run.
+     */
     @BeforeEach
     public void setup() {
         AbstractAsiContainer container = new MockAsiContainer("test-app");
@@ -40,6 +44,10 @@ public class JavaToolContextTest {
         toolkit = (JavaObjectToolkit) agi.getToolManager().getToolkits().get("MockToolkit");
     }
 
+    /**
+     * Verifies that executing tools have thread-safe, non-null access to
+     * the active ToolContext during execution.
+     */
     @Test
     public void testToolContextAccess() {
         JavaMethodTool tool = (JavaMethodTool) toolkit.getTools().stream()

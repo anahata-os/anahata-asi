@@ -31,6 +31,14 @@ public class JavaMemberPage extends Page<JavaMember> {
         this.urlOfAllMembers = url;
     }
     
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Appends the shared source URL of all members in the page to the standard
+     * string representation.
+     * </p>
+     * @return The string representation of the member page.
+     */
     @Override
     public String toString() {
         return super.toString() + "\nSource URL for all members: " + urlOfAllMembers;
