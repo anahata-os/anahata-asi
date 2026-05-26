@@ -83,6 +83,14 @@ public class PartNode extends AbstractContextNode<AbstractPart> {
 
     /**
      * {@inheritDoc}
+     */
+    @Override
+    public boolean isActive() {
+        return !userObject.isEffectivelyPruned();
+    }
+
+    /**
+     * {@inheritDoc}
      * <p>
      * Implementation details: Includes the remaining depth metric in the status
      * string to visualize the Context Window Garbage Collection (CwGC) state.
