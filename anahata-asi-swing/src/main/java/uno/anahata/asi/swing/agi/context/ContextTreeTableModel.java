@@ -10,11 +10,11 @@ import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.internal.SwingTask;
 
 /**
- * A TreeTableModel that provides a hierarchical, JNDI-style view of the entire 
+ * A TreeTableModel that provides a hierarchical, JNDI-style view of the entire
  * AI context using unified AbstractContextNodes.
  * <p>
- * This model is designed for high performance and UI stability. It preserves 
- * node identity across refreshes, ensuring that the tree view remains stable 
+ * This model is designed for high performance and UI stability. It preserves
+ * node identity across refreshes, ensuring that the tree view remains stable
  * (no jumping or collapsing) when the underlying context changes.
  * </p>
  * <p>
@@ -25,27 +25,32 @@ import uno.anahata.asi.swing.internal.SwingTask;
  */
 @Slf4j
 public class ContextTreeTableModel extends AbstractTreeTableModel {
-    /** The parent agi panel. */
+
+    /**
+     * The parent agi panel.
+     */
     private final AgiPanel agiPanel;
 
     /**
      * Constructs a new ContextTreeTableModel.
+     *
      * @param agiPanel The parent agi panel.
      */
     public ContextTreeTableModel(AgiPanel agiPanel) {
-        super(null); 
+        super(null);
         this.agiPanel = agiPanel;
         refresh();
     }
 
     /**
-     * Refreshes the model's data from the ContextManager and notifies the view of the change.
+     * Refreshes the model's data from the ContextManager and notifies the view
+     * of the change.
      * <p>
-     * Implementation details: It preserves the root node instance if it already 
-     * exists, triggering a recursive refresh of the node hierarchy. 
+     * Implementation details: It preserves the root node instance if it already
+     * exists, triggering a recursive refresh of the node hierarchy.
      * </p>
      * <p>
-     * To prevent the 'jumping' behavior, it uses identity-preserving nodes and 
+     * To prevent the 'jumping' behavior, it uses identity-preserving nodes and
      * fires a structure change event on the root.
      * </p>
      */
@@ -62,12 +67,14 @@ public class ContextTreeTableModel extends AbstractTreeTableModel {
             modelSupport.fireTreeStructureChanged(new TreePath(root));
         }
     }
-    
+
     /**
-     * Triggers an asynchronous recalculation of token counts for all nodes in the tree.
-     * Uses SwingTask to run the calculation pass on a background thread.
-     * 
-     * @param onDone An optional callback to run on the EDT after the refresh is complete.
+     * Triggers an asynchronous recalculation of token counts for all nodes in
+     * the tree. Uses SwingTask to run the calculation pass on a background
+     * thread.
+     *
+     * @param onDone An optional callback to run on the EDT after the refresh is
+     * complete.
      */
     public void refreshTokens(Runnable onDone) {
         if (root instanceof AbstractContextNode<?> node) {
@@ -83,59 +90,84 @@ public class ContextTreeTableModel extends AbstractTreeTableModel {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getColumnCount() {
-        return 6; // Name, Instructions, Declarations, History, RAG, Status
+        return 7; // Name, Total, Instructions, Declarations, History, RAG, Status
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getColumnName(int column) {
         return switch (column) {
-            case 0 -> "Name";
-            case 1 -> "Instructions";
-            case 2 -> "Declarations";
-            case 3 -> "History";
-            case 4 -> "RAG";
-            case 5 -> "Status";
-            default -> "";
-        };
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public Class<?> getColumnClass(int column) {
-        return switch (column) {
-            case 1, 2, 3, 4 -> Integer.class;
-            default -> String.class;
+            case 0 ->
+                "Name";
+            case 1 ->
+                "Total";
+            case 2 ->
+                "Instructions";
+            case 3 ->
+                "Declarations";
+            case 4 ->
+                "History";
+            case 5 ->
+                "RAG";
+            case 6 ->
+                "Status";
+            default ->
+                "";
         };
     }
 
     /**
      * {@inheritDoc}
-     * Implementation details: Delegates value retrieval to the AbstractContextNode 
-     * based on the column index.
+     */
+    @Override
+    public Class<?> getColumnClass(int column) {
+        return switch (column) {
+            case 1, 2, 3, 4, 5 ->
+                Integer.class;
+            default ->
+                String.class;
+        };
+    }
+
+    /**
+     * {@inheritDoc} Implementation details: Delegates value retrieval to the
+     * AbstractContextNode based on the column index.
      */
     @Override
     public Object getValueAt(Object node, int column) {
         if (node instanceof AbstractContextNode<?> cn) {
             return switch (column) {
-                case 0 -> cn.getName();
-                case 1 -> cn.getInstructionsTokens();
-                case 2 -> cn.getDeclarationsTokens();
-                case 3 -> cn.getHistoryTokens();
-                case 4 -> cn.getRagTokens();
-                case 5 -> cn.getStatus();
-                default -> null;
+                case 0 ->
+                    cn.getName();
+                case 1 ->
+                    cn.getInstructionsTokens() + cn.getDeclarationsTokens() + cn.getHistoryTokens() + cn.getRagTokens();
+                case 2 ->
+                    cn.getInstructionsTokens();
+                case 3 ->
+                    cn.getDeclarationsTokens();
+                case 4 ->
+                    cn.getHistoryTokens();
+                case 5 ->
+                    cn.getRagTokens();
+                case 6 ->
+                    cn.getStatus();
+                default ->
+                    null;
             };
         }
         return null;
     }
 
     /**
-     * {@inheritDoc}
-     * Implementation details: Delegates to the parent node's getChildren() method.
+     * {@inheritDoc} Implementation details: Delegates to the parent node's
+     * getChildren() method.
      */
     @Override
     public Object getChild(Object parent, int index) {
@@ -146,8 +178,8 @@ public class ContextTreeTableModel extends AbstractTreeTableModel {
     }
 
     /**
-     * {@inheritDoc}
-     * Implementation details: Delegates to the parent node's getChildren().size().
+     * {@inheritDoc} Implementation details: Delegates to the parent node's
+     * getChildren().size().
      */
     @Override
     public int getChildCount(Object parent) {
@@ -158,8 +190,8 @@ public class ContextTreeTableModel extends AbstractTreeTableModel {
     }
 
     /**
-     * {@inheritDoc}
-     * Implementation details: Performs a standard indexOf search in the child list.
+     * {@inheritDoc} Implementation details: Performs a standard indexOf search
+     * in the child list.
      */
     @Override
     public int getIndexOfChild(Object parent, Object child) {
@@ -170,8 +202,8 @@ public class ContextTreeTableModel extends AbstractTreeTableModel {
     }
 
     /**
-     * {@inheritDoc}
-     * Implementation details: A node is a leaf if its getChildren() list is empty.
+     * {@inheritDoc} Implementation details: A node is a leaf if its
+     * getChildren() list is empty.
      */
     @Override
     public boolean isLeaf(Object node) {
