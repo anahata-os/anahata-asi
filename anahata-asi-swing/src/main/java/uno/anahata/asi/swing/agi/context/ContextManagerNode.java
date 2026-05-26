@@ -10,6 +10,7 @@ import uno.anahata.asi.agi.context.ContextManager;
 import uno.anahata.asi.agi.context.ContextProvider;
 import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
 import uno.anahata.asi.agi.resource.ResourceManager;
+import uno.anahata.asi.agi.tool.ToolManager;
 import uno.anahata.asi.swing.agi.AgiPanel;
 
 /**
@@ -22,6 +23,7 @@ public class ContextManagerNode extends AbstractContextNode<ContextManager> {
 
     /**
      * Constructs a new ContextManagerNode.
+     *
      * @param agiPanel The parent agi panel.
      * @param userObject The context manager to wrap.
      */
@@ -29,10 +31,10 @@ public class ContextManagerNode extends AbstractContextNode<ContextManager> {
         super(agiPanel, userObject);
     }
 
-    /** 
-     * {@inheritDoc} 
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details: Returns the static identifier "Context Manager", 
+     * Implementation details: Returns the static identifier "Context Manager",
      * marking this node as the root of the AGI's environmental awareness.
      * </p>
      */
@@ -41,10 +43,10 @@ public class ContextManagerNode extends AbstractContextNode<ContextManager> {
         return "Context Manager";
     }
 
-    /** 
-     * {@inheritDoc} 
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details: Provides a high-level overview of the root 
+     * Implementation details: Provides a high-level overview of the root
      * orchestrator's role in maintaining the conversation and provider state.
      * </p>
      */
@@ -53,55 +55,60 @@ public class ContextManagerNode extends AbstractContextNode<ContextManager> {
         return "The central orchestrator for the AI context, managing providers, resources, and history.";
     }
 
-    /** 
-     * {@inheritDoc} 
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details: Aggregates all registered {@link ContextProvider}s 
-     * (excluding toolkits) and injects the manager itself to represent 
-     * the conversation history branch.
+     * Implementation details: Aggregates all registered
+     * {@link ContextProvider}s (excluding toolkits) and injects the manager
+     * itself to represent the conversation history branch.
      * </p>
      */
     @Override
     protected List<?> fetchChildObjects() {
         List<Object> objects = new ArrayList<>();
-        
+
         // 1. Providers (excluding toolkits which are handled by ToolManager)
         for (ContextProvider cp : userObject.getProviders()) {
-            if (cp instanceof AbstractToolkit) continue;
+            if (cp instanceof AbstractToolkit) {
+                continue;
+            }
             objects.add(cp);
         }
-        
+
         // 2. History (The ContextManager itself acts as the domain object for history)
         objects.add(userObject);
-        
+
         return objects;
     }
 
-    /** 
-     * {@inheritDoc} 
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details: Maps domain-level orchestrators to their specialized 
-     * context nodes, including {@link ResourcesNode} and {@link HistoryNode}.
+     * Implementation details: Maps domain-level orchestrators to their
+     * specialized context nodes, including {@link ResourcesNode} and
+     * {@link HistoryNode}.
      * </p>
      */
     @Override
     protected AbstractContextNode<?> createChildNode(Object obj) {
         if (obj instanceof ResourceManager rm2) {
             return new ResourcesNode(agiPanel, rm2);
+        } else if (obj instanceof ToolManager tm) {
+            return new ToolManagerNode(agiPanel, tm);
         } else if (obj instanceof ContextProvider cp) {
-            return new ProviderNode(agiPanel, cp);
+            return new ContextProviderNode(agiPanel, cp);
         } else if (obj instanceof ContextManager cm) {
             return new HistoryNode(agiPanel, cm);
         }
         return null;
     }
 
-    /** 
-     * {@inheritDoc} 
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details: The manager node is a logical container and does 
-     * not contribute tokens directly. All token metrics are aggregated from 
-     * its children.
+     * Implementation details: The manager node is a logical container and does
+     * not contribute tokens directly. All token metrics are aggregated from its
+     * children.
      * </p>
      */
     @Override
@@ -109,11 +116,19 @@ public class ContextManagerNode extends AbstractContextNode<ContextManager> {
         // The manager itself doesn't have tokens, it just aggregates.
     }
 
-    /** 
-     * {@inheritDoc} 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isActive() {
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
      * <p>
-     * Implementation details: Fixed to "Providing" as the manager is always 
-     * the active source of the AGI's context.
+     * Implementation details: Fixed to "Providing" as the manager is always the
+     * active source of the AGI's context.
      * </p>
      */
     @Override
