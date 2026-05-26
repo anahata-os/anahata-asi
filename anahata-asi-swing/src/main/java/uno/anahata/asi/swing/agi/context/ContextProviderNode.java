@@ -20,7 +20,7 @@ import uno.anahata.asi.agi.tool.ToolManager;
  *
  * @author anahata
  */
-public class ProviderNode extends AbstractContextNode<ContextProvider> {
+public class ContextProviderNode extends AbstractContextNode<ContextProvider> {
 
     /**
      * Constructs a new ProviderNode.
@@ -28,7 +28,7 @@ public class ProviderNode extends AbstractContextNode<ContextProvider> {
      * @param agiPanel The parent agi panel.
      * @param userObject The context provider to wrap.
      */
-    public ProviderNode(AgiPanel agiPanel, ContextProvider userObject) {
+    public ContextProviderNode(AgiPanel agiPanel, ContextProvider userObject) {
         super(agiPanel, userObject);
     }
 
@@ -78,7 +78,7 @@ public class ProviderNode extends AbstractContextNode<ContextProvider> {
         if (obj instanceof AbstractToolkit<?> tk) {
             return new ToolkitNode(agiPanel, tk);
         } else if (obj instanceof ContextProvider cp) {
-            return new ProviderNode(agiPanel, cp);
+            return new ContextProviderNode(agiPanel, cp);
         }
         return null;
     }
@@ -95,6 +95,14 @@ public class ProviderNode extends AbstractContextNode<ContextProvider> {
             this.instructionsTokens = 0;
             this.ragTokens = 0;
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isActive() {
+        return userObject.isEffectivelyProviding();
     }
 
     /**
