@@ -122,6 +122,10 @@ public class ContextPanel extends JPanel {
     private boolean refreshing = false;
 
     /**
+     * Flag indicating token calculation is currently running in the background.
+     */
+    private boolean calculatingTokens = false;
+    /**
      * Registry for mapping domain types to custom UI configurers.
      */
     private final Map<Class<?>, BiConsumer<Object, JPanel>> customConfigRegistry = new HashMap<>();
@@ -522,21 +526,24 @@ public class ContextPanel extends JPanel {
      * targeted even if the user has reordered or hidden them.
      * </p>
      */
-    private void applyColumnWidths() {
+        private void applyColumnWidths() {
         if (treeTable.getColumnCount() == 0) {
             return;
         }
 
-        // 1. Name Column (400px) - Model Index 0
-        applyColumnWidth(0, 400, 200);
+        // 1. Name Column (300px instead of 400px to give width to Total!) - Model Index 0
+        applyColumnWidth(0, 300, 150);
 
-        // 2. Token Columns (Instructions, Declarations, History, RAG) - Model Indices 1-4
-        for (int i = 1; i <= 4; i++) {
+        // 2. Total Column (Model Index 1)
+        applyColumnWidth(1, 80, 50);
+
+        // 3. Token Columns (Instructions, Declarations, History, RAG) - Model Indices 2-5
+        for (int i = 2; i <= 5; i++) {
             applyColumnWidth(i, 80, 50);
         }
 
-        // 3. Status Column - Model Index 5
-        applyColumnWidth(5, 120, 80);
+        // 4. Status Column - Model Index 6
+        applyColumnWidth(6, 120, 80);
     }
 
     /**
@@ -665,6 +672,14 @@ public class ContextPanel extends JPanel {
      * @param onDone Optional callback to run after tokens are refreshed.
      */
     public void refreshTokens(Runnable onDone) {
+        if (calculatingTokens) {
+            if (onDone != null) {
+                onDone.run();
+            }
+            return;
+        }
+        calculatingTokens = true;
+
         // Capture expansion and selection state to restore it after the background task fires its event
         Set<TreePath> expandedPaths = getExpandedPaths();
         TreePath selectedPath = treeTable.getTreeSelectionModel().getSelectionPath();
@@ -677,12 +692,15 @@ public class ContextPanel extends JPanel {
                     treeTable.getTreeSelectionModel().setSelectionPath(selectedPath);
                 }
                 this.refreshing = false;
+                this.calculatingTokens = false;
 
                 if (onDone != null) {
                     onDone.run();
                 }
             });
         } catch (Exception e) {
+            this.calculatingTokens = false;
+            this.refreshing = false;
             log.error("Error refreshing context tokens", e);
         }
     }
