@@ -15,6 +15,8 @@ This file tracks the actionable tasks and tactical goals for the Anahata ASI (V2
 
 - [ ] check playback lines on linux work correctly
 
+- [ ] Include part types in Garbage collector logs 
+
 - [ ] ToolCallPanel sometimes shows white sspace between the adjustingtabbedpane and the response titled panel in maven tool calls 
 
 - [ ] make "cached data" in MediaView transient? possibly in text resources too?
