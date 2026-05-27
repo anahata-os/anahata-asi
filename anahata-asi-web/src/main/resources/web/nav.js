@@ -184,5 +184,56 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = '';
         document.body.style.overflow = '';
     });
+
+    // Dynamic Releases Asset Resolver
+    const initDynamicDownloads = async () => {
+        const winBtn = document.getElementById('dl-windows');
+        const macBtn = document.getElementById('dl-macos');
+        const linBtn = document.getElementById('dl-linux');
+        if (!winBtn && !macBtn && !linBtn) return;
+
+        try {
+            const response = await fetch('https://api.github.com/repos/anahata-os/anahata-asi/releases');
+            if (!response.ok) throw new Error('Failed to fetch releases metadata');
+            
+            const releases = await response.json();
+            if (!releases || releases.length === 0) return;
+
+            // Find the most recent release candidate or stable release (ignoring rolling snapshot tags)
+            const latestRelease = releases.find(rel => rel.tag_name !== 'latest-snapshot' && !rel.draft);
+            if (!latestRelease) return;
+
+            const assets = latestRelease.assets;
+            
+            const winAsset = assets.find(asset => asset.name.endsWith('-windows.zip'));
+            const macAsset = assets.find(asset => asset.name.endsWith('-macos.zip'));
+            const linAsset = assets.find(asset => asset.name.endsWith('-linux.tar.gz'));
+
+            if (winAsset && winBtn) {
+                winBtn.href = winAsset.browser_download_url;
+                const sizeMb = Math.round(winAsset.size / (1024 * 1024));
+                winBtn.querySelector('span').textContent = `.zip (Portable) • ${sizeMb} MB`;
+            }
+            if (macAsset && macBtn) {
+                macBtn.href = macAsset.browser_download_url;
+                const sizeMb = Math.round(macAsset.size / (1024 * 1024));
+                macBtn.querySelector('span').textContent = `.zip (App Bundle) • ${sizeMb} MB`;
+            }
+            if (linAsset && linBtn) {
+                linBtn.href = linAsset.browser_download_url;
+                const sizeMb = Math.round(linAsset.size / (1024 * 1024));
+                linBtn.querySelector('span').textContent = `.tar.gz (Binary) • ${sizeMb} MB`;
+            }
+
+            const subtitle = document.querySelector('#installation p');
+            if (subtitle) {
+                subtitle.innerHTML = `Native standalone binaries are compiled on secure runners. Currently serving the latest release candidate: <strong style="color: var(--barca-gold); font-family: 'JetBrains Mono', monospace;">${latestRelease.tag_name}</strong>.`;
+            }
+        } catch (error) {
+            console.error('Error resolving dynamic asset URLs:', error);
+        }
+    };
+
     initScrollSpy();
+    initDynamicDownloads();
 });
