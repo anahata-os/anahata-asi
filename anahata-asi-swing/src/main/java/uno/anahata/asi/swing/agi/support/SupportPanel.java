@@ -10,9 +10,11 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.swing.components.ScrollablePanel;
 import uno.anahata.asi.swing.components.WrapLayout;
+import uno.anahata.asi.swing.games.AgiKart;
 import uno.anahata.asi.swing.games.Arkanoid;
 import uno.anahata.asi.swing.games.Snake;
 import uno.anahata.asi.swing.games.Tetris;
+import uno.anahata.asi.swing.icons.AgiKartIcon;
 import uno.anahata.asi.swing.icons.ArkanoidIcon;
 import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.icons.SnakeIcon;
@@ -98,6 +100,9 @@ public class SupportPanel extends ScrollablePanel {
                 "Support the development of the first ASI.", "v2/anahata.png"));
 
         // Games Row
+        cards.add(createCard("Agi Kart", () -> AgiKart.main(null),
+                "Experience the speed of the first retro pseudo-3D Mode 7 speedway! Força Barça!", new AgiKartIcon(16)));
+
         cards.add(createCard("Play Arkanoid", () -> Arkanoid.main(null),
                 "Take a break with the classic brick breaker.", new ArkanoidIcon(16)));
 
