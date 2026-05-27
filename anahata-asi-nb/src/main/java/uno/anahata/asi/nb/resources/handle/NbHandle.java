@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.resources.handle;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -8,10 +9,13 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.queries.FileEncodingQuery;
+import org.openide.cookies.EditorCookie;
 import org.openide.filesystems.FileAttributeEvent;
 import org.openide.filesystems.FileChangeListener;
 import org.openide.filesystems.FileEvent;
@@ -19,7 +23,11 @@ import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileRenameEvent;
 import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.URLMapper;
+import org.openide.loaders.DataLoaderPool;
 import org.openide.loaders.DataObject;
+import org.openide.loaders.OperationAdapter;
+import org.openide.loaders.OperationEvent;
+import org.openide.loaders.OperationListener;
 import uno.anahata.asi.internal.TikaUtils;
 import uno.anahata.asi.persistence.Rebindable;
 import uno.anahata.asi.agi.resource.handle.AbstractResourceHandle;
@@ -64,12 +72,27 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
     private transient FileChangeListener weakListener;
 
     /**
+     * Weak operation listener registered with the IDE's DataLoaderPool to
+     * monitor global file moves and lifecycle changes (such as drag-and-drop or
+     * cut-and-paste across folders) without creating memory leaks.
+     */
+    private transient OperationListener weakOpListener;
+    /**
+     * Strong reference to the operation listener adapter. This field anchors
+     * the listener in memory to prevent the JVM's Garbage Collector from
+     * reclaiming it while the NbHandle is alive, preserving global
+     * file-movement monitoring.
+     */
+    private transient OperationListener strongOpListener;
+
+    /**
      * Constructs a new NbHandle from a URI.
      *
      * @param uri The resource URI (file:, jar:, etc.).
      */
     public NbHandle(URI uri) {
         setUri(uri);
+        setupOperationListener();
     }
 
     /**
@@ -84,10 +107,10 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
     }
 
     /**
-     * Authoritatively sets and normalizes the resource URI.
-     * For local files, it forces the triple-slash (file:///) format and 
-     * extracts the physical path to maintain identity consistency within the manager.
-     * 
+     * Authoritatively sets and normalizes the resource URI. For local files, it
+     * forces the triple-slash (file:///) format and extracts the physical path
+     * to maintain identity consistency within the manager.
+     *
      * @param uri The URI to set.
      */
     private void setUri(URI uri) {
@@ -115,7 +138,7 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
 
                 // 2. Fallback to path resolution for local files
                 if (fileObject == null && path != null) {
-                    fileObject = FileUtil.toFileObject(FileUtil.normalizeFile(new java.io.File(path)));
+                    fileObject = FileUtil.toFileObject(FileUtil.normalizeFile(new File(path)));
                 }
 
                 if (fileObject != null) {
@@ -138,6 +161,72 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
             weakListener = FileUtil.weakFileChangeListener(this, fileObject);
             fileObject.addFileChangeListener(weakListener);
         }
+        setupOperationListener();
+    }
+
+    /**
+     * Re-establishes or initializes the global operation listener.
+     * <p>
+     * Leverages the
+     * {@link org.openide.loaders.DataLoaderPool#createWeakOperationListener(org.openide.loaders.OperationListener, java.lang.Object)}
+     * utility to bind a weak listener that automatically unloads if this
+     * resource handle is GCed.</p>
+     */
+    private void setupOperationListener() {
+        if (strongOpListener == null) {
+            strongOpListener = new OperationAdapter() {
+                @Override
+                public void operationMove(OperationEvent.Move ev) {
+                    handleOperationMove(ev);
+                }
+            };
+            weakOpListener = DataLoaderPool.createWeakOperationListener(strongOpListener, DataLoaderPool.getDefault());
+            DataLoaderPool.getDefault().addOperationListener(weakOpListener);
+        }
+    }
+
+    /**
+     * Processes global file move operations fired by the IDE loaders layer.
+     * <p>
+     * If the original primary file of the moved
+     * {@link org.openide.loaders.DataObject} matches our active
+     * {@link FileObject}, this handle detaches its old file listeners, updates
+     * its internally managed URI and path to point to the new destination file,
+     * re-attaches new listeners, and marks the parent resource dirty.</p>
+     *
+     * @param ev The IDE-fired move operation event.
+     */
+    private void handleOperationMove(OperationEvent.Move ev) {
+        FileObject originalFile = ev.getOriginalPrimaryFile();
+        boolean matches = false;
+        if (originalFile != null) {
+            if (originalFile.equals(this.fileObject)) {
+                matches = true;
+            } else {
+                java.net.URI origUri = originalFile.toURI();
+                if (origUri.equals(this.uri)) {
+                    matches = true;
+                } else if (this.path != null && origUri.getPath() != null && origUri.getPath().equals(this.path)) {
+                    matches = true;
+                }
+            }
+        }
+        if (matches) {
+            FileObject newFo = ev.getObject().getPrimaryFile();
+            log.info("NbHandle detected move for {} from {} to {}", getName(), originalFile.getPath(), newFo.getPath());
+            synchronized (this) {
+                if (fileObject != null && weakListener != null) {
+                    fileObject.removeFileChangeListener(weakListener);
+                    weakListener = null;
+                }
+                fileObject = newFo;
+                setUri(newFo.toURI());
+                setupListener();
+            }
+            if (owner != null) {
+                owner.markDirty();
+            }
+        }
     }
 
     /**
@@ -153,7 +242,7 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
             return fo.getNameExt();
         }
         String p = uri.getPath();
-        return (p != null && !p.isBlank()) ? new java.io.File(p).getName() : uri.toString();
+        return (p != null && !p.isBlank()) ? new File(p).getName() : uri.toString();
     }
 
     /**
@@ -189,7 +278,7 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
         if (mime == null || "content/unknown".equals(mime)) {
             try {
                 if (path != null) {
-                    return TikaUtils.detectMimeType(new java.io.File(path));
+                    return TikaUtils.detectMimeType(new File(path));
                 }
             } catch (Exception e) {
                 return "application/octet-stream";
@@ -199,10 +288,12 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
     }
 
     /**
-     * Currently unsued. Prioritizes the active NetBeans Document 
-     * content if the file is open in the editor, use this to show unsaved changes to the model.
+     * Currently unsued. Prioritizes the active NetBeans Document content if the
+     * file is open in the editor, use this to show unsaved changes to the
+     * model.
      *
-     * @return The text content of the active document in the editor, or file content if not open.
+     * @return The text content of the active document in the editor, or file
+     * content if not open.
      * @throws IOException If reading the document or stream fails.
      */
     public String asTextFromEditorIfOpenInEditor() throws IOException {
@@ -210,15 +301,15 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
         if (fo != null) {
             try {
                 DataObject dobj = DataObject.find(fo);
-                org.openide.cookies.EditorCookie ec = dobj.getLookup().lookup(org.openide.cookies.EditorCookie.class);
+                EditorCookie ec = dobj.getLookup().lookup(EditorCookie.class);
                 if (ec != null) {
-                    javax.swing.text.Document doc = ec.getDocument();
+                    Document doc = ec.getDocument();
                     if (doc != null) {
                         final String[] text = new String[1];
                         doc.render(() -> {
                             try {
                                 text[0] = doc.getText(0, doc.getLength());
-                            } catch (javax.swing.text.BadLocationException ex) {
+                            } catch (BadLocationException ex) {
                                 // Fallback to stream
                             }
                         });
@@ -328,10 +419,11 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
     public boolean isVirtual() {
         return false;
     }
-    
+
     /**
      * {@inheritDoc}
-     * <p>Returns the size of the NetBeans FileObject.</p>
+     * <p>
+     * Returns the size of the NetBeans FileObject.</p>
      */
     @Override
     public long length() {
@@ -367,7 +459,7 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
         } else {
             setUri(uri);
         }
-
+        setupOperationListener();
         getFileObject();
     }
 
@@ -383,6 +475,11 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
             fileObject.removeFileChangeListener(weakListener);
             weakListener = null;
         }
+        if (weakOpListener != null) {
+            DataLoaderPool.getDefault().removeOperationListener(weakOpListener);
+            weakOpListener = null;
+        }
+        strongOpListener = null;
     }
 
     // --- FileChangeListener Implementation ---
