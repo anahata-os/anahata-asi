@@ -12,6 +12,10 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.TreePath;
+import javax.swing.text.Document;
+import org.netbeans.api.java.source.CodeStyle;
+import org.netbeans.api.java.source.Comment;
+import org.netbeans.api.java.source.CompilationController;
 import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.nb.tools.java.BatchCodeRefiner;
 
@@ -215,7 +219,7 @@ public class CodeRefinementIntent implements Serializable {
      * @return the updated text content.
      * @throws java.lang.Exception if parsing or string replacement fails.
      */
-    public String applyToText(org.netbeans.api.java.source.CompilationController cc, String currentContent) throws Exception {
+    public String applyToText(CompilationController cc, String currentContent) throws Exception {
         CompilationUnitTree cut = cc.getCompilationUnit();
         SourcePositions sp = cc.getTrees().getSourcePositions();
 
@@ -244,7 +248,7 @@ public class CodeRefinementIntent implements Serializable {
             }
 
             long docStart = startPos;
-            for (org.netbeans.api.java.source.Comment comm : cc.getTreeUtilities().getComments(member, true)) {
+            for (Comment comm : cc.getTreeUtilities().getComments(member, true)) {
                 if (comm.isDocComment() && comm.pos() < docStart) {
                     docStart = comm.pos();
                 }
@@ -323,6 +327,9 @@ public class CodeRefinementIntent implements Serializable {
             String newDeclStr = oldDecl;
             if (declaration != null) {
                 newDeclStr = declaration.stripIndent().trim().replace("\n", "\n" + baseIndent);
+                if (member instanceof VariableTree && newDeclStr.endsWith(";")) {
+                    newDeclStr = newDeclStr.substring(0, newDeclStr.length() - 1).trim();
+                }
                 if (member instanceof MethodTree || member instanceof ClassTree) {
                     newDeclStr += " ";
                 }
@@ -395,7 +402,7 @@ public class CodeRefinementIntent implements Serializable {
             }
 
             long docStart = startPos;
-            for (org.netbeans.api.java.source.Comment comm : cc.getTreeUtilities().getComments(member, true)) {
+            for (Comment comm : cc.getTreeUtilities().getComments(member, true)) {
                 if (comm.pos() > 0 && comm.pos() < docStart) {
                     docStart = comm.pos();
                 }
@@ -458,7 +465,7 @@ public class CodeRefinementIntent implements Serializable {
                 } else {
                     Tree anchor = members.get(index);
                     long aStart = sp.getStartPosition(cut, anchor);
-                    for (org.netbeans.api.java.source.Comment comm : cc.getTreeUtilities().getComments(anchor, true)) {
+                    for (Comment comm : cc.getTreeUtilities().getComments(anchor, true)) {
                         if (comm.pos() > 0 && comm.pos() < aStart) {
                             aStart = comm.pos();
                         }
@@ -479,7 +486,7 @@ public class CodeRefinementIntent implements Serializable {
                 } else {
                     Tree anchor = decls.get(index);
                     long aStart = sp.getStartPosition(cut, anchor);
-                    for (org.netbeans.api.java.source.Comment comm : cc.getTreeUtilities().getComments(anchor, true)) {
+                    for (Comment comm : cc.getTreeUtilities().getComments(anchor, true)) {
                         if (comm.pos() > 0 && comm.pos() < aStart) {
                             aStart = comm.pos();
                         }
@@ -548,7 +555,7 @@ public class CodeRefinementIntent implements Serializable {
                 } else {
                     Tree anchor = members.get(index);
                     long aStart = sp.getStartPosition(cut, anchor);
-                    for (org.netbeans.api.java.source.Comment comm : cc.getTreeUtilities().getComments(anchor, true)) {
+                    for (Comment comm : cc.getTreeUtilities().getComments(anchor, true)) {
                         if (comm.pos() > 0 && comm.pos() < aStart) {
                             aStart = comm.pos();
                         }
@@ -570,7 +577,7 @@ public class CodeRefinementIntent implements Serializable {
                 } else {
                     Tree anchor = decls.get(index);
                     long aStart = sp.getStartPosition(cut, anchor);
-                    for (org.netbeans.api.java.source.Comment comm : cc.getTreeUtilities().getComments(anchor, true)) {
+                    for (Comment comm : cc.getTreeUtilities().getComments(anchor, true)) {
                         if (comm.pos() > 0 && comm.pos() < aStart) {
                             aStart = comm.pos();
                         }
@@ -586,7 +593,7 @@ public class CodeRefinementIntent implements Serializable {
             boolean isBlock = declStr.equals("static") || declStr.isEmpty();
             boolean isField = !isMethod && !isClass && !isBlock;
 
-            if (isField && innerBlockOrInitializer != null && !innerBlockOrInitializer.isEmpty() && declStr.endsWith(";")) {
+            if (isField && declStr.endsWith(";")) {
                 declStr = declStr.substring(0, declStr.length() - 1).trim();
             }
 
@@ -632,12 +639,12 @@ public class CodeRefinementIntent implements Serializable {
             int blankLinesBefore = 1;
             int blankLinesAfter = 1;
             try {
-                org.netbeans.api.java.source.CodeStyle cs = null;
-                javax.swing.text.Document doc = cc.getDocument();
+                CodeStyle cs = null;
+                Document doc = cc.getDocument();
                 if (doc != null) {
-                    cs = org.netbeans.api.java.source.CodeStyle.getDefault(doc);
+                    cs = CodeStyle.getDefault(doc);
                 } else if (cc.getFileObject() != null) {
-                    cs = org.netbeans.api.java.source.CodeStyle.getDefault(cc.getFileObject());
+                    cs = CodeStyle.getDefault(cc.getFileObject());
                 }
                 if (cs != null) {
                     if (isMethod) {
