@@ -11,6 +11,13 @@
     <name>Anahata ASI Website</name>
     <description>The official website and documentation for Anahata ASI V2.</description>
     
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+        <maven.source.skip>true</maven.source.skip>
+        <gpg.skip>true</gpg.skip>
+    </properties>
+    
     <build>
         <resources>
             <resource>
