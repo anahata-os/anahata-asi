@@ -3,6 +3,7 @@ name: Deploy Website & Javadoc
 on:
   push:
     branches: [ "master", "main" ]
+    tags: [ "v*" ]
   workflow_dispatch:
 
 permissions:
@@ -57,8 +58,8 @@ jobs:
             for dir in temp-gh-pages/apidocs/*/; do
               if [ -d "$dir" ]; then
                 dirname=$(basename "$dir")
-                # Filter out standard Javadoc resource folders to prevent polluting the version index
-                if [ "$dirname" != "resources" ] && [ "$dirname" != "jquery" ] && [ "$dirname" != "script-dir" ] && [ "$dirname" != "legal" ] && [ "$dirname" != "member-search-index" ]; then
+                # Only copy directories starting with a digit (the versions)
+                if [[ "$dirname" =~ ^[0-9] ]]; then
                   cp -r "$dir" _site/apidocs/
                 fi
               fi
@@ -77,8 +78,7 @@ jobs:
           python3 -c '
           import os, re
           apidocs_dir = "_site/apidocs"
-          exclude = {"resources", "jquery", "script-dir", "legal", "member-search-index", "tag-search-index", "type-search-index", "package-search-index", "class-search-index"}
-          versions = [d for d in os.listdir(apidocs_dir) if os.path.isdir(os.path.join(apidocs_dir, d)) and not d.startswith(".") and d not in exclude]
+          versions = [d for d in os.listdir(apidocs_dir) if os.path.isdir(os.path.join(apidocs_dir, d)) and not d.startswith(".") and d[0].isdigit()]
           versions.sort(reverse=True)
           li_html = ""
           for v in versions:

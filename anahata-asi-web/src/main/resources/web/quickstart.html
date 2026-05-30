@@ -33,6 +33,9 @@
         pre[class*="language-"] { background: #0d1117 !important; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1.5rem !important; margin: 1.5rem 0 !important; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
         .code-header { color: var(--barca-gold); font-size: 0.8rem; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
         .info-box { background: rgba(44, 122, 123, 0.1); border-left: 4px solid var(--barca-gold); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; }
+        .toolkit-header { display: flex; align-items: center; gap: 1rem; margin-top: 3rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; }
+        .toolkit-header i { font-size: 1.8rem; color: var(--barca-gold); }
+        .toolkit-header h2 { margin: 0 !important; border-bottom: none !important; padding-bottom: 0 !important; }
     </style>
 </head>
 <body>
@@ -79,12 +82,12 @@
     &lt;dependency&gt;
         &lt;groupId&gt;uno.anahata&lt;/groupId&gt;
         &lt;artifactId&gt;anahata-asi-core&lt;/artifactId&gt;
-        &lt;version&gt;1.0.0-SNAPSHOT&lt;/version&gt;
+        &lt;version&gt;1.0.0&lt;/version&gt;
     &lt;/dependency&gt;
     &lt;dependency&gt;
         &lt;groupId&gt;uno.anahata&lt;/groupId&gt;
         &lt;artifactId&gt;anahata-asi-gemini&lt;/artifactId&gt;
-        &lt;version&gt;1.0.0-SNAPSHOT&lt;/version&gt;
+        &lt;version&gt;1.0.0&lt;/version&gt;
     &lt;/dependency&gt;
 &lt;/dependencies&gt;</code></pre>
 
@@ -158,11 +161,11 @@ public class Main {
                         
                         <h3 style="margin-top: 2rem; color: var(--white);">Dependencies</h3>
                         <div class="code-header" style="text-transform: none;">pom.xml</div>
-                        <pre><code class="language-xml">&lt;dependency&gt;
-    &lt;groupId&gt;uno.anahata&lt;/groupId&gt;
-    &lt;artifactId&gt;anahata-asi-swing&lt;/artifactId&gt;
-    &lt;version&gt;1.0.0-SNAPSHOT&lt;/version&gt;
-&lt;/dependency&gt;</code></pre>
+                        <pre><code class="language-xml">    &lt;dependency&gt;
+        &lt;groupId&gt;uno.anahata&lt;/groupId&gt;
+        &lt;artifactId&gt;anahata-asi-swing&lt;/artifactId&gt;
+        &lt;version&gt;1.0.0&lt;/version&gt;
+    &lt;/dependency&gt;</code></pre>
                         
                         <h3 style="margin-top: 2rem; color: var(--white);">Embedded Configuration & Toolkits</h3>
                         <p>Define your session DNA and register any custom toolkits you want to expose to the AI.</p>
@@ -256,11 +259,11 @@ public class EmbeddedSwingAppAsiContainer extends AbstractSwingAsiContainer {
                         
                         <h3 style="margin-top: 2rem; color: var(--white);">1. Dependencies</h3>
                         <div class="code-header" style="text-transform: none;">pom.xml</div>
-                        <pre><code class="language-xml">&lt;dependency&gt;
-    &lt;groupId&gt;uno.anahata&lt;/groupId&gt;
-    &lt;artifactId&gt;anahata-asi-desktop&lt;/artifactId&gt;
-    &lt;version&gt;1.0.0-SNAPSHOT&lt;/version&gt;
-&lt;/dependency&gt;</code></pre>
+                        <pre><code class="language-xml">    &lt;dependency&gt;
+        &lt;groupId&gt;uno.anahata&lt;/groupId&gt;
+        &lt;artifactId&gt;anahata-asi-desktop&lt;/artifactId&gt;
+        &lt;version&gt;1.0.0&lt;/version&gt;
+    &lt;/dependency&gt;</code></pre>
 
                         <h3 style="margin-top: 2rem; color: var(--white);">2. Container & Config</h3>
                         <p>Extend <code>AsiDesktopAsiContainer</code> and define your custom default providers and configuration.</p>
@@ -334,7 +337,14 @@ public class Main {
                         <p class="subtitle">Create a NetBeans module that extends Anahata ASI Studio with custom toolkits.</p>
                         
                         <h3 style="margin-top: 2rem; color: var(--white);">Dependencies</h3>
-                        <p>Set <code>uno.anahata.asi.nb</code> as a module dependency in your NBM project.</p>
+                        <p>Declare the Anahata Studio API dependency in your suite or standalone NBM module POM:</p>
+                        <div class="code-header" style="text-transform: none;">pom.xml</div>
+                        <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;uno.anahata&lt;/groupId&gt;
+    &lt;artifactId&gt;anahata-asi-nb&lt;/artifactId&gt;
+    &lt;version&gt;1.0.0&lt;/version&gt;
+    &lt;type&gt;nbm&lt;/type&gt;
+&lt;/dependency&gt;</code></pre>
                         
                         <h3 style="margin-top: 2rem; color: var(--white);">Module Installer</h3>
                         <div class="code-header" style="text-transform: none;">MyModuleInstaller.java</div>
