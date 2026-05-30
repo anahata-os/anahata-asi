@@ -9,6 +9,7 @@ import java.awt.Dimension;
 import java.awt.event.HierarchyEvent;
 import javax.swing.Box;
 import javax.swing.JButton;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -183,13 +184,13 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
      * </p>
      */
     public void createNew() {
-        if (!asiContainer.hasAnyApiKeysConfigured()) {
-            JOptionPane.showMessageDialog(this, 
+        if (!asiContainer.hasAnyProviderConfigured()) {
+            JOptionPane.showMessageDialog(this,
                     "<html>Welcome to the Anahata Java Renaissance!<br><br>" +
-                    "To begin, you need to configure at least one API key for an AI provider.<br>" +
-                    "I am opening the <b>Preferences</b> dashboard for you now.</html>", 
+                    "To begin, you need to configure at least one AI provider.<br>" +
+                    "I am opening the <b>Preferences</b> dashboard for you now.</html>",
                     "Setup Required", JOptionPane.INFORMATION_MESSAGE);
-            showPreferences(3);
+            showPreferences(4);
             return;
         }
         asiContainer.createNewAgi();
@@ -220,7 +221,7 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
      * @param initialTabIndex The index of the tab to open.
      */
     public void showPreferences(int initialTabIndex) {
-        javax.swing.JFrame frame = asiContainer.getPreferencesFrame();
+        JFrame frame = asiContainer.getPreferencesFrame();
         
         if (frame != null && frame.isVisible()) {
             frame.toFront();
@@ -230,8 +231,8 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
             return;
         }
 
-        frame = new javax.swing.JFrame("ASI Container Preferences");
-        frame.setDefaultCloseOperation(javax.swing.JFrame.DISPOSE_ON_CLOSE);
+        frame = new JFrame("ASI Container Preferences");
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         
         try {
             frame.setIconImages(IconUtils.getLogoImages());
@@ -243,7 +244,7 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
         frame.setLayout(new BorderLayout());
         frame.add(prefsPanel, BorderLayout.CENTER);
         
-        final javax.swing.JFrame finalFrame = frame;
+        final JFrame finalFrame = frame;
         prefsPanel.setCloseCallback(() -> {
             finalFrame.dispose();
             asiContainer.setPreferencesFrame(null);

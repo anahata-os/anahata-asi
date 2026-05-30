@@ -231,11 +231,11 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
      *
      * @return true if keys are configured, false otherwise.
      */
-    public boolean hasAnyApiKeysConfigured() {
+    public boolean hasAnyProviderConfigured() {
         AgiConfig template = preferences.getAgiTemplate();
         for (String uuid : template.getProviderUuids()) {
             AbstractAiProvider provider = getProvider(uuid);
-            if (provider != null && provider.hasKeys()) {
+            if (provider != null && provider.isEnabled() && (provider.hasKeys() || !provider.isApiKeyRequired())) {
                 return true;
             }
         }
