@@ -55,7 +55,7 @@ jobs:
           # 2. Reconstruct the historical Javadoc vault (ONLY copy true version directories, skipping legacy root files)
           mkdir -p _site/apidocs
           if [ -d "temp-gh-pages/apidocs" ]; then
-            for dir in temp-gh-pages/apidocs/*/; do
+            for dir in temp-gh-pages/apidocs/*; do
               if [ -d "$dir" ]; then
                 dirname=$(basename "$dir")
                 # Only copy directories starting with a digit (the versions)
