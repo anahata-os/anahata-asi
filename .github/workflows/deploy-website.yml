@@ -83,8 +83,8 @@ jobs:
           li_html = ""
           for v in versions:
               badge = " <span class=\"badge\">Latest</span>" if "SNAPSHOT" in v else ""
-              # Path matches V2 flat output structure (version/index.html)
-              li_html += f"            <li class=\"version-item\"><a href=\"{v}/index.html\" class=\"version-link\">{v}{badge}</a></li>\n"
+              # Path matches V2 native aggregate output structure (version/apidocs/index.html)
+              li_html += f"            <li class=\"version-item\"><a href=\"{v}/apidocs/index.html\" class=\"version-link\">{v}{badge}</a></li>\n"
           index_path = os.path.join(apidocs_dir, "index.html")
           with open(index_path, "r") as f:
               html = f.read()

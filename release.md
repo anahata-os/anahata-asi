@@ -132,3 +132,19 @@ To cleanly migrate the existing 3,200 active V1 users (`anahata-netbeans-ai`) to
 
 3. **Verify the Website**:
    Check `https://asi.anahata.uno/desktop.html` to confirm that the navigation and dynamic javascript is successfully fetching and rewriting the direct download URLs to point to your new release candidate!
+
+## Javadoc Alignment Log (DevOps Vitacora)
+
+During the V2 launch on May 30, 2026, we encountered a series of directory layout collisions regarding the multi-version Javadocs. Here is the official chronological log and final architectural alignment:
+
+### 1. The Collision Chronology
+*   **Attempt 1 (Local Clean-up)**: Wiped the remote `gh-pages` root and generated flat `1.0.0` and `1.1.0-SNAPSHOT` Javadocs.
+*   **Attempt 2 (Cloud Overwrite)**: The user committed and pushed `main` branch. This triggered the parallel `Deploy Website & Javadoc` cloud build. Because the runner checked out the old `gh-pages` state before our cleanup push had registered, and because its YAML script lacked flattening logic, it over-wrote the remote branch, resulting in a nested `1.0.0/apidocs/` path and 404s.
+*   **Attempt 3 (The Trailing Slash cp-r Flood)**: We added flattening logic in Step 3 of `deploy-website.yml`, but left the trailing slash wildcard (`temp-gh-pages/apidocs/*/`) in Step 2. GNU `cp` interpreted this trailing slash as a command to copy the *contents* of `1.0.0` directly into the root, overwriting the beautiful version selector `index.html` and corrupting the styles.
+*   **Attempt 4 (The Maven Javadoc aggregate Constraint)**: We attempted to output Javadocs flatly to `docs/apidocs/${project.version}` using `<destDir>${project.version}</destDir>`. However, we discovered that `javadoc:aggregate` completely ignores the `<destDir>` parameter by design. It always outputs directly to `<outputDirectory>` (natively appending `/apidocs`), which resulted in `apidocs/apidocs` nesting in the cloud.
+
+### 2. The Final, Elegant Alignment (No Hacks!)
+*   **The Paradigm Shift**: Instead of fighting the native, un-overridable behavior of the Maven Javadoc plugin using complex, dirty bash loops and directory-flattening hacks inside `deploy-website.yml`, we aligned our landing page links to match Maven's out-of-the-box output.
+*   **The Path Alignment**: Configured `<outputDirectory>docs/apidocs/${project.version}</outputDirectory>` inside `pom.xml`. The Javadoc plugin naturally outputs versioned docs to `docs/apidocs/${project.version}/apidocs/index.html`.
+*   **The Link Alignment**: Updated the Python generator script and `apidocs/index.html` to natively link to `{v}/apidocs/index.html` instead of `{v}/index.html`.
+*   **Result**: 100% standard, clean, zero-friction, and permanently immune to nesting or formatting bugs across both stable and snapshot releases.

@@ -49,6 +49,7 @@
                     <li><a href="#dependencies">Dependencies</a></li>
                     <li><a href="#deployment">Deployment Models</a></li>
                     <li><a href="#custom-tools">Creating Custom Tools</a></li>
+                    <li><a href="#advanced-toolkits">Advanced Toolkits</a></li>
                     <li><a href="#context-providers">Custom Context Providers</a></li>
                 </ul>
             </div>
@@ -381,6 +382,130 @@ public class EnterpriseToolkit extends AnahataToolkit {
         
         log("Calculating revenue for region: " + region); // Thread-safe logging!
         return includeProjected ? 1500000.0 : 1000000.0;
+    }
+}</code></pre>
+            </section>
+
+            <section id="advanced-toolkits" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-cubes"></i><h2>Advanced Toolkits & Lifecycle Management</h2></div>
+                <p>For complex enterprise integrations, toolkits must manage their own state persistence (Kryo serialization), interact with external resources, and integrate tightly with the ASI's prompt-assembly phase. To do this, your toolkit can leverage POJOs, transient fields, prompt-population callbacks, and early/late deserialization recovery hooks.</p>
+                
+                <div class="info-box">
+                    <h4 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--white);"><i class="fas fa-sync-alt"></i> Rebind vs. PostActivate Lifecycle Hooks</h4>
+                    <p style="margin-bottom: 0.8rem;">Because Anahata passivates and serializes the entire <code>Agi</code> session graph to a <code>.kryo</code> binary file on every turn, fields marked as <code>transient</code> (like database connections, threads, or UI listener supports) will be skipped during serialization. You must recover them on deserialization using our two-stage lifecycle hooks:</p>
+                    <ul style="margin: 0; padding-left: 1.5rem; font-size: 0.9rem; line-height: 1.5;">
+                        <li><b><code>rebind()</code> (Early Stage)</b>: Part of the <code>Rebindable</code> interface. Triggered <i>immediately</i> as soon as Kryo finishes deserializing your specific toolkit object, before the rest of the session graph is built. It is reserved strictly for restoring local transient variables (e.g. recreating <code>PropertyChangeSupport</code>). <i>Always invoke <code>super.rebind()</code> first!</i></li>
+                        <li><b><code>postActivate()</code> (Late Stage)</b>: Triggered by the framework <i>later</i>, after the entire session object graph is fully reconstructed and bound to the host <code>AsiContainer</code>. This is the safe, authoritative place to run logic that depends on other toolkits, active connections, your parent <code>Agi</code> session, or the host container.</li>
+                    </ul>
+                </div>
+
+                <div class="code-header" style="text-transform: none;">ProjectMetadata.java (POJO Parameter Model)</div>
+                <pre><code class="language-java">import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.Getter;
+
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(description = "Structured metadata describing an enterprise engineering project.")
+public class ProjectMetadata {
+    @Schema(description = "The unique identifier of the project.", required = true)
+    private String projectId;
+
+    @Schema(description = "The target deployment region.", example = "EMEA")
+    private String region;
+
+    @Schema(description = "The current development budget.")
+    private double budget;
+}</code></pre>
+
+                <div class="code-header" style="text-transform: none;">AdvancedEnterpriseToolkit.java</div>
+                <pre><code class="language-java">import java.beans.PropertyChangeSupport;
+import java.util.List;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Files;
+import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.agi.tool.AnahataToolkit;
+import uno.anahata.asi.agi.tool.AgiToolkit;
+import uno.anahata.asi.agi.tool.AgiTool;
+import uno.anahata.asi.agi.tool.AgiToolParam;
+import uno.anahata.asi.agi.message.RagMessage;
+
+@Slf4j
+@AgiToolkit("High-performance enterprise toolkit with state persistence and JIT prompt integration.")
+public class AdvancedEnterpriseToolkit extends AnahataToolkit {
+
+    // Persistent field: Automatically saved to Kryo on every turn
+    private String currentAuditId = "INIT-AUDIT";
+
+    // Transient fields: Skipped by Kryo, must be recovered manually
+    private transient PropertyChangeSupport propertyChangeSupport;
+    private transient MyDatabaseConnection dbConnection;
+
+    // --- 1. Deserialization & Lifecycle Recovery ---
+
+    @Override
+    public void rebind() {
+        super.rebind(); // CRITICAL: Always invoke parent rebind first!
+        log.debug("Early stage: Recreating transient PropertyChangeSupport");
+        this.propertyChangeSupport = new PropertyChangeSupport(this);
+    }
+
+    @Override
+    public void postActivate() {
+        super.postActivate(); // Always invoke parent postActivate
+        log.debug("Late stage: Re-establishing transient database connection");
+        this.dbConnection = new MyDatabaseConnection(getAsiContainer().getHostId());
+    }
+
+    // --- 2. Prompt-Augmentation Integration ---
+
+    @Override
+    public List<String> getSystemInstructions() throws Exception {
+        // Automatically appends custom instructions to the AI's global system prompt on every turn
+        return List.of("Strictly audit all transaction budgets under AdvancedEnterpriseToolkit before approving.");
+    }
+
+    @Override
+    public void populateMessage(RagMessage ragMessage) throws Exception {
+        // Injects dynamic, real-time RAG context at the beginning of each turn
+        String dbStatus = (dbConnection != null && dbConnection.isAlive()) ? "CONNECTED" : "DISCONNECTED";
+        ragMessage.addTextPart("## Advanced Enterprise Context\n"
+                + "- Current Audit: " + currentAuditId + "\n"
+                + "- DB Connection Status: " + dbStatus);
+    }
+
+    // --- 3. AI-Callable Tool Method ---
+
+    @AgiTool("Audits project metadata, writes reports, and attaches the binary receipts.")
+    public String auditProject(
+            @AgiToolParam("The structured metadata of the target project.") ProjectMetadata metadata
+    ) {
+        // Operation check: Streaming log/error back to the AI panel
+        if (metadata.getBudget() <= 0) {
+            error("Validation failed: Budget must be a positive number."); // AI sees this in 'Errors'
+            return "Audit failed due to invalid budget constraints.";
+        }
+
+        this.currentAuditId = "AUDIT-" + metadata.getProjectId();
+        log("Executing audit on: " + currentAuditId); // AI sees this in 'Logs'
+
+        try {
+            // Write report to disk
+            Path reportPath = Path.of("/tmp/" + currentAuditId + "-report.txt");
+            Files.writeString(reportPath, "Pristine Audit completed for " + metadata.getProjectId());
+            
+            // Programmatically attach the report binary directly to the AI's tool response!
+            addAttachment(reportPath); 
+            
+            return "Audit successfully completed. Report attached as a response binary.";
+        } catch (IOException e) {
+            log.error("Internal filesystem error", e); // Writes to system slf4j logs
+            error("Failed to write report file: " + e.getMessage()); // Writes to AI's error log
+            return "Audit completed, but failed to attach binary receipt.";
+        }
     }
 }</code></pre>
             </section>
