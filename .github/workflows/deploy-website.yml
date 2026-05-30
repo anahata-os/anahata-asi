@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -36,23 +36,68 @@ jobs:
       - name: Build and Generate Javadoc
         run: mvn clean install javadoc:aggregate -DskipTests -ntp
 
+      - name: Checkout gh-pages Branch (Persistence Database)
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: temp-gh-pages
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Prepare Deployment Folder
+      - name: Prepare Deployment Folder & Merge Javadocs
         run: |
           mkdir -p _site
           # 1. Copy the static website source
           cp -r anahata-asi-web/src/main/resources/web/* _site/
           
-          # 2. Copy the fresh versioned Javadocs
+          # 2. Reconstruct the historical Javadoc vault
           mkdir -p _site/apidocs
+          if [ -d "temp-gh-pages/apidocs" ]; then
+            cp -r temp-gh-pages/apidocs/* _site/apidocs/
+          fi
+          
+          # 3. Copy the newly generated Javadocs
           if [ -d "docs/apidocs" ]; then
             cp -r docs/apidocs/* _site/apidocs/
           fi
 
-          # 3. Inject CNAME for custom domain
+          # 4. Inject CNAME for custom domain
           echo "asi.anahata.uno" > _site/CNAME
+
+          # 5. Dynamically regenerate apidocs/index.html with all discovered versions
+          python3 -c '
+          import os, re
+          apidocs_dir = "_site/apidocs"
+          versions = [d for d in os.listdir(apidocs_dir) if os.path.isdir(os.path.join(apidocs_dir, d)) and not d.startswith(".")]
+          versions.sort(reverse=True)
+          li_html = ""
+          for v in versions:
+              badge = " <span class=\"badge\">Latest</span>" if "SNAPSHOT" in v else ""
+              li_html += f"            <li class=\"version-item\"><a href=\"{v}/apidocs/index.html\" class=\"version-link\">{v}{badge}</a></li>\n"
+          index_path = os.path.join(apidocs_dir, "index.html")
+          with open(index_path, "r") as f:
+              html = f.read()
+          new_html = re.sub(r"<ul class=\"version-list\">.*?</ul>", f"<ul class=\"version-list\">\n{li_html}        </ul>", html, flags=re.DOTALL)
+          with open(index_path, "w") as f:
+              f.write(new_html)
+          '
+
+      - name: Persist New Javadocs back to gh-pages
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+        run: |
+          cd temp-gh-pages
+          mkdir -p apidocs
+          cp -r ../_site/apidocs/* apidocs/
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add apidocs/
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: persist versioned Javadocs from run ${{ github.run_id }} 📚"
+            git push origin gh-pages
+          else
+            echo "No new Javadoc changes to persist."
+          fi
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

@@ -40,34 +40,36 @@ Anahata strictly follows **Semantic Versioning 2.0.0 (SemVer)** and the custom s
 
 ---
 
-## Phase 1: Local Preparation & Safety Checks (The Setup)
+## Phase 1: Local Automation & Symmetrical Release Prep
 
-Executed directly within your local terminal or within the NetBeans integrated terminal on your host machine.
+All local release preparation—pre-flight compilation checks, symmetrical SemVer bumping, tagging, and post-release snapshot transitions—is fully automated via the root **`release.sh`** script.
 
-### Step 1: Pre-flight Diagnostic Check
-Before initiating any release trigger, verify that your local workspace has **zero compilation alerts or project errors** in the NetBeans project trees. Pushing a tag on a broken commit causes runner compilation failure, wasting GitHub Action cycles and resulting in broken builds on Central.
-
-### Step 2: Symmetrical Version Bumping
-To safely bump the version across all 13 active sub-modules under the parent project without manual XML editing errors, execute the Maven Versions Plugin:
+### Option A: Standard Interactive Execution
+For normal releases, execute the script from the root folder without arguments:
 ```bash
-mvn versions:set -DnewVersion=1.0.0-rc1 -DgenerateBackupPoms=false
+./release.sh
 ```
-Verify the changes are cleanly propagated across all nested `pom.xml` files, then commit:
-```bash
-git commit -am "chore: cut release v1.0.0-rc1"
-```
+*   **Step-by-Step Flow**:
+    1.  **Prudence Check**: Verifies that your git status is 100% clean.
+    2.  **Version Capture**: Prompts you interactively for the `TARGET RELEASE` version (e.g., `1.0.0`) and the `NEXT DEVELOPMENT` snapshot version (e.g., `1.1.0-SNAPSHOT`).
+    3.  **Local Pre-flight**: Runs `mvn clean install` locally to guarantee zero compiler alerts before pushing.
+    4.  **Symmetrical Promotion**: Uses the versions plugin to set all 13 modules to the release version.
+    5.  **Git Tagging**: Automatically commits the release and cuts the annotated tag (e.g., `v1.0.0`).
+    6.  **Post-Release Transition**: Bumps the parent and submodules to the development snapshot, commits, and exits.
 
-### Step 3: Git Tagging
-Create an annotated release tag matching our SemVer pattern:
+### Option B: Programmatic Execution (LTS & Support Branches)
+If you are on a support branch (e.g., `support-1.0`) and need to cut a hotfix (e.g., `1.0.1`) and advance the branch's development cycle to the next maintenance snapshot (e.g., `1.0.2-SNAPSHOT`), the script supports **direct command-line arguments**, completely bypassing the interactive prompts:
 ```bash
-git tag -a v1.0.0-rc1 -m "Anahata ASI v1.0.0-rc1 Release Candidate"
+./release.sh 1.0.1 1.0.2-SNAPSHOT
 ```
+This enables headless, programmatic releases across any support branch or automated runner!
 
-### Step 4: Pushing the Payload
-Push the tag and branch to trigger the remote deployment pipelines:
+### Step 2: Push the Payload
+To complete the transaction and unleash the automated cloud pipelines, execute:
 ```bash
 git push origin main --tags
 ```
+*(On support branches, push your support branch instead, e.g., `git push origin support-1.0 --tags`)*
 
 ---
 
