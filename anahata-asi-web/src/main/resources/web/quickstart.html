@@ -88,45 +88,7 @@
     &lt;/dependency&gt;
 &lt;/dependencies&gt;</code></pre>
 
-                        <h3 style="margin-top: 2rem; color: var(--white);">2. Custom Context Provider</h3>
-                        <p>Context providers act as "sensors", injecting real-time data into the ASI's prompt.</p>
-                        <div class="code-header" style="text-transform: none;">DatabaseContextProvider.java</div>
-                        <pre><code class="language-java">import uno.anahata.asi.agi.context.BasicContextProvider;
-import uno.anahata.asi.agi.message.RagMessage;
-
-public class DatabaseContextProvider extends BasicContextProvider {
-    public DatabaseContextProvider() {
-        super("db-sensor", "Database Status", "Monitors active DB connections.");
-    }
-
-    @Override
-    public void populateMessage(RagMessage ragMessage) throws Exception {
-        int activeConnections = 42; // Example logic
-        ragMessage.addTextPart("## Database Status\n- Active Connections: " + activeConnections);
-    }
-}</code></pre>
-
-                        <h3 style="margin-top: 2rem; color: var(--white);">3. Custom Toolkit</h3>
-                        <p>Toolkits grant the ASI the ability to take action. The <code>SchemaProvider</code> generates OpenAPI schemas automatically.</p>
-                        <div class="code-header" style="text-transform: none;">EnterpriseToolkit.java</div>
-                        <pre><code class="language-java">import uno.anahata.asi.agi.tool.AnahataToolkit;
-import uno.anahata.asi.agi.tool.AgiToolkit;
-import uno.anahata.asi.agi.tool.AgiTool;
-import uno.anahata.asi.agi.tool.AgiToolParam;
-
-@AgiToolkit("Enterprise operations and revenue management.")
-public class EnterpriseToolkit extends AnahataToolkit {
-    @AgiTool("Calculates the total revenue for a given region.")
-    public double calculateRevenue(
-            @AgiToolParam("The target region (e.g., 'EMEA', 'NA').") String region,
-            @AgiToolParam("Whether to include projected sales.") boolean includeProjected) {
-        
-        log("Calculating revenue for region: " + region); // Thread-safe logging!
-        return includeProjected ? 1500000.0 : 1000000.0;
-    }
-}</code></pre>
-
-                        <h3 style="margin-top: 2rem; color: var(--white);">4. Configuration (DNA)</h3>
+                        <h3 style="margin-top: 2rem; color: var(--white);">2. Configuration (DNA)</h3>
                         <p>The <code>AgiConfig</code> defines the default AI provider, model, and which toolkits are enabled for the session.</p>
                         <div class="code-header" style="text-transform: none;">MyAppAgiConfig.java</div>
                         <pre><code class="language-java">import uno.anahata.asi.agi.AgiConfig;
@@ -143,7 +105,7 @@ public class MyAppAgiConfig extends AgiConfig {
     }
 }</code></pre>
 
-                        <h3 style="margin-top: 2rem; color: var(--white);">5. Container & Main</h3>
+                        <h3 style="margin-top: 2rem; color: var(--white);">3. Container & Main</h3>
                         <p>The <code>AbstractAsiContainer</code> acts as the host application, managing session lifecycles.</p>
                         <div class="code-header" style="text-transform: none;">MyAppAsiContainer.java</div>
                         <pre><code class="language-java">import uno.anahata.asi.AbstractAsiContainer;
@@ -389,6 +351,48 @@ public class MyModuleInstaller extends ModuleInstall {
 }</code></pre>
                     </div>
                 </div>
+            </section>
+
+            <section id="custom-tools" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-wrench"></i><h2>Creating Custom Tools (Toolkits)</h2></div>
+                <p>Toolkits grant the ASI the ability to take action. By extending <code>AnahataToolkit</code> and annotating methods with <code>@AgiTool</code>, the <code>SchemaProvider</code> generates OpenAPI schemas automatically, allowing any model to invoke your custom code securely.</p>
+                <div class="code-header" style="text-transform: none;">EnterpriseToolkit.java</div>
+                <pre><code class="language-java">import uno.anahata.asi.agi.tool.AnahataToolkit;
+import uno.anahata.asi.agi.tool.AgiToolkit;
+import uno.anahata.asi.agi.tool.AgiTool;
+import uno.anahata.asi.agi.tool.AgiToolParam;
+
+@AgiToolkit("Enterprise operations and revenue management.")
+public class EnterpriseToolkit extends AnahataToolkit {
+    @AgiTool("Calculates the total revenue for a given region.")
+    public double calculateRevenue(
+            @AgiToolParam("The target region (e.g., 'EMEA', 'NA').") String region,
+            @AgiToolParam("Whether to include projected sales.") boolean includeProjected) {
+        
+        log("Calculating revenue for region: " + region); // Thread-safe logging!
+        return includeProjected ? 1500000.0 : 1000000.0;
+    }
+}</code></pre>
+            </section>
+
+            <section id="context-providers" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-eye"></i><h2>Custom Context Providers</h2></div>
+                <p>Context providers act as "sensors", injecting real-time data, files, active database states, or runtime telemetry into the ASI's prompt at the beginning of each turn.</p>
+                <div class="code-header" style="text-transform: none;">DatabaseContextProvider.java</div>
+                <pre><code class="language-java">import uno.anahata.asi.agi.context.BasicContextProvider;
+import uno.anahata.asi.agi.message.RagMessage;
+
+public class DatabaseContextProvider extends BasicContextProvider {
+    public DatabaseContextProvider() {
+        super("db-sensor", "Database Status", "Monitors active DB connections.");
+    }
+
+    @Override
+    public void populateMessage(RagMessage ragMessage) throws Exception {
+        int activeConnections = 42; // Example logic
+        ragMessage.addTextPart("## Database Status\n- Active Connections: " + activeConnections);
+    }
+}</code></pre>
             </section>
         </main>
     </div>
