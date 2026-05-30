@@ -4,7 +4,7 @@
     <parent>
         <groupId>uno.anahata</groupId>
         <artifactId>anahata-asi-parent</artifactId>
-        <version>1.0.0-rc1</version>
+        <version>1.0.0</version>
     </parent>
     <artifactId>anahata-asi-huggingface</artifactId>
     <name>Anahata ASI Hugging Face Provider</name>
