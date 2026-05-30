@@ -66,19 +66,9 @@ jobs:
             done
           fi
           
-          # 3. Copy and flatten the newly generated Javadocs
+          # 3. Copy the newly generated flat Javadocs (Simple, direct copy!)
           if [ -d "docs/apidocs" ]; then
-            for ver_dir in docs/apidocs/*; do
-              if [ -d "$ver_dir" ]; then
-                ver_name=$(basename "$ver_dir")
-                mkdir -p _site/apidocs/$ver_name
-                if [ -d "$ver_dir/apidocs" ]; then
-                  cp -r $ver_dir/apidocs/* _site/apidocs/$ver_name/
-                else
-                  cp -r $ver_dir/* _site/apidocs/$ver_name/
-                fi
-              fi
-            done
+            cp -r docs/apidocs/* _site/apidocs/
           fi
 
           # 4. Inject CNAME for custom domain

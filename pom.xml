@@ -348,7 +348,8 @@
                         <detectJavaApiLink>true</detectJavaApiLink>
                         <detectOfflineLinks>true</detectOfflineLinks>
                         <show>private</show>
-                        <outputDirectory>${maven.multiModuleProjectDirectory}/docs/apidocs/${project.version}</outputDirectory>
+                        <outputDirectory>${maven.multiModuleProjectDirectory}/docs/apidocs</outputDirectory>
+                        <destDir>${project.version}</destDir>
                         <javadocDirectory>${maven.multiModuleProjectDirectory}/src/main/javadoc</javadocDirectory>
                         <addStylesheets>
                             <addStylesheet>anahata-barca-theme.css</addStylesheet>
