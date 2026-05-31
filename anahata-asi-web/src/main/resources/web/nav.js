@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <a href="https://x.com/AnahataASI" target="_blank" title="Twitter / X"><i class="fa-brands fa-x-twitter"></i></a>
                         <a href="https://github.com/anahata-os/anahata-asi" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
                     </div>
-                    <a href="https://github.com/anahata-os/sponsors" class="btn-sponsor">Sponsor</a>
+                    <a href="https://github.com/sponsors/anahata-os" class="btn-sponsor">Sponsor</a>
                 </div>
             </div>
         </nav>

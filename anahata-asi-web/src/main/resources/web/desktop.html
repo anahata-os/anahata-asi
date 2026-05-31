@@ -151,6 +151,74 @@
                 </div>
 
                 <p id="dl-subtitle" class="tagline" style="text-align: left;">The authoritative cross-platform ASI launcher.</p>
+
+                <!-- macOS Gatekeeper Warning Modal Overlay -->
+                <div id="macos-warning-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+                    <div class="container" style="max-width: 600px; width: 90%; background: #0f0f1a; border: 1px solid rgba(237, 187, 0, 0.3); border-left: 6px solid var(--barca-red); border-radius: 12px; padding: 2.5rem; text-align: left; box-shadow: 0 20px 50px rgba(0,0,0,0.6); position: relative; animation: modalFadeIn 0.3s ease;">
+                        <h4 style="color: #ff5c5c; margin-top: 0; margin-bottom: 0.8rem; font-size: 1.3rem; display: flex; align-items: center; gap: 8px;"><i class="fab fa-apple"></i> macOS Gatekeeper Warning</h4>
+                        <p style="margin: 0; font-size: 0.95rem; line-height: 1.6; color: var(--text-main);">
+                            Because our standalone macOS app bundles are not digitally signed with an Apple Developer certificate, macOS Gatekeeper may flag the app as <strong>"damaged and can't be opened"</strong> upon launch.<br/><br/>
+                            <span style="color: var(--barca-gold); font-weight: bold;">Why?</span> These binaries are not signed—we are waiting for our very first donation to buy an official code signing certificate! In the meantime, you can easily bypass this Gatekeeper warning by running the following command in your terminal after moving the app to your Applications folder:
+                        </p>
+                        <pre style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 6px; margin-top: 1rem; margin-bottom: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--barca-gold); overflow-x: auto;">xattr -cr /Applications/Anahata-ASI-Desktop.app</pre>
+                        
+                        <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                            <button id="modal-cancel-btn" class="btn-secondary" style="padding: 10px 20px; font-size: 0.9rem;">Cancel</button>
+                            <a id="modal-download-btn" href="#" class="btn-primary" style="padding: 10px 24px; font-size: 0.9rem; text-decoration: none; font-weight: bold; background: var(--barca-red);">Ok fine, I get that</a>
+                        </div>
+                    </div>
+                </div>
+
+                <style>
+                    @keyframes modalFadeIn {
+                        from { opacity: 0; transform: scale(0.95); }
+                        to { opacity: 1; transform: scale(1); }
+                    }
+                </style>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const macBtn = document.getElementById('dl-macos');
+                        const modal = document.getElementById('macos-warning-modal');
+                        const cancelBtn = document.getElementById('modal-cancel-btn');
+                        const downloadBtn = document.getElementById('modal-download-btn');
+
+                        if (macBtn && modal && cancelBtn && downloadBtn) {
+                            // Intercept macOS download click
+                            macBtn.addEventListener('click', (e) => {
+                                e.preventDefault(); // Stop immediate download redirect
+                                
+                                // Bind the real download URL to the modal's confirmation link
+                                downloadBtn.href = macBtn.href;
+                                
+                                // Display the warning modal
+                                modal.style.display = 'flex';
+                                document.body.style.overflow = 'hidden'; // Lock scrolling
+                            });
+
+                            // Cancel button closes the modal
+                            cancelBtn.addEventListener('click', () => {
+                                modal.style.display = 'none';
+                                document.body.style.overflow = '';
+                            });
+
+                            // Clicking outside the modal container also closes it
+                            modal.addEventListener('click', (e) => {
+                                if (e.target === modal) {
+                                    modal.style.display = 'none';
+                                    document.body.style.overflow = '';
+                                }
+                            });
+
+                            // "Ok fine, I get that" button closes modal and lets download execute
+                            downloadBtn.addEventListener('click', () => {
+                                modal.style.display = 'none';
+                                document.body.style.overflow = '';
+                                // Download continues naturally because href was bound to macBtn.href!
+                            });
+                        }
+                    });
+                </script>
                 <p>Anahata ASI Desktop provides a standalone environment for running agentic workflows outside of any IDE. Built on the <b>Blaugrana DNA</b> architecture, it offers absolute stability across Linux, Windows, and macOS.</p>
             </section>
 
