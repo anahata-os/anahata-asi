@@ -406,6 +406,19 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     }
 
     /**
+     * Removes logs that match the given predicate, updates the token count,
+     * and fires a single property change event.
+     *
+     * @param filter The predicate to apply to each log message.
+     */
+    public void removeLogsIf(java.util.function.Predicate<String> filter) {
+        if (this.logs.removeIf(filter)) {
+            updateTokenCount();
+            propertyChangeSupport.firePropertyChange("logs", null, logs);
+        }
+    }
+
+    /**
      * Gets the effective arguments that were used for execution. This merges
      * the original immutable call arguments with the snapshot of modifications
      * taken at execution time.
