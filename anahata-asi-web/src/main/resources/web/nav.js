@@ -237,3 +237,15 @@ document.addEventListener('DOMContentLoaded', () => {
     initScrollSpy();
     initDynamicDownloads();
 });
+
+/* --- Dynamic Live Support Chat Injection (Anahata ASI) --- */
+(function() {
+    var s1 = document.createElement("script"), 
+        s0 = document.getElementsByTagName("script")[0];
+    s1.async = true;
+    // Dynamic tawk.to live support chat widget for anahata.uno
+    s1.src = 'https://embed.tawk.to/6a218f67b974371c3124fc61/1jq9hgbb2';
+    s1.charset = 'UTF-8';
+    s1.setAttribute('crossorigin', '*');
+    s0.parentNode.insertBefore(s1, s0);
+})();
