@@ -352,13 +352,7 @@
                         <addStylesheets>
                             <addStylesheet>anahata-barca-theme.css</addStylesheet>
                         </addStylesheets>
-                        <links>
-                            <link>https://www.slf4j.org/api/</link>
-                            <link>https://docs.junit.org/6.1.0/api/</link>
-                            <link>https://commons.apache.org/proper/commons-lang/javadocs/api-release/</link>
-                            <link>https://commons.apache.org/proper/commons-io/javadocs/api-release/</link>
-                            <link>https://tika.apache.org/2.9.2/api/</link>
-                        </links>
+
                         <top>
                             <![CDATA[
         <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=f19c44f5-8b2e-458f-beab-96e4f9f8e603" />
