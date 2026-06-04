@@ -66,6 +66,9 @@ public class AnthropicMessage extends AbstractModelMessage<AnthropicResponse> {
             } else if ("tool_use".equals(type)) {
                 String id = block.path("id").asText();
                 String name = block.path("name").asText();
+                if (name != null) {
+                    name = name.replace("__", ".");
+                }
                 JsonNode input = block.get("input");
                 Map<String, Object> args = input != null ? JacksonUtils.parse(input.toString(), Map.class) : new HashMap<>();
                 getAgi().getToolManager().createToolCall(this, id, name, args);
@@ -91,7 +94,11 @@ public class AnthropicMessage extends AbstractModelMessage<AnthropicResponse> {
                 JsonNode block = data.get("content_block");
                 if (block != null && "tool_use".equals(block.path("type").asText())) {
                     toolIds.put(index, block.path("id").asText());
-                    toolNames.put(index, block.path("name").asText());
+                    String name = block.path("name").asText();
+                    if (name != null) {
+                        name = name.replace("__", ".");
+                    }
+                    toolNames.put(index, name);
                     toolArgBuffers.put(index, new StringBuilder());
                 }
                 break;

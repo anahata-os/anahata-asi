@@ -118,7 +118,7 @@ public class AnthropicModel extends AbstractModel {
         try {
             Map<String, Object> map = new HashMap<>();
             map.put("id", toolCall.getId());
-            map.put("name", toolCall.getToolName());
+            map.put("name", toolCall.getToolName().replace(".", "__"));
             map.put("input", toolCall.getEffectiveArgs());
             return countTokens(JacksonUtils.serialize(map));
         } catch (Exception e) {
@@ -405,7 +405,7 @@ public class AnthropicModel extends AbstractModel {
     @Override
     public String getToolDeclarationJson(AbstractTool<?, ?> tool, RequestConfig config) {
         ObjectNode toolNode = SchemaProvider.OBJECT_MAPPER.createObjectNode();
-        toolNode.put("name", tool.getName());
+        toolNode.put("name", tool.getName().replace(".", "__"));
         toolNode.put("description", tool.getDescription());
 
         ObjectNode inputSchema = SchemaProvider.OBJECT_MAPPER.createObjectNode();

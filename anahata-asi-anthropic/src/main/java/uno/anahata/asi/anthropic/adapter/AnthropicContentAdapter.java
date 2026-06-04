@@ -82,7 +82,7 @@ public class AnthropicContentAdapter {
                     ObjectNode toolUse = assistantContent.addObject();
                     toolUse.put("type", "tool_use");
                     toolUse.put("id", tc.getId() != null ? tc.getId() : "call_" + tc.getSequentialId());
-                    toolUse.put("name", tc.getToolName());
+                    toolUse.put("name", tc.getToolName().replace(".", "__"));
                     try {
                         toolUse.set("input", SchemaProvider.OBJECT_MAPPER.readTree(
                             SchemaProvider.OBJECT_MAPPER.writeValueAsString(tc.getEffectiveArgs())
