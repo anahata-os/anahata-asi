@@ -104,7 +104,9 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
         log.info("[V4-AST-TEXT] Replaying structural changes on: {}", originalFo.getNameExt());
 
         ClasspathInfo cpInfo = ClasspathInfo.create(originalFo);
-        String currentContent = originalContent;
+        //String currentContent = originalContent;
+        // CRITICAL FIX: Normalize CRLF to LF to prevent AST SourcePositions drift
+        String currentContent = originalContent.replace("\r\n", "\n");
 
         int index = 0;
         for (CodeRefinementIntent intent : intents) {

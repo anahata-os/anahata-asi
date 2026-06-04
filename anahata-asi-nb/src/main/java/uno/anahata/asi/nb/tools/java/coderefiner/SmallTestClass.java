@@ -92,4 +92,8 @@ public class SmallTestClass {
         }
         String displayValue;
     }
+
+    public void testMethodWithEnum(TestEnum val) {
+        System.out.println("Updated: " + val);
+    }
 }

@@ -287,6 +287,26 @@ public class CodeRefinementBatchTest {
         if (!finalContent.contains("private final String description = \"123\";")) {
             throw new Exception("Test 17 Failed: Field declaration update lost the initializer or '=' sign!");
         }
+
+        logToToolContext("Test 18: Insert and Update Method with Inner Enum Parameter (Resolving $ vs . Standard)");
+        CodeRefinementIntent i18a = new CodeRefinementIntent();
+        i18a.setType(CodeRefinementIntent.Type.INSERT);
+        i18a.setClassFqn("uno.anahata.asi.nb.tools.java.coderefiner.SmallTestClass");
+        i18a.setPosition(RelativePosition.END);
+        i18a.setDeclaration("public void testMethodWithEnum(TestEnum val)");
+        i18a.setInnerBlockOrInitializer("System.out.println(val);");
+        runBatch.accept(buildBatch.apply(List.of(i18a)));
+
+        CodeRefinementIntent i18b = new CodeRefinementIntent();
+        i18b.setType(CodeRefinementIntent.Type.UPDATE);
+        i18b.setMemberFqn("uno.anahata.asi.nb.tools.java.coderefiner.SmallTestClass.testMethodWithEnum(uno.anahata.asi.nb.tools.java.coderefiner.SmallTestClass$TestEnum)");
+        i18b.setInnerBlockOrInitializer("System.out.println(\"Updated: \" + val);");
+        runBatch.accept(buildBatch.apply(List.of(i18b)));
+
+        finalContent = new String(handle.getFileObject().asBytes(), "UTF-8");
+        if (!finalContent.contains("System.out.println(\"Updated: \" + val);")) {
+            throw new Exception("Test 18 Failed: Method with inner enum parameter was not successfully updated (signature matching failed)!");
+        }
         
         logToToolContext("Validation SUCCESS. The AST is perfect.");
     }

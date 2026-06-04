@@ -86,7 +86,7 @@ public class JavaSourceUtils {
         }
 
         String parentFqn = getCanonicalFqn(enclosing);
-        if (e.getKind().isClass() || e.getKind().isInterface()) {
+        if (e instanceof TypeElement) {
             return parentFqn + "$" + e.getSimpleName();
         }
 

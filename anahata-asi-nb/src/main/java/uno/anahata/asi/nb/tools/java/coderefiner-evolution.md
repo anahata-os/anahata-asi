@@ -236,6 +236,22 @@ While the `CodeRefinementBatch` has an `optimize` parameter, it is currently not
 
 ---
 
+## Turn 416: Inner Enums FQN and The CRLF Offset Drift Bugs (June 4, 2026)
+
+During real-world refactoring of legacy code (`RexistroSacrificiosPanel`), we hit a massive failure where V4 chopped off a method declaration and injected a rogue `JasperPrint {` block. The forensic analysis uncovered two deeply subtle bugs interacting with each other:
+
+1. **The Inner Enum FQN Resolution Bug (`JavaSourceUtils`)**
+   - *Symptom:* The model correctly provided the Anahata Canonical FQN for an inner enum parameter: `Outer$InnerEnum`. But `JavaSourceUtils.getCanonicalFqn` resolved the live AST to `Outer.InnerEnum` (with a dot). Because of this mismatch, the exact signature match failed, and it fell back to a fuzzy name-based search.
+   - *Root Cause:* The FQN generator used `e.getKind().isClass() || e.getKind().isInterface()` to detect nested types and apply the `$` separator. However, in the Javac API, `isClass()` and `isInterface()` both return `false` for `ElementKind.ENUM`!
+   - *The Fix:* Changed the condition to `e instanceof TypeElement`, which safely encompasses classes, interfaces, enums, records, and annotation types, instantly aligning all inner types with the `$` standard.
+
+2. **The CRLF Offset Drift Bug (`CodeRefinementBatch`)**
+   - *Symptom:* The fallback fuzzy search found the method, but the text extracted using the AST `SourcePositions` was shifted by several characters, slicing into the preceding method.
+   - *Root Cause:* The target file was created on Windows and used `\r\n` (CRLF) line endings (2 chars per line). The NetBeans Javac Lexer automatically normalizes all line endings to `\n` (1 char) when building the AST. This means the character offsets returned by `SourcePositions` were drifting by 1 character for every line of code relative to our raw Java `String` length!
+   - *The Fix:* A single line of code in `CodeRefinementBatch` to normalize `\r\n` to `\n` (`originalContent.replace("\r\n", "\n")`) before performing any substring math. This guarantees the Java String length perfectly matches the Javac AST character offsets, completely eliminating the drift.
+
+---
+
 ### The Future: Approach C — The AST Self-Healing Parser (The Ultimate Evolution!)
 
 During our brainstorming, we designed **Approach C**, a highly evolved, compiler-guided "self-healing" fallback mechanism. 

@@ -95,7 +95,9 @@ public class BatchCodeRefiner extends AnahataToolkit {
             + " Never include the declaration of a field or a method in the 'innerBlockOrInitializer' attribute, the member declaration (signature) can only be in the 'declaration' field only. The 'innerBlockOrInitializer' can only contain either whats inside the {} or whatever is to the right of the '='. If you update the declaration of a method, you must include the full declaration with all annotations and all throws clauses. Provides a fully integrated `javadoc` object property so you can document members synchronously with code changes! Inline comments inside the `innerBlockOrInitializer` string are natively preserved! It is not a find-and-replace tool, use the Resources toolkit for that. You CAN use this tool to add or remove imports via the importsToAdd and importsToRemove arrays. For fields, declaration is what goes to the left of the '=', innerBlockOrInitializer is the initializer expression to the right of the '=', leave 'innerBlockOrInitializer' empty if you just want to insert a field without initializer expression."
             + " For Enum Constants, put the constant name in `declaration` and constructor arguments in `innerBlockOrInitializer`."
             + " Do not put javadoc strings inside the `declaration` field, use the structured `javadoc` parameter instead."
-            + " Follows the Anahata Canonical FQN Standarad (remember, it's package.name.ClassName.<init>(param1Type) for constructors")
+            + " Follows the Anahata Canonical FQN Standarad (remember, it's package.name.ClassName.<init>(param1Type) for constructors."
+            + " If the user declines the tool call (i.e tool execution status is 'DECLINED') you will still get the diff of your 'Proposed Intent' in the tool logs so you can try to work out why the user declined it."
+    )
     public String refine(
             @AgiToolParam("The robust refinement batch.") CodeRefinementBatch batch
     ) throws Exception {
