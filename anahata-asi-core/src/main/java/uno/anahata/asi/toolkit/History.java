@@ -199,7 +199,7 @@ public class History extends AnahataToolkit {
      * @param newState The new pruning state to apply.
      * @return Confirmation message.
      */
-    @AgiTool(value = "Bulk sets the pruningState of all parts for one or more messages. Requires in-band metadata to be enabled.")
+    @AgiTool(value = "Bulk sets the pruningState of all parts for one or more messages.")
     public String setMessagePruningState(
             @AgiToolParam("The x-anahata-message-id of the messages to update.") List<Long> messageIds,
             @AgiToolParam("The new pruning state.") PruningState newState) {
@@ -234,7 +234,7 @@ public class History extends AnahataToolkit {
      * @param newState The new pruning state.
      * @return Confirmation message.
      */
-    @AgiTool(value = "Sets the pruningState state of one or more message parts. Requires in-band metadata to be enabled.")
+    @AgiTool(value = "Sets the pruningState state of one or more message parts.")
     public String setPartPruningState(
             @AgiToolParam("The x-anahata-part-id of the parts to update.") List<Long> partIds,
             @AgiToolParam("The new pruning state.") PruningState newState) {
@@ -262,14 +262,14 @@ public class History extends AnahataToolkit {
      * @param enabled If true, metadata headers are included in the prompt.
      * @return Confirmation message.
      */
-    @AgiTool(value = "Toggles the injection of in-band metadata headers for history pruning.",
+    @AgiTool(value = "Toggles the history metadata strategy between consolidated index and in-band. Some models cannot stand in-band metadata as it can cause them to mimic the framework behaviour and they start producting metadata in their text parts which is horrible because then the user starts seeing metadata in the model text parts. As a general thing, let the user handle this.",
             permission = ToolPermission.APPROVE_ALWAYS)
     public String setInjectInbandMetadata(boolean enabled) {
         getAgi().getRequestConfig().setInjectInbandMetadata(enabled);
         if (enabled) {
-            return "In-band metadata injection enabled. You can now see IDs and use pruning tools.";
+            return "In-band metadata injection enabled. No consolidated index will be included in the RAG message.";
         } else {
-            return "In-band metadata injection disabled. Pruning tools are now inactive.";
+            return "In-band metadata injection disabled. Consolidated index will be included in the RAG message.";
         }
     }
 }
