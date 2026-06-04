@@ -1,9 +1,11 @@
 /* Licensed under the Apache License, Version 2.0 */
 package uno.anahata.asi.toolkit.shell;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +14,7 @@ import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.tool.spi.java.JavaMethodToolResponse;
@@ -47,29 +50,21 @@ public class Shell extends AnahataToolkit {
         SH
     }
 
-    /** {@inheritDoc} */
-    @Override
-    public List<String> getSystemInstructions() throws Exception {
-        StringBuilder sb = new StringBuilder();
-        sb.append("## Shell Toolkit\n");
-        sb.append("- **Current Shell Working Directory**: Included in the RAG message. This is were the commands will be executed if no workingDirectory is provided in the Shell.runAndWait tool");
-        sb.append("- **Host Environment Variables**:\n");
-        Map<String, String> sortedEnv = new TreeMap<>(System.getenv());
-        sortedEnv.forEach((k, v) -> sb.append("- **").append(k).append("**: ").append(v).append("\n"));
-        return List.of(sb.toString());
-    }
-
+    
     /** 
      * {@inheritDoc} 
-     * 
      * 
      */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
-        String cwd = System.getProperty("user.dir");
-        ragMessage.addTextPart(
-                "## Shell Toolkit Context"
-                + "\n- Current Shell Working Directory (**were the shell commands will be executed if no workingDirectory is provided**): " + cwd + "\n");
+        StringBuilder sb = new StringBuilder();
+        sb.append("## Shell Toolkit\n");
+        //sb.append("- **Current Shell Working Directory**: Included in the RAG message. This is were the commands will be executed if no workingDirectory is provided in the Shell.runAndWait tool");
+        sb.append("- **Host Environment Variables**:\n");
+        Map<String, String> sortedEnv = new TreeMap<>(System.getenv());
+        sortedEnv.forEach((k, v) -> sb.append("- **").append(k).append("**: ").append(v).append("\n"));
+        
+        ragMessage.addTextPart(sb.toString());
     }
 
     /**
@@ -85,7 +80,7 @@ public class Shell extends AnahataToolkit {
     public ShellExecutionResult runAndWait(
             @AgiToolParam("The command to run") String command,
             @AgiToolParam("The type of shell to use (BASH, CMD, POWERSHELL, SH). If null, it defaults to POWERSHELL on Windows and BASH on Unix.") ShellType type,
-            @AgiToolParam(value = "The directory where the command will be executed. If null, it defaults to the **Current Shell Working Directory** provided in the RAG message.", required = false) String workingDirectory) throws Exception {
+            @AgiToolParam(value = "The directory where the command will be executed.") String workingDirectory) throws Exception {
         
         Thread currentThread = Thread.currentThread();
         log(String.format("[Shell] runAndWait started on thread: %s (ID: %d)", currentThread.getName(), currentThread.getId()));
@@ -160,6 +155,9 @@ public class Shell extends AnahataToolkit {
         result.setProcessId(pid);
         result.setExitCode(exitCode);
         result.setStdOut(output);
+        
+        getResponse().removeLogsIf(l -> l.startsWith("[stdout]"));
+        
 
         return result;
     }
@@ -186,17 +184,15 @@ public class Shell extends AnahataToolkit {
             response.addLog(String.format("[Gobbler-%s] Started on thread: %s (ID: %d)", streamName, currentThread.getName(), currentThread.getId()));
 
             StringBuilder sb = new StringBuilder();
-            try (InputStream in = is) {
-                byte[] buffer = new byte[1024];
-                int len;
-                while ((len = in.read(buffer)) != -1) {
-                    String line = new String(buffer, 0, len, StandardCharsets.UTF_8);
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
                     if (error) {
                         response.addError(line);
                     } else {
-                        //response.addLog(line);
+                        response.addLog("[stdout]" + line);
                     }
-                    sb.append(line);
+                    sb.append(line).append(System.lineSeparator());
                 }
             }
             response.addLog(String.format("[Gobbler-%s] Finished.", streamName));
