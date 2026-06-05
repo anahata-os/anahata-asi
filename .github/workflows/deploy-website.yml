@@ -35,7 +35,7 @@ jobs:
           cache: 'maven'
 
       - name: Build and Generate Javadoc
-        run: mvn clean install javadoc:aggregate -DskipTests -ntp
+        run: mvn clean install javadoc:aggregate -DskipTests -o -ntp
 
       - name: Checkout gh-pages Branch (Persistence Database)
         uses: actions/checkout@v4
