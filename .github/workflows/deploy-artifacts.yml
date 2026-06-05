@@ -64,7 +64,7 @@ jobs:
               mvn package -DskipTests -P release -ntp
             else
               echo "[INFO] Branch trigger with SNAPSHOT version ($VERSION) detected. Deploying to Sonatype Snapshot repository..."
-              mvn deploy -DskipTests -P release -ntp -DaltSnapshotDeploymentRepository=sonatype-central::default::https://central.sonatype.com/repository/maven-snapshots/
+              mvn deploy -DskipTests -ntp -DaltSnapshotDeploymentRepository=sonatype-central::default::https://central.sonatype.com/repository/maven-snapshots/
             fi
           fi
 
