@@ -33,7 +33,7 @@ public class AsiContainer extends AnahataToolkit {
      * {@inheritDoc}
      * <p>Provides core instructions on how to programmatically query the container's
      * AI providers and API keys from within NbJava scripts.</p>
-     * @throws Lines throws Exception if an error occurs during instruction generation.
+     * @throws Exception if an error occurs during instruction generation.
      */
     @Override
     public List<String> getSystemInstructions() throws Exception {
