@@ -378,6 +378,15 @@ public class Chrome extends AbstractBrowser {
             }, getExecutorService());
             
             d.driver = future.get(60, TimeUnit.SECONDS);
+            if (d.driver instanceof ChromeDriver chromeDriver) {
+                try {
+                    chromeDriver.executeCdpCommand("Page.addScriptToEvaluateOnNewDocument", Map.of(
+                        "source", "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+                    ));
+                } catch (Exception e) {
+                    log.error("Failed to inject CDP stealth script for drone {}", d.id, e);
+                }
+            }
             log("Drone '" + d.id + "' successfully initialized. URL: " + d.driver.getCurrentUrl());
         } catch (Exception e) {
             d.lastError = ExceptionUtils.getStackTrace(e);

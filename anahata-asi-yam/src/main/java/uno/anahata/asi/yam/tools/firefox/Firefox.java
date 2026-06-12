@@ -269,6 +269,14 @@ public class Firefox extends AbstractBrowser {
         }
 
         FirefoxOptions options = new FirefoxOptions();
+
+        // Enable universal stealth preferences to bypass aggressive bot shields (DataDome/Cloudflare)
+        options.addPreference("dom.webdriver.enabled", false);
+        options.addPreference("useAutomationExtension", false);
+        options.addPreference("media.webspeech.synth.enabled", false); // Disable speech synth to stop Speech Dispatcher warning bars and blocks
+        options.addPreference("general.useragent.override",
+            "Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0");
+
         if (d.headless) {
             options.addArguments("-headless");
         }

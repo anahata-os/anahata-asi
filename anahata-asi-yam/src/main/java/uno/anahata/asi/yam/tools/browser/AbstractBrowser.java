@@ -16,6 +16,7 @@ import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.WindowType;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import uno.anahata.asi.AbstractAsiContainer;
@@ -183,6 +184,22 @@ public abstract class AbstractBrowser extends AnahataToolkit implements Rebindab
         return "Switched drone '" + droneId + "' to tab: " + driver.getTitle();
     }
 
+    @AgiTool("Opens a brand-new tab in the browser and optionally navigates it to a URL.")
+        public String openNewTab(
+                @AgiToolParam("The ID of the drone.") String droneId,
+                @AgiToolParam(value = "Optional URL to navigate to once the tab is open.", required = false) String url) {
+        WebDriver driver = getDriver(droneId);
+                if (driver == null) {
+                    return "No active session for drone: " + droneId;
+                }
+
+                driver.switchTo().newWindow(WindowType.TAB);
+                if (url != null && !url.isBlank()) {
+                    driver.get(url);
+                    return "Opened new tab and navigated to: " + url;
+                }
+                return "Opened new blank tab successfully.";
+    }
     /**
      * Navigates back in the browser history.
      *
