@@ -193,14 +193,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!winBtn && !macBtn && !linBtn) return;
 
         try {
-            const response = await fetch('https://api.github.com/repos/anahata-os/anahata-asi/releases');
-            if (!response.ok) throw new Error('Failed to fetch releases metadata');
+            // Fetch latest snapshot release directly
+            const response = await fetch('https://api.github.com/repos/anahata-os/anahata-asi/releases/tags/latest-snapshot');
+            if (!response.ok) throw new Error('Failed to fetch snapshot metadata');
             
-            const releases = await response.json();
-            if (!releases || releases.length === 0) return;
-
-            // Find the most recent release candidate or stable release (ignoring rolling snapshot tags)
-            const latestRelease = releases.find(rel => rel.tag_name !== 'latest-snapshot' && !rel.draft);
+            const latestRelease = await response.json();
             if (!latestRelease) return;
 
             const assets = latestRelease.assets;
@@ -225,9 +222,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 linBtn.querySelector('span').textContent = `.tar.gz (Binary) • ${sizeMb} MB`;
             }
 
-            const subtitle = document.querySelector('#installation p');
+            // Extract the version from the filename dynamically (e.g. 1.1.0-SNAPSHOT)
+            let version = "1.1.0-SNAPSHOT";
+            if (linAsset) {
+                const match = linAsset.name.match(/Anahata-ASI-Desktop-(.*?)-linux/);
+                if (match) version = match[1];
+            }
+
+            const subtitle = document.getElementById('dl-subtitle') || document.querySelector('#installation p');
             if (subtitle) {
-                subtitle.innerHTML = `Native standalone binaries are compiled on secure runners. Currently serving the latest release candidate: <strong style="color: var(--barca-gold); font-family: 'JetBrains Mono', monospace;">${latestRelease.tag_name}</strong>.`;
+                subtitle.innerHTML = `Native standalone binaries are compiled on secure runners. Currently serving the latest rolling snapshot: <strong style="color: var(--barca-gold); font-family: 'JetBrains Mono', monospace;">${version}</strong>.`;
             }
         } catch (error) {
             console.error('Error resolving dynamic asset URLs:', error);
