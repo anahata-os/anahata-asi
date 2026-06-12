@@ -140,7 +140,7 @@ jobs:
                    --app-version "${{ env.JPACKAGE_VERSION }}" \
                    --input package-input \
                    --main-jar "anahata-asi-desktop-${{ env.VERSION }}.jar" \
-                   --main-class uno.anahata.asi.standalone.SwingMain \
+                   --main-class uno.anahata.asi.desktop.Main \
                    --icon "${{ env.ICON_FILE }}" \
                    --java-options "-splash:splash.png" \
                    --java-options "--enable-native-access=ALL-UNNAMED" \
