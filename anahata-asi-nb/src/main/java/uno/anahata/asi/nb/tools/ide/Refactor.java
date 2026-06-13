@@ -4,12 +4,14 @@ package uno.anahata.asi.nb.tools.ide;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -39,11 +41,13 @@ import org.netbeans.modules.refactoring.java.api.ExtractSuperclassRefactoring;
 import org.netbeans.modules.refactoring.java.api.InlineRefactoring;
 import org.netbeans.modules.refactoring.java.api.InnerToOuterRefactoring;
 import org.netbeans.modules.refactoring.java.api.InvertBooleanRefactoring;
+import org.netbeans.modules.refactoring.java.api.JavaRefactoringUtils;
 import org.netbeans.modules.refactoring.java.api.MemberInfo;
 import org.netbeans.modules.refactoring.java.api.PullUpRefactoring;
 import org.netbeans.modules.refactoring.java.api.PushDownRefactoring;
 import org.netbeans.modules.refactoring.java.api.UseSuperTypeRefactoring;
 import org.openide.filesystems.FileObject;
+import org.openide.filesystems.URLMapper;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
 import uno.anahata.asi.agi.resource.Resource;
@@ -186,7 +190,7 @@ public class Refactor extends AnahataToolkit {
             refactoring.setTarget(Lookups.fixed(targetHandle));
         } else if (targetFo.isFolder()) {
             refactoring = new MoveRefactoring(Lookups.fixed(sourceFo));
-            java.net.URL targetUrl = org.openide.filesystems.URLMapper.findURL(targetFo, org.openide.filesystems.URLMapper.EXTERNAL);
+            URL targetUrl = URLMapper.findURL(targetFo, URLMapper.EXTERNAL);
             if (targetUrl == null) {
                 targetUrl = targetFo.toURL();
             }
@@ -219,7 +223,7 @@ public class Refactor extends AnahataToolkit {
         }
 
         MoveRefactoring refactoring = new MoveRefactoring(Lookups.fixed(sourceFo));
-        java.net.URL targetUrl = org.openide.filesystems.URLMapper.findURL(targetFo, org.openide.filesystems.URLMapper.EXTERNAL);
+        URL targetUrl = URLMapper.findURL(targetFo, URLMapper.EXTERNAL);
         if (targetUrl == null) {
             targetUrl = targetFo.toURL();
         }
@@ -229,6 +233,54 @@ public class Refactor extends AnahataToolkit {
         return enrichWithContextInfo(sourcePath, result, "moved");
     }
 
+    /**
+     * Moves a Java package (and all its sub-packages and classes) to a new parent package.
+     * @param targetPackagePath The absolute path of the destination package folder.
+     * @param packagePath The absolute path of the package folder to move.
+     * @return A detailed log of the refactoring process.
+     * @throws java.lang.Exception if the operation fails.
+     */
+    @AgiTool("Moves a Java package (and all its nested classes) to a new parent package, safely updating all declarations, references, and imports across all open projects.")
+    public String movePackage(
+            @AgiToolParam(value = "The absolute path of the package folder to move.", rendererId = "path") String packagePath,
+            @AgiToolParam(value = "The absolute path of the target parent package folder.", rendererId = "path") String targetPackagePath) throws Exception {
+        FileObject sourceFo = JavaSourceUtils.getFileObject(packagePath);
+        FileObject targetFo = JavaSourceUtils.getFileObject(targetPackagePath);
+
+        if (!sourceFo.isFolder() || !targetFo.isFolder()) {
+            throw new IllegalArgumentException("Both source and target must be package folders.");
+        }
+
+        MoveRefactoring refactoring = new MoveRefactoring(Lookups.fixed(sourceFo));
+        URL targetUrl = URLMapper.findURL(targetFo, URLMapper.EXTERNAL);
+        if (targetUrl == null) {
+            targetUrl = targetFo.toURL();
+        }
+        refactoring.setTarget(Lookups.singleton(targetUrl));
+
+        return executeRefactoring(refactoring, "Move Package " + sourceFo.getName());
+    }
+
+    /**
+     * Renames a Java package across all open projects.
+     * @param packagePath The absolute path of the package folder to rename.
+     * @param newName The new simple name for the package folder.
+     * @return A detailed log of the refactoring process.
+     * @throws java.lang.Exception if the operation fails.
+     */
+    @AgiTool("Renames a Java package across all open projects, updating all package statements, imports, and references dynamically.")
+    public String renamePackage(
+            @AgiToolParam(value = "The absolute path of the package folder to rename.", rendererId = "path") String packagePath,
+            @AgiToolParam("The new simple name for the package folder (e.g. 'desktop').") String newName) throws Exception {
+        FileObject fo = JavaSourceUtils.getFileObject(packagePath);
+        if (!fo.isFolder()) {
+            throw new IllegalArgumentException("Path must be a package folder: " + packagePath);
+        }
+        RenameRefactoring refactoring = new RenameRefactoring(Lookups.singleton(fo));
+        refactoring.setNewName(newName);
+
+        return executeRefactoring(refactoring, "Rename Package " + fo.getName() + " to " + newName);
+    }
     /**
      * Copies a Java class to a new package or folder.
      *
@@ -252,7 +304,7 @@ public class Refactor extends AnahataToolkit {
         }
 
         CopyRefactoring refactoring = new CopyRefactoring(Lookups.fixed(sourceFo));
-        java.net.URL targetUrl = org.openide.filesystems.URLMapper.findURL(targetFo, org.openide.filesystems.URLMapper.EXTERNAL);
+        URL targetUrl = URLMapper.findURL(targetFo, URLMapper.EXTERNAL);
         if (targetUrl == null) {
             targetUrl = targetFo.toURL();
         }
@@ -281,7 +333,7 @@ public class Refactor extends AnahataToolkit {
         }
 
         CopyRefactoring refactoring = new CopyRefactoring(Lookups.fixed(sourceFo));
-        java.net.URL targetUrl = org.openide.filesystems.URLMapper.findURL(targetFo, org.openide.filesystems.URLMapper.EXTERNAL);
+        URL targetUrl = URLMapper.findURL(targetFo, URLMapper.EXTERNAL);
         if (targetUrl == null) {
             targetUrl = targetFo.toURL();
         }
@@ -447,7 +499,7 @@ public class Refactor extends AnahataToolkit {
         PullUpRefactoring refactoring = new PullUpRefactoring(classHandle);
 
         // Resolve target type
-        ElementHandle<TypeElement> targetHandle = ElementHandle.createTypeElementHandle(javax.lang.model.element.ElementKind.CLASS, targetClassFqn);
+        ElementHandle<TypeElement> targetHandle = ElementHandle.createTypeElementHandle(ElementKind.CLASS, targetClassFqn);
         refactoring.setTargetType(targetHandle);
 
         // Resolve members to MemberInfo
@@ -574,7 +626,7 @@ public class Refactor extends AnahataToolkit {
         }
 
         UseSuperTypeRefactoring refactoring = new UseSuperTypeRefactoring(classHandle);
-        ElementHandle<TypeElement> superHandle = ElementHandle.createTypeElementHandle(javax.lang.model.element.ElementKind.CLASS, supertypeFqn);
+        ElementHandle<TypeElement> superHandle = ElementHandle.createTypeElementHandle(ElementKind.CLASS, supertypeFqn);
         refactoring.setTargetSuperType(superHandle);
 
         return executeRefactoring(refactoring, "Use Supertype " + supertypeFqn);
@@ -713,12 +765,19 @@ public class Refactor extends AnahataToolkit {
         // to prevent the generic file plugin from 'stealing' the physical move/rename.
         Lookup sourceLookup = refactoring.getRefactoringSource();
         FileObject fo = sourceLookup.lookup(FileObject.class);
-        if (fo != null && "java".equals(fo.getExt())) {
-            refactoring.getContext().add(org.netbeans.modules.refactoring.java.api.JavaRefactoringUtils.getClasspathInfoFor(new FileObject[]{fo}));
+        if (fo != null) {
+            if ("java".equals(fo.getExt())) {
+                refactoring.getContext().add(JavaRefactoringUtils.getClasspathInfoFor(new FileObject[]{fo}));
+            } else if (fo.isFolder()) {
+                FileObject javaFo = findAnyJavaFile(fo);
+                if (javaFo != null) {
+                    refactoring.getContext().add(JavaRefactoringUtils.getClasspathInfoFor(new FileObject[]{javaFo}));
+                }
+            }
         } else {
             TreePathHandle tph = sourceLookup.lookup(TreePathHandle.class);
             if (tph != null && tph.getFileObject() != null) {
-                refactoring.getContext().add(org.netbeans.modules.refactoring.java.api.JavaRefactoringUtils.getClasspathInfoFor(new FileObject[]{tph.getFileObject()}));
+                refactoring.getContext().add(JavaRefactoringUtils.getClasspathInfoFor(new FileObject[]{tph.getFileObject()}));
             }
         }
 
@@ -970,4 +1029,22 @@ public class Refactor extends AnahataToolkit {
         return handle[0];
     }
 
+    /**
+     * Recursively searches for any Java file within a folder to assist in ClasspathInfo resolution.
+     * @param folder The folder to search.
+     * @return The first Java FileObject found, or null.
+     */
+    private static FileObject findAnyJavaFile(FileObject folder) {
+        for (FileObject child : folder.getChildren()) {
+            if ("java".equals(child.getExt())) {
+                return child;
+            } else if (child.isFolder()) {
+                FileObject res = findAnyJavaFile(child);
+                if (res != null) {
+                    return res;
+                }
+            }
+        }
+        return null;
+    }
 }
