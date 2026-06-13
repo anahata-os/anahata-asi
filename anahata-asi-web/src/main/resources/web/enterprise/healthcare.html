@@ -11,7 +11,7 @@
       gtag('config', 'G-WMGS1YH2WD');
     </script>
     <meta charset="UTF-8">
-    <meta name="description" content="Anahata ASI for Healthcare and Pharma. Protect clinical trials, drug discoveries, and patent code bases from public API leaks.">
+    <meta name="description" content="Anahata ASI for Healthcare and Pharma. Complete HIPAA compliance, on-premises patient data containment, clinical decision support auditing, and absolute IP protection.">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Healthcare & Pharma | Anahata ASI Platform</title>
     <link rel="icon" type="image/png" href="../assets/favicon.png">
@@ -33,10 +33,113 @@
         .main-content h2 { font-size: 2.2rem; margin-top: 3rem; margin-bottom: 1.5rem; color: var(--white); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; }
         
         .tagline { font-size: 1.4rem; color: var(--text-muted); margin-top: 0; line-height: 1.5; }
-        .info-box { background: rgba(237, 187, 0, 0.05); border-left: 4px solid var(--barca-gold); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; }
+        .info-box { background: rgba(237, 187, 0, 0.05); border-left: 4px solid var(--barca-gold); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; box-shadow: 0 4px 20px rgba(237, 187, 0, 0.05); }
         .integration-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; margin: 2rem 0; background: rgba(255, 255, 255, 0.02); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
         .integration-item { display: flex; align-items: flex-start; gap: 1rem; color: var(--text-main); font-size: 1rem; line-height: 1.5; }
         .integration-item i { color: var(--barca-gold); margin-top: 5px; font-size: 1.2rem; flex-shrink: 0; width: 24px; text-align: center; }
+
+        /* Tactical HUD Grid Overlay */
+        .tactical-hud {
+            position: relative;
+            background: linear-gradient(180deg, #100f0b, #1f1d14);
+            border: 1px solid rgba(237, 187, 0, 0.2);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin: 3rem 0;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .tactical-hud::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 80% 20%, rgba(237, 187, 0, 0.15), transparent 60%),
+                        linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px) 0 0 / 20px 20px,
+                        linear-gradient(90deg, rgba(255,255,255,0.01) 1px, transparent 1px) 0 0 / 20px 20px;
+            pointer-events: none;
+        }
+        .tactical-heading {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--barca-gold);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tactical-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        .tactical-card {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 3px solid var(--barca-gold);
+        }
+        .tactical-card h4 {
+            color: var(--white);
+            margin-top: 0;
+            margin-bottom: 0.8rem;
+            font-size: 1.1rem;
+        }
+        .tactical-card p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* Shot Showcase */
+        .showcase-container {
+            margin: 4rem 0;
+            text-align: center;
+        }
+        .showcase-title {
+            color: var(--white);
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .showcase-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        .showcase-card {
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: var(--transition);
+        }
+        .showcase-card:hover {
+            border-color: var(--barca-gold);
+            box-shadow: 0 10px 30px rgba(237, 187, 0, 0.15);
+            transform: translateY(-5px);
+        }
+        .showcase-card img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            display: block;
+        }
+        .showcase-caption {
+            background: rgba(0,0,0,0.85);
+            padding: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            border-top: 1px solid rgba(255,255,255,0.05);
+            text-align: left;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
@@ -45,40 +148,97 @@
     <div class="docs-wrapper">
         <aside class="sidebar">
             <div class="sidebar-nav">
-                <h4>Healthcare & Pharma</h4>
+                <h4>Pharma & Clinical</h4>
                 <ul>
                     <li><a href="#overview" class="active">Overview</a></li>
-                    <li><a href="#discovery">Drug Discovery Security</a></li>
-                    <li><a href="#hipaa">HIPAA Compliance</a></li>
-                    <li><a href="#support">Clinical Retainers</a></li>
+                    <li><a href="#tactical-specs">Compliance specs</a></li>
+                    <li><a href="#isolation">Local PHI Containment</a></li>
+                    <li><a href="#visuals">Active Observability</a></li>
+                    <li><a href="#regulatory">August 2026 AI Act</a></li>
+                    <li><a href="#procurement">Procurement & Demos</a></li>
                 </ul>
             </div>
         </aside>
 
         <main class="main-content">
             <section id="overview">
-                <h1>Healthcare & <span style="color: var(--barca-gold)">Pharma</span></h1>
-                <p class="tagline">Absolute IP Protection for Clinical Research.</p>
+                <div style="background: url('https://images.unsplash.com/photo-1532187643603-ba119ca4109e?auto=format&fit=crop&w=1200&q=80') center/cover; border-radius: 16px; position: relative; overflow: hidden; margin-bottom: 3rem; border: 1px solid rgba(237,187,0,0.4); box-shadow: 0 0 40px rgba(237,187,0,0.15);">
+                    <div style="position: absolute; top:0; left:0; width:100%; height:100%; background: linear-gradient(90deg, rgba(11,12,16,0.95) 0%, rgba(237,187,0,0.15) 100%);"></div>
+                    <div style="position: relative; z-index: 2; padding: 4rem 3rem;">
+                        <div style="font-family: 'JetBrains Mono', monospace; color: var(--barca-gold); font-size: 0.85rem; letter-spacing: 4px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;"><i class="fas fa-dna"></i> PHI SAFE // 100% HIPAA ONSITE</div>
+                        <h1 style="font-family: 'JetBrains Mono', monospace; font-size: 3.5rem; margin: 0 0 1rem; color: var(--white); text-shadow: 0 0 20px rgba(237,187,0,0.8);">HEALTHCARE & <span style="color: var(--barca-gold);">PHARMA</span></h1>
+                        <p style="font-size: 1.2rem; color: var(--text-muted); max-width: 600px; line-height: 1.6; border-left: 3px solid var(--barca-gold); padding-left: 1.5rem; margin: 0;">Sovereign, BAA-free clinical trial matching and molecular sequence analysis.</p>
+                    </div>
+                </div>
                 
-                <div class="info-box">
-                    <h4 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--white);"><i class="fas fa-dna"></i> Safeguarding Medical Innovation</h4>
-                    <p style="margin-bottom: 0;">Clinical research databases, gene-sequencing software, and proprietary molecular blueprints represent billions of dollars in R&D. Sending this code or research data to third-party public LLM endpoints is an unacceptable compliance risk. Anahata ASI delivers secure, on-premises AI modeling directly on your local hardware.</p>
+                <div class="info-box" style="border-left-color: var(--barca-gold);">
+                    <h4 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--white);"><i class="fas fa-check-circle" style="color: var(--barca-gold);"></i> Clinical Data Sovereignty</h4>
+                    <p style="margin-bottom: 0;">Pharmaceutical R&D pipelines, clinical trial logs, and patient records represent billions of dollars in intellectual property. Sending this data over public cloud APIs is an unacceptable data-leakage and regulatory risk. Anahata can operate completely locally, enabling clinical researchers to run inference with absolute privacy.</p>
                 </div>
             </section>
 
-            <section id="discovery">
-                <h2>Drug Discovery Security</h2>
-                <p>Protect drug discovery pipelines, patent code bases, and research documentation from public API leakage. Anahata operates completely locally, allowing your R&D teams to leverage state-of-the-art models (<b>GLM-5.1, Qwen-3.6, MiniMax M3</b>) without exposing proprietary formulas.</p>
+            <!-- Tactical Specs section -->
+            <section id="tactical-specs">
+                <div class="tactical-hud">
+                    <div class="tactical-heading"><i class="fas fa-dna"></i> CLINICAL COMPLIANCE SPECIFICATIONS</div>
+                    <div class="tactical-grid">
+                        <div class="tactical-card">
+                            <h4>BAA-Free Containment</h4>
+                            <p>Bypasses the HIPAA Business Associate Agreement (BAA) cloud bottleneck entirely by processing patient records locally on your secure, on-premises networks.</p>
+                        </div>
+                        <div class="tactical-card" style="border-left-color: var(--barca-gold);">
+                            <h4>Open-Weights R&D Integration</h4>
+                            <p>Runs offline open-weight models (like <b>Llama 4 Scout, DeepSeek V4 Pro, and GLM-5.1</b>) over a secure localhost loopback, protecting pharmaceutical IP.</p>
+                        </div>
+                        <div class="tactical-card" style="border-left-color: var(--barca-blue);">
+                            <h4>Human Clinician-In-The-Loop</h4>
+                            <p>Every analysis, clinical trial match, or data export is blocked in a PENDING state for clinician review before execution, complying with FDA/EMA guidelines.</p>
+                        </div>
+                        <div class="tactical-card" style="border-left-color: var(--verified-green);">
+                            <h4>Immutable Medical Auditing</h4>
+                            <p>Kryo state passivation serializes active history, resources, and tool variables to a secure, unalterable flight recorder ledger on every single turn.</p>
+                        </div>
+                    </div>
+                </div>
             </section>
 
-            <section id="hipaa">
-                <h2>HIPAA Compliance & Thread Safety</h2>
-                <p>Java's robust concurrency libraries and virtual threads allow Anahata's background parsers to index clinical data lakes and research records locally on secure databases without blocking active user sessions, complying fully with HIPAA and clinical trial confidentiality standards.</p>
+            <section id="isolation">
+                <h2>Local PHI Containment</h2>
+                <p>Anahata ASI is a native Java container designed to run completely on-premises. Because patient records, molecular blueprints, and medical logs remain on your secure physical drives, your facility meets 100% of HIPAA security standards without the risk of public cloud leaks.</p>
             </section>
 
-            <section id="support">
-                <h2>Consulting & Custom Tools</h2>
-                <p>We help pharmaceutical and healthcare institutions integrate Anahata ASI directly with legacy medical systems, clinical registry databases, and secure laboratory data pipelines.</p>
+            <!-- Visual Reconnaissance Screenshots section -->
+            <section id="visuals">
+                <div class="showcase-container">
+                    <div class="showcase-title"><i class="fas fa-eye" style="color: var(--barca-gold);"></i> Pre-Flight Visual Auditing & Context Explorer</div>
+                    <div class="showcase-grid">
+                        <div class="showcase-card">
+                            <img src="../screenshots/desktop/AsiContainerPreferencesGlobalToolPermissions.png" alt="Anahata Global Tool Permissions" class="clickable-media" data-caption="Operator Verification: Managing global tool permissions. Ensure database writes, transactions, and terminal scripts are strictly locked behind human approval.">
+                            <div class="showcase-caption">
+                                <strong style="color: var(--barca-gold);">Clinical Verification Matrix</strong><br>
+                                Programmatically dictate Prompt, Always, or Never policies for all 148 tools. Secure database writes behind manual operator approval.
+                            </div>
+                        </div>
+                        <div class="showcase-card">
+                            <img src="../screenshots/desktop/ContextPanel-CompleteContextWindowObservability.png" alt="Anahata Context Explorer" class="clickable-media" data-caption="Traceability Tree: View the entire mental state of the ASI. Inspect RAG inputs, active system instructions, and token budgets recursively.">
+                            <div class="showcase-caption">
+                                <strong style="color: #4faaff;">The Context Explorer</strong><br>
+                                A unified, JNDI-style tree view of the active session context. Inspect token budgets, history variables, and RAG views in real-time.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="regulatory">
+                <h2>The August 2, 2026 EU AI Act Deadline</h2>
+                <p>On <strong>August 2, 2026</strong>, the strict obligations for high-risk AI systems under the European Union's <strong>EU AI Act</strong> officially become law. Clinical decision support software and automated trial-matching tools must prove continuous human oversight, detailed logging, and unalterable operation audits.</p>
+                <p>Anahata's local, Java-based runtime natively satisfies these mandates. Every automated action is gated behind a mandatory clinician approval window, and all operation metrics are written down to our unalterable Kryo flight recorder, providing immediate audit compliance.</p>
+            </section>
+
+            <section id="procurement">
+                <h2>Procurement & Support Retainers</h2>
+                <p>We build highly secure, custom Java toolkits and context providers tailored to integrate Anahata ASI cleanly into your clinical trial registries, lab equipment outputs, and private database pipelines.</p>
                 <div style="margin-top: 2rem;">
                     <a href="mailto:support@anahata.uno" class="btn-primary" style="background: var(--barca-gold); color: black; border: none; text-decoration: none; font-weight: bold; display: inline-block;">Request Pharma Consultation</a>
                 </div>

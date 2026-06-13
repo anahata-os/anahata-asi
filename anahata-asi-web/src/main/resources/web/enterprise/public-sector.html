@@ -11,7 +11,7 @@
       gtag('config', 'G-WMGS1YH2WD');
     </script>
     <meta charset="UTF-8">
-    <meta name="description" content="Anahata ASI for Public Sector. Compliant on-premises multi-tenant containment, strict auditing, and secure regional government architectures.">
+    <meta name="description" content="Anahata ASI for Public Sector. Sovereign on-premises container deployment, NIST SP 800-53 security control alignment, and secure federal intelligence operations.">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Public Sector & Gov | Anahata ASI Platform</title>
     <link rel="icon" type="image/png" href="../assets/favicon.png">
@@ -33,10 +33,113 @@
         .main-content h2 { font-size: 2.2rem; margin-top: 3rem; margin-bottom: 1.5rem; color: var(--white); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; }
         
         .tagline { font-size: 1.4rem; color: var(--text-muted); margin-top: 0; line-height: 1.5; }
-        .info-box { background: rgba(39, 174, 96, 0.1); border-left: 4px solid var(--verified-green); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; }
+        .info-box { background: rgba(39, 174, 96, 0.08); border-left: 4px solid var(--verified-green); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; box-shadow: 0 4px 20px rgba(39, 174, 96, 0.1); }
         .integration-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; margin: 2rem 0; background: rgba(255, 255, 255, 0.02); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
         .integration-item { display: flex; align-items: flex-start; gap: 1rem; color: var(--text-main); font-size: 1rem; line-height: 1.5; }
         .integration-item i { color: var(--verified-green); margin-top: 5px; font-size: 1.2rem; flex-shrink: 0; width: 24px; text-align: center; }
+
+        /* Tactical HUD Grid Overlay */
+        .tactical-hud {
+            position: relative;
+            background: linear-gradient(180deg, #0b100c, #141f16);
+            border: 1px solid rgba(39, 174, 96, 0.2);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin: 3rem 0;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .tactical-hud::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 80% 20%, rgba(39, 174, 96, 0.15), transparent 60%),
+                        linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px) 0 0 / 20px 20px,
+                        linear-gradient(90deg, rgba(255,255,255,0.01) 1px, transparent 1px) 0 0 / 20px 20px;
+            pointer-events: none;
+        }
+        .tactical-heading {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--barca-gold);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tactical-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        .tactical-card {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 3px solid var(--verified-green);
+        }
+        .tactical-card h4 {
+            color: var(--white);
+            margin-top: 0;
+            margin-bottom: 0.8rem;
+            font-size: 1.1rem;
+        }
+        .tactical-card p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* Shot Showcase */
+        .showcase-container {
+            margin: 4rem 0;
+            text-align: center;
+        }
+        .showcase-title {
+            color: var(--white);
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .showcase-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        .showcase-card {
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: var(--transition);
+        }
+        .showcase-card:hover {
+            border-color: var(--barca-gold);
+            box-shadow: 0 10px 30px rgba(237, 187, 0, 0.15);
+            transform: translateY(-5px);
+        }
+        .showcase-card img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            display: block;
+        }
+        .showcase-caption {
+            background: rgba(0,0,0,0.85);
+            padding: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            border-top: 1px solid rgba(255,255,255,0.05);
+            text-align: left;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
@@ -50,6 +153,7 @@
                     <li><a href="#overview" class="active">Overview</a></li>
                     <li><a href="#standards">NIST & Compliance</a></li>
                     <li><a href="#local">On-Premises Containers</a></li>
+                    <li><a href="#visuals">Active Observability</a></li>
                     <li><a href="#procurement">Government Contracts</a></li>
                 </ul>
             </div>
@@ -57,28 +161,77 @@
 
         <main class="main-content">
             <section id="overview">
-                <h1>Public <span style="color: var(--verified-green)">Sector</span></h1>
-                <p class="tagline">Compliant, Secure, On-Premises Government Intelligence.</p>
+                <div style="background: url('https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1200&q=80') center/cover; border-radius: 16px; position: relative; overflow: hidden; margin-bottom: 3rem; border: 1px solid rgba(39,174,96,0.4); box-shadow: 0 0 40px rgba(39,174,96,0.15);">
+                    <div style="position: absolute; top:0; left:0; width:100%; height:100%; background: linear-gradient(90deg, rgba(11,12,16,0.95) 0%, rgba(39,174,96,0.15) 100%);"></div>
+                    <div style="position: relative; z-index: 2; padding: 4rem 3rem;">
+                        <div style="font-family: 'JetBrains Mono', monospace; color: var(--verified-green); font-size: 0.85rem; letter-spacing: 4px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;"><i class="fas fa-gavel"></i> NIST & SECURE GOVERNMENT ENCLAVES // ON-PREMISES</div>
+                        <h1 style="font-family: 'JetBrains Mono', monospace; font-size: 3.5rem; margin: 0 0 1rem; color: var(--white); text-shadow: 0 0 20px rgba(39, 174, 96, 0.8);">PUBLIC <span style="color: var(--verified-green);">SECTOR</span></h1>
+                        <p style="font-size: 1.2rem; color: var(--text-muted); max-width: 600px; line-height: 1.6; border-left: 3px solid var(--verified-green); padding-left: 1.5rem; margin: 0;">Sovereign, air-gapped administrative automation for regional and federal enclaves.</p>
+                    </div>
+                </div>
                 
                 <div class="info-box">
-                    <h4 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--white);"><i class="fas fa-gavel"></i> Secure Administrative Handshakes</h4>
+                    <h4 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--white);"><i class="fas fa-gavel"></i> Secure Administrative Sovereignty</h4>
                     <p style="margin-bottom: 0;">Federal, state, and local administration deployments require absolute sovereignty and compliance with national data directives (such as NIST or local cyber security centers). Anahata ASI provides an audit-compliant, local-first container designed for secure government operations.</p>
                 </div>
             </section>
 
+            <!-- Compliance Specs section -->
             <section id="standards">
-                <h2>NIST & Regulatory Compliance</h2>
-                <p>Fully certifiable on local network topologies with absolute multi-tenant containment. The deterministic <b>Human-In-The-Loop (HITL)</b> design requires explicit, manual verification for any terminal command, database modification, or file write, preventing unauthorized code execution in secure zones.</p>
+                <div class="tactical-hud">
+                    <div class="tactical-heading"><i class="fas fa-shield-halved"></i> GOVERNMENT COMPLIANCE SPECIFICATIONS</div>
+                    <div class="tactical-grid">
+                        <div class="tactical-card">
+                            <h4>NIST SP 800-53 Alignment</h4>
+                            <p>Seamlessly map security controls under NIST SP 800-53 guidelines. Enforce strict boundaries, zero-trust scopes, and local audit storage.</p>
+                        </div>
+                        <div class="tactical-card" style="border-left-color: var(--barca-gold);">
+                            <h4>Open-Weights Compliance</h4>
+                            <p>Runs offline open-weight models (like <b>Llama 4 Scout, DeepSeek V4 Pro, and GLM-5.1</b>) over a secure localhost loopback, keeping administrative work fully contained.</p>
+                        </div>
+                        <div class="tactical-card" style="border-left-color: var(--barca-blue);">
+                            <h4>Human-In-The-Loop (HITL)</h4>
+                            <p>Destructive terminal executions, database modifications, or file writes are securely gated behind the PENDING state, requiring explicit operator verification.</p>
+                        </div>
+                        <div class="tactical-card" style="border-left-color: var(--verified-green);">
+                            <h4>Immutable Audit Trails</h4>
+                            <p>Binary Kryo state passivation acts as an unalterable flight recorder, writing active session object graphs directly to disk on every turn for complete regulatory accountability.</p>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <section id="local">
                 <h2>On-Premises Containers</h2>
-                <p>Integrate cleanly with existing government Java infrastructures (Jakarta EE, Spring Boot, WebSphere) with zero external internet dependencies, running local open-weight models natively on private government hardware configurations.</p>
+                <p>Anahata can operate as a self-contained local Java bytecode container. It integrates cleanly with existing government Java infrastructures (Jakarta EE, Spring Boot, WebSphere) with zero external internet dependencies, running local open-weight models natively on private government hardware configurations.</p>
+            </section>
+
+            <!-- Visual Verification Screenshots section -->
+            <section id="visuals">
+                <div class="showcase-container">
+                    <div class="showcase-title"><i class="fas fa-eye" style="color: var(--barca-gold);"></i> Pre-Flight Visual Auditing & Context Explorer</div>
+                    <div class="showcase-grid">
+                        <div class="showcase-card">
+                            <img src="../screenshots/desktop/AsiContainerPreferencesGlobalToolPermissions.png" alt="Anahata Global Tool Permissions" class="clickable-media" data-caption="Operator Verification: Managing global tool permissions. Ensure database writes, transactions, and terminal scripts are strictly locked behind human approval.">
+                            <div class="showcase-caption">
+                                <strong style="color: var(--barca-gold);">Administrative Verification Matrix</strong><br>
+                                Programmatically dictate Prompt, Always, or Never policies for all 148 tools. Secure database writes behind manual operator approval.
+                            </div>
+                        </div>
+                        <div class="showcase-card">
+                            <img src="../screenshots/desktop/ContextPanel-CompleteContextWindowObservability.png" alt="Anahata Context Explorer" class="clickable-media" data-caption="Traceability Tree: View the entire mental state of the ASI. Inspect RAG inputs, active system instructions, and token budgets recursively.">
+                            <div class="showcase-caption">
+                                <strong style="color: #4faaff;">The Context Explorer</strong><br>
+                                A unified, JNDI-style tree view of the active session context. Inspect token budgets, history variables, and RAG views in real-time.
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <section id="procurement">
                 <h2>Procurement & Support Agreements</h2>
-                <p>We provide professional consulting, priority 24/48-hour SLAs, and bespoke toolkit creation to integrate Anahata ASI directly with your administrative data pipelines.</p>
+                <p>We provide professional consulting, priority 24/48-hour SLAs, and bespoke toolkit creation to integrate Anahata ASI cleanly into your administrative data pipelines.</p>
                 <div style="margin-top: 2rem;">
                     <a href="mailto:support@anahata.uno" class="btn-primary" style="background: var(--verified-green); color: white; border: none; text-decoration: none; font-weight: bold; display: inline-block;">Request Administrative Demo</a>
                 </div>

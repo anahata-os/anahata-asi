@@ -38,7 +38,7 @@
         .integration-item { display: flex; align-items: flex-start; gap: 1rem; color: var(--text-main); font-size: 1rem; line-height: 1.5; }
         .integration-item i { color: var(--barca-blue); margin-top: 5px; font-size: 1.2rem; flex-shrink: 0; width: 24px; text-align: center; }
 
-        /* Tactical HUD Grid Overlay (Themed for Finance/Emerald) */
+        /* Tactical HUD Grid Overlay */
         .tactical-hud {
             position: relative;
             background: linear-gradient(180deg, #0b100c, #141f16);
@@ -140,12 +140,6 @@
             text-align: left;
             line-height: 1.4;
         }
-        @keyframes scanline {
-            0% { top: 0%; opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { top: 100%; opacity: 0; }
-        }
     </style>
 </head>
 <body>
@@ -161,7 +155,7 @@
                     <li><a href="#auditability">Immutable Audits</a></li>
                     <li><a href="#visuals">Visual Verification</a></li>
                     <li><a href="#auth-wall">The Authorization Wall</a></li>
-                    <li><a href="#retainers">Consulting Retainers</a></li>
+                    <li><a href="#procurement">Procurement & Demos</a></li>
                 </ul>
             </div>
         </aside>
@@ -170,7 +164,6 @@
             <section id="overview">
                 <div style="background: url('https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=1200&q=80') center/cover; border-radius: 16px; position: relative; overflow: hidden; margin-bottom: 3rem; border: 1px solid rgba(39,174,96,0.4); box-shadow: 0 0 40px rgba(39,174,96,0.15);">
                     <div style="position: absolute; top:0; left:0; width:100%; height:100%; background: linear-gradient(90deg, rgba(11,12,16,0.95) 0%, rgba(39,174,96,0.15) 100%);"></div>
-                    <div style="position: absolute; top:0; left:0; width:100%; height:2px; background: rgba(255,255,255,0.4); box-shadow: 0 0 15px var(--white); animation: scanline 4s linear infinite; z-index: 1;"></div>
                     <div style="position: relative; z-index: 2; padding: 4rem 3rem;">
                         <div style="font-family: 'JetBrains Mono', monospace; color: var(--verified-green); font-size: 0.85rem; letter-spacing: 4px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;"><i class="fas fa-landmark"></i> DORA & SOC2 COMPLIANT // LOCAL-FIRST</div>
                         <h1 style="font-family: 'JetBrains Mono', monospace; font-size: 3.5rem; margin: 0 0 1rem; color: var(--white); text-shadow: 0 0 20px rgba(39,174,96,0.8);">FINANCE & <span style="color: var(--verified-green);">BANKING</span></h1>
@@ -180,7 +173,7 @@
                 
                 <div class="info-box">
                     <h4 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--white);"><i class="fas fa-landmark"></i> Deterministic Financial Intelligence</h4>
-                    <p style="margin-bottom: 0;">Institutional finance requires absolute data sovereignty and operational predictability. Anahata ASI operates as a self-contained local Java bytecode container, delivering peak tactical intelligence for report synthesis, contractual anomaly checking, and algorithmic modeling with zero external cloud dependencies.</p>
+                    <p style="margin-bottom: 0;">Institutional finance requires absolute data sovereignty and operational predictability. Anahata ASI can operate as a self-contained local Java bytecode container, delivering peak tactical intelligence for report synthesis, contractual anomaly checking, and algorithmic modeling with zero external cloud dependencies.</p>
                 </div>
             </section>
 
@@ -211,8 +204,8 @@
 
             <section id="auditability">
                 <h2>Immutable Auditing (The Flight Recorder)</h2>
-                <p>Regulators require complete, queryable auditing of automated agentic workflows. Anahata's binary serialization (via Kryo and the <code>Rebindable</code> state wrapper) serializes the entire active <code>Agi</code> session graph at every turn.</p>
-                <p>This provides an unalterable, secure <b>Flight Recorder</b> ledger. Compliance teams can reconstruct and analyze session states down to chronological tool call arguments, providing the exact proof of human clinical oversight and data integrity required by auditors.</p>
+                <p>Regulators require complete, queryable auditing of automated agentic workflows. Under strict DORA requirements, BaFin guidelines, and financial audit controls, Anahata's binary serialization (via Kryo and the <code>Rebindable</code> state wrapper) serializes the entire active <code>Agi</code> session graph at every turn.</p>
+                <p>This provides an unalterable, secure <b>Flight Recorder</b> ledger. Compliance teams can reconstruct and analyze session states down to chronological tool call arguments, providing the exact proof of human oversight and data integrity required by auditors.</p>
             </section>
 
             <!-- Visual Verification Screenshots section -->
@@ -246,7 +239,7 @@
                 <p>By executing within your active JVM thread context, Anahata securely binds to your existing enterprise identity providers (JAAS, Spring Security, OAuth) and safely leverages transaction-grade database connection pools (JDBC/Hibernate) to execute tools under the strict, audited authority of the active session operator.</p>
             </section>
 
-            <section id="retainers">
+            <section id="procurement">
                 <h2>Procurement & Support Retainers</h2>
                 <p>We build highly secure, custom Java toolkits and context providers tailored to integrate Anahata ASI cleanly into your institutional ledgers, risk analytics engines, and private database pipelines.</p>
                 <div style="margin-top: 2rem;">
