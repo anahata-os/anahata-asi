@@ -12,7 +12,7 @@ import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.agi.provider.GenerationRequest;
 import uno.anahata.asi.agi.provider.Response;
 import uno.anahata.asi.agi.provider.StreamObserver;
-import uno.anahata.asi.destkop.swing.AsiDesktopAsiContainer;
+import uno.anahata.asi.desktop.swing.AsiDesktopAsiContainer;
 import uno.anahata.asi.openai.OpenAiResponsesProvider;
 
 /**

@@ -23,4 +23,4 @@
  * 
  * @author anahata
  */
-package uno.anahata.asi.destkop.swing;
+package uno.anahata.asi.desktop.swing;

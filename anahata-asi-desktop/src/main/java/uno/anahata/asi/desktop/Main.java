@@ -1,6 +1,6 @@
 package uno.anahata.asi.desktop;
 
-import uno.anahata.asi.destkop.swing.AsiDesktopMainPanel;
+import uno.anahata.asi.desktop.swing.AsiDesktopMainPanel;
 import com.formdev.flatlaf.FlatLightLaf;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -8,7 +8,7 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.destkop.swing.AsiDesktopAsiContainer;
+import uno.anahata.asi.desktop.swing.AsiDesktopAsiContainer;
 import uno.anahata.asi.swing.icons.IconUtils;
 
 /**
