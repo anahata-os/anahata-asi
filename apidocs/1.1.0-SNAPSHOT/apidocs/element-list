@@ -19,7 +19,7 @@ uno.anahata.asi.agi.tool.spi.java
 uno.anahata.asi.anthropic
 uno.anahata.asi.anthropic.adapter
 uno.anahata.asi.desktop
-uno.anahata.asi.destkop.swing
+uno.anahata.asi.desktop.swing
 uno.anahata.asi.gemini
 uno.anahata.asi.gemini.adapter
 uno.anahata.asi.gemini.schema
