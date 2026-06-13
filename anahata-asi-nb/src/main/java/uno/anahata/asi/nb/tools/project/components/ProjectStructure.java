@@ -80,7 +80,7 @@ public final class ProjectStructure extends ProjectNode {
         this.rootFolders = new ArrayList<>();
         this.javaSourceGroups = new ArrayList<>();
         this.resourceSourceGroups = new ArrayList<>();
-        
+
         FileObject root = project.getProjectDirectory();
         Sources sources = ProjectUtils.getSources(project);
         List<FileObject> sgRoots = new ArrayList<>();
@@ -91,7 +91,11 @@ public final class ProjectStructure extends ProjectNode {
         for (FileObject child : root.getChildren()) {
             if (child.isFolder()) {
                 if (!sgRoots.contains(child)) {
-                    rootFolders.add(child.getNameExt());
+                    if (".github".equals(child.getNameExt())) {
+                        resourceSourceGroups.add(new ResourceSourceGroup(project, child, ".github"));
+                    } else {
+                        rootFolders.add(child.getNameExt());
+                    }
                 }
             } else {
                 rootFiles.add(new ProjectComponent(child, null));

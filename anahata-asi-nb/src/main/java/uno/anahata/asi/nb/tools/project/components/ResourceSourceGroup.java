@@ -68,6 +68,27 @@ public final class ResourceSourceGroup extends ProjectNode {
     }
 
     /**
+     * Constructs and populates the resource source group tree directly from a FileObject.
+     * @param name The display name of this group.
+     * @param project The parent project.
+     * @param rootFolder The physical root folder to map.
+     * @throws java_lang_Exception if the physical walk fails.
+     * @throws javaLangException if the physical walk fails.
+     * @throws langException if the physical walk fails.
+     * @throws javaException if the physical walk fails.
+     * @throws Exception if the physical walk fails.
+     * @throws javaControls if the physical walk fails.
+     */
+    public ResourceSourceGroup(Project project, FileObject rootFolder, String name) throws Exception {
+        this.name = name;
+        this.relPath = FileUtil.getRelativePath(project.getProjectDirectory(), rootFolder);
+        this.folders = new ArrayList<>();
+
+        Map<String, ResourceFolder> dirMap = new TreeMap<>();
+        walkResources(rootFolder, rootFolder, dirMap);
+        this.folders.addAll(dirMap.values());
+    }
+    /**
      * Performs a recursive walk of the filesystem to identify all files 
      * and non-empty directories.
      * 
