@@ -11,7 +11,7 @@
       gtag('config', 'G-WMGS1YH2WD');
     </script>
     <meta charset="UTF-8">
-    <meta name="description" content="Anahata ASI for Finance and Banking. Strict audit trails, immutable flight recorders, and zero exfiltration for institutional compliance.">
+    <meta name="description" content="Anahata ASI for Finance and Banking. Strict, regulator-compliant audit trails, immutable Kryo flight recorders, and zero data exfiltration for institutional security.">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Finance & Banking | Anahata ASI Platform</title>
     <link rel="icon" type="image/png" href="../assets/favicon.png">
@@ -33,10 +33,119 @@
         .main-content h2 { font-size: 2.2rem; margin-top: 3rem; margin-bottom: 1.5rem; color: var(--white); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; }
         
         .tagline { font-size: 1.4rem; color: var(--text-muted); margin-top: 0; line-height: 1.5; }
-        .info-box { background: rgba(0, 77, 152, 0.1); border-left: 4px solid var(--barca-blue); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; }
+        .info-box { background: rgba(0, 77, 152, 0.08); border-left: 4px solid var(--barca-blue); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; box-shadow: 0 4px 20px rgba(0, 77, 152, 0.1); }
         .integration-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; margin: 2rem 0; background: rgba(255, 255, 255, 0.02); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
         .integration-item { display: flex; align-items: flex-start; gap: 1rem; color: var(--text-main); font-size: 1rem; line-height: 1.5; }
         .integration-item i { color: var(--barca-blue); margin-top: 5px; font-size: 1.2rem; flex-shrink: 0; width: 24px; text-align: center; }
+
+        /* Tactical HUD Grid Overlay (Themed for Finance/Emerald) */
+        .tactical-hud {
+            position: relative;
+            background: linear-gradient(180deg, #0b100c, #141f16);
+            border: 1px solid rgba(39, 174, 96, 0.2);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin: 3rem 0;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .tactical-hud::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 80% 20%, rgba(39, 174, 96, 0.15), transparent 60%),
+                        linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px) 0 0 / 20px 20px,
+                        linear-gradient(90deg, rgba(255,255,255,0.01) 1px, transparent 1px) 0 0 / 20px 20px;
+            pointer-events: none;
+        }
+        .tactical-heading {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--barca-gold);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tactical-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        .tactical-card {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 3px solid var(--verified-green);
+        }
+        .tactical-card h4 {
+            color: var(--white);
+            margin-top: 0;
+            margin-bottom: 0.8rem;
+            font-size: 1.1rem;
+        }
+        .tactical-card p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* Shot Showcase */
+        .showcase-container {
+            margin: 4rem 0;
+            text-align: center;
+        }
+        .showcase-title {
+            color: var(--white);
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .showcase-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        .showcase-card {
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: var(--transition);
+        }
+        .showcase-card:hover {
+            border-color: var(--barca-gold);
+            box-shadow: 0 10px 30px rgba(237, 187, 0, 0.15);
+            transform: translateY(-5px);
+        }
+        .showcase-card img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            display: block;
+        }
+        .showcase-caption {
+            background: rgba(0,0,0,0.85);
+            padding: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            border-top: 1px solid rgba(255,255,255,0.05);
+            text-align: left;
+            line-height: 1.4;
+        }
+        @keyframes scanline {
+            0% { top: 0%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
     </style>
 </head>
 <body>
@@ -48,39 +157,100 @@
                 <h4>Finance & Banking</h4>
                 <ul>
                     <li><a href="#overview" class="active">Overview</a></li>
-                    <li><a href="#traceability">Immutable Audits</a></li>
-                    <li><a href="#compliance">Regulatory Safeguards</a></li>
-                    <li><a href="#deployment">Deployment Models</a></li>
+                    <li><a href="#compliance-specs">Compliance Specs</a></li>
+                    <li><a href="#auditability">Immutable Audits</a></li>
+                    <li><a href="#visuals">Visual Verification</a></li>
+                    <li><a href="#auth-wall">The Authorization Wall</a></li>
+                    <li><a href="#retainers">Consulting Retainers</a></li>
                 </ul>
             </div>
         </aside>
 
         <main class="main-content">
             <section id="overview">
-                <h1>Finance & <span style="color: var(--barca-blue)">Banking</span></h1>
-                <p class="tagline">Audit-Proof, Deterministic Financial Intelligence.</p>
+                <div style="background: url('https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=1200&q=80') center/cover; border-radius: 16px; position: relative; overflow: hidden; margin-bottom: 3rem; border: 1px solid rgba(39,174,96,0.4); box-shadow: 0 0 40px rgba(39,174,96,0.15);">
+                    <div style="position: absolute; top:0; left:0; width:100%; height:100%; background: linear-gradient(90deg, rgba(11,12,16,0.95) 0%, rgba(39,174,96,0.15) 100%);"></div>
+                    <div style="position: absolute; top:0; left:0; width:100%; height:2px; background: rgba(255,255,255,0.4); box-shadow: 0 0 15px var(--white); animation: scanline 4s linear infinite; z-index: 1;"></div>
+                    <div style="position: relative; z-index: 2; padding: 4rem 3rem;">
+                        <div style="font-family: 'JetBrains Mono', monospace; color: var(--verified-green); font-size: 0.85rem; letter-spacing: 4px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;"><i class="fas fa-landmark"></i> DORA & SOC2 COMPLIANT // LOCAL-FIRST</div>
+                        <h1 style="font-family: 'JetBrains Mono', monospace; font-size: 3.5rem; margin: 0 0 1rem; color: var(--white); text-shadow: 0 0 20px rgba(39,174,96,0.8);">FINANCE & <span style="color: var(--verified-green);">BANKING</span></h1>
+                        <p style="font-size: 1.2rem; color: var(--text-muted); max-width: 600px; line-height: 1.6; border-left: 3px solid var(--verified-green); padding-left: 1.5rem; margin: 0;">Regulator-compliant, zero-exfiltration ASI orchestration for algorithmic banking.</p>
+                    </div>
+                </div>
                 
                 <div class="info-box">
-                    <h4 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--white);"><i class="fas fa-landmark"></i> Compliance-First Core</h4>
-                    <p style="margin-bottom: 0;">Institutional banking requires absolute operational predictability and deterministic auditing. Anahata ASI provides financial software engineers with a completely secure environment to automate transactional modeling, compliance review, and report generation without risking data leaks.</p>
+                    <h4 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--white);"><i class="fas fa-landmark"></i> Deterministic Financial Intelligence</h4>
+                    <p style="margin-bottom: 0;">Institutional finance requires absolute data sovereignty and operational predictability. Anahata ASI operates as a self-contained local Java bytecode container, delivering peak tactical intelligence for report synthesis, contractual anomaly checking, and algorithmic modeling with zero external cloud dependencies.</p>
                 </div>
             </section>
 
-            <section id="traceability">
+            <!-- Compliance Specs section -->
+            <section id="compliance-specs">
+                <div class="tactical-hud">
+                    <div class="tactical-heading"><i class="fas fa-shield-halved"></i> FINANCIAL REGULATORY SAFEGUARDS</div>
+                    <div class="tactical-grid">
+                        <div class="tactical-card">
+                            <h4>Zero Cloud Leakage</h4>
+                            <p>Keeps sensitive client-advisor transcripts, trade logs, and contract archives 100% contained within your secure corporate intranet, eliminating public LLM API data exfiltration.</p>
+                        </div>
+                        <div class="tactical-card" style="border-left-color: var(--barca-gold);">
+                            <h4>Local Open-Weights Integration</h4>
+                            <p>Connects natively to secure, locally hosted open-weight models (like <b>Llama 4 Scout, DeepSeek V4 Pro, Qwen 3.6-35B, and GLM-5.1</b>) via a local loopback on your physical hardware.</p>
+                        </div>
+                        <div class="tactical-card" style="border-left-color: var(--barca-blue);">
+                            <h4>DORA & SOC2 Alignment</h4>
+                            <p>Satisfies the European Union's DORA (Digital Operational Resilience Act) and strict SOC2 parameters by executing all AI tool actions locally inside your firewall.</p>
+                        </div>
+                        <div class="tactical-card" style="border-left-color: var(--verified-green);">
+                            <h4>Deterministic AST Patches</h4>
+                            <p>Code modifications are compiled, validated, and syntactically structured using AST trees locally, preventing fragile regex string mutations from corrupting critical codebases.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="auditability">
                 <h2>Immutable Auditing (The Flight Recorder)</h2>
-                <p>Anahata's binary serialization (via Kryo and the <code>Rebindable</code> state wrapper) serializes the entire container state graph at every turn. This provides regulators with an immutable <b>Flight Recorder</b> ledger. Auditors can reconstruct and replay the exact state transition of a complex transaction down to individual JVM threads, providing absolute traceability.</p>
+                <p>Regulators require complete, queryable auditing of automated agentic workflows. Anahata's binary serialization (via Kryo and the <code>Rebindable</code> state wrapper) serializes the entire active <code>Agi</code> session graph at every turn.</p>
+                <p>This provides an unalterable, secure <b>Flight Recorder</b> ledger. Compliance teams can reconstruct and analyze session states down to chronological tool call arguments, providing the exact proof of human clinical oversight and data integrity required by auditors.</p>
             </section>
 
-            <section id="compliance">
-                <h2>Regulatory Safeguards (DORA & SOC2)</h2>
-                <p>Exceed strict data-sovereignty mandates by keeping all operations local-first. Integrating with thread-safe database connection pools (JDBC) allows RAG pipelines to securely index sensitive transactions locally without sending a single byte to external public clouds.</p>
+            <!-- Visual Verification Screenshots section -->
+            <section id="visuals">
+                <div class="showcase-container">
+                    <div class="showcase-title"><i class="fas fa-eye" style="color: var(--barca-gold);"></i> Pre-Flight Visual Auditing & Context Explorer</div>
+                    <div class="showcase-grid">
+                        <!-- Card 1: Tool Call editing -->
+                        <div class="showcase-card">
+                            <img src="../screenshots/desktop/AsiContainerPreferencesGlobalToolPermissions.png" alt="Anahata Global Tool Permissions" class="clickable-media" data-caption="Operator Verification: Managing global tool permissions. Ensure database writes, transactions, and terminal scripts are strictly locked behind human approval.">
+                            <div class="showcase-caption">
+                                <strong style="color: var(--barca-gold);">Transaction Verification Matrix</strong><br>
+                                Programmatically dictate Prompt, Always, or Never policies for all 148 tools. Secure database writes behind manual operator approval.
+                            </div>
+                        </div>
+                        <!-- Card 2: Context Explorer -->
+                        <div class="showcase-card">
+                            <img src="../screenshots/desktop/ContextPanel-CompleteContextWindowObservability.png" alt="Anahata Context Explorer" class="clickable-media" data-caption="Traceability Tree: View the entire mental state of the ASI. Inspect RAG inputs, active system instructions, and token budgets recursively.">
+                            <div class="showcase-caption">
+                                <strong style="color: #4faaff;">The Context Explorer</strong><br>
+                                A unified, JNDI-style tree view of the active session context. Inspect token budgets, history variables, and RAG views in real-time.
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
 
-            <section id="deployment">
-                <h2>Enterprise Retainers & SLAs</h2>
-                <p>Our dedicated team provides professional SLAs and custom toolkit creation to integrate Anahata ASI seamlessly into your existing banking ledgers, risk analytics engines, and transactional pipelines.</p>
+            <section id="auth-wall">
+                <h2>Surpassing the "Authorization Wall"</h2>
+                <p>Standard Python or Node.js agents fail in enterprise banking because they cannot securely verify operator identities when calling core transactional systems. Anahata ASI is a native Java container designed to reside directly within your JVM.</p>
+                <p>By executing within your active JVM thread context, Anahata securely binds to your existing enterprise identity providers (JAAS, Spring Security, OAuth) and safely leverages transaction-grade database connection pools (JDBC/Hibernate) to execute tools under the strict, audited authority of the active session operator.</p>
+            </section>
+
+            <section id="retainers">
+                <h2>Procurement & Support Retainers</h2>
+                <p>We build highly secure, custom Java toolkits and context providers tailored to integrate Anahata ASI cleanly into your institutional ledgers, risk analytics engines, and private database pipelines.</p>
                 <div style="margin-top: 2rem;">
-                    <a href="mailto:support@anahata.uno" class="btn-primary" style="background: var(--barca-blue); color: white; border: none; text-decoration: none; font-weight: bold; display: inline-block;">Contact Institutional Sales</a>
+                    <a href="mailto:support@anahata.uno" class="btn-primary" style="background: var(--verified-green); color: white; border: none; text-decoration: none; font-weight: bold; display: inline-block;">Request Institutional Demo</a>
                 </div>
             </section>
         </main>
