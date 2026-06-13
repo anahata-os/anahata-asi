@@ -65,16 +65,17 @@
                 <ul>
                     <li><a href="#overview" class="active">Security Overview</a></li>
                     <li><a href="#architecture">Air-Gapped Architecture</a></li>
+                    <li><a href="#verticals">Industry Verticals</a></li>
                     <li><a href="#comparison">The Risk Matrix</a></li>
-                    <li><a href="#forge">The Anahata Forge</a></li>
+                    <li><a href="#forge">The Anahata Forge & SLAs</a></li>
                 </ul>
             </div>
         </aside>
 
         <main class="main-content">
             <section id="overview">
-                <h1>Enterprise <span style="color: var(--barca-gold)">Security</span></h1>
-                <p class="tagline">Absolute Data Sovereignty for Defense, Finance, and highly regulated engineering environments.</p>
+                <h1>Enterprise <span style="color: var(--barca-gold)">Sovereignty</span></h1>
+                <p class="tagline">Sovereign AI Infrastructure for Critical Defense, Algorithmic Finance, and High-Fidelity Engineering Environments.</p>
                 
                 <div class="tag-row">
                     <span class="tag tag-gold"><i class="fas fa-shield-alt"></i> Zero Telemetry</span>
@@ -99,7 +100,7 @@
                     </div>
                     <div class="integration-item">
                         <i class="fas fa-database"></i> 
-                        <div><b>Stateful Passivation:</b> All conversation state, context window memory, and tool execution logs are serialized locally via Kryo. Data rests safely on your encrypted corporate drives, not on an external cloud database.</div>
+                        <div><b>Stateful Passivation:</b> All conversation state, context window memory, and tool execution logs are serialized locally via Kryo. Furthermore, your custom <b>Stateful Toolkits</b> (stateful Java tool wrappers with RAG capabilities) and <b>Context Providers</b> (RAG pipeline handlers without tools) are fully passivated, allowing complete state recovery upon session reboot. Data rests safely on your encrypted corporate drives, not on an external cloud database.</div>
                     </div>
                     <div class="integration-item">
                         <i class="fas fa-folder-open"></i> 
@@ -108,6 +109,49 @@
                     <div class="integration-item">
                         <i class="fas fa-hand-paper"></i> 
                         <div><b>Deterministic HITL:</b> Human-In-The-Loop by design. Every structural refactoring or shell execution proposed by the model is blocked in a PENDING state for security review before execution.</div>
+                    </div>
+                    <div class="integration-item">
+                        <i class="fas fa-cube"></i> 
+                        <div><b>Custom Proprietary Containers:</b> Build your own custom, proprietary Anahata ASI Containers. Package your own workflows, custom layouts, and branding to establish your own "root" central intelligence agency.</div>
+                    </div>
+                    <div class="integration-item">
+                        <i class="fas fa-puzzle-piece"></i> 
+                        <div><b>Seamless Java Application Integration:</b> Integrate Anahata ASI directly into your existing corporate Java applications (e.g., legacy IDEs, business analytics, financial ledgers, health monitoring, and defense systems).</div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="verticals">
+                <div class="toolkit-header"><i class="fas fa-shield-halved"></i><h2>Targeted Industry Verticals</h2></div>
+                <p>Anahata ASI's stateful, air-gapped, and local-first architecture makes it the premier choice for sectors requiring uncompromising compliance and safety.</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2rem;">
+                    <!-- Defense & Intel -->
+                    <div class="nb-card" style="margin: 0; border-top-color: var(--barca-red); padding: 1.5rem; display: flex; flex-direction: column;">
+                        <h4 style="color: var(--white); margin: 0 0 1rem; display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-shield-alt" style="color: var(--barca-red);"></i> Defense & Intel</h4>
+                        <p style="font-size: 0.85rem; line-height: 1.6; color: var(--text-muted); margin: 0; margin-bottom: 1.5rem; flex-grow: 1;">Supports completely offline deployment with state-of-the-art 2026 open-weight models (like <b>Llama-3.3, DeepSeek-V4 Pro, MiniMax M3, Qwen 3.6-27B, and GLM-5.1</b>) running on physical hardware racks behind secure military firewalls.</p>
+                        <a href="enterprise/defense.html" class="btn-secondary" style="text-align: center; padding: 10px; font-size: 0.85rem; text-decoration: none; color: var(--white); border-color: rgba(255,255,255,0.1); width: 100%;">Read Defense Blueprint</a>
+                    </div>
+                    
+                    <!-- Finance -->
+                    <div class="nb-card" style="margin: 0; border-top-color: var(--barca-blue); padding: 1.5rem; display: flex; flex-direction: column;">
+                        <h4 style="color: var(--white); margin: 0 0 1rem; display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-landmark" style="color: #4faaff;"></i> Finance & Banking</h4>
+                        <p style="font-size: 0.85rem; line-height: 1.6; color: var(--text-muted); margin: 0; margin-bottom: 1.5rem; flex-grow: 1;">Designed to exceed strict financial audit and data-sovereignty mandates (DORA, SOC2, GDPR, PCI-DSS) by keeping all operational data within direct institutional control.</p>
+                        <a href="enterprise/finance.html" class="btn-secondary" style="text-align: center; padding: 10px; font-size: 0.85rem; text-decoration: none; color: var(--white); border-color: rgba(255,255,255,0.1); width: 100%;">Read Banking Blueprint</a>
+                    </div>
+
+                    <!-- Healthcare -->
+                    <div class="nb-card" style="margin: 0; border-top-color: var(--barca-gold); padding: 1.5rem; display: flex; flex-direction: column;">
+                        <h4 style="color: var(--white); margin: 0 0 1rem; display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-dna" style="color: var(--barca-gold);"></i> Healthcare & Pharma</h4>
+                        <p style="font-size: 0.85rem; line-height: 1.6; color: var(--text-muted); margin: 0; margin-bottom: 1.5rem; flex-grow: 1;">Protects highly sensitive clinical research data, proprietary drug discovery modeling, and patent code bases from public API leakage, complying fully with HIPAA guidelines.</p>
+                        <a href="enterprise/healthcare.html" class="btn-secondary" style="text-align: center; padding: 10px; font-size: 0.85rem; text-decoration: none; color: var(--white); border-color: rgba(255,255,255,0.1); width: 100%;">Read Pharma Blueprint</a>
+                    </div>
+
+                    <!-- Public Sector -->
+                    <div class="nb-card" style="margin: 0; border-top-color: var(--verified-green); padding: 1.5rem; display: flex; flex-direction: column;">
+                        <h4 style="color: var(--white); margin: 0 0 1rem; display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-gavel" style="color: var(--verified-green);"></i> Public Sector</h4>
+                        <p style="font-size: 0.85rem; line-height: 1.6; color: var(--text-muted); margin: 0; margin-bottom: 1.5rem; flex-grow: 1;">Bridges public-sector requirements (NIST, national data directives) with on-premises multi-tenant containment and strict, deterministic operation handshakes.</p>
+                        <a href="enterprise/public-sector.html" class="btn-secondary" style="text-align: center; padding: 10px; font-size: 0.85rem; text-decoration: none; color: var(--white); border-color: rgba(255,255,255,0.1); width: 100%;">Read Public Sector Blueprint</a>
                     </div>
                 </div>
             </section>
@@ -149,25 +193,59 @@
             </section>
 
             <section id="forge">
-                <div class="toolkit-header"><i class="fas fa-hammer"></i><h2>The Anahata Forge</h2></div>
-                <p>We offer a premier, hands-on consulting package for enterprise Java teams. We will directly help your organization deploy, configure, and train your developers on the Anahata ASI ecosystem entirely behind your corporate firewall.</p>
+                <div class="toolkit-header"><i class="fas fa-hammer"></i><h2>The Anahata Forge & Enterprise SLAs</h2></div>
+                <p>We offer premier, hands-on consulting packages for enterprise Java teams. We will help your staff:</p>
+                <ul style="color: var(--text-muted); font-size: 1.05rem; line-height: 1.6; margin-bottom: 2rem;">
+                    <li>Build your proprietary, sovereign Anahata ASI Container — Your own centralized, private AI Command Center.</li>
+                    <li>Build custom toolkits, custom UIs, or Context Providers (Internal RAG pipelines).</li>
+                    <li>Train your developers on secure, AST-guided Java refactoring via ASI.</li>
+                </ul>
                 
-                <div class="nb-card" style="border-top-color: var(--barca-gold); background: linear-gradient(145deg, rgba(26, 32, 44, 0.9), #000); padding: 3rem; text-align: center; margin-top: 3rem;">
-                    <h3 style="color: var(--barca-gold); text-transform: uppercase; letter-spacing: 2px; font-size: 1.2rem; margin: 0;">Corporate Air-Gapped Package</h3>
-                    <div style="font-size: 4rem; color: var(--white); font-weight: 800; margin: 1.5rem 0; letter-spacing: -2px;">$5,000 <span style="font-size: 1.2rem; color: var(--text-muted); font-weight: 400; letter-spacing: normal;">/ setup</span></div>
-                    <p style="color: var(--text-muted); margin-bottom: 2.5rem; font-size: 1.1rem;">Full architectural integration and team onboarding.</p>
-                    
-                    <div class="usp-list" style="text-align: left; max-width: 600px; margin: 0 auto 3rem;">
-                        <div class="usp-item"><i class="fas fa-check-circle" style="color: var(--verified-green);"></i> <div>Deployment architecture for local vLLM/Ollama servers behind your firewall.</div></div>
-                        <div class="usp-item"><i class="fas fa-check-circle" style="color: var(--verified-green);"></i> <div>Anahata ASI Desktop configuration tailored for your internal network constraints.</div></div>
-                        <div class="usp-item"><i class="fas fa-check-circle" style="color: var(--verified-green);"></i> <div>Custom proprietary toolkit design session (e.g., internal Jira, GitLab, DBs).</div></div>
-                        <div class="usp-item"><i class="fas fa-check-circle" style="color: var(--verified-green);"></i> <div>Hands-on developer training for AST-guided Java refactoring via ASI.</div></div>
-                        <div class="usp-item"><i class="fas fa-check-circle" style="color: var(--verified-green);"></i> <div>Priority 48-hour issue resolution direct from core maintainers for 6 months.</div></div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin-top: 3rem;">
+                    <!-- Tier 1 -->
+                    <div class="nb-card" style="margin: 0; display: flex; flex-direction: column; border-top-color: var(--verified-green);">
+                        <h3 style="color: var(--verified-green); text-transform: uppercase; letter-spacing: 1px; font-size: 1rem; margin-top: 0;">The Forge</h3>
+                        <div style="font-size: 2.5rem; color: var(--white); font-weight: 800; margin: 1rem 0; letter-spacing: -1px;">$5,000 <span style="font-size: 1rem; color: var(--text-muted); font-weight: 400; letter-spacing: normal;">/ block</span></div>
+                        <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem; flex-grow: 1;">A 30-hour block of dedicated consulting at an effective 17% volume discount to kickstart your ASI infrastructure.</p>
+                        <div style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 1.5rem;">
+                            <div style="margin-bottom: 8px;"><i class="fas fa-clock" style="color: var(--barca-gold); width: 20px;"></i> <b>48-hour</b> response SLA</div>
+                            <div style="margin-bottom: 8px;"><i class="fas fa-user-tie" style="color: var(--barca-gold); width: 20px;"></i> Standard Developer</div>
+                            <div style="margin-bottom: 8px;"><i class="fas fa-hourglass-half" style="color: var(--barca-gold); width: 20px;"></i> <b>$200/hr</b> standalone rate</div>
+                            <div style="margin-bottom: 8px;"><i class="fas fa-desktop" style="color: var(--barca-gold); width: 20px;"></i> Video & Remote Desktop support</div>
+                        </div>
+                        <a href="mailto:support@anahata.uno" class="btn-primary" style="text-align: center; padding: 12px; font-size: 0.95rem; width: 100%;">Book The Forge</a>
                     </div>
                     
-                    <a href="https://www.paypal.com/donate/?hosted_button_id=SS8B8R7S68R7G" target="_blank" class="btn-primary" style="display: inline-block; padding: 18px 40px; font-size: 1.1rem; background: var(--barca-red); border: none; border-radius: 8px; color: white; text-decoration: none; font-weight: bold; box-shadow: 0 10px 20px rgba(165, 0, 68, 0.4); transition: transform 0.2s;"><i class="fas fa-rocket"></i> Secure Your Onboarding Slot</a>
-                    <p style="margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted);">or email <a href="mailto:support@anahata.uno" style="color: var(--barca-gold);">support@anahata.uno</a> for custom enterprise invoicing.</p>
+                    <!-- Tier 2 -->
+                    <div class="nb-card" style="margin: 0; display: flex; flex-direction: column; border-top-color: var(--barca-blue); background: linear-gradient(145deg, rgba(0, 77, 152, 0.1), rgba(0,0,0,0.4)); transform: scale(1.02); box-shadow: 0 15px 35px rgba(0,0,0,0.5);">
+                        <h3 style="color: #4faaff; text-transform: uppercase; letter-spacing: 1px; font-size: 1rem; margin-top: 0;">The Core Team</h3>
+                        <div style="font-size: 2.5rem; color: var(--white); font-weight: 800; margin: 1rem 0; letter-spacing: -1px;">$15,000 <span style="font-size: 1rem; color: var(--text-muted); font-weight: 400; letter-spacing: normal;">/ month</span></div>
+                        <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem; flex-grow: 1;">Dedicated retainer for up to 60 hours/month (giving an effective 28.5% volume discount) to build proprietary toolkits.</p>
+                        <div style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 1.5rem;">
+                            <div style="margin-bottom: 8px;"><i class="fas fa-clock" style="color: var(--barca-gold); width: 20px;"></i> <b>24-hour</b> response SLA</div>
+                            <div style="margin-bottom: 8px;"><i class="fas fa-user-tie" style="color: var(--barca-gold); width: 20px;"></i> 15+ Yrs Senior Developer</div>
+                            <div style="margin-bottom: 8px;"><i class="fas fa-hourglass-half" style="color: var(--barca-gold); width: 20px;"></i> <b>$350/hr</b> standalone rate</div>
+                            <div style="margin-bottom: 8px;"><i class="fas fa-desktop" style="color: var(--barca-gold); width: 20px;"></i> Video & Remote Desktop support</div>
+                        </div>
+                        <a href="mailto:support@anahata.uno" class="btn-primary" style="text-align: center; padding: 12px; font-size: 0.95rem; width: 100%; background: var(--barca-blue);">Contact Sales</a>
+                    </div>
+
+                    <!-- Tier 3 -->
+                    <div class="nb-card" style="margin: 0; display: flex; flex-direction: column; border-top-color: var(--barca-gold);">
+                        <h3 style="color: var(--barca-gold); text-transform: uppercase; letter-spacing: 1px; font-size: 1rem; margin-top: 0;">The Architect</h3>
+                        <div style="font-size: 2.5rem; color: var(--white); font-weight: 800; margin: 1rem 0; letter-spacing: -1px;">$25,000 <span style="font-size: 1rem; color: var(--text-muted); font-weight: 400; letter-spacing: normal;">/ month</span></div>
+                        <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem; flex-grow: 1;">White-glove service. 100 hours/month of ultimate architectural consulting (giving an effective 50% volume discount).</p>
+                        <div style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 1.5rem;">
+                            <div style="margin-bottom: 8px;"><i class="fas fa-clock" style="color: var(--barca-red); width: 20px;"></i> <b>4-hour</b> emergency SLA</div>
+                            <div style="margin-bottom: 8px;"><i class="fas fa-crown" style="color: var(--barca-gold); width: 20px;"></i> Oracle Certified Architect</div>
+                            <div style="margin-bottom: 8px;"><i class="fas fa-hourglass-half" style="color: var(--barca-gold); width: 20px;"></i> <b>$500/hr</b> standalone rate</div>
+                            <div style="margin-bottom: 8px;"><i class="fas fa-desktop" style="color: var(--barca-gold); width: 20px;"></i> Video & Remote Desktop support</div>
+                        </div>
+                        <a href="mailto:support@anahata.uno" class="btn-secondary" style="text-align: center; padding: 12px; font-size: 0.95rem; width: 100%;">Contact Sales</a>
+                    </div>
                 </div>
+                
+                <p style="margin-top: 3rem; font-size: 0.95rem; color: var(--text-muted); text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 2rem;">Our order process is conducted by our online reseller <a href="https://paddle.com" target="_blank" style="color: var(--barca-gold); text-decoration: underline;">Paddle.com</a>, the Merchant of Record for all our orders. Need fewer hours? Standalone consulting and support hours are available at the base rates listed above. <a href="mailto:support@anahata.uno" style="color: var(--barca-gold);">Email us</a> to inquire.</p>
             </section>
         </main>
     </div>

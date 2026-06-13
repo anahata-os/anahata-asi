@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WMGS1YH2WD"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-WMGS1YH2WD');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="description" content="Anahata ASI for Defense and Intelligence. Absolute compliance, air-gapped secure local execution, sandboxed JIT JVM runs, and 100% data sovereignty.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Defense & Intelligence | Anahata ASI Platform</title>
+    <link rel="icon" type="image/png" href="../assets/favicon.png">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .docs-wrapper { display: flex; max-width: 1400px; margin: 0 auto; padding: 160px 2rem 100px; gap: 4rem; }
+        .sidebar { width: 300px; flex-shrink: 0; position: sticky; top: 130px; height: calc(100vh - 160px); overflow-y: auto; padding-right: 1.5rem; }
+        .sidebar-nav h4 { color: var(--barca-gold); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(237, 187, 0, 0.2); padding-bottom: 8px; }
+        .sidebar-nav ul { list-style: none; padding: 0; margin: 0; width: 100%; }
+        .sidebar-nav li { margin-bottom: 0.5rem; }
+        .sidebar-nav a { color: var(--text-muted); text-decoration: none; display: block; padding: 10px 15px; transition: var(--transition); border-left: 3px solid transparent; font-size: 0.95rem; }
+        .sidebar-nav a:hover, .sidebar-nav a.active { color: var(--primary-light); border-left-color: var(--primary-light); background: linear-gradient(to right, rgba(44, 122, 123, 0.12), transparent); border-radius: 0 6px 6px 0; }
+        
+        .main-content { flex-grow: 1; max-width: 900px; min-width: 0; }
+        section { padding-top: 20px; margin-bottom: 80px; scroll-margin-top: 140px; }
+        
+        .main-content h1 { font-size: 3.5rem; margin-bottom: 0.5rem; color: var(--white); }
+        .main-content h2 { font-size: 2.2rem; margin-top: 3rem; margin-bottom: 1.5rem; color: var(--white); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; }
+        
+        .tagline { font-size: 1.4rem; color: var(--text-muted); margin-top: 0; line-height: 1.5; }
+        .info-box { background: rgba(165, 0, 68, 0.08); border-left: 4px solid var(--barca-red); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; box-shadow: 0 4px 20px rgba(165, 0, 68, 0.1); }
+        .integration-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; margin: 2rem 0; background: rgba(255, 255, 255, 0.02); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .integration-item { display: flex; align-items: flex-start; gap: 1rem; color: var(--text-main); font-size: 1rem; line-height: 1.5; }
+        .integration-item i { color: var(--barca-red); margin-top: 5px; font-size: 1.2rem; flex-shrink: 0; width: 24px; text-align: center; }
+
+        /* Tactical HUD Grid Overlay */
+        .tactical-hud {
+            position: relative;
+            background: linear-gradient(180deg, #0b0c10, #14161f);
+            border: 1px solid rgba(165, 0, 68, 0.2);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin: 3rem 0;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .tactical-hud::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 80% 20%, rgba(165, 0, 68, 0.15), transparent 60%),
+                        linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px) 0 0 / 20px 20px,
+                        linear-gradient(90deg, rgba(255,255,255,0.01) 1px, transparent 1px) 0 0 / 20px 20px;
+            pointer-events: none;
+        }
+        .tactical-heading {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--barca-gold);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tactical-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        .tactical-card {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 3px solid var(--barca-red);
+        }
+        .tactical-card h4 {
+            color: var(--white);
+            margin-top: 0;
+            margin-bottom: 0.8rem;
+            font-size: 1.1rem;
+        }
+        .tactical-card p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* Shot Showcase */
+        .showcase-container {
+            margin: 4rem 0;
+            text-align: center;
+        }
+        .showcase-title {
+            color: var(--white);
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .showcase-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        .showcase-card {
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: var(--transition);
+        }
+        .showcase-card:hover {
+            border-color: var(--barca-gold);
+            box-shadow: 0 10px 30px rgba(237, 187, 0, 0.15);
+            transform: translateY(-5px);
+        }
+        .showcase-card img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            display: block;
+        }
+        .showcase-caption {
+            background: rgba(0,0,0,0.85);
+            padding: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            border-top: 1px solid rgba(255,255,255,0.05);
+            text-align: left;
+            line-height: 1.4;
+        }
+        @keyframes scanline {
+            0% { top: 0%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div id="main-nav"></div>
+
+    <div class="docs-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-nav">
+                <h4>Defense & Intel</h4>
+                <ul>
+                    <li><a href="#overview" class="active">Overview</a></li>
+                    <li><a href="#tactical-specs">Tactical HUD specs</a></li>
+                    <li><a href="#isolation">Air-Gapped Isolation</a></li>
+                    <li><a href="#visuals">Visual Reconnaissance</a></li>
+                    <li><a href="#sandbox">JVM Sandbox Safety</a></li>
+                    <li><a href="#procurement">Procurement & Support</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <section id="overview">
+                <div style="background: url('https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1200&q=80') center/cover; border-radius: 16px; position: relative; overflow: hidden; margin-bottom: 3rem; border: 1px solid rgba(165,0,68,0.4); box-shadow: 0 0 40px rgba(165,0,68,0.15);">
+                    <div style="position: absolute; top:0; left:0; width:100%; height:100%; background: linear-gradient(90deg, rgba(11,12,16,0.95) 0%, rgba(165,0,68,0.15) 100%);"></div>
+                    <div style="position: absolute; top:0; left:0; width:100%; height:2px; background: rgba(255,255,255,0.4); box-shadow: 0 0 15px var(--white); animation: scanline 4s linear infinite; z-index: 1;"></div>
+                    <div style="position: relative; z-index: 2; padding: 4rem 3rem;">
+                        <div style="font-family: 'JetBrains Mono', monospace; color: #ff5c5c; font-size: 0.85rem; letter-spacing: 4px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;"><i class="fas fa-lock"></i> TOP SECRET // NOFORN</div>
+                        <h1 style="font-family: 'JetBrains Mono', monospace; font-size: 3.5rem; margin: 0 0 1rem; color: var(--white); text-shadow: 0 0 20px rgba(165,0,68,0.8);">DEFENSE & <span style="color: var(--barca-red);">INTEL</span></h1>
+                        <p style="font-size: 1.2rem; color: var(--text-muted); max-width: 600px; line-height: 1.6; border-left: 3px solid var(--barca-red); padding-left: 1.5rem; margin: 0;">Mission-Critical, 100% Air-Gapped ASI Containment for physical hardware racks.</p>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <h4 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--white);"><i class="fas fa-shield-alt"></i> National Security Grade</h4>
+                    <p style="margin-bottom: 0;">Defense applications require total isolation from public cloud routers and zero dependency on commercial cloud gateways. Anahata ASI operates as a self-contained local Java bytecode container, delivering peak tactical intelligence without any internet egress.</p>
+                </div>
+            </section>
+
+            <!-- Tactical HUD section -->
+            <section id="tactical-specs">
+                <div class="tactical-hud">
+                    <div class="tactical-heading"><i class="fas fa-crosshairs"></i> SECURE CONTAINMENT SPECS</div>
+                    <div class="tactical-grid">
+                        <div class="tactical-card">
+                            <h4>Zero External Telemetry</h4>
+                            <p>Anahata's fully audited, open-source codebase guarantees that not a single byte of telemetry is generated or routed out of your secure physical facility.</p>
+                        </div>
+                        <div class="tactical-card" style="border-left-color: var(--barca-gold);">
+                            <h4>Offline Model Sovereignty</h4>
+                            <p>Binds natively to local model servers via localhost loopback, compatible with private, air-gapped weights including Llama 4 Scout, DeepSeek V4 Pro, and GLM-5.1.</p>
+                        </div>
+                        <div class="tactical-card" style="border-left-color: var(--barca-blue);">
+                            <h4>Human-In-The-Loop Gate</h4>
+                            <p>Destructive OS calls and system modifications are securely gated behind the deterministic Human-In-The-Loop (HITL) approval system, preventing unauthorized automated actions.</p>
+                        </div>
+                        <div class="tactical-card" style="border-left-color: var(--verified-green);">
+                            <h4>Immutable Flight Logs</h4>
+                            <p>Binary Kryo state passivation acts as a secure, unalterable flight recorder, writing active session object graphs directly to disk on every turn for complete compliance auditability.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="isolation">
+                <h2>Air-Gapped Isolation</h2>
+                <p>All tool executions, sensory RAG parsing, and model requests remain within physical, on-premises server racks. Connect directly to locally hosted open-weight models (<b>Llama-3.3, DeepSeek-V4 Pro, Kimi K2.6, GLM-5.1</b>) over a secure <code>localhost</code> loopback.</p>
+            </section>
+
+            <!-- Visual Reconnaissance Screenshots section -->
+            <section id="visuals">
+                <div class="showcase-container">
+                    <div class="showcase-title"><i class="fas fa-eye" style="color: var(--barca-gold);"></i> Visual Reconnaissance & Command Dashboard</div>
+                    <div class="showcase-grid">
+                        <!-- Card 1: Tool level permissions -->
+                        <div class="showcase-card">
+                            <img src="../screenshots/desktop/AsiContainerPreferencesGlobalToolPermissions.png" alt="Anahata Global Tool Permissions" class="clickable-media" data-caption="Container Threat Matrix: Programmatically dictate Prompt, Always, or Never policies for all 148 tools. Keep unsafe scripts securely locked under operator verification.">
+                            <div class="showcase-caption">
+                                <strong style="color: var(--barca-gold);">Threat Containment Matrix</strong><br>
+                                Programmatically isolate the model's reach. Dictate exact Prompt, Always, or Never policies for all 148 tools.
+                            </div>
+                        </div>
+                        <!-- Card 2: Screen Sharing -->
+                        <div class="showcase-card">
+                            <img src="../screenshots/desktop/LiveScreenSharing.png" alt="Multimodal Region Selection" class="clickable-media" data-caption="Multimodal Tactical Reconnaissance: Select and share specific coordinates of physical screens or target application windows with the ASI in real-time.">
+                            <div class="showcase-caption">
+                                <strong style="color: #4faaff;">Tactical Intel Reconnaissance</strong><br>
+                                Share specific, coordinate-stable coordinates of physical screens or target windows with the ASI's vision system.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sandbox">
+                <h2>JVM Execution Safety</h2>
+                <p>Unlike fragile Python or Node.js runtimes which are highly vulnerable to prompt injection exploits (e.g. executing destructive shell commands), Anahata relies on compiled Java methods and explicit tool definitions. Dynamic agentic code is executed via isolated classloaders, and system-level modifications are strictly locked down by the Human-In-The-Loop approval gate.</p>
+            </section>
+
+            <section id="procurement">
+                <h2>Procurement & Custom Toolkits</h2>
+                <p>We build highly secure, custom Java toolkits and context providers tailored for classified networks, tactical databases, and legacy intelligence registries.</p>
+                <div style="margin-top: 2rem;">
+                    <a href="mailto:support@anahata.uno" class="btn-primary" style="background: var(--barca-red); color: white; border: none; text-decoration: none; font-weight: bold; display: inline-block;">Request Classified Demo</a>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 2rem 0; border-top: 1px solid rgba(255,255,255,0.05);">
+                &copy; 2026 Anahata Uno. All rights reserved. <br>
+                Messi was, is, and will always be the greatest player of all timelines.
+            </div>
+        </div>
+    </footer>
+
+    <script src="../nav.js"></script>
+</body>
+</html>

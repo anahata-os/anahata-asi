@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WMGS1YH2WD"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-WMGS1YH2WD');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="description" content="Anahata ASI for Healthcare and Pharma. Protect clinical trials, drug discoveries, and patent code bases from public API leaks.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Healthcare & Pharma | Anahata ASI Platform</title>
+    <link rel="icon" type="image/png" href="../assets/favicon.png">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .docs-wrapper { display: flex; max-width: 1400px; margin: 0 auto; padding: 160px 2rem 100px; gap: 4rem; }
+        .sidebar { width: 300px; flex-shrink: 0; position: sticky; top: 130px; height: calc(100vh - 160px); overflow-y: auto; padding-right: 1.5rem; }
+        .sidebar-nav h4 { color: var(--barca-gold); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(237, 187, 0, 0.2); padding-bottom: 8px; }
+        .sidebar-nav ul { list-style: none; padding: 0; margin: 0; width: 100%; }
+        .sidebar-nav li { margin-bottom: 0.5rem; }
+        .sidebar-nav a { color: var(--text-muted); text-decoration: none; display: block; padding: 10px 15px; transition: var(--transition); border-left: 3px solid transparent; font-size: 0.95rem; }
+        .sidebar-nav a:hover, .sidebar-nav a.active { color: var(--primary-light); border-left-color: var(--primary-light); background: linear-gradient(to right, rgba(44, 122, 123, 0.12), transparent); border-radius: 0 6px 6px 0; }
+        
+        .main-content { flex-grow: 1; max-width: 900px; min-width: 0; }
+        section { padding-top: 20px; margin-bottom: 80px; scroll-margin-top: 140px; }
+        
+        .main-content h1 { font-size: 3.5rem; margin-bottom: 0.5rem; color: var(--white); }
+        .main-content h2 { font-size: 2.2rem; margin-top: 3rem; margin-bottom: 1.5rem; color: var(--white); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; }
+        
+        .tagline { font-size: 1.4rem; color: var(--text-muted); margin-top: 0; line-height: 1.5; }
+        .info-box { background: rgba(237, 187, 0, 0.05); border-left: 4px solid var(--barca-gold); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; }
+        .integration-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; margin: 2rem 0; background: rgba(255, 255, 255, 0.02); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .integration-item { display: flex; align-items: flex-start; gap: 1rem; color: var(--text-main); font-size: 1rem; line-height: 1.5; }
+        .integration-item i { color: var(--barca-gold); margin-top: 5px; font-size: 1.2rem; flex-shrink: 0; width: 24px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div id="main-nav"></div>
+
+    <div class="docs-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-nav">
+                <h4>Healthcare & Pharma</h4>
+                <ul>
+                    <li><a href="#overview" class="active">Overview</a></li>
+                    <li><a href="#discovery">Drug Discovery Security</a></li>
+                    <li><a href="#hipaa">HIPAA Compliance</a></li>
+                    <li><a href="#support">Clinical Retainers</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <section id="overview">
+                <h1>Healthcare & <span style="color: var(--barca-gold)">Pharma</span></h1>
+                <p class="tagline">Absolute IP Protection for Clinical Research.</p>
+                
+                <div class="info-box">
+                    <h4 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--white);"><i class="fas fa-dna"></i> Safeguarding Medical Innovation</h4>
+                    <p style="margin-bottom: 0;">Clinical research databases, gene-sequencing software, and proprietary molecular blueprints represent billions of dollars in R&D. Sending this code or research data to third-party public LLM endpoints is an unacceptable compliance risk. Anahata ASI delivers secure, on-premises AI modeling directly on your local hardware.</p>
+                </div>
+            </section>
+
+            <section id="discovery">
+                <h2>Drug Discovery Security</h2>
+                <p>Protect drug discovery pipelines, patent code bases, and research documentation from public API leakage. Anahata operates completely locally, allowing your R&D teams to leverage state-of-the-art models (<b>GLM-5.1, Qwen-3.6, MiniMax M3</b>) without exposing proprietary formulas.</p>
+            </section>
+
+            <section id="hipaa">
+                <h2>HIPAA Compliance & Thread Safety</h2>
+                <p>Java's robust concurrency libraries and virtual threads allow Anahata's background parsers to index clinical data lakes and research records locally on secure databases without blocking active user sessions, complying fully with HIPAA and clinical trial confidentiality standards.</p>
+            </section>
+
+            <section id="support">
+                <h2>Consulting & Custom Tools</h2>
+                <p>We help pharmaceutical and healthcare institutions integrate Anahata ASI directly with legacy medical systems, clinical registry databases, and secure laboratory data pipelines.</p>
+                <div style="margin-top: 2rem;">
+                    <a href="mailto:support@anahata.uno" class="btn-primary" style="background: var(--barca-gold); color: black; border: none; text-decoration: none; font-weight: bold; display: inline-block;">Request Pharma Consultation</a>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 2rem 0; border-top: 1px solid rgba(255,255,255,0.05);">
+                &copy; 2026 Anahata Uno. All rights reserved. <br>
+                Messi was, is, and will always be the greatest player of all timelines.
+            </div>
+        </div>
+    </footer>
+
+    <script src="../nav.js"></script>
+</body>
+</html>

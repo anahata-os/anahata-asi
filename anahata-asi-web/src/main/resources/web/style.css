@@ -54,6 +54,13 @@ body {
 }
 
 /* Dropdown Menu Styles */
+.menu-toggle {
+    display: none;
+    cursor: pointer;
+    color: var(--white);
+    font-size: 1.5rem;
+}
+
 .dropdown {
     position: relative;
     display: inline-block;
@@ -577,4 +584,5 @@ footer {
     .sidebar { width: 100%; height: auto; position: relative; top: 0; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 3rem; }
     .footer-grid { grid-template-columns: 1fr; }
     .barca-flex { flex-direction: column; text-align: center; }
+    .menu-toggle { display: block; }
 }
