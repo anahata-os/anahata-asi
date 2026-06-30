@@ -93,6 +93,7 @@
         <module>anahata-asi-modal</module>
         <module>anahata-asi-minimax</module>
         <module>anahata-asi-anthropic</module>
+        <module>anahata-asi-intellij</module>
     </modules>
 
     <properties>

@@ -1,0 +1,18 @@
+<idea-plugin>
+    <id>uno.anahata.asi.intellij</id>
+    <name>Anahata ASI</name>
+    <vendor email="anahata@anahata.uno" url="https://anahata.uno">Anahata</vendor>
+
+    <description><![CDATA[
+      Anahata ASI integration for IntelliJ IDEA.<br>
+      Brings the power of Anahata's Artificial Super Intelligence directly into your IDE.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow id="Anahata ASI" secondary="true" icon="AllIcons.General.Web" anchor="right"
+                    factoryClass="uno.anahata.asi.intellij.AnahataToolWindowFactory"/>
+    </extensions>
+</idea-plugin>
