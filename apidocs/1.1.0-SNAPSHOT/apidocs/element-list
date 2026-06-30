@@ -25,6 +25,10 @@ uno.anahata.asi.gemini.adapter
 uno.anahata.asi.gemini.schema
 uno.anahata.asi.gemini.tokenizer
 uno.anahata.asi.huggingface
+uno.anahata.asi.intellij
+uno.anahata.asi.intellij.tools.java
+uno.anahata.asi.intellij.tools.project
+uno.anahata.asi.intellij.tools.project.context
 uno.anahata.asi.internal
 uno.anahata.asi.minimax
 uno.anahata.asi.modal
