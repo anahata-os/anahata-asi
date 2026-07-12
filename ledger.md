@@ -3,8 +3,8 @@
 ## 📈 Distribution Funnel
 | Channel | Version | Status | Downloads (Est) | Strategy |
 | :--- | :--- | :--- | :--- | :--- |
-| **NB Plugin Portal (V1)** | 30.0.1 | Stable | 3,825 | Brand Awareness / Discovery |
-| **NB Plugin Portal (V2)** | 1.0.0 | Stable | 360 | The Singularity / JASI Container |
+| **NB Plugin Portal (V1)** | 30.0.1 | Stable | 4,067 | Brand Awareness / Discovery |
+| **NB Plugin Portal (V2)** | 1.0.0 | Stable | 573 | The Singularity / JASI Container |
 | **Maven Central** | 30.0.1 | Stable | Unknown | Developer SDK Adoption |
 | **GitHub Releases** | 1.1.0-SN | Beta | Unknown | Direct Binary Distribution |
 
@@ -72,6 +72,12 @@
 ## 🛠️ Milestone Log
 | Date | Milestone | Token ROI | Impact |
 | :--- | :--- | :--- | :--- |
+| 2026-07-12 16:24 | Portal Scrape: V1=4,067, V2=573 | High | V1: +16 (0.52 DLs/hr), V2: +15 (0.49 DLs/hr) in 30.6 hours (Combined: 1.01 DLs/hr!) |
+| 2026-07-11 09:51 | Portal Scrape: V1=4,051, V2=558 | High | V1: +124 (0.77 DLs/hr), V2: +84 (0.52 DLs/hr) in 161.4 hours (Combined: 1.29 DLs/hr!) |
+| 2026-07-04 16:26 | Portal Scrape: V1=3,927, V2=474 | High | V1: +28 (0.59 DLs/hr), V2: +22 (0.46 DLs/hr) in 47.6 hours (Combined: 1.05 DLs/hr!) |
+| 2026-07-02 16:49 | Portal Scrape: V1=3,899, V2=452 | High | V1: +11 (0.55 DLs/hr), V2: +13 (0.65 DLs/hr) in 20.1 hours (Combined: 1.20 DLs/hr!) |
+| 2026-07-01 20:44 | Portal Scrape: V1=3,888, V2=439 | High | V1: +28 (0.95 DLs/hr), V2: +28 (0.95 DLs/hr) in 29.5 hours (Combined: 1.90 DLs/hr!) |
+| 2026-06-30 15:17 | Portal Scrape: V1=3,860, V2=411 | High | V1: +35 (0.72 DLs/hr), V2: +51 (1.05 DLs/hr) in 48.8 hours (Combined: 1.76 DLs/hr!) |
 | 2026-06-28 14:32 | Portal Scrape: V1=3,825, V2=360 | High | V1: +69 (2.44 DLs/hr), V2: +14 (0.49 DLs/hr) in 28.3 hours (Combined: 2.93 DLs/hr!) |
 | 2026-06-27 10:14 | Portal Scrape: V1=3,756, V2=346 | High | V1: +42 (3.77 DLs/hr), V2: +10 (0.90 DLs/hr) in 11.1 hours (Combined: 4.67 DLs/hr!) |
 | 2026-06-26 23:06 | Portal Scrape: V1=3,714, V2=336 | High | V1: +23 (0.67 DLs/hr), V2: +23 (0.67 DLs/hr) in 34.3 hours (Combined: 1.34 DLs/hr!) |
