@@ -24,6 +24,7 @@ import javax.swing.JList;
 import javax.swing.Icon;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.UIManager;
 import javax.swing.JTabbedPane;
 import javax.swing.JScrollPane;
 import javax.swing.ListCellRenderer;
@@ -363,7 +364,9 @@ public class AsiContainerPreferencesPanel extends ScrollablePanel {
         });
         panel.add(modelDropdown, "wrap");
 
-        panel.add(new JLabel("<html><font color='#707070'><i>These settings define which model is selected by default when you create a brand-new session.</i></font></html>"), "gapleft 20, span, wrap");
+        JLabel infoLabel = new JLabel("<html><i>These settings define which model is selected by default when you create a brand-new session.</i></html>");
+        infoLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
+        panel.add(infoLabel, "gapleft 20, span, wrap");
 
         return panel;
     }
@@ -632,9 +635,9 @@ public class AsiContainerPreferencesPanel extends ScrollablePanel {
 
             nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD, 12f));
             fqnLabel.setFont(fqnLabel.getFont().deriveFont(Font.ITALIC, 11f));
-            fqnLabel.setForeground(new Color(70, 70, 70));
+            fqnLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
             descLabel.setFont(descLabel.getFont().deriveFont(11f));
-            descLabel.setForeground(new Color(110, 110, 110));
+            descLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
 
             GridBagConstraints gbc = new GridBagConstraints();
 
@@ -701,8 +704,8 @@ public class AsiContainerPreferencesPanel extends ScrollablePanel {
                 setBackground(list.getBackground());
                 setForeground(list.getForeground());
                 nameLabel.setForeground(list.getForeground());
-                fqnLabel.setForeground(new Color(70, 70, 70));
-                descLabel.setForeground(new Color(110, 110, 110));
+                fqnLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
+                descLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
             }
 
             if (value != null) {

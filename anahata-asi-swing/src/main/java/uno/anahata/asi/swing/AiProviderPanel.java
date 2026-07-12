@@ -37,6 +37,7 @@ import uno.anahata.asi.agi.provider.TokenizerType;
 import uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider;
 import javax.swing.Icon;
 import javax.swing.JFileChooser;
+import javax.swing.UIManager;
 import javax.swing.JTabbedPane;
 import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.anthropic.AnthropicProvider;
@@ -173,13 +174,13 @@ public class AiProviderPanel extends ScrollablePanel {
         this.textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 13));
         PromptSupport.setPrompt(provider.getApiKeyHint(), textArea);
         PromptSupport.setFocusBehavior(PromptSupport.FocusBehavior.HIDE_PROMPT, textArea);
-        PromptSupport.setForeground(Color.GRAY, textArea);
+        PromptSupport.setForeground(UIManager.getColor("Label.disabledForeground"), textArea);
         setLayout(new MigLayout("fillx, insets 10", "[right]10[grow,fill]5[]"));
 
         JButton removeBtn = new JButton(new DeleteIcon(16));
         removeBtn.setToolTipText("Remove Provider");
         removeBtn.addActionListener(e -> removeCallback.run());
-        
+
         JPanel headerLeft = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         headerLeft.setOpaque(false);
         Icon providerIcon = IconUtils.getIcon("aiproviders/" + provider.getClass().getName() + ".png", 32, 32);
@@ -204,6 +205,7 @@ public class AiProviderPanel extends ScrollablePanel {
 
         add(new JLabel("Enabled:"));
         enabledCheck = new JCheckBox("", provider.isEnabled());
+        enabledCheck.setOpaque(false);
         add(enabledCheck, "span 2, wrap, gapbottom 10");
 
         add(new JLabel("Display Name:"));
@@ -259,7 +261,7 @@ public class AiProviderPanel extends ScrollablePanel {
 
         // --- Allowed Models ---
         add(new JLabel("Allowed Models:"), "top, gaptop 5");
-        
+
         JButton fillModelsBtn = new JButton("Fetch Models", new PulseIcon(12));
         fillModelsBtn.setToolTipText("Fetch available models from provider and populate this list.");
         fillModelsBtn.addActionListener(e -> {
@@ -279,13 +281,12 @@ public class AiProviderPanel extends ScrollablePanel {
                 JOptionPane.showMessageDialog(this, "Pre-fetch sync failed: " + ex.getMessage());
             }
         });
-        
+
         allowedModelsArea.setRows(5);
         allowedModelsArea.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
         JScrollPane allowedScroll = new JScrollPane(allowedModelsArea);
-        allowedScroll.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
         add(allowedScroll, "span 2, growx, wrap");
-        
+
         JPanel fetchBtnContainer = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         fetchBtnContainer.setOpaque(false);
         fetchBtnContainer.add(fillModelsBtn);
@@ -296,7 +297,6 @@ public class AiProviderPanel extends ScrollablePanel {
         apiKeyRequiredCheck.setOpaque(false);
         apiKeyRequiredCheck.addActionListener(e -> {
             textArea.setEnabled(apiKeyRequiredCheck.isSelected());
-            textArea.setBackground(apiKeyRequiredCheck.isSelected() ? Color.WHITE : new Color(245, 245, 245));
         });
         add(apiKeyRequiredCheck, "span 2, wrap");
 
@@ -341,7 +341,6 @@ public class AiProviderPanel extends ScrollablePanel {
             }
             PromptSupport.setPrompt("Header-Name: Header-Value\nOne per line...", customHeadersArea);
             JScrollPane headersScroll = new JScrollPane(customHeadersArea);
-            headersScroll.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
             add(headersScroll, "span 2, growx, wrap");
 
             add(new JLabel("Prefer HTTP/1.1:"), "gaptop 5");
@@ -355,10 +354,11 @@ public class AiProviderPanel extends ScrollablePanel {
         add(new JLabel("API Key Pool:"), "top, gaptop 10");
         JPanel keysContainer = new JPanel(new MigLayout("ins 0, fill", "[grow,fill]", "[][][grow,fill]"));
         keysContainer.setOpaque(false);
-        
+
         JPanel keysHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         keysHeader.setOpaque(false);
-        JLabel tipLabel = new JLabel("<html><font color='#707070'><i><b>Pro Tip:</b> Add multiple keys (one per line) for Round-Robin rotation.</i></font></html>");
+        JLabel tipLabel = new JLabel("<html><i><b>Pro Tip:</b> Add multiple keys (one per line) for Round-Robin rotation.</i></html>");
+        tipLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
         keysHeader.add(tipLabel);
         keysContainer.add(keysHeader, "wrap");
 
@@ -370,9 +370,8 @@ public class AiProviderPanel extends ScrollablePanel {
         textArea.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(textArea, e));
         textArea.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
         JScrollPane textScroll = new JScrollPane(textArea);
-        textScroll.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
         keysContainer.add(textScroll, "grow, wrap");
-        
+
         add(keysContainer, "span 2, grow, wrap");
 
         testConnectionBtn = new JButton("Test Connection (Discover Models)", new PulseIcon(16));
@@ -381,7 +380,6 @@ public class AiProviderPanel extends ScrollablePanel {
 
         // Initial state sync
         textArea.setEnabled(provider.isApiKeyRequired());
-        textArea.setBackground(provider.isApiKeyRequired() ? Color.WHITE : new Color(245, 245, 245));
         loadKeys();
     }
 

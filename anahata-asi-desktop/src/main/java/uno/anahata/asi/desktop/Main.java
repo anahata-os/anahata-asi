@@ -1,9 +1,9 @@
 package uno.anahata.asi.desktop;
 
 import uno.anahata.asi.desktop.swing.AsiDesktopMainPanel;
-import com.formdev.flatlaf.FlatLightLaf;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.util.prefs.Preferences;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -45,19 +45,20 @@ public class Main {
         log.info("Starting Anahata AI Standalone UI...");
 
         try {
-            UIManager.setLookAndFeel(new FlatLightLaf());
+            String lafClassName = Preferences.userNodeForPackage(Main.class).get("laf", "com.formdev.flatlaf.FlatDarkLaf");
+            UIManager.setLookAndFeel(lafClassName);
         } catch (Exception e) {
-            log.error("Failed to initialize FlatLaf", e);
+            log.error("Failed to initialize Look and Feel", e);
         }
 
         // Core application setup
         AsiDesktopAsiContainer container = new AsiDesktopAsiContainer();
-        
+
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Anahata ASI");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setPreferredSize(new Dimension(1200, 900));
-            
+
             try {
                 // Provide multiple icon sizes for better OS integration
                 frame.setIconImages(IconUtils.getLogoImages());
@@ -72,7 +73,7 @@ public class Main {
             frame.pack();
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
-            
+
             // Start the panel after the frame is visible to ensure listeners are active
             mainPanel.start();
         });

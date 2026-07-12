@@ -28,6 +28,7 @@ This project uses a set of key documents to guide development. For detailed info
 > **Simplicity and Stability**
 > The absolute priority for all development is **Simplicity and Stability** (or Stability through Simplicity). These principles rule above all others. 
 
+- **DRY Principle (Don't Repeat Yourself)**: Avoid duplicating logic across classes. Extract shared behaviors (like Swing UI updates, event listeners, or domain state checks) into common base classes or utility methods.
 - **Domain Driven Architecture (DDA)**: The entire multimodule project is based on DDA. Business logic and state transitions must reside in the domain model entities. Anything UI agnositc should be in `anahata-asi-core`. UI components of core in `anahata-asi-swing`.
 - **Architectural Integrity**: We do not implement "dirty hacks" or workarounds to mask architectural flaws. If a design is broken, we fix the design.
 - **JDK 25 Standard**: All modules are built and documented using **JDK 25**.

@@ -28,6 +28,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jdesktop.swingx.JXPanel;
 import org.jdesktop.swingx.JXTitledPanel;
+import uno.anahata.asi.swing.components.CollapsibleTitledPanel;
 import org.jdesktop.swingx.painter.MattePainter;
 import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.internal.TimeUtils;
@@ -56,7 +57,7 @@ import uno.anahata.asi.swing.internal.SwingUtils;
  */
 @Slf4j
 @Getter
-public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitledPanel {
+public abstract class AbstractPartPanel<T extends AbstractPart> extends CollapsibleTitledPanel {
 
     /** The parent agi panel. */
     protected final AgiPanel agiPanel;
@@ -174,17 +175,7 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
 
         setBorder(BorderFactory.createLineBorder(theme.getPartBorder(), 1, true));
 
-        // 4. Expand/Collapse Logic on Header Click
-        if (getComponentCount() > 0) {
-            Component header = getComponent(0);
-            header.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            header.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    toggleExpanded();
-                }
-            });
-        }
+        // 4. Expand/Collapse Logic on Header Click is now handled by CollapsibleTitledPanel
 
         // Declarative, thread-safe binding to all part properties
         new EdtPropertyChangeListener(this, part, null, evt -> render());
@@ -201,9 +192,11 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends JXTitled
     }
 
     /**
-     * Toggles the visibility of the content container.
+     * {@inheritDoc}
+     * <p>Toggles the expanded state of the part.</p>
      */
-    private void toggleExpanded() {
+    @Override
+    protected void toggleExpanded() {
         part.setExpanded(!part.isExpanded());
         // The property change listener will trigger render()
     }

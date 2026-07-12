@@ -5,16 +5,24 @@ package uno.anahata.asi.desktop.swing;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.FlowLayout;
+import java.awt.Window;
 import java.beans.PropertyChangeEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.prefs.Preferences;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.desktop.Main;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.AsiCardsContainerPanel;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
@@ -49,14 +57,51 @@ public class AsiDesktopMainPanel extends JPanel {
         this.asiContainer = container;
         // Register this panel as the UI display for the container
         container.setMainPanel(this);
-        
+
         setLayout(new BorderLayout());
+
+        // --- Theme Selector Toolbar ---
+        JPanel topBar = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        topBar.add(new JLabel("Theme:"));
+        JComboBox<LafItem> lafCombo = new JComboBox<>();
+        lafCombo.addItem(new LafItem("Flat Dark", "com.formdev.flatlaf.FlatDarkLaf"));
+        lafCombo.addItem(new LafItem("Flat Light", "com.formdev.flatlaf.FlatLightLaf"));
+        lafCombo.addItem(new LafItem("Flat Darcula", "com.formdev.flatlaf.FlatDarculaLaf"));
+        lafCombo.addItem(new LafItem("Flat IntelliJ", "com.formdev.flatlaf.FlatIntelliJLaf"));
+        for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+            lafCombo.addItem(new LafItem(info.getName(), info.getClassName()));
+        }
+
+        String currentLaf = Preferences.userNodeForPackage(Main.class).get("laf", "com.formdev.flatlaf.FlatDarkLaf");
+        for (int i = 0; i < lafCombo.getItemCount(); i++) {
+            if (lafCombo.getItemAt(i).className().equals(currentLaf)) {
+                lafCombo.setSelectedIndex(i);
+                break;
+            }
+        }
+
+        lafCombo.addActionListener(e -> {
+            LafItem item = (LafItem) lafCombo.getSelectedItem();
+            if (item != null) {
+                try {
+                    UIManager.setLookAndFeel(item.className());
+                    Preferences.userNodeForPackage(Main.class).put("laf", item.className());
+                    for (Window window : Window.getWindows()) {
+                        SwingUtilities.updateComponentTreeUI(window);
+                    }
+                } catch (Exception ex) {
+                    log.error("Failed to set LaF", ex);
+                }
+            }
+        });
+        topBar.add(lafCombo);
+        add(topBar, BorderLayout.NORTH);
 
         asiContainerPanel = new AsiCardsContainerPanel(container);
 
         tabbedPane = new JTabbedPane();
         tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
-        
+
         // Enable closable tabs via FlatLaf properties
         tabbedPane.putClientProperty("JTabbedPane.tabClosable", true);
         tabbedPane.putClientProperty("JTabbedPane.tabCloseCallback", (BiConsumer<JTabbedPane, Integer>) (tabPane, tabIndex) -> {
@@ -70,7 +115,7 @@ public class AsiDesktopMainPanel extends JPanel {
         splitPane.setDividerLocation(300);
         splitPane.setOneTouchExpandable(true);
         add(splitPane, BorderLayout.CENTER);
-        
+
         this.asiListener = new EdtPropertyChangeListener(this, container, "activeAgis", this::handleAsiChange);
     }
 
@@ -194,6 +239,13 @@ public class AsiDesktopMainPanel extends JPanel {
                     asiContainer.close(agi);
                 }
             }
+        }
+    }
+
+    private record LafItem(String name, String className) {
+        @Override
+        public String toString() {
+            return name;
         }
     }
 }

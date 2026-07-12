@@ -28,6 +28,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jdesktop.swingx.JXPanel;
 import org.jdesktop.swingx.JXTitledPanel;
+import uno.anahata.asi.swing.components.CollapsibleTitledPanel;
 import org.jdesktop.swingx.painter.MattePainter;
 import uno.anahata.asi.internal.TimeUtils;
 import uno.anahata.asi.agi.message.AbstractMessage;
@@ -52,7 +53,7 @@ import uno.anahata.asi.swing.internal.SwingUtils;
  * @param <T> The concrete type of AbstractMessage that this panel renders.
  */
 @Slf4j
-public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JXTitledPanel {
+public abstract class AbstractMessagePanel<T extends AbstractMessage> extends CollapsibleTitledPanel {
 
     /** The parent agi panel. */
     protected final AgiPanel agiPanel;
@@ -163,17 +164,7 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
                 getMessageBorder()
         ));
 
-        // 4. Expand/Collapse Logic on Header Click
-        if (getComponentCount() > 0) {
-            Component header = getComponent(0);
-            header.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            getComponent(0).addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    toggleExpanded();
-                }
-            });
-        }
+        // 4. Expand/Collapse Logic on Header Click is now handled by CollapsibleTitledPanel
 
         // Declarative, thread-safe binding to message properties
         new EdtPropertyChangeListener(this, message, "pruned", evt -> render());
@@ -183,9 +174,11 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends JX
     }
 
     /**
-     * Toggles the visibility of the content container.
+     * {@inheritDoc}
+     * <p>Toggles the visibility of the content container for this message.</p>
      */
-    private void toggleExpanded() {
+    @Override
+    protected void toggleExpanded() {
         getContentContainer().setVisible(!getContentContainer().isVisible());
         revalidate();
         repaint();
