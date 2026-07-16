@@ -185,6 +185,22 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends Co
     }
 
     /**
+     * {@inheritDoc}
+     * <p>Overridden to dynamically update background colors and gradients when the Look and Feel changes.</p>
+     */
+    @Override
+    public void updateUI() {
+        super.updateUI();
+        if (agiConfig != null) {
+            updateBackgroundColors();
+            setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createEmptyBorder(5, 0, 5, 0),
+                    getMessageBorder()
+            ));
+        }
+    }
+
+    /**
      * Called when the component is added to its parent. Performs the initial render.
      */
     @Override
@@ -233,15 +249,17 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends Co
      */
     protected void updateBackgroundColors() {
         boolean isEffectivelyPruned = message.isEffectivelyPruned();
-        Color start = getHeaderStartColor();
-        Color end = getHeaderEndColor();
+        Color start;
+        Color end;
         
         if (isEffectivelyPruned) {
             // Distinct 'Ghosted' style for pruned messages
-            start = new Color(235, 235, 235);
-            end = new Color(242, 242, 242);
-            setTitleForeground(new Color(120, 120, 120));
+            start = agiConfig.getTheme().getPrunedHeaderStartBg();
+            end = agiConfig.getTheme().getPrunedHeaderEndBg();
+            setTitleForeground(agiConfig.getTheme().getPrunedHeaderFg());
         } else {
+            start = getHeaderStartColor();
+            end = getHeaderEndColor();
             setTitleForeground(getHeaderForegroundColor());
         }
         

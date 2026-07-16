@@ -199,6 +199,20 @@ public class TextPartPanel extends AbstractPartPanel<TextPart> {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>Overridden to propagate Look and Feel updates to all active text segment renderers.</p>
+     */
+    @Override
+    public void updateUI() {
+        super.updateUI();
+        if (cachedSegmentRenderers != null) {
+            for (AbstractTextSegmentRenderer renderer : cachedSegmentRenderers) {
+                renderer.updateTheme();
+            }
+        }
+    }
+
+    /**
      * Rebuilds the full markdown string from all current segment renderers 
      * and updates the underlying {@link TextPart} model.
      */

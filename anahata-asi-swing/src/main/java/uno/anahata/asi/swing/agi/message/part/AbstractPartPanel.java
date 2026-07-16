@@ -173,7 +173,10 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends Collapsi
         this.footerContainer.setOpaque(false);
         mainContainer.add(this.footerContainer, BorderLayout.SOUTH);
 
-        setBorder(BorderFactory.createLineBorder(theme.getPartBorder(), 1, true));
+        setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createEmptyBorder(0, 0, 6, 0),
+                BorderFactory.createLineBorder(theme.getPartBorder(), 1, true)
+        ));
 
         // 4. Expand/Collapse Logic on Header Click is now handled by CollapsibleTitledPanel
 
@@ -199,6 +202,22 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends Collapsi
     protected void toggleExpanded() {
         part.setExpanded(!part.isExpanded());
         // The property change listener will trigger render()
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>Overridden to dynamically update background colors and gradients when the Look and Feel changes.</p>
+     */
+    @Override
+    public void updateUI() {
+        super.updateUI();
+        if (agiConfig != null) {
+            updateBackgroundColors();
+            setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createEmptyBorder(0, 0, 6, 0),
+                    BorderFactory.createLineBorder(agiConfig.getTheme().getPartBorder(), 1, true)
+            ));
+        }
     }
 
     /**
@@ -246,11 +265,11 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends Collapsi
         Color startColor;
         Color contentBg;
         if (isEffectivelyPruned) {
-            startColor = new Color(230, 230, 230, 150);
-            contentBg = new Color(240, 240, 240);
+            startColor = agiConfig.getTheme().getPrunedPartHeaderStartBg();
+            contentBg = agiConfig.getTheme().getPrunedPartContentBg();
         } else {
-            startColor = new Color(248, 248, 248, 80);
-            contentBg = new Color(0, 0, 0, 0); // Transparent
+            startColor = agiConfig.getTheme().getPartHeaderStartBg();
+            contentBg = agiConfig.getTheme().getPartContentBg();
         }
         
         MattePainter mp = new MattePainter(new GradientPaint(0, 0, startColor, 1, 0, new Color(0,0,0,0)), true);

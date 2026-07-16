@@ -61,6 +61,6 @@ public class UserMessagePanel extends AbstractMessagePanel<UserMessage> {
      */
     @Override
     protected Border getMessageBorder() {
-        return BorderFactory.createLineBorder(agiConfig.getTheme().getUserBorder(), 2, true);
+        return BorderFactory.createLineBorder(agiConfig.getTheme().getUserBorder(), 1, true);
     }
 }

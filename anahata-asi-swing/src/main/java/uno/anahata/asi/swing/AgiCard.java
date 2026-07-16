@@ -28,6 +28,7 @@ import uno.anahata.asi.swing.icons.CancelIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.SearchIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
+import javax.swing.UIManager;
 
 /**
  * A "sticky note" style card representing an active AI session.
@@ -76,7 +77,7 @@ public class AgiCard extends JPanel {
     @Getter private boolean selected = false;
     
     /** The UI theme derived from the agi's configuration. */
-    private final SwingAgiConfig.UITheme theme;
+    private SwingAgiConfig.UITheme theme;
 
     /**
      * Constructs a new AgiCard for the given agi session.
@@ -133,7 +134,7 @@ public class AgiCard extends JPanel {
 
         summaryArea = new JTextArea(agi.getConversationSummary() != null ? agi.getConversationSummary() : "No summary available.");
         summaryArea.setFont(summaryArea.getFont().deriveFont(Font.ITALIC, 11f));
-        summaryArea.setForeground(new Color(80, 80, 50));
+        summaryArea.setForeground(UIManager.getColor("Label.disabledForeground"));
         summaryArea.setLineWrap(true);
         summaryArea.setWrapStyleWord(true);
         summaryArea.setEditable(false);
@@ -147,12 +148,12 @@ public class AgiCard extends JPanel {
 
         messageCountLabel = new JLabel();
         messageCountLabel.setFont(messageCountLabel.getFont().deriveFont(10f));
-        messageCountLabel.setForeground(Color.GRAY);
+        messageCountLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
         content.add(messageCountLabel, "wrap");
 
         resourceCountLabel = new JLabel();
         resourceCountLabel.setFont(resourceCountLabel.getFont().deriveFont(10f));
-        resourceCountLabel.setForeground(Color.GRAY);
+        resourceCountLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
         content.add(resourceCountLabel, "wrap");
         
         usageLabel = new JLabel();
@@ -167,7 +168,7 @@ public class AgiCard extends JPanel {
         
         JLabel idLabel = new JLabel(agi.getShortId());
         idLabel.setFont(idLabel.getFont().deriveFont(10f));
-        idLabel.setForeground(Color.GRAY);
+        idLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
         footer.add(idLabel, "growx");
         
         JButton focusBtn = new JButton("Open", new SearchIcon(14));
@@ -228,7 +229,7 @@ public class AgiCard extends JPanel {
             setBackground(theme.getCardHoverBg());
         } else {
             // Archived (Closed) cards get a dimmed background
-            setBackground(agi.isOpen() ? theme.getCardNormalBg() : new Color(240, 240, 240));
+            setBackground(agi.isOpen() ? theme.getCardNormalBg() : theme.getCardArchivedBg());
         }
     }
 
@@ -325,6 +326,20 @@ public class AgiCard extends JPanel {
         double usage = agi.getContextWindowUsage();
         usageLabel.setText("Context: " + String.format("%.1f%%", usage * 100));
         usageLabel.setForeground(SwingAgiConfig.getColorForContextUsage(usage));
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>Overridden to dynamically update the theme and background colors when the Look and Feel changes.</p>
+     */
+    @Override
+    public void updateUI() {
+        super.updateUI();
+        if (agi != null) {
+            this.theme = ((SwingAgiConfig) agi.getConfig()).getTheme();
+            updateBackground();
+            updateBorder();
+        }
     }
     
     /**

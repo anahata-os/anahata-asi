@@ -138,6 +138,16 @@ public class MarkupTextSegmentRenderer extends AbstractTextSegmentRenderer {
 
     /**
      * {@inheritDoc}
+     * <p>Overridden to clear the render cache and force a complete HTML text rebuild with the fresh theme colors.</p>
+     */
+    @Override
+    public void updateTheme() {
+        lastRenderedContent = null;
+        render();
+    }
+
+    /**
+     * {@inheritDoc}
      * A {@code MarkupTextSegmentRenderer} handles {@link TextSegmentType#TEXT} descriptors.
      */
     @Override

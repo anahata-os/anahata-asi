@@ -168,6 +168,6 @@ public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage
      */
     @Override
     protected Border getMessageBorder() {
-        return BorderFactory.createLineBorder(agiConfig.getTheme().getModelBorder(), 2, true);
+        return BorderFactory.createLineBorder(agiConfig.getTheme().getModelBorder(), 1, true);
     }
 }

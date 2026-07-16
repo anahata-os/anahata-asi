@@ -98,6 +98,14 @@ public abstract class AbstractTextSegmentRenderer {
     }
 
     /**
+     * Forces the renderer to refresh its visual styling (e.g., colors, fonts)
+     * to align with the active Look and Feel.
+     */
+    public void updateTheme() {
+        // Default implementation does nothing
+    }
+
+    /**
      * Determines if this renderer can handle the given segment descriptor.
      * Subclasses must implement this to specify their compatibility.
      *
