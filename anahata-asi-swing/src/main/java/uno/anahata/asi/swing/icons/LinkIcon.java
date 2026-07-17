@@ -17,14 +17,7 @@ import java.awt.geom.RoundRectangle2D;
  */
 public class LinkIcon extends AbstractAnahataIcon {
 
-    /**
-     * Official Blaugrana Blue color used to style the first interlocked ring.
-     */
-    private static final Color BARCA_BLUE = new Color(0, 77, 152);
-    /**
-     * Official Blaugrana Garnet Red color used to style the second interlocked ring.
-     */
-    private static final Color BARCA_RED = new Color(168, 19, 62);
+
 
     /**
      * Constructs a new LinkIcon of the specified square size.
@@ -53,11 +46,11 @@ public class LinkIcon extends AbstractAnahataIcon {
             g2.rotate(Math.toRadians(-45), size / 2.0, size / 2.0);
             
             // Blue Link (Top-Leftish)
-            g2.setColor(c.isEnabled() ? BARCA_BLUE : Color.GRAY);
+            g2.setColor(getBlueColor(c));
             g2.draw(new RoundRectangle2D.Double(size * 0.05, size * 0.35, linkWidth, linkHeight, arc, arc));
             
             // Red Link (Bottom-Rightish)
-            g2.setColor(c.isEnabled() ? BARCA_RED : Color.GRAY);
+            g2.setColor(getRedColor(c));
             g2.draw(new RoundRectangle2D.Double(size * 0.4, size * 0.35, linkWidth, linkHeight, arc, arc));
 
         } finally {

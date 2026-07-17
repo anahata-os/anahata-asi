@@ -33,16 +33,9 @@ public class AttachIcon extends AbstractAnahataIcon {
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 
-        Color barcaBlue = new Color(0, 77, 152);
-        
         float s = size;
         g2d.translate(x, y);
-        
-        if (c.isEnabled()) {
-            g2d.setColor(barcaBlue);
-        } else {
-            g2d.setColor(Color.GRAY);
-        }
+        g2d.setColor(getBlueColor(c));
         
         g2d.setStroke(new BasicStroke(s * 0.08f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         

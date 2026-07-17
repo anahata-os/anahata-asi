@@ -45,9 +45,6 @@ public class ScreenshotIcon extends AbstractAnahataIcon {
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 
-        Color barcaRed = new Color(165, 0, 68);
-        Color barcaBlue = new Color(0, 77, 152);
-        
         float s = size;
         float p = s * 0.15f; // Padding
         float w = s - (p * 2);
@@ -59,11 +56,11 @@ public class ScreenshotIcon extends AbstractAnahataIcon {
             g2d.setStroke(new BasicStroke(s * 0.08f));
             
             // Screen (Blue)
-            g2d.setColor(barcaBlue);
+            g2d.setColor(getBlueColor(c));
             g2d.draw(new RoundRectangle2D.Float(p, p, w, h * 0.65f, s * 0.1f, s * 0.1f));
             
             // Stand (Red)
-            g2d.setColor(barcaRed);
+            g2d.setColor(getRedColor(c));
             g2d.fill(new Rectangle2D.Float(s * 0.42f, s * 0.7f, s * 0.16f, s * 0.1f)); // Neck
             g2d.fill(new Rectangle2D.Float(s * 0.3f, s * 0.8f, s * 0.4f, s * 0.08f)); // Base
         } else {

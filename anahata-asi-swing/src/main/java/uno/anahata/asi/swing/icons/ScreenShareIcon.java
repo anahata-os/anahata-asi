@@ -36,7 +36,7 @@ public class ScreenShareIcon extends AbstractAnahataIcon {
         double sy = y + pad;
 
         // 1. Stand
-        g2.setColor(Color.GRAY);
+        g2.setColor(getRedColor(c));
         double neckW = sw * 0.15;
         double neckH = size * 0.1;
         g2.fill(new Rectangle2D.Double(x + (size - neckW) / 2.0, sy + sh, neckW, neckH));
@@ -46,7 +46,7 @@ public class ScreenShareIcon extends AbstractAnahataIcon {
         g2.fill(new RoundRectangle2D.Double(x + (size - baseW) / 2.0, sy + sh + neckH, baseW, baseH, 2, 2));
 
         // 2. Outer Frame
-        Color frameColor = sharing ? new Color(50, 200, 120) : new Color(80, 80, 80);
+        Color frameColor = sharing ? new Color(50, 200, 120) : getBlueColor(c);
         g2.setColor(frameColor);
         g2.fill(new RoundRectangle2D.Double(sx, sy, sw, sh, 4, 4));
 

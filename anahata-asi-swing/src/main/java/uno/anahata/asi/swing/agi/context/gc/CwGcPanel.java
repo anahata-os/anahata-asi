@@ -14,6 +14,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.UIManager;
 import javax.swing.table.DefaultTableModel;
 import lombok.NonNull;
 import net.miginfocom.swing.MigLayout;
@@ -102,9 +103,13 @@ public class CwGcPanel extends JPanel {
      */
     private MetabolicDonutChart donutChart;
     /**
-     * Label indicating the current history metadata positioning strategy.
+     * Muted prefix label for the CwGC strategy display (e.g., "Strategy:").
      */
-    private JLabel strategyLabel;
+    private JLabel strategyPrefixLabel;
+    /**
+     * Bold value label displaying the active CwGC strategy name.
+     */
+    private JLabel strategyValueLabel;
 
     /** Reactive listener for history changes. */
     private EdtPropertyChangeListener historyListener;
@@ -155,15 +160,28 @@ public class CwGcPanel extends JPanel {
      */
     private void initComponents() {
         JPanel headerPanel = new JPanel(new MigLayout("insets 10, fillx", "[grow]", "[]0[]"));
-        headerPanel.setBackground(new Color(245, 245, 245));
-        headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY));
+        Color panelBg = UIManager.getColor("Panel.background");
+        Color headerBg = UIManager.getColor("TableHeader.background") != null 
+                ? UIManager.getColor("TableHeader.background") 
+                : (panelBg != null ? panelBg.darker() : new Color(245, 245, 245));
+        headerPanel.setBackground(headerBg);
+
+        Color borderColor = UIManager.getColor("Separator.foreground") != null 
+                ? UIManager.getColor("Separator.foreground") 
+                : Color.LIGHT_GRAY;
+        headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, borderColor));
         JLabel titleLabel = new JLabel("Context Window Garbage Collector");
         titleLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
         headerPanel.add(titleLabel, "wrap");
 
-        strategyLabel = new JLabel();
-        strategyLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        headerPanel.add(strategyLabel);
+        strategyPrefixLabel = new JLabel("Strategy: ");
+        strategyPrefixLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        strategyPrefixLabel.setEnabled(false); // Native L&F muted style
+        headerPanel.add(strategyPrefixLabel, "split 2");
+
+        strategyValueLabel = new JLabel();
+        strategyValueLabel.setFont(new Font("SansSerif", Font.BOLD, 14)); // Bold enabled value
+        headerPanel.add(strategyValueLabel);
 
         add(headerPanel, BorderLayout.NORTH);
 
@@ -306,7 +324,7 @@ public class CwGcPanel extends JPanel {
             
             boolean inject = agi.getRequestConfig().isInjectInbandMetadata();
             String strategyName = inject ? "In-Band Injection" : "Consolidated Index";
-            strategyLabel.setText("<html><font color='#666666'>Strategy:</font> <font color='#333333'><b>" + strategyName + "</b></font></html>");
+            strategyValueLabel.setText(strategyName);
 
             systemTokensLabel.setText(NUMBER_FORMAT.format(stats.getSystemInstructionsTokens()));
             toolTokensLabel.setText(NUMBER_FORMAT.format(stats.getToolDeclarationsTokens()));

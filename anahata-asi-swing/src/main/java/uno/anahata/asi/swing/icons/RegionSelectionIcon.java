@@ -51,7 +51,7 @@ public class RegionSelectionIcon extends AbstractAnahataIcon {
 
         // 2. The Mouse Pointer (Red cursor)
         g2.translate(s * 0.6, s * 0.55);
-        g2.setColor(new Color(220, 40, 40)); // Barça Red-ish
+        g2.setColor(getRedColor(c));
         
         Path2D.Double pointer = new Path2D.Double();
         pointer.moveTo(0, 0);
