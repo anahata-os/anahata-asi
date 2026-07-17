@@ -24,6 +24,10 @@ public class ScreenShareIcon extends AbstractAnahataIcon {
         this.sharing = sharing;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Paints a monitor screen share icon with its frame colored adaptively, showing a pulsing recording dot if active screen sharing is occurring.</p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2 = (Graphics2D) g.create();

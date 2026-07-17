@@ -27,6 +27,10 @@ public class LinkIcon extends AbstractAnahataIcon {
         super(size);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Paints two interlocked rounded rectangle rings representing a link, colored using Barça Blue and Barça Red adaptively.</p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2 = (Graphics2D) g.create();

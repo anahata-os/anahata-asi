@@ -242,6 +242,12 @@ public class AsiDesktopMainPanel extends JPanel {
         }
     }
 
+    /**
+     * A lightweight representation of an available Swing Look and Feel.
+     * 
+     * @param name The human-readable name of the theme.
+     * @param className The fully qualified class name of the LookAndFeel class.
+     */
     private record LafItem(String name, String className) {
         @Override
         public String toString() {

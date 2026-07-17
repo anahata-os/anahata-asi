@@ -27,6 +27,10 @@ public class AttachIcon extends AbstractAnahataIcon {
         super(size);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Renders a classic paperclip silhouette with anti-aliasing enabled, using the Barça Blue theme-appropriate color.</p>
+     */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2d = (Graphics2D) g.create();
