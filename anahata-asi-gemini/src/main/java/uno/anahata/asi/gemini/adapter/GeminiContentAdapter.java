@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import uno.anahata.asi.internal.TokenizerUtils;
 import uno.anahata.asi.agi.message.AbstractMessage;
 import uno.anahata.asi.agi.message.AbstractModelMessage;
 import uno.anahata.asi.agi.message.AbstractPart;
+import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.message.Role;
 import uno.anahata.asi.agi.message.ThoughtSignature;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
@@ -87,6 +87,10 @@ public class GeminiContentAdapter {
      * @return The user content or null if empty.
      */
     private Content toGoogleUser() {
+        //tool role not supported any more since 3.6-flash
+        //Role 'tool' is not supported. Please use a valid role: SYSTEM, SYSTEM_1, USER, ASSISTANT, DEVELOPER, CONTEXT, USER_CONTEXT, MODEL, USER.
+            
+        //Content.Builder builder = Content.builder().role(anahataMessage instanceof RagMessage ? "USER_CONTEXT": "user");
         Content.Builder builder = Content.builder().role("user");
         List<Part> googleParts = new ArrayList<>();
 
@@ -147,7 +151,9 @@ public class GeminiContentAdapter {
                 .collect(Collectors.toList());
 
         if (!executedResponses.isEmpty()) {
-            Content.Builder toolContentBuilder = Content.builder().role("tool");
+            //tool role not supported any more since 3.6-flash
+            //Role 'tool' is not supported. Please use a valid role: SYSTEM, SYSTEM_1, USER, ASSISTANT, DEVELOPER, CONTEXT, USER_CONTEXT, MODEL, USER.
+            Content.Builder toolContentBuilder = Content.builder().role("user");
             List<Part> toolParts = new ArrayList<>();
 
             for (AbstractToolResponse<?> response : executedResponses) {

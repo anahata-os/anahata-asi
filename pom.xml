@@ -284,7 +284,7 @@
             <dependency>
                 <groupId>com.google.genai</groupId>
                 <artifactId>google-genai</artifactId>
-                <version>1.58.0</version>
+                <version>1.60.0</version>
             </dependency>
             <!-- Testing -->
             <dependency>
