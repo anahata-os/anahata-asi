@@ -42,6 +42,8 @@ public class GeminiGoogleCloudExpressAIProvider extends GeminiAiProvider {
     public List<? extends AbstractModel> listModels() {
         List<HardcodedGeminiModel> manifest = new ArrayList<>();
         
+        //manifest.add(createModel("gemini-flash-latest", "Gemini Flash Latest", "Latest", 1048576, 65000));
+        manifest.add(createModel("gemini-3.6-flash", "Gemini 3.6 Flash", "v3.6", 1048576, 65000));
         manifest.add(createModel("gemini-3.1-pro-preview", "Gemini 3.1 Pro (Preview)", "v3.1", 2097152, 65000));        
         manifest.add(createModel("gemini-3.5-flash", "Gemini 3.5 Flash", "v3.5", 1048576, 65000));
         
