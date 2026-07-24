@@ -501,6 +501,49 @@
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
         </dependency>
+        
+        <dependency>
+            <groupId>org.netbeans.modules</groupId>
+            <artifactId>org-netbeans-modules-dlight-terminal</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.modules</groupId>
+            <artifactId>org-netbeans-lib-terminalemulator</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.modules</groupId>
+            <artifactId>org-netbeans-modules-terminal</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.modules</groupId>
+            <artifactId>org-netbeans-modules-terminal-nb</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-libs-jna</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-libs-jna-platform</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        <!--
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>1.83</version>
+        </dependency>
+-->
+        <dependency>
+            <groupId>org.netbeans.modules</groupId>
+            <artifactId>org-netbeans-modules-dlight-nativeexecution</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
 
     </dependencies>
     <build>
@@ -660,6 +703,28 @@
                             <type>impl</type>
                             <id>org.netbeans.modules:org-netbeans-modules-java-completion</id>
                         </dependency>
+                        <!--terminal-->
+                        <dependency>
+                            <type>impl</type>
+                            <id>org.netbeans.modules:org-netbeans-modules-dlight-terminal</id>
+                        </dependency>
+                        <dependency>
+                            <type>impl</type>
+                            <id>org.netbeans.modules:org-netbeans-modules-dlight-nativeexecution</id>
+                        </dependency>
+                        <dependency>
+                            <type>impl</type>
+                            <id>org.netbeans.modules:org-netbeans-lib-terminalemulator</id>
+                        </dependency>
+                        <dependency>
+                            <type>impl</type>
+                            <id>org.netbeans.modules:org-netbeans-modules-terminal</id>
+                        </dependency>
+                        <dependency>
+                            <type>impl</type>
+                            <id>org.netbeans.modules:org-netbeans-modules-terminal-nb</id>
+                        </dependency>
+                        
                         <!--
                         <dependency>
                             <type>impl</type>
@@ -688,6 +753,7 @@
                         <publicPackage>uno.anahata.asi.nb.util</publicPackage>
                         <publicPackage>uno.anahata.asi.nb.tools.java.classpath</publicPackage>
                         <publicPackage>uno.anahata.asi.nb.tools.java.coderefiner</publicPackage>
+                        <publicPackage>uno.anahata.asi.nb.tools.terminal</publicPackage>
                     </publicPackages>
                 </configuration>
             </plugin>

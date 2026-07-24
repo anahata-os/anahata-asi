@@ -167,7 +167,7 @@ public class InputPanel extends JPanel {
     private void initComponents() {
         setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5)); 
 
-        inputTextArea = new JXTextArea("Type your message here (Ctrl+Enter to send)");
+        inputTextArea = new JXTextArea("Type, paste or drop here (images supported).... Press Ctrl+Enter to send");
         inputTextArea.setLineWrap(true);
         inputTextArea.setWrapStyleWord(true);
 

@@ -18,6 +18,7 @@ import uno.anahata.asi.nb.resources.handle.NbHandle;
 import uno.anahata.asi.agi.resource.handle.ResourceHandle;
 import uno.anahata.asi.nb.tools.java.BatchCodeRefiner;
 import uno.anahata.asi.nb.tools.java.CodeRefiner;
+import uno.anahata.asi.nb.tools.terminal.NbTerminal;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.toolkit.Host;
 import uno.anahata.asi.swing.toolkit.SwingJava;
@@ -36,22 +37,21 @@ import uno.anahata.asi.swing.toolkit.SwingJava;
 public class NetBeansAgiConfig extends SwingAgiConfig {
 
     {
-        // Replace core Java with NbJava
+        // Replace SwingJava with NbJava
         getToolClasses().remove(SwingJava.class);
         getToolClasses().add(NbJava.class);
-        
+                
         getToolClasses().add(Maven.class);
         getToolClasses().add(Projects.class);
         getToolClasses().add(CodeModel.class);
         getToolClasses().add(CodeRefiner.class);
         getToolClasses().add(BatchCodeRefiner.class);
-        //getToolClasses().add(Javadocs.class);
+        
         getToolClasses().add(IDE.class);
         getToolClasses().add(Editor.class);
         getToolClasses().add(Hints.class);
         getToolClasses().add(Refactor.class);
-        getToolClasses().add(Host.class);
-        getToolClasses().add(Screens.class);
+        getToolClasses().add(NbTerminal.class);
         
         setIconProvider(new NetBeansIconProvider());
         
