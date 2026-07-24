@@ -113,6 +113,7 @@
                     <li><a href="#hints"><i class="fas fa-lightbulb"></i> Hints</a></li>
                     <li><a href="#editor"><i class="fas fa-edit"></i> Editor</a></li>
                     <li><a href="#ide"><i class="fas fa-laptop-code"></i> IDE</a></li>
+                    <li><a href="#nbterminal"><i class="fas fa-terminal"></i> NbTerminal</a></li>
                 </ul>
 
                 <h4>Core Toolkits</h4>
@@ -568,6 +569,23 @@
                     <div class="tool-card"><span class="tool-sig">selectIn(path, target) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Highlights elements in Projects, Files, or Favorites.</p></div>
                     <div class="tool-card"><span class="tool-sig">getTopComponentsMarkdown() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Returns a table of all open IDE windows.</p></div>
                     <div class="tool-card"><span class="tool-sig">getOutputTabsMarkdown() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Captures a snapshot of all active Output windows.</p></div>
+                </div>
+            </section>
+
+            <!-- NbTerminal Toolkit -->
+            <section id="nbterminal" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-terminal"></i><h2>NbTerminal Toolkit (4 Tools)</h2></div>
+                <p>A NetBeans-integrated toolkit for managing, tracking, and typing into native IDE terminal tabs. Enables full command-line interaction and subshell collaboration between the ASI and local or remote terminal environments.</p>
+                <ul class="toolkit-highlights">
+                    <li><b>Deep Terminal Integration</b>: Automatically discovers and tracks all open local and remote terminal sessions in the IDE layout.</li>
+                    <li><b>Interactive Collaboration</b>: Dispatches commands and keystrokes directly into active terminal tabs with automatic tab selection and focus.</li>
+                    <li><b>Real-time Scrollback Perception</b>: The scrollback buffer of each terminal tab is captured and rendered as a thread-safe context provider in the RAG prompt.</li>
+                </ul>
+                <div class="tool-grid">
+                    <div class="tool-card"><span class="tool-sig">openLocalTerminal(title, workingDir) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Opens a new interactive local terminal tab in the IDE.</p></div>
+                    <div class="tool-card"><span class="tool-sig">typeCommand(terminalTabId, command) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Types a command sequence into a specific terminal tab and executes it.</p></div>
+                    <div class="tool-card"><span class="tool-sig">updateTerminalViewport(id, settings) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Updates lines, tail, or grep filters for an active terminal tab.</p></div>
+                    <div class="tool-card"><span class="tool-sig">closeTerminal(terminalTabId) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Closes a specific terminal tab.</p></div>
                 </div>
             </section>
 
