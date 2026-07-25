@@ -71,7 +71,8 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
         uno.anahata.asi.gemini.GeminiAiProvider.class,
         uno.anahata.asi.gemini.GeminiGoogleCloudExpressAIProvider.class,
         uno.anahata.asi.huggingface.HuggingFaceProvider.class,
-        uno.anahata.asi.modal.ModalProvider.class
+        uno.anahata.asi.modal.ModalProvider.class,
+        uno.anahata.asi.novarouteai.NovarouteAiProvider.class
     );
 
 

@@ -89,9 +89,6 @@
         <module>anahata-asi-gemini</module>        
         <module>anahata-asi-openai</module>
         <module>anahata-asi-openai-compatible</module>
-        <module>anahata-asi-huggingface</module>
-        <module>anahata-asi-modal</module>
-        <module>anahata-asi-minimax</module>
         <module>anahata-asi-anthropic</module>
         <module>anahata-asi-intellij</module>
     </modules>
