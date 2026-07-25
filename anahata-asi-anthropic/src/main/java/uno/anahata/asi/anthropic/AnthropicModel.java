@@ -341,6 +341,7 @@ public class AnthropicModel extends AbstractModel {
                     
             HttpClient client = provider.getHttpClient(); {
                 AnthropicMessage target = new AnthropicMessage(agi, modelId);
+                target.setStreaming(true);
                 List<AnthropicMessage> targets = List.of(target);
                 AtomicBoolean started = new AtomicBoolean(false);
                 

@@ -332,7 +332,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
      * @return a new OpenAiCompatibleModelMessage.
      */
     public OpenAiCompatibleModelMessage createModelMessage(Agi agi) {
-        return new OpenAiCompatibleMessage(agi, modelId);
+        return new OpenAiCompatibleModelMessage(agi, modelId);
     }
 
     @Override
@@ -460,7 +460,9 @@ public class OpenAiCompatibleModel extends AbstractModel {
                             }
                             if (chunk.has("type") && chunk.get("type").asText().startsWith("response.")) {
                                 if (!started.get()) {
-                                    targets.add(createModelMessage(agi));
+                                    OpenAiCompatibleModelMessage msg = createModelMessage(agi);
+                                    msg.setStreaming(true);
+                                    targets.add(msg);
                                     observer.onStart((List) targets);
                                     started.set(true);
                                 }
@@ -472,7 +474,9 @@ public class OpenAiCompatibleModel extends AbstractModel {
                                 if (choices != null && choices.isArray() && choices.size() > 0) {
                                     if (!started.get()) {
                                         for (int i = 0; i < choices.size(); i++) {
-                                            targets.add(createModelMessage(agi));
+                                            OpenAiCompatibleModelMessage msg = createModelMessage(agi);
+                                            msg.setStreaming(true);
+                                            targets.add(msg);
                                         }
                                         observer.onStart((List) targets);
                                         started.set(true);
@@ -566,6 +570,8 @@ public class OpenAiCompatibleModel extends AbstractModel {
         if (delta == null) {
             return;
         }
+        
+        log.info("delta is " + choice);
 
         // AUTODETECT: Check for reasoning_content field on first chunk if not explicitly configured
         if (reasoningStyle == OpenAiCompatibleReasoningStyle.NONE

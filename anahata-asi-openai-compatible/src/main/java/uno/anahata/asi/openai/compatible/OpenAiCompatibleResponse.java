@@ -153,7 +153,7 @@ public class OpenAiCompatibleResponse extends Response<OpenAiCompatibleModelMess
             JsonNode choices = responseNode.get("choices");
             if (choices != null && choices.isArray()) {
                 for (JsonNode choice : choices) {
-                    OpenAiCompatibleMessage msg = new OpenAiCompatibleMessage(agi, modelId, choice, this, 
+                    OpenAiCompatibleModelMessage msg = new OpenAiCompatibleModelMessage(agi, modelId, choice, this, 
                             model.getReasoningStyle(), model.getReasoningFieldName(), model.getReasoningTags());
                     candidates.add(msg);
                 }
