@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.TypeElement;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.java.classpath.ClassPath;
 import org.netbeans.api.java.classpath.GlobalPathRegistry;
@@ -106,17 +107,26 @@ public class CodeModel extends AnahataToolkit {
     }
 
     /**
-     * Gets the source file for a type specified by its fully qualified name and
-     * registers it as a resource.
-     *
-     * @param fqn The fully qualified name of the type.
-     * @return a confirmation message.
-     * @throws Exception if the type is not found or ambiguous.
+     * Gets the source files for types specified by their fully qualified names and registers them as resources.
+     * @param fqns The list of fully qualified names of the types.
+     * @return a confirmation message summarizing loaded sources.
+     * @throws java.lang.Exception if an unexpected error occurs.
      */
-    @AgiTool(value = "Loads the source file for of a java type as a managed resource by its fully qualified name (fqn). Fails if the FQN is ambiguous.", permission = ToolPermission.APPROVE_ALWAYS)
-    public String loadTypeSourcesByFqn(
-            @AgiToolParam("The fully qualified name of the type.") String fqn) throws Exception {
-        return loadTypeSources(resolveUniqueType(fqn));
+    @AgiTool(value = "Loads the source files for java types as managed resources by their fully qualified names (fqns). Fails if any FQN is ambiguous.", permission = ToolPermission.APPROVE_ALWAYS)
+    public String loadTypeSourcesByFqn(@AgiToolParam("The list of fully qualified names of the types.") List<String> fqns) throws Exception {
+        StringBuilder sb = new StringBuilder();
+        for (String fqn : fqns) {
+            try {
+                String result = loadTypeSources(resolveUniqueType(fqn));
+                if (!sb.isEmpty()) {
+                    sb.append("\n");
+                }
+                sb.append(fqn).append(": ").append(result);
+            } catch (Exception e) {
+                error("could not load sources for " + fqn + ": " + e.getMessage());
+            }
+        }
+        return sb.toString();
     }
 
     /**
@@ -274,7 +284,7 @@ public class CodeModel extends AnahataToolkit {
 
         ClasspathInfo cpInfo = getGlobalClasspathInfo();
 
-        Set<ElementHandle<javax.lang.model.element.TypeElement>> declaredTypes = cpInfo.getClassIndex().getDeclaredTypes(
+        Set<ElementHandle<TypeElement>> declaredTypes = cpInfo.getClassIndex().getDeclaredTypes(
                 "", ClassIndex.NameKind.PREFIX, EnumSet.allOf(ClassIndex.SearchScope.class));
 
         List<JavaType> allResults = declaredTypes.stream()
