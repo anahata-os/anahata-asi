@@ -26,7 +26,7 @@ public class NovarouteAiProvider extends OpenAiChatCompletionsProvider {
      */
     public NovarouteAiProvider() {
         super("NovarouteAI", "NovarouteAI", "https://novarouteai.com/v1", "NovarouteAI", "https://novarouteai.com/register?aff=UBCS7HL727XC");
-        setDescription("Open Source Chinese Models");
+        setDescription("OpenAI-compatible access to selected official Chinese models");
         setFolderName(AbstractAsiContainer.getWorkDirSubDir("NovarouteAI").toString());
     }
 
