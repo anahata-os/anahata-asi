@@ -223,6 +223,42 @@ public class AiProviderPanel extends ScrollablePanel {
         }));
         add(displayNameField, "span 2, wrap");
 
+        add(new JLabel("Base URL:"));
+        baseUrlField = new JTextField(provider.getBaseUrl());
+        add(baseUrlField, "span 2, wrap");
+
+        add(new JLabel("API Key Required:"), "gaptop 5");
+        apiKeyRequiredCheck = new JCheckBox("", provider.isApiKeyRequired());
+        apiKeyRequiredCheck.setOpaque(false);
+        apiKeyRequiredCheck.addActionListener(e -> {
+            textArea.setEnabled(apiKeyRequiredCheck.isSelected());
+        });
+        add(apiKeyRequiredCheck, "span 2, wrap");
+
+        // --- Key Pool Section ---
+        add(new JLabel("API Key Pool:"), "top, gaptop 10");
+        JPanel keysContainer = new JPanel(new MigLayout("ins 0, fill", "[grow,fill]", "[][][grow,fill]"));
+        keysContainer.setOpaque(false);
+
+        JPanel keysHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        keysHeader.setOpaque(false);
+        JLabel tipLabel = new JLabel("<html><i><b>Pro Tip:</b> Add multiple keys (one per line) for Round-Robin rotation.</i></html>");
+        tipLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
+        keysHeader.add(tipLabel);
+        keysContainer.add(keysHeader, "wrap");
+
+        if (provider.getKeysAcquisitionUri() != null) {
+            keysContainer.add(acquisitionLinkLabel, "wrap, gapleft 5");
+        }
+
+        textArea.setRows(7);
+        textArea.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(textArea, e));
+        textArea.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
+        JScrollPane textScroll = new JScrollPane(textArea);
+        keysContainer.add(textScroll, "grow, wrap");
+
+        add(keysContainer, "span 2, grow, wrap");
+
         add(new JLabel("Storage Folder:"));
         add(folderLabel);
         JPanel folderButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
@@ -292,18 +328,6 @@ public class AiProviderPanel extends ScrollablePanel {
         fetchBtnContainer.add(fillModelsBtn);
         add(fetchBtnContainer, "skip 1, span 2, wrap");
 
-        add(new JLabel("API Key Required:"), "gaptop 5");
-        apiKeyRequiredCheck = new JCheckBox("", provider.isApiKeyRequired());
-        apiKeyRequiredCheck.setOpaque(false);
-        apiKeyRequiredCheck.addActionListener(e -> {
-            textArea.setEnabled(apiKeyRequiredCheck.isSelected());
-        });
-        add(apiKeyRequiredCheck, "span 2, wrap");
-
-        add(new JLabel("Base URL:"));
-        baseUrlField = new JTextField(provider.getBaseUrl());
-        add(baseUrlField, "span 2, wrap");
-
         if (provider instanceof GeminiAiProvider gemini) {
             add(new JLabel("Use Vertex AI:"), "gaptop 5");
             vertexCheck = new JCheckBox("", gemini.isVertex());
@@ -349,30 +373,6 @@ public class AiProviderPanel extends ScrollablePanel {
             preferHttp11Check.setToolTipText("Force HTTP/1.1 to avoid protocol hangs on some local servers/routers.");
             add(preferHttp11Check, "span 2, wrap");
         }
-
-        // --- Key Pool Section ---
-        add(new JLabel("API Key Pool:"), "top, gaptop 10");
-        JPanel keysContainer = new JPanel(new MigLayout("ins 0, fill", "[grow,fill]", "[][][grow,fill]"));
-        keysContainer.setOpaque(false);
-
-        JPanel keysHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        keysHeader.setOpaque(false);
-        JLabel tipLabel = new JLabel("<html><i><b>Pro Tip:</b> Add multiple keys (one per line) for Round-Robin rotation.</i></html>");
-        tipLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
-        keysHeader.add(tipLabel);
-        keysContainer.add(keysHeader, "wrap");
-
-        if (provider.getKeysAcquisitionUri() != null) {
-            keysContainer.add(acquisitionLinkLabel, "wrap, gapleft 5");
-        }
-
-        textArea.setRows(7);
-        textArea.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(textArea, e));
-        textArea.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
-        JScrollPane textScroll = new JScrollPane(textArea);
-        keysContainer.add(textScroll, "grow, wrap");
-
-        add(keysContainer, "span 2, grow, wrap");
 
         testConnectionBtn = new JButton("Test Connection (Discover Models)", new PulseIcon(16));
         testConnectionBtn.addActionListener(e -> testConnection());
