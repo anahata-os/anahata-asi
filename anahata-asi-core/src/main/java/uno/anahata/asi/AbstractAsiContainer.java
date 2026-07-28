@@ -426,6 +426,28 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
+     * Retrieves an active Agi instance from the container pool by its unique UUID / session ID.
+     *
+     * @param uuid The unique UUID or session ID of the Agi instance.
+     * @return The matching Agi instance, or {@code null} if not found or if uuid is null.
+     */
+    public Agi getAgi(String uuid) {
+        if (uuid == null || uuid.isBlank()) {
+            throw new IllegalArgumentException("AGI UUID cannot be null or blank");
+        }
+        synchronized (activeAgis) {
+            Agi agi = activeAgis.stream()
+                    .filter(a -> uuid.equals(a.getConfig().getSessionId()))
+                    .findFirst()
+                    .orElse(null);
+            if (agi == null) {
+                throw new IllegalArgumentException("No active AGI session found with UUID: " + uuid);
+            }
+            return agi;
+        }
+    }
+
+    /**
      * Retrieves all active Agi sessions spawned by a specific parent.
      *
      * @param parentUuid The UUID of the parent session.
