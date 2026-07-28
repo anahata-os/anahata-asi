@@ -10,6 +10,7 @@ import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.agi.message.AgiUserMessage;
+import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.agi.resource.Resource;
@@ -31,25 +32,59 @@ public class AsiContainer extends AnahataToolkit {
 
     /**
      * {@inheritDoc}
-     * <p>Provides core instructions on how to programmatically query the container's
-     * AI providers and API keys from within NbJava scripts.</p>
+     * <p>
+     * Provides core instructions on how to programmatically query the
+     * container's AI providers and API keys from within NbJava scripts.</p>
+     *
      * @throws Exception if an error occurs during instruction generation.
      */
     @Override
     public List<String> getSystemInstructions() throws Exception {
         List<String> inst = new ArrayList<>(super.getSystemInstructions());
-        inst.add("### Programmatic Container Access (NbJava)\n" +
-            "When scripting custom automation via NbJava.compileAndExecute (extends SwingAgiTool), " +
-            "you can programmatically query the container's configurations, providers, and secure API keys:\n" +
-            "1. Retrieve the Container: `AbstractAsiContainer container = getAsiContainer();`\n" +
-            "2. Resolve AI Providers:\n" +
-            "   - By UUID (Authoritative): `container.getProvider(\"GeminiGCExpress\");` (Do NOT use Class-based lookups because multiple provider instances can share the same Class type, e.g. different Ollama or OpenAI-compatible endpoints configured differently).\n" +
-            "   - Get All: `container.getAllProviders();` to inspect or filter by class type, display name, or enabled status manually.\n" +
-            "3. Retrieve Active API Keys:\n" +
-            "   - Get currently selected/rotated key: `String apiKey = provider.getCurrentKey();`\n" +
-            "   - Trigger key rotation: `provider.hokusPocus();`"
+        inst.add("### Programmatic Container Access (from the java toolkit)\n"
+                + "When scripting custom automation via the java toolkit, "
+                + "you can programmatically query the container's configurations, providers, and secure API keys:\n"
+                + "1. Retrieve the Container: `AbstractAsiContainer container = getAsiContainer();`\n"
+                + "2. Retrieve Active API Keys:\n"
+                + "   - Get currently selected/rotated key: `String apiKey = provider.getCurrentKey();`\n"
+                + "   - Trigger key rotation: `provider.hokusPocus();`"
         );
         return inst;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Populates the RAG message with container-level overview metadata, including host application ID, working directory, default template configuration, configured AI providers (summarized model counts), and active AGI sessions.
+     * </p>
+     * @param ragMessage The target RAG message to populate.
+     * @throws java.lang.Exception If an error occurs during message population.
+     */
+    @Override
+    public void populateMessage(RagMessage ragMessage) throws Exception {
+        AbstractAsiContainer container = getAsiContainer();
+        
+        StringBuilder sb = new StringBuilder();
+        sb.append("## ASI Container Overview\n");
+        sb.append("- **Host Application**: ").append(container.getHostApplicationId()).append("\n");
+        sb.append("- **App Directory**: ").append(container.getAppDir()).append("\n");
+
+        AgiConfig template = container.getPreferences() != null ? container.getPreferences().getAgiTemplate() : null;
+        if (template != null) {
+            sb.append("- **Default Provider UUID**: ").append(template.getSelectedProviderUuid() != null ? template.getSelectedProviderUuid() : "None").append("\n");
+            sb.append("- **Default Model ID**: ").append(template.getSelectedModelId() != null ? template.getSelectedModelId() : "None").append("\n");
+        }
+
+        sb.append("\n### Configured AI Providers\n");
+        sb.append(listAiProviders(false));
+
+        List<Agi> activeAgis = container.getActiveAgis();
+        if (activeAgis != null && !activeAgis.isEmpty()) {
+            sb.append("\n### Active AGI Sessions\n");
+            sb.append(listActiveAgis());
+        }
+
+        ragMessage.addTextPart(sb.toString());
     }
     /**
      * Returns a Markdown table of all active AGI sessions in the container.
@@ -81,69 +116,111 @@ public class AsiContainer extends AnahataToolkit {
     }
 
     /**
-     * Returns a Markdown table of all configured AI providers, their UUIDs,
-     * endpoints, and API key statuses.
+     * Returns a Markdown table of all configured AI providers, including their UUIDs, enabled status, class FQNs, endpoints, API key statuses, and model counts or model IDs.
+     * @param includeModelIds Whether to include the full comma-separated list of model IDs (true) or just the total count (false).
      * @return A Markdown formatted table summarizing the container's AI providers.
      */
     @AgiTool("Lists all configured AI providers and their current status.")
-    public String listAiProviders() {
+    public String listAiProviders(
+            @AgiToolParam(value = "Whether to include the full comma-separated list of model IDs or just the total count.", required = false) boolean includeModelIds) {
         List<AbstractAiProvider> providers = getAsiContainer().getAllProviders();
         if (providers.isEmpty()) {
             return "No registered AI providers found in the container.";
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("| Display Name | UUID | Base URL | Key Configured | Keys Acquisition URI |\n");
-        sb.append("|---|---|---|---|---|\n");
+        sb.append("| Display Name | UUID | Enabled | Provider Class | Base URL | Key Configured | Models |\n");
+        sb.append("|---|---|---|---|---|---|---|\n");
 
         for (AbstractAiProvider p : providers) {
+            String modelsList;
+            if (p.isEnabled()) {
+                List<? extends AbstractModel> models = p.getModels();
+                if (includeModelIds) {
+                    modelsList = (models != null && !models.isEmpty())
+                            ? models.stream().map(AbstractModel::getModelId).collect(Collectors.joining(", "))
+                            : "None";
+                } else {
+                    modelsList = (models != null) ? String.valueOf(models.size()) : "0";
+                }
+            } else {
+                modelsList = "N/A (Disabled)";
+            }
+
             sb.append("| ").append(p.getDisplayName() != null ? p.getDisplayName() : "N/A")
-              .append(" | ").append(p.getUuid())
-              .append(" | ").append(p.getBaseUrl() != null ? p.getBaseUrl() : "Default Cloud")
-              .append(" | ").append(p.hasKeys() ? "✅ YES" : "❌ NO (Required: " + p.isApiKeyRequired() + ")")
-              .append(" | ").append(p.getKeysAcquisitionUri() != null ? p.getKeysAcquisitionUri().toString() : "N/A")
-              .append(" |\n");
+                    .append(" | ").append(p.getUuid())
+                    .append(" | ").append(p.isEnabled() ? "✅ YES" : "❌ NO")
+                    .append(" | ").append(p.getClass().getName())
+                    .append(" | ").append(p.getBaseUrl() != null ? p.getBaseUrl() : "Default Cloud")
+                    .append(" | ").append(p.hasKeys() ? "✅ YES" : "❌ NO (Required: " + p.isApiKeyRequired() + ")")
+                    .append(" | ").append(modelsList)
+                    .append(" |\n");
         }
         return sb.toString();
     }
 
     /**
-     * Returns a Markdown table of all available models for a specific AI provider.
-     * @param providerUuid The unique UUID of the AI provider.
+     * Returns a Markdown table of available models for a specific AI provider or all providers if providerUuid is null.
+     * @param providerUuid Optional unique UUID of the AI provider. If null or empty, lists models across all providers.
      * @return A Markdown table of models.
      */
-    @AgiTool("Lists all available models for a specific AI provider.")
-    public String listAiModels(@AgiToolParam("The unique UUID of the AI provider.") String providerUuid) {
-        AbstractAiProvider provider = getAsiContainer().getProvider(providerUuid);
-        if (provider == null) {
-            return "AI provider not found with UUID: " + providerUuid;
+    @AgiTool("Lists all available models for a specific AI provider, or all models if providerUuid is null.")
+    public String listAiModels(@AgiToolParam(value = "The unique UUID of the AI provider. If null, lists models for all providers.", required = false) String providerUuid) {
+        List<AbstractAiProvider> targetProviders;
+        if (providerUuid != null && !providerUuid.isBlank()) {
+            AbstractAiProvider p = getAsiContainer().getProvider(providerUuid);
+            if (p == null) {
+                return "AI provider not found with UUID: " + providerUuid;
+            }
+            targetProviders = List.of(p);
+        } else {
+            targetProviders = getAsiContainer().getAllProviders();
         }
 
-        List<? extends AbstractModel> models = provider.getModels();
-        if (models == null || models.isEmpty()) {
-            return "No models found or configured for provider: " + provider.getDisplayName();
+        if (targetProviders.isEmpty()) {
+            return "No registered AI providers found in the container.";
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("### Available Models for Provider: ").append(provider.getDisplayName()).append(" (").append(providerUuid).append(")\n\n");
-        sb.append("| Model ID | Display Name | Input Tokens | Output Tokens | Actions |\n");
-        sb.append("|---|---|---|---|---|\n");
+        sb.append("| Provider UUID | Provider Name | Enabled | Model ID | Display Name | Input Tokens | Output Tokens | Actions |\n");
+        sb.append("|---|---|---|---|---|---|---|---|\n");
 
-        for (AbstractModel m : models) {
-            String actions = m.getSupportedActions() != null ? String.join(", ", m.getSupportedActions()) : "N/A";
-            sb.append("| ").append(m.getModelId())
-              .append(" | ").append(m.getDisplayName() != null ? m.getDisplayName() : "N/A")
-              .append(" | ").append(m.getMaxInputTokens() > 0 ? m.getMaxInputTokens() : "Unbounded")
-              .append(" | ").append(m.getMaxOutputTokens() > 0 ? m.getMaxOutputTokens() : "Unbounded")
-              .append(" | ").append(actions)
-              .append(" |\n");
+        for (AbstractAiProvider p : targetProviders) {
+            String uuid = p.getUuid();
+            String name = p.getDisplayName() != null ? p.getDisplayName() : "N/A";
+
+            if (!p.isEnabled()) {
+                sb.append("| ").append(uuid)
+                        .append(" | ").append(name)
+                        .append(" | ❌ NO | | | | | |\n");
+                continue;
+            }
+
+            List<? extends AbstractModel> models = p.getModels();
+            if (models == null || models.isEmpty()) {
+                sb.append("| ").append(uuid)
+                        .append(" | ").append(name)
+                        .append(" | ✅ YES | None | No models configured | | | |\n");
+            } else {
+                for (AbstractModel m : models) {
+                    String actions = m.getSupportedActions() != null ? String.join(", ", m.getSupportedActions()) : "N/A";
+                    sb.append("| ").append(uuid)
+                            .append(" | ").append(name)
+                            .append(" | ✅ YES")
+                            .append(" | ").append(m.getModelId())
+                            .append(" | ").append(m.getDisplayName() != null ? m.getDisplayName() : "N/A")
+                            .append(" | ").append(m.getMaxInputTokens() > 0 ? m.getMaxInputTokens() : "Unbounded")
+                            .append(" | ").append(m.getMaxOutputTokens() > 0 ? m.getMaxOutputTokens() : "Unbounded")
+                            .append(" | ").append(actions)
+                            .append(" |\n");
+                }
+            }
         }
         return sb.toString();
     }
+
     /**
-     * Returns detailed metadata for a specific AGI session, including its
-     * enabled toolkits, context providers, and managed resources.
-     *
+     * Returns detailed metadata for a specific AGI session, including its enabled toolkits, context providers, and managed resources.
      * @param sessionId The unique ID of the session.
      * @return A Markdown summary of the session details.
      */
@@ -156,10 +233,10 @@ public class AsiContainer extends AnahataToolkit {
                     StringBuilder sb = new StringBuilder();
                     sb.append("### AGI Session Details: ").append(agi.getDisplayName()).append("\n\n");
                     sb.append("## Current Session Metadata:\n");
-                    sb.append("- **AI Provider Class**: ").append(agi.getSelectedModel().getProvider().getClass());
-                    sb.append("- **AI Provider uuid**: ").append(agi.getSelectedModel().getProvider().getUuid());
-                    sb.append("- **Model Class **: ").append(agi.getSelectedModel() != null ? agi.getSelectedModel().getClass().getName(): "None").append("\n");
-                    sb.append("- **Model Id **: ").append(agi.getSelectedModel() != null ? agi.getSelectedModel().getModelId() : "None").append("\n");
+                    sb.append("- **AI Provider Class**: ").append(agi.getSelectedModel() != null && agi.getSelectedModel().getProvider() != null ? agi.getSelectedModel().getProvider().getClass().getName() : "None").append("\n");
+                    sb.append("- **AI Provider uuid**: ").append(agi.getSelectedModel() != null && agi.getSelectedModel().getProvider() != null ? agi.getSelectedModel().getProvider().getUuid() : "None").append("\n");
+                    sb.append("- **Model Class**: ").append(agi.getSelectedModel() != null ? agi.getSelectedModel().getClass().getName() : "None").append("\n");
+                    sb.append("- **Model Id**: ").append(agi.getSelectedModel() != null ? agi.getSelectedModel().getModelId() : "None").append("\n");
                     sb.append("- **Thinking Level**: ").append(agi.getRequestConfig().getThinkingLevel()).append("\n");
 
                     sb.append("- **Session ID**: ").append(agi.getConfig().getSessionId()).append("\n");
