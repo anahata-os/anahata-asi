@@ -181,7 +181,8 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
     public String asText(boolean includePruned) {
         return getParts(includePruned).stream()
                 .map(AbstractPart::asText)
-                .collect(Collectors.joining());
+                .filter(text -> text != null && !text.isEmpty())
+                .collect(Collectors.joining("\n\n"));
     }
 
     /**
