@@ -183,7 +183,7 @@ public class AgiConfig extends BasicPropertyChangeSource {
     /**
      * The maximum number of tokens allowed in the context window.
      */
-    private int tokenThreshold = 250000;
+    private int tokenThreshold = 1000000; //1M
 
     /**
      * The default maximum depth a BlobPart should be kept in context.
