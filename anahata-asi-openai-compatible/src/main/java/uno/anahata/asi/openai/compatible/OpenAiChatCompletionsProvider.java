@@ -127,7 +127,7 @@ public class OpenAiChatCompletionsProvider extends AbstractAiProvider {
         String fullUrl = url.endsWith("/") ? url + endpoint : url + "/" + endpoint;
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(fullUrl))
-                .timeout(Duration.ofSeconds(120));
+                .timeout(Duration.ofMinutes(10));
 
         if (super.isApiKeyRequired()) {
             String apiKey = getCurrentKey();
