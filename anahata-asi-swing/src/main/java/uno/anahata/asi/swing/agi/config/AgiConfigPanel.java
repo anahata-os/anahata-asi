@@ -132,7 +132,7 @@ public class AgiConfigPanel extends ScrollablePanel implements PropertyChangeLis
         JPanel loopPanel = createSectionPanel("Loop Logic & Behavior");
         loopPanel.setLayout(new MigLayout("fillx, insets 10", "[right]pref[10][grow,fill]"));
 
-        tokenThresholdSpinner = new JSpinner(new SpinnerNumberModel(250000, 1000, 2000000, 1000));
+        tokenThresholdSpinner = new JSpinner(new SpinnerNumberModel(1000000, 1000, 2000000, 1000));
         loopPanel.add(new JLabel("Token Threshold:"));
         loopPanel.add(tokenThresholdSpinner, "split 2, w 100!");
         loopPanel.add(new JLabel("tokens"), "wrap, gapbottom 10");
