@@ -3,12 +3,15 @@ package uno.anahata.asi.toolkit;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
+import uno.anahata.asi.agi.message.AbstractMessage;
 import uno.anahata.asi.agi.message.AgiUserMessage;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
@@ -18,6 +21,8 @@ import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.AgiToolParam;
+import uno.anahata.asi.agi.tool.ToolPermission;
+import uno.anahata.asi.agi.tool.spi.AbstractTool;
 
 /**
  * The definitive toolkit for managing and inspecting the ASI container and its
@@ -226,94 +231,92 @@ public class AsiContainer extends AnahataToolkit {
      */
     @AgiTool("Returns detailed metadata for a specific AGI session by its UUID.")
     public String getAgiDetails(@AgiToolParam("The unique ID of the session to inspect.") String sessionId) {
-        return getAsiContainer().getActiveAgis().stream()
-                .filter(agi -> agi.getConfig().getSessionId().equals(sessionId))
-                .findFirst()
-                .map(agi -> {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("### AGI Session Details: ").append(agi.getDisplayName()).append("\n\n");
-                    sb.append("## Current Session Metadata:\n");
-                    sb.append("- **AI Provider Class**: ").append(agi.getSelectedModel() != null && agi.getSelectedModel().getProvider() != null ? agi.getSelectedModel().getProvider().getClass().getName() : "None").append("\n");
-                    sb.append("- **AI Provider uuid**: ").append(agi.getSelectedModel() != null && agi.getSelectedModel().getProvider() != null ? agi.getSelectedModel().getProvider().getUuid() : "None").append("\n");
-                    sb.append("- **Model Class**: ").append(agi.getSelectedModel() != null ? agi.getSelectedModel().getClass().getName() : "None").append("\n");
-                    sb.append("- **Model Id**: ").append(agi.getSelectedModel() != null ? agi.getSelectedModel().getModelId() : "None").append("\n");
-                    sb.append("- **Thinking Level**: ").append(agi.getRequestConfig().getThinkingLevel()).append("\n");
+        Agi agi = getAsiContainer().getAgi(sessionId);
+        StringBuilder sb = new StringBuilder();
+        sb.append("### AGI Session Details: ").append(agi.getDisplayName()).append("\n\n");
+        sb.append("## Current Session Metadata:\n");
+        sb.append("- **AI Provider Class**: ").append(agi.getSelectedModel() != null && agi.getSelectedModel().getProvider() != null ? agi.getSelectedModel().getProvider().getClass().getName() : "None").append("\n");
+        sb.append("- **AI Provider uuid**: ").append(agi.getSelectedModel() != null && agi.getSelectedModel().getProvider() != null ? agi.getSelectedModel().getProvider().getUuid() : "None").append("\n");
+        sb.append("- **Model Class**: ").append(agi.getSelectedModel() != null ? agi.getSelectedModel().getClass().getName() : "None").append("\n");
+        sb.append("- **Model Id**: ").append(agi.getSelectedModel() != null ? agi.getSelectedModel().getModelId() : "None").append("\n");
+        sb.append("- **Thinking Level**: ").append(agi.getRequestConfig().getThinkingLevel()).append("\n");
 
-                    sb.append("- **Session ID**: ").append(agi.getConfig().getSessionId()).append("\n");
-                    sb.append("- **Nickname**: ").append(agi.getNickname()).append("\n");
-                    sb.append("- **Current Status**: ").append(agi.getStatusManager().getCurrentStatus()).append("\n");
-                    sb.append("- **Active Model**: ").append(agi.getSelectedModel() != null ? agi.getSelectedModel().getModelId() : "None").append("\n");
-                    sb.append("- **History Length**: ").append(agi.getContextManager().getHistory().size()).append(" messages\n");
-                    sb.append("- **Summary**: ").append(agi.getConversationSummary() != null ? agi.getConversationSummary() : "No summary available.").append("\n");
+        sb.append("- **Session ID**: ").append(agi.getConfig().getSessionId()).append("\n");
+        sb.append("- **Nickname**: ").append(agi.getNickname()).append("\n");
+        sb.append("- **Current Status**: ").append(agi.getStatusManager().getCurrentStatus()).append("\n");
+        sb.append("- **Active Model**: ").append(agi.getSelectedModel() != null ? agi.getSelectedModel().getModelId() : "None").append("\n");
+        sb.append("- **History Length**: ").append(agi.getContextManager().getHistory().size()).append(" messages\n");
+        sb.append("- **Summary**: ").append(agi.getConversationSummary() != null ? agi.getConversationSummary() : "No summary available.").append("\n");
 
-                    // Enabled Toolkits (Single Line)
-                    String toolkits = agi.getToolManager().getEnabledToolkits().stream()
-                            .map(tk -> tk.getName())
-                            .collect(Collectors.joining(", "));
-                    sb.append("- **Enabled Toolkits**: ").append(toolkits.isEmpty() ? "None" : toolkits).append("\n");
+        // Enabled Toolkits (Single Line)
+        String toolkits = agi.getToolManager().getEnabledToolkits().stream()
+                .map(tk -> tk.getName())
+                .collect(Collectors.joining(", "));
+        sb.append("- **Enabled Toolkits**: ").append(toolkits.isEmpty() ? "None" : toolkits).append("\n");
 
-                    // Context Providers (Single Line)
-                    String providers = agi.getContextManager().getProviders().stream()
-                            .flatMap(root -> root.getFlattenedHierarchy(true).stream())
-                            .map(cp -> cp.getName() + " (EP: " + cp.isEffectivelyProviding() + ")")
-                            .collect(Collectors.joining(", "));
-                    sb.append("- **Context Providers**: ").append(providers.isEmpty() ? "None" : providers).append("\n");
+        // Context Providers (Single Line)
+        String providers = agi.getContextManager().getProviders().stream()
+                .flatMap(root -> root.getFlattenedHierarchy(true).stream())
+                .map(cp -> cp.getName() + " (EP: " + cp.isEffectivelyProviding() + ")")
+                .collect(Collectors.joining(", "));
+        sb.append("- **Context Providers**: ").append(providers.isEmpty() ? "None" : providers).append("\n");
 
-                    // Resources Table
-                    List<Resource> resources = agi.getResourceManager().getResourcesList();
-                    if (!resources.isEmpty()) {
-                        sb.append("\n#### Managed Resources\n\n");
-                        sb.append("| Name | UUID | Position | Policy | Mime |\n");
-                        sb.append("|---|---|---|---|---|\n");
-                        for (Resource r : resources) {
-                            sb.append("| ").append(r.getName())
-                                    .append(" | ").append(r.getId())
-                                    .append(" | ").append(r.getContextPosition())
-                                    .append(" | ").append(r.getRefreshPolicy())
-                                    .append(" | ").append(r.getMimeType())
-                                    .append(" |\n");
-                        }
-                    } else {
-                        sb.append("- **Resources**: None registered.\n");
-                    }
+        // Resources Table
+        List<Resource> resources = agi.getResourceManager().getResourcesList();
+        if (!resources.isEmpty()) {
+            sb.append("\n#### Managed Resources\n\n");
+            sb.append("| Name | UUID | Position | Policy | Mime |\n");
+            sb.append("|---|---|---|---|---|\n");
+            for (Resource r : resources) {
+                sb.append("| ").append(r.getName())
+                        .append(" | ").append(r.getId())
+                        .append(" | ").append(r.getContextPosition())
+                        .append(" | ").append(r.getRefreshPolicy())
+                        .append(" | ").append(r.getMimeType())
+                        .append(" |\n");
+            }
+        } else {
+            sb.append("- **Resources**: None registered.\n");
+        }
 
-                    return sb.toString();
-                })
-                .orElse("No session found with ID: " + sessionId);
+        return sb.toString();
     }
 
     /**
-     * Creates a new AGI session with optional model and tool configuration.
-     *
+     * Creates a new AGI session with comprehensive configuration options.
+     * @param resourceURIs Optional list of resource URIs to register in the new session.
+     * @param aiProviderUUID Optional UUID of the AI provider to use. Will use container default if null.
+     * @param nickName the nickname for the new AGI
      * @param open Whether to open the new AGI session in the host UI.
-     * @param agiProviderUUID Optional UUID of the AI provider to use.
-     * @param modelID Optional ID of the AI model to select.
-     * @param toolkitFqns Optional list of fully qualified toolkit class names
-     * to enable.
-     * @param resourceURIs Optional list of resource URIs to register in the new
-     * session.
-     * @param initialMessage Optional message to send to the new AGI immediately
-     * after creation.
+     * @param autoReplyTools Whether to automatically execute tool calls for the new session without waiting for manual user intervention.
+     * @param toolPermissions Optional map of tool permission overrides for this session (e.g. tool name -> PROMPT, APPROVE_ALWAYS, DENY).
+     * @param initialMessage Optional message to send to the new AGI immediately after creation.
+     * @param modelID Optional ID of the AI model to select. Will use container default if null.
+     * @param toolkitFqns Optional list of fully qualified toolkit class names to enable.
      * @return A confirmation message with the new session ID.
      */
     @AgiTool("Creates a brand new AGI session with comprehensive configuration options.")
     public String createNewAgi(
             @AgiToolParam("Whether to open the new AGI session in the UI.") boolean open,
-            @AgiToolParam(value = "The UUID of the AI provider to use. Will use the Asi Container default if not provided.", required = false) String agiProviderUUID,
+            @AgiToolParam("Whether to automatically execute tool calls for the new session without waiting for manual user intervention.") boolean autoReplyTools,
+            @AgiToolParam(value = "Optional nickname for the new AGI session.", required = false) String nickName,
+            @AgiToolParam(value = "The UUID of the AI provider to use. Will use the Asi Container default if not provided.", required = false) String aiProviderUUID,
             @AgiToolParam(value = "The ID of the AI model to use. Leave emtpy for default. Will use the Asi Container default if not provided", required = false) String modelID,
             @AgiToolParam(value = "List of toolkit fully qualified class names to enable. If not provided, will use all toolkits in the Asi Container preferences.", required = false) List<String> toolkitFqns,
             @AgiToolParam(value = "Optional List of resource URIs to register.", required = false) List<String> resourceURIs,
-            @AgiToolParam(value = "An optional initial message to send to the new AGI.", required = false) String initialMessage
+            @AgiToolParam(value = "An optional initial message to send to the new AGI.", required = false) String initialMessage,
+            @AgiToolParam(value = "Optional map of tool permission overrides for this session (e.g. tool name -> PROMPT, APPROVE_ALWAYS, DENY).", required = false) Map<String, ToolPermission> toolPermissions
     ) {
         AbstractAsiContainer container = getAsiContainer();
         AgiConfig config = container.createNewAgiConfig();
 
-        // 1. Ancestry Tracking
+        // 1. Ancestry & Loop Configuration
         config.setParentUuid(getAgi().getConfig().getSessionId());
+        config.setAutoReplyTools(autoReplyTools);
 
         // 2. Model & Provider Overrides
-        if (agiProviderUUID != null) {
-            config.setSelectedProviderUuid(agiProviderUUID);
+        if (aiProviderUUID != null) {
+            config.setSelectedProviderUuid(aiProviderUUID);
         }
         if (modelID != null) {
             config.setSelectedModelId(modelID);
@@ -333,8 +336,21 @@ public class AsiContainer extends AnahataToolkit {
 
         // 4. Atomic Creation & Registration
         Agi newAgi = container.createNewAgi(config);
+        if (nickName != null && !nickName.isBlank()) {
+            newAgi.setNickname(nickName);
+        }
 
-        // 5. Resource Bootstrapping
+        // 5. Session-Level Tool Permission Overrides
+        if (toolPermissions != null && !toolPermissions.isEmpty()) {
+            for (AbstractTool<?, ?> tool : newAgi.getToolManager().getAllTools()) {
+                ToolPermission p = toolPermissions.get(tool.getName());
+                if (p != null) {
+                    tool.setPermission(p);
+                }
+            }
+        }
+
+        // 6. Resource Bootstrapping
         if (resourceURIs != null) {
             for (String uriStr : resourceURIs) {
                 try {
@@ -347,19 +363,50 @@ public class AsiContainer extends AnahataToolkit {
             }
         }
 
-        // 6. Initial Prompting
+        // 7. Initial Prompting
         if (initialMessage != null && !initialMessage.isBlank()) {
             AgiUserMessage msg = new AgiUserMessage(newAgi, getAgi().getConfig().getSessionId());
             msg.addTextPart(initialMessage);
             newAgi.sendMessage(msg);
         }
 
-        // 7. UI Visibility
+        // 8. UI Visibility
         if (open) {
             container.open(newAgi);
         }
 
         return "Successfully created and registered new AGI session: " + newAgi.getConfig().getSessionId();
+    }
+
+    /**
+     * Closes the UI tab/window of a specific active AGI session without disposing it.
+     *
+     * @param sessionId The unique ID of the session to close.
+     * @return A confirmation message.
+     */
+    @AgiTool("Closes the UI tab/window of a specific active AGI session without disposing it.")
+    public String closeAgi(@AgiToolParam("The unique ID of the session to close.") String sessionId) {
+        Agi targetAgi = getAsiContainer().getAgi(sessionId);
+        if (!targetAgi.isOpen()) {
+            return "Session " + sessionId + " (" + targetAgi.getDisplayName() + ") is already closed in the UI.";
+        }
+
+        getAsiContainer().close(targetAgi);
+        return "Successfully closed UI tab for session: " + targetAgi.getDisplayName() + " (" + sessionId + ")";
+    }
+
+    /**
+     * Permanently disposes of an active AGI session, closing its UI, shutting down its executors, and archiving its session file.
+     *
+     * @param sessionId The unique ID of the session to dispose.
+     * @return A confirmation message.
+     */
+    @AgiTool("Permanently disposes of an active AGI session, closing its UI and archiving its session file.")
+    public String disposeAgi(@AgiToolParam("The unique ID of the session to dispose.") String sessionId) {
+        Agi targetAgi = getAsiContainer().getAgi(sessionId);
+        String displayName = targetAgi.getDisplayName();
+        getAsiContainer().dispose(targetAgi);
+        return "Successfully disposed and archived AGI session: " + displayName + " (" + sessionId + ")";
     }
 
     /**
@@ -370,22 +417,14 @@ public class AsiContainer extends AnahataToolkit {
      * used.
      * @return A text dump of the history.
      */
-    @AgiTool("Returns a plain text dump of the conversation history for a session.")
-    public String dumpHistory(@AgiToolParam("The unique ID of the session. If null, uses the current session.") String sessionId) {
-        Agi targetAgi = getAgi();
-        if (sessionId != null) {
-            targetAgi = getAsiContainer().getActiveAgis().stream()
-                    .filter(a -> a.getConfig().getSessionId().equals(sessionId))
-                    .findFirst().orElse(null);
-        }
-
-        if (targetAgi == null) {
-            return "Session not found.";
-        }
+    @AgiTool("Returns a plain text dump of the conversation history for a session. Does not include effectively pruned parts.")
+    public String dumpHistory(@AgiToolParam("The unique ID of the session.") String sessionId) {
+        Agi targetAgi = getAsiContainer().getAgi(sessionId);
 
         return targetAgi.getContextManager().getHistory().stream()
                 .map(m -> String.format("[ID: %d | Role: %s | From: %s]\n%s",
-                m.getSequentialId(), m.getRole(), m.getFrom(), m.asText(true)))
+                m.getSequentialId(), m.getRole(), m.getFrom(), m.asText(false)))
                 .collect(Collectors.joining("\n\n---\n\n"));
     }
+
 }
