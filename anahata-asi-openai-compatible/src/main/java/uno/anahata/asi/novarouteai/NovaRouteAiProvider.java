@@ -14,7 +14,7 @@ import uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider;
  *
  * @author anahata
  */
-public class NovarouteAiProvider extends OpenAiChatCompletionsProvider {
+public class NovaRouteAiProvider extends OpenAiChatCompletionsProvider {
 
     /**
      * Constructs a new NovarouteAI OpenAI-compatible provider.
@@ -24,7 +24,7 @@ public class NovarouteAiProvider extends OpenAiChatCompletionsProvider {
      * documentation URI for API key acquisition.
      * </p>
      */
-    public NovarouteAiProvider() {
+    public NovaRouteAiProvider() {
         super("NovaRouteAI", "NovaRouteAI", "https://novarouteai.com/v1", "NovaRouteAI", "https://novarouteai.com/register?aff=UBCS7HL727XC");
         setDescription("OpenAI-compatible access to selected official Chinese models");
         setFolderName(AbstractAsiContainer.getWorkDirSubDir("NovaRouteAI").toString());
