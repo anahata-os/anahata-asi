@@ -199,9 +199,26 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         resultsTabbedPane = new AdjustingTabPane(150);
         
         UITheme theme = agiConfig.getTheme();
+        MouseAdapter collapseOnDoubleClick = new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    getPart().getResponse().setExpanded(false);
+                }
+            }
+        };
+
         outputArea = createTextArea(theme.getToolOutputFg(), theme.getToolOutputBg());
+        outputArea.setToolTipText("Double-click to collapse response panel");
+        outputArea.addMouseListener(collapseOnDoubleClick);
+
         errorArea = createTextArea(theme.getToolErrorFg(), theme.getToolErrorBg());
+        errorArea.setToolTipText("Double-click to collapse response panel");
+        errorArea.addMouseListener(collapseOnDoubleClick);
+
         logsArea = createTextArea(theme.getToolLogsFg(), theme.getToolLogsBg());
+        logsArea.setToolTipText("Double-click to collapse response panel");
+        logsArea.addMouseListener(collapseOnDoubleClick);
         attachmentsPanel = new ToolResponseAttachmentsPanel(agiPanel);
 
         outputScrollPane = new JScrollPane(outputArea);
@@ -220,10 +237,14 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         responseTitledPanel.setOpaque(false);
         responseTitledPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.LIGHT_GRAY));
         
-        // Add expand/collapse logic to the response titled panel header
+        // Add expand/collapse logic and tooltip to the response titled panel header
         if (responseTitledPanel.getComponentCount() > 0) {
-            responseTitledPanel.getComponent(0).setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            responseTitledPanel.getComponent(0).addMouseListener(new MouseAdapter() {
+            Component header = responseTitledPanel.getComponent(0);
+            header.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            if (header instanceof JComponent jc) {
+                jc.setToolTipText("Click to collapse / expand response");
+            }
+            header.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
                     AbstractToolResponse<?> resp = getPart().getResponse();
