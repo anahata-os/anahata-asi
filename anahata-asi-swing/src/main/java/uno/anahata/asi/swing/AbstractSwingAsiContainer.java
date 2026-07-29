@@ -21,6 +21,7 @@ import uno.anahata.asi.gemini.GeminiGoogleCloudExpressAIProvider;
 import uno.anahata.asi.huggingface.HuggingFaceProvider;
 import uno.anahata.asi.minimax.MinimaxAnthropicProvider;
 import uno.anahata.asi.modal.ModalProvider;
+import uno.anahata.asi.novarouteai.NovaRouteAiProvider;
 import uno.anahata.asi.openai.OpenAiResponsesProvider;
 import uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider;
 import uno.anahata.asi.swing.agi.AgiPanel;
@@ -72,7 +73,7 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
         uno.anahata.asi.gemini.GeminiGoogleCloudExpressAIProvider.class,
         uno.anahata.asi.huggingface.HuggingFaceProvider.class,
         uno.anahata.asi.modal.ModalProvider.class,
-        uno.anahata.asi.novarouteai.NovarouteAiProvider.class
+        uno.anahata.asi.novarouteai.NovaRouteAiProvider.class
     );
 
 
@@ -100,6 +101,10 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
         if (getProvider("GeminiVertex") == null) {
             registerProvider(new GeminiAiProvider("GeminiVertex", "Google Cloud (Vertex)", true));
         }
+        
+        if (getProvider("NovaRouteAI") == null) {
+            registerProvider(new NovaRouteAiProvider());
+        }
 
         if (getProvider("OpenAI") == null) {
             log.info("Registering OpenAI");
@@ -125,7 +130,9 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
 
         if (getProvider("HuggingFace") == null) {
             log.info("Registering HF");
-            registerProvider(new HuggingFaceProvider());
+            HuggingFaceProvider hf = new HuggingFaceProvider();
+            hf.setEnabled(false);
+            registerProvider(hf);
         }
     }
 
