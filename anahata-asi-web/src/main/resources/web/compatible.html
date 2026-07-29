@@ -36,6 +36,7 @@
                 <ul>
                     <li><a href="#overview" class="active">Overview</a></li>
                     <li><a href="#openai-compatible">OpenAI Compatible</a></li>
+                    <li><a href="#novarouteai">NovaRouteAI</a></li>
                     <li><a href="#huggingface">Hugging Face</a></li>
                     <li><a href="#modal">Modal (GLM-5)</a></li>
                     <li><a href="#minimax">MiniMax</a></li>
@@ -56,6 +57,11 @@
             </section>
 
             <div class="alliance-grid">
+                <section id="novarouteai" class="adapter-box" style="margin: 0; border-top: 4px solid var(--barca-gold);">
+                    <h4><img src="assets/logos/uno.anahata.asi.novarouteai.NovarouteAiProvider.png" alt="NovaRouteAI" style="height: 24px; vertical-align: middle; margin-right: 8px;"> NovaRouteAI</h4>
+                    <p>An OpenAI-compatible provider adapter offering seamless access to official Chinese models (DeepSeek, Qwen, GLM, etc.) with pre-configured endpoints and affiliate onboarding.</p>
+                </section>
+
                 <section id="huggingface" class="adapter-box" style="margin: 0; border-top: 4px solid var(--barca-gold);">
                     <h4><img src="assets/logos/uno.anahata.asi.huggingface.HuggingFaceProvider.png" alt="HF" style="height: 24px; vertical-align: middle; margin-right: 8px;"> Hugging Face (The Deep Inspector)</h4>
                     <p>Our Hugging Face adapter doesn't just blindly send prompts. It runs a parallel <b>"Deep Inspection"</b> using the container's background executor to fetch <code>config.json</code> and <code>tokenizer_config.json</code> directly from the HF Hub. This allows it to dynamically learn the model's architecture, accurate token limits, and whether it uses <code>&lt;think&gt;</code> tags or <code>reasoning_content</code> fields!</p>
@@ -66,7 +72,7 @@
                     <p>A sleek, pre-configured adapter that instantly taps into Modal's serverless GLM-5.1 endpoint. It automatically parses GLM's native function calling mechanics and its specific <code>reasoning_content</code> fields for pristine UI rendering.</p>
                 </section>
 
-                <section id="minimax" class="adapter-box" style="margin: 0; border-top: 4px solid var(--barca-blue); grid-column: 1 / -1;">
+                <section id="minimax" class="adapter-box" style="margin: 0; border-top: 4px solid var(--barca-blue);">
                     <h4><img src="assets/logos/uno.anahata.asi.minimax.MinimaxAnthropicProvider.png" alt="MiniMax" style="height: 24px; vertical-align: middle; margin-right: 8px;"> MiniMax (Anthropic-Compatible)</h4>
                     <p>Demonstrating our extreme architectural flexibility, we mapped MiniMax's high-speed M2.5/M2.7 models through our <i>Anthropic-compatible</i> adapter rather than OpenAI's. This provides native access to their lightning-fast agentic workflows while reusing our bulletproof Claude SSE streaming logic.</p>
                 </section>
