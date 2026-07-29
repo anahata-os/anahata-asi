@@ -3,7 +3,6 @@ package uno.anahata.asi.toolkit;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -11,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
-import uno.anahata.asi.agi.message.AbstractMessage;
 import uno.anahata.asi.agi.message.AgiUserMessage;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
@@ -422,8 +420,8 @@ public class AsiContainer extends AnahataToolkit {
         Agi targetAgi = getAsiContainer().getAgi(sessionId);
 
         return targetAgi.getContextManager().getHistory().stream()
-                .map(m -> String.format("[ID: %d | Role: %s | From: %s]\n%s",
-                m.getSequentialId(), m.getRole(), m.getFrom(), m.asText(false)))
+                .map(m -> String.format("[ID: %d | Role: %s | From: %s | Tokens: %d]\n%s",
+                m.getSequentialId(), m.getRole(), m.getFrom(), m.getTokenCount(true), m.asText(false)))
                 .collect(Collectors.joining("\n\n---\n\n"));
     }
 
