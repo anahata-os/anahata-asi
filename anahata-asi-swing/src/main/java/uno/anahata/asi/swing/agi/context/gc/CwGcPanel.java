@@ -256,7 +256,7 @@ public class CwGcPanel extends JPanel {
         topLogActions.add(clearBtn);
         logPanel.add(topLogActions, BorderLayout.NORTH);
 
-        logModel = new DefaultTableModel(new Object[]{"Timestamp", "Msg ID", "Type", "Tokens Recycled"}, 0) {
+        logModel = new DefaultTableModel(new Object[]{"Timestamp", "Msg ID", "Type", "Tokens Recycled", "Parts Summary"}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -367,7 +367,8 @@ public class CwGcPanel extends JPanel {
                 TimeUtils.formatSmartTimestamp(Instant.ofEpochMilli(record.getTimestamp())),
                 record.getMessageId(),
                 record.getType(),
-                NUMBER_FORMAT.format(record.getTokenCount())
+                NUMBER_FORMAT.format(record.getTokenCount()),
+                record.getPartsSummary() != null ? record.getPartsSummary() : ""
             });
         }
     }

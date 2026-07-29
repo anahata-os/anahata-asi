@@ -9,32 +9,37 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.internal.TokenizerUtils;
 import uno.anahata.asi.agi.message.AbstractMessage;
 import uno.anahata.asi.agi.message.AbstractPart;
 import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.provider.AbstractModel;
-import uno.anahata.asi.agi.provider.TokenizerType;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
+import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.toolkit.History;
 
 /**
- * Orchestrates the monitoring and logging of the Context Window Garbage Collection (CwGC).
- * This class calculates high-fidelity metrics for prompt load and recycling efficiency
- * using a one-pass calculation strategy.
+ * Orchestrates the monitoring and logging of the Context Window Garbage
+ * Collection (CwGC). This class calculates high-fidelity metrics for prompt
+ * load and recycling efficiency using a one-pass calculation strategy.
  */
 @Slf4j
 @Getter
 public class ContextWindowGarbageCollector extends BasicPropertyChangeSource {
 
-    /** The parent ContextManager orchestrating the active session. */
+    /**
+     * The parent ContextManager orchestrating the active session.
+     */
     private final ContextManager contextManager;
 
-    /** The concurrent log records of all garbage collection sweeps. */
+    /**
+     * The concurrent log records of all garbage collection sweeps.
+     */
     private final List<GarbageCollectorRecord> logRecords = new CopyOnWriteArrayList<>();
-    
-    /** The results of the last token calculation pass. */
+
+    /**
+     * The results of the last token calculation pass.
+     */
     private Stats stats = Stats.builder().build();
 
     /**
@@ -47,11 +52,12 @@ public class ContextWindowGarbageCollector extends BasicPropertyChangeSource {
     }
 
     /**
-     * Performs a comprehensive, one-pass calculation of all token metrics in the 
-     * current context. This categorizes tokens into system instructions, tools, 
-     * metadata, and various history states using the active session tokenizer.
+     * Performs a comprehensive, one-pass calculation of all token metrics in
+     * the current context. This categorizes tokens into system instructions,
+     * tools, metadata, and various history states using the active session
+     * tokenizer.
      */
-        public void calculate() {
+    public void calculate() {
         long startTime = System.currentTimeMillis();
         log.debug("Calculating high-fidelity token metabolism for session {}", contextManager.getAgi().getShortId());
         Stats.StatsBuilder sb = Stats.builder();
@@ -134,8 +140,38 @@ public class ContextWindowGarbageCollector extends BasicPropertyChangeSource {
     }
 
     /**
+     * Generates a compact parts summary string for a message being garbage
+     * collected.
+     *
+     * @param message The message to summarize.
+     * @return The formatted summary string.
+     */
+    private String summarizeParts(AbstractMessage message) {
+        java.util.List<String> summaries = new java.util.ArrayList<>();
+        for (AbstractPart part : message.getParts(true)) {
+            if (part instanceof AbstractToolCall<?, ?> toolCall) {
+                String status = toolCall.getResponse() != null && toolCall.getResponse().getStatus() != null
+                        ? toolCall.getResponse().getStatus().name()
+                        : "UNKNOWN";
+                summaries.add(part.getClass().getSimpleName() + "(tool: " + toolCall.getToolName() + ", status: " + status + ")");
+            } else if (part instanceof uno.anahata.asi.agi.message.TextPart textPart) {
+                if (textPart.isThought()) {
+                    summaries.add(part.getClass().getSimpleName() + "(thought)");
+                } else {
+                    summaries.add(part.getClass().getSimpleName());
+                }
+            } else if (part instanceof uno.anahata.asi.agi.message.BlobPart blobPart) {
+                summaries.add(part.getClass().getSimpleName() + "(mime: " + blobPart.getMimeType() + ")");
+            } else {
+                summaries.add(part.getClass().getSimpleName());
+            }
+        }
+        return summaries.stream().collect(java.util.stream.Collectors.joining(", ", "[", "]"));
+    }
+
+    /**
      * Records the recycling of a message turn.
-     * 
+     *
      * @param message The message being garbage collected.
      */
     public void recordCollection(@NonNull AbstractMessage message) {
@@ -144,6 +180,7 @@ public class ContextWindowGarbageCollector extends BasicPropertyChangeSource {
                 .messageId(message.getSequentialId())
                 .type(message.getClass().getSimpleName())
                 .tokenCount(message.getTokenCount(true))
+                .partsSummary(summarizeParts(message))
                 .build();
         logRecords.add(record);
         propertyChangeSupport.firePropertyChange("log", null, logRecords);
@@ -159,7 +196,7 @@ public class ContextWindowGarbageCollector extends BasicPropertyChangeSource {
 
     /**
      * Gets an unmodifiable view of the collection log.
-     * 
+     *
      * @return The list of collection records.
      */
     public List<GarbageCollectorRecord> getRecords() {
@@ -172,23 +209,39 @@ public class ContextWindowGarbageCollector extends BasicPropertyChangeSource {
     @Data
     @Builder
     public static class Stats {
-        /** The total tokens consumed by system instructions. */
+
+        /**
+         * The total tokens consumed by system instructions.
+         */
         private final int systemInstructionsTokens;
-        /** The total tokens consumed by all enabled tool declarations. */
+        /**
+         * The total tokens consumed by all enabled tool declarations.
+         */
         private final int toolDeclarationsTokens;
-        /** The total tokens consumed by active message and part metadata. */
+        /**
+         * The total tokens consumed by active message and part metadata.
+         */
         private final int metadataTokens;
-        /** The total tokens consumed by unpruned history parts. */
+        /**
+         * The total tokens consumed by unpruned history parts.
+         */
         private final int activeHistoryTokens;
-        /** The total tokens consumed by pruned history parts. */
+        /**
+         * The total tokens consumed by pruned history parts.
+         */
         private final int prunedHistoryTokens;
-        /** The total tokens consumed by unpruned RAG message content. */
+        /**
+         * The total tokens consumed by unpruned RAG message content.
+         */
         private final int ragTokens;
-        /** The cumulative tokens recycled by the garbage collector. */
+        /**
+         * The cumulative tokens recycled by the garbage collector.
+         */
         private final int garbageCollectedTokens;
 
         /**
          * Calculates the total prompt load (tokens sent to the model).
+         *
          * @return The total active tokens.
          */
         public int getTotalPromptLoad() {

@@ -23,4 +23,6 @@ public class GarbageCollectorRecord {
     private String type;
     /** The total number of content tokens recycled (not including metadata). */
     private int tokenCount;
+    /** Summarized list of each part contained in the recycled message. */
+    private String partsSummary;
 }
