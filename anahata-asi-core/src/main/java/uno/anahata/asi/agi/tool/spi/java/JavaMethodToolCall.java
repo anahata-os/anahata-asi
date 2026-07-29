@@ -44,7 +44,7 @@ public class JavaMethodToolCall extends AbstractToolCall<JavaMethodTool, JavaMet
         String inner = getTool().getParameters().stream()
                 .map(p -> {
                     Object val = getArgs().get(p.getName());
-                    return p.getName() + " = " + (val == null ? "null" : val.toString());
+                    return p.getName() + " = " + TextUtils.resolveContentString(val);
                 })
                 .collect(Collectors.joining(", "));
         return getToolName() + "(" + inner + ")";
