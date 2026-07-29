@@ -20,6 +20,7 @@ import uno.anahata.asi.gemini.GeminiAiProvider;
 import uno.anahata.asi.gemini.GeminiGoogleCloudExpressAIProvider;
 import uno.anahata.asi.huggingface.HuggingFaceProvider;
 import uno.anahata.asi.minimax.MinimaxAnthropicProvider;
+import uno.anahata.asi.mistral.MistralAiProvider;
 import uno.anahata.asi.modal.ModalProvider;
 import uno.anahata.asi.novarouteai.NovaRouteAiProvider;
 import uno.anahata.asi.openai.OpenAiResponsesProvider;
@@ -69,6 +70,7 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
         uno.anahata.asi.openai.OpenAiResponsesProvider.class,
         uno.anahata.asi.anthropic.AnthropicProvider.class,
         uno.anahata.asi.minimax.MinimaxAnthropicProvider.class,
+        uno.anahata.asi.mistral.MistralAiProvider.class,
         uno.anahata.asi.gemini.GeminiAiProvider.class,
         uno.anahata.asi.gemini.GeminiGoogleCloudExpressAIProvider.class,
         uno.anahata.asi.huggingface.HuggingFaceProvider.class,
@@ -126,6 +128,11 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
         if (getProvider("Modal") == null) {
             log.info("Registering Modal");
             registerProvider(new ModalProvider());
+        }
+
+        if (getProvider("Mistral") == null) {
+            log.info("Registering Mistral AI");
+            registerProvider(new MistralAiProvider());
         }
 
         if (getProvider("HuggingFace") == null) {
