@@ -27,16 +27,19 @@ Anahata ships with the most comprehensive agentic toolchain on Earth, featuring 
 - **NetBeans IDE Integration**: AST-Guided Code Splicing, Maven Embedders, Project Structure Scanners, and Live Output Tailing.
 - **Core OS & Hardware**: Screen Sharing, Audio PCM Recording, Speech Synthesis (TTS), and Shell Process execution.
 - **Web Automation**: Fully autonomous Chromium and Gecko (Firefox) WebDriver orchestration.
-- **Universal Alliance Adapters**: Run 100% locally with Ollama/vLLM, or connect to Google Gemini, OpenAI, Anthropic, HuggingFace, and DeepSeek.
+- **Universal Alliance Adapters**: Run 100% locally with Ollama/vLLM, or connect to Google Gemini, OpenAI, Anthropic, HuggingFace, NovaRouteAI, and DeepSeek.
 
 ---
 
 ### 📦 The Strategic Stack
-The platform is built on four foundation libraries:
-1. **[`anahata-asi-core`](https://asi.anahata.uno/core.html)**: The foundational ASI container, the CwGC engine, and the toolchain.
-2. **[`anahata-asi-swing`](https://asi.anahata.uno/swing.html)**: Multimodal UI components with identity-preserving "Diff-and-Update" rendering.
-3. **[`anahata-asi-gemini`](https://asi.anahata.uno/gemini.html)**: The reference adapter for Google’s Generative AI.
-4. **[`anahata-asi-yam`](https://asi.anahata.uno/yam.html)**: The laboratory for experimental multimodal tools (Chrome, Audio, Speech).
+The platform is built on modular foundation modules:
+1. **[`anahata-asi-core`](https://asi.anahata.uno/core.html)**: The foundational ASI container, CwGC engine, and core toolchain.
+2. **[`anahata-asi-gemini`](https://asi.anahata.uno/gemini.html)**: High-performance reference adapter for Google Gemini (Flash, Pro, Thinking).
+3. **[`anahata-asi-openai-compatible`](https://asi.anahata.uno/compatible.html)**: Universal OpenAI Chat Completions wire adapter for Hugging Face, Modal, NovaRouteAI, DeepSeek, and local Ollama/vLLM endpoints.
+4. **[`anahata-asi-openai`](https://asi.anahata.uno/openai.html)**: Provider for modern OpenAI Responses API (`/v1/responses`), GPT-4o, o1, o3, and upcoming GPT-5.x models.
+5. **[`anahata-asi-anthropic`](https://asi.anahata.uno/anthropic.html)**: Native adapter for Anthropic Claude (Sonnet, Thinking blocks) and MiniMax Anthropic-compatible endpoints.
+6. **[`anahata-asi-swing`](https://asi.anahata.uno/swing.html)**: Multimodal Swing UI components with identity-preserving rendering and reactive observability.
+7. **[`anahata-asi-yam`](https://asi.anahata.uno/yam.html)**: The laboratory for experimental multimodal tools (Chrome, Firefox, Audio, Radio, Speech).
 
 ---
 
@@ -52,10 +55,14 @@ A pure-Java Swing application providing a full-fidelity interface for desktop an
 > If you see a message saying the file is damaged on macOS, it is simply Gatekeeper blocking an unsigned app. Run this in your terminal:
 > `sudo xattr -rd com.apple.quarantine /Applications/Anahata\ ASI\ Desktop.app`
 
-#### **[Anahata ASI Studio](https://asi.anahata.uno/nb.html)**
+#### **[Anahata ASI Studio - NetBeans](https://asi.anahata.uno/nb.html)**
 *Enterprise Java-Ready Autonomous Coding Agent*
 A deep NetBeans IDE integration that transforms your development environment into an ASI studio.
 - **Get it**: [Latest Release](https://github.com/anahata-os/anahata-asi/releases/latest) | [Latest Snapshot (.nbm)](https://github.com/anahata-os/anahata-asi/releases/tag/latest-snapshot)
+
+#### **Anahata ASI Studio - IntelliJ** « In progress »
+*IntelliJ IDEA Autonomous Coding Agent Integration*
+A deep integration plugin for JetBrains IntelliJ IDEA platform to bring the full power of Anahata ASI to IntelliJ users.
 
 ---
 
@@ -86,3 +93,19 @@ This ASI was forged by the spirit of icons, gurus, and titans.
 - **Patanjali**, **Swami Satyananda**, **Swami Niranjananda**
 
 Everything in this universe is computable. The only thing that remains incomputable is our love for **F.C. Barcelona**. **Força Barça!**
+
+---
+
+### 📸 Visual Gallery & Interface Showcase
+
+| NetBeans IDE Integration | JIT Dynamic Java Execution |
+| :---: | :---: |
+| ![NetBeans Integration](https://asi.anahata.uno/screenshots/netbeans/InContextResourcesVisualization.png) | ![JIT Java Compiler](https://asi.anahata.uno/screenshots/netbeans/NbJava.png) |
+
+| Live Screen & Region Sharing | CwGC Context Window Metabolism |
+| :---: | :---: |
+| ![Live Screen Sharing](https://asi.anahata.uno/screenshots/netbeans/NetBeansLiveScreenSharingAdrianaLima.png) | ![Context Window GC](https://asi.anahata.uno/screenshots/netbeans/ContextWindowGarbageCollector.png) |
+
+| Standalone Desktop UI | Editable Tool Calls & Syntax Highlighting |
+| :---: | :---: |
+| ![Standalone Desktop](https://asi.anahata.uno/screenshots/desktop/OnTheFlyJavaCodeExecution.png) | ![Editable Tool Calls](https://asi.anahata.uno/screenshots/netbeans/editable-java-tool-calls-shl.png) |
