@@ -14,6 +14,7 @@ import uno.anahata.asi.agi.message.AgiUserMessage;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.agi.provider.AbstractModel;
+import uno.anahata.asi.agi.provider.ThinkingLevel;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.AgiToolkit;
@@ -291,6 +292,7 @@ public class AsiContainer extends AnahataToolkit {
      * @param initialMessage Optional message to send to the new AGI immediately after creation.
      * @param modelID Optional ID of the AI model to select. Will use container default if null.
      * @param toolkitFqns Optional list of fully qualified toolkit class names to enable.
+     * @param thinkingLevel the startup thinking level for the new AGI
      * @return A confirmation message with the new session ID.
      */
     @AgiTool("Creates a brand new AGI session with comprehensive configuration options.")
@@ -303,7 +305,8 @@ public class AsiContainer extends AnahataToolkit {
             @AgiToolParam(value = "List of toolkit fully qualified class names to enable. If not provided, will use all toolkits in the Asi Container preferences.", required = false) List<String> toolkitFqns,
             @AgiToolParam(value = "Optional List of resource URIs to register.", required = false) List<String> resourceURIs,
             @AgiToolParam(value = "An optional initial message to send to the new AGI.", required = false) String initialMessage,
-            @AgiToolParam(value = "Optional map of tool permission overrides for this session (e.g. tool name -> PROMPT, APPROVE_ALWAYS, DENY).", required = false) Map<String, ToolPermission> toolPermissions
+            @AgiToolParam(value = "Optional map of tool permission overrides for this session. The tool name, should be fully qualified: i.e. (ToolkitName.toolName)", required = false) Map<String, ToolPermission> toolPermissions,
+            @AgiToolParam(value = "Optional thinking level/mode for the new session.", required = false) ThinkingLevel thinkingLevel
     ) {
         AbstractAsiContainer container = getAsiContainer();
         AgiConfig config = container.createNewAgiConfig();
@@ -336,6 +339,9 @@ public class AsiContainer extends AnahataToolkit {
         Agi newAgi = container.createNewAgi(config);
         if (nickName != null && !nickName.isBlank()) {
             newAgi.setNickname(nickName);
+        }
+        if (thinkingLevel != null) {
+            newAgi.getRequestConfig().setThinkingLevel(thinkingLevel);
         }
 
         // 5. Session-Level Tool Permission Overrides
