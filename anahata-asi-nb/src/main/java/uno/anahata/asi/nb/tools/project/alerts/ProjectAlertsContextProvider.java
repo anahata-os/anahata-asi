@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.tools.project.alerts;
 
+import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.java.source.SourceUtils;
 import uno.anahata.asi.agi.message.RagMessage;
@@ -37,8 +38,7 @@ public class ProjectAlertsContextProvider extends AbstractProjectContextProvider
      */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
-        
-        if (javax.swing.SwingUtilities.isEventDispatchThread()) {
+        if (SwingUtilities.isEventDispatchThread()) {
             if (SourceUtils.isScanInProgress()) {
                 ragMessage.addTextPart("\n**Project Alerts**: Scanning in progress (UI refresh)...\n");
                 return;
@@ -49,35 +49,38 @@ public class ProjectAlertsContextProvider extends AbstractProjectContextProvider
                 Thread.sleep(500);
             }
         }
-        
+
         ProjectDiagnostics diags = projectsToolkit.getProjectAlerts(projectPath);
-        
+
         StringBuilder sb = new StringBuilder();
-        sb.append("\n**Project Alerts ").append(diags.getProjectName()).append("**\n");
-        
+
         if (diags.getJavacAlerts().isEmpty() && diags.getProjectAlerts().isEmpty()) {
-            sb.append("  - No alerts found.\n");
+            sb.append("\n**Project Alerts ").append(diags.getProjectName()).append("**: No alerts found.\n");
         } else {
+            sb.append("\n🚨🚨🚨 **CRITICAL COMPILER ALERTS & PROJECT ERRORS [").append(diags.getProjectName()).append("]** 🚨🚨🚨\n");
+            sb.append("> [!CAUTION]\n");
+
             // 1. Project Problems (High-level)
             if (!diags.getProjectAlerts().isEmpty()) {
-                sb.append("   Project Problems\n");
+                sb.append("> ### ⚠️ Project Problems (High-Level)\n");
                 for (ProjectAlert alert : diags.getProjectAlerts()) {
-                    sb.append("    - [").append(alert.getSeverity()).append("] ")
+                    sb.append("> - **[").append(alert.getSeverity()).append("]** ")
                       .append(alert.getDisplayName()).append(": ").append(alert.getDescription().replace("\n", " ")).append("\n");
                 }
             }
 
             // 2. Java Compiler Alerts (File-level)
             if (!diags.getJavacAlerts().isEmpty()) {
-                sb.append("   Java Compiler Alerts\n");
+                sb.append("> ### 🛑 Java Compiler Errors (File-Level)\n");
                 for (JavacAlert alert : diags.getJavacAlerts()) {
-                    sb.append("    - [").append(alert.getKind()).append("] ")
+                    sb.append("> - 🛑 **[").append(alert.getKind()).append("]** `")
                       .append(alert.getFilePath()).append(":").append(alert.getLineNumber())
-                      .append(" - ").append(alert.getMessage().replace("\n", " ")).append("\n");
+                      .append("`: ").append(alert.getMessage().replace("\n", " ")).append("\n");
                 }
             }
+            sb.append("\n");
         }
-        
+
         ragMessage.addTextPart(sb.toString());
     }
 
