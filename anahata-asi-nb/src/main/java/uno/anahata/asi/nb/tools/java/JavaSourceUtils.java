@@ -47,8 +47,8 @@ public class JavaSourceUtils {
     /**
      * The authoritative identification standard for all Anahata Java toolkits.
      */
-    public static final String CANONICAL_FQN_STANDARD = 
-              "### Anahata Canonical Identification Standard (Global)\n"
+    public static final String CANONICAL_FQN_STANDARD
+            = "### Anahata Canonical Identification Standard (Global)\n"
             + "All Java toolkits require members to be identified using this exact FQN syntax. **No simple names, no fallbacks**.\n"
             + "\n"
             + "| Entity | Canonical Identification FQN Syntax | Example |\n"
@@ -70,6 +70,7 @@ public class JavaSourceUtils {
 
     /**
      * Generates the Anahata Canonical FQN for a given element.
+     *
      * @param e The element to resolve.
      * @return The canonical FQN string.
      */
@@ -103,6 +104,7 @@ public class JavaSourceUtils {
 
     /**
      * Generates the Anahata Canonical FQN for a given type mirror.
+     *
      * @param m The type mirror to resolve.
      * @return The canonical FQN string.
      */
@@ -190,16 +192,15 @@ public class JavaSourceUtils {
         return fqn.replace('$', '.');
     }
 
-    
-
     /**
-     * Locates a syntax tree node inside the compilation context matching the given FQN.
+     * Locates a syntax tree node inside the compilation context matching the
+     * given FQN.
+     *
      * @param memberFqn The canonical FQN of the member to find.
      * @param info The compilation context.
      * @return The matching Tree node, or null if not found.
      */
     public static Tree findTree(CompilationInfo info, final String memberFqn) {
-        
         final String pureFqn;
         final String indexPart;
         if (memberFqn.contains("#")) {
@@ -226,9 +227,19 @@ public class JavaSourceUtils {
                 if (found[0] != null) {
                     return null;
                 }
+                String currentFqn = null;
                 Element el = info.getTrees().getElement(getCurrentPath());
                 if (el instanceof TypeElement te) {
-                    String currentFqn = te.getQualifiedName().toString();
+                    currentFqn = te.getQualifiedName().toString();
+                } else {
+                    String pkg = (info.getCompilationUnit().getPackage() != null)
+                            ? info.getCompilationUnit().getPackage().getPackageName().toString()
+                            : "";
+                    String className = node.getSimpleName().toString();
+                    currentFqn = pkg.isEmpty() ? className : pkg + "." + className;
+                }
+
+                if (currentFqn != null) {
                     String normalizedPureFqn = normalizeFqn(pureFqn);
                     // Case 1: Exact Class Match
                     if (currentFqn.equals(normalizedPureFqn) && !memberFqn.contains("(") && indexPart == null) {
@@ -251,17 +262,30 @@ public class JavaSourceUtils {
                             if (member instanceof MethodTree mt) {
                                 String name = mt.getName().toString();
                                 String targetName = getMemberSimpleName(pureFqn);
-                                String className = te.getSimpleName().toString();
-                                // Support both <init> and ClassName for constructors in the FQN
-                                boolean nameMatch = name.equals(targetName) || 
-                                                 (name.equals("<init>") && (targetName.equals("<init>") || targetName.equals(className)));
+                                String className = node.getSimpleName().toString();
+                                boolean nameMatch = name.equals(targetName)
+                                        || (name.equals("<init>") && (targetName.equals("<init>") || targetName.equals(className)));
                                 if (nameMatch) {
                                     if (memberFqn.contains("(")) {
                                         TreePath memberPath = new TreePath(getCurrentPath(), member);
                                         Element e = info.getTrees().getElement(memberPath);
-                                        if (e instanceof ExecutableElement ee && matchSignature(info, ee, memberFqn)) {
-                                            found[0] = member;
-                                            return null;
+                                        if (e instanceof ExecutableElement ee) {
+                                            if (matchSignature(info, ee, memberFqn)) {
+                                                found[0] = member;
+                                                return null;
+                                            }
+                                        } else {
+                                            // Fallback for Phase.PARSED or un-attributed AST trees
+                                            String params = mt.getParameters().stream()
+                                                    .map(param -> param.getType().toString().replaceAll("<[^>]*>", "").replaceAll("\\s+", ""))
+                                                    .collect(Collectors.joining(","));
+                                            String candidateSig = currentFqn + "." + (name.equals("<init>") ? "<init>" : name) + "(" + params + ")";
+                                            String simpleCandidateSig = currentFqn + "." + name + "(" + params + ")";
+                                            String normalizedExpected = normalizeFqn(memberFqn).replaceAll("\\s+", "");
+                                            if (candidateSig.equalsIgnoreCase(normalizedExpected) || simpleCandidateSig.equalsIgnoreCase(normalizedExpected)) {
+                                                found[0] = member;
+                                                return null;
+                                            }
                                         }
                                     } else if (!memberFqn.contains("#")) {
                                         found[0] = member;
@@ -283,15 +307,15 @@ public class JavaSourceUtils {
         }.scan(new TreePath(info.getCompilationUnit()), null);
         return found[0];
     }
-    // Case 1: Exact Class Match
-    // Case 2: Member Match inside Class
+
     // Support both <init> and ClassName for constructors in the FQN
-        // Support both <init> and ClassName for constructors
-        
+    // Support both <init> and ClassName for constructors
     /**
      * Internal helper to match a method element against a string signature.
-     * <p>This implementation is erasure-aware. If the provided signature does not
+     * <p>
+     * This implementation is erasure-aware. If the provided signature does not
      * contain generics, it will match against the raw AST type.</p>
+     *
      * @param methodFqn The signature to compare against.
      * @param ee The executable element to match.
      * @param info The compilation context.
@@ -300,12 +324,12 @@ public class JavaSourceUtils {
     private static boolean matchSignature(CompilationInfo info, ExecutableElement ee, String methodFqn) {
         String actualFqn = getCanonicalFqn(ee).replaceAll("\\s+", "");
         String expectedFqn = methodFqn.replaceAll("\\s+", "");
-        
+
         // Normalization: remove generics from both sides to ensure raw signature matching
         if (expectedFqn.contains("<")) {
             expectedFqn = expectedFqn.replaceAll("<[^>]*>", "");
         }
-        if (actualFqn.contains("<")) {        
+        if (actualFqn.contains("<")) {
             actualFqn = actualFqn.replaceAll("<[^>]*>", "");
         }
         // Special case: Constructor name normalization (<init> vs ClassName)
@@ -319,7 +343,9 @@ public class JavaSourceUtils {
     }
 
     /**
-     * Splits a parameter string into individual types, respecting generic brackets.
+     * Splits a parameter string into individual types, respecting generic
+     * brackets.
+     *
      * @param params The raw parameters string.
      * @return A list of individual parameter types.
      */
@@ -352,11 +378,6 @@ public class JavaSourceUtils {
         return result;
     }
 
-    
-
-    
-
-
     /**
      * Generates a list of canonical candidate FQNs for a given partial member
      * name. Use this when a resolution fails to provide helpful feedback.
@@ -374,13 +395,13 @@ public class JavaSourceUtils {
         }
         String parentFqn = namePart.substring(0, lastSeparator);
         String name = namePart.substring(lastSeparator + 1);
-        
+
         // For lookup we must normalize to dots
         TypeElement parent = info.getElements().getTypeElement(normalizeFqn(parentFqn));
         if (parent == null) {
             return Collections.emptyList();
         }
-        
+
         List<String> candidates = new ArrayList<>();
         for (Element e : parent.getEnclosedElements()) {
             if (e.getSimpleName().contentEquals(name) || (name.equals("<init>") && e.getKind() == javax.lang.model.element.ElementKind.CONSTRUCTOR)) {
@@ -390,11 +411,10 @@ public class JavaSourceUtils {
         return candidates;
     }
 
-    
-    
-
     /**
-     * Forces the IDE to save and flush any open document buffers for the given file.
+     * Forces the IDE to save and flush any open document buffers for the given
+     * file.
+     *
      * @param fo The NetBeans file object to save.
      * @throws java.io.IOException If saving fails.
      */
