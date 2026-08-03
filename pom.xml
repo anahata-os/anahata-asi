@@ -81,6 +81,7 @@
     <modules>
         <module>anahata-asi-core</module>
         <module>anahata-asi-yam</module>
+        <module>anahata-asi-javafx</module>
         <module>anahata-asi-swing</module>
         <module>anahata-asi-desktop</module>
         <module>anahata-asi-nb</module>
@@ -281,7 +282,7 @@
             <dependency>
                 <groupId>com.google.genai</groupId>
                 <artifactId>google-genai</artifactId>
-                <version>1.60.0</version>
+                <version>1.62.0</version>
             </dependency>
             <!-- Testing -->
             <dependency>
