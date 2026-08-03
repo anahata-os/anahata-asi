@@ -45,11 +45,13 @@ public class AsiContainer extends AnahataToolkit {
     @Override
     public List<String> getSystemInstructions() throws Exception {
         List<String> inst = new ArrayList<>(super.getSystemInstructions());
-        inst.add("### Programmatic Container Access (from the java toolkit)\n"
+        inst.add("### The **AsiContainer** toolkit is a proxy toolkit for " + getAsiContainer().getClass().getName() + ". It provides some convenience, on-shot tools to query and manage sub agents.\n"
+                + "Programmatic Container Access (from the java toolkit, if available:)\n"
                 + "When scripting custom automation via the java toolkit, "
-                + "you can programmatically query the container's configurations, providers, and secure API keys:\n"
+                + "you can programmatically query the ASI container's configurations, providers, and secure API keys:\n"
                 + "1. Retrieve the Container: `AbstractAsiContainer container = getAsiContainer();`\n"
-                + "2. Retrieve Active API Keys:\n"
+                + "2. Get a provider by id: `AbstractAiProvider provider= getProvider(\"Gemini\");`\n"
+                + "3. Retrieve Active API Keys:\n"
                 + "   - Get currently selected/rotated key: `String apiKey = provider.getCurrentKey();`\n"
                 + "   - Trigger key rotation: `provider.hokusPocus();`"
         );
@@ -305,7 +307,7 @@ public class AsiContainer extends AnahataToolkit {
             @AgiToolParam(value = "List of toolkit fully qualified class names to enable. If not provided, will use all toolkits in the Asi Container preferences.", required = false) List<String> toolkitFqns,
             @AgiToolParam(value = "Optional List of resource URIs to register.", required = false) List<String> resourceURIs,
             @AgiToolParam(value = "An optional initial message to send to the new AGI.", required = false) String initialMessage,
-            @AgiToolParam(value = "Optional map of tool permission overrides for this session. The tool name, should be fully qualified: i.e. (ToolkitName.toolName)", required = false) Map<String, ToolPermission> toolPermissions,
+            @AgiToolParam(value = "Optional map of tool permission overrides for this session. The key should be the tool name using '.' as separator between the toolkit name and the tool name: e.g. 'AsiContainer.createAgi' or 'Session.updateSessionNickname'", required = false) Map<String, ToolPermission> toolPermissions,
             @AgiToolParam(value = "Optional thinking level/mode for the new session.", required = false) ThinkingLevel thinkingLevel
     ) {
         AbstractAsiContainer container = getAsiContainer();
