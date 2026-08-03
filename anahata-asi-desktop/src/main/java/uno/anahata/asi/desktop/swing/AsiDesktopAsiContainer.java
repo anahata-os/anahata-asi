@@ -13,6 +13,7 @@ import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.resources.DefaultResourceUI;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
+import uno.anahata.asi.javafx.util.JavaFxUtils;
 
 /**
  * A specialized {@link uno.anahata.asi.AbstractAsiContainer} for the standalone
@@ -28,6 +29,8 @@ public class AsiDesktopAsiContainer extends AbstractSwingAsiContainer {
         log.info("Performing global Standalone environment configuration...");
         // Register the universal/standalone resource UI strategy
         ResourceUiRegistry.getInstance().setResourceUI(new DefaultResourceUI());
+        // Pre-boot JavaFX Platform with setImplicitExit(false) for multi-stage stability
+        JavaFxUtils.ensureInitialized();
     }
 
     /**
