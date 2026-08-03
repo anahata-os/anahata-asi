@@ -20,6 +20,13 @@
             <version>${project.version}</version>
         </dependency>
         
+        <!-- JavaFX Module -->
+        <dependency>
+            <groupId>uno.anahata</groupId>
+            <artifactId>anahata-asi-javafx</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        
         <!-- FlatLaf and themes -->
         <dependency>
             <groupId>com.formdev</groupId>
