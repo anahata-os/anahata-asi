@@ -5,8 +5,11 @@ import com.sun.source.tree.*;
 import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
+import java.io.OutputStream;
 import java.util.*;
-import javax.lang.model.element.*;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.swing.text.Document;
 import lombok.extern.slf4j.Slf4j;
@@ -17,9 +20,9 @@ import org.netbeans.modules.editor.java.Utilities;
 import org.netbeans.modules.java.editor.base.imports.UnusedImports;
 import org.openide.cookies.EditorCookie;
 import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
 import uno.anahata.asi.agi.tool.*;
-import org.netbeans.api.java.source.TreePathHandle;
 
 /**
  * V3.0.0 of the structural Java code refinement toolkit. High-precision
@@ -163,7 +166,7 @@ public class CodeRefiner extends AnahataToolkit {
         String sourceCode = new String(fo.asBytes(), "UTF-8");
         String optimizedContent = optimizeImportsInMemory(cpInfo, sourceCode, removeUnused, null, null);
         if (!sourceCode.equals(optimizedContent)) {
-            try (java.io.OutputStream os = fo.getOutputStream()) {
+            try (OutputStream os = fo.getOutputStream()) {
                 os.write(optimizedContent.getBytes("UTF-8"));
             }
             JavaSourceUtils.handleSave(fo);
@@ -171,7 +174,9 @@ public class CodeRefiner extends AnahataToolkit {
     }
 
     /**
-     * Helper to optimize imports entirely in-memory, preserving atomicity during batch edits.
+     * Helper to optimize imports entirely in-memory, preserving atomicity
+     * during batch edits.
+     *
      * @param cpInfo The classpath info
      * @param explicitImportsToAdd Additional FQNs to add
      * @param explicitImportsToRemove FQNs to forcibly remove
@@ -180,7 +185,7 @@ public class CodeRefiner extends AnahataToolkit {
      * @return The import-optimized source string
      */
     public static String optimizeImportsInMemory(ClasspathInfo cpInfo, String sourceCode, boolean optimize, List<String> explicitImportsToAdd, List<String> explicitImportsToRemove) throws Exception {
-        FileObject tempFo = org.openide.filesystems.FileUtil.createMemoryFileSystem().getRoot().createData("Temp_OptimizeImports_" + System.nanoTime(), "java");
+        FileObject tempFo = FileUtil.createMemoryFileSystem().getRoot().createData("Temp_OptimizeImports_" + System.nanoTime(), "java");
         try (java.io.OutputStream os = tempFo.getOutputStream()) {
             os.write(sourceCode.getBytes("UTF-8"));
         }
@@ -235,9 +240,14 @@ public class CodeRefiner extends AnahataToolkit {
 
                 new TreePathScanner<Void, WorkingCopy>() {
                     @Override
-                    public Void visitPackage(PackageTree node, WorkingCopy wcSub) { return null; }
+                    public Void visitPackage(PackageTree node, WorkingCopy wcSub) {
+                        return null;
+                    }
+
                     @Override
-                    public Void visitImport(ImportTree node, WorkingCopy wcSub) { return null; }
+                    public Void visitImport(ImportTree node, WorkingCopy wcSub) {
+                        return null;
+                    }
 
                     @Override
                     public Void visitMemberSelect(MemberSelectTree node, WorkingCopy wcSub) {
@@ -297,8 +307,10 @@ public class CodeRefiner extends AnahataToolkit {
                                         Set<ElementHandle<TypeElement>> handles = index.getDeclaredTypes(name, ClassIndex.NameKind.SIMPLE_NAME, scopes);
                                         if (!handles.isEmpty()) {
                                             class Candidate {
+
                                                 final String fqn;
                                                 final int score;
+
                                                 Candidate(String fqn, int score) {
                                                     this.fqn = fqn;
                                                     this.score = score;
@@ -420,9 +432,14 @@ public class CodeRefiner extends AnahataToolkit {
 
                 new TreePathScanner<Void, WorkingCopy>() {
                     @Override
-                    public Void visitPackage(PackageTree node, WorkingCopy wcSub) { return null; }
+                    public Void visitPackage(PackageTree node, WorkingCopy wcSub) {
+                        return null;
+                    }
+
                     @Override
-                    public Void visitImport(ImportTree node, WorkingCopy wcSub) { return null; }
+                    public Void visitImport(ImportTree node, WorkingCopy wcSub) {
+                        return null;
+                    }
 
                     @Override
                     public Void visitMemberSelect(MemberSelectTree node, WorkingCopy wcSub) {
@@ -447,39 +464,41 @@ public class CodeRefiner extends AnahataToolkit {
                                     }
 
                                     String simpleName = (outerType != null ? outerType : te).getSimpleName().toString();
-                                    if (!originalTakenSimpleNames.contains(simpleName)) {
-                                        PackageElement tePkg = wcSub.getElements().getPackageOf(outerType != null ? outerType : te);
-                                        String pkgName = tePkg != null ? tePkg.getQualifiedName().toString() : "";
-                                        String currentPkg = cut.getPackage() != null ? cut.getPackage().getPackageName().toString() : "";
-                                        boolean isImplicit = "java.lang".equals(pkgName) || currentPkg.equals(pkgName);
+                                    PackageElement tePkg = wcSub.getElements().getPackageOf(outerType != null ? outerType : te);
+                                    String pkgName = tePkg != null ? tePkg.getQualifiedName().toString() : "";
+                                    String currentPkg = cut.getPackage() != null ? cut.getPackage().getPackageName().toString() : "";
+                                    boolean isImplicit = "java.lang".equals(pkgName) || currentPkg.equals(pkgName);
 
-                                        boolean isImported = false;
-                                        if (isImplicit) {
-                                            isImported = true;
-                                        } else {
-                                            String targetFqn = outerType != null ? outerType.getQualifiedName().toString() : fqn;
-                                            for (ImportTree imp : cut.getImports()) {
-                                                String impStr = imp.getQualifiedIdentifier().toString();
-                                                if (impStr.equals(targetFqn)) {
-                                                    isImported = true;
-                                                    break;
-                                                }
+                                    // Pass 2 FQN Rewrite check:
+                                    // A type is eligible to be rewritten from its full FQN (e.g. java.util.List) to its simple name (List)
+                                    // if it is implicitly available (java.lang or same package) or if an explicit 'import' statement 
+                                    // for that exact FQN is already present in the compilation unit's import header (cut.getImports()).
+                                    boolean isImported = false;
+                                    if (isImplicit) {
+                                        isImported = true;
+                                    } else {
+                                        String targetFqn = outerType != null ? outerType.getQualifiedName().toString() : fqn;
+                                        for (ImportTree imp : cut.getImports()) {
+                                            String impStr = imp.getQualifiedIdentifier().toString();
+                                            if (impStr.equals(targetFqn)) {
+                                                isImported = true;
+                                                break;
                                             }
                                         }
-                                        if (isImported) {
-                                            String replacementName;
-                                            if (outerType != null) {
-                                                String pkg = wcSub.getElements().getPackageOf(outerType).getQualifiedName().toString();
-                                                if (pkg.isEmpty()) {
-                                                    replacementName = fqn;
-                                                } else {
-                                                    replacementName = fqn.substring(pkg.length() + 1);
-                                                }
+                                    }
+                                    if (!originalTakenSimpleNames.contains(simpleName) || isImported) {
+                                        String replacementName;
+                                        if (outerType != null) {
+                                            String pkg = wcSub.getElements().getPackageOf(outerType).getQualifiedName().toString();
+                                            if (pkg.isEmpty()) {
+                                                replacementName = fqn;
                                             } else {
-                                                replacementName = te.getSimpleName().toString();
+                                                replacementName = fqn.substring(pkg.length() + 1);
                                             }
-                                            wcSub.rewrite(node, make.Identifier(replacementName));
+                                        } else {
+                                            replacementName = te.getSimpleName().toString();
                                         }
+                                        wcSub.rewrite(node, make.Identifier(replacementName));
                                     }
                                 }
                             }
@@ -490,8 +509,12 @@ public class CodeRefiner extends AnahataToolkit {
             }).commit();
         }
 
-        return new String(tempFo.asBytes(), "UTF-8");
+        String rawOutput = new String(tempFo.asBytes(), "UTF-8");
+        return rawOutput.replaceAll("@\\s+([A-Z][a-zA-Z0-9_]*)", "@$1");
     }
+
+
+
     /**
      * Adds an annotation to a class, method, or field.
      *
