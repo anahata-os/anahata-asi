@@ -5,13 +5,13 @@ import com.sun.source.tree.*;
 import com.sun.source.util.SourcePositions;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.TreePath;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.text.Document;
 import org.netbeans.api.java.source.CodeStyle;
 import org.netbeans.api.java.source.Comment;
@@ -268,7 +268,7 @@ public class CodeRefinementIntent implements Serializable {
                     bodyStart = initStart;
                     bodyEnd = initEnd;
                     String textToInit = currentContent.substring((int) startPos, (int) bodyStart);
-                    int eq = textToInit.lastIndexOf('=');
+                    int eq = findAssignmentEqualsIndex(textToInit, vt.getName().toString());
                     if (eq != -1) {
                         bodyStart = startPos + eq + 1;
                     } else {
@@ -337,10 +337,10 @@ public class CodeRefinementIntent implements Serializable {
 
             String newBodyStr = oldBody;
             if (innerBlockOrInitializer != null) {
-                if (member instanceof VariableTree) {
+                if (member instanceof VariableTree vt) {
                     if (innerBlockOrInitializer.isBlank()) {
                         newBodyStr = "";
-                        int eq = newDeclStr.lastIndexOf('=');
+                        int eq = findAssignmentEqualsIndex(newDeclStr, vt.getName().toString());
                         if (eq != -1) {
                             newDeclStr = newDeclStr.substring(0, eq).trim();
                         }
@@ -757,23 +757,20 @@ public class CodeRefinementIntent implements Serializable {
     }
 
     /**
-     * Calculates the expected fully qualified name of the member after this
-     * intent is applied.
+     * Locates the assignment equals ('=') operator index in a variable declaration
+     * or initialization prefix text, searching strictly after the variable name
+     * to avoid matching equals operators inside annotations.
      *
-     * @return the resulting FQN, or null if deleted.
+     * @param text The text preceding the variable initializer or declaration.
+     * @param varName The simple name of the variable.
+     * @return The character index of the assignment '=', or -1 if not found.
      */
-    public String getResultingMemberFqn() {
-        if (type == Type.DELETE) {
-            return null;
+    private static int findAssignmentEqualsIndex(String text, String varName) {
+        int varNameIdx = text.lastIndexOf(varName);
+        if (varNameIdx != -1) {
+            return text.indexOf('=', varNameIdx + varName.length());
         }
-        if (type == Type.INSERT) {
-            String name = getSimpleNameFromDeclaration(declaration);
-            if (classFqn == null || classFqn.isBlank()) {
-                return name;
-            }
-            return classFqn + "." + name;
-        }
-        return memberFqn;
+        return text.lastIndexOf('=');
     }
 
     /**
