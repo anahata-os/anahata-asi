@@ -11,6 +11,7 @@ import uno.anahata.asi.agi.message.AbstractModelMessage;
 import uno.anahata.asi.agi.message.AbstractPart;
 import uno.anahata.asi.agi.message.ModelTextPart;
 import uno.anahata.asi.agi.provider.FinishReason;
+import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.internal.JacksonUtils;
 
 /**
@@ -180,6 +181,14 @@ public class OpenAiCompatibleModelMessage extends AbstractModelMessage<OpenAiCom
         if (funcNode != null && funcNode.has("name")) {
             String name = funcNode.get("name").asText();
             if (name != null && !name.isBlank()) {
+                if (!name.contains(".")) {
+                    for (AbstractTool<?, ?> tool : getAgi().getToolManager().getAllTools()) {
+                        if (tool.getName().replace('.', '_').equals(name)) {
+                            name = tool.getName();
+                            break;
+                        }
+                    }
+                }
                 callNames.put(index, name);
             }
         }

@@ -153,13 +153,13 @@ public class AnthropicModel extends AbstractModel {
      * {@inheritDoc}
      */
     @Override
-    public int getMaxInputTokens() { return 200000; }
+    public Integer getMaxInputTokens() { return null; }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public int getMaxOutputTokens() { return 8192; }
+    public Integer getMaxOutputTokens() { return null; }
 
     /**
      * {@inheritDoc}
@@ -250,8 +250,10 @@ public class AnthropicModel extends AbstractModel {
         ObjectNode payload = SchemaProvider.OBJECT_MAPPER.createObjectNode();
         payload.put("model", modelId);
         
-        int maxTokens = request.config().getMaxOutputTokens() != null ? request.config().getMaxOutputTokens() : getMaxOutputTokens();
-        payload.put("max_tokens", maxTokens);
+        Integer maxTokens = request.config().getMaxOutputTokens() != null ? request.config().getMaxOutputTokens() : getMaxOutputTokens();
+        if (maxTokens != null) {
+            payload.put("max_tokens", maxTokens);
+        }
         
         if (stream) payload.put("stream", true);
 

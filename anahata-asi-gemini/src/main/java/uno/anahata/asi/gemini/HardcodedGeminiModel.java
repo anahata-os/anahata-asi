@@ -31,12 +31,12 @@ public class HardcodedGeminiModel extends GeminiModel {
      * The maximum number of input tokens supported by this specific 
      * hardcoded manifest.
      */
-    private int maxInputTokens;
+    private Integer maxInputTokens;
     /**
      * The maximum number of output tokens supported by this specific 
      * hardcoded manifest.
      */
-    private int maxOutputTokens;
+    private Integer maxOutputTokens;
     /**
      * The list of API actions (e.g. 'generateContent') supported by 
      * this specific hardcoded manifest.
@@ -81,7 +81,7 @@ public class HardcodedGeminiModel extends GeminiModel {
      * </p>
      */
     @Override
-    public int getMaxInputTokens() {
+    public Integer getMaxInputTokens() {
         return maxInputTokens;
     }
 
@@ -92,7 +92,7 @@ public class HardcodedGeminiModel extends GeminiModel {
      * </p>
      */
     @Override
-    public int getMaxOutputTokens() {
+    public Integer getMaxOutputTokens() {
         return maxOutputTokens;
     }
 

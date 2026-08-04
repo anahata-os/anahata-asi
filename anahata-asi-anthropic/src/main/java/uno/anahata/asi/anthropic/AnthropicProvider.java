@@ -83,7 +83,7 @@ public class AnthropicProvider extends AbstractAiProvider {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(fullUrl))
                 .header("content-type", "application/json")
-                .timeout(Duration.ofMinutes(10));
+                .timeout(Duration.ofHours(1));
                 
         String apiKey = getCurrentKey();
         if (apiKey != null && !apiKey.isBlank()) {

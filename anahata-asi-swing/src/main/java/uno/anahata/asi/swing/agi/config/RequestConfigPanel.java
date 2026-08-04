@@ -338,25 +338,29 @@ public class RequestConfigPanel extends ScrollablePanel implements PropertyChang
         AbstractModel model = agi != null ? agi.getSelectedModel() : null;
 
         // Temperature
+        Float modelTemp = model != null ? model.getDefaultTemperature() : null;
         float temp = config.getTemperature() != null ? config.getTemperature() : 
-                     (model != null && model.getDefaultTemperature() != null ? model.getDefaultTemperature() : 1.0f);
+                     (modelTemp != null ? modelTemp : 1.0f);
         temperatureControl.setValue((double) temp);
 
         // Max Tokens
-        int modelMax = (model != null && model.getMaxOutputTokens() > 0) ? model.getMaxOutputTokens() : 8192;
+        Integer modelMaxObj = model != null ? model.getMaxOutputTokens() : null;
+        int modelMax = (modelMaxObj != null && modelMaxObj > 0) ? modelMaxObj : 8192;
         int maxTokens = config.getMaxOutputTokens() != null ? config.getMaxOutputTokens() : modelMax;
         
         maxOutputTokensControl.getSlider().setMaximum(Math.max(modelMax, 4096));
         maxOutputTokensControl.setValue(maxTokens);
 
         // Top K
+        Integer modelTopKObj = model != null ? model.getDefaultTopK() : null;
         int topK = config.getTopK() != null ? config.getTopK() : 
-                   (model != null && model.getDefaultTopK() != null ? model.getDefaultTopK() : 40);
+                   (modelTopKObj != null ? modelTopKObj : 40);
         topKControl.setValue(topK);
 
         // Top P
+        Float modelTopPObj = model != null ? model.getDefaultTopP() : null;
         float topP = config.getTopP() != null ? config.getTopP() : 
-                     (model != null && model.getDefaultTopP() != null ? model.getDefaultTopP() : 0.95f);
+                     (modelTopPObj != null ? modelTopPObj : 0.95f);
         topPControl.setValue((double) topP);
 
         if (model != null) {

@@ -93,11 +93,11 @@ public class AiModelTableModel extends AbstractTableModel {
             case 3: return model.getVersion();
             case 4: return model.getDescription();
             case 5: return String.join(", ", model.getSupportedActions());
-            case 6: return model.getMaxInputTokens();
-            case 7: return model.getMaxOutputTokens();
-            case 8: return model.getDefaultTemperature();
-            case 9: return model.getDefaultTopP();
-            case 10: return model.getDefaultTopK();
+            case 6: return model.getMaxInputTokens() != null ? model.getMaxInputTokens() : "N/A";
+            case 7: return model.getMaxOutputTokens() != null ? model.getMaxOutputTokens() : "N/A";
+            case 8: return model.getDefaultTemperature() != null ? model.getDefaultTemperature() : "N/A";
+            case 9: return model.getDefaultTopP() != null ? model.getDefaultTopP() : "N/A";
+            case 10: return model.getDefaultTopK() != null ? model.getDefaultTopK() : "N/A";
             default: return null;
         }
     }

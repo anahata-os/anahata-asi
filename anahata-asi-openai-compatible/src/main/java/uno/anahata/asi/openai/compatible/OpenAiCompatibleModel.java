@@ -39,6 +39,7 @@ import uno.anahata.asi.agi.provider.Response;
 import uno.anahata.asi.agi.provider.RetryableApiException;
 import uno.anahata.asi.agi.provider.ServerTool;
 import uno.anahata.asi.agi.provider.StreamObserver;
+import uno.anahata.asi.agi.provider.ThinkingLevel;
 import uno.anahata.asi.agi.provider.TokenizerType;
 import uno.anahata.asi.agi.tool.ToolResponseAttachment;
 import uno.anahata.asi.agi.tool.schema.SchemaProvider;
@@ -74,10 +75,10 @@ public class OpenAiCompatibleModel extends AbstractModel {
     private final String displayName;
     /** The model version. */
     private String version = "";
-    /** The maximum input tokens allowed. */
-    private int maxInputTokens = 200000;
-    /** The maximum output tokens allowed. */
-    private int maxOutputTokens = 32000;
+    /** The maximum input tokens allowed, or null if unknown. */
+    private Integer maxInputTokens = null;
+    /** The maximum output tokens allowed, or null if unknown. */
+    private Integer maxOutputTokens = null;
 
     /** The reasoning extraction style used by this model. */
     private OpenAiCompatibleReasoningStyle reasoningStyle = OpenAiCompatibleReasoningStyle.NONE;
@@ -133,6 +134,20 @@ public class OpenAiCompatibleModel extends AbstractModel {
                     Instant.ofEpochSecond(created),
                     ZoneId.systemDefault()
             ).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        }
+
+        if (node.has("context_length")) {
+            this.maxInputTokens = node.get("context_length").asInt();
+        } else if (node.has("max_context_length")) {
+            this.maxInputTokens = node.get("max_context_length").asInt();
+        } else if (node.has("context_window")) {
+            this.maxInputTokens = node.get("context_window").asInt();
+        }
+
+        if (node.has("max_output_tokens")) {
+            this.maxOutputTokens = node.get("max_output_tokens").asInt();
+        } else if (node.has("max_tokens")) {
+            this.maxOutputTokens = node.get("max_tokens").asInt();
         }
     }
 
@@ -195,7 +210,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
         }
         try {
             Map<String, Object> map = new HashMap<>();
-            map.put("name", toolCall.getToolName());
+            map.put("name", toolCall.getToolName().replace('.', '_'));
             map.put("arguments", JacksonUtils.serialize(toolCall.getEffectiveArgs()));
             return countTokens(JacksonUtils.serialize(map));
         } catch (Exception e) {
@@ -299,7 +314,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
      */
     @Override
     public Float getDefaultTemperature() {
-        return 0.7f;
+        return null;
     }
 
     /**
@@ -315,7 +330,23 @@ public class OpenAiCompatibleModel extends AbstractModel {
      */
     @Override
     public Float getDefaultTopP() {
-        return 0.95f;
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Integer getMaxInputTokens() {
+        return maxInputTokens;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Integer getMaxOutputTokens() {
+        return maxOutputTokens;
     }
 
     /**
@@ -534,6 +565,9 @@ public class OpenAiCompatibleModel extends AbstractModel {
                     for (OpenAiCompatibleModelMessage target : targets) {
                         target.setResponse(finalResponse);
                         target.setStreaming(false);
+                        if (target.getFinishReason() == null) {
+                            target.setFinishReason(uno.anahata.asi.agi.provider.FinishReason.GOD_FUCKING_KNOWS);
+                        }
                     }
                 }
             }
@@ -563,6 +597,11 @@ public class OpenAiCompatibleModel extends AbstractModel {
      * @param target the target message accumulating the content.
      */
     private void routeChunk(JsonNode choice, OpenAiCompatibleModelMessage target) {
+        // Extract finish_reason first, as final chunks may have null delta
+        if (choice.has("finish_reason") && !choice.get("finish_reason").isNull()) {
+            target.setFinishReasonFromOpenAi(choice.get("finish_reason").asText());
+        }
+
         JsonNode delta = choice.get("delta");
         if (delta == null) {
             delta = choice.get("message");
@@ -612,11 +651,6 @@ public class OpenAiCompatibleModel extends AbstractModel {
                 target.updateToolCall(callNode);
             }
         }
-
-        // 4. Finish Reason
-        if (choice.has("finish_reason") && !choice.get("finish_reason").isNull()) {
-            target.setFinishReasonFromOpenAi(choice.get("finish_reason").asText());
-        }
     }
 
     @Override
@@ -624,7 +658,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
         ObjectNode toolNode = SchemaProvider.OBJECT_MAPPER.createObjectNode();
         toolNode.put("type", "function");
         ObjectNode funcNode = toolNode.putObject("function");
-        funcNode.put("name", tool.getName());
+        funcNode.put("name", tool.getName().replace('.', '_'));
         funcNode.put("description", tool.getDescription());
 
         funcNode.set("parameters", buildParametersNode(tool, false));
@@ -757,17 +791,33 @@ public class OpenAiCompatibleModel extends AbstractModel {
         if (request.config().getTopP() != null) {
             payload.put("top_p", request.config().getTopP());
         }
+        ThinkingLevel level = request.config().getThinkingLevel();
+        if (level != null && level != ThinkingLevel.THINKING_LEVEL_UNSPECIFIED) {
+            String effort = switch (level) {
+                case NONE -> "none";
+                case MINIMAL, LOW -> "low";
+                case MEDIUM -> "medium";
+                case HIGH, XHIGH -> "high";
+                default -> null;
+            };
+            if (effort != null) {
+                payload.put("reasoning_effort", effort);
+            }
+        }
         // 4. Dynamic max_tokens calculation
         if (request.config().getMaxOutputTokens() != null) {
             int requestedMaxOutput = request.config().getMaxOutputTokens();
-            int userThreshold = request.config().getAgi().getConfig().getTokenThreshold();
-            int effectiveLimit = Math.min(maxInputTokens, userThreshold > 0 ? userThreshold : maxInputTokens);
-            String payloadStr = payload.toString();
-            int estimatedPayloadTokens = TokenizerUtils.countTokens(payloadStr, getTokenizerType());
-            int availableForOutput = effectiveLimit - estimatedPayloadTokens;
-            int actualMaxOutput = Math.min(requestedMaxOutput, availableForOutput);
-            if (actualMaxOutput < requestedMaxOutput) {
-                log.warn("Reducing max_tokens from {} to {} due to context limit", requestedMaxOutput, actualMaxOutput);
+            int actualMaxOutput = requestedMaxOutput;
+            if (maxInputTokens != null && maxInputTokens > 0) {
+                int userThreshold = request.config().getAgi().getConfig().getTokenThreshold();
+                int effectiveLimit = Math.min(maxInputTokens, userThreshold > 0 ? userThreshold : maxInputTokens);
+                String payloadStr = payload.toString();
+                int estimatedPayloadTokens = TokenizerUtils.countTokens(payloadStr, getTokenizerType());
+                int availableForOutput = effectiveLimit - estimatedPayloadTokens;
+                actualMaxOutput = Math.min(requestedMaxOutput, availableForOutput);
+                if (actualMaxOutput < requestedMaxOutput) {
+                    log.warn("Reducing max_tokens from {} to {} due to context limit", requestedMaxOutput, actualMaxOutput);
+                }
             }
             actualMaxOutput = Math.max(actualMaxOutput, 1);
             payload.put("max_tokens", actualMaxOutput);

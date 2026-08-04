@@ -60,7 +60,7 @@ public class HuggingFaceModel extends OpenAiCompatibleModel {
      * <p>Implementation details: Prioritizes 'max_position_embeddings' from config.json.</p>
      */
     @Override
-    public int getMaxInputTokens() {
+    public Integer getMaxInputTokens() {
         if (hubConfig != null && hubConfig.has("max_position_embeddings")) {
             return hubConfig.get("max_position_embeddings").asInt();
         }
@@ -72,7 +72,7 @@ public class HuggingFaceModel extends OpenAiCompatibleModel {
      * <p>Implementation details: Prioritizes 'max_new_tokens' from generation_config.json.</p>
      */
     @Override
-    public int getMaxOutputTokens() {
+    public Integer getMaxOutputTokens() {
         if (generationConfig != null && generationConfig.has("max_new_tokens")) {
             return generationConfig.get("max_new_tokens").asInt();
         }

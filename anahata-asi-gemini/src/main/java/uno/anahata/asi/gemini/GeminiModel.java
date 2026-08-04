@@ -298,16 +298,16 @@ public class GeminiModel extends AbstractModel {
      * {@inheritDoc}
      */
     @Override
-    public int getMaxInputTokens() {
-        return getGenaiModel().inputTokenLimit().orElse(0);
+    public Integer getMaxInputTokens() {
+        return getGenaiModel().inputTokenLimit().orElse(null);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public int getMaxOutputTokens() {
-        return getGenaiModel().outputTokenLimit().orElse(8192);
+    public Integer getMaxOutputTokens() {
+        return getGenaiModel().outputTokenLimit().orElse(null);
     }
 
     /**

@@ -138,16 +138,16 @@ public class OpenAiModel extends AbstractModel {
      * {@inheritDoc}
      */
     @Override
-    public int getMaxInputTokens() {
-        return 1050000;
+    public Integer getMaxInputTokens() {
+        return null;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public int getMaxOutputTokens() {
-        return 128000;
+    public Integer getMaxOutputTokens() {
+        return null;
     }
 
     /**

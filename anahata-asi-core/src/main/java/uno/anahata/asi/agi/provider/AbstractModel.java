@@ -123,17 +123,17 @@ public abstract class AbstractModel {
     /**
      * Gets the maximum number of input tokens supported by this model.
      *
-     * @return The input token limit.
+     * @return The input token limit, or null if unspecified/unknown by provider.
      */
-    public abstract int getMaxInputTokens();
+    public abstract Integer getMaxInputTokens();
 
     /**
      * Gets the maximum number of output tokens this model can generate in a
      * single turn.
      *
-     * @return The output token limit.
+     * @return The output token limit, or null if unspecified/unknown by provider.
      */
-    public abstract int getMaxOutputTokens();
+    public abstract Integer getMaxOutputTokens();
 
     /**
      * Gets the list of supported API actions for this model (e.g.,
