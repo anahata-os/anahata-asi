@@ -25,7 +25,7 @@ import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.netbeans.api.java.source.SourceUtils;
 import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
+import java.util.jar.JarEntry;
 import java.util.zip.ZipFile;
 import java.io.IOException;
 import org.apache.maven.artifact.Artifact;
@@ -78,7 +78,7 @@ public class NbJava extends SwingJava {
     public void postActivate() {
         super.postActivate();
         //we should really only be doing this if we are in dev / reload mode
-        //setDefaultClasspath(NetBeansModuleUtils.getNetBeansClasspath());
+        //setDefaultClasspath(NetBeansModuleUtils.getFullModuleClasspath());
         log.info("NbJava postActive() completed. default classPath:" + getDefaultClasspath());
         log.info("NbJava postActive() completed. parentFirstClasses:" + getParentFirstClassess());
     }
@@ -139,7 +139,7 @@ public class NbJava extends SwingJava {
             // Passing Runtime.version() ensures that JarFile.getEntry(path) 
             // performs the correct backwards lookup (e.g., META-INF/versions/25/...)
             try (JarFile jf = new JarFile(jarFile, true, ZipFile.OPEN_READ, Runtime.version())) {
-                ZipEntry ze = jf.getEntry(path);
+                JarEntry ze = jf.getJarEntry(path);
                 if (ze != null) {
                     try (var is = jf.getInputStream(ze)) {
                         byte[] bytes = is.readAllBytes();
