@@ -42,8 +42,8 @@ public class ModalModel extends OpenAiCompatibleModel {
      */
     private void configure() {
         // Modal GLM-5 has a specific context limit around 200K
-        setMaxInputTokens(202752);
-        setMaxOutputTokens(65536);
+        //setMaxInputTokens(202752);
+        //setMaxOutputTokens(65536);
 
         // Modal's GLM-5 uses the reasoning_content field
         setReasoningStyle(OpenAiCompatibleReasoningStyle.FIELD);
