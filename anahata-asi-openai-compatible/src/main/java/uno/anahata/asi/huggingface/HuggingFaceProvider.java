@@ -109,7 +109,9 @@ public class HuggingFaceProvider extends OpenAiChatCompletionsProvider {
                     if (json != null) {
                         log.info("Got config.json for" + modelId);
                         model.setHubConfig(json);
-                        model.setMaxInputTokens(json.path("max_position_embeddings").asInt(model.getMaxInputTokens()));
+                        if (json.has("max_position_embeddings")) {
+                            model.setMaxInputTokens(json.get("max_position_embeddings").asInt());
+                        }
 
                         String modelType = json.path("model_type").asText("").toLowerCase();
                         if (modelType.contains("deepseek") || modelType.contains("qwen")) {
