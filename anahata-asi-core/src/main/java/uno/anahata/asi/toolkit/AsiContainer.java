@@ -215,8 +215,8 @@ public class AsiContainer extends AnahataToolkit {
                             .append(" | ✅ YES")
                             .append(" | ").append(m.getModelId())
                             .append(" | ").append(m.getDisplayName() != null ? m.getDisplayName() : "N/A")
-                            .append(" | ").append(m.getMaxInputTokens() > 0 ? m.getMaxInputTokens() : "Unbounded")
-                            .append(" | ").append(m.getMaxOutputTokens() > 0 ? m.getMaxOutputTokens() : "Unbounded")
+                            .append(" | ").append(m.getMaxInputTokens() != null ? m.getMaxInputTokens() : "Unbounded")
+                            .append(" | ").append(m.getMaxOutputTokens() != null ? m.getMaxOutputTokens() : "Unbounded")
                             .append(" | ").append(actions)
                             .append(" |\n");
                 }
