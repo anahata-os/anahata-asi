@@ -303,7 +303,7 @@ public class AiProviderPanel extends ScrollablePanel {
         fillModelsBtn.addActionListener(e -> {
             try {
                 syncToProvider(); // Ensure URL and API keys are synced
-                new SwingTask<>(containerPanel, "Fetching Models", () -> {
+                new SwingTask<>(this, provider.getAsiContainer(), "Fetching Models", () -> {
                     return provider.refreshModels().stream().map(AbstractModel::getModelId).collect(Collectors.toList());
                 }, models -> {
                     if(models.isEmpty()) {
@@ -392,7 +392,7 @@ public class AiProviderPanel extends ScrollablePanel {
             // Force sync to ensure keys and URL are latest
             syncToProvider();
             
-            new SwingTask<>(containerPanel, "Testing Connection", () -> {
+            new SwingTask<>(this, provider.getAsiContainer(), "Testing Connection", () -> {
                 var models = provider.refreshModels();
                 if (models.isEmpty()) {
                     throw new Exception("Discovery returned 0 models. Check your URL and API Keys.");

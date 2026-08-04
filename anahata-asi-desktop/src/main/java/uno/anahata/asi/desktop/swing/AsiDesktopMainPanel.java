@@ -10,6 +10,7 @@ import java.awt.Window;
 import java.beans.PropertyChangeEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.prefs.Preferences;
 import javax.swing.JComboBox;
@@ -26,6 +27,7 @@ import uno.anahata.asi.desktop.Main;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.AsiCardsContainerPanel;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
+import uno.anahata.asi.swing.internal.SwingTask;
 
 /**
  * The main container for the Anahata AI Swing UI, managing multiple agi sessions.
@@ -125,22 +127,22 @@ public class AsiDesktopMainPanel extends JPanel {
      */
     public void start() {
         asiContainerPanel.startRefresh();
-        
-        // Load persisted sessions from disk
-        asiContainer.loadSessions();
-        
-        List<Agi> activeAgis = asiContainer.getActiveAgis();
-        if (activeAgis.isEmpty()) {
-            log.info("No active sessions found. Creating a new empty agi.");
-            asiContainer.createNewAgi();
-        } else {
-            // Restore sessions that were marked as 'Open' during previous exit
-            for (Agi agi : new ArrayList<>(activeAgis)) {
-                if (agi.isOpen()) {
-                    asiContainer.open(agi);
-                }
+
+        // 1. Container-wide Model Discovery Task
+        new SwingTask<>(this, asiContainer, "Discovering AI Models", () -> {
+            return asiContainer.getAllModels(true);
+        }).start();
+
+        // 2. Container-wide Session Restoration Task
+        new SwingTask<>(this, asiContainer, "Restoring Sessions", () -> {
+            asiContainer.loadSessions();
+            return null;
+        }, v -> {
+            if (asiContainer.getActiveAgis().isEmpty()) {
+                log.info("No active sessions found after loading. Creating a new empty agi.");
+                asiContainer.createNewAgi();
             }
-        }
+        }).start();
     }
 
     /**

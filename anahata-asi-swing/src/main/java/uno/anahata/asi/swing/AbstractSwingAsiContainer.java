@@ -3,6 +3,7 @@
  */
 package uno.anahata.asi.swing;
 
+import uno.anahata.asi.swing.internal.SwingTask;
 import java.awt.Component;
 import java.io.File;
 import java.nio.file.Path;
@@ -194,6 +195,8 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
      * @param agi The session to close.
      */
     protected abstract void closeUI(Agi agi);
+
+
 
     /**
      * Opens a standard Swing {@link JFileChooser} to allow the user to select 

@@ -123,20 +123,22 @@ public class SwingTask<T> {
     }
 
     /**
-     * Constructs a SwingTask bound to the global Container dashboard.
-     * Uses the container's shared infrastructure thread pool.
+     * Constructs a container-level SwingTask bound to an AbstractAsiContainer.
+     * Uses the container's thread pool executor.
      * 
-     * @param containerPanel The parent container dashboard UI.
-     * @param taskName Descriptive name.
-     * @param backgroundTask Logic to run in background.
-     * @param onDone Success callback (EDT).
-     * @param onError Error callback (EDT).
-     * @param showError Whether to show error dialog.
+     * @param owner The parent UI component for positioning modal error dialogs (can be null).
+     * @param container The parent ASI container providing the thread pool executor.
+     * @param taskName Descriptive name of the task for UI observability.
+     * @param backgroundTask Async logic to run off the Event Dispatch Thread (EDT).
+     * @param onDone Success callback executed on the EDT.
+     * @param onError Error callback executed on the EDT.
+     * @param showError Whether to show an ExceptionDialog on failure.
      */
-    public SwingTask(AbstractAsiContainerPanel containerPanel, String taskName, Callable<T> backgroundTask, Consumer<T> onDone, Consumer<Exception> onError, boolean showError) {
-        this.owner = containerPanel;
-        this.container = containerPanel.getAsiContainer();
-        this.executor = container.getExecutor();
+    public SwingTask(Component owner, AbstractAsiContainer container, String taskName, Callable<T> backgroundTask, Consumer<T> onDone, Consumer<Exception> onError, boolean showError) {
+        this.owner = owner;
+        this.agi = null;
+        this.container = container;
+        this.executor = container != null ? container.getExecutor() : null;
         this.taskName = taskName;
         this.backgroundTask = backgroundTask;
         this.onDone = onDone;
@@ -145,39 +147,79 @@ public class SwingTask<T> {
     }
 
     /**
-     * Constructs a SwingTask bound to the global Container dashboard.
+     * Constructs a container-level SwingTask with automatic error dialog presentation.
      * 
-     * @param containerPanel The parent container dashboard UI.
-     * @param taskName Descriptive name.
-     * @param backgroundTask Logic to run in background.
-     * @param onDone Success callback (EDT).
-     * @param onError Error callback (EDT).
+     * @param owner The parent UI component for positioning modal error dialogs (can be null).
+     * @param container The parent ASI container providing the thread pool executor.
+     * @param taskName Descriptive name of the task.
+     * @param backgroundTask Async logic to run off the EDT.
+     * @param onDone Success callback executed on the EDT.
+     * @param onError Error callback executed on the EDT.
      */
-    public SwingTask(AbstractAsiContainerPanel containerPanel, String taskName, Callable<T> backgroundTask, Consumer<T> onDone, Consumer<Exception> onError) {
-        this(containerPanel, taskName, backgroundTask, onDone, onError, true);
+    public SwingTask(Component owner, AbstractAsiContainer container, String taskName, Callable<T> backgroundTask, Consumer<T> onDone, Consumer<Exception> onError) {
+        this(owner, container, taskName, backgroundTask, onDone, onError, true);
     }
 
     /**
-     * Constructs a SwingTask bound to the global Container dashboard with only a success callback.
+     * Constructs a container-level SwingTask with only a success callback.
      * 
-     * @param containerPanel The parent container dashboard UI.
-     * @param taskName Descriptive name.
-     * @param backgroundTask Logic to run in background.
-     * @param onDone Success callback (EDT).
+     * @param owner The parent UI component for positioning modal error dialogs (can be null).
+     * @param container The parent ASI container providing the thread pool executor.
+     * @param taskName Descriptive name of the task.
+     * @param backgroundTask Async logic to run off the EDT.
+     * @param onDone Success callback executed on the EDT.
      */
-    public SwingTask(AbstractAsiContainerPanel containerPanel, String taskName, Callable<T> backgroundTask, Consumer<T> onDone) {
-        this(containerPanel, taskName, backgroundTask, onDone, null, true);
+    public SwingTask(Component owner, AbstractAsiContainer container, String taskName, Callable<T> backgroundTask, Consumer<T> onDone) {
+        this(owner, container, taskName, backgroundTask, onDone, null, true);
     }
 
     /**
-     * Constructs a SwingTask bound to the global Container dashboard with default settings.
+     * Constructs a minimal container-level SwingTask without callbacks.
      * 
-     * @param containerPanel The parent container dashboard UI.
-     * @param taskName Descriptive name.
-     * @param backgroundTask Logic to run in background.
+     * @param owner The parent UI component for positioning modal error dialogs (can be null).
+     * @param container The parent ASI container providing the thread pool executor.
+     * @param taskName Descriptive name of the task.
+     * @param backgroundTask Async logic to run off the EDT.
      */
-    public SwingTask(AbstractAsiContainerPanel containerPanel, String taskName, Callable<T> backgroundTask) {
-        this(containerPanel, taskName, backgroundTask, null, null, true);
+    public SwingTask(Component owner, AbstractAsiContainer container, String taskName, Callable<T> backgroundTask) {
+        this(owner, container, taskName, backgroundTask, null, null, true);
+    }
+
+    /**
+     * Constructs a container-level SwingTask without a parent owner component.
+     * 
+     * @param container The parent ASI container providing the thread pool executor.
+     * @param taskName Descriptive name of the task.
+     * @param backgroundTask Async logic to run off the EDT.
+     * @param onDone Success callback executed on the EDT.
+     * @param onError Error callback executed on the EDT.
+     * @param showError Whether to show error dialog on failure.
+     */
+    public SwingTask(AbstractAsiContainer container, String taskName, Callable<T> backgroundTask, Consumer<T> onDone, Consumer<Exception> onError, boolean showError) {
+        this(null, container, taskName, backgroundTask, onDone, onError, showError);
+    }
+
+    /**
+     * Constructs a container-level SwingTask without a parent owner component and with only a success callback.
+     * 
+     * @param container The parent ASI container providing the thread pool executor.
+     * @param taskName Descriptive name of the task.
+     * @param backgroundTask Async logic to run off the EDT.
+     * @param onDone Success callback executed on the EDT.
+     */
+    public SwingTask(AbstractAsiContainer container, String taskName, Callable<T> backgroundTask, Consumer<T> onDone) {
+        this(null, container, taskName, backgroundTask, onDone, null, true);
+    }
+
+    /**
+     * Constructs a minimal container-level SwingTask without a parent owner component.
+     * 
+     * @param container The parent ASI container providing the thread pool executor.
+     * @param taskName Descriptive name of the task.
+     * @param backgroundTask Async logic to run off the EDT.
+     */
+    public SwingTask(AbstractAsiContainer container, String taskName, Callable<T> backgroundTask) {
+        this(null, container, taskName, backgroundTask, null, null, true);
     }
 
     /** 

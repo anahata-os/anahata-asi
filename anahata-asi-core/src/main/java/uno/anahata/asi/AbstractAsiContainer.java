@@ -14,7 +14,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
@@ -108,6 +111,41 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
+     * Fetches models concurrently in parallel across all matching providers.
+     *
+     * @param providerEnabled if true, filters to only enabled providers that have configured API keys or don't require keys.
+     * @return an aggregated list of all discovered models.
+     */
+    public List<AbstractModel> getAllModels(boolean providerEnabled) {
+        List<AbstractAiProvider> targetProviders = getAllProviders().stream()
+                .filter(p -> !providerEnabled || (p.isEnabled() && (p.hasKeys() || !p.isApiKeyRequired())))
+                .collect(Collectors.toList());
+
+        List<CompletableFuture<List<? extends AbstractModel>>> futures = targetProviders.stream()
+                .map(p -> CompletableFuture.supplyAsync(() -> {
+                    try {
+                        return p.getModels();
+                    } catch (Exception e) {
+                        log.warn("Error fetching models for provider {}", p.getUuid(), e);
+                        return Collections.<AbstractModel>emptyList();
+                    }
+                }, getExecutor()))
+                .collect(Collectors.toList());
+
+        try {
+            return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                    .thenApply(v -> futures.stream()
+                            .flatMap(f -> f.join().stream())
+                            .map(m -> (AbstractModel) m)
+                            .collect(Collectors.toList()))
+                    .get(30, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.error("Failed to execute parallel getAllModels", e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
      * Retrieves a shared provider instance from the master registry by its UUID. 
      * <p>Implementation details: This is the authoritative way to resolve 
      * providers. If the UUID is {@code null}, this method returns {@code null}.</p>
@@ -151,7 +189,7 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
             template.getProviderUuids().add(provider.getUuid());
         }
 
-        savePreferences();
+        savePreferences();  
     }
 
     /**

@@ -385,7 +385,7 @@ public class AsiContainerPreferencesPanel extends ScrollablePanel {
         modelDropdown.setEnabled(false);
         modelDropdown.setToolTipText("Discovering models...");
 
-        new SwingTask<List<String>>(containerPanel, "Model Discovery", () -> {
+        new SwingTask<List<String>>(this, container, "Model Discovery", () -> {
             AbstractAiProvider provider = container.getProvider(providerUuid);
             if (provider == null) {
                 return new ArrayList<>();
