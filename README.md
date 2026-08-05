@@ -22,8 +22,8 @@ A high-fidelity execution environment for individual AGI sessions providing:
 - **Stateful Human-in-the-Loop (HITL)**: Tool executions stage as `PENDING`. Visually review, edit arguments, and grant permission before execution.
 - **Multimodal Universal Pipeline**: URI-centric resource management (Local, Remote, any Protocol).
 
-#### 🧰 The Universal Registry (148 Tools)
-Anahata ships with the most comprehensive agentic toolchain on Earth, featuring **148 specialized tools** across 22 toolkits:
+#### 🧰 The Universal Registry (160 Tools)
+Anahata ships with the most comprehensive agentic toolchain on Earth, featuring **160 specialized tools** across 23 toolkits:
 - **NetBeans IDE Integration**: AST-Guided Code Splicing, Maven Embedders, Project Structure Scanners, and Live Output Tailing.
 - **Core OS & Hardware**: Screen Sharing, Audio PCM Recording, Speech Synthesis (TTS), and Shell Process execution.
 - **Web Automation**: Fully autonomous Chromium and Gecko (Firefox) WebDriver orchestration.
@@ -59,6 +59,7 @@ A pure-Java Swing application providing a full-fidelity interface for desktop an
 *Enterprise Java-Ready Autonomous Coding Agent*
 A deep NetBeans IDE integration that transforms your development environment into an ASI studio.
 - **Get it**: [Latest Release](https://github.com/anahata-os/anahata-asi/releases/latest) | [Latest Snapshot (.nbm)](https://github.com/anahata-os/anahata-asi/releases/tag/latest-snapshot)
+- **Scarf Analytics**: [![Scarf Downloads](https://api.scarf.sh/v2/packages/Anahata/38628ccf-4686-4402-a7d9-3c7194eeff36/downloads-badge)](https://scarf.sh) [![Scarf Commercial Users](https://api.scarf.sh/v2/packages/Anahata/38628ccf-4686-4402-a7d9-3c7194eeff36/commercial-users-badge)](https://scarf.sh)
 
 #### **Anahata ASI Studio - IntelliJ** « In progress »
 *IntelliJ IDEA Autonomous Coding Agent Integration*

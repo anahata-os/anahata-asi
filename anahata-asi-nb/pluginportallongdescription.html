@@ -12,6 +12,11 @@
             <a href="https://github.com/sponsors/anahata-os" target="_blank" style="color: #a50044; text-decoration: underline;">Sponsor & Get Support SLA</a> | 
             <a href="https://discord.gg/gwGWWxPUXE" target="_blank" style="color: #004d98; text-decoration: underline;">Join the Discord</a>
         </div>
+        <div style="margin-top: 15px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+            <a href="https://scarf.sh" target="_blank"><img src="https://api.scarf.sh/v2/packages/Anahata/38628ccf-4686-4402-a7d9-3c7194eeff36/downloads-badge" alt="Scarf Downloads" style="vertical-align: middle;" /></a>
+            <a href="https://scarf.sh" target="_blank"><img src="https://api.scarf.sh/v2/packages/Anahata/38628ccf-4686-4402-a7d9-3c7194eeff36/commercial-users-badge" alt="Scarf Commercial Users" style="vertical-align: middle;" /></a>
+            <a href="https://central.sonatype.com/search?q=uno.anahata" target="_blank"><img src="https://img.shields.io/maven-central/v/uno.anahata/anahata-asi-parent.svg" alt="Maven Central" style="vertical-align: middle;" /></a>
+        </div>
     </div>
 
     <!-- HIGH-IMPACT HUMAN VALUE PROPOSITION -->
@@ -42,6 +47,13 @@
                         </td>
                         <td style="padding: 12px 15px; color: #4a5568;">MiniMax API adapter utilizing the Anthropic protocol compatible specification.</td>
                         <td style="padding: 12px 15px; font-family: monospace; font-size: 17px !important; color: #a50044;">uno.anahata.asi.minimax.MinimaxAnthropicProvider</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #edf2f7;">
+                        <td style="padding: 12px 15px; font-weight: 600; color: #004d98;">
+                            <img src="https://asi.anahata.uno/assets/logos/uno.anahata.asi.novarouteai.NovaRouteAiProvider.png" alt="NovaRouteAI" style="height: 24px; vertical-align: middle; margin-right: 8px;" />NovaRouteAI
+                        </td>
+                        <td style="padding: 12px 15px; color: #4a5568;">OpenAI-compatible access to selected official Chinese models (DeepSeek, Qwen, GLM-4, Kimi, etc.).</td>
+                        <td style="padding: 12px 15px; font-family: monospace; font-size: 17px !important; color: #a50044;">uno.anahata.asi.novarouteai.NovaRouteAiProvider</td>
                     </tr>
                     <tr style="border-bottom: 1px solid #edf2f7;">
                         <td style="padding: 12px 15px; font-weight: 600; color: #004d98;">
@@ -225,6 +237,15 @@
         <img src="https://asi.anahata.uno/screenshots/netbeans/asi-container-preferences-ai-providers.png" alt="AI Provider Preferences" width="50%" style="width: 50% !important; min-width: 300px; border: 1px solid #ddd; border-radius: 6px; margin: 0; display: block;"/>
     </div>
 
+    <!-- 14. Collaborative NetBeans Terminal -->
+    <div style="margin-bottom: 40px; padding: 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+        <h4 style="color: #004d98; margin-top: 0; margin-bottom: 10px; font-size: 24px !important; display: flex; align-items: center; gap: 8px;">[14] Collaborative NetBeans Terminal (NbTerminal)</h4>
+        <p style="font-size: 20px !important; color: #4a5568; margin: 0 0 15px 0;">
+            Integrated NetBeans terminal tab shared interactively between the developer and the model for subshell collaboration, command execution, and viewport line monitoring.
+        </p>
+        <img src="https://asi.anahata.uno/screenshots/netbeans/CollaborativeNetBeansTerminal.png" alt="Collaborative NetBeans Terminal" width="50%" style="width: 50% !important; min-width: 300px; border: 1px solid #ddd; border-radius: 6px; margin: 0; display: block;"/>
+    </div>
+
     <!-- THE HIGH-LEVEL TOOLKIT CATALOG TABLE (HUMAN FRIENDLY & IMPRESSIVE) -->
     <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 40px 0;"/>
     <h2 style="font-size: 32px !important;">Compiled Platform Toolkits (140+ Native JVM Tools)</h2>
@@ -283,6 +304,12 @@
                     <td style="padding: 12px 15px; font-weight: bold; color: #004d98;">Workspace Projects</td>
                     <td style="padding: 12px 15px; color: #4a5568;">Workspace projects management: open, close, set Main, trigger project actions, and configure CoS.</td>
                     <td style="padding: 12px 15px; text-align: center; font-weight: bold;">7 Tools</td>
+                </tr>
+                <!-- NbTerminal -->
+                <tr style="border-bottom: 1px solid #edf2f7; background: #fafafa;">
+                    <td style="padding: 12px 15px; font-weight: bold; color: #004d98;">NetBeans Terminal</td>
+                    <td style="padding: 12px 15px; color: #4a5568;">Integrates with NetBeans terminal tabs for command execution, subshell collaboration, and log monitoring.</td>
+                    <td style="padding: 12px 15px; text-align: center; font-weight: bold;">4 Tools</td>
                 </tr>
                 <!-- Hints -->
                 <tr style="border-bottom: 1px solid #edf2f7; background: #fafafa;">
@@ -397,6 +424,7 @@
             • <code>Hints</code>: getAllHints(), applyHintFix(), removeUnusedImports(). [3 Tools]<br/>
             • <code>Editor</code>: openFile(), getOpenFiles(), closeAllFiles(). [3 Tools]<br/>
             • <code>IDE</code>: monitorLogs(), selectIn(), getTopComponentsMarkdown(), getOutputTabsMarkdown(). [4 Tools]<br/>
+            • <code>NbTerminal</code>: openLocalTerminal(), typeCommand(), updateTerminalViewport(), closeTerminal(). [4 Tools]<br/>
             • <code>Chrome</code> / <code>Firefox</code>: Browser navigation, cookies profiles, form filling, xpath selectors clicking, and script executions. [38 Tools]<br/>
             • <code>Audio</code> / <code>Screens</code> / <code>Resources</code>: Hardware microphones recording, display captures, live sharing, and viewport handle locks. [32 Tools]
         </div>
