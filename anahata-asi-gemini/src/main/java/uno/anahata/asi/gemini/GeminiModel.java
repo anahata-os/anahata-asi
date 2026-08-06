@@ -46,7 +46,7 @@ import uno.anahata.asi.agi.provider.RetryableApiException;
 import uno.anahata.asi.agi.tool.ToolResponseAttachment;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.gemini.adapter.GeminiPartAdapter;
-import uno.anahata.asi.gemini.tokenizer.LocalTokenizer;
+import com.google.genai.LocalTokenizer;
 import uno.anahata.asi.internal.ImageMetadataUtils;
 import uno.anahata.asi.internal.ImageMetadataUtils.ImageMetadata;
 import uno.anahata.asi.internal.JacksonUtils;
@@ -174,7 +174,11 @@ public class GeminiModel extends AbstractModel {
         try {
             Part googlePart = new GeminiPartAdapter(toolCall, false).toGoogle();
             if (googlePart != null) {
-                return getLocalTokenizer().countTokens(googlePart.toJson()).totalTokens().orElse(0);
+                String json = googlePart.toJson();
+                if (json == null || json.isEmpty()) {
+                    return 0;
+                }
+                return getLocalTokenizer().countTokens(json).totalTokens().orElse(0);
             }
         } catch (Exception e) {
             log.warn("Failed to count tokens for Gemini tool call, falling back to raw args", e);
@@ -242,8 +246,11 @@ public class GeminiModel extends AbstractModel {
                 try {
                     Part googlePart = GeminiPartAdapter.toGoogleFunctionResponsePart(toolResponse);
                     if (googlePart != null) {
-                        // 1. Count the base tokens of the function response name and map using the local tokenizer.
-                        int total = getLocalTokenizer().countTokens(googlePart.toJson()).totalTokens().orElse(0);
+                        String json = googlePart.toJson();
+                        int total = 0;
+                        if (json != null && !json.isEmpty()) {
+                            total = getLocalTokenizer().countTokens(json).totalTokens().orElse(0);
+                        }
 
                         // 2. LocalTokenizer ignores parts() inside FunctionResponse. We must manually
                         // accumulate the flat-rate token cost for each binary attachment to match billing.
