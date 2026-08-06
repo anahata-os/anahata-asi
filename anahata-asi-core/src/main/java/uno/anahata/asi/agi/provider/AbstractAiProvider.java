@@ -338,7 +338,7 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
     public Path getKeysFilePath() {
         Path providerDir = getProviderDirectory();
         Path keysFilePath = providerDir.resolve("api_keys.txt");
-        log.info("Keys File Path: {}", keysFilePath);
+        log.debug("Keys File Path: {}", keysFilePath);
         if (!Files.exists(providerDir)) {
             try {
                 log.info("Creating provider directory: {}", providerDir);
