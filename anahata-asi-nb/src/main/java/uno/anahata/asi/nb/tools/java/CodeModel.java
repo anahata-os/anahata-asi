@@ -274,7 +274,7 @@ public class CodeModel extends AnahataToolkit {
      * @param pageSize The maximum number of results to return per page.
      * @return a paginated result of JavaType objects.
      */
-    @AgiTool("Finds all types within a given package, with an option for recursive search. Do not use for packages in open projects if the project's Structure context provider is 'providing' and already including the types of each package")
+    @AgiTool(value = "Finds all types within a given package, with an option for recursive search. Do not use for packages in open pêrojects if the project's Structure context provider is 'providing' and already including the types of each package", permission = ToolPermission.APPROVE_ALWAYS)
     public Page<JavaType> findTypesInPackage(
             @AgiToolParam("The fully qualified name of the package to search (e.g., 'java.util').") String packageName,
             @AgiToolParam(value = "Optional kind of type to search for.", required = false) ElementKind kindFilter,
