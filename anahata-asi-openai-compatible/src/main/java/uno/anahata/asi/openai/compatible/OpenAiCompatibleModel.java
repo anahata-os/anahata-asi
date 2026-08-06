@@ -126,7 +126,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
     public OpenAiCompatibleModel(OpenAiChatCompletionsProvider provider, JsonNode node) {
         this(provider,
                 node.path("id").asText(),
-                String.format("%s (%s)", node.path("id").asText(), node.path("owned_by").asText("unknown")));
+                resolveDisplayName(node));
 
         long created = node.path("created").asLong(0);
         if (created > 0) {
@@ -149,6 +149,29 @@ public class OpenAiCompatibleModel extends AbstractModel {
         } else if (node.has("max_tokens")) {
             this.maxOutputTokens = node.get("max_tokens").asInt();
         }
+    }
+
+    /**
+     * Resolves a human-readable display name from a model JSON node.
+     * <p>
+     * Checks for {@code display_name}, {@code name}, or {@code owned_by} fields,
+     * defaulting cleanly to the model ID if no additional metadata is present.
+     * </p>
+     * @param node The JSON node containing model metadata.
+     * @return The resolved display name string.
+     */
+    private static String resolveDisplayName(JsonNode node) {
+        String id = node.path("id").asText();
+        if (node.hasNonNull("display_name") && !node.path("display_name").asText().isBlank()) {
+            return node.path("display_name").asText();
+        }
+        if (node.hasNonNull("name") && !node.path("name").asText().isBlank()) {
+            return node.path("name").asText();
+        }
+        if (node.hasNonNull("owned_by") && !node.path("owned_by").asText().isBlank()) {
+            return String.format("%s (%s)", id, node.path("owned_by").asText());
+        }
+        return id;
     }
 
     /**
