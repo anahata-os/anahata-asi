@@ -140,7 +140,7 @@ public class AsiContainer extends AnahataToolkit {
 
         for (AbstractAiProvider p : providers) {
             String modelsList;
-            if (p.isEnabled()) {
+            if (p.isEnabled() && (!p.isApiKeyRequired() || p.hasKeys())) {
                 List<? extends AbstractModel> models = p.getModels();
                 if (includeModelIds) {
                     modelsList = (models != null && !models.isEmpty())
