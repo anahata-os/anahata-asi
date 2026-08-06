@@ -217,7 +217,7 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends Co
      * </p>
      */
     public final void render() {
-        log.info("Updating message structure for #{}", message.getSequentialId());
+        log.debug("Updating message structure for #{}", message.getSequentialId());
         updateHeaderInfoText();
         updateHeaderButtons();
         updateBackgroundColors();
