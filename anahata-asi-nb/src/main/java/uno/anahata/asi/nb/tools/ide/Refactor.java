@@ -56,6 +56,7 @@ import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.AgiToolException;
+import uno.anahata.asi.agi.tool.ToolPermission;
 import uno.anahata.asi.nb.tools.java.JavaSourceUtils;
 import static uno.anahata.asi.nb.tools.java.JavaSourceUtils.findMemberCandidates;
 import static uno.anahata.asi.nb.tools.java.JavaSourceUtils.findTree;
@@ -664,7 +665,7 @@ public class Refactor extends AnahataToolkit {
      * @return A formatted list of all found usages.
      * @throws Exception if there is an error invoking the query.
      */
-    @AgiTool("Finds all references/usages of a file or type in all open projects.")
+    @AgiTool(value = "Finds all references/usages of a file or type in all open projects.", permission = ToolPermission.APPROVE_ALWAYS)
     public String whereUsed(
             @AgiToolParam(value = "The absolute path of the file to search for.", rendererId = "path") String filePath,
             @AgiToolParam("Whether to search in comments.") boolean searchInComments) throws Exception {
@@ -710,7 +711,7 @@ public class Refactor extends AnahataToolkit {
      * @return A formatted list of all found usages.
      * @throws Exception if there is an error invoking the query.
      */
-    @AgiTool("Finds all references/usages of a specific class member (method or field) in all open projects.")
+    @AgiTool(value = "Finds all references/usages of a specific class member (method or field) in all open projects.", permission = ToolPermission.APPROVE_ALWAYS)
     public String whereUsedMember(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The ABSOLUTE FQN of the member (e.g. 'com.foo.Bar.myMethod(int)').") String memberFqn,
