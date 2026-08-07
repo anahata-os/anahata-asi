@@ -64,18 +64,31 @@ public class ResourcePanel extends ScrollablePanel {
      */
     private Resource currentResource;
 
-    /** Label displaying the resource name in the global header. */
+    /**
+     * Label displaying the resource name in the global header.
+     */
     private final JLabel nameLabel;
-    /** Panel hosting resource-specific actions (e.g., Open, Edit) provided by the strategy. */
+    /**
+     * Panel hosting resource-specific actions (e.g., Open, Edit) provided by
+     * the strategy.
+     */
     private final JPanel actionPanel;
 
-    /** Text field displaying the unique resource identifier. */
+    /**
+     * Text field displaying the unique resource identifier.
+     */
     private final JTextField idField;
-    /** Checkbox to toggle the active context-providing state of the resource. */
+    /**
+     * Checkbox to toggle the active context-providing state of the resource.
+     */
     private final JCheckBox providingBox;
-    /** Combo box for selecting the target context position (SYSTEM vs RAG). */
+    /**
+     * Combo box for selecting the target context position (SYSTEM vs RAG).
+     */
     private final JComboBox<ContextPosition> positionCombo;
-    /** Combo box for selecting the refresh policy for synchronization. */
+    /**
+     * Combo box for selecting the refresh policy for synchronization.
+     */
     private final JComboBox<RefreshPolicy> policyCombo;
 
     /**
@@ -129,113 +142,115 @@ public class ResourcePanel extends ScrollablePanel {
     public ResourcePanel(AgiPanel agiPanel) {
         this.agiPanel = agiPanel;
 
-                setLayout(new BorderLayout());
-                setOpaque(true);
-                setBackground(javax.swing.UIManager.getColor("Panel.background"));
-                setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        setLayout(new BorderLayout());
+        setOpaque(true);
+        setBackground(javax.swing.UIManager.getColor("Panel.background"));
+        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-                // 1. GLOBAL HEADER
-                JPanel globalHeader = new JPanel(new BorderLayout());
-                globalHeader.setOpaque(false);
-                globalHeader.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        // 1. GLOBAL HEADER
+        JPanel globalHeader = new JPanel(new BorderLayout());
+        globalHeader.setOpaque(false);
+        globalHeader.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
 
-                nameLabel = new JLabel("Resource");
-                nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD, 18f));
-                globalHeader.add(nameLabel, BorderLayout.WEST);
+        nameLabel = new JLabel("Resource");
+        nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD, 18f));
+        globalHeader.add(nameLabel, BorderLayout.WEST);
 
-                actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-                actionPanel.setOpaque(false);
-                globalHeader.add(actionPanel, BorderLayout.EAST);
+        actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        actionPanel.setOpaque(false);
+        globalHeader.add(actionPanel, BorderLayout.EAST);
 
-                // 2. METADATA TABS (Identity, Handle, View)
-                metadataTabs = new AdjustingTabPane(50);
+        // 2. METADATA TABS (Identity, Handle, View)
+        metadataTabs = new AdjustingTabPane(50);
 
-                // Identity Tab - Pure JGoodies Implementation
-                JPanel identityTab = new JPanel();
-                identityTab.setOpaque(false);
-                identityTab.setBorder(BorderFactory.createTitledBorder(null, "Identity (Core Metadata)", TitledBorder.LEFT, TitledBorder.TOP, identityTab.getFont().deriveFont(Font.BOLD)));
+        // Identity Tab - Pure JGoodies Implementation
+        JPanel identityTab = new JPanel();
+        identityTab.setOpaque(false);
+        identityTab.setBorder(BorderFactory.createTitledBorder(null, "Identity (Core Metadata)", TitledBorder.LEFT, TitledBorder.TOP, identityTab.getFont().deriveFont(Font.BOLD)));
 
-                FormLayout idLayout = new FormLayout(
-                        "pref, 6dlu, pref, 0:grow", // Cols: Label, Gap, Component, Pusher
-                        "p, 3dlu, p, 3dlu, p, 3dlu, p" // Rows: UUID, Position, Policy, Providing
-                );
-                identityTab.setLayout(idLayout);
-                CellConstraints cc = new CellConstraints();
+        FormLayout idLayout = new FormLayout(
+                "pref, 6dlu, pref, 0:grow", // Cols: Label, Gap, Component, Pusher
+                "p, 3dlu, p, 3dlu, p, 3dlu, p" // Rows: UUID, Position, Policy, Providing
+        );
+        identityTab.setLayout(idLayout);
+        CellConstraints cc = new CellConstraints();
 
-                // ROW 0: UUID
-                identityTab.add(new JLabel("UUID:"), cc.xy(1, 1));
-                idField = createReadOnlyField();
-                identityTab.add(idField, cc.xy(3, 1));
+        // ROW 0: UUID
+        identityTab.add(new JLabel("UUID:"), cc.xy(1, 1));
+        idField = createReadOnlyField();
+        identityTab.add(idField, cc.xy(3, 1));
 
-                // ROW 1: Position
-                identityTab.add(new JLabel("Position:"), cc.xy(1, 3));
-                positionCombo = new JComboBox<>(ContextPosition.values());
-                positionCombo.addActionListener(e -> {
-                    if (!syncing && currentResource != null) {
-                        currentResource.setContextPosition((ContextPosition) positionCombo.getSelectedItem());
-                    }
-                });
-                identityTab.add(positionCombo, cc.xy(3, 3));
+        // ROW 1: Position
+        identityTab.add(new JLabel("Position:"), cc.xy(1, 3));
+        positionCombo = new JComboBox<>(ContextPosition.values());
+        positionCombo.addActionListener(e -> {
+            if (!syncing && currentResource != null) {
+                currentResource.setContextPosition((ContextPosition) positionCombo.getSelectedItem());
+            }
+        });
+        identityTab.add(positionCombo, cc.xy(3, 3));
 
-                // ROW 2: Refresh Policy
-                identityTab.add(new JLabel("Refresh Policy:"), cc.xy(1, 5));
-                policyCombo = new JComboBox<>(RefreshPolicy.values());
-                policyCombo.addActionListener(e -> {
-                    if (!syncing && currentResource != null) {
-                        currentResource.setRefreshPolicy((RefreshPolicy) policyCombo.getSelectedItem());
-                    }
-                });
-                identityTab.add(policyCombo, cc.xy(3, 5));
+        // ROW 2: Refresh Policy
+        identityTab.add(new JLabel("Refresh Policy:"), cc.xy(1, 5));
+        policyCombo = new JComboBox<>(RefreshPolicy.values());
+        policyCombo.addActionListener(e -> {
+            if (!syncing && currentResource != null) {
+                currentResource.setRefreshPolicy((RefreshPolicy) policyCombo.getSelectedItem());
+            }
+        });
+        identityTab.add(policyCombo, cc.xy(3, 5));
 
-                // ROW 3: Providing Context
-                providingBox = new JCheckBox("Providing Context");
-                providingBox.setOpaque(false);
-                providingBox.addActionListener(e -> {
-                    if (!syncing && currentResource != null) {
-                        currentResource.setProviding(providingBox.isSelected());
-                    }
-                });
-                identityTab.add(providingBox, cc.xyw(1, 7, 3));
+        // ROW 3: Providing Context
+        providingBox = new JCheckBox("Providing Context");
+        providingBox.setOpaque(false);
+        providingBox.addActionListener(e -> {
+            if (!syncing && currentResource != null) {
+                currentResource.setProviding(providingBox.isSelected());
+            }
+        });
+        identityTab.add(providingBox, cc.xyw(1, 7, 3));
 
-                metadataTabs.addTab("Identity", createHScrollPane(identityTab));
+        metadataTabs.addTab("Identity", createHScrollPane(identityTab));
 
-                handleSectorContainer = new JPanel(new BorderLayout());
-                handleSectorContainer.setOpaque(false);
-                metadataTabs.addTab("Handle", createHScrollPane(handleSectorContainer));
+        handleSectorContainer = new JPanel(new BorderLayout());
+        handleSectorContainer.setOpaque(false);
+        metadataTabs.addTab("Handle", createHScrollPane(handleSectorContainer));
 
-                viewSectorContainer = new JPanel(new BorderLayout());
-                viewSectorContainer.setOpaque(false);
-                metadataTabs.addTab("View", createHScrollPane(viewSectorContainer));
+        viewSectorContainer = new JPanel(new BorderLayout());
+        viewSectorContainer.setOpaque(false);
+        metadataTabs.addTab("View", createHScrollPane(viewSectorContainer));
 
-                // 3. CONTENT TABS (Capabilities, Model perspective (RAG))
-                contentTabs = new AdjustingTabPane(350);
+        // 3. CONTENT TABS (Capabilities, Model perspective (RAG))
+        contentTabs = new AdjustingTabPane(350);
 
-                viewerContainer = new JPanel(new BorderLayout());
-                viewerContainer.setOpaque(false);
+        viewerContainer = new JPanel(new BorderLayout());
+        viewerContainer.setOpaque(false);
 
-                // 4. VERTICAL STACK ASSEMBLY
-                JPanel topStack = new JPanel();
-                topStack.setLayout(new BoxLayout(topStack, BoxLayout.Y_AXIS));
-                topStack.setOpaque(false);
+        // 4. VERTICAL STACK ASSEMBLY
+        JPanel topStack = new JPanel();
+        topStack.setLayout(new BoxLayout(topStack, BoxLayout.Y_AXIS));
+        topStack.setOpaque(false);
 
-                globalHeader.setAlignmentX(Component.LEFT_ALIGNMENT);
-                metadataTabs.setAlignmentX(Component.LEFT_ALIGNMENT);
+        globalHeader.setAlignmentX(Component.LEFT_ALIGNMENT);
+        metadataTabs.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-                topStack.add(globalHeader);
-                topStack.add(Box.createVerticalStrut(10));
-                topStack.add(metadataTabs);
-                topStack.add(Box.createVerticalStrut(15));
+        topStack.add(globalHeader);
+        topStack.add(Box.createVerticalStrut(10));
+        topStack.add(metadataTabs);
+        topStack.add(Box.createVerticalStrut(15));
 
-                JPanel contentStack = new JPanel(new BorderLayout());
-                contentStack.setOpaque(false);
-                contentStack.add(topStack, BorderLayout.NORTH);
-                contentStack.add(contentTabs, BorderLayout.CENTER);
+        JPanel contentStack = new JPanel(new BorderLayout());
+        contentStack.setOpaque(false);
+        contentStack.add(topStack, BorderLayout.NORTH);
+        contentStack.add(contentTabs, BorderLayout.CENTER);
 
-                add(contentStack, BorderLayout.CENTER);
+        add(contentStack, BorderLayout.CENTER);
     }
 
     /**
-     * Creates a standardized read-only text field for immutable metadata like UUIDs.
+     * Creates a standardized read-only text field for immutable metadata like
+     * UUIDs.
+     *
      * @return A configured {@link JTextField}.
      */
     private JTextField createReadOnlyField() {
@@ -253,8 +268,9 @@ public class ResourcePanel extends ScrollablePanel {
     }
 
     /**
-     * Creates a horizontal scroll pane for metadata tabs to prevent layout overflow.
-     * 
+     * Creates a horizontal scroll pane for metadata tabs to prevent layout
+     * overflow.
+     *
      * @param comp The component to wrap.
      * @return The configured JScrollPane.
      */
@@ -270,16 +286,14 @@ public class ResourcePanel extends ScrollablePanel {
 
     /**
      * Atomically saves the content back to the resource.
+     *
      * @param content The new text content to save.
      */
     private void saveContent(String content) {
         new SwingTask<Void>(agiPanel, "Saving Resource", () -> {
             log.info("Saving content to {}", currentResource);
             currentResource.write(content);
-            currentResource.reloadIfNeeded();
             return null;
-        }, done -> {
-            syncUiWithResource();
         }).start();
     }
 
@@ -319,7 +333,22 @@ public class ResourcePanel extends ScrollablePanel {
                 log.info("Resource {} changed to {}, ejecting!", currentResource, res);
                 return;
             }
-            this.resourceListener = new EdtPropertyChangeListener(this, res, null, evt -> syncUiWithResource());
+            this.resourceListener = new EdtPropertyChangeListener(this, res, null, evt -> {
+                String prop = evt.getPropertyName();
+                if ("dirty".equals(prop) && Boolean.TRUE.equals(evt.getNewValue())) {
+                    new SwingTask<Void>(agiPanel, "Reloading Resource: " + res.getName(), () -> {
+                        res.reloadIfNeeded();
+                        return null;
+                    }, doneReload -> {
+                        syncUiWithResource();
+                    }, null, false).start();
+                } else if ("lastLoadTimestamp".equals(prop)
+                        || "providing".equals(prop)
+                        || "contextPosition".equals(prop)
+                        || "refreshPolicy".equals(prop)) {
+                    syncUiWithResource();
+                }
+            });
             assembleResourceUI();
         }, error -> {
             viewerContainer.add(new JLabel("<html><font color='red'><b>Failed to load resource:</b><br>" + error.getMessage() + "</font></html>"), BorderLayout.CENTER);
@@ -334,7 +363,7 @@ public class ResourcePanel extends ScrollablePanel {
     }
 
     /**
-     * Orchestrates the high-fidelity UI assembly by selecting the appropriate 
+     * Orchestrates the high-fidelity UI assembly by selecting the appropriate
      * {@link ResourceUI} strategy and populating handles, views, and viewers.
      */
     private void assembleResourceUI() {
@@ -431,8 +460,9 @@ public class ResourcePanel extends ScrollablePanel {
     }
 
     /**
-     * Generates a "Model Perspective" using a {@link RagMessagePanel} to show 
+     * Generates a "Model Perspective" using a {@link RagMessagePanel} to show
      * exactly how this resource is presented to the ASI during generation.
+     *
      * @return The rendered model perspective component.
      */
     private JComponent createModelPerspectiveComponent() {

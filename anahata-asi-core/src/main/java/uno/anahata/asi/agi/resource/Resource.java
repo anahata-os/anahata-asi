@@ -44,7 +44,8 @@ public class Resource extends BasicPropertyChangeSource implements Rebindable, C
     /**
      * The parent AGI session this resource belongs to.
      * <p>
-     * Bidirectional references are managed natively by the Kryo serialization engine.
+     * Bidirectional references are managed natively by the Kryo serialization
+     * engine.
      * </p>
      */
     private Agi agi = null;
@@ -320,6 +321,8 @@ public class Resource extends BasicPropertyChangeSource implements Rebindable, C
             log.info("Reloading resource: {} ({}) [Dirty: {}, Stale: {}]",
                     getName(), uuid, dirty, stale);
 
+            long oldTimestamp = this.lastLoadTimestamp;
+
             // ATOMIC STATE TRANSITION: Break recursive loop by clearing flag before events
             this.dirty = false;
             this.lastLoadTimestamp = handle.getLastModified();
@@ -328,8 +331,9 @@ public class Resource extends BasicPropertyChangeSource implements Rebindable, C
                 view.reload();
             }
 
-            // Notify UI that a semantic interpretation reload occurred
-            propertyChangeSupport.firePropertyChange("reloaded", false, true);
+            // Standard JavaBeans Property Events
+            propertyChangeSupport.firePropertyChange("dirty", true, false);
+            propertyChangeSupport.firePropertyChange("lastLoadTimestamp", oldTimestamp, this.lastLoadTimestamp);
         }
     }
 
@@ -358,8 +362,6 @@ public class Resource extends BasicPropertyChangeSource implements Rebindable, C
     public void dispose() {
         handle.dispose();
     }
-
-
 
     /**
      * Returns the detected MIME type of the underlying source.
@@ -399,6 +401,7 @@ public class Resource extends BasicPropertyChangeSource implements Rebindable, C
 
     /**
      * Gets the parent AGI session.
+     *
      * @return The active Agi session, or null.
      */
     public Agi getAgi() {
@@ -407,6 +410,7 @@ public class Resource extends BasicPropertyChangeSource implements Rebindable, C
 
     /**
      * Sets the parent AGI session.
+     *
      * @param agi The active Agi session.
      */
     public void setAgi(Agi agi) {
@@ -414,8 +418,11 @@ public class Resource extends BasicPropertyChangeSource implements Rebindable, C
     }
 
     /**
-     * Convenience method to retrieve the currently selected model from the parent session.
-     * @return The active AbstractModel instance, or null if no model is selected.
+     * Convenience method to retrieve the currently selected model from the
+     * parent session.
+     *
+     * @return The active AbstractModel instance, or null if no model is
+     * selected.
      */
     public AbstractModel getSelectedModel() {
         return agi != null ? agi.getSelectedModel() : null;
@@ -424,28 +431,35 @@ public class Resource extends BasicPropertyChangeSource implements Rebindable, C
     /**
      * {@inheritDoc}
      * <p>
-     * Resolves the active model from the parent AGI session and sums the token counts
-     * of this resource's header and active viewport. Returns 0 if no model is selected.
+     * Resolves the active model from the parent AGI session and calculates
+     * token count for system instructions. Returns 0 if this resource is not in
+     * SYSTEM_INSTRUCTIONS position.
      * </p>
      */
-    @Override public int getInstructionsTokenCount() {
+    @Override
+    public int getInstructionsTokenCount() {
+        if (contextPosition != ContextPosition.SYSTEM_INSTRUCTIONS) {
+            return 0;
+        }
         AbstractModel model = getSelectedModel();
         if (model == null) {
             return 0;
         }
         int headerTokens = model.countTokens(getHeader());
-        int viewTokens = (view != null && contextPosition == ContextPosition.SYSTEM_INSTRUCTIONS) ? view.getTokenCount() : 0;
+        int viewTokens = (view != null) ? view.getTokenCount() : 0;
         return headerTokens + viewTokens;
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * Resolves the active model from the parent AGI session and sums the token counts
-     * of this resource's header and active viewport. Returns 0 if no model is selected.
+     * Resolves the active model from the parent AGI session and sums the token
+     * counts of this resource's header and active viewport. Returns 0 if no
+     * model is selected.
      * </p>
      */
-    @Override public int getRagTokenCount() {
+    @Override
+    public int getRagTokenCount() {
         AbstractModel model = getSelectedModel();
         if (model == null) {
             return 0;
@@ -456,7 +470,8 @@ public class Resource extends BasicPropertyChangeSource implements Rebindable, C
     }
 
     /**
-     * Resets the cached token counts on the active view, forcing a lazy recalculation.
+     * Resets the cached token counts on the active view, forcing a lazy
+     * recalculation.
      */
     public void resetTokenCount() {
         if (view != null) {

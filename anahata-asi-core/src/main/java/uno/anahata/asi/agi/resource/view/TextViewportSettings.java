@@ -1,13 +1,14 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.agi.resource.view;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
+import lombok.Setter;
 
 /**
  * Encapsulates adjustable viewport configuration for V2 text resources.
@@ -15,128 +16,150 @@ import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
  * Controls pagination, tailing, grep filtering, and visual markers for 
  * large resource files.
  * </p>
- * <p>
- * <b>Reactivity:</b> Extends {@link BasicPropertyChangeSource} to provide 
- * fine-grained change notifications to the UI.
- * </p>
  * 
  * @author anahata
  */
 @Getter
-@Builder
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "Adjustable settings for the text viewport")
-public class TextViewportSettings extends BasicPropertyChangeSource {
+public class TextViewportSettings {
+
+    /**
+     * Back-reference to the parent viewport engine.
+     */
+    @JsonIgnore
+    @Schema(hidden = true)
+    private TextViewport viewport;
+
+    /**
+     * Constructs settings bound to a parent viewport engine.
+     * @param viewport The parent viewport.
+     */
+    public TextViewportSettings(TextViewport viewport) {
+        this();
+        this.viewport = viewport;
+    }
+
+    /**
+     * Synchronously notifies the parent viewport and view that settings have changed.
+     */
+    public void markDirty() {
+        if (viewport != null) {
+            viewport.markDirty();
+        }
+    }
+
+    /** Whether full view is enabled (loading entire resource up to EOF). */
+    private boolean fullView = false;
 
     /** The starting character offset for pagination. */
-    @Builder.Default
     private int startChar = 0;
 
     /** The maximum number of characters to load in a single page. */
-    @Builder.Default
     private int pageSizeInChars = 64 * 1024;
 
     /** The maximum line width before horizontal truncation. */
-    @Builder.Default
     private int columnWidth = 1024;
 
     /** A regular expression pattern for filtering lines (grep). */
     private String grepPattern;
 
     /** Whether to include line numbers in the processed output. */
-    @Builder.Default
     private boolean includeLineNumbers = true;
 
     /** Whether to enable tailing mode. */
-    @Builder.Default
     private boolean tail = false;
 
     /** The number of lines to capture from the end of the source. */
-    @Builder.Default
     private int tailLines = 100;
 
     /** 
-     * Sets the start character and fires a change event if the value is different.
+     * Sets whether full view mode is enabled and triggers dirty chain.
+     * @param fullView True to load full resource.
+     */
+    public void setFullView(boolean fullView) {
+        if (this.fullView != fullView) {
+            this.fullView = fullView;
+            markDirty();
+        }
+    }
+
+    /** 
+     * Sets the start character and triggers dirty chain.
      * @param startChar The new character offset.
      */
     public void setStartChar(int startChar) {
         if (this.startChar != startChar) {
-            long old = this.startChar;
             this.startChar = startChar;
-            propertyChangeSupport.firePropertyChange("startChar", old, startChar);
+            markDirty();
         }
     }
 
     /** 
-     * Sets the page size and fires a change event if the value is different.
+     * Sets the page size and triggers dirty chain.
      * @param pageSizeInChars The maximum characters per page.
      */
     public void setPageSizeInChars(int pageSizeInChars) {
         if (this.pageSizeInChars != pageSizeInChars) {
-            int old = this.pageSizeInChars;
             this.pageSizeInChars = pageSizeInChars;
-            propertyChangeSupport.firePropertyChange("pageSizeInChars", old, pageSizeInChars);
+            markDirty();
         }
     }
 
     /** 
-     * Sets the column width and fires a change event if the value is different.
+     * Sets the column width and triggers dirty chain.
      * @param columnWidth The maximum characters per line.
      */
     public void setColumnWidth(int columnWidth) {
         if (this.columnWidth != columnWidth) {
-            int old = this.columnWidth;
             this.columnWidth = columnWidth;
-            propertyChangeSupport.firePropertyChange("columnWidth", old, columnWidth);
+            markDirty();
         }
     }
 
     /** 
-     * Sets the grep pattern and fires a change event if the value is different.
+     * Sets the grep pattern and triggers dirty chain.
      * @param grepPattern The regex pattern.
      */
     public void setGrepPattern(String grepPattern) {
         if (!Objects.equals(this.grepPattern, grepPattern)) {
-            String old = this.grepPattern;
             this.grepPattern = grepPattern;
-            propertyChangeSupport.firePropertyChange("grepPattern", old, grepPattern);
+            markDirty();
         }
     }
 
     /** 
-     * Toggles line numbers and fires a change event if the value is different.
+     * Toggles line numbers and triggers dirty chain.
      * @param includeLineNumbers True to show gutters.
      */
     public void setIncludeLineNumbers(boolean includeLineNumbers) {
         if (this.includeLineNumbers != includeLineNumbers) {
-            boolean old = this.includeLineNumbers;
             this.includeLineNumbers = includeLineNumbers;
-            propertyChangeSupport.firePropertyChange("includeLineNumbers", old, includeLineNumbers);
+            markDirty();
         }
     }
 
     /** 
-     * Toggles tailing mode and fires a change event if the value is different.
+     * Toggles tailing mode and triggers dirty chain.
      * @param tail True to enable tailing.
      */
     public void setTail(boolean tail) {
         if (this.tail != tail) {
-            boolean old = this.tail;
             this.tail = tail;
-            propertyChangeSupport.firePropertyChange("tail", old, tail);
+            markDirty();
         }
     }
 
     /** 
-     * Sets the number of tail lines and fires a change event if the value is different.
+     * Sets the number of tail lines and triggers dirty chain.
      * @param tailLines The number of lines to capture.
      */
     public void setTailLines(int tailLines) {
         if (this.tailLines != tailLines) {
-            int old = this.tailLines;
             this.tailLines = tailLines;
-            propertyChangeSupport.firePropertyChange("tailLines", old, tailLines);
+            markDirty();
         }
     }
 
@@ -146,6 +169,9 @@ public class TextViewportSettings extends BasicPropertyChangeSource {
      */
     @Override
     public String toString() {
+        if (fullView) {
+            return "Full View " + (includeLineNumbers ? "(+Lines)" : "(-Lines)");
+        }
         StringBuilder sb = new StringBuilder();
         if (grepPattern != null && !grepPattern.isBlank()) {
             sb.append("Grep: '").append(grepPattern).append("' ");

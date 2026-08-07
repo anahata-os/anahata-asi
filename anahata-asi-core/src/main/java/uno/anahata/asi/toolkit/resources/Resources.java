@@ -159,6 +159,38 @@ public class Resources extends AnahataToolkit {
     }
 
     /**
+     * Enables or disables Full View mode for one or more text resources.
+     * <p>
+     * When Full View is enabled, the entire file content up to EOF is loaded into the prompt
+     * without character pagination or horizontal column truncation, while preserving line numbers.
+     * </p>
+     *
+     * @param resourceIds The list of unique resource identifiers.
+     * @param fullView True to enable full view mode, false to revert to viewport settings.
+     */
+    @AgiTool("Enables or disables Full View mode for one or more text resources. When enabled, the entire file is loaded into prompt memory without character pagination or horizontal column truncation.")
+    public void setFullView(
+            @AgiToolParam(value = "The list of unique resource identifiers.", rendererId = "resource") List<String> resourceIds,
+            @AgiToolParam("True to load the full resource up to EOF, false to use viewport pagination.") boolean fullView) {
+        ResourceManager manager = getAgi().getResourceManager();
+        for (String id : resourceIds) {
+            Resource res = manager.get(id);
+            if (res != null && res.getView() instanceof TextView tv) {
+                tv.getViewport().getSettings().setFullView(fullView);
+                try {
+                    res.reloadIfNeeded();
+                    log("Set fullView=" + fullView + " for resource: " + res.getName());
+                } catch (Exception e) {
+                    log.error("Failed to reload resource during setFullView: {}", id, e);
+                    error("Failed to reload resource '" + res.getName() + "': " + e.getMessage());
+                }
+            } else {
+                error("Resource not found or not textual: " + id);
+            }
+        }
+    }
+
+    /**
      * Unloads multiple resources from the context.
      *
      * @param resourceIds The UUIDs to unregister.

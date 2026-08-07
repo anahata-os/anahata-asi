@@ -103,12 +103,11 @@ public class IDE extends AnahataToolkit {
 
         Resources resourcesToolkit = getToolkit(Resources.class);
         
-        TextViewportSettings settings = TextViewportSettings.builder()
-                .tail(true)
-                .tailLines(tailLines != null ? tailLines : 100)
-                .grepPattern(grepPattern)
-                .includeLineNumbers(false)
-                .build();
+        TextViewportSettings settings = new TextViewportSettings();
+        settings.setTail(true);
+        settings.setTailLines(tailLines != null ? tailLines : 100);
+        settings.setGrepPattern(grepPattern);
+        settings.setIncludeLineNumbers(false);
         
         PathHandle handle = new PathHandle(logFile.getAbsolutePath());
         Resource resource = new Resource(handle);

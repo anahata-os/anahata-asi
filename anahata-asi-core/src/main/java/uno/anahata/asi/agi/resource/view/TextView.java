@@ -25,20 +25,19 @@ import uno.anahata.asi.agi.resource.Resource;
 @Slf4j
 @Getter
 @Setter
-@NoArgsConstructor
-public class TextView extends AbstractResourceView implements Rebindable {
+public class TextView extends AbstractResourceView {
 
     /**
      * The viewport engine for processing text.
      */
-    private final TextViewport viewport = new TextViewport();
+    private final TextViewport viewport;
 
     /**
-     * Persistent listener for settings changes to trigger interpretation
-     * reloads. We keep a field reference to ensure single registration in the
-     * PropertyChangeSupport.
+     * Constructs a default TextView and links the viewport engine.
      */
-    private transient PropertyChangeListener settingsListener;
+    public TextView() {
+        this.viewport = new TextViewport(this);
+    }
 
     /**
      * Constructs a TextView and links it to its parent resource.
@@ -46,8 +45,8 @@ public class TextView extends AbstractResourceView implements Rebindable {
      * @param owner The owning resource.
      */
     public TextView(Resource owner) {
+        this();
         this.owner = owner;
-        setupListener();
     }
 
     /**
@@ -57,36 +56,9 @@ public class TextView extends AbstractResourceView implements Rebindable {
      * @param settings The initial viewport configuration.
      */
     public TextView(Resource owner, TextViewportSettings settings) {
+        this();
         this.owner = owner;
         this.viewport.setSettings(settings);
-        setupListener();
-    }
-
-    /**
-     * Authoritatively registers the persistent listener on the viewport
-     * settings.
-     */
-    private void setupListener() {
-
-        TextViewportSettings settings = viewport.getSettings();
-        // Technical Purity: remove before add to prevent double-registration
-        if (settingsListener == null) {
-            settingsListener = evt -> markDirty();
-        } else {
-            settings.removePropertyChangeListener(settingsListener);
-        }
-        settings.addPropertyChangeListener(settingsListener);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Implementation details: Re-establishes the reactive listener for viewport
-     * settings after deserialization.</p>
-     */
-    @Override
-    public void rebind() {
-        setupListener();
     }
 
     /**
@@ -136,6 +108,39 @@ public class TextView extends AbstractResourceView implements Rebindable {
     @Override
     public String toString() {
         return viewport.toString();
+    }
+
+    /**
+     * Checks whether the text viewport is currently truncated in prompt view
+     * (i.e. not in Full View mode, or has start offset / page size bounds active).
+     *
+     * @return true if the viewport content in prompt is truncated.
+     */
+    public boolean isTruncated() {
+        TextViewportSettings settings = viewport.getSettings();
+        if (settings.isFullView()) {
+            return false;
+        }
+        return viewport.getTotalChars() > settings.getPageSizeInChars()
+                || settings.getStartChar() > 0
+                || (settings.getGrepPattern() != null && !settings.getGrepPattern().isBlank())
+                || settings.isTail();
+    }
+
+    /**
+     * Calculates the percentage of the total resource content currently visible in prompt.
+     *
+     * @return The percentage between 0.0 and 100.0.
+     */
+    public double getVisiblePercentage() {
+        long total = viewport.getTotalChars();
+        if (total <= 0) {
+            return 100.0;
+        }
+        String visible = viewport.getVisibleContent();
+        long visibleChars = (visible != null) ? visible.length() : 0;
+        double pct = (visibleChars * 100.0) / total;
+        return Math.min(100.0, pct);
     }
 
     /**

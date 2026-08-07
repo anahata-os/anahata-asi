@@ -16,6 +16,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.agi.resource.Resource;
+import uno.anahata.asi.agi.resource.view.TextView;
 import uno.anahata.asi.agi.tool.AgiToolException;
 
 /**
@@ -144,15 +146,16 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
             if (count != expected) {
                 throw new AgiToolException(diagnostics 
                         + "\n**Your 'totalOccurrences' was " + expected + " but I found " + count + " matches in the file** "
-                        + "\nYou have to provide the exact number of 'totalOccurences' in the file for each replacement.");
-
+                        + "\nYou have to provide the exact number of 'totalOccurences' in the file for each replacement."
+                        + getTruncatedHint(agi));
             }
 
             if (indexes != null) {
                 for (Integer idx : indexes) {
                     if (idx > count || idx <= 0) {
                         throw new AgiToolException(diagnostics
-                                + "\nSurgical Range Error: **Requested occurrence index " + idx + " but only " + count + " occurrences found.**");
+                                + "\nSurgical Range Error: **Requested occurrence index " + idx + " but only " + count + " occurrences found.**"
+                                + getTruncatedHint(agi));
                     }
                 }
             }
@@ -160,6 +163,21 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
 
         // 3. Final check for identical content
         validateIdenticalContent(agi);
+    }
+
+    /**
+     * Helper to construct a viewport truncation diagnostic hint if the resource
+     * view in the RAG prompt is currently truncated.
+     *
+     * @param agi The active Agi session.
+     * @return The formatted hint string, or empty string if not truncated.
+     */
+    private String getTruncatedHint(Agi agi) {
+        Resource res = agi.getResourceManager().get(resourceUuid);
+        if (res != null && res.getView() instanceof TextView tv && tv.isTruncated()) {
+            return "\n\n**VIEWPORT TRUNCATION HINT**: The resource view in your prompt context is currently TRUNCATED (only partial file content is visible in the RAG message, not the full file). This is likely why your 'totalOccurrences' checksum or target search count did not match. Please call `Resources.setFullView(\"" + resourceUuid + "\", true)` to enable Full View mode for this resource before attempting surgical edits!";
+        }
+        return "";
     }
 
     /**

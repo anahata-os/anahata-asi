@@ -1,6 +1,8 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.agi.resource.view;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.v3.oas.annotations.media.Schema;
 import uno.anahata.asi.agi.resource.handle.ResourceHandle;
 import java.io.BufferedReader;
 import java.io.File;
@@ -40,8 +42,48 @@ import org.apache.commons.io.input.ReversedLinesFileReader;
 @NoArgsConstructor
 public class TextViewport {
 
+    /**
+     * Back-reference to the parent TextView interpreter.
+     */
+    @JsonIgnore
+    @Schema(hidden = true)
+    private TextView view;
+
     /** Current viewport configuration. */
-    private TextViewportSettings settings = new TextViewportSettings();
+    private TextViewportSettings settings = new TextViewportSettings(this);
+
+    /**
+     * Constructs a viewport engine linked to a parent TextView view.
+     * @param view The parent view.
+     */
+    public TextViewport(TextView view) {
+        this.view = view;
+        if (this.settings != null) {
+            this.settings.setViewport(this);
+        }
+    }
+
+    /**
+     * Synchronously notifies the parent view that viewport settings have changed.
+     */
+    public void markDirty() {
+        if (view != null) {
+            view.markDirty();
+        }
+    }
+
+    /**
+     * Sets the viewport configuration and binds the back-reference.
+     * 
+     * @param settings The new viewport configuration.
+     */
+    public void setSettings(TextViewportSettings settings) {
+        if (settings != null && this.settings != settings) {
+            this.settings = settings;
+            this.settings.setViewport(this);
+            markDirty();
+        }
+    }
 
     /** The processed text chunk captured during the last process pass. */
     private String visibleContent;
@@ -91,9 +133,13 @@ public class TextViewport {
         
         // 1. Initial metadata update
         this.totalChars = handle.length();
+        this.matchingLineCount = null;
+        this.truncatedLinesCount = 0;
 
         List<String> lines;
-        if (settings.isTail()) {
+        if (settings.isFullView()) {
+            lines = processFullView(handle);
+        } else if (settings.isTail()) {
             lines = processTail(handle);
         } else if (settings.getGrepPattern() != null && !settings.getGrepPattern().isBlank()) {
             lines = processGrep(handle);
@@ -199,6 +245,23 @@ public class TextViewport {
     }
 
     /** 
+     * Full-view processing reading the complete stream up to EOF. 
+     * @param handle The source handle.
+     * @return The complete list of lines.
+     * @throws Exception if reading fails.
+     */
+    private List<String> processFullView(ResourceHandle handle) throws Exception {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(handle.openStream(), handle.getCharset()))) {
+            List<String> lines = new ArrayList<>();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+            }
+            return lines;
+        }
+    }
+
+    /** 
      * Character-based pagination. 
      * @param handle The source handle.
      * @return The list of lines in the page.
@@ -219,6 +282,21 @@ public class TextViewport {
         }
     }
 
+    /**
+     * Formats a line or chunk with dynamic line-number padding based on total line count.
+     * 
+     * @param format The line-number format string (e.g. "%4d | %s").
+     * @param lineNumber The 1-based line number.
+     * @param content The line or chunk text.
+     * @return The formatted line string.
+     */
+    private String decorateLine(String format, int lineNumber, String content) {
+        if (settings.isIncludeLineNumbers()) {
+            return String.format(format, lineNumber, content);
+        }
+        return content;
+    }
+
     /** 
      * Finalizes output with line numbers and truncation. 
      * @param lines The raw processed lines.
@@ -226,7 +304,18 @@ public class TextViewport {
      */
     private String finalizeOutput(List<String> lines) {
         this.truncatedLinesCount = 0;
-        List<String> processed = new ArrayList<>();
+        List<String> processed = new ArrayList<>(lines.size());
+        
+        int lineDigits = Math.max(4, String.valueOf(lines.size()).length());
+        String lineFormat = "%" + lineDigits + "d | %s";
+
+        if (settings.isFullView()) {
+            for (int i = 0; i < lines.size(); i++) {
+                processed.add(decorateLine(lineFormat, i + 1, lines.get(i)));
+            }
+            return String.join("\n", processed);
+        }
+
         for (int i = 0; i < lines.size(); i++) {
             String line = lines.get(i);
             
@@ -237,20 +326,12 @@ public class TextViewport {
                 while (start < line.length()) {
                     int end = Math.min(start + settings.getColumnWidth(), line.length());
                     String chunk = line.substring(start, end);
-                    if (settings.isIncludeLineNumbers()) {
-                        processed.add(String.format("%4d | %s", i + 1, chunk));
-                    } else {
-                        processed.add(chunk);
-                    }
+                    processed.add(decorateLine(lineFormat, i + 1, chunk));
                     start = end;
                 }
             } else {
                 // 2. Line Numbers
-                if (settings.isIncludeLineNumbers()) {
-                    processed.add(String.format("%4d | %s", i + 1, line));
-                } else {
-                    processed.add(line);
-                }
+                processed.add(decorateLine(lineFormat, i + 1, line));
             }
         }
         return String.join("\n", processed);
@@ -262,6 +343,9 @@ public class TextViewport {
      */
     @Override
     public String toString() {
+        if (settings.isFullView()) {
+            return "TextViewport{settings=" + settings + ", totalChars=" + totalChars + '}';
+        }
         return "TextViewport{" + "settings=" + settings + ", totalChars=" + totalChars + ", matchingLineCount=" + matchingLineCount + ", truncatedLinesCount=" + truncatedLinesCount + '}';
     }
 }

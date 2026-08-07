@@ -12,6 +12,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
+import javax.swing.JToggleButton;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 import lombok.extern.slf4j.Slf4j;
@@ -68,9 +69,13 @@ public class TextViewPanel extends AbstractViewPanel<TextView> {
      */
     private final JLabel tokenLabel;
     /**
-     * Button to expand viewport to full resource size.
+     * Pending background task calculating tokens, allowing preemption on rapid updates.
      */
-    private final JButton expandButton;
+    private SwingTask<Integer> pendingTokenTask;
+    /**
+     * Button/Toggle to enable or disable full view mode.
+     */
+    private final JToggleButton fullViewButton;
     /**
      * Label displaying the viewport summary toString.
      */
@@ -91,50 +96,70 @@ public class TextViewPanel extends AbstractViewPanel<TextView> {
         setLayout(new BorderLayout());
         tailLinesSpinner = new JSpinner(new SpinnerNumberModel(100, 1, 10000, 50));
         tailLinesSpinner.setPreferredSize(new Dimension(70, 22));
-        tailLinesSpinner.addChangeListener(e -> updateViewportSettings());
+        tailLinesSpinner.addChangeListener(e -> {
+            if (!syncing && view != null) {
+                view.getViewport().getSettings().setTailLines(((Number) tailLinesSpinner.getValue()).intValue());
+            }
+        });
         tailLinesSpinner.setEnabled(false);
 
         fromSpinner = new JSpinner(new SpinnerNumberModel(0, 0, Integer.MAX_VALUE, 4096));
         fromSpinner.setPreferredSize(new Dimension(80, 22));
-        fromSpinner.addChangeListener(e -> updateViewportSettings());
+        fromSpinner.addChangeListener(e -> {
+            if (!syncing && view != null) {
+                view.getViewport().getSettings().setStartChar(((Number) fromSpinner.getValue()).intValue());
+            }
+        });
 
         sizeSpinner = new JSpinner(new SpinnerNumberModel(65536, 1, Integer.MAX_VALUE, 4096));
         sizeSpinner.setPreferredSize(new Dimension(100, 22));
-        sizeSpinner.addChangeListener(e -> updateViewportSettings());
+        sizeSpinner.addChangeListener(e -> {
+            if (!syncing && view != null) {
+                view.getViewport().getSettings().setPageSizeInChars(((Number) sizeSpinner.getValue()).intValue());
+            }
+        });
 
         tailCheck = new JCheckBox("Tail (Follow end of resource)");
         tailCheck.setOpaque(false);
         tailCheck.addActionListener(e -> {
-            boolean tailing = tailCheck.isSelected();
-            tailLinesSpinner.setEnabled(tailing);
-            fromSpinner.setEnabled(!tailing);
-            sizeSpinner.setEnabled(!tailing);
-            updateViewportSettings();
+            if (!syncing && view != null) {
+                view.getViewport().getSettings().setTail(tailCheck.isSelected());
+            }
         });
         grepField = new JTextField();
         grepField.setPreferredSize(new Dimension(200, 22));
-        grepField.getDocument().addDocumentListener(new AnyChangeDocumentListener(this::updateViewportSettings));
+        grepField.getDocument().addDocumentListener(new AnyChangeDocumentListener(() -> {
+            if (!syncing && view != null) {
+                view.getViewport().getSettings().setGrepPattern(grepField.getText());
+            }
+        }));
 
         lineNumbersCheck = new JCheckBox("Inject Line Numbers");
         lineNumbersCheck.setOpaque(false);
-        lineNumbersCheck.addActionListener(e -> updateViewportSettings());
+        lineNumbersCheck.addActionListener(e -> {
+            if (!syncing && view != null) {
+                view.getViewport().getSettings().setIncludeLineNumbers(lineNumbersCheck.isSelected());
+            }
+        });
 
         colWidthSpinner = new JSpinner(new SpinnerNumberModel(1024, 10, Integer.MAX_VALUE, 100));
         colWidthSpinner.setPreferredSize(new Dimension(80, 22));
-        colWidthSpinner.addChangeListener(e -> updateViewportSettings());
+        colWidthSpinner.addChangeListener(e -> {
+            if (!syncing && view != null) {
+                view.getViewport().getSettings().setColumnWidth(((Number) colWidthSpinner.getValue()).intValue());
+            }
+        });
 
         tokenLabel = new JLabel("Tokens: N/A");
         summaryLabel = new JLabel("");
         summaryLabel.setFont(summaryLabel.getFont().deriveFont(Font.ITALIC));
 
-        expandButton = new JButton("Expand to fit full resource");
-        expandButton.addActionListener(e -> {
-            if (view != null) {
-                view.getViewport().expandToFit();
-                new SwingTask<Void>(agiPanel, "Refresh Viewport", () -> {
-                    view.getOwner().reloadIfNeeded();
-                    return null;
-                }, done -> refresh()).start();
+        fullViewButton = new JToggleButton("Full View");
+        fullViewButton.addActionListener(e -> {
+            if (!syncing && view != null) {
+                boolean selected = fullViewButton.isSelected();
+                log.info("fullViewButton clicked: selected={}, view={}", selected, view.getOwner() != null ? view.getOwner().getName() : "null");
+                view.getViewport().getSettings().setFullView(selected);
             }
         });
 
@@ -158,7 +183,7 @@ public class TextViewPanel extends AbstractViewPanel<TextView> {
         paginationRow.add(new JLabel("Size (Chars):"));
         paginationRow.add(sizeSpinner);
         paginationRow.add(Box.createHorizontalStrut(10));
-        paginationRow.add(expandButton);
+        paginationRow.add(fullViewButton);
         controls.add(paginationRow);
 
         // Row 3: Line Numbers & Col Width
@@ -202,59 +227,70 @@ public class TextViewPanel extends AbstractViewPanel<TextView> {
      * current TextView state and estimated token count.</p>
      */
     @Override
-        public void refresh() {
+    public void refresh() {
+        log.info("TextViewPanel refresh() view={}", view );
         if (view == null) {
-                    return;
-                }
-
-                this.syncing = true;
-                try {
-                    TextViewportSettings settings = view.getViewport().getSettings();
-                    boolean tailing = settings.isTail();
-                    tailCheck.setSelected(tailing);
-                    tailLinesSpinner.setValue(settings.getTailLines());
-                    tailLinesSpinner.setEnabled(tailing);
-                    fromSpinner.setValue(settings.getStartChar());
-                    fromSpinner.setEnabled(!tailing);
-                    sizeSpinner.setValue(settings.getPageSizeInChars());
-                    sizeSpinner.setEnabled(!tailing);
-                    grepField.setText(settings.getGrepPattern());
-                    lineNumbersCheck.setSelected(settings.isIncludeLineNumbers());
-                    colWidthSpinner.setValue(settings.getColumnWidth());
-
-                    tokenLabel.setText("Estimated Tokens: " + view.getTokenCount());
-                    summaryLabel.setText(view.getViewport().toString());
-
-                    // Enabled if content is cut off
-                    expandButton.setEnabled(settings.getPageSizeInChars() < view.getViewport().getTotalChars() || settings.getStartChar() > 0);
-                } finally {
-                    this.syncing = false;
-                }
-    }
-
-    /**
-     * Authoritatively updates the underlying viewport settings and triggers a
-     * background reload of the resource.
-     */
-    private void updateViewportSettings() {
-        if (syncing || view == null) {
             return;
         }
 
-        TextViewportSettings settings = view.getViewport().getSettings();
-        settings.setTail(tailCheck.isSelected());
-        settings.setTailLines(((Number) tailLinesSpinner.getValue()).intValue());
-        settings.setStartChar(((Number) fromSpinner.getValue()).intValue());
-        settings.setPageSizeInChars(((Number) sizeSpinner.getValue()).intValue());
-        settings.setGrepPattern(grepField.getText());
-        settings.setIncludeLineNumbers(lineNumbersCheck.isSelected());
-        settings.setColumnWidth(((Number) colWidthSpinner.getValue()).intValue());
+        this.syncing = true;
+        try {
+            TextViewportSettings settings = view.getViewport().getSettings();
+            boolean fullView = settings.isFullView();
+            fullViewButton.setSelected(fullView);
+            fullViewButton.setText(fullView ? "Full View (Active)" : "Full View");
 
-        // Trigger background reload for immediate feedback in tabs
-        new SwingTask<Void>(agiPanel, "Refresh Viewport", () -> {
-            view.markDirty();
-            view.getOwner().reloadIfNeeded();
-            return null;
-        }).start();
+            boolean tailing = settings.isTail();
+            tailCheck.setSelected(tailing);
+            tailCheck.setEnabled(!fullView);
+            tailLinesSpinner.setValue(settings.getTailLines());
+            tailLinesSpinner.setEnabled(!fullView && tailing);
+
+            fromSpinner.setValue(settings.getStartChar());
+            fromSpinner.setEnabled(!fullView && !tailing);
+
+            sizeSpinner.setValue(settings.getPageSizeInChars());
+            sizeSpinner.setEnabled(!fullView && !tailing);
+
+            grepField.setText(settings.getGrepPattern());
+            grepField.setEnabled(!fullView);
+
+            lineNumbersCheck.setSelected(settings.isIncludeLineNumbers());
+
+            colWidthSpinner.setValue(settings.getColumnWidth());
+            colWidthSpinner.setEnabled(!fullView);
+
+            tokenLabel.setText("Estimated Tokens: Counting...");
+            
+            if (pendingTokenTask != null && !pendingTokenTask.isDone()) {
+                log.info("Cancelling previous SwingTask " + pendingTokenTask);
+                pendingTokenTask.cancel(true);
+            }
+
+            final TextView targetView = view;
+            String resName = (view.getOwner() != null) ? view.getOwner().getName() : "Resource";
+            
+            final SwingTask<Integer>[] taskRef = new SwingTask[1];
+            taskRef[0] = new SwingTask<Integer>(agiPanel, "Calculating Tokens: " + resName, () -> {
+                return targetView.getTokenCount();
+            }, count -> {
+                if (this.pendingTokenTask == taskRef[0] && this.view == targetView) {
+                    tokenLabel.setText("Estimated Tokens: " + count);
+                }
+            }, error -> {
+                if (this.pendingTokenTask == taskRef[0] && this.view == targetView) {
+                    tokenLabel.setText("Estimated Tokens: Error");
+                }
+            }, false);
+
+            this.pendingTokenTask = taskRef[0];
+            log.info("Starting new SwingTask " + pendingTokenTask);
+            taskRef[0].start();
+            
+            summaryLabel.setText(view.getViewport().toString());
+        } finally {
+            this.syncing = false;
+        }
     }
+
 }

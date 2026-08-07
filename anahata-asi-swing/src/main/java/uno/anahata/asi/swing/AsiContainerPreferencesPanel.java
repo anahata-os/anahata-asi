@@ -32,7 +32,9 @@ import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
 import uno.anahata.asi.AsiContainerPreferences;
+import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
+import java.util.stream.Collectors;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.agi.provider.RequestConfig;
@@ -294,10 +296,37 @@ public class AsiContainerPreferencesPanel extends ScrollablePanel {
 
         // 2. Promote any "Draft" providers to the official container registry
         if (!unsavedProviders.isEmpty()) {
-            for (AbstractAiProvider p : new ArrayList<>(unsavedProviders)) {
+            List<AbstractAiProvider> newlyAdded = new ArrayList<>(unsavedProviders);
+            for (AbstractAiProvider p : newlyAdded) {
                 container.registerProvider(p);
             }
             unsavedProviders.clear();
+
+            // Prompt user if there are active sessions to add these newly created providers to
+            List<Agi> activeAgis = container.getActiveAgis();
+            if (!activeAgis.isEmpty()) {
+                int count = activeAgis.size();
+                String sessionMsg = count == 1 ? "the active session" : "all " + count + " active sessions";
+                String names = newlyAdded.stream().map(AbstractAiProvider::getDisplayName).collect(Collectors.joining(", "));
+                int choice = JOptionPane.showConfirmDialog(
+                        this,
+                        "Would you like to add the newly created provider (" + names + ") to " + sessionMsg + "?",
+                        "Add Provider to Active Sessions",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE
+                );
+                if (choice == JOptionPane.YES_OPTION) {
+                    for (AbstractAiProvider p : newlyAdded) {
+                        for (Agi agi : activeAgis) {
+                            List<String> uuids = agi.getConfig().getProviderUuids();
+                            if (!uuids.contains(p.getUuid())) {
+                                uuids.add(p.getUuid());
+                                agi.autoSave("added provider " + p.getUuid());
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // 3. Persist everything to preferences.kryo
@@ -559,6 +588,7 @@ public class AsiContainerPreferencesPanel extends ScrollablePanel {
                 try {
                     AbstractAiProvider newProvider = selected.clazz().getDeclaredConstructor().newInstance();
                     newProvider.setUuid(UUID.randomUUID().toString());
+                    newProvider.setAsiContainer(container);
                     unsavedProviders.add(newProvider);
                     refreshProviderTabs(providerTabs);
                     providerTabs.setSelectedIndex(providerTabs.getTabCount() - 1);

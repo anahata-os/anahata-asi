@@ -296,6 +296,15 @@ public class ContextPanel extends JPanel {
         treeTable.setShowsRootHandles(true);
         treeTable.setTreeCellRenderer(new ContextTreeCellRenderer());
 
+        // Configure Table Cell Renderers for Token Metrics and Status
+        ContextTableCellRenderer numberRenderer = new ContextTableCellRenderer(javax.swing.SwingConstants.RIGHT);
+        ContextTableCellRenderer textRenderer = new ContextTableCellRenderer(javax.swing.SwingConstants.LEFT);
+
+        treeTable.setDefaultRenderer(Integer.class, numberRenderer);
+        treeTable.setDefaultRenderer(Number.class, numberRenderer);
+        treeTable.setDefaultRenderer(String.class, textRenderer);
+        treeTable.setDefaultRenderer(Object.class, textRenderer);
+
         // Disable auto-resize to respect preferred widths
         treeTable.setAutoResizeMode(JXTreeTable.AUTO_RESIZE_OFF);
 

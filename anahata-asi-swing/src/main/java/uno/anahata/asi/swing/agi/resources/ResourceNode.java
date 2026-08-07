@@ -5,6 +5,9 @@ import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.resource.Resource;
+import uno.anahata.asi.agi.resource.view.TextView;
+import uno.anahata.asi.agi.resource.view.TextViewport;
+import uno.anahata.asi.agi.resource.view.TextViewportSettings;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.context.AbstractContextNode;
 
@@ -105,5 +108,30 @@ public class ResourceNode extends AbstractContextNode<Resource> {
     @Override
     public boolean isActive() {
         return userObject.isEffectivelyProviding() && userObject.getHandle().exists();
+    }
+
+    /**
+     * Checks whether the underlying resource is currently truncated in prompt view
+     * (i.e. not in Full View mode, or has start offset / page size bounds active).
+     * 
+     * @return true if the resource content in prompt is truncated.
+     */
+    public boolean isTruncated() {
+        if (userObject.getView() instanceof TextView tv) {
+            return tv.isTruncated();
+        }
+        return false;
+    }
+
+    /**
+     * Calculates the percentage of the total resource content currently visible in prompt.
+     * 
+     * @return The percentage between 0.0 and 100.0.
+     */
+    public double getVisiblePercentage() {
+        if (userObject.getView() instanceof TextView tv) {
+            return tv.getVisiblePercentage();
+        }
+        return 100.0;
     }
 }

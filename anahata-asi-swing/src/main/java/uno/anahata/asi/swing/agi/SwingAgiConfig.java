@@ -184,6 +184,16 @@ public class SwingAgiConfig extends AgiConfig {
     }
 
     /**
+     * Gets a theme-adaptive warning color for truncated resource token counts.
+     * High-contrast in both dark and light Look and Feels.
+     *
+     * @return The adaptive warning/orange color.
+     */
+    public static Color getTruncatedTokenColor() {
+        return isDarkLaf() ? new Color(255, 170, 50) : new Color(210, 105, 0);
+    }
+
+    /**
      * Returns a new theme object containing the color and font definitions for the UI.
      * @return The UI theme.
      */

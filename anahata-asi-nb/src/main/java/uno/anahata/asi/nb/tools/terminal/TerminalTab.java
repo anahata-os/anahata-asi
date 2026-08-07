@@ -64,11 +64,10 @@ public class TerminalTab extends BasicContextProvider {
     public TerminalTab(long tabId, String name, Term term) {
         super(String.valueOf(tabId), name, "Active terminal tab: " + name);
         this.term = term;
-        this.viewportSettings = TextViewportSettings.builder()
-                .tail(true)
-                .tailLines(100)
-                .includeLineNumbers(true)
-                .build();
+        this.viewportSettings = new TextViewportSettings();
+        this.viewportSettings.setTail(true);
+        this.viewportSettings.setTailLines(100);
+        this.viewportSettings.setIncludeLineNumbers(false);
     }
 
     /**
