@@ -84,6 +84,10 @@ public class AiProviderPanel extends ScrollablePanel {
      */
     private final JTextField displayNameField;
     /**
+     * Editable description for this provider instance.
+     */
+    private final JTextField descriptionField;
+    /**
      * Visual indicator of where this provider's data is stored on the host FS.
      */
     private final JLabel folderLabel;
@@ -177,9 +181,17 @@ public class AiProviderPanel extends ScrollablePanel {
         PromptSupport.setForeground(UIManager.getColor("Label.disabledForeground"), textArea);
         setLayout(new MigLayout("fillx, insets 10", "[right]10[grow,fill]5[]"));
 
-        JButton removeBtn = new JButton(new DeleteIcon(16));
+        JButton removeBtn = new JButton("Delete", new DeleteIcon(16));
         removeBtn.setToolTipText("Remove Provider");
         removeBtn.addActionListener(e -> removeCallback.run());
+
+        testConnectionBtn = new JButton("Test Connection", new PulseIcon(16));
+        testConnectionBtn.addActionListener(e -> testConnection());
+
+        JPanel headerRight = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        headerRight.setOpaque(false);
+        headerRight.add(testConnectionBtn);
+        headerRight.add(removeBtn);
 
         JPanel headerLeft = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         headerLeft.setOpaque(false);
@@ -187,8 +199,8 @@ public class AiProviderPanel extends ScrollablePanel {
         if (providerIcon != null) {
             headerLeft.add(new JLabel(providerIcon));
         }
-        add(headerLeft, "span 2, left");
-        add(removeBtn, "right, wrap");
+        add(headerLeft, "left");
+        add(headerRight, "span 2, right, wrap");
 
         add(new JLabel("UUID:"));
         JLabel uuidLabel = new JLabel(provider.getUuid());
@@ -202,6 +214,10 @@ public class AiProviderPanel extends ScrollablePanel {
         classField.setOpaque(false);
         classField.setFont(classField.getFont().deriveFont(Font.ITALIC, 11.0F));
         add(classField, "span 2, wrap");
+
+        add(new JLabel("Description:"));
+        descriptionField = new JTextField(provider.getDescription() != null ? provider.getDescription() : "");
+        add(descriptionField, "span 2, wrap");
 
         add(new JLabel("Enabled:"));
         enabledCheck = new JCheckBox("", provider.isEnabled());
@@ -319,6 +335,7 @@ public class AiProviderPanel extends ScrollablePanel {
         });
 
         allowedModelsArea.setRows(5);
+        allowedModelsArea.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(allowedModelsArea, e));
         allowedModelsArea.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
         JScrollPane allowedScroll = new JScrollPane(allowedModelsArea);
         add(allowedScroll, "span 2, growx, wrap");
@@ -357,6 +374,7 @@ public class AiProviderPanel extends ScrollablePanel {
             add(new JLabel("Custom Headers:"), "top, gaptop 5");
             customHeadersArea = new JTextArea(3, 20);
             customHeadersArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+            customHeadersArea.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(customHeadersArea, e));
             if (oai.getCustomHeaders() != null) {
                 String headers = oai.getCustomHeaders().entrySet().stream()
                         .map(entry -> entry.getKey() + ": " + entry.getValue())
@@ -373,10 +391,6 @@ public class AiProviderPanel extends ScrollablePanel {
             preferHttp11Check.setToolTipText("Force HTTP/1.1 to avoid protocol hangs on some local servers/routers.");
             add(preferHttp11Check, "span 2, wrap");
         }
-
-        testConnectionBtn = new JButton("Test Connection (Discover Models)", new PulseIcon(16));
-        testConnectionBtn.addActionListener(e -> testConnection());
-        add(testConnectionBtn, "span 3, right, gaptop 20");
 
         // Initial state sync
         textArea.setEnabled(provider.isApiKeyRequired());
@@ -474,6 +488,7 @@ public class AiProviderPanel extends ScrollablePanel {
      */
     public void syncToProvider() throws IOException {
         provider.setDisplayName(displayNameField.getText().trim());
+        provider.setDescription(descriptionField.getText().trim());
         provider.setEnabled(enabledCheck.isSelected());
         provider.setApiKeyRequired(apiKeyRequiredCheck.isSelected());
 
