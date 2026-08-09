@@ -154,14 +154,19 @@ public class CodeRefinementIntent implements Serializable {
      * Validates the intent before execution to ensure all mandatory fields
      * are populated correctly based on the intent type. This pre-flight check
      * guarantees that the intent is structurally sound before AST parsing begins.
-     *
-     * @throws AgiToolException if the intent configuration is invalid.
+     * @throws uno.anahata.asi.agi.tool.AgiToolException if the intent configuration is invalid.
      */
     public void validate() throws AgiToolException {
         if (declaration != null && declaration.contains("/**")) {
             throw new AgiToolException("Validation Failed: You cannot add javadoc in the declaration, javadoc should be provided in the javadoc field.");
         }
         if (type == Type.INSERT || type == Type.MOVE) {
+            if (position == null) {
+                throw new AgiToolException("Validation Failed: 'position' (RelativePosition: START, END, BEFORE, AFTER) is mandatory for " + type + " intents.");
+            }
+            if ((position == RelativePosition.BEFORE || position == RelativePosition.AFTER) && (anchorMemberName == null || anchorMemberName.isBlank())) {
+                throw new AgiToolException("Validation Failed: 'anchorMemberName' is mandatory when 'position' is " + position + ".");
+            }
             String decl = declaration != null ? declaration.stripIndent().trim() : "";
             boolean isTopLevelType = decl.contains("class ") || decl.contains("interface ") || decl.contains("enum ") || decl.contains("record ");
 
