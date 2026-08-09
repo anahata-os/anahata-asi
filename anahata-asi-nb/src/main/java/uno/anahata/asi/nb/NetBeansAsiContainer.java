@@ -200,21 +200,4 @@ public class NetBeansAsiContainer extends AbstractSwingAsiContainer {
         }
     }
 
-    /**
-     * Finds an existing active agi by its session ID, or creates a new one if
-     * the ID is null or not found.
-     *
-     * @param sessionId The session ID to find.
-     * @return The found or newly created agi session.
-     */
-    public Agi findOrCreateAgi(String sessionId) {
-        if (sessionId != null) {
-            for (Agi agi : getActiveAgis()) {
-                if (agi.getConfig().getSessionId().equals(sessionId)) {
-                    return agi;
-                }
-            }
-        }
-        return createNewAgi();
-    }
 }
