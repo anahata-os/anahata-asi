@@ -454,7 +454,7 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
         super.rebind();
         // HEALING GUARD: If the deserialized URI is a zombie, force a re-parse.
         if (uri != null && uri.getScheme() == null) {
-            log.warn("Healing zombie URI on rebind: {}", uri);
+            log.debug("Healing zombie URI on rebind: {}", uri);
             setUri(URI.create(uri.toString()));
         } else {
             setUri(uri);
