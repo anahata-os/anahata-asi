@@ -607,7 +607,7 @@ public class ContextPanel extends JPanel {
      */
     public final void refresh(boolean structural) {
         SwingUtilities.invokeLater(() -> {
-            log.info("Refreshing ContextPanel tree (structural={}) for agi: {}", structural, agi.getShortId());
+            log.debug("Refreshing ContextPanel tree (structural={}) for agi: {}", structural, agi.getShortId());
 
             // 1. Capture current expansion and selection state
             Set<TreePath> expandedPaths = getExpandedPaths();

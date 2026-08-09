@@ -68,7 +68,7 @@ public class StatusManager extends BasicPropertyChangeSource {
         AgiStatus oldStatus = this.currentStatus;
 
         if (this.currentStatus != newStatus) {
-            log.info("Status changed from {} to {}", this.currentStatus, newStatus);
+            log.debug("Status changed from {} to {}", this.currentStatus, newStatus);
             this.currentStatus = newStatus;
             this.statusChangeTime = System.currentTimeMillis();
         }

@@ -56,13 +56,13 @@ public class ContextTreeTableModel extends AbstractTreeTableModel {
      */
     public final void refresh() {
         if (this.root instanceof ContextManagerNode cmn) {
-            log.info("Refreshing existing context tree root for agi: {}", agiPanel.getAgi().getShortId());
+            log.debug("Refreshing existing context tree root for agi: {}", agiPanel.getAgi().getShortId());
             cmn.refresh();
             // fireTreeStructureChanged is the safest way to notify of deep changes.
             // UI stability is maintained by preserving node instances.
             modelSupport.fireTreeStructureChanged(new TreePath(root));
         } else {
-            log.info("Creating new context tree root for agi: {}", agiPanel.getAgi().getShortId());
+            log.debug("Creating new context tree root for agi: {}", agiPanel.getAgi().getShortId());
             this.root = new ContextManagerNode(agiPanel, agiPanel.getAgi().getContextManager());
             modelSupport.fireTreeStructureChanged(new TreePath(root));
         }

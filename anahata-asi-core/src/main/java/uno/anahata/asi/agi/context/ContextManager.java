@@ -164,7 +164,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
     public List<AbstractMessage> buildVisibleHistory() {
         List<AbstractMessage> visibleHistory = new ArrayList<>(history);
 
-        log.info("Built visible history with {} messages (total history: {})", visibleHistory.size(), history.size());
+        log.debug("Built visible history with {} messages (total history: {})", visibleHistory.size(), history.size());
 
         visibleHistory.add(buildRagMessage());
 
