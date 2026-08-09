@@ -62,7 +62,7 @@ public class Firefox extends AbstractBrowser {
      */
     @Override
     public void postActivate() {
-        log.info("Post-activating Firefox toolkit. Clearing orphaned drones.");
+        log.debug("Post-activating Firefox toolkit. Clearing orphaned drones.");
         drones.clear();
     }
 
