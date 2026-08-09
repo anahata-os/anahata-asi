@@ -35,7 +35,9 @@ import uno.anahata.asi.swing.internal.SwingUtils;
  */
 public class AnahataInstaller extends ModuleInstall {
 
-    /** Logger instance for module lifecycle events. */
+    /**
+     * Logger instance for module lifecycle events.
+     */
     private static final Logger log = Logger.getLogger(AnahataInstaller.class.getName());
 
     /**
@@ -66,11 +68,13 @@ public class AnahataInstaller extends ModuleInstall {
             log.log(Level.SEVERE, "Failed to write to lifecycle log", e);
         }
     }
+
     /**
      * {@inheritDoc} Performs module initialization and sets up global listeners
      * for UI updates.
      */
-    @Override public void restored() {
+    @Override
+    public void restored() {
         logLifecycle("AnahataInstaller.restored() ENTER");
         log.info("Anahata ASI NetBeans Module Restored");
 
@@ -89,7 +93,6 @@ public class AnahataInstaller extends ModuleInstall {
         }
 
         boolean isNbmReload = "true".equals(System.getProperty("anahata.nbmreload.pending"));
-        
 
         if (isNbmReload) {
             logLifecycle("AnahataInstaller.restored() detected nbmreload. Reopening open session tabs.");
@@ -100,22 +103,22 @@ public class AnahataInstaller extends ModuleInstall {
         } else {
             logLifecycle("AnahataInstaller.restored() detected IDE boot. Deferring window restoration to NetBeans WindowManager.");
         }
-        
+
         System.clearProperty("anahata.nbmreload.pending");
 
         logLifecycle("AnahataInstaller.restored() EXIT");
-        
-        
-        
+
     }
-    
 
     /**
      * {@inheritDoc}
-     * <p>Shuts down the container and closes/detaches all TopComponents when the module is uninstalled.
-     * This is critical to prevent classloader leaks during nbmreload.</p>
+     * <p>
+     * Shuts down the container and closes/detaches all TopComponents when the
+     * module is uninstalled. This is critical to prevent classloader leaks
+     * during nbmreload.</p>
      */
-    @Override public void uninstalled() {
+    @Override
+    public void uninstalled() {
         logLifecycle("AnahataInstaller.uninstalled() ENTER");
         log.log(Level.INFO, "Anahata ASI V2 Module Uninstalled - Thread: {0}", Thread.currentThread().getName());
 
