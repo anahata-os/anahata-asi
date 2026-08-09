@@ -292,6 +292,9 @@ public class BatchCodeRefiner extends AnahataToolkit {
      * rules are violated or the anchor is not found.
      */
     public static int getInsertIndex(CompilationInfo wc, List<? extends Tree> members, RelativePosition position, String anchor) throws AgiToolException {
+        if (position == null) {
+            throw new AgiToolException("Validation Failed: RelativePosition 'position' cannot be null for INSERT or MOVE operations.");
+        }
         if ((position == RelativePosition.BEFORE || position == RelativePosition.AFTER) && (anchor == null || anchor.isBlank())) {
             throw new AgiToolException("anchorMemberName is mandatory for relative position " + position);
         }
