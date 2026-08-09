@@ -35,6 +35,11 @@ public class AnahataAnnotationLogic {
     /** Logger for performance tracking and classification diagnostics. */
     private static final Logger LOG = Logger.getLogger(AnahataAnnotationLogic.class.getName());
 
+    /** Pre-resolved URL string for the Anahata 16x16 badge icon to prevent synchronous ClassLoader lookups on the EDT. */
+    private static final String BADGE_ICON_URL = AnahataAnnotationLogic.class.getResource("/icons/anahata_16.png") != null
+            ? AnahataAnnotationLogic.class.getResource("/icons/anahata_16.png").toExternalForm()
+            : "";
+
     /** 
      * Semantic classification for UI node rendering. 
      */
@@ -206,7 +211,7 @@ public class AnahataAnnotationLogic {
     public static String buildTooltip(FileObject fo, NodeType nodeType, List<Agi> activeAgis, List<Integer> totals) {
         StringBuilder sb = new StringBuilder();
         
-        sb.append("<img src=\"").append(AnahataAnnotationLogic.class.getResource("/icons/anahata_16.png")).append("\" width=\"16\" height=\"16\"> ");
+        sb.append("<img src=\"").append(BADGE_ICON_URL).append("\" width=\"16\" height=\"16\"> ");
         sb.append("<b>In context in:</b><br>");
         
         if (nodeType == NodeType.PROJECT) {
