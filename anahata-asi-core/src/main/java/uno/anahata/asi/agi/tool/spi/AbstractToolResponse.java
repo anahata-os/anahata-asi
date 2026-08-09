@@ -12,8 +12,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.internal.TextUtils;
@@ -35,7 +38,7 @@ import uno.anahata.asi.agi.provider.AbstractModel;
  */
 @Getter
 @Setter
-@lombok.extern.slf4j.Slf4j
+@Slf4j
 public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> extends BasicPropertyChangeSource {
 
     /**
@@ -48,7 +51,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     /**
      * The final status of the invocation after execution.
      */
-    @Setter(lombok.AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     @Schema(description = "The execution status of the tool call")
     private ToolExecutionStatus status;
 
@@ -409,7 +412,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
      *
      * @param filter The predicate to apply to each log message.
      */
-    public void removeLogsIf(java.util.function.Predicate<String> filter) {
+    public void removeLogsIf(Predicate<String> filter) {
         if (this.logs.removeIf(filter)) {
             updateTokenCount();
             propertyChangeSupport.firePropertyChange("logs", null, logs);
@@ -446,7 +449,36 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
      * @return The text representation of the response.
      */
     public String asText() {
-        return String.format("[%s] %s", status, result != null ? TextUtils.formatValue(result.toString()) : (errors != null ? errors : ""));
+        StringBuilder sb = new StringBuilder();
+        sb.append("Status: ").append(status != null ? status : "PENDING");
+        sb.append("\nExecution Time: ").append(executionTimeMillis).append(" ms");
+        if (threadName != null && !threadName.isBlank()) {
+            sb.append("\nThread: ").append(threadName);
+        }
+        if (result != null) {
+            sb.append("\nResult: ").append(TextUtils.resolveContentString(result));
+        }
+        if (errors != null && !errors.isBlank()) {
+            sb.append("\nErrors: ").append(errors);
+        }
+        if (userFeedback != null && !userFeedback.isBlank()) {
+            sb.append("\nUser Feedback: ").append(userFeedback);
+        }
+        if (modifiedArgs != null && !modifiedArgs.isEmpty()) {
+            sb.append("\nModified Args: ").append(modifiedArgs);
+        }
+        if (logs != null && !logs.isEmpty()) {
+            sb.append("\nLogs:\n").append(String.join("\n", logs));
+        }
+        if (attachments != null && !attachments.isEmpty()) {
+            sb.append("\nAttachments:");
+            for (ToolResponseAttachment att : attachments) {
+                long size = att.getData() != null ? att.getData().length : 0;
+                sb.append("\n  - Size: ").append(TextUtils.formatSize(size))
+                  .append(" (").append(size).append(" bytes), MimeType: ").append(att.getMimeType());
+            }
+        }
+        return sb.toString();
     }
 
     /**
