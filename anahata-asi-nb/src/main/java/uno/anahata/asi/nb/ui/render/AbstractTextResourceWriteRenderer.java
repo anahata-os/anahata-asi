@@ -7,6 +7,7 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.Image;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
@@ -213,13 +214,11 @@ public abstract class AbstractTextResourceWriteRenderer<T extends AbstractTextRe
     /**
      * Performs an immediate validation of the file write using the
      * authoritative logic in the Files toolkit. If validation fails, the tool
-     * call is rejected immediately with a diff of the failed intent.
-     *
+     * call is rejected immediately with a structured validation error and full stack trace.
+     * 
      * @return true if valid, false if rejected.
      */
     private boolean validatePreFlight() {
-
-        //bad model
         if (update == null || update.getResourceUuid() == null) {
             return false;
         }
@@ -257,6 +256,7 @@ public abstract class AbstractTextResourceWriteRenderer<T extends AbstractTextRe
             }
 
             call.getResponse().fail("Validation Failed: " + e.getMessage(), diff);
+            call.getResponse().addError(e);
             return false;
         }
     }
@@ -611,7 +611,7 @@ public abstract class AbstractTextResourceWriteRenderer<T extends AbstractTextRe
                 break;
         }
         JLabel statusLabel = new JLabel(labelText);
-        statusLabel.setFont(statusLabel.getFont().deriveFont(java.awt.Font.BOLD));
+        statusLabel.setFont(statusLabel.getFont().deriveFont(Font.BOLD));
 
         topRow.add(statusLabel);
         topRow.add(htmlDisplayName);
