@@ -150,7 +150,7 @@ public class JavaMethodTool extends AbstractTool<JavaMethodToolParameter, JavaMe
      */
     public void postActivate() throws Exception {
         if (method == null) {
-            log.info("Restoring Method for tool: {} using signature lookup", getName());
+            log.debug("Restoring Method for tool: {} using signature lookup", getName());
             Object instance = getToolkitInstance();
             if (instance == null) {
                 throw new RuntimeException("Cannot restore method: parent toolkit instance is not yet available for tool " + getName());
