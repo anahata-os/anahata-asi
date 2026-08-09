@@ -80,10 +80,11 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
         try {
             this.toolkitInstance = toolClass.getDeclaredConstructor().newInstance();
             if (toolkitInstance instanceof ToolContext tc) {
-                log.info("Onboarding {}", tc);
+                log.debug("Onboarding {}", tc);
                 tc.setToolkit(this);
             }
         } catch (Exception e) {
+            log.error("Exception initializing toolkit instance. Rethrowing", e);
             throw new IllegalArgumentException("Could not initialize toolkit class: " + toolClass.getName() + ". It must be public and have a public no-arg constructor.", e);
         }
 
@@ -135,12 +136,12 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
 
     @Override
     public void rebind() {
-        log.info("Rebinding JavaObjectToolkit: {}", name);
+        log.debug("Rebinding JavaObjectToolkit: {}", name);
         
         // 1. Restore Instance if missing (transient recovery)
         if (toolkitInstance == null && toolkitClassName != null) {
             try {
-                log.info("Restoring toolkit instance for class: {}", toolkitClassName);
+                log.debug("Restoring toolkit instance for class: {}", toolkitClassName);
                 Class<?> clazz = Class.forName(toolkitClassName);
                 this.toolkitInstance = clazz.getDeclaredConstructor().newInstance();
             } catch (Exception e) {
@@ -236,7 +237,7 @@ public class JavaObjectToolkit extends AbstractToolkit<JavaMethodTool> implement
      */
     @Override
     public void postActivate() {
-        log.info("Post-activating Java toolkit: {}", name);
+        log.debug("Post-activating Java toolkit: {}", name);
         // 1. Warm up tools to prevent race conditions during UI rendering
         for (JavaMethodTool tool : getAllTools()) {
             try {
