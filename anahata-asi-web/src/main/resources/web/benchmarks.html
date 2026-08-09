@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anahata ASI Benchmarks | Pure-Java AI Performance Leaderboard</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="main-nav"></div>
+
+    <header class="hero" style="padding-top: 8rem;">
+        <div class="hero-overlay"></div>
+        <div class="hero-content container">
+            <h1 class="fade-in">Anahata <span style="color: var(--barca-gold);">ASI</span> Benchmarks</h1>
+            <p class="tagline">The Industry's First Standardized Pure-Java AI Performance Leaderboard</p>
+            <p class="hero-description" style="max-width: 850px; margin: 0 auto 2rem; color: var(--text-muted); font-size: 1.1rem; line-height: 1.7;">
+                Evaluating Large Language Models on real-world Java engineering: interactive Swing/JavaFX GUIs, LWJGL 3D graphics, AST refactoring, and JNA native C-library bindings.
+            </p>
+        </div>
+    </header>
+
+    <main>
+        <!-- Active Benchmark Suites -->
+        <section id="suites" class="dark-bg">
+            <div class="container">
+                <div class="section-header" style="text-align: center; margin-bottom: 3rem;">
+                    <h2>🏆 Active Benchmark Suites</h2>
+                    <p style="color: var(--text-muted); font-size: 1.1rem;">Explore the flagship benchmark programs and candidate model scorecards.</p>
+                </div>
+
+                <div class="feature-grid">
+                    <div class="feature-card" style="border-top: 4px solid var(--barca-gold);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem;">
+                            <span style="background: var(--barca-gold); color: black; font-size: 0.75rem; font-weight: 800; padding: 3px 10px; border-radius: 4px; text-transform: uppercase;">Flagship Suite</span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Sponsor:</span>
+                                <img src="assets/logos/uno.anahata.asi.novarouteai.NovaRouteAiProvider.png" alt="NovaRouteAI Logo" style="height: 24px; vertical-align: middle;">
+                                <span style="font-size: 0.9rem; color: var(--barca-gold); font-weight: 700;">NovaRouteAI</span>
+                            </div>
+                        </div>
+                        <h3 style="font-size: 1.5rem; color: var(--white); margin-bottom: 0.8rem;"><i class="fas fa-trophy" style="color: var(--barca-gold); margin-right: 8px;"></i> Anahata-AGI-1</h3>
+                        <p style="color: var(--text-muted); font-size: 1rem; line-height: 1.6; margin-bottom: 1.5rem;">
+                            The master certification suite evaluating LLMs on multi-modal Java tasks, EDT context discipline, in-process safety, and JNA system hardware integration.
+                        </p>
+                        <a href="benchmarks/anahata-agi-1/index.html" class="btn-primary" style="align-self: flex-start; text-decoration: none;">View Anahata-AGI-1 Results &rarr;</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Scoring Criteria -->
+        <section id="criteria">
+            <div class="container">
+                <div class="section-header" style="text-align: center; margin-bottom: 3rem;">
+                    <h2>📐 Standard Scoring Criteria</h2>
+                    <p style="color: var(--text-muted); font-size: 1.1rem;">Every challenge is evaluated across 3 weighted categories (100 points maximum):</p>
+                </div>
+
+                <div class="responsive-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem;">
+                    <div class="nb-card" style="border-top-color: var(--verified-green); margin: 0;">
+                        <h3 style="color: var(--verified-green); margin-top: 0; font-size: 1.3rem;"><i class="fas fa-bullseye"></i> Accuracy & Safety (50%)</h3>
+                        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 0; line-height: 1.6;">
+                            Zero-defect code execution, full requirement completion, thread safety, and zero critical safety violations (e.g. no <code>System.exit()</code> or process crashes).
+                        </p>
+                    </div>
+
+                    <div class="nb-card" style="border-top-color: var(--barca-gold); margin: 0;">
+                        <h3 style="color: var(--barca-gold); margin-top: 0; font-size: 1.3rem;"><i class="fas fa-user-check"></i> Developers Score (20%)</h3>
+                        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 0; line-height: 1.6;">
+                            Qualitative architectural review by Anahata core developers evaluating code elegance, DRY principles, Javadoc standards, and visual design quality.
+                        </p>
+                    </div>
+
+                    <div class="nb-card" style="border-top-color: var(--primary-light); margin: 0;">
+                        <h3 style="color: var(--primary-light); margin-top: 0; font-size: 1.3rem;"><i class="fas fa-tachometer-alt"></i> Efficiency & Latency (30%)</h3>
+                        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 0; line-height: 1.6;">
+                            Time-to-first-token, per-turn execution latency, output token economy, and minimal turn count to complete the prompt.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+                &copy; 2026 Anahata Software Foundation. Licensed under ASL v108. Força Barça!
+            </div>
+        </div>
+    </footer>
+    <script src="nav.js"></script>
+</body>
+</html>

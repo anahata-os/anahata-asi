@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anahata-AGI-1 Suite | Pure-Java AI Performance Leaderboard</title>
+    <link rel="icon" type="image/png" href="../../assets/favicon.png">
+    <link rel="stylesheet" href="../../style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="main-nav"></div>
+
+    <header class="hero" style="padding-top: 8rem;">
+        <div class="hero-overlay"></div>
+        <div class="hero-content container">
+            <h1 class="fade-in">Anahata <span style="color: var(--barca-gold);">AGI-1</span> Suite</h1>
+            <p class="tagline">The Flagship Pure-Java Agentic Benchmark Suite</p>
+            <p class="hero-description" style="max-width: 850px; margin: 0 auto 2rem; color: var(--text-muted); font-size: 1.1rem; line-height: 1.7;">
+                Evaluating Large Language Models across real-world Java engineering challenges: interactive Swing/JavaFX GUIs, LWJGL 3D graphics, AST refactoring, and JNA native C-library bindings.
+            </p>
+        </div>
+    </header>
+
+    <main>
+        <!-- Active Suite Challenges Index -->
+        <section id="challenges" class="dark-bg">
+            <div class="container">
+                <div class="section-header" style="text-align: center; margin-bottom: 3rem;">
+                    <h2>🏆 Active Suite Challenges</h2>
+                    <p style="color: var(--text-muted); font-size: 1.1rem;">Explore individual prompt score sheets, model telemetry, and visual runs.</p>
+                </div>
+
+                <div class="feature-grid">
+                    <!-- Test #1: JAVA-JNA-1 -->
+                    <div class="feature-card" style="border-top: 4px solid var(--barca-gold);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <span style="background: var(--barca-gold); color: black; font-size: 0.75rem; font-weight: 800; padding: 3px 10px; border-radius: 4px; text-transform: uppercase;">Test #1</span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Sponsor:</span>
+                                <img src="../../assets/logos/uno.anahata.asi.novarouteai.NovaRouteAiProvider.png" alt="NovaRouteAI" style="height: 22px; vertical-align: middle;">
+                                <span style="font-size: 0.85rem; color: var(--barca-gold); font-weight: 700;">NovaRouteAI</span>
+                            </div>
+                        </div>
+                        <h3 style="font-size: 1.3rem; color: var(--white); margin-bottom: 0.8rem;"><i class="fas fa-microchip" style="color: var(--barca-gold); margin-right: 8px;"></i> JAVA-JNA-1</h3>
+                        <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
+                            Build a real-time, interactive Swing system dashboard using JNA (<code>com.sun.jna.Library</code>) to monitor host system CPU/GPU temperatures and process ID.
+                        </p>
+                        <a href="java-jna-1.html" class="btn-primary" style="align-self: flex-start; text-decoration: none;">View JAVA-JNA-1 Results &rarr;</a>
+                    </div>
+
+                    <!-- Test #2: JAVA-ARKANOID-1 -->
+                    <div class="feature-card" style="border-top: 4px solid var(--primary-light);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <span style="background: var(--primary-light); color: white; font-size: 0.75rem; font-weight: 800; padding: 3px 10px; border-radius: 4px; text-transform: uppercase;">Test #2</span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Sponsor:</span>
+                                <img src="../../assets/logos/uno.anahata.asi.novarouteai.NovaRouteAiProvider.png" alt="NovaRouteAI" style="height: 22px; vertical-align: middle;">
+                                <span style="font-size: 0.85rem; color: var(--barca-gold); font-weight: 700;">NovaRouteAI</span>
+                            </div>
+                        </div>
+                        <h3 style="font-size: 1.3rem; color: var(--white); margin-bottom: 0.8rem;"><i class="fas fa-gamepad" style="color: var(--primary-light); margin-right: 8px;"></i> JAVA-ARKANOID-1</h3>
+                        <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
+                            Build a fully playable, retro Arkanoid brick-breaker game in Swing with collision physics, power-ups, score counter, and smooth 60 FPS EDT animation loop.
+                        </p>
+                        <a href="java-arkanoid-1.html" class="btn-primary" style="align-self: flex-start; text-decoration: none;">View JAVA-ARKANOID-1 Results &rarr;</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Master Suite Leaderboard Table -->
+        <section id="leaderboard">
+            <div class="container">
+                <div class="section-header" style="text-align: center; margin-bottom: 3rem;">
+                    <h2>📊 Master Candidate Leaderboard</h2>
+                    <p style="color: var(--text-muted); font-size: 1.1rem;">Models earn <strong>Anahata AGI Certification</strong> upon achieving an average score > 85% across all suite tests.</p>
+                </div>
+
+                <div class="comparison-container" style="overflow-x: auto; margin-bottom: 3rem;">
+                    <table class="comparison-table" style="width: 100%; border-collapse: collapse; text-align: left; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; font-size: 0.95rem;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02);">
+                                <th style="padding: 1.2rem; color: var(--barca-gold);">Model ID</th>
+                                <th style="padding: 1.2rem; color: var(--white);">Sponsor Provider</th>
+                                <th style="padding: 1.2rem; color: var(--white);">JAVA-JNA-1</th>
+                                <th style="padding: 1.2rem; color: var(--white);">JAVA-ARKANOID-1</th>
+                                <th style="padding: 1.2rem; color: var(--primary-light);"><strong>Suite Average</strong></th>
+                                <th style="padding: 1.2rem; color: var(--barca-gold);">Certification</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <td style="padding: 1.2rem;"><code>gemini-3.6-flash</code></td>
+                                <td style="padding: 1.2rem;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <img src="../../assets/logos/uno.anahata.asi.gemini.GeminiAiProvider.png" alt="Google Cloud" style="height: 20px;">
+                                        <span>Google Cloud</span>
+                                    </div>
+                                </td>
+                                <td style="padding: 1.2rem; color: var(--verified-green); font-weight: 700;">98.0%</td>
+                                <td style="padding: 1.2rem; color: var(--verified-green); font-weight: 700;">95.0%</td>
+                                <td style="padding: 1.2rem; background: rgba(44, 122, 123, 0.05); border-left: 3px solid var(--primary-light);"><strong>96.5%</strong></td>
+                                <td style="padding: 1.2rem;"><span style="background: var(--verified-green); color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: 800;">Certified AGI</span></td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <td style="padding: 1.2rem;"><code>kimi/Kimi-K3</code></td>
+                                <td style="padding: 1.2rem;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <img src="../../assets/logos/uno.anahata.asi.novarouteai.NovaRouteAiProvider.png" alt="NovaRouteAI" style="height: 20px;">
+                                        <span>NovaRouteAI</span>
+                                    </div>
+                                </td>
+                                <td style="padding: 1.2rem; color: var(--text-muted);">Pending</td>
+                                <td style="padding: 1.2rem; color: var(--text-muted);">Pending</td>
+                                <td style="padding: 1.2rem; background: rgba(44, 122, 123, 0.05); border-left: 3px solid var(--primary-light);"><strong>--</strong></td>
+                                <td style="padding: 1.2rem;"><span style="background: rgba(255,255,255,0.1); color: var(--text-muted); padding: 4px 10px; border-radius: 4px; font-size: 0.8rem;">Pending</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+                &copy; 2026 Anahata Software Foundation. Licensed under ASL v108. Força Barça!
+            </div>
+        </div>
+    </footer>
+    <script src="../../nav.js"></script>
+</body>
+</html>

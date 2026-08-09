@@ -23,15 +23,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="menu-toggle"><i class="fas fa-bars"></i></div>
                 <div class="nav-links">
                     
+                    <!-- Docs Dropdown -->
                     <div class="dropdown">
-                        <a href="#" class="dropdown-toggle ${(isActive('core.html') || isActive('swing.html') || isActive('yam.html') || isActive('gemini.html') || isActive('openai.html') || isActive('anthropic.html') || isActive('compatible.html')) ? 'active-link' : ''}">
-                            Modules <i class="fas fa-chevron-down"></i>
+                        <a href="#" class="dropdown-toggle ${(isActive('quickstart.html') || currentPath.includes('apidocs') || isActive('core.html') || isActive('swing.html') || isActive('yam.html') || isActive('gemini.html') || isActive('openai.html') || isActive('anthropic.html') || isActive('compatible.html')) ? 'active-link' : ''}">
+                            Docs <i class="fas fa-chevron-down"></i>
                         </a>
                         <div class="dropdown-menu">
+                            <div class="dropdown-header" style="padding: 6px 12px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--barca-gold); font-weight: 800;">Developer Docs</div>
+                            <a href="${prefix}quickstart.html" class="${isActive('quickstart.html') ? 'active-item' : ''}"><i class="fas fa-bolt"></i> Quick Start</a>
+                            <a href="${prefix}apidocs/index.html"><i class="fas fa-book"></i> Platform Javadocs</a>
+                            
+                            <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 6px 0;"></div>
+                            <div class="dropdown-header" style="padding: 6px 12px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--barca-gold); font-weight: 800;">Modules</div>
                             <a href="${prefix}core.html" class="${isActive('core.html') ? 'active-item' : ''}"><i class="fas fa-brain"></i> Core API</a>
                             <a href="${prefix}swing.html" class="${isActive('swing.html') ? 'active-item' : ''}"><i class="fas fa-desktop"></i> Swing UI</a>
                             <a href="${prefix}yam.html" class="${isActive('yam.html') ? 'active-item' : ''}"><i class="fas fa-flask"></i> Yam Tools</a>
-                            <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 5px 0;"></div>
                             <a href="${prefix}gemini.html" class="${isActive('gemini.html') ? 'active-item' : ''}"><i class="fas fa-plug"></i> Gemini Provider</a>
                             <a href="${prefix}openai.html" class="${isActive('openai.html') ? 'active-item' : ''}"><i class="fas fa-bolt"></i> OpenAI Provider</a>
                             <a href="${prefix}anthropic.html" class="${isActive('anthropic.html') ? 'active-item' : ''}"><i class="fas fa-ghost"></i> Anthropic Provider</a>
@@ -39,6 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
 
+                    <!-- Applications Dropdown -->
                     <div class="dropdown">
                         <a href="#" class="dropdown-toggle ${(isActive('nb.html') || isActive('desktop.html')) ? 'active-link' : ''}">
                             Applications <i class="fas fa-chevron-down"></i>
@@ -49,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
 
+                    <!-- Enterprise Dropdown -->
                     <div class="dropdown">
                         <a href="#" class="dropdown-toggle ${(isActive('enterprise.html') || isActive('defense.html') || isActive('finance.html') || isActive('healthcare.html') || isActive('public-sector.html') || isActive('legal.html') || isActive('logistics.html') || isActive('telecom.html')) ? 'active-link' : ''}">
                             Enterprise <i class="fas fa-chevron-down"></i>
@@ -67,15 +75,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
 
-                    <div class="dropdown">
-                        <a href="#" class="dropdown-toggle ${(isActive('quickstart.html') || currentPath.includes('apidocs')) ? 'active-link' : ''}">
-                            Developer docs <i class="fas fa-chevron-down"></i>
-                        </a>
-                        <div class="dropdown-menu">
-                            <a href="${prefix}quickstart.html" class="${isActive('quickstart.html') ? 'active-item' : ''}"><i class="fas fa-bolt"></i> Quick Start</a>
-                            <a href="${prefix}apidocs/index.html"><i class="fas fa-book"></i> Javadocs</a>
-                        </div>
-                    </div>
+                    <!-- Benchmarks Direct Link -->
+                    <a href="${prefix}benchmarks.html" class="${(isActive('benchmarks.html') || currentPath.includes('/benchmarks/')) ? 'active-link' : ''}" style="display: flex; align-items: center; gap: 6px; color: var(--white); text-decoration: none; font-weight: 600; font-size: 0.95rem; padding: 0.5rem 0.8rem; border-radius: 6px; transition: var(--transition);">
+                        <i class="fas fa-trophy" style="color: var(--barca-gold);"></i> Benchmarks
+                    </a>
                     
                     <div class="social-links">
                         <a href="https://www.youtube.com/@anahata108" target="_blank" title="Anahata TV"><i class="fab fa-youtube"></i></a>
