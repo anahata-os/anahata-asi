@@ -318,7 +318,7 @@ public class Resource extends BasicPropertyChangeSource implements Rebindable, C
         boolean stale = (refreshPolicy == RefreshPolicy.LIVE && handle.isStale(lastLoadTimestamp));
 
         if (dirty || stale) {
-            log.info("Reloading resource: {} ({}) [Dirty: {}, Stale: {}]",
+            log.debug("Reloading resource: {} ({}) [Dirty: {}, Stale: {}]",
                     getName(), uuid, dirty, stale);
 
             long oldTimestamp = this.lastLoadTimestamp;
@@ -342,7 +342,7 @@ public class Resource extends BasicPropertyChangeSource implements Rebindable, C
      * interpreter.
      */
     private void autoBindView() {
-        log.info("Auto-binding view for resource '{}' (MIME: {})", getName(), handle.getMimeType());
+        log.debug("Auto-binding view for resource '{}' (MIME: {})", getName(), handle.getMimeType());
 
         // Decoupled decision: let the handle decide if it can be viewed as text
         if (handle.isTextual()) {
