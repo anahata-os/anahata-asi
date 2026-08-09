@@ -10,13 +10,14 @@ import uno.anahata.asi.agi.message.AbstractModelMessage;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 
 /**
- * A model-agnostic representation of a request to execute a specific Java method tool.
+ * A model-agnostic representation of a request to execute a specific Java
+ * method tool.
  *
  * @author anahata-gemini-pro-2.5
  */
 @Getter
 public class JavaMethodToolCall extends AbstractToolCall<JavaMethodTool, JavaMethodToolResponse> {
-    
+
     /**
      * Constructs a new JavaMethodToolCall instance.
      *
@@ -36,8 +37,8 @@ public class JavaMethodToolCall extends AbstractToolCall<JavaMethodTool, JavaMet
     }
 
     /**
-     * {@inheritDoc}
-     * Returns a Java-like method signature: toolName(arg1, arg2, null, arg4).
+     * {@inheritDoc} Returns a Java-like method signature: toolName(arg1, arg2,
+     * null, arg4).
      */
     @Override
     public String asText() {
@@ -47,6 +48,10 @@ public class JavaMethodToolCall extends AbstractToolCall<JavaMethodTool, JavaMet
                     return p.getName() + " = " + TextUtils.resolveContentString(val);
                 })
                 .collect(Collectors.joining(", "));
-        return getToolName() + "(" + inner + ")";
+        String callStr = getToolName() + "(" + inner + ")";
+        JavaMethodToolResponse resp = getResponse();
+
+        return callStr + "\nResponse:\n" + resp.asText();
+
     }
 }
