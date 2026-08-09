@@ -116,7 +116,7 @@ public class ConversationPanel extends JPanel {
                 // We ONLY re-enable autoScroll if we land at the bottom.
                 // We NEVER disable it here to avoid false positives during layout shifts.
                 if (atBottom && !autoScroll) {
-                    log.info("[Scroll] Adjustment landed at BOTTOM, re-enabling autoScroll");
+                    log.debug("[Scroll] Adjustment landed at BOTTOM, re-enabling autoScroll");
                     autoScroll = true;
                 }
             }
@@ -184,7 +184,7 @@ public class ConversationPanel extends JPanel {
             history = fullHistory;
         }
         
-        log.info("Updating conversation structure for session {}: {} messages visible (of {})", 
+        log.debug("Updating conversation structure for session {}: {} messages visible (of {})", 
                 agi.getConfig().getSessionId(), history.size(), fullHistory.size());
 
         List<AbstractMessage> toRemove = cachedMessagePanels.keySet().stream()
@@ -230,7 +230,7 @@ public class ConversationPanel extends JPanel {
         cachedMessagePanels.values().forEach(AbstractMessagePanel::refreshMetadata);
 
         if (added) {
-            log.info("New message added, forcing autoScroll to true.");
+            log.debug("New message added, forcing autoScroll to true.");
             autoScroll = true; 
             scrollToBottom();
         }
