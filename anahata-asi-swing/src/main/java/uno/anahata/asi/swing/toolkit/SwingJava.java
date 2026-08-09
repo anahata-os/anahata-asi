@@ -46,24 +46,25 @@ public class SwingJava extends Java {
      * </p> 
      */
     @Override
-    public List<String> getSystemInstructions() throws Exception {
+        public List<String> getSystemInstructions() throws Exception {
         List<String> instructions = new ArrayList<>(super.getSystemInstructions());
-        
-        StringBuilder sb = new StringBuilder();
-        sb.append("\n**Swing execution helpers**\n");
-        sb.append("You have also access to these helpers for EDT operations (inherited from SwingAgiTool):\n\n");
-        sb.append("- `runInEdt(Runnable runnable)`: Safely executes code on the Event Dispatch Thread (EDT) while propagating the current tool context. Use this for non-blocking UI updates.\n");
-        sb.append("- `runInEdtAndWait(Runnable runnable)`: Executes code on the EDT and waits for completion. Use this when you need to ensure the UI has updated before proceeding.\n\n");
-        sb.append("**Example usage**:\n");
-        sb.append("```java\n");
-        sb.append("runInEdtAndWait(() -> {\n");
-        sb.append("    log(\"Updating UI component...\");\n");
-        sb.append("    myComponent.setText(\"New Value\");\n");
-        sb.append("});\n");
-        sb.append("```\n");
-        
-        instructions.add(sb.toString());
-        return instructions;
+
+                StringBuilder sb = new StringBuilder();
+                sb.append("\n**Swing & EDT Execution Helpers (Context Propagation)**\n");
+                sb.append("You have direct access to these Swing execution helpers (inherited from `SwingAgiTool`):\n\n");
+                sb.append("- `runInEdt(Runnable runnable)`: Safely executes code on the Event Dispatch Thread (EDT) while **automatically propagating the active tool context**. Calling `log()`, `error()`, or `addAttachment()` inside the runnable block works seamlessly and outputs directly to the UI response panel.\n");
+                sb.append("- `runInEdtAndWait(Runnable runnable)`: Executes code on the EDT and blocks the execution thread until complete, maintaining full context awareness throughout.\n\n");
+                sb.append("**Example usage**:\n");
+                sb.append("```java\n");
+                sb.append("runInEdtAndWait(() -> {\n");
+                sb.append("    // ToolContext methods work directly on the EDT inside runInEdt/runInEdtAndWait!\n");
+                sb.append("    log(\"Updating UI component on the Swing EDT...\");\n");
+                sb.append("    myComponent.setText(\"New Value\");\n");
+                sb.append("});\n");
+                sb.append("```\n");
+
+                instructions.add(sb.toString());
+                return instructions;
     }
     
     /** 
