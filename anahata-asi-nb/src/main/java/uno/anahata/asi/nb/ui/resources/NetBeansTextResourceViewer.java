@@ -278,7 +278,7 @@ public class NetBeansTextResourceViewer extends AbstractTextResourceViewer {
                         }
 
                         if (fileToDelete.isValid()) {
-                            log.info("Deleting in memory file object {}", fileToDelete);
+                            log.debug("Deleting in memory file object {}", fileToDelete);
                             fileToDelete.delete();
                         } else {
                             log.warn("Did not delete in memory file object {} as it was not valid", fileToDelete);
