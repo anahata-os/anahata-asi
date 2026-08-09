@@ -13,6 +13,13 @@
 
 **Anahata-AGI-1** is the industry's first standardized, pure-Java agentic benchmark suite designed to determine which Large Language Models (LLMs) earn the title of **Anahata AGI Certified Model** (average score > 85% across all tests).
 
+> [!IMPORTANT]
+> **Strict Prompt Purity & Autonomous Tool Discovery Philosophy**
+> Benchmark prompts are strictly minimal and forbid providing hints, clues, or instructions regarding:
+> 1. **Tool Definitions & Execution**: No explanations on how tools work, how to execute code, or how tool schemas are formatted. Models are benchmarked purely on how autonomously they read, interpret, and invoke tool definitions.
+> 2. **UI Libraries & Framework Choice**: Prompts do not mandate UI frameworks (Swing, JavaFX, LWJGL, ImGui, etc.) nor dictate visual styles, themes, or colors. The choice of UI library, rendering architecture, and visual aesthetics is left 100% to the candidate model's discretion.
+> 3. **Framework Safety & Infrastructure**: No hints on safety guards, ThreadLocal bindings, or class hierarchy structures are provided in test prompts.
+
 The suite evaluates models across dynamic Java categories:
 * **UI & Visual Rendering**: Swing, JavaFX, Custom Canvas, GlassPane overlays.
 * **Pure Coding & Algorithm Execution**: High-performance data structures, concurrency, reflection.
@@ -70,7 +77,7 @@ Scoring for each challenge combines automated evaluation metrics with human deve
 * **Test Code**: `JAVA-JNA-1`
 * **Asset Path**: `/assets/benchmarks/ANAHATA-AGI-1/JAVA-JNA-1/`
 * **Target Container**: `NetBeansAsiContainer`
-* **Prompt**: Build a real-time, interactive Swing system dashboard in a single Java class extending `SwingAgiTool` using JNA (`com.sun.jna.Library`) to monitor host system CPU/GPU temperatures and process ID.
+* **Prompt**: You are currently being benchmarked in the official **Anahata-AGI-1 Suite** (`JAVA-JNA-1`). Your performance is evaluated across 3 criteria: **Accuracy & Technical Completion (50%)**, **Developer & Artistic Score (20%)**, and **Efficiency & Latency (30%)**. **Goal**: Build a real-time, interactive host system dashboard using JNA (`com.sun.jna.Library`) to monitor host system telemetry. You have complete creative freedom to decide what metrics to retrieve, what UI framework to use, and how to design the interface.
 * **Toolkits**: `NbJava`, `Host`, `Audio`, `Screens`, `Session`, `History`, `Resources`
 * **Context Providers**: Core, ToolManager, Host, Shell
 
