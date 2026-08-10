@@ -4,6 +4,7 @@ package uno.anahata.asi.agi.tool.spi.java;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Getter;
@@ -79,23 +80,23 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
         this.executing = new AtomicBoolean(false);
     }
 
-    @Override
-    public void execute() {
+    @Override public void execute() {
         if (!executing.compareAndSet(false, true)) {
             throw new IllegalStateException("Tool execution is already in progress for this call.");
         }
-        
+
         long startTime = System.currentTimeMillis();
+        addLog("Execution start time: " + LocalDateTime.now());
         setExpanded(true);
         setCurrent(this); // Establish the thread-local context
         setStatus(ToolExecutionStatus.EXECUTING);
         setThread(Thread.currentThread());
         getAgi().getToolManager().registerExecutingCall(getCall());
-        
+
         // Capture a snapshot of the modified arguments at the time of execution
         getModifiedArgs().clear();
         getModifiedArgs().putAll(getCall().getModifiedArgs());
-        
+
         try {
             JavaMethodTool tool = getCall().getTool();
             Object toolkitInstance = tool.getToolkitInstance();
@@ -140,9 +141,10 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
         } finally {
             getAgi().getToolManager().unregisterExecutingCall(getCall());
             setCurrent(null); // Clear the context
-            //TODO this clears the threadName too, maybe we should keep the thread name so the model knows what thread executed the tool
             setThread(null);
-            setExecutionTimeMillis(System.currentTimeMillis() - startTime);
+            long duration = System.currentTimeMillis() - startTime;
+            setExecutionTimeMillis(duration);
+            addLog("Execution end time: " + LocalDateTime.now() + " (duration: " + duration + " ms)");
             executing.set(false);
         }
     }
