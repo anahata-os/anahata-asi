@@ -11,6 +11,11 @@
 
 ## 1. Vision & Certification Overview
 
+> [!NOTE]
+> **Single Source of Truth Architecture**
+> `benchmarks.md` is the master technical specification and single source of truth for the entire **Anahata-AGI-1** benchmark suite. All benchmark challenge specifications, rules, prompts, metrics, and scoring formulas originate here.
+> The website files (`https://asi.anahata.uno/benchmarks/`) are the public publishing layer and serve as a verbatim web reflection of this master document.
+
 **Anahata-AGI-1** is the industry's first standardized, pure-Java agentic benchmark suite designed to determine which Large Language Models (LLMs) earn the title of **Anahata AGI Certified Model** (average score > 85% across all tests).
 
 > [!IMPORTANT]
@@ -36,8 +41,9 @@ The suite evaluates models across dynamic Java categories:
 The **Orchestrating Model** (Anahata ASI) is responsible for driving the benchmark pipeline end-to-end:
 
 1. **Standardized Environment Provisioning**:
-   * Every aspirant model receives identical toolkits, permissions, and context providers.
-   * `autoReplyTools` is **ON**.
+   * Every aspirant model receives identical toolkits (strictly `NbJava` only), permissions (`NbJava.compileAndExecute` set to `APPROVE_ALWAYS`), and normal thinking mode (`MEDIUM`).
+   * `autoReplyTools` is **ON** (`true`). All proposed tool calls (e.g. `NbJava.compileAndExecute`) execute automatically without pausing for user intervention or manual approval (`Tool Prompt`).
+   * **Window Title Branding Rule**: On any visual benchmark (Swing `JFrame`, `JDialog`, JavaFX `Stage`, LWJGL window, etc.), candidate models MUST always include their Model ID in the window title bar (e.g. `frame.setTitle("OS System Dashboard - models/gemini-3.6-flash")`).
    * Aspirant models are explicitly informed they are being benchmarked, the certification name, test goals, and current leaderboard rankings.
 
 2. **Metrics & Session Telemetry**:
@@ -77,8 +83,11 @@ Scoring for each challenge combines automated evaluation metrics with human deve
 * **Test Code**: `JAVA-JNA-1`
 * **Asset Path**: `/assets/benchmarks/ANAHATA-AGI-1/JAVA-JNA-1/`
 * **Target Container**: `NetBeansAsiContainer`
-* **Prompt**: You are currently being benchmarked in the official **Anahata-AGI-1 Suite** (`JAVA-JNA-1`). Your performance is evaluated across 3 criteria: **Accuracy & Technical Completion (50%)**, **Developer & Artistic Score (20%)**, and **Efficiency & Latency (30%)**. **Goal**: Build a real-time, interactive host system dashboard using JNA (`com.sun.jna.Library`) to monitor host system telemetry. You have complete creative freedom to decide what metrics to retrieve, what UI framework to use, and how to design the interface.
-* **Toolkits**: `NbJava`, `Host`, `Audio`, `Screens`, `Session`, `History`, `Resources`
+* **Prompt**: You are currently being benchmarked in the official **Anahata-AGI-1 Suite** (`JAVA-JNA-1`). Your performance is evaluated across 3 criteria: **Accuracy & Technical Completion (50%)**, **Developer & Artistic Score (20%)**, and **Efficiency & Latency (30%)**. **Goal**: Build a real-time, interactive host system telemetry dashboard using JNA (`com.sun.jna.Library`). You have complete creative freedom to decide what metrics to retrieve, what UI framework to use, and how to design the interface. **Visual Window Branding Requirement**: On any visual window created, you MUST display your Model ID in the window title bar.
+* **Toolkits**: `NbJava` (strictly isolated)
+* **Permissions**: `NbJava.compileAndExecute` set to `APPROVE_ALWAYS`; all other `NbJava` tools set to `DENY`
+* **Thinking Mode**: Normal (`MEDIUM`)
+* **Window Branding Rule**: Must display Model ID on the window title bar.
 * **Context Providers**: Core, ToolManager, Host, Shell
 
 ### **Test #2: JAVA-ARKANOID-1 (Arcade Game Execution)**
