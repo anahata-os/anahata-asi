@@ -19,6 +19,7 @@ import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiTool;
+import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.ToolPermission;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
@@ -307,7 +308,7 @@ public class AsiContainer extends AnahataToolkit {
             @AgiToolParam(value = "List of toolkit fully qualified class names to enable. If not provided, will use all toolkits in the Asi Container preferences.", required = false) List<String> toolkitFqns,
             @AgiToolParam(value = "Optional List of resource URIs to register.", required = false) List<String> resourceURIs,
             @AgiToolParam(value = "An optional initial message to send to the new AGI.", required = false) String initialMessage,
-            @AgiToolParam(value = "Optional map of tool permission overrides for this session. The key should be the tool name using '.' as separator between the toolkit name and the tool name: e.g. 'AsiContainer.createAgi' or 'Session.updateSessionNickname'", required = false) Map<String, ToolPermission> toolPermissions,
+            @AgiToolParam(value = "Optional map of tool permission overrides for this session. The key must be the exact tool name using '.' as separator between the toolkit name and the method name: e.g. 'NbJava.compileAndExecute' or 'Session.updateSessionNickname'. Do not include backticks or markdown quotes in the map key.", required = false) Map<String, ToolPermission> toolPermissions,
             @AgiToolParam(value = "Optional thinking level/mode for the new session.", required = false) ThinkingLevel thinkingLevel
     ) {
         AbstractAsiContainer container = getAsiContainer();
@@ -348,11 +349,16 @@ public class AsiContainer extends AnahataToolkit {
 
         // 5. Session-Level Tool Permission Overrides
         if (toolPermissions != null && !toolPermissions.isEmpty()) {
-            for (AbstractTool<?, ?> tool : newAgi.getToolManager().getAllTools()) {
-                ToolPermission p = toolPermissions.get(tool.getName());
-                if (p != null) {
-                    tool.setPermission(p);
+            for (Map.Entry<String, ToolPermission> entry : toolPermissions.entrySet()) {
+                String toolName = entry.getKey();
+                ToolPermission permission = entry.getValue();
+                AbstractTool<?, ?> tool = newAgi.getToolManager().findToolByName(toolName).orElse(null);
+                if (tool == null) {
+                    error("disposing agi " + newAgi.getConfig().getSessionId() + " due to invalid tool permission key: " + toolName);
+                    container.dispose(newAgi);
+                    throw new AgiToolException("Invalid tool permission override: No tool found with name '" + toolName + "'. Available tools: " + newAgi.getToolManager().getAllToolNames());
                 }
+                tool.setPermission(permission);
             }
         }
 
