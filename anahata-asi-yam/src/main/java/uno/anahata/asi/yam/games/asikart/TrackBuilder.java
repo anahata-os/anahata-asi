@@ -24,11 +24,13 @@ import java.util.Random;
  * TrackBuilder — Specialized 3D Circuit Generator for AsiKart 3D.
  * <p>
  * Supports multiple 3D circuits:
+ * </p>
  * <ul>
  *   <li>{@link CircuitType#RAINBOW_CIRCUIT} — High-altitude cosmic track surrounded by starfield and neon light-rails.</li>
  *   <li>{@link CircuitType#DESERT_SPEEDWAY} — Sun-scorched desert raceway with dunes, palm trees, and ancient stone arches.</li>
  *   <li>{@link CircuitType#CYBER_CIRCUIT} — Futuristic neon-grid circuit set in a synthwave cyber metropolis.</li>
  * </ul>
+ * <p>
  * Features 3D Sky Dome, PBR Asphalt/Grass normal bump textures, 3D Finish Arches, and thematic scenery trees.
  * </p>
  *
