@@ -39,11 +39,13 @@ import java.util.Random;
  * AsiKart 3D v4.2 — Console-Grade Arcade Kart Racer.
  * <p>
  * Features a clean, modular multi-class architecture:
+ * </p>
  * <ul>
  *   <li>{@link TrackBuilder} — Multi-circuit 3D world generator (Rainbow Circuit, Desert Speedway, Cyber Circuit).</li>
  *   <li>{@link ItemManager} — Stationary 3D Item Mystery Boxes, 3D Upright Gold Coins, Green/Red Shells, and Bananas.</li>
  *   <li>{@link AudioManager} — Spatial audio and sound feedback chimes.</li>
  * </ul>
+ * <p>
  * Includes 3-Tier Mini-Turbo Drift Sparks, Interactive Radar Minimap, Directional Corner Arrow Warning Signs,
  * real-time directional shadow maps, PBR asphalt normal/bump surface textures, and 3D Sky Domes.
  * </p>
