@@ -3,7 +3,6 @@
  */
 package uno.anahata.asi.swing;
 
-import uno.anahata.asi.swing.internal.SwingTask;
 import java.awt.Component;
 import java.io.File;
 import java.nio.file.Path;
@@ -24,6 +23,7 @@ import uno.anahata.asi.minimax.MinimaxAnthropicProvider;
 import uno.anahata.asi.mistral.MistralAiProvider;
 import uno.anahata.asi.modal.ModalProvider;
 import uno.anahata.asi.novarouteai.NovaRouteAiProvider;
+import uno.anahata.asi.nvidia.NvidiaAiProvider;
 import uno.anahata.asi.openai.OpenAiResponsesProvider;
 import uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider;
 import uno.anahata.asi.swing.agi.AgiPanel;
@@ -76,7 +76,8 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
         uno.anahata.asi.gemini.GeminiGoogleCloudExpressAIProvider.class,
         uno.anahata.asi.huggingface.HuggingFaceProvider.class,
         uno.anahata.asi.modal.ModalProvider.class,
-        uno.anahata.asi.novarouteai.NovaRouteAiProvider.class
+        uno.anahata.asi.novarouteai.NovaRouteAiProvider.class,
+        uno.anahata.asi.nvidia.NvidiaAiProvider.class
     );
 
 
@@ -141,6 +142,11 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
             HuggingFaceProvider hf = new HuggingFaceProvider();
             hf.setEnabled(false);
             registerProvider(hf);
+        }
+
+        if (getProvider("Nvidia") == null) {
+            log.info("Registering NVIDIA");
+            registerProvider(new NvidiaAiProvider());
         }
     }
 
