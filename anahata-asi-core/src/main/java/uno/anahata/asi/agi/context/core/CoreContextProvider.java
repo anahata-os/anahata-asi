@@ -3,6 +3,8 @@
  */
 package uno.anahata.asi.agi.context.core;
 
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import lombok.Getter;
@@ -143,10 +145,31 @@ public class CoreContextProvider implements ContextProvider {
 
     /**
      * {@inheritDoc}
+     * <p>
+     * Populates mission-critical, live temporal and environment metadata into the
+     * RAG message on every turn. Guarantees that the AI model maintains precise
+     * awareness of time, time zone, OS, user, and runtime environment even when
+     * all tools/toolkits are disabled.
+     * </p>
      */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
-        // RAG population logic can be added here if needed.
+        ZonedDateTime now = ZonedDateTime.now();
+        DateTimeFormatter isoFormat = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+        DateTimeFormatter humanFormat = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z");
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("## Live System & Environment Context\n");
+        sb.append("- **Current Time**: ").append(now.format(isoFormat)).append(" (").append(now.format(humanFormat)).append(")\n");
+        sb.append("- **Time Zone**: ").append(now.getZone().getId()).append(" (UTC").append(now.getOffset()).append(")\n");
+        sb.append("- **Host OS**: ").append(System.getProperty("os.name", "Unknown")).append(" ")
+                .append(System.getProperty("os.version", "")).append(" (")
+                .append(System.getProperty("os.arch", "")).append(")\n");
+        sb.append("- **User & Directory**: user=").append(System.getProperty("user.name", "unknown"))
+                .append(" | dir=").append(System.getProperty("user.dir", "")).append("\n");
+        sb.append("- **Java Runtime**: JDK ").append(System.getProperty("java.version", "unknown")).append("\n");
+
+        ragMessage.addTextPart(sb.toString());
     }
 
 }
