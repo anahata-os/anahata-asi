@@ -193,11 +193,11 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         // --- Arguments Panel (Top) ---
         argsContainer = new JPanel(new BorderLayout());
         argsContainer.setOpaque(false);
-        getCentralContainer().add(argsContainer, "push, grow, wrap");
-        
+        getCentralContainer().add(argsContainer, "hidemode 3, push, grow, wrap");
+
         // --- Response Panel (Middle) ---
         resultsTabbedPane = new AdjustingTabPane(150);
-        
+
         UITheme theme = agiConfig.getTheme();
         MouseAdapter collapseOnDoubleClick = new MouseAdapter() {
             @Override
@@ -236,7 +236,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         responseTitledPanel.setContentContainer(resultsTabbedPane);
         responseTitledPanel.setOpaque(false);
         responseTitledPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.LIGHT_GRAY));
-        
+
         // Add expand/collapse logic and tooltip to the response titled panel header
         if (responseTitledPanel.getComponentCount() > 0) {
             Component header = responseTitledPanel.getComponent(0);
@@ -252,8 +252,8 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
                 }
             });
         }
-        
-        getCentralContainer().add(responseTitledPanel, "growx, wrap");
+
+        getCentralContainer().add(responseTitledPanel, "hidemode 3, growx, wrap");
 
         // --- Bottom Control Bar ---
         JPanel controlBar = new JPanel(new MigLayout("fillx, insets 5", "[][grow][]", "[][]"));
@@ -297,22 +297,21 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
             getPart().getResponse().decline();
             getPart().setExpanded(false);
         });
-                ;
 
         revertButton = new JButton("Clear response", new DeleteIcon(16));
         revertButton.setToolTipText("Clear execution results, erros and logs and sets the status to DECLINED");
         revertButton.addActionListener(e -> getPart().getResponse().decline());
 
         runButton = new JButton("Run", new RunIcon(16));
-        
+
         toolProgressBar = new JProgressBar();
         toolProgressBar.setIndeterminate(true);
         toolProgressBar.setPreferredSize(new Dimension(100, 16));
         toolProgressBar.setVisible(false);
 
-        jsonLink = new CodeHyperlink("json", 
-                () -> "Tool Response: " + getPart().getToolName(), 
-                () -> JacksonUtils.prettyPrint(getPart().getResponse()), 
+        jsonLink = new CodeHyperlink("json",
+                () -> "Tool Response: " + getPart().getToolName(),
+                () -> JacksonUtils.prettyPrint(getPart().getResponse()),
                 "json");
 
         controlBar.add(new JLabel("Status:"), "split 2");
@@ -321,7 +320,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         controlBar.add(declineButton, "right, skip 1, split 3");
         controlBar.add(revertButton);
         controlBar.add(runButton, "right, wrap");
-        
+
         JPanel jsonLinksPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         jsonLinksPanel.setOpaque(false);
         jsonLinksPanel.add(jsonLink);
@@ -404,7 +403,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         if (hasAttachments) {
             attachmentsPanel.render(response);
         }
-        
+
         StringBuilder logsBuilder = new StringBuilder();
         for (String log : new ArrayList<>(response.getLogs())) {//wrapping into arraylist to avoid cme
             logsBuilder.append("• ").append(log).append("\n");
@@ -426,12 +425,12 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         syncTab(attachmentsPanel, "Attachments", hasAttachments, 1);
         syncTab(logsScrollPane, "Logs", hasLogs, 2);
         syncTab(errorScrollPane, "Error", hasError, 3);
-        
+
         // 3. Dynamic Visibility
-        boolean hasResults = resultsTabbedPane.getTabCount() > 0;
+        boolean hasResults = resultsTabbedPane.getTabCount() > 0 || response.getStatus() != ToolExecutionStatus.PENDING;
         responseTitledPanel.setVisible(hasResults);
         resultsTabbedPane.setVisible(response.isExpanded());
-        
+
         if (hasResults) {
             if (response.getStatus() == ToolExecutionStatus.FAILED && hasError) {
                 resultsTabbedPane.setSelectedComponent(errorScrollPane);
@@ -444,8 +443,8 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
                     resultsTabbedPane.setSelectedComponent(logsScrollPane);
                 }
             }
-            
-            if (resultsTabbedPane.getSelectedIndex() == -1) {
+
+            if (resultsTabbedPane.getSelectedIndex() == -1 && resultsTabbedPane.getTabCount() > 0) {
                 resultsTabbedPane.setSelectedIndex(0);
             }
         }
