@@ -211,10 +211,21 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
      * @param name The tool name.
      * @return An Optional containing the tool if found.
      */
-    private Optional<? extends AbstractTool> findToolByName(String name) {
+    public Optional<? extends AbstractTool> findToolByName(String name) {
         return getAllTools().stream()
                 .filter(t -> t.getName().equals(name))
                 .findFirst();
+    }
+
+    /**
+     * Gets a list of all fully qualified tool names registered in this manager.
+     *
+     * @return A list of registered tool names.
+     */
+    public List<String> getAllToolNames() {
+        return getAllTools().stream()
+                .map(AbstractTool::getName)
+                .collect(Collectors.toList());
     }
 
     /**
