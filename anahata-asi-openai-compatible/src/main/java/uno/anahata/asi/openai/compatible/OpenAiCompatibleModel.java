@@ -814,13 +814,17 @@ public class OpenAiCompatibleModel extends AbstractModel {
         if (request.config().getTopP() != null) {
             payload.put("top_p", request.config().getTopP());
         }
+        boolean includeThoughts = request.config().getAgi().getConfig().isIncludeThoughts();
         ThinkingLevel level = request.config().getThinkingLevel();
-        if (level != null && level != ThinkingLevel.THINKING_LEVEL_UNSPECIFIED) {
+
+        if (!includeThoughts || level == ThinkingLevel.NONE) {
+            payload.put("reasoning_effort", "none");
+        } else if (level != null && level != ThinkingLevel.THINKING_LEVEL_UNSPECIFIED) {
             String effort = switch (level) {
-                case NONE -> "none";
                 case MINIMAL, LOW -> "low";
                 case MEDIUM -> "medium";
-                case HIGH, XHIGH -> "high";
+                case HIGH -> "high";
+                case XHIGH -> "xhigh";
                 default -> null;
             };
             if (effort != null) {
