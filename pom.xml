@@ -56,6 +56,12 @@
     </distributionManagement>
 
     <repositories>
+        <!--
+        <repository>
+            <id>projectlombok.org</id>
+            <url>https://projectlombok.org/edge-releases</url>
+        </repository>
+        -->
         <repository>
             <id>apache</id>
             <url>https://repo.maven.apache.org/maven2</url>
@@ -97,17 +103,17 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>21</maven.compiler.release>
-        <netbeans.version>RELEASE310</netbeans.version>
+        <netbeans.version>RELEASE300</netbeans.version>
         <!-- Dependency Group Versions -->
-        <lombok.version>1.18.42</lombok.version>
+        <lombok.version>1.18.46</lombok.version>
         <swagger.version>2.2.22</swagger.version><!--2.2.48 seems the latest-->
         <jackson.version>2.17.1</jackson.version><!--2.32.2 seems the latest-->
         <slf4j.version>2.0.17</slf4j.version>
         <junit.version>5.10.3</junit.version>
-        <flatlaf.version>3.7.1</flatlaf.version>
+        <flatlaf.version>3.7.2</flatlaf.version>
         <jtokkit.version>1.1.0</jtokkit.version>
         <sentencepiece4j.version>1.0.2</sentencepiece4j.version>
-        <java-diff-utils.version>4.15</java-diff-utils.version>
+        <java-diff-utils.version>4.17</java-diff-utils.version>
 
         
         <!-- 
@@ -118,13 +124,13 @@
         <flexmark.version>0.64.8</flexmark.version>
         
         <!-- Plugin Versions -->
-        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+        <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.3.1</maven-surefire-plugin.version>
-        <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
-        <maven-jar-plugin.version>3.4.1</maven-jar-plugin.version>
+        <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
+        <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
         <netbeans.compile.on.save>all</netbeans.compile.on.save>
     </properties>
-
+    
     <dependencyManagement>
         <dependencies>
             <!-- LLM Tokenizer -->
