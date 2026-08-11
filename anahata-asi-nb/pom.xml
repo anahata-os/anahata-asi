@@ -601,7 +601,6 @@
                     <author>Anahata</author>
                     <homePageUrl>https://asi.anahata.uno</homePageUrl>
                     <codeNameBase>uno.anahata.asi.nb</codeNameBase>
-                    <brandingToken>anahata</brandingToken>
                     <additionalArguments>${netbeans.runparams}</additionalArguments>
                     
                     <!--
@@ -762,7 +761,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.4.2</version>
+                <!--<version>3.5.0</version>-->
                 <configuration>
                     <archive>
                         <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
