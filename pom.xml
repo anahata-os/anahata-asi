@@ -97,7 +97,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>21</maven.compiler.release>
-        <netbeans.version>RELEASE300</netbeans.version>
+        <netbeans.version>RELEASE310</netbeans.version>
         <!-- Dependency Group Versions -->
         <lombok.version>1.18.42</lombok.version>
         <swagger.version>2.2.22</swagger.version><!--2.2.48 seems the latest-->
