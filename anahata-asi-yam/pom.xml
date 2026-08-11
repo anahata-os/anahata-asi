@@ -36,7 +36,6 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <scope>provided</scope>
         </dependency>
 
         <!-- Modern Fork of FreeTTS for the Singularity's Voice -->
