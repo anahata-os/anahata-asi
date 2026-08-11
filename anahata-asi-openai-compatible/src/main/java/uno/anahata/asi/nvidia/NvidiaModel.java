@@ -4,9 +4,8 @@ package uno.anahata.asi.nvidia;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import uno.anahata.asi.agi.provider.GenerationRequest;
-import uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider;
+import uno.anahata.asi.agi.provider.ThinkingLevel;
 import uno.anahata.asi.openai.compatible.OpenAiCompatibleModel;
-import uno.anahata.asi.openai.compatible.OpenAiCompatibleReasoningStyle;
 
 /**
  * Concrete model implementation for NVIDIA NIM microservices endpoints.
@@ -43,9 +42,14 @@ public class NvidiaModel extends OpenAiCompatibleModel {
     @Override
     protected void enrichPayload(ObjectNode payload, GenerationRequest request) {
         super.enrichPayload(payload, request);
-        // Generic NVIDIA NIM flags to trigger thinking generation in vLLM / NIM template rendering
-        payload.putObject("chat_template_kwargs").put("enable_thinking", true);
-        if (!payload.has("reasoning_effort")) {
+
+        boolean includeThoughts = request.config().getAgi().getConfig().isIncludeThoughts();
+        ThinkingLevel level = request.config().getThinkingLevel();
+
+        boolean enableThinking = includeThoughts && level != ThinkingLevel.NONE;
+        payload.putObject("chat_template_kwargs").put("enable_thinking", enableThinking);
+
+        if (enableThinking && !payload.has("reasoning_effort")) {
             payload.put("reasoning_effort", "high");
         }
     }
