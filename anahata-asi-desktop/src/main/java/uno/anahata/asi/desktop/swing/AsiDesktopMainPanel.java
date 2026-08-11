@@ -10,7 +10,6 @@ import java.awt.Window;
 import java.beans.PropertyChangeEvent;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.prefs.Preferences;
 import javax.swing.JComboBox;
@@ -121,6 +120,12 @@ public class AsiDesktopMainPanel extends JPanel {
         this.asiListener = new EdtPropertyChangeListener(this, container, "activeAgis", this::handleAsiChange);
     }
 
+    /**
+     * Displays the global ASI preferences dashboard.
+     */
+    public void showPreferences() {
+        asiContainerPanel.showPreferences();
+    }
     /**
      * Starts the background refresh of the session list and loads persisted sessions.
      * If no sessions are loaded, a new empty agi is created.
