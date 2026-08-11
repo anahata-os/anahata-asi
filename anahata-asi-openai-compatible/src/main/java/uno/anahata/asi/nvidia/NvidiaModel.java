@@ -2,7 +2,8 @@
 package uno.anahata.asi.nvidia;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.util.List;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import uno.anahata.asi.agi.provider.GenerationRequest;
 import uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider;
 import uno.anahata.asi.openai.compatible.OpenAiCompatibleModel;
 import uno.anahata.asi.openai.compatible.OpenAiCompatibleReasoningStyle;
@@ -26,7 +27,6 @@ public class NvidiaModel extends OpenAiCompatibleModel {
      */
     public NvidiaModel(NvidiaAiProvider provider, JsonNode node) {
         super(provider, node);
-        configureReasoning();
     }
 
     /**
@@ -38,20 +38,15 @@ public class NvidiaModel extends OpenAiCompatibleModel {
      */
     public NvidiaModel(NvidiaAiProvider provider, String modelId, String displayName) {
         super(provider, modelId, displayName);
-        configureReasoning();
     }
 
-    /**
-     * Configures default reasoning style and tags/field name based on model ID heuristics.
-     */
-    private void configureReasoning() {
-        String lowerId = getModelId().toLowerCase();
-        if (lowerId.contains("deepseek") || lowerId.contains("r1") || lowerId.contains("qwq") || lowerId.contains("reasoning") || lowerId.contains("nemotron")) {
-            setReasoningStyle(OpenAiCompatibleReasoningStyle.FIELD);
-            setReasoningFieldName("reasoning_content");
-        } else if (lowerId.contains("think")) {
-            setReasoningStyle(OpenAiCompatibleReasoningStyle.TAGS);
-            setReasoningTags(List.of("<think>", "</think>"));
+    @Override
+    protected void enrichPayload(ObjectNode payload, GenerationRequest request) {
+        super.enrichPayload(payload, request);
+        // Generic NVIDIA NIM flags to trigger thinking generation in vLLM / NIM template rendering
+        payload.putObject("chat_template_kwargs").put("enable_thinking", true);
+        if (!payload.has("reasoning_effort")) {
+            payload.put("reasoning_effort", "high");
         }
     }
 }
