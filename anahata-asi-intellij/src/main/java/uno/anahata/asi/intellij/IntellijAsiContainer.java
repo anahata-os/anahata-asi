@@ -3,12 +3,20 @@ package uno.anahata.asi.intellij;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import lombok.Getter;
 import lombok.Setter;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
+import uno.anahata.asi.intellij.ui.IntellijTextResourceWriteRenderer;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory;
+import uno.anahata.asi.toolkit.resources.text.FullTextFileCreate;
+import uno.anahata.asi.toolkit.resources.text.FullTextResourceUpdate;
+import uno.anahata.asi.toolkit.resources.text.TextResourceReplacements;
+import uno.anahata.asi.toolkit.resources.text.lines.TextResourceLineEdits;
 
 /**
  * Concrete implementation of the ASI Container for IntelliJ IDEA.
@@ -20,6 +28,33 @@ import uno.anahata.asi.swing.agi.AgiPanel;
  * @author anahata
  */
 public class IntellijAsiContainer extends AbstractSwingAsiContainer {
+
+    /**
+     * Live registry of tool-window-backed containers in this JVM.
+     * <p>
+     * Lets host-side UI hooks that have no direct container reference — the Project-view
+     * node decorator and the "AGI Context" popup action — enumerate active sessions and
+     * their resource managers. Uses a copy-on-write list for safe concurrent iteration
+     * from EDT and background action threads.
+     * </p>
+     */
+    private static final List<IntellijAsiContainer> INSTANCES = new CopyOnWriteArrayList<>();
+
+    /**
+     * Registers the IntelliJ diff visualization for the core text-write tool arguments.
+     * <p>
+     * Mirrors the NetBeans container's renderer registration: each concrete
+     * {@code AbstractTextResourceWrite} DTO type is mapped to the shared
+     * {@link IntellijTextResourceWriteRenderer}, so every file-writing tool call renders as
+     * an editable side-by-side diff instead of raw JSON.
+     * </p>
+     */
+    static {
+        ParameterRendererFactory.register(FullTextResourceUpdate.class, IntellijTextResourceWriteRenderer.class);
+        ParameterRendererFactory.register(FullTextFileCreate.class, IntellijTextResourceWriteRenderer.class);
+        ParameterRendererFactory.register(TextResourceReplacements.class, IntellijTextResourceWriteRenderer.class);
+        ParameterRendererFactory.register(TextResourceLineEdits.class, IntellijTextResourceWriteRenderer.class);
+    }
 
     /**
      * The IntelliJ ToolWindow instance.
@@ -36,13 +71,34 @@ public class IntellijAsiContainer extends AbstractSwingAsiContainer {
     }
 
     /**
-     * Constructor initializing with a specific ToolWindow.
-     * 
+     * Constructor initializing with a specific ToolWindow and registering this container
+     * in the live {@link #INSTANCES} registry.
+     *
      * @param toolWindow The target ToolWindow.
      */
     public IntellijAsiContainer(ToolWindow toolWindow) {
         this();
         this.toolWindow = toolWindow;
+        INSTANCES.add(this);
+    }
+
+    /**
+     * Returns an immutable snapshot of the live tool-window-backed containers.
+     *
+     * @return the active containers in this JVM.
+     */
+    public static List<IntellijAsiContainer> getInstances() {
+        return List.copyOf(INSTANCES);
+    }
+
+    /**
+     * Removes a container from the live registry, called when its project/tool window is
+     * disposed so closed projects no longer surface stale sessions to the Project-view UI.
+     *
+     * @param container the container to deregister.
+     */
+    public static void removeInstance(IntellijAsiContainer container) {
+        INSTANCES.remove(container);
     }
 
     /**

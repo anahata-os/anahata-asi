@@ -38,15 +38,15 @@ public class ProjectContextProvider extends AbstractProjectContextProvider {
         this.project = project;
         
         // Register with parent
-        this.setParent(projectsToolkit);
+        this.setParentProvider(projectsToolkit);
         
         // Initialize structural children
         ProjectStructureContextProvider structure = new ProjectStructureContextProvider(projectsToolkit, projectPath);
-        structure.setParent(this);
+        structure.setParentProvider(this);
         children.add(structure);
 
         ProjectAlertsContextProvider alerts = new ProjectAlertsContextProvider(projectsToolkit, projectPath);
-        alerts.setParent(this);
+        alerts.setParentProvider(this);
         children.add(alerts);
 
         // Sync anahata.md on creation
