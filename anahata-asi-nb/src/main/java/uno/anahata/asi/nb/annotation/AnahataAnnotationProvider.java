@@ -322,10 +322,10 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
      * @param files The set of files requiring a redraw (can be null for global pulse).
      */
     public static void fireRefresh(FileSystem fs, Set<FileObject> files) {
-        log.info("fireRefresh pulse requested (Outer Thread: {})", Thread.currentThread().getName());
+        log.debug("fireRefresh pulse requested (Outer Thread: {})", Thread.currentThread().getName());
         
         SwingUtilities.invokeLater(() -> {
-            log.info("Executing async IDE annotation refresh (EDT Triggered)");
+            log.debug("Executing async IDE annotation refresh (EDT Triggered)");
             try {
                 Set<FileSystem> fss = new HashSet<>();
                 
@@ -378,7 +378,7 @@ public class AnahataAnnotationProvider extends AnnotationProvider {
                         }
                     }
                 }
-                log.info("IDE annotation refresh sequence complete for {} filesystems.", fss.size());
+                log.debug("IDE annotation refresh sequence complete for {} filesystems.", fss.size());
             } catch (Exception ex) {
                 log.error("Fatal error during IDE annotation refresh pulse.", ex);
             }
