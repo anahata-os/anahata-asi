@@ -30,7 +30,9 @@ uno.anahata.asi.intellij.tools.java
 uno.anahata.asi.intellij.tools.project
 uno.anahata.asi.intellij.tools.project.context
 uno.anahata.asi.internal
+uno.anahata.asi.javafx.util
 uno.anahata.asi.minimax
+uno.anahata.asi.mistral
 uno.anahata.asi.modal
 uno.anahata.asi.nb
 uno.anahata.asi.nb.annotation
@@ -50,9 +52,12 @@ uno.anahata.asi.nb.tools.project.actions
 uno.anahata.asi.nb.tools.project.alerts
 uno.anahata.asi.nb.tools.project.components
 uno.anahata.asi.nb.tools.project.context
+uno.anahata.asi.nb.tools.terminal
 uno.anahata.asi.nb.ui.render
 uno.anahata.asi.nb.ui.resources
 uno.anahata.asi.nb.util
+uno.anahata.asi.novarouteai
+uno.anahata.asi.nvidia
 uno.anahata.asi.openai
 uno.anahata.asi.openai.compatible
 uno.anahata.asi.openai.compatible.adapter
@@ -94,6 +99,7 @@ uno.anahata.asi.toolkit.resources
 uno.anahata.asi.toolkit.resources.text
 uno.anahata.asi.toolkit.resources.text.lines
 uno.anahata.asi.toolkit.shell
+uno.anahata.asi.yam.games.asikart
 uno.anahata.asi.yam.tools
 uno.anahata.asi.yam.tools.browser
 uno.anahata.asi.yam.tools.chrome
