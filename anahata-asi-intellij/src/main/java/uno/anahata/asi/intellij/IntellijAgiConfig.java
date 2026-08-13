@@ -12,7 +12,6 @@ import uno.anahata.asi.intellij.tools.java.Hints;
 import uno.anahata.asi.intellij.tools.java.IntellijJava;
 import uno.anahata.asi.intellij.tools.maven.Maven;
 import uno.anahata.asi.intellij.tools.project.Projects;
-import uno.anahata.asi.intellij.settings.AnahataSettings;
 import uno.anahata.asi.intellij.tools.run.RunConfigurations;
 import uno.anahata.asi.intellij.tools.terminal.Terminals;
 import uno.anahata.asi.intellij.tools.vcs.Vcs;
@@ -63,9 +62,6 @@ public class IntellijAgiConfig extends SwingAgiConfig {
         getToolClasses().add(Refactor.class);
         getToolClasses().add(Terminals.class);
 
-        AnahataSettings settings = AnahataSettings.getInstance();
-        setSelectedProviderUuid(settings.defaultProviderUuid);
-        setSelectedModelId(settings.defaultModelId);
     }
 
     /**

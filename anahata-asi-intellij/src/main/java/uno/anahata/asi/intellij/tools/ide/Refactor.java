@@ -79,6 +79,12 @@ import java.util.List;
 public class Refactor extends AnahataToolkit {
 
     /**
+     * Constructs the Refactor toolkit (instantiated reflectively via its public no-arg constructor).
+     */
+    public Refactor() {
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Documents the FQN scheme and the project-wide, non-interactive nature of these

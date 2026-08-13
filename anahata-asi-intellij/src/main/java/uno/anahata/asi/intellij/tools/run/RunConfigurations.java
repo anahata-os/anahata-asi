@@ -33,6 +33,12 @@ import uno.anahata.asi.agi.tool.AnahataToolkit;
 public class RunConfigurations extends AnahataToolkit {
 
     /**
+     * Constructs the RunConfigurations toolkit (instantiated reflectively via its public no-arg constructor).
+     */
+    public RunConfigurations() {
+    }
+
+    /**
      * Lists every run configuration across all open projects.
      *
      * @return a Markdown listing of configuration names, types and owning project.

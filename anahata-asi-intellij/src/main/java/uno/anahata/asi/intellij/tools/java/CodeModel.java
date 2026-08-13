@@ -126,6 +126,13 @@ public class CodeModel extends AnahataToolkit {
         return new Page<>(allResults, start, size);
     }
 
+    /**
+     * Appends a class to the result list as a {@link JavaType} keychain DTO, de-duplicating by
+     * fully-qualified name. Classes without an FQN (anonymous/local) are skipped.
+     *
+     * @param cl      the PSI class to add.
+     * @param results the accumulating result list.
+     */
     private void addClassToResults(PsiClass cl, List<JavaType> results) {
         String fqn = cl.getQualifiedName();
         if (fqn != null) {
@@ -137,6 +144,13 @@ public class CodeModel extends AnahataToolkit {
         }
     }
 
+    /**
+     * Resolves the source/class-file {@code file:} URL backing a PSI class, used as the keychain
+     * for later source/javadoc lookups.
+     *
+     * @param cl the PSI class.
+     * @return the file URL, or {@code null} if it cannot be resolved.
+     */
     private URL getUrlOfClass(PsiClass cl) {
         try {
             PsiFile file = cl.getContainingFile();
@@ -486,6 +500,13 @@ public class CodeModel extends AnahataToolkit {
         JavaPsi.requireSmartForOpenProjects();
     }
 
+    /**
+     * Finds a PSI class by fully-qualified name across all open projects. Must be called inside a
+     * read action.
+     *
+     * @param fqn the fully-qualified type name.
+     * @return the first matching class, or {@code null} if none is found.
+     */
     private PsiClass findPsiClass(String fqn) {
         for (Project project : ProjectManager.getInstance().getOpenProjects()) {
             PsiClass cl = JavaPsiFacade.getInstance(project).findClass(fqn, GlobalSearchScope.allScope(project));
@@ -496,6 +517,14 @@ public class CodeModel extends AnahataToolkit {
         return null;
     }
 
+    /**
+     * Resolves a fully-qualified type name to a unique {@link JavaType} keychain, waiting for
+     * indexing to finish first.
+     *
+     * @param fqn the fully-qualified type name.
+     * @return the resolved type keychain.
+     * @throws AgiToolException if the type is not found.
+     */
     private JavaType resolveUniqueType(String fqn) throws AgiToolException {
         awaitSmart();
         return ReadAction.compute(() -> {
@@ -507,6 +536,14 @@ public class CodeModel extends AnahataToolkit {
         });
     }
 
+    /**
+     * Resolves a canonical member FQN to a unique {@link JavaMember} keychain, waiting for indexing
+     * to finish first.
+     *
+     * @param memberFqn the canonical member FQN.
+     * @return the resolved member keychain.
+     * @throws Exception if the member is not found or is ambiguous.
+     */
     private JavaMember resolveUniqueMember(String memberFqn) throws Exception {
         awaitSmart();
         return ReadAction.compute(() -> {
@@ -531,6 +568,13 @@ public class CodeModel extends AnahataToolkit {
         });
     }
 
+    /**
+     * Collects the fields, methods, constructors and inner classes of a PSI class as
+     * {@link JavaMember} keychain DTOs. Must be called inside a read action.
+     *
+     * @param cl the declaring class.
+     * @return the list of member keychains.
+     */
     private List<JavaMember> getPsiMembers(PsiClass cl) {
         List<JavaMember> members = new ArrayList<>();
         URL url = getUrlOfClass(cl);
@@ -567,6 +611,14 @@ public class CodeModel extends AnahataToolkit {
         return members;
     }
 
+    /**
+     * Builds the canonical method FQN ({@code pkg.Type.name(erasedArg,...)}; constructors use
+     * {@code <init>}) so member FQNs round-trip with the other Java toolkits.
+     *
+     * @param cl     the declaring class.
+     * @param method the method.
+     * @return the canonical method FQN.
+     */
     private String getMethodFqn(PsiClass cl, PsiMethod method) {
         StringBuilder sb = new StringBuilder(cl.getQualifiedName()).append(".");
         if (method.isConstructor()) {
@@ -586,6 +638,12 @@ public class CodeModel extends AnahataToolkit {
         return sb.toString();
     }
 
+    /**
+     * Extracts the Java modifier keywords (public, static, final, …) present on a modifier list.
+     *
+     * @param modifierList the modifier list, or {@code null}.
+     * @return the set of modifier keywords (empty if none or {@code null}).
+     */
     private Set<String> getModifiersSet(PsiModifierList modifierList) {
         if (modifierList == null) return Collections.emptySet();
         Set<String> modifiers = new HashSet<>();
@@ -601,6 +659,15 @@ public class CodeModel extends AnahataToolkit {
         return modifiers;
     }
 
+    /**
+     * Returns the source text of a member (method, field or inner class) identified by its canonical
+     * FQN within a class. Must be called inside a read action.
+     *
+     * @param cl        the declaring class.
+     * @param memberFqn the canonical member FQN.
+     * @return the member's source text.
+     * @throws Exception if no member matches the FQN.
+     */
     private String getPsiMemberSource(PsiClass cl, String memberFqn) throws Exception {
         for (PsiMethod method : cl.getMethods()) {
             if (memberFqn.equals(getMethodFqn(cl, method))) {
@@ -620,6 +687,15 @@ public class CodeModel extends AnahataToolkit {
         throw new Exception("Member not found: " + memberFqn);
     }
 
+    /**
+     * Returns the Javadoc comment text of a member (method, field or inner class) identified by its
+     * canonical FQN within a class. Must be called inside a read action.
+     *
+     * @param cl        the declaring class.
+     * @param memberFqn the canonical member FQN.
+     * @return the member's Javadoc text, or an empty string if it has none.
+     * @throws Exception if resolution fails.
+     */
     private String getPsiMemberJavadoc(PsiClass cl, String memberFqn) throws Exception {
         for (PsiMethod method : cl.getMethods()) {
             if (memberFqn.equals(getMethodFqn(cl, method))) {
@@ -642,6 +718,15 @@ public class CodeModel extends AnahataToolkit {
         return "";
     }
 
+    /**
+     * Recursively builds the supertype hierarchy node for a class up to a maximum depth, skipping
+     * {@code java.lang.Object}. Must be called inside a read action.
+     *
+     * @param cl           the starting class.
+     * @param maxDepth     the maximum recursion depth.
+     * @param currentDepth the current recursion depth.
+     * @return the hierarchy node rooted at the class.
+     */
     private JavaHierarchyNode getSupertypesNode(PsiClass cl, int maxDepth, int currentDepth) {
         JavaType type = new JavaType(cl.getQualifiedName(), getUrlOfClass(cl));
         JavaHierarchyNode node = new JavaHierarchyNode();
@@ -657,6 +742,15 @@ public class CodeModel extends AnahataToolkit {
         return node;
     }
 
+    /**
+     * Recursively builds the subtype (implementors/subclasses) hierarchy node for a class up to a
+     * maximum depth via {@code ClassInheritorsSearch}. Must be called inside a read action.
+     *
+     * @param cl           the starting class.
+     * @param maxDepth     the maximum recursion depth.
+     * @param currentDepth the current recursion depth.
+     * @return the hierarchy node rooted at the class.
+     */
     private JavaHierarchyNode getSubtypesNode(PsiClass cl, int maxDepth, int currentDepth) {
         JavaType type = new JavaType(cl.getQualifiedName(), getUrlOfClass(cl));
         JavaHierarchyNode node = new JavaHierarchyNode();

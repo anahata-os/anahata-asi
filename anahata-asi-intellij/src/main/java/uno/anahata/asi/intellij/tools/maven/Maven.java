@@ -52,6 +52,12 @@ import java.util.concurrent.TimeUnit;
 public class Maven extends AnahataToolkit {
 
     /**
+     * Constructs the Maven toolkit (instantiated reflectively via its public no-arg constructor).
+     */
+    public Maven() {
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Notes that projects must be imported as Maven projects and that goal output appears in

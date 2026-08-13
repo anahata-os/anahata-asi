@@ -36,7 +36,13 @@ public class JavaMember extends JavaType {
     private Set<String> modifiers;
 
     /**
-     * Custom constructor to initialize all fields.
+     * Custom constructor to initialize all fields, including the inherited type keychain.
+     *
+     * @param fqn       the canonical fully-qualified name of the member.
+     * @param name      the simple member name.
+     * @param kind      the member kind (field, method, constructor, …).
+     * @param url       the file URL backing the declaring type.
+     * @param modifiers the member's modifier keywords.
      */
     public JavaMember(String fqn, String name, ElementKind kind, URL url, Set<String> modifiers) {
         super(fqn, url);

@@ -32,6 +32,12 @@ import java.util.Collection;
 public class Vcs extends AnahataToolkit {
 
     /**
+     * Constructs the Vcs toolkit (instantiated reflectively via its public no-arg constructor).
+     */
+    public Vcs() {
+    }
+
+    /**
      * Reports the version-control status of all open projects: local changes grouped by change
      * list, plus unversioned files.
      *

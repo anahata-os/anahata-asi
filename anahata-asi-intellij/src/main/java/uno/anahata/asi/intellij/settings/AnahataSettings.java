@@ -32,6 +32,12 @@ public final class AnahataSettings implements PersistentStateComponent<AnahataSe
     public String defaultModelId = "models/gemini-flash-latest";
 
     /**
+     * Constructs the settings service (instantiated by the platform via its public no-arg constructor).
+     */
+    public AnahataSettings() {
+    }
+
+    /**
      * Returns the application-wide settings instance.
      *
      * @return the singleton settings service.

@@ -52,6 +52,12 @@ import java.util.List;
 public class Hints extends AnahataToolkit {
 
     /**
+     * Constructs the Hints toolkit (instantiated reflectively via its public no-arg constructor).
+     */
+    public Hints() {
+    }
+
+    /**
      * Lists the inspection/annotator highlights for a file at or above a severity threshold.
      * <p>
      * Runs the analysis daemon's main passes synchronously (on this background tool thread,

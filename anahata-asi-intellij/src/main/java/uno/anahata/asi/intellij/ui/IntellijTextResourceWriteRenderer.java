@@ -116,6 +116,13 @@ public class IntellijTextResourceWriteRenderer implements ParameterRenderer<Abst
     private transient String lastProposed;
 
     /**
+     * Constructs the renderer (instantiated reflectively by the parameter-renderer factory via its
+     * public no-arg constructor).
+     */
+    public IntellijTextResourceWriteRenderer() {
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override

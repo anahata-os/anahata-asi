@@ -42,6 +42,12 @@ public class Terminals extends AnahataToolkit {
     private transient Map<Long, ShellTerminalWidget> widgets = new ConcurrentHashMap<>();
 
     /**
+     * Constructs the Terminals toolkit (instantiated reflectively via its public no-arg constructor).
+     */
+    public Terminals() {
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Re-initializes the transient terminal registry after deserialization.

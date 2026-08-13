@@ -35,7 +35,7 @@ import java.util.List;
  * The IntelliJ port replaces the NetBeans {@code EditorRegistry}/{@code TopComponent}
  * crawl with the platform's first-class {@link FileEditorManager}. All editor and
  * UI-model access is marshalled onto the Event Dispatch Thread via
- * {@link ApplicationManager#invokeAndWait}, because {@code @AgiTool} methods and
+ * {@code ApplicationManager.getApplication().invokeAndWait}, because {@code @AgiTool} methods and
  * {@code populateMessage} are typically invoked from background AI-execution
  * threads where direct editor access is illegal.
  * </p>
@@ -45,6 +45,12 @@ import java.util.List;
 @Slf4j
 @AgiToolkit("A toolkit for interacting with the IntelliJ IDEA editor.")
 public class Editor extends AnahataToolkit {
+
+    /**
+     * Constructs the Editor toolkit (instantiated reflectively via its public no-arg constructor).
+     */
+    public Editor() {
+    }
 
     /**
      * {@inheritDoc}

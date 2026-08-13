@@ -27,6 +27,12 @@ import java.util.List;
 public class AgiContextActionGroup extends ActionGroup {
 
     /**
+     * Constructs the action group (instantiated by the platform via its public no-arg constructor).
+     */
+    public AgiContextActionGroup() {
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Builds one {@link ToggleAgiContextAction} per active session, or a disabled hint when

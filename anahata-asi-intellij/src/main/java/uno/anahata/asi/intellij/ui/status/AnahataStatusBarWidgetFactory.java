@@ -22,6 +22,12 @@ public class AnahataStatusBarWidgetFactory implements StatusBarWidgetFactory {
     public static final String ID = "AnahataAsiStatusWidget";
 
     /**
+     * Constructs the widget factory (instantiated by the platform via its public no-arg constructor).
+     */
+    public AnahataStatusBarWidgetFactory() {
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override

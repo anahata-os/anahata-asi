@@ -39,6 +39,12 @@ public class AnahataToolWindowFactory implements ToolWindowFactory {
     private static final String DASHBOARD_TAB = "Dashboard";
 
     /**
+     * Constructs the tool-window factory (instantiated by the platform via its public no-arg constructor).
+     */
+    public AnahataToolWindowFactory() {
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Builds the dashboard content, hides its in-panel toolbar, and installs native

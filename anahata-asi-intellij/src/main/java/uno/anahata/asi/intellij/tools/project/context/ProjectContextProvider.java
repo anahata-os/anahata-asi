@@ -89,6 +89,14 @@ public class ProjectContextProvider extends AbstractProjectContextProvider {
         ragMessage.addTextPart(sb.toString());
     }
 
+    /**
+     * Synchronizes the project's {@code anahata.md} instructions file with the session's resource
+     * manager to reflect this provider's active state.
+     * <p>
+     * When providing, ensures {@code anahata.md} exists (creating a stub if needed) and registers it
+     * at the {@code SYSTEM_INSTRUCTIONS} context position; when not providing, unregisters it.
+     * </p>
+     */
     private void syncMdResource() {
         if (projectPath == null) return;
         String mdPath = Path.of(projectPath).resolve("anahata.md").toAbsolutePath().toString();

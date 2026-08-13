@@ -63,6 +63,12 @@ import java.util.List;
 public class BatchCodeRefiner extends AnahataToolkit {
 
     /**
+     * Constructs the BatchCodeRefiner toolkit (instantiated reflectively via its public no-arg constructor).
+     */
+    public BatchCodeRefiner() {
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Explains the batch model and the canonical FQN scheme the intents use.

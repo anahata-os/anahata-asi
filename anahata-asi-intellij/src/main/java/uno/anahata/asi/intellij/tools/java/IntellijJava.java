@@ -37,6 +37,12 @@ import java.util.List;
 public class IntellijJava extends SwingJava {
 
     /**
+     * Constructs the IntellijJava toolkit (instantiated reflectively via its public no-arg constructor).
+     */
+    public IntellijJava() {
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Appends IntelliJ-specific guidance describing when to prefer

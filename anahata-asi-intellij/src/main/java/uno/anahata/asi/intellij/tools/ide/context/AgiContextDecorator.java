@@ -22,6 +22,12 @@ import uno.anahata.asi.intellij.internal.AgiContext;
 public class AgiContextDecorator implements ProjectViewNodeDecorator {
 
     /**
+     * Constructs the decorator (instantiated by the platform via its public no-arg constructor).
+     */
+    public AgiContextDecorator() {
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Appends " ● AGI" (with a "×N" suffix when several sessions hold the file) to files

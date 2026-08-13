@@ -39,6 +39,12 @@ public class AnahataConfigurable implements Configurable {
     private JPanel panel;
 
     /**
+     * Constructs the configurable (instantiated by the platform via its public no-arg constructor).
+     */
+    public AnahataConfigurable() {
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Nls

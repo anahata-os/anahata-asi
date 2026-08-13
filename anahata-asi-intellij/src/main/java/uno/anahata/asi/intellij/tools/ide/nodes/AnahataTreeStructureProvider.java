@@ -30,6 +30,12 @@ import java.util.List;
 public class AnahataTreeStructureProvider implements TreeStructureProvider {
 
     /**
+     * Constructs the tree-structure provider (instantiated by the platform via its public no-arg constructor).
+     */
+    public AnahataTreeStructureProvider() {
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Prepends the Anahata instructions node to the project root node's children when the

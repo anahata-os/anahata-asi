@@ -40,7 +40,7 @@ import java.util.List;
  * drives {@code WorkingCopy}/{@code TreeMaker}, IntelliJ mutates the live PSI tree
  * inside a {@link WriteCommandAction}. Because AI tool calls arrive on background
  * threads, every mutation is marshalled onto the EDT via
- * {@link ApplicationManager#invokeAndWait}; PSI reads needed to resolve targets run
+ * {@code ApplicationManager.getApplication().invokeAndWait}; PSI reads needed to resolve targets run
  * inside that same command.
  * </p>
  *
@@ -49,6 +49,12 @@ import java.util.List;
 @Slf4j
 @AgiToolkit("AST-based updates of java code: structural imports, reformatting and annotations.")
 public class CodeRefiner extends AnahataToolkit {
+
+    /**
+     * Constructs the CodeRefiner toolkit (instantiated reflectively via its public no-arg constructor).
+     */
+    public CodeRefiner() {
+    }
 
     /**
      * Adds one or more imports to a Java file structurally (as real import
