@@ -21,8 +21,8 @@ import uno.anahata.asi.swing.toolkit.SwingJava;
 /**
  * IntelliJ-specific AGI configuration.
  * <p>
- * Customizes the default model, provider, and tool availability
- * for the IntelliJ IDEA platform environment. Mirrors the NetBeans
+ * Customizes the default model, provider, and tool availability for the
+ * IntelliJ IDEA platform environment. Mirrors the NetBeans
  * {@code NetBeansAgiConfig} registration pattern: IDE-native toolkits are
  * contributed purely by adding their {@link Class} to {@code getToolClasses()};
  * the {@code ToolManager} then reflectively registers each as a
@@ -36,6 +36,14 @@ import uno.anahata.asi.swing.toolkit.SwingJava;
 public class IntellijAgiConfig extends SwingAgiConfig {
 
     /**
+     * Default initialization block to set IntelliJ-specific settings.
+     */
+    {
+        setSelectedProviderUuid("Gemini");
+        setSelectedModelId("models/gemini-flash-latest");
+    }
+
+    /**
      * Default initialization block registering the IntelliJ-native toolkits and
      * selecting the default provider/model.
      * <p>
@@ -45,6 +53,7 @@ public class IntellijAgiConfig extends SwingAgiConfig {
      * </p>
      */
     {
+
         // Replace the Swing Java toolkit with the IntelliJ project-aware one (mirrors NbJava).
         getToolClasses().remove(SwingJava.class);
         getToolClasses().add(IntellijJava.class);
@@ -66,7 +75,7 @@ public class IntellijAgiConfig extends SwingAgiConfig {
 
     /**
      * Constructs a new IntelliJ AGI configuration.
-     * 
+     *
      * @param container The host ASI container.
      */
     public IntellijAgiConfig(AbstractAsiContainer container) {
@@ -75,7 +84,7 @@ public class IntellijAgiConfig extends SwingAgiConfig {
 
     /**
      * Constructs a new IntelliJ AGI configuration with a specific session ID.
-     * 
+     *
      * @param container The host ASI container.
      * @param sessionId The unique session ID.
      */

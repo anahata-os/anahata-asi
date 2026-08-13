@@ -10,6 +10,10 @@
 
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.java</depends>
+    <!-- Bundled plugins whose classes the Maven and Terminal toolkits use. Declared so their
+         classloaders are on Anahata's classpath at runtime. -->
+    <depends>org.jetbrains.idea.maven</depends>
+    <depends>org.jetbrains.plugins.terminal</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="Anahata ASI" secondary="true" icon="/icons/anahataToolWindow.png" anchor="right"
