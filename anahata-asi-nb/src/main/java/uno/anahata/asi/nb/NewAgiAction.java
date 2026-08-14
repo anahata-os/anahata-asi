@@ -21,7 +21,7 @@ import org.openide.awt.ActionRegistration;
         id = "uno.anahata.asi.nb.NewAgiAction"
 )
 @ActionRegistration(
-        displayName = "New AGI",
+        displayName = "#CTL_NewAgiAction",
         iconBase = "icons/anahata_16.png"
 )
 @ActionReference(path = "Menu/Window", position = 100)
