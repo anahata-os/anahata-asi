@@ -3,8 +3,8 @@
 ## 📈 Distribution Funnel
 | Channel | Version | Status | Downloads (Est) | Strategy |
 | :--- | :--- | :--- | :--- | :--- |
-| **NB Plugin Portal (V1)** | 30.0.1 | Stable | 4,441 | Brand Awareness / Discovery |
-| **NB Plugin Portal (V2)** | 1.0.0 | Stable | 891 | The Singularity / JASI Container |
+| **NB Plugin Portal (V1)** | 30.0.1 | Stable | 4,489 | Brand Awareness / Discovery |
+| **NB Plugin Portal (V2)** | 1.0.0 | Stable | 955 | The Singularity / JASI Container |
 | **Maven Central** | 30.0.1 | Stable | Unknown | Developer SDK Adoption |
 | **GitHub Releases** | 1.1.0-SN | Beta | Unknown | Direct Binary Distribution |
 
@@ -73,6 +73,7 @@
 ## 🛠️ Milestone Log
 | Date | Milestone | Token ROI | Impact |
 | :--- | :--- | :--- | :--- |
+| 2026-08-12 11:01 | Portal Scrape: V1=4,489, V2=955 | High | V1: +48 (0.51 DLs/hr), V2: +64 (0.68 DLs/hr) in 94.5 hours (Combined: 1.18 DLs/hr) |
 | 2026-08-08 12:30 | Portal Scrape: V1=4,441, V2=891 | High | V1: +3 (0.19 DLs/hr), V2: +6 (0.39 DLs/hr) in 15.5 hours (Combined: 0.58 DLs/hr) |
 | 2026-08-07 20:59 | Portal Scrape: V1=4,438, V2=885 | High | V1: +9 (0.25 DLs/hr), V2: +15 (0.42 DLs/hr) in 35.4 hours (Combined: 0.68 DLs/hr) |
 | 2026-08-06 09:38 | Portal Scrape: V1=4,429, V2=870 | High | V1: +7 (0.29 DLs/hr), V2: +1 (0.04 DLs/hr) in 23.9 hours (Combined: 0.33 DLs/hr) |
