@@ -146,6 +146,16 @@ public interface ResourceHandle extends Rebindable {
     }
 
     /**
+     * Checks whether the underlying resource has unsaved in-memory modifications
+     * in the active host environment (e.g., an open NetBeans/IntelliJ editor tab).
+     *
+     * @return true if the resource has unsaved modifications in memory, false otherwise.
+     */
+    default boolean isModified() {
+        return false;
+    }
+
+    /**
      * Determines if the resource is textual and suitable for a TextView.
      * <p>
      * This method provides a centralized capability check. It whitelists common 
