@@ -2,7 +2,6 @@
 package uno.anahata.asi.nb.tools.java.coderefiner;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.sun.source.tree.CompilationUnitTree;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
@@ -11,13 +10,19 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.java.source.*;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.io.OutputStream;
+import java.util.Objects;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.toolkit.resources.text.AbstractTextResourceWrite;
 import uno.anahata.asi.toolkit.resources.text.LineComment;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
+import uno.anahata.asi.nb.tools.java.BatchCodeRefiner;
+import uno.anahata.asi.nb.tools.java.JavaSourceUtils;
+import uno.anahata.asi.nb.tools.java.CodeRefiner;
 
 /**
  * A robust, agent-friendly batch of structural AST modifications for a single
@@ -66,6 +71,11 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
     private List<String> importsToRemove = new ArrayList<>();
 
     /**
+     * The NetBeans formatting mode to apply after refinement. Defaults to SELECTED_RANGES.
+     */
+    @Schema(description = "The NetBeans formatting mode to apply after refinement. Defaults to SELECTED_RANGES.")
+    private FormatMode format = FormatMode.SELECTED_RANGES;
+    /**
      * The list of line-level comments calculated during the AST transformation
      * process. These are intended for UI rendering of the changes.
      */
@@ -85,13 +95,12 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
      * resulting code is semantically sound.
      * </p>
      */
-    @Override
-    protected String doCalculateResultingContent(Agi agi) throws Exception {
+    @Override protected String doCalculateResultingContent(Agi agi) throws Exception {
         if (originalContent == null) {
             captureOriginalContent(agi);
         }
 
-        uno.anahata.asi.agi.resource.Resource res = agi.getResourceManager().get(resourceUuid);
+        Resource res = agi.getResourceManager().get(resourceUuid);
         if (res == null) {
             throw new AgiToolException("Resource not found for uuid: " + resourceUuid);
         }
@@ -104,15 +113,15 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
         log.info("[V4-AST-TEXT] Replaying structural changes on: {}", originalFo.getNameExt());
 
         ClasspathInfo cpInfo = ClasspathInfo.create(originalFo);
-        //String currentContent = originalContent;
         // CRITICAL FIX: Normalize CRLF to LF to prevent AST SourcePositions drift
         String currentContent = originalContent.replace("\r\n", "\n");
 
+        List<int[]> modifiedRanges = new ArrayList<>();
         int index = 0;
         for (CodeRefinementIntent intent : intents) {
             try {
                 FileObject tempFo = FileUtil.createMemoryFileSystem().getRoot().createData("Temp_" + index, "java");
-                try (java.io.OutputStream os = tempFo.getOutputStream()) {
+                try (OutputStream os = tempFo.getOutputStream()) {
                     os.write(currentContent.getBytes("UTF-8"));
                 }
 
@@ -120,7 +129,7 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
                 String[] out = new String[]{currentContent};
                 js.runUserActionTask(cc -> {
                     cc.toPhase(JavaSource.Phase.RESOLVED);
-                    out[0] = intent.applyToText(cc, out[0]);
+                    out[0] = intent.applyToText(cc, out[0], modifiedRanges);
                 }, true);
                 currentContent = out[0];
                 index++;
@@ -131,10 +140,12 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
 
         boolean hasExplicitImports = (importsToAdd != null && !importsToAdd.isEmpty()) || (importsToRemove != null && !importsToRemove.isEmpty());
         if (this.optimize || hasExplicitImports) {
-            currentContent = uno.anahata.asi.nb.tools.java.CodeRefiner.optimizeImportsInMemory(cpInfo, currentContent, this.optimize, importsToAdd, importsToRemove);
+            currentContent = CodeRefiner.optimizeImportsInMemory(cpInfo, currentContent, this.optimize, importsToAdd, importsToRemove);
         }
 
-        if (java.util.Objects.equals(originalContent, currentContent)) {
+        currentContent = JavaSourceUtils.reformat(originalFo, currentContent, this.format, modifiedRanges);
+
+        if (Objects.equals(originalContent, currentContent)) {
             throw new AgiToolException("Update rejected: AST rewrite produced no changes.");
         }
 
@@ -183,7 +194,7 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
                     + "or an import modification (importsToAdd/importsToRemove).");
         }
 
-        if (java.util.Objects.equals(originalContent, calculateResultingContent(agi))) {
+        if (Objects.equals(originalContent, calculateResultingContent(agi))) {
             throw new AgiToolException("Update rejected: The resulting content is identical to the current file content on disk.");
         }
 
