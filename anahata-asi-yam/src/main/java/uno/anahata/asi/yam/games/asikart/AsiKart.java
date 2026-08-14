@@ -41,14 +41,18 @@ import java.util.Random;
  * Features a clean, modular multi-class architecture:
  * </p>
  * <ul>
- *   <li>{@link TrackBuilder} — Multi-circuit 3D world generator (Rainbow Circuit, Desert Speedway, Cyber Circuit).</li>
- *   <li>{@link ItemManager} — Stationary 3D Item Mystery Boxes, 3D Upright Gold Coins, Green/Red Shells, and Bananas.</li>
- *   <li>{@link AudioManager} — Spatial audio and sound feedback chimes.</li>
+ * <li>{@link TrackBuilder} — Multi-circuit 3D world generator (Rainbow Circuit,
+ * Desert Speedway, Cyber Circuit).</li>
+ * <li>{@link ItemManager} — Stationary 3D Item Mystery Boxes, 3D Upright Gold
+ * Coins, Green/Red Shells, and Bananas.</li>
+ * <li>{@link AudioManager} — Spatial audio and sound feedback chimes.</li>
  * </ul>
  * <p>
- * Includes 3-Tier Mini-Turbo Drift Sparks, Interactive Radar Minimap, Directional Corner Arrow Warning Signs,
- * real-time directional shadow maps, PBR asphalt normal/bump surface textures, and 3D Sky Domes.
+ * Includes 3-Tier Mini-Turbo Drift Sparks, Interactive Radar Minimap,
+ * Directional Corner Arrow Warning Signs, real-time directional shadow maps,
+ * PBR asphalt normal/bump surface textures, and 3D Sky Domes.
  * </p>
+ *
  * @author anahata
  * @since 1.1.0-SNAPSHOT
  */
@@ -159,7 +163,8 @@ public class AsiKart extends SimpleApplication implements ActionListener, ItemMa
             @SuppressWarnings("unchecked")
             Class<? extends AssetLoader> gltfClass = (Class<? extends AssetLoader>) Class.forName("com.jme3.scene.plugins.gltf.GltfLoader");
             assetManager.registerLoader(gltfClass, "glb", "gltf");
-        } catch (Throwable ignored) {}
+        } catch (Throwable ignored) {
+        }
 
         // Register local asset locator for downloading 3D glTF models
         File assetFolder = new File("/tmp/asikart_assets");
@@ -217,7 +222,8 @@ public class AsiKart extends SimpleApplication implements ActionListener, ItemMa
             Spatial gltfModel = assetManager.loadModel("kart.glb");
             gltfModel.setLocalScale(0.9f);
             playerChassisNode.attachChild(gltfModel);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         playerKartNode.attachChild(playerChassisNode);
 
@@ -352,10 +358,10 @@ public class AsiKart extends SimpleApplication implements ActionListener, ItemMa
         Cylinder rimShape = new Cylinder(16, 16, 0.22f, 0.33f, true);
 
         float[][] wheelPositions = {
-            {-0.92f, 0.38f, 1.05f},  // Front Left
-            {0.92f, 0.38f, 1.05f},   // Front Right
+            {-0.92f, 0.38f, 1.05f}, // Front Left
+            {0.92f, 0.38f, 1.05f}, // Front Right
             {-0.95f, 0.38f, -0.95f}, // Rear Left
-            {0.95f, 0.38f, -0.95f}   // Rear Right
+            {0.95f, 0.38f, -0.95f} // Rear Right
         };
 
         for (int i = 0; i < 4; i++) {
@@ -442,10 +448,18 @@ public class AsiKart extends SimpleApplication implements ActionListener, ItemMa
 
     @Override
     public void onAction(String name, boolean isPressed, float tpf) {
-        if (name.equals("Accel")) accel = isPressed;
-        if (name.equals("Brake")) brake = isPressed;
-        if (name.equals("Left")) steerLeft = isPressed;
-        if (name.equals("Right")) steerRight = isPressed;
+        if (name.equals("Accel")) {
+            accel = isPressed;
+        }
+        if (name.equals("Brake")) {
+            brake = isPressed;
+        }
+        if (name.equals("Left")) {
+            steerLeft = isPressed;
+        }
+        if (name.equals("Right")) {
+            steerRight = isPressed;
+        }
         if (name.equals("Drift")) {
             if (isPressed && Math.abs(speed) > 12f) {
                 isDrifting = true;
@@ -469,9 +483,15 @@ public class AsiKart extends SimpleApplication implements ActionListener, ItemMa
                 driftSparks.setParticlesPerSec(0);
             }
         }
-        if (name.equals("Circuit1") && isPressed) switchCircuit(TrackBuilder.CircuitType.RAINBOW_CIRCUIT);
-        if (name.equals("Circuit2") && isPressed) switchCircuit(TrackBuilder.CircuitType.DESERT_SPEEDWAY);
-        if (name.equals("Circuit3") && isPressed) switchCircuit(TrackBuilder.CircuitType.CYBER_CIRCUIT);
+        if (name.equals("Circuit1") && isPressed) {
+            switchCircuit(TrackBuilder.CircuitType.RAINBOW_CIRCUIT);
+        }
+        if (name.equals("Circuit2") && isPressed) {
+            switchCircuit(TrackBuilder.CircuitType.DESERT_SPEEDWAY);
+        }
+        if (name.equals("Circuit3") && isPressed) {
+            switchCircuit(TrackBuilder.CircuitType.CYBER_CIRCUIT);
+        }
     }
 
     public void switchCircuit(TrackBuilder.CircuitType circuitType) {
@@ -535,7 +555,9 @@ public class AsiKart extends SimpleApplication implements ActionListener, ItemMa
     }
 
     private void updateRadarMinimap() {
-        if (playerKartNode == null || currentTrack == null) return;
+        if (playerKartNode == null || currentTrack == null) {
+            return;
+        }
 
         Vector3f playerPos = playerKartNode.getLocalTranslation();
         float scale = 0.45f; // Map world units to radar GUI pixels
@@ -568,7 +590,9 @@ public class AsiKart extends SimpleApplication implements ActionListener, ItemMa
 
         if ("MUSHROOM".equals(currentItem)) {
             turboBoostTimer = 3.0f;
-            if (audioManager != null) audioManager.playTurboSound();
+            if (audioManager != null) {
+                audioManager.playTurboSound();
+            }
             currentItem = "NONE";
         } else if ("GREEN_SHELL".equals(currentItem)) {
             itemManager.launchGreenShell(spawnPos, heading);
@@ -598,7 +622,8 @@ public class AsiKart extends SimpleApplication implements ActionListener, ItemMa
                         audioManager.playItemBoxSound();
                     }
                     Thread.sleep(120);
-                } catch (InterruptedException ignored) {}
+                } catch (InterruptedException ignored) {
+                }
             }
             this.currentItem = itemType;
             itemHud.setText("ITEM: [" + currentItem + "] | COINS: " + itemManager.getCoinsCollected());
@@ -646,7 +671,7 @@ public class AsiKart extends SimpleApplication implements ActionListener, ItemMa
         initRadarMinimap();
     }
 
-    private float findTrackSurfaceHeight(float x, float z, java.util.List<com.jme3.math.Vector3f> waypoints) {
+    private float findTrackSurfaceHeight(float x, float z, List<Vector3f> waypoints) {
         // Updated via BCR: Calculate exact interpolated track surface elevation
         float minDistanceSq = Float.MAX_VALUE;
         float bestGroundY = 0.2f;
@@ -671,6 +696,7 @@ public class AsiKart extends SimpleApplication implements ActionListener, ItemMa
         }
         return bestGroundY;
     }
+
     public void simpleUpdate(float tpf) {
         // Updated via BCR: Simple update loop with tpf delta processing
         itemManager.update(tpf, playerKartNode, aiKarts, currentItem, this);
@@ -688,8 +714,12 @@ public class AsiKart extends SimpleApplication implements ActionListener, ItemMa
         } else if (brake) {
             speed = Math.max(-10f, speed - deceleration * 1.5f * tpf);
         } else {
-            if (speed > 0) speed = Math.max(0, speed - deceleration * tpf);
-            if (speed < 0) speed = Math.min(0, speed + deceleration * tpf);
+            if (speed > 0) {
+                speed = Math.max(0, speed - deceleration * tpf);
+            }
+            if (speed < 0) {
+                speed = Math.min(0, speed + deceleration * tpf);
+            }
         }
 
         if (audioManager != null) {
@@ -698,8 +728,12 @@ public class AsiKart extends SimpleApplication implements ActionListener, ItemMa
 
         if (Math.abs(speed) > 0.5f) {
             float dirMultiplier = speed > 0 ? 1f : -1f;
-            if (steerLeft) heading += steeringSensitivity * dirMultiplier * tpf;
-            if (steerRight) heading -= steeringSensitivity * dirMultiplier * tpf;
+            if (steerLeft) {
+                heading += steeringSensitivity * dirMultiplier * tpf;
+            }
+            if (steerRight) {
+                heading -= steeringSensitivity * dirMultiplier * tpf;
+            }
         }
 
         if (isDrifting) {
@@ -750,7 +784,9 @@ public class AsiKart extends SimpleApplication implements ActionListener, ItemMa
         for (Geometry boost : currentTrack.getBoostPads()) {
             if (playerKartNode.getLocalTranslation().distance(boost.getLocalTranslation()) < 3.8f) {
                 turboBoostTimer = 2.0f;
-                if (audioManager != null) audioManager.playTurboSound();
+                if (audioManager != null) {
+                    audioManager.playTurboSound();
+                }
             }
         }
 
@@ -764,7 +800,7 @@ public class AsiKart extends SimpleApplication implements ActionListener, ItemMa
         int curMs = (int) ((currentLapTime * 100) % 100);
         String timeStr = String.format("TIME: %02d:%02d.%02d", curMin, curSec, curMs);
 
-        String bestStr = (bestLapTime == Float.MAX_VALUE) ? "--:--.--" : String.format("%02d:%02d.%02d", (int)(bestLapTime/60), (int)(bestLapTime%60), (int)((bestLapTime*100)%100));
+        String bestStr = (bestLapTime == Float.MAX_VALUE) ? "--:--.--" : String.format("%02d:%02d.%02d", (int) (bestLapTime / 60), (int) (bestLapTime % 60), (int) ((bestLapTime * 100) % 100));
         timerHud.setText(timeStr + " | BEST: " + bestStr);
 
         Vector3f targetCheckpoint = waypoints.get(nextCheckpointIdx);
@@ -830,5 +866,16 @@ public class AsiKart extends SimpleApplication implements ActionListener, ItemMa
             rot.lookAt(dir, Vector3f.UNIT_Y);
             ai.setLocalRotation(rot);
         }
+    }
+
+    /**
+     * Checks if an active AsiKart 3D game window instance is currently running
+     * in this JVM process.
+     *
+     * @return true if an active game application instance exists, false
+     * otherwise.
+     */
+    public boolean isGameRunning() {
+        return activeInstance != null;
     }
 }
