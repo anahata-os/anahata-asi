@@ -340,6 +340,27 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
     /**
      * {@inheritDoc}
      * <p>
+     * Implementation details: Checks if the NetBeans DataObject associated with this FileObject
+     * is currently marked as modified in the IDE (i.e. has unsaved editor changes).
+     * </p>
+     */
+    @Override
+    public boolean isModified() {
+        FileObject fo = getFileObject();
+        if (fo != null && fo.isValid()) {
+            try {
+                DataObject dobj = DataObject.find(fo);
+                return dobj != null && dobj.isModified();
+            } catch (Exception e) {
+                log.warn("Failed to check isModified for {}: {}", getName(), e.getMessage());
+            }
+        }
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
      * Implementation details: Checks the validity of the NetBeans
      * FileObject.</p>
      */
