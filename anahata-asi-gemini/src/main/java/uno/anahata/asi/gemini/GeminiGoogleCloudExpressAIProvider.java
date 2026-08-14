@@ -48,7 +48,9 @@ public class GeminiGoogleCloudExpressAIProvider extends GeminiAiProvider {
         manifest.add(createModel("gemini-3.1-pro-preview", "Gemini 3.1 Pro (Preview)", "v3.1", 2097152, 65000));        
         manifest.add(createModel("gemini-3.5-flash", "Gemini 3.5 Flash", "v3.5", 1048576, 65000));
         
-        manifest.add(createModel("gemini-3.1-flash-image-preview", "Gemini 3.1 Flash Image (Preview)", "v3.1", 1048576, 8192));
+        manifest.add(createModel("gemini-3.1-flash-image", "Gemini 3.1 Flash Image", "v3.1", 65536, 65536));
+        manifest.add(createModel("gemini-3.1-flash-lite-image", "Gemini 3.1 Flash Lite Image", "v3.1", 65536, 65536));
+        manifest.add(createModel("gemini-3-pro-image", "Gemini 3 Pro Image", "v3.0", 131072, 32768));
         manifest.add(createModel("gemini-3-pro-preview", "Gemini 3 Pro (Preview)", "v3", 2097152, 8192));
         manifest.add(createModel("gemini-3-flash-preview", "Gemini 3 Flash (Preview)", "v3", 1048576, 8192));
         manifest.add(createModel("gemini-2.5-pro", "Gemini 2.5 Pro", "v2.5", 2097152, 8192));
