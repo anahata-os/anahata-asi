@@ -6,23 +6,22 @@ import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
-import javax.swing.text.Document;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.java.source.*;
 import org.netbeans.api.java.source.support.ReferencesCount;
-import org.netbeans.modules.editor.indent.api.Reformat;
 import org.netbeans.modules.editor.java.Utilities;
 import org.netbeans.modules.java.editor.base.imports.UnusedImports;
-import org.openide.cookies.EditorCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
-import org.openide.loaders.DataObject;
 import uno.anahata.asi.agi.tool.*;
+import uno.anahata.asi.internal.AnahataDiffUtils;
+import uno.anahata.asi.nb.tools.java.coderefiner.FormatMode;
 
 /**
  * V3.0.0 of the structural Java code refinement toolkit. High-precision
@@ -116,42 +115,43 @@ public class CodeRefiner extends AnahataToolkit {
     }
 
     /**
-     * Reformats a file using IDE rules.
-     *
-     * @param filePath the absolute path of the Java file
+     * Reformats a file using IDE rules, logging each step and returning the resulting unified diff.
      * @param save whether to save the file
-     * @return a success message
-     * @throws Exception if reformat fails
+     * @param filePath the absolute path of the Java file
+     * @return the generated unified diff string or a no-changes message
+     * @throws java.lang.Exception if reformat fails
      */
-    @AgiTool("Reformats a file using IDE rules. Only works if the file is open in the editor")
-    public String reformat(
-            @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
-            @AgiToolParam("Whether to save.") boolean save) throws Exception {
-
+    @AgiTool("Reformats a file using IDE rules.")
+        public String reformat(
+                @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
+                @AgiToolParam("Whether to save.") boolean save) throws Exception {
+        log("Resolving FileObject for: " + filePath);
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
-        DataObject doid = DataObject.find(fo);
-        EditorCookie ec = doid.getLookup().lookup(EditorCookie.class);
-        if (ec == null || ec.getOpenedPanes() == null || ec.getOpenedPanes().length == 0) {
-            throw new AgiToolException("File is not open in the editor: " + filePath);
-        }
-        JavaSource js = JavaSource.forFileObject(fo);
-        js.runModificationTask(wc -> {
-            wc.toPhase(JavaSource.Phase.RESOLVED);
-            Document doc = wc.getDocument();
-            if (doc != null) {
-                Reformat reformat = Reformat.get(doc);
-                reformat.lock();
-                try {
-                    reformat.reformat(0, doc.getLength());
-                } finally {
-                    reformat.unlock();
-                }
+        String sourceCode = new String(fo.asBytes(), StandardCharsets.UTF_8);
+        log("Original source code length: " + sourceCode.length() + " chars");
+
+        log("Formatting in memory using FormatMode.ENTIRE_DOCUMENT...");
+        String formatted = JavaSourceUtils.reformat(fo, sourceCode, FormatMode.ENTIRE_DOCUMENT, null);
+        log("Formatted source code length: " + formatted.length() + " chars");
+
+        boolean changed = !sourceCode.equals(formatted);
+        log("Content changed: " + changed);
+
+        String diff = AnahataDiffUtils.generateUnifiedDiff(fo.getNameExt(), sourceCode, formatted);
+
+        if (changed) {
+            if (save) {
+                log("Saving reformatted content...");
+            } else {
+                log("Updating in-memory editor buffer (save=false)...");
             }
-        }).commit();
-        if (save) {
-            JavaSourceUtils.handleSave(fo);
+            JavaSourceUtils.writeContent(fo, formatted, save);
         }
-        return "Reformated: " + fo.getNameExt();
+
+        if (diff.isBlank()) {
+            return "No reformat changes required for " + fo.getNameExt();
+        }
+        return diff;
     }
 
     /**
@@ -186,7 +186,7 @@ public class CodeRefiner extends AnahataToolkit {
      */
     public static String optimizeImportsInMemory(ClasspathInfo cpInfo, String sourceCode, boolean optimize, List<String> explicitImportsToAdd, List<String> explicitImportsToRemove) throws Exception {
         FileObject tempFo = FileUtil.createMemoryFileSystem().getRoot().createData("Temp_OptimizeImports_" + System.nanoTime(), "java");
-        try (java.io.OutputStream os = tempFo.getOutputStream()) {
+        try (OutputStream os = tempFo.getOutputStream()) {
             os.write(sourceCode.getBytes("UTF-8"));
         }
         JavaSource js1 = JavaSource.create(cpInfo, tempFo);
