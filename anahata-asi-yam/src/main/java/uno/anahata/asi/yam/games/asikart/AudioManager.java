@@ -9,8 +9,8 @@ import com.jme3.scene.Node;
 /**
  * AudioManager handles sound effects and audio feedback for AsiKart 3D.
  * <p>
- * Provides jME3 AudioNode management with reliable fallback audio triggers
- * for coins, items, turbo boosts, drift, shell ballistics, and banana slips.
+ * Provides jME3 AudioNode management with reliable fallback audio triggers for
+ * coins, items, turbo boosts, drift, shell ballistics, and banana slips.
  * </p>
  *
  * @author anahata
@@ -155,12 +155,26 @@ public class AudioManager {
      * Stops all active audio nodes.
      */
     public void stopAll() {
-        if (engineSoundNode != null) engineSoundNode.stop();
-        if (coinSoundNode != null) coinSoundNode.stop();
-        if (itemBoxSoundNode != null) itemBoxSoundNode.stop();
-        if (turboSoundNode != null) turboSoundNode.stop();
-        if (shellLaunchNode != null) shellLaunchNode.stop();
-        if (shellImpactNode != null) shellImpactNode.stop();
-        if (bananaSlipNode != null) bananaSlipNode.stop();
+        if (engineSoundNode != null) {
+            engineSoundNode.stop();
+        }
+        if (coinSoundNode != null) {
+            coinSoundNode.stop();
+        }
+        if (itemBoxSoundNode != null) {
+            itemBoxSoundNode.stop();
+        }
+        if (turboSoundNode != null) {
+            turboSoundNode.stop();
+        }
+        if (shellLaunchNode != null) {
+            shellLaunchNode.stop();
+        }
+        if (shellImpactNode != null) {
+            shellImpactNode.stop();
+        }
+        if (bananaSlipNode != null) {
+            bananaSlipNode.stop();
+        }
     }
 }

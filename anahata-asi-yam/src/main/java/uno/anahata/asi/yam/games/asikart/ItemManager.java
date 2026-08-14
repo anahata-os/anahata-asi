@@ -3,7 +3,6 @@ package uno.anahata.asi.yam.games.asikart;
 
 import com.jme3.asset.AssetManager;
 import com.jme3.material.Material;
-import com.jme3.material.RenderState.BlendMode;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
@@ -27,7 +26,7 @@ import java.util.Random;
  *
  * @author anahata
  */
-public class ItemManager {
+public class ItemManager {  
 
     /**
      * Listener interface for item box pickups.
@@ -341,5 +340,26 @@ public class ItemManager {
 
     public void setCoinsCollected(int coins) {
         this.coinsCollected = coins;
+    }
+
+    /**
+     * Returns the total count of currently active in-flight projectiles on the
+     * track (active shells and placed bananas).
+     *
+     * @return The sum of active shells and bananas.
+     */
+    public int getTotalActiveProjectiles() {
+        return activeShells.size() + activeBananas.size();
+    }
+
+    /**
+     * Checks if there are any active banana hazards currently deployed on the
+     * track.
+     *
+     * @return true if at least one banana is active on the track, false
+     * otherwise.
+     */
+    public boolean hasAnyBananas() {
+        return !activeBananas.isEmpty();
     }
 }
