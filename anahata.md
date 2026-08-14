@@ -15,6 +15,7 @@ The project is divided into the following active modules:
 6. **`anahata-asi-web`**: The official ASI Portal and documentation hub.
 7. **`anahata-asi-nb`**: The NetBeans integration module.
 8. **`anahata-asi-yam`**: The "Yet Another Module" for creative and experimental agentic tools.
+9. **`anahata-asi-intellij`**: The IntelliJ IDEA plugin integration module (Lead: Arslan). Provides multi-IDE parity with the NetBeans platform.
 
 ## 3. Strategic Documents
 
@@ -48,6 +49,7 @@ This project uses a set of key documents to guide development. For detailed info
 - **Static should be static**: A method that does not use instance members should be made static.
 - **Thread Awareness**: Toolkit methods can be invoked from background threads (during AI tool execution) or the Event Dispatch Thread (when triggered by user UI actions). The `SwingUtils` class contains convenience methods like `runInEDT` and `runInEDTAndWait` to help handle these transitions safely.
 - **Reactive UI**: Use `PropertyChangeSource` and `EdtPropertyChangeListener` for UI-to-Domain bindings to ensure EDT execution.
+- **Multi-IDE & Cross-Module Synchronization (IntelliJ Lead: Arslan)**: Arslan is actively developing the `anahata-asi-intellij` port. Whenever architectural changes, interface extensions, or contract updates are made to `anahata-asi-core` (e.g., `ResourceHandle.isModified()`), `anahata-asi-swing`, or `uno.anahata.asi.toolkit.resources`, always document the change in `anahata-asi-intellij/anahata.md` and coordinate so the IntelliJ port stays in sync.
 - **Cross-Platform Support**: All toolkits and utilities must support Linux, Windows, and macOS via `OsUtils` and `SystemUtils`.
 - **Standard Toolkit Method creation**: 
     1. extend `AnahataToolkit` and annotate the class with @AgiToolkit("what this toolkit does")
