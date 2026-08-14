@@ -19,6 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
 import org.openide.windows.TopComponent;
 import org.openide.util.ImageUtilities;
+import org.openide.windows.Mode;
+import org.openide.windows.WindowManager;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.status.AgiStatus;
 import uno.anahata.asi.swing.agi.AgiPanel;
@@ -43,7 +45,7 @@ import uno.anahata.asi.swing.internal.SwingUtils;
         persistenceType = TopComponent.PERSISTENCE_ONLY_OPENED)
 @TopComponent.Registration(mode = "editor", openAtStartup = false, position = 102)
 @Slf4j
-public final class AgiTopComponent extends TopComponent {
+public final class AgiTopComponent extends TopComponent implements ReloadableTopComponent {
 
     /**
      * The UI panel for the agi session.
@@ -152,13 +154,21 @@ public final class AgiTopComponent extends TopComponent {
     }
 
     /**
-     * Detaches this TopComponent from its session and panel during module reload, severing references for GC and closing without syncing open=false to the container.
+     * {@inheritDoc}
+     * <p>
+     * Detaches this TopComponent from its session and panel during module
+     * reload, severing references for GC and closing without syncing open=false
+     * to the container.
+     * </p>
      */
+    @Override
     public void detachForNbmReload() {
         this.agiPanel = null;
         this.sessionId = null;
+        removeAll();
         close();
     }
+
     /**
      * {@inheritDoc} Ensures the agi panel is initialized when the component is
      * opened. Uses the professional Container executor to avoid blocking the
@@ -212,11 +222,17 @@ public final class AgiTopComponent extends TopComponent {
      * {@inheritDoc}
      * <p>
      * Authoritatively updates the agi's 'open' status when the component is
-     * closed.
+     * closed, skipping container sync if the close was triggered by an
+     * nbmreload.
      * </p>
      */
     @Override
     protected void componentClosed() {
+        boolean isNbmReload = "true".equals(System.getProperty("anahata.nbmreload.pending"));
+        if (isNbmReload) {
+            AnahataInstaller.logLifecycle("AgiTopComponent.componentClosed() skipping container.close() during nbmreload sessionId=" + sessionId);
+            return;
+        }
         Agi agi = getAgi();
         boolean isOpen = (agi != null && agi.isOpen());
         AnahataInstaller.logLifecycle("AgiTopComponent.componentClosed() ENTER sessionId=" + sessionId + " agi=" + (agi != null ? agi.getShortId() : "null") + " agi.isOpen=" + isOpen);
@@ -283,7 +299,8 @@ public final class AgiTopComponent extends TopComponent {
     }
 
     /**
-     * Gets the agi session managed by this component. Null-safe if session ID is missing or invalid.
+     * Gets the agi session managed by this component. Null-safe if session ID
+     * is missing or invalid.
      */
     public Agi getAgi() {
         if (agiPanel != null) {
@@ -326,9 +343,13 @@ public final class AgiTopComponent extends TopComponent {
      */
     private static final class Resolvable implements Serializable {
 
-        /** The serializable version UID. */
+        /**
+         * The serializable version UID.
+         */
         private static final long serialVersionUID = 1L;
-        /** The unique identifier of the preserved session. */
+        /**
+         * The unique identifier of the preserved session.
+         */
         private final String sessionId;
 
         /**

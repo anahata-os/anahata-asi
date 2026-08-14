@@ -1,7 +1,6 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb;
 
-import java.awt.BorderLayout;
 import lombok.extern.slf4j.Slf4j;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
@@ -9,8 +8,7 @@ import org.openide.windows.TopComponent;
 import uno.anahata.asi.swing.AsiCardsContainerPanel;
 
 /**
- * A TopComponent that displays a list of all active Anahata ASI sessions. It
- * uses the switcher view which defaults to Sticky Notes (Cards).
+ * A TopComponent that displays a list of all active Anahata ASI sessions as visual sticky note cards.
  *
  * @author anahata
  */
@@ -18,7 +16,7 @@ import uno.anahata.asi.swing.AsiCardsContainerPanel;
         preferredID = "AsiCardsTopComponent",
         iconBase = "icons/anahata_16.png",
         persistenceType = TopComponent.PERSISTENCE_ALWAYS)
-@TopComponent.Registration(mode = "navigator", openAtStartup = true, position = 108)
+@TopComponent.Registration(mode = "editor", openAtStartup = true, position = 108)
 @ActionID(category = "Window", id = "uno.anahata.asi.OpenAsiCardsTopComponent")
 @ActionReference(path = "Menu/Window", position = 101)
 @TopComponent.OpenActionRegistration(
@@ -26,46 +24,15 @@ import uno.anahata.asi.swing.AsiCardsContainerPanel;
         preferredID = "AsiCardsTopComponent"
 )
 @Slf4j
-public class AsiCardsTopComponent extends TopComponent {
-
-    /**
-     * The UI panel displaying the active sessions as cards.
-     */
-    private final AsiCardsContainerPanel sessionsPanel;
+public class AsiCardsTopComponent extends AbstractAsiContainerTopComponent<AsiCardsContainerPanel> {
 
     /**
      * Default constructor for the cards view.
      */
-    private AsiCardsTopComponent() {
-        setName("Anahata ASI");
+    public AsiCardsTopComponent() {
+        super(new AsiCardsContainerPanel(AnahataInstaller.getContainer()));
+        setName("ASI Container (Cards)");
         setToolTipText("Manage active AGI sessions");
-        setLayout(new BorderLayout());
-
-        // Use the shared AsiContainer from the installer
-        NetBeansAsiContainer container = AnahataInstaller.getContainer();
-        sessionsPanel = new AsiCardsContainerPanel(container);
-        add(sessionsPanel, BorderLayout.CENTER);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Starts the periodic refresh of the sessions panel.
-     * </p>
-     */
-    @Override
-    public void componentOpened() {
-        sessionsPanel.startRefresh();
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Stops the periodic refresh of the sessions panel.
-     * </p>
-     */
-    @Override
-    public void componentClosed() {
-        sessionsPanel.stopRefresh();
     }
 }
+

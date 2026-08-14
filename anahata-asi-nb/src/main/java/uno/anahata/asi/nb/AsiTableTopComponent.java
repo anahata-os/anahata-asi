@@ -1,7 +1,6 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb;
 
-import java.awt.BorderLayout;
 import lombok.extern.slf4j.Slf4j;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
@@ -26,46 +25,15 @@ import uno.anahata.asi.swing.AsiTableContainerPanel;
         preferredID = "AsiTableTopComponent"
 )
 @Slf4j
-public class AsiTableTopComponent extends TopComponent {
-
-    /**
-     * The UI panel displaying the active sessions in a table.
-     */
-    private final AsiTableContainerPanel sessionsPanel;
+public class AsiTableTopComponent extends AbstractAsiContainerTopComponent<AsiTableContainerPanel> {
 
     /**
      * Default constructor for the table view.
      */
-    private AsiTableTopComponent() {
-        setName("Anahata ASI (Table)");
+    public AsiTableTopComponent() {
+        super(new AsiTableContainerPanel(AnahataInstaller.getContainer()));
+        setName("ASI Container (Table)");
         setToolTipText("Manage active AGI sessions in a tabular view");
-        setLayout(new BorderLayout());
-
-        // Use the shared AsiContainer from the installer
-        NetBeansAsiContainer container = AnahataInstaller.getContainer();
-        sessionsPanel = new AsiTableContainerPanel(container);
-        add(sessionsPanel, BorderLayout.CENTER);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Starts the periodic refresh of the sessions table.
-     * </p>
-     */
-    @Override
-    public void componentOpened() {
-        sessionsPanel.startRefresh();
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Stops the periodic refresh of the sessions table.
-     * </p>
-     */
-    @Override
-    public void componentClosed() {
-        sessionsPanel.stopRefresh();
     }
 }
+
