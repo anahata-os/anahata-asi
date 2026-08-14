@@ -22,11 +22,10 @@ import org.openide.util.NbBundle.Messages;
         id = "uno.anahata.asi.nb.NewAgiAction"
 )
 @ActionRegistration(
-        displayName = "#CTL_NewAgiAction",
+        displayName = "New AGI",
         iconBase = "icons/anahata_16.png"
 )
 @ActionReference(path = "Menu/Window", position = 100)
-@Messages("CTL_NewAgiAction=New AGI")
 public final class NewAgiAction implements ActionListener {
 
     /**
