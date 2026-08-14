@@ -195,7 +195,14 @@ public abstract class AbstractTextResourceWrite {
         // 1. Authoritative state capture
         captureOriginalContent(agi);
 
-        // 2. Optimistic Locking Check
+        // 2. Unsaved Modifications Check (Data Loss Protection)
+        if (res.getHandle().isModified()) {
+            throw new AgiToolException("Operation rejected: '" + res.getName()
+                    + "' has unsaved modifications in the editor. "
+                    + "Please save (Ctrl+S) or discard your changes before applying this tool.");
+        }
+
+        // 3. Optimistic Locking Check
         long actualLm = res.getHandle().getLastModified();
         if (lastModified > 0 && lastModified != actualLm) {
             throw new AgiToolException("Optimistic locking failure for " + res.getName() + ". The time stamp provided doesn't match the last modified timestamp on disk: " + actualLm + " (provided: " + lastModified + ").");
