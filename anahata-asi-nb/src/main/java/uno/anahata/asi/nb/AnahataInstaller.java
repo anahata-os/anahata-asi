@@ -61,6 +61,15 @@ public class AnahataInstaller extends ModuleInstall {
         return container;
     }
 
+    /**
+     * Appends a timestamped lifecycle diagnostic entry to {@code ~/.anahata/asi/netbeans/lifecycle.log}.
+     * <p>
+     * Includes the active {@link ClassLoader}, thread name, and message to provide full traceability
+     * during module initialization, restoration, and {@code nbmreload} cycles.
+     * </p>
+     *
+     * @param message The diagnostic message to record in the lifecycle log.
+     */
     public static synchronized void logLifecycle(String message) {
         try {
             Path logFile = NetBeansAsiContainer.getWorkDirSubDir("netbeans").resolve("lifecycle.log");
