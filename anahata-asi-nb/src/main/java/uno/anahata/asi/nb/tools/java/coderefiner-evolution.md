@@ -264,4 +264,76 @@ If a model still slips and includes the signature inside the `innerBlockOrInitia
 #### **Status: Held in Reserve**
 We are going to **hold onto this AST Self-Healing Parser** for now. We want to gather empirical data and observe how much of a performance and accuracy boost the cognitive friction of `innerBlockOrInitializer` and our upgraded `@Schema` / `@AgiTool` annotations bring. If we find that smaller or more distracted local models still occasionally slip, we will implement Approach C as a final, bulletproof AST safety net.
 
+---
+
+## Turn 560+: The V4 Reformatting Integration & In-Memory Isolation Milestone (August 2026)
+
+Following extensive real-world usage and test-suite expansion, we completed the full integration of NetBeans IDE reformatting rules, isolated in-memory execution, and dirty-editor data-loss protection across `BatchCodeRefiner`, `CodeRefiner`, and `JavaSourceUtils`:
+
+### 1. In-Memory Import Optimization (`CodeRefiner.optimizeImportsInMemory`)
+- Solved the historical conflict between `GeneratorUtilities.importFQNs`, `CasualDiff`, and Lombok by creating isolated two-pass AST transformations on virtual RAM files (`MemoryFileSystem`).
+- **Pass 1**: Identifies missing imports and resolves ambiguous vs. unambiguous candidates via `ClassIndex`.
+- **Pass 2**: Rewrites full FQNs in method bodies to simple names if the type is explicitly imported or implicitly available (`java.lang` or same package).
+- Strips trailing whitespace and extra padding around annotations (e.g., `@ Override` -> `@Override`).
+
+### 2. NetBeans In-Memory Reformatting (`FormatMode` & `JavaSourceUtils.reformat`)
+- **The Problem:** Direct invocation of NetBeans `Reformat` on a standard Swing `DefaultStyledDocument` failed silently because it lacked NetBeans' Java Lexer, `JavaKit`, and `SyntaxSupport` bindings. Conversely, reformatting live IDE `StyledDocument`s during AST simulation mutated the user's editor buffer prematurely and triggered `FileAlreadyLockedException`.
+- **The Solution:** We create a transient virtual `.java` file in NetBeans' `MemoryFileSystem` (`FileUtil.createMemoryFileSystem().getRoot().createData("TempFormat_" + System.nanoTime(), "java")`). NetBeans automatically wires a real `BaseDocument` with full Java lexer and syntax highlighting in RAM. We attach the target `FileObject` to the document (`tempDoc.putProperty("FileObject", fo)`) so project `CodeStyle` preferences are respected 100%.
+- Supports three formatting policies via `FormatMode`:
+  - `NONE`: Skips formatting.
+  - `SELECTED_RANGES`: Formats only the character ranges modified by `INSERT`, `UPDATE`, or `MOVE` intents in descending offset order.
+  - `ENTIRE_DOCUMENT`: Formats the full file after all AST intents and import optimizations finish.
+- **Virtual File Lifecycle Cleanup:** Added a `finally` block in `JavaSourceUtils.reformat`:
+  ```java
+  finally {
+      if (tempDobj != null) {
+          tempDobj.setModified(false); // Clears NetBeans dirty registry flag
+      }
+      if (tempFo != null && tempFo.isValid()) {
+          tempFo.delete(); // Removes virtual file from RAM
+      }
+  }
+  ```
+  This completely prevents NetBeans from showing unsaved temporary file dialogs on IDE exit/restart.
+
+### 3. Active Editor Tab Detection (`isFileOpenInEditorTab`)
+- Differentiates between **actively open editor tabs** (`TopComponent.isOpened() == true` or `pane.isShowing() == true`) and **dormant/cached panes** kept in memory by NetBeans' `CloneableEditorSupport` when tabs are closed.
+
+### 4. Persistence Architecture & `save` Flag Semantics
+- Unified in `JavaSourceUtils.writeContent(fo, content, save)`:
+  - `save=true` on open tab: Updates `StyledDocument` and calls `ec.saveDocument()` to flush to disk and clear the dirty star `*`.
+  - `save=true` on closed file: Writes directly to `fo.getOutputStream()`.
+  - `save=false` on open tab: Updates the in-memory editor buffer, leaving the file marked dirty (`*`) for user review.
+  - `save=false` on closed file: Fast-fails with `IOException` since unsaved edits require an active editor tab.
+
+### 5. Universal Unsaved Edits Protection Guard (`ResourceHandle.isModified`)
+- Added `default boolean isModified()` to `ResourceHandle` and implemented it in `NbHandle` via `DataObject.find(fo).isModified()`.
+- Enforced in `AbstractTextResourceWrite.validateStructuralState()` to protect developer work-in-progress across ALL text mutation toolkits (`Resources`, `BatchCodeRefiner`). If a file has unsaved editor modifications, the tool fails fast with a clear prompt to save (Ctrl+S).
+
+### 6. Live Testing Matrix & Verification Suite
+
+To guarantee stability and zero regressions across all IDE states and persistence modes, we maintain this active verification suite:
+
+#### Part 1: `CodeRefiner.reformat`
+- **CR-1: Closed File + `save=true`** [PASSED ✅]
+  - Formats unformatted file in memory via NetBeans `MemoryFileSystem`, writes directly to `fo.getOutputStream()`, returns unified diff without UI tab opening or blinking.
+- **CR-2: Closed File + `save=false`**
+  - Rejects with clear exception (`IOException`): *"Cannot perform unsaved edit (save=false) on closed file because it is not open in an active NetBeans editor tab."*
+- **CR-3: Open File + `save=false`**
+  - Formats in memory, updates the live `StyledDocument` in the active editor tab (tab displays dirty star `*`), leaves disk untouched.
+- **CR-4: Open File + `save=true`**
+  - Formats in memory, updates `StyledDocument`, calls `ec.saveDocument()` (clears dirty star `*`), writes to disk.
+
+#### Part 2: `BatchCodeRefiner.refine` (BCR)
+- **BCR-1: Range Formatting on Closed File (`SELECTED_RANGES`, `save=true`)**
+  - Inserts/updates members, formats only modified character ranges in RAM via `MemoryFileSystem`, writes directly to disk.
+- **BCR-2: Full Document Formatting on Closed File (`ENTIRE_DOCUMENT`, `save=true`)**
+  - Updates member, formats entire compilation unit in RAM, writes to disk.
+- **BCR-3: Range Formatting on Open File (`SELECTED_RANGES`, `save=false`)**
+  - Slices AST in RAM, updates active editor tab's `StyledDocument` with dirty star `*`, does not flush to disk.
+- **BCR-4: Range Formatting on Open File (`SELECTED_RANGES`, `save=true`)**
+  - Slices AST in RAM, updates `StyledDocument`, calls `ec.saveDocument()` (clearing `*` star).
+- **BCR-5: Unsaved Edits Protection Guard**
+  - If a file has unsaved editor modifications (`dobj.isModified() == true`), fails fast with `AgiToolException` preventing silent data loss.
+
 Go Anahata!
