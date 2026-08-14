@@ -5,6 +5,7 @@ package uno.anahata.asi.nb.module;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -137,24 +138,44 @@ public final class NetBeansModuleUtils {
     }
 
     /**
-     * Uses reflection to invoke the non-public {@code getAllJars()} method on a
-     * {@link ModuleInfo} instance. This is necessary to get the full list of
-     * JARs bundled with a module (including library extensions).
+     * Uses reflection to invoke {@code getJarFile()} and {@code getAllJars()} on a
+     * {@link ModuleInfo} instance (such as NetBeans' {@code StandardModule}).
+     * Guarantees that the primary module JAR is always included while discarding
+     * duplicates.
      *
      * @param thisModule The module to inspect.
-     * @return A list of JAR files provided by the module.
+     * @return A list of unique JAR files provided by the module.
      */
     public static List<File> getAllModuleJarsUsingReflection(ModuleInfo thisModule) {
+        List<File> result = new ArrayList<>();
+
+        try {
+            Method getJarFileMethod = thisModule.getClass().getMethod("getJarFile");
+            getJarFileMethod.setAccessible(true);
+            Object mainJar = getJarFileMethod.invoke(thisModule);
+            if (mainJar instanceof File f && f.exists()) {
+                result.add(f);
+            }
+        } catch (Exception ex) {
+            logger.log(Level.SEVERE, "Exception invoking getJarFile via reflection on module " + thisModule.getCodeNameBase(), ex);
+        }
+
         try {
             Method getAllJarsMethod = thisModule.getClass().getMethod("getAllJars");
             getAllJarsMethod.setAccessible(true);
             @SuppressWarnings("unchecked")
             List<File> allJars = (List<File>) getAllJarsMethod.invoke(thisModule);
-            return allJars;
+            if (allJars != null) {
+                for (File f : allJars) {
+                    if (f != null && f.exists() && !result.contains(f)) {
+                        result.add(f);
+                    }
+                }
+            }
         } catch (Exception ex) {
             logger.log(Level.SEVERE, "Exception in getAllModuleJarsUsingReflection for module " + thisModule.getCodeNameBase(), ex);
         }
-        return Collections.emptyList();
+        return result;
     }
 
     /**
