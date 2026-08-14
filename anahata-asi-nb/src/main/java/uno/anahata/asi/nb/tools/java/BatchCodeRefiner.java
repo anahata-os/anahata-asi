@@ -113,14 +113,9 @@ public class BatchCodeRefiner extends AnahataToolkit {
 
         String finalText = batch.calculateResultingContent(getAgi());
 
-        try (OutputStream os = fo.getOutputStream()) {
-            os.write(finalText.getBytes());
-        }
+        JavaSourceUtils.writeContent(fo, finalText, batch.isSave());
 
         batch.setResultingContent(finalText);
-        if (batch.isSave()) {
-            JavaSourceUtils.handleSave(fo);
-        }
 
         return batch.getUnifiedDiff(getAgi());
     }
@@ -398,121 +393,5 @@ public class BatchCodeRefiner extends AnahataToolkit {
         };
     }
 
-    /**
-     * Reformats Java source content in memory using NetBeans Reformat engineand
-     * project CodeStyle preferences.
-     *
-     * @author anahata
-     * @param fo The target FileObject providing project context and CodeStyle
-     * options.
-     * @param content The Java source text to format.
-     * @return The formatted Java source text.
-     */
-    public static String reformatFileInMemory(FileObject fo, String content) {
-        if (fo == null || content == null || content.isBlank()) {
-            log.warn("reformatFileInMemory skipped: fo is {}, content length is {}", fo, (content != null ? content.length() : "null"));
-            return content;
-        }
-        try {
-            DataObject dobj = DataObject.find(fo);
-            if (dobj == null) {
-                log.warn("reformatFileInMemory failed: DataObject is null for FileObject {}", fo.getNameExt());
-                return content;
-            }
 
-            EditorCookie ec = dobj.getLookup().lookup(EditorCookie.class);
-            if (ec == null) {
-                log.warn("reformatFileInMemory failed: EditorCookie is null for DataObject {}", dobj.getName());
-                return content;
-            }
-
-            StyledDocument doc = ec.openDocument();
-            if (doc == null) {
-                log.warn("reformatFileInMemory failed: StyledDocument is null for FileObject {}", fo.getNameExt());
-                return content;
-            }
-
-            String docText = doc.getText(0, doc.getLength());
-            if (!docText.equals(content)) {
-                doc.remove(0, doc.getLength());
-                doc.insertString(0, content, null);
-            }
-
-            Reformat reformat = Reformat.get(doc);
-            if (reformat != null) {
-                reformat.lock();
-                try {
-                    reformat.reformat(0, doc.getLength());
-                } finally {
-                    reformat.unlock();
-                }
-                return doc.getText(0, doc.getLength());
-            } else {
-                log.warn("reformatFileInMemory failed: Reformat instance is null for StyledDocument in {}", fo.getNameExt());
-            }
-        } catch (Exception e) {
-            log.warn("Failed to reformat file in memory for {}: {}", fo.getNameExt(), e.getMessage(), e);
-        }
-        return content;
-    }
-
-    /**
-     * Reformats specific character ranges of Java source content in memory using NetBeans Reformat engine and project CodeStyle preferences. Iterates in bottom-to-top order to preserve character offset accuracy.
-     * @param ranges List of 2-element integer arrays [startOffset, endOffset] to reformat.
-     * @param fo The target FileObject providing project context and CodeStyle options.
-     * @param content The Java source text to format.
-     * @return The formatted Java source text.
-     */
-    public static String reformatRangesInMemory(FileObject fo, String content, List<int[]> ranges) {
-        if (fo == null || content == null || content.isBlank() || ranges == null || ranges.isEmpty()) {
-            return content;
-        }
-        try {
-            DataObject dobj = DataObject.find(fo);
-            if (dobj == null) {
-                log.warn("reformatRangesInMemory failed: DataObject is null for FileObject {}", fo.getNameExt());
-                return content;
-            }
-
-            EditorCookie ec = dobj.getLookup().lookup(EditorCookie.class);
-            if (ec == null) {
-                log.warn("reformatRangesInMemory failed: EditorCookie is null for DataObject {}", dobj.getName());
-                return content;
-            }
-
-            StyledDocument doc = ec.openDocument();
-            if (doc == null) {
-                log.warn("reformatRangesInMemory failed: StyledDocument is null for FileObject {}", fo.getNameExt());
-                return content;
-            }
-
-            String docText = doc.getText(0, doc.getLength());
-            if (!docText.equals(content)) {
-                doc.remove(0, doc.getLength());
-                doc.insertString(0, content, null);
-            }
-
-            Reformat reformat = Reformat.get(doc);
-            if (reformat != null) {
-                reformat.lock();
-                try {
-                    List<int[]> sortedRanges = new ArrayList<>(ranges);
-                    sortedRanges.sort((a, b) -> Integer.compare(b[0], a[0]));
-                    for (int[] range : sortedRanges) {
-                        int start = Math.max(0, Math.min(range[0], doc.getLength()));
-                        int end = Math.max(start, Math.min(range[1], doc.getLength()));
-                        if (start < end) {
-                            reformat.reformat(start, end);
-                        }
-                    }
-                } finally {
-                    reformat.unlock();
-                }
-                return doc.getText(0, doc.getLength());
-            }
-        } catch (Exception e) {
-            log.warn("Failed to reformat ranges in memory for {}: {}", fo.getNameExt(), e.getMessage(), e);
-        }
-        return content;
-    }
 }
