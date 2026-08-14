@@ -275,7 +275,7 @@ public class CodeRefinementBatchTest {
         if (!finalContent.contains("* The third constant.") || !finalContent.contains("THIRD;")) {
             throw new Exception("Test 13 Failed: Enum constant Javadoc missing or malformed!");
         }
-        if (!finalContent.contains("* The third constant with args.") || !finalContent.contains("THIRD (\"third\");")) {
+        if (!finalContent.contains("* The third constant with args.") || (!finalContent.contains("THIRD (\"third\");") && !finalContent.contains("THIRD(\"third\");"))) {
             throw new Exception("Test 15 Failed: Enum constant with args Javadoc missing or malformed!");
         }
         /*

@@ -12,10 +12,14 @@ public class SmallTestClass {
      * Inner Class Doc.
      */
     public static class InnerTest {
+
         private String b;
 
         private final String description = "123";
-        public void foo() {}
+
+        public void foo() {
+        }
+
         @Deprecated
         public void bar() {
             System.out.println("bar");
@@ -30,7 +34,6 @@ public class SmallTestClass {
         System.out.println("A");
 
         // Space!
-
         System.out.println("B");
     }
 
@@ -41,11 +44,11 @@ public class SmallTestClass {
         java.util.List<R> list = new java.util.ArrayList<>();
 
         // Look at this beautiful blank line!
-
         return list;
     }
 
     public static class GenericInner<X, Y> {
+
         private X first;
         private Y second;
     }
@@ -66,9 +69,13 @@ public class SmallTestClass {
      * A test enum.
      */
     public enum TestEnum {
-        /** First doc */
+        /**
+         * First doc
+         */
         FIRST,
-        /** Second doc */
+        /**
+         * Second doc
+         */
         SECOND,
         /**
          * The third constant.
@@ -78,17 +85,21 @@ public class SmallTestClass {
 
     @lombok.Getter
     public enum TestEnum2 {
-        FIRST ("first"),
-        /** Second doc */
-        SECOND ("second"),
+        FIRST("first"),
+        /**
+         * Second doc
+         */
+        SECOND("second"),
         /**
          * The third constant with args.
          */
-        THIRD ("third");
+        THIRD("third");
 
-        /** First doc */
+        /**
+         * First doc
+         */
         private TestEnum2(String displayValue) {
-        this.displayValue = displayValue;
+            this.displayValue = displayValue;
         }
         String displayValue;
     }

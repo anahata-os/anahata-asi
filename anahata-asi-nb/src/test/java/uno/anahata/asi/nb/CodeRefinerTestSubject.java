@@ -1,6 +1,5 @@
 package uno.anahata.asi.nb;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -22,4 +21,8 @@ public class CodeRefinerTestSubject<T extends Number,
     }
     
     public record ComplexRecord<Z>(Optional<Z> opt) {}
+
+    public void testFormattedRangeMethod(String name) {
+        System.out.println("Hello, " + name);
+    }
 }
