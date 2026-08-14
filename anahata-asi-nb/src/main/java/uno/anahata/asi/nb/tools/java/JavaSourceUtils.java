@@ -31,6 +31,12 @@ import uno.anahata.asi.agi.tool.AgiToolException;
 import org.openide.loaders.DataObject;
 import org.openide.cookies.EditorCookie;
 import org.openide.cookies.SaveCookie;
+import javax.swing.text.StyledDocument;
+import javax.swing.text.DefaultStyledDocument;
+import org.netbeans.modules.editor.indent.api.Reformat;
+import uno.anahata.asi.nb.tools.java.coderefiner.FormatMode;
+import java.nio.charset.StandardCharsets;
+import java.io.OutputStream;
 
 /**
  * Shared utilities for NetBeans Java Source (AST) operations.
@@ -429,6 +435,142 @@ public class JavaSourceUtils {
             sc.save();
         }
         fo.refresh();
+    }
+
+    /**
+     * Checks if a file is currently open in an active, visible NetBeans UI editor tab.
+     * Differentiates between active tabs and cached/closed editor components.
+     *
+     * @param ec The EditorCookie associated with the file's DataObject.
+     * @return true if the file is open in a visible/opened TopComponent in the UI editor.
+     */
+    public static boolean isFileOpenInEditorTab(EditorCookie ec) {
+        if (ec == null || ec.getOpenedPanes() == null) {
+            return false;
+        }
+        for (javax.swing.JEditorPane pane : ec.getOpenedPanes()) {
+            if (pane.isShowing()) {
+                return true;
+            }
+            java.awt.Container parent = pane.getParent();
+            while (parent != null) {
+                if (parent instanceof org.openide.windows.TopComponent tc && tc.isOpened()) {
+                    return true;
+                }
+                parent = parent.getParent();
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Reformats Java source text in memory using an isolated virtual file in NetBeans MemoryFileSystem,
+     * NetBeans Reformat engine, and project CodeStyle preferences.
+     *
+     * @param fo The target FileObject providing project context and CodeStyle options.
+     * @param content The Java source text to format.
+     * @param mode The FormatMode (NONE, SELECTED_RANGES, ENTIRE_DOCUMENT).
+     * @param ranges List of [start, end] offset pairs (used when mode == SELECTED_RANGES).
+     * @return The formatted Java source text.
+     */
+    public static String reformat(FileObject fo, String content, FormatMode mode, List<int[]> ranges) {
+        if (fo == null || content == null || content.isBlank() || mode == null || mode == FormatMode.NONE) {
+            return content;
+        }
+        FileObject tempFo = null;
+        DataObject tempDobj = null;
+        try {
+            tempFo = FileUtil.createMemoryFileSystem().getRoot()
+                    .createData("TempFormat_" + System.nanoTime(), "java");
+
+            try (OutputStream os = tempFo.getOutputStream()) {
+                os.write(content.getBytes(StandardCharsets.UTF_8));
+            }
+
+            tempDobj = DataObject.find(tempFo);
+            EditorCookie tempEc = (tempDobj != null) ? tempDobj.getLookup().lookup(EditorCookie.class) : null;
+            StyledDocument tempDoc = (tempEc != null) ? tempEc.openDocument() : null;
+
+            if (tempDoc != null) {
+                tempDoc.putProperty("FileObject", fo);
+
+                Reformat reformat = Reformat.get(tempDoc);
+                if (reformat != null) {
+                    reformat.lock();
+                    try {
+                        if (mode == FormatMode.ENTIRE_DOCUMENT) {
+                            reformat.reformat(0, tempDoc.getLength());
+                        } else if (mode == FormatMode.SELECTED_RANGES && ranges != null && !ranges.isEmpty()) {
+                            List<int[]> sortedRanges = new ArrayList<>(ranges);
+                            sortedRanges.sort((a, b) -> Integer.compare(b[0], a[0]));
+                            for (int[] range : sortedRanges) {
+                                int start = Math.max(0, Math.min(range[0], tempDoc.getLength()));
+                                int end = Math.max(start, Math.min(range[1], tempDoc.getLength()));
+                                if (start < end) {
+                                    reformat.reformat(start, end);
+                                }
+                            }
+                        }
+                    } finally {
+                        reformat.unlock();
+                    }
+                    return tempDoc.getText(0, tempDoc.getLength());
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to reformat in memory for {}: {}", fo.getNameExt(), e.getMessage(), e);
+        } finally {
+            if (tempDobj != null) {
+                tempDobj.setModified(false);
+            }
+            if (tempFo != null && tempFo.isValid()) {
+                try {
+                    tempFo.delete();
+                } catch (IOException e) {
+                    // Ignore
+                }
+            }
+        }
+        return content;
+    }
+
+    /**
+     * Writes content to a FileObject and manages disk/editor persistence based on the save flag.
+     *
+     * @param fo The target FileObject.
+     * @param content The content to write.
+     * @param save Whether to save the file to disk/editor.
+     * @throws IOException If writing, saving, or location updates fail.
+     */
+    public static void writeContent(FileObject fo, String content, boolean save) throws IOException {
+        DataObject dobj = DataObject.find(fo);
+        EditorCookie ec = (dobj != null) ? dobj.getLookup().lookup(EditorCookie.class) : null;
+
+        if (isFileOpenInEditorTab(ec)) {
+            try {
+                StyledDocument doc = ec.openDocument();
+                if (!doc.getText(0, doc.getLength()).equals(content)) {
+                    doc.remove(0, doc.getLength());
+                    doc.insertString(0, content, null);
+                }
+                if (save) {
+                    ec.saveDocument();
+                }
+            } catch (javax.swing.text.BadLocationException e) {
+                throw new IOException("Failed to update open editor document for " + fo.getNameExt(), e);
+            }
+        } else {
+            if (!save) {
+                throw new IOException("Cannot perform unsaved edit (save=false) on " + fo.getNameExt()
+                        + " because the file is not open in an active NetBeans editor tab.");
+            }
+            try (OutputStream os = fo.getOutputStream()) {
+                os.write(content.getBytes(StandardCharsets.UTF_8));
+            }
+        }
+        if (save) {
+            handleSave(fo);
+        }
     }
 
 }
