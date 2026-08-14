@@ -1,6 +1,10 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.intellij.tools.project;
 
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.compiler.CompileScope;
+import com.intellij.openapi.compiler.CompilerManager;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import lombok.extern.slf4j.Slf4j;
@@ -10,9 +14,13 @@ import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiTool;
+import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -312,5 +320,90 @@ public class Projects extends AnahataToolkit {
             pcp.setProviding(enabled);
             log.info("Project context for {} set to: {}", projectPath, enabled);
         });
+    }
+
+    /**
+     * Compiles a project and returns a synchronous build result (error/warning counts).
+     * <p>
+     * Mirrors the NetBeans {@code Projects.invokeAction} build/rebuild capability using
+     * IntelliJ's {@link CompilerManager}. Compilation is triggered on the EDT and this
+     * method blocks on a latch off the EDT until the asynchronous build completes, so the
+     * model receives the actual outcome rather than a fire-and-forget acknowledgement.
+     * </p>
+     *
+     * @param projectPath the absolute path of the open project to build.
+     * @param rebuild     {@code true} to force a full rebuild; {@code false} for an incremental make.
+     * @return a human-readable build summary.
+     * @throws AgiToolException if the project is not open or the build is interrupted.
+     */
+    @AgiTool("Compiles (make) or rebuilds an open project and returns the error/warning counts.")
+    public String buildProject(
+            @AgiToolParam("The absolute path of the open project to build.") String projectPath,
+            @AgiToolParam("True to force a full rebuild; false for an incremental make.") boolean rebuild) throws AgiToolException {
+
+        Project project = findProjectByPath(projectPath);
+        if (project == null) {
+            throw new AgiToolException("Project is not open: " + projectPath);
+        }
+
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<String> summary = new AtomicReference<>("Build did not report a result.");
+        ApplicationManager.getApplication().invokeLater(() -> {
+            CompilerManager compilerManager = CompilerManager.getInstance(project);
+            CompileScope scope = compilerManager.createProjectCompileScope(project);
+            com.intellij.openapi.compiler.CompileStatusNotification callback = (aborted, errors, warnings, context) -> {
+                summary.set((aborted ? "Build aborted. " : "Build finished. ")
+                        + "Errors: " + errors + ", Warnings: " + warnings + ".");
+                latch.countDown();
+            };
+            if (rebuild) {
+                compilerManager.rebuild(callback);
+            } else {
+                compilerManager.make(scope, callback);
+            }
+        });
+
+        try {
+            if (!latch.await(20, TimeUnit.MINUTES)) {
+                return "Build of " + projectPath + " is still running after 20 minutes (see the Build tool window).";
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new AgiToolException("Build interrupted for: " + projectPath);
+        }
+        log(summary.get());
+        return summary.get();
+    }
+
+    /**
+     * Persists all unsaved editor documents across the IDE to disk.
+     * <p>
+     * Useful before a build or an external tool run so on-disk state matches the editor.
+     * </p>
+     *
+     * @return a confirmation message.
+     */
+    @AgiTool("Saves all unsaved editor documents across the IDE to disk.")
+    public String saveAllDocuments() {
+        ApplicationManager.getApplication().invokeAndWait(() ->
+                FileDocumentManager.getInstance().saveAllDocuments());
+        return "Saved all documents.";
+    }
+
+    /**
+     * Resolves an open {@link Project} by its canonical base path.
+     *
+     * @param projectPath the absolute base path.
+     * @return the matching open project, or {@code null} if none is open at that path.
+     */
+    private Project findProjectByPath(String projectPath) {
+        String target = Path.of(projectPath).toAbsolutePath().toString();
+        for (Project project : ProjectManager.getInstance().getOpenProjects()) {
+            String basePath = project.getBasePath();
+            if (basePath != null && Path.of(basePath).toAbsolutePath().toString().equals(target)) {
+                return project;
+            }
+        }
+        return null;
     }
 }

@@ -59,6 +59,99 @@
             <version>261.25134.95</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.jetbrains.intellij.java</groupId>
+            <artifactId>java-psi</artifactId>
+            <version>261.25134.95</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.jetbrains.intellij.java</groupId>
+            <artifactId>java-impl</artifactId>
+            <version>261.25134.95</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- Java refactoring processors (PullUp/PushDown/ChangeSignature/Inline/ExtractSuperclass). -->
+        <dependency>
+            <groupId>com.jetbrains.intellij.java</groupId>
+            <artifactId>java-impl-refactorings</artifactId>
+            <version>261.25134.95</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- Bundled Maven plugin API (MavenProjectsManager, MavenRunner, ...).
+             Transitives are excluded: many (packagesearch, ai.grazie.*) are unpublished
+             internal JetBrains artifacts. Scope is provided, so the real classes are
+             supplied by the running IDE; only the API surface is needed to compile. -->
+        <dependency>
+            <groupId>com.jetbrains.intellij.maven</groupId>
+            <artifactId>maven</artifactId>
+            <version>261.25134.95</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- Maven domain model (MavenId). -->
+        <dependency>
+            <groupId>com.jetbrains.intellij.maven</groupId>
+            <artifactId>maven-model</artifactId>
+            <version>261.25134.95</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- Maven server model (MavenArtifact and resolved-dependency types). -->
+        <dependency>
+            <groupId>com.jetbrains.intellij.maven</groupId>
+            <artifactId>maven-server</artifactId>
+            <version>261.25134.95</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- Repository search model (MavenRepositoryArtifactInfo) for Maven index search. -->
+        <dependency>
+            <groupId>com.jetbrains.intellij.repository</groupId>
+            <artifactId>repository-search-common</artifactId>
+            <version>261.25134.95</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- Bundled Terminal plugin API (TerminalToolWindowManager, ShellTerminalWidget). -->
+        <dependency>
+            <groupId>com.jetbrains.intellij.terminal</groupId>
+            <artifactId>terminal</artifactId>
+            <version>261.25134.95</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
 
     <build>

@@ -10,9 +10,37 @@
 
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.java</depends>
+    <!-- Bundled plugins whose classes the Maven and Terminal toolkits use. Declared so their
+         classloaders are on Anahata's classpath at runtime. -->
+    <depends>org.jetbrains.idea.maven</depends>
+    <depends>org.jetbrains.plugins.terminal</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="Anahata ASI" secondary="true" icon="AllIcons.General.Web" anchor="right"
+        <toolWindow id="Anahata ASI" secondary="true" icon="/icons/anahataToolWindow.png" anchor="right"
                     factoryClass="uno.anahata.asi.intellij.AnahataToolWindowFactory"/>
+        <!-- Badges Project-view files that are in one or more active AGI session contexts. -->
+        <projectViewNodeDecorator
+                implementation="uno.anahata.asi.intellij.tools.ide.context.AgiContextDecorator"/>
+        <!-- Surfaces anahata.md as a branded node at the top of the Project view. -->
+        <treeStructureProvider
+                implementation="uno.anahata.asi.intellij.tools.ide.nodes.AnahataTreeStructureProvider"/>
+        <!-- Persisted plugin defaults + native Settings page under Tools. -->
+        <applicationService serviceImplementation="uno.anahata.asi.intellij.settings.AnahataSettings"/>
+        <applicationConfigurable parentId="tools" id="anahata.asi.settings" displayName="Anahata ASI"
+                                 instance="uno.anahata.asi.intellij.settings.AnahataConfigurable"/>
+        <!-- Active-sessions status-bar widget. -->
+        <statusBarWidgetFactory id="AnahataAsiStatusWidget"
+                                implementation="uno.anahata.asi.intellij.ui.status.AnahataStatusBarWidgetFactory"/>
+        <!-- Balloon notification group for Anahata events. -->
+        <notificationGroup id="Anahata ASI" displayType="BALLOON"/>
     </extensions>
+
+    <actions>
+        <!-- "AGI Context" submenu on the Project-view right-click menu: one toggle per active session. -->
+        <group id="Anahata.AgiContext"
+               class="uno.anahata.asi.intellij.tools.ide.actions.AgiContextActionGroup"
+               text="AGI Context" popup="true">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        </group>
+    </actions>
 </idea-plugin>

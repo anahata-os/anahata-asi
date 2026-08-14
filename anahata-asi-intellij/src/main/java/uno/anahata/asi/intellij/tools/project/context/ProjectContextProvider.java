@@ -38,15 +38,15 @@ public class ProjectContextProvider extends AbstractProjectContextProvider {
         this.project = project;
         
         // Register with parent
-        this.setParent(projectsToolkit);
+        this.setParentProvider(projectsToolkit);
         
         // Initialize structural children
         ProjectStructureContextProvider structure = new ProjectStructureContextProvider(projectsToolkit, projectPath);
-        structure.setParent(this);
+        structure.setParentProvider(this);
         children.add(structure);
 
         ProjectAlertsContextProvider alerts = new ProjectAlertsContextProvider(projectsToolkit, projectPath);
-        alerts.setParent(this);
+        alerts.setParentProvider(this);
         children.add(alerts);
 
         // Sync anahata.md on creation
@@ -89,6 +89,14 @@ public class ProjectContextProvider extends AbstractProjectContextProvider {
         ragMessage.addTextPart(sb.toString());
     }
 
+    /**
+     * Synchronizes the project's {@code anahata.md} instructions file with the session's resource
+     * manager to reflect this provider's active state.
+     * <p>
+     * When providing, ensures {@code anahata.md} exists (creating a stub if needed) and registers it
+     * at the {@code SYSTEM_INSTRUCTIONS} context position; when not providing, unregisters it.
+     * </p>
+     */
     private void syncMdResource() {
         if (projectPath == null) return;
         String mdPath = Path.of(projectPath).resolve("anahata.md").toAbsolutePath().toString();
