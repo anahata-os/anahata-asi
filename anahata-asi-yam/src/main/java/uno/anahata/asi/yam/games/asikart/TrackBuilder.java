@@ -7,7 +7,6 @@ import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
-import com.jme3.math.Spline;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.Geometry;
@@ -26,12 +25,16 @@ import java.util.Random;
  * Supports multiple 3D circuits:
  * </p>
  * <ul>
- *   <li>{@link CircuitType#RAINBOW_CIRCUIT} — High-altitude cosmic track surrounded by starfield and neon light-rails.</li>
- *   <li>{@link CircuitType#DESERT_SPEEDWAY} — Sun-scorched desert raceway with dunes, palm trees, and ancient stone arches.</li>
- *   <li>{@link CircuitType#CYBER_CIRCUIT} — Futuristic neon-grid circuit set in a synthwave cyber metropolis.</li>
+ * <li>{@link CircuitType#RAINBOW_CIRCUIT} — High-altitude cosmic track
+ * surrounded by starfield and neon light-rails.</li>
+ * <li>{@link CircuitType#DESERT_SPEEDWAY} — Sun-scorched desert raceway with
+ * dunes, palm trees, and ancient stone arches.</li>
+ * <li>{@link CircuitType#CYBER_CIRCUIT} — Futuristic neon-grid circuit set in a
+ * synthwave cyber metropolis.</li>
  * </ul>
  * <p>
- * Features 3D Sky Dome, PBR Asphalt/Grass normal bump textures, 3D Finish Arches, and thematic scenery trees.
+ * Features 3D Sky Dome, PBR Asphalt/Grass normal bump textures, 3D Finish
+ * Arches, and thematic scenery trees.
  * </p>
  *
  * @author anahata
@@ -67,6 +70,7 @@ public class TrackBuilder {
      * Container holding generated track objects and geometry references.
      */
     public static class TrackResult {
+
         private final Node trackNode;
         private final Geometry skyDome;
         private final List<Vector3f> waypoints;
@@ -76,8 +80,8 @@ public class TrackBuilder {
         private final List<Geometry> trackCoins;
 
         public TrackResult(Node trackNode, Geometry skyDome, List<Vector3f> waypoints,
-                           List<Geometry> trackCurbs, List<Geometry> boostPads,
-                           List<Node> itemBoxGroups, List<Geometry> trackCoins) {
+                List<Geometry> trackCurbs, List<Geometry> boostPads,
+                List<Node> itemBoxGroups, List<Geometry> trackCoins) {
             this.trackNode = trackNode;
             this.skyDome = skyDome;
             this.waypoints = waypoints;
@@ -121,9 +125,9 @@ public class TrackBuilder {
     /**
      * Builds a complete 3D circuit environment for AsiKart.
      *
-     * @param rootNode     The scene root node.
+     * @param rootNode The scene root node.
      * @param assetManager The jME3 asset manager.
-     * @param type         The circuit type to construct.
+     * @param type The circuit type to construct.
      * @return TrackResult containing created elements and waypoints.
      */
     public TrackResult buildTrack(Node rootNode, AssetManager assetManager, CircuitType type) {
@@ -195,9 +199,12 @@ public class TrackBuilder {
         Material skyMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
 
         ColorRGBA skyColor = switch (type) {
-            case RAINBOW_CIRCUIT -> new ColorRGBA(0.08f, 0.05f, 0.18f, 1.0f);
-            case DESERT_SPEEDWAY -> new ColorRGBA(0.85f, 0.62f, 0.35f, 1.0f);
-            case CYBER_CIRCUIT -> new ColorRGBA(0.04f, 0.02f, 0.12f, 1.0f);
+            case RAINBOW_CIRCUIT ->
+                new ColorRGBA(0.08f, 0.05f, 0.18f, 1.0f);
+            case DESERT_SPEEDWAY ->
+                new ColorRGBA(0.85f, 0.62f, 0.35f, 1.0f);
+            case CYBER_CIRCUIT ->
+                new ColorRGBA(0.04f, 0.02f, 0.12f, 1.0f);
         };
 
         skyMat.setColor("Color", skyColor);
@@ -232,16 +239,21 @@ public class TrackBuilder {
         }
         return smoothPoints;
     }
+
     private void buildGroundAndAsphalt(Node parentNode, AssetManager assetManager, CircuitType type,
-                                       List<Vector3f> waypoints, List<Geometry> trackCurbs) {
+            List<Vector3f> waypoints, List<Geometry> trackCurbs) {
         try {
             assetManager.registerLocator("/tmp/asikart_assets/", FileLocator.class);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         ColorRGBA groundColor = switch (type) {
-            case RAINBOW_CIRCUIT -> new ColorRGBA(0.05f, 0.03f, 0.12f, 1.0f);
-            case DESERT_SPEEDWAY -> new ColorRGBA(0.78f, 0.65f, 0.42f, 1.0f);
-            case CYBER_CIRCUIT -> new ColorRGBA(0.08f, 0.08f, 0.15f, 1.0f);
+            case RAINBOW_CIRCUIT ->
+                new ColorRGBA(0.05f, 0.03f, 0.12f, 1.0f);
+            case DESERT_SPEEDWAY ->
+                new ColorRGBA(0.78f, 0.65f, 0.42f, 1.0f);
+            case CYBER_CIRCUIT ->
+                new ColorRGBA(0.08f, 0.08f, 0.15f, 1.0f);
         };
 
         Material groundMat = createLightedMaterial(assetManager, groundColor, ColorRGBA.Gray, 12f);
@@ -249,7 +261,8 @@ public class TrackBuilder {
             Texture grassTex = assetManager.loadTexture("grass_diffuse.jpg");
             grassTex.setWrap(Texture.WrapMode.Repeat);
             groundMat.setTexture("DiffuseMap", grassTex);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         Box ground = new Box(500, 0.1f, 500);
         Geometry groundGeo = new Geometry("Ground_" + type.name(), ground);
@@ -259,9 +272,12 @@ public class TrackBuilder {
         parentNode.attachChild(groundGeo);
 
         ColorRGBA asphaltColor = switch (type) {
-            case RAINBOW_CIRCUIT -> new ColorRGBA(0.3f, 0.3f, 0.45f, 1.0f);
-            case DESERT_SPEEDWAY -> new ColorRGBA(0.35f, 0.32f, 0.28f, 1.0f);
-            case CYBER_CIRCUIT -> new ColorRGBA(0.12f, 0.12f, 0.22f, 1.0f);
+            case RAINBOW_CIRCUIT ->
+                new ColorRGBA(0.3f, 0.3f, 0.45f, 1.0f);
+            case DESERT_SPEEDWAY ->
+                new ColorRGBA(0.35f, 0.32f, 0.28f, 1.0f);
+            case CYBER_CIRCUIT ->
+                new ColorRGBA(0.12f, 0.12f, 0.22f, 1.0f);
         };
 
         Material asphaltMat = createLightedMaterial(assetManager, asphaltColor, ColorRGBA.White, 32f);
@@ -269,18 +285,23 @@ public class TrackBuilder {
             Texture asphaltDiffuse = assetManager.loadTexture("asphalt_diffuse.jpg");
             asphaltDiffuse.setWrap(Texture.WrapMode.Repeat);
             asphaltMat.setTexture("DiffuseMap", asphaltDiffuse);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         try {
             Texture asphaltNormal = assetManager.loadTexture("asphalt_normal.jpg");
             asphaltNormal.setWrap(Texture.WrapMode.Repeat);
             asphaltMat.setTexture("NormalMap", asphaltNormal);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         ColorRGBA curbColor = switch (type) {
-            case RAINBOW_CIRCUIT -> new ColorRGBA(0.95f, 0.2f, 0.8f, 1.0f);
-            case DESERT_SPEEDWAY -> new ColorRGBA(0.85f, 0.2f, 0.1f, 1.0f);
-            case CYBER_CIRCUIT -> new ColorRGBA(0.1f, 0.9f, 0.95f, 1.0f);
+            case RAINBOW_CIRCUIT ->
+                new ColorRGBA(0.95f, 0.2f, 0.8f, 1.0f);
+            case DESERT_SPEEDWAY ->
+                new ColorRGBA(0.85f, 0.2f, 0.1f, 1.0f);
+            case CYBER_CIRCUIT ->
+                new ColorRGBA(0.1f, 0.9f, 0.95f, 1.0f);
         };
 
         Material curbMat = createLightedMaterial(assetManager, curbColor, ColorRGBA.White, 64f);
@@ -296,7 +317,9 @@ public class TrackBuilder {
 
             Vector3f dir = p2.subtract(p1);
             float len = dir.length();
-            if (len < 0.01f) continue;
+            if (len < 0.01f) {
+                continue;
+            }
             Vector3f mid = p1.add(p2).mult(0.5f);
 
             Node segmentNode = new Node("TrackSegment_" + i);
@@ -362,9 +385,12 @@ public class TrackBuilder {
         Node arch = new Node("FinishArch_" + type.name());
 
         ColorRGBA archColor = switch (type) {
-            case RAINBOW_CIRCUIT -> new ColorRGBA(0.95f, 0.85f, 0.1f, 1.0f);
-            case DESERT_SPEEDWAY -> new ColorRGBA(0.75f, 0.55f, 0.3f, 1.0f);
-            case CYBER_CIRCUIT -> new ColorRGBA(0.95f, 0.1f, 0.85f, 1.0f);
+            case RAINBOW_CIRCUIT ->
+                new ColorRGBA(0.95f, 0.85f, 0.1f, 1.0f);
+            case DESERT_SPEEDWAY ->
+                new ColorRGBA(0.75f, 0.55f, 0.3f, 1.0f);
+            case CYBER_CIRCUIT ->
+                new ColorRGBA(0.95f, 0.1f, 0.85f, 1.0f);
         };
 
         Material archMat = createLightedMaterial(assetManager, archColor, ColorRGBA.White, 128f);
@@ -395,9 +421,12 @@ public class TrackBuilder {
 
     private void buildDirectionalArrowSigns(Node parentNode, AssetManager assetManager, CircuitType type, List<Vector3f> waypoints) {
         ColorRGBA arrowColor = switch (type) {
-            case RAINBOW_CIRCUIT -> new ColorRGBA(0.1f, 0.95f, 0.95f, 1f);
-            case DESERT_SPEEDWAY -> new ColorRGBA(0.98f, 0.85f, 0.1f, 1f);
-            case CYBER_CIRCUIT -> new ColorRGBA(0.95f, 0.1f, 0.85f, 1f);
+            case RAINBOW_CIRCUIT ->
+                new ColorRGBA(0.1f, 0.95f, 0.95f, 1f);
+            case DESERT_SPEEDWAY ->
+                new ColorRGBA(0.98f, 0.85f, 0.1f, 1f);
+            case CYBER_CIRCUIT ->
+                new ColorRGBA(0.95f, 0.1f, 0.85f, 1f);
         };
 
         Material arrowMat = createLightedMaterial(assetManager, arrowColor, ColorRGBA.White, 128f);
@@ -445,16 +474,21 @@ public class TrackBuilder {
     }
 
     private void build3DTunnelAndGrandstands(Node parentNode, AssetManager assetManager, CircuitType type, List<Vector3f> waypoints) {
-        if (waypoints.size() < 6) return;
+        if (waypoints.size() < 6) {
+            return;
+        }
 
         // 1. Build 3D Tunnel Arch over Waypoint 4
         Vector3f tunnelPos = waypoints.get(4);
         Node tunnel = new Node("3DTunnel_" + type.name());
 
         ColorRGBA tunnelColor = switch (type) {
-            case RAINBOW_CIRCUIT -> new ColorRGBA(0.12f, 0.08f, 0.25f, 1f);
-            case DESERT_SPEEDWAY -> new ColorRGBA(0.45f, 0.35f, 0.25f, 1f);
-            case CYBER_CIRCUIT -> new ColorRGBA(0.05f, 0.12f, 0.22f, 1f);
+            case RAINBOW_CIRCUIT ->
+                new ColorRGBA(0.12f, 0.08f, 0.25f, 1f);
+            case DESERT_SPEEDWAY ->
+                new ColorRGBA(0.45f, 0.35f, 0.25f, 1f);
+            case CYBER_CIRCUIT ->
+                new ColorRGBA(0.05f, 0.12f, 0.22f, 1f);
         };
 
         Material tunnelMat = createLightedMaterial(assetManager, tunnelColor, ColorRGBA.White, 64f);
@@ -508,25 +542,35 @@ public class TrackBuilder {
         }
         return FastMath.sqrt(minDistSq);
     }
+
     private void buildSceneryAndTrees(Node parentNode, AssetManager assetManager, CircuitType type, List<Vector3f> waypoints) {
         int count = switch (type) {
-            case RAINBOW_CIRCUIT -> 45;
-            case DESERT_SPEEDWAY -> 60;
-            case CYBER_CIRCUIT -> 50;
+            case RAINBOW_CIRCUIT ->
+                45;
+            case DESERT_SPEEDWAY ->
+                60;
+            case CYBER_CIRCUIT ->
+                50;
         };
 
         Material trunkMat = createLightedMaterial(assetManager, new ColorRGBA(0.32f, 0.18f, 0.08f, 1.0f), ColorRGBA.Black, 1f);
 
         ColorRGBA leafColor1 = switch (type) {
-            case RAINBOW_CIRCUIT -> new ColorRGBA(0.85f, 0.2f, 0.95f, 1.0f);
-            case DESERT_SPEEDWAY -> new ColorRGBA(0.2f, 0.65f, 0.15f, 1.0f);
-            case CYBER_CIRCUIT -> new ColorRGBA(0.1f, 0.9f, 0.98f, 1.0f);
+            case RAINBOW_CIRCUIT ->
+                new ColorRGBA(0.85f, 0.2f, 0.95f, 1.0f);
+            case DESERT_SPEEDWAY ->
+                new ColorRGBA(0.2f, 0.65f, 0.15f, 1.0f);
+            case CYBER_CIRCUIT ->
+                new ColorRGBA(0.1f, 0.9f, 0.98f, 1.0f);
         };
 
         ColorRGBA leafColor2 = switch (type) {
-            case RAINBOW_CIRCUIT -> new ColorRGBA(0.45f, 0.1f, 0.75f, 1.0f);
-            case DESERT_SPEEDWAY -> new ColorRGBA(0.12f, 0.45f, 0.1f, 1.0f);
-            case CYBER_CIRCUIT -> new ColorRGBA(0.05f, 0.6f, 0.85f, 1.0f);
+            case RAINBOW_CIRCUIT ->
+                new ColorRGBA(0.45f, 0.1f, 0.75f, 1.0f);
+            case DESERT_SPEEDWAY ->
+                new ColorRGBA(0.12f, 0.45f, 0.1f, 1.0f);
+            case CYBER_CIRCUIT ->
+                new ColorRGBA(0.05f, 0.6f, 0.85f, 1.0f);
         };
 
         Material leafMat1 = createLightedMaterial(assetManager, leafColor1, ColorRGBA.White, 32f);
@@ -588,11 +632,14 @@ public class TrackBuilder {
     }
 
     private void spawnItemBoxesAndBoostPads(Node parentNode, AssetManager assetManager, CircuitType type,
-                                            List<Vector3f> waypoints, List<Node> itemBoxGroups, List<Geometry> boostPads) {
+            List<Vector3f> waypoints, List<Node> itemBoxGroups, List<Geometry> boostPads) {
         ColorRGBA boxColor = switch (type) {
-            case RAINBOW_CIRCUIT -> new ColorRGBA(0.98f, 0.75f, 0.05f, 1f);
-            case DESERT_SPEEDWAY -> new ColorRGBA(0.95f, 0.45f, 0.05f, 1f);
-            case CYBER_CIRCUIT -> new ColorRGBA(0.05f, 0.95f, 0.85f, 1f);
+            case RAINBOW_CIRCUIT ->
+                new ColorRGBA(0.98f, 0.75f, 0.05f, 1f);
+            case DESERT_SPEEDWAY ->
+                new ColorRGBA(0.95f, 0.45f, 0.05f, 1f);
+            case CYBER_CIRCUIT ->
+                new ColorRGBA(0.05f, 0.95f, 0.85f, 1f);
         };
 
         Material boxMat = createLightedMaterial(assetManager, boxColor, ColorRGBA.White, 128f);
@@ -624,7 +671,7 @@ public class TrackBuilder {
     }
 
     private void spawnTrackCoins(Node parentNode, AssetManager assetManager, CircuitType type,
-                                 List<Vector3f> waypoints, List<Geometry> trackCoins) {
+            List<Vector3f> waypoints, List<Geometry> trackCoins) {
         Cylinder coinShape = new Cylinder(16, 16, 0.45f, 0.12f, true);
         Material coinMat = createLightedMaterial(assetManager, new ColorRGBA(1.0f, 0.85f, 0.1f, 1.0f), ColorRGBA.White, 128f);
 
@@ -650,5 +697,16 @@ public class TrackBuilder {
         mat.setColor("Specular", specular);
         mat.setFloat("Shininess", shininess);
         return mat;
+    }
+
+    /**
+     * Calculates the total number of primary waypoints defining the specified
+     * circuit layout.
+     *
+     * @param type The circuit type to evaluate.
+     * @return The number of waypoints in the track spline.
+     */
+    public int getWaypointCount(CircuitType type) {
+        return generateWaypoints(type).size();
     }
 }
