@@ -6,7 +6,6 @@ import java.awt.event.ActionListener;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.ActionRegistration;
-import org.openide.util.NbBundle.Messages;
 
 /**
  * Action that creates and opens a brand-new AGI session in the NetBeans IDE.
