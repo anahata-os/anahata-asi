@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WMGS1YH2WD"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-WMGS1YH2WD');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="description" content="Anahata ASI NovaRouteAI Adapter. Official Chinese models routed smart with automatic fallback and OpenAI-compatible integration for DeepSeek, Qwen, Kimi, GLM, and MiniMax.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NovaRouteAI | Anahata ASI Platform</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .docs-wrapper { display: flex; max-width: 1400px; margin: 0 auto; padding: 160px 2rem 100px; gap: 4rem; }
+        .sidebar { width: 300px; flex-shrink: 0; position: sticky; top: 130px; height: calc(100vh - 160px); overflow-y: auto; padding-right: 1.5rem; }
+        .sidebar-nav h4 { color: var(--barca-gold); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(237, 187, 0, 0.2); padding-bottom: 8px; }
+        .sidebar-nav ul { list-style: none; padding: 0; }
+        .sidebar-nav a { color: var(--text-muted); text-decoration: none; display: block; padding: 10px 15px; transition: var(--transition); border-left: 3px solid transparent; }
+        .sidebar-nav a:hover, .sidebar-nav a.active { color: var(--primary-light); border-left-color: var(--primary-light); background: linear-gradient(to right, rgba(44, 122, 123, 0.1), transparent); }
+        .main-content { flex-grow: 1; max-width: 900px; }
+        .promo-hero-card {
+            background: linear-gradient(135deg, rgba(0, 128, 255, 0.1) 0%, rgba(237, 187, 0, 0.05) 100%);
+            border: 1px solid rgba(0, 128, 255, 0.3);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="main-nav"></div>
+
+    <div class="docs-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-nav">
+                <h4>NovaRouteAI Adapter</h4>
+                <ul>
+                    <li><a href="#overview" class="active">Overview & Promo</a></li>
+                    <li><a href="#models">Frontier Models</a></li>
+                    <li><a href="#smart-routing">Smart Routing & Architecture</a></li>
+                    <li><a href="#tournament">Single-Shot Tournament</a></li>
+                    <li><a href="#benchmarks">Benchmark Sponsorship</a></li>
+                    <li><a href="#video-guide">Video Walkthrough</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <section id="overview">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 0.5rem;">
+                    <img src="assets/logos/uno.anahata.asi.novarouteai.NovaRouteAiProvider.png" alt="NovaRouteAI Logo" style="height: 36px;">
+                    <h1 style="margin: 0;">Anahata <span style="color: var(--barca-gold)">NovaRouteAI</span></h1>
+                </div>
+                <p class="tagline" style="text-align: left;">Official Chinese frontier models routed smart. One endpoint, automatic fallback.</p>
+                <p><strong>NovaRouteAI</strong> delivers enterprise-grade, OpenAI-compatible access to premier Chinese foundation models including <strong>DeepSeek</strong>, <strong>Qwen</strong>, <strong>Kimi</strong>, <strong>GLM</strong>, and <strong>MiniMax</strong> with intelligent multi-datacenter routing.</p>
+                
+                <!-- Launch Promo Callout -->
+                <div class="promo-hero-card">
+                    <img src="assets/banners/novarouteai-promo-dark.png" alt="NovaRouteAI Launch Promo" style="width: 100%; max-width: 800px; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                    <div style="display: inline-block; background: var(--barca-gold); color: black; font-weight: 800; font-size: 0.8rem; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem;">
+                        🎁 Limited Launch Promotion
+                    </div>
+                    <h3 style="color: var(--white); font-size: 1.4rem; margin-top: 0; margin-bottom: 0.6rem;">First 50 sign-ups get $10 free credit | Next 50 get $5</h3>
+                    <p style="color: var(--text-muted); font-size: 1rem; max-width: 650px; margin: 0 auto 1.5rem;">
+                        Get started with the full power of DeepSeek V4, Qwen 3.8 Max, and Kimi K3 directly inside Anahata ASI Studio and Desktop with zero initial upfront cost.
+                    </p>
+                    <a href="https://novarouteai.com/register?aff=UBCS7HL727XC" target="_blank" rel="noopener noreferrer" class="btn-primary" style="display: inline-flex; align-items: center; gap: 8px; font-size: 1.05rem; padding: 0.8rem 1.8rem; text-decoration: none;">
+                        <i class="fas fa-rocket"></i> Claim $10 Credits & Register at NovaRouteAI &rarr;
+                    </a>
+                </div>
+            </section>
+
+            <section id="models">
+                <h2>Supported Frontier Model Families</h2>
+                <p>NovaRouteAI provides version-agnostic, multi-datacenter access across premier Chinese foundation model families:</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 2rem 0;">
+                    <div class="adapter-box" style="margin: 0; border-top: 4px solid var(--barca-gold);">
+                        <i class="fas fa-brain" style="color: var(--barca-gold); font-size: 1.4rem; margin-bottom: 0.8rem; display: block;"></i>
+                        <h4>DeepSeek</h4>
+                        <p>Industry-leading code reasoning and multi-step agentic planning with automatic <code>reasoning_content</code> extraction.</p>
+                    </div>
+                    <div class="adapter-box" style="margin: 0; border-top: 4px solid var(--primary-light);">
+                        <i class="fas fa-cube" style="color: var(--primary-light); font-size: 1.4rem; margin-bottom: 0.8rem; display: block;"></i>
+                        <h4>Qwen (Alibaba Cloud)</h4>
+                        <p>Benchmark-topping multilingual foundation and coding models, engineered for complex Java refactoring and algorithm design.</p>
+                    </div>
+                    <div class="adapter-box" style="margin: 0; border-top: 4px solid var(--verified-green);">
+                        <i class="fas fa-moon" style="color: var(--verified-green); font-size: 1.4rem; margin-bottom: 0.8rem; display: block;"></i>
+                        <h4>Kimi (Moonshot AI)</h4>
+                        <p>High-efficiency ultra-long context reasoning designed for multi-module workspace synthesis and deep document reasoning.</p>
+                    </div>
+                    <div class="adapter-box" style="margin: 0; border-top: 4px solid var(--accent);">
+                        <i class="fas fa-bolt" style="color: var(--accent); font-size: 1.4rem; margin-bottom: 0.8rem; display: block;"></i>
+                        <h4>GLM (Zhipu) & MiniMax</h4>
+                        <p>High-throughput, fast-inference reasoning engines optimized for high-frequency Java tool calling and autonomous agent loops.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="smart-routing">
+                <h2>Smart Routing & OpenAI Compatibility</h2>
+                <p>Under the hood, <code>NovaRouteAiProvider</code> extends Anahata's <code>OpenAiChatCompletionsProvider</code>, eliminating vendor SDK dependencies while providing:</p>
+                
+                <div class="adapter-box">
+                    <ul>
+                        <li><strong>Single Endpoint (<code>https://novarouteai.com/v1</code>)</strong>: Unified authentication and billing across all supported Chinese model providers.</li>
+                        <li><strong>Automatic Datacenter Fallback</strong>: If an upstream provider node experiences latency or rate limits, NovaRouteAI routes requests to healthy nodes automatically.</li>
+                        <li><strong>Dynamic Thinking Extraction</strong>: Automatically decodes both XML <code>&lt;think&gt;</code> tags and JSON <code>reasoning_content</code> fields directly into Anahata's collapsible thought panels.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Single-Shot Tournament Section -->
+            <section id="tournament">
+                <div class="feature-card" style="border-top: 4px solid var(--barca-gold); background: rgba(255, 255, 255, 0.02); margin: 2rem 0; padding: 2.2rem; text-align: center;">
+                    <img src="assets/banners/tournament-banner.png" alt="The Single-Shot Tournament - Anahata ASI x NovaRouteAI" style="width: 100%; max-width: 850px; border-radius: 10px; margin-bottom: 1.5rem; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 15px 40px rgba(0,0,0,0.6);">
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; text-align: left;">
+                        <span style="background: var(--barca-gold); color: black; font-size: 0.75rem; font-weight: 800; padding: 3px 10px; border-radius: 4px; text-transform: uppercase;">Community Challenge</span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <img src="assets/logos/uno.anahata.asi.novarouteai.NovaRouteAiProvider.png" alt="NovaRouteAI" style="height: 20px;">
+                            <span style="font-size: 0.85rem; color: var(--barca-gold); font-weight: 700;">NovaRouteAI</span>
+                        </div>
+                    </div>
+                    
+                    <h2 style="color: var(--white); margin-top: 0; font-size: 1.7rem; text-align: left;"><i class="fas fa-trophy" style="color: var(--barca-gold); margin-right: 8px;"></i> "Single Shot" Tournament @ NovaRouteAI</h2>
+                    
+                    <div style="display: inline-block; background: rgba(237, 187, 0, 0.1); border: 1px solid rgba(237, 187, 0, 0.3); border-radius: 6px; padding: 6px 14px; margin-bottom: 1.2rem; color: var(--barca-gold); font-weight: 800; font-size: 1rem; text-align: left;">
+                        🎁 Prize: $100 USD in NovaRouteAI API Credits • Most Impressive Wins!
+                    </div>
+
+                    <p style="color: var(--text-muted); font-size: 1.05rem; line-height: 1.7; margin-bottom: 1.5rem; text-align: left;">
+                        Publish your best <strong>Shot</strong> using <strong>Anahata ASI</strong> with <strong>NovaRouteAI</strong> to earn <strong>$100 USD</strong> worth of NovaRouteAI API Credits! Whatever you want: a game, an interactive presentation, a music synthesizer, a particle physics simulation, or whatever creative challenge you want to showcase the model's capabilities using Anahata ASI.
+                    </p>
+
+                    <!-- Rules List -->
+                    <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 1.5rem; margin-bottom: 1.8rem;">
+                        <h4 style="color: var(--white); margin: 0 0 1rem; font-size: 1.15rem;"><i class="fas fa-gavel" style="color: var(--barca-gold); margin-right: 8px;"></i> Official Rules</h4>
+                        <ul style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8; margin-bottom: 0; padding-left: 1.2rem;">
+                            <li><strong>Single Turn:</strong> You can configure enabled toolkits, tool permissions, resources, and the prompt for the first message. Once you press send and the turn starts, the model can reloop for as long as needed until it reaches <code>STOP</code>.</li>
+                            <li><strong>Extra Messages Penalize:</strong> If you forgot to give <code>APPROVE_ALWAYS</code> permission to a tool and you have to approve a tool prompt, or you want to send a second message after the first turn finishes for a final fix, adjustment, or feature, you will receive a <strong>10% penalty</strong> each time you touch the mouse or keyboard.</li>
+                            <li><strong>Public Video:</strong> Video must be public and hosted on any public social media platform (e.g., <strong>X.com</strong>, <strong>YouTube</strong>, <strong>Reddit</strong>, etc.) with the hashtags <code style="color: var(--barca-gold);">#AnahataASI</code> and <code style="color: var(--primary-light);">#NovaRouteAI</code>.</li>
+                            <li><strong>Most Impressive Wins:</strong> That's it — the winner will be the most impressive turn!</li>
+                            <li><strong>All You Can Shoot:</strong> You can submit as many applications as you want; all applications will be scored.</li>
+                        </ul>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.8rem;">
+                        <!-- Timeline & Date -->
+                        <div class="nb-card" style="margin: 0; border-top-color: var(--verified-green);">
+                            <h4 style="color: var(--verified-green); margin-top: 0; font-size: 1.05rem;"><i class="fas fa-calendar-check"></i> Closing Time & Winner</h4>
+                            <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; margin-bottom: 0;">
+                                <strong>Submissions Deadline:</strong> September 30th, 2026<br>
+                                <strong>Winner Announcement:</strong> October 1st, 2026
+                            </p>
+                        </div>
+
+                        <!-- Pro Tips -->
+                        <div class="nb-card" style="margin: 0; border-top-color: var(--barca-gold);">
+                            <h4 style="color: var(--barca-gold); margin-top: 0; font-size: 1.05rem;"><i class="fas fa-lightbulb"></i> Pro Tips</h4>
+                            <ul style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.6; margin-bottom: 0; padding-left: 1rem;">
+                                <li>Add any resources (3D texture files, sound files, images) to context before sending.</li>
+                                <li>Set tools to <code>APPROVE_ALWAYS</code> and toggle <strong>Auto-Reply Tools ON</strong>.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div style="background: rgba(79, 170, 255, 0.05); border: 1px solid rgba(79, 170, 255, 0.25); border-radius: 10px; padding: 1.4rem; text-align: center;">
+                        <h4 style="color: var(--primary-light); margin: 0 0 0.5rem; font-size: 1.15rem;"><i class="fas fa-paper-plane"></i> Ready to Submit Your Video?</h4>
+                        <p style="color: var(--text-muted); font-size: 0.95rem; margin: 0 auto 1.2rem; max-width: 650px; line-height: 1.6;">
+                            Submit your published video link, prompt details, model ID, and NovaRouteAI User ID via the official Google Form:
+                        </p>
+                        <a href="https://forms.gle/vpAMfv6Da77nYykd9" target="_blank" rel="noopener noreferrer" class="btn-primary" style="display: inline-flex; align-items: center; gap: 8px; font-size: 1.05rem; padding: 0.75rem 1.8rem; text-decoration: none;">
+                            <i class="fas fa-file-signature"></i> Submit Tournament Entry Form &rarr;
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <section id="benchmarks">
+                <h2>🏆 Benchmark Sponsorship</h2>
+                <p>NovaRouteAI is the official title sponsor of the <strong>Anahata-AGI-1 Master Benchmark Suite</strong>, powering standardized pure-Java evaluations across interactive Swing/JavaFX GUIs, LWJGL 3D graphics, and JNA native bindings.</p>
+                
+                <div style="text-align: center; margin: 1.5rem 0;">
+                    <a href="benchmarks.html" class="btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
+                        <i class="fas fa-trophy" style="color: var(--barca-gold);"></i> View Anahata-AGI-1 Leaderboard &rarr;
+                    </a>
+                </div>
+            </section>
+
+            <!-- Video Setup Walkthrough -->
+            <section id="video-guide">
+                <h2>📺 Video Setup Walkthrough</h2>
+                <p>Watch how to configure NovaRouteAI in Anahata ASI and run multi-model benchmarks in under 2 minutes:</p>
+                
+                <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5); margin: 1.5rem 0 1rem;">
+                    <iframe src="https://www.youtube-nocookie.com/embed/u0mTyEZI8Fo?rel=0" title="NovaRouteAI + Anahata ASI Setup | One API Key for Qwen, DeepSeek and Kimi" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
+                </div>
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <a href="https://www.youtube.com/watch?v=u0mTyEZI8Fo" target="_blank" rel="noopener noreferrer" style="color: var(--barca-gold); font-size: 0.95rem; font-weight: 600; text-decoration: none;">
+                        <i class="fab fa-youtube" style="color: #ff0000; margin-right: 6px;"></i> Open video directly on YouTube &rarr;
+                    </a>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="nav.js"></script>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=f19c44f5-8b2e-458f-beab-96e4f9f8e603" />
+</body>
+</html>

@@ -10,9 +10,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const activeFile = currentPath.split('/').pop();
     const isActive = (file) => activeFile === file;
 
-    // Compute directory depth prefix
-    const isSubfolder = currentPath.includes('/enterprise/') || currentPath.includes('/apidocs/');
-    const prefix = isSubfolder ? '../' : '';
+    // Compute directory depth prefix dynamically based on the script location
+    const navScript = document.querySelector('script[src*="nav.js"]');
+    const scriptAttr = navScript ? navScript.getAttribute('src') : 'nav.js';
+    const prefix = scriptAttr.includes('nav.js') ? scriptAttr.substring(0, scriptAttr.indexOf('nav.js')) : '';
 
     navPlaceholder.innerHTML = `
         <nav class="${isIndex ? '' : 'nav-solid'}">
