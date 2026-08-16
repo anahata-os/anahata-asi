@@ -9,9 +9,11 @@ import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Image;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -20,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -181,6 +184,11 @@ public class AiProviderPanel extends ScrollablePanel {
         PromptSupport.setForeground(UIManager.getColor("Label.disabledForeground"), textArea);
         setLayout(new MigLayout("fillx, insets 10", "[right]10[grow,fill]5[]"));
 
+        JLabel promoBannerLabel = createPromoBannerLabel();
+        if (promoBannerLabel != null) {
+            add(promoBannerLabel, "span, growx, center, wrap, gapbottom 12");
+        }
+
         JButton removeBtn = new JButton("Delete", new DeleteIcon(16));
         removeBtn.setToolTipText("Remove Provider");
         removeBtn.addActionListener(e -> removeCallback.run());
@@ -267,10 +275,12 @@ public class AiProviderPanel extends ScrollablePanel {
             keysContainer.add(acquisitionLinkLabel, "wrap, gapleft 5");
         }
 
-        textArea.setRows(7);
+        textArea.setRows(5);
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(false);
         textArea.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(textArea, e));
-        textArea.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
-        JScrollPane textScroll = new JScrollPane(textArea);
+        textArea.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+        JScrollPane textScroll = new JScrollPane(textArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         keysContainer.add(textScroll, "grow, wrap");
 
         add(keysContainer, "span 2, grow, wrap");
@@ -424,21 +434,61 @@ public class AiProviderPanel extends ScrollablePanel {
     }
 
     /**
+     * Creates the promotional banner label if a banner asset is bundled for this provider.
+     *
+     * @return The clickable banner label, or null if no banner exists.
+     */
+    private JLabel createPromoBannerLabel() {
+        if (provider.getKeysAcquisitionUri() == null) {
+            return null;
+        }
+        URL bannerResource = getClass().getResource("/banners/aiproviders/" + provider.getClass().getName() + ".png");
+        if (bannerResource == null) {
+            return null;
+        }
+        ImageIcon orig = new ImageIcon(bannerResource);
+        if (orig.getIconWidth() <= 0) {
+            return null;
+        }
+        int targetWidth = 560;
+        int targetHeight = (int) (orig.getIconHeight() * ((double) targetWidth / orig.getIconWidth()));
+        Image scaled = orig.getImage().getScaledInstance(targetWidth, targetHeight, Image.SCALE_SMOOTH);
+        JLabel bannerLabel = new JLabel(new ImageIcon(scaled));
+        bannerLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        bannerLabel.setToolTipText("Claim promotion & register at " + provider.getDisplayName());
+        bannerLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
+        bannerLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                try {
+                    Desktop.getDesktop().browse(provider.getKeysAcquisitionUri());
+                } catch (Exception ex) {
+                    log.error("Failed to open acquisition URI", ex);
+                }
+            }
+        });
+        return bannerLabel;
+    }
+
+    /**
      * Updates the hyperlinked label to browse to the key acquisition URL.
      */
     private void updateLinkLabel() {
         if (provider.getKeysAcquisitionUri() == null) {
+            acquisitionLinkLabel.setVisible(false);
             return;
         }
+        acquisitionLinkLabel.setVisible(true);
         String name = displayNameField != null ? displayNameField.getText().trim() : provider.getDisplayName();
         if (name.isBlank()) {
             name = "Provider";
         }
 
+        acquisitionLinkLabel.setIcon(null);
         acquisitionLinkLabel.setText("<html><a href=''>" + name + " - Get API Keys</a></html>");
-        acquisitionLinkLabel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        acquisitionLinkLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        acquisitionLinkLabel.setToolTipText("Get API keys for " + name);
         acquisitionLinkLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        // Remove existing listeners to avoid duplicates
         for (var l : acquisitionLinkLabel.getMouseListeners()) {
             acquisitionLinkLabel.removeMouseListener(l);
         }

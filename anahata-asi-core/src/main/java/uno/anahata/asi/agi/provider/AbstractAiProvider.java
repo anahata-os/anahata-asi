@@ -41,6 +41,11 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
     private List<String> allowedModels = new ArrayList<>();
 
     /**
+     * The sorting priority for this provider. Lower values indicate higher priority (pinned to top).
+     */
+    private int priority = 100;
+
+    /**
      * A transient reference to the parent container. 
 * This allows providers to access shared resources like the executor service.
      */

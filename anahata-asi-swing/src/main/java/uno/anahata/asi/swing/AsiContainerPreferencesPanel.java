@@ -5,7 +5,15 @@ package uno.anahata.asi.swing;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Desktop;
+import java.awt.Image;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.GridBagConstraints;
+import java.net.URI;
+import java.net.URL;
+import javax.swing.ImageIcon;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Component;
@@ -355,7 +363,11 @@ public class AsiContainerPreferencesPanel extends ScrollablePanel {
         providerDropdown = new JComboBox<>();
         AgiConfig template = prefs.getAgiTemplate();
         DefaultComboBoxModel<String> providerModel = new DefaultComboBoxModel<>();
-        template.getProviderUuids().forEach(providerModel::addElement);
+        List<String> sortedUuids = container.getAllProviders().stream()
+                .map(AbstractAiProvider::getUuid)
+                .filter(template.getProviderUuids()::contains)
+                .collect(Collectors.toList());
+        sortedUuids.forEach(providerModel::addElement);
         providerDropdown.setModel(providerModel);
 
         providerDropdown.setRenderer(new DefaultListCellRenderer() {
@@ -396,6 +408,32 @@ public class AsiContainerPreferencesPanel extends ScrollablePanel {
         JLabel infoLabel = new JLabel("<html><i>These settings define which model is selected by default when you create a brand-new session.</i></html>");
         infoLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
         panel.add(infoLabel, "gapleft 20, span, wrap");
+
+        URL bannerUrl = getClass().getResource("/banners/tournament-banner.png");
+        if (bannerUrl != null) {
+            ImageIcon orig = new ImageIcon(bannerUrl);
+            int targetWidth = 560;
+            int targetHeight = (int) (targetWidth * (9.0 / 16.0));
+            Image scaled = orig.getImage().getScaledInstance(targetWidth, targetHeight, Image.SCALE_SMOOTH);
+            JLabel bannerLabel = new JLabel(new ImageIcon(scaled));
+            bannerLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            bannerLabel.setToolTipText("Click to view Single-Shot Tournament details & submit your entry");
+            bannerLabel.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createEmptyBorder(15, 0, 0, 0),
+                    BorderFactory.createLineBorder(new Color(0, 128, 255, 120), 1, true)
+            ));
+            bannerLabel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    try {
+                        Desktop.getDesktop().browse(URI.create("https://asi.anahata.uno/novaroute.html#tournament"));
+                    } catch (Exception ex) {
+                        log.error("Failed to open tournament URL", ex);
+                    }
+                }
+            });
+            panel.add(bannerLabel, "span, center, wrap, gaptop 15");
+        }
 
         return panel;
     }
@@ -779,7 +817,11 @@ public class AsiContainerPreferencesPanel extends ScrollablePanel {
     private void refreshProviderDropdown() {
         AgiConfig template = prefs.getAgiTemplate();
         DefaultComboBoxModel<String> providerModel = new DefaultComboBoxModel<>();
-        template.getProviderUuids().forEach(providerModel::addElement);
+        List<String> sortedUuids = container.getAllProviders().stream()
+                .map(AbstractAiProvider::getUuid)
+                .filter(template.getProviderUuids()::contains)
+                .collect(Collectors.toList());
+        sortedUuids.forEach(providerModel::addElement);
         providerDropdown.setModel(providerModel);
         providerDropdown.setSelectedItem(template.getSelectedProviderUuid());
     }

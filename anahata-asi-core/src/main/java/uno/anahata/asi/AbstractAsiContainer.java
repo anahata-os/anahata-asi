@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -162,10 +163,13 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     /**
      * Gets an unmodifiable list of all registered provider instances.
      *
-     * @return All providers.
+     * @return All providers sorted by priority and display name.
      */
     public List<AbstractAiProvider> getAllProviders() {
-        return new ArrayList<>(providerRegistry.values());
+        return providerRegistry.values().stream()
+                .sorted(Comparator.comparingInt(AbstractAiProvider::getPriority)
+                        .thenComparing(AbstractAiProvider::getDisplayName, String.CASE_INSENSITIVE_ORDER))
+                .collect(Collectors.toList());
     }
 
     /**
