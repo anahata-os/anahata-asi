@@ -178,7 +178,7 @@ public class AnahataInstaller extends ModuleInstall {
      * Anahata TopComponents (e.g. {@code agi.settings}, {@code AsiCardsTopComponent.settings},
      * {@code AsiTableTopComponent.settings}).
      * <p>
-     * Calling {@link DataObject#setValid(false)} on these settings DataObjects forces NetBeans'
+     * Calling {@link DataObject#setValid} on these settings DataObjects forces NetBeans'
      * global {@code DataObjectPool} to evict the {@link org.openide.loaders.InstanceDataObject}s
      * and their cached {@link java.lang.ref.SoftReference}s, which in turn causes NetBeans'
      * {@link org.netbeans.core.windows.persistence.PersistenceManager} to automatically purge the
