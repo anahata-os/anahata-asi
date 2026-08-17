@@ -131,23 +131,61 @@
                     <a class="next" onclick="plusSlides(1)">&#10095;</a>
                 </div>
 
-                <!-- Standalone Native Downloads -->
-                <div class="download-grid" style="margin-top: 2rem; margin-bottom: 4rem;">
-                    <a href="https://github.com/anahata-os/anahata-asi/releases/tag/latest-snapshot" id="dl-windows" class="dl-card">
-                        <i class="fab fa-windows"></i>
-                        <h3>Windows</h3>
-                        <span>.zip (Portable)</span>
-                    </a>
-                    <a href="https://github.com/anahata-os/anahata-asi/releases/tag/latest-snapshot" id="dl-macos" class="dl-card">
-                        <i class="fab fa-apple"></i>
-                        <h3>macOS</h3>
-                        <span>.zip (App Bundle)</span>
-                    </a>
-                    <a href="https://github.com/anahata-os/anahata-asi/releases/tag/latest-snapshot" id="dl-linux" class="dl-card">
-                        <i class="fab fa-linux"></i>
-                        <h3>Linux</h3>
-                        <span>.tar.gz (Binary)</span>
-                    </a>
+                <!-- Standalone Native Downloads (Split into Stable & Snapshot) -->
+                <div style="margin-top: 2rem; margin-bottom: 4rem;">
+                    <!-- Section 1: Latest Stable Release -->
+                    <div style="margin-bottom: 2.5rem;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                            <h3 style="margin: 0; color: var(--white); font-size: 1.25rem; display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-certificate" style="color: var(--barca-gold);"></i> Official Stable Releases
+                            </h3>
+                            <span id="desktop-stable-ver" class="badge" style="background: var(--barca-gold); color: black; font-weight: 800; padding: 4px 10px; border-radius: 4px; font-size: 0.85rem;">...</span>
+                        </div>
+                        <div class="download-grid" style="margin-top: 0;">
+                            <a href="https://github.com/anahata-os/anahata-asi/releases/latest" id="dl-win-stable" class="dl-card" style="border-top: 3px solid var(--barca-gold);">
+                                <i class="fab fa-windows" style="color: var(--barca-gold);"></i>
+                                <h3>Windows</h3>
+                                <span class="dl-size">.zip (Portable)</span>
+                            </a>
+                            <a href="https://github.com/anahata-os/anahata-asi/releases/latest" id="dl-mac-stable" class="dl-card dl-mac-btn" style="border-top: 3px solid var(--barca-gold);">
+                                <i class="fab fa-apple" style="color: var(--barca-gold);"></i>
+                                <h3>macOS</h3>
+                                <span class="dl-size">.zip (App Bundle)</span>
+                            </a>
+                            <a href="https://github.com/anahata-os/anahata-asi/releases/latest" id="dl-lin-stable" class="dl-card" style="border-top: 3px solid var(--barca-gold);">
+                                <i class="fab fa-linux" style="color: var(--barca-gold);"></i>
+                                <h3>Linux</h3>
+                                <span class="dl-size">.tar.gz (Binary)</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Latest Rolling Snapshot -->
+                    <div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                            <h3 style="margin: 0; color: var(--white); font-size: 1.25rem; display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-bolt" style="color: var(--primary-light);"></i> Latest Rolling Snapshots
+                            </h3>
+                            <span id="desktop-snapshot-ver" class="badge" style="background: var(--primary-light); color: white; font-weight: 800; padding: 4px 10px; border-radius: 4px; font-size: 0.85rem;">...</span>
+                        </div>
+                        <div class="download-grid" style="margin-top: 0;">
+                            <a href="https://github.com/anahata-os/anahata-asi/releases/tag/latest-snapshot" id="dl-windows" class="dl-card" style="border-top: 3px solid var(--primary-light);">
+                                <i class="fab fa-windows"></i>
+                                <h3>Windows</h3>
+                                <span class="dl-size">.zip (Portable)</span>
+                            </a>
+                            <a href="https://github.com/anahata-os/anahata-asi/releases/tag/latest-snapshot" id="dl-macos" class="dl-card dl-mac-btn" style="border-top: 3px solid var(--primary-light);">
+                                <i class="fab fa-apple"></i>
+                                <h3>macOS</h3>
+                                <span class="dl-size">.zip (App Bundle)</span>
+                            </a>
+                            <a href="https://github.com/anahata-os/anahata-asi/releases/tag/latest-snapshot" id="dl-linux" class="dl-card" style="border-top: 3px solid var(--primary-light);">
+                                <i class="fab fa-linux"></i>
+                                <h3>Linux</h3>
+                                <span class="dl-size">.tar.gz (Binary)</span>
+                            </a>
+                        </div>
+                    </div>
                 </div>
 
                 <p id="dl-subtitle" class="tagline" style="text-align: left;">The authoritative cross-platform ASI launcher.</p>
@@ -196,56 +234,26 @@
 
                 <script>
                     document.addEventListener('DOMContentLoaded', () => {
-                        // Dynamically resolve download links from GitHub API to point directly to latest-snapshot assets
-                        fetch('https://api.github.com/repos/anahata-os/anahata-asi/releases/tags/latest-snapshot')
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data && data.assets) {
-                                    data.assets.forEach(asset => {
-                                        const name = asset.name.toLowerCase();
-                                        const url = asset.browser_download_url;
-                                        if (name.endsWith('-windows.zip')) {
-                                            const winBtn = document.getElementById('dl-windows');
-                                            if (winBtn) winBtn.href = url;
-                                        } else if (name.endsWith('-macos.zip')) {
-                                            const macBtn = document.getElementById('dl-macos');
-                                            if (macBtn) macBtn.href = url;
-                                        } else if (name.endsWith('-linux.tar.gz')) {
-                                            const linuxBtn = document.getElementById('dl-linux');
-                                            if (linuxBtn) {
-                                                linuxBtn.href = url;
-                                            }
-                                        }
-                                    });
-                                }
-                            })
-                            .catch(err => console.error('Error fetching latest snapshot assets:', err));
-
-                        const macBtn = document.getElementById('dl-macos');
                         const modal = document.getElementById('macos-warning-modal');
                         const cancelBtn = document.getElementById('modal-cancel-btn');
                         const downloadBtn = document.getElementById('modal-download-btn');
+                        const macBtns = document.querySelectorAll('.dl-mac-btn');
 
-                        if (macBtn && modal && cancelBtn && downloadBtn) {
-                            // Intercept macOS download click
-                            macBtn.addEventListener('click', (e) => {
-                                e.preventDefault(); // Stop immediate download redirect
-                                
-                                // Bind the real download URL to the modal's confirmation link
-                                downloadBtn.href = macBtn.href;
-                                
-                                // Display the warning modal
-                                modal.style.display = 'flex';
-                                document.body.style.overflow = 'hidden'; // Lock scrolling
+                        if (modal && cancelBtn && downloadBtn && macBtns.length > 0) {
+                            macBtns.forEach(btn => {
+                                btn.addEventListener('click', (e) => {
+                                    e.preventDefault();
+                                    downloadBtn.href = btn.href;
+                                    modal.style.display = 'flex';
+                                    document.body.style.overflow = 'hidden';
+                                });
                             });
 
-                            // Cancel button closes the modal
                             cancelBtn.addEventListener('click', () => {
                                 modal.style.display = 'none';
                                 document.body.style.overflow = '';
                             });
 
-                            // Clicking outside the modal container also closes it
                             modal.addEventListener('click', (e) => {
                                 if (e.target === modal) {
                                     modal.style.display = 'none';
@@ -253,11 +261,9 @@
                                 }
                             });
 
-                            // "Ok fine, I get that" button closes modal and lets download execute
                             downloadBtn.addEventListener('click', () => {
                                 modal.style.display = 'none';
                                 document.body.style.overflow = '';
-                                // Download continues naturally because href was bound to macBtn.href!
                             });
                         }
                     });

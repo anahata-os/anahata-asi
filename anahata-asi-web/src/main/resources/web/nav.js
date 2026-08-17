@@ -219,51 +219,126 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Dynamic Releases Asset Resolver
     const initDynamicDownloads = async () => {
-        const winBtn = document.getElementById('dl-windows');
-        const macBtn = document.getElementById('dl-macos');
-        const linBtn = document.getElementById('dl-linux');
-        if (!winBtn && !macBtn && !linBtn) return;
+        // Desktop Snapshot elements
+        const winSnapBtn = document.getElementById('dl-windows');
+        const macSnapBtn = document.getElementById('dl-macos');
+        const linSnapBtn = document.getElementById('dl-linux');
+        const deskSnapshotVer = document.getElementById('desktop-snapshot-ver');
+
+        // Desktop Stable elements
+        const winStableBtn = document.getElementById('dl-win-stable');
+        const macStableBtn = document.getElementById('dl-mac-stable');
+        const linStableBtn = document.getElementById('dl-lin-stable');
+        const deskStableVer = document.getElementById('desktop-stable-ver');
+
+        // NetBeans elements
+        const nbStableBtn = document.getElementById('nb-dl-stable');
+        const nbStableVer = document.getElementById('nb-stable-ver');
+        const nbSnapshotBtn = document.getElementById('nb-dl-snapshot');
+        const nbSnapshotVer = document.getElementById('nb-snapshot-ver');
+
+        if (!winSnapBtn && !macSnapBtn && !linSnapBtn && !winStableBtn && !macStableBtn && !linStableBtn && !nbStableBtn && !nbSnapshotBtn) return;
 
         try {
-            // Fetch latest snapshot release directly
-            const response = await fetch('https://api.github.com/repos/anahata-os/anahata-asi/releases/tags/latest-snapshot');
-            if (!response.ok) throw new Error('Failed to fetch snapshot metadata');
-            
-            const latestRelease = await response.json();
-            if (!latestRelease) return;
+            // 1. Fetch latest snapshot release directly
+            const snapResponse = await fetch('https://api.github.com/repos/anahata-os/anahata-asi/releases/tags/latest-snapshot');
+            if (snapResponse.ok) {
+                const latestRelease = await snapResponse.json();
+                if (latestRelease && latestRelease.assets) {
+                    const assets = latestRelease.assets;
+                    
+                    const winAsset = assets.find(asset => asset.name.endsWith('-windows.zip'));
+                    const macAsset = assets.find(asset => asset.name.endsWith('-macos.zip'));
+                    const linAsset = assets.find(asset => asset.name.endsWith('-linux.tar.gz'));
+                    const nbmAsset = assets.find(asset => asset.name.endsWith('.nbm'));
 
-            const assets = latestRelease.assets;
-            
-            const winAsset = assets.find(asset => asset.name.endsWith('-windows.zip'));
-            const macAsset = assets.find(asset => asset.name.endsWith('-macos.zip'));
-            const linAsset = assets.find(asset => asset.name.endsWith('-linux.tar.gz'));
+                    if (winAsset && winSnapBtn) {
+                        winSnapBtn.href = winAsset.browser_download_url;
+                        const sizeMb = Math.round(winAsset.size / (1024 * 1024));
+                        const sizeSpan = winSnapBtn.querySelector('span');
+                        if (sizeSpan) sizeSpan.textContent = `.zip (Portable) • ${sizeMb} MB`;
+                    }
+                    if (macAsset && macSnapBtn) {
+                        macSnapBtn.href = macAsset.browser_download_url;
+                        const sizeMb = Math.round(macAsset.size / (1024 * 1024));
+                        const sizeSpan = macSnapBtn.querySelector('span');
+                        if (sizeSpan) sizeSpan.textContent = `.zip (App Bundle) • ${sizeMb} MB`;
+                    }
+                    if (linAsset && linSnapBtn) {
+                        linSnapBtn.href = linAsset.browser_download_url;
+                        const sizeMb = Math.round(linAsset.size / (1024 * 1024));
+                        const sizeSpan = linSnapBtn.querySelector('span');
+                        if (sizeSpan) sizeSpan.textContent = `.tar.gz (Binary) • ${sizeMb} MB`;
+                    }
 
-            if (winAsset && winBtn) {
-                winBtn.href = winAsset.browser_download_url;
-                const sizeMb = Math.round(winAsset.size / (1024 * 1024));
-                winBtn.querySelector('span').textContent = `.zip (Portable) • ${sizeMb} MB`;
-            }
-            if (macAsset && macBtn) {
-                macBtn.href = macAsset.browser_download_url;
-                const sizeMb = Math.round(macAsset.size / (1024 * 1024));
-                macBtn.querySelector('span').textContent = `.zip (App Bundle) • ${sizeMb} MB`;
-            }
-            if (linAsset && linBtn) {
-                linBtn.href = linAsset.browser_download_url;
-                const sizeMb = Math.round(linAsset.size / (1024 * 1024));
-                linBtn.querySelector('span').textContent = `.tar.gz (Binary) • ${sizeMb} MB`;
+                    // Extract the desktop snapshot version from filename dynamically
+                    let snapVersion = "1.1.0-SNAPSHOT";
+                    if (linAsset) {
+                        const match = linAsset.name.match(/Anahata-ASI-Desktop-(.*?)-linux/);
+                        if (match) snapVersion = match[1];
+                    }
+
+                    if (deskSnapshotVer) {
+                        deskSnapshotVer.textContent = snapVersion.startsWith("v") ? snapVersion : `v${snapVersion}`;
+                    }
+
+                    // Dynamic NBM snapshot resolver
+                    if (nbmAsset && nbSnapshotBtn) {
+                        nbSnapshotBtn.href = nbmAsset.browser_download_url;
+                        const match = nbmAsset.name.match(/(?:anahata-asi-nb|uno-anahata-asi-nb)-(.*?)\.nbm/);
+                        const verStr = match ? match[1] : "1.1.0-SNAPSHOT";
+                        if (nbSnapshotVer) {
+                            nbSnapshotVer.textContent = verStr.startsWith("v") ? verStr : `v${verStr}`;
+                        }
+                    }
+                }
             }
 
-            // Extract the version from the filename dynamically (e.g. 1.1.0-SNAPSHOT)
-            let version = "1.1.0-SNAPSHOT";
-            if (linAsset) {
-                const match = linAsset.name.match(/Anahata-ASI-Desktop-(.*?)-linux/);
-                if (match) version = match[1];
-            }
+            // 2. Fetch latest stable release tag & assets
+            const stableResponse = await fetch('https://api.github.com/repos/anahata-os/anahata-asi/releases/latest');
+            if (stableResponse.ok) {
+                const stableRelease = await stableResponse.json();
+                if (stableRelease) {
+                    const stableTag = stableRelease.tag_name || "v1.0.0";
+                    const formattedTag = stableTag.startsWith("v") ? stableTag : `v${stableTag}`;
+                    
+                    if (deskStableVer) {
+                        deskStableVer.textContent = formattedTag;
+                    }
+                    if (nbStableVer) {
+                        nbStableVer.textContent = formattedTag;
+                    }
 
-            const subtitle = document.getElementById('dl-subtitle') || document.querySelector('#installation p');
-            if (subtitle) {
-                subtitle.innerHTML = `Native standalone binaries are compiled on secure runners. Currently serving the latest rolling snapshot: <strong style="color: var(--barca-gold); font-family: 'JetBrains Mono', monospace;">${version}</strong>.`;
+                    if (stableRelease.assets && stableRelease.assets.length > 0) {
+                        const stableAssets = stableRelease.assets;
+                        const winStableAsset = stableAssets.find(a => a.name.endsWith('-windows.zip'));
+                        const macStableAsset = stableAssets.find(a => a.name.endsWith('-macos.zip'));
+                        const linStableAsset = stableAssets.find(a => a.name.endsWith('-linux.tar.gz'));
+                        const nbmStableAsset = stableAssets.find(a => a.name.endsWith('.nbm'));
+
+                        if (winStableAsset && winStableBtn) {
+                            winStableBtn.href = winStableAsset.browser_download_url;
+                            const sizeMb = Math.round(winStableAsset.size / (1024 * 1024));
+                            const sizeSpan = winStableBtn.querySelector('span');
+                            if (sizeSpan) sizeSpan.textContent = `.zip (Portable) • ${sizeMb} MB`;
+                        }
+                        if (macStableAsset && macStableBtn) {
+                            macStableBtn.href = macStableAsset.browser_download_url;
+                            const sizeMb = Math.round(macStableAsset.size / (1024 * 1024));
+                            const sizeSpan = macStableBtn.querySelector('span');
+                            if (sizeSpan) sizeSpan.textContent = `.zip (App Bundle) • ${sizeMb} MB`;
+                        }
+                        if (linStableAsset && linStableBtn) {
+                            linStableBtn.href = linStableAsset.browser_download_url;
+                            const sizeMb = Math.round(linStableAsset.size / (1024 * 1024));
+                            const sizeSpan = linStableBtn.querySelector('span');
+                            if (sizeSpan) sizeSpan.textContent = `.tar.gz (Binary) • ${sizeMb} MB`;
+                        }
+                        if (nbmStableAsset && nbStableBtn) {
+                            nbStableBtn.href = nbmStableAsset.browser_download_url;
+                        }
+                    }
+                }
             }
         } catch (error) {
             console.error('Error resolving dynamic asset URLs:', error);
