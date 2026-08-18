@@ -41,7 +41,9 @@ jobs:
         env:
           MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
-        run: mvn clean install javadoc:aggregate -DskipTests -ntp
+        run: |
+          mvn clean install javadoc:aggregate -DskipTests -ntp
+          mvn nbm:autoupdate -pl :anahata-asi-nb -ntp
 
       - name: Checkout gh-pages Branch (Persistence Database)
         uses: actions/checkout@v4
@@ -80,7 +82,13 @@ jobs:
           # 4. Inject CNAME for custom domain
           echo "asi.anahata.uno" > _site/CNAME
 
-          # 5. Dynamically regenerate apidocs/index.html with all discovered versions (excluding Javadoc assets)
+          # 5. Copy auto-generated NetBeans Autoupdate Catalogs
+          mkdir -p _site/nb/30 _site/nb/31
+          if [ -f "anahata-asi-nb/target/updates.xml" ]; then
+            cp anahata-asi-nb/target/updates.xml* _site/nb/30/
+          fi
+
+          # 6. Dynamically regenerate apidocs/index.html with all discovered versions (excluding Javadoc assets)
           python3 -c '
           import os, re
           apidocs_dir = "_site/apidocs"

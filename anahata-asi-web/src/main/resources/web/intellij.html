@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WMGS1YH2WD"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-WMGS1YH2WD');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="description" content="Anahata ASI Studio for IntelliJ IDEA. The enterprise-grade, PSI-native Java AI coding agent with AST-guided refactoring, dumb-mode indexing safety, and complete NetBeans parity.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anahata ASI Studio - IntelliJ | Anahata ASI Platform</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .toolkit-section { margin-bottom: 5rem; scroll-margin-top: 140px; }
+        .toolkit-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.8rem; }
+        .toolkit-header i { font-size: 1.8rem; color: var(--barca-gold); }
+        .tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 1rem; }
+        .tool-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 0.8rem 1rem; transition: var(--transition); display: flex; flex-direction: column; justify-content: center; }
+        .tool-card:hover { border-color: rgba(79, 170, 255, 0.3); background: rgba(255,255,255,0.04); }
+        .tool-sig { font-family: 'JetBrains Mono', monospace; color: var(--primary-light); font-size: 0.85rem; font-weight: 600; margin-bottom: 0.3rem; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .tool-desc { color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; margin: 0; }
+        .badge-perm { font-size: 0.6rem; padding: 1px 6px; border-radius: 3px; text-transform: uppercase; font-weight: bold; margin-left: 6px; vertical-align: middle; }
+        .perm-prompt { background: rgba(0, 123, 255, 0.1); color: #007bff; border: 1px solid rgba(0, 123, 255, 0.2); }
+        .perm-always { background: rgba(40, 167, 69, 0.1); color: #28a745; border: 1px solid rgba(40, 167, 69, 0.2); }
+        .info-box { background: rgba(44, 122, 123, 0.1); border-left: 4px solid var(--barca-gold); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; }
+        .main-content h1 { font-size: 2.2rem; margin-bottom: 0.4rem; margin-top: -5rem; }
+        .usp-list { list-style: none; padding: 0; margin-bottom: 2rem; }
+        .usp-item { display: flex; align-items: flex-start; gap: 0.8rem; color: var(--white); font-size: 0.95rem; line-height: 1.5; margin-bottom: 1.2rem; }
+        .usp-item i { color: var(--barca-gold); margin-top: 5px; font-size: 0.85rem; flex-shrink: 0; }
+        .integration-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; margin: 2.5rem 0; background: rgba(255, 255, 255, 0.02); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .integration-item { display: flex; align-items: flex-start; gap: 1rem; color: var(--text-main); font-size: 0.95rem; line-height: 1.5; }
+        .integration-item i { color: var(--primary-light); margin-top: 5px; font-size: 1rem; flex-shrink: 0; }
+        .tag-row { display: flex; gap: 0.8rem; margin-bottom: 2rem; flex-wrap: wrap; }
+        .tag { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-muted); padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+        .tag-gold { border-color: var(--barca-gold); color: var(--barca-gold); background: rgba(237, 187, 0, 0.05); }
+        .provider-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+        .provider-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 1.5rem; transition: var(--transition); border-top: 3px solid var(--barca-gold); }
+        .provider-card:hover { background: rgba(255,255,255,0.04); border-color: var(--primary-light); transform: translateY(-3px); }
+        .provider-card h4 { color: var(--white); margin: 0 0 0.8rem; font-size: 1.1rem; display: flex; align-items: center; gap: 0.6rem; }
+        .provider-card p { color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin: 0; }
+    </style>
+</head>
+<body>
+    <div id="main-nav"></div>
+
+    <div class="docs-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-nav">
+                <h4>Application</h4>
+                <ul>
+                    <li><a href="#overview">Overview</a></li>
+                    <li><a href="#features">Architecture & Highlights</a></li>
+                    <li><a href="#installation">Installation Guide</a></li>
+                </ul>
+
+                <h4>IntelliJ Native Toolkits</h4>
+                <ul>
+                    <li><a href="#intellijjava"><i class="fab fa-java"></i> IntellijJava</a></li>
+                    <li><a href="#batchcoderefiner"><i class="fas fa-wrench"></i> BatchCodeRefiner</a></li>
+                    <li><a href="#coderefiner"><i class="fas fa-atom"></i> CodeRefiner</a></li>
+                    <li><a href="#codemodel"><i class="fas fa-sitemap"></i> CodeModel</a></li>
+                    <li><a href="#refactor"><i class="fas fa-magic"></i> Refactor</a></li>
+                    <li><a href="#hints"><i class="fas fa-lightbulb"></i> Hints</a></li>
+                    <li><a href="#maven"><i class="fas fa-hammer"></i> Maven</a></li>
+                    <li><a href="#projects"><i class="fas fa-project-diagram"></i> Projects</a></li>
+                    <li><a href="#runconfigurations"><i class="fas fa-play"></i> RunConfigurations</a></li>
+                    <li><a href="#vcs"><i class="fas fa-code-branch"></i> Vcs</a></li>
+                    <li><a href="#terminals"><i class="fas fa-terminal"></i> Terminals</a></li>
+                    <li><a href="#editor-ide"><i class="fas fa-edit"></i> Editor & IDE</a></li>
+                </ul>
+
+                <h4>Sensory Context</h4>
+                <ul>
+                    <li><a href="#context-providers"><i class="fas fa-eye"></i> Context Providers</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <section id="overview" class="toolkit-section">
+                <h1>Anahata <span style="color: var(--barca-gold)">ASI Studio - IntelliJ</span></h1>
+                
+                <!-- Dynamic Download Badges -->
+                <div style="margin-top: 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                    <a id="intellij-dl-stable" href="https://github.com/anahata-os/anahata-asi/releases/latest" class="btn-primary" target="_blank" style="text-decoration: none; font-weight: bold;">
+                        <i class="fas fa-download" style="margin-right: 8px;"></i> Download Stable Plugin (.zip) <span id="intellij-stable-ver" class="badge" style="font-size: 0.75rem; background: var(--barca-gold); color: black; margin-left: 6px; padding: 2px 6px; border-radius: 4px; font-weight: 800;">v1.0.0</span>
+                    </a>
+                    <a id="intellij-dl-snapshot" href="https://github.com/anahata-os/anahata-asi/releases/download/latest-snapshot/anahata-asi-intellij-1.1.0-SNAPSHOT.zip" class="btn-secondary" style="text-decoration: none; font-weight: bold; border-color: var(--primary-light);">
+                        <i class="fas fa-bolt" style="color: var(--primary-light); margin-right: 8px;"></i> Download Latest Snapshot (.zip) <span id="intellij-snapshot-ver" class="badge" style="font-size: 0.75rem; background: var(--primary-light); color: white; margin-left: 6px; padding: 2px 6px; border-radius: 4px; font-weight: 800;">v1.1.0-SN</span>
+                    </a>
+                </div>
+
+                <div class="tag-row">
+                    <span class="tag">Apache Licensed</span>
+                    <span class="tag">IntelliJ 2024.x - 2026.x</span>
+                    <span class="tag tag-gold">Lead Developer: Arslan</span>
+                    <span class="tag">Android Studio Ready</span>
+                </div>
+
+                <div class="info-box">
+                    <h3 style="margin-top: 0; color: var(--barca-gold); font-size: 1.2rem;"><i class="fas fa-cubes"></i> Multi-IDE Parity with NetBeans</h3>
+                    <p style="margin: 0; font-size: 0.95rem; line-height: 1.6; color: var(--white);">
+                        The <code>anahata-asi-intellij</code> module provides complete feature parity with NetBeans ASI Studio. Powered by IntelliJ's Program Structure Interface (PSI), Virtual File System (VFS), and OpenAPI refactoring engines, Anahata operates natively inside JetBrains IDEs without external Node.js bridges or electron overlays.
+                    </p>
+                </div>
+
+                <div class="usp-list">
+                    <div class="usp-item"><i class="fas fa-check-circle"></i> <div><b>PSI-Guided Code Refinement (V4 Engine)</b>: Surgically inject methods, fields, and classes directly using IntelliJ's <code>WriteCommandAction</code> with 100% undo/redo fidelity and comment preservation.</div></div>
+                    <div class="usp-item"><i class="fas fa-check-circle"></i> <div><b>Smart Mode & Indexing Safety</b>: Automatically coordinates with IntelliJ's <code>DumbService</code> so background AI execution threads never throw <code>IndexNotReadyException</code> or return stale PSI elements.</div></div>
+                    <div class="usp-item"><i class="fas fa-check-circle"></i> <div><b>Native Tool Window Chrome</b>: Integrates seamlessly as a dockable IntelliJ Tool Window with live session badges on the status bar and custom Project View context decorators.</div></div>
+                    <div class="usp-item"><i class="fas fa-check-circle"></i> <div><b>Beyond-Parity Capabilities</b>: Includes workspace Run Configurations execution, provider-agnostic VCS status tracking, interactive terminal tabs, and 14 safe refactorings.</div></div>
+                </div>
+            </section>
+
+            <!-- Deep Architectural Highlights -->
+            <section id="features" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-microchip"></i><h2>IntelliJ Native Architecture Highlights</h2></div>
+                <div class="integration-grid">
+                    <div class="integration-item"><i class="fas fa-columns"></i> <div><b>Editable Side-by-Side Diff Viewer with Gutter Comments</b>: Visualizes all file-modifying tool calls (full file updates, replacements, and line edits) using IntelliJ's native <code>DiffRequestPanel</code>. Features overlaid comic-style speech bubbles on the gutter and full two-way write-back so developers can tweak proposed code in <code>PENDING</code> state before execution.</div></div>
+                    <div class="integration-item"><i class="fas fa-shield-alt"></i> <div><b>WolfTheProblemSolver Compiler Diagnostics</b>: Real-time background tracking of compilation errors and unresolved references, feeding diagnostic alert badges directly into the ASI's per-turn RAG context.</div></div>
+                    <div class="integration-item"><i class="fas fa-terminal"></i> <div><b>ShellTerminalWidget Integration</b>: Interactively drives and manages native IntelliJ terminal tabs, typing commands and capturing scrollback perception streams.</div></div>
+                    <div class="integration-item"><i class="fas fa-tags"></i> <div><b>Project View Context Badges & Actions</b>: Badges in-context files with <code>● AGI</code> markers and adds per-session context curation popup menus to the Project explorer.</div></div>
+                </div>
+            </section>
+
+            <!-- Installation Guide -->
+            <section id="installation" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-download"></i><h2>How to Install the IntelliJ Plugin</h2></div>
+                <p>Installing Anahata ASI in IntelliJ IDEA, Android Studio, or any JetBrains IDE takes less than 30 seconds:</p>
+                
+                <div class="integration-grid">
+                    <div class="integration-item"><i class="fas fa-file-archive"></i> <div><b>1. Download the Plugin Distribution</b>: Click the <b>Download Snapshot (.zip)</b> button above to get the latest <code>anahata-asi-intellij-*.zip</code> distribution archive.</div></div>
+                    <div class="integration-item"><i class="fas fa-cog"></i> <div><b>2. Open IntelliJ Settings</b>: Go to <b>Settings</b> (or <b>Preferences</b> on macOS) &rarr; <b>Plugins</b>.</div></div>
+                    <div class="integration-item"><i class="fas fa-sliders-h"></i> <div><b>3. Install from Disk</b>: Click the gear icon (⚙️) at the top right of the Plugins dialog and choose <b>Install Plugin from Disk...</b></div></div>
+                    <div class="integration-item"><i class="fas fa-check-double"></i> <div><b>4. Select File & Restart</b>: Select the downloaded <code>.zip</code> file, click <b>OK</b>, and restart the IDE. The <b>Anahata ASI</b> tool window will appear in your right-hand sidebar!</div></div>
+                </div>
+            </section>
+
+            <!-- IntellijJava Toolkit -->
+            <section id="intellijjava" class="toolkit-section">
+                <div class="toolkit-header"><i class="fab fa-java"></i><h2>IntellijJava Toolkit (1 Tool)</h2></div>
+                <p>An IntelliJ-aware JIT compilation engine that compiles and executes model-generated Java code against the project's live <code>OrderEnumerator</code> classpath with child-first classloader prioritization.</p>
+                <div class="tool-grid">
+                    <div class="tool-card"><span class="tool-sig">compileAndExecuteInProject(code, path, incDeps, incTests, opts) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Compiles and runs Java scripts against an open project's compiled module outputs and dependencies.</p></div>
+                </div>
+            </section>
+
+            <!-- BatchCodeRefiner Toolkit -->
+            <section id="batchcoderefiner" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-wrench"></i><h2>BatchCodeRefiner Toolkit (1 Tool)</h2></div>
+                <p>Advanced structural Java refinement engine utilizing PSI AST-guided batch operations. Injects, updates, deletes, or moves entire class members atomically within a single undoable write command.</p>
+                <div class="tool-grid">
+                    <div class="tool-card"><span class="tool-sig">refine(CodeRefinementBatch batch) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Executes an atomic batch of structural member modifications on a Java source file and returns a unified diff.</p></div>
+                </div>
+            </section>
+
+            <!-- CodeRefiner Toolkit -->
+            <section id="coderefiner" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-atom"></i><h2>CodeRefiner Toolkit (4 Tools)</h2></div>
+                <p>AST-based maintenance operations for Java files: structural import insertion, import optimization, IDE reformatting, and member annotations.</p>
+                <div class="tool-grid">
+                    <div class="tool-card"><span class="tool-sig">addImports(filePath, imports, save) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Structurally adds imports by resolving FQNs against the project classpath.</p></div>
+                    <div class="tool-card"><span class="tool-sig">optimizeImports(filePath, removeUnused, save) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Shortens FQNs to simple names and cleans up unused imports.</p></div>
+                    <div class="tool-card"><span class="tool-sig">reformat(filePath, save) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Reformats a file using the project's active IDE code-style rules.</p></div>
+                    <div class="tool-card"><span class="tool-sig">addAnnotation(filePath, memberFqn, annotation, save) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Adds an annotation to a class, method, or field identified by its canonical FQN.</p></div>
+                </div>
+            </section>
+
+            <!-- CodeModel Toolkit -->
+            <section id="codemodel" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-sitemap"></i><h2>CodeModel Toolkit (16 Tools)</h2></div>
+                <p>High-performance PSI type index exploration: type discovery, member browsing, source retrieval, Javadoc inspection, and hierarchy resolution.</p>
+                <div class="tool-grid">
+                    <div class="tool-card"><span class="tool-sig">findTypes(query, caseSensitive, preferOpen, start, size) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Index-based search across all open projects (IntelliJ Ctrl+N).</p></div>
+                    <div class="tool-card"><span class="tool-sig">loadTypeSources(javaType) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Registers a type's source file as a managed resource.</p></div>
+                    <div class="tool-card"><span class="tool-sig">loadTypeSourcesByFqn(fqn) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">One-shot source loading for known class FQNs.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getTypeJavadocs(javaType) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Retrieves the Javadoc documentation for a given type.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getTypeJavadocsByFqn(fqn) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Javadoc retrieval for known class FQNs.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getMemberSources(member) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Retrieves source code for a specific Java member.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getMemberSourcesByFqn(memberFqn) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Source loading for known member FQNs.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getMemberJavadocs(member) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Retrieves Javadoc documentation for a specific member.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getMemberJavadocsByFqn(memberFqn) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Javadoc retrieval for known member FQNs.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getMembers(javaType, nameQuery, start, size, kinds) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Lists fields, constructors, methods, and inner classes.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getMembersByFqn(fqn, nameQuery, start, size, kinds) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Jump straight to members of a known class FQN.</p></div>
+                    <div class="tool-card"><span class="tool-sig">findTypesInPackage(pkg, kindFilter, recursive, start, size) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Scans a package for types with optional recursion.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getSubtypes(javaType, depth) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Explores implementations and subclasses for a JavaType.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getSubtypesByFqn(fqn, depth) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Builds recursive implementation trees by FQN.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getSupertypes(javaType, depth) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Explores inheritance base classes and interfaces for a JavaType.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getSupertypesByFqn(fqn, depth) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Builds recursive inheritance trees by FQN.</p></div>
+                </div>
+            </section>
+
+            <!-- Refactor Toolkit -->
+            <section id="refactor" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-magic"></i><h2>Refactor Toolkit (14 Tools)</h2></div>
+                <p>Transactional refactoring tools driven by IntelliJ's <code>JavaRefactoringFactory</code> and <code>ReferencesSearch</code> engines.</p>
+                <div class="tool-grid">
+                    <div class="tool-card"><span class="tool-sig">rename(filePath, newName) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Safe rename of a top-level class updating all workspace references.</p></div>
+                    <div class="tool-card"><span class="tool-sig">renameMember(filePath, memberFqn, newName) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Renames a class member across all open projects.</p></div>
+                    <div class="tool-card"><span class="tool-sig">safeDelete(filePath, searchComments) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Verifies remaining usages before deleting a class.</p></div>
+                    <div class="tool-card"><span class="tool-sig">whereUsed(filePath, searchComments) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Finds all references/usages of a class in all open projects.</p></div>
+                    <div class="tool-card"><span class="tool-sig">whereUsedMember(filePath, memberFqn, searchComments) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Finds all usages of a specific class member.</p></div>
+                    <div class="tool-card"><span class="tool-sig">moveClass(filePath, targetPackage) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Moves a class to a different package, updating references.</p></div>
+                    <div class="tool-card"><span class="tool-sig">moveMembers(filePath, memberFqns, targetClassFqn) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Moves static members to another class.</p></div>
+                    <div class="tool-card"><span class="tool-sig">copyClass(filePath, targetPackage, newName) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Copies a class to another package, fixing package statements.</p></div>
+                    <div class="tool-card"><span class="tool-sig">pullUpMembers(filePath, targetSuperclassFqn, memberFqns) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Pulls members up to a superclass.</p></div>
+                    <div class="tool-card"><span class="tool-sig">pushDownMembers(filePath, memberFqns) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Pushes members down to subclasses.</p></div>
+                    <div class="tool-card"><span class="tool-sig">inlineMethod(filePath, memberFqn) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Inlines a method, replacing call sites with its body.</p></div>
+                    <div class="tool-card"><span class="tool-sig">changeMethodSignature(filePath, memberFqn, name, retType) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Updates name and return type, preserving parameters.</p></div>
+                    <div class="tool-card"><span class="tool-sig">extractSuperclass(filePath, newSuperclass, memberFqns) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Extracts a new superclass from existing class.</p></div>
+                    <div class="tool-card"><span class="tool-sig">extractInterface(filePath, newInterface, memberFqns) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Extracts a new interface with declared members.</p></div>
+                </div>
+            </section>
+
+            <!-- Hints Toolkit -->
+            <section id="hints" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-lightbulb"></i><h2>Hints Toolkit (2 Tools)</h2></div>
+                <p>On-demand inspection and code analysis via <code>DaemonCodeAnalyzerImpl</code> with programmatic quick-fix application.</p>
+                <div class="tool-grid">
+                    <div class="tool-card"><span class="tool-sig">getFileHints(filePath, minSeverity) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Lists inspection/annotator highlights (errors, warnings) with line numbers.</p></div>
+                    <div class="tool-card"><span class="tool-sig">applyHint(filePath, line, fixName) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Applies an inspection quick-fix on a given line automatically.</p></div>
+                </div>
+            </section>
+
+            <!-- Maven Toolkit -->
+            <section id="maven" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-hammer"></i><h2>Maven Toolkit (5 Tools)</h2></div>
+                <p>Deep Maven integration via <code>MavenProjectsManager</code> and <code>MavenRunner</code>.</p>
+                <div class="tool-grid">
+                    <div class="tool-card"><span class="tool-sig">getMavenProjects() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Lists all imported Maven projects across open workspaces.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getDependencies(projectPath) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Lists resolved dependencies grouped by scope.</p></div>
+                    <div class="tool-card"><span class="tool-sig">runGoals(projectPath, goals, profiles) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Executes Maven goals synchronously with latch wait.</p></div>
+                    <div class="tool-card"><span class="tool-sig">addDependency(projectPath, g, a, v, scope) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Splices dependency into pom.xml and triggers reimport.</p></div>
+                    <div class="tool-card"><span class="tool-sig">searchMavenIndex(query, maxResults) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Searches the configured Maven repository index.</p></div>
+                </div>
+            </section>
+
+            <!-- Projects Toolkit -->
+            <section id="projects" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-project-diagram"></i><h2>Projects Toolkit (6 Tools)</h2></div>
+                <p>Workspace and lifecycle management for IntelliJ projects.</p>
+                <div class="tool-grid">
+                    <div class="tool-card"><span class="tool-sig">getOpenProjects() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Returns absolute paths of all currently open projects.</p></div>
+                    <div class="tool-card"><span class="tool-sig">openProject(projectPath) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Opens a project directory programmatically.</p></div>
+                    <div class="tool-card"><span class="tool-sig">closeProjects(projectPaths) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Closes specified open projects in the IDE.</p></div>
+                    <div class="tool-card"><span class="tool-sig">buildProject(projectPath, rebuild) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Compiles (make) or rebuilds a project with synchronous results.</p></div>
+                    <div class="tool-card"><span class="tool-sig">saveAllDocuments() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Saves all unsaved editor documents across the IDE to disk.</p></div>
+                    <div class="tool-card"><span class="tool-sig">setProjectProviderEnabled(path, enabled) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Toggles project-level context provider in prompt.</p></div>
+                </div>
+            </section>
+
+            <!-- RunConfigurations Toolkit -->
+            <section id="runconfigurations" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-play"></i><h2>RunConfigurations Toolkit (2 Tools)</h2></div>
+                <p>Discovers and launches IntelliJ run, debug, and test configurations directly.</p>
+                <div class="tool-grid">
+                    <div class="tool-card"><span class="tool-sig">listRunConfigurations() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Lists all configured run/debug/test configurations.</p></div>
+                    <div class="tool-card"><span class="tool-sig">runConfiguration(name) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Launches a run/test configuration by name via ProgramRunnerUtil.</p></div>
+                </div>
+            </section>
+
+            <!-- Vcs Toolkit -->
+            <section id="vcs" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-code-branch"></i><h2>Vcs Toolkit (1 Tool)</h2></div>
+                <p>Provider-agnostic version-control status inspector powered by <code>ChangeListManager</code>.</p>
+                <div class="tool-grid">
+                    <div class="tool-card"><span class="tool-sig">getVcsStatus() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Reports changed, added, deleted, and unversioned files grouped by change list.</p></div>
+                </div>
+            </section>
+
+            <!-- Terminals Toolkit -->
+            <section id="terminals" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-terminal"></i><h2>Terminals Toolkit (3 Tools)</h2></div>
+                <p>Integrated terminal management via <code>TerminalToolWindowManager</code>.</p>
+                <div class="tool-grid">
+                    <div class="tool-card"><span class="tool-sig">openLocalTerminal(title, workingDir) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Opens a local terminal tab and returns its tracking ID.</p></div>
+                    <div class="tool-card"><span class="tool-sig">typeCommand(terminalId, command) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Types and executes a command sequence in a terminal tab.</p></div>
+                    <div class="tool-card"><span class="tool-sig">closeTerminal(terminalId) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Closes a tracked terminal tab by ID.</p></div>
+                </div>
+            </section>
+
+            <!-- Editor & IDE Toolkit -->
+            <section id="editor-ide" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-edit"></i><h2>Editor & IDE Toolkits (6 Tools)</h2></div>
+                <p>Direct editor navigation, log monitoring, and tool window queries.</p>
+                <div class="tool-grid">
+                    <div class="tool-card"><span class="tool-sig">Editor.openFile(filePath, scrollToLine) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Opens a file in the editor and optionally scrolls to line.</p></div>
+                    <div class="tool-card"><span class="tool-sig">Editor.getOpenFiles() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Lists all open editor tabs and their modification state.</p></div>
+                    <div class="tool-card"><span class="tool-sig">Editor.closeAllFiles() <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Closes all files currently open in the editor.</p></div>
+                    <div class="tool-card"><span class="tool-sig">IDE.monitorLogs(grepPattern, tailLines) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Tails the idea.log stream with optional grep filtering.</p></div>
+                    <div class="tool-card"><span class="tool-sig">IDE.selectIn(path) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Reveals and selects a file/folder in the Project view.</p></div>
+                    <div class="tool-card"><span class="tool-sig">IDE.getToolWindowsMarkdown() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Returns a Markdown report of all registered tool windows.</p></div>
+                </div>
+            </section>
+
+            <!-- Context Providers Section -->
+            <section id="context-providers" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-eye"></i><h2>Context Providers</h2></div>
+                <p>The sensory array of the ASI in IntelliJ. These providers feed the RAG prompt with high-salience workspace metadata on every turn:</p>
+                <div class="provider-grid">
+                    <div class="provider-card">
+                        <h4><i class="fas fa-info-circle"></i> Project Overview</h4>
+                        <p>Injects authoritative project metadata, Maven packaging, and automatically synchronizes project-specific behavioral instructions from <code>anahata.md</code>.</p>
+                    </div>
+                    <div class="provider-card">
+                        <h4><i class="fas fa-sitemap"></i> Project Structure</h4>
+                        <p>Source-root-aware map built from IntelliJ's <code>ProjectRootManager</code> and <code>ProjectFileIndex</code>, distinguishing production vs test packages.</p>
+                    </div>
+                    <div class="provider-card">
+                        <h4><i class="fas fa-exclamation-triangle"></i> Project Alerts</h4>
+                        <p>Real-time compiler diagnostics via <code>WolfTheProblemSolver</code>, alerting the model to unresolved symbols and compilation errors.</p>
+                    </div>
+                    <div class="provider-card">
+                        <h4><i class="fas fa-edit"></i> Open Editors & Snippets</h4>
+                        <p>Renders a live table of open files, the focused editor's caret line, active text selections, and currently visible viewport lines.</p>
+                    </div>
+                    <div class="provider-card">
+                        <h4><i class="fas fa-window-restore"></i> Tool Windows</h4>
+                        <p>Real-time snapshot of every registered tool window across all open projects, reporting on visibility and active focus.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="nav.js"></script>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=f19c44f5-8b2e-458f-beab-96e4f9f8e603" />
+</body>
+</html>
