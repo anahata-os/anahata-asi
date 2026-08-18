@@ -4,7 +4,7 @@
 | Channel | Version | Status | Downloads (Est) | Strategy |
 | :--- | :--- | :--- | :--- | :--- |
 | **NB Plugin Portal (V1)** | 30.0.1 | Stable | 4,489 | Brand Awareness / Discovery |
-| **NB Plugin Portal (V2)** | 1.0.0 | Stable | 955 | The Singularity / JASI Container |
+| **NB Plugin Portal (V2)** | 1.0.0 | Stable | 955 | The Singularity / ASI Container |
 | **Maven Central** | 30.0.1 | Stable | Unknown | Developer SDK Adoption |
 | **GitHub Releases** | 1.1.0-SN | Beta | Unknown | Direct Binary Distribution |
 
