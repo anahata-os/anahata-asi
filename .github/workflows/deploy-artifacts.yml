@@ -62,8 +62,8 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
-          echo "Setting NBM module version to: ${{ env.TARGET_VERSION }}"
-          mvn versions:set -DnewVersion=${{ env.TARGET_VERSION }} -pl :anahata-asi-nb -DgenerateBackupPoms=false
+          echo "Setting project target version to: ${{ env.TARGET_VERSION }}"
+          mvn versions:set -DnewVersion=${{ env.TARGET_VERSION }} -DgenerateBackupPoms=false -ntp
 
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             if [[ "${{ env.TARGET_VERSION }}" == *-SNAPSHOT ]]; then
