@@ -43,9 +43,31 @@ Every push to `main` automatically:
 - Atomically refreshes the `latest-snapshot` release tag on GitHub.
 - Updates the live website and latest Javadoc vault on `asi.anahata.uno`.
 
-### 2. Official Stable GA Releases (`v*` Tag)
-To cut an official release (e.g. `v1.1.0`):
-1. **Set Release Version**: Update POMs to the release version (e.g. `1.1.0`):
+### 2. Official Stable GA Releases
+To cut an official release (e.g. `v1.1.0`), choose any of the three synchronized release methods:
+
+#### Method A: 1-Click GitHub Actions Web UI (Recommended for Team)
+Anyone with maintainer permissions can trigger a release from their browser (even on a smartphone):
+1. Navigate to **Actions** &rarr; **🚀 1-Click Production Release Dispatcher** (`manual-release.yml`).
+2. Click **Run workflow**.
+3. *(Optional)* Leave inputs blank to automatically strip `-SNAPSHOT` from POMs and auto-increment the next patch cycle, or specify custom versions (e.g. Release: `1.1.0`, Next: `1.2.0-SNAPSHOT`).
+4. Click **Run workflow** &mdash; the cloud runner handles version bumping, commits, tag creation, and rollover automatically!
+
+#### Method B: Transactional Cross-Platform Release Scripts
+Run the automated pre-flight release coordinator locally:
+- **macOS / Linux / Git Bash**:
+  ```bash
+  ./release.sh 1.1.0 1.2.0-SNAPSHOT
+  git push origin main --tags
+  ```
+- **Windows (CMD / PowerShell)**:
+  ```cmd
+  release.bat 1.1.0 1.2.0-SNAPSHOT
+  git push origin main --tags
+  ```
+
+#### Method C: Direct CLI Git Tagging
+1. **Set Release Version**:
    ```bash
    mvn versions:set -DnewVersion=1.1.0 -DgenerateBackupPoms=false
    git commit -am "chore(release): prepare v1.1.0"
@@ -56,21 +78,23 @@ To cut an official release (e.g. `v1.1.0`):
    git tag v1.1.0
    git push origin v1.1.0
    ```
-3. **Automated CI Execution**:
-   - `deploy-artifacts.yml` triggers on the `v*` tag:
-     - Stamps generation suffixes (`1.1.0.300`, `1.1.0.310`).
-     - Activates `-P release`, signs artifacts with GPG, and deploys to the **Sonatype Central Release Portal** (`central-publishing-maven-plugin`).
-     - Packages IntelliJ `.zip` and native Desktop app-images.
-     - Publishes the official GitHub Release for `v1.1.0` marked as `Latest`.
-   - `deploy-website.yml` triggers on the `v*` tag:
-     - Archives versioned Javadocs under `apidocs/1.1.0/` and persists to `gh-pages`.
-     - Deploys production `updates.xml` catalogs to `/nb/30/` and `/nb/31/`.
-4. **Prepare Next Development Cycle**:
+3. **Prepare Next Development Cycle**:
    ```bash
    mvn versions:set -DnewVersion=1.2.0-SNAPSHOT -DgenerateBackupPoms=false
    git commit -am "chore: open 1.2.0-SNAPSHOT development cycle"
    git push origin main
    ```
+
+### 3. Automated Release Cloud Execution
+When a `v*` tag is pushed (via Web UI, script, or CLI):
+- **`deploy-artifacts.yml`**:
+  - Stamps NetBeans generation suffixes (`1.1.0.300`, `1.1.0.310`).
+  - Activates `-P release`, signs all artifacts with GPG, and deploys to the **Sonatype Central Release Portal** (`central-publishing-maven-plugin`).
+  - Packages standalone IntelliJ `.zip` distribution and native Desktop app-images (Linux, Windows, macOS).
+  - Publishes the official GitHub Release for `v1.1.0` marked as `Latest` with all binaries attached.
+- **`deploy-website.yml`**:
+  - Archives versioned Javadocs under `apidocs/1.1.0/` and persists to `gh-pages`.
+  - Deploys official `updates.xml` catalogs to `/nb/30/` and `/nb/31/` on `asi.anahata.uno`.
 
 ### Javadoc Strategy
 We maintain a stateful, multi-version Javadoc repository in the cloud without local git bloat.

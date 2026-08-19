@@ -1,0 +1,100 @@
+name: 🚀 1-Click Production Release Dispatcher
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Target Release Version (Leave empty to auto-strip -SNAPSHOT from POM, e.g. 1.1.0)'
+        required: false
+        default: ''
+        type: string
+      next_snapshot:
+        description: 'Next Snapshot Version (Leave empty to auto-increment patch, e.g. 1.1.1-SNAPSHOT)'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  stage-release:
+    name: Prepare & Tag Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Resolve Version Calculations
+        id: calc_versions
+        run: |
+          CURRENT_VER=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "Current POM Version: $CURRENT_VER"
+
+          # 1. Determine Target Release Version
+          INPUT_REL="${{ inputs.release_version }}"
+          if [ -n "$INPUT_REL" ]; then
+            RELEASE_VER="$INPUT_REL"
+          else
+            RELEASE_VER="${CURRENT_VER%-SNAPSHOT}"
+          fi
+
+          # 2. Determine Next Snapshot Version
+          INPUT_SNAP="${{ inputs.next_snapshot }}"
+          if [ -n "$INPUT_SNAP" ]; then
+            NEXT_SNAP="$INPUT_SNAP"
+          else
+            # Automatically calculate next patch version (e.g., 1.1.0 -> 1.1.1-SNAPSHOT)
+            IFS='.' read -r v1 v2 v3 <<< "$RELEASE_VER"
+            if [ -n "$v3" ]; then
+              next_patch=$((v3 + 1))
+              NEXT_SNAP="${v1}.${v2}.${next_patch}-SNAPSHOT"
+            elif [ -n "$v2" ]; then
+              next_patch=$((v2 + 1))
+              NEXT_SNAP="${v1}.${next_patch}-SNAPSHOT"
+            else
+              NEXT_SNAP="${RELEASE_VER}.1-SNAPSHOT"
+            fi
+          fi
+
+          echo "========================================================"
+          echo " Target Release Version : $RELEASE_VER"
+          echo " Next Snapshot Version  : $NEXT_SNAP"
+          echo "========================================================"
+
+          echo "RELEASE_VER=$RELEASE_VER" >> $GITHUB_ENV
+          echo "NEXT_SNAP=$NEXT_SNAP" >> $GITHUB_ENV
+
+      - name: Promote POMs to Release & Tag
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          echo "[INFO] Updating all POMs to release version: $RELEASE_VER..."
+          mvn versions:set -DnewVersion=$RELEASE_VER -DgenerateBackupPoms=false -ntp
+
+          git commit -am "chore(release): prepare v$RELEASE_VER"
+          git tag -a "v$RELEASE_VER" -m "Anahata ASI v$RELEASE_VER Stable GA Release"
+
+      - name: Advance POMs to Next Snapshot
+        run: |
+          echo "[INFO] Advancing all POMs to development cycle: $NEXT_SNAP..."
+          mvn versions:set -DnewVersion=$NEXT_SNAP -DgenerateBackupPoms=false -ntp
+
+          git commit -am "chore: open $NEXT_SNAP development cycle"
+
+      - name: Push Release Commits & Tags
+        run: |
+          echo "[INFO] Pushing commits and release tag [v$RELEASE_VER] to origin..."
+          git push origin main --tags
+          echo "🎉 Successfully staged release v$RELEASE_VER and opened $NEXT_SNAP!"
