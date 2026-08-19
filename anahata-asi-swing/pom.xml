@@ -53,23 +53,7 @@
             <version>${project.version}</version>
         </dependency>
         
-        <dependency>
-            <groupId>uno.anahata</groupId>
-            <artifactId>anahata-asi-minimax</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        
-        <dependency>
-            <groupId>uno.anahata</groupId>
-            <artifactId>anahata-asi-modal</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        
-        <dependency>
-            <groupId>uno.anahata</groupId>
-            <artifactId>anahata-asi-huggingface</artifactId>
-            <version>${project.version}</version>
-        </dependency>
+
         
         
         <!-- Look and Feel & UI Components -->
