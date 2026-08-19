@@ -18,11 +18,11 @@ jobs:
         include:
           - nb_target: "300"
             nb_api: "RELEASE300"
+          - nb_target: "310"
+            nb_api: "RELEASE310"
     permissions:
       contents: write
       packages: write
-    outputs:
-      version: ${{ steps.resolve_version.outputs.VERSION }}
 
     steps:
       - name: Checkout Code
