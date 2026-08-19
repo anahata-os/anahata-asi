@@ -82,13 +82,35 @@ jobs:
           # 4. Inject CNAME for custom domain
           echo "asi.anahata.uno" > _site/CNAME
 
-          # 5. Copy auto-generated NetBeans Autoupdate Catalogs
-          mkdir -p _site/nb/30 _site/nb/31
-          if [ -f "anahata-asi-nb/target/updates.xml" ]; then
-            cp anahata-asi-nb/target/updates.xml* _site/nb/30/
+          # 5. Restore existing update catalogs from gh-pages branch so stable/dev catalogs persist across runs
+          if [ -d "temp-gh-pages/nb" ]; then
+            cp -r temp-gh-pages/nb _site/
           fi
 
-          # 6. Dynamically regenerate apidocs/index.html with all discovered versions (excluding Javadoc assets)
+          # 6. Generate and Deploy NetBeans Autoupdate Catalogs dynamically
+          NB_VERSIONS="30 31"
+          for VER in $NB_VERSIONS; do
+            NB_TARGET="${VER}0"
+            NB_API="RELEASE${NB_TARGET}"
+            CATALOG_DIR="_site/nb/${VER}"
+            mkdir -p "$CATALOG_DIR"
+
+            echo "[INFO] Generating catalog for NetBeans $VER ($NB_API)..."
+            mvn nbm:autoupdate -pl :anahata-asi-nb -Dnetbeans.version=$NB_API -ntp
+
+            if [ -f "anahata-asi-nb/target/updates.xml" ]; then
+              if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+                CATALOG_FILE="$CATALOG_DIR/updates.xml"
+              else
+                CATALOG_FILE="$CATALOG_DIR/dev-updates.xml"
+              fi
+
+              cp anahata-asi-nb/target/updates.xml "$CATALOG_FILE"
+              gzip -9 -c "$CATALOG_FILE" > "${CATALOG_FILE}.gz"
+            fi
+          done
+
+          # 7. Dynamically regenerate apidocs/index.html with all discovered versions (excluding Javadoc assets)
           python3 -c '
           import os, re
           apidocs_dir = "_site/apidocs"
@@ -107,22 +129,23 @@ jobs:
               f.write(new_html)
           '
 
-      - name: Persist New Javadocs back to gh-pages
+      - name: Persist New Javadocs & Update Catalogs back to gh-pages
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
         run: |
           cd temp-gh-pages
           # Wipe old files first to completely purge legacy, non-versioned Javadoc directories/assets
           rm -rf apidocs/*
-          mkdir -p apidocs
+          mkdir -p apidocs nb
           cp -r ../_site/apidocs/* apidocs/
+          cp -r ../_site/nb/* nb/
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add apidocs/
+          git add apidocs/ nb/
           if ! git diff --cached --quiet; then
-            git commit -m "chore: persist versioned Javadocs from run ${{ github.run_id }} 📚"
+            git commit -m "chore: persist versioned Javadocs & update catalogs from run ${{ github.run_id }} 📚"
             git push origin gh-pages
           else
-            echo "No new Javadoc changes to persist."
+            echo "No new Javadoc or catalog changes to persist."
           fi
 
       - name: Upload artifact

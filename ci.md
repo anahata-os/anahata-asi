@@ -29,8 +29,48 @@ The project website, update catalogs, and aggregated Javadocs are deployed to **
 -   **Deployment Method**: Hybrid Cloud Deployment. The runner compiles the new version's Javadocs, pulls the historical `apidocs/` vault from the persistent `gh-pages` branch, merges them, auto-indexes the landing page via an inline Python script, deploys NetBeans update center catalogs, and commits the updated vault back to `gh-pages` automatically.
 
 ### Update Center Strategy
-- **Stable Channel**: `https://asi.anahata.uno/netbeans/30/updates.xml` (NetBeans 30) / `https://asi.anahata.uno/netbeans/31/updates.xml` (NetBeans 31).
-- **Development Channel**: `https://asi.anahata.uno/netbeans/30/dev-updates.xml` / `https://asi.anahata.uno/netbeans/31/dev-updates.xml`.
+- **Stable Channel**: `https://asi.anahata.uno/nb/30/updates.xml` (NetBeans 30) / `https://asi.anahata.uno/nb/31/updates.xml` (NetBeans 31).
+- **Development Channel**: `https://asi.anahata.uno/nb/30/dev-updates.xml` / `https://asi.anahata.uno/nb/31/dev-updates.xml`.
+- **Dynamic Catalog Loop**: `deploy-website.yml` uses an automated loop (`NB_VERSIONS="30 31"`) to compile and compress (`.xml` & `.xml.gz`) catalogs for every supported NetBeans generation without hardcoding.
+
+## Triggering Releases on GitHub
+
+### 1. Rolling Snapshots (Automatic on `main`)
+Every push to `main` automatically:
+- Builds target-specific NBMs (`1.1.0.300-SNAPSHOT`, `1.1.0.310-SNAPSHOT`) and deploys them to the **Sonatype Central Snapshot repository**.
+- Generates snapshot update catalogs (`/nb/30/dev-updates.xml.gz`, `/nb/31/dev-updates.xml.gz`).
+- Compiles native Desktop binaries (Linux, Windows, macOS) and the IntelliJ plugin ZIP.
+- Atomically refreshes the `latest-snapshot` release tag on GitHub.
+- Updates the live website and latest Javadoc vault on `asi.anahata.uno`.
+
+### 2. Official Stable GA Releases (`v*` Tag)
+To cut an official release (e.g. `v1.1.0`):
+1. **Set Release Version**: Update POMs to the release version (e.g. `1.1.0`):
+   ```bash
+   mvn versions:set -DnewVersion=1.1.0 -DgenerateBackupPoms=false
+   git commit -am "chore(release): prepare v1.1.0"
+   git push origin main
+   ```
+2. **Push Git Tag**:
+   ```bash
+   git tag v1.1.0
+   git push origin v1.1.0
+   ```
+3. **Automated CI Execution**:
+   - `deploy-artifacts.yml` triggers on the `v*` tag:
+     - Stamps generation suffixes (`1.1.0.300`, `1.1.0.310`).
+     - Activates `-P release`, signs artifacts with GPG, and deploys to the **Sonatype Central Release Portal** (`central-publishing-maven-plugin`).
+     - Packages IntelliJ `.zip` and native Desktop app-images.
+     - Publishes the official GitHub Release for `v1.1.0` marked as `Latest`.
+   - `deploy-website.yml` triggers on the `v*` tag:
+     - Archives versioned Javadocs under `apidocs/1.1.0/` and persists to `gh-pages`.
+     - Deploys production `updates.xml` catalogs to `/nb/30/` and `/nb/31/`.
+4. **Prepare Next Development Cycle**:
+   ```bash
+   mvn versions:set -DnewVersion=1.2.0-SNAPSHOT -DgenerateBackupPoms=false
+   git commit -am "chore: open 1.2.0-SNAPSHOT development cycle"
+   git push origin main
+   ```
 
 ### Javadoc Strategy
 We maintain a stateful, multi-version Javadoc repository in the cloud without local git bloat.
