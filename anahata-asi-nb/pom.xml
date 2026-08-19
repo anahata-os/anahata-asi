@@ -606,6 +606,7 @@
                     <author>Anahata</author>
                     <homePageUrl>https://asi.anahata.uno</homePageUrl>
                     <codeNameBase>uno.anahata.asi.nb</codeNameBase>
+                    <distBase>${nbm.distBase}</distBase>
                     <additionalArguments>${netbeans.runparams}</additionalArguments>
                     
                     <!--
