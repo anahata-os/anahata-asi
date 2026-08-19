@@ -123,6 +123,9 @@
         -->
         <flexmark.version>0.64.8</flexmark.version>
         
+        <!-- NBM Autoupdate Distribution Base (Overridden in release profile) -->
+        <nbm.distBase>https://github.com/anahata-os/anahata-asi/releases/download/latest-snapshot/</nbm.distBase>
+        
         <!-- Plugin Versions -->
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.3.1</maven-surefire-plugin.version>
@@ -420,6 +423,9 @@
     <profiles>
         <profile>
             <id>release</id>
+            <properties>
+                <nbm.distBase>https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb/${project.version}/</nbm.distBase>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
