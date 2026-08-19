@@ -97,6 +97,7 @@
                 <h4>Application</h4>
                 <ul>
                     <li><a href="#overview">Overview</a></li>
+                    <li><a href="#update-centers">Update Centers</a></li>
                     <li><a href="#flywheel">The ASI Flywheel</a></li>
                     <li><a href="#comparison">Industry Comparison</a></li>
                 </ul>
@@ -248,6 +249,89 @@
                     <p style="margin: 0; font-size: 1rem; color: var(--white);">
                         It contains all the tools of the <a href="desktop.html" style="color: var(--barca-gold); text-decoration: underline;">standalone version</a>, plus these toolkits (the ones that are only available in NetBeans):
                     </p>
+                </div>
+            </section>
+
+            <!-- Official Update Centers Section -->
+            <section id="update-centers" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-cloud-download-alt"></i><h2>Official NetBeans Update Centers</h2></div>
+                <p>Subscribe your Apache NetBeans IDE directly to our high-speed, rolling release channels. Adding the Anahata Update Center gives you automatic in-IDE upgrade notifications within 60 seconds of any new release—completely bypassing third-party verification queues.</p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.5rem; margin: 2rem 0;">
+                    
+                    <!-- 1. NetBeans 30 Stable -->
+                    <div class="nb-card" style="margin: 0; border-top-color: var(--barca-gold);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+                            <span style="background: var(--barca-gold); color: black; font-weight: 800; font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">NetBeans 30 • Stable</span>
+                            <span style="font-size: 0.8rem; color: var(--text-muted);">RELEASE300</span>
+                        </div>
+                        <h3 style="color: var(--white); margin: 0 0 0.5rem; font-size: 1.15rem;">Official GA Release Channel</h3>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 1rem;">
+                            Production-ready, certified releases tested for Apache NetBeans 30.
+                        </p>
+                        <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                            <code id="uc-nb30-stable" style="font-size: 0.8rem; color: var(--primary-light); overflow-x: auto; white-space: nowrap;">https://asi.anahata.uno/nb/30/updates.xml</code>
+                            <button onclick="navigator.clipboard.writeText('https://asi.anahata.uno/nb/30/updates.xml'); this.innerHTML='<i class=\'fas fa-check\'></i>'; setTimeout(() => this.innerHTML='<i class=\'fas fa-copy\'></i>', 2000);" style="background: none; border: none; color: var(--barca-gold); cursor: pointer; font-size: 1rem; padding: 4px 6px;" title="Copy URL"><i class="fas fa-copy"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- 2. NetBeans 30 Dev -->
+                    <div class="nb-card" style="margin: 0; border-top-color: var(--primary-light);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+                            <span style="background: var(--primary-light); color: white; font-weight: 800; font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">NetBeans 30 • Dev (Snapshots)</span>
+                            <span style="font-size: 0.8rem; color: var(--text-muted);">RELEASE300</span>
+                        </div>
+                        <h3 style="color: var(--white); margin: 0 0 0.5rem; font-size: 1.15rem;">Daily Rolling Snapshot Channel</h3>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 1rem;">
+                            Continuous bleeding-edge builds compiled automatically from the <code>main</code> branch.
+                        </p>
+                        <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                            <code id="uc-nb30-dev" style="font-size: 0.8rem; color: var(--primary-light); overflow-x: auto; white-space: nowrap;">https://asi.anahata.uno/nb/30/dev-updates.xml</code>
+                            <button onclick="navigator.clipboard.writeText('https://asi.anahata.uno/nb/30/dev-updates.xml'); this.innerHTML='<i class=\'fas fa-check\'></i>'; setTimeout(() => this.innerHTML='<i class=\'fas fa-copy\'></i>', 2000);" style="background: none; border: none; color: var(--barca-gold); cursor: pointer; font-size: 1rem; padding: 4px 6px;" title="Copy URL"><i class="fas fa-copy"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- 3. NetBeans 31 Stable -->
+                    <div class="nb-card" style="margin: 0; border-top-color: var(--barca-gold);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+                            <span style="background: var(--barca-gold); color: black; font-weight: 800; font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">NetBeans 31 • Stable</span>
+                            <span style="font-size: 0.8rem; color: var(--text-muted);">RELEASE310</span>
+                        </div>
+                        <h3 style="color: var(--white); margin: 0 0 0.5rem; font-size: 1.15rem;">Official GA Release Channel</h3>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 1rem;">
+                            Production-ready, certified releases compiled against Apache NetBeans 31 platform APIs.
+                        </p>
+                        <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                            <code id="uc-nb31-stable" style="font-size: 0.8rem; color: var(--primary-light); overflow-x: auto; white-space: nowrap;">https://asi.anahata.uno/nb/31/updates.xml</code>
+                            <button onclick="navigator.clipboard.writeText('https://asi.anahata.uno/nb/31/updates.xml'); this.innerHTML='<i class=\'fas fa-check\'></i>'; setTimeout(() => this.innerHTML='<i class=\'fas fa-copy\'></i>', 2000);" style="background: none; border: none; color: var(--barca-gold); cursor: pointer; font-size: 1rem; padding: 4px 6px;" title="Copy URL"><i class="fas fa-copy"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- 4. NetBeans 31 Dev -->
+                    <div class="nb-card" style="margin: 0; border-top-color: var(--primary-light);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+                            <span style="background: var(--primary-light); color: white; font-weight: 800; font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">NetBeans 31 • Dev (Snapshots)</span>
+                            <span style="font-size: 0.8rem; color: var(--text-muted);">RELEASE310</span>
+                        </div>
+                        <h3 style="color: var(--white); margin: 0 0 0.5rem; font-size: 1.15rem;">Daily Rolling Snapshot Channel</h3>
+                        <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 1rem;">
+                            Continuous bleeding-edge builds compiled automatically for Apache NetBeans 31.
+                        </p>
+                        <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                            <code id="uc-nb31-dev" style="font-size: 0.8rem; color: var(--primary-light); overflow-x: auto; white-space: nowrap;">https://asi.anahata.uno/nb/31/dev-updates.xml</code>
+                            <button onclick="navigator.clipboard.writeText('https://asi.anahata.uno/nb/31/dev-updates.xml'); this.innerHTML='<i class=\'fas fa-check\'></i>'; setTimeout(() => this.innerHTML='<i class=\'fas fa-copy\'></i>', 2000);" style="background: none; border: none; color: var(--barca-gold); cursor: pointer; font-size: 1rem; padding: 4px 6px;" title="Copy URL"><i class="fas fa-copy"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step-by-Step Instructions Box -->
+                <div class="integration-grid" style="border-left: 4px solid var(--barca-gold); margin-top: 2rem;">
+                    <h3 style="color: var(--white); margin-top: 0; font-size: 1.2rem;"><i class="fas fa-wrench" style="color: var(--barca-gold); margin-right: 8px;"></i> How to Add an Update Center to NetBeans:</h3>
+                    <div class="integration-item"><i class="fas fa-step-forward"></i> <div><b>1. Open Plugins Configuration</b>: In Apache NetBeans, go to <b>Tools</b> &rarr; <b>Plugins</b>.</div></div>
+                    <div class="integration-item"><i class="fas fa-sliders-h"></i> <div><b>2. Navigate to Settings</b>: Select the <b>Settings</b> tab in the Plugins window.</div></div>
+                    <div class="integration-item"><i class="fas fa-plus-circle"></i> <div><b>3. Add Update Center</b>: Click the <b>Add</b> button on the right side.</div></div>
+                    <div class="integration-item"><i class="fas fa-paste"></i> <div><b>4. Enter Details</b>: Set Name to <code>Anahata ASI (NB 30)</code> and paste your desired URL above.</div></div>
+                    <div class="integration-item"><i class="fas fa-sync-alt"></i> <div><b>5. Check for Updates</b>: Switch to the <b>Updates</b> or <b>Available Plugins</b> tab to install with 1 click!</div></div>
                 </div>
             </section>
 
