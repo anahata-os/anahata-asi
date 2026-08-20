@@ -48,12 +48,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     <!-- Applications Dropdown -->
                     <div class="dropdown">
-                        <a href="#" class="dropdown-toggle ${(isActive('nb.html') || isActive('desktop.html')) ? 'active-link' : ''}">
+                        <a href="#" class="dropdown-toggle ${(isActive('nb.html') || isActive('desktop.html') || isActive('intellij.html')) ? 'active-link' : ''}">
                             Applications <i class="fas fa-chevron-down"></i>
                         </a>
                         <div class="dropdown-menu">
                             <a href="${prefix}nb.html" class="${isActive('nb.html') ? 'active-item' : ''}"><i class="fas fa-code"></i> NetBeans ASI Studio</a>
                             <a href="${prefix}desktop.html" class="${isActive('desktop.html') ? 'active-item' : ''}"><i class="fas fa-rocket"></i> Anahata ASI Desktop</a>
+                            <a href="${prefix}intellij.html" class="${isActive('intellij.html') ? 'active-item' : ''}"><i class="fas fa-laptop-code"></i> IntelliJ ASI Studio <span class="badge" style="background: var(--accent); color: white; font-size: 0.65rem; padding: 1px 6px; border-radius: 4px; font-weight: 800; margin-left: 4px;">BETA</span></a>
                         </div>
                     </div>
 
