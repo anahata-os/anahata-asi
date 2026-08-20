@@ -8,7 +8,7 @@ All project artifacts (NBMs, IntelliJ IDEA plugin distributions, native Desktop 
     - Multi-target matrix build for NetBeans releases (e.g. `300` for `RELEASE300`, `310` for `RELEASE310`).
     - Deterministic version stamping: `1.1.0-SNAPSHOT` -> `1.1.0.300-SNAPSHOT` (Dev) / `1.1.0` -> `1.1.0.300` (Release).
     - Published to **Sonatype Central Snapshot repository** on pushes to `main`, and **Sonatype Central Release portal** on release tags.
-    - Automated catalog generation: `mvn nbm:autoupdate` produces `updates.xml` and `updates.xml.gz` catalogs deployed per NetBeans generation (`/netbeans/30/`, `/netbeans/31/`).
+    - Automated catalog generation: `mvn nbm:autoupdate` produces `updates.xml` (for stable releases) and `dev-updates.xml` (for dev snapshots), compressed with `.gz`, deployed per NetBeans generation (`/nb/30/`, `/nb/31/`).
 2.  **IntelliJ IDEA Plugin Distribution**:
     - Packaged as a standalone distribution ZIP (`anahata-asi-intellij-${version}.zip`) via `maven-assembly-plugin`.
     - Bundles all core and swing dependencies alongside PSI-based IDE tools.
@@ -105,5 +105,4 @@ We maintain a stateful, multi-version Javadoc repository in the cloud without lo
 
 ## Current Status & Transition Plan
 -   **V1**: The `anahata.uno` domain is currently pointed to the V1 website (hosted in the `anahata-netbeans-ai` project).
--   **V2 (JASI)**: The V2 portal is live at `asi.anahata.uno`.
--   **Active Modules**: All modules, including `anahata-asi-intellij` and `anahata-asi-yam`, are part of the automated CI/CD pipeline.
+-   **V2 (ASI)**: The V2 portal is live at `asi.anahata.uno`.

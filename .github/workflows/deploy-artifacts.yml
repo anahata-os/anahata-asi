@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 25 & Maven
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '25'
           distribution: 'temurin'
@@ -47,15 +47,28 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
-          echo "[INFO] Building and deploying NBM against NetBeans API: ${{ matrix.nb_api }}..."
+          # 1. Read current project version (e.g. 1.1.0-SNAPSHOT or 1.1.0)
+          BASE_VER=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
 
+          # 2. Compute stamped version (e.g. 1.1.0.300-SNAPSHOT or 1.1.0.300)
+          if [[ "$BASE_VER" == *"-SNAPSHOT" ]]; then
+            BASE_NUM="${BASE_VER%-SNAPSHOT}"
+            STAMPED_VER="${BASE_NUM}.${{ matrix.nb_target }}-SNAPSHOT"
+          else
+            STAMPED_VER="${BASE_VER}.${{ matrix.nb_target }}"
+          fi
+
+          echo "[INFO] Stamping NBM module version to: $STAMPED_VER on runner..."
+          mvn versions:set -DnewVersion=$STAMPED_VER -DgenerateBackupPoms=false -pl :anahata-asi-nb -ntp
+
+          echo "[INFO] Building and deploying NBM ($STAMPED_VER) against NetBeans API: ${{ matrix.nb_api }}..."
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             echo "[INFO] Tag trigger with release version detected. Deploying NBM to Sonatype Central Release portal..."
             mvn deploy -DskipTests -P release -pl :anahata-asi-nb -am -ntp -Dnetbeans.version=${{ matrix.nb_api }}
           else
             echo "[INFO] Branch trigger with SNAPSHOT version detected. Deploying to Sonatype Snapshot repository..."
             mvn deploy -DskipTests -pl :anahata-asi-nb -am -ntp -Dnetbeans.version=${{ matrix.nb_api }} \
-              -DaltSnapshotDeploymentRepository=sonatype-central::default::https://central.sonatype.com/repository/maven-snapshots/
+              -DaltSnapshotDeploymentRepository=sonatype-central::https://central.sonatype.com/repository/maven-snapshots/
           fi
           
           echo "[INFO] Generating Autoupdate catalog for NetBeans ${{ matrix.nb_target }}..."
@@ -81,7 +94,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 25
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '25'
           distribution: 'temurin'
@@ -168,7 +181,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 25
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '25'
           distribution: 'temurin'
