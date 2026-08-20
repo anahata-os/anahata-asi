@@ -11,6 +11,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.mrbean.MrBeanModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import io.swagger.v3.core.converter.AnnotatedType;
@@ -48,6 +50,8 @@ public class SchemaProvider {
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .registerModule(new ParameterNamesModule())
             .registerModule(new MrBeanModule())
+            .registerModule(new JavaTimeModule())
+            .registerModule(new Jdk8Module())
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
             .setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
@@ -59,6 +63,8 @@ public class SchemaProvider {
      * POJOs.
      */
     private static final ObjectMapper INTERNAL_MAPPER = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .registerModule(new Jdk8Module())
             .setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
     /**
