@@ -225,6 +225,21 @@ public class ToolContext {
             log.error("ToolContext error outside of tool execution context: [{}] {}", getClass().getSimpleName(), message);
         }
     }
+    
+    /**
+     * Adds an exceptions stack trace to the current tool's response. If called outside a
+     * tool execution thread, it logs to the SLF4J logger.
+     *
+     * @param t The error message to add.
+     */
+    public void error(Throwable t) {
+        JavaMethodToolResponse response = peekResponse();
+        if (response != null) {
+            response.addError(t);
+        } else {
+            log.error("ToolContext error outside of tool execution context on " + getClass().getSimpleName(), t);
+        }
+    }
 
     /**
      * Attaches a binary blob to the current tool's response.
