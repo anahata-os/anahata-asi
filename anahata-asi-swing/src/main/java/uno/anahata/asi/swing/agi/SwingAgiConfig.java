@@ -5,7 +5,6 @@ package uno.anahata.asi.swing.agi;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.GradientPaint;
 import javax.swing.UIManager;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,6 +22,8 @@ import uno.anahata.asi.yam.tools.chrome.Chrome;
 import uno.anahata.asi.yam.tools.firefox.Firefox;
 import uno.anahata.asi.yam.tools.Radio;
 import uno.anahata.asi.yam.tools.Speech;
+import uno.anahata.asi.yam.tools.benchmarks.Agi1Benchmark;
+import uno.anahata.asi.yam.tools.youtube.YouTube;
 
 /**
  * A concrete {@link AgiConfig} implementation for standalone Swing applications, 
@@ -58,6 +59,8 @@ public class SwingAgiConfig extends AgiConfig {
         getToolClasses().add(Speech.class);
         getToolClasses().add(Chrome.class);
         getToolClasses().add(Firefox.class);
+        getToolClasses().add(YouTube.class);
+        getToolClasses().add(Agi1Benchmark.class);
         //getToolClasses().add(OldChrome.class);
         getToolClasses().add(Screens.class);
     }
