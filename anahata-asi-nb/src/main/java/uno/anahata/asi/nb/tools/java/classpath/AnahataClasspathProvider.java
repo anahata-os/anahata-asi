@@ -28,7 +28,7 @@ public class AnahataClasspathProvider implements ClassPathProvider {
     /**
      * The cached classpath of the Anahata plugin, initialized lazily.
      */
-    private ClassPath anahataPluginCp;
+    //private ClassPath anahataPluginCp;
 
     /**
      * Lazily initializes and returns the ClassPath representing the Anahata
@@ -41,9 +41,10 @@ public class AnahataClasspathProvider implements ClassPathProvider {
      *
      * @return the anahata plugin classpath.
      */
+    /*
     private synchronized ClassPath getPluginClassPath() {
         if (anahataPluginCp == null) {
-            String rawCp = NetBeansModuleUtils.getFullModuleClasspath();
+            String rawCp = NetBeansModuleUtils.getFullAnahataAsiModuleClasspath();
             List<URL> cpUrls = new ArrayList<>();
             for (String path : rawCp.split(File.pathSeparator)) {
                 File f = new File(path);
@@ -57,7 +58,7 @@ public class AnahataClasspathProvider implements ClassPathProvider {
             anahataPluginCp = ClassPathSupport.createClassPath(cpUrls.toArray(new URL[0]));
         }
         return anahataPluginCp;
-    }
+    }*/
 
     /**
      * {@inheritDoc}
