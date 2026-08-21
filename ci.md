@@ -1,7 +1,7 @@
 # Continuous Integration & Deployment (CI/CD)
 
 ## Artifact Publishing
-All project artifacts (NBMs, IntelliJ IDEA plugin distributions, native Desktop installers, JARs, POMs) are compiled, validated, and published via a unified, multi-job GitHub Action (`deploy-artifacts.yml`), triggered on pushes to the `main` branch or release tags (`v*`).
+All project artifacts (NBMs, IntelliJ IDEA plugin distributions, native Desktop installers, JARs, POMs) and website/Javadoc deployments are compiled, validated, and published via a unified, multi-job GitHub Action (`build.yml`), triggered on pushes to the `main` branch or release tags (`v*`).
 
 ### Publishing Pipelines
 1.  **Platform NBMs & NetBeans Generation Suffixes**:
@@ -25,7 +25,7 @@ All project artifacts (NBMs, IntelliJ IDEA plugin distributions, native Desktop 
 ## Website & Javadoc Deployment
 The project website, update catalogs, and aggregated Javadocs are deployed to **GitHub Pages** using the modern Actions-based deployment method.
 
--   **Workflow**: `.github/workflows/deploy-website.yml`
+-   **Workflow**: `.github/workflows/build.yml`
 -   **Custom Domain**: [https://asi.anahata.uno](https://asi.anahata.uno)
 -   **Deployment Method**: Hybrid Cloud Deployment. The runner compiles the new version's Javadocs, pulls the historical `apidocs/` vault from the persistent `gh-pages` branch, merges them, auto-indexes the landing page via an inline Python script, deploys NetBeans update center catalogs, and commits the updated vault back to `gh-pages` automatically.
 
@@ -88,12 +88,12 @@ Run the automated pre-flight release coordinator locally:
 
 ### 3. Automated Release Cloud Execution
 When a `v*` tag is pushed (via Web UI, script, or CLI):
-- **`deploy-artifacts.yml`**:
+- **`build.yml` (Artifacts Pipeline)**:
   - Stamps NetBeans generation suffixes (`1.1.0.300`, `1.1.0.310`).
   - Activates `-P release`, signs all artifacts with GPG, and deploys to the **Sonatype Central Release Portal** (`central-publishing-maven-plugin`).
   - Packages standalone IntelliJ `.zip` distribution and native Desktop app-images (Linux, Windows, macOS).
   - Publishes the official GitHub Release for `v1.1.0` marked as `Latest` with all binaries attached.
-- **`deploy-website.yml`**:
+- **`build.yml` (Website & Javadoc Pipeline)**:
   - Archives versioned Javadocs under `apidocs/1.1.0/` and persists to `gh-pages`.
   - Deploys official `updates.xml` catalogs to `/nb/30/` and `/nb/31/` on `asi.anahata.uno`.
 
