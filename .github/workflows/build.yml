@@ -76,9 +76,9 @@ jobs:
 
           echo "[INFO] Generating Autoupdate catalog for NetBeans ${{ matrix.nb_target }}..."
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            mvn nbm:autoupdate -pl :anahata-asi-nb -Dnetbeans.version=RELEASE${{ matrix.nb_target }} -Dnbm.distBase=https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb/${STAMPED_VER}/ -ntp
+            mvn nbm:autoupdate -pl :anahata-asi-nb -Dnetbeans.version=RELEASE${{ matrix.nb_target }} -Dnbm.distBase=https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb/${STAMPED_VER} -ntp
           else
-            mvn nbm:autoupdate -pl :anahata-asi-nb -Dnetbeans.version=RELEASE${{ matrix.nb_target }} -Dnbm.distBase=https://github.com/anahata-os/anahata-asi/releases/download/latest-snapshot/ -ntp
+            mvn nbm:autoupdate -pl :anahata-asi-nb -Dnetbeans.version=RELEASE${{ matrix.nb_target }} -Dnbm.distBase=https://github.com/anahata-os/anahata-asi/releases/download/latest-snapshot -ntp
           fi
 
           # Fail-Fast: Verify catalog was produced

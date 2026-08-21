@@ -263,9 +263,9 @@
                             dlBadge.style.background = 'var(--barca-gold)';
                             dlBadge.style.color = 'black';
                         } else {
-                            dlBtn.href = 'https://central.sonatype.com/repository/maven-snapshots/uno/anahata/anahata-asi-nb/';
-                            dlText.textContent = `Browse Snapshot NBMs (${apiName})`;
-                            dlBadge.textContent = 'Sonatype Snapshots';
+                            dlBtn.href = `https://github.com/anahata-os/anahata-asi/releases/download/latest-snapshot/anahata-asi-nb-1.1.0.${targetSuffix}-SNAPSHOT.nbm`;
+                            dlText.textContent = `Download Latest Snapshot (${apiName})`;
+                            dlBadge.textContent = 'Direct Download';
                             dlBadge.style.background = 'var(--primary-light)';
                             dlBadge.style.color = 'white';
                         }

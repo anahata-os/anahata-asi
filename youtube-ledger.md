@@ -8,7 +8,7 @@ This ledger tracks live reach, developer engagement, and video-by-video view met
 | Metric | Value | Status |
 | :--- | :--- | :--- |
 | **Subscribers** | 40 | Growth Phase |
-| **Total Views** | 1,636 | Core Reach |
+| **Total Views** | 1,639 | Core Reach |
 | **Total Videos** | 27 | Active Library |
 
 --- 
@@ -17,7 +17,7 @@ This ledger tracks live reach, developer engagement, and video-by-video view met
 
 | Publish Date | Video Title | Video ID | Views | Likes | Comments | Link |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 2026-08-06 | **NovaRouteAI + Anahata ASI Setup \| One API Key for Qwen, DeepSeek and Kimi** | `u0mTyEZI8Fo` | 13 | 0 | 0 | [Watch](https://youtu.be/u0mTyEZI8Fo) |
+| 2026-08-06 | **NovaRouteAI + Anahata ASI Setup \| One API Key for Qwen, DeepSeek and Kimi** | `u0mTyEZI8Fo` | 14 | 0 | 0 | [Watch](https://youtu.be/u0mTyEZI8Fo) |
 | 2026-08-04 | **Gemini 3.6 Flash Thinkining Mode - Java Arkanoid Benchmark** | `tbP3Vpr3tLE` | 19 | 0 | 0 | [Watch](https://youtu.be/tbP3Vpr3tLE) |
 | 2026-08-04 | **Qwen 3.8 Max: Default vs HIGH Thinking Mode (Pure Java Benchmark) - AnahataASI NovaRouteAI** | `Gx2W0X5K9yg` | 37 | 0 | 0 | [Watch](https://youtu.be/Gx2W0X5K9yg) |
 | 2026-08-04 | **DeepSeek v4 Flash - High vs Default - NovaRouteAI - JavaFX** | `marYtKN_CQo` | 65 | 0 | 0 | [Watch](https://youtu.be/marYtKN_CQo) |
@@ -30,7 +30,7 @@ This ledger tracks live reach, developer engagement, and video-by-video view met
 | 2026-05-20 | **Gemini 3.5 Flash - Wembley 3D Stadium - Anahata ASI - LWJGL - Java** | `fLlAc1TDuOQ` | 21 | 1 | 0 | [Watch](https://youtu.be/fLlAc1TDuOQ) |
 | 2026-05-20 | **Gemini 3.5 Flash Single Shot 3D Stadium - LWJGL - Java -  Anahata ASI Desktop** | `FV_UPG6XJU8` | 14 | 0 | 0 | [Watch](https://youtu.be/FV_UPG6XJU8) |
 | 2026-05-17 | **3d Wembly Stadium - Anahata ASI - Gemini 3 Flash** | `oh4fU1VJ1Zs` | 22 | 1 | 0 | [Watch](https://youtu.be/oh4fU1VJ1Zs) |
-| 2026-05-05 | **Anahata ASI - Gemini 3 Flash Obliterates NetBeans** | `vVhVsWBJ4nU` | 48 | 0 | 0 | [Watch](https://youtu.be/vVhVsWBJ4nU) |
+| 2026-05-05 | **Anahata ASI - Gemini 3 Flash Obliterates NetBeans** | `vVhVsWBJ4nU` | 50 | 0 | 0 | [Watch](https://youtu.be/vVhVsWBJ4nU) |
 | 2026-05-04 | **Anahata ASI - Gemini 3 Flash Destroys NetBeans** | `GUWM0siDx2o` | 56 | 2 | 0 | [Watch](https://youtu.be/GUWM0siDx2o) |
 | 2026-05-04 | **Anahata ASI - ChatGPT 5 makes his first on-the-fly Swing Game in barely 350 lines of code** | `JN97B7Sh-rY` | 29 | 0 | 0 | [Watch](https://youtu.be/JN97B7Sh-rY) |
 | 2026-04-28 | **Anahata ASI Saving the world from Alien NetBeans Voluteers - gets extra points for hitting Chris** | `uAZmaZXcmu4` | 87 | 0 | 0 | [Watch](https://youtu.be/uAZmaZXcmu4) |
@@ -44,13 +44,14 @@ This ledger tracks live reach, developer engagement, and video-by-video view met
 | 2026-01-21 | **When Agentic  Kovalsky says GO! it means GO! #coding #programming #netbeans #java #ai #singularity** | `NWBJWpGCkPM` | 72 | 0 | 0 | [Watch](https://youtu.be/NWBJWpGCkPM) |
 | 2026-01-12 | **Anahata NetBeans AI v2 - Gal Gadot joins Messi's team with the help of jsoup** | `5RHszrXhtMg` | 115 | 2 | 0 | [Watch](https://youtu.be/5RHszrXhtMg) |
 | 2026-01-12 | **Anahata ASI - Barça NetBeans 28 Artificial Super Intelligence** | `2G8X8T6W5yo` | 85 | 2 | 0 | [Watch](https://youtu.be/2G8X8T6W5yo) |
-| 2026-01-07 | **Anahata NetBeans AI v2 teaser - Anahata ASI** | `fBP7s6cQhMQ` | 221 | 6 | 0 | [Watch](https://youtu.be/fBP7s6cQhMQ) |
+| 2026-01-07 | **Anahata NetBeans AI v2 teaser - Anahata ASI** | `fBP7s6cQhMQ` | 225 | 6 | 0 | [Watch](https://youtu.be/fBP7s6cQhMQ) |
 
 --- 
 
 ## 🛠️ Milestone Log
 | Date | Milestone | Token ROI | Impact |
 | :--- | :--- | :--- | :--- |
+| 2026-08-21 19:38 | Channel Scrape: Subs=40, Views=1,639 | High | Subs: +0, Views: +3 (0.09 Views/hr) in 32.6 hours since 2026-08-20 11:01 |
 | 2026-08-20 11:01 | Channel Scrape: Subs=40, Views=1,636 | High | Subs: +0, Views: +0 (0.00 Views/hr) in 16.3 hours since 2026-08-19 18:43 |
 | 2026-08-19 18:43 | Channel Scrape: Subs=40, Views=1,636 | High | Subs: +0, Views: +66 (0.38 Views/hr) in 175.7 hours since 2026-08-12 11:01 |
 | 2026-08-12 11:01 | Channel Scrape: Subs=40, Views=1,570 | High | Subs: +0, Views: +37 (0.39 Views/hr) in 94.5 hours since 2026-08-08 12:30 |
@@ -70,97 +71,3 @@ This ledger tracks live reach, developer engagement, and video-by-video view met
 | 2026-07-25 12:01 | Channel Scrape: Subs=39, Views=1,319 | High | Subs: +0, Views: +0 (0.00 Views/hr) in 19.5 hours since 2026-07-24 16:30 |
 | 2026-07-24 16:30 | Channel Scrape: Subs=39, Views=1,319 | High | Subs: +0, Views: +0 (0.00 Views/hr) since 2026-07-23 15:30 |
 | 2026-07-23 15:30 | Channel Scrape: Subs=39, Views=1,319 | High | Baseline tracking initiated |
-
----
-
-## 🛠️ One-Shot JIT Scraper & Refresher Guide
-Run this script via `NbJava.compileAndExecute` or the JIT compilation engine to scrape the latest metrics and automatically refresh this ledger in a single turn:
-
-```java
-import org.jsoup.Jsoup;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-
-public class Anahata extends uno.anahata.asi.swing.agi.tool.SwingAgiTool {
-    @Override
-    public Object call() throws Exception {
-        // Read key securely from home directory
-        Path keyPath = Path.of(System.getProperty("user.home"), ".anahata/youtube_api_key.txt");
-        if (!Files.exists(keyPath)) {
-            throw new IllegalStateException("YouTube API key not found at: " + keyPath);
-        }
-        String apiKey = Files.readString(keyPath).trim();
-        String playlistId = "UU0WXH03OU-RJeUQ2CuMFU9g";
-        
-        log("1. Fetching uploads playlist...");
-        String playlistUrl = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=" + playlistId + "&key=" + apiKey;
-        String playlistResponse = Jsoup.connect(playlistUrl).ignoreContentType(true).execute().body();
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode playlistJson = mapper.readTree(playlistResponse);
-        
-        List<String> videoIds = new ArrayList<>();
-        for (JsonNode item : playlistJson.get("items")) {
-            videoIds.add(item.get("snippet").get("resourceId").get("videoId").asText());
-        }
-        
-        log("2. Requesting video statistics...");
-        String idsJoined = String.join(",", videoIds);
-        String videosUrl = "https://www.googleapis.com/youtube/v3/videos?part=statistics,snippet&id=" + idsJoined + "&key=" + apiKey;
-        String videosResponse = Jsoup.connect(videosUrl).ignoreContentType(true).execute().body();
-        JsonNode videosJson = mapper.readTree(videosResponse);
-        JsonNode videoItems = videosJson.get("items");
-        
-        StringBuilder sb = new StringBuilder();
-        sb.append("# 📺 Anahata TV Media Ledger: Operation Audience Expansion\n\n");
-        sb.append("This ledger tracks live reach, developer engagement, and video-by-video view metrics for the official **Anahata TV** channel (`@anahata108`).\n\n");
-        sb.append("--- \n\n## 📊 Channel Overview\n");
-        
-        String channelUrl = "https://www.googleapis.com/youtube/v3/channels?part=statistics&id=UC0WXH03OU-RJeUQ2CuMFU9g&key=" + apiKey;
-        String channelResponse = Jsoup.connect(channelUrl).ignoreContentType(true).execute().body();
-        JsonNode channelJson = mapper.readTree(channelResponse);
-        JsonNode channelStats = channelJson.get("items").get(0).get("statistics");
-        
-        sb.append("| Metric | Value | Status |\n");
-        sb.append("| :--- | :--- | :--- |\n");
-        sb.append("| **Subscribers** | ").append(channelStats.get("subscriberCount").asText()).append(" | Growth Phase |\n");
-        sb.append("| **Total Views** | ").append(String.format("%,d", channelStats.get("viewCount").asLong())).append(" | Core Reach |\n");
-        sb.append("| **Total Videos** | ").append(channelStats.get("videoCount").asText()).append(" | Active Library |\n\n");
-        sb.append("--- \n\n## 🎥 Video Analytics Directory\n\n");
-        sb.append("| Publish Date | Video Title | Video ID | Views | Likes | Comments | Link |\n");
-        sb.append("| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n");
-        
-        for (JsonNode video : videoItems) {
-            JsonNode snippet = video.get("snippet");
-            JsonNode stats = video.get("statistics");
-            
-            String publishedAt = snippet.get("publishedAt").asText().substring(0, 10);
-            String title = snippet.get("title").asText().replace("|", "\\|");
-            String id = video.get("id").asText();
-            long views = stats.has("viewCount") ? stats.get("viewCount").asLong() : 0;
-            long likes = stats.has("likeCount") ? stats.get("likeCount").asLong() : 0;
-            long comments = stats.has("commentCount") ? stats.get("commentCount").asLong() : 0;
-            
-            sb.append("| ").append(publishedAt)
-              .append(" | **").append(title).append("**")
-              .append(" | `").append(id).append("`")
-              .append(" | ").append(String.format("%,d", views))
-              .append(" | ").append(String.format("%,d", likes))
-              .append(" | ").append(String.format("%,d", comments))
-              .append(" | [Watch](https://youtu.be/").append(id).append(") |\n");
-        }
-        
-        sb.append("\n---\n\n## 🛠️ One-Shot JIT Scraper & Refresher Guide\n..."); // Preserve instructions
-        
-        // Write result to file programmatically
-        Path ledgerPath = Path.of(\"/home/pablo/NetBeansProjects/anahata-asi-parent/youtube-ledger.md\");
-        Files.writeString(ledgerPath, sb.toString());
-        log("Ledger successfully refreshed on disk!");
-        return "YouTube ledger successfully updated!";
-    }
-}
-```
