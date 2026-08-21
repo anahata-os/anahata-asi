@@ -294,10 +294,11 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Download NBM Catalogs from Matrix Jobs
+      - name: Download NBM Artifacts & Catalogs
         uses: actions/download-artifact@v4
         with:
-          path: downloaded-catalogs
+          pattern: 'nbm-artifact-*'
+          path: downloaded-nbm-artifacts
 
       - name: Prepare Deployment Folder & Merge Javadocs & Catalogs
         run: |
@@ -331,28 +332,30 @@ jobs:
             cp -r temp-gh-pages/nb _site/
           fi
 
-          # 6. Deploy NetBeans Autoupdate Catalogs from the NBM matrix build artifacts
-          NB_TARGETS="300 310"
-          for TARGET in $NB_TARGETS; do
-            MAJOR="${TARGET:0:2}"
-            CATALOG_DIR="_site/nb/${MAJOR}"
-            mkdir -p "$CATALOG_DIR"
+          # 6. Dynamically discover and deploy NetBeans update catalogs from matrix build artifacts
+          for artifact_dir in downloaded-nbm-artifacts/nbm-artifact-*; do
+            if [ -d "$artifact_dir" ]; then
+              TARGET="${artifact_dir##*artifact-}"
+              MAJOR="${TARGET:0:2}"
+              CATALOG_DIR="_site/nb/${MAJOR}"
+              mkdir -p "$CATALOG_DIR"
 
-            SOURCE_CATALOG="downloaded-catalogs/nbm-artifact-${TARGET}/updates.xml"
-            if [ ! -f "$SOURCE_CATALOG" ]; then
-              echo "[FATAL ERROR] Downloaded catalog $SOURCE_CATALOG does not exist!"
-              exit 1
+              SOURCE_CATALOG=$(find "$artifact_dir" -name "updates.xml" | head -n 1)
+              if [ -z "$SOURCE_CATALOG" ] || [ ! -f "$SOURCE_CATALOG" ]; then
+                echo "[FATAL ERROR] updates.xml not found in $artifact_dir!"
+                exit 1
+              fi
+
+              if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+                CATALOG_FILE="$CATALOG_DIR/updates.xml"
+              else
+                CATALOG_FILE="$CATALOG_DIR/dev-updates.xml"
+              fi
+
+              echo "[INFO] Copying catalog for NetBeans $MAJOR (Target: $TARGET) from $SOURCE_CATALOG to $CATALOG_FILE..."
+              cp "$SOURCE_CATALOG" "$CATALOG_FILE" || exit 1
+              gzip -9 -c "$CATALOG_FILE" > "${CATALOG_FILE}.gz" || exit 1
             fi
-
-            if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-              CATALOG_FILE="$CATALOG_DIR/updates.xml"
-            else
-              CATALOG_FILE="$CATALOG_DIR/dev-updates.xml"
-            fi
-
-            echo "[INFO] Copying catalog for NetBeans $MAJOR into $CATALOG_FILE..."
-            cp "$SOURCE_CATALOG" "$CATALOG_FILE" || exit 1
-            gzip -9 -c "$CATALOG_FILE" > "${CATALOG_FILE}.gz" || exit 1
           done
 
           # 7. Dynamically regenerate apidocs/index.html with all discovered versions
