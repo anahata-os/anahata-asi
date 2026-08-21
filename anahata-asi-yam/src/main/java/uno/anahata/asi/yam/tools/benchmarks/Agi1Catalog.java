@@ -25,13 +25,13 @@ import uno.anahata.asi.toolkit.shell.Shell;
 public final class Agi1Catalog {
 
     /**
-     * Test #1: OS Hardware & System Values Dashboard (JNA Native C-Library Binding).
+     * Test #1: OS Hardware &amp; System Values Dashboard (JNA Native C-Library Binding).
      */
     public static final Agi1TestDefinition JAVA_JNA_1 = Agi1TestDefinition.builder()
             .testCode("JAVA-JNA-1")
             .title("OS Hardware & System Values Dashboard")
-            .rawPrompt("Build a real-time, interactive Swing host system telemetry dashboard in a single Java class "
-                    + "extending SwingAgiTool using JNA (com.sun.jna.Library) to monitor host system CPU/GPU temperatures "
+            .rawPrompt("Build a real-time, interactive system telemetry dashboard "
+                    + "using JNA (com.sun.jna.Library) to monitor host system CPU/GPU temperatures "
                     + "and process ID. You have complete creative freedom to decide what metrics to retrieve, what UI "
                     + "framework to use, and how to design the interface. Window title MUST contain your Model ID.")
             .toolkits(List.of(
@@ -43,14 +43,12 @@ public final class Agi1Catalog {
             .build();
 
     /**
-     * Test #2: Retro Arcade Game Execution (Swing EDT Loop & Physics).
+     * Test #2: Retro Arcade Game Execution (Swing EDT Loop &amp; Physics).
      */
     public static final Agi1TestDefinition JAVA_ARKANOID_1 = Agi1TestDefinition.builder()
             .testCode("JAVA-ARKANOID-1")
             .title("Retro Arcade Game Execution")
-            .rawPrompt("Build a fully playable, retro Arkanoid brick-breaker game in Swing in a single Java class "
-                    + "extending SwingAgiTool with paddle movement, ball collision physics, power-ups, score counter, "
-                    + "and smooth 60 FPS EDT animation loop. Window title MUST contain your Model ID.")
+            .rawPrompt("Build a fully playable, retro Arkanoid brick-breaker game with smooth 60 FPS animation loop. Window title MUST contain your Model ID.")
             .toolkits(List.of(
                     ToolkitSettings.of(Java.class, "compileAndExecute", ToolPermission.APPROVE_ALWAYS),
                     ToolkitSettings.of(Host.class),

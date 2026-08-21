@@ -40,7 +40,7 @@ import uno.anahata.asi.toolkit.java.Java;
 public class Agi1Benchmark extends AnahataToolkit {
 
     /**
-     * Executes the JAVA-JNA-1 benchmark test (OS Hardware & System Values Dashboard).
+     * Executes the JAVA-JNA-1 benchmark test (OS Hardware &amp; System Values Dashboard).
      *
      * @param participant The candidate participant descriptor (provider UUID, model ID, thinking level).
      * @param openSession Whether to open the child AGI session tab in the UI.
