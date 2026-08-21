@@ -36,8 +36,17 @@ import uno.anahata.asi.toolkit.java.Java;
  * @author anahata
  */
 @Slf4j
-@AgiToolkit("Programmatic benchmark orchestrator for the Anahata-AGI-1 suite.")
+@AgiToolkit("Programmatic benchmark orchestrator for the Anahata-AGI-1 suite. (beta) ")
 public class Agi1Benchmark extends AnahataToolkit {
+    
+    /**
+     * disabled on startup
+     */
+    @Override
+    public void initialize() {
+        super.initialize(); 
+        getToolkit().setEnabled(false);
+    }
 
     /**
      * Executes the JAVA-JNA-1 benchmark test (OS Hardware &amp; System Values Dashboard).

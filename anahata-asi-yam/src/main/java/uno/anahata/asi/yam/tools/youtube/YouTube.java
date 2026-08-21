@@ -35,7 +35,7 @@ import uno.anahata.asi.agi.tool.AnahataToolkit;
  * @author anahata
  */
 @Slf4j
-@AgiToolkit("Pure Java YouTube Data API v3 toolkit for video uploads and playlist management.")
+@AgiToolkit("Pure Java YouTube Data API v3 toolkit for video uploads and playlist management. (Beta)")
 public class YouTube extends AnahataToolkit {
 
     /**
@@ -70,6 +70,15 @@ public class YouTube extends AnahataToolkit {
      * Default constructor for the YouTube toolkit.
      */
     public YouTube() {
+    }
+
+    /**
+     * disabled on startup
+     */
+    @Override
+    public void initialize() {
+        super.initialize(); 
+        getToolkit().setEnabled(false);
     }
 
     /**
