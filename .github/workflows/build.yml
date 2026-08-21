@@ -1,0 +1,401 @@
+name: Build & Deploy Platform, Artifacts & Website
+
+on:
+  push:
+    branches: [ "main" ]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "build-and-deploy"
+  cancel-in-progress: false
+
+jobs:
+  build-nbm:
+    name: Build & Publish NBM (${{ matrix.nb_target }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        nb_target: ["300", "310"]
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25 & Maven
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+          server-id: sonatype-central
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Build & Deploy NBM
+        env:
+          MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          # 1. Read current project version (e.g. 1.1.0-SNAPSHOT or 1.1.0)
+          BASE_VER=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+
+          # 2. Compute stamped version (e.g. 1.1.0.300-SNAPSHOT or 1.1.0.300)
+          if [[ "$BASE_VER" == *"-SNAPSHOT" ]]; then
+            BASE_NUM="${BASE_VER%-SNAPSHOT}"
+            STAMPED_VER="${BASE_NUM}.${{ matrix.nb_target }}-SNAPSHOT"
+          else
+            STAMPED_VER="${BASE_VER}.${{ matrix.nb_target }}"
+          fi
+
+          echo "[INFO] Stamping NBM module version to: $STAMPED_VER on runner..."
+          mvn versions:set -DnewVersion=$STAMPED_VER -DgenerateBackupPoms=false -pl :anahata-asi-nb -ntp
+
+          echo "[INFO] Building and deploying NBM ($STAMPED_VER) against NetBeans API: RELEASE${{ matrix.nb_target }}..."
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "[INFO] Tag trigger with release version detected. Deploying NBM to Sonatype Central Release portal..."
+            mvn deploy -DskipTests -P release -pl :anahata-asi-nb -am -ntp -Dnetbeans.version=RELEASE${{ matrix.nb_target }}
+          else
+            echo "[INFO] Branch trigger with SNAPSHOT version detected. Deploying to Sonatype Snapshot repository..."
+            mvn deploy -DskipTests -pl :anahata-asi-nb -am -ntp -Dnetbeans.version=RELEASE${{ matrix.nb_target }} \
+              -DaltSnapshotDeploymentRepository=sonatype-central::https://central.sonatype.com/repository/maven-snapshots/
+          fi
+
+          echo "[INFO] Generating Autoupdate catalog for NetBeans ${{ matrix.nb_target }}..."
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            mvn nbm:autoupdate -pl :anahata-asi-nb -Dnetbeans.version=RELEASE${{ matrix.nb_target }} -Dnbm.distBase=https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb/${STAMPED_VER}/ -ntp
+          else
+            mvn nbm:autoupdate -pl :anahata-asi-nb -Dnetbeans.version=RELEASE${{ matrix.nb_target }} -Dnbm.distBase=https://github.com/anahata-os/anahata-asi/releases/download/latest-snapshot/ -ntp
+          fi
+
+          # Fail-Fast: Verify catalog was produced
+          if [ ! -f "anahata-asi-nb/target/netbeans_site/updates.xml" ]; then
+            echo "[FATAL ERROR] target/netbeans_site/updates.xml was not generated for NetBeans ${{ matrix.nb_target }}!"
+            exit 1
+          fi
+
+      - name: Upload NBM Artifact & Catalog
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbm-artifact-${{ matrix.nb_target }}
+          path: |
+            anahata-asi-nb/target/*.nbm
+            anahata-asi-nb/target/netbeans_site/updates.xml
+
+  build-desktop:
+    name: Build Desktop on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Get Project Version
+        id: get_version
+        shell: bash
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          # jpackage on macOS is strict: version must be 1-3 integers separated by dots.
+          # Strip any -SNAPSHOT or other suffixes for the installer metadata.
+          JPACKAGE_VERSION=$(echo $VERSION | sed 's/-.*//')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "JPACKAGE_VERSION=$JPACKAGE_VERSION" >> $GITHUB_ENV
+
+      - name: Build Project
+        run: mvn clean install -DskipTests -pl :anahata-asi-desktop -am -ntp
+
+      - name: Prepare jpackage Input
+        shell: bash
+        run: |
+          mkdir -p package-input/lib
+          # Copy the main executable jar to the root
+          cp anahata-asi-desktop/target/anahata-asi-desktop-${{ env.VERSION }}.jar package-input/
+          # Copy all runtime dependencies to the lib folder. 
+          mvn -f anahata-asi-desktop/pom.xml dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=../package-input/lib
+          
+          # Copy assets for jpackage flags
+          cp anahata-asi-desktop/src/main/resources/icon.* .
+          cp anahata-asi-desktop/src/main/resources/splash.png package-input/
+
+      - name: Set OS Specific Variables
+        shell: bash
+        run: |
+          if [ "${{ matrix.os }}" == "macos-latest" ]; then
+            echo "ICON_FILE=icon.icns" >> $GITHUB_ENV
+          elif [ "${{ matrix.os }}" == "windows-latest" ]; then
+            echo "ICON_FILE=icon.ico" >> $GITHUB_ENV
+          else
+            echo "ICON_FILE=icon.png" >> $GITHUB_ENV
+          fi
+
+      - name: Package Native App (jpackage)
+        shell: bash
+        run: |
+          jpackage --name "Anahata-ASI-Desktop" \
+                   --app-version "${{ env.JPACKAGE_VERSION }}" \
+                   --input package-input \
+                   --main-jar "anahata-asi-desktop-${{ env.VERSION }}.jar" \
+                   --main-class uno.anahata.asi.desktop.Main \
+                   --icon "${{ env.ICON_FILE }}" \
+                   --java-options "-splash:splash.png" \
+                   --java-options "--enable-native-access=ALL-UNNAMED" \
+                   --type app-image \
+                   --dest dist \
+                   --verbose
+          
+          # Zip/Tar the result for distribution
+          if [ "${{ matrix.os }}" == "windows-latest" ]; then
+            7z a "Anahata-ASI-Desktop-${{ env.VERSION }}-windows.zip" "./dist/Anahata-ASI-Desktop"
+          elif [ "${{ matrix.os }}" == "macos-latest" ]; then
+            cd dist && zip -r "../Anahata-ASI-Desktop-${{ env.VERSION }}-macos.zip" "Anahata-ASI-Desktop.app" && cd ..
+          else
+            tar -czf "Anahata-ASI-Desktop-${{ env.VERSION }}-linux.tar.gz" -C dist "Anahata-ASI-Desktop"
+          fi
+
+      - name: Upload Desktop Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bin-${{ matrix.os }}
+          path: |
+            Anahata-ASI-Desktop-*.zip
+            Anahata-ASI-Desktop-*.tar.gz
+
+  build-intellij:
+    name: Build IntelliJ Plugin
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build IntelliJ Plugin Distribution
+        run: mvn clean package -DskipTests -pl :anahata-asi-intellij -am -ntp
+
+      - name: Upload IntelliJ Plugin Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: intellij-plugin
+          path: anahata-asi-intellij/target/*.zip
+
+  release:
+    name: Create & Publish Unified Release
+    needs: [build-nbm, build-desktop, build-intellij]
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts
+          merge-multiple: true
+
+      - name: Purge old snapshot assets
+        if: github.ref == 'refs/heads/main'
+        run: |
+          # Fetch and delete all existing assets for the latest-snapshot release
+          assets=$(gh release view latest-snapshot --json assets -q '.assets[].name' || true)
+          for asset in $assets; do
+            echo "Deleting stale snapshot asset: $asset"
+            gh release delete-asset latest-snapshot "$asset" -y || true
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create/Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'latest-snapshot' }}
+          name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'Latest Snapshot' }}
+          body: |
+            ${{ startsWith(github.ref, 'refs/tags/') && 'Official Stable GA Release' || '🚀 This is an automated rolling snapshot of the main branch. Use with caution!' }}
+          files: |
+            all-artifacts/*.nbm
+            all-artifacts/Anahata-ASI-Desktop-*.zip
+            all-artifacts/Anahata-ASI-Desktop-*.tar.gz
+            all-artifacts/*.zip
+          draft: false
+          prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          make_latest: ${{ startsWith(github.ref, 'refs/tags/') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy-website:
+    name: Deploy Website, Javadocs & Update Centers
+    needs: [build-nbm, release]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+          server-id: sonatype-central
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+
+      - name: Build and Generate Aggregated Javadoc
+        env:
+          MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+        run: |
+          mvn clean install javadoc:aggregate -DskipTests -ntp
+
+      - name: Checkout gh-pages Branch (Persistence Database)
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: temp-gh-pages
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Download NBM Catalogs from Matrix Jobs
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded-catalogs
+
+      - name: Prepare Deployment Folder & Merge Javadocs & Catalogs
+        run: |
+          mkdir -p _site
+          # 1. Copy the static website source
+          cp -r anahata-asi-web/src/main/resources/web/* _site/
+          
+          # 2. Reconstruct historical Javadoc vault (only copy version directories starting with a digit)
+          mkdir -p _site/apidocs
+          if [ -d "temp-gh-pages/apidocs" ]; then
+            for dir in temp-gh-pages/apidocs/*; do
+              if [ -d "$dir" ]; then
+                dirname=$(basename "$dir")
+                if [[ "$dirname" =~ ^[0-9] ]]; then
+                  cp -r "$dir" _site/apidocs/
+                fi
+              fi
+            done
+          fi
+          
+          # 3. Copy newly generated flat Javadocs
+          if [ -d "docs/apidocs" ]; then
+            cp -r docs/apidocs/* _site/apidocs/
+          fi
+
+          # 4. Inject CNAME for custom domain
+          echo "asi.anahata.uno" > _site/CNAME
+
+          # 5. Restore existing update catalogs from gh-pages branch so historical catalogs persist
+          if [ -d "temp-gh-pages/nb" ]; then
+            cp -r temp-gh-pages/nb _site/
+          fi
+
+          # 6. Deploy NetBeans Autoupdate Catalogs from the NBM matrix build artifacts
+          NB_TARGETS="300 310"
+          for TARGET in $NB_TARGETS; do
+            MAJOR="${TARGET:0:2}"
+            CATALOG_DIR="_site/nb/${MAJOR}"
+            mkdir -p "$CATALOG_DIR"
+
+            SOURCE_CATALOG="downloaded-catalogs/nbm-artifact-${TARGET}/updates.xml"
+            if [ ! -f "$SOURCE_CATALOG" ]; then
+              echo "[FATAL ERROR] Downloaded catalog $SOURCE_CATALOG does not exist!"
+              exit 1
+            fi
+
+            if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+              CATALOG_FILE="$CATALOG_DIR/updates.xml"
+            else
+              CATALOG_FILE="$CATALOG_DIR/dev-updates.xml"
+            fi
+
+            echo "[INFO] Copying catalog for NetBeans $MAJOR into $CATALOG_FILE..."
+            cp "$SOURCE_CATALOG" "$CATALOG_FILE" || exit 1
+            gzip -9 -c "$CATALOG_FILE" > "${CATALOG_FILE}.gz" || exit 1
+          done
+
+          # 7. Dynamically regenerate apidocs/index.html with all discovered versions
+          python3 -c '
+          import os, re
+          apidocs_dir = "_site/apidocs"
+          versions = [d for d in os.listdir(apidocs_dir) if os.path.isdir(os.path.join(apidocs_dir, d)) and not d.startswith(".") and d[0].isdigit()]
+          versions.sort(reverse=True)
+          li_html = ""
+          for v in versions:
+              badge = " <span class=\"badge\">Latest</span>" if "SNAPSHOT" in v else ""
+              li_html += f"            <li class=\"version-item\"><a href=\"{v}/apidocs/index.html\" class=\"version-link\">{v}{badge}</a></li>\n"
+          index_path = os.path.join(apidocs_dir, "index.html")
+          with open(index_path, "r") as f:
+              html = f.read()
+          new_html = re.sub(r"<ul class=\"version-list\">.*?</ul>", f"<ul class=\"version-list\">\n{li_html}        </ul>", html, flags=re.DOTALL)
+          with open(index_path, "w") as f:
+              f.write(new_html)
+          '
+
+      - name: Persist New Javadocs & Update Catalogs back to gh-pages
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+        run: |
+          cd temp-gh-pages
+          rm -rf apidocs/*
+          mkdir -p apidocs nb
+          cp -r ../_site/apidocs/* apidocs/
+          cp -r ../_site/nb/* nb/
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add apidocs/ nb/
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: persist versioned Javadocs & update catalogs from run ${{ github.run_id }} 📚"
+            git push origin gh-pages
+          else
+            echo "No new Javadoc or catalog changes to persist."
+          fi
+
+      - name: Upload pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
