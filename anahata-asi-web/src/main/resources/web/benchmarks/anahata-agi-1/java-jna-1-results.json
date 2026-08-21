@@ -1,0 +1,22 @@
+[ {
+  "participant" : {
+    "providerUuid" : "Gemini",
+    "modelId" : "models/gemini-flash-latest",
+    "thinkingLevel" : "THINKING_LEVEL_UNSPECIFIED"
+  },
+  "testCode" : "JAVA-JNA-1",
+  "timestamp" : "2026-08-20T13:28:32.329451014Z",
+  "durationSeconds" : 29.05,
+  "turns" : 1,
+  "promptTokens" : 19245,
+  "candidatesTokens" : 0,
+  "thoughtsTokens" : 0,
+  "totalTokens" : 19245,
+  "passed" : true,
+  "judgeScores" : { },
+  "videoUrl" : null,
+  "screenshotPath" : null,
+  "sessionId" : "ff4d27af-e9f8-4e16-8fc3-e03822f28d7a",
+  "observations" : "",
+  "averageScore" : null
+} ]
