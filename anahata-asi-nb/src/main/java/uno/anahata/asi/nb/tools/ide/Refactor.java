@@ -120,15 +120,15 @@ public class Refactor extends AnahataToolkit {
      * IDE.
      *
      * @param filePath The absolute path of the file to rename.
-     * @param newName The new name for the file or class (without the
-     * extension).
+     * @param newName The new simple name for the file or class (without
+     * extension or package path).
      * @return A detailed log of the refactoring process.
      * @throws Exception if there is an error invoking the operation.
      */
     @AgiTool("Renames a file or class. This is a 'safe' rename that updates all references in all open projects and the most efficient way of renaming a type as it updates the file's content, all its references and the file name on the file system in a single shot.")
     public String rename(
             @AgiToolParam(value = "The absolute path of the file to rename.", rendererId = "path") String filePath,
-            @AgiToolParam("The new name (without extension).") String newName) throws Exception {
+            @AgiToolParam("The new simple name (without extension or package prefix).") String newName) throws Exception {
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         RenameRefactoring refactoring = new RenameRefactoring(getLookupForFile(fo));
         refactoring.setNewName(newName);
@@ -142,7 +142,7 @@ public class Refactor extends AnahataToolkit {
      *
      * @param filePath The absolute path of the Java file.
      * @param memberFqn The ABSOLUTE FQN of the member.
-     * @param newName The new name for the member.
+     * @param newName The new simple name for the member.
      * @return A detailed log of the refactoring process.
      * @throws Exception if there is an error invoking the operation.
      */
@@ -150,7 +150,7 @@ public class Refactor extends AnahataToolkit {
     public String renameMember(
             @AgiToolParam(value = "The absolute path of the Java file.", rendererId = "path") String filePath,
             @AgiToolParam("The ABSOLUTE FQN of the member (e.g. 'com.foo.Bar.myMethod(int)').") String memberFqn,
-            @AgiToolParam("The new name for the member (simple name only).") String newName) throws Exception {
+            @AgiToolParam("The new simple name for the member (simple name only, no return type or parameter list).") String newName) throws Exception {
         FileObject fo = JavaSourceUtils.getFileObject(filePath);
         TreePathHandle handle = resolveMember(fo, memberFqn);
 
@@ -161,22 +161,26 @@ public class Refactor extends AnahataToolkit {
     }
 
     /**
-     * Moves a Java class to a new package or integrates it into another class.
+     * Moves a Java class to a new package directory or integrates it into
+     * another existing class.
      * <p>
-     * For package moves, use a folder path as target. For member integration,
-     * use the path of the target .java file.
+     * When moving to another package, {@code targetPath} MUST be the
+     * destination folder path (do NOT include the class filename). For member
+     * integration into an existing class, use the path of the target .java
+     * file.
      * </p>
      *
      * @param sourcePath The absolute path of the .java file to move.
-     * @param targetPath The absolute path of the destination folder or .java
-     * file.
+     * @param targetPath The absolute path of the destination directory folder
+     * (when moving to a package) or the path of an EXISTING .java file (when
+     * integrating). Do not include the filename if moving to a folder.
      * @return A detailed log of the refactoring process.
      * @throws Exception if the operation fails.
      */
-    @AgiTool("Moves a Java class to a new package or integrates it into another class. For inner classes, use moveInnerToTopLevel first.")
+    @AgiTool("Moves a Java class to a new package directory or integrates it into another existing class. When moving to another package, targetPath MUST be the destination folder (do NOT append the filename). For inner classes, use moveInnerToTopLevel first.")
     public String moveClass(
             @AgiToolParam(value = "The absolute path of the .java file to move.", rendererId = "path") String sourcePath,
-            @AgiToolParam(value = "The absolute path of the target folder or .java file.", rendererId = "path") String targetPath) throws Exception {
+            @AgiToolParam(value = "The absolute path of the destination folder (when moving to a package) or the path of an EXISTING .java file (when integrating). Do not include the filename if moving to a folder.", rendererId = "path") String targetPath) throws Exception {
         FileObject sourceFo = JavaSourceUtils.getFileObject(sourcePath);
         if (!"java".equals(sourceFo.getExt())) {
             throw new IllegalArgumentException("Source must be a .java file. Use moveFile for other types.");
@@ -208,14 +212,15 @@ public class Refactor extends AnahataToolkit {
      * Moves a non-Java file to a different folder.
      *
      * @param sourcePath The absolute path of the file to move.
-     * @param targetFolderPath The absolute path of the target folder.
+     * @param targetFolderPath The absolute path of the destination directory
+     * folder.
      * @return A detailed log of the refactoring process.
      * @throws Exception if the operation fails.
      */
     @AgiTool("Moves a non-Java file to a different folder.")
     public String moveFile(
             @AgiToolParam(value = "The absolute path of the file to move.", rendererId = "path") String sourcePath,
-            @AgiToolParam(value = "The absolute path of the target folder.", rendererId = "path") String targetFolderPath) throws Exception {
+            @AgiToolParam(value = "The absolute path of the destination directory folder.", rendererId = "path") String targetFolderPath) throws Exception {
         FileObject sourceFo = JavaSourceUtils.getFileObject(sourcePath);
         FileObject targetFo = JavaSourceUtils.getFileObject(targetFolderPath);
 
@@ -235,16 +240,19 @@ public class Refactor extends AnahataToolkit {
     }
 
     /**
-     * Moves a Java package (and all its sub-packages and classes) to a new parent package.
-     * @param targetPackagePath The absolute path of the destination package folder.
+     * Moves a Java package (and all its sub-packages and classes) to a new
+     * parent package.
+     *
      * @param packagePath The absolute path of the package folder to move.
+     * @param targetPackagePath The absolute path of the target parent package
+     * folder where the package will be relocated.
      * @return A detailed log of the refactoring process.
      * @throws java.lang.Exception if the operation fails.
      */
     @AgiTool("Moves a Java package (and all its nested classes) to a new parent package, safely updating all declarations, references, and imports across all open projects.")
     public String movePackage(
             @AgiToolParam(value = "The absolute path of the package folder to move.", rendererId = "path") String packagePath,
-            @AgiToolParam(value = "The absolute path of the target parent package folder.", rendererId = "path") String targetPackagePath) throws Exception {
+            @AgiToolParam(value = "The absolute path of the target parent package folder where the package will be relocated.", rendererId = "path") String targetPackagePath) throws Exception {
         FileObject sourceFo = JavaSourceUtils.getFileObject(packagePath);
         FileObject targetFo = JavaSourceUtils.getFileObject(targetPackagePath);
 
@@ -264,15 +272,17 @@ public class Refactor extends AnahataToolkit {
 
     /**
      * Renames a Java package across all open projects.
+     *
      * @param packagePath The absolute path of the package folder to rename.
-     * @param newName The new simple name for the package folder.
+     * @param newName The new simple name for the package folder (e.g.
+     * 'desktop').
      * @return A detailed log of the refactoring process.
      * @throws java.lang.Exception if the operation fails.
      */
     @AgiTool("Renames a Java package across all open projects, updating all package statements, imports, and references dynamically.")
     public String renamePackage(
             @AgiToolParam(value = "The absolute path of the package folder to rename.", rendererId = "path") String packagePath,
-            @AgiToolParam("The new simple name for the package folder (e.g. 'desktop').") String newName) throws Exception {
+            @AgiToolParam("The new simple name for the package folder (e.g. 'desktop'). Do not use dot-separated package paths.") String newName) throws Exception {
         FileObject fo = JavaSourceUtils.getFileObject(packagePath);
         if (!fo.isFolder()) {
             throw new IllegalArgumentException("Path must be a package folder: " + packagePath);
@@ -282,18 +292,20 @@ public class Refactor extends AnahataToolkit {
 
         return executeRefactoring(refactoring, "Rename Package " + fo.getName() + " to " + newName);
     }
+
     /**
      * Copies a Java class to a new package or folder.
      *
      * @param sourcePath The absolute path of the .java file to copy.
-     * @param targetFolderPath The absolute path of the destination folder.
+     * @param targetFolderPath The absolute path of the destination directory
+     * folder.
      * @return A detailed log of the refactoring process.
      * @throws Exception if the operation fails.
      */
-    @AgiTool("Copies a Java class to a new package or folder.")
+    @AgiTool("Copies a Java class to a new package directory folder.")
     public String copyClass(
             @AgiToolParam(value = "The absolute path of the .java file to copy.", rendererId = "path") String sourcePath,
-            @AgiToolParam(value = "The absolute path of the target folder.", rendererId = "path") String targetFolderPath) throws Exception {
+            @AgiToolParam(value = "The absolute path of the destination directory folder.", rendererId = "path") String targetFolderPath) throws Exception {
         FileObject sourceFo = JavaSourceUtils.getFileObject(sourcePath);
         if (!"java".equals(sourceFo.getExt())) {
             throw new IllegalArgumentException("Source must be a .java file. Use copyFile for other types.");
@@ -318,14 +330,15 @@ public class Refactor extends AnahataToolkit {
      * Copies a non-Java file to a different folder.
      *
      * @param sourcePath The absolute path of the file to copy.
-     * @param targetFolderPath The absolute path of the target folder.
+     * @param targetFolderPath The absolute path of the destination directory
+     * folder.
      * @return A detailed log of the refactoring process.
      * @throws Exception if the operation fails.
      */
     @AgiTool("Copies a non-Java file to a different folder.")
     public String copyFile(
             @AgiToolParam(value = "The absolute path of the file to copy.", rendererId = "path") String sourcePath,
-            @AgiToolParam(value = "The absolute path of the target folder.", rendererId = "path") String targetFolderPath) throws Exception {
+            @AgiToolParam(value = "The absolute path of the destination directory folder.", rendererId = "path") String targetFolderPath) throws Exception {
         FileObject sourceFo = JavaSourceUtils.getFileObject(sourcePath);
         FileObject targetFo = JavaSourceUtils.getFileObject(targetFolderPath);
 
@@ -446,8 +459,8 @@ public class Refactor extends AnahataToolkit {
      *
      * @param filePath The absolute path of the Java file containing the class.
      * @param interfaceName The name of the new interface.
-     * @param memberFqns The ABSOLUTE FQNs of the members to extract.
-     * in the interface.
+     * @param memberFqns The ABSOLUTE FQNs of the members to extract. in the
+     * interface.
      * @return A detailed log of the refactoring process.
      * @throws Exception if the operation fails.
      */
@@ -1031,7 +1044,9 @@ public class Refactor extends AnahataToolkit {
     }
 
     /**
-     * Recursively searches for any Java file within a folder to assist in ClasspathInfo resolution.
+     * Recursively searches for any Java file within a folder to assist in
+     * ClasspathInfo resolution.
+     *
      * @param folder The folder to search.
      * @return The first Java FileObject found, or null.
      */
