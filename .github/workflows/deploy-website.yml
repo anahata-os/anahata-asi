@@ -88,26 +88,30 @@ jobs:
           fi
 
           # 6. Generate and Deploy NetBeans Autoupdate Catalogs dynamically
-          NB_VERSIONS="30 31"
-          for VER in $NB_VERSIONS; do
-            NB_TARGET="${VER}0"
-            NB_API="RELEASE${NB_TARGET}"
-            CATALOG_DIR="_site/nb/${VER}"
+          NB_TARGETS="300 310"
+          for TARGET in $NB_TARGETS; do
+            MAJOR="${TARGET:0:2}"
+            NB_API="RELEASE${TARGET}"
+            CATALOG_DIR="_site/nb/${MAJOR}"
             mkdir -p "$CATALOG_DIR"
 
-            echo "[INFO] Generating catalog for NetBeans $VER ($NB_API)..."
+            echo "[INFO] Generating catalog for NetBeans $MAJOR (API: $NB_API, Target: $TARGET)..."
             mvn nbm:autoupdate -pl :anahata-asi-nb -Dnetbeans.version=$NB_API -ntp
 
-            if [ -f "anahata-asi-nb/target/updates.xml" ]; then
-              if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-                CATALOG_FILE="$CATALOG_DIR/updates.xml"
-              else
-                CATALOG_FILE="$CATALOG_DIR/dev-updates.xml"
-              fi
-
-              cp anahata-asi-nb/target/updates.xml "$CATALOG_FILE"
-              gzip -9 -c "$CATALOG_FILE" > "${CATALOG_FILE}.gz"
+            # Fail-Fast: Must exist in target/netbeans_site/updates.xml
+            if [ ! -f "anahata-asi-nb/target/netbeans_site/updates.xml" ]; then
+              echo "[FATAL ERROR] target/netbeans_site/updates.xml was not generated for NetBeans $MAJOR ($NB_API)!"
+              exit 1
             fi
+
+            if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+              CATALOG_FILE="$CATALOG_DIR/updates.xml"
+            else
+              CATALOG_FILE="$CATALOG_DIR/dev-updates.xml"
+            fi
+
+            cp anahata-asi-nb/target/netbeans_site/updates.xml "$CATALOG_FILE" || exit 1
+            gzip -9 -c "$CATALOG_FILE" > "${CATALOG_FILE}.gz" || exit 1
           done
 
           # 7. Dynamically regenerate apidocs/index.html with all discovered versions (excluding Javadoc assets)

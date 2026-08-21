@@ -15,11 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        include:
-          - nb_target: "300"
-            nb_api: "RELEASE300"
-          - nb_target: "310"
-            nb_api: "RELEASE310"
+        nb_target: ["300", "310"]
     permissions:
       contents: write
       packages: write
@@ -61,18 +57,18 @@ jobs:
           echo "[INFO] Stamping NBM module version to: $STAMPED_VER on runner..."
           mvn versions:set -DnewVersion=$STAMPED_VER -DgenerateBackupPoms=false -pl :anahata-asi-nb -ntp
 
-          echo "[INFO] Building and deploying NBM ($STAMPED_VER) against NetBeans API: ${{ matrix.nb_api }}..."
+          echo "[INFO] Building and deploying NBM ($STAMPED_VER) against NetBeans API: RELEASE${{ matrix.nb_target }}..."
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             echo "[INFO] Tag trigger with release version detected. Deploying NBM to Sonatype Central Release portal..."
-            mvn deploy -DskipTests -P release -pl :anahata-asi-nb -am -ntp -Dnetbeans.version=${{ matrix.nb_api }}
+            mvn deploy -DskipTests -P release -pl :anahata-asi-nb -am -ntp -Dnetbeans.version=RELEASE${{ matrix.nb_target }}
           else
             echo "[INFO] Branch trigger with SNAPSHOT version detected. Deploying to Sonatype Snapshot repository..."
-            mvn deploy -DskipTests -pl :anahata-asi-nb -am -ntp -Dnetbeans.version=${{ matrix.nb_api }} \
+            mvn deploy -DskipTests -pl :anahata-asi-nb -am -ntp -Dnetbeans.version=RELEASE${{ matrix.nb_target }} \
               -DaltSnapshotDeploymentRepository=sonatype-central::https://central.sonatype.com/repository/maven-snapshots/
           fi
           
           echo "[INFO] Generating Autoupdate catalog for NetBeans ${{ matrix.nb_target }}..."
-          mvn nbm:autoupdate -pl :anahata-asi-nb -Dnetbeans.version=${{ matrix.nb_api }} -ntp
+          mvn nbm:autoupdate -pl :anahata-asi-nb -Dnetbeans.version=RELEASE${{ matrix.nb_target }} -ntp
 
       - name: Upload NBM Artifact
         uses: actions/upload-artifact@v4

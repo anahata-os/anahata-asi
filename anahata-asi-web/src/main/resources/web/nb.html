@@ -186,8 +186,8 @@
                         <!-- 1. Download NBM -->
                         <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 1.2rem;">
                             <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.6rem; font-weight: 600;"><i class="fas fa-file-download" style="color: var(--barca-gold); margin-right: 6px;"></i> Direct NBM Binary:</div>
-                            <a id="dynamic-dl-btn" href="https://github.com/anahata-os/anahata-asi/releases/latest" class="btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; width: 100%; padding: 12px 20px;">
-                                <i class="fas fa-download"></i> <span id="dynamic-dl-text">Download Stable NBM (RELEASE300)</span> <span id="dynamic-dl-badge" class="badge" style="background: var(--barca-gold); color: black; font-weight: 800; padding: 2px 6px; border-radius: 3px; font-size: 0.75rem;">v1.0.0</span>
+                            <a id="dynamic-dl-btn" href="https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb/" target="_blank" class="btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; width: 100%; padding: 12px 20px;">
+                                <i class="fas fa-download"></i> <span id="dynamic-dl-text">Browse Stable NBMs (RELEASE300)</span> <span id="dynamic-dl-badge" class="badge" style="background: var(--barca-gold); color: black; font-weight: 800; padding: 2px 6px; border-radius: 3px; font-size: 0.75rem;">Maven Central</span>
                             </a>
                         </div>
 
@@ -238,7 +238,8 @@
 
                     function updateUcDisplay() {
                         const isStable = currentChannel === 'stable';
-                        const apiName = currentNbVer === '30' ? 'RELEASE300' : 'RELEASE310';
+                        const targetSuffix = `${currentNbVer}0`;
+                        const apiName = `RELEASE${targetSuffix}`;
                         const chLabel = isStable ? 'Stable' : 'Dev (Snapshots)';
                         const ucFileName = isStable ? 'updates.xml' : 'dev-updates.xml';
                         const ucUrl = `https://asi.anahata.uno/nb/${currentNbVer}/${ucFileName}`;
@@ -256,15 +257,15 @@
                         const dlBadge = document.getElementById('dynamic-dl-badge');
 
                         if (isStable) {
-                            dlBtn.href = 'https://github.com/anahata-os/anahata-asi/releases/latest';
-                            dlText.textContent = `Download Stable NBM (${apiName})`;
-                            dlBadge.textContent = 'v1.0.0';
+                            dlBtn.href = 'https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb/';
+                            dlText.textContent = `Browse Stable NBMs (${apiName})`;
+                            dlBadge.textContent = 'Maven Central';
                             dlBadge.style.background = 'var(--barca-gold)';
                             dlBadge.style.color = 'black';
                         } else {
-                            dlBtn.href = `https://github.com/anahata-os/anahata-asi/releases/download/latest-snapshot/anahata-asi-nb-1.1.0-SNAPSHOT.nbm`;
-                            dlText.textContent = `Download Snapshot NBM (${apiName})`;
-                            dlBadge.textContent = 'v1.1.0-SN';
+                            dlBtn.href = 'https://central.sonatype.com/repository/maven-snapshots/uno/anahata/anahata-asi-nb/';
+                            dlText.textContent = `Browse Snapshot NBMs (${apiName})`;
+                            dlBadge.textContent = 'Sonatype Snapshots';
                             dlBadge.style.background = 'var(--primary-light)';
                             dlBadge.style.color = 'white';
                         }

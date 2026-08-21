@@ -8,7 +8,8 @@ All project artifacts (NBMs, IntelliJ IDEA plugin distributions, native Desktop 
     - Multi-target matrix build for NetBeans releases (e.g. `300` for `RELEASE300`, `310` for `RELEASE310`).
     - Deterministic version stamping: `1.1.0-SNAPSHOT` -> `1.1.0.300-SNAPSHOT` (Dev) / `1.1.0` -> `1.1.0.300` (Release).
     - Published to **Sonatype Central Snapshot repository** on pushes to `main`, and **Sonatype Central Release portal** on release tags.
-    - Automated catalog generation: `mvn nbm:autoupdate` produces `updates.xml` (for stable releases) and `dev-updates.xml` (for dev snapshots), compressed with `.gz`, deployed per NetBeans generation (`/nb/30/`, `/nb/31/`).
+    - **Website & Direct Downloads**: Direct NBM download links on `asi.anahata.uno` resolve from **Maven Central** (for Stable releases) and **Sonatype Snapshots** (for Dev builds).
+    - Automated catalog generation: `mvn nbm:autoupdate` produces `updates.xml` (for stable releases) and `dev-updates.xml` (for dev snapshots), deploying both uncompressed `.xml` and compressed `.xml.gz` catalogs per NetBeans generation (`/nb/30/`, `/nb/31/`) with fail-fast validation in CI.
 2.  **IntelliJ IDEA Plugin Distribution**:
     - Packaged as a standalone distribution ZIP (`anahata-asi-intellij-${version}.zip`) via `maven-assembly-plugin`.
     - Bundles all core and swing dependencies alongside PSI-based IDE tools.
@@ -31,7 +32,7 @@ The project website, update catalogs, and aggregated Javadocs are deployed to **
 ### Update Center Strategy
 - **Stable Channel**: `https://asi.anahata.uno/nb/30/updates.xml` (NetBeans 30) / `https://asi.anahata.uno/nb/31/updates.xml` (NetBeans 31).
 - **Development Channel**: `https://asi.anahata.uno/nb/30/dev-updates.xml` / `https://asi.anahata.uno/nb/31/dev-updates.xml`.
-- **Dynamic Catalog Loop**: `deploy-website.yml` uses an automated loop (`NB_VERSIONS="30 31"`) to compile and compress (`.xml` & `.xml.gz`) catalogs for every supported NetBeans generation without hardcoding.
+- **Hosting & Fail-Fast Delivery**: Catalogs are published in both uncompressed (`.xml`) and gzip-compressed (`.xml.gz`) formats. The CI build fails immediately if `target/netbeans_site/updates.xml` is missing.
 
 ## Triggering Releases on GitHub
 
