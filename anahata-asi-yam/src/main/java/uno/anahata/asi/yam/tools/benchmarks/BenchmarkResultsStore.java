@@ -10,24 +10,17 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.AbstractAsiContainer;
 
 /**
- * Persistence store and manager for JSON-formatted benchmark run telemetry and scorecards.
+ * Generic persistence store and manager for JSON-formatted benchmark run telemetry and scorecards.
  * <p>
- * Manages reading, updating, and saving {@link BenchmarkRunResult} records in test-specific
- * JSON files (e.g. {@code java-jna-1-results.json}) located within the website directory
- * ({@code anahata-asi-web/src/main/resources/web/benchmarks/anahata-agi-1/}).
- * </p>
- * <p>
- * Automatically resolves the workspace development repository path with fallback to
- * the container's working directory.
+ * Provides decoupled reading, updating, and saving of {@link BenchmarkRunResult} records to any
+ * designated JSON file path on disk without suite-specific hardcoding.
  * </p>
  *
  * @author anahata
@@ -44,110 +37,99 @@ public class BenchmarkResultsStore {
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     /**
-     * Resolves the primary directory where benchmark JSON result files are stored.
+     * Loads all recorded benchmark runs from a specific JSON file.
      *
-     * @return The path to the benchmark results directory.
+     * @param resultsFile The path to the JSON results file.
+     * @return An unmodifiable list of previous test runs, or an empty list if file doesn't exist or is empty.
      */
-    public static Path getResultsDirectory() {
-        // 1. Try resolving within the source tree of anahata-asi-web
-        Path devWebPath = Paths.get(System.getProperty("user.home"), "NetBeansProjects", "anahata-asi-parent",
-                "anahata-asi-web", "src", "main", "resources", "web", "benchmarks", "anahata-agi-1");
-        if (Files.exists(devWebPath)) {
-            return devWebPath;
-        }
-
-        // 2. Try resolving relative to the current working directory
-        Path relativeWebPath = Paths.get("anahata-asi-web", "src", "main", "resources", "web", "benchmarks", "anahata-agi-1");
-        if (Files.exists(relativeWebPath)) {
-            return relativeWebPath;
-        }
-
-        // 3. Fallback to ~/.anahata/asi/benchmarks/anahata-agi-1
-        Path fallbackPath = AbstractAsiContainer.getWorkDirSubDir("benchmarks").resolve("anahata-agi-1");
-        try {
-            Files.createDirectories(fallbackPath);
-        } catch (IOException e) {
-            log.error("Could not create fallback benchmark directory: {}", fallbackPath, e);
-        }
-        return fallbackPath;
-    }
-
-    /**
-     * Resolves the JSON file path for a specific benchmark test code.
-     * <p>
-     * Converts test codes such as {@code "JAVA-JNA-1"} into {@code "java-jna-1-results.json"}.
-     * </p>
-     *
-     * @param testCode The test identifier code.
-     * @return The path to the test's JSON results file.
-     */
-    public static Path getResultsFileForTest(String testCode) {
-        String filename = testCode.toLowerCase().replace('_', '-') + "-results.json";
-        return getResultsDirectory().resolve(filename);
-    }
-
-    /**
-     * Loads all recorded benchmark runs for a given test code.
-     *
-     * @param testCode The unique test identifier code.
-     * @return An unmodifiable list of previous test runs, or an empty list if no runs exist.
-     */
-    public static List<BenchmarkRunResult> loadResults(String testCode) {
-        Path file = getResultsFileForTest(testCode);
-        if (!Files.exists(file)) {
+    public static List<BenchmarkRunResult> loadResults(Path resultsFile) {
+        if (resultsFile == null || !Files.exists(resultsFile)) {
             return Collections.emptyList();
         }
 
         try {
-            byte[] data = Files.readAllBytes(file);
+            byte[] data = Files.readAllBytes(resultsFile);
             if (data.length == 0) {
                 return Collections.emptyList();
             }
             List<BenchmarkRunResult> list = MAPPER.readValue(data, new TypeReference<List<BenchmarkRunResult>>() {});
             return list != null ? list : Collections.emptyList();
         } catch (Exception e) {
-            log.error("Failed to load benchmark results from {}", file, e);
+            log.error("Failed to load benchmark results from {}", resultsFile, e);
             return Collections.emptyList();
         }
     }
 
     /**
-     * Appends a new benchmark run result to the test's results file and saves it.
+     * Loads all recorded benchmark runs for a given test code within a catalog context.
      *
-     * @param result The benchmark run result to record.
-     * @throws IOException If writing to disk fails.
+     * @param catalog The catalog context.
+     * @param testCode The unique test identifier code.
+     * @return List of previous test runs.
      */
-    public static synchronized void recordResult(BenchmarkRunResult result) throws IOException {
-        String testCode = result.testCode();
-        Path file = getResultsFileForTest(testCode);
-
-        List<BenchmarkRunResult> existing = new ArrayList<>(loadResults(testCode));
-        existing.add(result);
-
-        Files.createDirectories(file.getParent());
-        MAPPER.writeValue(file.toFile(), existing);
-        log.info("Recorded benchmark result for {} ({}) to {}", result.participant().modelId(), testCode, file);
+    public static List<BenchmarkRunResult> loadResults(TestCatalog catalog, String testCode) {
+        if (catalog == null) {
+            return Collections.emptyList();
+        }
+        return loadResults(catalog.getResultsFileForTest(testCode));
     }
 
     /**
-     * Adds or updates a judge's score for a specific run identified by the candidate {@link BenchmarkParticipant}.
+     * Appends a new benchmark run result to a specific results file and saves it atomically.
      *
-     * @param testCode The test code (e.g. "JAVA-JNA-1").
+     * @param resultsFile The path to the JSON results file.
+     * @param result The benchmark run result to record.
+     * @throws IOException If writing to disk fails.
+     */
+    public static synchronized void recordResult(Path resultsFile, BenchmarkRunResult result) throws IOException {
+        if (resultsFile == null) {
+            throw new IllegalArgumentException("Results file path cannot be null");
+        }
+
+        List<BenchmarkRunResult> existing = new ArrayList<>(loadResults(resultsFile));
+        existing.add(result);
+
+        Files.createDirectories(resultsFile.getParent());
+        MAPPER.writeValue(resultsFile.toFile(), existing);
+        log.info("Recorded benchmark result for {} ({}) to {}", result.participant().modelId(), result.testCode(), resultsFile);
+    }
+
+    /**
+     * Appends a new benchmark run result to the results file defined by the given catalog.
+     *
+     * @param catalog The catalog context.
+     * @param result The benchmark run result to record.
+     * @throws IOException If writing to disk fails.
+     */
+    public static synchronized void recordResult(TestCatalog catalog, BenchmarkRunResult result) throws IOException {
+        if (catalog == null) {
+            throw new IllegalArgumentException("Catalog cannot be null");
+        }
+        recordResult(catalog.getResultsFileForTest(result.testCode()), result);
+    }
+
+    /**
+     * Adds or updates a judge's score for a specific run in a results file.
+     *
+     * @param resultsFile The path to the JSON results file.
      * @param participant The composite candidate participant key (providerUuid, modelId, thinkingLevel).
      * @param judgeName The name of the judge (e.g. "Pablo", "Vijay").
      * @param score The score given by the judge.
      * @return {@code true} if a matching run was found and updated, {@code false} otherwise.
      * @throws IOException If saving fails.
      */
-    public static synchronized boolean submitJudgeScore(String testCode, BenchmarkParticipant participant, String judgeName, double score) throws IOException {
-        Path file = getResultsFileForTest(testCode);
-        List<BenchmarkRunResult> runs = new ArrayList<>(loadResults(testCode));
+    public static synchronized boolean submitJudgeScore(Path resultsFile, BenchmarkParticipant participant, String judgeName, double score) throws IOException {
+        if (resultsFile == null || !Files.exists(resultsFile)) {
+            return false;
+        }
+
+        List<BenchmarkRunResult> runs = new ArrayList<>(loadResults(resultsFile));
         boolean found = false;
 
         for (int i = 0; i < runs.size(); i++) {
             BenchmarkRunResult run = runs.get(i);
             if (run.participant().equals(participant)) {
-                var updatedScores = new java.util.HashMap<>(run.judgeScores());
+                var updatedScores = new HashMap<>(run.judgeScores());
                 updatedScores.put(judgeName, score);
 
                 BenchmarkRunResult updatedRun = BenchmarkRunResult.builder()
@@ -176,25 +158,27 @@ public class BenchmarkResultsStore {
         }
 
         if (found) {
-            MAPPER.writeValue(file.toFile(), runs);
-            log.info("Updated judge score for {} on {} by {}: {}", participant, testCode, judgeName, score);
+            MAPPER.writeValue(resultsFile.toFile(), runs);
+            log.info("Updated judge score for {} by {}: {} in {}", participant, judgeName, score, resultsFile);
         }
         return found;
     }
 
     /**
-     * Convenience method to submit a judge score using raw participant parameters.
+     * Adds or updates a judge's score for a specific run in a catalog.
      *
+     * @param catalog The catalog context.
      * @param testCode The test code.
-     * @param providerUuid The AI provider UUID.
-     * @param modelId The model identifier.
-     * @param thinkingLevel The thinking level.
-     * @param judgeName The name of the judge.
+     * @param participant The candidate participant key.
+     * @param judgeName The judge name.
      * @param score The score.
      * @return {@code true} if updated, {@code false} otherwise.
      * @throws IOException If saving fails.
      */
-    public static synchronized boolean submitJudgeScore(String testCode, String providerUuid, String modelId, uno.anahata.asi.agi.provider.ThinkingLevel thinkingLevel, String judgeName, double score) throws IOException {
-        return submitJudgeScore(testCode, BenchmarkParticipant.of(providerUuid, modelId, thinkingLevel), judgeName, score);
+    public static synchronized boolean submitJudgeScore(TestCatalog catalog, String testCode, BenchmarkParticipant participant, String judgeName, double score) throws IOException {
+        if (catalog == null) {
+            return false;
+        }
+        return submitJudgeScore(catalog.getResultsFileForTest(testCode), participant, judgeName, score);
     }
 }

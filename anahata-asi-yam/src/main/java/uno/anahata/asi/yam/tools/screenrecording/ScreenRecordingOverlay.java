@@ -1,7 +1,7 @@
 /*
  * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
  */
-package uno.anahata.asi.yam.tools.benchmarks;
+package uno.anahata.asi.yam.tools.screenrecording;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -23,12 +23,14 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.image.BufferedImage;
-import java.util.function.Consumer;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.IntStream;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -36,22 +38,27 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Floating, always-on-top Swing recording control overlay displayed during benchmark test execution.
+ * Universal, floating, always-on-top Swing screen recording control overlay.
  * <p>
- * Displays an active recording timer, pulsing red status indicator, test identifier, and candidate model ID.
- * Provides two primary actions:
+ * Provides interactive pre-launch multi-monitor selection with real-time thumbnail snapshots,
+ * active recording timer with pulsing red indicator, live 1-second interval mini-preview,
+ * and a three-action control bar:
  * <ul>
- *   <li><b>[ ❌ Stop &amp; Cancel ]</b>: Discards the video and closes the recorder.</li>
- *   <li><b>[ 🚀 Stop &amp; Upload ]</b>: Finalizes the video, triggers YouTube publishing, and persists telemetry.</li>
+ *   <li><b>[ ❌ Cancel ]</b>: Discards the video and closes the recorder.</li>
+ *   <li><b>[ 💾 Save ]</b>: Finalizes the video locally without external publishing.</li>
+ *   <li><b>[ 🚀 Save &amp; Upload ]</b>: Finalizes the video, executes upload publishing, and records telemetry.</li>
  * </ul>
+ * </p>
  *
  * @author anahata
  */
 @Slf4j
-public class BenchmarkRecordingOverlay extends JDialog {
+public class ScreenRecordingOverlay extends JDialog {
 
     /**
      * The pulsing red recording dot indicator component.
@@ -76,7 +83,7 @@ public class BenchmarkRecordingOverlay extends JDialog {
     /**
      * Cache for monitor pre-launch thumbnail snapshots.
      */
-    private final java.util.Map<Integer, Image> monitorThumbnails = new java.util.HashMap<>();
+    private final Map<Integer, Image> monitorThumbnails = new HashMap<>();
 
     /**
      * Swing timer updating the elapsed time, red dot pulse, and live screen preview.
@@ -91,30 +98,54 @@ public class BenchmarkRecordingOverlay extends JDialog {
     /**
      * The selected screen graphics device index.
      */
+    @Getter
+    @Setter
     private int selectedDeviceIndex = 0;
+
+    /**
+     * The title displayed on the overlay header.
+     */
+    @Getter
+    @Setter
+    private String headerTitle;
+
+    /**
+     * The subtitle displayed on the overlay header.
+     */
+    @Getter
+    @Setter
+    private String headerSubtitle;
 
     /**
      * The custom label for the start recording button.
      */
-    private String startRecordingLabel = "▶ Start Recording & Run Benchmark";
+    @Getter
+    @Setter
+    private String startRecordingLabel = "▶ Start Recording";
 
     /**
      * The custom label for the save locally button.
      */
+    @Getter
+    @Setter
     private String saveLocalLabel = "💾 Save";
 
     /**
      * The custom label for the stop and upload button.
      */
+    @Getter
+    @Setter
     private String saveAndUploadLabel = "🚀 Save & Upload";
 
     /**
      * The custom label for the cancel button.
      */
+    @Getter
+    @Setter
     private String cancelLabel = "❌ Cancel";
 
     /**
-     * Callback invoked when the user clicks 'Start Recording & Run Benchmark'.
+     * Callback invoked when the user clicks 'Start Recording'.
      */
     private final Runnable onStartAction;
 
@@ -139,29 +170,19 @@ public class BenchmarkRecordingOverlay extends JDialog {
     private JPanel rootPanel;
 
     /**
-     * The test code identifier.
-     */
-    private final String testCode;
-
-    /**
-     * The candidate model ID.
-     */
-    private final String modelId;
-
-    /**
-     * Constructs the floating benchmark recording overlay with three-action control flow (Cancel, Save, Save &amp; Upload).
+     * Constructs the universal floating recording overlay.
      *
-     * @param testCode The benchmark test identifier code (e.g. "JAVA-ARKANOID-1").
-     * @param modelId The candidate model identifier string (e.g. "gemini-3.6-flash").
+     * @param headerTitle The primary title string (e.g. "JAVA-ARKANOID-1" or "Screen Recording").
+     * @param headerSubtitle The subtitle string (e.g. candidate model ID or descriptor).
      * @param onStartAction The action executed when start is clicked.
      * @param onSaveLocalAction The action executed when save local is clicked.
      * @param onUploadAction The action executed when save and upload is clicked.
      * @param onCancelAction The action executed when recording is cancelled.
      */
-    public BenchmarkRecordingOverlay(String testCode, String modelId, Runnable onStartAction, Runnable onSaveLocalAction, Runnable onUploadAction, Runnable onCancelAction) {
+    public ScreenRecordingOverlay(String headerTitle, String headerSubtitle, Runnable onStartAction, Runnable onSaveLocalAction, Runnable onUploadAction, Runnable onCancelAction) {
         super();
-        this.testCode = testCode;
-        this.modelId = modelId;
+        this.headerTitle = headerTitle;
+        this.headerSubtitle = headerSubtitle;
         this.onStartAction = onStartAction;
         this.onSaveLocalAction = onSaveLocalAction;
         this.onUploadAction = onUploadAction;
@@ -226,11 +247,11 @@ public class BenchmarkRecordingOverlay extends JDialog {
                 }
             } catch (Exception ignored) {
             }
-        }, "Benchmark-LivePreview-Capture").start();
+        }, "ScreenRecording-LivePreview-Capture").start();
     }
 
     /**
-     * Configures custom button labels for all four action buttons.
+     * Configures custom button labels for the action buttons.
      *
      * @param startLabel Custom text for start button.
      * @param saveLocalLabel Custom text for save local button.
@@ -238,7 +259,7 @@ public class BenchmarkRecordingOverlay extends JDialog {
      * @param cancelLabel Custom text for cancel button.
      * @return This overlay instance.
      */
-    public BenchmarkRecordingOverlay withCustomLabels(String startLabel, String saveLocalLabel, String uploadLabel, String cancelLabel) {
+    public ScreenRecordingOverlay withCustomLabels(String startLabel, String saveLocalLabel, String uploadLabel, String cancelLabel) {
         if (startLabel != null && !startLabel.isBlank()) this.startRecordingLabel = startLabel;
         if (saveLocalLabel != null && !saveLocalLabel.isBlank()) this.saveLocalLabel = saveLocalLabel;
         if (uploadLabel != null && !uploadLabel.isBlank()) this.saveAndUploadLabel = uploadLabel;
@@ -286,7 +307,7 @@ public class BenchmarkRecordingOverlay extends JDialog {
     }
 
     /**
-     * Builds the Pre-Launch UI showing test info, visual monitor cards, and the Start Recording button.
+     * Builds the Pre-Launch UI showing test/session info, visual monitor cards, and the Start Recording button.
      */
     private void initPreLaunchUI() {
         if (rootPanel == null) {
@@ -301,22 +322,23 @@ public class BenchmarkRecordingOverlay extends JDialog {
             rootPanel.removeAll();
         }
 
-        // Info
+        // Info Panel
         JPanel leftPanel = new JPanel();
         leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
         leftPanel.setOpaque(false);
 
-        JLabel testLabel = new JLabel("⚡ Benchmark: " + testCode);
-        testLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
-        testLabel.setForeground(new Color(237, 187, 0)); // Barça Gold
-        leftPanel.add(testLabel);
+        JLabel titleLbl = new JLabel(headerTitle != null ? headerTitle : "Screen Recording");
+        titleLbl.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
+        titleLbl.setForeground(new Color(237, 187, 0)); // Barça Gold
+        leftPanel.add(titleLbl);
 
-        leftPanel.add(Box.createVerticalStrut(3));
-
-        JLabel modelLabel = new JLabel("Candidate: " + modelId);
-        modelLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
-        modelLabel.setForeground(new Color(148, 163, 184));
-        leftPanel.add(modelLabel);
+        if (headerSubtitle != null && !headerSubtitle.isBlank()) {
+            leftPanel.add(Box.createVerticalStrut(3));
+            JLabel subLbl = new JLabel(headerSubtitle);
+            subLbl.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
+            subLbl.setForeground(new Color(148, 163, 184));
+            leftPanel.add(subLbl);
+        }
 
         rootPanel.add(leftPanel, BorderLayout.WEST);
 
@@ -327,8 +349,7 @@ public class BenchmarkRecordingOverlay extends JDialog {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] devices = ge.getScreenDevices();
 
-        // Sort indices based on physical X coordinates
-        java.util.List<Integer> sortedIndices = java.util.stream.IntStream.range(0, devices.length)
+        List<Integer> sortedIndices = IntStream.range(0, devices.length)
                 .boxed()
                 .sorted(java.util.Comparator.comparingInt(i -> devices[i].getDefaultConfiguration().getBounds().x))
                 .toList();
@@ -405,13 +426,13 @@ public class BenchmarkRecordingOverlay extends JDialog {
                         SwingUtilities.invokeLater(centerMonitorsPanel::repaint);
                     } catch (Exception ignored) {
                     }
-                }, "Benchmark-PreLaunchThumb-" + idx).start();
+                }, "ScreenRecording-PreLaunchThumb-" + idx).start();
             }
         }
 
         rootPanel.add(centerMonitorsPanel, BorderLayout.CENTER);
 
-        // Buttons
+        // Buttons Panel
         JPanel rightControlPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         rightControlPanel.setOpaque(false);
 
@@ -435,7 +456,7 @@ public class BenchmarkRecordingOverlay extends JDialog {
         startBtn.addActionListener(e -> {
             transitionToActiveRecording();
             if (onStartAction != null) {
-                new Thread(onStartAction, "Benchmark-Launcher-" + testCode).start();
+                new Thread(onStartAction, "ScreenRecording-Launcher").start();
             }
         });
 
@@ -467,18 +488,18 @@ public class BenchmarkRecordingOverlay extends JDialog {
         timerLabel.setForeground(new Color(248, 250, 252));
         statusRow.add(timerLabel);
 
-        JLabel testLabel = new JLabel("⚡ " + testCode);
-        testLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
-        testLabel.setForeground(new Color(237, 187, 0));
-        statusRow.add(testLabel);
+        JLabel titleLbl = new JLabel("⚡ " + headerTitle);
+        titleLbl.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+        titleLbl.setForeground(new Color(237, 187, 0));
+        statusRow.add(titleLbl);
 
         leftPanel.add(statusRow);
         leftPanel.add(Box.createVerticalStrut(3));
 
-        JLabel modelLabel = new JLabel("Model: " + modelId + " (Screen " + selectedDeviceIndex + ")");
-        modelLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
-        modelLabel.setForeground(new Color(148, 163, 184));
-        leftPanel.add(modelLabel);
+        JLabel infoLbl = new JLabel((headerSubtitle != null ? headerSubtitle : "") + " (Screen " + selectedDeviceIndex + ")");
+        infoLbl.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
+        infoLbl.setForeground(new Color(148, 163, 184));
+        leftPanel.add(infoLbl);
 
         rootPanel.add(leftPanel, BorderLayout.WEST);
 
@@ -536,15 +557,6 @@ public class BenchmarkRecordingOverlay extends JDialog {
         rootPanel.add(buttonPanel, BorderLayout.EAST);
         rootPanel.revalidate();
         rootPanel.repaint();
-    }
-
-    /**
-     * Gets the user-selected screen graphics device index.
-     *
-     * @return The 0-based screen device index.
-     */
-    public int getSelectedDeviceIndex() {
-        return selectedDeviceIndex;
     }
 
     /**

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.awt.GraphicsEnvironment;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -16,8 +17,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.AgiToolException;
@@ -25,9 +31,13 @@ import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.ToolPermission;
+import uno.anahata.asi.yam.tools.screenrecording.ScreenRecordingOverlay;
+import uno.anahata.asi.yam.tools.screenrecording.ScreenRecorder;
+import uno.anahata.asi.yam.tools.screenrecording.RecordedSession;
 
 /**
- * Pure Java YouTube Data API v3 toolkit providing autonomous video uploads and playlist management.
+ * Pure Java YouTube Data API v3 toolkit providing autonomous video uploads,
+ * screen recording publishing, playlist management, and channel analytics.
  * <p>
  * Implements the official Google YouTube Resumable Upload protocol using standard {@link HttpClient}
  * without external client libraries. Integrates with {@link YouTubeAuthHelper} for automated OAuth2 token
@@ -37,7 +47,7 @@ import uno.anahata.asi.agi.tool.ToolPermission;
  * @author anahata
  */
 @Slf4j
-@AgiToolkit("Pure Java YouTube Data API v3 toolkit for video uploads and playlist management. (Beta)")
+@AgiToolkit("Pure Java YouTube Data API v3 toolkit for video uploads, screen recording, and channel management.")
 public class YouTube extends AnahataToolkit {
 
     /**
@@ -69,45 +79,205 @@ public class YouTube extends AnahataToolkit {
             .build();
 
     /**
+     * Active standalone screen recorder instance.
+     */
+    private transient ScreenRecorder activeRecorder;
+
+    /**
      * Default constructor for the YouTube toolkit.
      */
     public YouTube() {
     }
 
     /**
-     * disabled on startup
-     */
-    @Override
-    public void initialize() {
-        super.initialize(); 
-        getToolkit().setEnabled(false);
-    }
-
-    /**
      * {@inheritDoc}
      * <p>
-     * Injects live YouTube authentication and configuration telemetry into the RAG message on every turn.
+     * Injects live YouTube channel metadata, statistics, playlists, and recent uploads into the RAG message.
      * </p>
      */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
-        StringBuilder sb = new StringBuilder("## YouTube Status\n");
-        if (YouTubeCredentials.exists()) {
-            try {
-                YouTubeCredentials creds = YouTubeCredentials.load();
-                boolean auth = creds.isAuthenticated();
-                sb.append("- **Authenticated**: ").append(auth ? "✅ YES" : "❌ NO (Missing refresh token)").append("\n");
-                sb.append("- **Client ID**: ").append(creds.clientId() != null ? creds.clientId() : "Default (Anahata ASI)").append("\n");
-                sb.append("- **Default Playlist ID**: ").append(creds.playlistId() != null ? creds.playlistId() : "None").append("\n");
-                sb.append("- **Credentials Location**: ").append(YouTubeCredentials.getCredentialsPath()).append("\n");
-            } catch (Exception e) {
-                sb.append("- **Authenticated**: ⚠️ Error reading credentials: ").append(e.getMessage()).append("\n");
-            }
-        } else {
-            sb.append("- **Authenticated**: ❌ NO (Not configured)\n");
-            sb.append("- **Action**: Run `YouTube.login()` to authenticate via browser.\n");
+        if (!YouTubeCredentials.exists()) {
+            ragMessage.addTextPart("## YouTube Status\n- **Authenticated**: ❌ NO (Not configured)\n- **Action**: Run `YouTube.login()` to authenticate via browser.\n");
+            return;
         }
-        ragMessage.addTextPart(sb.toString());
+
+        try {
+            YouTubeCredentials creds = YouTubeCredentials.load();
+            if (!creds.isAuthenticated()) {
+                ragMessage.addTextPart("## YouTube Status\n- **Authenticated**: ❌ NO (Missing refresh token)\n- **Action**: Run `YouTube.login()` to authorize channel.\n");
+                return;
+            }
+
+            String accessToken = YouTubeAuthHelper.getValidAccessToken(creds);
+            StringBuilder sb = new StringBuilder("## YouTube Channel & Telemetry\n");
+
+            // 1. Fetch Channel Details & Statistics
+            String channelUrl = "https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics,contentDetails&mine=true";
+            HttpRequest chReq = HttpRequest.newBuilder().uri(URI.create(channelUrl)).header("Authorization", "Bearer " + accessToken).GET().build();
+            HttpResponse<String> chRes = HTTP_CLIENT.send(chReq, HttpResponse.BodyHandlers.ofString());
+
+            String uploadsPlaylistId = null;
+            if (chRes.statusCode() == 200) {
+                JsonNode chJson = MAPPER.readTree(chRes.body());
+                JsonNode items = chJson.path("items");
+                if (!items.isEmpty()) {
+                    JsonNode ch = items.get(0);
+                    JsonNode snip = ch.path("snippet");
+                    JsonNode stats = ch.path("statistics");
+                    uploadsPlaylistId = ch.path("contentDetails").path("relatedPlaylists").path("uploads").asText(null);
+
+                    sb.append("- **Channel**: ").append(snip.path("title").asText()).append(" (Handle: `").append(snip.path("customUrl").asText("@unknown")).append("`)\n");
+                    sb.append("- **Subscribers**: ").append(stats.path("subscriberCount").asText("0"))
+                      .append(" | **Total Views**: ").append(stats.path("viewCount").asText("0"))
+                      .append(" | **Total Videos**: ").append(stats.path("videoCount").asText("0")).append("\n");
+                    sb.append("- **Default Playlist ID**: ").append(creds.playlistId() != null ? creds.playlistId() : "None").append("\n");
+                }
+            } else {
+                sb.append("- **Authenticated**: ✅ YES\n");
+            }
+
+            // 2. Fetch Playlists
+            String plUrl = "https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&mine=true&maxResults=50";
+            HttpRequest plReq = HttpRequest.newBuilder().uri(URI.create(plUrl)).header("Authorization", "Bearer " + accessToken).GET().build();
+            HttpResponse<String> plRes = HTTP_CLIENT.send(plReq, HttpResponse.BodyHandlers.ofString());
+
+            if (plRes.statusCode() == 200) {
+                JsonNode plJson = MAPPER.readTree(plRes.body());
+                JsonNode plItems = plJson.path("items");
+                if (!plItems.isEmpty()) {
+                    sb.append("\n### Channel Playlists (").append(plItems.size()).append(")\n");
+                    for (JsonNode pl : plItems) {
+                        String id = pl.path("id").asText();
+                        String title = pl.path("snippet").path("title").asText();
+                        int count = pl.path("contentDetails").path("itemCount").asInt(0);
+                        sb.append("- **").append(title).append("** (ID: `").append(id).append("`) — ").append(count).append(" videos\n");
+                    }
+                }
+            }
+
+            // 3. Fetch Top 20 Most Recent Uploads
+            if (uploadsPlaylistId != null && !uploadsPlaylistId.isBlank()) {
+                String vUrl = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=" + uploadsPlaylistId + "&maxResults=20";
+                HttpRequest vReq = HttpRequest.newBuilder().uri(URI.create(vUrl)).header("Authorization", "Bearer " + accessToken).GET().build();
+                HttpResponse<String> vRes = HTTP_CLIENT.send(vReq, HttpResponse.BodyHandlers.ofString());
+
+                if (vRes.statusCode() == 200) {
+                    JsonNode vJson = MAPPER.readTree(vRes.body());
+                    JsonNode vItems = vJson.path("items");
+                    if (!vItems.isEmpty()) {
+                        sb.append("\n### Recent Uploads (Top ").append(vItems.size()).append(")\n");
+                        for (JsonNode v : vItems) {
+                            JsonNode vSnip = v.path("snippet");
+                            String title = vSnip.path("title").asText();
+                            String vid = vSnip.path("resourceId").path("videoId").asText();
+                            String pubDate = vSnip.path("publishedAt").asText();
+                            if (pubDate.length() > 10) {
+                                pubDate = pubDate.substring(0, 10);
+                            }
+                            sb.append("- [").append(pubDate).append("] **").append(title).append("** — https://youtu.be/").append(vid).append("\n");
+                        }
+                    }
+                }
+            }
+
+            ragMessage.addTextPart(sb.toString());
+
+        } catch (Exception e) {
+            log.error("Error populating YouTube RAG message", e);
+            ragMessage.addTextPart("## YouTube Status\n- ⚠️ Telemetry fetch error: " + ExceptionUtils.getStackTrace(e) + "\n");
+        }
+    }
+
+    /**
+     * Launches the screen recording overlay to record the screen and publish directly to YouTube.
+     *
+     * @param videoTitle The title for the uploaded video.
+     * @param playlistId The optional target playlist ID.
+     * @param privacyStatus The privacy status: "unlisted", "public", or "private".
+     * @return Confirmation with resulting video URL upon completion.
+     * @throws Exception If recording or upload fails.
+     */
+    @AgiTool(value = "Launches the screen recording overlay to record desktop activity and publish to YouTube.", permission = ToolPermission.APPROVE_ALWAYS)
+    public String startScreenRecording(
+            @AgiToolParam("The title for the recorded YouTube video.") String videoTitle,
+            @AgiToolParam(value = "Optional target playlist ID.", required = false) String playlistId,
+            @AgiToolParam(value = "Privacy status (unlisted, public, private).", required = false) String privacyStatus,
+            @AgiToolParam(value = "Optional custom target MP4 file path on disk.", required = false) String customTargetFilePath) throws Exception {
+        if (GraphicsEnvironment.isHeadless()) {
+            throw new AgiToolException("Screen recording is not supported in a headless environment.");
+        }
+
+        ScreenRecorder recorder = new ScreenRecorder();
+        this.activeRecorder = recorder;
+        CompletableFuture<String> uploadFuture = new CompletableFuture<>();
+
+        ScreenRecordingOverlay[] overlayHolder = new ScreenRecordingOverlay[1];
+        overlayHolder[0] = new ScreenRecordingOverlay(
+                "Recording",
+                videoTitle,
+                // onStartAction
+                () -> {
+                    try {
+                        int devIdx = overlayHolder[0].getSelectedDeviceIndex();
+                        log("Starting screen recording on Screen " + devIdx + " for title: " + videoTitle);
+                        if (customTargetFilePath != null && !customTargetFilePath.isBlank()) {
+                            recorder.startRecording(Paths.get(customTargetFilePath), devIdx);
+                        } else {
+                            recorder.startRecording("RECORDING", "desktop", devIdx);
+                        }
+                    } catch (Exception e) {
+                        log.error("Failed to start screen recording", e);
+                        error(e);
+                    }
+                },
+                // onSaveLocalAction
+                () -> {
+                    try {
+                        RecordedSession session = recorder.stopRecording(true, null);
+                        uploadFuture.complete("Video saved locally to: " + (session != null ? session.videoPath() : "unknown"));
+                    } catch (Exception e) {
+                        uploadFuture.completeExceptionally(e);
+                    }
+                },
+                // onUploadAction
+                () -> {
+                    try {
+                        RecordedSession session = recorder.stopRecording(true, null);
+                        if (session != null && session.videoPath() != null) {
+                            YouTubeVideoUploadRequest req = YouTubeVideoUploadRequest.builder()
+                                    .videoFilePath(session.videoPath().toString())
+                                    .title(videoTitle)
+                                    .description("Recorded via Anahata ASI Screen Recorder.\n\nhttps://asi.anahata.uno")
+                                    .playlistId(playlistId)
+                                    .privacyStatus(privacyStatus != null ? privacyStatus : "unlisted")
+                                    .build();
+                            String url = uploadVideo(req);
+                            if (session.thumbnailPath() != null) {
+                                try {
+                                    String videoId = url.substring(url.lastIndexOf('/') + 1);
+                                    setThumbnail(videoId, session.thumbnailPath().toString());
+                                } catch (Exception ignored) {
+                                    /* Best effort thumbnail assignment */
+                                }
+                            }
+                            uploadFuture.complete("Video published to YouTube: " + url);
+                        } else {
+                            uploadFuture.complete("No video recorded.");
+                        }
+                    } catch (Exception e) {
+                        uploadFuture.completeExceptionally(e);
+                    }
+                },
+                // onCancelAction
+                () -> {
+                    recorder.cancelRecording();
+                    uploadFuture.completeExceptionally(new AgiToolException("Recording cancelled by user."));
+                }
+        );
+
+        overlayHolder[0].showPreLaunch();
+        return uploadFuture.get(600, TimeUnit.SECONDS);
     }
 
     /**

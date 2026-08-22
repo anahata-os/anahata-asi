@@ -22,7 +22,7 @@ import uno.anahata.asi.yam.tools.chrome.Chrome;
 import uno.anahata.asi.yam.tools.firefox.Firefox;
 import uno.anahata.asi.yam.tools.Radio;
 import uno.anahata.asi.yam.tools.Speech;
-import uno.anahata.asi.yam.tools.benchmarks.Agi1Benchmark;
+import uno.anahata.asi.yam.tools.benchmarks.Benchmarks;
 import uno.anahata.asi.yam.tools.youtube.YouTube;
 
 /**
@@ -60,7 +60,7 @@ public class SwingAgiConfig extends AgiConfig {
         getToolClasses().add(Chrome.class);
         getToolClasses().add(Firefox.class);
         getToolClasses().add(YouTube.class);
-        getToolClasses().add(Agi1Benchmark.class);
+        getToolClasses().add(Benchmarks.class);
         //getToolClasses().add(OldChrome.class);
         getToolClasses().add(Screens.class);
     }

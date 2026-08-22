@@ -1,7 +1,7 @@
 /*
  * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
  */
-package uno.anahata.asi.yam.tools.benchmarks;
+package uno.anahata.asi.yam.tools.screenrecording;
 
 import java.nio.file.Path;
 import lombok.Builder;
@@ -20,7 +20,7 @@ import lombok.Builder;
  * @author anahata
  */
 @Builder
-public record RecordedBenchmarkSession(
+public record RecordedSession(
         Path videoPath,
         Path thumbnailPath,
         double durationSeconds

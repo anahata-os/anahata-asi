@@ -1,7 +1,7 @@
 /*
  * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
  */
-package uno.anahata.asi.yam.tools.benchmarks;
+package uno.anahata.asi.yam.tools.screenrecording;
 
 import java.awt.Dimension;
 import java.awt.Rectangle;
@@ -20,24 +20,25 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.imageio.ImageIO;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AbstractAsiContainer;
 
 /**
- * Cross-platform screen recording manager utilizing native FFmpeg process execution.
+ * Universal cross-platform screen recording engine utilizing native FFmpeg process execution.
  * <p>
  * Supports automated video capture and instantaneous thumbnail frame snapshots across
  * Linux (X11), macOS (AVFoundation), and Windows (gdigrab).
  * </p>
  * <p>
- * Videos are saved temporarily to {@code ~/.anahata/asi/benchmarks/recordings/} to prevent
- * repository bloat. Upon run finalization, thumbnails are copied directly to the website assets tree.
+ * Supports customizable recording directories, explicit target file paths, and multi-monitor resolution routing.
  * </p>
  *
  * @author anahata
  */
 @Slf4j
-public class BenchmarkScreenRecorder {
+public class ScreenRecorder {
 
     /**
      * The active FFmpeg recording operating system process, or {@code null} if idle.
@@ -47,6 +48,7 @@ public class BenchmarkScreenRecorder {
     /**
      * The absolute path to the .mp4 file currently being recorded.
      */
+    @Getter
     private Path currentVideoPath;
 
     /**
@@ -57,19 +59,35 @@ public class BenchmarkScreenRecorder {
     /**
      * Selected screen graphics device index.
      */
+    @Getter
     private int selectedDeviceIndex = 0;
 
     /**
-     * Resolves the temporary directory where benchmark screen recordings are stored.
-     *
-     * @return The path to {@code ~/.anahata/asi/benchmarks/recordings/}.
+     * Customizable output directory for recorded videos.
      */
-    public static Path getRecordingsDirectory() {
-        Path dir = AbstractAsiContainer.getWorkDirSubDir("benchmarks").resolve("recordings");
+    @Getter
+    @Setter
+    private Path customRecordingsDirectory;
+
+    /**
+     * Resolves the directory where screen recordings are stored.
+     *
+     * @return The path to the recordings directory.
+     */
+    public Path getEffectiveRecordingsDirectory() {
+        if (customRecordingsDirectory != null) {
+            try {
+                Files.createDirectories(customRecordingsDirectory);
+            } catch (IOException e) {
+                log.error("Could not create custom recordings directory: {}", customRecordingsDirectory, e);
+            }
+            return customRecordingsDirectory;
+        }
+        Path dir = AbstractAsiContainer.getWorkDirSubDir("recordings");
         try {
             Files.createDirectories(dir);
         } catch (IOException e) {
-            log.error("Could not create benchmark recordings directory: {}", dir, e);
+            log.error("Could not create recordings directory: {}", dir, e);
         }
         return dir;
     }
@@ -84,42 +102,26 @@ public class BenchmarkScreenRecorder {
     }
 
     /**
-     * Initiates a new screen recording session for a benchmark test on the default screen.
+     * Initiates a new screen recording session to an explicit target file path on the specified screen device.
      *
-     * @param testCode The benchmark test identifier code (e.g. {@code "JAVA-ARKANOID-1"}).
-     * @param modelId The candidate model identifier string (e.g. {@code "gemini-3.6-flash"}).
-     * @return The path to the destination .mp4 file.
-     * @throws Exception If launching the FFmpeg process fails.
-     */
-    public synchronized Path startRecording(String testCode, String modelId) throws Exception {
-        return startRecording(testCode, modelId, 0);
-    }
-
-    /**
-     * Initiates a new screen recording session for a benchmark test on a specific screen device.
-     *
-     * @param testCode The benchmark test identifier code (e.g. {@code "JAVA-ARKANOID-1"}).
-     * @param modelId The candidate model identifier string (e.g. {@code "gemini-3.6-flash"}).
+     * @param targetFilePath The exact destination .mp4 file path.
      * @param deviceIndex The 0-based screen graphics device index to record.
      * @return The path to the destination .mp4 file.
      * @throws Exception If launching the FFmpeg process fails.
      */
-    public synchronized Path startRecording(String testCode, String modelId, int deviceIndex) throws Exception {
+    public synchronized Path startRecording(Path targetFilePath, int deviceIndex) throws Exception {
         if (isRecording()) {
             log.warn("Recording already in progress. Stopping previous recording first.");
             cancelRecording();
         }
 
         this.selectedDeviceIndex = deviceIndex;
-        String safeModel = modelId.replaceAll("[^a-zA-Z0-9.-]", "_");
-        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        String filename = testCode.toLowerCase().replace('_', '-') + "_" + safeModel + "_" + timestamp + ".mp4";
-
-        this.currentVideoPath = getRecordingsDirectory().resolve(filename);
+        this.currentVideoPath = targetFilePath;
+        Files.createDirectories(targetFilePath.getParent());
         this.startEpochMillis = System.currentTimeMillis();
 
         List<String> command = buildFfmpegCommand(currentVideoPath.toString(), deviceIndex);
-        log.info("Starting benchmark screen recording with command: {}", String.join(" ", command));
+        log.info("Starting screen recording with command: {}", String.join(" ", command));
 
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.redirectErrorStream(true);
@@ -131,38 +133,55 @@ public class BenchmarkScreenRecorder {
             try (var reader = new java.io.BufferedReader(new java.io.InputStreamReader(ffmpegProcess.getInputStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    // Debug trace output
                     log.trace("[FFmpeg] {}", line);
                 }
             } catch (IOException ignored) {
             }
-        }, "Benchmark-FFmpeg-Drain");
+        }, "ScreenRecorder-FFmpeg-Drain");
         drainThread.setDaemon(true);
         drainThread.start();
 
-        log.info("FFmpeg screen recording started for {} on Screen {} -> {}", testCode, deviceIndex, currentVideoPath);
+        log.info("FFmpeg screen recording started on Screen {} -> {}", deviceIndex, currentVideoPath);
         return currentVideoPath;
     }
 
     /**
+     * Initiates a new screen recording session using a generated filename with prefix and identifier.
+     *
+     * @param prefix The filename prefix (e.g., "desktop", "java-jna-1").
+     * @param identifier The descriptor identifier (e.g., "gemini-3.6-flash").
+     * @param deviceIndex The 0-based screen graphics device index.
+     * @return The path to the destination .mp4 file.
+     * @throws Exception If launching FFmpeg fails.
+     */
+    public synchronized Path startRecording(String prefix, String identifier, int deviceIndex) throws Exception {
+        String safePrefix = prefix != null ? prefix.replaceAll("[^a-zA-Z0-9.-]", "_") : "recording";
+        String safeId = identifier != null ? identifier.replaceAll("[^a-zA-Z0-9.-]", "_") : "session";
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String filename = safePrefix + "_" + safeId + "_" + timestamp + ".mp4";
+
+        Path target = getEffectiveRecordingsDirectory().resolve(filename);
+        return startRecording(target, deviceIndex);
+    }
+
+    /**
      * Stops the active recording, captures an instantaneous screen frame thumbnail,
-     * and finalizes the MP4 file.
+     * and finalizes the MP4 file by cleanly sending the 'q' quit signal to FFmpeg.
      *
      * @param captureThumbnail Whether to capture a PNG screenshot at the stop moment.
-     * @param testCode The test identifier code.
-     * @param modelId The candidate model identifier string.
-     * @return A {@link RecordedBenchmarkSession} containing paths and recording duration.
+     * @param thumbnailDestination The optional destination path for the captured thumbnail PNG.
+     * @return A {@link RecordedSession} containing paths and recording duration.
      * @throws Exception If process termination or thumbnail capture fails.
      */
-    public synchronized RecordedBenchmarkSession stopRecording(boolean captureThumbnail, String testCode, String modelId) throws Exception {
+    public synchronized RecordedSession stopRecording(boolean captureThumbnail, Path thumbnailDestination) throws Exception {
         if (!isRecording()) {
             log.warn("No active recording process to stop.");
             return null;
         }
 
-        Path thumbnailPath = null;
+        Path finalThumbPath = null;
         if (captureThumbnail) {
-            thumbnailPath = captureScreenFrame(testCode, modelId, selectedDeviceIndex);
+            finalThumbPath = captureScreenFrame(thumbnailDestination, selectedDeviceIndex);
         }
 
         long elapsedMillis = System.currentTimeMillis() - startEpochMillis;
@@ -170,7 +189,7 @@ public class BenchmarkScreenRecorder {
 
         log.info("Stopping FFmpeg recording process (elapsed: {}s)...", durationSeconds);
         try {
-            // Gracefully send 'q' to FFmpeg standard input
+            // Gracefully send 'q' to FFmpeg standard input to flush H.264 moov atom
             OutputStream os = ffmpegProcess.getOutputStream();
             os.write("q\n".getBytes());
             os.flush();
@@ -191,10 +210,10 @@ public class BenchmarkScreenRecorder {
             this.ffmpegProcess = null;
         }
 
-        log.info("Benchmark recording finalized: {} (Thumbnail: {})", currentVideoPath, thumbnailPath);
-        return RecordedBenchmarkSession.builder()
+        log.info("Screen recording finalized: {} (Thumbnail: {})", currentVideoPath, finalThumbPath);
+        return RecordedSession.builder()
                 .videoPath(currentVideoPath)
-                .thumbnailPath(thumbnailPath)
+                .thumbnailPath(finalThumbPath)
                 .durationSeconds(durationSeconds)
                 .build();
     }
@@ -204,7 +223,7 @@ public class BenchmarkScreenRecorder {
      */
     public synchronized void cancelRecording() {
         if (ffmpegProcess != null) {
-            log.info("Cancelling benchmark screen recording...");
+            log.info("Cancelling screen recording...");
             try {
                 ffmpegProcess.destroyForcibly();
             } catch (Exception ignored) {
@@ -226,12 +245,11 @@ public class BenchmarkScreenRecorder {
     /**
      * Captures a high-resolution snapshot of the recorded screen at the current instant.
      *
-     * @param testCode The test code.
-     * @param modelId The candidate model ID.
+     * @param customDest The optional custom destination file path.
      * @param deviceIndex The screen device index.
      * @return The path to the saved PNG thumbnail file.
      */
-    private Path captureScreenFrame(String testCode, String modelId, int deviceIndex) {
+    public Path captureScreenFrame(Path customDest, int deviceIndex) {
         try {
             java.awt.GraphicsEnvironment ge = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment();
             java.awt.GraphicsDevice[] devices = ge.getScreenDevices();
@@ -246,26 +264,18 @@ public class BenchmarkScreenRecorder {
             Robot robot = new Robot();
             BufferedImage capture = robot.createScreenCapture(bounds);
 
-            String safeModel = modelId.replaceAll("[^a-zA-Z0-9.-]", "_");
-            String filename = testCode.toLowerCase().replace('_', '-') + "_" + safeModel + "_thumb.png";
-            Path localThumbPath = getRecordingsDirectory().resolve(filename);
+            Path thumbPath = customDest != null ? customDest : getEffectiveRecordingsDirectory().resolve(
+                    currentVideoPath != null
+                            ? currentVideoPath.getFileName().toString().replace(".mp4", "_thumb.png")
+                            : "thumb_" + System.currentTimeMillis() + ".png"
+            );
 
-            ImageIO.write(capture, "png", localThumbPath.toFile());
-            log.info("Captured benchmark frame thumbnail to {}", localThumbPath);
-
-            // Copy to web assets folder if development environment exists
-            Path webAssetDir = Paths.get(System.getProperty("user.home"), "NetBeansProjects", "anahata-asi-parent",
-                    "anahata-asi-web", "src", "main", "resources", "web", "assets", "benchmarks", "ANAHATA-AGI-1", testCode);
-            if (Files.exists(webAssetDir.getParent())) {
-                Files.createDirectories(webAssetDir);
-                Path webThumbPath = webAssetDir.resolve(safeModel + ".png");
-                Files.copy(localThumbPath, webThumbPath, StandardCopyOption.REPLACE_EXISTING);
-                log.info("Copied benchmark thumbnail to website assets: {}", webThumbPath);
-            }
-
-            return localThumbPath;
+            Files.createDirectories(thumbPath.getParent());
+            ImageIO.write(capture, "png", thumbPath.toFile());
+            log.info("Captured screen frame thumbnail to {}", thumbPath);
+            return thumbPath;
         } catch (Exception e) {
-            log.error("Failed to capture benchmark screen frame thumbnail", e);
+            log.error("Failed to capture screen frame thumbnail", e);
             return null;
         }
     }
