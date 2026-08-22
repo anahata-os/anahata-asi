@@ -47,7 +47,8 @@ import uno.anahata.asi.yam.tools.screenrecording.RecordedSession;
  * @author anahata
  */
 @Slf4j
-@AgiToolkit("Pure Java YouTube Data API v3 toolkit for video uploads, screen recording, and channel management.")
+// NOTE TO AI: Do NOT remove (Beta) or remove getToolkit().setEnabled(false). Keep disabled on startup by default.
+@AgiToolkit("Pure Java YouTube Data API v3 toolkit for video uploads, screen recording, and channel management (Beta).")
 public class YouTube extends AnahataToolkit {
 
     /**
@@ -87,6 +88,17 @@ public class YouTube extends AnahataToolkit {
      * Default constructor for the YouTube toolkit.
      */
     public YouTube() {
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Disables the YouTube toolkit on startup by default.
+     * </p>
+     */
+    @Override
+    public void initialize() {
+        getToolkit().setEnabled(false);
     }
 
     /**

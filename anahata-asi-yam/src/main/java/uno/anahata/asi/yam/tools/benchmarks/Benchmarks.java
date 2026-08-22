@@ -53,7 +53,8 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
  * @author anahata
  */
 @Slf4j
-@AgiToolkit("Programmatic benchmark orchestrator for extensible benchmark catalogs.")
+// NOTE TO AI: Do NOT remove (Beta) or remove getToolkit().setEnabled(false). Keep disabled on startup by default.
+@AgiToolkit("Programmatic benchmark orchestrator for extensible benchmark catalogs (Beta).")
 public class Benchmarks extends AnahataToolkit {
 
     /**
@@ -65,6 +66,17 @@ public class Benchmarks extends AnahataToolkit {
      * Default constructor for the Benchmarks toolkit.
      */
     public Benchmarks() {
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Disables the Benchmarks toolkit on startup by default.
+     * </p>
+     */
+    @Override
+    public void initialize() {
+        getToolkit().setEnabled(false);
     }
 
     /**
@@ -177,22 +189,20 @@ public class Benchmarks extends AnahataToolkit {
     }
 
     /**
-     * Runs an ad-hoc benchmark on a custom prompt with custom or inherited toolkits and permissions.
+     * Runs an ad-hoc benchmark on a custom prompt with container default toolkits and permissions.
      *
      * @param customPrompt The raw task prompt to benchmark the model with.
      * @param participant The candidate participant descriptor.
      * @param title Optional title for this custom challenge.
-     * @param toolkitSettings Optional list of {@link ToolkitSettings} specifying toolkits and permissions. If null or empty, inherits current AGI toolkits.
      * @param openSession Whether to open the child session tab in the UI during execution.
      * @return The complete telemetry record of the benchmark run.
      * @throws Exception If benchmark execution fails.
      */
-    @AgiTool(value = "Runs an ad-hoc benchmark on a custom prompt with customizable toolkits and permissions.", permission = ToolPermission.APPROVE_ALWAYS)
+    @AgiTool(value = "Runs an ad-hoc benchmark on a custom prompt with container default toolkits and permissions.", permission = ToolPermission.APPROVE_ALWAYS)
     public BenchmarkRunResult runCustomPrompt(
             @AgiToolParam("The raw task prompt to benchmark the model with.") String customPrompt,
             @AgiToolParam("The candidate participant descriptor.") BenchmarkParticipant participant,
             @AgiToolParam(value = "Optional title for this custom challenge.", required = false) String title,
-            @AgiToolParam(value = "Optional list of toolkit settings and permissions. If null, uses container default toolkits and permissions.", required = false) List<ToolkitSettings> toolkitSettings,
             @AgiToolParam(value = "Whether to open the child session tab in the UI during execution.", required = false) boolean openSession) throws Exception {
 
         String effectiveTitle = (title != null && !title.isBlank()) ? title.trim() : "Custom Benchmark Challenge";
@@ -202,7 +212,7 @@ public class Benchmarks extends AnahataToolkit {
                 .testCode(testCode)
                 .title(effectiveTitle)
                 .rawPrompt(customPrompt)
-                .toolkits(toolkitSettings)
+                .toolkits(null) // Null inherits container defaults cleanly
                 .build();
 
         TestCatalog primaryCatalog = !catalogs.isEmpty() ? catalogs.get(0) : new Agi1TestCatalog();
@@ -302,20 +312,17 @@ public class Benchmarks extends AnahataToolkit {
         config.setAutoReplyTools(true);
         config.setParentUuid(getAgi().getConfig().getSessionId());
 
-        // Resolve concrete Java toolkit class running in this container (e.g. NbJava or SwingJava)
-        Class<?> concreteJavaClass = getAgi().getToolkit(Java.class)
-                .map(Object::getClass)
-                .orElse(Java.class);
-
         // Isolated toolkits defined strictly by the test specification (null/empty inherits container defaults)
+        Map<String, ToolPermission> permissionOverrides = new HashMap<>();
         if (testDef.toolkits() != null && !testDef.toolkits().isEmpty()) {
             config.getToolClasses().clear();
             for (ToolkitSettings ts : testDef.toolkits()) {
-                if (Java.class.isAssignableFrom(ts.toolkitClass())) {
-                    config.getToolClasses().add(concreteJavaClass);
-                } else {
-                    config.getToolClasses().add(ts.toolkitClass());
-                }
+                Class<?> baseClass = Class.forName(ts.toolkit());
+                Class<?> concreteClass = getAgi().getToolkit(baseClass)
+                        .map(Object::getClass)
+                        .orElse(baseClass);
+                config.getToolClasses().add(concreteClass);
+                permissionOverrides.putAll(ts.getResolvedPermissions(concreteClass));
             }
         }
 
@@ -325,12 +332,10 @@ public class Benchmarks extends AnahataToolkit {
         candidateAgi.getRequestConfig().setThinkingLevel(participant.thinkingLevel());
 
         // Apply strict tool permission overrides if toolkits are explicitly configured
-        if (testDef.toolkits() != null && !testDef.toolkits().isEmpty()) {
-            testDef.getResolvedToolPermissions(concreteJavaClass).forEach((toolName, permission) -> {
-                candidateAgi.getToolManager().findToolByName(toolName)
-                        .ifPresent(tool -> tool.setPermission(permission));
-            });
-        }
+        permissionOverrides.forEach((toolName, permission) -> {
+            candidateAgi.getToolManager().findToolByName(toolName)
+                    .ifPresent(tool -> tool.setPermission(permission));
+        });
 
         if (!openSession) {
             container.close(candidateAgi);

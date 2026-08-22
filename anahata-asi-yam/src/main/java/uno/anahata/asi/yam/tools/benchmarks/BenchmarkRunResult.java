@@ -3,6 +3,8 @@
  */
 package uno.anahata.asi.yam.tools.benchmarks;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,6 +39,7 @@ import lombok.Builder;
  * @author anahata
  */
 @Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record BenchmarkRunResult(
         BenchmarkParticipant participant,
         String testCode,
@@ -85,6 +88,7 @@ public record BenchmarkRunResult(
      *
      * @return The average judge score, or {@code null} if no judge scores have been recorded yet.
      */
+    @JsonIgnore
     public Double getAverageScore() {
         if (judgeScores == null || judgeScores.isEmpty()) {
             return null;

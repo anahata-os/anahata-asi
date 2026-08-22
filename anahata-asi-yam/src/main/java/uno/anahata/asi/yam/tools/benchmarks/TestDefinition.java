@@ -45,16 +45,16 @@ public record TestDefinition(
     }
 
     /**
-     * Extracts the fully qualified class names (FQNs) of all configured toolkits for this test.
+     * Extracts the fully qualified class names (FQNs) or names of all configured toolkits for this test.
      *
-     * @return List of toolkit class FQNs or an empty list if using container defaults.
+     * @return List of toolkit names/FQNs or an empty list if using container defaults.
      */
     public List<String> getToolkitFqns() {
         if (toolkits == null || toolkits.isEmpty()) {
             return List.of("Container Defaults");
         }
         return toolkits.stream()
-                .map(ts -> ts.toolkitClass().getName())
+                .map(ToolkitSettings::toolkit)
                 .toList();
     }
 

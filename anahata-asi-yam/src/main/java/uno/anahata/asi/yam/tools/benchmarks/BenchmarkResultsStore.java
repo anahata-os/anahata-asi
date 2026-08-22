@@ -3,7 +3,10 @@
  */
 package uno.anahata.asi.yam.tools.benchmarks;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -29,12 +32,17 @@ import lombok.extern.slf4j.Slf4j;
 public class BenchmarkResultsStore {
 
     /**
-     * Shared JSON object mapper configured for clean indentation and ISO-8601 timestamps.
+     * Shared JSON object mapper configured for clean field-only persistence, ISO-8601 timestamps,
+     * and ignoring JavaBean getters or unknown properties.
      */
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .registerModule(new JavaTimeModule())
             .enable(SerializationFeature.INDENT_OUTPUT)
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
+            .setVisibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
+            .setVisibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE);
 
     /**
      * Loads all recorded benchmark runs from a specific JSON file.
