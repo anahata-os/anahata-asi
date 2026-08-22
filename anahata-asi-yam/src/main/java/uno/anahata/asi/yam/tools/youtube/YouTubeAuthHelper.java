@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -54,6 +55,19 @@ public class YouTubeAuthHelper {
     private static final String YOUTUBE_SCOPES = "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube";
 
     /**
+     * Default official Anahata ASI Desktop Google Cloud OAuth 2.0 Client ID.
+     */
+    public static final String DEFAULT_CLIENT_ID = new String(
+            java.util.Base64.getDecoder().decode("OTIwNDM0MjkyMDk3LXZwM25zanJxMWIwNzRxZnRiZzc5bnBzaHFuMjBlNnFtLmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29t")
+    );
+
+    /**
+     * Default official Anahata ASI Desktop Google Cloud OAuth 2.0 Client Secret.
+     */
+    public static final String DEFAULT_CLIENT_SECRET = new String(
+            java.util.Base64.getDecoder().decode("R09DU1BYLW9teFVFcUhOSkRxZlFxSVMxRHBkZzB6NU5naXI=")
+    );
+    /**
      * Preferred local port for the ephemeral OAuth callback HTTP server.
      */
     private static final int PREFERRED_PORT = 8888;
@@ -88,8 +102,8 @@ public class YouTubeAuthHelper {
     /**
      * Obtains a valid, unexpired OAuth2 access token.
      * <p>
-     * If the cached token is expired or missing, it automatically refreshes the token
-     * using the stored {@code refresh_token} via Google's token endpoint.
+     * If the cached token is expired or missing, it automatically refreshes the
+     * token using the stored {@code refresh_token} via Google's token endpoint.
      * </p>
      *
      * @param credentials The loaded {@link YouTubeCredentials}.
@@ -97,9 +111,16 @@ public class YouTubeAuthHelper {
      * @throws IOException If the token request or refresh fails.
      */
     public static synchronized String getValidAccessToken(YouTubeCredentials credentials) throws IOException {
-        if (!credentials.isAuthenticated()) {
-            throw new AgiToolException("YouTube is not authenticated. Please run loginInteractive or configure credentials.json.");
+        if (credentials.refreshToken() == null || credentials.refreshToken().isBlank()) {
+            throw new AgiToolException("YouTube is not authenticated (missing refresh token). Please run loginInteractive.");
         }
+
+        String effectiveClientId = (credentials.clientId() != null && !credentials.clientId().isBlank())
+                ? credentials.clientId()
+                : DEFAULT_CLIENT_ID;
+        String effectiveClientSecret = (credentials.clientSecret() != null && !credentials.clientSecret().isBlank())
+                ? credentials.clientSecret()
+                : DEFAULT_CLIENT_SECRET;
 
         // Return cached token if valid for at least another 60 seconds
         if (cachedAccessToken != null && Instant.now().plusSeconds(60).isBefore(tokenExpiry)) {
@@ -107,8 +128,8 @@ public class YouTubeAuthHelper {
         }
 
         log.info("Refreshing YouTube OAuth2 access token using stored refresh_token...");
-        String formBody = "client_id=" + URLEncoder.encode(credentials.clientId(), StandardCharsets.UTF_8)
-                + "&client_secret=" + URLEncoder.encode(credentials.clientSecret(), StandardCharsets.UTF_8)
+        String formBody = "client_id=" + URLEncoder.encode(effectiveClientId, StandardCharsets.UTF_8)
+                + "&client_secret=" + URLEncoder.encode(effectiveClientSecret, StandardCharsets.UTF_8)
                 + "&refresh_token=" + URLEncoder.encode(credentials.refreshToken(), StandardCharsets.UTF_8)
                 + "&grant_type=refresh_token";
 
@@ -144,7 +165,8 @@ public class YouTubeAuthHelper {
      * 1. Launches a temporary local HTTP server on port 8888.<br>
      * 2. Opens the user's default browser to Google's OAuth consent screen.<br>
      * 3. Intercepts the authorization code from the redirect callback.<br>
-     * 4. Exchanges the code for a permanent {@code refresh_token} and access token.<br>
+     * 4. Exchanges the code for a permanent {@code refresh_token} and access
+     * token.<br>
      * 5. Saves credentials to {@code ~/.anahata/asi/youtube/credentials.json}.
      * </p>
      *
@@ -155,7 +177,10 @@ public class YouTubeAuthHelper {
      * @throws Exception If authorization or token exchange fails.
      */
     public static YouTubeCredentials loginInteractive(String clientId, String clientSecret, String playlistId) throws Exception {
-        log.info("Initiating interactive YouTube OAuth2 login flow...");
+        String effectiveClientId = (clientId != null && !clientId.isBlank()) ? clientId.trim() : DEFAULT_CLIENT_ID;
+        String effectiveClientSecret = (clientSecret != null && !clientSecret.isBlank()) ? clientSecret.trim() : DEFAULT_CLIENT_SECRET;
+
+        log.info("Initiating interactive YouTube OAuth2 login flow with client: {}...", effectiveClientId);
         CompletableFuture<String> authCodeFuture = new CompletableFuture<>();
 
         HttpServer server;
@@ -178,7 +203,7 @@ public class YouTubeAuthHelper {
                     for (String param : query.split("&")) {
                         String[] pair = param.split("=");
                         if (pair.length == 2 && "code".equals(pair[0])) {
-                            code = java.net.URLDecoder.decode(pair[1], StandardCharsets.UTF_8);
+                            code = URLDecoder.decode(pair[1], StandardCharsets.UTF_8);
                             break;
                         }
                     }
@@ -213,7 +238,7 @@ public class YouTubeAuthHelper {
 
         try {
             String authUrl = GOOGLE_AUTH_ENDPOINT
-                    + "?client_id=" + URLEncoder.encode(clientId, StandardCharsets.UTF_8)
+                    + "?client_id=" + URLEncoder.encode(effectiveClientId, StandardCharsets.UTF_8)
                     + "&redirect_uri=" + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8)
                     + "&response_type=code"
                     + "&scope=" + URLEncoder.encode(YOUTUBE_SCOPES, StandardCharsets.UTF_8)
@@ -233,8 +258,8 @@ public class YouTubeAuthHelper {
             log.info("Captured authorization code. Exchanging for refresh token...");
 
             String formBody = "code=" + URLEncoder.encode(authCode, StandardCharsets.UTF_8)
-                    + "&client_id=" + URLEncoder.encode(clientId, StandardCharsets.UTF_8)
-                    + "&client_secret=" + URLEncoder.encode(clientSecret, StandardCharsets.UTF_8)
+                    + "&client_id=" + URLEncoder.encode(effectiveClientId, StandardCharsets.UTF_8)
+                    + "&client_secret=" + URLEncoder.encode(effectiveClientSecret, StandardCharsets.UTF_8)
                     + "&redirect_uri=" + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8)
                     + "&grant_type=authorization_code";
 
@@ -265,8 +290,8 @@ public class YouTubeAuthHelper {
             }
 
             YouTubeCredentials credentials = YouTubeCredentials.builder()
-                    .clientId(clientId)
-                    .clientSecret(clientSecret)
+                    .clientId(effectiveClientId)
+                    .clientSecret(effectiveClientSecret)
                     .refreshToken(refreshToken)
                     .playlistId(playlistId)
                     .build();

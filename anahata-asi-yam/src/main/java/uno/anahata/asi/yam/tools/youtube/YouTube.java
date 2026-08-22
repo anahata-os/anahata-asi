@@ -18,11 +18,13 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
+import uno.anahata.asi.agi.tool.ToolPermission;
 
 /**
  * Pure Java YouTube Data API v3 toolkit providing autonomous video uploads and playlist management.
@@ -82,38 +84,80 @@ public class YouTube extends AnahataToolkit {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * Injects live YouTube authentication and configuration telemetry into the RAG message on every turn.
+     * </p>
+     */
+    @Override
+    public void populateMessage(RagMessage ragMessage) throws Exception {
+        StringBuilder sb = new StringBuilder("## YouTube Status\n");
+        if (YouTubeCredentials.exists()) {
+            try {
+                YouTubeCredentials creds = YouTubeCredentials.load();
+                boolean auth = creds.isAuthenticated();
+                sb.append("- **Authenticated**: ").append(auth ? "✅ YES" : "❌ NO (Missing refresh token)").append("\n");
+                sb.append("- **Client ID**: ").append(creds.clientId() != null ? creds.clientId() : "Default (Anahata ASI)").append("\n");
+                sb.append("- **Default Playlist ID**: ").append(creds.playlistId() != null ? creds.playlistId() : "None").append("\n");
+                sb.append("- **Credentials Location**: ").append(YouTubeCredentials.getCredentialsPath()).append("\n");
+            } catch (Exception e) {
+                sb.append("- **Authenticated**: ⚠️ Error reading credentials: ").append(e.getMessage()).append("\n");
+            }
+        } else {
+            sb.append("- **Authenticated**: ❌ NO (Not configured)\n");
+            sb.append("- **Action**: Run `YouTube.login()` to authenticate via browser.\n");
+        }
+        ragMessage.addTextPart(sb.toString());
+    }
+
+    /**
+     * Initiates the 1-click interactive browser login using the official Anahata Desktop OAuth client.
+     * <p>
+     * Launches a local callback listener, opens the user's default browser to Google OAuth consent,
+     * exchanges the code for a permanent refresh token, and saves credentials to disk.
+     * </p>
+     *
+     * @return Confirmation message indicating successful authentication.
+     * @throws Exception If authorization fails or is cancelled.
+     */
+    @AgiTool(value = "Launches interactive 1-click browser login to authorize YouTube video uploads with official Anahata credentials. No secrets required.", permission = ToolPermission.APPROVE_ALWAYS)
+    public String login() throws Exception {
+        return loginInteractive(null, null, null);
+    }
+
+    /**
      * Checks if YouTube OAuth2 credentials are configured and authenticated.
      *
      * @return A status message indicating authentication state.
      * @throws Exception If reading credentials fails.
      */
-    @AgiTool("Checks if YouTube OAuth2 credentials and refresh tokens are configured.")
+    @AgiTool(value = "Checks if YouTube OAuth2 credentials and refresh tokens are configured.", permission = ToolPermission.APPROVE_ALWAYS)
     public String getAuthStatus() throws Exception {
         if (!YouTubeCredentials.exists()) {
-            return "YouTube credentials not configured. Use 'loginInteractive' to authenticate.";
+            return "YouTube credentials not configured. Use 'login' to authenticate.";
         }
         YouTubeCredentials creds = YouTubeCredentials.load();
         if (creds.isAuthenticated()) {
             return "YouTube is fully authenticated (Client ID: " + creds.clientId()
                     + ", Playlist ID: " + (creds.playlistId() != null ? creds.playlistId() : "none") + ").";
         }
-        return "YouTube credentials exist but lack refresh token. Run 'loginInteractive' to complete authorization.";
+        return "YouTube credentials exist but lack refresh token. Run 'login' to complete authorization.";
     }
 
     /**
-     * Initiates the 1-click interactive browser login flow for YouTube.
+     * Initiates the interactive browser login flow for YouTube with custom OAuth client credentials.
      *
-     * @param clientId The Google Cloud OAuth 2.0 Client ID.
-     * @param clientSecret The Google Cloud OAuth 2.0 Client Secret.
+     * @param clientId The optional Google Cloud OAuth 2.0 Client ID.
+     * @param clientSecret The optional Google Cloud OAuth 2.0 Client Secret.
      * @param playlistId The optional default YouTube playlist ID.
      * @return Confirmation message with saved credentials details.
      * @throws Exception If authentication fails or is cancelled.
      */
-    @AgiTool("Launches interactive browser login to authorize YouTube video uploads. Use this tool if user is not logged in.")
+    @AgiTool(value = "Launches interactive browser login to authorize YouTube video uploads with custom client credentials. Use this if you have your own Google Cloud project.", permission = ToolPermission.APPROVE_ALWAYS)
     public String loginInteractive(
-            @AgiToolParam("The Google Cloud OAuth 2.0 Client ID.") String clientId,
-            @AgiToolParam("The Google Cloud OAuth 2.0 Client Secret.") String clientSecret,
-            @AgiToolParam("The optional default YouTube playlist ID.") String playlistId) throws Exception {
+            @AgiToolParam(value = "The optional Google Cloud OAuth 2.0 Client ID (leave empty for default).", required = false) String clientId,
+            @AgiToolParam(value = "The optional Google Cloud OAuth 2.0 Client Secret (leave empty for default).", required = false) String clientSecret,
+            @AgiToolParam(value = "The optional default YouTube playlist ID.", required = false) String playlistId) throws Exception {
         log("Initiating YouTube OAuth2 browser login...");
         YouTubeCredentials creds = YouTubeAuthHelper.loginInteractive(clientId, clientSecret, playlistId);
         return "Successfully authenticated YouTube for client: " + creds.clientId()
@@ -127,7 +171,7 @@ public class YouTube extends AnahataToolkit {
      * @return The public or unlisted URL of the uploaded video (e.g. {@code "https://youtu.be/..."}).
      * @throws Exception If the upload or authorization fails.
      */
-    @AgiTool("Uploads a video to YouTube with metadata, tags, and optional playlist assignment.")
+    @AgiTool(value = "Uploads a video to YouTube with metadata, tags, and optional playlist assignment.", permission = ToolPermission.APPROVE_ALWAYS)
     public String uploadVideo(
             @AgiToolParam("The video upload request DTO.") YouTubeVideoUploadRequest request) throws Exception {
         Path videoPath = Paths.get(request.videoFilePath());
@@ -179,14 +223,14 @@ public class YouTube extends AnahataToolkit {
      * @return The resulting YouTube URL.
      * @throws Exception If upload fails.
      */
-    @AgiTool("Uploads a video to YouTube with discrete parameters.")
+    @AgiTool(value = "Uploads a video to YouTube with discrete parameters.", permission = ToolPermission.APPROVE_ALWAYS)
     public String uploadVideoToPlaylist(
             @AgiToolParam("The absolute path of the video file on disk.") String videoFilePath,
             @AgiToolParam("The title of the video.") String title,
             @AgiToolParam("The description of the video.") String description,
-            @AgiToolParam("List of search tags.") List<String> tags,
-            @AgiToolParam("The target playlist ID.") String playlistId,
-            @AgiToolParam("The privacy status (unlisted, public, private).") String privacyStatus) throws Exception {
+            @AgiToolParam(value = "List of search tags.", required = false) List<String> tags,
+            @AgiToolParam(value = "The target playlist ID.", required = false) String playlistId,
+            @AgiToolParam(value = "The privacy status (unlisted, public, private).", required = false) String privacyStatus) throws Exception {
         YouTubeVideoUploadRequest request = YouTubeVideoUploadRequest.builder()
                 .videoFilePath(videoFilePath)
                 .title(title)
@@ -206,7 +250,7 @@ public class YouTube extends AnahataToolkit {
      * @return Confirmation message with the video ID.
      * @throws Exception If thumbnail upload or authorization fails.
      */
-    @AgiTool("Sets the custom thumbnail image for a YouTube video.")
+    @AgiTool(value = "Sets the custom thumbnail image for a YouTube video.", permission = ToolPermission.APPROVE_ALWAYS)
     public String setThumbnail(
             @AgiToolParam("The YouTube video ID.") String videoId,
             @AgiToolParam(value = "The absolute path of the image file (.png or .jpg).", rendererId = "path") String imagePath) throws Exception {
@@ -229,7 +273,7 @@ public class YouTube extends AnahataToolkit {
      * @return Confirmation message.
      * @throws Exception If the playlist insertion fails.
      */
-    @AgiTool("Adds an uploaded YouTube video to a specified playlist.")
+    @AgiTool(value = "Adds an uploaded YouTube video to a specified playlist.", permission = ToolPermission.APPROVE_ALWAYS)
     public String addVideoToPlaylist(
             @AgiToolParam("The YouTube video ID.") String videoId,
             @AgiToolParam("The target playlist ID.") String playlistId) throws Exception {
@@ -237,6 +281,95 @@ public class YouTube extends AnahataToolkit {
         String accessToken = YouTubeAuthHelper.getValidAccessToken(credentials);
         addVideoToPlaylistInternal(accessToken, videoId, playlistId);
         return "Successfully added video " + videoId + " to playlist " + playlistId;
+    }
+
+    /**
+     * Retrieves live statistics and engagement metrics (views, likes, comments) for a YouTube video.
+     *
+     * @param videoId The 11-character YouTube video ID.
+     * @return Formatted statistics report.
+     * @throws Exception If querying the YouTube API fails.
+     */
+    @AgiTool(value = "Retrieves live statistics and engagement metrics (views, likes, comments) for a YouTube video.", permission = ToolPermission.APPROVE_ALWAYS)
+    public String getVideoStats(
+            @AgiToolParam("The 11-character YouTube video ID (e.g. 'dQw4w9WgXcQ').") String videoId) throws Exception {
+        YouTubeCredentials credentials = YouTubeCredentials.load();
+        String accessToken = YouTubeAuthHelper.getValidAccessToken(credentials);
+
+        String url = "https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,status&id=" + videoId;
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Authorization", "Bearer " + accessToken)
+                .GET()
+                .build();
+
+        HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            throw new AgiToolException("Failed to get video stats: HTTP " + response.statusCode() + " - " + response.body());
+        }
+
+        JsonNode json = MAPPER.readTree(response.body());
+        JsonNode items = json.path("items");
+        if (items.isEmpty()) {
+            return "No video found with ID: " + videoId;
+        }
+
+        JsonNode item = items.get(0);
+        JsonNode snippet = item.path("snippet");
+        JsonNode stats = item.path("statistics");
+        JsonNode status = item.path("status");
+
+        StringBuilder sb = new StringBuilder("📊 **YouTube Video Stats: " + videoId + "**\n");
+        sb.append("- **Title**: ").append(snippet.path("title").asText()).append("\n");
+        sb.append("- **Channel**: ").append(snippet.path("channelTitle").asText()).append("\n");
+        sb.append("- **Published**: ").append(snippet.path("publishedAt").asText()).append("\n");
+        sb.append("- **Privacy Status**: ").append(status.path("privacyStatus").asText()).append("\n");
+        sb.append("- **👁️ Views**: ").append(stats.path("viewCount").asText("0")).append("\n");
+        sb.append("- **👍 Likes**: ").append(stats.path("likeCount").asText("0")).append("\n");
+        sb.append("- **💬 Comments**: ").append(stats.path("commentCount").asText("0")).append("\n");
+        sb.append("- **URL**: https://youtu.be/").append(videoId);
+
+        return sb.toString();
+    }
+
+    /**
+     * Lists all YouTube playlists owned by the authenticated channel.
+     *
+     * @return Formatted list of playlists with IDs, titles, and item counts.
+     * @throws Exception If querying playlists fails.
+     */
+    @AgiTool(value = "Lists all YouTube playlists owned by the authenticated channel.", permission = ToolPermission.APPROVE_ALWAYS)
+    public String listPlaylists() throws Exception {
+        YouTubeCredentials credentials = YouTubeCredentials.load();
+        String accessToken = YouTubeAuthHelper.getValidAccessToken(credentials);
+
+        String url = "https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&mine=true&maxResults=50";
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Authorization", "Bearer " + accessToken)
+                .GET()
+                .build();
+
+        HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            throw new AgiToolException("Failed to list playlists: HTTP " + response.statusCode() + " - " + response.body());
+        }
+
+        JsonNode json = MAPPER.readTree(response.body());
+        JsonNode items = json.path("items");
+        if (items.isEmpty()) {
+            return "No playlists found for the authenticated channel.";
+        }
+
+        StringBuilder sb = new StringBuilder("📋 **Channel Playlists (" + items.size() + ")**\n");
+        for (JsonNode item : items) {
+            String id = item.path("id").asText();
+            String title = item.path("snippet").path("title").asText();
+            int itemCount = item.path("contentDetails").path("itemCount").asInt(0);
+            sb.append("- **").append(title).append("** (ID: `").append(id).append("`) — ").append(itemCount).append(" videos\n");
+        }
+
+        return sb.toString();
     }
 
     /**

@@ -1,0 +1,162 @@
+name: Deploy Website & Javadoc
+
+on:
+  push:
+    branches: [ "master", "main" ]
+    tags: [ "v*" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+          server-id: sonatype-central
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+
+      - name: Build and Generate Javadoc
+        env:
+          MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+        run: |
+          mvn clean install javadoc:aggregate -DskipTests -ntp
+          mvn nbm:autoupdate -pl :anahata-asi-nb -ntp
+
+      - name: Checkout gh-pages Branch (Persistence Database)
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: temp-gh-pages
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Prepare Deployment Folder & Merge Javadocs
+        run: |
+          mkdir -p _site
+          # 1. Copy the static website source
+          cp -r anahata-asi-web/src/main/resources/web/* _site/
+          
+          # 2. Reconstruct the historical Javadoc vault (ONLY copy true version directories, skipping legacy root files)
+          mkdir -p _site/apidocs
+          if [ -d "temp-gh-pages/apidocs" ]; then
+            for dir in temp-gh-pages/apidocs/*; do
+              if [ -d "$dir" ]; then
+                dirname=$(basename "$dir")
+                # Only copy directories starting with a digit (the versions)
+                if [[ "$dirname" =~ ^[0-9] ]]; then
+                  cp -r "$dir" _site/apidocs/
+                fi
+              fi
+            done
+          fi
+          
+          # 3. Copy the newly generated flat Javadocs (Simple, direct copy!)
+          if [ -d "docs/apidocs" ]; then
+            cp -r docs/apidocs/* _site/apidocs/
+          fi
+
+          # 4. Inject CNAME for custom domain
+          echo "asi.anahata.uno" > _site/CNAME
+
+          # 5. Restore existing update catalogs from gh-pages branch so stable/dev catalogs persist across runs
+          if [ -d "temp-gh-pages/nb" ]; then
+            cp -r temp-gh-pages/nb _site/
+          fi
+
+          # 6. Generate and Deploy NetBeans Autoupdate Catalogs dynamically
+          NB_TARGETS="300 310"
+          for TARGET in $NB_TARGETS; do
+            MAJOR="${TARGET:0:2}"
+            NB_API="RELEASE${TARGET}"
+            CATALOG_DIR="_site/nb/${MAJOR}"
+            mkdir -p "$CATALOG_DIR"
+
+            echo "[INFO] Generating catalog for NetBeans $MAJOR (API: $NB_API, Target: $TARGET)..."
+            mvn nbm:autoupdate -pl :anahata-asi-nb -Dnetbeans.version=$NB_API -ntp
+
+            # Fail-Fast: Must exist in target/netbeans_site/updates.xml
+            if [ ! -f "anahata-asi-nb/target/netbeans_site/updates.xml" ]; then
+              echo "[FATAL ERROR] target/netbeans_site/updates.xml was not generated for NetBeans $MAJOR ($NB_API)!"
+              exit 1
+            fi
+
+            if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+              CATALOG_FILE="$CATALOG_DIR/updates.xml"
+            else
+              CATALOG_FILE="$CATALOG_DIR/dev-updates.xml"
+            fi
+
+            cp anahata-asi-nb/target/netbeans_site/updates.xml "$CATALOG_FILE" || exit 1
+            gzip -9 -c "$CATALOG_FILE" > "${CATALOG_FILE}.gz" || exit 1
+          done
+
+          # 7. Dynamically regenerate apidocs/index.html with all discovered versions (excluding Javadoc assets)
+          python3 -c '
+          import os, re
+          apidocs_dir = "_site/apidocs"
+          versions = [d for d in os.listdir(apidocs_dir) if os.path.isdir(os.path.join(apidocs_dir, d)) and not d.startswith(".") and d[0].isdigit()]
+          versions.sort(reverse=True)
+          li_html = ""
+          for v in versions:
+              badge = " <span class=\"badge\">Latest</span>" if "SNAPSHOT" in v else ""
+              # Path matches V2 native aggregate output structure (version/apidocs/index.html)
+              li_html += f"            <li class=\"version-item\"><a href=\"{v}/apidocs/index.html\" class=\"version-link\">{v}{badge}</a></li>\n"
+          index_path = os.path.join(apidocs_dir, "index.html")
+          with open(index_path, "r") as f:
+              html = f.read()
+          new_html = re.sub(r"<ul class=\"version-list\">.*?</ul>", f"<ul class=\"version-list\">\n{li_html}        </ul>", html, flags=re.DOTALL)
+          with open(index_path, "w") as f:
+              f.write(new_html)
+          '
+
+      - name: Persist New Javadocs & Update Catalogs back to gh-pages
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+        run: |
+          cd temp-gh-pages
+          # Wipe old files first to completely purge legacy, non-versioned Javadoc directories/assets
+          rm -rf apidocs/*
+          mkdir -p apidocs nb
+          cp -r ../_site/apidocs/* apidocs/
+          cp -r ../_site/nb/* nb/
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add apidocs/ nb/
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: persist versioned Javadocs & update catalogs from run ${{ github.run_id }} 📚"
+            git push origin gh-pages
+          else
+            echo "No new Javadoc or catalog changes to persist."
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

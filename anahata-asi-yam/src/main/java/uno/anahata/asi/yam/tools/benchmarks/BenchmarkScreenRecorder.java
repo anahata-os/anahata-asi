@@ -55,6 +55,11 @@ public class BenchmarkScreenRecorder {
     private long startEpochMillis;
 
     /**
+     * Selected screen graphics device index.
+     */
+    private int selectedDeviceIndex = 0;
+
+    /**
      * Resolves the temporary directory where benchmark screen recordings are stored.
      *
      * @return The path to {@code ~/.anahata/asi/benchmarks/recordings/}.
@@ -79,7 +84,7 @@ public class BenchmarkScreenRecorder {
     }
 
     /**
-     * Initiates a new screen recording session for a benchmark test.
+     * Initiates a new screen recording session for a benchmark test on the default screen.
      *
      * @param testCode The benchmark test identifier code (e.g. {@code "JAVA-ARKANOID-1"}).
      * @param modelId The candidate model identifier string (e.g. {@code "gemini-3.6-flash"}).
@@ -87,11 +92,25 @@ public class BenchmarkScreenRecorder {
      * @throws Exception If launching the FFmpeg process fails.
      */
     public synchronized Path startRecording(String testCode, String modelId) throws Exception {
+        return startRecording(testCode, modelId, 0);
+    }
+
+    /**
+     * Initiates a new screen recording session for a benchmark test on a specific screen device.
+     *
+     * @param testCode The benchmark test identifier code (e.g. {@code "JAVA-ARKANOID-1"}).
+     * @param modelId The candidate model identifier string (e.g. {@code "gemini-3.6-flash"}).
+     * @param deviceIndex The 0-based screen graphics device index to record.
+     * @return The path to the destination .mp4 file.
+     * @throws Exception If launching the FFmpeg process fails.
+     */
+    public synchronized Path startRecording(String testCode, String modelId, int deviceIndex) throws Exception {
         if (isRecording()) {
             log.warn("Recording already in progress. Stopping previous recording first.");
             cancelRecording();
         }
 
+        this.selectedDeviceIndex = deviceIndex;
         String safeModel = modelId.replaceAll("[^a-zA-Z0-9.-]", "_");
         String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String filename = testCode.toLowerCase().replace('_', '-') + "_" + safeModel + "_" + timestamp + ".mp4";
@@ -99,7 +118,7 @@ public class BenchmarkScreenRecorder {
         this.currentVideoPath = getRecordingsDirectory().resolve(filename);
         this.startEpochMillis = System.currentTimeMillis();
 
-        List<String> command = buildFfmpegCommand(currentVideoPath.toString());
+        List<String> command = buildFfmpegCommand(currentVideoPath.toString(), deviceIndex);
         log.info("Starting benchmark screen recording with command: {}", String.join(" ", command));
 
         ProcessBuilder pb = new ProcessBuilder(command);
@@ -121,7 +140,7 @@ public class BenchmarkScreenRecorder {
         drainThread.setDaemon(true);
         drainThread.start();
 
-        log.info("FFmpeg screen recording started for {} -> {}", testCode, currentVideoPath);
+        log.info("FFmpeg screen recording started for {} on Screen {} -> {}", testCode, deviceIndex, currentVideoPath);
         return currentVideoPath;
     }
 
@@ -143,7 +162,7 @@ public class BenchmarkScreenRecorder {
 
         Path thumbnailPath = null;
         if (captureThumbnail) {
-            thumbnailPath = captureScreenFrame(testCode, modelId);
+            thumbnailPath = captureScreenFrame(testCode, modelId, selectedDeviceIndex);
         }
 
         long elapsedMillis = System.currentTimeMillis() - startEpochMillis;
@@ -205,18 +224,27 @@ public class BenchmarkScreenRecorder {
     }
 
     /**
-     * Captures a high-resolution snapshot of the primary screen at the current instant.
+     * Captures a high-resolution snapshot of the recorded screen at the current instant.
      *
      * @param testCode The test code.
      * @param modelId The candidate model ID.
+     * @param deviceIndex The screen device index.
      * @return The path to the saved PNG thumbnail file.
      */
-    private Path captureScreenFrame(String testCode, String modelId) {
+    private Path captureScreenFrame(String testCode, String modelId, int deviceIndex) {
         try {
-            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-            Rectangle screenRect = new Rectangle(screenSize);
+            java.awt.GraphicsEnvironment ge = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment();
+            java.awt.GraphicsDevice[] devices = ge.getScreenDevices();
+            Rectangle bounds;
+            if (deviceIndex >= 0 && deviceIndex < devices.length) {
+                bounds = devices[deviceIndex].getDefaultConfiguration().getBounds();
+            } else {
+                Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+                bounds = new Rectangle(screenSize);
+            }
+
             Robot robot = new Robot();
-            BufferedImage capture = robot.createScreenCapture(screenRect);
+            BufferedImage capture = robot.createScreenCapture(bounds);
 
             String safeModel = modelId.replaceAll("[^a-zA-Z0-9.-]", "_");
             String filename = testCode.toLowerCase().replace('_', '-') + "_" + safeModel + "_thumb.png";
@@ -243,19 +271,29 @@ public class BenchmarkScreenRecorder {
     }
 
     /**
-     * Builds the OS-specific FFmpeg CLI command.
+     * Builds the OS-specific FFmpeg CLI command for the given screen device.
      *
      * @param outputPath The target output .mp4 file path.
+     * @param deviceIndex The target screen graphics device index.
      * @return List of command arguments.
      */
-    private List<String> buildFfmpegCommand(String outputPath) {
+    private List<String> buildFfmpegCommand(String outputPath, int deviceIndex) {
         String osName = System.getProperty("os.name", "").toLowerCase();
         List<String> cmd = new ArrayList<>();
         cmd.add("ffmpeg");
         cmd.add("-y"); // Overwrite output
 
-        if (osName.contains("linux")) {
+        java.awt.GraphicsEnvironment ge = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment();
+        java.awt.GraphicsDevice[] devices = ge.getScreenDevices();
+        Rectangle bounds;
+        if (deviceIndex >= 0 && deviceIndex < devices.length) {
+            bounds = devices[deviceIndex].getDefaultConfiguration().getBounds();
+        } else {
             Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            bounds = new Rectangle(0, 0, (int) screenSize.getWidth(), (int) screenSize.getHeight());
+        }
+
+        if (osName.contains("linux")) {
             cmd.add("-f");
             cmd.add("x11grab");
             cmd.add("-draw_mouse");
@@ -263,32 +301,45 @@ public class BenchmarkScreenRecorder {
             cmd.add("-r");
             cmd.add("30");
             cmd.add("-s");
-            cmd.add((int) screenSize.getWidth() + "x" + (int) screenSize.getHeight());
+            cmd.add(bounds.width + "x" + bounds.height);
             cmd.add("-i");
             String display = System.getenv("DISPLAY");
-            cmd.add(display != null && !display.isBlank() ? display : ":0.0");
+            if (display == null || display.isBlank()) {
+                display = ":0.0";
+            }
+            if (!display.contains("+")) {
+                display = display + "+" + bounds.x + "," + bounds.y;
+            }
+            cmd.add(display);
         } else if (osName.contains("mac")) {
             cmd.add("-f");
             cmd.add("avfoundation");
             cmd.add("-r");
             cmd.add("30");
             cmd.add("-i");
-            cmd.add("1:0"); // Screen index 1, default audio
+            cmd.add((deviceIndex + 1) + ":0");
         } else if (osName.contains("win")) {
             cmd.add("-f");
             cmd.add("gdigrab");
             cmd.add("-framerate");
             cmd.add("30");
+            cmd.add("-offset_x");
+            cmd.add(String.valueOf(bounds.x));
+            cmd.add("-offset_y");
+            cmd.add(String.valueOf(bounds.y));
+            cmd.add("-video_size");
+            cmd.add(bounds.width + "x" + bounds.height);
             cmd.add("-i");
             cmd.add("desktop");
         } else {
-            // Generic fallback
             cmd.add("-f");
             cmd.add("x11grab");
             cmd.add("-r");
             cmd.add("30");
+            cmd.add("-s");
+            cmd.add(bounds.width + "x" + bounds.height);
             cmd.add("-i");
-            cmd.add(":0.0");
+            cmd.add(":0.0+" + bounds.x + "," + bounds.y);
         }
 
         // Fast video encoding presets for low CPU overhead

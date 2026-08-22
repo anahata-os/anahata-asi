@@ -11,17 +11,24 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Image;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.awt.image.BufferedImage;
 import java.util.function.Consumer;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -62,7 +69,17 @@ public class BenchmarkRecordingOverlay extends JDialog {
     private int elapsedSeconds = 0;
 
     /**
-     * Swing timer updating the elapsed time and driving the red dot pulse.
+     * The label displaying live 1-second interval screen preview during active recording.
+     */
+    private final JLabel livePreviewLabel = new JLabel();
+
+    /**
+     * Cache for monitor pre-launch thumbnail snapshots.
+     */
+    private final java.util.Map<Integer, Image> monitorThumbnails = new java.util.HashMap<>();
+
+    /**
+     * Swing timer updating the elapsed time, red dot pulse, and live screen preview.
      */
     private final Timer clockTimer;
 
@@ -72,25 +89,81 @@ public class BenchmarkRecordingOverlay extends JDialog {
     private Point dragAnchor;
 
     /**
-     * Callback invoked when the user clicks 'Stop &amp; Upload'.
+     * The selected screen graphics device index.
+     */
+    private int selectedDeviceIndex = 0;
+
+    /**
+     * The custom label for the start recording button.
+     */
+    private String startRecordingLabel = "▶ Start Recording & Run Benchmark";
+
+    /**
+     * The custom label for the save locally button.
+     */
+    private String saveLocalLabel = "💾 Save";
+
+    /**
+     * The custom label for the stop and upload button.
+     */
+    private String saveAndUploadLabel = "🚀 Save & Upload";
+
+    /**
+     * The custom label for the cancel button.
+     */
+    private String cancelLabel = "❌ Cancel";
+
+    /**
+     * Callback invoked when the user clicks 'Start Recording & Run Benchmark'.
+     */
+    private final Runnable onStartAction;
+
+    /**
+     * Callback invoked when the user clicks 'Save' (local persistence only).
+     */
+    private final Runnable onSaveLocalAction;
+
+    /**
+     * Callback invoked when the user clicks 'Save & Upload'.
      */
     private final Runnable onUploadAction;
 
     /**
-     * Callback invoked when the user clicks 'Stop &amp; Cancel'.
+     * Callback invoked when the user clicks 'Cancel'.
      */
     private final Runnable onCancelAction;
 
     /**
-     * Constructs and initializes the floating benchmark recording overlay.
+     * The root content panel.
+     */
+    private JPanel rootPanel;
+
+    /**
+     * The test code identifier.
+     */
+    private final String testCode;
+
+    /**
+     * The candidate model ID.
+     */
+    private final String modelId;
+
+    /**
+     * Constructs the floating benchmark recording overlay with three-action control flow (Cancel, Save, Save &amp; Upload).
      *
      * @param testCode The benchmark test identifier code (e.g. "JAVA-ARKANOID-1").
      * @param modelId The candidate model identifier string (e.g. "gemini-3.6-flash").
-     * @param onUploadAction The action executed when upload is confirmed.
+     * @param onStartAction The action executed when start is clicked.
+     * @param onSaveLocalAction The action executed when save local is clicked.
+     * @param onUploadAction The action executed when save and upload is clicked.
      * @param onCancelAction The action executed when recording is cancelled.
      */
-    public BenchmarkRecordingOverlay(String testCode, String modelId, Runnable onUploadAction, Runnable onCancelAction) {
+    public BenchmarkRecordingOverlay(String testCode, String modelId, Runnable onStartAction, Runnable onSaveLocalAction, Runnable onUploadAction, Runnable onCancelAction) {
         super();
+        this.testCode = testCode;
+        this.modelId = modelId;
+        this.onStartAction = onStartAction;
+        this.onSaveLocalAction = onSaveLocalAction;
         this.onUploadAction = onUploadAction;
         this.onCancelAction = onCancelAction;
 
@@ -99,30 +172,103 @@ public class BenchmarkRecordingOverlay extends JDialog {
         setResizable(false);
         setType(Type.UTILITY);
 
-        initComponents(testCode, modelId);
-
         this.clockTimer = new Timer(1000, e -> {
             elapsedSeconds++;
             int mins = elapsedSeconds / 60;
             int secs = elapsedSeconds % 60;
             timerLabel.setText(String.format("%02d:%02d", mins, secs));
             recordingDot.togglePulse();
+
+            // Refresh live screen preview every second in a background thread
+            updateLivePreviewAsync();
         });
 
+        // Initialize default screen device based on current mouse location
+        try {
+            Point mouseLoc = java.awt.MouseInfo.getPointerInfo().getLocation();
+            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            GraphicsDevice[] devices = ge.getScreenDevices();
+            for (int i = 0; i < devices.length; i++) {
+                if (devices[i].getDefaultConfiguration().getBounds().contains(mouseLoc)) {
+                    selectedDeviceIndex = i;
+                    break;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+
+        initPreLaunchUI();
         pack();
         positionTopRight();
         enableDraggability();
     }
 
     /**
-     * Starts the overlay timer and displays the window on the screen.
+     * Captures a live downscaled screenshot of the currently recorded screen asynchronously.
      */
-    public void start() {
+    private void updateLivePreviewAsync() {
+        new Thread(() -> {
+            try {
+                GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+                GraphicsDevice[] devices = ge.getScreenDevices();
+                if (selectedDeviceIndex >= 0 && selectedDeviceIndex < devices.length) {
+                    Rectangle bounds = devices[selectedDeviceIndex].getDefaultConfiguration().getBounds();
+                    Robot robot = new Robot();
+                    BufferedImage capture = robot.createScreenCapture(bounds);
+
+                    int targetH = 34;
+                    int targetW = (int) (targetH * ((float) bounds.width / bounds.height));
+                    Image scaled = capture.getScaledInstance(targetW, targetH, Image.SCALE_SMOOTH);
+
+                    SwingUtilities.invokeLater(() -> {
+                        livePreviewLabel.setIcon(new javax.swing.ImageIcon(scaled));
+                    });
+                }
+            } catch (Exception ignored) {
+            }
+        }, "Benchmark-LivePreview-Capture").start();
+    }
+
+    /**
+     * Configures custom button labels for all four action buttons.
+     *
+     * @param startLabel Custom text for start button.
+     * @param saveLocalLabel Custom text for save local button.
+     * @param uploadLabel Custom text for save and upload button.
+     * @param cancelLabel Custom text for cancel button.
+     * @return This overlay instance.
+     */
+    public BenchmarkRecordingOverlay withCustomLabels(String startLabel, String saveLocalLabel, String uploadLabel, String cancelLabel) {
+        if (startLabel != null && !startLabel.isBlank()) this.startRecordingLabel = startLabel;
+        if (saveLocalLabel != null && !saveLocalLabel.isBlank()) this.saveLocalLabel = saveLocalLabel;
+        if (uploadLabel != null && !uploadLabel.isBlank()) this.saveAndUploadLabel = uploadLabel;
+        if (cancelLabel != null && !cancelLabel.isBlank()) this.cancelLabel = cancelLabel;
+        initPreLaunchUI();
+        pack();
+        return this;
+    }
+
+    /**
+     * Displays the overlay in pre-launch mode ready for user to click Start.
+     */
+    public void showPreLaunch() {
         SwingUtilities.invokeLater(() -> {
+            initPreLaunchUI();
+            pack();
+            setVisible(true);
+        });
+    }
+
+    /**
+     * Transitions the overlay from pre-launch to active recording view.
+     */
+    public void transitionToActiveRecording() {
+        SwingUtilities.invokeLater(() -> {
+            initActiveRecordingUI();
+            pack();
             elapsedSeconds = 0;
             timerLabel.setText("00:00");
             clockTimer.start();
-            setVisible(true);
         });
     }
 
@@ -131,7 +277,7 @@ public class BenchmarkRecordingOverlay extends JDialog {
      */
     public void stop() {
         SwingUtilities.invokeLater(() -> {
-            if (clockTimer.isRunning()) {
+            if (clockTimer != null && clockTimer.isRunning()) {
                 clockTimer.stop();
             }
             setVisible(false);
@@ -140,20 +286,173 @@ public class BenchmarkRecordingOverlay extends JDialog {
     }
 
     /**
-     * Builds and styles the internal Swing components with modern FlatLaf dark theme accents.
-     *
-     * @param testCode The test code.
-     * @param modelId The candidate model ID.
+     * Builds the Pre-Launch UI showing test info, visual monitor cards, and the Start Recording button.
      */
-    private void initComponents(String testCode, String modelId) {
-        JPanel root = new JPanel(new BorderLayout(12, 0));
-        root.setBackground(new Color(15, 23, 42)); // Deep Slate #0f172a
-        root.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(237, 187, 0), 2, true), // Barça Gold Border
-                BorderFactory.createEmptyBorder(10, 16, 10, 16)
-        ));
+    private void initPreLaunchUI() {
+        if (rootPanel == null) {
+            rootPanel = new JPanel(new BorderLayout(14, 0));
+            rootPanel.setBackground(new Color(15, 23, 42)); // Deep Slate #0f172a
+            rootPanel.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(new Color(237, 187, 0), 2, true), // Barça Gold
+                    BorderFactory.createEmptyBorder(10, 16, 10, 16)
+            ));
+            setContentPane(rootPanel);
+        } else {
+            rootPanel.removeAll();
+        }
 
-        // Left Section: Red Pulse Dot + Timer + Info
+        // Info
+        JPanel leftPanel = new JPanel();
+        leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
+        leftPanel.setOpaque(false);
+
+        JLabel testLabel = new JLabel("⚡ Benchmark: " + testCode);
+        testLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
+        testLabel.setForeground(new Color(237, 187, 0)); // Barça Gold
+        leftPanel.add(testLabel);
+
+        leftPanel.add(Box.createVerticalStrut(3));
+
+        JLabel modelLabel = new JLabel("Candidate: " + modelId);
+        modelLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
+        modelLabel.setForeground(new Color(148, 163, 184));
+        leftPanel.add(modelLabel);
+
+        rootPanel.add(leftPanel, BorderLayout.WEST);
+
+        // Center: Visual Monitors Selector Container
+        JPanel centerMonitorsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
+        centerMonitorsPanel.setOpaque(false);
+
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice[] devices = ge.getScreenDevices();
+
+        // Sort indices based on physical X coordinates
+        java.util.List<Integer> sortedIndices = java.util.stream.IntStream.range(0, devices.length)
+                .boxed()
+                .sorted(java.util.Comparator.comparingInt(i -> devices[i].getDefaultConfiguration().getBounds().x))
+                .toList();
+
+        for (int idx : sortedIndices) {
+            GraphicsDevice gd = devices[idx];
+            Rectangle bounds = gd.getDefaultConfiguration().getBounds();
+            int cardH = 44;
+            int cardW = (int) (cardH * ((float) bounds.width / bounds.height)) + 12;
+
+            JPanel monitorCard = new JPanel(new BorderLayout()) {
+                @Override
+                protected void paintComponent(Graphics g) {
+                    super.paintComponent(g);
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                    boolean isSelected = (idx == selectedDeviceIndex);
+                    g2.setColor(isSelected ? new Color(237, 187, 0) : new Color(51, 65, 85));
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+
+                    // Screen background / thumbnail area
+                    g2.setColor(Color.BLACK);
+                    g2.fillRoundRect(2, 2, getWidth() - 4, getHeight() - 14, 6, 6);
+
+                    Image thumb = monitorThumbnails.get(idx);
+                    if (thumb != null) {
+                        g2.drawImage(thumb, 2, 2, getWidth() - 4, getHeight() - 14, null);
+                    } else {
+                        g2.setColor(new Color(148, 163, 184));
+                        g2.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 9));
+                        g2.drawString("Screen " + idx, 6, 16);
+                    }
+
+                    // Stand / Base Label
+                    g2.setColor(isSelected ? Color.BLACK : Color.WHITE);
+                    g2.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 9));
+                    String label = "Screen " + idx;
+                    int strW = g2.getFontMetrics().stringWidth(label);
+                    g2.drawString(label, (getWidth() - strW) / 2, getHeight() - 3);
+
+                    if (isSelected) {
+                        g2.setColor(new Color(237, 187, 0));
+                        g2.setStroke(new java.awt.BasicStroke(2));
+                        g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
+                    }
+                    g2.dispose();
+                }
+            };
+
+            monitorCard.setPreferredSize(new Dimension(cardW, cardH));
+            monitorCard.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            monitorCard.setToolTipText("Select Screen " + idx + " (" + bounds.width + "x" + bounds.height + " " + gd.getIDstring() + ")");
+
+            monitorCard.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    selectedDeviceIndex = idx;
+                    positionOnScreen(selectedDeviceIndex);
+                    centerMonitorsPanel.repaint();
+                }
+            });
+
+            centerMonitorsPanel.add(monitorCard);
+
+            // Asynchronously capture thumbnail for this monitor card
+            if (!monitorThumbnails.containsKey(idx)) {
+                new Thread(() -> {
+                    try {
+                        Robot robot = new Robot();
+                        BufferedImage img = robot.createScreenCapture(bounds);
+                        Image thumb = img.getScaledInstance(cardW, cardH - 12, Image.SCALE_SMOOTH);
+                        monitorThumbnails.put(idx, thumb);
+                        SwingUtilities.invokeLater(centerMonitorsPanel::repaint);
+                    } catch (Exception ignored) {
+                    }
+                }, "Benchmark-PreLaunchThumb-" + idx).start();
+            }
+        }
+
+        rootPanel.add(centerMonitorsPanel, BorderLayout.CENTER);
+
+        // Buttons
+        JPanel rightControlPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        rightControlPanel.setOpaque(false);
+
+        JButton cancelBtn = new JButton(cancelLabel);
+        cancelBtn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+        cancelBtn.setBackground(new Color(239, 68, 68));
+        cancelBtn.setForeground(Color.WHITE);
+        cancelBtn.setFocusPainted(false);
+        cancelBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        cancelBtn.addActionListener(e -> {
+            stop();
+            if (onCancelAction != null) onCancelAction.run();
+        });
+
+        JButton startBtn = new JButton(startRecordingLabel);
+        startBtn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+        startBtn.setBackground(new Color(34, 197, 94)); // Green
+        startBtn.setForeground(Color.BLACK);
+        startBtn.setFocusPainted(false);
+        startBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        startBtn.addActionListener(e -> {
+            transitionToActiveRecording();
+            if (onStartAction != null) {
+                new Thread(onStartAction, "Benchmark-Launcher-" + testCode).start();
+            }
+        });
+
+        rightControlPanel.add(cancelBtn);
+        rightControlPanel.add(startBtn);
+        rootPanel.add(rightControlPanel, BorderLayout.EAST);
+        rootPanel.revalidate();
+        rootPanel.repaint();
+    }
+
+    /**
+     * Builds the Active Recording UI showing the live timer, pulsing dot, live 1s mini preview, and action buttons.
+     */
+    private void initActiveRecordingUI() {
+        rootPanel.removeAll();
+
+        // Left: Pulse Dot + Timer + Info
         JPanel leftPanel = new JPanel();
         leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
         leftPanel.setOpaque(false);
@@ -165,70 +464,117 @@ public class BenchmarkRecordingOverlay extends JDialog {
         statusRow.add(recordingDot);
 
         timerLabel.setFont(new Font(Font.MONOSPACED, Font.BOLD, 15));
-        timerLabel.setForeground(new Color(248, 250, 252)); // Light Slate
+        timerLabel.setForeground(new Color(248, 250, 252));
         statusRow.add(timerLabel);
 
         JLabel testLabel = new JLabel("⚡ " + testCode);
         testLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
-        testLabel.setForeground(new Color(237, 187, 0)); // Barça Gold
+        testLabel.setForeground(new Color(237, 187, 0));
         statusRow.add(testLabel);
 
         leftPanel.add(statusRow);
         leftPanel.add(Box.createVerticalStrut(3));
 
-        JLabel modelLabel = new JLabel("Model: " + modelId);
+        JLabel modelLabel = new JLabel("Model: " + modelId + " (Screen " + selectedDeviceIndex + ")");
         modelLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
-        modelLabel.setForeground(new Color(148, 163, 184)); // Muted slate
+        modelLabel.setForeground(new Color(148, 163, 184));
         leftPanel.add(modelLabel);
 
-        root.add(leftPanel, BorderLayout.CENTER);
+        rootPanel.add(leftPanel, BorderLayout.WEST);
 
-        // Right Section: Action Buttons
+        // Center: Live 1s Screen Preview Mini Display
+        JPanel centerPreviewPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        centerPreviewPanel.setOpaque(false);
+        livePreviewLabel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(237, 187, 0, 180), 1, true),
+                BorderFactory.createEmptyBorder(1, 1, 1, 1)
+        ));
+        livePreviewLabel.setToolTipText("Live Screen " + selectedDeviceIndex + " Recording Preview (Updated every 1s)");
+        centerPreviewPanel.add(livePreviewLabel);
+        rootPanel.add(centerPreviewPanel, BorderLayout.CENTER);
+
+        // Right Section: Cancel, Save Local & Save & Upload
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         buttonPanel.setOpaque(false);
 
-        JButton cancelButton = new JButton("❌ Cancel");
-        cancelButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
-        cancelButton.setBackground(new Color(239, 68, 68)); // Red #ef4444
-        cancelButton.setForeground(Color.WHITE);
-        cancelButton.setFocusPainted(false);
-        cancelButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        cancelButton.addActionListener(e -> {
+        JButton cancelBtn = new JButton(cancelLabel);
+        cancelBtn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+        cancelBtn.setBackground(new Color(239, 68, 68));
+        cancelBtn.setForeground(Color.WHITE);
+        cancelBtn.setFocusPainted(false);
+        cancelBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        cancelBtn.addActionListener(e -> {
             stop();
-            if (onCancelAction != null) {
-                onCancelAction.run();
-            }
+            if (onCancelAction != null) onCancelAction.run();
         });
 
-        JButton uploadButton = new JButton("🚀 Stop & Upload");
-        uploadButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
-        uploadButton.setBackground(new Color(34, 197, 94)); // Emerald Green #22c55e
-        uploadButton.setForeground(Color.BLACK);
-        uploadButton.setFocusPainted(false);
-        uploadButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        uploadButton.addActionListener(e -> {
+        JButton saveLocalBtn = new JButton(saveLocalLabel);
+        saveLocalBtn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+        saveLocalBtn.setBackground(new Color(59, 130, 246)); // Blue #3b82f6
+        saveLocalBtn.setForeground(Color.WHITE);
+        saveLocalBtn.setFocusPainted(false);
+        saveLocalBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        saveLocalBtn.addActionListener(e -> {
             stop();
-            if (onUploadAction != null) {
-                onUploadAction.run();
-            }
+            if (onSaveLocalAction != null) onSaveLocalAction.run();
         });
 
-        buttonPanel.add(cancelButton);
-        buttonPanel.add(uploadButton);
+        JButton uploadBtn = new JButton(saveAndUploadLabel);
+        uploadBtn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+        uploadBtn.setBackground(new Color(34, 197, 94));
+        uploadBtn.setForeground(Color.BLACK);
+        uploadBtn.setFocusPainted(false);
+        uploadBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        uploadBtn.addActionListener(e -> {
+            stop();
+            if (onUploadAction != null) onUploadAction.run();
+        });
 
-        root.add(buttonPanel, BorderLayout.EAST);
-        setContentPane(root);
+        buttonPanel.add(cancelBtn);
+        buttonPanel.add(saveLocalBtn);
+        buttonPanel.add(uploadBtn);
+        rootPanel.add(buttonPanel, BorderLayout.EAST);
+        rootPanel.revalidate();
+        rootPanel.repaint();
+    }
+
+    /**
+     * Gets the user-selected screen graphics device index.
+     *
+     * @return The 0-based screen device index.
+     */
+    public int getSelectedDeviceIndex() {
+        return selectedDeviceIndex;
+    }
+
+    /**
+     * Repositions the overlay to the top-right corner of the specified screen device.
+     *
+     * @param screenIndex The 0-based screen device index.
+     */
+    public void positionOnScreen(int screenIndex) {
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice[] devices = ge.getScreenDevices();
+        if (screenIndex >= 0 && screenIndex < devices.length) {
+            Rectangle bounds = devices[screenIndex].getDefaultConfiguration().getBounds();
+            int margin = 24;
+            int x = bounds.x + bounds.width - getWidth() - margin;
+            int y = bounds.y + margin;
+            setLocation(x, y);
+        } else {
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            int margin = 24;
+            int x = (int) screenSize.getWidth() - getWidth() - margin;
+            int y = margin;
+            setLocation(x, y);
+        }
     }
 
     /**
      * Positions the overlay at the top-right corner of the primary display screen.
      */
     private void positionTopRight() {
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        int margin = 24;
-        int x = (int) screenSize.getWidth() - getWidth() - margin;
-        int y = margin;
-        setLocation(x, y);
+        positionOnScreen(selectedDeviceIndex);
     }
 
     /**

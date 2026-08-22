@@ -1,0 +1,240 @@
+name: Deploy Platform & Standalone Artifacts
+
+on:
+  # Trigger on push to main (for Snapshots)
+  push:
+    branches: [ "main" ]
+    tags:
+      - 'v*'
+  # Manual trigger allowed
+  workflow_dispatch:
+
+jobs:
+  build-nbm:
+    name: Build & Publish NBM (${{ matrix.nb_target }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        nb_target: ["300", "310"]
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25 & Maven
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+          # MUST match the <server><id> in settings.xml and <distributionManagement>
+          server-id: sonatype-central
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Build & Deploy NBM
+        env:
+          MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          # 1. Read current project version (e.g. 1.1.0-SNAPSHOT or 1.1.0)
+          BASE_VER=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+
+          # 2. Compute stamped version (e.g. 1.1.0.300-SNAPSHOT or 1.1.0.300)
+          if [[ "$BASE_VER" == *"-SNAPSHOT" ]]; then
+            BASE_NUM="${BASE_VER%-SNAPSHOT}"
+            STAMPED_VER="${BASE_NUM}.${{ matrix.nb_target }}-SNAPSHOT"
+          else
+            STAMPED_VER="${BASE_VER}.${{ matrix.nb_target }}"
+          fi
+
+          echo "[INFO] Stamping NBM module version to: $STAMPED_VER on runner..."
+          mvn versions:set -DnewVersion=$STAMPED_VER -DgenerateBackupPoms=false -pl :anahata-asi-nb -ntp
+
+          echo "[INFO] Building and deploying NBM ($STAMPED_VER) against NetBeans API: RELEASE${{ matrix.nb_target }}..."
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "[INFO] Tag trigger with release version detected. Deploying NBM to Sonatype Central Release portal..."
+            mvn deploy -DskipTests -P release -pl :anahata-asi-nb -am -ntp -Dnetbeans.version=RELEASE${{ matrix.nb_target }}
+          else
+            echo "[INFO] Branch trigger with SNAPSHOT version detected. Deploying to Sonatype Snapshot repository..."
+            mvn deploy -DskipTests -pl :anahata-asi-nb -am -ntp -Dnetbeans.version=RELEASE${{ matrix.nb_target }} \
+              -DaltSnapshotDeploymentRepository=sonatype-central::https://central.sonatype.com/repository/maven-snapshots/
+          fi
+          
+          echo "[INFO] Generating Autoupdate catalog for NetBeans ${{ matrix.nb_target }}..."
+          mvn nbm:autoupdate -pl :anahata-asi-nb -Dnetbeans.version=RELEASE${{ matrix.nb_target }} -ntp
+
+      - name: Upload NBM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbm-artifact-${{ matrix.nb_target }}
+          path: |
+            anahata-asi-nb/target/*.nbm
+            anahata-asi-nb/target/updates.xml*
+
+  build-desktop:
+    name: Build Desktop on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Get Project Version
+        id: get_version
+        shell: bash
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          # jpackage on macOS is strict: version must be 1-3 integers separated by dots.
+          # Strip any -SNAPSHOT or other suffixes for the installer metadata.
+          JPACKAGE_VERSION=$(echo $VERSION | sed 's/-.*//')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "JPACKAGE_VERSION=$JPACKAGE_VERSION" >> $GITHUB_ENV
+
+      - name: Build Project
+        run: mvn clean install -DskipTests -pl :anahata-asi-desktop -am -ntp
+
+      - name: Prepare jpackage Input
+        shell: bash
+        run: |
+          mkdir -p package-input/lib
+          # Copy the main executable jar to the root
+          cp anahata-asi-desktop/target/anahata-asi-desktop-${{ env.VERSION }}.jar package-input/
+          # Copy all runtime dependencies to the lib folder. 
+          # Use relative path '../' because Maven is running with '-f anahata-asi-desktop/pom.xml'
+          mvn -f anahata-asi-desktop/pom.xml dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=../package-input/lib
+          
+          # Debug: List contents to verify preparation
+          ls -R package-input/
+          # Copy assets for jpackage flags
+          cp anahata-asi-desktop/src/main/resources/icon.* .
+          cp anahata-asi-desktop/src/main/resources/splash.png package-input/
+
+      - name: Set OS Specific Variables
+        shell: bash
+        run: |
+          if [ "${{ matrix.os }}" == "macos-latest" ]; then
+            echo "ICON_FILE=icon.icns" >> $GITHUB_ENV
+          elif [ "${{ matrix.os }}" == "windows-latest" ]; then
+            echo "ICON_FILE=icon.ico" >> $GITHUB_ENV
+          else
+            echo "ICON_FILE=icon.png" >> $GITHUB_ENV
+          fi
+
+      - name: Package Native App (jpackage)
+        shell: bash
+        run: |
+          jpackage --name "Anahata-ASI-Desktop" \
+                   --app-version "${{ env.JPACKAGE_VERSION }}" \
+                   --input package-input \
+                   --main-jar "anahata-asi-desktop-${{ env.VERSION }}.jar" \
+                   --main-class uno.anahata.asi.desktop.Main \
+                   --icon "${{ env.ICON_FILE }}" \
+                   --java-options "-splash:splash.png" \
+                   --java-options "--enable-native-access=ALL-UNNAMED" \
+                   --type app-image \
+                   --dest dist \
+                   --verbose
+          
+          # Zip/Tar the result for distribution
+          if [ "${{ matrix.os }}" == "windows-latest" ]; then
+            7z a "Anahata-ASI-Desktop-${{ env.VERSION }}-windows.zip" "./dist/Anahata-ASI-Desktop"
+          elif [ "${{ matrix.os }}" == "macos-latest" ]; then
+            cd dist && zip -r "../Anahata-ASI-Desktop-${{ env.VERSION }}-macos.zip" "Anahata-ASI-Desktop.app" && cd ..
+          else
+            tar -czf "Anahata-ASI-Desktop-${{ env.VERSION }}-linux.tar.gz" -C dist "Anahata-ASI-Desktop"
+          fi
+
+      - name: Upload Desktop Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bin-${{ matrix.os }}
+          path: |
+            Anahata-ASI-Desktop-*.zip
+            Anahata-ASI-Desktop-*.tar.gz
+
+  build-intellij:
+    name: Build IntelliJ Plugin
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build IntelliJ Plugin Distribution
+        run: mvn clean package -DskipTests -pl :anahata-asi-intellij -am -ntp
+
+      - name: Upload IntelliJ Plugin Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: intellij-plugin
+          path: anahata-asi-intellij/target/*.zip
+
+  release:
+    name: Create & Publish Unified Release
+    needs: [build-nbm, build-desktop, build-intellij]
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts
+          merge-multiple: true
+
+      - name: Purge old snapshot assets
+        if: github.ref == 'refs/heads/main'
+        run: |
+          # Fetch and delete all existing assets for the latest-snapshot release
+          assets=$(gh release view latest-snapshot --json assets -q '.assets[].name' || true)
+          for asset in $assets; do
+            echo "Deleting stale snapshot asset: $asset"
+            gh release delete-asset latest-snapshot "$asset" -y || true
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create/Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'latest-snapshot' }}
+          name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'Latest Snapshot' }}
+          body: |
+            ${{ startsWith(github.ref, 'refs/tags/') && 'Official Stable GA Release' || '🚀 This is an automated rolling snapshot of the main branch. Use with caution!' }}
+          files: |
+            all-artifacts/*.nbm
+            all-artifacts/Anahata-ASI-Desktop-*.zip
+            all-artifacts/Anahata-ASI-Desktop-*.tar.gz
+            all-artifacts/*.zip
+          draft: false
+          prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          make_latest: ${{ startsWith(github.ref, 'refs/tags/') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
