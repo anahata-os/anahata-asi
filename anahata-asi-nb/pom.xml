@@ -4,11 +4,11 @@
     <parent>
         <groupId>uno.anahata</groupId>
         <artifactId>anahata-asi-parent</artifactId>
-        <version>1.1.0</version>
+        <version>1.1.1-SNAPSHOT</version>
     </parent>
     
     <artifactId>anahata-asi-nb</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1-SNAPSHOT</version>
     <packaging>nbm</packaging>
     
     <name>Anahata ASI Studio - NetBeans</name>
