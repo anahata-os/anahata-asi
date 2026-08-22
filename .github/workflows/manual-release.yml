@@ -16,6 +16,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   stage-release:
@@ -98,3 +99,11 @@ jobs:
           echo "[INFO] Pushing commits and release tag [v$RELEASE_VER] to origin..."
           git push origin main --tags
           echo "🎉 Successfully staged release v$RELEASE_VER and opened $NEXT_SNAP!"
+
+      - name: Trigger Master Production Build & Deploy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "[INFO] Triggering master build.yml pipeline for release tag [v$RELEASE_VER]..."
+          gh workflow run build.yml --ref "v$RELEASE_VER"
+          echo "🚀 Master build pipeline successfully triggered on tag v$RELEASE_VER!"
