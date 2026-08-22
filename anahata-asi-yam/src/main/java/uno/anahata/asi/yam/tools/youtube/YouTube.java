@@ -109,7 +109,7 @@ public class YouTube extends AnahataToolkit {
      * @return Confirmation message with saved credentials details.
      * @throws Exception If authentication fails or is cancelled.
      */
-    @AgiTool("Launches interactive browser login to authorize YouTube video uploads.")
+    @AgiTool("Launches interactive browser login to authorize YouTube video uploads. Use this tool if user is not logged in.")
     public String loginInteractive(
             @AgiToolParam("The Google Cloud OAuth 2.0 Client ID.") String clientId,
             @AgiToolParam("The Google Cloud OAuth 2.0 Client Secret.") String clientSecret,
