@@ -36,7 +36,7 @@ public final class ShowAsiClasspathAction implements ActionListener {
         InputOutput io = IOProvider.getDefault().getIO("Default Anahata ASI Classpath", true);
         io.select();
         try (OutputWriter out = io.getOut()) {
-            String cp = NetBeansModuleUtils.getFullModuleClasspath();
+            String cp = NetBeansModuleUtils.getFullAnahataAsiModuleClasspath();
             String[] entries = cp.split(File.pathSeparator);
             
             out.println("-----------------------------------------------------------------------");
@@ -63,6 +63,31 @@ public final class ShowAsiClasspathAction implements ActionListener {
             out.println("Full Classpath String:");
             out.println("-----------------------------------------------------------------------");
             out.println(cp);
+            out.println("-----------------------------------------------------------------------");
+
+            String fxVersion = NetBeansModuleUtils.getJavaFxVersion();
+            boolean fxInstalled = NetBeansModuleUtils.isJavaFxModuleInstalled();
+            boolean fxEnabled = NetBeansModuleUtils.isJavaFxModuleEnabled();
+
+            out.println("\n-----------------------------------------------------------------------");
+            out.println("JavaFX Runtime & Classpath Status");
+            out.println("-----------------------------------------------------------------------");
+            out.println("Installed in NetBeans: " + (fxInstalled ? "Yes" : "No"));
+            out.println("Active / Enabled: " + (fxEnabled ? "Yes" : "No"));
+            if (fxVersion != null) {
+                out.println("Version: " + fxVersion);
+            }
+            String fxCp = NetBeansModuleUtils.getJavaFxModuleClasspath();
+            if (fxCp != null && !fxCp.isEmpty()) {
+                String[] fxEntries = fxCp.split(File.pathSeparator);
+                out.println("\nJavaFX Module JARs (" + fxEntries.length + " entries):");
+                for (String fxEntry : fxEntries) {
+                    out.println("  - " + fxEntry);
+                }
+                out.println("\nJavaFX Classpath String:\n" + fxCp);
+            } else {
+                out.println("JavaFX Module Classpath: N/A (Not active)");
+            }
             out.println("-----------------------------------------------------------------------");
         }
     }

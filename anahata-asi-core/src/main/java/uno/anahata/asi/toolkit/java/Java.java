@@ -156,14 +156,14 @@ public class Java extends AnahataToolkit {
      */
     @Override
     public void postActivate() {
-        getClasspathPrinter().setRaw(defaultCompilerClasspath);
+        this.classpathPrinter = null;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-        public List<String> getSystemInstructions() throws Exception {
+    public List<String> getSystemInstructions() throws Exception {
         StringBuilder sb = new StringBuilder();
         sb.append(" Java Toolkit Instructions: \n");
         sb.append("When using `compileAndExecute`, your class should be **public**, named **Anahata**, extend `" + getConcreteClassModelShouldExtend().getName() + "`, have no package declaration and implement the call() method of " + Callable.class.getName() + "<Object>. ");
@@ -306,7 +306,7 @@ public class Java extends AnahataToolkit {
     public void setDefaultClasspath(@AgiToolParam("The default classpath for all code compiled by the Java toolkit") String defaultCompilerClasspath) {
         if (!Objects.equals(this.defaultCompilerClasspath, defaultCompilerClasspath)) {
             this.defaultCompilerClasspath = defaultCompilerClasspath;
-            getClasspathPrinter().setRaw(defaultCompilerClasspath);
+            this.classpathPrinter = null;
         }
     }
 
@@ -331,7 +331,7 @@ public class Java extends AnahataToolkit {
     protected final VeryPrettyClassPathPrinter getClasspathPrinter() {
         if (classpathPrinter == null) {
             classpathPrinter = createClassPathPrinter();
-            classpathPrinter.setRaw(defaultCompilerClasspath);
+            classpathPrinter.setRaw(getDefaultClasspath());
         }
         return classpathPrinter;
     }
@@ -353,7 +353,7 @@ public class Java extends AnahataToolkit {
      * state and available libraries.</p>
      */
     @Override
-        public void populateMessage(RagMessage ragMessage) throws Exception {
+    public void populateMessage(RagMessage ragMessage) throws Exception {
         String ragText
                 = "\nSession (Agi) map keys (shared across turns, persistent): " + getSessionMap().keySet()
                 + "\nASI Container map keys (shared across AGIs within the container), not persistent today): " + getAsiContainerMap().keySet()
@@ -364,13 +364,18 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Adds a list of class FQNs to the Parent-First ClassLoader guard set, resolving each class on the host classloader and recursively registering its superclasses and interfaces.
-     * @param fqns List of fully qualified class names (FQNs) to resolve and add to parent-first classes.
-     * @throws java.lang.ClassNotFoundException If any requested class cannot be loaded by the host ClassLoader.
+     * Adds a list of class FQNs to the Parent-First ClassLoader guard set,
+     * resolving each class on the host classloader and recursively registering
+     * its superclasses and interfaces.
+     *
+     * @param fqns List of fully qualified class names (FQNs) to resolve and add
+     * to parent-first classes.
+     * @throws java.lang.ClassNotFoundException If any requested class cannot be
+     * loaded by the host ClassLoader.
      */
     @AgiTool("Adds a list of class FQNs to the Parent-First ClassLoader guard set, resolving each class and recursively registering its superclasses and interfaces")
-        public void addParentFirstClasses(
-                @AgiToolParam("List of fully qualified class names (FQNs) to add to parent-first classes") List<String> fqns) throws ClassNotFoundException {
+    public void addParentFirstClasses(
+            @AgiToolParam("List of fully qualified class names (FQNs) to add to parent-first classes") List<String> fqns) throws ClassNotFoundException {
         for (String fqn : fqns) {
             Class<?> clazz = Class.forName(fqn.trim(), false, getClass().getClassLoader());
             registerParentFirstClass(clazz);
@@ -378,16 +383,20 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Removes a list of class FQNs from the Parent-First guard set to allow Child-First hot reloading.
-     * @param fqns List of fully qualified class names (FQNs) to remove from parent-first classes.
+     * Removes a list of class FQNs from the Parent-First guard set to allow
+     * Child-First hot reloading.
+     *
+     * @param fqns List of fully qualified class names (FQNs) to remove from
+     * parent-first classes.
      */
     @AgiTool("Removes a list of class FQNs from the Parent-First guard set to allow Child-First hot reloading")
-        public void removeParentFirstClasses(
-                @AgiToolParam("List of fully qualified class names (FQNs) to remove from parent-first classes") List<String> fqns) {
+    public void removeParentFirstClasses(
+            @AgiToolParam("List of fully qualified class names (FQNs) to remove from parent-first classes") List<String> fqns) {
         for (String fqn : fqns) {
             parentFirstClassess.remove(fqn.trim());
         }
     }
+
     /**
      * Appends the signatures of all declared methods of a class to a
      * StringBuilder, filtering out standard Object methods and internal
@@ -493,7 +502,7 @@ public class Java extends AnahataToolkit {
             log.info("extraClassPath: {} entries:\n{}", extraClassPath.split(File.pathSeparator).length, extraClassPath);
         }
 
-        String classpath = defaultCompilerClasspath;
+        String classpath = getDefaultClasspath();
         if (extraClassPath != null && !extraClassPath.isEmpty()) {
             // CRITICAL FIX: Prepend extraClassPath to ensure hot-reloaded classes take precedence
             classpath = extraClassPath + File.pathSeparator + classpath;
@@ -590,7 +599,7 @@ public class Java extends AnahataToolkit {
                             try {
                                 // 4. CHILD-FIRST: Try to find the class in our own URLs (e.g., target/classes)
                                 c = findClass(name);
-                                log.info("Loaded class from extraClassPath (Child-First): {}" + name);
+                                log.info("Loaded class from default classpath (Child-First): {}" + name);
                             } catch (ClassNotFoundException e) {
                                 // 5. FALLBACK: Ask the toolkit if it can find the bytes elsewhere (e.g. MR-JARs)
                                 byte[] fallbackBytes = findClassFallbackBytes(name);
@@ -599,7 +608,21 @@ public class Java extends AnahataToolkit {
                                     c = defineClass(name, fallbackBytes, 0, fallbackBytes.length);
                                 } else {
                                     // 6. PARENT-LAST: If not found, delegate to the parent classloader.
-                                    c = super.loadClass(name, resolve);
+                                    try {
+                                        c = super.loadClass(name, resolve);
+                                    } catch (ClassNotFoundException parentEx) {
+                                        // 7. SIBLING / EXTRA CLASSLOADERS: (e.g., NetBeans JavaFX module)
+                                        for (ClassLoader extraLoader : getExtraClassLoaders()) {
+                                            try {
+                                                c = extraLoader.loadClass(name);
+                                                break;
+                                            } catch (ClassNotFoundException ignored) {
+                                            }
+                                        }
+                                        if (c == null) {
+                                            throw parentEx;
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -627,6 +650,16 @@ public class Java extends AnahataToolkit {
      */
     protected byte[] findClassFallbackBytes(String name) {
         return null;
+    }
+
+    /**
+     * Hook for subclasses to provide extra/sibling classloaders to search if
+     * both the child classpath and the parent classloader fail to find a class.
+     *
+     * @return A list of additional ClassLoaders to query.
+     */
+    protected List<ClassLoader> getExtraClassLoaders() {
+        return Collections.emptyList();
     }
 
     /**

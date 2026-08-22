@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 import org.openide.modules.Dependency;
 import org.openide.modules.ModuleInfo;
 import org.openide.modules.Modules;
+import org.openide.util.Lookup;
 import uno.anahata.asi.nb.AnahataInstaller;
 
 /**
@@ -32,7 +33,7 @@ public final class NetBeansModuleUtils {
     /**
      * Cached classpath string for the NetBeans environment.
      */
-    private static String cachedNetBeansClasspath;
+    private static String cachedAnahataAsiPluginClasspath;
 
     /**
      * Private constructor to prevent instantiation of this utility class.
@@ -46,11 +47,11 @@ public final class NetBeansModuleUtils {
      *
      * @return The full NetBeans classpath string.
      */
-    public static synchronized String getFullModuleClasspath() {
-        if (cachedNetBeansClasspath == null) {
-            cachedNetBeansClasspath = buildFullModuleClasspath();
+    public static synchronized String getFullAnahataAsiModuleClasspath() {
+        if (cachedAnahataAsiPluginClasspath == null) {
+            cachedAnahataAsiPluginClasspath = buildFullAnahataAsiModuleClasspath();
         }
-        return cachedNetBeansClasspath;
+        return cachedAnahataAsiPluginClasspath;
     }
 
     /**
@@ -59,12 +60,12 @@ public final class NetBeansModuleUtils {
      *
      * @return The fully assembled classpath string.
      */
-    private static String buildFullModuleClasspath() {
+    private static String buildFullAnahataAsiModuleClasspath() {
         try {
             String javaClassPath = System.getProperty("java.class.path");
             String netbeansDynamicClassPath = System.getProperty("netbeans.dynamic.classpath");
 
-            Set<File> moduleClassPath = getModuleClassPath();
+            Set<File> moduleClassPath = getAnahataAsiModuleClassPath();
             String moduleClassPathStr = filesToClassPathString(moduleClassPath);
 
             StringBuilder sb = new StringBuilder();
@@ -89,13 +90,108 @@ public final class NetBeansModuleUtils {
      *
      * @return A Set of File objects representing the module classpath.
      */
-    private static Set<File> getModuleClassPath() {
+    private static Set<File> getAnahataAsiModuleClassPath() {
         Set<ModuleInfo> processed = new HashSet<>();
         ModuleInfo thisModule = Modules.getDefault().ownerOf(AnahataInstaller.class);
         if (thisModule == null) {
             return Collections.emptySet();
         }
         return getClassPath(thisModule, processed);
+    }
+
+    /**
+     * Checks whether a JavaFX runtime provider module is installed in NetBeans (enabled or disabled).
+     *
+     * @return {@code true} if a module providing the JavaFX token is installed, {@code false} otherwise.
+     */
+    public static boolean isJavaFxModuleInstalled() {
+        for (ModuleInfo mi : Lookup.getDefault().lookupAll(ModuleInfo.class)) {
+            for (String token : mi.getProvides()) {
+                if ("org.openide.modules.jre.JavaFX".equals(token)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks whether a JavaFX runtime provider module is currently enabled and active in NetBeans.
+     *
+     * @return {@code true} if active, {@code false} otherwise.
+     */
+    public static boolean isJavaFxModuleEnabled() {
+        return getEnabledJavaFxModule() != null;
+    }
+
+    /**
+     * Finds the currently enabled JavaFX provider module in NetBeans
+     * (cross-platform).
+     *
+     * @return The active ModuleInfo providing org.openide.modules.jre.JavaFX,
+     * or null if absent.
+     */
+    public static ModuleInfo getEnabledJavaFxModule() {
+        for (ModuleInfo mi : Lookup.getDefault().lookupAll(ModuleInfo.class)) {
+            if (!mi.isEnabled()) {
+                continue;
+            }
+            for (String token : mi.getProvides()) {
+                if ("org.openide.modules.jre.JavaFX".equals(token)) {
+                    return mi;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Gets the ClassLoader of the enabled JavaFX provider module in NetBeans,
+     * or null if absent.
+     *
+     * @return The JavaFX module ClassLoader, or null.
+     */
+    public static ClassLoader getJavaFxModuleClassLoader() {
+        ModuleInfo fxModule = getEnabledJavaFxModule();
+        return fxModule != null ? fxModule.getClassLoader() : null;
+    }
+
+    /**
+     * Gets the classpath string for the enabled JavaFX provider module's JARs.
+     *
+     * @return The classpath string of JavaFX JARs, or null if JavaFX is not
+     * enabled in NetBeans.
+     */
+    public static String getJavaFxModuleClasspath() {
+        ModuleInfo fxModule = getEnabledJavaFxModule();
+        if (fxModule == null) {
+            return null;
+        }
+        List<File> jars = getAllModuleJarsUsingReflection(fxModule);
+        return filesToClassPathString(new HashSet<>(jars));
+    }
+
+    /**
+     * Gets the active JavaFX runtime version, or null if absent.
+     *
+     * @return The version string, or null.
+     */
+    public static String getJavaFxVersion() {
+        try {
+            Class<?> versionInfo = Class.forName("com.sun.javafx.runtime.VersionInfo");
+            return (String) versionInfo.getMethod("getVersion").invoke(null) + " (System JDK)";
+        } catch (Throwable ignored) {
+        }
+
+        ModuleInfo fxModule = getEnabledJavaFxModule();
+        if (fxModule != null && fxModule.getClassLoader() != null) {
+            try {
+                Class<?> versionInfo = fxModule.getClassLoader().loadClass("com.sun.javafx.runtime.VersionInfo");
+                return (String) versionInfo.getMethod("getVersion").invoke(null) + " (" + fxModule.getCodeNameBase() + ")";
+            } catch (Throwable ignored) {
+            }
+        }
+        return null;
     }
 
     /**
@@ -138,10 +234,10 @@ public final class NetBeansModuleUtils {
     }
 
     /**
-     * Uses reflection to invoke {@code getJarFile()} and {@code getAllJars()} on a
-     * {@link ModuleInfo} instance (such as NetBeans' {@code StandardModule}).
-     * Guarantees that the primary module JAR is always included while discarding
-     * duplicates.
+     * Uses reflection to invoke {@code getJarFile()} and {@code getAllJars()}
+     * on a {@link ModuleInfo} instance (such as NetBeans'
+     * {@code StandardModule}). Guarantees that the primary module JAR is always
+     * included while discarding duplicates.
      *
      * @param thisModule The module to inspect.
      * @return A list of unique JAR files provided by the module.

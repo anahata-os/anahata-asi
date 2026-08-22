@@ -30,6 +30,11 @@ import java.util.zip.ZipFile;
 import java.io.IOException;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.project.MavenProject;
+import org.netbeans.api.autoupdate.OperationContainer;
+import org.netbeans.api.autoupdate.OperationSupport;
+import org.netbeans.api.autoupdate.UpdateElement;
+import org.netbeans.api.autoupdate.UpdateManager;
+import org.netbeans.api.autoupdate.UpdateUnit;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.nb.module.NetBeansModuleUtils;
 
@@ -39,6 +44,7 @@ import uno.anahata.asi.swing.toolkit.SwingJava;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiTool;
+import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.nb.NetBeansAsiContainer;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
 import uno.anahata.asi.toolkit.java.classpath.VeryPrettyClassPathPrinter;
@@ -65,7 +71,7 @@ public class NbJava extends SwingJava {
         super.initialize();
         registerParentFirstClass(NbHandle.class);
         registerParentFirstClass(NetBeansAsiContainer.class);
-        setDefaultClasspath(NetBeansModuleUtils.getFullModuleClasspath());
+        setDefaultClasspath(NetBeansModuleUtils.getFullAnahataAsiModuleClasspath());
         log.debug("initialize() default classPath:" + getDefaultClasspath());
     }
 
@@ -110,15 +116,18 @@ public class NbJava extends SwingJava {
      * {@inheritDoc}
      * <p>
      * Appends an indicator to the RAG message specifying whether the NbJava
-     * toolkit's default classpath is identical to the plugin's classpath.</p>
+     * toolkit's default classpath is identical to the plugin's classpath, as
+     * well as the active JavaFX runtime status.</p>
      */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
         super.populateMessage(ragMessage);
-        String pluginCp = NetBeansModuleUtils.getFullModuleClasspath();
+        String pluginCp = NetBeansModuleUtils.getFullAnahataAsiModuleClasspath();
         String defaultCp = getDefaultClasspath();
         boolean identical = java.util.Objects.equals(pluginCp, defaultCp);
         ragMessage.addTextPart("\nNbJava toolkit's default classpath and Plugins default classpath identical: " + (identical ? "Yes" : "No"));
+        String fxVersion = NetBeansModuleUtils.getJavaFxVersion();
+        ragMessage.addTextPart("\nJavaFX Runtime Status: " + (fxVersion != null ? "Active (" + fxVersion + ")" : "Not Available (Use NbJava.installJavaFxSupport to activate)"));
     }
 
     /**
@@ -162,7 +171,7 @@ public class NbJava extends SwingJava {
      */
     @AgiTool("Restores the default classpath to the full original classpath of Anahata ASI Studio - NetBeans plugin's classpath. Useful for troubleshooting classpath issues during nbm reload.")
     public void resetDefaultClasspath() {
-        setDefaultClasspath(NetBeansModuleUtils.getFullModuleClasspath());
+        setDefaultClasspath(NetBeansModuleUtils.getFullAnahataAsiModuleClasspath());
         log.info("resetDefaultClasspath() restored default classpath: {}", getDefaultClasspath());
     }
 
@@ -176,7 +185,7 @@ public class NbJava extends SwingJava {
      */
     @AgiTool("Gets the current full module classpath of the Anahata ASI Studio - NetBeans plugin.")
     public String getPluginsClasspath() {
-        return NetBeansModuleUtils.getFullModuleClasspath();
+        return NetBeansModuleUtils.getFullAnahataAsiModuleClasspath();
     }
 
     /**
@@ -216,6 +225,71 @@ public class NbJava extends SwingJava {
             }
         }
         return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Dynamically augments the default compiler classpath with the JavaFX
+     * module classpath if JavaFX is enabled in NetBeans.</p>
+     */
+    @Override
+    public String getDefaultClasspath() {
+        String base = super.getDefaultClasspath();
+        String fxCp = NetBeansModuleUtils.getJavaFxModuleClasspath();
+        if (fxCp != null && !fxCp.isEmpty() && !base.contains(fxCp)) {
+            return base + File.pathSeparator + fxCp;
+        }
+        return base;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Provides the JavaFX module's ClassLoader as a sibling classloader if
+     * JavaFX support is enabled in NetBeans.</p>
+     */
+    @Override
+    protected List<ClassLoader> getExtraClassLoaders() {
+        List<ClassLoader> loaders = new ArrayList<>(super.getExtraClassLoaders());
+        ClassLoader fxLoader = NetBeansModuleUtils.getJavaFxModuleClassLoader();
+        if (fxLoader != null) {
+            loaders.add(fxLoader);
+        }
+        return loaders;
+    }
+
+    /**
+     * Installs and activates the NetBeans JavaFX runtime support programmatically.
+     *
+     * @return The installation result status.
+     * @throws Exception if installation fails.
+     */
+    @AgiTool("Installs and activates the NetBeans JavaFX runtime support programmatically on demand.")
+    public String installJavaFxSupport() throws Exception {
+        UpdateUnit unit = UpdateManager.getDefault().getUpdateUnits(UpdateManager.TYPE.MODULE)
+                .stream()
+                .filter(u -> "org.netbeans.modules.javafx2.kit".equals(u.getCodeName()))
+                .findFirst()
+                .orElseThrow(() -> new AgiToolException("JavaFX 2 Support module (org.netbeans.modules.javafx2.kit) not found in NetBeans."));
+
+        UpdateElement installed = unit.getInstalled();
+        if (installed == null) {
+            throw new AgiToolException("JavaFX 2 Support is not installed on disk.");
+        }
+        if (installed.isEnabled()) {
+            return "JavaFX support is already active. Version: " + NetBeansModuleUtils.getJavaFxVersion();
+        }
+
+        OperationContainer<OperationSupport> container = OperationContainer.createForEnable();
+        OperationContainer.OperationInfo<OperationSupport> info = container.add(installed);
+        if (info != null) {
+            container.add(info.getRequiredElements());
+            OperationSupport support = container.getSupport();
+            support.doOperation(null);
+            return "JavaFX support successfully activated! Version: " + NetBeansModuleUtils.getJavaFxVersion();
+        }
+        return "Unable to enable JavaFX support.";
     }
 
     /**
