@@ -3,6 +3,9 @@
  */
 package uno.anahata.asi.yam.tools.youtube;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import java.io.IOException;
@@ -27,6 +30,7 @@ import uno.anahata.asi.AbstractAsiContainer;
  * @author anahata
  */
 @Slf4j
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Builder
 public record YouTubeCredentials(
         String clientId,
@@ -36,9 +40,11 @@ public record YouTubeCredentials(
 ) {
 
     /**
-     * Shared JSON object mapper configured for formatted indentation.
+     * Shared JSON object mapper configured for formatted indentation and resilient deserialization.
      */
-    private static final ObjectMapper MAPPER = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+    private static final ObjectMapper MAPPER = new ObjectMapper()
+            .enable(SerializationFeature.INDENT_OUTPUT)
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     /**
      * Resolves the credentials storage file path: {@code ~/.anahata/asi/youtube/credentials.json}.
@@ -90,6 +96,7 @@ public record YouTubeCredentials(
      *
      * @return {@code true} if OAuth client details are present.
      */
+    @JsonIgnore
     public boolean hasClientSecrets() {
         return clientId != null && !clientId.isBlank() && clientSecret != null && !clientSecret.isBlank();
     }
@@ -99,6 +106,7 @@ public record YouTubeCredentials(
      *
      * @return {@code true} if authenticated.
      */
+    @JsonIgnore
     public boolean isAuthenticated() {
         return hasClientSecrets() && refreshToken != null && !refreshToken.isBlank();
     }

@@ -59,12 +59,30 @@ public final class Agi1Catalog {
             .timeoutSeconds(240)
             .build();
 
+    
+    public static final Agi1TestDefinition JAVA_SNAKE_GAME =  Agi1TestDefinition.builder()
+            .testCode("JAVA-SNAKEGAME-1")
+            .title("Snake Game")
+            .rawPrompt("Make an snake game using java tool. You can use the best tool for making this work in Java.")
+            .toolkits(List.of(
+                    ToolkitSettings.of(Java.class, "compileAndExecute", ToolPermission.APPROVE_ALWAYS),
+                    ToolkitSettings.of(Host.class),
+                    ToolkitSettings.of(Session.class),
+                    ToolkitSettings.of(History.class),
+                    ToolkitSettings.of(Resources.class)
+            ))
+            .timeoutSeconds(240)
+            .build();
+            
+            
+    
     /**
      * An unmodifiable list of all active test definitions in the suite.
      */
     private static final List<Agi1TestDefinition> ALL_TESTS = List.of(
-            JAVA_JNA_1,
-            JAVA_ARKANOID_1
+//            JAVA_JNA_1,
+//            JAVA_ARKANOID_1
+            JAVA_SNAKE_GAME
     );
 
     /**
