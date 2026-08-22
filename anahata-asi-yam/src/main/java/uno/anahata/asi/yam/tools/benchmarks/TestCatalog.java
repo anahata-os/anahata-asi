@@ -15,7 +15,7 @@ import lombok.Setter;
  * Abstract base catalog representing an extensible benchmark suite and repository of test definitions.
  * <p>
  * Encapsulates the suite identifier, display name, description, standard prompt header/footer templates,
- * customizable results storage path ({@link #getResultsDirectory()}), and registered {@link TestDefinition}s.
+ * customizable results storage directory, and registered {@link TestDefinition}s.
  * </p>
  *
  * @author anahata

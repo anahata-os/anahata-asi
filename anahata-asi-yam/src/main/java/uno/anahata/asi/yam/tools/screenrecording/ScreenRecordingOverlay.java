@@ -48,12 +48,12 @@ import lombok.extern.slf4j.Slf4j;
  * Provides interactive pre-launch multi-monitor selection with real-time thumbnail snapshots,
  * active recording timer with pulsing red indicator, live 1-second interval mini-preview,
  * and a three-action control bar:
+ * </p>
  * <ul>
  *   <li><b>[ ❌ Cancel ]</b>: Discards the video and closes the recorder.</li>
  *   <li><b>[ 💾 Save ]</b>: Finalizes the video locally without external publishing.</li>
  *   <li><b>[ 🚀 Save &amp; Upload ]</b>: Finalizes the video, executes upload publishing, and records telemetry.</li>
  * </ul>
- * </p>
  *
  * @author anahata
  */
@@ -155,7 +155,7 @@ public class ScreenRecordingOverlay extends JDialog {
     private final Runnable onSaveLocalAction;
 
     /**
-     * Callback invoked when the user clicks 'Save & Upload'.
+     * Callback invoked when the user clicks 'Save &amp; Upload'.
      */
     private final Runnable onUploadAction;
 
