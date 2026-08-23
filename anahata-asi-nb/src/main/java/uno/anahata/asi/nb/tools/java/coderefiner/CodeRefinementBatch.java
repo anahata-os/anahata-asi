@@ -4,6 +4,8 @@ package uno.anahata.asi.nb.tools.java.coderefiner;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.MemberSelectTree;
+import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.Tree;
 import com.sun.source.util.SourcePositions;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
@@ -128,19 +130,6 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
         String currentContent = originalContent.replace("\r\n", "\n");
 
         List<int[]> modifiedRanges = new ArrayList<>();
-        if (this.optimize) {
-            for (CodeRefinementIntent intent : intents) {
-                if (intent.getType() == CodeRefinementIntent.Type.INSERT || intent.getType() == CodeRefinementIntent.Type.UPDATE) {
-                    String[] shortened = shortenFqnsInSnippet(cpInfo, intent.getDeclaration(), intent.getInnerBlockOrInitializer(), this.importsToAdd);
-                    if (intent.getDeclaration() != null) {
-                        intent.setDeclaration(shortened[0]);
-                    }
-                    if (intent.getInnerBlockOrInitializer() != null) {
-                        intent.setInnerBlockOrInitializer(shortened[1]);
-                    }
-                }
-            }
-        }
 
         int index = 0;
         for (CodeRefinementIntent intent : intents) {
@@ -163,6 +152,10 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
             }
         }
 
+        if (this.optimize && modifiedRanges != null && !modifiedRanges.isEmpty()) {
+            currentContent = shortenFqnsInModifiedRanges(cpInfo, currentContent, modifiedRanges, this.importsToAdd);
+        }
+
         boolean hasExplicitImports = (importsToAdd != null && !importsToAdd.isEmpty()) || (importsToRemove != null && !importsToRemove.isEmpty());
         if (this.optimize || hasExplicitImports) {
             currentContent = CodeRefiner.optimizeImportsInMemory(cpInfo, currentContent, this.optimize, importsToAdd, importsToRemove);
@@ -181,61 +174,22 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
     }
 
     /**
-     * Shortens fully qualified type names in a code snippet (declaration and innerBlockOrInitializer)
-     * to simple names using isolated Javac AST resolution in RAM, collecting all discovered FQNs
-     * into importsToAddCollector without modifying or touching the main file.
+     * Shortens fully qualified type names in modified ranges to simple names using
+     * real project ClasspathInfo in RAM, collecting all discovered FQNs for the import header.
      *
      * @param cpInfo The project ClasspathInfo.
-     * @param declaration The member declaration (can be null).
-     * @param innerBlockOrInitializer The member body or initializer (can be null).
-     * @param importsToAddCollector Mutable list to collect newly discovered FQNs for the import header.
-     * @return A String array containing [transformedDeclaration, transformedInnerBlockOrInitializer].
+     * @param content The current source code content.
+     * @param modifiedRanges The list of [start, end] character ranges of modified regions.
+     * @param importsToAddCollector Mutable list to collect discovered FQNs.
+     * @return The updated source code content with simple names.
      */
-    private static String[] shortenFqnsInSnippet(ClasspathInfo cpInfo, String declaration, String innerBlockOrInitializer, List<String> importsToAddCollector) {
-        if (declaration == null && innerBlockOrInitializer == null) {
-            return new String[]{null, null};
-        }
-        String decl = declaration != null ? declaration.trim() : "";
-        String body = innerBlockOrInitializer != null ? innerBlockOrInitializer.trim() : "";
-        if (decl.isEmpty() && body.isEmpty()) {
-            return new String[]{declaration, innerBlockOrInitializer};
-        }
-
-        boolean isMethod = decl.contains("(");
-        boolean isStandaloneType = decl.startsWith("class ") || decl.startsWith("interface ") || decl.startsWith("enum ") || decl.startsWith("record ")
-                || decl.contains(" class ") || decl.contains(" interface ") || decl.contains(" enum ") || decl.contains(" record ");
-        boolean isBlock = decl.equals("static") || decl.isEmpty();
-        boolean isField = !isMethod && !isStandaloneType && !isBlock;
-
-        StringBuilder dummyCode = new StringBuilder("package temp;\nclass __DummySnippet {\n");
-
-        if (isStandaloneType) {
-            dummyCode = new StringBuilder("package temp;\n");
-            dummyCode.append(decl).append(" {\n");
-            dummyCode.append(body).append("\n}\n");
-        } else if (isMethod) {
-            dummyCode.append(decl).append(" {\n");
-            dummyCode.append(body).append("\n}\n}\n");
-        } else if (isField) {
-            dummyCode.append(decl);
-            if (!body.isEmpty()) {
-                dummyCode.append(" = ").append(body);
-            }
-            if (!dummyCode.toString().endsWith(";")) {
-                dummyCode.append(";");
-            }
-            dummyCode.append("\n}\n");
-        } else {
-            dummyCode.append("void __dummyMethod() {\n");
-            dummyCode.append(body).append("\n}\n}\n");
-        }
-
+    private static String shortenFqnsInModifiedRanges(ClasspathInfo cpInfo, String content, List<int[]> modifiedRanges, List<String> importsToAddCollector) {
         FileObject tempFo = null;
         DataObject tempDobj = null;
         try {
-            tempFo = FileUtil.createMemoryFileSystem().getRoot().createData("Temp_Snippet_" + System.nanoTime(), "java");
+            tempFo = FileUtil.createMemoryFileSystem().getRoot().createData("Temp_FqnShorten_" + System.nanoTime(), "java");
             try (OutputStream os = tempFo.getOutputStream()) {
-                os.write(dummyCode.toString().getBytes(StandardCharsets.UTF_8));
+                os.write(content.getBytes(StandardCharsets.UTF_8));
             }
 
             tempDobj = DataObject.find(tempFo);
@@ -252,20 +206,26 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
                 new TreePathScanner<Void, Void>() {
                     @Override
                     public Void visitMemberSelect(MemberSelectTree node, Void p) {
-                        TreePath path = getCurrentPath();
-                        if (path != null) {
-                            Element e = cc.getTrees().getElement(path);
-                            if (e instanceof TypeElement te) {
-                                String fqn = te.getQualifiedName().toString();
-                                String nodeStr = node.toString().replaceAll("\\s+", "");
-                                String normalizedFqn = fqn.replaceAll("\\s+", "");
-                                if (nodeStr.equals(normalizedFqn)) {
-                                    long start = sp.getStartPosition(cut, node);
-                                    long end = sp.getEndPosition(cut, node);
-                                    if (start >= 0 && end > start) {
+                        long start = sp.getStartPosition(cut, node);
+                        long end = sp.getEndPosition(cut, node);
+                        if (start >= 0 && end > start) {
+                            boolean inRange = false;
+                            for (int[] r : modifiedRanges) {
+                                if (start >= r[0] && end <= r[1]) {
+                                    inRange = true;
+                                    break;
+                                }
+                            }
+                            if (inRange) {
+                                TreePath path = getCurrentPath();
+                                Element e = cc.getTrees().getElement(path);
+                                if (e instanceof TypeElement te) {
+                                    String fqn = te.getQualifiedName().toString();
+                                    String rawText = content.substring((int) start, (int) end).replaceAll("\\s+", "");
+                                    if (rawText.equals(fqn)) {
                                         PackageElement pkg = cc.getElements().getPackageOf(te);
                                         String pkgName = (pkg != null) ? pkg.getQualifiedName().toString() : "";
-                                        if (!"java.lang".equals(pkgName) && !pkgName.isEmpty()) {
+                                        if (!"java.lang".equals(pkgName)) {
                                             if (importsToAddCollector != null && !importsToAddCollector.contains(fqn)) {
                                                 importsToAddCollector.add(fqn);
                                             }
@@ -282,45 +242,23 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
 
             if (!replacements.isEmpty()) {
                 replacements.sort((a, b) -> Integer.compare(b.start, a.start));
-                StringBuilder updated = new StringBuilder(dummyCode);
+                List<Replacement> nonOverlapping = new ArrayList<>();
+                int lastStart = Integer.MAX_VALUE;
                 for (Replacement r : replacements) {
+                    if (r.end <= lastStart) {
+                        nonOverlapping.add(r);
+                        lastStart = r.start;
+                    }
+                }
+
+                StringBuilder updated = new StringBuilder(content);
+                for (Replacement r : nonOverlapping) {
                     updated.replace(r.start, r.end, r.simpleName);
                 }
-                String finalTransformed = updated.toString();
-
-                if (isStandaloneType) {
-                    int firstBrace = finalTransformed.indexOf('{');
-                    int lastBrace = finalTransformed.lastIndexOf('}');
-                    String newDecl = finalTransformed.substring("package temp;\n".length(), firstBrace).trim();
-                    String newBody = finalTransformed.substring(firstBrace + 1, lastBrace).trim();
-                    return new String[]{newDecl, newBody};
-                } else if (isMethod) {
-                    int firstBrace = finalTransformed.indexOf('{', "package temp;\nclass __DummySnippet {\n".length());
-                    int lastBrace = finalTransformed.lastIndexOf('}');
-                    int methodCloseBrace = finalTransformed.lastIndexOf('}', lastBrace - 1);
-                    String newDecl = finalTransformed.substring("package temp;\nclass __DummySnippet {\n".length(), firstBrace).trim();
-                    String newBody = finalTransformed.substring(firstBrace + 1, methodCloseBrace).trim();
-                    return new String[]{newDecl, newBody};
-                } else if (isField) {
-                    String insideClass = finalTransformed.substring("package temp;\nclass __DummySnippet {\n".length());
-                    int semi = insideClass.lastIndexOf(';');
-                    String fieldStmt = insideClass.substring(0, semi != -1 ? semi : insideClass.length()).trim();
-                    int eq = fieldStmt.indexOf('=');
-                    if (eq != -1) {
-                        return new String[]{fieldStmt.substring(0, eq).trim(), fieldStmt.substring(eq + 1).trim()};
-                    } else {
-                        return new String[]{fieldStmt, innerBlockOrInitializer};
-                    }
-                } else {
-                    int firstBrace = finalTransformed.indexOf('{', "package temp;\nclass __DummySnippet {\nvoid __dummyMethod() {\n".length());
-                    int lastBrace = finalTransformed.lastIndexOf('}');
-                    int methodCloseBrace = finalTransformed.lastIndexOf('}', lastBrace - 1);
-                    String newBody = finalTransformed.substring(firstBrace + 1, methodCloseBrace).trim();
-                    return new String[]{declaration, newBody};
-                }
+                return updated.toString();
             }
         } catch (Exception e) {
-            log.warn("Failed to shorten snippet FQNs in memory: {}", e.getMessage(), e);
+            log.warn("Failed to shorten FQNs in modified ranges: {}", e.getMessage(), e);
         } finally {
             if (tempDobj != null) {
                 tempDobj.setModified(false);
@@ -333,7 +271,7 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
                 }
             }
         }
-        return new String[]{declaration, innerBlockOrInitializer};
+        return content;
     }
 
     /**
