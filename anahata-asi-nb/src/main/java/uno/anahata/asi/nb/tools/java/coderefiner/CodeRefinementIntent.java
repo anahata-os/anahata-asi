@@ -392,7 +392,9 @@ public class CodeRefinementIntent implements Serializable {
             }
 
             int modStart = (int) docStart;
-            int modEnd = modStart + newDocStr.length() + newDeclStr.length() + newBodyStr.length();
+            int modEnd = (member instanceof ClassTree)
+                    ? modStart + newDocStr.length() + newDeclStr.length()
+                    : modStart + newDocStr.length() + newDeclStr.length() + newBodyStr.length();
             if (modifiedRanges != null) {
                 modifiedRanges.add(new int[]{modStart, modEnd});
             }

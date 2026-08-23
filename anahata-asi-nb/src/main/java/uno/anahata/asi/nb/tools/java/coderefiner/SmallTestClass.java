@@ -9,8 +9,9 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 
 /**
- * Base Test Class for AST.
+ * Base Test Class for AST (Updated with ToString).
  */
+@lombok.ToString
 public class SmallTestClass {
 
     /**

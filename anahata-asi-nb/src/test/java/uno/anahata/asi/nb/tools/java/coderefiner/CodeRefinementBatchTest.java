@@ -347,6 +347,36 @@ public class CodeRefinementBatchTest {
             throw new Exception("Test 19 Failed: ConcurrentHashMap was not imported!");
         }
         
+        logToToolContext("Test 20: Class Level UPDATE with SELECTED_RANGES (Guaranteed Isolation of Enclosed Members)");
+        CodeRefinementIntent i20 = new CodeRefinementIntent();
+        i20.setType(CodeRefinementIntent.Type.UPDATE);
+        i20.setClassFqn("uno.anahata.asi.nb.tools.java.coderefiner.SmallTestClass");
+        i20.setMemberFqn("uno.anahata.asi.nb.tools.java.coderefiner.SmallTestClass");
+        i20.setDeclaration("@lombok.ToString\npublic class SmallTestClass");
+        JavadocIntent j20 = new JavadocIntent();
+        j20.setDescription("Base Test Class for AST (Updated with ToString).");
+        i20.setJavadoc(j20);
+
+        CodeRefinementBatch batch20 = buildBatch.apply(List.of(i20));
+        batch20.setFormat(FormatMode.SELECTED_RANGES);
+        runBatch.accept(batch20);
+
+        finalContent = new String(handle.getFileObject().asBytes(), "UTF-8");
+        logToToolContext("Test 20 Result:\n" + finalContent);
+
+        if (!finalContent.contains("Base Test Class for AST (Updated with ToString).")) {
+            throw new Exception("Test 20 Failed: Class javadoc was not updated!");
+        }
+        if (!finalContent.contains("@lombok.ToString\npublic class SmallTestClass")) {
+            throw new Exception("Test 20 Failed: Class declaration was not updated with @ToString!");
+        }
+        if (!finalContent.contains("String s = \"cat.eat.the.dog\";") || !finalContent.contains("Type.member or Type$NestedType")) {
+            throw new Exception("Test 20 Failed: Enclosed string literals in untouched methods were corrupted by class update!");
+        }
+        if (!finalContent.contains("Gets the source files for types specified by their fully qualified names")) {
+            throw new Exception("Test 20 Failed: Enclosed method Javadoc in untouched method was chopped by class update!");
+        }
+        
         logToToolContext("Validation SUCCESS. The AST is perfect.");
     }
 }
