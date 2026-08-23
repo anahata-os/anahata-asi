@@ -270,13 +270,21 @@ We are going to **hold onto this AST Self-Healing Parser** for now. We want to g
 
 Following extensive real-world usage and test-suite expansion, we completed the full integration of NetBeans IDE reformatting rules, isolated in-memory execution, and dirty-editor data-loss protection across `BatchCodeRefiner`, `CodeRefiner`, and `JavaSourceUtils`:
 
-### 1. In-Memory Import Optimization (`CodeRefiner.optimizeImportsInMemory`)
-- Solved the historical conflict between `GeneratorUtilities.importFQNs`, `CasualDiff`, and Lombok by creating isolated two-pass AST transformations on virtual RAM files (`MemoryFileSystem`).
-- **Pass 1**: Identifies missing imports and resolves ambiguous vs. unambiguous candidates via `ClassIndex`.
-- **Pass 2**: Rewrites full FQNs in method bodies to simple names if the type is explicitly imported or implicitly available (`java.lang` or same package).
-- Strips trailing whitespace and extra padding around annotations (e.g., `@ Override` -> `@Override`).
+### 1. In-Memory Import Optimization & CasualDiff Resolution
+- **The CasualDiff Hazard:** During real-world testing on `CodeModel.java`, we discovered that attempting a whole-file AST token rewrite via `WorkingCopy.rewrite(MemberSelectTree)` causes NetBeans' internal `CasualDiff` engine to desynchronize its character pointer on string literals and multi-line annotations. This chopped random characters across untouched methods throughout the file (e.g., turning `"Type$NestedType"` into `"TedType"` and corrupting `@AgiToolParam` strings).
+- **The Solution (Surgical Header Optimization):** We removed full-file AST token rewriting from `CodeRefiner.optimizeImportsInMemory`. It now behaves strictly like NetBeans' native `Fix Imports (Ctrl+Shift+I)`:
+  1. Auto-resolves missing imports for simple names via `ClassIndex`.
+  2. Cleans up unused/dead `import` statements via `UnusedImports`.
+  3. Applies explicit `importsToAdd` and `importsToRemove`.
+  4. Never touches or risks corrupting existing method bodies, comments, or intentional disambiguation FQNs.
 
-### 2. NetBeans In-Memory Reformatting (`FormatMode` & `JavaSourceUtils.reformat`)
+### 2. Isolated Compiler-Guided Snippet FQN Shortening (`shortenFqnsInSnippet`)
+- **The Innovation:** Rather than running whole-file AST diffs, `CodeRefinementBatch` processes incoming `INSERT` and `UPDATE` member snippets through an isolated, RAM-only Javac AST pass (`shortenFqnsInSnippet`) before splicing.
+- **Precision:** Uses pure Javac AST (`TreePathScanner` in `Phase.RESOLVED`) to distinguish real Java types from string literals (e.g. `"cat.eat.the.dog"`) and comments.
+- **Multi-Line & Generics Support:** Accurately normalizes multi-line FQNs (e.g. `java.util\n.AbstractCollection`) and complex generic types to simple names, while automatically promoting the resolved FQNs to `importsToAdd`.
+- **Zero Collateral Risk:** Splicing inserts only the cleaned snippet with simple names, while untouched methods in the file remain 100% immune to AST rewrite bugs.
+
+### 3. NetBeans In-Memory Reformatting (`FormatMode` & `JavaSourceUtils.reformat`)
 - **The Problem:** Direct invocation of NetBeans `Reformat` on a standard Swing `DefaultStyledDocument` failed silently because it lacked NetBeans' Java Lexer, `JavaKit`, and `SyntaxSupport` bindings. Conversely, reformatting live IDE `StyledDocument`s during AST simulation mutated the user's editor buffer prematurely and triggered `FileAlreadyLockedException`.
 - **The Solution:** We create a transient virtual `.java` file in NetBeans' `MemoryFileSystem` (`FileUtil.createMemoryFileSystem().getRoot().createData("TempFormat_" + System.nanoTime(), "java")`). NetBeans automatically wires a real `BaseDocument` with full Java lexer and syntax highlighting in RAM. We attach the target `FileObject` to the document (`tempDoc.putProperty("FileObject", fo)`) so project `CodeStyle` preferences are respected 100%.
 - Supports three formatting policies via `FormatMode`:
@@ -331,9 +339,11 @@ To guarantee stability and zero regressions across all IDE states and persistenc
   - Updates member, formats entire compilation unit in RAM, writes to disk.
 - **BCR-3: Range Formatting on Open File (`SELECTED_RANGES`, `save=false`)**
   - Slices AST in RAM, updates active editor tab's `StyledDocument` with dirty star `*`, does not flush to disk.
-- **BCR-4: Range Formatting on Open File (`SELECTED_RANGES`, `save=true`)**
+- **BCR-4: Range Formatting on Open File (`SELECTED_RANGES`, `save=true`)** [PASSED ✅]
   - Slices AST in RAM, updates `StyledDocument`, calls `ec.saveDocument()` (clearing `*` star).
-- **BCR-5: Unsaved Edits Protection Guard**
+- **BCR-5: Unsaved Edits Protection Guard** [PASSED ✅]
   - If a file has unsaved editor modifications (`dobj.isModified() == true`), fails fast with `AgiToolException` preventing silent data loss.
+- **BCR-6: Full 19-Stage AST Regression Test Suite (`CodeRefinementBatchTest`)** [PASSED 100% ✅]
+  - Verifies all 19 structural AST edge cases, including generics, enum constant arguments, chained anchoring, field initializers, inner enum parameters, string literal immunity (`"cat.eat.the.dog"`, `"Type$NestedType"`), and multi-line FQN snippet shortening.
 
 Go Anahata!

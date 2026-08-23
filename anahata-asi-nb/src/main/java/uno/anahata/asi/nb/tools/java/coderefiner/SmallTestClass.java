@@ -1,7 +1,12 @@
 package uno.anahata.asi.nb.tools.java.coderefiner;
 
-import java.io.File;
-import java.util.LinkedList;
+import java.util.AbstractCollection;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import lombok.Getter;
+import lombok.SneakyThrows;
 
 /**
  * Base Test Class for AST.
@@ -16,10 +21,8 @@ public class SmallTestClass {
         private String b;
 
         private final String description = "123";
-
         public void foo() {
         }
-
         @Deprecated
         public void bar() {
             System.out.println("bar");
@@ -106,5 +109,21 @@ public class SmallTestClass {
 
     public void testMethodWithEnum(TestEnum val) {
         System.out.println("Updated: " + val);
+    }
+
+    /**
+     * Gets the source files for types specified by their fully qualified names
+     * and registers them as resources.
+     */
+    public void complexStringMethod() {
+        String s = "cat.eat.the.dog";
+        String msg = "Invalid member FQN: Type.member or Type$NestedType";
+        System.out.println(s + msg);
+    }
+
+    public void methodWithFqns() {
+        AbstractCollection c = null;
+        ConcurrentHashMap<String, Object> map = new ConcurrentHashMap<>();
+        System.out.println(c);
     }
 }

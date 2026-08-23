@@ -307,6 +307,45 @@ public class CodeRefinementBatchTest {
         if (!finalContent.contains("System.out.println(\"Updated: \" + val);")) {
             throw new Exception("Test 18 Failed: Method with inner enum parameter was not successfully updated (signature matching failed)!");
         }
+
+        logToToolContext("Test 19: String literals, Annotations, and FQN Optimization Isolation (CodeModel Bug Reproduction)");
+        CodeRefinementIntent i19a = new CodeRefinementIntent();
+        i19a.setType(CodeRefinementIntent.Type.INSERT);
+        i19a.setClassFqn("uno.anahata.asi.nb.tools.java.coderefiner.SmallTestClass");
+        i19a.setPosition(RelativePosition.END);
+        i19a.setDeclaration("public void complexStringMethod()");
+        i19a.setInnerBlockOrInitializer("String s = \"cat.eat.the.dog\";\nString msg = \"Invalid member FQN: Type.member or Type$NestedType\";\nSystem.out.println(s + msg);");
+        JavadocIntent j19a = new JavadocIntent();
+        j19a.setDescription("Gets the source files for types specified by their fully qualified names and registers them as resources.");
+        i19a.setJavadoc(j19a);
+        runBatch.accept(buildBatch.apply(List.of(i19a)));
+
+        CodeRefinementIntent i19b = new CodeRefinementIntent();
+        i19b.setType(CodeRefinementIntent.Type.INSERT);
+        i19b.setClassFqn("uno.anahata.asi.nb.tools.java.coderefiner.SmallTestClass");
+        i19b.setPosition(RelativePosition.END);
+        i19b.setDeclaration("public void methodWithFqns()");
+        i19b.setInnerBlockOrInitializer("java.util\n        .AbstractCollection c = null;\njava.util.concurrent.ConcurrentHashMap<String, Object> map = new java.util.concurrent.ConcurrentHashMap<>();\nSystem.out.println(c);");
+
+        CodeRefinementBatch batch19 = buildBatch.apply(List.of(i19b));
+        batch19.setOptimize(true);
+        runBatch.accept(batch19);
+
+        finalContent = new String(handle.getFileObject().asBytes(), "UTF-8");
+        logToToolContext("Test 19 Result:\n" + finalContent);
+
+        if (!finalContent.contains("String s = \"cat.eat.the.dog\";")) {
+            throw new Exception("Test 19 Failed: String literal 'cat.eat.the.dog' was corrupted!");
+        }
+        if (!finalContent.contains("Type.member or Type$NestedType")) {
+            throw new Exception("Test 19 Failed: String literal with '$' was corrupted into 'TedType' or similar!");
+        }
+        if (!finalContent.contains("Gets the source files for types specified by their fully qualified names") || !finalContent.contains("and registers them as resources.")) {
+            throw new Exception("Test 19 Failed: Untouched Javadoc was sliced or chopped by CasualDiff!");
+        }
+        if (!finalContent.contains("import java.util.concurrent.ConcurrentHashMap;")) {
+            throw new Exception("Test 19 Failed: ConcurrentHashMap was not imported!");
+        }
         
         logToToolContext("Validation SUCCESS. The AST is perfect.");
     }

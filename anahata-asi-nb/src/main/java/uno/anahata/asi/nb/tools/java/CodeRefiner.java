@@ -181,7 +181,7 @@ public class CodeRefiner extends AnahataToolkit {
      * @param explicitImportsToAdd Additional FQNs to add
      * @param explicitImportsToRemove FQNs to forcibly remove
      * @param sourceCode The source code string
-     * @param optimize Whether to perform full import optimization
+     * @param optimize Whether to automatically resolve missing imports via ClassIndex and remove unused imports
      * @return The import-optimized source string
      */
     public static String optimizeImportsInMemory(ClasspathInfo cpInfo, String sourceCode, boolean optimize, List<String> explicitImportsToAdd, List<String> explicitImportsToRemove) throws Exception {
@@ -419,98 +419,7 @@ public class CodeRefiner extends AnahataToolkit {
             }
         }).commit();
 
-        if (optimize) {
-            js1.runUserActionTask(cc -> {
-                cc.toPhase(JavaSource.Phase.RESOLVED);
-            }, true);
-
-            JavaSource js2 = JavaSource.create(cpInfo, tempFo);
-            js2.runModificationTask(wc -> {
-                wc.toPhase(JavaSource.Phase.RESOLVED);
-                CompilationUnitTree cut = wc.getCompilationUnit();
-                TreeMaker make = wc.getTreeMaker();
-
-                new TreePathScanner<Void, WorkingCopy>() {
-                    @Override
-                    public Void visitPackage(PackageTree node, WorkingCopy wcSub) {
-                        return null;
-                    }
-
-                    @Override
-                    public Void visitImport(ImportTree node, WorkingCopy wcSub) {
-                        return null;
-                    }
-
-                    @Override
-                    public Void visitMemberSelect(MemberSelectTree node, WorkingCopy wcSub) {
-                        SourcePositions sp = wcSub.getTrees().getSourcePositions();
-                        long start = sp.getStartPosition(cut, node);
-                        long end = sp.getEndPosition(cut, node);
-                        if (start < 0 || end < 0 || start >= end) {
-                            return super.visitMemberSelect(node, wcSub);
-                        }
-                        TreePath path = getCurrentPath();
-                        if (path != null) {
-                            Element e = wcSub.getTrees().getElement(path);
-                            if (e instanceof TypeElement te) {
-                                String fqn = te.getQualifiedName().toString();
-                                String nodeStr = node.toString();
-                                if (nodeStr.equals(fqn)) {
-                                    TypeElement outerType = null;
-                                    Element enclosing = te.getEnclosingElement();
-                                    while (enclosing instanceof TypeElement parentType) {
-                                        outerType = parentType;
-                                        enclosing = parentType.getEnclosingElement();
-                                    }
-
-                                    String simpleName = (outerType != null ? outerType : te).getSimpleName().toString();
-                                    PackageElement tePkg = wcSub.getElements().getPackageOf(outerType != null ? outerType : te);
-                                    String pkgName = tePkg != null ? tePkg.getQualifiedName().toString() : "";
-                                    String currentPkg = cut.getPackage() != null ? cut.getPackage().getPackageName().toString() : "";
-                                    boolean isImplicit = "java.lang".equals(pkgName) || currentPkg.equals(pkgName);
-
-                                    // Pass 2 FQN Rewrite check:
-                                    // A type is eligible to be rewritten from its full FQN (e.g. java.util.List) to its simple name (List)
-                                    // if it is implicitly available (java.lang or same package) or if an explicit 'import' statement 
-                                    // for that exact FQN is already present in the compilation unit's import header (cut.getImports()).
-                                    boolean isImported = false;
-                                    if (isImplicit) {
-                                        isImported = true;
-                                    } else {
-                                        String targetFqn = outerType != null ? outerType.getQualifiedName().toString() : fqn;
-                                        for (ImportTree imp : cut.getImports()) {
-                                            String impStr = imp.getQualifiedIdentifier().toString();
-                                            if (impStr.equals(targetFqn)) {
-                                                isImported = true;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    if (!originalTakenSimpleNames.contains(simpleName) || isImported) {
-                                        String replacementName;
-                                        if (outerType != null) {
-                                            String pkg = wcSub.getElements().getPackageOf(outerType).getQualifiedName().toString();
-                                            if (pkg.isEmpty()) {
-                                                replacementName = fqn;
-                                            } else {
-                                                replacementName = fqn.substring(pkg.length() + 1);
-                                            }
-                                        } else {
-                                            replacementName = te.getSimpleName().toString();
-                                        }
-                                        wcSub.rewrite(node, make.Identifier(replacementName));
-                                    }
-                                }
-                            }
-                        }
-                        return super.visitMemberSelect(node, wcSub);
-                    }
-                }.scan(new TreePath(cut), wc);
-            }).commit();
-        }
-
-        String rawOutput = new String(tempFo.asBytes(), "UTF-8");
-        return rawOutput.replaceAll("@\\s+([A-Z][a-zA-Z0-9_]*)", "@$1");
+        return new String(tempFo.asBytes(), StandardCharsets.UTF_8);
     }
 
 
