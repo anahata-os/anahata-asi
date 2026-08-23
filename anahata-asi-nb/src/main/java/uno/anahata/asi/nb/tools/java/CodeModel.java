@@ -20,6 +20,7 @@ import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.SourceUtils;
 import org.netbeans.spi.java.classpath.support.ClassPathSupport;
 import org.openide.filesystems.FileObject;
+import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.tool.Page;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
 import uno.anahata.asi.agi.tool.AgiToolException;
@@ -32,27 +33,84 @@ import uno.anahata.asi.agi.tool.ToolPermission;
 /**
  * Provides tools for interacting with the Java code model in NetBeans. This
  * includes finding types, getting members, and retrieving source code.
+ * <p>
+ * Scope: CodeModel operates exclusively against NetBeans
+ * {@code GlobalClasspathInfo}, which indexes only currently <b>OPEN</b>
+ * projects, their dependencies, and the platform JDK.
+ * </p>
  */
 @Slf4j
-@AgiToolkit("A toolkit for browsing types, members, sources and javadocs.")
+@AgiToolkit("Explores Java types, members, sources, and javadocs across all currently open projects using NetBeans GlobalClasspathInfo.")
 public class CodeModel extends AnahataToolkit {
 
     /**
      * {@inheritDoc}
      * <p>
-     * Provides context-aware instructions for the CodeModel toolkit, detailing
-     * the usage of one-shot FQN methods versus discovery-based searches.</p>
+     * Provides context-aware instructions for the CodeModel toolkit, explaining
+     * the GlobalClasspathInfo scope and canonical identification standard
+     * without repeating individual tool definitions.
+     * </p>
      */
     @Override
     public List<String> getSystemInstructions() throws Exception {
         String instructions = JavaSourceUtils.CANONICAL_FQN_STANDARD + "\n"
-                + "CodeModel Toolkit Instructions:\n" 
-                + "- **One Shot Methods (`loadXxxxByFqn` or `getXxxxByFqn`)**: If you already know or can work out the FQN of a type or member, use these methods to skip discovery.\n" 
-                + "- **Disambiguation**: If a `xxxxByFqn` method fails, use `findTypes` or `getMembers` to get the explicit high-precision FQN.\n"
-                + "- **Hierarchy**: Use `getSubtypes` and `getSupertypes` to explore inheritance.\n";
+                + "CodeModel Toolkit Scope & Rules:\n"
+                + "- **GlobalClasspathInfo Scope**: CodeModel operates exclusively on NetBeans `GlobalClasspathInfo` (the combined SOURCE, COMPILE, and BOOT classpaths of all currently OPEN projects).\n"
+                + "- **Open Project Requirement**: If a project is NOT open in the IDE, its types, sources, and members cannot be resolved by CodeModel. The project must be opened first.\n"
+                + "- **Exact Canonical FQN**: All member lookups require the exact Anahata Canonical FQN format (e.g., `package.Class.method(paramType)` or `package.Class.<init>()`).\n";
         return Collections.singletonList(instructions);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Populates the RAG message with live statistics of the NetBeans
+     * GlobalClasspathInfo (open projects roots and indexed types).
+     * </p>
+     *
+     * @param ragMessage The outgoing RAG message for the turn.
+     * @throws java.lang.Exception if an error occurs populating the message.
+     */
+    @Override
+    public void populateMessage(RagMessage ragMessage) throws Exception {
+        super.populateMessage(ragMessage);
+
+        Set<ClassPath> sourcePaths = GlobalPathRegistry.getDefault().getPaths(ClassPath.SOURCE);
+        Set<ClassPath> compilePaths = GlobalPathRegistry.getDefault().getPaths(ClassPath.COMPILE);
+        Set<ClassPath> bootPaths = GlobalPathRegistry.getDefault().getPaths(ClassPath.BOOT);
+
+        int srcRoots = sourcePaths.stream().mapToInt(cp -> cp.entries().size()).sum();
+        int compileRoots = compilePaths.stream().mapToInt(cp -> cp.entries().size()).sum();
+        int bootRoots = bootPaths.stream().mapToInt(cp -> cp.entries().size()).sum();
+
+        ClasspathInfo cpInfo = getGlobalClasspathInfo();
+        int totalTypes = 0;
+        int sourceTypes = 0;
+        try {
+            Set<ElementHandle<TypeElement>> declaredTypes = cpInfo.getClassIndex().getDeclaredTypes(
+                    "", ClassIndex.NameKind.PREFIX, EnumSet.allOf(ClassIndex.SearchScope.class));
+            totalTypes = declaredTypes.size();
+            Set<ElementHandle<TypeElement>> srcTypes = cpInfo.getClassIndex().getDeclaredTypes(
+                    "", ClassIndex.NameKind.PREFIX, Collections.singleton(ClassIndex.SearchScope.SOURCE));
+            sourceTypes = srcTypes.size();
+        } catch (Exception e) {
+            log.debug("Error computing ClassIndex type counts", e);
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n## CodeModel Scope & Index Context (GlobalClasspathInfo)\n");
+        sb.append("- **Scope Boundary**: CodeModel queries `GlobalClasspathInfo`, which strictly covers **OPEN** projects, their dependencies, and the platform JDK. Closed projects are not indexed.\n");
+        sb.append("- **Global ClassPath Roots**: ");
+        sb.append("SOURCE: ").append(sourcePaths.size()).append(" ClassPaths (").append(srcRoots).append(" roots) | ");
+        sb.append("COMPILE: ").append(compilePaths.size()).append(" ClassPaths (").append(compileRoots).append(" roots) | ");
+        sb.append("BOOT: ").append(bootPaths.size()).append(" ClassPaths (").append(bootRoots).append(" roots)\n");
+        sb.append("- **Indexed Types**: ");
+        sb.append("Total: ").append(totalTypes).append(" | ");
+        sb.append("Source: ").append(sourceTypes).append(" | ");
+        sb.append("Dependencies/JDK: ").append(totalTypes - sourceTypes).append("\n");
+
+        ragMessage.addTextPart(sb.toString());
+    }
     /**
      * Finds multiple Java types matching a query and returns a paginated result
      * of minimalist, machine-readable keys.
