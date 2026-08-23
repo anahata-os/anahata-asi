@@ -18,8 +18,47 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  build-core:
+    name: Build & Deploy Core JARs & Parent POM
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25 & Maven
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+          server-id: sonatype-central
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Deploy Core Platform & Application JARs to Central
+        env:
+          MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          echo "[INFO] Building and deploying all core JAR modules and parent POM (excluding NBMs)..."
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "[INFO] Release tag detected. Deploying core JARs to Sonatype Central Release portal..."
+            mvn deploy -DskipTests -P release -pl !:anahata-asi-nb -ntp
+          else
+            echo "[INFO] Main branch detected. Deploying core snapshot JARs to Sonatype Snapshot repository..."
+            mvn deploy -DskipTests -pl !:anahata-asi-nb -ntp \
+              -DaltSnapshotDeploymentRepository=sonatype-central::https://central.sonatype.com/repository/maven-snapshots/
+          fi
+
   build-nbm:
     name: Build & Publish NBM (${{ matrix.nb_target }})
+    needs: [build-core]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -64,13 +103,14 @@ jobs:
           echo "[INFO] Stamping NBM module version to: $STAMPED_VER on runner..."
           mvn versions:set -DnewVersion=$STAMPED_VER -DgenerateBackupPoms=false -pl :anahata-asi-nb -ntp
 
-          echo "[INFO] Building and deploying NBM ($STAMPED_VER) against NetBeans API: RELEASE${{ matrix.nb_target }}..."
+          echo "[INFO] Compiling local dependencies for NetBeans API RELEASE${{ matrix.nb_target }}..."
+          mvn clean install -DskipTests -pl :anahata-asi-nb -am -ntp -Dnetbeans.version=RELEASE${{ matrix.nb_target }}
+
+          echo "[INFO] Deploying ONLY the stamped NBM module ($STAMPED_VER) to Central..."
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            echo "[INFO] Tag trigger with release version detected. Deploying NBM to Sonatype Central Release portal..."
-            mvn deploy -DskipTests -P release -pl :anahata-asi-nb -am -ntp -Dnetbeans.version=RELEASE${{ matrix.nb_target }}
+            mvn deploy -DskipTests -P release -pl :anahata-asi-nb -ntp -Dnetbeans.version=RELEASE${{ matrix.nb_target }}
           else
-            echo "[INFO] Branch trigger with SNAPSHOT version detected. Deploying to Sonatype Snapshot repository..."
-            mvn deploy -DskipTests -pl :anahata-asi-nb -am -ntp -Dnetbeans.version=RELEASE${{ matrix.nb_target }} \
+            mvn deploy -DskipTests -pl :anahata-asi-nb -ntp -Dnetbeans.version=RELEASE${{ matrix.nb_target }} \
               -DaltSnapshotDeploymentRepository=sonatype-central::https://central.sonatype.com/repository/maven-snapshots/
           fi
 
@@ -208,7 +248,7 @@ jobs:
 
   release:
     name: Create & Publish Unified Release
-    needs: [build-nbm, build-desktop, build-intellij]
+    needs: [build-core, build-nbm, build-desktop, build-intellij]
     if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
@@ -255,7 +295,7 @@ jobs:
 
   deploy-website:
     name: Deploy Website, Javadocs & Update Centers
-    needs: [build-nbm, release]
+    needs: [build-core, build-nbm, release]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -366,14 +406,14 @@ jobs:
           versions.sort(reverse=True)
           li_html = ""
           for v in versions:
-              badge = " <span class=\"badge\">Latest</span>" if "SNAPSHOT" in v else ""
-              li_html += f"            <li class=\"version-item\"><a href=\"{v}/apidocs/index.html\" class=\"version-link\">{v}{badge}</a></li>\n"
+            badge = " <span class=\"badge\">Latest</span>" if "SNAPSHOT" in v else ""
+            li_html += f"            <li class=\"version-item\"><a href=\"{v}/apidocs/index.html\" class=\"version-link\">{v}{badge}</a></li>\n"
           index_path = os.path.join(apidocs_dir, "index.html")
           with open(index_path, "r") as f:
-              html = f.read()
+            html = f.read()
           new_html = re.sub(r"<ul class=\"version-list\">.*?</ul>", f"<ul class=\"version-list\">\n{li_html}        </ul>", html, flags=re.DOTALL)
           with open(index_path, "w") as f:
-              f.write(new_html)
+            f.write(new_html)
           '
 
       - name: Persist New Javadocs & Update Catalogs back to gh-pages
