@@ -783,18 +783,6 @@
                 <configuration>
                     <updatePomFile>true</updatePomFile>
                     <flattenMode>oss</flattenMode>
-                    <pomElements>
-                        <name>resolve</name>
-                        <description>resolve</description>
-                        <url>resolve</url>
-                        <organization>resolve</organization>
-                        <licenses>resolve</licenses>
-                        <developers>resolve</developers>
-                        <scm>resolve</scm>
-                        <issueManagement>resolve</issueManagement>
-                        <dependencies>resolve</dependencies>
-                        <repositories>remove</repositories>
-                    </pomElements>
                 </configuration>
                 <executions>
                     <execution>
