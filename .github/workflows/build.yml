@@ -14,7 +14,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "build-and-deploy"
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
