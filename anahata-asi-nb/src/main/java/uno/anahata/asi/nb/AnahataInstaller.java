@@ -7,7 +7,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
@@ -17,12 +16,12 @@ import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
 import org.openide.modules.ModuleInstall;
-import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.tool.schema.SchemaProvider;
 import uno.anahata.asi.nb.ui.resources.NbResourceUI;
+import uno.anahata.asi.nb.util.AnahataUpdateCenterUtils;
 import uno.anahata.asi.nb.util.ElementHandleModule;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
 import uno.anahata.asi.swing.internal.SwingUtils;
@@ -84,13 +83,19 @@ public class AnahataInstaller extends ModuleInstall {
     }
 
     /**
-     * {@inheritDoc} Performs module initialization and sets up global listeners
-     * for UI updates.
+     * {@inheritDoc}
+     * <p>
+     * Performs module initialization, auto-registers the official Anahata
+     * Update Center, and sets up global listeners for UI updates.
+     * </p>
      */
     @Override
     public void restored() {
         logLifecycle("AnahataInstaller.restored() ENTER");
         log.info("Anahata ASI NetBeans Module Restored");
+
+        // Auto-register the official Anahata Update Center if not present
+        AnahataUpdateCenterUtils.registerDefaultUpdateCenter();
 
         // Register the NetBeans-native resource UI strategy
         ResourceUiRegistry.getInstance().setResourceUI(new NbResourceUI());
@@ -122,7 +127,6 @@ public class AnahataInstaller extends ModuleInstall {
         System.clearProperty("anahata.nbmreload.pending");
 
         logLifecycle("AnahataInstaller.restored() EXIT");
-
     }
 
     /**

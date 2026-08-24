@@ -1,11 +1,12 @@
 /* Shared Navigation Component for Anahata ASI Web */
 document.addEventListener('DOMContentLoaded', () => {
     const navPlaceholder = document.getElementById('main-nav');
-    if (!navPlaceholder) return;
+    if (!navPlaceholder)
+        return;
 
     const currentPath = window.location.pathname;
     const isIndex = currentPath.endsWith('index.html') || currentPath.endsWith('/');
-    
+
     // Detection logic
     const activeFile = currentPath.split('/').pop();
     const isActive = (file) => activeFile === file;
@@ -111,7 +112,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return href.startsWith('#') ? document.querySelector(href) : null;
         }).filter(s => s !== null);
 
-        if (sidebarLinks.length === 0 || sections.length === 0) return;
+        if (sidebarLinks.length === 0 || sections.length === 0)
+            return;
 
         const observerOptions = {
             root: null,
@@ -146,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Carousel Logic for desktop.html
     if (isActive('desktop.html') || isActive('nb.html')) {
         let slideIndex = 1;
-        
+
         window.plusSlides = (n) => {
             showSlides(slideIndex += n);
         };
@@ -158,15 +160,20 @@ document.addEventListener('DOMContentLoaded', () => {
         function showSlides(n) {
             let i;
             let slides = document.getElementsByClassName("carousel-slide");
-            if (slides.length === 0) return;
-            if (n > slides.length) {slideIndex = 1}    
-            if (n < 1) {slideIndex = slides.length}
-            for (i = 0; i < slides.length; i++) {
-                slides[i].style.display = "none";  
+            if (slides.length === 0)
+                return;
+            if (n > slides.length) {
+                slideIndex = 1
             }
-            slides[slideIndex-1].style.display = "block";  
+            if (n < 1) {
+                slideIndex = slides.length
+            }
+            for (i = 0; i < slides.length; i++) {
+                slides[i].style.display = "none";
+            }
+            slides[slideIndex - 1].style.display = "block";
         }
-        
+
         showSlides(slideIndex);
         // Auto play
         setInterval(() => {
@@ -194,11 +201,11 @@ document.addEventListener('DOMContentLoaded', () => {
             container.innerHTML = '';
             const isVideo = media.tagName.toLowerCase() === 'video';
             const clone = media.cloneNode(true);
-            
+
             clone.classList.remove('clickable-media');
             clone.classList.add('modal-content');
             clone.removeAttribute('style');
-            
+
             if (isVideo) {
                 clone.controls = true;
                 clone.autoplay = true;
@@ -238,7 +245,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const nbSnapshotBtn = document.getElementById('nb-dl-snapshot');
         const nbSnapshotVer = document.getElementById('nb-snapshot-ver');
 
-        if (!winSnapBtn && !macSnapBtn && !linSnapBtn && !winStableBtn && !macStableBtn && !linStableBtn && !nbStableBtn && !nbSnapshotBtn) return;
+        // IntelliJ elements
+        const intellijStableBtn = document.getElementById('intellij-dl-stable');
+        const intellijStableVer = document.getElementById('intellij-stable-ver');
+        const intellijSnapshotBtn = document.getElementById('intellij-dl-snapshot');
+        const intellijSnapshotVer = document.getElementById('intellij-snapshot-ver');
+
+        if (!winSnapBtn && !macSnapBtn && !linSnapBtn && !winStableBtn && !macStableBtn && !linStableBtn && !nbStableBtn && !nbSnapshotBtn && !intellijStableBtn && !intellijSnapshotBtn)
+            return;
 
         try {
             // 1. Fetch latest snapshot release directly
@@ -247,36 +261,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 const latestRelease = await snapResponse.json();
                 if (latestRelease && latestRelease.assets) {
                     const assets = latestRelease.assets;
-                    
+
                     const winAsset = assets.find(asset => asset.name.endsWith('-windows.zip'));
                     const macAsset = assets.find(asset => asset.name.endsWith('-macos.zip'));
                     const linAsset = assets.find(asset => asset.name.endsWith('-linux.tar.gz'));
                     const nbmAsset = assets.find(asset => asset.name.endsWith('.nbm'));
+                    const intellijAsset = assets.find(asset => (asset.name.includes('anahata-asi-intellij') || asset.name.includes('uno-anahata-asi-intellij')) && asset.name.endsWith('.zip'));
 
                     if (winAsset && winSnapBtn) {
                         winSnapBtn.href = winAsset.browser_download_url;
                         const sizeMb = Math.round(winAsset.size / (1024 * 1024));
                         const sizeSpan = winSnapBtn.querySelector('span');
-                        if (sizeSpan) sizeSpan.textContent = `.zip (Portable) • ${sizeMb} MB`;
+                        if (sizeSpan)
+                            sizeSpan.textContent = `.zip (Portable) • ${sizeMb} MB`;
                     }
                     if (macAsset && macSnapBtn) {
                         macSnapBtn.href = macAsset.browser_download_url;
                         const sizeMb = Math.round(macAsset.size / (1024 * 1024));
                         const sizeSpan = macSnapBtn.querySelector('span');
-                        if (sizeSpan) sizeSpan.textContent = `.zip (App Bundle) • ${sizeMb} MB`;
+                        if (sizeSpan)
+                            sizeSpan.textContent = `.zip (App Bundle) • ${sizeMb} MB`;
                     }
                     if (linAsset && linSnapBtn) {
                         linSnapBtn.href = linAsset.browser_download_url;
                         const sizeMb = Math.round(linAsset.size / (1024 * 1024));
                         const sizeSpan = linSnapBtn.querySelector('span');
-                        if (sizeSpan) sizeSpan.textContent = `.tar.gz (Binary) • ${sizeMb} MB`;
+                        if (sizeSpan)
+                            sizeSpan.textContent = `.tar.gz (Binary) • ${sizeMb} MB`;
                     }
 
                     // Extract the desktop snapshot version from filename dynamically
-                    let snapVersion = "1.1.0-SNAPSHOT";
+                    let snapVersion = "SNAPSHOT";
                     if (linAsset) {
                         const match = linAsset.name.match(/Anahata-ASI-Desktop-(.*?)-linux/);
-                        if (match) snapVersion = match[1];
+                        if (match)
+                            snapVersion = match[1];
                     }
 
                     if (deskSnapshotVer) {
@@ -287,9 +306,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (nbmAsset && nbSnapshotBtn) {
                         nbSnapshotBtn.href = nbmAsset.browser_download_url;
                         const match = nbmAsset.name.match(/(?:anahata-asi-nb|uno-anahata-asi-nb)-(.*?)\.nbm/);
-                        const verStr = match ? match[1] : "1.1.0-SNAPSHOT";
+                        const verStr = match ? match[1] : "SNAPSHOT";
                         if (nbSnapshotVer) {
                             nbSnapshotVer.textContent = verStr.startsWith("v") ? verStr : `v${verStr}`;
+                        }
+                    }
+
+                    // Dynamic IntelliJ snapshot resolver
+                    if (intellijAsset && intellijSnapshotBtn) {
+                        intellijSnapshotBtn.href = intellijAsset.browser_download_url;
+                        const match = intellijAsset.name.match(/(?:anahata-asi-intellij|uno-anahata-asi-intellij)-(.*?)\.zip/);
+                        const verStr = match ? match[1] : "SNAPSHOT";
+                        if (intellijSnapshotVer) {
+                            intellijSnapshotVer.textContent = verStr.startsWith("v") ? verStr : `v${verStr}`;
                         }
                     }
                 }
@@ -302,12 +331,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (stableRelease) {
                     const stableTag = stableRelease.tag_name || "v1.0.0";
                     const formattedTag = stableTag.startsWith("v") ? stableTag : `v${stableTag}`;
-                    
+
                     if (deskStableVer) {
                         deskStableVer.textContent = formattedTag;
                     }
                     if (nbStableVer) {
                         nbStableVer.textContent = formattedTag;
+                    }
+                    if (intellijStableVer) {
+                        intellijStableVer.textContent = formattedTag;
                     }
 
                     if (stableRelease.assets && stableRelease.assets.length > 0) {
@@ -316,27 +348,34 @@ document.addEventListener('DOMContentLoaded', () => {
                         const macStableAsset = stableAssets.find(a => a.name.endsWith('-macos.zip'));
                         const linStableAsset = stableAssets.find(a => a.name.endsWith('-linux.tar.gz'));
                         const nbmStableAsset = stableAssets.find(a => a.name.endsWith('.nbm'));
+                        const intellijStableAsset = stableAssets.find(a => (a.name.includes('anahata-asi-intellij') || a.name.includes('uno-anahata-asi-intellij')) && a.name.endsWith('.zip'));
 
                         if (winStableAsset && winStableBtn) {
                             winStableBtn.href = winStableAsset.browser_download_url;
                             const sizeMb = Math.round(winStableAsset.size / (1024 * 1024));
                             const sizeSpan = winStableBtn.querySelector('span');
-                            if (sizeSpan) sizeSpan.textContent = `.zip (Portable) • ${sizeMb} MB`;
+                            if (sizeSpan)
+                                sizeSpan.textContent = `.zip (Portable) • ${sizeMb} MB`;
                         }
                         if (macStableAsset && macStableBtn) {
                             macStableBtn.href = macStableAsset.browser_download_url;
                             const sizeMb = Math.round(macStableAsset.size / (1024 * 1024));
                             const sizeSpan = macStableBtn.querySelector('span');
-                            if (sizeSpan) sizeSpan.textContent = `.zip (App Bundle) • ${sizeMb} MB`;
+                            if (sizeSpan)
+                                sizeSpan.textContent = `.zip (App Bundle) • ${sizeMb} MB`;
                         }
                         if (linStableAsset && linStableBtn) {
                             linStableBtn.href = linStableAsset.browser_download_url;
                             const sizeMb = Math.round(linStableAsset.size / (1024 * 1024));
                             const sizeSpan = linStableBtn.querySelector('span');
-                            if (sizeSpan) sizeSpan.textContent = `.tar.gz (Binary) • ${sizeMb} MB`;
+                            if (sizeSpan)
+                                sizeSpan.textContent = `.tar.gz (Binary) • ${sizeMb} MB`;
                         }
                         if (nbmStableAsset && nbStableBtn) {
                             nbStableBtn.href = nbmStableAsset.browser_download_url;
+                        }
+                        if (intellijStableAsset && intellijStableBtn) {
+                            intellijStableBtn.href = intellijStableAsset.browser_download_url;
                         }
                     }
                 }
@@ -351,9 +390,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* --- Dynamic Live Support Chat Injection (Anahata ASI) --- */
-(function() {
-    var s1 = document.createElement("script"), 
-        s0 = document.getElementsByTagName("script")[0];
+(function () {
+    var s1 = document.createElement("script"),
+            s0 = document.getElementsByTagName("script")[0];
     s1.async = true;
     // Dynamic tawk.to live support chat widget for anahata.uno
     s1.src = 'https://embed.tawk.to/6a218f67b974371c3124fc61/1jq9hgbb2';

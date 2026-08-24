@@ -19,6 +19,7 @@ import org.openide.loaders.DataObject;
 import org.openide.util.ContextAwareAction;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.Lookups;
+import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.resource.handle.PathHandle;
 import uno.anahata.asi.agi.resource.view.TextView;
@@ -32,6 +33,7 @@ import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.nb.module.NetBeansModuleUtils;
+import uno.anahata.asi.nb.util.AnahataUpdateCenterUtils;
 
 /**
  * Provides tools for interacting with the NetBeans IDE. This includes managing
@@ -92,6 +94,47 @@ public class IDE extends AnahataToolkit {
                 + "The resources toolkit does not import fqns automatically, if you are using findAndReplaceInTextResource the Resources toolkit to code java, add the necessary imports with another replacement on that same tool call."
                 + "The 'Open Editor Files' context provider from the Editor's toolkit or the TopComponents context provider will tell you what files are open in the id and/ whether they have unsaved changes or not. "
                 + "If you need to get the unsaved contents, use the java tool");
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Augments the workspace context with real-time NetBeans plugin and update center status.
+     * </p>
+     *
+     * @param ragMessage The augmented workspace context message.
+     * @throws Exception if context population fails.
+     */
+    @Override
+    public void populateMessage(RagMessage ragMessage) throws Exception {
+        String updateStatusMarkdown = AnahataUpdateCenterUtils.getPluginUpdateStatusMarkdown();
+        if (updateStatusMarkdown != null && !updateStatusMarkdown.isEmpty()) {
+            ragMessage.addTextPart(updateStatusMarkdown);
+        }
+    }
+
+    /**
+     * Checks if updates are available for the Anahata ASI Studio NetBeans plugin.
+     *
+     * @param forceRefresh Whether to force a network refresh of the update catalogs from remote servers.
+     * @return A detailed summary of installed version, update center status, and available updates.
+     * @throws Exception if update checking fails.
+     */
+    @AgiTool("Checks if updates are available for the Anahata ASI Studio NetBeans plugin.")
+    public String checkForUpdates(
+            @AgiToolParam("Whether to force a network refresh of the update catalogs from remote servers.") Boolean forceRefresh) throws Exception {
+        return AnahataUpdateCenterUtils.checkForUpdates(Boolean.TRUE.equals(forceRefresh));
+    }
+
+    /**
+     * Downloads, validates, and installs the latest available update for the Anahata ASI Studio NetBeans plugin.
+     *
+     * @return A status message describing the outcome of the upgrade process.
+     * @throws Exception if the upgrade process fails.
+     */
+    @AgiTool("Downloads, validates, and installs the latest available update for the Anahata ASI Studio NetBeans plugin.")
+    public String upgradePlugin() throws Exception {
+        return AnahataUpdateCenterUtils.performPluginUpdate();
     }
 
     /**

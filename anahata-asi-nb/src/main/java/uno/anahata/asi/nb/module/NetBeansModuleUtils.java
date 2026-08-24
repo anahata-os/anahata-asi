@@ -12,10 +12,17 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.netbeans.api.autoupdate.OperationContainer;
+import org.netbeans.api.autoupdate.OperationSupport;
+import org.netbeans.api.autoupdate.UpdateElement;
+import org.netbeans.api.autoupdate.UpdateManager;
+import org.netbeans.api.autoupdate.UpdateUnit;
 import org.openide.modules.Dependency;
 import org.openide.modules.ModuleInfo;
 import org.openide.modules.Modules;
 import org.openide.util.Lookup;
+import uno.anahata.asi.agi.tool.AgiTool;
+import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.nb.AnahataInstaller;
 
 /**
@@ -192,6 +199,40 @@ public final class NetBeansModuleUtils {
             }
         }
         return null;
+    }
+    
+    /**
+     * Installs and activates the NetBeans JavaFX runtime support programmatically.
+     *
+     * @return The installation result status.
+     * @throws Exception if installation fails.
+     */
+    @AgiTool("Installs and activates the NetBeans JavaFX runtime support programmatically on demand.")
+    public static String installJavaFxSupport() throws Exception {
+        
+        UpdateUnit unit = UpdateManager.getDefault().getUpdateUnits(UpdateManager.TYPE.MODULE)
+                .stream()
+                .filter(u -> "org.netbeans.modules.javafx2.kit".equals(u.getCodeName()))
+                .findFirst()
+                .orElseThrow(() -> new AgiToolException("JavaFX 2 Support module (org.netbeans.modules.javafx2.kit) not found in NetBeans."));
+
+        UpdateElement installed = unit.getInstalled();
+        if (installed == null) {
+            throw new AgiToolException("JavaFX 2 Support is not installed on disk.");
+        }
+        if (installed.isEnabled()) {
+            return "JavaFX support is already active. Version: " + NetBeansModuleUtils.getJavaFxVersion();
+        }
+
+        OperationContainer<OperationSupport> container = OperationContainer.createForEnable();
+        OperationContainer.OperationInfo<OperationSupport> info = container.add(installed);
+        if (info != null) {
+            container.add(info.getRequiredElements());
+            OperationSupport support = container.getSupport();
+            support.doOperation(null);
+            return "JavaFX support successfully activated! Version: " + NetBeansModuleUtils.getJavaFxVersion();
+        }
+        return "Unable to enable JavaFX support.";
     }
 
     /**

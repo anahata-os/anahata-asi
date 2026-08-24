@@ -56,6 +56,12 @@ jobs:
               -DaltSnapshotDeploymentRepository=sonatype-central::https://central.sonatype.com/repository/maven-snapshots/
           fi
 
+      - name: Upload IntelliJ Plugin Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: intellij-plugin
+          path: anahata-asi-intellij/target/*.zip
+
   build-nbm:
     name: Build & Publish NBM (${{ matrix.nb_target }})
     needs: [build-core]
@@ -223,32 +229,9 @@ jobs:
             Anahata-ASI-Desktop-*.zip
             Anahata-ASI-Desktop-*.tar.gz
 
-  build-intellij:
-    name: Build IntelliJ Plugin
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 25
-        uses: actions/setup-java@v5
-        with:
-          java-version: '25'
-          distribution: 'temurin'
-          cache: 'maven'
-
-      - name: Build IntelliJ Plugin Distribution
-        run: mvn clean package -DskipTests -pl :anahata-asi-intellij -am -ntp
-
-      - name: Upload IntelliJ Plugin Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: intellij-plugin
-          path: anahata-asi-intellij/target/*.zip
-
   release:
     name: Create & Publish Unified Release
-    needs: [build-core, build-nbm, build-desktop, build-intellij]
+    needs: [build-core, build-nbm, build-desktop]
     if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
