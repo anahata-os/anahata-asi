@@ -471,7 +471,7 @@ jobs:
             if [ -d "$artifact_dir" ]; then
               TARGET="${artifact_dir##*artifact-}"
               if [ "$TARGET" == "uc" ]; then
-                CATALOG_DIR="_site/nb/uc"
+                CATALOG_DIR="_site/nb"
               else
                 MAJOR="${TARGET:0:2}"
                 CATALOG_DIR="_site/nb/${MAJOR}"

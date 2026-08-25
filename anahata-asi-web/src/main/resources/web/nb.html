@@ -144,10 +144,47 @@
             <!-- Row 2: Downloads & Official Update Centers Section -->
             <section id="update-centers" class="toolkit-section" style="margin-bottom: 3.5rem;">
                 <div class="toolkit-header"><i class="fas fa-cloud-download-alt"></i><h2>Downloads & Official Update Centers</h2></div>
-                <p>Select your Apache NetBeans IDE version and release channel to get your direct NBM download and matching Update Center URL. Subscribing your IDE gives you instant in-IDE upgrade notifications within 60 seconds of any new release.</p>
+                <p>Choose your preferred installation method: install the universal <b>Anahata ASI Update Center</b> plugin to manage updates directly inside NetBeans, or download standalone <b>Anahata ASI Studio</b> NBM binaries.</p>
                 
-                <!-- Dynamic Unified Output Card -->
-                <div class="nb-card" style="margin: 1.5rem 0 0; border-top-color: var(--barca-gold); padding: 1.8rem;">
+                <!-- Main Tab Navigation -->
+                <div style="display: flex; gap: 8px; margin-top: 1.5rem; margin-bottom: -1px; position: relative; z-index: 2;">
+                    <button type="button" id="tab-btn-uc" onclick="switchMainTab('uc')" style="background: rgba(237, 187, 0, 0.15); border: 1px solid var(--barca-gold); border-bottom: 1px solid rgba(237, 187, 0, 0.15); color: var(--barca-gold); padding: 10px 22px; border-radius: 8px 8px 0 0; font-weight: 800; font-size: 0.95rem; cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-star" style="color: var(--barca-gold);"></i> Anahata ASI Update Center <span class="badge" style="background: var(--barca-gold); color: black; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">RECOMMENDED</span>
+                    </button>
+                    <button type="button" id="tab-btn-studio" onclick="switchMainTab('studio')" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-bottom: 1px solid rgba(255, 255, 255, 0.08); color: var(--text-muted); padding: 10px 22px; border-radius: 8px 8px 0 0; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-cubes"></i> Anahata ASI Studio (Standalone NBMs)
+                    </button>
+                </div>
+
+                <!-- Tab 1: Anahata ASI Update Center (Default) -->
+                <div id="tab-pane-uc" class="nb-card" style="margin-top: 0; border-top: 2px solid var(--barca-gold); border-radius: 0 8px 8px 8px; padding: 1.8rem;">
+                    <p style="margin-top: 0; margin-bottom: 1.5rem; color: var(--text-main); font-size: 0.95rem; line-height: 1.5;">
+                        <i class="fas fa-info-circle" style="color: var(--barca-gold); margin-right: 6px;"></i>
+                        The universal 1-click installer and update manager. Works across <b>all Apache NetBeans versions</b> (NB 28, 29, 30, 31, 32+) with zero impl dependencies. Adds <code>Window &rarr; Anahata ASI Update Center</code> to inspect, toggle, and install official Anahata update channels right from your IDE.
+                    </p>
+
+                    <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                        <!-- Line 1: Update Center Catalog URL (TOP) -->
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 1.2rem;">
+                            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.6rem; font-weight: 600;"><i class="fas fa-link" style="color: var(--primary-light); margin-right: 6px;"></i> Update Center Catalog URL:</div>
+                            <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                                <code id="uc-catalog-url" style="font-size: 0.9rem; color: var(--primary-light); overflow-x: auto; white-space: nowrap;">https://asi.anahata.uno/nb/updates.xml</code>
+                                <button onclick="navigator.clipboard.writeText(document.getElementById('uc-catalog-url').textContent); this.innerHTML='<i class=\'fas fa-check\'></i>'; setTimeout(() => this.innerHTML='<i class=\'fas fa-copy\'></i>', 2000);" style="background: none; border: none; color: var(--barca-gold); cursor: pointer; font-size: 1.1rem; padding: 4px 6px;" title="Copy Catalog URL"><i class="fas fa-copy"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- Line 2: Download NBM from Central (BOTTOM) -->
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 1.2rem;">
+                            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.6rem; font-weight: 600;"><i class="fas fa-file-download" style="color: var(--barca-gold); margin-right: 6px;"></i> Direct NBM Binary:</div>
+                            <a id="uc-dynamic-dl-btn" href="https://central.sonatype.com/artifact/uno.anahata/anahata-asi-nb-uc" target="_blank" class="btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; width: 100%; padding: 12px 20px;">
+                                <i class="fas fa-download"></i> <span id="uc-dynamic-dl-text">Download Update Center NBM</span> <span id="uc-dynamic-dl-badge" class="badge" style="background: var(--barca-gold); color: black; font-weight: 800; padding: 2px 7px; border-radius: 4px; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;"><i class="fas fa-feather-alt"></i> Maven Central</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Anahata ASI Studio (Matrix Selector) -->
+                <div id="tab-pane-studio" class="nb-card" style="display: none; margin-top: 0; border-top: 2px solid var(--primary-light); border-radius: 0 8px 8px 8px; padding: 1.8rem;">
                     <!-- Sleek Top Controls Bar inside the card -->
                     <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1.2rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
                         <!-- Left: IDE Version Toggle Buttons -->
@@ -163,29 +200,66 @@
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; align-items: center;">
-                        <!-- 1. Download NBM -->
+                    <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                        <!-- Line 1: Update Center URL (TOP) -->
                         <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 1.2rem;">
-                            <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.6rem; font-weight: 600;"><i class="fas fa-file-download" style="color: var(--barca-gold); margin-right: 6px;"></i> Direct NBM Binary:</div>
-                            <a id="dynamic-dl-btn" href="https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb/1.1.4.300/anahata-asi-nb-1.1.4.300.nbm" target="_blank" class="btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; width: 100%; padding: 12px 20px;">
-                                <i class="fas fa-download"></i> <span id="dynamic-dl-text">Download Stable NBM v1.1.4.300</span> <span id="dynamic-dl-badge" class="badge" style="background: var(--barca-gold); color: black; font-weight: 800; padding: 2px 7px; border-radius: 4px; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;"><i class="fas fa-feather-alt"></i> Maven Central</span>
-                            </a>
-                        </div>
-
-                        <!-- 2. Update Center URL -->
-                        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 1.2rem;">
-                            <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.6rem; font-weight: 600;"><i class="fas fa-link" style="color: var(--primary-light); margin-right: 6px;"></i> Update Center Catalog URL:</div>
-                            <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                                <code id="dynamic-uc-url" style="font-size: 0.85rem; color: var(--primary-light); overflow-x: auto; white-space: nowrap;">https://asi.anahata.uno/nb/30/updates.xml</code>
+                            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.6rem; font-weight: 600;"><i class="fas fa-link" style="color: var(--primary-light); margin-right: 6px;"></i> Update Center Catalog URL:</div>
+                            <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                                <code id="dynamic-uc-url" style="font-size: 0.9rem; color: var(--primary-light); overflow-x: auto; white-space: nowrap;">https://asi.anahata.uno/nb/30/updates.xml</code>
                                 <button onclick="navigator.clipboard.writeText(document.getElementById('dynamic-uc-url').textContent); this.innerHTML='<i class=\'fas fa-check\'></i>'; setTimeout(() => this.innerHTML='<i class=\'fas fa-copy\'></i>', 2000);" style="background: none; border: none; color: var(--barca-gold); cursor: pointer; font-size: 1.1rem; padding: 4px 6px;" title="Copy Catalog URL"><i class="fas fa-copy"></i></button>
                             </div>
+                        </div>
+
+                        <!-- Line 2: Download NBM (BOTTOM) -->
+                        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 1.2rem;">
+                            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.6rem; font-weight: 600;"><i class="fas fa-file-download" style="color: var(--barca-gold); margin-right: 6px;"></i> Direct NBM Binary:</div>
+                            <a id="dynamic-dl-btn" href="https://central.sonatype.com/artifact/uno.anahata/anahata-asi-nb" target="_blank" class="btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; width: 100%; padding: 12px 20px;">
+                                <i class="fas fa-download"></i> <span id="dynamic-dl-text">Download Stable NBM</span> <span id="dynamic-dl-badge" class="badge" style="background: var(--barca-gold); color: black; font-weight: 800; padding: 2px 7px; border-radius: 4px; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;"><i class="fas fa-feather-alt"></i> Maven Central</span>
+                            </a>
                         </div>
                     </div>
                 </div>
 
                 <script>
+                    let currentMainTab = 'uc';
                     let currentNbVer = '30';
                     let currentChannel = 'stable';
+
+                    function switchMainTab(tab) {
+                        currentMainTab = tab;
+                        const btnUc = document.getElementById('tab-btn-uc');
+                        const btnStudio = document.getElementById('tab-btn-studio');
+                        const paneUc = document.getElementById('tab-pane-uc');
+                        const paneStudio = document.getElementById('tab-pane-studio');
+
+                        if (tab === 'uc') {
+                            btnUc.style.background = 'rgba(237, 187, 0, 0.15)';
+                            btnUc.style.borderColor = 'var(--barca-gold)';
+                            btnUc.style.color = 'var(--barca-gold)';
+                            btnUc.style.fontWeight = '800';
+
+                            btnStudio.style.background = 'rgba(255, 255, 255, 0.03)';
+                            btnStudio.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                            btnStudio.style.color = 'var(--text-muted)';
+                            btnStudio.style.fontWeight = '600';
+
+                            paneUc.style.display = 'block';
+                            paneStudio.style.display = 'none';
+                        } else {
+                            btnStudio.style.background = 'rgba(79, 170, 255, 0.15)';
+                            btnStudio.style.borderColor = 'var(--primary-light)';
+                            btnStudio.style.color = 'var(--primary-light)';
+                            btnStudio.style.fontWeight = '800';
+
+                            btnUc.style.background = 'rgba(255, 255, 255, 0.03)';
+                            btnUc.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                            btnUc.style.color = 'var(--text-muted)';
+                            btnUc.style.fontWeight = '600';
+
+                            paneUc.style.display = 'none';
+                            paneStudio.style.display = 'block';
+                        }
+                    }
 
                     function selectNbVersion(ver) {
                         currentNbVer = ver;
@@ -220,7 +294,6 @@
                     function updateUcDisplay() {
                         const isStable = currentChannel === 'stable';
                         const targetSuffix = `${currentNbVer}0`;
-                        const apiName = `RELEASE${targetSuffix}`;
                         const ucFileName = isStable ? 'updates.xml' : 'dev-updates.xml';
                         const ucUrl = `https://asi.anahata.uno/nb/${currentNbVer}/${ucFileName}`;
 
@@ -230,18 +303,18 @@
                         const dlText = document.getElementById('dynamic-dl-text');
                         const dlBadge = document.getElementById('dynamic-dl-badge');
 
-                        const stableVerStr = window.nbNbmVersions?.stable?.[targetSuffix] || (window.latestNbStableVer ? `${window.latestNbStableVer}.${targetSuffix}` : `1.1.4.${targetSuffix}`);
+                        const stableVerStr = window.nbNbmVersions?.stable?.[targetSuffix] || (window.latestNbStableVer ? `${window.latestNbStableVer}.${targetSuffix}` : '');
                         const snapVerStr = window.nbNbmVersions?.snapshot?.[targetSuffix] || 'SNAPSHOT';
 
                         if (isStable) {
-                            dlBtn.href = window.nbNbmAssets?.stable?.[targetSuffix] || `https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb/${stableVerStr}/anahata-asi-nb-${stableVerStr}.nbm`;
-                            dlText.textContent = `Download Stable NBM v${stableVerStr}`;
+                            dlBtn.href = window.nbNbmAssets?.stable?.[targetSuffix] || (stableVerStr ? `https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb/${stableVerStr}/anahata-asi-nb-${stableVerStr}.nbm` : 'https://central.sonatype.com/artifact/uno.anahata/anahata-asi-nb');
+                            dlText.textContent = stableVerStr ? `Download Stable NBM v${stableVerStr}` : 'Download Stable NBM';
                             dlBadge.innerHTML = '<i class="fas fa-feather-alt"></i> Maven Central';
                             dlBadge.style.background = 'var(--barca-gold)';
                             dlBadge.style.color = 'black';
                         } else {
-                            dlBtn.href = window.nbNbmAssets?.snapshot?.[targetSuffix] || `https://github.com/anahata-os/anahata-asi/releases/download/latest-snapshot/anahata-asi-nb-${snapVerStr}.nbm`;
-                            dlText.textContent = `Download Snapshot NBM v${snapVerStr}`;
+                            dlBtn.href = window.nbNbmAssets?.snapshot?.[targetSuffix] || (snapVerStr !== 'SNAPSHOT' ? `https://github.com/anahata-os/anahata-asi/releases/download/latest-snapshot/anahata-asi-nb-${snapVerStr}.nbm` : 'https://github.com/anahata-os/anahata-asi/releases/tag/latest-snapshot');
+                            dlText.textContent = snapVerStr !== 'SNAPSHOT' ? `Download Snapshot NBM v${snapVerStr}` : 'Download Snapshot NBM';
                             dlBadge.innerHTML = '<i class="fab fa-github"></i> GitHub Releases';
                             dlBadge.style.background = 'var(--primary-light)';
                             dlBadge.style.color = 'white';

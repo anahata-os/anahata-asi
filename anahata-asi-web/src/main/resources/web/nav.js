@@ -392,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         if (stableRelease.assets && stableRelease.assets.length > 0) {
                             window.nbNbmVersions = window.nbNbmVersions || { stable: {}, snapshot: {} };
-                            const rawTag = (stableRelease.tag_name || "1.1.4").replace(/^v/, "");
+                            const rawTag = stableRelease.tag_name ? stableRelease.tag_name.replace(/^v/, "") : "";
                             window.latestNbStableVer = rawTag;
                             stableRelease.assets.forEach(asset => {
                                 if (asset.name.endsWith('.nbm')) {
@@ -407,6 +407,22 @@ document.addEventListener('DOMContentLoaded', () => {
                                     }
                                 }
                             });
+
+                            // Dynamically update the Update Center plugin download button
+                            const ucDlBtn = document.getElementById('uc-dynamic-dl-btn');
+                            const ucDlText = document.getElementById('uc-dynamic-dl-text');
+                            if (ucDlBtn && rawTag) {
+                                const ucAsset = stableRelease.assets.find(a => a.name.includes('anahata-asi-nb-uc') && a.name.endsWith('.nbm'));
+                                if (ucAsset) {
+                                    ucDlBtn.href = ucAsset.browser_download_url;
+                                    const ucMatch = ucAsset.name.match(/(?:anahata-asi-nb-uc|uno-anahata-asi-nb-uc)-(.*?)\.nbm/);
+                                    const ucVer = ucMatch ? ucMatch[1] : rawTag;
+                                    if (ucDlText) ucDlText.textContent = `Download Update Center NBM v${ucVer}`;
+                                } else {
+                                    ucDlBtn.href = `https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb-uc/${rawTag}/anahata-asi-nb-uc-${rawTag}.nbm`;
+                                    if (ucDlText) ucDlText.textContent = `Download Update Center NBM v${rawTag}`;
+                                }
+                            }
                         }
 
                         if (typeof updateUcDisplay === 'function') {
