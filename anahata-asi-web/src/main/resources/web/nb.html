@@ -132,10 +132,11 @@
         <main class="main-content">
             <h1 style="margin-bottom: 0.8rem;">Anahata <span style="color: var(--barca-gold)">ASI Studio - NetBeans</span></h1>
             
-            <!-- Row 1: Plugin Portal & Scarf Analytics & Product Hunt -->
+            <!-- Row 1: Plugin Portal & Maven Central & Scarf Analytics & Product Hunt -->
             <div style="margin-top: 1rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                <a href="https://plugins.netbeans.apache.org/catalogue/?id=135" class="btn-primary" target="_blank" style="text-decoration: none; font-weight: bold; height: 54px; display: inline-flex; align-items: center;"><i class="fas fa-external-link-alt" style="margin-right: 8px;"></i> See in Plugin Portal</a>
-                <a href="https://www.producthunt.com/products/anahata-asi-studio/launches/anahata-asi-studio?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-anahata-asi-studio" target="_blank" rel="noopener noreferrer"><img alt="Anahata ASI Studio - Enterprise Java Coding Assistant and Agent Development Kit | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1160474&amp;theme=light&amp;t=1787388405617" style="vertical-align: middle; border-radius: 8px;"></a>
+                <a href="https://central.sonatype.com/artifact/uno.anahata/anahata-asi-nb" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/maven-central/v/uno.anahata/anahata-asi-nb.svg?label=Maven%20Central&style=for-the-badge&logo=apache-maven&logoColor=white&color=004d98" alt="Maven Central" style="vertical-align: middle; height: 42px; border-radius: 6px;" /></a>
+                <a href="https://plugins.netbeans.apache.org/catalogue/?id=135" class="btn-primary" target="_blank" style="text-decoration: none; font-weight: bold; height: 42px; display: inline-flex; align-items: center; padding: 0 18px;"><i class="fas fa-external-link-alt" style="margin-right: 8px;"></i> Plugin Portal</a>
+                <a href="https://www.producthunt.com/products/anahata-asi-studio/launches/anahata-asi-studio?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-anahata-asi-studio" target="_blank" rel="noopener noreferrer"><img alt="Anahata ASI Studio | Product Hunt" height="42" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1160474&amp;theme=light&amp;t=1787388405617" style="vertical-align: middle; border-radius: 6px;"></a>
                 <a href="https://scarf.sh" target="_blank"><img src="https://api.scarf.sh/v2/packages/Anahata/38628ccf-4686-4402-a7d9-3c7194eeff36/downloads-badge" alt="Scarf Downloads" style="vertical-align: middle;" /></a>
                 <a href="https://scarf.sh" target="_blank"><img src="https://api.scarf.sh/v2/packages/Anahata/38628ccf-4686-4402-a7d9-3c7194eeff36/commercial-users-badge" alt="Scarf Commercial Users" style="vertical-align: middle;" /></a>
             </div>
@@ -145,50 +146,29 @@
                 <div class="toolkit-header"><i class="fas fa-cloud-download-alt"></i><h2>Downloads & Official Update Centers</h2></div>
                 <p>Select your Apache NetBeans IDE version and release channel to get your direct NBM download and matching Update Center URL. Subscribing your IDE gives you instant in-IDE upgrade notifications within 60 seconds of any new release.</p>
                 
-                <!-- Interactive Toggle Controls -->
-                <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0;">
-                    <div style="display: flex; flex-wrap: wrap; gap: 2rem; justify-content: space-between; align-items: center;">
-                        
-                        <!-- 1. IDE Version Selector -->
-                        <div>
-                            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--barca-gold); font-weight: 800; margin-bottom: 0.6rem;">
-                                <i class="fas fa-code-branch" style="margin-right: 6px;"></i> 1. NetBeans Version
-                            </div>
-                            <div style="display: flex; gap: 8px;">
-                                <button type="button" id="btn-nb-30" onclick="selectNbVersion('30')" style="background: rgba(237, 187, 0, 0.15); border: 1px solid var(--barca-gold); color: var(--barca-gold); padding: 8px 18px; border-radius: 6px; font-weight: 800; font-size: 0.9rem; cursor: pointer; transition: var(--transition);">NetBeans 30</button>
-                                <button type="button" id="btn-nb-31" onclick="selectNbVersion('31')" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: var(--text-muted); padding: 8px 18px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: var(--transition);">NetBeans 31</button>
-                            </div>
+                <!-- Dynamic Unified Output Card -->
+                <div class="nb-card" style="margin: 1.5rem 0 0; border-top-color: var(--barca-gold); padding: 1.8rem;">
+                    <!-- Sleek Top Controls Bar inside the card -->
+                    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1.2rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+                        <!-- Left: IDE Version Toggle Buttons -->
+                        <div style="display: flex; gap: 8px;">
+                            <button type="button" id="btn-nb-30" onclick="selectNbVersion('30')" style="background: rgba(237, 187, 0, 0.15); border: 1px solid var(--barca-gold); color: var(--barca-gold); padding: 8px 18px; border-radius: 6px; font-weight: 800; font-size: 0.9rem; cursor: pointer; transition: var(--transition);">NetBeans 30</button>
+                            <button type="button" id="btn-nb-31" onclick="selectNbVersion('31')" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: var(--text-muted); padding: 8px 18px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: var(--transition);">NetBeans 31</button>
                         </div>
 
-                        <!-- 2. Release Channel Selector -->
-                        <div>
-                            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--primary-light); font-weight: 800; margin-bottom: 0.6rem;">
-                                <i class="fas fa-satellite-dish" style="margin-right: 6px;"></i> 2. Release Channel
-                            </div>
-                            <div style="display: flex; gap: 8px;">
-                                <button type="button" id="btn-ch-stable" onclick="selectChannel('stable')" style="background: rgba(49, 151, 149, 0.2); border: 1px solid var(--primary-light); color: var(--white); padding: 8px 18px; border-radius: 6px; font-weight: 800; font-size: 0.9rem; cursor: pointer; transition: var(--transition);"><i class="fas fa-certificate" style="color: var(--barca-gold); margin-right: 6px;"></i> Official Stable</button>
-                                <button type="button" id="btn-ch-snapshot" onclick="selectChannel('snapshot')" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: var(--text-muted); padding: 8px 18px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: var(--transition);"><i class="fas fa-bolt" style="margin-right: 6px;"></i> Dev (Snapshots)</button>
-                            </div>
+                        <!-- Right: Release Channel Toggle Buttons -->
+                        <div style="display: flex; gap: 8px;">
+                            <button type="button" id="btn-ch-stable" onclick="selectChannel('stable')" style="background: rgba(49, 151, 149, 0.2); border: 1px solid var(--primary-light); color: var(--white); padding: 8px 18px; border-radius: 6px; font-weight: 800; font-size: 0.9rem; cursor: pointer; transition: var(--transition);"><i class="fas fa-certificate" style="color: var(--barca-gold); margin-right: 6px;"></i> Official Stable</button>
+                            <button type="button" id="btn-ch-snapshot" onclick="selectChannel('snapshot')" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: var(--text-muted); padding: 8px 18px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: var(--transition);"><i class="fas fa-bolt" style="margin-right: 6px;"></i> Dev (Snapshots)</button>
                         </div>
                     </div>
-                </div>
 
-                <!-- Dynamic Output Card -->
-                <div class="nb-card" style="margin: 0; border-top-color: var(--barca-gold); padding: 2rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 0.8rem;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <span id="card-tag-version" style="background: var(--barca-gold); color: black; font-weight: 800; font-size: 0.8rem; padding: 4px 10px; border-radius: 4px; text-transform: uppercase;">NetBeans 30 • Stable</span>
-                            <span id="card-tag-api" style="font-size: 0.85rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">RELEASE300</span>
-                        </div>
-                        <span id="card-tag-channel" style="font-size: 0.85rem; color: var(--primary-light); font-weight: 700;">Production GA Release</span>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; align-items: center; margin-top: 1rem;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; align-items: center;">
                         <!-- 1. Download NBM -->
                         <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 1.2rem;">
                             <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.6rem; font-weight: 600;"><i class="fas fa-file-download" style="color: var(--barca-gold); margin-right: 6px;"></i> Direct NBM Binary:</div>
-                            <a id="dynamic-dl-btn" href="https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb/" target="_blank" class="btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; width: 100%; padding: 12px 20px;">
-                                <i class="fas fa-download"></i> <span id="dynamic-dl-text">Browse Stable NBMs (RELEASE300)</span> <span id="dynamic-dl-badge" class="badge" style="background: var(--barca-gold); color: black; font-weight: 800; padding: 2px 6px; border-radius: 3px; font-size: 0.75rem;">Maven Central</span>
+                            <a id="dynamic-dl-btn" href="https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb/1.1.4.300/anahata-asi-nb-1.1.4.300.nbm" target="_blank" class="btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; width: 100%; padding: 12px 20px;">
+                                <i class="fas fa-download"></i> <span id="dynamic-dl-text">Download Stable NBM v1.1.4.300</span> <span id="dynamic-dl-badge" class="badge" style="background: var(--barca-gold); color: black; font-weight: 800; padding: 2px 7px; border-radius: 4px; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;"><i class="fas fa-feather-alt"></i> Maven Central</span>
                             </a>
                         </div>
 
@@ -241,15 +221,8 @@
                         const isStable = currentChannel === 'stable';
                         const targetSuffix = `${currentNbVer}0`;
                         const apiName = `RELEASE${targetSuffix}`;
-                        const chLabel = isStable ? 'Stable' : 'Dev (Snapshots)';
                         const ucFileName = isStable ? 'updates.xml' : 'dev-updates.xml';
                         const ucUrl = `https://asi.anahata.uno/nb/${currentNbVer}/${ucFileName}`;
-
-                        document.getElementById('card-tag-version').textContent = `NetBeans ${currentNbVer} • ${chLabel}`;
-                        document.getElementById('card-tag-version').style.background = isStable ? 'var(--barca-gold)' : 'var(--primary-light)';
-                        document.getElementById('card-tag-version').style.color = isStable ? 'black' : 'white';
-                        document.getElementById('card-tag-api').textContent = apiName;
-                        document.getElementById('card-tag-channel').textContent = isStable ? 'Production GA Release' : 'Continuous Daily Snapshot';
 
                         document.getElementById('dynamic-uc-url').textContent = ucUrl;
 
@@ -257,16 +230,19 @@
                         const dlText = document.getElementById('dynamic-dl-text');
                         const dlBadge = document.getElementById('dynamic-dl-badge');
 
+                        const stableVerStr = window.nbNbmVersions?.stable?.[targetSuffix] || (window.latestNbStableVer ? `${window.latestNbStableVer}.${targetSuffix}` : `1.1.4.${targetSuffix}`);
+                        const snapVerStr = window.nbNbmVersions?.snapshot?.[targetSuffix] || 'SNAPSHOT';
+
                         if (isStable) {
-                            dlBtn.href = 'https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb/';
-                            dlText.textContent = `Browse Stable NBMs (${apiName})`;
-                            dlBadge.textContent = 'Maven Central';
+                            dlBtn.href = window.nbNbmAssets?.stable?.[targetSuffix] || `https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb/${stableVerStr}/anahata-asi-nb-${stableVerStr}.nbm`;
+                            dlText.textContent = `Download Stable NBM v${stableVerStr}`;
+                            dlBadge.innerHTML = '<i class="fas fa-feather-alt"></i> Maven Central';
                             dlBadge.style.background = 'var(--barca-gold)';
                             dlBadge.style.color = 'black';
                         } else {
-                            dlBtn.href = `https://github.com/anahata-os/anahata-asi/releases/download/latest-snapshot/anahata-asi-nb-1.1.0.${targetSuffix}-SNAPSHOT.nbm`;
-                            dlText.textContent = `Download Latest Snapshot (${apiName})`;
-                            dlBadge.textContent = 'Direct Download';
+                            dlBtn.href = window.nbNbmAssets?.snapshot?.[targetSuffix] || `https://github.com/anahata-os/anahata-asi/releases/download/latest-snapshot/anahata-asi-nb-${snapVerStr}.nbm`;
+                            dlText.textContent = `Download Snapshot NBM v${snapVerStr}`;
+                            dlBadge.innerHTML = '<i class="fab fa-github"></i> GitHub Releases';
                             dlBadge.style.background = 'var(--primary-light)';
                             dlBadge.style.color = 'white';
                         }

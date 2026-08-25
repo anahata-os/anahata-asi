@@ -3,6 +3,7 @@ package uno.anahata.asi.nb.uc;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.Dimension;
@@ -66,6 +67,8 @@ public class AnahataUpdateCenterPanel extends JPanel {
     private final Map<UpdateCenterType, JLabel> statusTextLabels = new EnumMap<>(UpdateCenterType.class);
     private final Map<UpdateCenterType, JLabel> urlLabels = new EnumMap<>(UpdateCenterType.class);
     private final Map<UpdateCenterType, JButton> updateButtons = new EnumMap<>(UpdateCenterType.class);
+    private final Map<UpdateCenterType, JLabel> packageDetailsLabels = new EnumMap<>(UpdateCenterType.class);
+    private final Map<UpdateCenterType, JLabel> notificationLabels = new EnumMap<>(UpdateCenterType.class);
 
     /**
      * Anahata ASI Studio installed version label.
@@ -118,12 +121,13 @@ public class AnahataUpdateCenterPanel extends JPanel {
         JPanel contentPanel = new JPanel();
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
         contentPanel.setBorder(BorderFactory.createEmptyBorder(10, 14, 10, 14));
+        contentPanel.setOpaque(false);
 
-        // 1. Header Section with Logo on the Right and Title/Shields on the Left
+        // 1. Header Section with Logo on the Right and Title on the Left (Pinned in single compact row)
         contentPanel.add(buildHeaderPanel());
         contentPanel.add(Box.createVerticalStrut(8));
 
-        // 2. Host Environment Card
+        // 2. Host Environment Card (Studio left, NetBeans right)
         contentPanel.add(buildEnvironmentCard());
         contentPanel.add(Box.createVerticalStrut(8));
 
@@ -137,9 +141,15 @@ public class AnahataUpdateCenterPanel extends JPanel {
 
         // 5. Legacy Update Centers Card (Dynamic)
         pnlLegacyContainer.setLayout(new BoxLayout(pnlLegacyContainer, BoxLayout.Y_AXIS));
+        pnlLegacyContainer.setOpaque(false);
         contentPanel.add(pnlLegacyContainer);
 
-        JScrollPane scrollPane = new JScrollPane(contentPanel);
+        // Pinned Viewport Wrapper: Placing contentPanel in BorderLayout.NORTH prevents any vertical stretching!
+        JPanel viewportWrapper = new JPanel(new BorderLayout());
+        viewportWrapper.setOpaque(false);
+        viewportWrapper.add(contentPanel, BorderLayout.NORTH);
+
+        JScrollPane scrollPane = new JScrollPane(viewportWrapper);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         add(scrollPane, BorderLayout.CENTER);
@@ -149,62 +159,34 @@ public class AnahataUpdateCenterPanel extends JPanel {
     }
 
     /**
-     * Builds the branding header banner containing title, subtitle, and Maven Central shields
-     * aligned to the left, and the Anahata logo aligned to the right.
+     * Builds the branding header banner containing title and subtitle on the left,
+     * and the Anahata logo on the right, constrained to a compact single row.
      *
      * @return The header JPanel.
      */
     private JPanel buildHeaderPanel() {
         JPanel pnl = new JPanel(new BorderLayout(14, 0));
         pnl.setOpaque(false);
+        pnl.setMaximumSize(new Dimension(32767, 50));
 
-        // Left section: Title, Subtitle, and Shields
+        // Left section: Title and Subtitle
         JPanel leftPnl = new JPanel();
         leftPnl.setLayout(new BoxLayout(leftPnl, BoxLayout.Y_AXIS));
         leftPnl.setOpaque(false);
+        leftPnl.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel lblTitle = new JLabel("Anahata ASI Update Center");
         lblTitle.setFont(lblTitle.getFont().deriveFont(Font.BOLD, 17f));
+        lblTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
         leftPnl.add(lblTitle);
+        leftPnl.add(Box.createVerticalStrut(2));
 
         JLabel lblSubtitle = new JLabel("Cross-Version Update Management & Runtime Setup for Apache NetBeans");
         lblSubtitle.setFont(lblSubtitle.getFont().deriveFont(11.5f));
         lblSubtitle.setForeground(new Color(115, 115, 115));
+        lblSubtitle.setAlignmentX(Component.LEFT_ALIGNMENT);
         leftPnl.add(lblSubtitle);
-        leftPnl.add(Box.createVerticalStrut(4));
 
-        // Maven Central Shields (Update Center & ASI Studio)
-        JPanel badgesPnl = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        badgesPnl.setOpaque(false);
-
-        String major = AnahataUcUtils.getNetBeansMajorVersion();
-        String studioVerSuffix = major != null ? major + "0" : "300";
-
-        // Shield 1: Update Center NBM
-        JLabel lblUcShield = new JLabel(AnahataUcIcons.createShieldBadgeIcon("maven-central", "v1.1.4", AnahataUcIcons.COLOR_SHIELD_RIGHT_BLUE));
-        lblUcShield.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        lblUcShield.setToolTipText("Open Anahata ASI Update Center on Maven Central (Sonatype)");
-        lblUcShield.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                openUrlInBrowser(AnahataUcUtils.MAVEN_UC_URL);
-            }
-        });
-        badgesPnl.add(lblUcShield);
-
-        // Shield 2: ASI Studio NBM
-        JLabel lblStudioShield = new JLabel(AnahataUcIcons.createShieldBadgeIcon("maven-central", "v1.1.4." + studioVerSuffix, AnahataUcIcons.COLOR_SHIELD_RIGHT_BLUE));
-        lblStudioShield.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        lblStudioShield.setToolTipText("Open Anahata ASI Studio on Maven Central (Sonatype)");
-        lblStudioShield.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                openUrlInBrowser(AnahataUcUtils.MAVEN_STUDIO_URL);
-            }
-        });
-        badgesPnl.add(lblStudioShield);
-
-        leftPnl.add(badgesPnl);
         pnl.add(leftPnl, BorderLayout.CENTER);
 
         // Right section: Logo
@@ -213,8 +195,9 @@ public class AnahataUpdateCenterPanel extends JPanel {
             logoImg = ImageUtilities.loadImage("icons/anahata_32.png");
         }
         if (logoImg != null) {
-            Image scaled = logoImg.getScaledInstance(-1, 42, Image.SCALE_SMOOTH);
+            Image scaled = logoImg.getScaledInstance(-1, 38, Image.SCALE_SMOOTH);
             JLabel lblLogo = new JLabel(new ImageIcon(scaled));
+            lblLogo.setVerticalAlignment(javax.swing.SwingConstants.CENTER);
             pnl.add(lblLogo, BorderLayout.EAST);
         }
 
@@ -222,21 +205,31 @@ public class AnahataUpdateCenterPanel extends JPanel {
     }
 
     /**
-     * Builds the host environment info card.
+     * Builds two separate side-by-side bordered panels on the same row:
+     * - Left panel: "Anahata ASI Studio" (left-aligned version, implementation version, and build info).
+     * - Right panel: "NetBeans" (right-aligned product, Java runtime platform, major version, and JavaFX status).
      *
-     * @return The environment JPanel.
+     * @return The side-by-side JPanel container.
      */
     private JPanel buildEnvironmentCard() {
-        JPanel card = createCardPanel("Host IDE Environment");
-        card.setLayout(new BorderLayout(8, 6));
+        JPanel container = new JPanel(new java.awt.GridLayout(1, 2, 10, 0));
+        container.setOpaque(false);
 
-        lblEnvironment.setFont(lblEnvironment.getFont().deriveFont(Font.BOLD, 12.5f));
-        card.add(lblEnvironment, BorderLayout.WEST);
+        // 1. Left Card: Anahata ASI Studio (Left aligned)
+        JPanel studioCard = createCardPanel("Anahata ASI Studio");
+        studioCard.setLayout(new BorderLayout());
+        lblStudioInstalled.setFont(lblStudioInstalled.getFont().deriveFont(11.5f));
+        studioCard.add(lblStudioInstalled, BorderLayout.CENTER);
+        container.add(studioCard);
 
-        lblStudioInstalled.setFont(lblStudioInstalled.getFont().deriveFont(Font.BOLD, 12f));
-        card.add(lblStudioInstalled, BorderLayout.EAST);
+        // 2. Right Card: NetBeans (Right aligned)
+        JPanel netBeansCard = createCardPanel("NetBeans");
+        netBeansCard.setLayout(new BorderLayout());
+        lblEnvironment.setFont(lblEnvironment.getFont().deriveFont(11.5f));
+        netBeansCard.add(lblEnvironment, BorderLayout.CENTER);
+        container.add(netBeansCard);
 
-        return card;
+        return container;
     }
 
     /**
@@ -258,12 +251,11 @@ public class AnahataUpdateCenterPanel extends JPanel {
     }
 
     /**
-     * Builds a distinct, highly visible card for a single update center catalog.
-     * <p>
-     * - Row 1: [ Toggle Button ] Name [ ] Trust (Auto-update) [ 🚀 Update Available Button (if available) ]
-     * - Row 2: Status Dot + Status Text (Centered under button) | URL (Clickable Hyperlink)
-     * - Row 3: Description
-     * </p>
+     * Builds a distinct, highly visible card for a single update center catalog using a clean
+     * 3-column layout:
+     * - Column 1 (Left): Toggle button and centered Online/Offline status (vertically centered).
+     * - Column 2 (Middle): Name + Trust, Description, URL link, live Maven Central shield badge, and alerts.
+     * - Column 3 (Right): 1-Click Update action button with single-line Size & Released metadata (vertically centered).
      *
      * @param type The {@link UpdateCenterType}.
      * @return The configured JPanel card.
@@ -276,29 +268,60 @@ public class AnahataUpdateCenterPanel extends JPanel {
         };
 
         JPanel card = createCardPanel(title);
-        card.setLayout(new GridBagLayout());
+        card.setLayout(new BorderLayout(12, 0));
 
-        GridBagConstraints c = new GridBagConstraints();
-        c.fill = GridBagConstraints.HORIZONTAL;
-        c.insets = new Insets(3, 4, 3, 4);
+        // =========================================================================
+        // COLUMN 1: LEFT (Toggle Switch + Centered Status - Vertically Centered)
+        // =========================================================================
+        JPanel leftCol = new JPanel(new GridBagLayout());
+        leftCol.setPreferredSize(new Dimension(115, 60));
+        leftCol.setOpaque(false);
 
-        // Row 1: Toggle Button - Name - Trust Checkbox - Update Action Button
-        c.gridx = 0;
-        c.gridy = 0;
-        c.weightx = 0.0;
+        JPanel leftInner = new JPanel();
+        leftInner.setLayout(new BoxLayout(leftInner, BoxLayout.Y_AXIS));
+        leftInner.setOpaque(false);
+
         JToggleButton btnToggle = new JToggleButton("Checking...", AnahataUcIcons.createDisabledIcon());
         btnToggle.setPreferredSize(new Dimension(115, 27));
+        btnToggle.setMaximumSize(new Dimension(115, 27));
+        btnToggle.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnToggle.addActionListener(e -> onToggleCenter(type));
         toggleButtons.put(type, btnToggle);
-        card.add(btnToggle, c);
+        leftInner.add(btnToggle);
+        leftInner.add(Box.createVerticalStrut(4));
 
-        c.gridx = 1;
-        c.weightx = 1.0;
+        JLabel lblStatus = new JLabel("Checking...", javax.swing.SwingConstants.CENTER);
+        lblStatus.setFont(lblStatus.getFont().deriveFont(Font.BOLD, 11f));
+        lblStatus.setAlignmentX(Component.CENTER_ALIGNMENT);
+        statusTextLabels.put(type, lblStatus);
+        leftInner.add(lblStatus);
+
+        leftCol.add(leftInner);
+        card.add(leftCol, BorderLayout.WEST);
+
+        // =========================================================================
+        // COLUMN 2: MIDDLE (Name+Trust -> Description -> URL -> Maven Badge -> Notifications)
+        // =========================================================================
+        JPanel midCol = new JPanel();
+        midCol.setLayout(new BoxLayout(midCol, BoxLayout.Y_AXIS));
+        midCol.setOpaque(false);
+
+        // Row 1: Name (with Anahata icon) + Trust Checkbox
         JPanel topMiddlePnl = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         topMiddlePnl.setOpaque(false);
+        topMiddlePnl.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel lblName = new JLabel("<html><b>" + AnahataUcUtils.getUpdateCenterDisplayName(type) + "</b></html>");
         lblName.setFont(lblName.getFont().deriveFont(12.5f));
+        Image anahataIconImg = ImageUtilities.loadImage("icons/anahata_32.png");
+        if (anahataIconImg == null) {
+            anahataIconImg = ImageUtilities.loadImage("icons/anahata_16.png");
+        }
+        if (anahataIconImg != null) {
+            Image scaled = anahataIconImg.getScaledInstance(18, 18, Image.SCALE_SMOOTH);
+            lblName.setIcon(new ImageIcon(scaled));
+            lblName.setIconTextGap(6);
+        }
         topMiddlePnl.add(lblName);
 
         JCheckBox chkTrust = new JCheckBox("Trust (Auto-update)");
@@ -306,45 +329,24 @@ public class AnahataUpdateCenterPanel extends JPanel {
         chkTrust.addActionListener(e -> onToggleTrust(type));
         trustCheckBoxes.put(type, chkTrust);
         topMiddlePnl.add(chkTrust);
-        card.add(topMiddlePnl, c);
+        midCol.add(topMiddlePnl);
+        midCol.add(Box.createVerticalStrut(2));
 
-        c.gridx = 2;
-        c.weightx = 0.0;
-        JButton btnUpdate = new JButton("Update");
-        btnUpdate.setIcon(AnahataUcIcons.createUpdateActionIcon());
-        btnUpdate.setFont(btnUpdate.getFont().deriveFont(Font.BOLD, 12f));
-        btnUpdate.setPreferredSize(new Dimension(215, 27));
-        btnUpdate.setVisible(false);
-        btnUpdate.addActionListener(e -> onInstallOrUpdateFromProvider(type));
-        updateButtons.put(type, btnUpdate);
-        card.add(btnUpdate, c);
+        // Row 2: Description
+        JLabel lblDesc = new JLabel(AnahataUcUtils.getUpdateCenterDescription(type));
+        lblDesc.setFont(lblDesc.getFont().deriveFont(11f));
+        lblDesc.setForeground(new Color(110, 110, 110));
+        lblDesc.setAlignmentX(Component.LEFT_ALIGNMENT);
+        midCol.add(lblDesc);
+        midCol.add(Box.createVerticalStrut(2));
 
-        // Row 2: Status Dot + Online/Offline text (Centered directly under the toggle button)
-        c.gridx = 0;
-        c.gridy = 1;
-        c.weightx = 0.0;
-        JPanel statusPnl = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
-        statusPnl.setPreferredSize(new Dimension(115, 20));
-        statusPnl.setOpaque(false);
-
-        JLabel lblStatusDot = new JLabel(AnahataUcIcons.createStatusDotIcon(AnahataUcIcons.COLOR_CHECKING, AnahataUcIcons.COLOR_CHECKING_BORDER, 14));
-        statusDotLabels.put(type, lblStatusDot);
-        statusPnl.add(lblStatusDot);
-
-        JLabel lblStatusText = new JLabel("Checking...");
-        lblStatusText.setFont(lblStatusText.getFont().deriveFont(Font.BOLD, 11f));
-        statusTextLabels.put(type, lblStatusText);
-        statusPnl.add(lblStatusText);
-        card.add(statusPnl, c);
-
-        c.gridx = 1;
-        c.gridwidth = 2;
-        c.weightx = 1.0;
+        // Row 3: URL Link (Swapped below description)
         String urlStr = AnahataUcUtils.getUpdateCenterUrl(type);
         JLabel lblUrl = new JLabel("<html><font color='#2563eb'><u>" + urlStr + "</u></font></html>");
         lblUrl.setFont(lblUrl.getFont().deriveFont(11f));
         lblUrl.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         lblUrl.setToolTipText("Click to view catalog XML in browser: " + urlStr);
+        lblUrl.setAlignmentX(Component.LEFT_ALIGNMENT);
         lblUrl.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -352,19 +354,114 @@ public class AnahataUpdateCenterPanel extends JPanel {
             }
         });
         urlLabels.put(type, lblUrl);
-        card.add(lblUrl, c);
+        midCol.add(lblUrl);
 
-        // Row 3: Description
-        c.gridx = 1;
-        c.gridy = 2;
-        c.gridwidth = 2;
-        c.weightx = 1.0;
-        JLabel lblDesc = new JLabel(AnahataUcUtils.getUpdateCenterDescription(type));
-        lblDesc.setFont(lblDesc.getFont().deriveFont(11f));
-        lblDesc.setForeground(new Color(110, 110, 110));
-        card.add(lblDesc, c);
+        // Row 4: Live Maven Central Shield Badges (Universal and Stable only)
+        if (type == UpdateCenterType.UNIVERSAL) {
+            midCol.add(Box.createVerticalStrut(3));
+            midCol.add(createLiveMavenShieldRow("https://img.shields.io/maven-central/v/uno.anahata/anahata-asi-nb-uc.png", AnahataUcUtils.MAVEN_UC_URL));
+        } else if (type == UpdateCenterType.STABLE) {
+            midCol.add(Box.createVerticalStrut(3));
+            midCol.add(createLiveMavenShieldRow("https://img.shields.io/maven-central/v/uno.anahata/anahata-asi-nb.png", AnahataUcUtils.MAVEN_STUDIO_URL));
+        }
+
+        // Row 5: Notification / Release Alert Banner (if present)
+        JLabel lblNotif = new JLabel();
+        lblNotif.setFont(lblNotif.getFont().deriveFont(11f));
+        lblNotif.setAlignmentX(Component.LEFT_ALIGNMENT);
+        lblNotif.setVisible(false);
+        notificationLabels.put(type, lblNotif);
+        midCol.add(lblNotif);
+
+        card.add(midCol, BorderLayout.CENTER);
+
+        // =========================================================================
+        // COLUMN 3: RIGHT (Update Action Button + Single-line Size & Date - Vertically Centered)
+        // =========================================================================
+        JPanel rightCol = new JPanel(new GridBagLayout());
+        rightCol.setPreferredSize(new Dimension(245, 60));
+        rightCol.setOpaque(false);
+
+        JPanel rightInner = new JPanel();
+        rightInner.setLayout(new BoxLayout(rightInner, BoxLayout.Y_AXIS));
+        rightInner.setOpaque(false);
+
+        JButton btnUpdate = new JButton("Update");
+        btnUpdate.setIcon(AnahataUcIcons.createUpdateActionIcon());
+        btnUpdate.setFont(btnUpdate.getFont().deriveFont(Font.BOLD, 12f));
+        btnUpdate.setPreferredSize(new Dimension(240, 28));
+        btnUpdate.setMaximumSize(new Dimension(240, 28));
+        btnUpdate.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btnUpdate.setVisible(false);
+        btnUpdate.addActionListener(e -> onInstallOrUpdateFromProvider(type));
+        updateButtons.put(type, btnUpdate);
+        rightInner.add(btnUpdate);
+        rightInner.add(Box.createVerticalStrut(3));
+
+        JLabel lblPkgDetails = new JLabel();
+        lblPkgDetails.setFont(lblPkgDetails.getFont().deriveFont(10.5f));
+        lblPkgDetails.setForeground(new Color(100, 100, 100));
+        lblPkgDetails.setAlignmentX(Component.LEFT_ALIGNMENT);
+        lblPkgDetails.setVisible(false);
+        packageDetailsLabels.put(type, lblPkgDetails);
+        rightInner.add(lblPkgDetails);
+
+        rightCol.add(rightInner);
+        card.add(rightCol, BorderLayout.EAST);
 
         return card;
+    }
+
+    /**
+     * Creates a live Maven Central shield badge row with label prefix and asynchronous remote image fetch.
+     *
+     * @param badgeImageUrl The shields.io image URL.
+     * @param targetPortalUrl The Sonatype/Maven Central portal URL opened on click.
+     * @return The badge JPanel row.
+     */
+    private JPanel createLiveMavenShieldRow(String badgeImageUrl, String targetPortalUrl) {
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        row.setOpaque(false);
+        row.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel lblPrefix = new JLabel("Latest in Maven Central:");
+        lblPrefix.setFont(lblPrefix.getFont().deriveFont(Font.BOLD, 10.5f));
+        lblPrefix.setForeground(new Color(90, 90, 90));
+        row.add(lblPrefix);
+
+        JLabel lblBadge = new JLabel();
+        lblBadge.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        lblBadge.setToolTipText("Open artifact on Maven Central (Sonatype): " + targetPortalUrl);
+        lblBadge.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                openUrlInBrowser(targetPortalUrl);
+            }
+        });
+        row.add(lblBadge);
+
+        // Fetch live image asynchronously
+        new SwingWorker<ImageIcon, Void>() {
+            @Override
+            protected ImageIcon doInBackground() throws Exception {
+                return new ImageIcon(new URL(badgeImageUrl));
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    ImageIcon icon = get();
+                    if (icon != null && icon.getIconWidth() > 0) {
+                        lblBadge.setIcon(icon);
+                        row.revalidate();
+                        row.repaint();
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+        }.execute();
+
+        return row;
     }
 
     /**
@@ -463,7 +560,7 @@ public class AnahataUpdateCenterPanel extends JPanel {
                         0,
                         getFont().deriveFont(Font.BOLD, 12f)
                 ),
-                BorderFactory.createEmptyBorder(6, 10, 6, 10)
+                BorderFactory.createEmptyBorder(3, 8, 4, 8)
         ));
         return pnl;
     }
@@ -505,7 +602,10 @@ public class AnahataUpdateCenterPanel extends JPanel {
             private final Map<UpdateCenterType, String> connectivityMap = new EnumMap<>(UpdateCenterType.class);
             private final Map<UpdateCenterType, UpdateElement> providerUpdatesMap = new EnumMap<>(UpdateCenterType.class);
 
-            private String installedStudioVer;
+            private AnahataUcUtils.InstalledModuleDetails installedStudioDetails;
+            private AnahataUcUtils.InstalledModuleDetails installedUcDetails;
+            private String javaPlatformDesc;
+            private String javaFxFormattedStatus;
             private boolean isJdkFx;
             private boolean fxActive;
             private String fxVer;
@@ -518,6 +618,9 @@ public class AnahataUpdateCenterPanel extends JPanel {
                 if (productVersion == null) {
                     productVersion = "Apache NetBeans IDE " + (major != null ? major : "Unknown");
                 }
+
+                javaPlatformDesc = AnahataUcUtils.getJavaPlatformDescription();
+                javaFxFormattedStatus = AnahataUcUtils.getJavaFxFormattedStatus();
 
                 // Ensure all default update centers are registered
                 AnahataUcUtils.registerDefaultUpdateCenters();
@@ -542,7 +645,8 @@ public class AnahataUpdateCenterPanel extends JPanel {
                     }
                 }
 
-                installedStudioVer = AnahataUcUtils.getInstalledStudioVersion();
+                installedStudioDetails = AnahataUcUtils.getInstalledStudioDetails();
+                installedUcDetails = AnahataUcUtils.getInstalledUcDetails();
                 isJdkFx = AnahataUcUtils.isSystemJdkJavaFx();
                 fxActive = AnahataUcUtils.isJavaFxActive();
                 fxVer = AnahataUcUtils.getJavaFxVersion();
@@ -556,17 +660,39 @@ public class AnahataUpdateCenterPanel extends JPanel {
                 try {
                     get();
 
-                    // Update Environment Label
-                    lblEnvironment.setText(String.format("<html><b>%s</b> &nbsp;|&nbsp; Java: %s &nbsp;|&nbsp; Detected Major: <code>%s</code></html>",
-                            productVersion,
-                            System.getProperty("java.version"),
-                            major != null ? major : "unknown"));
-
-                    if (installedStudioVer != null) {
-                        lblStudioInstalled.setText("<html>Anahata ASI Studio: <font color='#16a34a'><b>v" + installedStudioVer + "</b></font></html>");
+                    // 1. Update Left Card: Anahata ASI Studio (Left-aligned 3 lines)
+                    if (installedStudioDetails != null) {
+                        StringBuilder sb = new StringBuilder("<html><div style='text-align: left; line-height: 1.35;'>");
+                        sb.append("<b>Status:</b> <font color='#16a34a'><b>v")
+                                .append(installedStudioDetails.specVersion() != null ? installedStudioDetails.specVersion() : "unknown")
+                                .append("</b></font><br/>");
+                        sb.append("<font color='#666666'>Implementation Version: </font>")
+                                .append(installedStudioDetails.implVersion() != null ? installedStudioDetails.implVersion() : "N/A")
+                                .append("<br/>");
+                        sb.append("<font color='#666666'>Build: </font>")
+                                .append(installedStudioDetails.buildVersion() != null ? installedStudioDetails.buildVersion() : "N/A");
+                        sb.append("</div></html>");
+                        lblStudioInstalled.setText(sb.toString());
                     } else {
-                        lblStudioInstalled.setText("<html>Anahata ASI Studio: <font color='#dc2626'><b>Not Installed</b></font></html>");
+                        lblStudioInstalled.setText("<html><div style='text-align: left; line-height: 1.35;'>"
+                                + "<b>Status:</b> <font color='#dc2626'><b>Not Installed</b></font><br/>"
+                                + "<font color='#666666'>Implementation Version: </font>N/A<br/>"
+                                + "<font color='#666666'>Build: </font>N/A</div></html>");
                     }
+
+                    // 2. Update Right Card: NetBeans (Left-aligned 4 lines)
+                    StringBuilder nbSb = new StringBuilder("<html><div style='text-align: left; line-height: 1.35;'>");
+                    nbSb.append("<b>Product:</b> ").append(productVersion).append("<br/>");
+                    nbSb.append("<b>Java:</b> ").append(javaPlatformDesc).append("<br/>");
+                    nbSb.append("<b>Detected Major:</b> <code>").append(major != null ? major : "unknown").append("</code><br/>");
+                    nbSb.append("<b>JavaFX:</b> ");
+                    if (javaFxFormattedStatus.contains("Not available")) {
+                        nbSb.append("<font color='#dc2626'>").append(javaFxFormattedStatus).append("</font>");
+                    } else {
+                        nbSb.append("<font color='#16a34a'><b>").append(javaFxFormattedStatus).append("</b></font>");
+                    }
+                    nbSb.append("</div></html>");
+                    lblEnvironment.setText(nbSb.toString());
 
                     // Update all 3 Update Centers
                     for (UpdateCenterType type : UpdateCenterType.values()) {
@@ -581,6 +707,8 @@ public class AnahataUpdateCenterPanel extends JPanel {
                         JLabel dot = statusDotLabels.get(type);
                         JLabel text = statusTextLabels.get(type);
                         JButton btnUpdate = updateButtons.get(type);
+                        JLabel lblPkg = packageDetailsLabels.get(type);
+                        JLabel lblNotif = notificationLabels.get(type);
 
                         if (btn != null) {
                             if (!reg) {
@@ -603,31 +731,65 @@ public class AnahataUpdateCenterPanel extends JPanel {
                             chk.setSelected(trusted);
                         }
 
-                        if (dot != null && text != null) {
+                        if (text != null) {
                             if ("Online".equalsIgnoreCase(conn)) {
-                                dot.setIcon(AnahataUcIcons.createStatusDotIcon(AnahataUcIcons.COLOR_ONLINE, AnahataUcIcons.COLOR_ONLINE_BORDER, 14));
-                                text.setText("<html><font color='#16a34a'>Online</font></html>");
+                                text.setText("<html><div style='text-align: center;'><font color='#16a34a'>● <b>Online</b></font></div></html>");
                             } else {
-                                dot.setIcon(AnahataUcIcons.createStatusDotIcon(AnahataUcIcons.COLOR_OFFLINE, AnahataUcIcons.COLOR_OFFLINE_BORDER, 14));
-                                text.setText("<html><font color='#dc2626'>" + conn + "</font></html>");
+                                String rawErr = conn.startsWith("Offline") ? conn.substring(7).trim() : conn;
+                                rawErr = rawErr.replaceAll("^[\\(\\[]+|[\\)\\]]+$", "").trim();
+                                text.setText("<html><div style='text-align: center;'><font color='#dc2626'>● <b>Offline</b></font><br/><font color='#888888'>" + rawErr + "</font></div></html>");
                             }
                         }
 
                         if (btnUpdate != null) {
                             if (updateElem != null) {
                                 String channelTag = type == UpdateCenterType.DEV ? " (Dev Snapshot)" : (type == UpdateCenterType.STABLE ? " (Stable GA)" : "");
-                                String actionText = installedStudioVer == null
+                                String actionText = (installedStudioDetails == null)
                                         ? "Install v" + updateElem.getSpecificationVersion() + channelTag
                                         : "Update to v" + updateElem.getSpecificationVersion() + channelTag;
                                 btnUpdate.setText(actionText);
                                 btnUpdate.putClientProperty("targetElement", updateElem);
-                                if (updateElem.getDate() != null) {
-                                    btnUpdate.setToolTipText("Catalog timestamp / build: " + updateElem.getDate());
-                                }
                                 btnUpdate.setVisible(true);
                                 btnUpdate.setEnabled(true);
+
+                                // Format package download size and release date on a single line directly under button
+                                String sizeStr = AnahataUcUtils.formatDownloadSize(updateElem.getDownloadSize());
+                                String dateStr = updateElem.getDate();
+                                StringBuilder pkgInfo = new StringBuilder("<html><div style='text-align: left; font-size: 10px;'>");
+                                if (sizeStr != null) {
+                                    pkgInfo.append("<font color='#666666'>Size:</font> <b>").append(sizeStr).append("</b>");
+                                }
+                                if (dateStr != null) {
+                                    if (sizeStr != null) {
+                                        pkgInfo.append("&nbsp;&nbsp;|&nbsp;&nbsp;");
+                                    }
+                                    pkgInfo.append("<font color='#666666'>Released:</font> <b>").append(dateStr).append("</b>");
+                                }
+                                pkgInfo.append("</div></html>");
+
+                                if (lblPkg != null) {
+                                    lblPkg.setText(pkgInfo.toString());
+                                    lblPkg.setVisible(true);
+                                }
+
+                                // Notification / Release Banner
+                                String notif = updateElem.getNotification();
+                                if (lblNotif != null) {
+                                    if (notif != null && !notif.trim().isEmpty()) {
+                                        lblNotif.setText("<html><font color='#b45309'><b>🔔 Announcement:</b> " + notif + "</font></html>");
+                                        lblNotif.setVisible(true);
+                                    } else {
+                                        lblNotif.setVisible(false);
+                                    }
+                                }
                             } else {
                                 btnUpdate.setVisible(false);
+                                if (lblPkg != null) {
+                                    lblPkg.setVisible(false);
+                                }
+                                if (lblNotif != null) {
+                                    lblNotif.setVisible(false);
+                                }
                             }
                         }
                     }

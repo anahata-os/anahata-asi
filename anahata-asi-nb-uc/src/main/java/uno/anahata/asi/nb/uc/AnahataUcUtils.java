@@ -430,6 +430,82 @@ public final class AnahataUcUtils {
     }
 
     /**
+     * DTO capturing detailed version metadata for an installed NetBeans module.
+     *
+     * @param specVersion The specification version (e.g. "1.1.2").
+     * @param implVersion The implementation version string (e.g. "1.1.2-20260824").
+     * @param buildVersion The build version string (e.g. "202608241014").
+     * @param enabled Whether the module is currently active/enabled.
+     */
+    public record InstalledModuleDetails(String specVersion, String implVersion, String buildVersion, boolean enabled) {
+        public String toFormattedString() {
+            StringBuilder sb = new StringBuilder("v").append(specVersion != null ? specVersion : "unknown");
+            if (implVersion != null || buildVersion != null) {
+                sb.append(" (");
+                if (implVersion != null) {
+                    sb.append("Impl: ").append(implVersion);
+                }
+                if (buildVersion != null) {
+                    if (implVersion != null) {
+                        sb.append(" | ");
+                    }
+                    sb.append("Build: ").append(buildVersion);
+                }
+                sb.append(")");
+            }
+            return sb.toString();
+        }
+    }
+
+    /**
+     * Retrieves detailed version metadata for the installed Anahata ASI Studio module.
+     *
+     * @return The {@link InstalledModuleDetails}, or {@code null} if not installed on disk.
+     */
+    public static InstalledModuleDetails getInstalledStudioDetails() {
+        ModuleInfo mi = org.openide.modules.Modules.getDefault().findCodeNameBase(STUDIO_CODE_NAME);
+        if (mi == null) {
+            return null;
+        }
+        String spec = mi.getSpecificationVersion() != null ? mi.getSpecificationVersion().toString() : null;
+        String impl = mi.getImplementationVersion();
+        String build = mi.getBuildVersion();
+        return new InstalledModuleDetails(spec, impl, build, mi.isEnabled());
+    }
+
+    /**
+     * Retrieves detailed version metadata for the standalone Anahata Update Center module itself.
+     *
+     * @return The {@link InstalledModuleDetails}, or {@code null} if not found.
+     */
+    public static InstalledModuleDetails getInstalledUcDetails() {
+        ModuleInfo mi = org.openide.modules.Modules.getDefault().findCodeNameBase(UC_CODE_NAME);
+        if (mi == null) {
+            return null;
+        }
+        String spec = mi.getSpecificationVersion() != null ? mi.getSpecificationVersion().toString() : null;
+        String impl = mi.getImplementationVersion();
+        String build = mi.getBuildVersion();
+        return new InstalledModuleDetails(spec, impl, build, mi.isEnabled());
+    }
+
+    /**
+     * Formats a byte size into a human-readable string (e.g. "137.0 MB" or "450 KB").
+     *
+     * @param bytes The size in bytes.
+     * @return The formatted string, or {@code null} if size is zero or unknown.
+     */
+    public static String formatDownloadSize(int bytes) {
+        if (bytes <= 0) {
+            return null;
+        }
+        if (bytes >= 1024 * 1024) {
+            return String.format(java.util.Locale.US, "%.1f MB", bytes / (1024.0 * 1024.0));
+        }
+        return String.format(java.util.Locale.US, "%,d KB", bytes / 1024);
+    }
+
+    /**
      * Gets the installed specification version of the Anahata ASI Studio plugin.
      *
      * @return The version string (e.g., "1.1.2"), or {@code null} if not installed.
@@ -564,22 +640,99 @@ public final class AnahataUcUtils {
     }
 
     /**
-     * Checks whether the host system JDK itself provides bundled JavaFX (e.g. Liberica Full JDK, Azul Zulu FX).
+     * Retrieves a comprehensive, human-readable description of the host Java runtime platform.
      *
-     * @return {@code true} if JavaFX classes are available directly on the system bootstrap/system classloader.
+     * @return The formatted Java platform string (e.g. "OpenJDK Runtime Environment 26.0.1 (Eclipse Adoptium)").
+     */
+    public static String getJavaPlatformDescription() {
+        String runtimeName = System.getProperty("java.runtime.name");
+        String javaVersion = System.getProperty("java.version");
+        String javaVendor = System.getProperty("java.vendor");
+
+        StringBuilder sb = new StringBuilder();
+        if (runtimeName != null && !runtimeName.isEmpty()) {
+            sb.append(runtimeName);
+        } else {
+            sb.append("Java");
+        }
+        if (javaVersion != null && !javaVersion.isEmpty()) {
+            sb.append(" ").append(javaVersion);
+        }
+        if (javaVendor != null && !javaVendor.isEmpty()) {
+            sb.append(" (").append(javaVendor).append(")");
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Resolves the formatted JavaFX status string for NetBeans environment display.
+     * <p>
+     * Returns "Version (JDK)" if provided by the host JVM, "Version (NB Module)" if provided
+     * by a NetBeans module, or "Not available" if absent.
+     * </p>
+     *
+     * @return The formatted JavaFX status string.
+     */
+    public static String getJavaFxFormattedStatus() {
+        if (isSystemJdkJavaFx()) {
+            String ver = getSystemJdkJavaFxVersion();
+            return (ver != null ? ver : "Active") + " (JDK)";
+        }
+
+        for (ModuleInfo mi : Lookup.getDefault().lookupAll(ModuleInfo.class)) {
+            if (mi.isEnabled()) {
+                for (String token : mi.getProvides()) {
+                    if ("org.openide.modules.jre.JavaFX".equals(token)) {
+                        String ver = null;
+                        if (mi.getClassLoader() != null) {
+                            try {
+                                Class<?> versionInfo = mi.getClassLoader().loadClass("com.sun.javafx.runtime.VersionInfo");
+                                ver = (String) versionInfo.getMethod("getVersion").invoke(null);
+                            } catch (Throwable ignored) {
+                            }
+                        }
+                        if (ver == null && mi.getSpecificationVersion() != null) {
+                            ver = mi.getSpecificationVersion().toString();
+                        }
+                        return (ver != null ? ver : "Active") + " (NB Module)";
+                    }
+                }
+            }
+        }
+        return "Not available";
+    }
+
+    /**
+     * Checks whether JavaFX is bundled directly in the host system JDK (e.g., Liberica Full JDK or Azul Zulu FX).
+     * <p>
+     * Because this module does not declare a module dependency on NetBeans' JavaFX module, standard
+     * {@code Class.forName("javafx.application.Platform")} will ONLY find JavaFX if it is provided
+     * by the underlying JDK.
+     * </p>
+     *
+     * @return {@code true} if JavaFX classes are available directly from the host JDK.
      */
     public static boolean isSystemJdkJavaFx() {
         try {
-            Class.forName("com.sun.javafx.runtime.VersionInfo");
+            Class.forName("javafx.application.Platform");
             return true;
-        } catch (Throwable t1) {
-            try {
-                Class.forName("javafx.application.Application");
-                return true;
-            } catch (Throwable ignored) {
-                return false;
-            }
+        } catch (Throwable ignored) {
+            return false;
         }
+    }
+
+    /**
+     * Resolves the version of JavaFX if bundled in the host JDK.
+     *
+     * @return The JavaFX version string, or {@code null} if not found.
+     */
+    private static String getSystemJdkJavaFxVersion() {
+        try {
+            Class<?> versionInfo = Class.forName("com.sun.javafx.runtime.VersionInfo");
+            return (String) versionInfo.getMethod("getVersion").invoke(null);
+        } catch (Throwable ignored) {
+        }
+        return System.getProperty("javafx.version");
     }
 
     /**

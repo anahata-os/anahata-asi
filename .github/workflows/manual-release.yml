@@ -4,15 +4,40 @@ on:
   workflow_dispatch:
     inputs:
       release_version:
-        description: 'Target Release Version (Leave empty to auto-strip -SNAPSHOT from POM, e.g. 1.1.0)'
+        description: 'Target Release Version (Leave empty to auto-strip -SNAPSHOT from POM, e.g. 1.1.5)'
         required: false
         default: ''
         type: string
       next_snapshot:
-        description: 'Next Snapshot Version (Leave empty to auto-increment patch, e.g. 1.1.1-SNAPSHOT)'
+        description: 'Next Snapshot Version (Leave empty to auto-increment patch, e.g. 1.1.6-SNAPSHOT)'
         required: false
         default: ''
         type: string
+      release_nb_300:
+        description: 'Release NetBeans 30 ASI Studio (Target 300 NBM)'
+        required: true
+        type: boolean
+        default: true
+      release_nb_310:
+        description: 'Release NetBeans 31 ASI Studio (Target 310 NBM)'
+        required: true
+        type: boolean
+        default: true
+      release_nb_uc:
+        description: 'Release NetBeans Update Center Plugin (anahata-asi-nb-uc)'
+        required: true
+        type: boolean
+        default: false
+      release_desktop:
+        description: 'Release ASI Desktop Installers (Win/Mac/Linux)'
+        required: true
+        type: boolean
+        default: true
+      release_intellij:
+        description: 'Release IntelliJ IDEA Plugin (.zip)'
+        required: true
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -105,5 +130,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "[INFO] Triggering master build.yml pipeline for release tag [v$RELEASE_VER]..."
-          gh workflow run build.yml --ref "v$RELEASE_VER"
+          gh workflow run build.yml --ref "v$RELEASE_VER" \
+            -f release_nb_300="${{ inputs.release_nb_300 }}" \
+            -f release_nb_310="${{ inputs.release_nb_310 }}" \
+            -f release_nb_uc="${{ inputs.release_nb_uc }}" \
+            -f release_desktop="${{ inputs.release_desktop }}" \
+            -f release_intellij="${{ inputs.release_intellij }}"
           echo "🚀 Master build pipeline successfully triggered on tag v$RELEASE_VER!"

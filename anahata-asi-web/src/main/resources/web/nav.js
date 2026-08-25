@@ -251,7 +251,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const intellijSnapshotBtn = document.getElementById('intellij-dl-snapshot');
         const intellijSnapshotVer = document.getElementById('intellij-snapshot-ver');
 
-        if (!winSnapBtn && !macSnapBtn && !linSnapBtn && !winStableBtn && !macStableBtn && !linStableBtn && !nbStableBtn && !nbSnapshotBtn && !intellijStableBtn && !intellijSnapshotBtn)
+        // Dynamic NBM interactive button on nb.html
+        const nbDynamicDlBtn = document.getElementById('dynamic-dl-btn');
+
+        if (!winSnapBtn && !macSnapBtn && !linSnapBtn && !winStableBtn && !macStableBtn && !linStableBtn && !nbStableBtn && !nbSnapshotBtn && !intellijStableBtn && !intellijSnapshotBtn && !nbDynamicDlBtn)
             return;
 
         try {
@@ -302,7 +305,23 @@ document.addEventListener('DOMContentLoaded', () => {
                         deskSnapshotVer.textContent = snapVersion.startsWith("v") ? snapVersion : `v${snapVersion}`;
                     }
 
-                    // Dynamic NBM snapshot resolver
+                    // Dynamic NBM snapshot resolver (split by target: 300 / 310)
+                    window.nbNbmAssets = window.nbNbmAssets || { stable: {}, snapshot: {} };
+                    window.nbNbmVersions = window.nbNbmVersions || { stable: {}, snapshot: {} };
+                    assets.forEach(asset => {
+                        if (asset.name.endsWith('.nbm')) {
+                            const match = asset.name.match(/(?:anahata-asi-nb|uno-anahata-asi-nb)-(.*?)\.nbm/);
+                            const verStr = match ? match[1] : "SNAPSHOT";
+                            if (asset.name.includes('300')) {
+                                window.nbNbmAssets.snapshot['300'] = asset.browser_download_url;
+                                window.nbNbmVersions.snapshot['300'] = verStr;
+                            } else if (asset.name.includes('310')) {
+                                window.nbNbmAssets.snapshot['310'] = asset.browser_download_url;
+                                window.nbNbmVersions.snapshot['310'] = verStr;
+                            }
+                        }
+                    });
+
                     if (nbmAsset && nbSnapshotBtn) {
                         nbSnapshotBtn.href = nbmAsset.browser_download_url;
                         const match = nbmAsset.name.match(/(?:anahata-asi-nb|uno-anahata-asi-nb)-(.*?)\.nbm/);
@@ -371,8 +390,27 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (sizeSpan)
                                 sizeSpan.textContent = `.tar.gz (Binary) • ${sizeMb} MB`;
                         }
-                        if (nbmStableAsset && nbStableBtn) {
-                            nbStableBtn.href = nbmStableAsset.browser_download_url;
+                        if (stableRelease.assets && stableRelease.assets.length > 0) {
+                            window.nbNbmVersions = window.nbNbmVersions || { stable: {}, snapshot: {} };
+                            const rawTag = (stableRelease.tag_name || "1.1.4").replace(/^v/, "");
+                            window.latestNbStableVer = rawTag;
+                            stableRelease.assets.forEach(asset => {
+                                if (asset.name.endsWith('.nbm')) {
+                                    const match = asset.name.match(/(?:anahata-asi-nb|uno-anahata-asi-nb)-(.*?)\.nbm/);
+                                    const verStr = match ? match[1] : rawTag;
+                                    if (asset.name.includes('300')) {
+                                        window.nbNbmAssets.stable['300'] = `https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb/${verStr}/anahata-asi-nb-${verStr}.nbm`;
+                                        window.nbNbmVersions.stable['300'] = verStr;
+                                    } else if (asset.name.includes('310')) {
+                                        window.nbNbmAssets.stable['310'] = `https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb/${verStr}/anahata-asi-nb-${verStr}.nbm`;
+                                        window.nbNbmVersions.stable['310'] = verStr;
+                                    }
+                                }
+                            });
+                        }
+
+                        if (typeof updateUcDisplay === 'function') {
+                            updateUcDisplay();
                         }
                         if (intellijStableAsset && intellijStableBtn) {
                             intellijStableBtn.href = intellijStableAsset.browser_download_url;

@@ -6,6 +6,32 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      release_nb_300:
+        description: 'Release NetBeans 30 ASI Studio (Target 300 NBM)'
+        required: false
+        type: boolean
+        default: true
+      release_nb_310:
+        description: 'Release NetBeans 31 ASI Studio (Target 310 NBM)'
+        required: false
+        type: boolean
+        default: true
+      release_nb_uc:
+        description: 'Release NetBeans Update Center Plugin (anahata-asi-nb-uc)'
+        required: false
+        type: boolean
+        default: false
+      release_desktop:
+        description: 'Release ASI Desktop Installers (Win/Mac/Linux)'
+        required: false
+        type: boolean
+        default: true
+      release_intellij:
+        description: 'Release IntelliJ IDEA Plugin (.zip)'
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -57,6 +83,7 @@ jobs:
           fi
 
       - name: Upload IntelliJ Plugin Artifact
+        if: github.event_name != 'workflow_dispatch' || inputs.release_intellij != false
         uses: actions/upload-artifact@v4
         with:
           name: intellij-plugin
@@ -68,16 +95,35 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        nb_target: ["300", "310"]
+        include:
+          - nb_target: "300"
+            flag_name: "release_nb_300"
+          - nb_target: "310"
+            flag_name: "release_nb_310"
     permissions:
       contents: write
       packages: write
 
     steps:
+      - name: Check if NetBeans ${{ matrix.nb_target }} is Enabled
+        id: check_enabled
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            ENABLED="${{ inputs[matrix.flag_name] }}"
+            if [ "$ENABLED" == "false" ]; then
+              echo "[INFO] Skipping NetBeans ${{ matrix.nb_target }} build (disabled in workflow_dispatch inputs)."
+              echo "skip=true" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          fi
+          echo "skip=false" >> $GITHUB_OUTPUT
+
       - name: Checkout Code
+        if: steps.check_enabled.outputs.skip != 'true'
         uses: actions/checkout@v4
 
       - name: Set up JDK 25 & Maven
+        if: steps.check_enabled.outputs.skip != 'true'
         uses: actions/setup-java@v5
         with:
           java-version: '25'
@@ -90,6 +136,7 @@ jobs:
           gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: Build & Deploy NBM
+        if: steps.check_enabled.outputs.skip != 'true'
         env:
           MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
@@ -134,6 +181,7 @@ jobs:
           fi
 
       - name: Upload NBM Artifact & Catalog
+        if: steps.check_enabled.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: nbm-artifact-${{ matrix.nb_target }}
@@ -141,8 +189,59 @@ jobs:
             anahata-asi-nb/target/*.nbm
             anahata-asi-nb/target/netbeans_site/updates.xml
 
+  build-nb-uc:
+    name: Build & Publish Update Center Plugin (anahata-asi-nb-uc)
+    needs: [build-core]
+    if: github.event_name != 'workflow_dispatch' || inputs.release_nb_uc == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25 & Maven
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+          server-id: sonatype-central
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Build & Deploy Update Center Plugin NBM
+        env:
+          MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "[INFO] Building and deploying anahata-asi-nb-uc ($VERSION)..."
+          
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            mvn deploy -DskipTests -P release -pl :anahata-asi-nb-uc -ntp
+            mvn nbm:autoupdate -pl :anahata-asi-nb-uc -Dnbm.distBase=https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb-uc/${VERSION} -ntp
+          else
+            mvn deploy -DskipTests -pl :anahata-asi-nb-uc -ntp \
+              -DaltSnapshotDeploymentRepository=sonatype-central::https://central.sonatype.com/repository/maven-snapshots/
+            mvn nbm:autoupdate -pl :anahata-asi-nb-uc -Dnbm.distBase=https://github.com/anahata-os/anahata-asi/releases/download/latest-snapshot -ntp
+          fi
+
+      - name: Upload Update Center NBM Artifact & Catalog
+        uses: actions/upload-artifact@v4
+        with:
+          name: nbm-artifact-uc
+          path: |
+            anahata-asi-nb-uc/target/*.nbm
+            anahata-asi-nb-uc/target/netbeans_site/updates.xml
+
   build-desktop:
     name: Build Desktop on ${{ matrix.os }}
+    if: github.event_name != 'workflow_dispatch' || inputs.release_desktop != false
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -220,6 +319,18 @@ jobs:
           else
             tar -czf "Anahata-ASI-Desktop-${{ env.VERSION }}-linux.tar.gz" -C dist "Anahata-ASI-Desktop"
           fi
+
+      # =========================================================================
+      # Ubuntu Snap Store / App Center Distribution (Placeholder)
+      # To be enabled once Canonical Snapcraft store credentials are configured.
+      # =========================================================================
+      # - name: Publish to Ubuntu Snap Store (Linux only)
+      #   if: matrix.os == 'ubuntu-latest' && (startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch')
+      #   uses: canonical/action-publish@v1
+      #   with:
+      #     store_token: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+      #     snap: anahata-asi-desktop_*.snap
+      #     channel: stable
 
       - name: Upload Desktop Artifact
         uses: actions/upload-artifact@v4
@@ -359,25 +470,26 @@ jobs:
           for artifact_dir in downloaded-nbm-artifacts/nbm-artifact-*; do
             if [ -d "$artifact_dir" ]; then
               TARGET="${artifact_dir##*artifact-}"
-              MAJOR="${TARGET:0:2}"
-              CATALOG_DIR="_site/nb/${MAJOR}"
+              if [ "$TARGET" == "uc" ]; then
+                CATALOG_DIR="_site/nb/uc"
+              else
+                MAJOR="${TARGET:0:2}"
+                CATALOG_DIR="_site/nb/${MAJOR}"
+              fi
               mkdir -p "$CATALOG_DIR"
 
               SOURCE_CATALOG=$(find "$artifact_dir" -name "updates.xml" | head -n 1)
-              if [ -z "$SOURCE_CATALOG" ] || [ ! -f "$SOURCE_CATALOG" ]; then
-                echo "[FATAL ERROR] updates.xml not found in $artifact_dir!"
-                exit 1
-              fi
+              if [ -n "$SOURCE_CATALOG" ] && [ -f "$SOURCE_CATALOG" ]; then
+                if [[ "${{ github.ref }}" == refs/tags/v* ]] || [ "$TARGET" == "uc" ]; then
+                  CATALOG_FILE="$CATALOG_DIR/updates.xml"
+                else
+                  CATALOG_FILE="$CATALOG_DIR/dev-updates.xml"
+                fi
 
-              if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-                CATALOG_FILE="$CATALOG_DIR/updates.xml"
-              else
-                CATALOG_FILE="$CATALOG_DIR/dev-updates.xml"
+                echo "[INFO] Copying catalog (Target: $TARGET) from $SOURCE_CATALOG to $CATALOG_FILE..."
+                cp "$SOURCE_CATALOG" "$CATALOG_FILE" || exit 1
+                gzip -9 -c "$CATALOG_FILE" > "${CATALOG_FILE}.gz" || true
               fi
-
-              echo "[INFO] Copying catalog for NetBeans $MAJOR (Target: $TARGET) from $SOURCE_CATALOG to $CATALOG_FILE..."
-              cp "$SOURCE_CATALOG" "$CATALOG_FILE" || exit 1
-              gzip -9 -c "$CATALOG_FILE" > "${CATALOG_FILE}.gz" || exit 1
             fi
           done
 
