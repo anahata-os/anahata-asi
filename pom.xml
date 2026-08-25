@@ -91,6 +91,7 @@
         <module>anahata-asi-swing</module>
         <module>anahata-asi-desktop</module>
         <module>anahata-asi-nb</module>
+        <module>anahata-asi-nb-uc</module>
         <module>anahata-asi-web</module>
         <!-- AI Providers -->
         <module>anahata-asi-gemini</module>        
