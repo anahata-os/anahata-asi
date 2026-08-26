@@ -75,10 +75,10 @@ jobs:
           echo "[INFO] Building and deploying all core JAR modules and parent POM (excluding NBMs)..."
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             echo "[INFO] Release tag detected. Deploying core JARs to Sonatype Central Release portal..."
-            mvn deploy -DskipTests -P release -pl !:anahata-asi-nb -ntp
+            mvn deploy -DskipTests -P release -pl !:anahata-asi-nb,!:anahata-asi-nb-uc -ntp
           else
             echo "[INFO] Main branch detected. Deploying core snapshot JARs to Sonatype Snapshot repository..."
-            mvn deploy -DskipTests -pl !:anahata-asi-nb -ntp \
+            mvn deploy -DskipTests -pl !:anahata-asi-nb,!:anahata-asi-nb-uc -ntp \
               -DaltSnapshotDeploymentRepository=sonatype-central::https://central.sonatype.com/repository/maven-snapshots/
           fi
 
@@ -222,6 +222,8 @@ jobs:
           VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "[INFO] Building and deploying anahata-asi-nb-uc ($VERSION)..."
           
+          mvn clean install -DskipTests -pl :anahata-asi-nb-uc -am -ntp
+
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             mvn deploy -DskipTests -P release -pl :anahata-asi-nb-uc -ntp
             mvn nbm:autoupdate -pl :anahata-asi-nb-uc -Dnbm.distBase=https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb-uc/${VERSION} -ntp

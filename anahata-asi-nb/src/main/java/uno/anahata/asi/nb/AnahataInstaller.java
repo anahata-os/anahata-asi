@@ -24,6 +24,7 @@ import uno.anahata.asi.nb.ui.resources.NbResourceUI;
 import uno.anahata.asi.nb.util.AnahataUpdateCenterUtils;
 import uno.anahata.asi.nb.util.ElementHandleModule;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
+import uno.anahata.asi.swing.internal.SwingTask;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
@@ -94,8 +95,23 @@ public class AnahataInstaller extends ModuleInstall {
         logLifecycle("AnahataInstaller.restored() ENTER");
         log.info("Anahata ASI NetBeans Module Restored");
 
-        // Auto-register the official Anahata Update Center if not present
-        AnahataUpdateCenterUtils.registerDefaultUpdateCenter();
+        // Auto-register and bootstrap Anahata Update Centers asynchronously using container-scoped SwingTask
+        SwingTask<Void> bootstrapTask = new SwingTask<>(
+                getContainer(),
+                "Bootstrap Anahata Update Centers",
+                () -> {
+                    try {
+                        Thread.sleep(3000); // Allow NetBeans initial UI and window restoration to settle first
+                    } catch (InterruptedException ignored) {
+                    }
+                    AnahataUpdateCenterUtils.bootstrap();
+                    return null;
+                },
+                null,
+                ex -> log.log(Level.WARNING, "Failed to bootstrap Anahata Update Centers on startup", ex),
+                false
+        );
+        bootstrapTask.start();
 
         // Register the NetBeans-native resource UI strategy
         ResourceUiRegistry.getInstance().setResourceUI(new NbResourceUI());

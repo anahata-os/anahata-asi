@@ -17,6 +17,7 @@ import org.netbeans.api.autoupdate.UpdateManager;
 import org.netbeans.api.autoupdate.UpdateUnit;
 import org.netbeans.api.autoupdate.UpdateUnitProvider;
 import org.netbeans.api.autoupdate.UpdateUnitProviderFactory;
+import org.openide.modules.Modules;
 import org.openide.modules.Places;
 import uno.anahata.asi.agi.tool.AgiToolException;
 
@@ -41,6 +42,11 @@ public final class AnahataUpdateCenterUtils {
     private static final Logger LOG = Logger.getLogger(AnahataUpdateCenterUtils.class.getName());
 
     /**
+     * Unique internal provider code name for the universal cross-version update center.
+     */
+    public static final String PROVIDER_CODENAME_UNIVERSAL = "anahata-asi-uc-universal";
+
+    /**
      * Unique internal provider code name for the official stable update center.
      */
     public static final String PROVIDER_CODENAME = "anahata-asi-update-center";
@@ -49,6 +55,11 @@ public final class AnahataUpdateCenterUtils {
      * Unique internal provider code name for the development snapshot update center.
      */
     public static final String PROVIDER_CODENAME_DEV = "anahata-asi-dev-update-center";
+
+    /**
+     * Universal update center catalog URL.
+     */
+    public static final String UNIVERSAL_UPDATE_URL = "https://asi.anahata.uno/nb/updates.xml";
 
     /**
      * Resource path on classpath for the Anahata 16x16 icon displayed in the Plugins manager.
@@ -69,6 +80,11 @@ public final class AnahataUpdateCenterUtils {
      * Code name base for the core NetBeans plugin module.
      */
     public static final String STUDIO_CODE_NAME = "uno.anahata.asi.nb";
+
+    /**
+     * Code name base for the standalone update center plugin module.
+     */
+    public static final String UC_CODE_NAME = "uno.anahata.asi.nb.uc";
 
     /**
      * Private constructor to prevent direct instantiation of static utility class.
@@ -141,52 +157,111 @@ public final class AnahataUpdateCenterUtils {
     }
 
     /**
-     * Registers both Stable and Dev Snapshot Update Centers in the IDE if not already registered.
+     * Registers all standard Anahata Update Centers (Universal, Stable, and Dev Snapshot) in the IDE if not already registered.
      * <p>
-     * - The Stable Update Center is enabled by default upon initial registration. If the user subsequently
-     *   disables it, its enabled status will not be overridden.
+     * - The Universal Update Center is enabled by default upon initial registration.
+     * - The Stable Update Center is enabled by default upon initial registration.
      * - The Dev Snapshot Update Center is registered in a disabled state by default.
+     * - If the user has already installed/disabled any of these centers, their enabled state is strictly preserved.
      * </p>
      */
     public static void registerDefaultUpdateCenter() {
         try {
-            String major = getNetBeansMajorVersion();
-            if (major == null) {
-                LOG.log(Level.INFO, "Could not determine NetBeans major version (e.g. custom RCP application). Skipping Update Center auto-registration.");
-                return;
-            }
-
             UpdateUnitProviderFactory factory = UpdateUnitProviderFactory.getDefault();
             List<UpdateUnitProvider> providers = factory.getUpdateUnitProviders(false);
 
-            // 1. Stable Update Center
+            // 1. Universal Update Center (Cross-version for update center module)
+            URL universalUrl = new URL(UNIVERSAL_UPDATE_URL);
+            String universalDisplayName = "Anahata ASI Update Center";
+            UpdateUnitProvider existingUniversal = findProviderByCodeName(providers, PROVIDER_CODENAME_UNIVERSAL);
+            if (existingUniversal == null) {
+                existingUniversal = findProvider(providers, PROVIDER_CODENAME_UNIVERSAL, UNIVERSAL_UPDATE_URL);
+            }
+
+            if (existingUniversal == null) {
+                LOG.log(Level.INFO, "Auto-registering Anahata ASI Universal Update Center: {0} -> {1}", new Object[]{universalDisplayName, UNIVERSAL_UPDATE_URL});
+                UpdateUnitProvider createdUniversal = factory.create(PROVIDER_CODENAME_UNIVERSAL, universalDisplayName, universalUrl, ICON_BASE, CATEGORY_DISPLAY_NAME);
+                createdUniversal.setEnable(true);
+                LOG.log(Level.INFO, "Successfully registered and enabled Anahata Universal Update Center [{0}]", createdUniversal.getName());
+            }
+
+            // 2. Generation-specific Stable & Dev Update Centers
+            String major = getNetBeansMajorVersion();
+            if (major == null) {
+                LOG.log(Level.INFO, "Could not determine NetBeans major version (e.g. custom RCP application). Skipping versioned Update Centers auto-registration.");
+                return;
+            }
+
+            // Stable Update Center
             String stableUrlStr = getStableUpdateUrl(major);
             URL stableUrl = new URL(stableUrlStr);
             String stableDisplayName = "Anahata ASI (NB " + major + ") - Stable";
-            UpdateUnitProvider existingStable = findProvider(providers, PROVIDER_CODENAME, stableUrlStr);
+            UpdateUnitProvider existingStable = findProviderByCodeName(providers, PROVIDER_CODENAME);
+
+            if (existingStable == null) {
+                existingStable = findProvider(providers, PROVIDER_CODENAME, stableUrlStr);
+            }
 
             if (existingStable == null) {
                 LOG.log(Level.INFO, "Auto-registering Anahata ASI Stable Update Center: {0} -> {1}", new Object[]{stableDisplayName, stableUrlStr});
                 UpdateUnitProvider createdStable = factory.create(PROVIDER_CODENAME, stableDisplayName, stableUrl, ICON_BASE, CATEGORY_DISPLAY_NAME);
                 createdStable.setEnable(true);
                 LOG.log(Level.INFO, "Successfully registered and enabled Anahata Stable Update Center [{0}]", createdStable.getName());
+            } else {
+                // Migrate URL and display name across NetBeans version upgrades (e.g. NB 30 -> 31) while preserving user enabled state
+                if (existingStable.getProviderURL() == null || !stableUrlStr.equalsIgnoreCase(existingStable.getProviderURL().toExternalForm())) {
+                    LOG.log(Level.INFO, "Migrating Stable Update Center URL for NetBeans {0}: {1} -> {2}", new Object[]{major, existingStable.getProviderURL(), stableUrlStr});
+                    existingStable.setProviderURL(stableUrl);
+                }
+                if (!stableDisplayName.equals(existingStable.getDisplayName())) {
+                    existingStable.setDisplayName(stableDisplayName);
+                }
             }
 
-            // 2. Dev Snapshot Update Center (Disabled by default)
+            // Dev Snapshot Update Center (Disabled by default)
             String devUrlStr = getDevUpdateUrl(major);
             URL devUrl = new URL(devUrlStr);
             String devDisplayName = "Anahata ASI (NB " + major + ") - Dev Snapshot";
-            UpdateUnitProvider existingDev = findProvider(providers, PROVIDER_CODENAME_DEV, devUrlStr);
+            UpdateUnitProvider existingDev = findProviderByCodeName(providers, PROVIDER_CODENAME_DEV);
+
+            if (existingDev == null) {
+                existingDev = findProvider(providers, PROVIDER_CODENAME_DEV, devUrlStr);
+            }
 
             if (existingDev == null) {
                 LOG.log(Level.INFO, "Auto-registering Anahata ASI Dev Snapshot Update Center: {0} -> {1}", new Object[]{devDisplayName, devUrlStr});
                 UpdateUnitProvider createdDev = factory.create(PROVIDER_CODENAME_DEV, devDisplayName, devUrl, ICON_BASE, CATEGORY_DEV_DISPLAY_NAME);
                 createdDev.setEnable(false);
                 LOG.log(Level.INFO, "Successfully registered Anahata Dev Snapshot Update Center [{0}] (disabled by default)", createdDev.getName());
+            } else {
+                // Migrate URL and display name across NetBeans version upgrades while preserving user enabled state
+                if (existingDev.getProviderURL() == null || !devUrlStr.equalsIgnoreCase(existingDev.getProviderURL().toExternalForm())) {
+                    LOG.log(Level.INFO, "Migrating Dev Snapshot Update Center URL for NetBeans {0}: {1} -> {2}", new Object[]{major, existingDev.getProviderURL(), devUrlStr});
+                    existingDev.setProviderURL(devUrl);
+                }
+                if (!devDisplayName.equals(existingDev.getDisplayName())) {
+                    existingDev.setDisplayName(devDisplayName);
+                }
             }
         } catch (Exception ex) {
             LOG.log(Level.WARNING, "Failed to auto-register Anahata Update Centers", ex);
         }
+    }
+
+    /**
+     * Searches a list of update unit providers by their unique provider code name.
+     *
+     * @param providers The list of providers to search.
+     * @param codeName The provider code name to look for.
+     * @return The matching provider, or {@code null} if not found.
+     */
+    public static UpdateUnitProvider findProviderByCodeName(List<UpdateUnitProvider> providers, String codeName) {
+        for (UpdateUnitProvider p : providers) {
+            if (codeName != null && codeName.equals(p.getName())) {
+                return p;
+            }
+        }
+        return null;
     }
 
     /**
@@ -289,11 +364,99 @@ public final class AnahataUpdateCenterUtils {
     }
 
     /**
+     * Checks whether the standalone Anahata Update Center plugin ({@code uno.anahata.asi.nb.uc}) is installed on disk.
+     *
+     * @return {@code true} if installed, {@code false} otherwise.
+     */
+    public static boolean isUpdateCenterPluginInstalled() {
+        return Modules.getDefault().findCodeNameBase(UC_CODE_NAME) != null;
+    }
+
+    /**
+     * Retrieves the Universal {@link UpdateUnitProvider} if registered.
+     *
+     * @return The registered Universal {@link UpdateUnitProvider}, or {@code null} if not registered.
+     */
+    public static UpdateUnitProvider getUniversalUpdateUnitProvider() {
+        List<UpdateUnitProvider> providers = UpdateUnitProviderFactory.getDefault().getUpdateUnitProviders(false);
+        return findProvider(providers, PROVIDER_CODENAME_UNIVERSAL, UNIVERSAL_UPDATE_URL);
+    }
+
+    /**
+     * Installs the standalone Anahata ASI Update Center plugin ({@code uno.anahata.asi.nb.uc}) from the Universal catalog.
+     *
+     * @return A status message describing the outcome.
+     * @throws Exception if installation fails.
+     */
+    public static String installUpdateCenterPlugin() throws Exception {
+        if (isUpdateCenterPluginInstalled()) {
+            return "Anahata ASI Update Center plugin is already installed.";
+        }
+
+        UpdateUnitProvider universalProvider = getUniversalUpdateUnitProvider();
+        if (universalProvider == null || !universalProvider.isEnabled()) {
+            LOG.log(Level.INFO, "Universal update center is disabled or not registered. Skipping update center plugin auto-install.");
+            return "Universal update center is not enabled.";
+        }
+
+        universalProvider.refresh(null, true);
+        for (UpdateUnit unit : universalProvider.getUpdateUnits(UpdateManager.TYPE.MODULE)) {
+            if (UC_CODE_NAME.equals(unit.getCodeName())) {
+                List<UpdateElement> updates = unit.getAvailableUpdates();
+                if (updates != null && !updates.isEmpty()) {
+                    UpdateElement element = updates.get(0);
+                    OperationContainer<InstallSupport> container = OperationContainer.createForInstall();
+                    OperationContainer.OperationInfo<InstallSupport> info = container.add(element);
+                    if (info != null) {
+                        if (info.getRequiredElements() != null && !info.getRequiredElements().isEmpty()) {
+                            container.add(info.getRequiredElements());
+                        }
+                        InstallSupport support = container.getSupport();
+                        InstallSupport.Validator validator = support.doDownload(null, false, true);
+                        InstallSupport.Installer installer = support.doValidate(validator, null);
+                        Restarter restarter = support.doInstall(installer, null);
+                        if (restarter != null) {
+                            support.doRestartLater(restarter);
+                        }
+                        LOG.log(Level.INFO, "Successfully installed Anahata ASI Update Center plugin v{0}", element.getSpecificationVersion());
+                        return "Successfully installed Anahata ASI Update Center plugin v" + element.getSpecificationVersion();
+                    }
+                }
+            }
+        }
+        return "Update Center plugin not found in catalog.";
+    }
+
+    /**
+     * Executes the complete startup bootstrap sequence:
+     * 1. Auto-registers all 3 Anahata Update Centers (Universal, Stable, Dev).
+     * 2. Auto-installs the standalone Update Center plugin if Universal is enabled and plugin is missing.
+     * 3. Refreshes active Anahata update catalogs to warm cache.
+     */
+    public static void bootstrap() {
+        LOG.log(Level.INFO, "Starting Anahata Update Center startup bootstrap...");
+        registerDefaultUpdateCenter();
+
+        if (!isUpdateCenterPluginInstalled()) {
+            try {
+                installUpdateCenterPlugin();
+            } catch (Exception ex) {
+                LOG.log(Level.WARNING, "Failed to auto-install Anahata Update Center plugin on startup", ex);
+            }
+        }
+
+        refreshAnahataProviders();
+        LOG.log(Level.INFO, "Anahata Update Center startup bootstrap completed.");
+    }
+
+    /**
      * Refreshes all active Anahata update unit providers against remote catalogs.
      */
-    private static void refreshAnahataProviders() {
+    public static void refreshAnahataProviders() {
         for (UpdateUnitProvider p : UpdateUnitProviderFactory.getDefault().getUpdateUnitProviders(true)) {
-            if (PROVIDER_CODENAME.equals(p.getName()) || PROVIDER_CODENAME_DEV.equals(p.getName())) {
+            if (PROVIDER_CODENAME.equals(p.getName())
+                    || PROVIDER_CODENAME_DEV.equals(p.getName())
+                    || PROVIDER_CODENAME_UNIVERSAL.equals(p.getName())) {
                 try {
                     p.refresh(null, true);
                 } catch (IOException ex) {

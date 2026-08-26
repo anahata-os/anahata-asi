@@ -246,6 +246,15 @@ public final class AnahataUcUtils {
                     UpdateUnitProvider created = factory.create(codeName, displayName, url, ICON_BASE, categoryDisplayName);
                     created.setEnable(type != UpdateCenterType.DEV);
                     LOG.log(Level.INFO, "Auto-registered Anahata Update Center: {0} ({1})", new Object[]{displayName, urlStr});
+                } else {
+                    // Migrate URL and display name across NetBeans version jumps (e.g. NB 30 -> 31 -> 32) while preserving user enabled state
+                    if (existing.getProviderURL() == null || !urlStr.equalsIgnoreCase(existing.getProviderURL().toExternalForm())) {
+                        LOG.log(Level.INFO, "Migrating Update Center [{0}] URL for NetBeans {1}: {2} -> {3}", new Object[]{codeName, getNetBeansMajorVersion(), existing.getProviderURL(), urlStr});
+                        existing.setProviderURL(url);
+                    }
+                    if (!displayName.equals(existing.getDisplayName())) {
+                        existing.setDisplayName(displayName);
+                    }
                 }
             }
         } catch (Exception ex) {
