@@ -255,7 +255,7 @@ public class AnahataUpdateCenterPanel extends JPanel {
      * 3-column layout:
      * - Column 1 (Left): Toggle button and centered Online/Offline status (vertically centered).
      * - Column 2 (Middle): Name + Trust, Description, URL link, live Maven Central shield badge, and alerts.
-     * - Column 3 (Right): 1-Click Update action button with single-line Size & Released metadata (vertically centered).
+     * - Column 3 (Right): 1-Click Update action button with single-line Size &amp; Released metadata (vertically centered).
      *
      * @param type The {@link UpdateCenterType}.
      * @return The configured JPanel card.

@@ -6,16 +6,9 @@
 [![License: Apache ASL 2](https://img.shields.io/badge/License-Apache%20ASL%202-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![License: Anahata ASL 108](https://img.shields.io/badge/License-Anahata%20ASL%20108-blueviolet.svg)](https://asi.anahata.uno/ASL_108.html)
 
-> [!IMPORTANT]
-> ### ⚠️ Attention NetBeans 31 Users
-> Due to a compatibility issue between Lombok (`1.18.46`) and recent changes in `NBJavaCompiler` / JDK 26, we will not be releasing an official NB31-compatible NBM build to the NetBeans Plugin Portal until Project Lombok catches up.
-> 
-> **5 Simple Steps to use the latest version of Anahata ASI Studio on NetBeans 31:**
-> 1. **Clone the repository**: [`https://github.com/anahata-os/anahata-asi.git`](https://github.com/anahata-os/anahata-asi) and open both the **Anahata ASI Parent** project and the **Anahata ASI Studio - NetBeans** plugin in NetBeans.
-> 2. Edit `pom.xml` in **anahata-asi-parent** and change `<netbeans.version>RELEASE300</netbeans.version>` to `<netbeans.version>RELEASE310</netbeans.version>`.
-> 3. Build the parent project (**Anahata ASI Parent**).
-> 4. Right-click on **Anahata ASI Studio - NetBeans** in the Projects view and select **Install / Reload in Development IDE**.
-> 5. Enjoy the full power of Anahata ASI Studio on NetBeans 31!
+> [!NOTE]
+> **NetBeans 30 & NetBeans 31 Support**
+> Official releases and updates for both **NetBeans 30** and **NetBeans 31** are available via the [Anahata ASI Update Centers](https://asi.anahata.uno/nb.html).
 
 ---
 
