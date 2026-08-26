@@ -1,0 +1,326 @@
+name: Master Build & Platform Deploy (V3)
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      release_nb_300:
+        description: 'Release NetBeans 30 ASI Studio (Target 300 NBM)'
+        required: false
+        type: boolean
+        default: true
+      release_nb_310:
+        description: 'Release NetBeans 31 ASI Studio (Target 310 NBM)'
+        required: false
+        type: boolean
+        default: true
+      release_nb_uc:
+        description: 'Release NetBeans Update Center Plugin (anahata-asi-nb-uc)'
+        required: false
+        type: boolean
+        default: false
+      release_intellij:
+        description: 'Release IntelliJ IDEA Plugin (.zip)'
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  packages: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IS_RELEASE: ${{ startsWith(github.ref, 'refs/tags/v') }}
+
+jobs:
+  # =========================================================================
+  # SINGLE-RUNNER UNIFIED PLATFORM PIPELINE (Ubuntu Linux ~3-4 mins)
+  # Deploys Core, Javadocs, NBMs, Catalogs & Website on a single checkout!
+  # =========================================================================
+  build-and-deploy:
+    name: Build, Deploy & Publish Platform
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25 & Maven Settings
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+          server-id: sonatype-central
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      # ---------------------------------------------------------------------
+      # 1. ONE-PASS WHOLE REACTOR BUILD & CENTRAL DEPLOYMENT
+      # Runs full test suite, builds all modules, generates aggregated Javadocs & deploys
+      # ---------------------------------------------------------------------
+      - name: Deploy Whole Reactor & Javadocs (One-Pass)
+        env:
+          MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          BASE_VER=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "================================================================="
+          echo " [INFO] Starting One-Pass Reactor Build (Version: $BASE_VER)"
+          echo " [INFO] Release Mode: $IS_RELEASE"
+          echo "================================================================="
+
+          if [ "$IS_RELEASE" == "true" ]; then
+            echo "[INFO] Deploying release bundle to Sonatype Central Release portal..."
+            mvn clean deploy javadoc:aggregate -P release -ntp
+          else
+            echo "[INFO] Deploying snapshot bundle to Sonatype Central Snapshot repository..."
+            mvn clean deploy javadoc:aggregate -ntp
+          fi
+
+      # ---------------------------------------------------------------------
+      # 2. PARAMETERIZED NETBEANS NBM STAMPING, DEPLOYMENT & CATALOG LOOP
+      # ---------------------------------------------------------------------
+      - name: Build & Deploy Parameterized NetBeans NBMs
+        env:
+          MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          BASE_VER=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          mkdir -p staging-catalogs/nb staging-binaries
+
+          # Reusable deployment function for target NBMs
+          deploy_nbm() {
+            local target="$1"           # e.g., "300" or "310"
+            local major="${target:0:2}"    # e.g., "30"
+            local stamped_ver
+
+            if [ "$IS_RELEASE" == "true" ]; then
+              stamped_ver="${BASE_VER}.${target}"
+            else
+              local base_num="${BASE_VER%-SNAPSHOT}"
+              stamped_ver="${base_num}.${target}-SNAPSHOT"
+            fi
+
+            echo "---------------------------------------------------------"
+            echo " [INFO] Processing NetBeans $major (Target: $target | Version: $stamped_ver)"
+            echo "---------------------------------------------------------"
+
+            mvn versions:set -DnewVersion="$stamped_ver" -DgenerateBackupPoms=false -pl :anahata-asi-nb -ntp
+            
+            if [ "$IS_RELEASE" == "true" ]; then
+              mvn deploy -P release -pl :anahata-asi-nb -ntp -Dnetbeans.version="RELEASE$target"
+              mvn nbm:autoupdate -pl :anahata-asi-nb -Dnetbeans.version="RELEASE$target" -Dnbm.distBase="https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb/${stamped_ver}" -ntp
+            else
+              mvn deploy -pl :anahata-asi-nb -ntp -Dnetbeans.version="RELEASE$target"
+              mvn nbm:autoupdate -pl :anahata-asi-nb -Dnetbeans.version="RELEASE$target" -Dnbm.distBase="https://github.com/anahata-os/anahata-asi/releases/download/latest-snapshot" -ntp
+            fi
+
+            mkdir -p "staging-catalogs/nb/$major"
+            cp anahata-asi-nb/target/*.nbm staging-binaries/ || true
+            if [ "$IS_RELEASE" == "true" ]; then
+              cp anahata-asi-nb/target/netbeans_site/updates.xml "staging-catalogs/nb/$major/updates.xml"
+            else
+              cp anahata-asi-nb/target/netbeans_site/updates.xml "staging-catalogs/nb/$major/dev-updates.xml"
+            fi
+          }
+
+          # Evaluate and execute selected targets (always runs for snapshots; checks flag for releases)
+          if [ "$IS_RELEASE" != "true" ] || [ "${{ inputs.release_nb_300 }}" != "false" ]; then
+            deploy_nbm 300
+          fi
+
+          if [ "$IS_RELEASE" != "true" ] || [ "${{ inputs.release_nb_310 }}" != "false" ]; then
+            deploy_nbm 310
+          fi
+
+      # ---------------------------------------------------------------------
+      # 3. STANDALONE UPDATE CENTER PLUGIN (anahata-asi-nb-uc) CATALOG
+      # ---------------------------------------------------------------------
+      - name: Generate Universal Update Center Catalog
+        if: env.IS_RELEASE == 'true' && inputs.release_nb_uc == true
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "[INFO] Generating Universal Update Center Catalog ($VERSION)..."
+          mvn nbm:autoupdate -pl :anahata-asi-nb-uc -Dnbm.distBase="https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb-uc/${VERSION}" -ntp
+          mkdir -p staging-catalogs/nb
+          cp anahata-asi-nb-uc/target/*.nbm staging-binaries/ || true
+          cp anahata-asi-nb-uc/target/netbeans_site/updates.xml staging-catalogs/nb/updates.xml
+
+      # ---------------------------------------------------------------------
+      # 4. INTELLIJ IDEA PLUGIN PACKAGE (.zip)
+      # ---------------------------------------------------------------------
+      - name: Package IntelliJ IDEA Plugin (.zip)
+        if: github.event_name == 'push' || inputs.release_intellij != false
+        run: |
+          mvn clean package -pl :anahata-asi-intellij -am -ntp
+          mkdir -p staging-binaries
+          cp anahata-asi-intellij/target/*.zip staging-binaries/ || true
+
+      # ---------------------------------------------------------------------
+      # 5. ASSEMBLE WEBSITE, MERGE JAVADOCS & DEPLOY TO GITHUB PAGES
+      # ---------------------------------------------------------------------
+      - name: Checkout gh-pages Branch (Persistence Storage)
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: temp-gh-pages
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Prepare Website & Merge Catalogs
+        run: |
+          mkdir -p _site
+          cp -r anahata-asi-web/src/main/resources/web/* _site/
+
+          # 1. Restore historical Javadoc vault
+          mkdir -p _site/apidocs
+          if [ -d "temp-gh-pages/apidocs" ]; then
+            for dir in temp-gh-pages/apidocs/*; do
+              if [ -d "$dir" ]; then
+                dirname=$(basename "$dir")
+                if [[ "$dirname" =~ ^[0-9] ]]; then
+                  cp -r "$dir" _site/apidocs/
+                fi
+              fi
+            done
+          fi
+
+          # 2. Copy freshly generated Javadocs from parent
+          if [ -d "docs/apidocs" ]; then
+            cp -r docs/apidocs/* _site/apidocs/
+          fi
+
+          echo "asi.anahata.uno" > _site/CNAME
+
+          # 3. Restore existing update catalogs from gh-pages
+          if [ -d "temp-gh-pages/nb" ]; then
+            cp -r temp-gh-pages/nb _site/
+          fi
+
+          # 4. Merge newly generated catalogs from staging-catalogs
+          if [ -d "staging-catalogs/nb" ]; then
+            mkdir -p _site/nb
+            cp -r staging-catalogs/nb/* _site/nb/
+            find _site/nb -name "*.xml" -exec gzip -9 -f -k {} \;
+          fi
+
+          # 5. Prune obsolete development snapshot Javadocs and auto-index version list
+          python3 -c '
+          import os, re, shutil
+          apidocs_dir = "_site/apidocs"
+          all_dirs = [d for d in os.listdir(apidocs_dir) if os.path.isdir(os.path.join(apidocs_dir, d)) and not d.startswith(".") and d[0].isdigit()]
+
+          snapshots = [d for d in all_dirs if "SNAPSHOT" in d]
+          stables = [d for d in all_dirs if "SNAPSHOT" not in d]
+
+          def parse_ver(v_str):
+              clean = re.sub(r"-SNAPSHOT.*", "", v_str)
+              return [int(x) for x in re.findall(r"\d+", clean)]
+
+          stables.sort(key=parse_ver, reverse=True)
+          snapshots.sort(key=parse_ver, reverse=True)
+
+          active_snapshot = snapshots[0] if snapshots else None
+          for stale_snap in snapshots[1:]:
+              stale_path = os.path.join(apidocs_dir, stale_snap)
+              print(f"[INFO] Pruning obsolete snapshot Javadoc directory: {stale_snap}")
+              shutil.rmtree(stale_path, ignore_errors=True)
+
+          final_versions = ([active_snapshot] if active_snapshot else []) + stables
+
+          li_html = ""
+          for v in final_versions:
+              if "SNAPSHOT" in v:
+                  badge = " <span class=\"badge\" style=\"background: var(--primary-light); color: white; font-weight: 800; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; margin-left: 8px;\">Dev Snapshot</span>"
+              elif stables and v == stables[0]:
+                  badge = " <span class=\"badge\" style=\"background: var(--barca-gold); color: black; font-weight: 800; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; margin-left: 8px;\">Latest Stable</span>"
+              else:
+                  badge = ""
+              li_html += f"            <li class=\"version-item\"><a href=\"{v}/apidocs/index.html\" class=\"version-link\">{v}{badge}</a></li>\n"
+
+          index_path = os.path.join(apidocs_dir, "index.html")
+          with open(index_path, "r") as f:
+              html = f.read()
+          new_html = re.sub(r"<ul class=\"version-list\">.*?</ul>", f"<ul class=\"version-list\">\n{li_html}        </ul>", html, flags=re.DOTALL)
+          with open(index_path, "w") as f:
+              f.write(new_html)
+          '
+
+      - name: Persist Javadocs & Catalogs to gh-pages
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+        run: |
+          cd temp-gh-pages
+          rm -rf apidocs/*
+          mkdir -p apidocs nb
+          cp -r ../_site/apidocs/* apidocs/
+          cp -r ../_site/nb/* nb/
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add apidocs/ nb/
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: persist versioned Javadocs & update catalogs from run ${{ github.run_id }} 📚"
+            git push origin gh-pages
+          else
+            echo "No new Javadoc or catalog changes to persist."
+          fi
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      # ---------------------------------------------------------------------
+      # 6. PUBLISH BINARIES TO GITHUB RELEASE
+      # ---------------------------------------------------------------------
+      - name: Purge Old Snapshot Release Assets
+        if: github.ref == 'refs/heads/main'
+        run: |
+          assets=$(gh release view latest-snapshot --json assets -q '.assets[].name' || true)
+          for asset in $assets; do
+            echo "Deleting stale snapshot asset: $asset"
+            gh release delete-asset latest-snapshot "$asset" -y || true
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish Official GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'latest-snapshot' }}
+          name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'Latest Snapshot' }}
+          body: |
+            ${{ startsWith(github.ref, 'refs/tags/') && 'Official Stable GA Release' || '🚀 This is an automated rolling snapshot of the main branch. Use with caution!' }}
+          files: |
+            staging-binaries/*.nbm
+            staging-binaries/*.zip
+          draft: false
+          prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          make_latest: ${{ startsWith(github.ref, 'refs/tags/') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
