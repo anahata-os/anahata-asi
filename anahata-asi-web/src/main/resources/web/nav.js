@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     <!-- Docs Dropdown -->
                     <div class="dropdown">
-                        <a href="#" class="dropdown-toggle ${(isActive('quickstart.html') || currentPath.includes('apidocs') || isActive('core.html') || isActive('swing.html') || isActive('yam.html') || isActive('gemini.html') || isActive('openai.html') || isActive('anthropic.html') || isActive('compatible.html')) ? 'active-link' : ''}">
+                        <a href="#" class="dropdown-toggle ${(isActive('quickstart.html') || currentPath.includes('apidocs') || isActive('core.html') || isActive('swing.html') || isActive('yam.html') || isActive('gemini.html') || isActive('openai.html') || isActive('anthropic.html') || isActive('novaroute.html') || isActive('compatible.html')) ? 'active-link' : ''}">
                             Docs <i class="fas fa-chevron-down"></i>
                         </a>
                         <div class="dropdown-menu">
@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <a href="${prefix}gemini.html" class="${isActive('gemini.html') ? 'active-item' : ''}"><i class="fas fa-plug"></i> Gemini Provider</a>
                             <a href="${prefix}openai.html" class="${isActive('openai.html') ? 'active-item' : ''}"><i class="fas fa-bolt"></i> OpenAI Provider</a>
                             <a href="${prefix}anthropic.html" class="${isActive('anthropic.html') ? 'active-item' : ''}"><i class="fas fa-ghost"></i> Anthropic Provider</a>
+                            <a href="${prefix}novaroute.html" class="${isActive('novaroute.html') ? 'active-item' : ''}"><i class="fas fa-route" style="color: var(--barca-gold);"></i> NovaRouteAI Provider</a>
                             <a href="${prefix}compatible.html" class="${isActive('compatible.html') ? 'active-item' : ''}"><i class="fas fa-globe"></i> Universal Alliance</a>
                         </div>
                     </div>
