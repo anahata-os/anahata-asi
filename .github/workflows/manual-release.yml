@@ -130,12 +130,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "[INFO] Triggering master build.yml pipeline for release tag [v$RELEASE_VER]..."
-          gh workflow run build.yml --ref "v$RELEASE_VER" \
-            -f release_nb_300="${{ inputs.release_nb_300 }}" \
-            -f release_nb_310="${{ inputs.release_nb_310 }}" \
-            -f release_nb_uc="${{ inputs.release_nb_uc }}" \
-            -f release_desktop="${{ inputs.release_desktop }}" \
-            -f release_intellij="${{ inputs.release_intellij }}"
+          gh workflow run build.yml --ref "v$RELEASE_VER"
           echo "🚀 Master build pipeline successfully triggered on tag v$RELEASE_VER!"
 
           echo "[INFO] Triggering continuous snapshot build.yml pipeline for main (development cycle $NEXT_SNAP)..."

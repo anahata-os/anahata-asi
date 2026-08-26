@@ -3,9 +3,28 @@ name: Build & Deploy Platform, Artifacts & Website
 on:
   push:
     branches: [ "main" ]
-    tags:
-      - 'v*'
   workflow_dispatch:
+    inputs:
+      release_nb_300:
+        description: 'Release NetBeans 30 ASI Studio (Target 300 NBM)'
+        type: boolean
+        default: true
+      release_nb_310:
+        description: 'Release NetBeans 31 ASI Studio (Target 310 NBM)'
+        type: boolean
+        default: true
+      release_nb_uc:
+        description: 'Release NetBeans Update Center Plugin (anahata-asi-nb-uc)'
+        type: boolean
+        default: false
+      release_desktop:
+        description: 'Release ASI Desktop Installers'
+        type: boolean
+        default: true
+      release_intellij:
+        description: 'Release IntelliJ IDEA Plugin (.zip)'
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -62,22 +81,18 @@ jobs:
           name: intellij-plugin
           path: anahata-asi-intellij/target/*.zip
 
-  build-nbm:
-    name: Build & Publish NBM (${{ matrix.nb_target }})
-    needs: [build-core]
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - nb_target: "300"
-            flag_name: "release_nb_300"
-          - nb_target: "310"
-            flag_name: "release_nb_310"
-    permissions:
-      contents: write
-      packages: write
-
-    steps:
+      - name: Check if NetBeans ${{ matrix.nb_target }} is Enabled
+        id: check_enabled
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ] || [ "${{ github.event_name }}" == "workflow_call" ]; then
+            ENABLED="${{ inputs[matrix.flag_name] }}"
+            if [ "$ENABLED" == "false" ]; then
+              echo "[INFO] Skipping NetBeans ${{ matrix.nb_target }} build (disabled in workflow inputs)."
+              echo "skip=true" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          fi
+          echo "skip=false" >> $GITHUB_OUTPUT
       - name: Checkout Code
         uses: actions/checkout@v4
 
@@ -148,6 +163,7 @@ jobs:
   build-nb-uc:
     name: Build & Publish Update Center Plugin (anahata-asi-nb-uc)
     needs: [build-core]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || inputs.release_nb_uc == true
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -198,6 +214,8 @@ jobs:
 
   build-desktop:
     name: Build Desktop on ${{ matrix.os }}
+    needs: [build-core]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || inputs.release_desktop != false
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
