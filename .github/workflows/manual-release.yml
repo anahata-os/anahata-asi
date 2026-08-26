@@ -137,3 +137,7 @@ jobs:
             -f release_desktop="${{ inputs.release_desktop }}" \
             -f release_intellij="${{ inputs.release_intellij }}"
           echo "🚀 Master build pipeline successfully triggered on tag v$RELEASE_VER!"
+
+          echo "[INFO] Triggering continuous snapshot build.yml pipeline for main (development cycle $NEXT_SNAP)..."
+          gh workflow run build.yml --ref "main"
+          echo "🚀 Snapshot build pipeline successfully triggered for main!"
