@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+OpenIDE-Module-Install: uno/anahata/asi/nb/uc/AnahataUcInstaller.class
+OpenIDE-Module-Localizing-Bundle: uno/anahata/asi/nb/uc/Bundle.properties
+OpenIDE-Module-Display-Category: ASI

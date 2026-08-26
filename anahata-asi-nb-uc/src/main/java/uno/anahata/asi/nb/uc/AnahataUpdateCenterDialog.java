@@ -34,6 +34,24 @@ public final class AnahataUpdateCenterDialog {
     }
 
     /**
+     * Closes and disposes the update center dialog if currently open.
+     * <p>
+     * Ensures execution takes place on the Swing Event Dispatch Thread (EDT).
+     * </p>
+     */
+    public static void closeDialog() {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(AnahataUpdateCenterDialog::closeDialog);
+            return;
+        }
+
+        if (frameInstance != null) {
+            frameInstance.dispose();
+            frameInstance = null;
+        }
+    }
+
+    /**
      * Displays or brings to front the Anahata ASI Update Center JFrame window.
      * <p>
      * Ensures execution takes place on the Swing Event Dispatch Thread (EDT).
