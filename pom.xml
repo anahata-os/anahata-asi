@@ -72,16 +72,6 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
-        <repository>
-            <id>sonatype-snapshots</id>
-            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
     </repositories>
 
     <modules>
@@ -422,6 +412,26 @@
     </build>
     
     <profiles>
+        <profile>
+            <id>sonatype-snapshots</id>
+            <activation>
+                <property>
+                    <name>env.GITHUB_ACTIONS</name>
+                </property>
+            </activation>
+            <repositories>
+                <repository>
+                    <id>sonatype-snapshots</id>
+                    <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+                    <releases>
+                        <enabled>false</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
+        </profile>
         <profile>
             <id>release</id>
             <properties>
