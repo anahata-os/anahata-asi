@@ -296,7 +296,7 @@ jobs:
   release:
     name: Create & Publish Unified Release
     needs: [build-core, build-nbm, build-nb-uc, build-desktop]
-    if: ${{ !cancelled() && !failed() }}
+    if: ${{ !cancelled() && !failure() }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
