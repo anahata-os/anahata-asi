@@ -90,10 +90,10 @@ jobs:
           echo "================================================================="
 
           if [ "$IS_RELEASE" == "true" ]; then
-            echo "[INFO] Deploying release bundle to Sonatype Central Release portal..."
-            mvn clean deploy javadoc:aggregate -P release -ntp
+            echo "[INFO] Deploying release bundle to Sonatype Central Release portal (excluding Update Center NBM)..."
+            mvn clean deploy javadoc:aggregate -P release -pl !:anahata-asi-nb-uc -ntp
           else
-            echo "[INFO] Deploying snapshot bundle to Sonatype Central Snapshot repository..."
+            echo "[INFO] Deploying snapshot bundle to Sonatype Central Snapshot repository (all modules)..."
             mvn clean deploy javadoc:aggregate -ntp
           fi
 
@@ -155,15 +155,22 @@ jobs:
           fi
 
       # ---------------------------------------------------------------------
-      # 3. STANDALONE UPDATE CENTER PLUGIN (anahata-asi-nb-uc) CATALOG
+      # 3. STANDALONE UPDATE CENTER PLUGIN (anahata-asi-nb-uc)
       # ---------------------------------------------------------------------
-      - name: Generate Universal Update Center Catalog
+      - name: Build, Deploy & Generate Update Center Catalog
         if: env.IS_RELEASE == 'true' && inputs.release_nb_uc == true
+        env:
+          MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          echo "[INFO] Generating Universal Update Center Catalog ($VERSION)..."
+          echo "[INFO] Building, deploying to Central and generating catalog for anahata-asi-nb-uc ($VERSION)..."
+          mvn clean install -pl :anahata-asi-nb-uc -am -ntp
+          mvn deploy -P release -pl :anahata-asi-nb-uc -ntp
           mvn nbm:autoupdate -pl :anahata-asi-nb-uc -Dnbm.distBase="https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb-uc/${VERSION}" -ntp
-          mkdir -p staging-catalogs/nb
+
+          mkdir -p staging-catalogs/nb staging-binaries
           cp anahata-asi-nb-uc/target/*.nbm staging-binaries/ || true
           cp anahata-asi-nb-uc/target/netbeans_site/updates.xml staging-catalogs/nb/updates.xml
 
