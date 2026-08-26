@@ -4,27 +4,6 @@ on:
   push:
     branches: [ "main" ]
   workflow_dispatch:
-    inputs:
-      release_nb_300:
-        description: 'Release NetBeans 30 ASI Studio (Target 300 NBM)'
-        type: boolean
-        default: true
-      release_nb_310:
-        description: 'Release NetBeans 31 ASI Studio (Target 310 NBM)'
-        type: boolean
-        default: true
-      release_nb_uc:
-        description: 'Release NetBeans Update Center Plugin (anahata-asi-nb-uc)'
-        type: boolean
-        default: false
-      release_desktop:
-        description: 'Release ASI Desktop Installers'
-        type: boolean
-        default: true
-      release_intellij:
-        description: 'Release IntelliJ IDEA Plugin (.zip)'
-        type: boolean
-        default: true
 
 permissions:
   contents: write
