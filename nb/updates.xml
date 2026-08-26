@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE module_updates PUBLIC "-//NetBeans//DTD Autoupdate Catalog 2.8//EN" "https://netbeans.apache.org/dtds/autoupdate-catalog-2_8.dtd">
+<module_updates timestamp="41/12/12/26/08/2026">
+
+
+
+<module codenamebase="uno.anahata.asi.nb.uc" distribution="https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb-uc/1.1.8/anahata-asi-nb-uc-1.1.8.nbm" downloadsize="408818" homepage="https://asi.anahata.uno" license="85A28259" moduleauthor="Anahata" needsrestart="false" releasedate="2026/08/26">
+        
+    <manifest OpenIDE-Module="uno.anahata.asi.nb.uc" OpenIDE-Module-Display-Category="uno.anahata" OpenIDE-Module-Implementation-Version="1.1.8" OpenIDE-Module-Long-Description="Standalone Update Center and Installer for Anahata ASI across NetBeans versions." OpenIDE-Module-Module-Dependencies="org.netbeans.api.annotations.common/1 &gt; 1.60, org.netbeans.api.progress/1 &gt; 1.80, org.netbeans.modules.autoupdate.services &gt; 1.88, org.netbeans.modules.autoupdate.ui &gt; 1.78, org.openide.awt &gt; 7.100, org.openide.dialogs &gt; 7.79, org.openide.modules &gt; 7.80, org.openide.util &gt; 9.40, org.openide.util.lookup &gt; 8.66, org.openide.util.ui &gt; 9.41, org.openide.windows &gt; 6.109" OpenIDE-Module-Name="Anahata ASI Update Center - NetBeans" OpenIDE-Module-Requires="org.openide.modules.ModuleFormat1" OpenIDE-Module-Short-Description="Standalone Update Center and Installer for Anahata ASI across NetBeans versions." OpenIDE-Module-Specification-Version="1.1.8"/>
+        
+
+    <message_digest algorithm="SHA-512" value="50681a0a103d9ebcc1b35d8636f103b9a6d838a02f77b360f7baa5a37b73bca97626ebc22f968b4a17d340c04bde36e5d130cdd47d35720afa63d345674e295b"/>
+</module>
+
+<license name="85A28259">Copyright Anahata 2026
+-----------------------------------------------------
+License terms:
+Apache License, Version 2.0 - https://www.apache.org/licenses/LICENSE-2.0.txt,
+Anahata Software License, Version 108, "The Immutable Edict" Edition - https://asi.anahata.uno/ASL_108.html</license>
+</module_updates>
+
