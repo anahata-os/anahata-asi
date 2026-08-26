@@ -132,6 +132,12 @@
         <main class="main-content">
             <h1 style="margin-bottom: 0.8rem;">Anahata <span style="color: var(--barca-gold)">ASI Studio - NetBeans</span></h1>
             
+            <div class="tag-row" style="margin-top: 0.8rem; margin-bottom: 1rem;">
+                <span class="tag">Apache Licensed</span>
+                <span class="tag">Enterprise Ready</span>
+                <span class="tag tag-gold">Donation Based Support</span>
+            </div>
+
             <!-- Row 1: Plugin Portal & Maven Central & Scarf Analytics & Product Hunt -->
             <div style="margin-top: 1rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
                 <a href="https://central.sonatype.com/artifact/uno.anahata/anahata-asi-nb" target="_blank" rel="noopener noreferrer"><img src="https://img.shields.io/maven-central/v/uno.anahata/anahata-asi-nb.svg?label=Maven%20Central&style=for-the-badge&logo=apache-maven&logoColor=white&color=004d98" alt="Maven Central" style="vertical-align: middle; height: 42px; border-radius: 6px;" /></a>
@@ -170,6 +176,18 @@
                             <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
                                 <code id="uc-catalog-url" style="font-size: 0.9rem; color: var(--primary-light); overflow-x: auto; white-space: nowrap;">https://asi.anahata.uno/nb/updates.xml</code>
                                 <button onclick="navigator.clipboard.writeText(document.getElementById('uc-catalog-url').textContent); this.innerHTML='<i class=\'fas fa-check\'></i>'; setTimeout(() => this.innerHTML='<i class=\'fas fa-copy\'></i>', 2000);" style="background: none; border: none; color: var(--barca-gold); cursor: pointer; font-size: 1.1rem; padding: 4px 6px;" title="Copy Catalog URL"><i class="fas fa-copy"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- Screenshots: Update Center GUI & NetBeans Plugins Integration -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin: 0.2rem 0;">
+                            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px;">
+                                <div style="font-size: 0.85rem; color: var(--barca-gold); font-weight: 600; margin-bottom: 8px;"><i class="fas fa-sliders-h" style="margin-right: 6px;"></i> 1. Update Center UI & Channel Setup:</div>
+                                <a href="screenshots/netbeans/uc-1.png" target="_blank" title="Click to view full resolution"><img src="screenshots/netbeans/uc-1.png" alt="Anahata Update Center UI" style="width: 100%; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); display: block;" /></a>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px;">
+                                <div style="font-size: 0.85rem; color: var(--barca-gold); font-weight: 600; margin-bottom: 8px;"><i class="fas fa-puzzle-piece" style="margin-right: 6px;"></i> 2. NetBeans Plugins Settings Integration:</div>
+                                <a href="screenshots/netbeans/uc-2.png" target="_blank" title="Click to view full resolution"><img src="screenshots/netbeans/uc-2.png" alt="NetBeans Plugins Settings Tab" style="width: 100%; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); display: block;" /></a>
                             </div>
                         </div>
 
@@ -321,26 +339,10 @@
                         }
                     }
                 </script>
-
-                <!-- Step-by-Step Instructions Box -->
-                <div class="integration-grid" style="border-left: 4px solid var(--barca-gold); margin-top: 2rem;">
-                    <h3 style="color: var(--white); margin-top: 0; font-size: 1.2rem;"><i class="fas fa-wrench" style="color: var(--barca-gold); margin-right: 8px;"></i> How to Add an Update Center to NetBeans:</h3>
-                    <div class="integration-item"><i class="fas fa-step-forward"></i> <div><b>1. Open Plugins Configuration</b>: In Apache NetBeans, go to <b>Tools</b> &rarr; <b>Plugins</b>.</div></div>
-                    <div class="integration-item"><i class="fas fa-sliders-h"></i> <div><b>2. Navigate to Settings</b>: Select the <b>Settings</b> tab in the Plugins window.</div></div>
-                    <div class="integration-item"><i class="fas fa-plus-circle"></i> <div><b>3. Add Update Center</b>: Click the <b>Add</b> button on the right side.</div></div>
-                    <div class="integration-item"><i class="fas fa-paste"></i> <div><b>4. Enter Details</b>: Set Name to <code>Anahata ASI (NB 30)</code> and paste your desired URL above.</div></div>
-                    <div class="integration-item"><i class="fas fa-sync-alt"></i> <div><b>5. Check for Updates</b>: Switch to the <b>Updates</b> or <b>Available Plugins</b> tab to install with 1 click!</div></div>
-                </div>
             </section>
 
             <!-- Overview Section -->
             <section id="overview" class="toolkit-section">
-                <div class="tag-row">
-                    <span class="tag">Apache Licensed</span>
-                    <span class="tag">Enterprise Ready</span>
-                    <span class="tag tag-gold">Donation Based Support</span>
-                </div>
-
                 <div class="tabs">
                     <input type="radio" name="asi-tabs" id="tab-assistant" checked>
                     <label for="tab-assistant"><i class="fas fa-magic"></i> The best Java AI assistant on the market</label>

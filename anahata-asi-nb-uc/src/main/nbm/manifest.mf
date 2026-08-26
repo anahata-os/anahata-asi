@@ -2,3 +2,604 @@ Manifest-Version: 1.0
 OpenIDE-Module-Install: uno/anahata/asi/nb/uc/AnahataUcInstaller.class
 OpenIDE-Module-Localizing-Bundle: uno/anahata/asi/nb/uc/Bundle.properties
 OpenIDE-Module-Display-Category: ASI
+OpenIDE-Module-Long-Description: <div style="font-family: -apple-syste
+ m, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: le
+ ft; margin: 0; font-size: 20px !important; color: #1a202c; line-heigh
+ t: 1.6;"> <!-- TOP BADGES & SOCIAL LINKS --> <div style="text-align: 
+ left; margin-bottom: 20px;"> <a href="https://asi.anahata.uno" target
+ ="_blank"><img src="https://asi.anahata.uno/assets/logo-transparent.p
+ ng" border="0" /></a><br/> <div style="margin-top: 15px; margin-botto
+ m: 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wr
+ ap;"> <a href="https://central.sonatype.com/artifact/uno.anahata/anah
+ ata-asi-nb-uc" target="_blank"><img src="https://img.shields.io/maven
+ -central/v/uno.anahata/anahata-asi-nb-uc.png" alt="Maven Central" bor
+ der="0" /></a> <a href="https://github.com/anahata-os/anahata-asi" ta
+ rget="_blank"><img src="https://img.shields.io/badge/GitHub-repo-1817
+ 17.png?logo=github&logoColor=white" alt="GitHub" border="0" /></a> <a
+  href="https://discord.gg/gwGWWxPUXE" target="_blank"><img src="https
+ ://img.shields.io/badge/Discord-community-5865F2.png?logo=discord&log
+ oColor=white" alt="Discord" border="0" /></a> <a href="https://www.pa
+ ypal.com/donate/?hosted_button_id=SS8B8R7S68R7G" target="_blank"><img
+  src="https://img.shields.io/badge/Donate-PayPal-00457C.png?logo=payp
+ al&logoColor=white" alt="Donate" border="0" /></a> </div> <div style=
+ "margin-bottom: 15px; display: flex; gap: 10px; align-items: center; 
+ flex-wrap: wrap;"> <a href="https://www.youtube.com/@anahata108" targ
+ et="_blank"><img src="https://img.shields.io/badge/YouTube-AnahataTV-
+ FF0000.png?logo=youtube&logoColor=white" alt="YouTube" border="0" /><
+ /a> <a href="https://x.com/AnahataASI" target="_blank"><img src="http
+ s://img.shields.io/badge/X-@AnahataASI-000000.png?logo=x&logoColor=wh
+ ite" alt="Twitter / X" border="0" /></a> <a href="https://asi.anahata
+ .uno" target="_blank"><img src="https://img.shields.io/badge/Website-
+ asi.anahata.uno-004d98.png?logoColor=white" alt="Website" border="0" 
+ /></a> <a href="https://www.reddit.com/r/AnahataASI/" target="_blank"
+ ><img src="https://img.shields.io/badge/Reddit-r%2FAnahataASI-FF4500.
+ png?logo=reddit&logoColor=white" alt="Reddit" border="0" /></a> </div
+ > </div> <!-- UPDATE CENTER VALUE PROPOSITION BANNER --> <div style="
+ margin-bottom: 30px; padding: 20px; background: #f0f4f8; border: 1px 
+ solid rgba(237, 187, 0, 0.3); border-left: 6px solid #edbb00; border-
+ radius: 8px; text-align: left;"> <h3 style="margin-top: 0; color: #00
+ 4d98; font-size: 24px !important; margin-bottom: 10px;">Anahata ASI U
+ pdate Center: Universal Cross-Version NetBeans Installer</h3> <p styl
+ e="font-size: 18px !important; margin-bottom: 0; color: #4a5568;"> A 
+ lightweight, standalone NetBeans Platform module with zero implementa
+ tion locks. Provides automated NetBeans version detection, dynamic An
+ ahata ASI Update Center catalog registration (Universal, Stable, and 
+ Dev Snapshots), and 1-click installation of Anahata ASI Studio and Ja
+ vaFX runtimes across all NetBeans versions (NB 21 &ndash; NB 35+). </
+ p> </div> <!-- KEY UPDATE CENTER FEATURES --> <div style="margin: 30p
+ x 0; padding: 20px; background: #f7fafc; border: 1px solid #e2e8f0; b
+ order-radius: 6px; text-align: left;"> <h4 style="margin-top: 0; colo
+ r: #2d3748; font-size: 22px !important; text-transform: uppercase; le
+ tter-spacing: 1px;"><span style="color: #004d98;">◆</span> Key Update
+  Center Features</h4> <ul style="color: #4a5568; font-size: 18px !imp
+ ortant; margin: 0; padding-left: 25px; line-height: 1.8;"> <li><b>Zer
+ o Version Lock-in:</b> Relies exclusively on public OpenIDE APIs. Sur
+ vives NetBeans upgrades without breakage.</li> <li><b>Dynamic Catalog
+  Routing:</b> Automatically resolves the exact update catalog for you
+ r active NetBeans major release.</li> <li><b>1-Click Installation:</b
+ > Seamlessly downloads, validates, and installs Anahata ASI Studio fr
+ om within the IDE.</li> <li><b>JavaFX Activation:</b> Verifies host J
+ DK JavaFX runtime support and activates the NetBeans JavaFX kit when 
+ needed.</li> <li><b>Legacy Center Cleanup:</b> Detects and removes ob
+ solete update centers from previous NetBeans versions.</li> </ul> </d
+ iv> <!-- UPDATE CENTER SCREENSHOTS SHOWCASE --> <hr style="border: 0;
+  border-top: 1px solid #e2e8f0; margin: 40px 0;"/> <h2 style="font-si
+ ze: 30px !important;">Anahata ASI Update Center in Action</h2> <p sty
+ le="color: #4a5568; margin-bottom: 30px; font-size: 19px !important;"
+ >Explore the dedicated Update Center UI and native NetBeans catalog i
+ ntegration:</p> <!-- UC Screenshot 1 --> <div style="margin-bottom: 4
+ 0px; padding: 20px; background: #fff; border: 1px solid #e2e8f0; bord
+ er-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);"> <h4 style="
+ color: #004d98; margin-top: 0; margin-bottom: 10px; font-size: 22px !
+ important; display: flex; align-items: center; gap: 8px;">[1] Univers
+ al Update Center GUI & Channel Management</h4> <p style="font-size: 1
+ 8px !important; color: #4a5568; margin: 0 0 15px 0;"> Manage Universa
+ l, Stable GA, and Continuous Integration Dev Snapshot channels with l
+ ive connectivity checks, trust preferences, and 1-click updates. </p>
+  <a href="https://asi.anahata.uno/screenshots/netbeans/uc-1.png" targ
+ et="_blank" title="Click to expand"> <img src="https://asi.anahata.un
+ o/screenshots/netbeans/uc-1.png" alt="Anahata ASI Update Center Panel
+ " title="Click to expand" style="max-width: 100%; border: 1px solid #
+ ddd; border-radius: 6px; margin: 0; display: block;"/> </a> </div> <!
+ -- UC Screenshot 2 --> <div style="margin-bottom: 40px; padding: 20px
+ ; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; bo
+ x-shadow: 0 4px 6px rgba(0,0,0,0.02);"> <h4 style="color: #004d98; ma
+ rgin-top: 0; margin-bottom: 10px; font-size: 22px !important; display
+ : flex; align-items: center; gap: 8px;">[2] Native NetBeans Plugins S
+ ettings & Custom Catalogs</h4> <p style="font-size: 18px !important; 
+ color: #4a5568; margin: 0 0 15px 0;"> All Anahata update centers are 
+ registered with custom branding icons inside the standard NetBeans Pl
+ ugins manager. </p> <a href="https://asi.anahata.uno/screenshots/netb
+ eans/uc-2.png" target="_blank" title="Click to expand"> <img src="htt
+ ps://asi.anahata.uno/screenshots/netbeans/uc-2.png" alt="NetBeans Plu
+ gins Settings Tab" title="Click to expand" style="max-width: 100%; bo
+ rder: 1px solid #ddd; border-radius: 6px; margin: 0; display: block;"
+ /> </a> </div> <!-- COMPATIBLE PROVIDERS SECTION --> <hr style="borde
+ r: 0; border-top: 1px solid #e2e8f0; margin: 40px 0;"/> <div style="m
+ argin: 30px 0; padding: 20px; background: #f7fafc; border: 1px solid 
+ #e2e8f0; border-radius: 6px; text-align: left;"> <h4 style="margin-to
+ p: 0; color: #2d3748; font-size: 24px !important; text-transform: upp
+ ercase; letter-spacing: 1px;"><span style="color: #004d98;">◆</span> 
+ Universal Provider Integration (Zero Vendor Lock-in)</h4> <p style="f
+ ont-size: 20px !important; color: #4a5568; margin-bottom: 15px;"> Ana
+ hata ASI features a completely provider-agnostic core adapter. The co
+ ntainer dynamically loads the following configured providers at runti
+ me: </p> <div style="overflow-x: auto;"> <table style="width: 100%; b
+ order-collapse: collapse; text-align: left; font-size: 18px !importan
+ t; background: #fff; border: 1px solid #e2e8f0;"> <thead> <tr style="
+ border-bottom: 2px solid #e2e8f0; background: #edf2f7;"> <th style="p
+ adding: 12px 15px; color: #2d3748; font-weight: bold; width: 25%;">Di
+ splay Name</th> <th style="padding: 12px 15px; color: #2d3748; font-w
+ eight: bold; width: 45%;">Description</th> <th style="padding: 12px 1
+ 5px; color: #2d3748; font-weight: bold; width: 30%;">Provider Class F
+ QN</th> </tr> </thead> <tbody> <tr style="border-bottom: 1px solid #e
+ df2f7;"> <td style="padding: 12px 15px; font-weight: 600; color: #004
+ d98;"> <img src="https://asi.anahata.uno/assets/logos/uno.anahata.asi
+ .nvidia.NvidiaAiProvider.png" alt="NVIDIA" style="height: 24px; verti
+ cal-align: middle; margin-right: 8px;" />NVIDIA </td> <td style="padd
+ ing: 12px 15px; color: #4a5568;">NVIDIA NIM microservices offering hi
+ gh-performance AI models (DeepSeek, Nemotron, Llama, Cosmos, GLM, Qwe
+ n, GPT-OSS).</td> <td style="padding: 12px 15px; font-family: monospa
+ ce; font-size: 17px !important; color: #a50044;">uno.anahata.asi.nvid
+ ia.NvidiaAiProvider</td> </tr> <tr style="border-bottom: 1px solid #e
+ df2f7;"> <td style="padding: 12px 15px; font-weight: 600; color: #004
+ d98;"> <img src="https://asi.anahata.uno/assets/logos/uno.anahata.asi
+ .minimax.MinimaxAnthropicProvider.png" alt="MiniMax" style="height: 2
+ 4px; vertical-align: middle; margin-right: 8px;" />MiniMax (Anthropic
+ ) </td> <td style="padding: 12px 15px; color: #4a5568;">MiniMax API a
+ dapter utilizing the Anthropic protocol compatible specification.</td
+ > <td style="padding: 12px 15px; font-family: monospace; font-size: 1
+ 7px !important; color: #a50044;">uno.anahata.asi.minimax.MinimaxAnthr
+ opicProvider</td> </tr> <tr style="border-bottom: 1px solid #edf2f7;"
+ > <td style="padding: 12px 15px; font-weight: 600; color: #004d98;"> 
+ <img src="https://asi.anahata.uno/assets/logos/uno.anahata.asi.novaro
+ uteai.NovaRouteAiProvider.png" alt="NovaRouteAI" style="height: 24px;
+  vertical-align: middle; margin-right: 8px;" />NovaRouteAI </td> <td 
+ style="padding: 12px 15px; color: #4a5568;">OpenAI-compatible access 
+ to official Chinese models (DeepSeek, Qwen, Kimi, GLM, MiniMax).</td>
+  <td style="padding: 12px 15px; font-family: monospace; font-size: 17
+ px !important; color: #a50044;">uno.anahata.asi.novarouteai.NovaRoute
+ AiProvider</td> </tr> <tr style="border-bottom: 1px solid #edf2f7;"> 
+ <td style="padding: 12px 15px; font-weight: 600; color: #004d98;"> <i
+ mg src="https://asi.anahata.uno/assets/logos/uno.anahata.asi.gemini.G
+ eminiAiProvider.png" alt="Google Cloud (Vertex)" style="height: 24px;
+  vertical-align: middle; margin-right: 8px;" />Google Cloud (Vertex) 
+ </td> <td style="padding: 12px 15px; color: #4a5568;">Official Google
+  Cloud Vertex AI client.</td> <td style="padding: 12px 15px; font-fam
+ ily: monospace; font-size: 17px !important; color: #a50044;">uno.anah
+ ata.asi.gemini.GeminiAiProvider</td> </tr> <tr style="border-bottom: 
+ 1px solid #edf2f7;"> <td style="padding: 12px 15px; font-weight: 600;
+  color: #004d98;"> <img src="https://asi.anahata.uno/assets/logos/uno
+ .anahata.asi.huggingface.HuggingFaceProvider.png" alt="Hugging Face" 
+ style="height: 24px; vertical-align: middle; margin-right: 8px;" />Hu
+ gging Face </td> <td style="padding: 12px 15px; color: #4a5568;">Hugg
+ ing Face Serverless Inference API client for open-source models.</td>
+  <td style="padding: 12px 15px; font-family: monospace; font-size: 17
+ px !important; color: #a50044;">uno.anahata.asi.huggingface.HuggingFa
+ ceProvider</td> </tr> <tr style="border-bottom: 1px solid #edf2f7;"> 
+ <td style="padding: 12px 15px; font-weight: 600; color: #004d98;"> <i
+ mg src="https://asi.anahata.uno/assets/logos/uno.anahata.asi.openai.O
+ penAiResponsesProvider.png" alt="OpenAI (Responses)" style="height: 2
+ 4px; vertical-align: middle; margin-right: 8px;" />OpenAI (Responses)
+  </td> <td style="padding: 12px 15px; color: #4a5568;">Modern OpenAI 
+ Responses API with stateful history and reasoning.</td> <td style="pa
+ dding: 12px 15px; font-family: monospace; font-size: 17px !important;
+  color: #a50044;">uno.anahata.asi.openai.OpenAiResponsesProvider</td>
+  </tr> <tr style="border-bottom: 1px solid #edf2f7;"> <td style="padd
+ ing: 12px 15px; font-weight: 600; color: #004d98;"> <img src="https:/
+ /asi.anahata.uno/assets/logos/uno.anahata.asi.anthropic.AnthropicProv
+ ider.png" alt="Anthropic" style="height: 24px; vertical-align: middle
+ ; margin-right: 8px;" />Anthropic </td> <td style="padding: 12px 15px
+ ; color: #4a5568;">Anthropic Claude API client supporting Claude, Son
+ net and Mythos.</td> <td style="padding: 12px 15px; font-family: mono
+ space; font-size: 17px !important; color: #a50044;">uno.anahata.asi.a
+ nthropic.AnthropicProvider</td> </tr> <tr style="border-bottom: 1px s
+ olid #edf2f7;"> <td style="padding: 12px 15px; font-weight: 600; colo
+ r: #004d98;"> <img src="https://asi.anahata.uno/assets/logos/uno.anah
+ ata.asi.modal.ModalProvider.png" alt="Modal Free GLM-5" style="height
+ : 24px; vertical-align: middle; margin-right: 8px;" />Modal Free GLM-
+ 5 </td> <td style="padding: 12px 15px; color: #4a5568;">Modal GLM-5.1
+  free promotion.</td> <td style="padding: 12px 15px; font-family: mon
+ ospace; font-size: 17px !important; color: #a50044;">uno.anahata.asi.
+ modal.ModalProvider</td> </tr> <tr style="border-bottom: 1px solid #e
+ df2f7;"> <td style="padding: 12px 15px; font-weight: 600; color: #004
+ d98;"> <img src="https://asi.anahata.uno/assets/logos/uno.anahata.asi
+ .gemini.GeminiGoogleCloudExpressAIProvider.png" alt="Google Cloud Exp
+ ress Mode" style="height: 24px; vertical-align: middle; margin-right:
+  8px;" />Google Cloud Express Mode </td> <td style="padding: 12px 15p
+ x; color: #4a5568;">Google Vertex AI Express Mode. 90 days free trial
+  on pro models 2M tokens context window.</td> <td style="padding: 12p
+ x 15px; font-family: monospace; font-size: 17px !important; color: #a
+ 50044;">uno.anahata.asi.gemini.GeminiGoogleCloudExpressAIProvider</td
+ > </tr> <tr style="border-bottom: 1px solid #edf2f7;"> <td style="pad
+ ding: 12px 15px; font-weight: 600; color: #004d98;"> <img src="https:
+ //asi.anahata.uno/assets/logos/uno.anahata.asi.gemini.GeminiAiProvide
+ r.png" alt="Google AI Studio" style="height: 24px; vertical-align: mi
+ ddle; margin-right: 8px;" />Google AI Studio </td> <td style="padding
+ : 12px 15px; color: #4a5568;">Official Google Gemini API client suppo
+ rting Flash, Pro, and Ultra.</td> <td style="padding: 12px 15px; font
+ -family: monospace; font-size: 17px !important; color: #a50044;">uno.
+ anahata.asi.gemini.GeminiAiProvider</td> </tr> <tr> <td style="paddin
+ g: 12px 15px; font-weight: 600; color: #004d98;"> <img src="https://a
+ si.anahata.uno/assets/logos/uno.anahata.asi.openai.compatible.OpenAiC
+ hatCompletionsProvider.png" alt="OpenAI Compatible" style="height: 24
+ px; vertical-align: middle; margin-right: 8px;" />OpenAI Compatible <
+ /td> <td style="padding: 12px 15px; color: #4a5568;">Universal chat/c
+ ompletions OpenAI-compatible client for Groq, DeepSeek, Ollama, etc.<
+ /td> <td style="padding: 12px 15px; font-family: monospace; font-size
+ : 17px !important; color: #a50044;">uno.anahata.asi.openai.compatible
+ .OpenAiChatCompletionsProvider</td> </tr> </tbody> </table> </div> </
+ div> <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 40p
+ x 0;"/> <h2 style="font-size: 32px !important;">Live Interactive Capa
+ bilities Showcase (Studio Engine)</h2> <p style="color: #4a5568; marg
+ in-bottom: 30px; font-size: 20px !important;">Explore the active, hig
+ h-fidelity visual representations of Anahata ASI Studio operating dir
+ ectly inside Apache NetBeans:</p> <!-- 1. NbJava JIT Compiler --> <di
+ v style="margin-bottom: 40px; padding: 20px; background: #fff; border
+ : 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 4px 6px rgba(0
+ ,0,0,0.02);"> <h4 style="color: #004d98; margin-top: 0; margin-bottom
+ : 10px; font-size: 24px !important; display: flex; align-items: cente
+ r; gap: 8px;">[1] Singularity Engine: Dynamic JIT Java Compiler</h4> 
+ <p style="font-size: 20px !important; color: #4a5568; margin: 0 0 15p
+ x 0;"> The model compiles and executes raw Java code directly inside 
+ your running NetBeans JVM utilizing our custom child-first ClassLoade
+ r. Build, test, and hot-load live tools, Java swing panels, or comple
+ x dependency algorithms on-the-fly. </p> <a href="https://asi.anahata
+ .uno/screenshots/netbeans/NbJava.png" target="_blank" title="Click to
+  expand"> <img src="https://asi.anahata.uno/screenshots/netbeans/thum
+ bs/NbJava.png" alt="Anahata JIT Compiler" title="Click to expand" sty
+ le="max-width: 100%; border: 1px solid #ddd; border-radius: 6px; marg
+ in: 0; display: block;"/> </a> </div> <!-- 2. Live Screen Sharing -->
+  <div style="margin-bottom: 40px; padding: 20px; background: #fff; bo
+ rder: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 4px 6px rg
+ ba(0,0,0,0.02);"> <h4 style="color: #004d98; margin-top: 0; margin-bo
+ ttom: 10px; font-size: 24px !important; display: flex; align-items: c
+ enter; gap: 8px;">[2] Multimodal Vision: Real-Time Screen & Region Sh
+ aring</h4> <p style="font-size: 20px !important; color: #4a5568; marg
+ in: 0 0 15px 0;"> Share physical screens, specific monitors, or custo
+ m rectangular regions with the ASI. Perfect for providing real-time v
+ isual feedback on Swing UI renders, layouts, or compiler states. </p>
+  <a href="https://asi.anahata.uno/screenshots/netbeans/NetBeansLiveSc
+ reenSharingAdrianaLima.png" target="_blank" title="Click to expand"> 
+ <img src="https://asi.anahata.uno/screenshots/netbeans/thumbs/NetBean
+ sLiveScreenSharingAdrianaLima.png" alt="Live Screen Sharing" title="C
+ lick to expand" style="max-width: 100%; border: 1px solid #ddd; borde
+ r-radius: 6px; margin: 0; display: block;"/> </a> </div> <!-- 3. In-C
+ ontext Resource Visualization --> <div style="margin-bottom: 40px; pa
+ dding: 20px; background: #fff; border: 1px solid #e2e8f0; border-radi
+ us: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);"> <h4 style="color: 
+ #004d98; margin-top: 0; margin-bottom: 10px; font-size: 24px !importa
+ nt; display: flex; align-items: center; gap: 8px;">[3] Atomic Context
+ : Visual Resource Highlighting</h4> <p style="font-size: 20px !import
+ ant; color: #4a5568; margin: 0 0 15px 0;"> Complete visual context aw
+ areness. Files loaded into the active AI context automatically light 
+ up with a vibrant indicator directly inside the NetBeans Projects, Fi
+ les, and Favorites views. </p> <a href="https://asi.anahata.uno/scree
+ nshots/netbeans/InContextResourcesVisualization.png" target="_blank" 
+ title="Click to expand"> <img src="https://asi.anahata.uno/screenshot
+ s/netbeans/thumbs/InContextResourcesVisualization.png" alt="Resource 
+ Visualization" title="Click to expand" style="max-width: 100%; border
+ : 1px solid #ddd; border-radius: 6px; margin: 0; display: block;"/> <
+ /a> </div> <!-- 4. High-Fidelity 3D Prototyping --> <div style="margi
+ n-bottom: 40px; padding: 20px; background: #fff; border: 1px solid #e
+ 2e8f0; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);"> 
+ <h4 style="color: #004d98; margin-top: 0; margin-bottom: 10px; font-s
+ ize: 24px !important; display: flex; align-items: center; gap: 8px;">
+ [4] Real-Time 3D & Hardware Prototyping (LWJGL)</h4> <p style="font-s
+ ize: 20px !important; color: #4a5568; margin: 0 0 15px 0;"> With buil
+ t-in LWJGL, GLFW, and OpenGL dependencies, the agent can write, compi
+ le, and run raw, real-time 3D rendering windows and game prototypes d
+ irectly on the host JVM. </p> <a href="https://asi.anahata.uno/screen
+ shots/netbeans/NetBeansBundledLWJGL.png" target="_blank" title="Click
+  to expand"> <img src="https://asi.anahata.uno/screenshots/netbeans/t
+ humbs/NetBeansBundledLWJGL.png" alt="Bundled LWJGL support" title="Cl
+ ick to expand" style="max-width: 100%; border: 1px solid #ddd; border
+ -radius: 6px; margin: 0; display: block;"/> </a> </div> <!-- 5. Inlin
+ e AI Annotations --> <div style="margin-bottom: 40px; padding: 20px; 
+ background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-
+ shadow: 0 4px 6px rgba(0,0,0,0.02);"> <h4 style="color: #004d98; marg
+ in-top: 0; margin-bottom: 10px; font-size: 24px !important; display: 
+ flex; align-items: center; gap: 8px;">[5] Agentic Feedback: Inline AI
+  Code Annotations</h4> <p style="font-size: 20px !important; color: #
+ 4a5568; margin: 0 0 15px 0;"> Model suggestions, code explanations, a
+ nd diagnostics are painted dynamically directly onto your source code
+  lines within the NetBeans editor, acting as non-intrusive guide mark
+ ers. </p> <a href="https://asi.anahata.uno/screenshots/netbeans/Inlin
+ eAIAnnotations.png" target="_blank" title="Click to expand"> <img src
+ ="https://asi.anahata.uno/screenshots/netbeans/thumbs/InlineAIAnnotat
+ ions.png" alt="Inline AI Annotations" title="Click to expand" style="
+ max-width: 100%; border: 1px solid #ddd; border-radius: 6px; margin: 
+ 0; display: block;"/> </a> </div> <!-- 6. Custom FileObject Adapter -
+ -> <div style="margin-bottom: 40px; padding: 20px; background: #fff; 
+ border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 4px 6px 
+ rgba(0,0,0,0.02);"> <h4 style="color: #004d98; margin-top: 0; margin-
+ bottom: 10px; font-size: 24px !important; display: flex; align-items:
+  center; gap: 8px;">[6] Self-Healing Filesystem tracking (NbHandle)</
+ h4> <p style="font-size: 20px !important; color: #4a5568; margin: 0 0
+  15px 0;"> Every resource handle in context is bound to a native NetB
+ eans <code>FileObject</code>. If you drag-and-drop, rename, cut, or p
+ aste a file across projects, the handle auto-heals and preserves cont
+ ext. </p> <a href="https://asi.anahata.uno/screenshots/netbeans/NbHan
+ dleForFileObjectIntegration.png" target="_blank" title="Click to expa
+ nd"> <img src="https://asi.anahata.uno/screenshots/netbeans/thumbs/Nb
+ HandleForFileObjectIntegration.png" alt="NbHandle Integration" title=
+ "Click to expand" style="max-width: 100%; border: 1px solid #ddd; bor
+ der-radius: 6px; margin: 0; display: block;"/> </a> </div> <!-- 7. Pr
+ oject Structure --> <div style="margin-bottom: 40px; padding: 20px; b
+ ackground: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-s
+ hadow: 0 4px 6px rgba(0,0,0,0.02);"> <h4 style="color: #004d98; margi
+ n-top: 0; margin-bottom: 10px; font-size: 24px !important; display: f
+ lex; align-items: center; gap: 8px;">[7] Project Structure & Class Hi
+ erarchy Mapping</h4> <p style="font-size: 20px !important; color: #4a
+ 5568; margin: 0 0 15px 0;"> The model receives structured directory t
+ rees of all open source packages, mapping classes, interfaces, record
+ s, field modifiers, and precise sizes without expensive directory wal
+ king. </p> <a href="https://asi.anahata.uno/screenshots/netbeans/Proj
+ ectStructureContextProvider.png" target="_blank" title="Click to expa
+ nd"> <img src="https://asi.anahata.uno/screenshots/netbeans/thumbs/Pr
+ ojectStructureContextProvider.png" alt="Project Structure mapping" ti
+ tle="Click to expand" style="max-width: 100%; border: 1px solid #ddd;
+  border-radius: 6px; margin: 0; display: block;"/> </a> </div> <!-- 8
+ . Project Alerts --> <div style="margin-bottom: 40px; padding: 20px; 
+ background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-
+ shadow: 0 4px 6px rgba(0,0,0,0.02);"> <h4 style="color: #004d98; marg
+ in-top: 0; margin-bottom: 10px; font-size: 24px !important; display: 
+ flex; align-items: center; gap: 8px;">[8] Instant Diagnostics & Javac
+  Errors Cache</h4> <p style="font-size: 20px !important; color: #4a55
+ 68; margin: 0 0 15px 0;"> Continuous, turn-by-turn tracking of worksp
+ ace health. If a code patch triggers a compilation error, the agent i
+ nstantly receives the full compiler error stack trace during reloop. 
+ </p> <a href="https://asi.anahata.uno/screenshots/netbeans/ProjectAle
+ rtsContextProvider.png" target="_blank" title="Click to expand"> <img
+  src="https://asi.anahata.uno/screenshots/netbeans/thumbs/ProjectAler
+ tsContextProvider.png" alt="Project Alerts diagnostics" title="Click 
+ to expand" style="max-width: 100%; border: 1px solid #ddd; border-rad
+ ius: 6px; margin: 0; display: block;"/> </a> </div> <!-- 9. Radio Too
+ l --> <div style="margin-bottom: 40px; padding: 20px; background: #ff
+ f; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 4px 6
+ px rgba(0,0,0,0.02);"> <h4 style="color: #004d98; margin-top: 0; marg
+ in-bottom: 10px; font-size: 24px !important; display: flex; align-ite
+ ms: center; gap: 8px;">[9] Deep Work Zone: Curated Radio & MIDI Synth
+ esizer</h4> <p style="font-size: 20px !important; color: #4a5568; mar
+ gin: 0 0 15px 0;"> Maintain complete creative focus. Stream high-fide
+ lity internet radio (such as SomaFM, NTS, or KEXP Seattle) directly f
+ rom NetBeans. </p> <a href="https://asi.anahata.uno/screenshots/netbe
+ ans/RadioTool.png" target="_blank" title="Click to expand"> <img src=
+ "https://asi.anahata.uno/screenshots/netbeans/thumbs/RadioTool.png" a
+ lt="Radio tool dashboard" title="Click to expand" style="max-width: 1
+ 00%; border: 1px solid #ddd; border-radius: 6px; margin: 0; display: 
+ block;"/> </a> </div> <!-- 10. Context Window GC --> <div style="marg
+ in-bottom: 40px; padding: 20px; background: #fff; border: 1px solid #
+ e2e8f0; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+  <h4 style="color: #004d98; margin-top: 0; margin-bottom: 10px; font-
+ size: 24px !important; display: flex; align-items: center; gap: 8px;"
+ >[10] Context Window Garbage Collector (CwGC) Logs</h4> <p style="fon
+ t-size: 20px !important; color: #4a5568; margin: 0 0 15px 0;"> A revo
+ lutionary, depth-based context window metabolism. Messages fade gradu
+ ally depending on their type, and both model and developer can pin or
+  prune parts to support infinitely long sessions. </p> <a href="https
+ ://asi.anahata.uno/screenshots/netbeans/ContextWindowGarbageCollector
+ .png" target="_blank" title="Click to expand"> <img src="https://asi.
+ anahata.uno/screenshots/netbeans/thumbs/ContextWindowGarbageCollector
+ .png" alt="CwGC Metabolism Dashboard" title="Click to expand" style="
+ max-width: 100%; border: 1px solid #ddd; border-radius: 6px; margin: 
+ 0; display: block;"/> </a> </div> <!-- 11. Editable Tool Calls --> <d
+ iv style="margin-bottom: 40px; padding: 20px; background: #fff; borde
+ r: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 4px 6px rgba(
+ 0,0,0,0.02);"> <h4 style="color: #004d98; margin-top: 0; margin-botto
+ m: 10px; font-size: 24px !important; display: flex; align-items: cent
+ er; gap: 8px;">[11] Human-in-the-Loop Parameter Modification</h4> <p 
+ style="font-size: 20px !important; color: #4a5568; margin: 0 0 15px 0
+ ;"> Complete control over tool execution. View, review, edit, or clea
+ r parameters and Java payloads with full syntax highlighting before l
+ etting the agent execute them. </p> <a href="https://asi.anahata.uno/
+ screenshots/netbeans/editable-java-tool-calls-shl.png" target="_blank
+ " title="Click to expand"> <img src="https://asi.anahata.uno/screensh
+ ots/netbeans/thumbs/editable-java-tool-calls-shl.png" alt="Editable p
+ arameters" title="Click to expand" style="max-width: 100%; border: 1p
+ x solid #ddd; border-radius: 6px; margin: 0; display: block;"/> </a> 
+ </div> <!-- 12. Tool Permissions --> <div style="margin-bottom: 40px;
+  padding: 20px; background: #fff; border: 1px solid #e2e8f0; border-r
+ adius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);"> <h4 style="colo
+ r: #004d98; margin-top: 0; margin-bottom: 10px; font-size: 24px !impo
+ rtant; display: flex; align-items: center; gap: 8px;">[12] Command Ce
+ nter: Granular Security Permissions</h4> <p style="font-size: 20px !i
+ mportant; color: #4a5568; margin: 0 0 15px 0;"> Assign Prompt, Always
+ , or Never execution permissions across 148+ stateful JVM tools. Enjo
+ y completely secure, sandboxable coding without blind writes. </p> <a
+  href="https://asi.anahata.uno/screenshots/netbeans/tool-permissions-
+ preferences.png" target="_blank" title="Click to expand"> <img src="h
+ ttps://asi.anahata.uno/screenshots/netbeans/thumbs/tool-permissions-p
+ references.png" alt="Security configuration" title="Click to expand" 
+ style="max-width: 100%; border: 1px solid #ddd; border-radius: 6px; m
+ argin: 0; display: block;"/> </a> </div> <!-- 13. AI Provider Prefere
+ nces --> <div style="margin-bottom: 40px; padding: 20px; background: 
+ #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 4p
+ x 6px rgba(0,0,0,0.02);"> <h4 style="color: #004d98; margin-top: 0; m
+ argin-bottom: 10px; font-size: 24px !important; display: flex; align-
+ items: center; gap: 8px;">[13] Dynamic Provider Registry & Keys Panel
+ </h4> <p style="font-size: 20px !important; color: #4a5568; margin: 0
+  0 15px 0;"> Seamlessly configure multiple API endpoints, tokens, max
+  tokens, and temperature parameters globally across all supported AI 
+ providers. </p> <a href="https://asi.anahata.uno/screenshots/netbeans
+ /asi-container-preferences-ai-providers.png" target="_blank" title="C
+ lick to expand"> <img src="https://asi.anahata.uno/screenshots/netbea
+ ns/thumbs/asi-container-preferences-ai-providers.png" alt="AI Provide
+ r Preferences" title="Click to expand" style="max-width: 100%; border
+ : 1px solid #ddd; border-radius: 6px; margin: 0; display: block;"/> <
+ /a> </div> <!-- 14. Collaborative NetBeans Terminal --> <div style="m
+ argin-bottom: 40px; padding: 20px; background: #fff; border: 1px soli
+ d #e2e8f0; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.02)
+ ;"> <h4 style="color: #004d98; margin-top: 0; margin-bottom: 10px; fo
+ nt-size: 24px !important; display: flex; align-items: center; gap: 8p
+ x;">[14] Collaborative NetBeans Terminal (NbTerminal)</h4> <p style="
+ font-size: 20px !important; color: #4a5568; margin: 0 0 15px 0;"> Int
+ egrated NetBeans terminal tab shared interactively between the develo
+ per and the model for subshell collaboration, command execution, and 
+ viewport line monitoring. </p> <a href="https://asi.anahata.uno/scree
+ nshots/netbeans/CollaborativeNetBeansTerminal.png" target="_blank" ti
+ tle="Click to expand"> <img src="https://asi.anahata.uno/screenshots/
+ netbeans/thumbs/CollaborativeNetBeansTerminal.png" alt="Collaborative
+  NetBeans Terminal" title="Click to expand" style="max-width: 100%; b
+ order: 1px solid #ddd; border-radius: 6px; margin: 0; display: block;
+ "/> </a> </div> <!-- THE HIGH-LEVEL TOOLKIT CATALOG TABLE (HUMAN FRIE
+ NDLY & IMPRESSIVE) --> <hr style="border: 0; border-top: 1px solid #e
+ 2e8f0; margin: 40px 0;"/> <h2 style="font-size: 32px !important;">Com
+ piled Platform Toolkits (140+ Native JVM Tools)</h2> <p style="color:
+  #4a5568; margin-bottom: 25px; font-size: 20px !important;"> Anahata 
+ hosts a robust, stateful registry of compiled tools running directly 
+ in-process. Below is the simplified catalog of active capability suit
+ es: </p> <div style="overflow-x: auto; border: 1px solid #e2e8f0; bor
+ der-radius: 8px; margin-bottom: 40px;"> <table style="width: 100%; bo
+ rder-collapse: collapse; text-align: left; font-size: 18px !important
+ ;"> <thead> <tr style="background: #edf2f7; border-bottom: 2px solid 
+ #e2e8f0;"> <th style="padding: 12px 15px; font-weight: bold; color: #
+ 2d3748; width: 25%;">Toolkit Name</th> <th style="padding: 12px 15px;
+  color: #2d3748; width: 60%;">Capability Scope & System Access</th> <
+ th style="padding: 12px 15px; color: #2d3748; width: 15%; text-align:
+  center;">Tool Count</th> </tr> </thead> <tbody> <!-- NbJava --> <tr 
+ style="border-bottom: 1px solid #edf2f7; background: #fff;"> <td styl
+ e="padding: 12px 15px; font-weight: bold; color: #004d98;">JIT Java C
+ ompiler</td> <td style="padding: 12px 15px; color: #4a5568;">In-JVM d
+ ynamic JIT Java compiler. Builds, loads, and executes generated class
+ es with custom ClassLoaders.</td> <td style="padding: 12px 15px; text
+ -align: center; font-weight: bold;">2 Tools</td> </tr> <!-- BatchCode
+ Refiner --> <tr style="border-bottom: 1px solid #edf2f7; background: 
+ #fafafa;"> <td style="padding: 12px 15px; font-weight: bold; color: #
+ 004d98;">AST Batch Refiner</td> <td style="padding: 12px 15px; color:
+  #4a5568;">Executes complex batches of AST structural changes (insert
+ s, updates, deletes, moves) in a single transaction.</td> <td style="
+ padding: 12px 15px; text-align: center; font-weight: bold;">1 Tool</t
+ d> </tr> <!-- CodeRefiner --> <tr style="border-bottom: 1px solid #ed
+ f2f7; background: #fff;"> <td style="padding: 12px 15px; font-weight:
+  bold; color: #004d98;">AST Code Refiner</td> <td style="padding: 12p
+ x 15px; color: #4a5568;">Surgical AST-based updates of method declara
+ tions, field initializers, reformats, and imports.</td> <td style="pa
+ dding: 12px 15px; text-align: center; font-weight: bold;">8 Tools</td
+ > </tr> <!-- CodeModel --> <tr style="border-bottom: 1px solid #edf2f
+ 7; background: #fafafa;"> <td style="padding: 12px 15px; font-weight:
+  bold; color: #004d98;">CodeModel Explorer</td> <td style="padding: 1
+ 2px 15px; color: #4a5568;">Direct access to NetBeans types index. Res
+ olves FQNs, types, hierarchy trees, sources, and Javadocs.</td> <td s
+ tyle="padding: 12px 15px; text-align: center; font-weight: bold;">16 
+ Tools</td> </tr> <!-- Refactor --> <tr style="border-bottom: 1px soli
+ d #edf2f7; background: #fff;"> <td style="padding: 12px 15px; font-we
+ ight: bold; color: #004d98;">IDE Refactor Engine</td> <td style="padd
+ ing: 12px 15px; color: #4a5568;">Invokes NetBeans safe refactoring (r
+ enames, safe deletes, pulls, pushes, encapsulations) updating all cal
+ ling files.</td> <td style="padding: 12px 15px; text-align: center; f
+ ont-weight: bold;">17 Tools</td> </tr> <!-- Maven --> <tr style="bord
+ er-bottom: 1px solid #edf2f7; background: #fafafa;"> <td style="paddi
+ ng: 12px 15px; font-weight: bold; color: #004d98;">Maven Integrator</
+ td> <td style="padding: 12px 15px; color: #4a5568;">Runs goals synchr
+ onously via NetBeans Maven embedder, modifies POM, and returns transi
+ tive classpath maps.</td> <td style="padding: 12px 15px; text-align: 
+ center; font-weight: bold;">7 Tools</td> </tr> <!-- Projects --> <tr 
+ style="border-bottom: 1px solid #edf2f7; background: #fff;"> <td styl
+ e="padding: 12px 15px; font-weight: bold; color: #004d98;">Workspace 
+ Projects</td> <td style="padding: 12px 15px; color: #4a5568;">Workspa
+ ce projects management: open, close, set Main, trigger project action
+ s, and configure CoS.</td> <td style="padding: 12px 15px; text-align:
+  center; font-weight: bold;">7 Tools</td> </tr> <!-- NbTerminal --> <
+ tr style="border-bottom: 1px solid #edf2f7; background: #fafafa;"> <t
+ d style="padding: 12px 15px; font-weight: bold; color: #004d98;">NetB
+ eans Terminal</td> <td style="padding: 12px 15px; color: #4a5568;">In
+ tegrates with NetBeans terminal tabs for command execution, subshell 
+ collaboration, and log monitoring.</td> <td style="padding: 12px 15px
+ ; text-align: center; font-weight: bold;">4 Tools</td> </tr> <!-- Hin
+ ts --> <tr style="border-bottom: 1px solid #edf2f7; background: #fafa
+ fa;"> <td style="padding: 12px 15px; font-weight: bold; color: #004d9
+ 8;">Javac Editor Hints</td> <td style="padding: 12px 15px; color: #4a
+ 5568;">Inspects Javac parsing alerts, applies quick-fixes, and remove
+ s unused imports structurally.</td> <td style="padding: 12px 15px; te
+ xt-align: center; font-weight: bold;">3 Tools</td> </tr> <!-- Chrome 
+ Automation --> <tr style="border-bottom: 1px solid #edf2f7; backgroun
+ d: #fff;"> <td style="padding: 12px 15px; font-weight: bold; color: #
+ 004d98;">Chrome (Selenium)</td> <td style="padding: 12px 15px; color:
+  #4a5568;">Web automation drone using Chrome. Navigates, fills forms,
+  clicks elements, and executes JS scripts.</td> <td style="padding: 1
+ 2px 15px; text-align: center; font-weight: bold;">19 Tools</td> </tr>
+  <!-- Firefox Automation --> <tr style="border-bottom: 1px solid #edf
+ 2f7; background: #fafafa;"> <td style="padding: 12px 15px; font-weigh
+ t: bold; color: #004d98;">Firefox (Selenium)</td> <td style="padding:
+  12px 15px; color: #4a5568;">Web automation drone using Firefox. Supp
+ orts profiles, cookies session, navigation, and screenshots.</td> <td
+  style="padding: 12px 15px; text-align: center; font-weight: bold;">1
+ 9 Tools</td> </tr> <!-- Resources --> <tr style="border-bottom: 1px s
+ olid #edf2f7; background: #fff;"> <td style="padding: 12px 15px; font
+ -weight: bold; color: #004d98;">Unified Resources</td> <td style="pad
+ ding: 12px 15px; color: #4a5568;">Manages files, URLs, and Strings ha
+ ndles, controls viewport settings, and creates text assets.</td> <td 
+ style="padding: 12px 15px; text-align: center; font-weight: bold;">8 
+ Tools</td> </tr> <!-- Audio --> <tr style="border-bottom: 1px solid #
+ edf2f7; background: #fafafa;"> <td style="padding: 12px 15px; font-we
+ ight: bold; color: #004d98;">Audio Hardware</td> <td style="padding: 
+ 12px 15px; color: #4a5568;">Controls input/output lines, records audi
+ o WAV files, and manages playback.</td> <td style="padding: 12px 15px
+ ; text-align: center; font-weight: bold;">4 Tools</td> </tr> <!-- Scr
+ eens --> <tr style="border-bottom: 1px solid #edf2f7; background: #ff
+ f;"> <td style="padding: 12px 15px; font-weight: bold; color: #004d98
+ ;">Visual Screen</td> <td style="padding: 12px 15px; color: #4a5568;"
+ >Captures displays, crops regional rectangles, and manages live multi
+ -window screen sharing.</td> <td style="padding: 12px 15px; text-alig
+ n: center; font-weight: bold;">6 Tools</td> </tr> <!-- Session --> <t
+ r style="border-bottom: 1px solid #edf2f7; background: #fafafa;"> <td
+  style="padding: 12px 15px; font-weight: bold; color: #004d98;">Sessi
+ on Controller</td> <td style="padding: 12px 15px; color: #4a5568;">Or
+ chestrates session summaries, toggles provider settings, and manages 
+ hosted Google tools.</td> <td style="padding: 12px 15px; text-align: 
+ center; font-weight: bold;">10 Tools</td> </tr> <!-- History --> <tr 
+ style="border-bottom: 1px solid #edf2f7; background: #fff;"> <td styl
+ e="padding: 12px 15px; font-weight: bold; color: #004d98;">CwGC Metab
+ olism</td> <td style="padding: 12px 15px; color: #4a5568;">Manages th
+ e Context Window Garbage Collector settings (expiry depths, pinning, 
+ and metadata strategy).</td> <td style="padding: 12px 15px; text-alig
+ n: center; font-weight: bold;">4 Tools</td> </tr> <!-- Radio --> <tr 
+ style="border-bottom: 1px solid #edf2f7; background: #fafafa;"> <td s
+ tyle="padding: 12px 15px; font-weight: bold; color: #004d98;">Flow Ra
+ dio</td> <td style="padding: 12px 15px; color: #4a5568;">Streams high
+ -fidelity internet radio directly from the IDE toolbar.</td> <td styl
+ e="padding: 12px 15px; text-align: center; font-weight: bold;">3 Tool
+ s</td> </tr> <!-- Other Core Tools --> <tr style="background: #fff;">
+  <td style="padding: 12px 15px; font-weight: bold; color: #004d98;">H
+ ost & Speech</td> <td style="padding: 12px 15px; color: #4a5568;">Tai
+ ls log outputs, scans active OS processes by PID, and executes TTS sp
+ eech.</td> <td style="padding: 12px 15px; text-align: center; font-we
+ ight: bold;">12 Tools</td> </tr> </tbody> </table> </div> <!-- SPONSO
+ RSHIP AND FOOTER --> <hr style="border: 0; border-top: 1px solid #e2e
+ 8f0; margin: 40px 0;"/> <div style="text-align: center; padding: 20px
+ ; background: #fffdf5; border: 1px solid #fcf2e3; border-radius: 8px;
+  margin: 30px 0;"> <h4 style="color: #edbb00; font-size: 28px !import
+ ant; margin-top: 0;">Support the Open-Source Aliens</h4> <p style="fo
+ nt-size: 20px !important; color: #555;"> Anahata is developed as a pu
+ re, open-source project. If we are saving your enterprise hours of bo
+ ilerplate, please consider buying our developers some beers, proper P
+ eruvian mapacho cigars, or tickets to watch our beloved Barça: </p> <
+ a href="https://github.com/sponsors/anahata-os" target="_blank" style
+ ="display: inline-block; padding: 12px 28px; background: #a50044; col
+ or: #fff; font-weight: bold; font-size: 20px !important; text-decorat
+ ion: none; border-radius: 6px; box-shadow: 0 4px 10px rgba(165,0,68,0
+ .2);">Sponsor Anahata OS on GitHub</a> </div> <!-- ==================
+ =====================================================================
+ == --> <!-- 🤖 DEEP SEMANTIC METADATA INDEX FOR AI AGENTS, LLMS, AND 
+ RAG CRAWLERS (SEO SEARCH GOLD) --> <!-- =============================
+ ============================================================ --> <hr 
+ style="border: 0; border-top: 3px double #e2e8f0; margin: 50px 0;"/> 
+ <div style="background: #1e293b; color: #cbd5e1; padding: 30px; borde
+ r-radius: 12px; font-family: 'JetBrains Mono', 'Fira Code', Consolas,
+  monospace; font-size: 17px !important; border-left: 6px solid #4faaf
+ f; margin-bottom: 30px;"> <h3 style="color: #38bdf8; margin-top: 0; f
+ ont-size: 20px !important; border-bottom: 1px solid #334155; padding-
+ bottom: 10px; font-family: sans-serif; letter-spacing: 1px;">SEMANTIC
+  METADATA INDEX FOR AI AGENTS & SEARCH INDEXES (RAG SALIENCE)</h3> <p
+  style="color: #94a3b8; font-size: 16px !important; line-height: 1.5;
+  margin-bottom: 20px;"> <em>This index provides structural system spe
+ cs, keywords, and toolkit API definitions for web scrapers, crawler m
+ odels, and chat-time RAG engines. Use this to map the exact capabilit
+ ies of <code>uno.anahata:anahata-asi-nb-uc</code> inside the NetBeans
+  JVM.</em> </p> <div style="margin-bottom: 20px;"> <strong style="col
+ or: #e2e8f0;">[Platform Coordinate Identity]</strong><br/> - Maven Co
+ ordinate: <span style="color: #f43f5e;">uno.anahata:anahata-asi-nb-uc
+ :1.1.10</span><br/> - Plugin Name: <code>Anahata ASI Update Center - 
+ NetBeans</code><br/> - Host Platform: <code>Apache NetBeans IDE (RELE
+ ASE300, RELEASE310, Universal)</code><br/> - JVM Compatibility: <code
+ >JDK 21, JDK 25, JDK 26</code> </div> <div style="margin-bottom: 20px
+ ;"> <strong style="color: #e2e8f0;">[Core Capabilities & Architecture
+ ]</strong><br/> - <strong>Cross-Version NetBeans Upgrades</strong>: P
+ ure OpenIDE & Autoupdate API dependencies (zero implementation locks)
+ .<br/> - <strong>Dynamic Catalog Routing</strong>: Resolves active Ne
+ tBeans generation on boot and links directly to official Anahata rele
+ ase channels.<br/> - <strong>1-Click Studio & Runtime Installer</stro
+ ng>: Downloads and validates Anahata ASI Studio and JavaFX support wi
+ th staged commits. </div> </div> <hr style="border: 0; border-top: 1p
+ x solid #e2e8f0; margin: 40px 0;"/> <p style="text-align: center; fon
+ t-style: italic; color: #555;"> Developed with pride and passion by A
+ nahata. Swear your allegiance to tiki-taka coding. Visca el Barça! <s
+ pan style="color: #004d98;">●</span><span style="color: #a50044;">●</
+ span> </p> <div style="margin: 20px 0; text-align: center;"> <img src
+ ="https://asi.anahata.uno/assets/messi_photo.png" alt="Lionel Messi G
+ reatest of All Timelines" style="max-width: 250px; border-radius: 8px
+ ; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"/> </div> <img referrerpoli
+ cy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-
+ pxid=f19c44f5-8b2e-458f-beab-96e4f9f8e603" width="1" height="1" borde
+ r="0" /> </div>
