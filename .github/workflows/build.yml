@@ -344,8 +344,8 @@ jobs:
 
   release:
     name: Create & Publish Unified Release
-    needs: [build-core, build-nbm, build-desktop]
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main'
+    needs: [build-core, build-nbm, build-nb-uc, build-desktop]
+    if: !cancelled() && !failed()
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -355,6 +355,7 @@ jobs:
 
       - name: Download All Artifacts
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           path: all-artifacts
           merge-multiple: true
@@ -391,7 +392,8 @@ jobs:
 
   deploy-website:
     name: Deploy Website, Javadocs & Update Centers
-    needs: [build-core, build-nbm, release]
+    needs: [build-core, build-nbm, build-nb-uc, build-desktop, release]
+    if: !cancelled() && !failed()
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -432,6 +434,7 @@ jobs:
 
       - name: Download NBM Artifacts & Catalogs
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           pattern: 'nbm-artifact-*'
           path: downloaded-nbm-artifacts
