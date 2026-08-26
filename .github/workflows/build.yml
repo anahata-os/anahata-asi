@@ -344,7 +344,7 @@ jobs:
   deploy-website:
     name: Deploy Website, Javadocs & Update Centers
     needs: [build-core, build-nbm, build-nb-uc, build-desktop, release]
-    if: ${{ !cancelled() && !failed() }}
+    if: ${{ !cancelled() && !failure() }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
