@@ -60,6 +60,22 @@ jobs:
           name: intellij-plugin
           path: anahata-asi-intellij/target/*.zip
 
+  build-nbm:
+    name: Build & Publish NBM (${{ matrix.nb_target }})
+    needs: [build-core]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    strategy:
+      matrix:
+        nb_target: ['300', '310']
+        include:
+          - nb_target: '300'
+            flag_name: 'release_nb_300'
+          - nb_target: '310'
+            flag_name: 'release_nb_310'
+    steps:
       - name: Check if NetBeans ${{ matrix.nb_target }} is Enabled
         id: check_enabled
         run: |
@@ -72,10 +88,13 @@ jobs:
             fi
           fi
           echo "skip=false" >> $GITHUB_OUTPUT
+
       - name: Checkout Code
+        if: steps.check_enabled.outputs.skip != 'true'
         uses: actions/checkout@v4
 
       - name: Set up JDK 25 & Maven
+        if: steps.check_enabled.outputs.skip != 'true'
         uses: actions/setup-java@v5
         with:
           java-version: '25'
@@ -88,6 +107,7 @@ jobs:
           gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: Build & Deploy NBM
+        if: steps.check_enabled.outputs.skip != 'true'
         env:
           MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
@@ -132,6 +152,7 @@ jobs:
           fi
 
       - name: Upload NBM Artifact & Catalog
+        if: steps.check_enabled.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: nbm-artifact-${{ matrix.nb_target }}
@@ -343,7 +364,7 @@ jobs:
 
   deploy-website:
     name: Deploy Website, Javadocs & Update Centers
-    needs: [build-core, build-nbm, build-nb-uc, build-desktop, release]
+    needs: [release]
     if: ${{ !cancelled() && !failure() }}
     runs-on: ubuntu-latest
     permissions:
