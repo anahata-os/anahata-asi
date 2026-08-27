@@ -232,15 +232,23 @@ jobs:
         run: sudo snap install snapcraft --classic
 
       - name: Build Snap Package
+        id: build_snap
         if: env.IS_RELEASE != 'true' || inputs.release_snap == true
-        run: snapcraft --destructive-mode
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "[INFO] Dynamically stamping Snap version to: $VERSION..."
+          sed -i "s/^version:.*/version: '$VERSION'/" snap/snapcraft.yaml
+          snapcraft pack --destructive-mode
+          SNAP_FILE=$(ls anahata-asi-desktop_*.snap | head -n 1)
+          echo "snap_file=$SNAP_FILE" >> $GITHUB_OUTPUT
+          echo "[INFO] Generated snap package: $SNAP_FILE"
 
       - name: Publish to Ubuntu Snap Store (Edge on Dev / Stable on Release)
         if: env.IS_RELEASE != 'true' || inputs.release_snap == true
         uses: canonical/action-publish@v1
         with:
           store_login: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-          snap: anahata-asi-desktop_*.snap
+          snap: ${{ steps.build_snap.outputs.snap_file }}
           release: ${{ env.IS_RELEASE == 'true' && 'stable' || 'edge' }}
 
       # ---------------------------------------------------------------------
