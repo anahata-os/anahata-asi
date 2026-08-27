@@ -65,7 +65,10 @@ jobs:
                    --main-jar "anahata-asi-desktop-${VERSION}.jar" \
                    --main-class uno.anahata.asi.desktop.Main \
                    --icon "icon.png" \
-                   --java-options "-splash:splash.png" \
+                   --java-options "-XX:+UseZGC" \
+                   --java-options "-XX:+ZGenerational" \
+                   --java-options "-XX:MaxRAMPercentage=60.0" \
+                   --java-options "-XX:InitialRAMPercentage=10.0" \
                    --java-options "--enable-native-access=ALL-UNNAMED" \
                    --type app-image \
                    --dest dist \
@@ -135,7 +138,10 @@ jobs:
                    --main-jar "anahata-asi-desktop-${VERSION}.jar" \
                    --main-class uno.anahata.asi.desktop.Main \
                    --icon "icon.ico" \
-                   --java-options "-splash:splash.png" \
+                   --java-options "-XX:+UseZGC" \
+                   --java-options "-XX:+ZGenerational" \
+                   --java-options "-XX:MaxRAMPercentage=60.0" \
+                   --java-options "-XX:InitialRAMPercentage=10.0" \
                    --java-options "--enable-native-access=ALL-UNNAMED" \
                    --type app-image \
                    --dest dist \
@@ -186,7 +192,10 @@ jobs:
                    --main-jar "anahata-asi-desktop-${VERSION}.jar" \
                    --main-class uno.anahata.asi.desktop.Main \
                    --icon "icon.icns" \
-                   --java-options "-splash:splash.png" \
+                   --java-options "-XX:+UseZGC" \
+                   --java-options "-XX:+ZGenerational" \
+                   --java-options "-XX:MaxRAMPercentage=60.0" \
+                   --java-options "-XX:InitialRAMPercentage=10.0" \
                    --java-options "--enable-native-access=ALL-UNNAMED" \
                    --type app-image \
                    --dest dist \
