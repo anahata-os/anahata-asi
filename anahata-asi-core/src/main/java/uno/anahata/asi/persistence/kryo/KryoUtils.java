@@ -59,6 +59,9 @@ public class KryoUtils {
         // Register Path serializer to avoid JPMS issues with UnixPath/WindowsPath
         kryo.addDefaultSerializer(Path.class, new PathSerializer());
 
+        // Register JDK immutable, unmodifiable, singleton, and empty collection serializers
+        JdkCollectionsSerializers.register(kryo);
+
         // Set the global factory for automated Rebindable support
         kryo.setDefaultSerializer(new RebindableSerializerFactory());
 
