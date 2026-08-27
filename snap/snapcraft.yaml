@@ -1,21 +1,46 @@
 name: anahata-asi-desktop
+title: Anahata ASI Desktop
 base: core24
-version: '1.1.12'
+version: '0.0.0'
 summary: The Stateful, Air-Gapped Java ASI Container
 description: |
   Anahata ASI Desktop is a stateful, air-gapped Java ASI container with 
   deep hardware integration, session passivation, and complete observability.
   Pioneering Artificial Super Intelligence on the shoulders of Java giants.
+license: Apache-2.0
+contact: support@anahata.uno
+issues: https://github.com/anahata-os/anahata-asi/issues
+source-code: https://github.com/anahata-os/anahata-asi
 website: https://asi.anahata.uno
 
 grade: stable
-confinement: classic
+confinement: strict
 
 apps:
   anahata-asi-desktop:
     command: bin/Anahata-ASI-Desktop
+    plugs:
+      - desktop
+      - desktop-legacy
+      - x11
+      - wayland
+      - opengl
+      - audio-playback
+      - audio-record
+      - network
+      - network-bind
+      - home
+      - removable-media
 
 parts:
   desktop-app:
     plugin: dump
     source: dist/Anahata-ASI-Desktop
+    stage-packages:
+      - libx11-6
+      - libxext6
+      - libxrender1
+      - libxtst6
+      - libxi6
+      - libasound2t64
+      - libfreetype6

@@ -5,6 +5,11 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
     inputs:
+      deploy_central:
+        description: 'Deploy Core Platform JARs to Maven Central (repo1.maven.org)'
+        required: false
+        type: boolean
+        default: false
       release_nb_300:
         description: 'Release NetBeans 30 ASI Studio (Target 300 NBM)'
         required: false
@@ -78,10 +83,10 @@ jobs:
           gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
       # ---------------------------------------------------------------------
-      # 1. ONE-PASS WHOLE REACTOR BUILD & CENTRAL DEPLOYMENT
-      # Runs full test suite, builds all modules, generates aggregated Javadocs & deploys
+      # 1. ONE-PASS WHOLE REACTOR BUILD & OPTIONAL CENTRAL DEPLOYMENT
+      # Runs full test suite, builds all modules, generates aggregated Javadocs & deploys if selected
       # ---------------------------------------------------------------------
-      - name: Deploy Whole Reactor & Javadocs (One-Pass)
+      - name: Build Whole Reactor, Javadocs & Optional Central Deploy
         env:
           MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
@@ -90,55 +95,49 @@ jobs:
           BASE_VER=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "================================================================="
           echo " [INFO] Starting One-Pass Reactor Build (Version: $BASE_VER)"
-          echo " [INFO] Release Mode: $IS_RELEASE"
+          echo " [INFO] Release Mode: $IS_RELEASE | Deploy to Central: ${{ inputs.deploy_central }}"
           echo "================================================================="
 
-          if [ "$IS_RELEASE" == "true" ]; then
-            echo "[INFO] Deploying release bundle to Sonatype Central Release portal (excluding Update Center NBM)..."
-            mvn clean deploy javadoc:aggregate -P release -pl !:anahata-asi-nb-uc -ntp
+          if [ "$IS_RELEASE" == "true" ] && [ "${{ inputs.deploy_central }}" == "true" ]; then
+            echo "[INFO] Deploying release bundle to Sonatype Central Release portal (excluding NetBeans NBMs)..."
+            mvn clean deploy javadoc:aggregate -P release -pl !:anahata-asi-nb,!:anahata-asi-nb-uc -ntp
           else
-            echo "[INFO] Deploying snapshot bundle to Sonatype Central Snapshot repository (all modules)..."
-            mvn clean deploy javadoc:aggregate -ntp
+            echo "[INFO] Compiling, testing & generating Javadocs locally (zero remote Maven Central upload)..."
+            mvn clean install javadoc:aggregate -ntp
           fi
 
       # ---------------------------------------------------------------------
-      # 2. PARAMETERIZED NETBEANS NBM STAMPING, DEPLOYMENT & CATALOG LOOP
+      # 2. PARAMETERIZED NETBEANS NBM STAMPING & CATALOG LOOP (Served from GitHub Releases)
       # ---------------------------------------------------------------------
-      - name: Build & Deploy Parameterized NetBeans NBMs
-        env:
-          MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      - name: Build & Package Parameterized NetBeans NBMs
         run: |
           BASE_VER=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           mkdir -p staging-catalogs/nb staging-binaries
 
-          # Reusable deployment function for target NBMs
+          # Reusable packaging function for target NBMs (Always served from GitHub Releases)
           deploy_nbm() {
             local target="$1"           # e.g., "300" or "310"
             local major="${target:0:2}"    # e.g., "30"
             local stamped_ver
+            local dist_base
 
             if [ "$IS_RELEASE" == "true" ]; then
               stamped_ver="${BASE_VER}.${target}"
+              dist_base="https://github.com/anahata-os/anahata-asi/releases/download/v${BASE_VER}"
             else
               local base_num="${BASE_VER%-SNAPSHOT}"
               stamped_ver="${base_num}.${target}-SNAPSHOT"
+              dist_base="https://github.com/anahata-os/anahata-asi/releases/download/latest-snapshot"
             fi
 
             echo "---------------------------------------------------------"
             echo " [INFO] Processing NetBeans $major (Target: $target | Version: $stamped_ver)"
+            echo " [INFO] Distribution Base: $dist_base"
             echo "---------------------------------------------------------"
 
             mvn versions:set -DnewVersion="$stamped_ver" -DgenerateBackupPoms=false -pl :anahata-asi-nb -ntp
-            
-            if [ "$IS_RELEASE" == "true" ]; then
-              mvn deploy -P release -pl :anahata-asi-nb -ntp -Dnetbeans.version="RELEASE$target"
-              mvn nbm:autoupdate -pl :anahata-asi-nb -Dnetbeans.version="RELEASE$target" -Dnbm.distBase="https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb/${stamped_ver}" -ntp
-            else
-              mvn deploy -pl :anahata-asi-nb -ntp -Dnetbeans.version="RELEASE$target"
-              mvn nbm:autoupdate -pl :anahata-asi-nb -Dnetbeans.version="RELEASE$target" -Dnbm.distBase="https://github.com/anahata-os/anahata-asi/releases/download/latest-snapshot" -ntp
-            fi
+            mvn install -pl :anahata-asi-nb -ntp -Dnetbeans.version="RELEASE$target"
+            mvn nbm:autoupdate -pl :anahata-asi-nb -Dnetbeans.version="RELEASE$target" -Dnbm.distBase="$dist_base" -ntp
 
             mkdir -p "staging-catalogs/nb/$major"
             cp anahata-asi-nb/target/*.nbm staging-binaries/ || true
@@ -149,7 +148,7 @@ jobs:
             fi
           }
 
-          # Always build and deploy NBMs for both releases and snapshots (so binaries and Central are complete)
+          # Build NBMs locally and stage for GitHub Releases
           deploy_nbm 300
           deploy_nbm 310
 
@@ -176,10 +175,17 @@ jobs:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          echo "[INFO] Building, deploying to Central and generating catalog for anahata-asi-nb-uc ($VERSION)..."
+          echo "[INFO] Packaging anahata-asi-nb-uc ($VERSION)..."
           mvn clean install -pl :anahata-asi-nb-uc -am -ntp
-          mvn deploy -P release -pl :anahata-asi-nb-uc -ntp
-          mvn nbm:autoupdate -pl :anahata-asi-nb-uc -Dnbm.distBase="https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb-uc/${VERSION}" -ntp
+          
+          if [ "${{ inputs.deploy_central }}" == "true" ]; then
+            echo "[INFO] Deploying anahata-asi-nb-uc to Maven Central for Apache Plugin Portal..."
+            mvn deploy -P release -pl :anahata-asi-nb-uc -ntp
+            mvn nbm:autoupdate -pl :anahata-asi-nb-uc -Dnbm.distBase="https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb-uc/${VERSION}" -ntp
+          else
+            echo "[INFO] Staging anahata-asi-nb-uc to GitHub Releases (zero Central upload)..."
+            mvn nbm:autoupdate -pl :anahata-asi-nb-uc -Dnbm.distBase="https://github.com/anahata-os/anahata-asi/releases/download/v${VERSION}" -ntp
+          fi
 
           mkdir -p staging-catalogs/nb staging-binaries
           cp anahata-asi-nb-uc/target/*.nbm staging-binaries/ || true
