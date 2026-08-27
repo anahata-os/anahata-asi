@@ -25,6 +25,11 @@ on:
         required: false
         type: boolean
         default: true
+      release_snap:
+        description: 'Release ASI Desktop Snap Package (to Canonical Snap Store)'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -184,7 +189,56 @@ jobs:
           cp anahata-asi-intellij/target/*.zip staging-binaries/ || true
 
       # ---------------------------------------------------------------------
-      # 5. ASSEMBLE WEBSITE, MERGE JAVADOCS & DEPLOY TO GITHUB PAGES
+      # 5. LINUX DESKTOP (jpackage) & CANONICAL SNAP STORE (Edge / Stable)
+      # ---------------------------------------------------------------------
+      - name: Build Linux Desktop App Image & Package .tar.gz
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          JPACKAGE_VERSION=$(echo $VERSION | sed 's/-.*//')
+          echo "[INFO] Packaging Linux Desktop app-image (v$JPACKAGE_VERSION)..."
+
+          mkdir -p package-input/lib
+          cp anahata-asi-desktop/target/anahata-asi-desktop-${VERSION}.jar package-input/
+          mvn -f anahata-asi-desktop/pom.xml dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=../package-input/lib
+          cp anahata-asi-desktop/src/main/resources/icon.png .
+          cp anahata-asi-desktop/src/main/resources/splash.png package-input/
+
+          jpackage --name "Anahata-ASI-Desktop" \
+                   --app-version "$JPACKAGE_VERSION" \
+                   --input package-input \
+                   --main-jar "anahata-asi-desktop-${VERSION}.jar" \
+                   --main-class uno.anahata.asi.desktop.Main \
+                   --icon "icon.png" \
+                   --java-options "-XX:+UseZGC" \
+                   --java-options "-XX:+ZGenerational" \
+                   --java-options "-XX:MaxRAMPercentage=60.0" \
+                   --java-options "-XX:InitialRAMPercentage=10.0" \
+                   --java-options "--enable-native-access=ALL-UNNAMED" \
+                   --type app-image \
+                   --dest dist \
+                   --verbose
+
+          mkdir -p staging-binaries
+          tar -czf "staging-binaries/Anahata-ASI-Desktop-${VERSION}-linux.tar.gz" -C dist "Anahata-ASI-Desktop"
+
+      - name: Install Snapcraft
+        if: env.IS_RELEASE != 'true' || inputs.release_snap == true
+        run: sudo snap install snapcraft --classic
+
+      - name: Build Snap Package
+        if: env.IS_RELEASE != 'true' || inputs.release_snap == true
+        run: snapcraft --destructive-mode
+
+      - name: Publish to Ubuntu Snap Store (Edge on Dev / Stable on Release)
+        if: env.IS_RELEASE != 'true' || inputs.release_snap == true
+        uses: canonical/action-publish@v1
+        with:
+          store_token: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+          snap: anahata-asi-desktop_*.snap
+          channel: ${{ env.IS_RELEASE == 'true' && 'stable' || 'edge' }}
+
+      # ---------------------------------------------------------------------
+      # 6. ASSEMBLE WEBSITE, MERGE JAVADOCS & DEPLOY TO GITHUB PAGES
       # ---------------------------------------------------------------------
       - name: Checkout gh-pages Branch (Persistence Storage)
         uses: actions/checkout@v4
@@ -301,9 +355,143 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      # ---------------------------------------------------------------------
-      # 6. PUBLISH BINARIES TO GITHUB RELEASE
-      # ---------------------------------------------------------------------
+      # Upload all Linux-built binaries into artifact pool for final GitHub Release
+      - name: Upload Linux Staged Binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-linux
+          path: |
+            staging-binaries/*
+            staging-catalogs/nb/*/*.xml
+
+  # =========================================================================
+  # 2. WINDOWS DESKTOP BUILDER (Native .zip with jpackage - Parallel VM)
+  # =========================================================================
+  build-desktop-windows:
+    name: Build Desktop (Windows)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build & Package Windows Native App Image
+        shell: bash
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          JPACKAGE_VERSION=$(echo $VERSION | sed 's/-.*//')
+          mvn clean install -DskipTests -pl :anahata-asi-desktop -am -ntp
+
+          mkdir -p package-input/lib
+          cp anahata-asi-desktop/target/anahata-asi-desktop-${VERSION}.jar package-input/
+          mvn -f anahata-asi-desktop/pom.xml dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=../package-input/lib
+          cp anahata-asi-desktop/src/main/resources/icon.ico .
+          cp anahata-asi-desktop/src/main/resources/splash.png package-input/
+
+          jpackage --name "Anahata-ASI-Desktop" \
+                   --app-version "$JPACKAGE_VERSION" \
+                   --input package-input \
+                   --main-jar "anahata-asi-desktop-${VERSION}.jar" \
+                   --main-class uno.anahata.asi.desktop.Main \
+                   --icon "icon.ico" \
+                   --java-options "-XX:+UseZGC" \
+                   --java-options "-XX:+ZGenerational" \
+                   --java-options "-XX:MaxRAMPercentage=60.0" \
+                   --java-options "-XX:InitialRAMPercentage=10.0" \
+                   --java-options "--enable-native-access=ALL-UNNAMED" \
+                   --type app-image \
+                   --dest dist \
+                   --verbose
+
+          mkdir -p staging-win
+          7z a "staging-win/Anahata-ASI-Desktop-${VERSION}-windows.zip" "./dist/Anahata-ASI-Desktop"
+
+      - name: Upload Windows Desktop Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-windows
+          path: staging-win/*.zip
+
+  # =========================================================================
+  # 3. MACOS DESKTOP BUILDER (Native .zip App Bundle with jpackage - Parallel VM)
+  # =========================================================================
+  build-desktop-macos:
+    name: Build Desktop (macOS)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build & Package macOS App Bundle
+        shell: bash
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          JPACKAGE_VERSION=$(echo $VERSION | sed 's/-.*//')
+          mvn clean install -DskipTests -pl :anahata-asi-desktop -am -ntp
+
+          mkdir -p package-input/lib
+          cp anahata-asi-desktop/target/anahata-asi-desktop-${VERSION}.jar package-input/
+          mvn -f anahata-asi-desktop/pom.xml dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=../package-input/lib
+          cp anahata-asi-desktop/src/main/resources/icon.icns .
+          cp anahata-asi-desktop/src/main/resources/splash.png package-input/
+
+          jpackage --name "Anahata-ASI-Desktop" \
+                   --app-version "$JPACKAGE_VERSION" \
+                   --input package-input \
+                   --main-jar "anahata-asi-desktop-${VERSION}.jar" \
+                   --main-class uno.anahata.asi.desktop.Main \
+                   --icon "icon.icns" \
+                   --java-options "-XX:+UseZGC" \
+                   --java-options "-XX:+ZGenerational" \
+                   --java-options "-XX:MaxRAMPercentage=60.0" \
+                   --java-options "-XX:InitialRAMPercentage=10.0" \
+                   --java-options "--enable-native-access=ALL-UNNAMED" \
+                   --type app-image \
+                   --dest dist \
+                   --verbose
+
+          mkdir -p staging-mac
+          cd dist && zip -r "../staging-mac/Anahata-ASI-Desktop-${VERSION}-macos.zip" "Anahata-ASI-Desktop.app" && cd ..
+
+      - name: Upload macOS Desktop Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-macos
+          path: staging-mac/*.zip
+
+  # =========================================================================
+  # 4. UNIFIED GITHUB RELEASE PUBLISHER (All OSs + NBMs + IntelliJ ZIP)
+  # =========================================================================
+  publish-release:
+    name: Publish Multi-Platform Release
+    needs: [build-and-deploy, build-desktop-windows, build-desktop-macos]
+    if: ${{ !cancelled() && !failure() }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download All Staged Multi-Platform Binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: all-binaries
+          merge-multiple: true
+
       - name: Purge Old Snapshot Release Assets
         if: github.ref == 'refs/heads/main'
         run: |
@@ -323,8 +511,9 @@ jobs:
           body: |
             ${{ startsWith(github.ref, 'refs/tags/') && 'Official Stable GA Release' || '🚀 This is an automated rolling snapshot of the main branch. Use with caution!' }}
           files: |
-            staging-binaries/*.nbm
-            staging-binaries/*.zip
+            all-binaries/*.nbm
+            all-binaries/*.zip
+            all-binaries/*.tar.gz
           draft: false
           prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
           make_latest: ${{ startsWith(github.ref, 'refs/tags/') }}
