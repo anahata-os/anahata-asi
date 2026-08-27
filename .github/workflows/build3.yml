@@ -149,13 +149,20 @@ jobs:
             fi
           }
 
-          # Evaluate and execute selected targets (always runs for snapshots; checks flag for releases)
-          if [ "$IS_RELEASE" != "true" ] || [ "${{ inputs.release_nb_300 }}" == "true" ]; then
-            deploy_nbm 300
-          fi
+          # Always build and deploy NBMs for both releases and snapshots (so binaries and Central are complete)
+          deploy_nbm 300
+          deploy_nbm 310
 
-          if [ "$IS_RELEASE" != "true" ] || [ "${{ inputs.release_nb_310 }}" == "true" ]; then
-            deploy_nbm 310
+          # Gated Tier 3: Only update official production updates.xml catalogs if explicitly selected in release
+          if [ "$IS_RELEASE" == "true" ]; then
+            if [ "${{ inputs.release_nb_300 }}" != "true" ]; then
+              echo "[INFO] NetBeans 30 production updates.xml catalog skipped (release_nb_300=false)."
+              rm -f "staging-catalogs/nb/30/updates.xml"
+            fi
+            if [ "${{ inputs.release_nb_310 }}" != "true" ]; then
+              echo "[INFO] NetBeans 31 production updates.xml catalog skipped (release_nb_310=false)."
+              rm -f "staging-catalogs/nb/31/updates.xml"
+            fi
           fi
 
       # ---------------------------------------------------------------------
@@ -182,7 +189,6 @@ jobs:
       # 4. INTELLIJ IDEA PLUGIN PACKAGE (.zip)
       # ---------------------------------------------------------------------
       - name: Package IntelliJ IDEA Plugin (.zip)
-        if: env.IS_RELEASE != 'true' || inputs.release_intellij == true
         run: |
           mvn clean package -pl :anahata-asi-intellij -am -ntp
           mkdir -p staging-binaries
