@@ -80,7 +80,7 @@ public record BenchmarkRunResult(
      * @param observations Observations.
      */
     public BenchmarkRunResult {
-        judgeScores = judgeScores != null ? Collections.unmodifiableMap(new HashMap<>(judgeScores)) : Collections.emptyMap();
+        judgeScores = judgeScores != null ? new HashMap<>(judgeScores) : new HashMap<>();
     }
 
     /**
