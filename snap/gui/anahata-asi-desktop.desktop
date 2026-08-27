@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Anahata ASI Desktop
+GenericName=AI Operating System & Agent Container
+Comment=The Stateful, Air-Gapped Java ASI Container
+Exec=anahata-asi-desktop %U
+Icon=${SNAP}/meta/gui/icon.png
+Terminal=false
+Type=Application
+Categories=Development;IDE;Utility;
+Keywords=ai;java;agent;asi;container;singularity;
+StartupWMClass=uno-anahata-asi-desktop-Main
