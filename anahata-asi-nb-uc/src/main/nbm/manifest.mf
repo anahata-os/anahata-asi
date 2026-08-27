@@ -32,435 +32,607 @@ OpenIDE-Module-Long-Description: <html><div style="font-family: sans-s
  reddit.com/r/AnahataASI/" target="_blank"><img src="https://img.shiel
  ds.io/badge/Reddit-r%2FAnahataASI-FF4500.png?logo=reddit&logoColor=wh
  ite" alt="Reddit" border="0" /></a></div><div style="margin-bottom: 1
- 0px;"><a href="https://scarf.sh" target="_blank"><img src="https://ap
- i.scarf.sh/v2/packages/Anahata/38628ccf-4686-4402-a7d9-3c7194eeff36/d
- ownloads-badge" alt="Scarf Downloads" border="0" /></a>&nbsp;&nbsp;<a
-  href="https://scarf.sh" target="_blank"><img src="https://api.scarf.
- sh/v2/packages/Anahata/38628ccf-4686-4402-a7d9-3c7194eeff36/commercia
- l-users-badge" alt="Scarf Commercial Users" border="0" /></a></div></
- div><div style="margin-bottom: 20px; padding: 14px; background: #f0f4
- f8; border: 1px solid #edbb00; border-left: 5px solid #edbb00; text-a
- lign: left;"><h3 style="margin-top: 0; color: #004d98; font-size: 14p
- x; margin-bottom: 8px;">Anahata ASI Update Center: Universal Cross-Ve
- rsion NetBeans Installer</h3><p style="font-size: 11px; margin-bottom
- : 0; color: #4a5568;">A lightweight, standalone NetBeans Platform mod
- ule with zero implementation locks. Provides automated NetBeans versi
- on detection, dynamic Anahata ASI Update Center catalog registration 
- (Universal, Stable, and Dev Snapshots), and 1-click installation of A
- nahata ASI Studio and JavaFX runtimes across all NetBeans versions (N
- B 21 &ndash; NB 35+).</p></div><div style="margin: 20px 0; padding: 1
- 5px; background: #f7fafc; border: 1px solid #e2e8f0; text-align: left
- ;"><h4 style="margin-top: 0; color: #2d3748; font-size: 15px; text-tr
- ansform: uppercase;"><span style="color: #004d98;">◆</span> Key Updat
- e Center Features</h4><ul style="color: #4a5568; font-size: 12px; mar
- gin: 0; padding-left: 20px;"><li><b>Zero Version Lock-in:</b> Relies 
- exclusively on public OpenIDE APIs. Survives NetBeans upgrades withou
- t breakage.</li><li><b>Dynamic Catalog Routing:</b> Automatically res
- olves the exact update catalog for your active NetBeans major release
- .</li><li><b>1-Click Installation:</b> Seamlessly downloads, validate
- s, and installs Anahata ASI Studio from within the IDE.</li><li><b>Ja
- vaFX Activation:</b> Verifies host JDK JavaFX runtime support and act
- ivates the NetBeans JavaFX kit when needed.</li><li><b>Legacy Center 
- Cleanup:</b> Detects and removes obsolete update centers from previou
- s NetBeans versions.</li></ul></div><hr style="border: 0; border-top:
-  1px solid #e2e8f0; margin: 20px 0;"/><h3 style="font-size: 16px; col
- or: #004d98;">Anahata ASI Update Center in Action</h3><div style="mar
- gin-bottom: 20px; padding: 12px; background: #fff; border: 1px solid 
- #e2e8f0;"><h4 style="color: #004d98; margin-top: 0; margin-bottom: 6p
- x; font-size: 13px;">[1] Universal Update Center GUI & Channel Manage
- ment</h4><p style="font-size: 11px; color: #4a5568; margin: 0 0 10px 
- 0;">Manage Universal, Stable GA, and Continuous Integration Dev Snaps
- hot channels with live connectivity checks, trust preferences, and 1-
- click updates.</p><a href="https://asi.anahata.uno/screenshots/netbea
- ns/uc-1.png" target="_blank"><img src="https://asi.anahata.uno/screen
- shots/netbeans/uc-1.png" alt="Anahata ASI Update Center Panel" border
- ="0" /></a></div><div style="margin-bottom: 20px; padding: 12px; back
- ground: #fff; border: 1px solid #e2e8f0;"><h4 style="color: #004d98; 
- margin-top: 0; margin-bottom: 6px; font-size: 13px;">[2] Native NetBe
- ans Plugins Settings & Custom Catalogs</h4><p style="font-size: 11px;
-  color: #4a5568; margin: 0 0 10px 0;">All Anahata update centers are 
- registered with custom branding icons inside the standard NetBeans Pl
- ugins manager.</p><a href="https://asi.anahata.uno/screenshots/netbea
- ns/uc-2.png" target="_blank"><img src="https://asi.anahata.uno/screen
- shots/netbeans/uc-2.png" alt="NetBeans Plugins Settings Tab" border="
- 0" /></a></div><hr style="border: 0; border-top: 1px solid #e2e8f0; m
- argin: 20px 0;"/><div style="margin: 20px 0; padding: 15px; backgroun
- d: #f7fafc; border: 1px solid #e2e8f0; text-align: left;"><h4 style="
- margin-top: 0; color: #2d3748; font-size: 15px; text-transform: upper
- case;"><span style="color: #004d98;">◆</span> Universal Provider Inte
- gration (Zero Vendor Lock-in)</h4><p style="font-size: 12px; color: #
- 4a5568; margin-bottom: 10px;">Anahata ASI features a completely provi
- der-agnostic core adapter. The container dynamically loads the follow
- ing configured providers at runtime:</p><table border="0" cellpadding
- ="6" cellspacing="0" style="width: 100%; border-collapse: collapse; t
- ext-align: left; font-size: 11px; background: #fff; border: 1px solid
-  #e2e8f0;"><tr style="background: #edf2f7; border-bottom: 2px solid #
- e2e8f0;"><th style="width: 30%; color: #2d3748;">Display Name</th><th
-  style="width: 40%; color: #2d3748;">Description</th><th style="width
- : 30%; color: #2d3748;">Provider Class FQN</th></tr><tr style="border
- -bottom: 1px solid #edf2f7;"><td style="font-weight: bold; color: #00
- 4d98;"><img src="https://asi.anahata.uno/assets/logos/uno.anahata.asi
- .nvidia.NvidiaAiProvider.png" alt="NVIDIA" width="32" height="32" ali
- gn="middle" border="0" />&nbsp;&nbsp;NVIDIA</td><td style="color: #4a
- 5568;">NVIDIA NIM microservices offering high-performance AI models (
- DeepSeek, Nemotron, Llama, Cosmos, GLM, Qwen, GPT-OSS).</td><td style
- ="font-family: monospace; color: #a50044;">uno.anahata.asi.nvidia.Nvi
- diaAiProvider</td></tr><tr style="border-bottom: 1px solid #edf2f7;">
- <td style="font-weight: bold; color: #004d98;"><img src="https://asi.
- anahata.uno/assets/logos/uno.anahata.asi.novarouteai.NovaRouteAiProvi
- der.png" alt="NovaRouteAI" width="32" height="32" align="middle" bord
- er="0" />&nbsp;&nbsp;NovaRouteAI</td><td style="color: #4a5568;">Open
- AI-compatible access to official Chinese models (DeepSeek, Qwen, Kimi
- , GLM, MiniMax).</td><td style="font-family: monospace; color: #a5004
- 4;">uno.anahata.asi.novarouteai.NovaRouteAiProvider</td></tr><tr styl
- e="border-bottom: 1px solid #edf2f7;"><td style="font-weight: bold; c
- olor: #004d98;"><img src="https://asi.anahata.uno/assets/logos/uno.an
- ahata.asi.minimax.MinimaxAnthropicProvider.png" alt="MiniMax (Anthrop
- ic)" width="32" height="32" align="middle" border="0" />&nbsp;&nbsp;M
- iniMax (Anthropic)</td><td style="color: #4a5568;">MiniMax API adapte
- r utilizing the Anthropic protocol compatible specification.</td><td 
- style="font-family: monospace; color: #a50044;">uno.anahata.asi.minim
- ax.MinimaxAnthropicProvider</td></tr><tr style="border-bottom: 1px so
- lid #edf2f7;"><td style="font-weight: bold; color: #004d98;"><img src
- ="https://asi.anahata.uno/assets/logos/uno.anahata.asi.gemini.GeminiA
- iProvider.png" alt="Google Cloud (Vertex)" width="32" height="32" ali
- gn="middle" border="0" />&nbsp;&nbsp;Google Cloud (Vertex)</td><td st
- yle="color: #4a5568;">Official Google Cloud Vertex AI client.</td><td
-  style="font-family: monospace; color: #a50044;">uno.anahata.asi.gemi
- ni.GeminiAiProvider</td></tr><tr style="border-bottom: 1px solid #edf
- 2f7;"><td style="font-weight: bold; color: #004d98;"><img src="https:
- //asi.anahata.uno/assets/logos/uno.anahata.asi.huggingface.HuggingFac
- eProvider.png" alt="Hugging Face" width="32" height="32" align="middl
- e" border="0" />&nbsp;&nbsp;Hugging Face</td><td style="color: #4a556
- 8;">Hugging Face Serverless Inference API client for open-source mode
- ls.</td><td style="font-family: monospace; color: #a50044;">uno.anaha
- ta.asi.huggingface.HuggingFaceProvider</td></tr><tr style="border-bot
- tom: 1px solid #edf2f7;"><td style="font-weight: bold; color: #004d98
- ;"><img src="https://asi.anahata.uno/assets/logos/uno.anahata.asi.ope
- nai.OpenAiResponsesProvider.png" alt="OpenAI (Responses)" width="32" 
- height="32" align="middle" border="0" />&nbsp;&nbsp;OpenAI (Responses
- )</td><td style="color: #4a5568;">Modern OpenAI Responses API with st
- ateful history and reasoning.</td><td style="font-family: monospace; 
- color: #a50044;">uno.anahata.asi.openai.OpenAiResponsesProvider</td><
- /tr><tr style="border-bottom: 1px solid #edf2f7;"><td style="font-wei
- ght: bold; color: #004d98;"><img src="https://asi.anahata.uno/assets/
- logos/uno.anahata.asi.anthropic.AnthropicProvider.png" alt="Anthropic
- " width="32" height="32" align="middle" border="0" />&nbsp;&nbsp;Anth
- ropic</td><td style="color: #4a5568;">Anthropic Claude API client sup
- porting Claude, Sonnet and Mythos.</td><td style="font-family: monosp
- ace; color: #a50044;">uno.anahata.asi.anthropic.AnthropicProvider</td
- ></tr><tr style="border-bottom: 1px solid #edf2f7;"><td style="font-w
- eight: bold; color: #004d98;"><img src="https://asi.anahata.uno/asset
- s/logos/uno.anahata.asi.modal.ModalProvider.png" alt="Modal Free GLM-
- 5" width="32" height="32" align="middle" border="0" />&nbsp;&nbsp;Mod
- al Free GLM-5</td><td style="color: #4a5568;">Modal GLM-5.1 free prom
- otion.</td><td style="font-family: monospace; color: #a50044;">uno.an
- ahata.asi.modal.ModalProvider</td></tr><tr style="border-bottom: 1px 
- solid #edf2f7;"><td style="font-weight: bold; color: #004d98;"><img s
+ 0px;"><a href="https://scarf.sh" target="_blank"><img src="https://im
+ g.shields.io/badge/Scarf%3A%20Downloads-392%2Fmonth-0572F1.png?labelC
+ olor=374151" alt="Scarf Downloads" border="0" /></a>&nbsp;&nbsp;<a hr
+ ef="https://scarf.sh" target="_blank"><img src="https://img.shields.i
+ o/badge/Scarf%3A%20Commercial%20Users-40%2Fmonth-0572F1.png?labelColo
+ r=374151" alt="Scarf Commercial Users" border="0" /></a></div></div><
+ div style="margin-bottom: 20px; padding: 14px; background: #f0f4f8; b
+ order: 1px solid #edbb00; border-left: 5px solid #edbb00; text-align:
+  left;"><h3 style="margin-top: 0; color: #004d98; font-size: 14px; ma
+ rgin-bottom: 8px;">Anahata ASI Update Center: Universal Cross-Version
+  NetBeans Installer</h3><p style="font-size: 11px; margin-bottom: 0; 
+ color: #4a5568;">A lightweight, standalone NetBeans Platform module w
+ ith zero implementation locks. Provides automated NetBeans version de
+ tection, dynamic Anahata ASI Update Center catalog registration (Univ
+ ersal, Stable, and Dev Snapshots), and 1-click installation of Anahat
+ a ASI Studio and JavaFX runtimes across all NetBeans versions (NB 21 
+ &ndash; NB 35+).</p></div><div style="margin: 20px 0; padding: 15px; 
+ background: #f7fafc; border: 1px solid #e2e8f0; text-align: left;"><h
+ 4 style="margin-top: 0; color: #2d3748; font-size: 15px; text-transfo
+ rm: uppercase;"><span style="color: #004d98;">◆</span> Key Update Cen
+ ter Features</h4><ul style="color: #4a5568; font-size: 12px; margin: 
+ 0; padding-left: 20px;"><li><b>Zero Version Lock-in:</b> Relies exclu
+ sively on public OpenIDE APIs. Survives NetBeans upgrades without bre
+ akage.</li><li><b>Dynamic Catalog Routing:</b> Automatically resolves
+  the exact update catalog for your active NetBeans major release.</li
+ ><li><b>1-Click Installation:</b> Seamlessly downloads, validates, an
+ d installs Anahata ASI Studio from within the IDE.</li><li><b>JavaFX 
+ Activation:</b> Verifies host JDK JavaFX runtime support and activate
+ s the NetBeans JavaFX kit when needed.</li><li><b>Legacy Center Clean
+ up:</b> Detects and removes obsolete update centers from previous Net
+ Beans versions.</li></ul></div><hr style="border: 0; border-top: 1px 
+ solid #e2e8f0; margin: 20px 0;"/><h3 style="font-size: 16px; color: #
+ 004d98;">Anahata ASI Update Center in Action</h3><div style="margin-b
+ ottom: 20px; padding: 12px; background: #fff; border: 1px solid #e2e8
+ f0;"><h4 style="color: #004d98; margin-top: 0; margin-bottom: 6px; fo
+ nt-size: 13px;">[1] Universal Update Center GUI & Channel Management<
+ /h4><p style="font-size: 11px; color: #4a5568; margin: 0 0 10px 0;">M
+ anage Universal, Stable GA, and Continuous Integration Dev Snapshot c
+ hannels with live connectivity checks, trust preferences, and 1-click
+  updates.</p><a href="https://asi.anahata.uno/screenshots/netbeans/uc
+ -1.png" target="_blank"><img src="https://asi.anahata.uno/screenshots
+ /netbeans/uc-1.png" alt="Anahata ASI Update Center Panel" border="0" 
+ /></a></div><div style="margin-bottom: 20px; padding: 12px; backgroun
+ d: #fff; border: 1px solid #e2e8f0;"><h4 style="color: #004d98; margi
+ n-top: 0; margin-bottom: 6px; font-size: 13px;">[2] Native NetBeans P
+ lugins Settings & Custom Catalogs</h4><p style="font-size: 11px; colo
+ r: #4a5568; margin: 0 0 10px 0;">All Anahata update centers are regis
+ tered with custom branding icons inside the standard NetBeans Plugins
+  manager.</p><a href="https://asi.anahata.uno/screenshots/netbeans/uc
+ -2.png" target="_blank"><img src="https://asi.anahata.uno/screenshots
+ /netbeans/uc-2.png" alt="NetBeans Plugins Settings Tab" border="0" />
+ </a></div><hr style="border: 0; border-top: 1px solid #e2e8f0; margin
+ : 20px 0;"/><div style="margin: 20px 0; padding: 15px; background: #f
+ 7fafc; border: 1px solid #e2e8f0; text-align: left;"><h4 style="margi
+ n-top: 0; color: #2d3748; font-size: 15px; text-transform: uppercase;
+ "><span style="color: #004d98;">◆</span> Universal Provider Integrati
+ on (Zero Vendor Lock-in)</h4><p style="font-size: 12px; color: #4a556
+ 8; margin-bottom: 10px;">Anahata ASI features a completely provider-a
+ gnostic core adapter. The container dynamically loads the following c
+ onfigured providers at runtime:</p><table border="0" cellpadding="6" 
+ cellspacing="0" style="width: 100%; border-collapse: collapse; text-a
+ lign: left; font-size: 11px; background: #fff; border: 1px solid #e2e
+ 8f0;"><tr style="background: #edf2f7; border-bottom: 2px solid #e2e8f
+ 0;"><th style="width: 40px; text-align: center; color: #2d3748;">&nbs
+ p;</th><th style="width: 22%; color: #2d3748;">Display Name</th><th s
+ tyle="width: 46%; color: #2d3748;">Description</th><th style="width: 
+ 28%; color: #2d3748;">Provider Class FQN</th></tr><tr style="border-b
+ ottom: 1px solid #edf2f7;"><td style="text-align: center; vertical-al
+ ign: middle; padding: 6px 4px;"><img src="https://asi.anahata.uno/ass
+ ets/logos/uno.anahata.asi.nvidia.NvidiaAiProvider.png" alt="NVIDIA" w
+ idth="32" height="32" border="0" /></td><td style="font-weight: bold;
+  color: #004d98; vertical-align: middle; padding: 6px 8px;">NVIDIA</t
+ d><td style="color: #4a5568; vertical-align: middle; padding: 6px 8px
+ ;">NVIDIA NIM microservices offering high-performance AI models (Deep
+ Seek, Nemotron, Llama, Cosmos, GLM, Qwen, GPT-OSS).</td><td style="fo
+ nt-family: monospace; color: #a50044; vertical-align: middle; padding
+ : 6px 8px;">uno.anahata.asi.nvidia.NvidiaAiProvider</td></tr><tr styl
+ e="border-bottom: 1px solid #edf2f7;"><td style="text-align: center; 
+ vertical-align: middle; padding: 6px 4px;"><img src="https://asi.anah
+ ata.uno/assets/logos/uno.anahata.asi.novarouteai.NovaRouteAiProvider.
+ png" alt="NovaRouteAI" width="32" height="32" border="0" /></td><td s
+ tyle="font-weight: bold; color: #004d98; vertical-align: middle; padd
+ ing: 6px 8px;">NovaRouteAI</td><td style="color: #4a5568; vertical-al
+ ign: middle; padding: 6px 8px;">OpenAI-compatible access to official 
+ Chinese models (DeepSeek, Qwen, Kimi, GLM, MiniMax).</td><td style="f
+ ont-family: monospace; color: #a50044; vertical-align: middle; paddin
+ g: 6px 8px;">uno.anahata.asi.novarouteai.NovaRouteAiProvider</td></tr
+ ><tr style="border-bottom: 1px solid #edf2f7;"><td style="text-align:
+  center; vertical-align: middle; padding: 6px 4px;"><img src="https:/
+ /asi.anahata.uno/assets/logos/uno.anahata.asi.minimax.MinimaxAnthropi
+ cProvider.png" alt="MiniMax (Anthropic)" width="32" height="32" borde
+ r="0" /></td><td style="font-weight: bold; color: #004d98; vertical-a
+ lign: middle; padding: 6px 8px;">MiniMax (Anthropic)</td><td style="c
+ olor: #4a5568; vertical-align: middle; padding: 6px 8px;">MiniMax API
+  adapter utilizing the Anthropic protocol compatible specification.</
+ td><td style="font-family: monospace; color: #a50044; vertical-align:
+  middle; padding: 6px 8px;">uno.anahata.asi.minimax.MinimaxAnthropicP
+ rovider</td></tr><tr style="border-bottom: 1px solid #edf2f7;"><td st
+ yle="text-align: center; vertical-align: middle; padding: 6px 4px;"><
+ img src="https://asi.anahata.uno/assets/logos/uno.anahata.asi.gemini.
+ GeminiAiProvider.png" alt="Google Cloud (Vertex)" width="32" height="
+ 32" border="0" /></td><td style="font-weight: bold; color: #004d98; v
+ ertical-align: middle; padding: 6px 8px;">Google Cloud (Vertex)</td><
+ td style="color: #4a5568; vertical-align: middle; padding: 6px 8px;">
+ Official Google Cloud Vertex AI client.</td><td style="font-family: m
+ onospace; color: #a50044; vertical-align: middle; padding: 6px 8px;">
+ uno.anahata.asi.gemini.GeminiAiProvider</td></tr><tr style="border-bo
+ ttom: 1px solid #edf2f7;"><td style="text-align: center; vertical-ali
+ gn: middle; padding: 6px 4px;"><img src="https://asi.anahata.uno/asse
+ ts/logos/uno.anahata.asi.huggingface.HuggingFaceProvider.png" alt="Hu
+ gging Face" width="32" height="32" border="0" /></td><td style="font-
+ weight: bold; color: #004d98; vertical-align: middle; padding: 6px 8p
+ x;">Hugging Face</td><td style="color: #4a5568; vertical-align: middl
+ e; padding: 6px 8px;">Hugging Face Serverless Inference API client fo
+ r open-source models.</td><td style="font-family: monospace; color: #
+ a50044; vertical-align: middle; padding: 6px 8px;">uno.anahata.asi.hu
+ ggingface.HuggingFaceProvider</td></tr><tr style="border-bottom: 1px 
+ solid #edf2f7;"><td style="text-align: center; vertical-align: middle
+ ; padding: 6px 4px;"><img src="https://asi.anahata.uno/assets/logos/u
+ no.anahata.asi.openai.OpenAiResponsesProvider.png" alt="OpenAI (Respo
+ nses)" width="32" height="32" border="0" /></td><td style="font-weigh
+ t: bold; color: #004d98; vertical-align: middle; padding: 6px 8px;">O
+ penAI (Responses)</td><td style="color: #4a5568; vertical-align: midd
+ le; padding: 6px 8px;">Modern OpenAI Responses API with stateful hist
+ ory and reasoning.</td><td style="font-family: monospace; color: #a50
+ 044; vertical-align: middle; padding: 6px 8px;">uno.anahata.asi.opena
+ i.OpenAiResponsesProvider</td></tr><tr style="border-bottom: 1px soli
+ d #edf2f7;"><td style="text-align: center; vertical-align: middle; pa
+ dding: 6px 4px;"><img src="https://asi.anahata.uno/assets/logos/uno.a
+ nahata.asi.anthropic.AnthropicProvider.png" alt="Anthropic" width="32
+ " height="32" border="0" /></td><td style="font-weight: bold; color: 
+ #004d98; vertical-align: middle; padding: 6px 8px;">Anthropic</td><td
+  style="color: #4a5568; vertical-align: middle; padding: 6px 8px;">An
+ thropic Claude API client supporting Claude, Sonnet and Mythos.</td><
+ td style="font-family: monospace; color: #a50044; vertical-align: mid
+ dle; padding: 6px 8px;">uno.anahata.asi.anthropic.AnthropicProvider</
+ td></tr><tr style="border-bottom: 1px solid #edf2f7;"><td style="text
+ -align: center; vertical-align: middle; padding: 6px 4px;"><img src="
+ https://asi.anahata.uno/assets/logos/uno.anahata.asi.modal.ModalProvi
+ der.png" alt="Modal Free GLM-5" width="32" height="32" border="0" /><
+ /td><td style="font-weight: bold; color: #004d98; vertical-align: mid
+ dle; padding: 6px 8px;">Modal Free GLM-5</td><td style="color: #4a556
+ 8; vertical-align: middle; padding: 6px 8px;">Modal GLM-5.1 free prom
+ otion.</td><td style="font-family: monospace; color: #a50044; vertica
+ l-align: middle; padding: 6px 8px;">uno.anahata.asi.modal.ModalProvid
+ er</td></tr><tr style="border-bottom: 1px solid #edf2f7;"><td style="
+ text-align: center; vertical-align: middle; padding: 6px 4px;"><img s
  rc="https://asi.anahata.uno/assets/logos/uno.anahata.asi.gemini.Gemin
  iGoogleCloudExpressAIProvider.png" alt="Google Cloud Express Mode" wi
- dth="32" height="32" align="middle" border="0" />&nbsp;&nbsp;Google C
- loud Express Mode</td><td style="color: #4a5568;">Google Vertex AI Ex
- press Mode. 90 days free trial on pro models 2M tokens context window
- .</td><td style="font-family: monospace; color: #a50044;">uno.anahata
- .asi.gemini.GeminiGoogleCloudExpressAIProvider</td></tr><tr style="bo
- rder-bottom: 1px solid #edf2f7;"><td style="font-weight: bold; color:
-  #004d98;"><img src="https://asi.anahata.uno/assets/logos/uno.anahata
- .asi.gemini.GeminiAiProvider.png" alt="Google AI Studio" width="32" h
- eight="32" align="middle" border="0" />&nbsp;&nbsp;Google AI Studio</
- td><td style="color: #4a5568;">Official Google Gemini API client supp
- orting Flash, Pro, and Ultra.</td><td style="font-family: monospace; 
- color: #a50044;">uno.anahata.asi.gemini.GeminiAiProvider</td></tr><tr
-  style="border-bottom: 1px solid #edf2f7;"><td style="font-weight: bo
- ld; color: #004d98;"><img src="https://asi.anahata.uno/assets/logos/u
- no.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider.png" a
- lt="OpenAI Compatible" width="32" height="32" align="middle" border="
- 0" />&nbsp;&nbsp;OpenAI Compatible</td><td style="color: #4a5568;">Un
- iversal chat/completions OpenAI-compatible client for Groq, DeepSeek,
-  Ollama, etc.</td><td style="font-family: monospace; color: #a50044;"
- >uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider</td>
- </tr></table></div><hr style="border: 0; border-top: 1px solid #e2e8f
- 0; margin: 30px 0;"/><h3 style="font-size: 16px; color: #004d98;">Liv
- e Interactive Capabilities Showcase (Studio Engine)</h3><p style="col
- or: #4a5568; margin-bottom: 16px; font-size: 12px;">Explore the activ
- e visual representations of Anahata ASI Studio operating directly ins
- ide Apache NetBeans:</p><div style="margin-bottom: 20px; padding: 12p
- x; background: #fff; border: 1px solid #e2e8f0;"><h4 style="color: #0
- 04d98; margin-top: 0; margin-bottom: 6px; font-size: 13px;">[1] Singu
- larity Engine: Dynamic JIT Java Compiler</h4><p style="font-size: 11p
- x; color: #4a5568; margin: 0 0 10px 0;">The model compiles and execut
- es raw Java code directly inside your running NetBeans JVM utilizing 
- our custom child-first ClassLoader. Build, test, and hot-load live to
- ols, Java swing panels, or complex dependency algorithms on-the-fly.<
- /p><a href="https://asi.anahata.uno/screenshots/netbeans/NbJava.png" 
- target="_blank"><img src="https://asi.anahata.uno/screenshots/netbean
- s/thumbs/NbJava.png" alt="[1] Singularity Engine: Dynamic JIT Java Co
- mpiler" width="650" border="0" /></a></div><div style="margin-bottom:
-  20px; padding: 12px; background: #fff; border: 1px solid #e2e8f0;"><
- h4 style="color: #004d98; margin-top: 0; margin-bottom: 6px; font-siz
- e: 13px;">[2] Multimodal Vision: Real-Time Screen & Region Sharing</h
- 4><p style="font-size: 11px; color: #4a5568; margin: 0 0 10px 0;">Sha
- re physical screens, specific monitors, or custom rectangular regions
-  with the ASI. Perfect for providing real-time visual feedback on Swi
- ng UI renders, layouts, or compiler states.</p><a href="https://asi.a
- nahata.uno/screenshots/netbeans/NetBeansLiveScreenSharingAdrianaLima.
- png" target="_blank"><img src="https://asi.anahata.uno/screenshots/ne
- tbeans/thumbs/NetBeansLiveScreenSharingAdrianaLima.png" alt="[2] Mult
- imodal Vision: Real-Time Screen & Region Sharing" width="650" border=
- "0" /></a></div><div style="margin-bottom: 20px; padding: 12px; backg
- round: #fff; border: 1px solid #e2e8f0;"><h4 style="color: #004d98; m
- argin-top: 0; margin-bottom: 6px; font-size: 13px;">[3] Atomic Contex
- t: Visual Resource Highlighting</h4><p style="font-size: 11px; color:
-  #4a5568; margin: 0 0 10px 0;">Complete visual context awareness. Fil
- es loaded into the active AI context automatically light up with a vi
- brant indicator directly inside the NetBeans Projects, Files, and Fav
- orites views.</p><a href="https://asi.anahata.uno/screenshots/netbean
- s/InContextResourcesVisualization.png" target="_blank"><img src="http
- s://asi.anahata.uno/screenshots/netbeans/thumbs/InContextResourcesVis
- ualization.png" alt="[3] Atomic Context: Visual Resource Highlighting
- " width="650" border="0" /></a></div><div style="margin-bottom: 20px;
-  padding: 12px; background: #fff; border: 1px solid #e2e8f0;"><h4 sty
- le="color: #004d98; margin-top: 0; margin-bottom: 6px; font-size: 13p
- x;">[4] Real-Time 3D & Hardware Prototyping (LWJGL)</h4><p style="fon
- t-size: 11px; color: #4a5568; margin: 0 0 10px 0;">With built-in LWJG
- L, GLFW, and OpenGL dependencies, the agent can write, compile, and r
- un raw, real-time 3D rendering windows and game prototypes directly o
- n the host JVM.</p><a href="https://asi.anahata.uno/screenshots/netbe
- ans/NetBeansBundledLWJGL.png" target="_blank"><img src="https://asi.a
- nahata.uno/screenshots/netbeans/thumbs/NetBeansBundledLWJGL.png" alt=
- "[4] Real-Time 3D & Hardware Prototyping (LWJGL)" width="650" border=
- "0" /></a></div><div style="margin-bottom: 20px; padding: 12px; backg
- round: #fff; border: 1px solid #e2e8f0;"><h4 style="color: #004d98; m
- argin-top: 0; margin-bottom: 6px; font-size: 13px;">[5] Agentic Feedb
- ack: Inline AI Code Annotations</h4><p style="font-size: 11px; color:
-  #4a5568; margin: 0 0 10px 0;">Model suggestions, code explanations, 
- and diagnostics are painted dynamically directly onto your source cod
- e lines within the NetBeans editor, acting as non-intrusive guide mar
- kers.</p><a href="https://asi.anahata.uno/screenshots/netbeans/Inline
- AIAnnotations.png" target="_blank"><img src="https://asi.anahata.uno/
- screenshots/netbeans/thumbs/InlineAIAnnotations.png" alt="[5] Agentic
-  Feedback: Inline AI Code Annotations" width="650" border="0" /></a><
- /div><div style="margin-bottom: 20px; padding: 12px; background: #fff
- ; border: 1px solid #e2e8f0;"><h4 style="color: #004d98; margin-top: 
- 0; margin-bottom: 6px; font-size: 13px;">[6] Self-Healing Filesystem 
- tracking (NbHandle)</h4><p style="font-size: 11px; color: #4a5568; ma
- rgin: 0 0 10px 0;">Every resource handle in context is bound to a nat
- ive NetBeans FileObject. If you drag-and-drop, rename, cut, or paste 
- a file across projects, the handle auto-heals and preserves context.<
- /p><a href="https://asi.anahata.uno/screenshots/netbeans/NbHandleForF
- ileObjectIntegration.png" target="_blank"><img src="https://asi.anaha
- ta.uno/screenshots/netbeans/thumbs/NbHandleForFileObjectIntegration.p
- ng" alt="[6] Self-Healing Filesystem tracking (NbHandle)" width="650"
-  border="0" /></a></div><div style="margin-bottom: 20px; padding: 12p
- x; background: #fff; border: 1px solid #e2e8f0;"><h4 style="color: #0
- 04d98; margin-top: 0; margin-bottom: 6px; font-size: 13px;">[7] Proje
- ct Structure & Class Hierarchy Mapping</h4><p style="font-size: 11px;
-  color: #4a5568; margin: 0 0 10px 0;">The model receives structured d
- irectory trees of all open source packages, mapping classes, interfac
- es, records, field modifiers, and precise sizes without expensive dir
- ectory walking.</p><a href="https://asi.anahata.uno/screenshots/netbe
- ans/ProjectStructureContextProvider.png" target="_blank"><img src="ht
- tps://asi.anahata.uno/screenshots/netbeans/thumbs/ProjectStructureCon
- textProvider.png" alt="[7] Project Structure & Class Hierarchy Mappin
- g" width="650" border="0" /></a></div><div style="margin-bottom: 20px
- ; padding: 12px; background: #fff; border: 1px solid #e2e8f0;"><h4 st
- yle="color: #004d98; margin-top: 0; margin-bottom: 6px; font-size: 13
- px;">[8] Instant Diagnostics & Javac Errors Cache</h4><p style="font-
- size: 11px; color: #4a5568; margin: 0 0 10px 0;">Continuous, turn-by-
- turn tracking of workspace health. If a code patch triggers a compila
- tion error, the agent instantly receives the full compiler error stac
- k trace during reloop.</p><a href="https://asi.anahata.uno/screenshot
- s/netbeans/ProjectAlertsContextProvider.png" target="_blank"><img src
- ="https://asi.anahata.uno/screenshots/netbeans/thumbs/ProjectAlertsCo
- ntextProvider.png" alt="[8] Instant Diagnostics & Javac Errors Cache"
-  width="650" border="0" /></a></div><div style="margin-bottom: 20px; 
- padding: 12px; background: #fff; border: 1px solid #e2e8f0;"><h4 styl
- e="color: #004d98; margin-top: 0; margin-bottom: 6px; font-size: 13px
- ;">[9] Deep Work Zone: Curated Radio & MIDI Synthesizer</h4><p style=
- "font-size: 11px; color: #4a5568; margin: 0 0 10px 0;">Maintain compl
- ete creative focus. Stream high-fidelity internet radio (such as Soma
- FM, NTS, or KEXP Seattle) directly from NetBeans.</p><a href="https:/
- /asi.anahata.uno/screenshots/netbeans/RadioTool.png" target="_blank">
- <img src="https://asi.anahata.uno/screenshots/netbeans/thumbs/RadioTo
- ol.png" alt="[9] Deep Work Zone: Curated Radio & MIDI Synthesizer" wi
- dth="650" border="0" /></a></div><div style="margin-bottom: 20px; pad
- ding: 12px; background: #fff; border: 1px solid #e2e8f0;"><h4 style="
- color: #004d98; margin-top: 0; margin-bottom: 6px; font-size: 13px;">
- [10] Context Window Garbage Collector (CwGC) Logs</h4><p style="font-
- size: 11px; color: #4a5568; margin: 0 0 10px 0;">A revolutionary, dep
- th-based context window metabolism. Messages fade gradually depending
-  on their type, and both model and developer can pin or prune parts t
- o support infinitely long sessions.</p><a href="https://asi.anahata.u
- no/screenshots/netbeans/ContextWindowGarbageCollector.png" target="_b
- lank"><img src="https://asi.anahata.uno/screenshots/netbeans/thumbs/C
- ontextWindowGarbageCollector.png" alt="[10] Context Window Garbage Co
- llector (CwGC) Logs" width="650" border="0" /></a></div><div style="m
- argin-bottom: 20px; padding: 12px; background: #fff; border: 1px soli
- d #e2e8f0;"><h4 style="color: #004d98; margin-top: 0; margin-bottom: 
- 6px; font-size: 13px;">[11] Human-in-the-Loop Parameter Modification<
- /h4><p style="font-size: 11px; color: #4a5568; margin: 0 0 10px 0;">C
- omplete control over tool execution. View, review, edit, or clear par
- ameters and Java payloads with full syntax highlighting before lettin
- g the agent execute them.</p><a href="https://asi.anahata.uno/screens
- hots/netbeans/editable-java-tool-calls-shl.png" target="_blank"><img 
- src="https://asi.anahata.uno/screenshots/netbeans/thumbs/editable-jav
- a-tool-calls-shl.png" alt="[11] Human-in-the-Loop Parameter Modificat
- ion" width="650" border="0" /></a></div><div style="margin-bottom: 20
+ dth="32" height="32" border="0" /></td><td style="font-weight: bold; 
+ color: #004d98; vertical-align: middle; padding: 6px 8px;">Google Clo
+ ud Express Mode</td><td style="color: #4a5568; vertical-align: middle
+ ; padding: 6px 8px;">Google Vertex AI Express Mode. 90 days free tria
+ l on pro models 2M tokens context window.</td><td style="font-family:
+  monospace; color: #a50044; vertical-align: middle; padding: 6px 8px;
+ ">uno.anahata.asi.gemini.GeminiGoogleCloudExpressAIProvider</td></tr>
+ <tr style="border-bottom: 1px solid #edf2f7;"><td style="text-align: 
+ center; vertical-align: middle; padding: 6px 4px;"><img src="https://
+ asi.anahata.uno/assets/logos/uno.anahata.asi.gemini.GeminiAiProvider.
+ png" alt="Google AI Studio" width="32" height="32" border="0" /></td>
+ <td style="font-weight: bold; color: #004d98; vertical-align: middle;
+  padding: 6px 8px;">Google AI Studio</td><td style="color: #4a5568; v
+ ertical-align: middle; padding: 6px 8px;">Official Google Gemini API 
+ client supporting Flash, Pro, and Ultra.</td><td style="font-family: 
+ monospace; color: #a50044; vertical-align: middle; padding: 6px 8px;"
+ >uno.anahata.asi.gemini.GeminiAiProvider</td></tr><tr style="border-b
+ ottom: 1px solid #edf2f7;"><td style="text-align: center; vertical-al
+ ign: middle; padding: 6px 4px;"><img src="https://asi.anahata.uno/ass
+ ets/logos/uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProv
+ ider.png" alt="OpenAI Compatible" width="32" height="32" border="0" /
+ ></td><td style="font-weight: bold; color: #004d98; vertical-align: m
+ iddle; padding: 6px 8px;">OpenAI Compatible</td><td style="color: #4a
+ 5568; vertical-align: middle; padding: 6px 8px;">Universal chat/compl
+ etions OpenAI-compatible client for Groq, DeepSeek, Ollama, etc.</td>
+ <td style="font-family: monospace; color: #a50044; vertical-align: mi
+ ddle; padding: 6px 8px;">uno.anahata.asi.openai.compatible.OpenAiChat
+ CompletionsProvider</td></tr></table></div><hr style="border: 0; bord
+ er-top: 1px solid #e2e8f0; margin: 30px 0;"/><h3 style="font-size: 16
+ px; color: #004d98;">Live Interactive Capabilities Showcase (Studio E
+ ngine)</h3><p style="color: #4a5568; margin-bottom: 16px; font-size: 
+ 12px;">Explore the active visual representations of Anahata ASI Studi
+ o operating directly inside Apache NetBeans:</p><div style="margin-bo
+ ttom: 20px; padding: 12px; background: #fff; border: 1px solid #e2e8f
+ 0;"><h4 style="color: #004d98; margin-top: 0; margin-bottom: 6px; fon
+ t-size: 13px;">[1] Singularity Engine: Dynamic JIT Java Compiler</h4>
+ <p style="font-size: 11px; color: #4a5568; margin: 0 0 10px 0;">The m
+ odel compiles and executes raw Java code directly inside your running
+  NetBeans JVM utilizing our custom child-first ClassLoader. Build, te
+ st, and hot-load live tools, Java swing panels, or complex dependency
+  algorithms on-the-fly.</p><a href="https://asi.anahata.uno/screensho
+ ts/netbeans/NbJava.png" target="_blank"><img src="https://asi.anahata
+ .uno/screenshots/netbeans/thumbs/NbJava.png" alt="[1] Singularity Eng
+ ine: Dynamic JIT Java Compiler" width="650" border="0" /></a></div><d
+ iv style="margin-bottom: 20px; padding: 12px; background: #fff; borde
+ r: 1px solid #e2e8f0;"><h4 style="color: #004d98; margin-top: 0; marg
+ in-bottom: 6px; font-size: 13px;">[2] Multimodal Vision: Real-Time Sc
+ reen & Region Sharing</h4><p style="font-size: 11px; color: #4a5568; 
+ margin: 0 0 10px 0;">Share physical screens, specific monitors, or cu
+ stom rectangular regions with the ASI. Perfect for providing real-tim
+ e visual feedback on Swing UI renders, layouts, or compiler states.</
+ p><a href="https://asi.anahata.uno/screenshots/netbeans/NetBeansLiveS
+ creenSharingAdrianaLima.png" target="_blank"><img src="https://asi.an
+ ahata.uno/screenshots/netbeans/thumbs/NetBeansLiveScreenSharingAdrian
+ aLima.png" alt="[2] Multimodal Vision: Real-Time Screen & Region Shar
+ ing" width="650" border="0" /></a></div><div style="margin-bottom: 20
  px; padding: 12px; background: #fff; border: 1px solid #e2e8f0;"><h4 
  style="color: #004d98; margin-top: 0; margin-bottom: 6px; font-size: 
- 13px;">[12] Command Center: Granular Security Permissions</h4><p styl
- e="font-size: 11px; color: #4a5568; margin: 0 0 10px 0;">Assign Promp
- t, Always, or Never execution permissions across 148+ stateful JVM to
- ols. Enjoy completely secure, sandboxable coding without blind writes
- .</p><a href="https://asi.anahata.uno/screenshots/netbeans/tool-permi
- ssions-preferences.png" target="_blank"><img src="https://asi.anahata
- .uno/screenshots/netbeans/thumbs/tool-permissions-preferences.png" al
- t="[12] Command Center: Granular Security Permissions" width="650" bo
- rder="0" /></a></div><div style="margin-bottom: 20px; padding: 12px; 
- background: #fff; border: 1px solid #e2e8f0;"><h4 style="color: #004d
- 98; margin-top: 0; margin-bottom: 6px; font-size: 13px;">[13] Dynamic
-  Provider Registry & Keys Panel</h4><p style="font-size: 11px; color:
-  #4a5568; margin: 0 0 10px 0;">Seamlessly configure multiple API endp
- oints, tokens, max tokens, and temperature parameters globally across
-  all supported AI providers.</p><a href="https://asi.anahata.uno/scre
- enshots/netbeans/asi-container-preferences-ai-providers.png" target="
- _blank"><img src="https://asi.anahata.uno/screenshots/netbeans/thumbs
- /asi-container-preferences-ai-providers.png" alt="[13] Dynamic Provid
- er Registry & Keys Panel" width="650" border="0" /></a></div><div sty
+ 13px;">[3] Atomic Context: Visual Resource Highlighting</h4><p style=
+ "font-size: 11px; color: #4a5568; margin: 0 0 10px 0;">Complete visua
+ l context awareness. Files loaded into the active AI context automati
+ cally light up with a vibrant indicator directly inside the NetBeans 
+ Projects, Files, and Favorites views.</p><a href="https://asi.anahata
+ .uno/screenshots/netbeans/InContextResourcesVisualization.png" target
+ ="_blank"><img src="https://asi.anahata.uno/screenshots/netbeans/thum
+ bs/InContextResourcesVisualization.png" alt="[3] Atomic Context: Visu
+ al Resource Highlighting" width="650" border="0" /></a></div><div sty
  le="margin-bottom: 20px; padding: 12px; background: #fff; border: 1px
   solid #e2e8f0;"><h4 style="color: #004d98; margin-top: 0; margin-bot
- tom: 6px; font-size: 13px;">[14] Collaborative NetBeans Terminal (NbT
- erminal)</h4><p style="font-size: 11px; color: #4a5568; margin: 0 0 1
- 0px 0;">Integrated NetBeans terminal tab shared interactively between
-  the developer and the model for subshell collaboration, command exec
- ution, and viewport line monitoring.</p><a href="https://asi.anahata.
- uno/screenshots/netbeans/CollaborativeNetBeansTerminal.png" target="_
- blank"><img src="https://asi.anahata.uno/screenshots/netbeans/thumbs/
- CollaborativeNetBeansTerminal.png" alt="[14] Collaborative NetBeans T
- erminal (NbTerminal)" width="650" border="0" /></a></div><hr style="b
- order: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;"/><h3 style=
- "font-size: 16px; color: #004d98;">Compiled Platform Toolkits (160+ N
- ative JVM Tools)</h3><p style="color: #4a5568; margin-bottom: 12px; f
- ont-size: 12px;">Anahata hosts a robust, stateful registry of compile
- d tools running directly in-process:</p><table border="0" cellpadding
- ="6" cellspacing="0" style="width: 100%; border-collapse: collapse; t
- ext-align: left; font-size: 11px; background: #fff; border: 1px solid
-  #e2e8f0;"><tr style="background: #edf2f7; border-bottom: 2px solid #
- e2e8f0;"><th style="width: 25%; color: #2d3748;">Toolkit Name</th><th
-  style="width: 60%; color: #2d3748;">Capability Scope & System Access
- </th><th style="width: 15%; text-align: center; color: #2d3748;">Tool
-  Count</th></tr><tr style="border-bottom: 1px solid #edf2f7;"><td sty
- le="font-weight: bold; color: #004d98;">JIT Java Compiler</td><td sty
- le="color: #4a5568;">In-JVM dynamic JIT Java compiler. Builds, loads,
-  and executes generated classes with custom ClassLoaders.</td><td sty
- le="text-align: center; font-weight: bold;">2 Tools</td></tr><tr styl
- e="border-bottom: 1px solid #edf2f7;"><td style="font-weight: bold; c
- olor: #004d98;">AST Batch Refiner</td><td style="color: #4a5568;">Exe
- cutes complex batches of AST structural changes (inserts, updates, de
- letes, moves) in a single transaction.</td><td style="text-align: cen
- ter; font-weight: bold;">1 Tool</td></tr><tr style="border-bottom: 1p
- x solid #edf2f7;"><td style="font-weight: bold; color: #004d98;">AST 
- Code Refiner</td><td style="color: #4a5568;">Surgical AST-based updat
- es of method declarations, field initializers, reformats, and imports
- .</td><td style="text-align: center; font-weight: bold;">8 Tools</td>
- </tr><tr style="border-bottom: 1px solid #edf2f7;"><td style="font-we
- ight: bold; color: #004d98;">CodeModel Explorer</td><td style="color:
-  #4a5568;">Direct access to NetBeans types index. Resolves FQNs, type
- s, hierarchy trees, sources, and Javadocs.</td><td style="text-align:
-  center; font-weight: bold;">16 Tools</td></tr><tr style="border-bott
- om: 1px solid #edf2f7;"><td style="font-weight: bold; color: #004d98;
- ">IDE Refactor Engine</td><td style="color: #4a5568;">Invokes NetBean
- s safe refactoring (renames, safe deletes, pulls, pushes, encapsulati
- ons) updating all calling files.</td><td style="text-align: center; f
- ont-weight: bold;">17 Tools</td></tr><tr style="border-bottom: 1px so
- lid #edf2f7;"><td style="font-weight: bold; color: #004d98;">Maven In
- tegrator</td><td style="color: #4a5568;">Runs goals synchronously via
-  NetBeans Maven embedder, modifies POM, and returns transitive classp
- ath maps.</td><td style="text-align: center; font-weight: bold;">7 To
- ols</td></tr><tr style="border-bottom: 1px solid #edf2f7;"><td style=
- "font-weight: bold; color: #004d98;">Workspace Projects</td><td style
- ="color: #4a5568;">Workspace projects management: open, close, set Ma
- in, trigger project actions, and configure CoS.</td><td style="text-a
- lign: center; font-weight: bold;">7 Tools</td></tr><tr style="border-
- bottom: 1px solid #edf2f7;"><td style="font-weight: bold; color: #004
- d98;">NetBeans Terminal</td><td style="color: #4a5568;">Integrates wi
- th NetBeans terminal tabs for command execution, subshell collaborati
- on, and log monitoring.</td><td style="text-align: center; font-weigh
- t: bold;">4 Tools</td></tr><tr style="border-bottom: 1px solid #edf2f
- 7;"><td style="font-weight: bold; color: #004d98;">Javac Editor Hints
- </td><td style="color: #4a5568;">Inspects Javac parsing alerts, appli
- es quick-fixes, and removes unused imports structurally.</td><td styl
- e="text-align: center; font-weight: bold;">3 Tools</td></tr><tr style
- ="border-bottom: 1px solid #edf2f7;"><td style="font-weight: bold; co
- lor: #004d98;">Chrome (Selenium)</td><td style="color: #4a5568;">Web 
- automation drone using Chrome. Navigates, fills forms, clicks element
- s, and executes JS scripts.</td><td style="text-align: center; font-w
- eight: bold;">19 Tools</td></tr><tr style="border-bottom: 1px solid #
- edf2f7;"><td style="font-weight: bold; color: #004d98;">Firefox (Sele
- nium)</td><td style="color: #4a5568;">Web automation drone using Fire
- fox. Supports profiles, cookies session, navigation, and screenshots.
- </td><td style="text-align: center; font-weight: bold;">19 Tools</td>
- </tr><tr style="border-bottom: 1px solid #edf2f7;"><td style="font-we
- ight: bold; color: #004d98;">Unified Resources</td><td style="color: 
- #4a5568;">Manages files, URLs, and Strings handles, controls viewport
-  settings, and creates text assets.</td><td style="text-align: center
- ; font-weight: bold;">8 Tools</td></tr><tr style="border-bottom: 1px 
- solid #edf2f7;"><td style="font-weight: bold; color: #004d98;">Audio 
- Hardware</td><td style="color: #4a5568;">Controls input/output lines,
-  records audio WAV files, and manages playback.</td><td style="text-a
- lign: center; font-weight: bold;">4 Tools</td></tr><tr style="border-
- bottom: 1px solid #edf2f7;"><td style="font-weight: bold; color: #004
- d98;">Visual Screen</td><td style="color: #4a5568;">Captures displays
- , crops regional rectangles, and manages live multi-window screen sha
- ring.</td><td style="text-align: center; font-weight: bold;">6 Tools<
- /td></tr><tr style="border-bottom: 1px solid #edf2f7;"><td style="fon
- t-weight: bold; color: #004d98;">YouTube Toolkit</td><td style="color
- : #4a5568;">YouTube Data API v3 client for video uploads, playlist ma
- nagement, metadata curation, and analytics.</td><td style="text-align
- : center; font-weight: bold;">10 Tools</td></tr><tr style="border-bot
- tom: 1px solid #edf2f7;"><td style="font-weight: bold; color: #004d98
- ;">Benchmark Engine</td><td style="color: #4a5568;">Programmatic benc
- hmark orchestrator for autonomous AI model evaluations across standar
- dized test catalogs.</td><td style="text-align: center; font-weight: 
- bold;">6 Tools</td></tr><tr style="border-bottom: 1px solid #edf2f7;"
- ><td style="font-weight: bold; color: #004d98;">Session Controller</t
- d><td style="color: #4a5568;">Orchestrates session summaries, toggles
-  provider settings, and manages hosted Google tools.</td><td style="t
- ext-align: center; font-weight: bold;">10 Tools</td></tr><tr style="b
- order-bottom: 1px solid #edf2f7;"><td style="font-weight: bold; color
- : #004d98;">CwGC Metabolism</td><td style="color: #4a5568;">Manages t
- he Context Window Garbage Collector settings (expiry depths, pinning,
-  and metadata strategy).</td><td style="text-align: center; font-weig
- ht: bold;">4 Tools</td></tr><tr style="border-bottom: 1px solid #edf2
- f7;"><td style="font-weight: bold; color: #004d98;">Flow Radio</td><t
- d style="color: #4a5568;">Streams high-fidelity internet radio direct
- ly from the IDE toolbar.</td><td style="text-align: center; font-weig
- ht: bold;">3 Tools</td></tr><tr style="border-bottom: 1px solid #edf2
- f7;"><td style="font-weight: bold; color: #004d98;">Host & Speech</td
- ><td style="color: #4a5568;">Tails log outputs, scans active OS proce
- sses by PID, and executes TTS speech.</td><td style="text-align: cent
- er; font-weight: bold;">12 Tools</td></tr></table><hr style="border: 
- 0; border-top: 1px solid #e2e8f0; margin: 30px 0;"/><div style="text-
- align: center; padding: 18px; background: #fffdf5; border: 1px solid 
- #fcf2e3; margin: 20px 0;"><h4 style="color: #edbb00; font-size: 16px;
-  margin-top: 0;">Support the Open-Source Aliens</h4><p style="font-si
- ze: 12px; color: #555; margin-bottom: 14px;">Anahata is developed as 
- a pure, open-source project. If we are saving your enterprise hours o
- f boilerplate, please consider buying our developers some beers, prop
- er Peruvian mapacho cigars, or tickets to watch our beloved Barça:</p
- ><table border="0" cellpadding="0" cellspacing="0" align="center"><tr
- ><td align="center" bgcolor="#00457C" style="background: #00457C; pad
- ding: 10px 24px;"><a href="https://www.paypal.com/donate/?hosted_butt
- on_id=SS8B8R7S68R7G" target="_blank" style="color: #ffffff; font-weig
- ht: bold; font-size: 13px; text-decoration: none;"><font color="#ffff
- ff"><b>Donate Now (PayPal)</b></font></a></td></tr></table></div><hr 
- style="border: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;"/><p
-  style="text-align: center; font-style: italic; color: #555; font-siz
- e: 12px;">Developed with pride and passion by Anahata. Força Barça! <
- span style="color: #004d98;">●</span><span style="color: #a50044;">●<
- /span></p><div style="margin: 15px 0; text-align: center;"><img src="
- https://asi.anahata.uno/assets/messi_photo.png" alt="Lionel Messi Gre
- atest of All Timelines" width="540" border="0" /></div><img referrerp
- olicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png
- ?x-pxid=f19c44f5-8b2e-458f-beab-96e4f9f8e603" width="1" height="1" bo
- rder="0" /></div></html>
+ tom: 6px; font-size: 13px;">[4] Real-Time 3D & Hardware Prototyping (
+ LWJGL)</h4><p style="font-size: 11px; color: #4a5568; margin: 0 0 10p
+ x 0;">With built-in LWJGL, GLFW, and OpenGL dependencies, the agent c
+ an write, compile, and run raw, real-time 3D rendering windows and ga
+ me prototypes directly on the host JVM.</p><a href="https://asi.anaha
+ ta.uno/screenshots/netbeans/NetBeansBundledLWJGL.png" target="_blank"
+ ><img src="https://asi.anahata.uno/screenshots/netbeans/thumbs/NetBea
+ nsBundledLWJGL.png" alt="[4] Real-Time 3D & Hardware Prototyping (LWJ
+ GL)" width="650" border="0" /></a></div><div style="margin-bottom: 20
+ px; padding: 12px; background: #fff; border: 1px solid #e2e8f0;"><h4 
+ style="color: #004d98; margin-top: 0; margin-bottom: 6px; font-size: 
+ 13px;">[5] Agentic Feedback: Inline AI Code Annotations</h4><p style=
+ "font-size: 11px; color: #4a5568; margin: 0 0 10px 0;">Model suggesti
+ ons, code explanations, and diagnostics are painted dynamically direc
+ tly onto your source code lines within the NetBeans editor, acting as
+  non-intrusive guide markers.</p><a href="https://asi.anahata.uno/scr
+ eenshots/netbeans/InlineAIAnnotations.png" target="_blank"><img src="
+ https://asi.anahata.uno/screenshots/netbeans/thumbs/InlineAIAnnotatio
+ ns.png" alt="[5] Agentic Feedback: Inline AI Code Annotations" width=
+ "650" border="0" /></a></div><div style="margin-bottom: 20px; padding
+ : 12px; background: #fff; border: 1px solid #e2e8f0;"><h4 style="colo
+ r: #004d98; margin-top: 0; margin-bottom: 6px; font-size: 13px;">[6] 
+ Self-Healing Filesystem tracking (NbHandle)</h4><p style="font-size: 
+ 11px; color: #4a5568; margin: 0 0 10px 0;">Every resource handle in c
+ ontext is bound to a native NetBeans FileObject. If you drag-and-drop
+ , rename, cut, or paste a file across projects, the handle auto-heals
+  and preserves context.</p><a href="https://asi.anahata.uno/screensho
+ ts/netbeans/NbHandleForFileObjectIntegration.png" target="_blank"><im
+ g src="https://asi.anahata.uno/screenshots/netbeans/thumbs/NbHandleFo
+ rFileObjectIntegration.png" alt="[6] Self-Healing Filesystem tracking
+  (NbHandle)" width="650" border="0" /></a></div><div style="margin-bo
+ ttom: 20px; padding: 12px; background: #fff; border: 1px solid #e2e8f
+ 0;"><h4 style="color: #004d98; margin-top: 0; margin-bottom: 6px; fon
+ t-size: 13px;">[7] Project Structure & Class Hierarchy Mapping</h4><p
+  style="font-size: 11px; color: #4a5568; margin: 0 0 10px 0;">The mod
+ el receives structured directory trees of all open source packages, m
+ apping classes, interfaces, records, field modifiers, and precise siz
+ es without expensive directory walking.</p><a href="https://asi.anaha
+ ta.uno/screenshots/netbeans/ProjectStructureContextProvider.png" targ
+ et="_blank"><img src="https://asi.anahata.uno/screenshots/netbeans/th
+ umbs/ProjectStructureContextProvider.png" alt="[7] Project Structure 
+ & Class Hierarchy Mapping" width="650" border="0" /></a></div><div st
+ yle="margin-bottom: 20px; padding: 12px; background: #fff; border: 1p
+ x solid #e2e8f0;"><h4 style="color: #004d98; margin-top: 0; margin-bo
+ ttom: 6px; font-size: 13px;">[8] Instant Diagnostics & Javac Errors C
+ ache</h4><p style="font-size: 11px; color: #4a5568; margin: 0 0 10px 
+ 0;">Continuous, turn-by-turn tracking of workspace health. If a code 
+ patch triggers a compilation error, the agent instantly receives the 
+ full compiler error stack trace during reloop.</p><a href="https://as
+ i.anahata.uno/screenshots/netbeans/ProjectAlertsContextProvider.png" 
+ target="_blank"><img src="https://asi.anahata.uno/screenshots/netbean
+ s/thumbs/ProjectAlertsContextProvider.png" alt="[8] Instant Diagnosti
+ cs & Javac Errors Cache" width="650" border="0" /></a></div><div styl
+ e="margin-bottom: 20px; padding: 12px; background: #fff; border: 1px 
+ solid #e2e8f0;"><h4 style="color: #004d98; margin-top: 0; margin-bott
+ om: 6px; font-size: 13px;">[9] Deep Work Zone: Curated Radio & MIDI S
+ ynthesizer</h4><p style="font-size: 11px; color: #4a5568; margin: 0 0
+  10px 0;">Maintain complete creative focus. Stream high-fidelity inte
+ rnet radio (such as SomaFM, NTS, or KEXP Seattle) directly from NetBe
+ ans.</p><a href="https://asi.anahata.uno/screenshots/netbeans/RadioTo
+ ol.png" target="_blank"><img src="https://asi.anahata.uno/screenshots
+ /netbeans/thumbs/RadioTool.png" alt="[9] Deep Work Zone: Curated Radi
+ o & MIDI Synthesizer" width="650" border="0" /></a></div><div style="
+ margin-bottom: 20px; padding: 12px; background: #fff; border: 1px sol
+ id #e2e8f0;"><h4 style="color: #004d98; margin-top: 0; margin-bottom:
+  6px; font-size: 13px;">[10] Context Window Garbage Collector (CwGC) 
+ Logs</h4><p style="font-size: 11px; color: #4a5568; margin: 0 0 10px 
+ 0;">A revolutionary, depth-based context window metabolism. Messages 
+ fade gradually depending on their type, and both model and developer 
+ can pin or prune parts to support infinitely long sessions.</p><a hre
+ f="https://asi.anahata.uno/screenshots/netbeans/ContextWindowGarbageC
+ ollector.png" target="_blank"><img src="https://asi.anahata.uno/scree
+ nshots/netbeans/thumbs/ContextWindowGarbageCollector.png" alt="[10] C
+ ontext Window Garbage Collector (CwGC) Logs" width="650" border="0" /
+ ></a></div><div style="margin-bottom: 20px; padding: 12px; background
+ : #fff; border: 1px solid #e2e8f0;"><h4 style="color: #004d98; margin
+ -top: 0; margin-bottom: 6px; font-size: 13px;">[11] Human-in-the-Loop
+  Parameter Modification</h4><p style="font-size: 11px; color: #4a5568
+ ; margin: 0 0 10px 0;">Complete control over tool execution. View, re
+ view, edit, or clear parameters and Java payloads with full syntax hi
+ ghlighting before letting the agent execute them.</p><a href="https:/
+ /asi.anahata.uno/screenshots/netbeans/editable-java-tool-calls-shl.pn
+ g" target="_blank"><img src="https://asi.anahata.uno/screenshots/netb
+ eans/thumbs/editable-java-tool-calls-shl.png" alt="[11] Human-in-the-
+ Loop Parameter Modification" width="650" border="0" /></a></div><div 
+ style="margin-bottom: 20px; padding: 12px; background: #fff; border: 
+ 1px solid #e2e8f0;"><h4 style="color: #004d98; margin-top: 0; margin-
+ bottom: 6px; font-size: 13px;">[12] Command Center: Granular Security
+  Permissions</h4><p style="font-size: 11px; color: #4a5568; margin: 0
+  0 10px 0;">Assign Prompt, Always, or Never execution permissions acr
+ oss 180+ stateful JVM tools. Enjoy completely secure, sandboxable cod
+ ing without blind writes.</p><a href="https://asi.anahata.uno/screens
+ hots/netbeans/tool-permissions-preferences.png" target="_blank"><img 
+ src="https://asi.anahata.uno/screenshots/netbeans/thumbs/tool-permiss
+ ions-preferences.png" alt="[12] Command Center: Granular Security Per
+ missions" width="650" border="0" /></a></div><div style="margin-botto
+ m: 20px; padding: 12px; background: #fff; border: 1px solid #e2e8f0;"
+ ><h4 style="color: #004d98; margin-top: 0; margin-bottom: 6px; font-s
+ ize: 13px;">[13] Dynamic Provider Registry & Keys Panel</h4><p style=
+ "font-size: 11px; color: #4a5568; margin: 0 0 10px 0;">Seamlessly con
+ figure multiple API endpoints, tokens, max tokens, and temperature pa
+ rameters globally across all supported AI providers.</p><a href="http
+ s://asi.anahata.uno/screenshots/netbeans/asi-container-preferences-ai
+ -providers.png" target="_blank"><img src="https://asi.anahata.uno/scr
+ eenshots/netbeans/thumbs/asi-container-preferences-ai-providers.png" 
+ alt="[13] Dynamic Provider Registry & Keys Panel" width="650" border=
+ "0" /></a></div><div style="margin-bottom: 20px; padding: 12px; backg
+ round: #fff; border: 1px solid #e2e8f0;"><h4 style="color: #004d98; m
+ argin-top: 0; margin-bottom: 6px; font-size: 13px;">[14] Collaborativ
+ e NetBeans Terminal (NbTerminal)</h4><p style="font-size: 11px; color
+ : #4a5568; margin: 0 0 10px 0;">Integrated NetBeans terminal tab shar
+ ed interactively between the developer and the model for subshell col
+ laboration, command execution, and viewport line monitoring.</p><a hr
+ ef="https://asi.anahata.uno/screenshots/netbeans/CollaborativeNetBean
+ sTerminal.png" target="_blank"><img src="https://asi.anahata.uno/scre
+ enshots/netbeans/thumbs/CollaborativeNetBeansTerminal.png" alt="[14] 
+ Collaborative NetBeans Terminal (NbTerminal)" width="650" border="0" 
+ /></a></div><hr style="border: 0; border-top: 1px solid #e2e8f0; marg
+ in: 30px 0;"/><h3 style="font-size: 16px; color: #004d98;">Compiled P
+ latform Toolkits (184 Stateful JVM Tools)</h3><p style="color: #4a556
+ 8; margin-bottom: 12px; font-size: 12px;">Anahata hosts a robust, sta
+ teful registry of compiled tools running directly in-process:</p><tab
+ le border="0" cellpadding="6" cellspacing="0" style="width: 100%; bor
+ der-collapse: collapse; text-align: left; font-size: 11px; background
+ : #fff; border: 1px solid #e2e8f0;"><tr style="background: #edf2f7; b
+ order-bottom: 2px solid #e2e8f0;"><th style="width: 32px; text-align:
+  center; color: #2d3748;">&nbsp;</th><th style="width: 26%; color: #2
+ d3748;">Toolkit Name</th><th style="width: 58%; color: #2d3748;">Capa
+ bility Scope & System Access</th><th style="width: 12%; text-align: c
+ enter; color: #2d3748;">Tool Count</th></tr><tr style="border-bottom:
+  1px solid #edf2f7;"><td style="text-align: center; vertical-align: m
+ iddle; padding: 6px 4px;"><img src="https://img.icons8.com/?size=100&
+ id=4djt356tq8UO&format=png&color=000000" width="20" height="20" borde
+ r="0" /></td><td style="font-weight: bold; color: #004d98; vertical-a
+ lign: middle; padding: 6px 8px;">JIT Java Compiler (NbJava)</td><td s
+ tyle="color: #4a5568; vertical-align: middle; padding: 6px 8px;">In-J
+ VM dynamic JIT Java compiler. Builds, loads, and executes generated c
+ lasses with custom ClassLoaders.</td><td style="text-align: center; f
+ ont-weight: bold; vertical-align: middle; padding: 6px 8px;">8 Tools<
+ /td></tr><tr style="border-bottom: 1px solid #edf2f7;"><td style="tex
+ t-align: center; vertical-align: middle; padding: 6px 4px;"><img src=
+ "https://img.icons8.com/?size=100&id=4djt356tq8UO&format=png&color=00
+ 0000" width="20" height="20" border="0" /></td><td style="font-weight
+ : bold; color: #004d98; vertical-align: middle; padding: 6px 8px;">AS
+ T Batch Refiner</td><td style="color: #4a5568; vertical-align: middle
+ ; padding: 6px 8px;">Executes complex batches of AST structural chang
+ es (inserts, updates, deletes, moves) in a single transaction.</td><t
+ d style="text-align: center; font-weight: bold; vertical-align: middl
+ e; padding: 6px 8px;">1 Tool</td></tr><tr style="border-bottom: 1px s
+ olid #edf2f7;"><td style="text-align: center; vertical-align: middle;
+  padding: 6px 4px;"><img src="https://img.icons8.com/?size=100&id=4dj
+ t356tq8UO&format=png&color=000000" width="20" height="20" border="0" 
+ /></td><td style="font-weight: bold; color: #004d98; vertical-align: 
+ middle; padding: 6px 8px;">AST Code Refiner</td><td style="color: #4a
+ 5568; vertical-align: middle; padding: 6px 8px;">Surgical AST-based u
+ pdates of method declarations, annotations, field initializers, refor
+ mats, and imports.</td><td style="text-align: center; font-weight: bo
+ ld; vertical-align: middle; padding: 6px 8px;">4 Tools</td></tr><tr s
+ tyle="border-bottom: 1px solid #edf2f7;"><td style="text-align: cente
+ r; vertical-align: middle; padding: 6px 4px;"><img src="https://img.i
+ cons8.com/?size=100&id=4djt356tq8UO&format=png&color=000000" width="2
+ 0" height="20" border="0" /></td><td style="font-weight: bold; color:
+  #004d98; vertical-align: middle; padding: 6px 8px;">CodeModel Explor
+ er</td><td style="color: #4a5568; vertical-align: middle; padding: 6p
+ x 8px;">Direct access to NetBeans types index. Resolves FQNs, types, 
+ hierarchy trees, sources, and Javadocs.</td><td style="text-align: ce
+ nter; font-weight: bold; vertical-align: middle; padding: 6px 8px;">1
+ 6 Tools</td></tr><tr style="border-bottom: 1px solid #edf2f7;"><td st
+ yle="text-align: center; vertical-align: middle; padding: 6px 4px;"><
+ img src="https://img.icons8.com/?size=100&id=4djt356tq8UO&format=png&
+ color=000000" width="20" height="20" border="0" /></td><td style="fon
+ t-weight: bold; color: #004d98; vertical-align: middle; padding: 6px 
+ 8px;">IDE Refactor Engine</td><td style="color: #4a5568; vertical-ali
+ gn: middle; padding: 6px 8px;">Invokes NetBeans safe refactoring (ren
+ ames, safe deletes, pulls, pushes, encapsulations) updating all calli
+ ng files.</td><td style="text-align: center; font-weight: bold; verti
+ cal-align: middle; padding: 6px 8px;">21 Tools</td></tr><tr style="bo
+ rder-bottom: 1px solid #edf2f7;"><td style="text-align: center; verti
+ cal-align: middle; padding: 6px 4px;"><img src="https://img.icons8.co
+ m/?size=100&id=4djt356tq8UO&format=png&color=000000" width="20" heigh
+ t="20" border="0" /></td><td style="font-weight: bold; color: #004d98
+ ; vertical-align: middle; padding: 6px 8px;">Maven Integrator</td><td
+  style="color: #4a5568; vertical-align: middle; padding: 6px 8px;">Ru
+ ns goals synchronously via NetBeans Maven embedder, modifies POM, and
+  returns transitive classpath maps.</td><td style="text-align: center
+ ; font-weight: bold; vertical-align: middle; padding: 6px 8px;">7 Too
+ ls</td></tr><tr style="border-bottom: 1px solid #edf2f7;"><td style="
+ text-align: center; vertical-align: middle; padding: 6px 4px;"><img s
+ rc="https://img.icons8.com/?size=100&id=4djt356tq8UO&format=png&color
+ =000000" width="20" height="20" border="0" /></td><td style="font-wei
+ ght: bold; color: #004d98; vertical-align: middle; padding: 6px 8px;"
+ >Workspace Projects</td><td style="color: #4a5568; vertical-align: mi
+ ddle; padding: 6px 8px;">Workspace projects management: open, close, 
+ set Main, trigger project actions, and configure CoS.</td><td style="
+ text-align: center; font-weight: bold; vertical-align: middle; paddin
+ g: 6px 8px;">7 Tools</td></tr><tr style="border-bottom: 1px solid #ed
+ f2f7;"><td style="text-align: center; vertical-align: middle; padding
+ : 6px 4px;"><img src="https://img.icons8.com/?size=100&id=4djt356tq8U
+ O&format=png&color=000000" width="20" height="20" border="0" /></td><
+ td style="font-weight: bold; color: #004d98; vertical-align: middle; 
+ padding: 6px 8px;">Javac Editor Hints</td><td style="color: #4a5568; 
+ vertical-align: middle; padding: 6px 8px;">Inspects Javac parsing ale
+ rts, applies quick-fixes, and removes unused imports structurally.</t
+ d><td style="text-align: center; font-weight: bold; vertical-align: m
+ iddle; padding: 6px 8px;">6 Tools</td></tr><tr style="border-bottom: 
+ 1px solid #edf2f7;"><td style="text-align: center; vertical-align: mi
+ ddle; padding: 6px 4px;"><img src="https://img.icons8.com/?size=100&i
+ d=4djt356tq8UO&format=png&color=000000" width="20" height="20" border
+ ="0" /></td><td style="font-weight: bold; color: #004d98; vertical-al
+ ign: middle; padding: 6px 8px;">Editor Controller</td><td style="colo
+ r: #4a5568; vertical-align: middle; padding: 6px 8px;">Manages active
+  NetBeans editor tabs, file navigation, offsets, and editor state ins
+ pection.</td><td style="text-align: center; font-weight: bold; vertic
+ al-align: middle; padding: 6px 8px;">3 Tools</td></tr><tr style="bord
+ er-bottom: 1px solid #edf2f7;"><td style="text-align: center; vertica
+ l-align: middle; padding: 6px 4px;"><img src="https://img.icons8.com/
+ ?size=100&id=4djt356tq8UO&format=png&color=000000" width="20" height=
+ "20" border="0" /></td><td style="font-weight: bold; color: #004d98; 
+ vertical-align: middle; padding: 6px 8px;">NetBeans IDE Manager</td><
+ td style="color: #4a5568; vertical-align: middle; padding: 6px 8px;">
+ Tails messages.log, selects files in Projects/Files/Favorites, monito
+ rs open TopComponents, Output tabs, and triggers upgrades.</td><td st
+ yle="text-align: center; font-weight: bold; vertical-align: middle; p
+ adding: 6px 8px;">7 Tools</td></tr><tr style="border-bottom: 1px soli
+ d #edf2f7;"><td style="text-align: center; vertical-align: middle; pa
+ dding: 6px 4px;"><img src="https://img.icons8.com/?size=100&id=4djt35
+ 6tq8UO&format=png&color=000000" width="20" height="20" border="0" /><
+ /td><td style="font-weight: bold; color: #004d98; vertical-align: mid
+ dle; padding: 6px 8px;">NetBeans Terminal</td><td style="color: #4a55
+ 68; vertical-align: middle; padding: 6px 8px;">Integrates with NetBea
+ ns terminal tabs for command execution, subshell collaboration, and l
+ og monitoring.</td><td style="text-align: center; font-weight: bold; 
+ vertical-align: middle; padding: 6px 8px;">4 Tools</td></tr><tr style
+ ="border-bottom: 1px solid #edf2f7;"><td style="text-align: center; v
+ ertical-align: middle; padding: 6px 4px;"><img src="https://www.googl
+ e.com/chrome/static/images/favicons/favicon-32x32.png" width="20" hei
+ ght="20" border="0" /></td><td style="font-weight: bold; color: #004d
+ 98; vertical-align: middle; padding: 6px 8px;">Chrome (Selenium)</td>
+ <td style="color: #4a5568; vertical-align: middle; padding: 6px 8px;"
+ >Web automation drone using Chrome. Navigates, fills forms, clicks el
+ ements, and executes JS scripts.</td><td style="text-align: center; f
+ ont-weight: bold; vertical-align: middle; padding: 6px 8px;">20 Tools
+ </td></tr><tr style="border-bottom: 1px solid #edf2f7;"><td style="te
+ xt-align: center; vertical-align: middle; padding: 6px 4px;"><img src
+ ="https://www.mozilla.org/media/img/favicons/firefox/browser/favicon-
+ 196x196.59e3822720be.png" width="20" height="20" border="0" /></td><t
+ d style="font-weight: bold; color: #004d98; vertical-align: middle; p
+ adding: 6px 8px;">Firefox (Selenium)</td><td style="color: #4a5568; v
+ ertical-align: middle; padding: 6px 8px;">Web automation drone using 
+ Firefox. Supports profiles, cookies session, navigation, and screensh
+ ots.</td><td style="text-align: center; font-weight: bold; vertical-a
+ lign: middle; padding: 6px 8px;">20 Tools</td></tr><tr style="border-
+ bottom: 1px solid #edf2f7;"><td style="text-align: center; vertical-a
+ lign: middle; padding: 6px 4px;"><img src="https://asi.anahata.uno/as
+ sets/favicon.png" width="20" height="20" border="0" /></td><td style=
+ "font-weight: bold; color: #004d98; vertical-align: middle; padding: 
+ 6px 8px;">Unified Resources</td><td style="color: #4a5568; vertical-a
+ lign: middle; padding: 6px 8px;">Manages files, URLs, and Strings han
+ dles, controls viewport settings, and creates text assets.</td><td st
+ yle="text-align: center; font-weight: bold; vertical-align: middle; p
+ adding: 6px 8px;">9 Tools</td></tr><tr style="border-bottom: 1px soli
+ d #edf2f7;"><td style="text-align: center; vertical-align: middle; pa
+ dding: 6px 4px;"><img src="https://asi.anahata.uno/assets/favicon.png
+ " width="20" height="20" border="0" /></td><td style="font-weight: bo
+ ld; color: #004d98; vertical-align: middle; padding: 6px 8px;">Audio 
+ Hardware</td><td style="color: #4a5568; vertical-align: middle; paddi
+ ng: 6px 8px;">Controls input/output lines, records audio WAV files, a
+ nd manages playback.</td><td style="text-align: center; font-weight: 
+ bold; vertical-align: middle; padding: 6px 8px;">4 Tools</td></tr><tr
+  style="border-bottom: 1px solid #edf2f7;"><td style="text-align: cen
+ ter; vertical-align: middle; padding: 6px 4px;"><img src="https://asi
+ .anahata.uno/assets/favicon.png" width="20" height="20" border="0" />
+ </td><td style="font-weight: bold; color: #004d98; vertical-align: mi
+ ddle; padding: 6px 8px;">Visual Screen</td><td style="color: #4a5568;
+  vertical-align: middle; padding: 6px 8px;">Captures displays, crops 
+ regional rectangles, and manages live multi-window screen sharing.</t
+ d><td style="text-align: center; font-weight: bold; vertical-align: m
+ iddle; padding: 6px 8px;">6 Tools</td></tr><tr style="border-bottom: 
+ 1px solid #edf2f7;"><td style="text-align: center; vertical-align: mi
+ ddle; padding: 6px 4px;"><img src="https://cdn.jsdelivr.net/gh/walkxc
+ ode/dashboard-icons/png/youtube.png" width="20" height="20" border="0
+ " /></td><td style="font-weight: bold; color: #004d98; vertical-align
+ : middle; padding: 6px 8px;">YouTube Toolkit</td><td style="color: #4
+ a5568; vertical-align: middle; padding: 6px 8px;">YouTube Data API v3
+  client for video uploads, playlist management, metadata curation, an
+ d analytics.</td><td style="text-align: center; font-weight: bold; ve
+ rtical-align: middle; padding: 6px 8px;">10 Tools</td></tr><tr style=
+ "border-bottom: 1px solid #edf2f7;"><td style="text-align: center; ve
+ rtical-align: middle; padding: 6px 4px;"><img src="https://asi.anahat
+ a.uno/assets/favicon.png" width="20" height="20" border="0" /></td><t
+ d style="font-weight: bold; color: #004d98; vertical-align: middle; p
+ adding: 6px 8px;">Benchmark Engine</td><td style="color: #4a5568; ver
+ tical-align: middle; padding: 6px 8px;">Programmatic benchmark orches
+ trator for autonomous AI model evaluations across standardized test c
+ atalogs.</td><td style="text-align: center; font-weight: bold; vertic
+ al-align: middle; padding: 6px 8px;">6 Tools</td></tr><tr style="bord
+ er-bottom: 1px solid #edf2f7;"><td style="text-align: center; vertica
+ l-align: middle; padding: 6px 4px;"><img src="https://asi.anahata.uno
+ /assets/favicon.png" width="20" height="20" border="0" /></td><td sty
+ le="font-weight: bold; color: #004d98; vertical-align: middle; paddin
+ g: 6px 8px;">Session Controller</td><td style="color: #4a5568; vertic
+ al-align: middle; padding: 6px 8px;">Orchestrates session summaries, 
+ nicknames, toggles provider settings, and manages hosted Google tools
+ .</td><td style="text-align: center; font-weight: bold; vertical-alig
+ n: middle; padding: 6px 8px;">6 Tools</td></tr><tr style="border-bott
+ om: 1px solid #edf2f7;"><td style="text-align: center; vertical-align
+ : middle; padding: 6px 4px;"><img src="https://asi.anahata.uno/assets
+ /favicon.png" width="20" height="20" border="0" /></td><td style="fon
+ t-weight: bold; color: #004d98; vertical-align: middle; padding: 6px 
+ 8px;">ASI Container</td><td style="color: #4a5568; vertical-align: mi
+ ddle; padding: 6px 8px;">Inspects container instances, provider healt
+ h, rotates API keys, and manages active AGI sessions.</td><td style="
+ text-align: center; font-weight: bold; vertical-align: middle; paddin
+ g: 6px 8px;">8 Tools</td></tr><tr style="border-bottom: 1px solid #ed
+ f2f7;"><td style="text-align: center; vertical-align: middle; padding
+ : 6px 4px;"><img src="https://asi.anahata.uno/assets/favicon.png" wid
+ th="20" height="20" border="0" /></td><td style="font-weight: bold; c
+ olor: #004d98; vertical-align: middle; padding: 6px 8px;">CwGC Metabo
+ lism</td><td style="color: #4a5568; vertical-align: middle; padding: 
+ 6px 8px;">Manages the Context Window Garbage Collector settings (expi
+ ry depths, pinning, and metadata strategy).</td><td style="text-align
+ : center; font-weight: bold; vertical-align: middle; padding: 6px 8px
+ ;">4 Tools</td></tr><tr style="border-bottom: 1px solid #edf2f7;"><td
+  style="text-align: center; vertical-align: middle; padding: 6px 4px;
+ "><img src="https://asi.anahata.uno/assets/favicon.png" width="20" he
+ ight="20" border="0" /></td><td style="font-weight: bold; color: #004
+ d98; vertical-align: middle; padding: 6px 8px;">Flow Radio</td><td st
+ yle="color: #4a5568; vertical-align: middle; padding: 6px 8px;">Strea
+ ms high-fidelity internet radio directly from the IDE toolbar.</td><t
+ d style="text-align: center; font-weight: bold; vertical-align: middl
+ e; padding: 6px 8px;">3 Tools</td></tr><tr style="border-bottom: 1px 
+ solid #edf2f7;"><td style="text-align: center; vertical-align: middle
+ ; padding: 6px 4px;"><img src="https://asi.anahata.uno/assets/favicon
+ .png" width="20" height="20" border="0" /></td><td style="font-weight
+ : bold; color: #004d98; vertical-align: middle; padding: 6px 8px;">Sp
+ eech Synthesis</td><td style="color: #4a5568; vertical-align: middle;
+  padding: 6px 8px;">Speaks text dynamically using the internal pure-J
+ ava TTS voice engine.</td><td style="text-align: center; font-weight:
+  bold; vertical-align: middle; padding: 6px 8px;">1 Tool</td></tr><tr
+  style="border-bottom: 1px solid #edf2f7;"><td style="text-align: cen
+ ter; vertical-align: middle; padding: 6px 4px;"><img src="https://asi
+ .anahata.uno/assets/favicon.png" width="20" height="20" border="0" />
+ </td><td style="font-weight: bold; color: #004d98; vertical-align: mi
+ ddle; padding: 6px 8px;">Host Operations</td><td style="color: #4a556
+ 8; vertical-align: middle; padding: 6px 8px;">Scans active host OS pr
+ ocesses by PID, inspects CPU/memory, and terminates processes safely.
+ </td><td style="text-align: center; font-weight: bold; vertical-align
+ : middle; padding: 6px 8px;">2 Tools</td></tr><tr style="border-botto
+ m: 1px solid #edf2f7;"><td style="text-align: center; vertical-align:
+  middle; padding: 6px 4px;"><img src="https://asi.anahata.uno/assets/
+ favicon.png" width="20" height="20" border="0" /></td><td style="font
+ -weight: bold; color: #004d98; vertical-align: middle; padding: 6px 8
+ px;">Shell Execution</td><td style="color: #4a5568; vertical-align: m
+ iddle; padding: 6px 8px;">Executes subshell commands (Bash, PowerShel
+ l, CMD) synchronously with real-time stream forwarding.</td><td style
+ ="text-align: center; font-weight: bold; vertical-align: middle; padd
+ ing: 6px 8px;">1 Tool</td></tr></table><hr style="border: 0; border-t
+ op: 1px solid #e2e8f0; margin: 30px 0;"/><div style="text-align: cent
+ er; padding: 18px; background: #fffdf5; border: 1px solid #fcf2e3; ma
+ rgin: 20px 0;"><h4 style="color: #c85a17; font-size: 16px; margin-top
+ : 0; font-weight: bold;">Support the Open-Source Aliens</h4><p style=
+ "font-size: 12px; color: #555; margin-bottom: 16px;">Anahata is devel
+ oped as a pure, open-source project. If we are saving your enterprise
+  hours of boilerplate, please consider buying our developers some bee
+ rs, proper Peruvian mapacho cigars, or tickets to watch our beloved B
+ arça:</p><center><table border="0" cellpadding="0" cellspacing="0" bg
+ color="#c85a17" style="background: #c85a17; margin: 0 auto;"><tr><td 
+ align="center" valign="middle" bgcolor="#c85a17" style="background: #
+ c85a17; padding: 10px 24px;"><a href="https://www.paypal.com/donate/?
+ hosted_button_id=SS8B8R7S68R7G" target="_blank" style="color: #ffffff
+ ; text-decoration: none;"><img src="https://www.paypalobjects.com/web
+ static/icon/pp32.png" width="24" height="24" border="0" align="middle
+ " />&nbsp;&nbsp;<font color="#ffffff" size="4"><b>Donate Now!</b></fo
+ nt></a></td></tr></table></center></div><hr style="border: 0; border-
+ top: 1px solid #e2e8f0; margin: 30px 0;"/><p style="text-align: cente
+ r; font-style: italic; color: #555; font-size: 12px;">Developed with 
+ pride and passion by Anahata. Força Barça! <span style="color: #004d9
+ 8;">●</span><span style="color: #a50044;">●</span></p><div style="mar
+ gin: 15px 0; text-align: center;"><img src="https://asi.anahata.uno/a
+ ssets/messi_photo.png" alt="Lionel Messi Greatest of All Timelines" w
+ idth="540" border="0" /></div><p style="text-align: center; font-size
+ : 11px; color: #718096; margin-top: 15px;">Apache NetBeans and the Ap
+ ache NetBeans logo are trademarks of The Apache Software Foundation.<
+ /p><img referrerpolicy="no-referrer-when-downgrade" src="https://stat
+ ic.scarf.sh/a.png?x-pxid=f19c44f5-8b2e-458f-beab-96e4f9f8e603" width=
+ "1" height="1" border="0" /></div></html>
