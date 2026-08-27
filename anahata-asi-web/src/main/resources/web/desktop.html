@@ -131,62 +131,192 @@
                     <a class="next" onclick="plusSlides(1)">&#10095;</a>
                 </div>
 
-                <!-- Standalone Native Downloads (Split into Stable & Snapshot) -->
-                <div style="margin-top: 2rem; margin-bottom: 4rem;">
-                    <!-- Section 1: Latest Stable Release -->
-                    <div style="margin-bottom: 2.5rem;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
-                            <h3 style="margin: 0; color: var(--white); font-size: 1.25rem; display: flex; align-items: center; gap: 8px;">
-                                <i class="fas fa-certificate" style="color: var(--barca-gold);"></i> Official Stable Releases
-                            </h3>
-                            <span id="desktop-stable-ver" class="badge" style="background: var(--barca-gold); color: black; font-weight: 800; padding: 4px 10px; border-radius: 4px; font-size: 0.85rem;">...</span>
+                <!-- Downloads & Installation Channels Section -->
+                <section id="downloads" class="toolkit-section" style="margin-top: 2rem; margin-bottom: 3.5rem;">
+                    <div class="toolkit-header"><i class="fas fa-cloud-download-alt"></i><h2>Downloads & Installation Channels</h2></div>
+                    <p>Choose your preferred installation method: install natively via the <b>Ubuntu Snap Store / App Center</b> with automatic background updates, or download standalone portable native packages for <b>Windows, macOS, and Linux</b>.</p>
+                    
+                    <!-- Main Tab Navigation -->
+                    <div style="display: flex; gap: 8px; margin-top: 1.5rem; margin-bottom: -1px; position: relative; z-index: 2;">
+                        <button type="button" id="tab-btn-snap" onclick="switchDesktopTab('snap')" style="background: rgba(237, 187, 0, 0.15); border: 1px solid var(--barca-gold); border-bottom: 1px solid rgba(237, 187, 0, 0.15); color: var(--barca-gold); padding: 10px 22px; border-radius: 8px 8px 0 0; font-weight: 800; font-size: 0.95rem; cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 8px;">
+                            <i class="fab fa-ubuntu" style="color: #E95420;"></i> Ubuntu Snap Store <span class="badge" style="background: var(--barca-gold); color: black; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: 800;">RECOMMENDED FOR LINUX</span>
+                        </button>
+                        <button type="button" id="tab-btn-binaries" onclick="switchDesktopTab('binaries')" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-bottom: 1px solid rgba(255, 255, 255, 0.08); color: var(--text-muted); padding: 10px 22px; border-radius: 8px 8px 0 0; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-cubes"></i> Standalone Native Packages (Win / Mac / Linux)
+                        </button>
+                    </div>
+
+                    <!-- Tab 1: Ubuntu Snap Store (Default) -->
+                    <div id="tab-pane-snap" class="nb-card" style="margin-top: 0; border-top: 2px solid var(--barca-gold); border-radius: 0 8px 8px 8px; padding: 1.8rem;">
+                        <p style="margin-top: 0; margin-bottom: 1.5rem; color: var(--text-main); font-size: 0.95rem; line-height: 1.5;">
+                            <i class="fas fa-info-circle" style="color: var(--barca-gold); margin-right: 6px;"></i>
+                            Install Anahata ASI Desktop directly from the <b>Canonical Snap Store</b>. Seamlessly integrates with the <b>Ubuntu App Center</b>, dock launcher, and delivers automatic background updates across Ubuntu, Debian, Linux Mint, Manjaro, and Fedora.
+                        </p>
+
+                        <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                            <!-- Terminal Installation Commands -->
+                            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 1.2rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                                    <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;"><i class="fas fa-terminal" style="color: var(--primary-light); margin-right: 6px;"></i> 1-Click Install Command (Stable GA):</div>
+                                    <span class="badge" style="background: #16a34a; color: white; font-size: 0.68rem; padding: 2px 7px; border-radius: 4px; font-weight: 800;">STABLE</span>
+                                </div>
+                                <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                                    <code id="snap-install-cmd" style="font-size: 0.9rem; color: var(--barca-gold); overflow-x: auto; white-space: nowrap;">sudo snap install anahata-asi-desktop --classic</code>
+                                    <button onclick="navigator.clipboard.writeText('sudo snap install anahata-asi-desktop --classic'); this.innerHTML='<i class=\'fas fa-check\'></i>'; setTimeout(() => this.innerHTML='<i class=\'fas fa-copy\'></i>', 2000);" style="background: none; border: none; color: var(--barca-gold); cursor: pointer; font-size: 1.1rem; padding: 4px 6px;" title="Copy Command"><i class="fas fa-copy"></i></button>
+                                </div>
+
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; margin-bottom: 0.6rem;">
+                                    <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;"><i class="fas fa-bolt" style="color: var(--primary-light); margin-right: 6px;"></i> Continuous Integration Channel (Dev Edge):</div>
+                                    <span class="badge" style="background: var(--primary-light); color: white; font-size: 0.68rem; padding: 2px 7px; border-radius: 4px; font-weight: 800;">DEV SNAPSHOT</span>
+                                </div>
+                                <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                                    <code id="snap-edge-cmd" style="font-size: 0.9rem; color: var(--primary-light); overflow-x: auto; white-space: nowrap;">sudo snap install anahata-asi-desktop --edge --classic</code>
+                                    <button onclick="navigator.clipboard.writeText('sudo snap install anahata-asi-desktop --edge --classic'); this.innerHTML='<i class=\'fas fa-check\'></i>'; setTimeout(() => this.innerHTML='<i class=\'fas fa-copy\'></i>', 2000);" style="background: none; border: none; color: var(--barca-gold); cursor: pointer; font-size: 1.1rem; padding: 4px 6px;" title="Copy Command"><i class="fas fa-copy"></i></button>
+                                </div>
+                            </div>
+
+                            <!-- Snap Store Action Link -->
+                            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 1.2rem;">
+                                <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.6rem; font-weight: 600;"><i class="fas fa-store" style="color: #E95420; margin-right: 6px;"></i> Ubuntu App Center / Snapcraft Portal:</div>
+                                <a href="https://snapcraft.io/anahata-asi-desktop" target="_blank" class="btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; width: 100%; padding: 12px 20px; background: linear-gradient(135deg, #E95420 0%, #77216F 100%); border: none;">
+                                    <i class="fab fa-ubuntu"></i> <span>View Anahata ASI on Snapcraft.io</span> <span class="badge" style="background: rgba(255,255,255,0.25); color: white; font-weight: 800; padding: 2px 7px; border-radius: 4px; font-size: 0.75rem;">Canonical Snap Store</span>
+                                </a>
+                            </div>
                         </div>
+                    </div>
+
+                    <!-- Tab 2: Standalone Native Binaries (Windows, macOS, Linux) -->
+                    <div id="tab-pane-binaries" class="nb-card" style="display: none; margin-top: 0; border-top: 2px solid var(--primary-light); border-radius: 0 8px 8px 8px; padding: 1.8rem;">
+                        <!-- Top Controls: Channel Toggle Buttons -->
+                        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1.2rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+                            <div style="color: var(--white); font-weight: 700; font-size: 1.05rem;">
+                                Select Distribution Channel:
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" id="btn-desk-stable" onclick="selectDesktopChannel('stable')" style="background: rgba(49, 151, 149, 0.2); border: 1px solid var(--primary-light); color: var(--white); padding: 8px 18px; border-radius: 6px; font-weight: 800; font-size: 0.9rem; cursor: pointer; transition: var(--transition);"><i class="fas fa-certificate" style="color: var(--barca-gold); margin-right: 6px;"></i> Official Stable <span id="desktop-stable-badge" class="badge" style="background: var(--barca-gold); color: black; margin-left: 6px; padding: 2px 6px; border-radius: 4px;">...</span></button>
+                                <button type="button" id="btn-desk-snapshot" onclick="selectDesktopChannel('snapshot')" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: var(--text-muted); padding: 8px 18px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: var(--transition);"><i class="fas fa-bolt" style="margin-right: 6px;"></i> Dev (Snapshots) <span id="desktop-snapshot-badge" class="badge" style="background: var(--primary-light); color: white; margin-left: 6px; padding: 2px 6px; border-radius: 4px;">...</span></button>
+                            </div>
+                        </div>
+
+                        <!-- 3 Download Cards Grid -->
                         <div class="download-grid" style="margin-top: 0;">
-                            <a href="https://github.com/anahata-os/anahata-asi/releases/latest" id="dl-win-stable" class="dl-card" style="border-top: 3px solid var(--barca-gold);">
-                                <i class="fab fa-windows" style="color: var(--barca-gold);"></i>
+                            <a href="https://github.com/anahata-os/anahata-asi/releases/latest" id="dyn-dl-win" class="dl-card" style="border-top: 3px solid var(--barca-gold);">
+                                <i class="fab fa-windows" style="color: #00a4ef;"></i>
                                 <h3>Windows</h3>
-                                <span class="dl-size">.zip (Portable)</span>
+                                <span id="dyn-size-win" class="dl-size">.zip (Portable)</span>
                             </a>
-                            <a href="https://github.com/anahata-os/anahata-asi/releases/latest" id="dl-mac-stable" class="dl-card dl-mac-btn" style="border-top: 3px solid var(--barca-gold);">
-                                <i class="fab fa-apple" style="color: var(--barca-gold);"></i>
+                            <a href="https://github.com/anahata-os/anahata-asi/releases/latest" id="dyn-dl-mac" class="dl-card dl-mac-btn" style="border-top: 3px solid var(--barca-gold);">
+                                <i class="fab fa-apple" style="color: #a2aaad;"></i>
                                 <h3>macOS</h3>
-                                <span class="dl-size">.zip (App Bundle)</span>
+                                <span id="dyn-size-mac" class="dl-size">.zip (App Bundle)</span>
                             </a>
-                            <a href="https://github.com/anahata-os/anahata-asi/releases/latest" id="dl-lin-stable" class="dl-card" style="border-top: 3px solid var(--barca-gold);">
-                                <i class="fab fa-linux" style="color: var(--barca-gold);"></i>
+                            <a href="https://github.com/anahata-os/anahata-asi/releases/latest" id="dyn-dl-lin" class="dl-card" style="border-top: 3px solid var(--barca-gold);">
+                                <i class="fab fa-linux" style="color: #fcc624;"></i>
                                 <h3>Linux</h3>
-                                <span class="dl-size">.tar.gz (Binary)</span>
+                                <span id="dyn-size-lin" class="dl-size">.tar.gz (Binary)</span>
                             </a>
                         </div>
                     </div>
 
-                    <!-- Section 2: Latest Rolling Snapshot -->
-                    <div>
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
-                            <h3 style="margin: 0; color: var(--white); font-size: 1.25rem; display: flex; align-items: center; gap: 8px;">
-                                <i class="fas fa-bolt" style="color: var(--primary-light);"></i> Latest Rolling Snapshots
-                            </h3>
-                            <span id="desktop-snapshot-ver" class="badge" style="background: var(--primary-light); color: white; font-weight: 800; padding: 4px 10px; border-radius: 4px; font-size: 0.85rem;">...</span>
-                        </div>
-                        <div class="download-grid" style="margin-top: 0;">
-                            <a href="https://github.com/anahata-os/anahata-asi/releases/tag/latest-snapshot" id="dl-windows" class="dl-card" style="border-top: 3px solid var(--primary-light);">
-                                <i class="fab fa-windows"></i>
-                                <h3>Windows</h3>
-                                <span class="dl-size">.zip (Portable)</span>
-                            </a>
-                            <a href="https://github.com/anahata-os/anahata-asi/releases/tag/latest-snapshot" id="dl-macos" class="dl-card dl-mac-btn" style="border-top: 3px solid var(--primary-light);">
-                                <i class="fab fa-apple"></i>
-                                <h3>macOS</h3>
-                                <span class="dl-size">.zip (App Bundle)</span>
-                            </a>
-                            <a href="https://github.com/anahata-os/anahata-asi/releases/tag/latest-snapshot" id="dl-linux" class="dl-card" style="border-top: 3px solid var(--primary-light);">
-                                <i class="fab fa-linux"></i>
-                                <h3>Linux</h3>
-                                <span class="dl-size">.tar.gz (Binary)</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
+                    <script>
+                        let currentDesktopTab = 'snap';
+                        let currentDesktopChannel = 'stable';
+
+                        function switchDesktopTab(tab) {
+                            currentDesktopTab = tab;
+                            const btnSnap = document.getElementById('tab-btn-snap');
+                            const btnBin = document.getElementById('tab-btn-binaries');
+                            const paneSnap = document.getElementById('tab-pane-snap');
+                            const paneBin = document.getElementById('tab-pane-binaries');
+
+                            if (tab === 'snap') {
+                                btnSnap.style.background = 'rgba(237, 187, 0, 0.15)';
+                                btnSnap.style.borderColor = 'var(--barca-gold)';
+                                btnSnap.style.color = 'var(--barca-gold)';
+                                btnSnap.style.fontWeight = '800';
+
+                                btnBin.style.background = 'rgba(255, 255, 255, 0.03)';
+                                btnBin.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                                btnBin.style.color = 'var(--text-muted)';
+                                btnBin.style.fontWeight = '600';
+
+                                paneSnap.style.display = 'block';
+                                paneBin.style.display = 'none';
+                            } else {
+                                btnBin.style.background = 'rgba(79, 170, 255, 0.15)';
+                                btnBin.style.borderColor = 'var(--primary-light)';
+                                btnBin.style.color = 'var(--primary-light)';
+                                btnBin.style.fontWeight = '800';
+
+                                btnSnap.style.background = 'rgba(255, 255, 255, 0.03)';
+                                btnSnap.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                                btnSnap.style.color = 'var(--text-muted)';
+                                btnSnap.style.fontWeight = '600';
+
+                                paneSnap.style.display = 'none';
+                                paneBin.style.display = 'block';
+                            }
+                        }
+
+                        function selectDesktopChannel(ch) {
+                            currentDesktopChannel = ch;
+                            const btnSt = document.getElementById('btn-desk-stable');
+                            const btnSn = document.getElementById('btn-desk-snapshot');
+
+                            if (ch === 'stable') {
+                                btnSt.style.background = 'rgba(49, 151, 149, 0.2)';
+                                btnSt.style.borderColor = 'var(--primary-light)';
+                                btnSt.style.color = 'var(--white)';
+                                btnSt.style.fontWeight = '800';
+
+                                btnSn.style.background = 'rgba(255, 255, 255, 0.05)';
+                                btnSn.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                                btnSn.style.color = 'var(--text-muted)';
+                                btnSn.style.fontWeight = '600';
+                            } else {
+                                btnSn.style.background = 'rgba(49, 151, 149, 0.2)';
+                                btnSn.style.borderColor = 'var(--primary-light)';
+                                btnSn.style.color = 'var(--white)';
+                                btnSn.style.fontWeight = '800';
+
+                                btnSt.style.background = 'rgba(255, 255, 255, 0.05)';
+                                btnSt.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                                btnSt.style.color = 'var(--text-muted)';
+                                btnSt.style.fontWeight = '600';
+                            }
+
+                            updateDesktopBinariesDisplay();
+                        }
+
+                        function updateDesktopBinariesDisplay() {
+                            const isStable = currentDesktopChannel === 'stable';
+                            const assets = isStable ? window.desktopAssets?.stable : window.desktopAssets?.snapshot;
+
+                            const winBtn = document.getElementById('dyn-dl-win');
+                            const macBtn = document.getElementById('dyn-dl-mac');
+                            const linBtn = document.getElementById('dyn-dl-lin');
+
+                            const winSize = document.getElementById('dyn-size-win');
+                            const macSize = document.getElementById('dyn-size-mac');
+                            const linSize = document.getElementById('dyn-size-lin');
+
+                            if (assets) {
+                                if (assets.win) {
+                                    winBtn.href = assets.win.url;
+                                    winSize.textContent = `.zip (Portable) • ${assets.win.size || ''}`;
+                                }
+                                if (assets.mac) {
+                                    macBtn.href = assets.mac.url;
+                                    macSize.textContent = `.zip (App Bundle) • ${assets.mac.size || ''}`;
+                                }
+                                if (assets.lin) {
+                                    linBtn.href = assets.lin.url;
+                                    linSize.textContent = `.tar.gz (Binary) • ${assets.lin.size || ''}`;
+                                }
+                            }
+                        }
+                    </script>
+                </section>
 
                 <p id="dl-subtitle" class="tagline" style="text-align: left;">The authoritative cross-platform ASI launcher.</p>
 

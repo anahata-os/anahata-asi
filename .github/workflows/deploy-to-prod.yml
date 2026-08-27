@@ -33,6 +33,16 @@ on:
         required: true
         type: boolean
         default: true
+      release_snap:
+        description: 'Release ASI Desktop Snap Package (to Canonical Snap Store)'
+        required: true
+        type: boolean
+        default: false
+      release_desktop:
+        description: 'Release ASI Desktop Native Installers (Win / Mac)'
+        required: true
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -129,7 +139,8 @@ jobs:
             -f release_nb_300="${{ inputs.release_nb_300 }}" \
             -f release_nb_310="${{ inputs.release_nb_310 }}" \
             -f release_nb_uc="${{ inputs.release_nb_uc }}" \
-            -f release_intellij="${{ inputs.release_intellij }}"
+            -f release_intellij="${{ inputs.release_intellij }}" \
+            -f release_snap="${{ inputs.release_snap }}"
           echo "🚀 Master build3 pipeline successfully triggered on tag v$RELEASE_VER!"
 
           echo "[INFO] Triggering continuous snapshot build3.yml pipeline for main (development cycle $NEXT_SNAP)..."
