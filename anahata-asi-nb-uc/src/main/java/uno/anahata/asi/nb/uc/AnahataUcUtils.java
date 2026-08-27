@@ -641,11 +641,11 @@ public final class AnahataUcUtils {
 
         if (restarter != null) {
             support.doRestartLater(restarter);
-            return "Successfully downloaded and installed Anahata ASI Studio v" + element.getSpecificationVersion()
-                    + ". It will be fully activated on next IDE restart.";
+            return "Anahata ASI Studio v" + element.getSpecificationVersion()
+                    + " installed and will be activated after the next NetBeans restart.";
         }
 
-        return "Successfully installed Anahata ASI Studio v" + element.getSpecificationVersion() + "!";
+        return "Anahata ASI Studio v" + element.getSpecificationVersion() + " installed successfully!";
     }
 
     /**
@@ -846,8 +846,9 @@ public final class AnahataUcUtils {
                 Restarter restarter = support.doInstall(installer, null);
                 if (restarter != null) {
                     support.doRestartLater(restarter);
+                    return "JavaFX runtime support installed and will be activated after the next NetBeans restart.";
                 }
-                return "JavaFX runtime support installed successfully!";
+                return "JavaFX runtime support activated successfully!";
             }
         }
 
