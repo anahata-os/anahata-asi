@@ -17,12 +17,12 @@ on:
         description: 'Release NetBeans 30 ASI Studio (Target 300 NBM)'
         required: true
         type: boolean
-        default: true
+        default: false
       release_nb_310:
         description: 'Release NetBeans 31 ASI Studio (Target 310 NBM)'
         required: true
         type: boolean
-        default: true
+        default: false
       release_nb_uc:
         description: 'Release NetBeans Update Center Plugin (anahata-asi-nb-uc)'
         required: true
@@ -32,7 +32,7 @@ on:
         description: 'Release IntelliJ IDEA Plugin (.zip)'
         required: true
         type: boolean
-        default: true
+        default: false
       release_snap:
         description: 'Release ASI Desktop Snap Package (to Canonical Snap Store)'
         required: true
@@ -42,7 +42,7 @@ on:
         description: 'Release ASI Desktop Native Installers (Win / Mac)'
         required: true
         type: boolean
-        default: true
+        default: false
 
 permissions:
   contents: write
