@@ -417,9 +417,11 @@ public final class AnahataUpdateCenterUtils {
                         Restarter restarter = support.doInstall(installer, null);
                         if (restarter != null) {
                             support.doRestartLater(restarter);
+                            LOG.log(Level.INFO, "Anahata ASI Update Center plugin v{0} installed and will be activated after the next NetBeans restart.", element.getSpecificationVersion());
+                            return "Anahata ASI Update Center plugin v" + element.getSpecificationVersion() + " installed and will be activated after the next NetBeans restart.";
                         }
                         LOG.log(Level.INFO, "Successfully installed Anahata ASI Update Center plugin v{0}", element.getSpecificationVersion());
-                        return "Successfully installed Anahata ASI Update Center plugin v" + element.getSpecificationVersion();
+                        return "Anahata ASI Update Center plugin v" + element.getSpecificationVersion() + " installed successfully!";
                     }
                 }
             }
@@ -526,11 +528,11 @@ public final class AnahataUpdateCenterUtils {
 
         if (restarter != null) {
             support.doRestartLater(restarter);
-            return "Successfully downloaded and installed update to version " + updateElement.getSpecificationVersion()
-                    + ". The update will be activated on next IDE restart.";
+            return "Anahata ASI Studio v" + updateElement.getSpecificationVersion()
+                    + " installed and will be activated after the next NetBeans restart.";
         }
 
-        return "Successfully installed Anahata ASI Studio update to version " + updateElement.getSpecificationVersion() + ".";
+        return "Anahata ASI Studio v" + updateElement.getSpecificationVersion() + " installed successfully!";
     }
 
     /**
