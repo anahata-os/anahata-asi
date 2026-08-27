@@ -3,6 +3,7 @@
  */
 package uno.anahata.asi.yam.tools.benchmarks;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -41,7 +42,7 @@ public record TestDefinition(
      * @param toolkits The list of toolkit settings.
      */
     public TestDefinition {
-        toolkits = toolkits != null ? Collections.unmodifiableList(toolkits) : null;
+        toolkits = toolkits != null ? new ArrayList<>(toolkits) : null;
     }
 
     /**
@@ -72,6 +73,6 @@ public record TestDefinition(
         for (ToolkitSettings ts : toolkits) {
             resolved.putAll(ts.getResolvedPermissions(concreteJavaClass));
         }
-        return Collections.unmodifiableMap(resolved);
+        return resolved;
     }
 }
