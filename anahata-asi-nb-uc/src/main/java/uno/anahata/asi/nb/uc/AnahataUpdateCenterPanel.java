@@ -13,6 +13,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.Insets;
+import java.awt.image.BufferedImage;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URI;
@@ -20,6 +21,7 @@ import java.net.URL;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -69,6 +71,8 @@ public class AnahataUpdateCenterPanel extends JPanel {
     private final Map<UpdateCenterType, JButton> updateButtons = new EnumMap<>(UpdateCenterType.class);
     private final Map<UpdateCenterType, JLabel> packageDetailsLabels = new EnumMap<>(UpdateCenterType.class);
     private final Map<UpdateCenterType, JLabel> notificationLabels = new EnumMap<>(UpdateCenterType.class);
+    private final Map<UpdateCenterType, JLabel> mavenBadgeLabels = new EnumMap<>(UpdateCenterType.class);
+    private final Map<UpdateCenterType, String> mavenBadgeImageUrls = new EnumMap<>(UpdateCenterType.class);
 
     /**
      * Anahata ASI Studio installed version label.
@@ -111,7 +115,7 @@ public class AnahataUpdateCenterPanel extends JPanel {
     public AnahataUpdateCenterPanel() {
         super(new BorderLayout());
         initComponents();
-        refreshAllStateAsync(false);
+        refreshAllStateAsync(true);
     }
 
     /**
@@ -358,11 +362,15 @@ public class AnahataUpdateCenterPanel extends JPanel {
 
         // Row 4: Live Maven Central Shield Badges (Universal and Stable only)
         if (type == UpdateCenterType.UNIVERSAL) {
+            String badgeUrl = "https://img.shields.io/maven-central/v/uno.anahata/anahata-asi-nb-uc.png";
+            mavenBadgeImageUrls.put(type, badgeUrl);
             midCol.add(Box.createVerticalStrut(3));
-            midCol.add(createLiveMavenShieldRow("https://img.shields.io/maven-central/v/uno.anahata/anahata-asi-nb-uc.png", AnahataUcUtils.MAVEN_UC_URL));
+            midCol.add(createLiveMavenShieldRow(type, badgeUrl, AnahataUcUtils.MAVEN_UC_URL));
         } else if (type == UpdateCenterType.STABLE) {
+            String badgeUrl = "https://img.shields.io/maven-central/v/uno.anahata/anahata-asi-nb.png";
+            mavenBadgeImageUrls.put(type, badgeUrl);
             midCol.add(Box.createVerticalStrut(3));
-            midCol.add(createLiveMavenShieldRow("https://img.shields.io/maven-central/v/uno.anahata/anahata-asi-nb.png", AnahataUcUtils.MAVEN_STUDIO_URL));
+            midCol.add(createLiveMavenShieldRow(type, badgeUrl, AnahataUcUtils.MAVEN_STUDIO_URL));
         }
 
         // Row 5: Notification / Release Alert Banner (if present)
@@ -415,11 +423,12 @@ public class AnahataUpdateCenterPanel extends JPanel {
     /**
      * Creates a live Maven Central shield badge row with label prefix and asynchronous remote image fetch.
      *
+     * @param type The update center type.
      * @param badgeImageUrl The shields.io image URL.
      * @param targetPortalUrl The Sonatype/Maven Central portal URL opened on click.
      * @return The badge JPanel row.
      */
-    private JPanel createLiveMavenShieldRow(String badgeImageUrl, String targetPortalUrl) {
+    private JPanel createLiveMavenShieldRow(UpdateCenterType type, String badgeImageUrl, String targetPortalUrl) {
         JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         row.setOpaque(false);
         row.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -438,30 +447,48 @@ public class AnahataUpdateCenterPanel extends JPanel {
                 openUrlInBrowser(targetPortalUrl);
             }
         });
+        mavenBadgeLabels.put(type, lblBadge);
         row.add(lblBadge);
 
-        // Fetch live image asynchronously
-        new SwingWorker<ImageIcon, Void>() {
-            @Override
-            protected ImageIcon doInBackground() throws Exception {
-                return new ImageIcon(new URL(badgeImageUrl));
-            }
-
-            @Override
-            protected void done() {
-                try {
-                    ImageIcon icon = get();
-                    if (icon != null && icon.getIconWidth() > 0) {
-                        lblBadge.setIcon(icon);
-                        row.revalidate();
-                        row.repaint();
-                    }
-                } catch (Exception ignored) {
-                }
-            }
-        }.execute();
-
         return row;
+    }
+
+    /**
+     * Refreshes all Maven Central shields.io badges asynchronously with cache-busting.
+     */
+    public void refreshMavenBadgesAsync() {
+        for (Map.Entry<UpdateCenterType, JLabel> entry : mavenBadgeLabels.entrySet()) {
+            UpdateCenterType type = entry.getKey();
+            JLabel lblBadge = entry.getValue();
+            String baseUrl = mavenBadgeImageUrls.get(type);
+            if (baseUrl != null && lblBadge != null) {
+                new SwingWorker<ImageIcon, Void>() {
+                    @Override
+                    protected ImageIcon doInBackground() throws Exception {
+                        String freshUrl = baseUrl + "?_cb=" + System.currentTimeMillis();
+                        URL url = new URL(freshUrl);
+                        BufferedImage img = ImageIO.read(url);
+                        if (img != null) {
+                            return new ImageIcon(img);
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    protected void done() {
+                        try {
+                            ImageIcon icon = get();
+                            if (icon != null && icon.getIconWidth() > 0) {
+                                lblBadge.setIcon(icon);
+                                lblBadge.revalidate();
+                                lblBadge.repaint();
+                            }
+                        } catch (Exception ignored) {
+                        }
+                    }
+                }.execute();
+            }
+        }
     }
 
     /**
@@ -591,6 +618,7 @@ public class AnahataUpdateCenterPanel extends JPanel {
      * @param forceNetworkRefresh Whether to force a network refresh of the update catalogs.
      */
     public void refreshAllStateAsync(boolean forceNetworkRefresh) {
+        refreshMavenBadgesAsync();
         setBusy(true, forceNetworkRefresh ? "Refreshing update catalogs from network..." : "Reading IDE module state...");
 
         new SwingWorker<Void, Void>() {

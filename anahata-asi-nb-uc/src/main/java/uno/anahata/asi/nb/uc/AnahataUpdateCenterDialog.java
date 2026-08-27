@@ -92,6 +92,10 @@ public final class AnahataUpdateCenterDialog {
                     frameInstance = null;
                 }
             });
+        } else {
+            if (frameInstance.getContentPane() instanceof AnahataUpdateCenterPanel panel) {
+                panel.refreshAllStateAsync(true);
+            }
         }
 
         if (!frameInstance.isVisible()) {
