@@ -9,12 +9,12 @@ on:
         description: 'Release NetBeans 30 ASI Studio (Target 300 NBM)'
         required: false
         type: boolean
-        default: true
+        default: false
       release_nb_310:
         description: 'Release NetBeans 31 ASI Studio (Target 310 NBM)'
         required: false
         type: boolean
-        default: true
+        default: false
       release_nb_uc:
         description: 'Release NetBeans Update Center Plugin (anahata-asi-nb-uc)'
         required: false
@@ -24,7 +24,7 @@ on:
         description: 'Release IntelliJ IDEA Plugin (.zip)'
         required: false
         type: boolean
-        default: true
+        default: false
       release_snap:
         description: 'Release ASI Desktop Snap Package (to Canonical Snap Store)'
         required: false
@@ -150,11 +150,11 @@ jobs:
           }
 
           # Evaluate and execute selected targets (always runs for snapshots; checks flag for releases)
-          if [ "$IS_RELEASE" != "true" ] || [ "${{ inputs.release_nb_300 }}" != "false" ]; then
+          if [ "$IS_RELEASE" != "true" ] || [ "${{ inputs.release_nb_300 }}" == "true" ]; then
             deploy_nbm 300
           fi
 
-          if [ "$IS_RELEASE" != "true" ] || [ "${{ inputs.release_nb_310 }}" != "false" ]; then
+          if [ "$IS_RELEASE" != "true" ] || [ "${{ inputs.release_nb_310 }}" == "true" ]; then
             deploy_nbm 310
           fi
 
@@ -182,7 +182,7 @@ jobs:
       # 4. INTELLIJ IDEA PLUGIN PACKAGE (.zip)
       # ---------------------------------------------------------------------
       - name: Package IntelliJ IDEA Plugin (.zip)
-        if: github.event_name == 'push' || inputs.release_intellij != false
+        if: env.IS_RELEASE != 'true' || inputs.release_intellij == true
         run: |
           mvn clean package -pl :anahata-asi-intellij -am -ntp
           mkdir -p staging-binaries
