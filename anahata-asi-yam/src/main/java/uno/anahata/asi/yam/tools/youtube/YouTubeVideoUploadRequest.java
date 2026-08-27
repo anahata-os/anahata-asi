@@ -3,6 +3,7 @@
  */
 package uno.anahata.asi.yam.tools.youtube;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import lombok.Builder;
@@ -44,7 +45,7 @@ public record YouTubeVideoUploadRequest(
      * @param privacyStatus The privacy status.
      */
     public YouTubeVideoUploadRequest {
-        tags = tags != null ? Collections.unmodifiableList(tags) : Collections.emptyList();
+        tags = tags != null ? new ArrayList<>(tags) : new ArrayList<>();
         if (privacyStatus == null || privacyStatus.isBlank()) {
             privacyStatus = "unlisted";
         }
