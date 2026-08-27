@@ -54,15 +54,16 @@ public class SwingAgiConfig extends AgiConfig {
         // Replace java for swing java
         getToolClasses().remove(Java.class);
         getToolClasses().add(SwingJava.class);
+        getToolClasses().add(Screens.class);
         // Add yam tools
-        getToolClasses().add(Radio.class);
-        getToolClasses().add(Speech.class);
+        getToolClasses().add(Radio.class);        
         getToolClasses().add(Chrome.class);
         getToolClasses().add(Firefox.class);
         getToolClasses().add(YouTube.class);
         getToolClasses().add(Benchmarks.class);
+        getToolClasses().add(Speech.class);
         //getToolClasses().add(OldChrome.class);
-        getToolClasses().add(Screens.class);
+        
     }
 
     /**
