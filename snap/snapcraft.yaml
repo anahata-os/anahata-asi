@@ -13,7 +13,6 @@ confinement: classic
 apps:
   anahata-asi-desktop:
     command: bin/Anahata-ASI-Desktop
-    extensions: [gnome]
 
 parts:
   desktop-app:
