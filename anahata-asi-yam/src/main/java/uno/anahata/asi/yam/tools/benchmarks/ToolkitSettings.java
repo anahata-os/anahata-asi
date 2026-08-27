@@ -3,7 +3,6 @@
  */
 package uno.anahata.asi.yam.tools.benchmarks;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Builder;
@@ -30,13 +29,13 @@ public record ToolkitSettings(
 ) {
 
     /**
-     * Canonical constructor providing unmodifiable copy of permissions.
+     * Canonical constructor initializing a standard mutable map copy of permissions to ensure safe Kryo serialization.
      *
      * @param toolkit The toolkit name or FQN.
      * @param permissions The tool method permission overrides.
      */
     public ToolkitSettings {
-        permissions = permissions != null ? Collections.unmodifiableMap(permissions) : Collections.emptyMap();
+        permissions = permissions != null ? new HashMap<>(permissions) : new HashMap<>();
     }
 
     /**
@@ -46,7 +45,7 @@ public record ToolkitSettings(
      * @return The ToolkitSettings instance.
      */
     public static ToolkitSettings of(String toolkit) {
-        return new ToolkitSettings(toolkit, Collections.emptyMap());
+        return new ToolkitSettings(toolkit, new HashMap<>());
     }
 
     /**
@@ -58,7 +57,9 @@ public record ToolkitSettings(
      * @return The ToolkitSettings instance.
      */
     public static ToolkitSettings of(String toolkit, String toolName, ToolPermission permission) {
-        return new ToolkitSettings(toolkit, Map.of(toolName, permission));
+        Map<String, ToolPermission> map = new HashMap<>();
+        map.put(toolName, permission);
+        return new ToolkitSettings(toolkit, map);
     }
 
     /**
@@ -69,7 +70,7 @@ public record ToolkitSettings(
      * @return The ToolkitSettings instance.
      */
     public static ToolkitSettings of(String toolkit, Map<String, ToolPermission> permissions) {
-        return new ToolkitSettings(toolkit, permissions);
+        return new ToolkitSettings(toolkit, permissions != null ? new HashMap<>(permissions) : new HashMap<>());
     }
 
     /**
@@ -79,7 +80,7 @@ public record ToolkitSettings(
      * @return The ToolkitSettings instance.
      */
     public static ToolkitSettings of(Class<? extends AnahataToolkit> toolkitClass) {
-        return new ToolkitSettings(toolkitClass.getName(), Collections.emptyMap());
+        return new ToolkitSettings(toolkitClass.getName(), new HashMap<>());
     }
 
     /**
@@ -91,7 +92,9 @@ public record ToolkitSettings(
      * @return The ToolkitSettings instance.
      */
     public static ToolkitSettings of(Class<? extends AnahataToolkit> toolkitClass, String toolName, ToolPermission permission) {
-        return new ToolkitSettings(toolkitClass.getName(), Map.of(toolName, permission));
+        Map<String, ToolPermission> map = new HashMap<>();
+        map.put(toolName, permission);
+        return new ToolkitSettings(toolkitClass.getName(), map);
     }
 
     /**
@@ -102,23 +105,23 @@ public record ToolkitSettings(
      * @return The ToolkitSettings instance.
      */
     public static ToolkitSettings of(Class<? extends AnahataToolkit> toolkitClass, Map<String, ToolPermission> permissions) {
-        return new ToolkitSettings(toolkitClass.getName(), permissions);
+        return new ToolkitSettings(toolkitClass.getName(), permissions != null ? new HashMap<>(permissions) : new HashMap<>());
     }
 
     /**
      * Resolves the composite tool permission keys for this toolkit using the concrete class simple name.
      *
      * @param concreteClass The resolved concrete class running in the active container.
-     * @return An unmodifiable map of resolved tool permission keys.
+     * @return A map of resolved tool permission keys.
      */
     public Map<String, ToolPermission> getResolvedPermissions(Class<?> concreteClass) {
-        if (permissions.isEmpty()) {
-            return Collections.emptyMap();
+        if (permissions == null || permissions.isEmpty()) {
+            return new HashMap<>();
         }
         String simpleName = (concreteClass != null ? concreteClass.getSimpleName() : getSimpleToolkitName());
         Map<String, ToolPermission> resolved = new HashMap<>();
         permissions.forEach((toolName, perm) -> resolved.put(simpleName + "." + toolName, perm));
-        return Collections.unmodifiableMap(resolved);
+        return resolved;
     }
 
     /**
