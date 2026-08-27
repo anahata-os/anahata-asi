@@ -190,7 +190,7 @@ jobs:
       # ---------------------------------------------------------------------
       - name: Package IntelliJ IDEA Plugin (.zip)
         run: |
-          mvn clean package -pl :anahata-asi-intellij -am -ntp
+          mvn package -pl :anahata-asi-intellij -DskipTests -ntp
           mkdir -p staging-binaries
           cp anahata-asi-intellij/target/*.zip staging-binaries/ || true
 
@@ -245,11 +245,12 @@ jobs:
 
       - name: Publish to Ubuntu Snap Store (Edge on Dev / Stable on Release)
         if: env.IS_RELEASE != 'true' || inputs.release_snap == true
-        uses: canonical/action-publish@v1
-        with:
-          store_login: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-          snap: ${{ steps.build_snap.outputs.snap_file }}
-          release: ${{ env.IS_RELEASE == 'true' && 'stable' || 'edge' }}
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        run: |
+          RELEASE_CHANNEL="${{ env.IS_RELEASE == 'true' && 'stable' || 'edge' }}"
+          echo "[INFO] Publishing ${{ steps.build_snap.outputs.snap_file }} to Snap Store channel: $RELEASE_CHANNEL..."
+          snapcraft upload "${{ steps.build_snap.outputs.snap_file }}" --release="$RELEASE_CHANNEL"
 
       # ---------------------------------------------------------------------
       # 6. ASSEMBLE WEBSITE, MERGE JAVADOCS & DEPLOY TO GITHUB PAGES
