@@ -1,0 +1,25 @@
+name: anahata-asi-desktop
+base: core24
+adopt-info: desktop-app
+summary: The Stateful, Air-Gapped Java ASI Container
+description: |
+  Anahata ASI Desktop is a stateful, air-gapped Java ASI container with 
+  deep hardware integration, session passivation, and complete observability.
+  Pioneering Artificial Super Intelligence on the shoulders of Java giants.
+
+grade: stable
+confinement: classic
+
+apps:
+  anahata-asi-desktop:
+    command: bin/Anahata-ASI-Desktop
+    extensions: [gnome]
+
+parts:
+  desktop-app:
+    plugin: dump
+    source: dist/Anahata-ASI-Desktop
+    override-build: |
+      craftctl default
+      VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | sed 's/-.*//')
+      craftctl set version="$VERSION"
