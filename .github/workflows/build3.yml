@@ -201,20 +201,23 @@ jobs:
           cp anahata-asi-intellij/target/*.zip staging-binaries/ || true
 
       # ---------------------------------------------------------------------
-      # 5. LINUX DESKTOP (jpackage) & CANONICAL SNAP STORE (Edge / Stable)
+      # 5. LINUX DESKTOP (AppImage, .deb, .tar.gz & Canonical Snap Store)
       # ---------------------------------------------------------------------
-      - name: Build Linux Desktop App Image & Package .tar.gz
+      - name: Build Linux Desktop Packages (AppImage, .deb, .tar.gz)
         run: |
           VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           JPACKAGE_VERSION=$(echo $VERSION | sed 's/-.*//')
-          echo "[INFO] Packaging Linux Desktop app-image (v$JPACKAGE_VERSION)..."
+          echo "================================================================="
+          echo " [INFO] Packaging Linux Desktop (AppImage, .deb, .tar.gz) v$JPACKAGE_VERSION"
+          echo "================================================================="
 
-          mkdir -p package-input/lib
+          mkdir -p package-input/lib staging-binaries
           cp anahata-asi-desktop/target/anahata-asi-desktop-${VERSION}.jar package-input/
           mvn -f anahata-asi-desktop/pom.xml dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=../package-input/lib
           cp anahata-asi-desktop/src/main/resources/icon.png .
           cp anahata-asi-desktop/src/main/resources/splash.png package-input/
 
+          # 1. Build app-image (portable native directory)
           jpackage --name "Anahata-ASI-Desktop" \
                    --app-version "$JPACKAGE_VERSION" \
                    --input package-input \
@@ -230,8 +233,54 @@ jobs:
                    --dest dist \
                    --verbose
 
-          mkdir -p staging-binaries
+          # 2. Package .tar.gz binary
           tar -czf "staging-binaries/Anahata-ASI-Desktop-${VERSION}-linux.tar.gz" -C dist "Anahata-ASI-Desktop"
+
+          # 3. Build native Debian/Ubuntu .deb package
+          jpackage --name "Anahata-ASI-Desktop" \
+                   --app-version "$JPACKAGE_VERSION" \
+                   --input package-input \
+                   --main-jar "anahata-asi-desktop-${VERSION}.jar" \
+                   --main-class uno.anahata.asi.desktop.Main \
+                   --icon "icon.png" \
+                   --java-options "-XX:+UseZGC" \
+                   --java-options "-XX:+ZGenerational" \
+                   --java-options "-XX:MaxRAMPercentage=60.0" \
+                   --java-options "-XX:InitialRAMPercentage=10.0" \
+                   --java-options "--enable-native-access=ALL-UNNAMED" \
+                   --type deb \
+                   --dest dist-deb \
+                   --linux-shortcut \
+                   --linux-menu-group "Development" || true
+
+          if [ -d "dist-deb" ]; then
+            DEB_FILE=$(ls dist-deb/*.deb | head -n 1)
+            if [ -n "$DEB_FILE" ]; then
+              cp "$DEB_FILE" "staging-binaries/Anahata-ASI-Desktop-${VERSION}-linux.deb"
+              echo "[INFO] Generated Debian package: staging-binaries/Anahata-ASI-Desktop-${VERSION}-linux.deb"
+            fi
+          fi
+
+          # 4. Build Universal Linux .AppImage
+          echo "[INFO] Assembling Universal AppImage..."
+          mkdir -p AppDir/usr
+          cp -r dist/Anahata-ASI-Desktop/* AppDir/usr/
+
+          cat << 'EOF' > AppDir/AppRun
+#!/bin/bash
+HERE="$(dirname "$(readlink -f "${0}")")"
+exec "${HERE}/usr/bin/Anahata-ASI-Desktop" "$@"
+EOF
+          chmod +x AppDir/AppRun
+
+          cp snap/gui/anahata-asi-desktop.desktop AppDir/
+          cp snap/gui/icon.png AppDir/anahata-asi-desktop.png
+          cp snap/gui/icon.png AppDir/.DirIcon
+
+          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
+          chmod +x appimagetool
+          ./appimagetool --appimage-extract-and-run AppDir "staging-binaries/Anahata-ASI-Desktop-${VERSION}-linux.AppImage"
+          echo "[INFO] Generated AppImage: staging-binaries/Anahata-ASI-Desktop-${VERSION}-linux.AppImage"
 
       - name: Install Snapcraft
         if: inputs.release_snap == true
@@ -536,6 +585,8 @@ jobs:
             all-binaries/*.nbm
             all-binaries/*.zip
             all-binaries/*.tar.gz
+            all-binaries/*.deb
+            all-binaries/*.AppImage
           draft: false
           prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
           make_latest: ${{ startsWith(github.ref, 'refs/tags/') }}
