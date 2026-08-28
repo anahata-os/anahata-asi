@@ -266,11 +266,7 @@ jobs:
           mkdir -p AppDir/usr
           cp -r dist/Anahata-ASI-Desktop/* AppDir/usr/
 
-          cat << 'EOF' > AppDir/AppRun
-#!/bin/bash
-HERE="$(dirname "$(readlink -f "${0}")")"
-exec "${HERE}/usr/bin/Anahata-ASI-Desktop" "$@"
-EOF
+          printf '#!/bin/bash\nHERE="$(dirname "$(readlink -f "${0}")")"\nexec "${HERE}/usr/bin/Anahata-ASI-Desktop" "$@"\n' > AppDir/AppRun
           chmod +x AppDir/AppRun
 
           cp snap/gui/anahata-asi-desktop.desktop AppDir/
