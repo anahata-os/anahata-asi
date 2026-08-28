@@ -234,12 +234,12 @@ jobs:
           tar -czf "staging-binaries/Anahata-ASI-Desktop-${VERSION}-linux.tar.gz" -C dist "Anahata-ASI-Desktop"
 
       - name: Install Snapcraft
-        if: env.IS_RELEASE != 'true' || inputs.release_snap == true
+        if: inputs.release_snap == true
         run: sudo snap install snapcraft --classic
 
       - name: Build Snap Package
         id: build_snap
-        if: env.IS_RELEASE != 'true' || inputs.release_snap == true
+        if: inputs.release_snap == true
         run: |
           VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "[INFO] Dynamically stamping Snap version to: $VERSION..."
@@ -248,9 +248,10 @@ jobs:
           SNAP_FILE=$(ls anahata-asi-desktop_*.snap | head -n 1)
           echo "snap_file=$SNAP_FILE" >> $GITHUB_OUTPUT
           echo "[INFO] Generated snap package: $SNAP_FILE"
+          cp "$SNAP_FILE" staging-binaries/ || true
 
       - name: Publish to Ubuntu Snap Store (Edge on Dev / Stable on Release)
-        if: env.IS_RELEASE != 'true' || inputs.release_snap == true
+        if: inputs.release_snap == true
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
         run: |
