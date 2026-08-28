@@ -227,7 +227,7 @@ public class HeaderPanel extends JPanel {
     private void showProviderRegistry() {
         new SwingTask<List<AbstractModel>>(agiPanel, "Collecting Models from Providers", () -> {
             return agi.getProviders().stream()
-                    .filter(AbstractAiProvider::isEnabled)
+                    .filter(AbstractAiProvider::isEffectivelyEnabled)
                     .flatMap(provider -> provider.getModels().stream())
                     .collect(Collectors.toList());
         }, allModels -> {
