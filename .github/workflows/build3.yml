@@ -225,7 +225,6 @@ jobs:
                    --main-class uno.anahata.asi.desktop.Main \
                    --icon "icon.png" \
                    --java-options "-XX:+UseZGC" \
-                   --java-options "-XX:+ZGenerational" \
                    --java-options "-XX:MaxRAMPercentage=60.0" \
                    --java-options "-XX:InitialRAMPercentage=10.0" \
                    --java-options "--enable-native-access=ALL-UNNAMED" \
@@ -244,7 +243,6 @@ jobs:
                    --main-class uno.anahata.asi.desktop.Main \
                    --icon "icon.png" \
                    --java-options "-XX:+UseZGC" \
-                   --java-options "-XX:+ZGenerational" \
                    --java-options "-XX:MaxRAMPercentage=60.0" \
                    --java-options "-XX:InitialRAMPercentage=10.0" \
                    --java-options "--enable-native-access=ALL-UNNAMED" \
@@ -261,7 +259,7 @@ jobs:
             fi
           fi
 
-          # 4. Build Universal Linux .AppImage
+          # 4. Build Universal Linux 1-Click Self-Extracting AppImage (Zero FUSE 2 Dependency)
           echo "[INFO] Assembling Universal AppImage..."
           mkdir -p AppDir/usr
           cp -r dist/Anahata-ASI-Desktop/* AppDir/usr/
@@ -269,14 +267,35 @@ jobs:
           printf '#!/bin/bash\nHERE="$(dirname "$(readlink -f "${0}")")"\nexec "${HERE}/usr/bin/Anahata-ASI-Desktop" "$@"\n' > AppDir/AppRun
           chmod +x AppDir/AppRun
 
-          cp snap/gui/anahata-asi-desktop.desktop AppDir/
+          printf '[Desktop Entry]\nName=Anahata ASI Desktop\nComment=The Stateful, Air-Gapped Java ASI Container\nExec=Anahata-ASI-Desktop\nIcon=anahata-asi-desktop\nTerminal=false\nType=Application\nCategories=Development;\nStartupWMClass=uno-anahata-asi-desktop-Main\n' > AppDir/anahata-asi-desktop.desktop
           cp snap/gui/icon.png AppDir/anahata-asi-desktop.png
           cp snap/gui/icon.png AppDir/.DirIcon
 
           wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
           chmod +x appimagetool
-          ./appimagetool --appimage-extract-and-run AppDir "staging-binaries/Anahata-ASI-Desktop-${VERSION}-linux.AppImage"
-          echo "[INFO] Generated AppImage: staging-binaries/Anahata-ASI-Desktop-${VERSION}-linux.AppImage"
+          ./appimagetool --appimage-extract-and-run AppDir raw-bundle.AppImage
+
+          OUTPUT_APPIMAGE="staging-binaries/Anahata-ASI-Desktop-${VERSION}-linux.AppImage"
+          cat << 'HEADER' > "$OUTPUT_APPIMAGE"
+#!/bin/bash
+# Anahata ASI 1-Click Self-Extracting AppImage Runner
+export APPIMAGE="$0"
+export ARG0="$0"
+if command -v fusermount >/dev/null 2>&1 && [ -e /dev/fuse ] && ldconfig -p 2>/dev/null | grep -q "libfuse.so.2"; then
+  exec "$0" --appimage-mount "$@" 2>/dev/null || true
+fi
+TMPDIR=$(mktemp -d /tmp/.anahata-appimage-XXXXXX)
+trap 'rm -rf "$TMPDIR"' EXIT INT TERM
+tail -n +20 "$0" | tar -xz -C "$TMPDIR" 2>/dev/null || {
+  tail -n +20 "$0" > "$TMPDIR/bundle.appimage"
+  chmod +x "$TMPDIR/bundle.appimage"
+  exec "$TMPDIR/bundle.appimage" --appimage-extract-and-run "$@"
+}
+exec "$TMPDIR/AppRun" "$@"
+HEADER
+          cat raw-bundle.AppImage >> "$OUTPUT_APPIMAGE"
+          chmod +x "$OUTPUT_APPIMAGE"
+          echo "[INFO] Generated 1-Click AppImage: $OUTPUT_APPIMAGE"
 
       - name: Install Snapcraft
         if: inputs.release_snap == true
@@ -395,6 +414,18 @@ jobs:
               f.write(new_html)
           '
 
+          # 6. Index Debian packages for static GitHub Pages APT Repository
+          if ls staging-binaries/*.deb 1> /dev/null 2>&1; then
+            echo "[INFO] Indexing Debian packages for GitHub Pages APT repository (dists/stable/main/binary-amd64)..."
+            sudo apt-get update -qq && sudo apt-get install -y -qq dpkg-dev
+            mkdir -p _site/apt/pool/main _site/apt/dists/stable/main/binary-amd64
+            cp staging-binaries/*.deb _site/apt/pool/main/
+            cd _site/apt
+            dpkg-scanpackages --multiversion pool/main /dev/null > dists/stable/main/binary-amd64/Packages
+            gzip -9 -c dists/stable/main/binary-amd64/Packages > dists/stable/main/binary-amd64/Packages.gz
+            cd ../..
+          fi
+
       - name: Persist Javadocs & Catalogs to gh-pages
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
         run: |
@@ -468,7 +499,6 @@ jobs:
                    --main-class uno.anahata.asi.desktop.Main \
                    --icon "icon.ico" \
                    --java-options "-XX:+UseZGC" \
-                   --java-options "-XX:+ZGenerational" \
                    --java-options "-XX:MaxRAMPercentage=60.0" \
                    --java-options "-XX:InitialRAMPercentage=10.0" \
                    --java-options "--enable-native-access=ALL-UNNAMED" \
@@ -522,7 +552,6 @@ jobs:
                    --main-class uno.anahata.asi.desktop.Main \
                    --icon "icon.icns" \
                    --java-options "-XX:+UseZGC" \
-                   --java-options "-XX:+ZGenerational" \
                    --java-options "-XX:MaxRAMPercentage=60.0" \
                    --java-options "-XX:InitialRAMPercentage=10.0" \
                    --java-options "--enable-native-access=ALL-UNNAMED" \
