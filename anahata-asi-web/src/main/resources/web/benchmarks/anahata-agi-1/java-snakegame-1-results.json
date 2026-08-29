@@ -1,0 +1,22 @@
+[ {
+  "participant" : {
+    "providerUuid" : "Gemini",
+    "modelId" : "models/gemini-3.5-flash",
+    "thinkingLevel" : "THINKING_LEVEL_UNSPECIFIED"
+  },
+  "testCode" : "JAVA-SNAKEGAME-1",
+  "asiContainer" : "AsiDesktopAsiContainer",
+  "timestamp" : "2026-08-28T19:05:23.766199729Z",
+  "durationSeconds" : 77.94,
+  "turns" : 2,
+  "promptTokens" : 65133,
+  "candidatesTokens" : 4138,
+  "thoughtsTokens" : 5726,
+  "totalTokens" : 74997,
+  "passed" : true,
+  "judgeScores" : { },
+  "videoUrl" : null,
+  "screenshotPath" : "/home/pablo/.anahata/asi/recordings/JAVA-SNAKEGAME-1_models_gemini-3.5-flash_20260828_210405_thumb.png",
+  "sessionId" : "957964cc-9814-40bd-93ae-0689b5a752ab",
+  "observations" : ""
+} ]
