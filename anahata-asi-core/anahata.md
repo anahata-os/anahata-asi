@@ -53,3 +53,16 @@ This project contains the foundational logic, while provider-specific implementa
 -   **`ResourceManager`**: Manages all stateful resources.
 -   **`AbstractResource`**: Base class unifying concepts of resource and context provider.
 -   **`AbstractPathResource`**: specialized base for file-based resources.
+
+---
+
+## 3. Tasks & Upcoming Architectural Improvements
+
+### 3.1. Smart Surgical Divergence Diagnostic Engine in `TextResourceReplacements`
+- **Objective**: Enhance `TextResourceReplacements.validate()` so that when an exact substring replacement fails with 0 occurrences, the framework automatically performs an in-memory near-match diagnostic.
+- **Rationale**: Currently, when an exact match fails on a multi-line target block due to a single differing token, missing prefix/variable, or whitespace discrepancy, the tool throws a generic `AgiToolException: Your 'totalOccurrences' was 1 but I found 0 matches in the file.` This leaves the AI model blind, leading to repeated failed attempts.
+- **Implementation Design**:
+  1. **Near-Match Line Alignment**: Split the target into lines and locate the closest candidate block in the file (by first-line matching, trimmed matching, or Levenshtein similarity).
+  2. **Character & Token Diff**: Pinpoint the exact line number, column index, and diverging characters between the target and file (e.g. `FILE has 'm', TARGET has 'g'`).
+  3. **Whitespace Diagnostic**: Specifically detect whether the divergence is purely whitespace-related (spaces vs tabs, trailing spaces, CRLF vs LF).
+  4. **Actionable Error Reporting**: Include this diagnostic report directly in the `AgiToolException` error message returned in the tool response, preserving 100% byte-for-byte modification safety while providing the model with immediate, actionable feedback to recover in a single turn.
