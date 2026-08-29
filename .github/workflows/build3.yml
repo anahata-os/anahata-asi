@@ -276,23 +276,7 @@ jobs:
           ./appimagetool --appimage-extract-and-run AppDir raw-bundle.AppImage
 
           OUTPUT_APPIMAGE="staging-binaries/Anahata-ASI-Desktop-${VERSION}-linux.AppImage"
-          cat << 'HEADER' > "$OUTPUT_APPIMAGE"
-#!/bin/bash
-# Anahata ASI 1-Click Self-Extracting AppImage Runner
-export APPIMAGE="$0"
-export ARG0="$0"
-if command -v fusermount >/dev/null 2>&1 && [ -e /dev/fuse ] && ldconfig -p 2>/dev/null | grep -q "libfuse.so.2"; then
-  exec "$0" --appimage-mount "$@" 2>/dev/null || true
-fi
-TMPDIR=$(mktemp -d /tmp/.anahata-appimage-XXXXXX)
-trap 'rm -rf "$TMPDIR"' EXIT INT TERM
-tail -n +20 "$0" | tar -xz -C "$TMPDIR" 2>/dev/null || {
-  tail -n +20 "$0" > "$TMPDIR/bundle.appimage"
-  chmod +x "$TMPDIR/bundle.appimage"
-  exec "$TMPDIR/bundle.appimage" --appimage-extract-and-run "$@"
-}
-exec "$TMPDIR/AppRun" "$@"
-HEADER
+          printf '#!/bin/bash\n# Anahata ASI 1-Click Self-Extracting AppImage Runner\nexport APPIMAGE="$0"\nexport ARG0="$0"\nif command -v fusermount >/dev/null 2>&1 && [ -e /dev/fuse ] && ldconfig -p 2>/dev/null | grep -q "libfuse.so.2"; then\n  exec "$0" --appimage-mount "$@" 2>/dev/null || true\nfi\nTMPDIR=$(mktemp -d /tmp/.anahata-appimage-XXXXXX)\ntrap '\''rm -rf "$TMPDIR"'\'' EXIT INT TERM\ntail -n +16 "$0" > "$TMPDIR/bundle.appimage"\nchmod +x "$TMPDIR/bundle.appimage"\nexec "$TMPDIR/bundle.appimage" --appimage-extract-and-run "$@"\n' > "$OUTPUT_APPIMAGE"
           cat raw-bundle.AppImage >> "$OUTPUT_APPIMAGE"
           chmod +x "$OUTPUT_APPIMAGE"
           echo "[INFO] Generated 1-Click AppImage: $OUTPUT_APPIMAGE"
