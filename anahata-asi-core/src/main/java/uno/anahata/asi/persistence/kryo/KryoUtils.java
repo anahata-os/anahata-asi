@@ -9,7 +9,10 @@ import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -96,6 +99,42 @@ public class KryoUtils {
         }
         byte[] bytes = serialize(object);
         return (T) deserialize(bytes, object.getClass());
+    }
+
+    /**
+     * Serializes an object with Kryo and writes it atomically to the target file on disk using a temporary file.
+     *
+     * @param object The object to serialize and save.
+     * @param targetFile The final destination path.
+     * @throws IOException If serialization or writing fails.
+     */
+    public static void saveToFile(Object object, Path targetFile) throws IOException {
+        Path parent = targetFile.getParent();
+        if (parent != null && !Files.exists(parent)) {
+            Files.createDirectories(parent);
+        }
+        Path tmpFile = targetFile.resolveSibling(targetFile.getFileName().toString() + ".tmp");
+        byte[] data = serialize(object);
+        Files.write(tmpFile, data);
+        try {
+            Files.move(tmpFile, targetFile, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+            Files.move(tmpFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    /**
+     * Reads a file from disk and deserializes it with Kryo.
+     *
+     * @param <T> The target object type.
+     * @param file The file to read.
+     * @param clazz The target class.
+     * @return The deserialized object.
+     * @throws IOException If reading the file fails.
+     */
+    public static <T> T loadFromFile(Path file, Class<T> clazz) throws IOException {
+        byte[] data = Files.readAllBytes(file);
+        return deserialize(data, clazz);
     }
 
     /**
