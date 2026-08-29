@@ -213,7 +213,6 @@ public class AsiContainer extends AnahataToolkit {
      * {@code [IMAGE, TEXT]}), filters to models that support <b>ALL</b>
      * requested response modalities.</li>
      * </ul>
-     * </p>
      *
      * @param query Optional regex or keyword query to match against model ID,
      * display name, description, actions, or modalities.
