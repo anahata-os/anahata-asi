@@ -29,6 +29,7 @@ import uno.anahata.asi.agi.provider.ServerTool;
 import uno.anahata.asi.agi.provider.ThinkingLevel;
 import uno.anahata.asi.swing.components.ScrollablePanel;
 import uno.anahata.asi.swing.components.SliderSpinner;
+import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 
 /**
@@ -380,8 +381,14 @@ public class RequestConfigPanel extends ScrollablePanel implements PropertyChang
         List<ResponseModality> supported = model != null ? model.getSupportedResponseModalities() : null;
         for (ResponseModality modality : ResponseModality.values()) {
             boolean isSupported = supported != null && supported.contains(modality);
-            JCheckBox cb = new JCheckBox(modality.name());
-            cb.setSelected(config.getResponseModalities().contains(modality));
+            
+            javax.swing.Icon icon = IconUtils.getModalityIcon(modality, 14);
+
+            String text = isSupported 
+                    ? modality.name() 
+                    : modality.name() + " (not sure if the model supports it, but you can try)";
+            
+            JCheckBox cb = new JCheckBox(text, icon, config.getResponseModalities().contains(modality));
             cb.setOpaque(false);
             if (!isSupported) {
                 cb.setForeground(new Color(130, 130, 130));
