@@ -1,6 +1,8 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.provider;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import javax.swing.table.AbstractTableModel;
 import uno.anahata.asi.agi.provider.AbstractModel;
@@ -33,7 +35,20 @@ public class AiModelTableModel extends AbstractTableModel {
      * @param models The list of models to display.
      */
     public AiModelTableModel(List<AbstractModel> models) {
-        this.models = models;
+        this.models = new ArrayList<>(models != null ? models : Collections.emptyList());
+    }
+
+    /**
+     * Updates the underlying model list and notifies listeners of the change.
+     * 
+     * @param newModels The new list of models.
+     */
+    public void setModels(List<AbstractModel> newModels) {
+        this.models.clear();
+        if (newModels != null) {
+            this.models.addAll(newModels);
+        }
+        fireTableDataChanged();
     }
 
     /**
