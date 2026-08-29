@@ -32,6 +32,7 @@ import uno.anahata.asi.agi.status.AgiStatus;
 import uno.anahata.asi.persistence.kryo.KryoUtils;
 import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
 import uno.anahata.asi.agi.provider.AbstractModel;
+import uno.anahata.asi.agi.provider.ResponseModality;
 
 /**
  * A hybrid static/instance class for managing global and application-specific
@@ -119,7 +120,7 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
      */
     public List<AbstractModel> getAllModels(boolean providerEnabled) {
         List<AbstractAiProvider> targetProviders = getAllProviders().stream()
-                .filter(p -> !providerEnabled || (p.isEnabled() && (p.hasKeys() || !p.isApiKeyRequired())))
+                .filter(p -> !providerEnabled || p.isEffectivelyEnabled())
                 .collect(Collectors.toList());
 
         List<CompletableFuture<List<? extends AbstractModel>>> futures = targetProviders.stream()
@@ -144,6 +145,21 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
             log.error("Failed to execute parallel getAllModels", e);
             return Collections.emptyList();
         }
+    }
+
+    /**
+     * Finds and filters models across providers matching a regex/text query AND all requested response modalities.
+     *
+     * @param query Optional regex or keyword query.
+     * @param modalities Optional list of response modalities (e.g. [IMAGE, AUDIO]).
+     * @param enabledOnly If true, filters to only effectively enabled providers (enabled with valid API keys).
+     * @return A list of matching {@link AbstractModel} instances across matching providers.
+     */
+    public List<AbstractModel> findModels(String query, List<ResponseModality> modalities, boolean enabledOnly) {
+        return getAllProviders().stream()
+                .filter(p -> !enabledOnly || p.isEffectivelyEnabled())
+                .flatMap(p -> p.findModels(query, modalities).stream())
+                .collect(Collectors.toList());
     }
 
     /**
@@ -277,7 +293,7 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
         AgiConfig template = preferences.getAgiTemplate();
         for (String uuid : template.getProviderUuids()) {
             AbstractAiProvider provider = getProvider(uuid);
-            if (provider != null && provider.isEnabled() && (provider.hasKeys() || !provider.isApiKeyRequired())) {
+            if (provider != null && provider.isEffectivelyEnabled()) {
                 return true;
             }
         }
@@ -560,7 +576,7 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
         if (agi.getConfig().getSelectedModelId() != null) {
             log.info("Applying DNA-defined default model ({}) to new session", agi.getConfig().getSelectedModelId());
             AbstractAiProvider prov = getProvider(agi.getConfig().getSelectedProviderUuid());
-            Optional<? extends AbstractModel> am = prov.findModel(agi.getConfig().getSelectedModelId());
+            Optional<? extends AbstractModel> am = prov.getModel(agi.getConfig().getSelectedModelId());
             if (am.isPresent()) {
                 agi.setSelectedModel(am.get());
             }
@@ -859,6 +875,10 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
      * @return The root working directory path.
      */
     public static Path getWorkDir() {
+        String snapUserData = System.getenv("SNAP_USER_DATA");
+        if (snapUserData != null && !snapUserData.isBlank()) {
+            return Paths.get(snapUserData, ".anahata", "asi");
+        }
         return Paths.get(System.getProperty("user.home"), ".anahata", "asi");
     }
 

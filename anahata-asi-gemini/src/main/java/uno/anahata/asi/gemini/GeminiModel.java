@@ -40,6 +40,7 @@ import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.agi.provider.ApiCallInterruptedException;
 import uno.anahata.asi.agi.provider.FinishReason;
+import uno.anahata.asi.agi.provider.ResponseModality;
 import uno.anahata.asi.agi.provider.ServerTool;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.agi.provider.RetryableApiException;
@@ -413,11 +414,27 @@ public class GeminiModel extends AbstractModel {
      * {@inheritDoc}
      */
     @Override
-    public List<String> getSupportedResponseModalities() {
-        List<String> modalities = new ArrayList<>();
-        modalities.add("TEXT");
-        modalities.add("IMAGE");
-        modalities.add("AUDIO");
+    public List<ResponseModality> getSupportedResponseModalities() {
+        List<ResponseModality> modalities = new ArrayList<>();
+        String id = getModelId().toLowerCase();
+        
+        modalities.add(ResponseModality.TEXT);
+        
+        // 1. Image generation models (e.g. imagen-3.0-generate-002, gemini-2.5-flash-image, nano-banana)
+        if (id.contains("image") || id.contains("banana") || id.contains("omni")) {
+            modalities.add(ResponseModality.IMAGE);
+        } 
+
+        // 2. Audio generation / TTS models
+        if (id.contains("lyria") || id.contains("live") || id.contains("tts") || id.contains("audio") || id.contains("omni")) {
+            modalities.add(ResponseModality.AUDIO);
+        }
+
+        // 3. Video generation models
+        if (id.contains("veo") || id.contains("omni")) {
+            modalities.add(ResponseModality.VIDEO);
+        }
+
         return modalities;
     }
 

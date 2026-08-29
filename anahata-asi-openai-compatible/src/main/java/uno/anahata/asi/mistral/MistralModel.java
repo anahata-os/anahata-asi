@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.agi.provider.ResponseModality;
 import uno.anahata.asi.openai.compatible.OpenAiCompatibleModel;
 import uno.anahata.asi.openai.compatible.OpenAiCompatibleReasoningStyle;
 
@@ -112,14 +113,14 @@ public class MistralModel extends OpenAiCompatibleModel {
      * <p>Maps Mistral vision/audio flags to supported response modalities.</p>
      */
     @Override
-    public List<String> getSupportedResponseModalities() {
-        List<String> modalities = new ArrayList<>();
-        modalities.add("TEXT");
+    public List<ResponseModality> getSupportedResponseModalities() {
+        List<ResponseModality> modalities = new ArrayList<>();
+        modalities.add(ResponseModality.TEXT);
         if (vision) {
-            modalities.add("IMAGE");
+            modalities.add(ResponseModality.IMAGE);
         }
         if (audio || audioSpeech) {
-            modalities.add("AUDIO");
+            modalities.add(ResponseModality.AUDIO);
         }
         return modalities;
     }

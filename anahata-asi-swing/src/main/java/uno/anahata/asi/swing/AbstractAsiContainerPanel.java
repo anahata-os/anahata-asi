@@ -68,8 +68,8 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
         this.toolBar = new JToolBar();
         toolBar.setFloatable(false);
 
-        JButton newButton = new JButton("New", new RestartIcon(16));
-        newButton.setToolTipText("Create a new AI session");
+        JButton newButton = new JButton("New AGI", new RestartIcon(16));
+        newButton.setToolTipText("Create a new AGI");
         newButton.addActionListener(e -> createNew());
         toolBar.add(newButton);
 

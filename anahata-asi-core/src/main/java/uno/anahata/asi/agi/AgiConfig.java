@@ -216,10 +216,6 @@ public class AgiConfig extends BasicPropertyChangeSource {
     private int defaultWebSearchMaxDepth = 8;
 
     //</editor-fold>
-    /**
-     * The default response modalities for this agi session.
-     */
-    private List<String> defaultResponseModalities = new ArrayList<>(List.of("TEXT"));
 
     /**
      * Sets the selected provider UUID and fires a property change event.

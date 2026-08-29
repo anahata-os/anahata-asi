@@ -99,11 +99,14 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
         }
 
         if (getProvider("Gemni") == null) {
-            registerProvider(new GeminiAiProvider("Gemini", "Google AI Studio", false));
+            GeminiAiProvider g = new GeminiAiProvider("Gemini", "Google AI Studio", false);
+            registerProvider(g);
         }
 
         if (getProvider("GeminiVertex") == null) {
-            registerProvider(new GeminiAiProvider("GeminiVertex", "Google Cloud (Vertex)", true));
+            GeminiAiProvider g = new GeminiAiProvider("GeminiVertex", "Google Cloud (Vertex)", true);
+            g.setEnabled(false);
+            //registerProvider();
         }
         
         if (getProvider("NovaRouteAI") == null) {

@@ -10,6 +10,7 @@ import java.awt.RenderingHints;
 import java.awt.geom.Arc2D;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.RoundRectangle2D;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 
 /**
  * A vector icon rendering an image landscape frame with mountain peaks and sun.
@@ -43,7 +44,8 @@ public class ImageModalityIcon extends AbstractAnahataIcon {
             g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 
             float s = size;
-            Color primary = (c != null && c.getForeground() != null) ? c.getForeground() : getBlueColor(c);
+            Color primary = (c != null && !c.isEnabled()) ? Color.GRAY
+                    : (SwingAgiConfig.isDarkLaf() ? new Color(52, 211, 153) : new Color(16, 185, 129));
             g2.setColor(primary);
 
             float stroke = Math.max(1.2f, s * 0.075f);

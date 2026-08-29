@@ -20,6 +20,7 @@ import com.google.genai.types.ToolConfig;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -78,9 +79,9 @@ public final class RequestConfigAdapter {
             builder.systemInstruction(sysInstContent);
         }
 
-        List<String> modalities = requestConfig.getResponseModalities();
+        List<uno.anahata.asi.agi.provider.ResponseModality> modalities = requestConfig.getResponseModalities();
         if (modalities != null && !modalities.isEmpty()) {
-            builder.responseModalities(modalities);
+            builder.responseModalities(modalities.stream().map(Enum::name).collect(Collectors.toList()));
         } else {
             builder.responseModalities("TEXT");
         }

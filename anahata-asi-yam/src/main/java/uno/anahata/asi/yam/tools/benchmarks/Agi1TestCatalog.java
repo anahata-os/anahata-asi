@@ -77,10 +77,26 @@ public class Agi1TestCatalog extends TestCatalog {
     /**
      * Test #3: Classic Snake Game.
      */
-    public static final TestDefinition JAVA_SNAKE_GAME = TestDefinition.builder()
-            .testCode("JAVA-SNAKEGAME-1")
+    public static final TestDefinition JAVA_SNAKE_GAME_1 = TestDefinition.builder()
+            .testCode("JAVA-SNAKE-GAME-1")
             .title("Snake Game")
-            .rawPrompt("Make an snake game using java tool. You can use the best tool for making this work in Java.")
+            .rawPrompt("Make a snake game using the java tool. Window title MUST contain your Model ID.")
+            .toolkits(List.of(
+                    ToolkitSettings.of(Java.class, "compileAndExecute", ToolPermission.APPROVE_ALWAYS),
+                    ToolkitSettings.of(Host.class),
+                    ToolkitSettings.of(Session.class),
+                    ToolkitSettings.of(History.class),
+                    ToolkitSettings.of(Resources.class)
+            ))
+            .build();
+    
+    /**
+     * Test #3: Classic Snake Game.
+     */
+    public static final TestDefinition JAVA_3D_NOU_CAMP_NOU_1 = TestDefinition.builder()
+            .testCode("JAVA-NOU-CAMP-NOU-1")
+            .title("Snake Game")
+            .rawPrompt("Make a 3D model of what the Nou Camp Nou will look like when completed")
             .toolkits(List.of(
                     ToolkitSettings.of(Java.class, "compileAndExecute", ToolPermission.APPROVE_ALWAYS),
                     ToolkitSettings.of(Host.class),
@@ -131,6 +147,7 @@ public class Agi1TestCatalog extends TestCatalog {
         );
         addTest(JAVA_JNA_1);
         addTest(JAVA_ARKANOID_1);
-        addTest(JAVA_SNAKE_GAME);
+        addTest(JAVA_SNAKE_GAME_1);
+        addTest(JAVA_3D_NOU_CAMP_NOU_1);
     }
 }

@@ -36,6 +36,7 @@ import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.agi.provider.GenerationRequest;
 import uno.anahata.asi.agi.provider.RequestConfig;
 import uno.anahata.asi.agi.provider.Response;
+import uno.anahata.asi.agi.provider.ResponseModality;
 import uno.anahata.asi.agi.provider.RetryableApiException;
 import uno.anahata.asi.agi.provider.ServerTool;
 import uno.anahata.asi.agi.provider.StreamObserver;
@@ -308,12 +309,8 @@ public class OpenAiCompatibleModel extends AbstractModel {
      * {@inheritDoc}
      */
     @Override
-    public List<String> getSupportedResponseModalities() {
-        String lowerId = modelId.toLowerCase();
-        if (lowerId.contains("vision") || lowerId.contains("gpt-4o") || lowerId.contains("claude-3")) {
-            return List.of("TEXT", "IMAGE");
-        }
-        return List.of("TEXT");
+    public List<ResponseModality> getSupportedResponseModalities() {
+        return List.of(ResponseModality.TEXT);
     }
 
     /**

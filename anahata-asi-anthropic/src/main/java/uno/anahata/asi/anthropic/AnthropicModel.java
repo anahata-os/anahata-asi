@@ -24,6 +24,7 @@ import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.agi.provider.GenerationRequest;
 import uno.anahata.asi.agi.provider.RequestConfig;
 import uno.anahata.asi.agi.provider.Response;
+import uno.anahata.asi.agi.provider.ResponseModality;
 import uno.anahata.asi.agi.provider.RetryableApiException;
 import uno.anahata.asi.agi.provider.ServerTool;
 import uno.anahata.asi.agi.provider.StreamObserver;
@@ -207,7 +208,7 @@ public class AnthropicModel extends AbstractModel {
      * {@inheritDoc}
      */
     @Override
-    public List<String> getSupportedResponseModalities() { return List.of("TEXT", "IMAGE"); }
+    public List<ResponseModality> getSupportedResponseModalities() { return List.of(ResponseModality.TEXT); }
 
     /**
      * {@inheritDoc}

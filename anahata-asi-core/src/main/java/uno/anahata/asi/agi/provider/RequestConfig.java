@@ -51,7 +51,7 @@ public class RequestConfig extends BasicPropertyChangeSource {
     private ThinkingLevel thinkingLevel = ThinkingLevel.THINKING_LEVEL_UNSPECIFIED;
 
     /** The list of response modalities requested for this specific request. */
-    private List<String> responseModalities = new ArrayList<>(List.of("TEXT"));
+    private List<ResponseModality> responseModalities = new ArrayList<>(List.of(ResponseModality.TEXT));
 
     /** The list of server-side tools enabled for this specific request. */
     private List<ServerTool> enabledServerTools = new ArrayList<>();

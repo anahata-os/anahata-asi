@@ -21,7 +21,7 @@ public class AiModelTableModel extends AbstractTableModel {
     /** The ordered set of column headers reflecting model specifications. */
     private final String[] columnNames = {
         "AI Provider", "Model ID", "Display Name", "Version", "Description",
-        "Supported Actions", "Input Tokens", "Output Tokens",
+        "Modalities", "Supported Actions", "Input Tokens", "Output Tokens",
         "Temperature", "Top P", "Top K"
     };
     /** The backing list of model entities. */
@@ -87,17 +87,18 @@ public class AiModelTableModel extends AbstractTableModel {
     public Object getValueAt(int rowIndex, int columnIndex) {
         AbstractModel model = models.get(rowIndex);
         switch (columnIndex) {
-            case 0: return model.getProvider().getDisplayName();
+            case 0: return model.getProvider();
             case 1: return model.getModelId();
             case 2: return model.getDisplayName();
             case 3: return model.getVersion();
             case 4: return model.getDescription();
-            case 5: return String.join(", ", model.getSupportedActions());
-            case 6: return model.getMaxInputTokens() != null ? model.getMaxInputTokens() : "N/A";
-            case 7: return model.getMaxOutputTokens() != null ? model.getMaxOutputTokens() : "N/A";
-            case 8: return model.getDefaultTemperature() != null ? model.getDefaultTemperature() : "N/A";
-            case 9: return model.getDefaultTopP() != null ? model.getDefaultTopP() : "N/A";
-            case 10: return model.getDefaultTopK() != null ? model.getDefaultTopK() : "N/A";
+            case 5: return model.getSupportedResponseModalities();
+            case 6: return String.join(", ", model.getSupportedActions());
+            case 7: return model.getMaxInputTokens() != null ? model.getMaxInputTokens() : "N/A";
+            case 8: return model.getMaxOutputTokens() != null ? model.getMaxOutputTokens() : "N/A";
+            case 9: return model.getDefaultTemperature() != null ? model.getDefaultTemperature() : "N/A";
+            case 10: return model.getDefaultTopP() != null ? model.getDefaultTopP() : "N/A";
+            case 11: return model.getDefaultTopK() != null ? model.getDefaultTopK() : "N/A";
             default: return null;
         }
     }

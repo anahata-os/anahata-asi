@@ -226,10 +226,7 @@ public class HeaderPanel extends JPanel {
      */
     private void showProviderRegistry() {
         new SwingTask<List<AbstractModel>>(agiPanel, "Collecting Models from Providers", () -> {
-            return agi.getProviders().stream()
-                    .filter(AbstractAiProvider::isEffectivelyEnabled)
-                    .flatMap(provider -> provider.getModels().stream())
-                    .collect(Collectors.toList());
+            return agi.getConfig().getAsiContainer().getAllModels(false);
         }, allModels -> {
             JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "AI Provider & Model Registry", JDialog.ModalityType.MODELESS);
 

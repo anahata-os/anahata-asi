@@ -5,27 +5,46 @@ package uno.anahata.asi.swing.provider;
 
 import java.awt.BorderLayout;
 import java.awt.Point;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
+import javax.swing.JToggleButton;
 import javax.swing.RowFilter;
+import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.JXTable;
+import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.agi.provider.AbstractModel;
+import uno.anahata.asi.agi.provider.ResponseModality;
+import uno.anahata.asi.swing.icons.ImageModalityIcon;
+import uno.anahata.asi.swing.icons.SpeakerIcon;
+import uno.anahata.asi.swing.icons.TextModalityIcon;
+import uno.anahata.asi.swing.icons.VideoModalityIcon;
 import uno.anahata.asi.swing.internal.AnyChangeDocumentListener;
 
 /**
  * A high-fidelity visual registry for exploring and selecting registered AI models.
  * <p>
- * This panel utilizes a {@link org.jdesktop.swingx.JXTable} to provide advanced 
- * discovery features such as real-time regex filtering, dynamic column 
- * visibility, and high-performance horizontal scrolling. It acts as the primary 
- * UI for model disambiguation and selection.
+ * This panel utilizes a {@link org.jdesktop.swingx.JXTable} and rich filter controls
+ * (provider dropdown with icons, keyword/regex query field, response modality toggles,
+ * and effectively-enabled state filter) to provide advanced discovery features.
+ * Acts as the primary UI for model disambiguation and selection.
  * </p>
  * 
  * @author anahata
@@ -38,11 +57,23 @@ public class AiProviderRegistryViewer extends JPanel {
     private final AiModelTableModel tableModel;
     /** The real-time search and filter input field. */
     private final JTextField filterField;
+    /** The dropdown combo box for selecting/filtering by AI provider. */
+    private final JComboBox<AbstractAiProvider> providerComboBox;
+    /** Toggle button for filtering by TEXT response modality. */
+    private final JToggleButton textToggle;
+    /** Toggle button for filtering by IMAGE response modality. */
+    private final JToggleButton imageToggle;
+    /** Toggle button for filtering by AUDIO response modality. */
+    private final JToggleButton audioToggle;
+    /** Toggle button for filtering by VIDEO response modality. */
+    private final JToggleButton videoToggle;
+    /** Checkbox to filter models to only effectively enabled providers. */
+    private final JCheckBox effectivelyEnabledCheckbox;
     /** Reactive callback for notifying the system of a user's model selection. */
     private final Consumer<AbstractModel> modelSelectionCallback;
 
     /**
-     * Constructs a new ProviderRegistryViewer.
+     * Constructs a new ProviderRegistryViewer with full search, filter, and selection capabilities.
      * 
      * @param models The list of models to display.
      * @param modelSelectionCallback A callback for when a model is double-clicked.
@@ -53,10 +84,50 @@ public class AiProviderRegistryViewer extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         // Filter Panel
-        JPanel filterPanel = new JPanel(new BorderLayout(5, 5));
+        JPanel filterPanel = new JPanel(new MigLayout("insets 0, fillx", "[][180!,grow 0][][grow,fill][][][][][]", "[]"));
+        
+        // Extract unique providers from models
+        DefaultComboBoxModel<AbstractAiProvider> comboModel = new DefaultComboBoxModel<>();
+        comboModel.addElement(null); // Represents "All AI Providers"
+        Set<String> seenUuids = new HashSet<>();
+        for (AbstractModel m : models) {
+            if (m.getProvider() != null && seenUuids.add(m.getProvider().getUuid())) {
+                comboModel.addElement(m.getProvider());
+            }
+        }
+        providerComboBox = new JComboBox<>(comboModel);
+        providerComboBox.setRenderer(new AiProviderRenderer());
+        providerComboBox.setSelectedItem(null);
+        providerComboBox.addActionListener(e -> applyFilter());
+
         filterField = new JTextField();
-        filterPanel.add(new JLabel("Filter:"), BorderLayout.WEST);
-        filterPanel.add(filterField, BorderLayout.CENTER);
+        filterField.getDocument().addDocumentListener(new AnyChangeDocumentListener(this::applyFilter));
+
+        textToggle = new JToggleButton("TEXT", new TextModalityIcon(16));
+        imageToggle = new JToggleButton("IMAGE", new ImageModalityIcon(16));
+        audioToggle = new JToggleButton("AUDIO", new SpeakerIcon(16));
+        videoToggle = new JToggleButton("VIDEO", new VideoModalityIcon(16));
+
+        ActionListener toggleListener = e -> applyFilter();
+        textToggle.addActionListener(toggleListener);
+        imageToggle.addActionListener(toggleListener);
+        audioToggle.addActionListener(toggleListener);
+        videoToggle.addActionListener(toggleListener);
+
+        effectivelyEnabledCheckbox = new JCheckBox("Effectively Enabled Only");
+        effectivelyEnabledCheckbox.setSelected(false);
+        effectivelyEnabledCheckbox.addActionListener(e -> applyFilter());
+
+        filterPanel.add(new JLabel("Provider:"));
+        filterPanel.add(providerComboBox);
+        filterPanel.add(new JLabel("Search:"));
+        filterPanel.add(filterField);
+        filterPanel.add(textToggle);
+        filterPanel.add(imageToggle);
+        filterPanel.add(audioToggle);
+        filterPanel.add(videoToggle);
+        filterPanel.add(effectivelyEnabledCheckbox);
+
         add(filterPanel, BorderLayout.NORTH);
 
         // Table
@@ -114,8 +185,22 @@ public class AiProviderRegistryViewer extends JPanel {
             }
         });
         
+        // Set cell renderer on AI Provider column (shows provider icon and display name)
+        table.getColumnModel().getColumn(0).setCellRenderer(new AiProviderRenderer());
+        table.getColumnExt("Modalities").setCellRenderer(new ResponseModalitiesRenderer());
+        table.getColumnExt("Modalities").setComparator((o1, o2) -> {
+            List<?> l1 = (o1 instanceof List<?> l) ? l : Collections.emptyList();
+            List<?> l2 = (o2 instanceof List<?> l) ? l : Collections.emptyList();
+            if (l1.size() != l2.size()) {
+                return Integer.compare(l1.size(), l2.size());
+            }
+            int max1 = l1.stream().filter(ResponseModality.class::isInstance).mapToInt(m -> ((ResponseModality) m).ordinal()).max().orElse(-1);
+            int max2 = l2.stream().filter(ResponseModality.class::isInstance).mapToInt(m -> ((ResponseModality) m).ordinal()).max().orElse(-1);
+            return Integer.compare(max1, max2);
+        });
+
         // Set preferred column widths
-        table.getColumnModel().getColumn(0).setPreferredWidth(120); // AI Provider
+        table.getColumnModel().getColumn(0).setPreferredWidth(140); // AI Provider
         table.getColumnModel().getColumn(1).setPreferredWidth(150); // Model ID
         table.getColumnModel().getColumn(2).setPreferredWidth(150); // Display Name
         table.getColumnModel().getColumn(3).setPreferredWidth(80);  // Version
@@ -125,7 +210,6 @@ public class AiProviderRegistryViewer extends JPanel {
         table.getColumnModel().getColumn(7).setPreferredWidth(100); // Output Tokens
 
         // Hide columns by default (user can show them via column control)
-        // Use column names as identifiers to avoid index shifting issues
         table.getColumnExt("Model ID").setVisible(false);
         table.getColumnExt("Temperature").setVisible(false);
         table.getColumnExt("Top P").setVisible(false);
@@ -133,16 +217,54 @@ public class AiProviderRegistryViewer extends JPanel {
 
         JScrollPane scrollPane = new JScrollPane(table);
         add(scrollPane, BorderLayout.CENTER);
-
-        // Filter logic
-        filterField.getDocument().addDocumentListener(new AnyChangeDocumentListener(this::applyFilter));
     }
 
     /**
-     * Applies the filter from the filter field to the table.
+     * Evaluates all active filters (provider, search query regex, response modalities, and enabled status)
+     * and updates the table row filter accordingly.
      */
     private void applyFilter() {
-        String text = filterField.getText();
-        table.setRowFilter(text.trim().isEmpty() ? null : RowFilter.regexFilter("(?i)" + text));
+        AbstractAiProvider selectedProvider = (AbstractAiProvider) providerComboBox.getSelectedItem();
+        String queryText = filterField.getText().trim();
+        boolean effectivelyEnabledOnly = effectivelyEnabledCheckbox.isSelected();
+
+        Set<ResponseModality> selectedModalities = new HashSet<>();
+        if (textToggle.isSelected()) selectedModalities.add(ResponseModality.TEXT);
+        if (imageToggle.isSelected()) selectedModalities.add(ResponseModality.IMAGE);
+        if (audioToggle.isSelected()) selectedModalities.add(ResponseModality.AUDIO);
+        if (videoToggle.isSelected()) selectedModalities.add(ResponseModality.VIDEO);
+
+        Pattern pattern = null;
+        if (!queryText.isEmpty()) {
+            try {
+                pattern = Pattern.compile(queryText, Pattern.CASE_INSENSITIVE);
+            } catch (PatternSyntaxException e) {
+                pattern = Pattern.compile(Pattern.quote(queryText), Pattern.CASE_INSENSITIVE);
+            }
+        }
+
+        final Pattern finalPattern = pattern;
+
+        table.setRowFilter(new RowFilter<AiModelTableModel, Integer>() {
+            @Override
+            public boolean include(Entry<? extends AiModelTableModel, ? extends Integer> entry) {
+                int modelRow = entry.getIdentifier();
+                AbstractModel m = tableModel.getModelAt(modelRow);
+                if (m == null) return false;
+
+                // 1. Provider Filter
+                if (selectedProvider != null && m.getProvider() != null && !selectedProvider.getUuid().equals(m.getProvider().getUuid())) {
+                    return false;
+                }
+
+                // 2. Effectively Enabled Filter
+                if (effectivelyEnabledOnly && m.getProvider() != null && !m.getProvider().isEffectivelyEnabled()) {
+                    return false;
+                }
+
+                // 3. Modalities & Query Pattern Filter (delegates directly to m.matches)
+                return m.matches(finalPattern, selectedModalities);
+            }
+        });
     }
 }

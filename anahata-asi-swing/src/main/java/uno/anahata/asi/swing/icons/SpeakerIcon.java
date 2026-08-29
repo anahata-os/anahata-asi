@@ -9,6 +9,7 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Arc2D;
 import java.awt.geom.GeneralPath;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 
 /**
  * A vector icon rendering an acoustic speaker with radiating sound waves.
@@ -42,7 +43,8 @@ public class SpeakerIcon extends AbstractAnahataIcon {
             g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 
             float s = size;
-            Color primary = (c != null && c.getForeground() != null) ? c.getForeground() : getBlueColor(c);
+            Color primary = (c != null && !c.isEnabled()) ? Color.GRAY
+                    : (SwingAgiConfig.isDarkLaf() ? new Color(251, 191, 36) : new Color(217, 119, 6));
             g2.setColor(primary);
 
             // Speaker cone body

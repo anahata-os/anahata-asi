@@ -198,11 +198,55 @@ public abstract class AbstractModel {
 
     /**
      * Gets the list of response modalities supported by this model (e.g.,
-     * "TEXT", "IMAGE", "AUDIO").
+     * TEXT, IMAGE, AUDIO, VIDEO).
      *
      * @return A list of supported response modalities.
      */
-    public abstract List<String> getSupportedResponseModalities();
+    public abstract List<ResponseModality> getSupportedResponseModalities();
+
+    /**
+     * Checks if this model matches a search query (regex or substring) AND all target response modalities.
+     *
+     * @param queryPattern Optional compiled regex pattern to match against model attributes. If null, matches all.
+     * @param targetModalities Optional set of required response modalities. If not empty, the model must support ALL specified modalities.
+     * @return true if the model satisfies all active criteria (AND logic).
+     */
+    public boolean matches(java.util.regex.Pattern queryPattern, java.util.Set<ResponseModality> targetModalities) {
+        if (queryPattern != null) {
+            String id = getModelId() != null ? getModelId() : "";
+            String name = getDisplayName() != null ? getDisplayName() : "";
+            String desc = getDescription() != null ? getDescription() : "";
+            String actions = getSupportedActions() != null ? String.join(" ", getSupportedActions()) : "";
+            String provName = getProvider() != null ? getProvider().getDisplayName() : "";
+            String provUuid = getProvider() != null ? getProvider().getUuid() : "";
+            String version = getVersion() != null ? getVersion() : "";
+            String mods = getSupportedResponseModalities() != null
+                    ? getSupportedResponseModalities().stream().map(Enum::name).collect(java.util.stream.Collectors.joining(" "))
+                    : "";
+
+            boolean queryMatch = queryPattern.matcher(id).find()
+                    || queryPattern.matcher(name).find()
+                    || queryPattern.matcher(desc).find()
+                    || queryPattern.matcher(actions).find()
+                    || queryPattern.matcher(provName).find()
+                    || queryPattern.matcher(provUuid).find()
+                    || queryPattern.matcher(version).find()
+                    || queryPattern.matcher(mods).find();
+
+            if (!queryMatch) {
+                return false;
+            }
+        }
+
+        if (targetModalities != null && !targetModalities.isEmpty()) {
+            List<ResponseModality> supported = getSupportedResponseModalities();
+            if (supported == null || !supported.containsAll(targetModalities)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     /**
      * Gets the list of server-side tools available for this model.
@@ -290,5 +334,42 @@ public abstract class AbstractModel {
     @Override
     public String toString() {
         return getDisplayName();
+    }
+
+    /**
+     * Markdown table header for model listings.
+     */
+    public static final String MARKUP_TABLE_HEADER =
+            "| Provider UUID | Model ID | Display Name | Version | Modalities | In Tokens | Out Tokens | Actions | Description |\n"
+            + "|---|---|---|---|---|---|---|---|---|\n";
+
+    /**
+     * Formats this model as a Markdown table row for model listing and discovery tools.
+     *
+     * @return A Markdown row representing this model.
+     */
+    public String toMarkupRow() {
+        String provUuid = getProvider() != null ? getProvider().getUuid() : "N/A";
+        String id = getModelId();
+        String displayName = getDisplayName() != null && !getDisplayName().isBlank() ? getDisplayName() : "N/A";
+        String version = getVersion() != null && !getVersion().isBlank() ? getVersion() : "N/A";
+        String modalities = getSupportedResponseModalities() != null && !getSupportedResponseModalities().isEmpty()
+                ? getSupportedResponseModalities().stream().map(Enum::name).collect(java.util.stream.Collectors.joining(", ")) : "TEXT";
+        String inTokens = getMaxInputTokens() != null ? String.valueOf(getMaxInputTokens()) : "N/A";
+        String outTokens = getMaxOutputTokens() != null ? String.valueOf(getMaxOutputTokens()) : "N/A";
+        String actions = getSupportedActions() != null && !getSupportedActions().isEmpty()
+                ? String.join(", ", getSupportedActions()) : "N/A";
+        String desc = getDescription() != null && !getDescription().isBlank() ? getDescription().replace("\n", " ").trim() : "N/A";
+
+        return "| " + provUuid
+                + " | " + id
+                + " | " + displayName
+                + " | " + version
+                + " | " + modalities
+                + " | " + inTokens
+                + " | " + outTokens
+                + " | " + actions
+                + " | " + desc
+                + " |\n";
     }
 }

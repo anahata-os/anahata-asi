@@ -14,7 +14,9 @@
   "thoughtsTokens" : 5726,
   "totalTokens" : 74997,
   "passed" : true,
-  "judgeScores" : { },
+  "judgeScores" : {
+    "Priyanka" : 0.0
+  },
   "videoUrl" : null,
   "screenshotPath" : "/home/pablo/.anahata/asi/recordings/JAVA-SNAKEGAME-1_models_gemini-3.5-flash_20260828_210405_thumb.png",
   "sessionId" : "957964cc-9814-40bd-93ae-0689b5a752ab",

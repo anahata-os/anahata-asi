@@ -24,6 +24,7 @@ import net.miginfocom.swing.MigLayout;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.agi.provider.RequestConfig;
+import uno.anahata.asi.agi.provider.ResponseModality;
 import uno.anahata.asi.agi.provider.ServerTool;
 import uno.anahata.asi.agi.provider.ThinkingLevel;
 import uno.anahata.asi.swing.components.ScrollablePanel;
@@ -371,17 +372,31 @@ public class RequestConfigPanel extends ScrollablePanel implements PropertyChang
 
     /**
      * Dynamically populates modalities toggles supported by the selected model.
+     *
      * @param model The active AI model.
      */
     private void updateModalities(AbstractModel model) {
         modalitiesPanel.removeAll();
-        for (String modality : model.getSupportedResponseModalities()) {
-            JCheckBox cb = new JCheckBox(modality);
+        List<ResponseModality> supported = model != null ? model.getSupportedResponseModalities() : null;
+        for (ResponseModality modality : ResponseModality.values()) {
+            boolean isSupported = supported != null && supported.contains(modality);
+            JCheckBox cb = new JCheckBox(modality.name());
             cb.setSelected(config.getResponseModalities().contains(modality));
             cb.setOpaque(false);
+            if (!isSupported) {
+                cb.setForeground(new Color(130, 130, 130));
+                cb.setToolTipText("Modality unverified for this model, but you may still request it.");
+            } else {
+                cb.setFont(cb.getFont().deriveFont(Font.BOLD));
+            }
             cb.addActionListener(e -> {
-                if (cb.isSelected()) config.getResponseModalities().add(modality);
-                else config.getResponseModalities().remove(modality);
+                if (cb.isSelected()) {
+                    if (!config.getResponseModalities().contains(modality)) {
+                        config.getResponseModalities().add(modality);
+                    }
+                } else {
+                    config.getResponseModalities().remove(modality);
+                }
             });
             modalitiesPanel.add(cb);
         }

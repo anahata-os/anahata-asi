@@ -192,10 +192,50 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      * @param modelId The ID of the model to find.
      * @return An Optional containing the model if found, otherwise empty.
      */
-    public Optional<? extends AbstractModel> findModel(String modelId) {
+    public Optional<? extends AbstractModel> getModel(String modelId) {
         return getModels().stream()
                 .filter(model -> model.getModelId().equals(modelId))
                 .findFirst();
+    }
+
+    /**
+     * Finds and filters models within this provider matching a regex/text query AND all requested response modalities.
+     *
+     * @param query Optional regex or text query to match against model ID, display name, description, supported actions, or modalities.
+     * @param modalities Optional list of target response modalities (e.g. [IMAGE, AUDIO]). The model must support all listed modalities.
+     * @return A list of matching models.
+     */
+    public List<AbstractModel> findModels(String query, List<ResponseModality> modalities) {
+        List<? extends AbstractModel> allModels = getModels();
+        if (allModels == null || allModels.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        boolean hasQuery = query != null && !query.isBlank();
+        boolean hasModalities = modalities != null && !modalities.isEmpty();
+
+        if (!hasQuery && !hasModalities) {
+            return new ArrayList<>(allModels);
+        }
+
+        java.util.regex.Pattern pattern = null;
+        if (hasQuery) {
+            try {
+                pattern = java.util.regex.Pattern.compile(query, java.util.regex.Pattern.CASE_INSENSITIVE);
+            } catch (java.util.regex.PatternSyntaxException e) {
+                pattern = java.util.regex.Pattern.compile(java.util.regex.Pattern.quote(query), java.util.regex.Pattern.CASE_INSENSITIVE);
+            }
+        }
+
+        final java.util.regex.Pattern finalPattern = pattern;
+        final java.util.Set<ResponseModality> targetModalities = hasModalities
+                ? new java.util.HashSet<>(modalities)
+                : Collections.emptySet();
+
+        return allModels.stream()
+                .filter(m -> m.matches(finalPattern, targetModalities))
+                .map(m -> (AbstractModel) m)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -251,6 +291,82 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      */
     public boolean hasKeys() {
         return !readApiKeysFile().isEmpty();
+    }
+
+    /**
+     * Returns the total number of configured API keys for this provider.
+     *
+     * @return The count of valid API keys in the key pool.
+     */
+    public int getKeyCount() {
+        if (keyPool != null) {
+            return keyPool.size();
+        }
+        return readApiKeysFile().size();
+    }
+
+    /**
+     * Checks if this provider is effectively enabled and ready for active model requests.
+     * <p>
+     * A provider is effectively enabled if {@link #isEnabled()} is {@code true} AND
+     * either it does not require an API key (e.g. local Ollama) or at least one valid
+     * API key is configured.
+     * </p>
+     * 
+     * @return true if enabled and properly keyed for requests.
+     */
+    public boolean isEffectivelyEnabled() {
+        return isEnabled() && (!isApiKeyRequired() || hasKeys());
+    }
+
+    /**
+     * Markdown table header for provider listings.
+     */
+    public static final String MARKUP_TABLE_HEADER =
+            "| Display Name | UUID | Enabled | Eff. Enabled | Provider Class | Base URL | Key Req. | Key Configured | Keys | Models |\n"
+            + "|---|---|---|---|---|---|---|---|---|---|\n";
+
+    /**
+     * Formats this provider as a Markdown table row for provider listing tools.
+     *
+     * @param includeModelIds Whether to include the full comma-separated list of model IDs (true) or just the total count (false).
+     * @return A Markdown row representing this provider.
+     */
+    public String toMarkupRow(boolean includeModelIds) {
+        String modelsInfo;
+        if (isEnabled() && (!isApiKeyRequired() || hasKeys())) {
+            List<? extends AbstractModel> m = getModels();
+            if (includeModelIds) {
+                modelsInfo = (m != null && !m.isEmpty())
+                        ? m.stream().map(AbstractModel::getModelId).collect(Collectors.joining(", "))
+                        : "None";
+            } else {
+                modelsInfo = (m != null) ? String.valueOf(m.size()) : "0";
+            }
+        } else {
+            modelsInfo = "N/A (Disabled)";
+        }
+
+        return "| " + (getDisplayName() != null ? getDisplayName() : "N/A")
+                + " | " + getUuid()
+                + " | " + (isEnabled() ? "✅ YES" : "❌ NO")
+                + " | " + (isEffectivelyEnabled() ? "✅ YES" : "❌ NO")
+                + " | " + getClass().getName()
+                + " | " + (getBaseUrl() != null ? getBaseUrl() : "Default Cloud")
+                + " | " + (isApiKeyRequired() ? "YES" : "NO")
+                + " | " + (hasKeys() ? "✅ YES" : "❌ NO")
+                + " | " + (isApiKeyRequired() ? String.valueOf(getKeyCount()) : "N/A")
+                + " | " + modelsInfo
+                + " |\n";
+    }
+
+    /**
+     * Formats this provider as a Markdown table row, defaulting to showing the total count of models.
+     *
+     * @return A Markdown row representing this provider.
+     */
+    public String toMarkupRow() {
+        return toMarkupRow(false);
     }
 
     /**
@@ -390,7 +506,7 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
             }).filter(key -> !key.isEmpty()).collect(Collectors.toList());
             Collections.shuffle(keys);
             if (keys.isEmpty()) {
-                log.error("No active API keys found in {}. Please add your keys to the file.", keysFilePath);
+                log.info("No active API keys found in {}. Please add your keys to the file if you intend to use this provider.", keysFilePath);
                 return Collections.emptyList();
             }
             log.debug("Loaded {} API key(s) for provider '{}' from {}.", keys.size(), getProviderId(), keysFilePath);

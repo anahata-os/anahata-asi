@@ -185,7 +185,6 @@ public class Agi extends BasicPropertyChangeSource {
         this.statusManager = new StatusManager(this);
         this.toolManager = new ToolManager(this);
         this.requestConfig = new RequestConfig(this);
-        this.requestConfig.setResponseModalities(new ArrayList<>(config.getDefaultResponseModalities()));
 
         // Final manager initialization cascade
         contextManager.init();
@@ -245,7 +244,7 @@ public class Agi extends BasicPropertyChangeSource {
         if (providerId != null) {            
             if (modelId != null) {
                 AbstractAiProvider prov = container.getProvider(providerId);            
-                Optional<? extends AbstractModel> model = prov.findModel(modelId);
+                Optional<? extends AbstractModel> model = prov.getModel(modelId);
                 if (model.isPresent()) {
                     log.info("Restoring transient selected model: {}", modelId);
                     setSelectedModel(model.get());
