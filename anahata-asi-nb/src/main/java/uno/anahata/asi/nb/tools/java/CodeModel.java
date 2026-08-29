@@ -4,6 +4,7 @@ package uno.anahata.asi.nb.tools.java;
 import java.net.URL;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -20,6 +21,7 @@ import org.netbeans.api.java.source.JavaSource;
 import org.netbeans.api.java.source.SourceUtils;
 import org.netbeans.spi.java.classpath.support.ClassPathSupport;
 import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.tool.Page;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
@@ -64,8 +66,9 @@ public class CodeModel extends AnahataToolkit {
     /**
      * {@inheritDoc}
      * <p>
-     * Populates the RAG message with live statistics of the NetBeans
-     * GlobalClasspathInfo (open projects roots and indexed types).
+     * Populates the RAG message with a summary of the unique classpath roots
+     * (sources, compile outputs, dependency JARs, and boot roots) across all
+     * open projects.
      * </p>
      *
      * @param ragMessage The outgoing RAG message for the turn.
@@ -79,35 +82,61 @@ public class CodeModel extends AnahataToolkit {
         Set<ClassPath> compilePaths = GlobalPathRegistry.getDefault().getPaths(ClassPath.COMPILE);
         Set<ClassPath> bootPaths = GlobalPathRegistry.getDefault().getPaths(ClassPath.BOOT);
 
-        int srcRoots = sourcePaths.stream().mapToInt(cp -> cp.entries().size()).sum();
-        int compileRoots = compilePaths.stream().mapToInt(cp -> cp.entries().size()).sum();
-        int bootRoots = bootPaths.stream().mapToInt(cp -> cp.entries().size()).sum();
+        Set<String> uniqueSourceRoots = new HashSet<>();
+        for (ClassPath cp : sourcePaths) {
+            for (ClassPath.Entry entry : cp.entries()) {
+                FileObject root = entry.getRoot();
+                if (root != null) {
+                    uniqueSourceRoots.add(root.getPath());
+                } else if (entry.getURL() != null) {
+                    uniqueSourceRoots.add(entry.getURL().toString());
+                }
+            }
+        }
 
-        ClasspathInfo cpInfo = getGlobalClasspathInfo();
-        int totalTypes = 0;
-        int sourceTypes = 0;
-        try {
-            Set<ElementHandle<TypeElement>> declaredTypes = cpInfo.getClassIndex().getDeclaredTypes(
-                    "", ClassIndex.NameKind.PREFIX, EnumSet.allOf(ClassIndex.SearchScope.class));
-            totalTypes = declaredTypes.size();
-            Set<ElementHandle<TypeElement>> srcTypes = cpInfo.getClassIndex().getDeclaredTypes(
-                    "", ClassIndex.NameKind.PREFIX, Collections.singleton(ClassIndex.SearchScope.SOURCE));
-            sourceTypes = srcTypes.size();
-        } catch (Exception e) {
-            log.debug("Error computing ClassIndex type counts", e);
+        Set<String> uniqueCompileDirs = new HashSet<>();
+        Set<String> uniqueCompileJars = new HashSet<>();
+        for (ClassPath cp : compilePaths) {
+            for (ClassPath.Entry entry : cp.entries()) {
+                FileObject root = entry.getRoot();
+                if (root != null) {
+                    FileObject archive = FileUtil.getArchiveFile(root);
+                    if (archive != null) {
+                        uniqueCompileJars.add(archive.getPath());
+                    } else {
+                        uniqueCompileDirs.add(root.getPath());
+                    }
+                } else if (entry.getURL() != null) {
+                    String url = entry.getURL().toString();
+                    if (url.endsWith(".jar") || url.contains(".jar!")) {
+                        uniqueCompileJars.add(url);
+                    } else {
+                        uniqueCompileDirs.add(url);
+                    }
+                }
+            }
+        }
+
+        Set<String> uniqueBootRoots = new HashSet<>();
+        for (ClassPath cp : bootPaths) {
+            for (ClassPath.Entry entry : cp.entries()) {
+                FileObject root = entry.getRoot();
+                if (root != null) {
+                    uniqueBootRoots.add(root.getPath());
+                } else if (entry.getURL() != null) {
+                    uniqueBootRoots.add(entry.getURL().toString());
+                }
+            }
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("\n## CodeModel Scope & Index Context (GlobalClasspathInfo)\n");
+        sb.append("\n## CodeModel Scope & Classpath Context (GlobalClasspathInfo)\n");
         sb.append("- **Scope Boundary**: CodeModel queries `GlobalClasspathInfo`, which strictly covers **OPEN** projects, their dependencies, and the platform JDK. Closed projects are not indexed.\n");
-        sb.append("- **Global ClassPath Roots**: ");
-        sb.append("SOURCE: ").append(sourcePaths.size()).append(" ClassPaths (").append(srcRoots).append(" roots) | ");
-        sb.append("COMPILE: ").append(compilePaths.size()).append(" ClassPaths (").append(compileRoots).append(" roots) | ");
-        sb.append("BOOT: ").append(bootPaths.size()).append(" ClassPaths (").append(bootRoots).append(" roots)\n");
-        sb.append("- **Indexed Types**: ");
-        sb.append("Total: ").append(totalTypes).append(" | ");
-        sb.append("Source: ").append(sourceTypes).append(" | ");
-        sb.append("Dependencies/JDK: ").append(totalTypes - sourceTypes).append("\n");
+        sb.append("- **Global Unique Roots (Aggregated across all open projects)**: ");
+        sb.append("Source Roots: ").append(uniqueSourceRoots.size()).append(" | ");
+        sb.append("Compile Output Dirs: ").append(uniqueCompileDirs.size()).append(" | ");
+        sb.append("Dependency JARs: ").append(uniqueCompileJars.size()).append(" | ");
+        sb.append("JDK Boot Roots: ").append(uniqueBootRoots.size()).append("\n");
 
         ragMessage.addTextPart(sb.toString());
     }
