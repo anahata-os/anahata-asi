@@ -18,6 +18,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.agi.provider.ResponseModality;
 
 /**
  * A utility class for loading, scaling, and managing a global registry of icons.
@@ -274,8 +275,42 @@ public class IconUtils {
         // Draw the Anahata badge in the bottom-right corner
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.drawImage(badgeIcon.getImage(), 8, 8, null);
-        
+
         g.dispose();
         return new ImageIcon(combined);
+    }
+
+    /**
+     * Returns the appropriate vector icon for a given ResponseModality.
+     *
+     * @param size The size of the icon in pixels.
+     * @param modality The response modality.
+     * @return The vector icon representing the modality, or null if modality is
+     * null.
+     */
+    public static Icon getModalityIcon(ResponseModality modality, int size) {
+        if (modality == null) {
+            return null;
+        }
+        return switch (modality) {
+            case TEXT ->
+                new TextModalityIcon(size);
+            case IMAGE ->
+                new ImageModalityIcon(size);
+            case AUDIO ->
+                new SpeakerIcon(size);
+            case VIDEO ->
+                new VideoModalityIcon(size);
+        };
+    }
+
+    /**
+     * Returns the default 16px vector icon for a given ResponseModality.
+     *
+     * @param modality The response modality.
+     * @return The vector icon representing the modality.
+     */
+    public static Icon getModalityIcon(ResponseModality modality) {
+        return getModalityIcon(modality, 16);
     }
 }
