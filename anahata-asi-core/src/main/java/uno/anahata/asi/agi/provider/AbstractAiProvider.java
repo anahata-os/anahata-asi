@@ -308,7 +308,7 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
     /**
      * Checks if this provider is effectively enabled and ready for active model requests.
      * <p>
-     * A provider is effectively enabled if {@link #isEnabled()} is {@code true} AND
+     * A provider is effectively enabled if {@link #isEnabled} is {@code true} AND
      * either it does not require an API key (e.g. local Ollama) or at least one valid
      * API key is configured.
      * </p>
