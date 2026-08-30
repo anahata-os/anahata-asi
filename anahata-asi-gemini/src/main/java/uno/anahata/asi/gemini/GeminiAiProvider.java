@@ -73,12 +73,12 @@ public class GeminiAiProvider extends AbstractAiProvider {
         if (client == null) {
 
             if (isApiKeyRequired()) {
-                String nextKey = getNextKey();
-                log.info("Got api key from " + getUuid() + " " + StringUtils.abbreviate(nextKey, 8));
-                if (nextKey != null) {
+                String apiKey = getCurrentKey();
+                log.info("Got api key from " + getUuid() + " " + StringUtils.abbreviate(apiKey, 8));
+                if (apiKey != null) {
                     Client.Builder builder = Client.builder()
                             .vertexAI(vertex)
-                            .apiKey(nextKey);
+                            .apiKey(apiKey);
                     if (getBaseUrl() != null && !getBaseUrl().isBlank()) {
                         builder.httpOptions(HttpOptions.builder().baseUrl(getBaseUrl()).build());
                     }

@@ -95,7 +95,7 @@ public class KryoUtils {
      */
     public static <T> T clone(T object) {
         if (object == null) {
-            return null;
+            throw new IllegalArgumentException ("Cannot clone a null object.");
         }
         byte[] bytes = serialize(object);
         return (T) deserialize(bytes, object.getClass());

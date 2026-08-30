@@ -3,10 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anahata-AGI-1 Suite | Pure-Java AI Performance Leaderboard</title>
+    <title>Anahata-AGI-1 Suite | Live Results & Leaderboard</title>
     <link rel="icon" type="image/png" href="../../assets/favicon.png">
     <link rel="stylesheet" href="../../style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .bench-filter { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: #e2e8f0; border-radius: 8px; padding: 10px 14px; font-size: 0.9rem; outline: none; }
+        .bench-filter:focus { border-color: var(--barca-gold, #edbb00); }
+        .bench-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        .bench-table th { text-align: left; padding: 0.8rem; color: #cbd5e1; border-bottom: 2px solid rgba(255,255,255,0.12); white-space: nowrap; }
+        .bench-table td { padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.06); vertical-align: top; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; }
+        .badge-pass { background: #16a34a; color: #fff; }
+        .badge-fail { background: #dc2626; color: #fff; }
+        .badge-cert { background: #16a34a; color: #fff; }
+        .badge-pending { background: rgba(255,255,255,0.1); color: #94a3b8; }
+        .stat-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 1.2rem; text-align: center; }
+        .stat-card .num { font-size: 1.9rem; font-weight: 800; color: var(--barca-gold, #edbb00); }
+        .stat-card .lbl { font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.25rem; }
+        a.video-link { color: #60a5fa; text-decoration: none; }
+        a.video-link:hover { text-decoration: underline; }
+    </style>
 </head>
 <body>
     <div id="main-nav"></div>
@@ -17,108 +34,53 @@
             <h1 class="fade-in">Anahata <span style="color: var(--barca-gold);">AGI-1</span> Suite</h1>
             <p class="tagline">The Flagship Pure-Java Agentic Benchmark Suite</p>
             <p class="hero-description" style="max-width: 850px; margin: 0 auto 2rem; color: var(--text-muted); font-size: 1.1rem; line-height: 1.7;">
-                Evaluating Large Language Models across real-world Java engineering challenges: interactive Swing/JavaFX GUIs, LWJGL 3D graphics, AST refactoring, and JNA native C-library bindings.
+                Live, filterable results for every model challenged on real-world Java engineering tasks. This page is generated automatically from the benchmark engine's <code>catalog.json</code> and <code>results.json</code>.
             </p>
         </div>
     </header>
 
     <main>
-        <!-- Active Suite Challenges Index -->
-        <section id="challenges" class="dark-bg">
-            <div class="container">
-                <div class="section-header" style="text-align: center; margin-bottom: 3rem;">
-                    <h2>🏆 Active Suite Challenges</h2>
-                    <p style="color: var(--text-muted); font-size: 1.1rem;">Explore individual prompt score sheets, model telemetry, and visual runs.</p>
+        <section id="dashboard" class="dark-bg" style="padding-top: 1.5rem; padding-bottom: 4rem;">
+            <div class="container" style="max-width: 1200px; margin: 0 auto;">
+
+                <div id="loading" style="text-align:center; color: var(--text-muted); padding: 3rem 0;">
+                    <i class="fas fa-spinner fa-spin"></i>&nbsp; Loading benchmark data…
                 </div>
 
-                <div class="feature-grid">
-                    <!-- Test #1: JAVA-JNA-1 -->
-                    <div class="feature-card" style="border-top: 4px solid var(--barca-gold);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                            <span style="background: var(--barca-gold); color: black; font-size: 0.75rem; font-weight: 800; padding: 3px 10px; border-radius: 4px; text-transform: uppercase;">Test #1</span>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Sponsor:</span>
-                                <img src="../../assets/logos/uno.anahata.asi.novarouteai.NovaRouteAiProvider.png" alt="NovaRouteAI" style="height: 22px; vertical-align: middle;">
-                                <span style="font-size: 0.85rem; color: var(--barca-gold); font-weight: 700;">NovaRouteAI</span>
-                            </div>
-                        </div>
-                        <h3 style="font-size: 1.3rem; color: var(--white); margin-bottom: 0.8rem;"><i class="fas fa-microchip" style="color: var(--barca-gold); margin-right: 8px;"></i> JAVA-JNA-1</h3>
-                        <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
-                            You are currently being benchmarked in the official <strong>Anahata-AGI-1 Suite</strong> (<code>JAVA-JNA-1</code>). Your performance is evaluated across 3 criteria: <strong>Accuracy & Technical Completion (50%)</strong>, <strong>Developer & Artistic Score (20%)</strong>, and <strong>Efficiency & Latency (30%)</strong>. <strong>Goal:</strong> Build a real-time, interactive host system dashboard using JNA (<code>com.sun.jna.Library</code>) to monitor host system telemetry. You have complete creative freedom to decide what metrics to retrieve, what UI framework to use, and how to design the interface.
-                        </p>
-                        <a href="java-jna-1.html" class="btn-primary" style="align-self: flex-start; text-decoration: none;">View JAVA-JNA-1 Results &rarr;</a>
+                <div id="error" style="display:none; text-align:center; color:#f87171; padding:2rem;" ></div>
+
+                <div id="dashboardContent" style="display:none;">
+                    <!-- Stats -->
+                    <div id="stats" class="responsive-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.8rem;"></div>
+
+                    <!-- Filters -->
+                    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 1rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; margin-bottom: 2rem;">
+                        <input id="search" class="bench-filter" type="text" placeholder="🔍 Search model, provider, test…" style="flex: 1 1 220px; min-width: 180px;">
+                        <select id="testFilter" class="bench-filter"><option value="">All Tests</option></select>
+                        <select id="providerFilter" class="bench-filter"><option value="">All Providers</option></select>
+                        <select id="passedFilter" class="bench-filter">
+                            <option value="">All Status</option>
+                            <option value="true">Passed</option>
+                            <option value="false">Failed</option>
+                        </select>
+                        <select id="sortBy" class="bench-filter">
+                            <option value="newest">Sort: Newest</option>
+                            <option value="scoreDesc">Sort: Score (High-Low)</option>
+                            <option value="durationAsc">Sort: Duration (Fastest)</option>
+                            <option value="tokensAsc">Sort: Tokens (Fewest)</option>
+                        </select>
+                        <button id="resetBtn" class="bench-filter" style="cursor:pointer; background: var(--barca-gold, #edbb00); color:#000; font-weight:700; border:none;">Reset</button>
                     </div>
 
-                    <!-- Test #2: JAVA-ARKANOID-1 -->
-                    <div class="feature-card" style="border-top: 4px solid var(--primary-light);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                            <span style="background: var(--primary-light); color: white; font-size: 0.75rem; font-weight: 800; padding: 3px 10px; border-radius: 4px; text-transform: uppercase;">Test #2</span>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Sponsor:</span>
-                                <img src="../../assets/logos/uno.anahata.asi.novarouteai.NovaRouteAiProvider.png" alt="NovaRouteAI" style="height: 22px; vertical-align: middle;">
-                                <span style="font-size: 0.85rem; color: var(--barca-gold); font-weight: 700;">NovaRouteAI</span>
-                            </div>
-                        </div>
-                        <h3 style="font-size: 1.3rem; color: var(--white); margin-bottom: 0.8rem;"><i class="fas fa-gamepad" style="color: var(--primary-light); margin-right: 8px;"></i> JAVA-ARKANOID-1</h3>
-                        <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
-                            Build a fully playable, retro Arkanoid brick-breaker game in Swing with collision physics, power-ups, score counter, and smooth 60 FPS EDT animation loop.
-                        </p>
-                        <a href="java-arkanoid-1.html" class="btn-primary" style="align-self: flex-start; text-decoration: none;">View JAVA-ARKANOID-1 Results &rarr;</a>
-                    </div>
-                </div>
-            </div>
-        </section>
+                    <!-- Leaderboard -->
+                    <h2 style="margin-bottom: 1rem;"><i class="fas fa-trophy" style="color: var(--barca-gold);"></i> Model Leaderboard</h2>
+                    <div style="overflow-x: auto; margin-bottom: 3rem;" id="leaderboard"></div>
 
-        <!-- Master Suite Leaderboard Table -->
-        <section id="leaderboard">
-            <div class="container">
-                <div class="section-header" style="text-align: center; margin-bottom: 3rem;">
-                    <h2>📊 Master Candidate Leaderboard</h2>
-                    <p style="color: var(--text-muted); font-size: 1.1rem;">Models earn <strong>Anahata AGI Certification</strong> upon achieving an average score > 85% across all suite tests.</p>
+                    <!-- Runs -->
+                    <h2 style="margin-bottom: 1rem;"><i class="fas fa-list"></i> All Runs <span id="runCount" style="font-size:0.8rem; color: var(--text-muted);"></span></h2>
+                    <div style="overflow-x: auto;" id="runs"></div>
                 </div>
 
-                <div class="comparison-container" style="overflow-x: auto; margin-bottom: 3rem;">
-                    <table class="comparison-table" style="width: 100%; border-collapse: collapse; text-align: left; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; font-size: 0.95rem;">
-                        <thead>
-                            <tr style="border-bottom: 2px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.02);">
-                                <th style="padding: 1.2rem; color: var(--barca-gold);">Model ID</th>
-                                <th style="padding: 1.2rem; color: var(--white);">Sponsor Provider</th>
-                                <th style="padding: 1.2rem; color: var(--white);">JAVA-JNA-1</th>
-                                <th style="padding: 1.2rem; color: var(--white);">JAVA-ARKANOID-1</th>
-                                <th style="padding: 1.2rem; color: var(--primary-light);"><strong>Suite Average</strong></th>
-                                <th style="padding: 1.2rem; color: var(--barca-gold);">Certification</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                <td style="padding: 1.2rem;"><code>gemini-3.6-flash</code></td>
-                                <td style="padding: 1.2rem;">
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <img src="../../assets/logos/uno.anahata.asi.gemini.GeminiAiProvider.png" alt="Google Cloud" style="height: 20px;">
-                                        <span>Google Cloud</span>
-                                    </div>
-                                </td>
-                                <td style="padding: 1.2rem; color: var(--verified-green); font-weight: 700;">98.0%</td>
-                                <td style="padding: 1.2rem; color: var(--verified-green); font-weight: 700;">95.0%</td>
-                                <td style="padding: 1.2rem; background: rgba(44, 122, 123, 0.05); border-left: 3px solid var(--primary-light);"><strong>96.5%</strong></td>
-                                <td style="padding: 1.2rem;"><span style="background: var(--verified-green); color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: 800;">Certified AGI</span></td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                                <td style="padding: 1.2rem;"><code>kimi/Kimi-K3</code></td>
-                                <td style="padding: 1.2rem;">
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <img src="../../assets/logos/uno.anahata.asi.novarouteai.NovaRouteAiProvider.png" alt="NovaRouteAI" style="height: 20px;">
-                                        <span>NovaRouteAI</span>
-                                    </div>
-                                </td>
-                                <td style="padding: 1.2rem; color: var(--text-muted);">Pending</td>
-                                <td style="padding: 1.2rem; color: var(--text-muted);">Pending</td>
-                                <td style="padding: 1.2rem; background: rgba(44, 122, 123, 0.05); border-left: 3px solid var(--primary-light);"><strong>--</strong></td>
-                                <td style="padding: 1.2rem;"><span style="background: rgba(255,255,255,0.1); color: var(--text-muted); padding: 4px 10px; border-radius: 4px; font-size: 0.8rem;">Pending</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
             </div>
         </section>
     </main>
@@ -131,5 +93,184 @@
         </div>
     </footer>
     <script src="../../nav.js"></script>
+    <script>
+    (function () {
+        var catalog = { tests: [] };
+        var results = [];
+
+        function modelOf(r) { return r && r.participant ? (r.participant.modelId || 'unknown') : 'unknown'; }
+        function providerOf(r) { return r && r.participant ? (r.participant.providerUuid || 'unknown') : 'unknown'; }
+        function titleOf(code) {
+            var t = (catalog.tests || []).filter(function (x) { return x.testCode === code; })[0];
+            return t ? t.title : code;
+        }
+        function avgScore(r) {
+            var s = (r.judgeScores || []).filter(function (x) { return x != null; }).map(function (x) { return x.score; });
+            if (!s.length) return null;
+            return s.reduce(function (a, b) { return a + b; }, 0) / s.length;
+        }
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+                return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+            });
+        }
+
+        function render() {
+            var search = (document.getElementById('search').value || '').toLowerCase();
+            var testF = document.getElementById('testFilter').value;
+            var provF = document.getElementById('providerFilter').value;
+            var passF = document.getElementById('passedFilter').value;
+            var sort = document.getElementById('sortBy').value;
+
+            var filtered = results.filter(function (r) {
+                if (testF && r.testCode !== testF) return false;
+                if (provF && providerOf(r) !== provF) return false;
+                if (passF !== '' && String(r.passed) !== passF) return false;
+                if (search) {
+                    var hay = (modelOf(r) + ' ' + providerOf(r) + ' ' + r.testCode + ' ' + titleOf(r.testCode)).toLowerCase();
+                    if (hay.indexOf(search) === -1) return false;
+                }
+                return true;
+            });
+
+            filtered.sort(function (a, b) {
+                if (sort === 'scoreDesc') { return (avgScore(b) || -1e9) - (avgScore(a) || -1e9); }
+                if (sort === 'durationAsc') { return (a.durationSeconds || 1e9) - (b.durationSeconds || 1e9); }
+                if (sort === 'tokensAsc') { return (a.totalTokens || 1e15) - (b.totalTokens || 1e15); }
+                return (b.timestamp || '').localeCompare(a.timestamp || ''); // newest default
+            });
+
+            renderStats(results);
+            renderLeaderboard(results);
+            renderRuns(filtered);
+        }
+
+        function renderStats(all) {
+            var passed = all.filter(function (r) { return r.passed; }).length;
+            var models = {}; all.forEach(function (r) { models[modelOf(r)] = 1; });
+            var providers = {}; all.forEach(function (r) { providers[providerOf(r)] = 1; });
+            var totalDur = all.reduce(function (a, r) { return a + (r.durationSeconds || 0); }, 0);
+            var avgDur = all.length ? (totalDur / all.length).toFixed(1) : '0';
+            document.getElementById('stats').innerHTML =
+                stat('' + all.length, 'Total Runs') +
+                stat('' + passed, 'Passed') +
+                stat('' + Object.keys(models).length, 'Models') +
+                stat('' + Object.keys(providers).length, 'Providers') +
+                stat(avgDur + 's', 'Avg Duration');
+        }
+        function stat(num, lbl) { return '<div class="stat-card"><div class="num">' + esc(num) + '</div><div class="lbl">' + esc(lbl) + '</div></div>'; }
+
+        function renderLeaderboard(all) {
+            if (!all.length) {
+                document.getElementById('leaderboard').innerHTML = '<p style="color: var(--text-muted);">No runs recorded yet. Run a benchmark to populate the leaderboard.</p>';
+                return;
+            }
+            var byModel = {};
+            all.forEach(function (r) {
+                var k = modelOf(r);
+                if (!byModel[k]) { byModel[k] = { model: k, provider: providerOf(r), runs: [], passedTests: {} }; }
+                byModel[k].runs.push(r);
+                if (r.passed) byModel[k].passedTests[r.testCode] = true;
+            });
+            var rows = Object.keys(byModel).map(function (k) {
+                var m = byModel[k];
+                var scores = m.runs.map(avgScore).filter(function (s) { return s != null; });
+                var avg = scores.length ? (scores.reduce(function (a, b) { return a + b; }, 0) / scores.length).toFixed(1) : '—';
+                var passRate = Math.round(100 * m.runs.filter(function (r) { return r.passed; }).length / m.runs.length) + '%';
+                var certified = catalog.tests.length > 0 && Object.keys(m.passedTests).length >= catalog.tests.length;
+                return '<tr>' +
+                    '<td><code>' + esc(k) + '</code></td>' +
+                    '<td>' + esc(m.provider) + '</td>' +
+                    '<td>' + m.runs.length + '</td>' +
+                    '<td>' + passRate + '</td>' +
+                    '<td>' + avg + '</td>' +
+                    '<td>' + (certified ? '<span class="badge badge-cert">Certified AGI</span>' : '<span class="badge badge-pending">Pending</span>') + '</td>' +
+                    '</tr>';
+            }).join('');
+            document.getElementById('leaderboard').innerHTML =
+                '<table class="bench-table"><thead><tr>' +
+                '<th>Model ID</th><th>Provider</th><th>Runs</th><th>Pass Rate</th><th>Avg Score</th><th>Certification</th>' +
+                '</tr></thead><tbody>' + rows + '</tbody></table>';
+        }
+
+        function renderRuns(filtered) {
+            document.getElementById('runCount').textContent = '(' + filtered.length + ')';
+            if (!filtered.length) {
+                document.getElementById('runs').innerHTML = '<p style="color: var(--text-muted);">No runs match the current filters.</p>';
+                return;
+            }
+            var rows = filtered.map(function (r) {
+                var a = avgScore(r);
+                var scoreStr = a != null ? a.toFixed(1) : '<span style="color: var(--text-muted);">Unrated</span>';
+                var vid = r.videoUrl ? ' <a class="video-link" href="' + esc(r.videoUrl) + '" target="_blank" rel="noopener"><i class="fas fa-video"></i></a>' : '';
+                var judges = (r.judgeScores || []).filter(function (s) { return s != null; }).map(function (s) {
+                    return esc(s.name) + ':' + s.score + (s.comments ? ' (' + esc(s.comments) + ')' : '');
+                }).join(', ');
+                return '<tr>' +
+                    '<td>' + esc((r.timestamp || '').substring(0, 10)) + '</td>' +
+                    '<td><code>' + esc(modelOf(r)) + '</code></td>' +
+                    '<td>' + esc(providerOf(r)) + '</td>' +
+                    '<td>' + esc(r.testCode) + '<br><span style="color: var(--text-muted); font-size:0.8rem;">' + esc(titleOf(r.testCode)) + '</span></td>' +
+                    '<td>' + (r.passed ? '<span class="badge badge-pass">Pass</span>' : '<span class="badge badge-fail">Fail</span>') + '</td>' +
+                    '<td>' + (r.durationSeconds || 0) + 's</td>' +
+                    '<td>' + (r.turns || 0) + '</td>' +
+                    '<td>' + (r.totalTokens || 0) + '</td>' +
+                    '<td>' + scoreStr + '</td>' +
+                    '<td>' + (judges || '<span style="color: var(--text-muted);">—</span>') + '</td>' +
+                    '<td>' + vid + '</td>' +
+                    '</tr>';
+            }).join('');
+            document.getElementById('runs').innerHTML =
+                '<table class="bench-table"><thead><tr>' +
+                '<th>Date</th><th>Model</th><th>Provider</th><th>Test</th><th>Status</th><th>Duration</th><th>Turns</th><th>Tokens</th><th>Score</th><th>Judges</th><th>Video</th>' +
+                '</tr></thead><tbody>' + rows + '</tbody></table>';
+        }
+
+        function populateSelects() {
+            var testSel = document.getElementById('testFilter');
+            catalog.tests.forEach(function (t) {
+                var o = document.createElement('option'); o.value = t.testCode; o.textContent = t.testCode + ' — ' + t.title;
+                testSel.appendChild(o);
+            });
+            var provSel = document.getElementById('providerFilter');
+            var provs = {}; results.forEach(function (r) { provs[providerOf(r)] = 1; });
+            Object.keys(provs).sort().forEach(function (p) {
+                var o = document.createElement('option'); o.value = p; o.textContent = p; provSel.appendChild(o);
+            });
+        }
+
+        function load() {
+            Promise.all([
+                fetch('catalog.json').then(function (r) { return r.json(); }),
+                fetch('results.json').then(function (r) { return r.json(); })
+            ]).then(function (data) {
+                catalog = data[0] || { tests: [] };
+                results = data[1] || [];
+                populateSelects();
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('dashboardContent').style.display = 'block';
+                render();
+            }).catch(function (e) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = 'Could not load benchmark data (' + e.message + '). Ensure this page is served over HTTP and that catalog.json / results.json exist.';
+            });
+        }
+
+        ['search', 'testFilter', 'providerFilter', 'passedFilter', 'sortBy'].forEach(function (id) {
+            document.getElementById(id).addEventListener('input', render);
+        });
+        document.getElementById('resetBtn').addEventListener('click', function () {
+            document.getElementById('search').value = '';
+            document.getElementById('testFilter').value = '';
+            document.getElementById('providerFilter').value = '';
+            document.getElementById('passedFilter').value = '';
+            document.getElementById('sortBy').value = 'newest';
+            render();
+        });
+
+        load();
+    })();
+    </script>
 </body>
 </html>

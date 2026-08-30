@@ -11,6 +11,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.desktop.swing.AsiDesktopAsiContainer;
+import uno.anahata.asi.swing.components.ExceptionDialog;
 import uno.anahata.asi.swing.icons.IconUtils;
 
 /**
@@ -63,58 +64,66 @@ public class Main {
         }
 
         // Core application setup
-        AsiDesktopAsiContainer container = new AsiDesktopAsiContainer();
+        try {
+            final AsiDesktopAsiContainer container = new AsiDesktopAsiContainer();
 
-        SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Anahata ASI");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setPreferredSize(new Dimension(1200, 900));
+            SwingUtilities.invokeLater(() -> {
+                JFrame frame = new JFrame("Anahata ASI");
+                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                frame.setPreferredSize(new Dimension(1200, 900));
 
-            try {
-                // Provide multiple icon sizes for better OS integration
-                frame.setIconImages(IconUtils.getLogoImages());
-            } catch (Exception e) {
-                log.warn("Could not load frame icons", e);
-            }
-
-            try {
-                if (Taskbar.isTaskbarSupported()) {
-                    Taskbar taskbar = Taskbar.getTaskbar();
-                    if (taskbar.isSupported(Taskbar.Feature.ICON_IMAGE)) {
-                        taskbar.setIconImage(IconUtils.getLogoImages().getLast());
-                    }
+                try {
+                    // Provide multiple icon sizes for better OS integration
+                    frame.setIconImages(IconUtils.getLogoImages());
+                } catch (Exception e) {
+                    log.warn("Could not load frame icons", e);
                 }
-            } catch (Exception e) {
-                log.warn("Could not set taskbar icon", e);
-            }
 
-            // Create the StandaloneMainPanel which manages multiple sessions
-            AsiDesktopMainPanel mainPanel = new AsiDesktopMainPanel(container);
-            frame.add(mainPanel, BorderLayout.CENTER);
-
-            try {
-                if (Desktop.isDesktopSupported()) {
-                    Desktop desktop = Desktop.getDesktop();
-                    if (desktop.isSupported(Desktop.Action.APP_PREFERENCES)) {
-                        desktop.setPreferencesHandler(evt -> {
-                            SwingUtilities.invokeLater(() -> mainPanel.showPreferences());
-                        });
+                try {
+                    if (Taskbar.isTaskbarSupported()) {
+                        Taskbar taskbar = Taskbar.getTaskbar();
+                        if (taskbar.isSupported(Taskbar.Feature.ICON_IMAGE)) {
+                            taskbar.setIconImage(IconUtils.getLogoImages().getLast());
+                        }
                     }
+                } catch (Exception e) {
+                    log.warn("Could not set taskbar icon", e);
                 }
-            } catch (Exception e) {
-                log.warn("Could not register native desktop handlers", e);
-            }
 
-            frame.pack();
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
+                // Create the StandaloneMainPanel which manages multiple sessions
+                AsiDesktopMainPanel mainPanel = new AsiDesktopMainPanel(container);
+                frame.add(mainPanel, BorderLayout.CENTER);
 
-            // Start the panel after the frame is visible to ensure listeners are active
-            mainPanel.start();
-        });
+                try {
+                    if (Desktop.isDesktopSupported()) {
+                        Desktop desktop = Desktop.getDesktop();
+                        if (desktop.isSupported(Desktop.Action.APP_PREFERENCES)) {
+                            desktop.setPreferencesHandler(evt -> {
+                                SwingUtilities.invokeLater(() -> mainPanel.showPreferences());
+                            });
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Could not register native desktop handlers", e);
+                }
 
-        Thread.setDefaultUncaughtExceptionHandler((thread, thrwbl) -> {
-            log.error("Uncaught exception in thread {}", thread.getName(), thrwbl);
-        });
+                frame.pack();
+                frame.setLocationRelativeTo(null);
+                frame.setVisible(true);
+
+                // Start the panel after the frame is visible to ensure listeners are active
+                mainPanel.start();
+            });
+
+            Thread.setDefaultUncaughtExceptionHandler((thread, thrwbl) -> {
+                log.error("Uncaught exception in thread {}", thread.getName(), thrwbl);
+                ExceptionDialog.show(null, "Unexpected Error", "Unexpected Error", thrwbl);
+            });
+
+        } catch (Exception e) {
+            log.error("Could not start AsiDesktopAsiContainer", e);
+            ExceptionDialog.show(null, "Boot", "Booting error", e);
+            System.exit(0);
+        }
     }
 }

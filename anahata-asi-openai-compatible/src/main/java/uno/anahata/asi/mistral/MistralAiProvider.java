@@ -21,9 +21,8 @@ public class MistralAiProvider extends OpenAiChatCompletionsProvider {
      * Constructs a new Mistral AI provider with stable UUID "Mistral".
      */
     public MistralAiProvider() {
-        super("Mistral", "Mistral AI", "https://api.mistral.ai/v1", "Mistral", "https://console.mistral.ai/api-keys");
+        super("Mistral", "Mistral AI", "https://api.mistral.ai/v1", "https://console.mistral.ai/api-keys");
         setDescription("Official Mistral AI provider supporting frontier multimodal, reasoning, vision, and coding models.");
-        setFolderName(AbstractAsiContainer.getWorkDirSubDir("Mistral").toString());
     }
 
     /**

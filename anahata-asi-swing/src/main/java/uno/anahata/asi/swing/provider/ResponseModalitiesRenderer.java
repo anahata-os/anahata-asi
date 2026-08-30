@@ -52,11 +52,11 @@ public class ResponseModalitiesRenderer implements TableCellRenderer {
                     if (!first) {
                         tooltip.append(", ");
                     }
-                    tooltip.append(modality.name());
+                    tooltip.append(modality.getDisplayName());
                     first = false;
 
                     JLabel label = new JLabel(IconUtils.getModalityIcon(modality, 14));
-                    label.setToolTipText(modality.name());
+                    label.setToolTipText(modality.getDisplayName());
                     panel.add(label);
                 }
             }

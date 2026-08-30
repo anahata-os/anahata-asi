@@ -21,9 +21,8 @@ public class NvidiaAiProvider extends OpenAiChatCompletionsProvider {
      * Constructs a new NVIDIA AI provider with stable UUID "Nvidia".
      */
     public NvidiaAiProvider() {
-        super("Nvidia", "NVIDIA", "https://integrate.api.nvidia.com/v1", "Nvidia", "https://build.nvidia.com/models");
+        super("Nvidia", "NVIDIA", "https://integrate.api.nvidia.com/v1", "https://build.nvidia.com/models");
         setDescription("NVIDIA NIM microservices offering high-performance AI models.");
-        setFolderName(AbstractAsiContainer.getWorkDirSubDir("Nvidia").toString());
     }
 
     /**

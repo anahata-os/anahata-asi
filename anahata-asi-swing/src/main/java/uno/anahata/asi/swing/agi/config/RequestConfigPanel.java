@@ -5,6 +5,7 @@ package uno.anahata.asi.swing.agi.config;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -13,6 +14,7 @@ import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultListCellRenderer;
+import javax.swing.Icon;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -381,21 +383,34 @@ public class RequestConfigPanel extends ScrollablePanel implements PropertyChang
         List<ResponseModality> supported = model != null ? model.getSupportedResponseModalities() : null;
         for (ResponseModality modality : ResponseModality.values()) {
             boolean isSupported = supported != null && supported.contains(modality);
-            
-            javax.swing.Icon icon = IconUtils.getModalityIcon(modality, 14);
 
-            String text = isSupported 
-                    ? modality.name() 
-                    : modality.name() + " (not sure if the model supports it, but you can try)";
-            
-            JCheckBox cb = new JCheckBox(text, icon, config.getResponseModalities().contains(modality));
+            Icon icon = IconUtils.getModalityIcon(modality, 16);
+
+            String text = isSupported
+                    ? modality.getDisplayName()
+                    : modality.getDisplayName() + " (not sure if the model supports it, but you can try)";
+
+            JCheckBox cb = new JCheckBox();
             cb.setOpaque(false);
+            cb.setSelected(config.getResponseModalities().contains(modality));
+
+            JLabel iconLabel = new JLabel(icon);
+            iconLabel.setBorder(BorderFactory.createEmptyBorder(0, 2, 0, 4));
+
+            JLabel textLabel = new JLabel(text);
             if (!isSupported) {
-                cb.setForeground(new Color(130, 130, 130));
-                cb.setToolTipText("Modality unverified for this model, but you may still request it.");
+                textLabel.setForeground(new Color(130, 130, 130));
+                textLabel.setToolTipText("Modality unverified for this model, but you may still request it.");
             } else {
-                cb.setFont(cb.getFont().deriveFont(Font.BOLD));
+                textLabel.setFont(textLabel.getFont().deriveFont(Font.BOLD));
             }
+
+            JPanel rowPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
+            rowPanel.setOpaque(false);
+            rowPanel.add(cb);
+            rowPanel.add(iconLabel);
+            rowPanel.add(textLabel);
+
             cb.addActionListener(e -> {
                 if (cb.isSelected()) {
                     if (!config.getResponseModalities().contains(modality)) {
@@ -405,7 +420,7 @@ public class RequestConfigPanel extends ScrollablePanel implements PropertyChang
                     config.getResponseModalities().remove(modality);
                 }
             });
-            modalitiesPanel.add(cb);
+            modalitiesPanel.add(rowPanel);
         }
     }
 

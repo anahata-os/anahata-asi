@@ -38,7 +38,6 @@ public class ModalProvider extends OpenAiChatCompletionsProvider {
             "Modal",
             "Modal Free GLM-5",
             "https://api.us-west-2.modal.direct/v1",
-            "Modal",
             "https://modal.com/glm-5-endpoint"
         );
         setDescription("Modal GLM-5.1 free promotion.");

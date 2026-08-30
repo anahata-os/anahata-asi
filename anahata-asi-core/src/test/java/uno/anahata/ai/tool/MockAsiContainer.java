@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.ai.tool;
 
+import java.io.IOException;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
@@ -16,7 +17,7 @@ public class MockAsiContainer extends AbstractAsiContainer {
      * Initializes a new mock container with the specified host identifier.
      * @param hostId The unique identifier for the virtual host.
      */
-    public MockAsiContainer(String hostId) {
+    public MockAsiContainer(String hostId) throws IOException {
         super(hostId);
     }
 

@@ -1,6 +1,8 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.agi.provider;
 
+import lombok.Getter;
+
 /**
  * Represents the modalities that an AI model can output in its generative response.
  * <p>
@@ -10,27 +12,51 @@ package uno.anahata.asi.agi.provider;
  * 
  * @author anahata
  */
+@Getter
 public enum ResponseModality {
 
     /** 
      * Textual output, markdown, code, reasoning thoughts, and function/tool calls. 
      */
-    TEXT,
+    TEXT("Text"),
 
     /** 
      * Binary image generation and visual editing artifacts. 
      */
-    IMAGE,
+    IMAGE("Image"),
 
     /** 
      * Binary audio synthesis, voice streams, speech-to-speech, and music generation. 
      */
-    AUDIO,
+    AUDIO("Audio"),
 
     /** 
      * Video generation and video synthesis streams. 
      */
-    VIDEO;
+    VIDEO("Video");
+
+    /**
+     * The human-readable display name for this response modality.
+     */
+    private final String displayName;
+
+    /**
+     * Constructs a ResponseModality enum constant with its display name.
+     *
+     * @param displayName The human-readable display name.
+     */
+    ResponseModality(String displayName) {
+        this.displayName = displayName;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>Returns the human-readable display name.</p>
+     */
+    @Override
+    public String toString() {
+        return displayName;
+    }
 
     /**
      * Parses a string into a {@link ResponseModality} case-insensitively.

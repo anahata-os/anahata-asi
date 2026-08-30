@@ -3,6 +3,7 @@
  */
 package uno.anahata.asi.agi;
 
+import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -271,14 +272,20 @@ public class Agi extends BasicPropertyChangeSource {
      * 
      * @param reason the reason for the autosave
      */
-    public void autoSave(String reason) {
-        config.getAsiContainer().autoSaveSession(this, reason);
+    public void autoSave(String reason)  {
+        try {
+            config.getAsiContainer().autoSaveSession(this, reason);
+        } catch (Exception e) {
+            log.error("Could not auto save session " + this, e);
+        }
+        
     }
 
     /**
      * Manually saves the session to the 'saved' directory.
+     * @throws java.io.IOException
      */
-    public void save() {
+    public void save() throws IOException {
         config.getAsiContainer().manualSaveSession(this);
     }
 

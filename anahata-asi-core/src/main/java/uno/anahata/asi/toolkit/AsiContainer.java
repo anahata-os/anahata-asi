@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.toolkit;
 
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -86,14 +87,10 @@ public class AsiContainer extends AnahataToolkit {
 
         StringBuilder sb = new StringBuilder();
         sb.append("## ASI Container Overview\n");
+        sb.append("- **Container Class**: ").append(container.getClass().getName()).append("\n");
+        sb.append("- **Container Implementation Version**: ").append(container.getContainerImplementationVersion()).append("\n");
+        sb.append("- **Container Directory**: ").append(container.getDirectory()).append("\n");
         sb.append("- **Host Application**: ").append(container.getHostApplicationId()).append("\n");
-        sb.append("- **App Directory**: ").append(container.getAppDir()).append("\n");
-
-        AgiConfig template = container.getPreferences() != null ? container.getPreferences().getAgiTemplate() : null;
-        if (template != null) {
-            sb.append("- **Default Provider UUID**: ").append(template.getSelectedProviderUuid() != null ? template.getSelectedProviderUuid() : "None").append("\n");
-            sb.append("- **Default Model ID**: ").append(template.getSelectedModelId() != null ? template.getSelectedModelId() : "None").append("\n");
-        }
 
         sb.append("\n### Configured AI Providers\n");
         sb.append(listAiProviders(false));
@@ -412,7 +409,12 @@ public class AsiContainer extends AnahataToolkit {
                 AbstractTool<?, ?> tool = newAgi.getToolManager().findToolByName(toolName).orElse(null);
                 if (tool == null) {
                     error("disposing agi " + newAgi.getConfig().getSessionId() + " due to invalid tool permission key: " + toolName);
-                    container.dispose(newAgi);
+                    try {
+                        container.dispose(newAgi);
+                    } catch (Exception e) {
+                        error("could not dispose agi");
+                        error(e);
+                    }
                     throw new AgiToolException("Invalid tool permission override: No tool found with name '" + toolName + "'. Available tools: " + newAgi.getToolManager().getAllToolNames());
                 }
                 tool.setPermission(permission);
@@ -586,7 +588,7 @@ public class AsiContainer extends AnahataToolkit {
      * @return A confirmation message.
      */
     @AgiTool("Permanently disposes of an active AGI session, closing its UI and archiving its session file.")
-    public String disposeAgi(@AgiToolParam("The unique ID of the session to dispose.") String sessionId) {
+    public String disposeAgi(@AgiToolParam("The unique ID of the session to dispose.") String sessionId) throws IOException {
         Agi targetAgi = getAsiContainer().getAgi(sessionId);
         String displayName = targetAgi.getDisplayName();
         getAsiContainer().dispose(targetAgi);

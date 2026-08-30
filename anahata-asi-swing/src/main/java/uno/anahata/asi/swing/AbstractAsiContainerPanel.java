@@ -28,6 +28,7 @@ import uno.anahata.asi.swing.icons.LoadSessionIcon;
 import uno.anahata.asi.swing.agi.status.TaskStatusComponent;
 import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.icons.RestartIcon;
+import uno.anahata.asi.swing.settings.AsiContainerSettingsFrame;
 import uno.anahata.asi.swing.icons.SettingsIcon;
 
 /**
@@ -81,16 +82,11 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
         JButton settingsBtn = new JButton("Preferences", new SettingsIcon(16));
         settingsBtn.setToolTipText("Configure global ASI settings and API keys");
         
-        this.warningLabel = new JLabel("<html><font color='yellow'><b>&#9888;</b></font></html>");
+        this.warningLabel = new JLabel("<html><font color='red'><b>&#9888;</b></font></html>");
         this.warningLabel.setToolTipText("Evolutionary leap detected. Previous settings were backed up.");
-        this.warningLabel.setVisible(asiContainer.getPreferences().isLoadFailed());
+        this.warningLabel.setVisible(!asiContainer.getNotifications().isEmpty());
         
         settingsBtn.addActionListener(e -> {
-            if (asiContainer.getPreferences().isLoadFailed()) {
-                asiContainer.getPreferences().setLoadFailed(false);
-                asiContainer.savePreferences();
-                warningLabel.setVisible(false);
-            }
             showPreferences();
         });
         toolBar.add(settingsBtn);
@@ -204,59 +200,53 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
     }
 
     /**
-     * Displays the global ASI preferences dashboard in a modal dialog.
+     * Displays the global ASI settings dashboard in a modal dialog.
      */
-    public void showPreferences() {
-        showPreferences(0);
+    public void showSettings() {
+        showSettings(0);
     }
 
     /**
-     * Displays the global ASI preferences dashboard with a specific tab selected.
+     * Displays the global ASI settings dashboard with a specific tab
+     * selected.
      * <p>
-     * Implementation details: Switches from modal JDialog to a non-modal JFrame 
-     * to support full OS window management (maximization). Implements a 
-     * single-instance pattern to reuse the existing frame if already open.
+     * Switches to a non-modal JFrame ({@link AsiContainerSettingsFrame}) in full
+     * maximized mode ({@link JFrame#MAXIMIZED_BOTH}) to support full OS window management.
+     * Implements a single-instance pattern to reuse the existing frame if already open.
      * </p>
-     * 
+     *
      * @param initialTabIndex The index of the tab to open.
      */
-    public void showPreferences(int initialTabIndex) {
-        JFrame frame = asiContainer.getPreferencesFrame();
-        
-        if (frame != null && frame.isVisible()) {
+    public void showSettings(int initialTabIndex) {
+        AsiContainerSettingsFrame frame = asiContainer.getSettingsFrame();
+
+        if (frame != null && frame.isDisplayable()) {
+            frame.getSettingsPanel().selectTab(initialTabIndex);
+            frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
             frame.toFront();
-            if (frame.getContentPane() instanceof AsiContainerPreferencesPanel p) {
-                p.selectTab(initialTabIndex);
-            }
+            frame.requestFocus();
             return;
         }
 
-        frame = new JFrame("ASI Container Preferences");
-        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        
-        try {
-            frame.setIconImages(IconUtils.getLogoImages());
-        } catch (Exception e) {
-            log.warn("Failed to set frame icons", e);
-        }
+        AsiContainerSettingsFrame settingsFrame = new AsiContainerSettingsFrame(asiContainer, initialTabIndex);
+        settingsFrame.setLocationRelativeTo(SwingUtilities.getWindowAncestor(this));
+        settingsFrame.setVisible(true);
+    }
 
-        AsiContainerPreferencesPanel prefsPanel = new AsiContainerPreferencesPanel(this, initialTabIndex);
-        frame.setLayout(new BorderLayout());
-        frame.add(prefsPanel, BorderLayout.CENTER);
-        
-        final JFrame finalFrame = frame;
-        prefsPanel.setCloseCallback(() -> {
-            finalFrame.dispose();
-            asiContainer.setPreferencesFrame(null);
-        });
-        
-        asiContainer.setPreferencesFrame(frame);
-        
-        frame.setMinimumSize(new Dimension(800, 600));
-        frame.setPreferredSize(new Dimension(900, 650));
-        frame.pack();
-        frame.setLocationRelativeTo(SwingUtilities.getWindowAncestor(this));
-        frame.setVisible(true);
+    /**
+     * Compatibility alias for {@link #showSettings(int)}.
+     *
+     * @param initialTabIndex The index of the tab to open.
+     */
+    public void showPreferences(int initialTabIndex) {
+        showSettings(initialTabIndex);
+    }
+
+    /**
+     * Compatibility alias for {@link #showSettings()}.
+     */
+    public void showPreferences() {
+        showSettings(0);
     }
 
 
@@ -296,7 +286,7 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
         closeButton.setEnabled(isSelected);
         
         if (warningLabel != null) {
-            warningLabel.setVisible(asiContainer.getPreferences().isLoadFailed());
+            //warningLabel.setVisible(asiContainer.getPreferences().isLoadFailed());
         }
     }
 

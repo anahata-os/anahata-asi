@@ -22,9 +22,9 @@ public class AiModelTableModel extends AbstractTableModel {
 
     /** The ordered set of column headers reflecting model specifications. */
     private final String[] columnNames = {
-        "AI Provider", "Model ID", "Display Name", "Version", "Description",
+        "Enabled", "AI Provider", "Model ID", "Display Name", "Version", "Description",
         "Modalities", "Supported Actions", "Input Tokens", "Output Tokens",
-        "Temperature", "Top P", "Top K"
+        "Temperature", "Top P", "Top K", "Actions"
     };
     /** The backing list of model entities. */
     private final List<AbstractModel> models;
@@ -91,6 +91,56 @@ public class AiModelTableModel extends AbstractTableModel {
         return columnNames[column];
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Class<?> getColumnClass(int columnIndex) {
+        if (columnIndex == 0) {
+            return Boolean.class;
+        }
+        if (columnIndex == 6) {
+            return List.class;
+        }
+        return Object.class;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>Allows editing Column 0 (Enabled checkbox or Add button) and Column 13 (Actions).</p>
+     */
+    @Override
+    public boolean isCellEditable(int rowIndex, int columnIndex) {
+        AbstractModel model = getModelAt(rowIndex);
+        if (model == null) {
+            return false;
+        }
+        if (columnIndex == 0) {
+            return true;
+        }
+        if (columnIndex == 13) {
+            return model.isRegistered();
+        }
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+        AbstractModel model = getModelAt(rowIndex);
+        if (model != null && columnIndex == 0 && aValue instanceof Boolean b && model.isRegistered()) {
+            model.setEnabled(b);
+            try {
+                model.persist();
+            } catch (Exception e) {
+                // Error logged
+            }
+            fireTableCellUpdated(rowIndex, columnIndex);
+        }
+    }
+
     /** 
      * {@inheritDoc} 
      * <p>
@@ -102,18 +152,20 @@ public class AiModelTableModel extends AbstractTableModel {
     public Object getValueAt(int rowIndex, int columnIndex) {
         AbstractModel model = models.get(rowIndex);
         switch (columnIndex) {
-            case 0: return model.getProvider();
-            case 1: return model.getModelId();
-            case 2: return model.getDisplayName();
-            case 3: return model.getVersion();
-            case 4: return model.getDescription();
-            case 5: return model.getSupportedResponseModalities();
-            case 6: return String.join(", ", model.getSupportedActions());
-            case 7: return model.getMaxInputTokens() != null ? model.getMaxInputTokens() : "N/A";
-            case 8: return model.getMaxOutputTokens() != null ? model.getMaxOutputTokens() : "N/A";
-            case 9: return model.getDefaultTemperature() != null ? model.getDefaultTemperature() : "N/A";
-            case 10: return model.getDefaultTopP() != null ? model.getDefaultTopP() : "N/A";
-            case 11: return model.getDefaultTopK() != null ? model.getDefaultTopK() : "N/A";
+            case 0: return model;
+            case 1: return model.getProvider();
+            case 2: return model.getModelId();
+            case 3: return model.getDisplayName();
+            case 4: return model.getVersion();
+            case 5: return model.getDescription();
+            case 6: return model.getSupportedResponseModalities();
+            case 7: return String.join(", ", model.getSupportedActions());
+            case 8: return model.getMaxInputTokens() != null ? model.getMaxInputTokens() : "N/A";
+            case 9: return model.getMaxOutputTokens() != null ? model.getMaxOutputTokens() : "N/A";
+            case 10: return model.getDefaultTemperature() != null ? model.getDefaultTemperature() : "N/A";
+            case 11: return model.getDefaultTopP() != null ? model.getDefaultTopP() : "N/A";
+            case 12: return model.getDefaultTopK() != null ? model.getDefaultTopK() : "N/A";
+            case 13: return model;
             default: return null;
         }
     }
