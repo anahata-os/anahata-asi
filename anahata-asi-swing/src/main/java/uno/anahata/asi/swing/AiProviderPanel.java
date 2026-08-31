@@ -30,6 +30,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.prompt.PromptSupport;
@@ -76,7 +77,7 @@ public class AiProviderPanel extends ScrollablePanel {
     /**
      * The domain entity representing the AI provider being configured.
      */
-    private final AbstractAiProvider provider;
+    private AbstractAiProvider provider;
     /**
      * Monospace editor for the 'api_keys.txt' file, supporting multiple keys.
      */
@@ -280,12 +281,13 @@ public class AiProviderPanel extends ScrollablePanel {
             keysContainer.add(acquisitionLinkLabel, "wrap, gapleft 5");
         }
 
-        textArea.setRows(5);
+        textArea.setRows(8);
         textArea.setLineWrap(true);
         textArea.setWrapStyleWord(false);
         textArea.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(textArea, e));
         textArea.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
         JScrollPane textScroll = new JScrollPane(textArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        textScroll.setPreferredSize(new java.awt.Dimension(400, 160));
         keysContainer.add(textScroll, "grow, wrap");
 
         formPanel.add(keysContainer, "span 2, grow, wrap");
@@ -514,6 +516,66 @@ public class AiProviderPanel extends ScrollablePanel {
         } catch (IOException e) {
             log.error("Failed to load keys from {}", path, e);
             textArea.setText("# Error loading keys: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Re-binds this panel to a different provider instance dynamically.
+     *
+     * @param newProvider The new provider to display and configure.
+     */
+    public void setProvider(@NonNull AbstractAiProvider newProvider) {
+        this.provider = newProvider;
+        this.currentApiKeysPath = newProvider.getApiKeysFile();
+        displayNameField.setText(newProvider.getDisplayName() != null ? newProvider.getDisplayName() : "");
+        descriptionField.setText(newProvider.getDescription() != null ? newProvider.getDescription() : "");
+        enabledCheck.setSelected(newProvider.isEnabled());
+        apiKeyRequiredCheck.setSelected(newProvider.isApiKeyRequired());
+        textArea.setEnabled(newProvider.isApiKeyRequired());
+        tokenizerCombo.setSelectedItem(newProvider.getTokenizerType());
+        if (autoRegisterCheck != null) {
+            autoRegisterCheck.setSelected(newProvider.isAutomaticallyRegisterNewlyDiscoveredModels());
+        }
+        if (baseUrlField != null) {
+            baseUrlField.setText(newProvider.getBaseUrl() != null ? newProvider.getBaseUrl() : "");
+        }
+        updateFolderLabel();
+        updateLinkLabel();
+        loadKeys();
+        if (registryViewer != null) {
+            registryViewer.setTargetProvider(newProvider);
+        }
+    }
+
+    /**
+     * Checks if any settings or API key text in the UI have been modified compared to the domain entity.
+     *
+     * @return true if there are unsaved modifications.
+     */
+    public boolean isModified() {
+        boolean fieldsModified = !java.util.Objects.equals(displayNameField.getText().trim(), provider.getDisplayName() != null ? provider.getDisplayName() : "")
+                || !java.util.Objects.equals(descriptionField.getText().trim(), provider.getDescription() != null ? provider.getDescription() : "")
+                || enabledCheck.isSelected() != provider.isEnabled()
+                || apiKeyRequiredCheck.isSelected() != provider.isApiKeyRequired()
+                || (baseUrlField != null && !java.util.Objects.equals(baseUrlField.getText().trim(), provider.getBaseUrl() != null ? provider.getBaseUrl() : ""))
+                || (autoRegisterCheck != null && autoRegisterCheck.isSelected() != provider.isAutomaticallyRegisterNewlyDiscoveredModels())
+                || tokenizerCombo.getSelectedItem() != provider.getTokenizerType()
+                || !java.util.Objects.equals(currentApiKeysPath, provider.getApiKeysFile());
+
+        if (fieldsModified) {
+            return true;
+        }
+
+        Path path = provider.getKeysFilePath();
+        if (Files.exists(path)) {
+            try {
+                String diskContent = Files.readString(path);
+                return !java.util.Objects.equals(textArea.getText().trim(), diskContent.trim());
+            } catch (IOException e) {
+                return true;
+            }
+        } else {
+            return !textArea.getText().trim().isEmpty();
         }
     }
 

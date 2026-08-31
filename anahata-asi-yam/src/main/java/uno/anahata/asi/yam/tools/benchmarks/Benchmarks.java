@@ -555,12 +555,24 @@ public class Benchmarks extends AnahataToolkit {
             List<String> tags = List.of("AnahataASI", "Java", "AI", "Benchmarks", "LLM", testDef.testCode());
 
             YouTube youtube = getAgi().getToolkit(YouTube.class).orElse(new YouTube());
+
+            String playlistId = creds.playlistId();
+            try {
+                String playlistTitle = "Anahata-AGI-1: " + testDef.testCode();
+                playlistId = youtube.resolveOrCreatePlaylist(playlistTitle,
+                        "Automated Anahata-AGI-1 benchmark runs for " + testDef.testCode() + " (" + testDef.title() + ").");
+                log("Resolved per-test playlist '" + playlistTitle + "' -> " + playlistId);
+            } catch (Exception e) {
+                log.error("Could not resolve per-test playlist; falling back to default playlist", e);
+                error("Could not resolve per-test playlist; falling back to default playlist: " + e.getMessage());
+            }
+
             YouTubeVideoUploadRequest request = YouTubeVideoUploadRequest.builder()
                     .videoFilePath(session.videoPath().toString())
                     .title(title)
                     .description(description)
                     .tags(tags)
-                    .playlistId(creds.playlistId())
+                    .playlistId(playlistId)
                     .privacyStatus("unlisted")
                     .build();
 

@@ -177,9 +177,9 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      * providers directory
      * (~/.anahata/asi/&lt;hostApp&gt;/&lt;version&gt;/providers/&lt;uuid&gt;.kryo).
      *
-     * @throws java_io_IOException If creating the directory or saving the file
+     * @throws java.io.IOException If creating the directory or saving the file
      * fails.
-     * @throws java_lang_IllegalStateException If the parent container is null
+     * @throws java.lang.IllegalStateException If the parent container is null
      * or uuid is null or blank.
      */
     public synchronized void persist() throws IOException {
@@ -198,8 +198,8 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      * Deletes the persisted .kryo file for this AI provider from disk and
      * removes it from its parent container registry.
      *
-     * @throws java_io_IOException If deleting the file fails.
-     * @throws java_lang_IllegalStateException If the parent container is null
+     * @throws java.io.IOException If deleting the file fails.
+     * @throws java.lang.IllegalStateException If the parent container is null
      * or uuid is null or blank.
      */
     public synchronized void remove() throws IOException {

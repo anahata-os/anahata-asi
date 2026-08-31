@@ -98,8 +98,10 @@ public class AsiContainerSettingsPanel extends ScrollablePanel {
 
         JButton closeBtn = new JButton("Close", new CancelIcon(16));
         closeBtn.addActionListener(e -> {
-            if (closeCallback != null) {
-                closeCallback.run();
+            if (providersPanel.checkUnsavedChanges()) {
+                if (closeCallback != null) {
+                    closeCallback.run();
+                }
             }
         });
         panel.add(closeBtn);

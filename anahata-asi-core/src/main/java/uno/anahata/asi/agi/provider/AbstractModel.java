@@ -51,6 +51,46 @@ public abstract class AbstractModel {
     protected TokenizerType tokenizerType;
 
     /**
+     * User-facing or API display name for this model.
+     */
+    protected String displayName;
+
+    /**
+     * Human-readable description of this model's capabilities and limitations.
+     */
+    protected String description;
+
+    /**
+     * The version identifier for this model.
+     */
+    protected String version;
+
+    /**
+     * The maximum number of input tokens allowed, or null if unspecified.
+     */
+    protected Integer maxInputTokens;
+
+    /**
+     * The maximum number of output tokens this model can generate in a single turn, or null if unspecified.
+     */
+    protected Integer maxOutputTokens;
+
+    /**
+     * The default temperature setting for this model, or null if unspecified.
+     */
+    protected Float defaultTemperature;
+
+    /**
+     * The default Top-P setting for this model, or null if unspecified.
+     */
+    protected Float defaultTopP;
+
+    /**
+     * The default Top-K setting for this model, or null if unspecified.
+     */
+    protected Integer defaultTopK;
+
+    /**
      * Checks if this model is registered in its parent provider's master persisted models list.
      *
      * @return true if this model exists in {@code provider.getModels()}, false otherwise.
@@ -235,42 +275,6 @@ public abstract class AbstractModel {
     public abstract String getModelId();
 
     /**
-     * Gets the human-readable display name for this model.
-     *
-     * @return The display name.
-     */
-    public abstract String getDisplayName();
-
-    /**
-     * Gets a detailed description of the model's capabilities and limitations.
-     *
-     * @return The model description.
-     */
-    public abstract String getDescription();
-
-    /**
-     * Gets the version string for this model.
-     *
-     * @return The version.
-     */
-    public abstract String getVersion();
-
-    /**
-     * Gets the maximum number of input tokens supported by this model.
-     *
-     * @return The input token limit, or null if unspecified/unknown by provider.
-     */
-    public abstract Integer getMaxInputTokens();
-
-    /**
-     * Gets the maximum number of output tokens this model can generate in a
-     * single turn.
-     *
-     * @return The output token limit, or null if unspecified/unknown by provider.
-     */
-    public abstract Integer getMaxOutputTokens();
-
-    /**
      * Gets the list of supported API actions for this model (e.g.,
      * "generateContent").
      *
@@ -397,40 +401,6 @@ public abstract class AbstractModel {
      * @return The list of default server tools.
      */
     public abstract List<ServerTool> getDefaultServerTools();
-
-    /**
-     * Gets the default temperature for this model.
-     * <p>
-     * Temperature controls the randomness of the response. Higher values (e.g.,
-     * 1.0) make the output more random, while lower values (e.g., 0.2) make it
-     * more deterministic.
-     * </p>
-     *
-     * @return The default temperature, or null if not specified.
-     */
-    public abstract Float getDefaultTemperature();
-
-    /**
-     * Gets the default topK for this model.
-     * <p>
-     * Top-K sampling limits the model's choices to the K most likely next
-     * tokens.
-     * </p>
-     *
-     * @return The default topK, or null if not specified.
-     */
-    public abstract Integer getDefaultTopK();
-
-    /**
-     * Gets the default topP for this model.
-     * <p>
-     * Top-P (nucleus) sampling selects tokens whose cumulative probability adds
-     * up to the threshold P.
-     * </p>
-     *
-     * @return The default topP, or null if not specified.
-     */
-    public abstract Float getDefaultTopP();
 
     /**
      * The core method for interacting with an AI model. It takes a

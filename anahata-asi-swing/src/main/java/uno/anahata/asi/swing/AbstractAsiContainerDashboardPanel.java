@@ -39,7 +39,7 @@ import uno.anahata.asi.swing.icons.SettingsIcon;
  * @author anahata
  */
 @Slf4j
-public abstract class AbstractAsiContainerPanel extends JPanel {
+public abstract class AbstractAsiContainerDashboardPanel extends JPanel {
 
     /** The application-wide ASI container. */
     @Getter
@@ -62,7 +62,7 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
      * 
      * @param container The ASI container.
      */
-    public AbstractAsiContainerPanel(@NonNull AbstractSwingAsiContainer container) {
+    public AbstractAsiContainerDashboardPanel(@NonNull AbstractSwingAsiContainer container) {
         this.asiContainer = container;
         
         // 1. Setup Toolbar
@@ -79,11 +79,11 @@ public abstract class AbstractAsiContainerPanel extends JPanel {
         importButton.addActionListener(e -> importSession());
         toolBar.add(importButton);
 
-        JButton settingsBtn = new JButton("Preferences", new SettingsIcon(16));
+        JButton settingsBtn = new JButton("Settings", new SettingsIcon(16));
         settingsBtn.setToolTipText("Configure global ASI settings and API keys");
         
         this.warningLabel = new JLabel("<html><font color='red'><b>&#9888;</b></font></html>");
-        this.warningLabel.setToolTipText("Evolutionary leap detected. Previous settings were backed up.");
+        this.warningLabel.setToolTipText("Check Notifications in the About Panel");
         this.warningLabel.setVisible(!asiContainer.getNotifications().isEmpty());
         
         settingsBtn.addActionListener(e -> {

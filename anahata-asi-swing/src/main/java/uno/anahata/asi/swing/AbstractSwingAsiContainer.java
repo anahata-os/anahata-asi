@@ -137,7 +137,7 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
 
         if (getProvider("GeminiVertex") == null) {
             GeminiAiProvider g = new GeminiAiProvider("GeminiVertex", "Google Cloud (Vertex)", true);
-            g.setEnabled(false);
+            registerProvider(g);
         }
 
         if (getProvider("NovaRouteAI") == null) {
@@ -152,7 +152,6 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
         if (getProvider("Anthropic") == null) {
             log.info("Registering Anthropic");
             AnthropicProvider anthropic = new AnthropicProvider();
-            anthropic.setEnabled(false);
             registerProvider(anthropic);
         }
 
@@ -174,7 +173,6 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
         if (getProvider("HuggingFace") == null) {
             log.info("Registering HF");
             HuggingFaceProvider hf = new HuggingFaceProvider();
-            hf.setEnabled(false);
             registerProvider(hf);
         }
 

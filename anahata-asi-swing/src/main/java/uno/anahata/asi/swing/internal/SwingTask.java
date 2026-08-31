@@ -14,7 +14,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.swing.AbstractAsiContainerPanel;
+import uno.anahata.asi.swing.AbstractAsiContainerDashboardPanel;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.components.ExceptionDialog;
 

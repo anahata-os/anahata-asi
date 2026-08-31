@@ -88,6 +88,14 @@ public class GeminiModel extends AbstractModel {
         this.provider = provider;
         this.genaiModel = genaiModel;
         this.modelId = genaiModel.name().orElseThrow(() -> new IllegalArgumentException("Model name is required"));
+        this.displayName = genaiModel.displayName().orElse(this.modelId);
+        this.description = genaiModel.description().orElse("");
+        this.version = genaiModel.version().orElse("");
+        this.maxInputTokens = genaiModel.inputTokenLimit().orElse(null);
+        this.maxOutputTokens = genaiModel.outputTokenLimit().orElse(null);
+        this.defaultTemperature = genaiModel.temperature().orElse(null);
+        this.defaultTopK = genaiModel.topK().orElse(null);
+        this.defaultTopP = genaiModel.topP().orElse(null);
     }
 
     /**
@@ -277,51 +285,6 @@ public class GeminiModel extends AbstractModel {
      * {@inheritDoc}
      */
     @Override
-    public String getDisplayName() {
-        return getGenaiModel().displayName().orElse("");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getDescription() {
-        String desc = getGenaiModel().description().orElse("");
-        String displayName = getDisplayName();
-        if (desc.isEmpty() || desc.equalsIgnoreCase(displayName)) {
-            return "";
-        }
-        return desc;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getVersion() {
-        return getGenaiModel().version().orElse("");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Integer getMaxInputTokens() {
-        return getGenaiModel().inputTokenLimit().orElse(null);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Integer getMaxOutputTokens() {
-        return getGenaiModel().outputTokenLimit().orElse(null);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public List<String> getSupportedActions() {
         return getGenaiModel().supportedActions().orElse(Collections.emptyList());
     }
@@ -462,30 +425,6 @@ public class GeminiModel extends AbstractModel {
         return getAvailableServerTools().stream()
                 .filter(st -> st.getId().equals(GoogleSearch.class))
                 .collect(Collectors.toList());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Float getDefaultTemperature() {
-        return getGenaiModel().temperature().orElse(null);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Integer getDefaultTopK() {
-        return getGenaiModel().topK().orElse(null);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Float getDefaultTopP() {
-        return getGenaiModel().topP().orElse(null);
     }
 
     /**

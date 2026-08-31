@@ -98,14 +98,6 @@ public class GeminiAiProvider extends AbstractAiProvider {
 
     /**
      * {@inheritDoc}
-     */
-    @Override
-    public String getCurrentKey() {
-        return getClient().apiKey();
-    }
-
-    /**
-     * {@inheritDoc}
      * <p>
      * Implementation details: Nullifies the internal Gemini client. This forces
      * the provider to rotate to the next API key in the pool and reconstruct

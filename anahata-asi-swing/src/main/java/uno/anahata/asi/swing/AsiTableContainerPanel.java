@@ -29,7 +29,7 @@ import uno.anahata.asi.swing.agi.SwingAgiConfig;
  * 
  * @author anahata
  */
-public class AsiTableContainerPanel extends AbstractAsiContainerPanel {
+public class AsiTableContainerPanel extends AbstractAsiContainerDashboardPanel {
 
     /**
      * The JTable component displaying the active sessions.

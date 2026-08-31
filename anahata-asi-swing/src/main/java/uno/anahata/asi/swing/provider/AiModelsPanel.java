@@ -6,12 +6,16 @@ package uno.anahata.asi.swing.provider;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import uno.anahata.asi.swing.components.WrapLayout;
+import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -184,8 +188,9 @@ public class AiModelsPanel extends JPanel {
         this.modelSelectionCallback = modelSelectionCallback;
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Filter Panel
-        JPanel filterPanel = new JPanel(new MigLayout("insets 0, fillx", "[][180!,grow 0][][grow,fill][][][][][][][]", "[]"));
+        // Filter Panel with dynamic component wrapping
+        JPanel filterPanel = new JPanel(new WrapLayout(FlowLayout.LEFT, 6, 4));
+        filterPanel.setOpaque(false);
 
         // Extract all providers from container or models
         DefaultComboBoxModel<AbstractAiProvider> comboModel = new DefaultComboBoxModel<>();
@@ -204,7 +209,7 @@ public class AiModelsPanel extends JPanel {
             updateAddNewModelsButton();
         });
 
-        filterField = new JTextField();
+        filterField = new JTextField(14);
         filterField.getDocument().addDocumentListener(new AnyChangeDocumentListener(this::applyFilter));
 
         textToggle = new JToggleButton(ResponseModality.TEXT.getDisplayName(), IconUtils.getModalityIcon(ResponseModality.TEXT, 16));
@@ -289,6 +294,14 @@ public class AiModelsPanel extends JPanel {
         table.setFillsViewportHeight(true);
         table.setRowHeight(28);
         table.setRolloverEnabled(false);
+        table.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
+
+        // Remove legacy SwingX CellEditorRemover listeners from KeyboardFocusManager to avoid JDK 26 Applet ClassNotFoundException
+        for (PropertyChangeListener l : KeyboardFocusManager.getCurrentKeyboardFocusManager().getPropertyChangeListeners("permanentFocusOwner")) {
+            if (l.getClass().getName().contains("CellEditorRemover")) {
+                KeyboardFocusManager.getCurrentKeyboardFocusManager().removePropertyChangeListener("permanentFocusOwner", l);
+            }
+        }
 
         // Add double-click listener
         table.addMouseListener(new MouseAdapter() {

@@ -38,7 +38,7 @@ public class AsiContainerSettingsFrame extends JFrame {
      */
     public AsiContainerSettingsFrame(@NonNull AbstractSwingAsiContainer container, int initialTabIndex) {
         super("ASI Container Settings - " + container.getHostApplicationId());
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
         try {
             setIconImages(IconUtils.getLogoImages());
@@ -56,6 +56,14 @@ public class AsiContainerSettingsFrame extends JFrame {
         });
 
         addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if (settingsPanel.getProvidersPanel().checkUnsavedChanges()) {
+                    dispose();
+                    container.setSettingsFrame(null);
+                }
+            }
+
             @Override
             public void windowClosed(WindowEvent e) {
                 container.setSettingsFrame(null);
