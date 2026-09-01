@@ -5,9 +5,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.swing.table.AbstractTableModel;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.provider.AbstractModel;
+import uno.anahata.asi.agi.provider.ResponseModality;
 import uno.anahata.asi.internal.TypeParsers;
 
 /**
@@ -129,7 +131,7 @@ public class AiModelTableModel extends AbstractTableModel {
             return false;
         }
         return switch (columnIndex) {
-            case 3, 4, 5, 8, 9, 10, 11, 12 -> true;
+            case 3, 4, 5, 6, 8, 9, 10, 11, 12 -> true;
             default -> false;
         };
     }
@@ -153,6 +155,7 @@ public class AiModelTableModel extends AbstractTableModel {
                 case 3 -> model.setDisplayName(aValue != null ? aValue.toString().trim() : "");
                 case 4 -> model.setVersion(aValue != null ? aValue.toString().trim() : "");
                 case 5 -> model.setDescription(aValue != null ? aValue.toString().trim() : "");
+                case 6 -> model.setSupportedResponseModalities(TypeParsers.parseEnumList(aValue, ResponseModality.class));
                 case 8 -> model.setMaxInputTokens(TypeParsers.parseInteger(aValue));
                 case 9 -> model.setMaxOutputTokens(TypeParsers.parseInteger(aValue));
                 case 10 -> model.setDefaultTemperature(TypeParsers.parseFloat(aValue));

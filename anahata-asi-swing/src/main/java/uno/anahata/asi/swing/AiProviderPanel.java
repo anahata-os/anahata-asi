@@ -79,6 +79,22 @@ public class AiProviderPanel extends ScrollablePanel {
      */
     private AbstractAiProvider provider;
     /**
+     * Visual container for provider logo icon in the top header row.
+     */
+    private final JPanel headerLeft;
+    /**
+     * Visual container hosting promo banner, dynamically updated per provider.
+     */
+    private final JPanel promoBannerContainer;
+    /**
+     * Readonly label displaying the active provider UUID.
+     */
+    private final JLabel uuidLabel;
+    /**
+     * Readonly field displaying the concrete provider class FQN.
+     */
+    private final JTextField classField;
+    /**
      * Monospace editor for the 'api_keys.txt' file, supporting multiple keys.
      */
     private final JTextArea textArea;
@@ -177,10 +193,10 @@ public class AiProviderPanel extends ScrollablePanel {
         JPanel formPanel = new JPanel(new MigLayout("fillx, insets 15", "[right]12[grow,fill]5[]"));
         formPanel.setOpaque(false);
 
-        JLabel promoBannerLabel = createPromoBannerLabel();
-        if (promoBannerLabel != null) {
-            formPanel.add(promoBannerLabel, "span, growx, center, wrap, gapbottom 12");
-        }
+        promoBannerContainer = new JPanel(new BorderLayout());
+        promoBannerContainer.setOpaque(false);
+        updatePromoBanner();
+        formPanel.add(promoBannerContainer, "span, growx, center, wrap, gapbottom 12");
 
         JButton removeBtn = new JButton("Delete", new DeleteIcon(16));
         removeBtn.setToolTipText("Remove Provider");
@@ -208,22 +224,19 @@ public class AiProviderPanel extends ScrollablePanel {
         headerRight.add(testConnectionBtn);
         headerRight.add(removeBtn);
 
-        JPanel headerLeft = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        headerLeft = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         headerLeft.setOpaque(false);
-        Icon providerIcon = IconUtils.getIcon("aiproviders/" + provider.getClass().getName() + ".png", 32, 32);
-        if (providerIcon != null) {
-            headerLeft.add(new JLabel(providerIcon));
-        }
+        updateHeaderIcon();
         formPanel.add(headerLeft, "left");
         formPanel.add(headerRight, "span 2, right, wrap");
 
         formPanel.add(new JLabel("UUID:"));
-        JLabel uuidLabel = new JLabel(provider.getUuid());
+        uuidLabel = new JLabel(provider.getUuid());
         uuidLabel.setFont(uuidLabel.getFont().deriveFont(Font.BOLD));
         formPanel.add(uuidLabel, "span 2, wrap");
 
         formPanel.add(new JLabel("Provider Class:"));
-        JTextField classField = new JTextField(provider.getClass().getName());
+        classField = new JTextField(provider.getClass().getName());
         classField.setEditable(false);
         classField.setBorder(null);
         classField.setOpaque(false);
@@ -328,7 +341,7 @@ public class AiProviderPanel extends ScrollablePanel {
         folderRow.add(openFolderBtn);
         formPanel.add(folderRow, "span 2, wrap");
 
-        formPanel.add(new JLabel("Tokenizer Type:"), "gaptop 5");
+        formPanel.add(new JLabel("Default Tokenizer:"), "gaptop 5");
         tokenizerCombo = new JComboBox<>(TokenizerType.values());
         tokenizerCombo.setSelectedItem(provider.getTokenizerType());
         formPanel.add(tokenizerCombo, "wmax 300, span 2, wrap");
@@ -520,6 +533,35 @@ public class AiProviderPanel extends ScrollablePanel {
     }
 
     /**
+     * Updates the provider icon in the top-left header.
+     */
+    private void updateHeaderIcon() {
+        headerLeft.removeAll();
+        Icon providerIcon = IconUtils.getIcon("aiproviders/" + provider.getClass().getName() + ".png", 32, 32);
+        if (providerIcon != null) {
+            headerLeft.add(new JLabel(providerIcon));
+        }
+        headerLeft.revalidate();
+        headerLeft.repaint();
+    }
+
+    /**
+     * Updates the promo banner in the promo container based on active provider.
+     */
+    private void updatePromoBanner() {
+        promoBannerContainer.removeAll();
+        JLabel banner = createPromoBannerLabel();
+        if (banner != null) {
+            promoBannerContainer.add(banner, BorderLayout.CENTER);
+            promoBannerContainer.setVisible(true);
+        } else {
+            promoBannerContainer.setVisible(false);
+        }
+        promoBannerContainer.revalidate();
+        promoBannerContainer.repaint();
+    }
+
+    /**
      * Re-binds this panel to a different provider instance dynamically.
      *
      * @param newProvider The new provider to display and configure.
@@ -527,6 +569,10 @@ public class AiProviderPanel extends ScrollablePanel {
     public void setProvider(@NonNull AbstractAiProvider newProvider) {
         this.provider = newProvider;
         this.currentApiKeysPath = newProvider.getApiKeysFile();
+        uuidLabel.setText(newProvider.getUuid());
+        classField.setText(newProvider.getClass().getName());
+        updateHeaderIcon();
+        updatePromoBanner();
         displayNameField.setText(newProvider.getDisplayName() != null ? newProvider.getDisplayName() : "");
         descriptionField.setText(newProvider.getDescription() != null ? newProvider.getDescription() : "");
         enabledCheck.setSelected(newProvider.isEnabled());

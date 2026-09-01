@@ -55,6 +55,7 @@ import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.agi.provider.ResponseModality;
+import uno.anahata.asi.swing.components.EnumSetTableCellEditor;
 import uno.anahata.asi.swing.icons.AddIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.IconUtils;
@@ -386,6 +387,12 @@ public class AiModelsPanel extends JPanel {
 
         // Set cell renderer on Modalities column
         table.getColumnExt("Modalities").setCellRenderer(new ResponseModalitiesRenderer());
+        EnumSetTableCellEditor<ResponseModality> modalityEditor = new EnumSetTableCellEditor<>(
+                ResponseModality.class,
+                m -> IconUtils.getModalityIcon(m, 16),
+                ResponseModality::getDisplayName
+        );
+        table.getColumnExt("Modalities").setCellEditor(modalityEditor);
         table.getColumnExt("Modalities").setComparator((o1, o2) -> {
             List<?> l1 = (o1 instanceof List<?> l) ? l : Collections.emptyList();
             List<?> l2 = (o2 instanceof List<?> l) ? l : Collections.emptyList();
