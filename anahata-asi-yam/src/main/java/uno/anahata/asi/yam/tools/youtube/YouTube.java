@@ -67,6 +67,11 @@ public class YouTube extends AnahataToolkit {
     private static final String YOUTUBE_PLAYLIST_ITEMS_ENDPOINT = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet";
 
     /**
+     * YouTube playlists collection endpoint URL (for playlist creation and lookup).
+     */
+    private static final String YOUTUBE_PLAYLISTS_ENDPOINT = "https://www.googleapis.com/youtube/v3/playlists?part=snippet,status";
+
+    /**
      * Shared JSON object mapper for request serialization and response parsing.
      */
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -552,6 +557,147 @@ public class YouTube extends AnahataToolkit {
         }
 
         return sb.toString();
+    }
+
+    /**
+     * Creates a brand-new YouTube playlist owned by the authenticated channel.
+     *
+     * @param title The desired playlist title.
+     * @param description The optional playlist description.
+     * @return A confirmation message carrying the new playlist ID.
+     * @throws Exception If playlist creation or authorization fails.
+     */
+    @AgiTool(value = "Creates a new YouTube playlist for the authenticated channel.", permission = ToolPermission.APPROVE_ALWAYS)
+    public String createPlaylist(
+            @AgiToolParam("The playlist title.") String title,
+            @AgiToolParam(value = "The optional playlist description.", required = false) String description) throws Exception {
+        if (title == null || title.isBlank()) {
+            throw new AgiToolException("Playlist title cannot be null or blank");
+        }
+        YouTubeCredentials credentials = YouTubeCredentials.load();
+        String accessToken = YouTubeAuthHelper.getValidAccessToken(credentials);
+        String playlistId = createPlaylistInternal(accessToken, title, description);
+        return "Successfully created playlist \"" + title + "\" (ID: " + playlistId + ")";
+    }
+
+    /**
+     * Finds an existing playlist by title (case-insensitive) or creates it if missing, returning its ID.
+     * <p>
+     * Provides idempotent playlist resolution so repeated benchmark runs accumulate into a single
+     * per-test playlist instead of spawning duplicates.
+     * </p>
+     *
+     * @param title The playlist title to find or create.
+     * @param description The optional description applied only when a new playlist is created.
+     * @return A message carrying the existing or newly created playlist ID.
+     * @throws Exception If the playlist lookup, creation, or authorization fails.
+     */
+    @AgiTool(value = "Finds a playlist by title (case-insensitive) or creates it if missing, returning its ID.", permission = ToolPermission.APPROVE_ALWAYS)
+    public String findOrCreatePlaylist(
+            @AgiToolParam("The playlist title to find or create.") String title,
+            @AgiToolParam(value = "The optional playlist description (only applied when creating).", required = false) String description) throws Exception {
+        String playlistId = resolveOrCreatePlaylist(title, description);
+        return "Playlist \"" + title + "\" ready (ID: " + playlistId + ")";
+    }
+
+    /**
+     * Resolves an existing playlist by title or creates it if absent, returning the raw playlist ID.
+     * <p>
+     * Exposed as a plain public helper (distinct from the {@code @AgiTool} wrapper) so internal
+     * orchestrators such as the benchmark engine can obtain the raw ID without parsing a UI message.
+     * </p>
+     *
+     * @param title The playlist title to find or create.
+     * @param description The optional description applied only when creating.
+     * @return The existing or newly created playlist ID.
+     * @throws Exception If authorization, lookup, or creation fails.
+     */
+    public String resolveOrCreatePlaylist(String title, String description) throws Exception {
+        if (title == null || title.isBlank()) {
+            throw new AgiToolException("Playlist title cannot be null or blank");
+        }
+        YouTubeCredentials credentials = YouTubeCredentials.load();
+        String accessToken = YouTubeAuthHelper.getValidAccessToken(credentials);
+        String existing = findPlaylistByTitleInternal(accessToken, title);
+        if (existing != null) {
+            return existing;
+        }
+        return createPlaylistInternal(accessToken, title, description);
+    }
+
+    /**
+     * Creates a playlist on the authenticated channel via the playlists collection endpoint.
+     *
+     * @param accessToken The OAuth2 access token.
+     * @param title The playlist title.
+     * @param description The optional playlist description.
+     * @return The new playlist ID.
+     * @throws Exception If the API call fails.
+     */
+    private String createPlaylistInternal(String accessToken, String title, String description) throws Exception {
+        ObjectNode root = MAPPER.createObjectNode();
+        ObjectNode snippet = root.putObject("snippet");
+        snippet.put("title", title);
+        if (description != null && !description.isBlank()) {
+            snippet.put("description", description);
+        }
+        ObjectNode status = root.putObject("status");
+        status.put("privacyStatus", "unlisted");
+
+        String jsonBody = MAPPER.writeValueAsString(root);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(YOUTUBE_PLAYLISTS_ENDPOINT))
+                .header("Authorization", "Bearer " + accessToken)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                .build();
+
+        HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200 && response.statusCode() != 201) {
+            log.warn("Failed to create playlist: HTTP {} - {}", response.statusCode(), response.body());
+            throw new IOException("Failed to create YouTube playlist: HTTP " + response.statusCode() + " - " + response.body());
+        }
+
+        JsonNode json = MAPPER.readTree(response.body());
+        String playlistId = json.path("id").asText();
+        log.info("Successfully created YouTube playlist {} ({})", title, playlistId);
+        return playlistId;
+    }
+
+    /**
+     * Finds a playlist owned by the authenticated channel whose title matches (case-insensitive).
+     *
+     * @param accessToken The OAuth2 access token.
+     * @param title The title to match.
+     * @return The matching playlist ID, or {@code null} if not found.
+     * @throws Exception If the API call fails.
+     */
+    private String findPlaylistByTitleInternal(String accessToken, String title) throws Exception {
+        String url = "https://www.googleapis.com/youtube/v3/playlists?part=snippet&mine=true&maxResults=50";
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Authorization", "Bearer " + accessToken)
+                .GET()
+                .build();
+
+        HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            log.warn("Failed to list playlists while resolving by title: HTTP {} - {}", response.statusCode(), response.body());
+            return null;
+        }
+
+        JsonNode json = MAPPER.readTree(response.body());
+        JsonNode items = json.path("items");
+        String lower = title.trim().toLowerCase();
+        for (JsonNode item : items) {
+            String id = item.path("id").asText();
+            String itemTitle = item.path("snippet").path("title").asText();
+            if (itemTitle != null && itemTitle.toLowerCase().equals(lower)) {
+                return id;
+            }
+        }
+        return null;
     }
 
     /**

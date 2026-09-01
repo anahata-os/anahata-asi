@@ -142,12 +142,6 @@ public class AnthropicModel extends AbstractModel {
      * {@inheritDoc}
      */
     @Override
-    public String getDescription() { return "Anthropic Claude Model"; }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public String getVersion() { return version; }
 
     /**

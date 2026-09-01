@@ -157,8 +157,6 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
                 log.error("Failed to initialize toolkit: {}", toolkit.getName(), e);
             }
         }
-        
-        applyPreferences();
     }
 
     /**
@@ -276,19 +274,6 @@ public class ToolManager extends BasicPropertyChangeSource implements ContextPro
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Applies application-wide tool preferences to all registered tools.
-     */
-    private void applyPreferences() {
-        log.info("Applying application-wide tool permissions...");
-        Map<String, ToolPermission> prefs = agi.getConfig().getAsiContainer().getPreferences().getToolPermissions();
-        for (AbstractTool<?, ?> tool : getAllTools()) {
-            ToolPermission p = prefs.get(tool.getName());
-            if (p != null) {
-                tool.setPermission(p);
-            }
-        }
-    }
     
     /**
      * Returns all context providers from enabled toolkits.

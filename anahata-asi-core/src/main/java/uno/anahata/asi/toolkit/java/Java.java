@@ -448,13 +448,14 @@ public class Java extends AnahataToolkit {
             @AgiToolParam(value = "The source code", rendererId = "java") String sourceCode,
             @AgiToolParam("The class name") String className,
             @AgiToolParam(value = "Additional classpath entries", required = false) String extraClassPath,
-            @AgiToolParam(value = "Additional compiler options", required = false) String[] compilerOptions)
+            @AgiToolParam(value = "Additional compiler options", required = false) String[] compilerOptions,
+            JavaCompiler compiler)
             throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 
         final ToolContext ctx = getToolContext();
 
         log("Compiling class: " + className);
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        
 
         if (compiler == null) {
             throw new RuntimeException("JDK required (running on JRE).");
@@ -690,7 +691,7 @@ public class Java extends AnahataToolkit {
         log.info("executeJavaCode: \nsource={}", sourceCode);
         log.info("executeJavaCode: \nextraCompilerClassPath={}", extraClassPath);
 
-        Class c = compile(sourceCode, "Anahata", extraClassPath, compilerOptions);
+        Class c = compile(sourceCode, "Anahata", extraClassPath, compilerOptions, getDefaultJavaCompiler());
 
         // CRITICAL FIX: Use setAccessible(true) to allow instantiation even if the class/constructor is not public.
         var constructor = c.getDeclaredConstructor();
@@ -711,6 +712,15 @@ public class Java extends AnahataToolkit {
         } else {
             throw new AgiToolException("Source file should extend AnahataTool or implement java.util.Callable");
         }
+    }
+    
+    /**
+     * Overridable method for implementations to decide what compiler to use by default.
+     * 
+     * @return <code>ToolProvider.getSystemJavaCompiler();</code>
+     */
+    protected JavaCompiler getDefaultJavaCompiler() {
+        return ToolProvider.getSystemJavaCompiler();
     }
 
     /**

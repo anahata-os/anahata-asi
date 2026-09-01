@@ -51,4 +51,7 @@ Standard tool calls (the ones that show run buttons in the ui) will not reflect 
 - **nbmreload**: Required to update the "Static" tool calls used by the UI and the standard framework execution path.
 - **Turn Sequencing**: Never batch `nbmreload` with source write operations. Wait for a successful compilation before triggering a reload.
 
+## 6. Tasks & Bug Reports
+- **BCR Abstract Method Replacement Semicolon**: In `BatchCodeRefiner` (or AST rewrite pipeline), when replacing an `abstract` method declaration (e.g. `public abstract Foo bar();`) with a concrete method implementation (containing a body `{ ... }`), the AST replacement leaves behind the original trailing semicolon after the closing brace (e.g. `public Foo bar() { ... };`). Fix the refiner so trailing semicolons following replaced abstract method headers are cleanly removed.
+
 Força Barça!

@@ -151,6 +151,7 @@ public class Benchmarks extends AnahataToolkit {
 
         Path newPath = Paths.get(resultsDirectory);
         catalog.setResultsDirectory(newPath);
+        refreshWebsiteArtifacts();
         return "Updated results directory for catalog '" + catalog.getName() + "' to: " + newPath.toAbsolutePath();
     }
 
@@ -247,31 +248,28 @@ public class Benchmarks extends AnahataToolkit {
     }
 
     /**
-     * Submits or updates a judge's subjective score for a specific benchmark test run.
+     * Submits or updates a judge's subjective score for a specific benchmark test run, keyed by session ID.
      *
-     * @param testCode The test code (e.g. "JAVA-JNA-1").
-     * @param participant The candidate participant descriptor.
-     * @param judgeName The name of the judge (e.g., "Pablo", "Vijay").
-     * @param score The score awarded by the judge (e.g., 9.5).
+     * @param sessionId The unique session ID of the run to score.
+     * @param judgeScore The judge score DTO (name, score, comments).
      * @return A confirmation message indicating whether the score was updated.
      * @throws Exception If updating the results store fails.
      */
     @AgiTool(value = "Submits or updates a judge's score for a candidate run in the results database.", permission = ToolPermission.APPROVE_ALWAYS)
     public String submitJudgeScore(
-            @AgiToolParam("The test code (e.g., 'JAVA-JNA-1').") String testCode,
-            @AgiToolParam("The candidate participant descriptor.") BenchmarkParticipant participant,
-            @AgiToolParam("The judge name (e.g., 'Pablo', 'Vijay').") String judgeName,
-            @AgiToolParam("The score (0.0 to 10.0 or 0 to 100).") double score) throws Exception {
+            @AgiToolParam("The unique session ID of the benchmark run to score.") String sessionId,
+            @AgiToolParam("The judge score DTO (name, score, comments).") JudgeScore judgeScore) throws Exception {
 
         for (TestCatalog cat : catalogs) {
-            if (cat.findByCode(testCode).isPresent()) {
-                boolean updated = BenchmarkResultsStore.submitJudgeScore(cat, testCode, participant, judgeName, score);
-                if (updated) {
-                    return "Successfully recorded judge score of " + score + " by " + judgeName + " for " + participant + " on " + testCode;
+            for (TestDefinition test : cat.getTests()) {
+                Path resultsFile = cat.getResultsFileForTest(test.testCode());
+                if (BenchmarkResultsStore.submitJudgeScore(resultsFile, sessionId, judgeScore)) {
+                    refreshWebsiteArtifacts();
+                    return "Successfully recorded judge score of " + judgeScore.score() + " by " + judgeScore.name() + " for session " + sessionId;
                 }
             }
         }
-        return "No matching benchmark run found for " + participant + " on " + testCode + ". Execute the test first before scoring.";
+        return "No matching benchmark run found for session " + sessionId + ". Execute the test first before scoring.";
     }
 
     /**
@@ -290,6 +288,62 @@ public class Benchmarks extends AnahataToolkit {
             }
         }
         return List.of();
+    }
+
+    /**
+     * Finds benchmark run results across all catalogs matching ALL provided predicates (AND semantics).
+     * <p>
+     * Every non-null predicate must match for a run to be returned.
+     * </p>
+     *
+     * @param testCode The optional test code filter (case-insensitive).
+     * @param providerUuid The optional provider UUID filter (case-insensitive).
+     * @param modelId The optional model ID filter (case-insensitive).
+     * @param passed The optional passed/failed status filter.
+     * @param sessionId The optional session ID filter (case-insensitive).
+     * @return The list of runs matching every provided predicate.
+     * @throws Exception If reading the results store fails.
+     */
+    @AgiTool(value = "Finds benchmark run results matching ALL provided predicates (AND semantics).", permission = ToolPermission.APPROVE_ALWAYS)
+    public List<BenchmarkRunResult> findResults(
+            @AgiToolParam(value = "Optional test code filter (e.g. 'JAVA-JNA-1').", required = false) String testCode,
+            @AgiToolParam(value = "Optional provider UUID filter.", required = false) String providerUuid,
+            @AgiToolParam(value = "Optional model ID filter.", required = false) String modelId,
+            @AgiToolParam(value = "Optional passed/failed status filter.", required = false) Boolean passed,
+            @AgiToolParam(value = "Optional session ID filter.", required = false) String sessionId) throws Exception {
+        List<BenchmarkRunResult> matches = new ArrayList<>();
+        for (TestCatalog cat : catalogs) {
+            for (TestDefinition test : cat.getTests()) {
+                if (testCode != null && !testCode.isBlank() && !test.testCode().equalsIgnoreCase(testCode.trim())) {
+                    continue;
+                }
+                Path resultsFile = cat.getResultsFileForTest(test.testCode());
+                matches.addAll(BenchmarkResultsStore.findResults(resultsFile, providerUuid, modelId, passed, sessionId));
+            }
+        }
+        return matches;
+    }
+
+    /**
+     * Updates an entire benchmark run result record on disk, matching by session ID (the unique primary key).
+     *
+     * @param result The fully populated replacement {@link BenchmarkRunResult}.
+     * @return A confirmation message indicating whether the record was replaced.
+     * @throws Exception If updating the results store fails.
+     */
+    @AgiTool(value = "Updates an entire benchmark run result JSON record on disk, matching by session ID.", permission = ToolPermission.APPROVE_ALWAYS)
+    public String updateResults(
+            @AgiToolParam("The fully populated BenchmarkRunResult to persist, replacing the matching existing record by session ID.") BenchmarkRunResult result) throws Exception {
+        for (TestCatalog cat : catalogs) {
+            if (cat.findByCode(result.testCode()).isPresent()) {
+                boolean updated = BenchmarkResultsStore.updateResult(cat.getResultsFileForTest(result.testCode()), result);
+                if (updated) {
+                    refreshWebsiteArtifacts();
+                    return "Successfully updated benchmark result for session " + result.sessionId() + " on " + result.testCode();
+                }
+            }
+        }
+        return "No matching benchmark run found for session " + result.sessionId() + " on " + result.testCode() + ". Record the run first before updating.";
     }
 
     /**
@@ -378,7 +432,11 @@ public class Benchmarks extends AnahataToolkit {
                         log("Finalizing recording (Save Local)...");
                         RecordedSession session = recorder.stopRecording(true, null);
                         double duration = session != null ? session.durationSeconds() : 0.0;
+                        String localVideoPath = session != null && session.videoPath() != null ? session.videoPath().toString() : null;
                         String thumbPath = session != null && session.thumbnailPath() != null ? session.thumbnailPath().toString() : null;
+                        if (localVideoPath != null) {
+                            log("Recording saved to disk at: " + localVideoPath);
+                        }
                         BenchmarkRunResult runResult = compileRunResult(candidateAgi, testDef, participant, duration, thumbPath, null);
                         BenchmarkResultsStore.recordResult(catalog, runResult);
                         runResultFuture.complete(runResult);
@@ -397,7 +455,11 @@ public class Benchmarks extends AnahataToolkit {
                             videoUrl = uploadBenchmarkVideoToYouTube(testDef, participant, session);
                         }
                         double duration = session != null ? session.durationSeconds() : 0.0;
+                        String localVideoPath = session != null && session.videoPath() != null ? session.videoPath().toString() : null;
                         String thumbPath = session != null && session.thumbnailPath() != null ? session.thumbnailPath().toString() : null;
+                        if (localVideoPath != null) {
+                            log("Recording saved to disk at: " + localVideoPath);
+                        }
                         BenchmarkRunResult runResult = compileRunResult(candidateAgi, testDef, participant, duration, thumbPath, videoUrl);
                         BenchmarkResultsStore.recordResult(catalog, runResult);
                         runResultFuture.complete(runResult);
@@ -493,12 +555,24 @@ public class Benchmarks extends AnahataToolkit {
             List<String> tags = List.of("AnahataASI", "Java", "AI", "Benchmarks", "LLM", testDef.testCode());
 
             YouTube youtube = getAgi().getToolkit(YouTube.class).orElse(new YouTube());
+
+            String playlistId = creds.playlistId();
+            try {
+                String playlistTitle = "Anahata-AGI-1: " + testDef.testCode();
+                playlistId = youtube.resolveOrCreatePlaylist(playlistTitle,
+                        "Automated Anahata-AGI-1 benchmark runs for " + testDef.testCode() + " (" + testDef.title() + ").");
+                log("Resolved per-test playlist '" + playlistTitle + "' -> " + playlistId);
+            } catch (Exception e) {
+                log.error("Could not resolve per-test playlist; falling back to default playlist", e);
+                error("Could not resolve per-test playlist; falling back to default playlist: " + e.getMessage());
+            }
+
             YouTubeVideoUploadRequest request = YouTubeVideoUploadRequest.builder()
                     .videoFilePath(session.videoPath().toString())
                     .title(title)
                     .description(description)
                     .tags(tags)
-                    .playlistId(creds.playlistId())
+                    .playlistId(playlistId)
                     .privacyStatus("unlisted")
                     .build();
 
@@ -587,11 +661,25 @@ public class Benchmarks extends AnahataToolkit {
                 .thoughtsTokens(thoughtsTokens)
                 .totalTokens(totalTokens > 0 ? totalTokens : (promptTokens + candidatesTokens + thoughtsTokens))
                 .passed(passed)
-                .judgeScores(new HashMap<>())
+                .judgeScores(new ArrayList<>())
                 .videoUrl(videoUrl)
                 .screenshotPath(screenshotPath)
                 .sessionId(candidateAgi.getConfig().getSessionId())
                 .observations(observations.toString().trim())
                 .build();
+    }
+
+    /**
+     * Regenerates the public website benchmark artifacts ({@code catalog.json} and {@code results.json})
+     * for every registered catalog, keeping the static leaderboard in sync with the engine.
+     */
+    private void refreshWebsiteArtifacts() {
+        for (TestCatalog catalog : catalogs) {
+            try {
+                BenchmarkResultsStore.refreshWebsiteManifests(catalog);
+            } catch (Exception e) {
+                log.error("Failed to refresh website benchmark artifacts for catalog " + catalog.getId(), e);
+            }
+        }
     }
 }

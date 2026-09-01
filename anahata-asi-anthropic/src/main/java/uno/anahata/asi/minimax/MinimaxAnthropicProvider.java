@@ -27,7 +27,6 @@ public class MinimaxAnthropicProvider extends AnthropicProvider {
     public MinimaxAnthropicProvider() {
         super("Minimax", "MiniMax (Anthropic)", "https://api.minimax.io/anthropic/v1", "2023-06-01", "https://platform.minimax.io/subscribe/coding-plan?code=FVciM5NhFX&source=link");
         setDescription("MiniMax API adapter utilizing the Anthropic protocol compatible specification.");
-        setFolderName(AbstractAsiContainer.getWorkDirSubDir("Minimax").toString());
     }
 
     /**

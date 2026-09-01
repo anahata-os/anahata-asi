@@ -5,6 +5,7 @@ package uno.anahata.asi.swing;
 
 import java.awt.Component;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import javax.swing.JFileChooser;
@@ -32,7 +33,10 @@ import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactor
 import uno.anahata.asi.swing.agi.message.part.tool.param.PathParameterRenderer;
 import uno.anahata.asi.swing.agi.message.part.tool.param.ResourceUUIDParameterRenderer;
 import uno.anahata.asi.swing.agi.message.part.tool.param.UriParameterRenderer;
+import uno.anahata.asi.swing.components.ExceptionDialog;
 import uno.anahata.asi.swing.internal.SwingUtils;
+import uno.anahata.asi.swing.provider.DiscoverModelsTask;
+import uno.anahata.asi.swing.settings.AsiContainerSettingsFrame;
 import uno.anahata.asi.swing.toolkit.radio.RadioRenderer;
 import uno.anahata.asi.swing.toolkit.render.ToolkitUiRegistry;
 import uno.anahata.asi.toolkit.resources.text.FullTextFileCreate;
@@ -82,33 +86,60 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
 
 
     /**
-     * The single-instance Preferences dashboard frame for this container.
+     * The single-instance Settings Command Center frame for this container.
      */
-    private javax.swing.JFrame preferencesFrame;
+    private AsiContainerSettingsFrame settingsFrame;
+
+    /**
+     * Displays the global ASI settings Command Center in maximized mode.
+     */
+    public void showSettings() {
+        showSettings(0);
+    }
+
+    /**
+     * Displays the global ASI settings Command Center with a specific tab selected.
+     * <p>
+     * Reuses the existing {@link AsiContainerSettingsFrame} instance if already open,
+     * bringing it to front and selecting the requested tab index.
+     * </p>
+     *
+     * @param initialTabIndex The index of the tab to open.
+     */
+    public synchronized void showSettings(int initialTabIndex) {
+        if (settingsFrame == null || !settingsFrame.isDisplayable()) {
+            settingsFrame = new AsiContainerSettingsFrame(this, initialTabIndex);
+        } else {
+            settingsFrame.getSettingsPanel().selectTab(initialTabIndex);
+        }
+        settingsFrame.setExtendedState(javax.swing.JFrame.MAXIMIZED_BOTH);
+        settingsFrame.toFront();
+        settingsFrame.requestFocus();
+        settingsFrame.setVisible(true);
+    }
 
     /**
      * Constructs a new Swing ASI container.
-     * 
+     *
      * @param hostApplicationId The unique ID of the host application.
      */
-    public AbstractSwingAsiContainer(String hostApplicationId) {
+    public AbstractSwingAsiContainer(String hostApplicationId) throws IOException {
         super(hostApplicationId);
-        
+
         if (getProvider("GeminiGCExpress") == null) {
             registerProvider(new GeminiGoogleCloudExpressAIProvider());
         }
 
-        if (getProvider("Gemni") == null) {
+        if (getProvider("Gemini") == null) {
             GeminiAiProvider g = new GeminiAiProvider("Gemini", "Google AI Studio", false);
             registerProvider(g);
         }
 
         if (getProvider("GeminiVertex") == null) {
             GeminiAiProvider g = new GeminiAiProvider("GeminiVertex", "Google Cloud (Vertex)", true);
-            g.setEnabled(false);
-            //registerProvider();
+            registerProvider(g);
         }
-        
+
         if (getProvider("NovaRouteAI") == null) {
             registerProvider(new NovaRouteAiProvider());
         }
@@ -117,11 +148,10 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
             log.info("Registering OpenAI");
             registerProvider(new OpenAiResponsesProvider());
         }
-        
+
         if (getProvider("Anthropic") == null) {
-            log.info("Registering OpenAI");
+            log.info("Registering Anthropic");
             AnthropicProvider anthropic = new AnthropicProvider();
-            anthropic.setEnabled(false);
             registerProvider(anthropic);
         }
 
@@ -129,7 +159,7 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
             log.info("Registering MiniMax (Anthropic)");
             registerProvider(new MinimaxAnthropicProvider());
         }
-        
+
         if (getProvider("Modal") == null) {
             log.info("Registering Modal");
             registerProvider(new ModalProvider());
@@ -143,13 +173,17 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
         if (getProvider("HuggingFace") == null) {
             log.info("Registering HF");
             HuggingFaceProvider hf = new HuggingFaceProvider();
-            hf.setEnabled(false);
             registerProvider(hf);
         }
 
         if (getProvider("Nvidia") == null) {
             log.info("Registering NVIDIA");
             registerProvider(new NvidiaAiProvider());
+        }
+
+        // Background Model Discovery for effectively enabled providers
+        for (AbstractAiProvider provider : getEffectivelyEnabledProviders()) {
+            new DiscoverModelsTask(provider, false).start();
         }
     }
 
@@ -222,9 +256,12 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
         if (chooser.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) {
             File selectedFile = chooser.getSelectedFile();
             log.info("User selected file for import: {}", selectedFile);
-            Agi imported = importSession(selectedFile.toPath());
-            if (imported != null) {
+            try {
+                Agi imported = importSession(selectedFile.toPath());
                 open(imported);
+            } catch (IOException ex) {
+                log.error("Could not import session with UI for " + selectedFile, ex);
+                ExceptionDialog.show(null, "Import AGI", "Import AGI failed", ex);
             }
         }
     }

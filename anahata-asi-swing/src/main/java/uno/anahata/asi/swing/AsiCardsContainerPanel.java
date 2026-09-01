@@ -23,7 +23,7 @@ import uno.anahata.asi.swing.components.ScrollablePanel;
  * 
  * @author anahata
  */
-public class AsiCardsContainerPanel extends AbstractAsiContainerPanel {
+public class AsiCardsContainerPanel extends AbstractAsiContainerDashboardPanel {
 
     /**
      * The panel containing the collection of AgiCard components.

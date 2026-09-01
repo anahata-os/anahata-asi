@@ -26,14 +26,16 @@ import uno.anahata.asi.agi.tool.AgiToolException;
 @Slf4j
 public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolCall> {
 
-    /** 
+    /**
      * A thread-local storage for the currently executing Java tool response.
-     * This allows tool logic to access its own context without explicit parameter passing.
+     * This allows tool logic to access its own context without explicit
+     * parameter passing.
      */
     private static final ThreadLocal<JavaMethodToolResponse> current = new ThreadLocal<>();
 
     /**
      * Gets the tool response associated with the current thread.
+     *
      * @return The active tool response, or {@code null} if none is active.
      */
     public static JavaMethodToolResponse getCurrent() {
@@ -42,7 +44,9 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
 
     /**
      * Sets the tool response for the current thread.
-     * @param response The response to set, or {@code null} to clear the context.
+     *
+     * @param response The response to set, or {@code null} to clear the
+     * context.
      */
     public static void setCurrent(JavaMethodToolResponse response) {
         if (response == null) {
@@ -53,13 +57,16 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
     }
 
     /**
-     * The raw exception thrown during execution, for debugging and session serialization.
-     * Ignored during schema generation as it's an internal detail.
+     * The raw exception thrown during execution, for debugging and session
+     * serialization. Ignored during schema generation as it's an internal
+     * detail.
      */
     @JsonIgnore
     private transient Throwable exception;
-    
-    /** Guard to ensure only one thread can execute this response at a time. */
+
+    /**
+     * Guard to ensure only one thread can execute this response at a time.
+     */
     @JsonIgnore
     private transient AtomicBoolean executing = new AtomicBoolean(false);
 
@@ -73,14 +80,17 @@ public class JavaMethodToolResponse extends AbstractToolResponse<JavaMethodToolC
         setStatus(ToolExecutionStatus.PENDING);
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void rebind() {
         super.rebind();
         this.executing = new AtomicBoolean(false);
     }
 
-    @Override public void execute() {
+    @Override
+    public void execute() {
         if (!executing.compareAndSet(false, true)) {
             throw new IllegalStateException("Tool execution is already in progress for this call.");
         }

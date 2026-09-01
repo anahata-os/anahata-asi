@@ -9,13 +9,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -88,6 +89,7 @@ public class BenchmarkResultsStore {
      * @param resultsFile The path to the JSON results file.
      * @param result The benchmark run result to record.
      * @throws IOException If writing to disk fails.
+     * @throws IllegalStateException If a run with the same session ID already exists.
      */
     public static synchronized void recordResult(Path resultsFile, BenchmarkRunResult result) throws IOException {
         if (resultsFile == null) {
@@ -95,6 +97,13 @@ public class BenchmarkResultsStore {
         }
 
         List<BenchmarkRunResult> existing = new ArrayList<>(loadResults(resultsFile));
+        if (result.sessionId() != null && !result.sessionId().isBlank()) {
+            boolean duplicate = existing.stream()
+                    .anyMatch(run -> run.sessionId() != null && run.sessionId().equals(result.sessionId()));
+            if (duplicate) {
+                throw new IllegalStateException("A benchmark run with session ID " + result.sessionId() + " already exists in " + resultsFile);
+            }
+        }
         existing.add(result);
 
         Files.createDirectories(resultsFile.getParent());
@@ -114,19 +123,19 @@ public class BenchmarkResultsStore {
             throw new IllegalArgumentException("Catalog cannot be null");
         }
         recordResult(catalog.getResultsFileForTest(result.testCode()), result);
+        refreshWebsiteManifests(catalog);
     }
 
     /**
-     * Adds or updates a judge's score for a specific run in a results file.
+     * Adds or updates a judge's score for a specific run in a results file, keyed by session ID.
      *
      * @param resultsFile The path to the JSON results file.
-     * @param participant The composite candidate participant key (providerUuid, modelId, thinkingLevel).
-     * @param judgeName The name of the judge (e.g. "Pablo", "Vijay").
-     * @param score The score given by the judge.
+     * @param sessionId The unique session ID of the run to score.
+     * @param judgeScore The judge score DTO carrying name, score, and optional comments.
      * @return {@code true} if a matching run was found and updated, {@code false} otherwise.
      * @throws IOException If saving fails.
      */
-    public static synchronized boolean submitJudgeScore(Path resultsFile, BenchmarkParticipant participant, String judgeName, double score) throws IOException {
+    public static synchronized boolean submitJudgeScore(Path resultsFile, String sessionId, JudgeScore judgeScore) throws IOException {
         if (resultsFile == null || !Files.exists(resultsFile)) {
             return false;
         }
@@ -136,9 +145,10 @@ public class BenchmarkResultsStore {
 
         for (int i = 0; i < runs.size(); i++) {
             BenchmarkRunResult run = runs.get(i);
-            if (run.participant().equals(participant)) {
-                var updatedScores = new HashMap<>(run.judgeScores());
-                updatedScores.put(judgeName, score);
+            if (run.sessionId() != null && run.sessionId().equals(sessionId)) {
+                var updatedScores = new ArrayList<>(run.judgeScores());
+                updatedScores.removeIf(judge -> judge != null && judge.name() != null && judge.name().equals(judgeScore.name()));
+                updatedScores.add(judgeScore);
 
                 BenchmarkRunResult updatedRun = BenchmarkRunResult.builder()
                         .participant(run.participant())
@@ -167,26 +177,161 @@ public class BenchmarkResultsStore {
 
         if (found) {
             MAPPER.writeValue(resultsFile.toFile(), runs);
-            log.info("Updated judge score for {} by {}: {} in {}", participant, judgeName, score, resultsFile);
+            log.info("Updated judge score for session {} by {}: {} in {}", sessionId, judgeScore.name(), judgeScore.score(), resultsFile);
         }
         return found;
     }
 
     /**
-     * Adds or updates a judge's score for a specific run in a catalog.
+     * Adds or updates a judge's score for a specific run in a catalog, keyed by session ID.
      *
      * @param catalog The catalog context.
      * @param testCode The test code.
-     * @param participant The candidate participant key.
-     * @param judgeName The judge name.
-     * @param score The score.
+     * @param sessionId The unique session ID of the run to score.
+     * @param judgeScore The judge score DTO.
      * @return {@code true} if updated, {@code false} otherwise.
      * @throws IOException If saving fails.
      */
-    public static synchronized boolean submitJudgeScore(TestCatalog catalog, String testCode, BenchmarkParticipant participant, String judgeName, double score) throws IOException {
+    public static synchronized boolean submitJudgeScore(TestCatalog catalog, String testCode, String sessionId, JudgeScore judgeScore) throws IOException {
         if (catalog == null) {
             return false;
         }
-        return submitJudgeScore(catalog.getResultsFileForTest(testCode), participant, judgeName, score);
+        return submitJudgeScore(catalog.getResultsFileForTest(testCode), sessionId, judgeScore);
+    }
+
+    /**
+     * Filters recorded benchmark runs from a specific JSON results file, applying AND semantics
+     * across all non-null predicate filters.
+     *
+     * @param resultsFile The path to the JSON results file.
+     * @param providerUuid Optional provider UUID filter (case-insensitive).
+     * @param modelId Optional model ID filter (case-insensitive).
+     * @param passed Optional pass/fail status filter.
+     * @param sessionId Optional session ID filter (case-insensitive).
+     * @return The list of runs matching every provided filter, or an empty list if none match.
+     */
+    public static List<BenchmarkRunResult> findResults(Path resultsFile, String providerUuid, String modelId, Boolean passed, String sessionId) {
+        List<BenchmarkRunResult> matches = new ArrayList<>();
+        for (BenchmarkRunResult run : loadResults(resultsFile)) {
+            if (providerUuid != null && !providerUuid.isBlank() && !providerUuid.equalsIgnoreCase(run.participant().providerUuid())) {
+                continue;
+            }
+            if (modelId != null && !modelId.isBlank() && !modelId.equalsIgnoreCase(run.participant().modelId())) {
+                continue;
+            }
+            if (passed != null && !passed.equals(run.passed())) {
+                continue;
+            }
+            if (sessionId != null && !sessionId.isBlank() && !sessionId.equalsIgnoreCase(run.sessionId())) {
+                continue;
+            }
+            matches.add(run);
+        }
+        return matches;
+    }
+
+    /**
+     * Replaces an entire recorded benchmark run in the results file, matching by session ID (the unique primary key).
+     *
+     * @param resultsFile The path to the JSON results file.
+     * @param updated The fully populated replacement {@link BenchmarkRunResult}.
+     * @return {@code true} if a matching run was found and replaced, {@code false} otherwise.
+     * @throws IOException If saving fails.
+     * @throws IllegalArgumentException If the updated record lacks a session ID.
+     */
+    public static synchronized boolean updateResult(Path resultsFile, BenchmarkRunResult updated) throws IOException {
+        if (resultsFile == null || !Files.exists(resultsFile)) {
+            return false;
+        }
+        String targetSessionId = updated.sessionId();
+        if (targetSessionId == null || targetSessionId.isBlank()) {
+            throw new IllegalArgumentException("Cannot update a benchmark result without a session ID.");
+        }
+        List<BenchmarkRunResult> runs = new ArrayList<>(loadResults(resultsFile));
+        boolean found = false;
+        for (int i = 0; i < runs.size(); i++) {
+            BenchmarkRunResult run = runs.get(i);
+            if (run.sessionId() != null && run.sessionId().equals(targetSessionId)) {
+                runs.set(i, updated);
+                found = true;
+                break;
+            }
+        }
+        if (found) {
+            MAPPER.writeValue(resultsFile.toFile(), runs);
+            log.info("Updated benchmark result for session {} ({})", updated.sessionId(), updated.testCode());
+        }
+        return found;
+    }
+
+    /**
+     * Writes the machine-readable catalog manifest ({@code catalog.json}) describing the suite and its tests.
+     * <p>
+     * Emits the catalog id, name, description, and every registered test's code, title, and raw prompt
+     * so the static website renders the correct suite without hardcoded HTML.
+     * </p>
+     *
+     * @param catalog The catalog context.
+     * @throws IOException If writing to disk fails.
+     */
+    public static synchronized void writeCatalogManifest(TestCatalog catalog) throws IOException {
+        if (catalog == null || catalog.getResultsDirectory() == null) {
+            return;
+        }
+        Path dir = catalog.getResultsDirectory();
+        Files.createDirectories(dir);
+
+        ObjectNode root = MAPPER.createObjectNode();
+        root.put("id", catalog.getId());
+        root.put("name", catalog.getName());
+        root.put("description", catalog.getDescription());
+
+        ArrayNode tests = root.putArray("tests");
+        for (TestDefinition test : catalog.getTests()) {
+            ObjectNode t = tests.addObject();
+            t.put("testCode", test.testCode());
+            t.put("title", test.title());
+            t.put("rawPrompt", test.rawPrompt() != null ? test.rawPrompt() : "");
+        }
+
+        MAPPER.writeValue(dir.resolve("catalog.json").toFile(), root);
+        log.info("Wrote benchmark catalog manifest to {}", dir.resolve("catalog.json"));
+    }
+
+    /**
+     * Writes the combined results file ({@code results.json}) aggregating every run across all tests in a catalog.
+     * <p>
+     * Flattens each test's per-run scorecard into a single ordered list so the public leaderboard
+     * can render and filter everything from one fetch.
+     * </p>
+     *
+     * @param catalog The catalog context.
+     * @throws IOException If writing to disk fails.
+     */
+    public static synchronized void writeCombinedResults(TestCatalog catalog) throws IOException {
+        if (catalog == null || catalog.getResultsDirectory() == null) {
+            return;
+        }
+        Path dir = catalog.getResultsDirectory();
+        Files.createDirectories(dir);
+
+        List<BenchmarkRunResult> all = new ArrayList<>();
+        for (TestDefinition test : catalog.getTests()) {
+            all.addAll(loadResults(catalog, test.testCode()));
+        }
+
+        MAPPER.writeValue(dir.resolve("results.json").toFile(), all);
+        log.info("Wrote combined benchmark results ({} runs) to {}", all.size(), dir.resolve("results.json"));
+    }
+
+    /**
+     * Regenerates both public website artifacts ({@code catalog.json} and {@code results.json}) for a catalog.
+     *
+     * @param catalog The catalog context.
+     * @throws IOException If writing to disk fails.
+     */
+    public static synchronized void refreshWebsiteManifests(TestCatalog catalog) throws IOException {
+        writeCatalogManifest(catalog);
+        writeCombinedResults(catalog);
     }
 }

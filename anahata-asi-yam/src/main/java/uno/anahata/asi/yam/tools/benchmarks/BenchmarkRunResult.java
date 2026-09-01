@@ -6,9 +6,8 @@ package uno.anahata.asi.yam.tools.benchmarks;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Builder;
 
 /**
@@ -30,7 +29,7 @@ import lombok.Builder;
  * @param thoughtsTokens The total internal reasoning (thinking) tokens generated across all turns.
  * @param totalTokens The total interaction tokens reported by the provider.
  * @param passed Whether the benchmark test completed successfully with zero defects.
- * @param judgeScores A map of judge names to their given ratings (e.g. {@code "Pablo" -> 9.0, "Vijay" -> 8.5}).
+ * @param judgeScores A list of {@link JudgeScore} evaluations submitted by individual judges.
  * @param videoUrl The URL to the run demonstration video (e.g. YouTube video).
  * @param screenshotPath The relative or absolute path to the captured execution screenshot.
  * @param sessionId The unique UUID of the child AGI session that executed the test.
@@ -52,7 +51,7 @@ public record BenchmarkRunResult(
         int thoughtsTokens,
         int totalTokens,
         boolean passed,
-        Map<String, Double> judgeScores,
+        List<JudgeScore> judgeScores,
         String videoUrl,
         String screenshotPath,
         String sessionId,
@@ -73,14 +72,14 @@ public record BenchmarkRunResult(
      * @param thoughtsTokens Thoughts tokens.
      * @param totalTokens Total tokens.
      * @param passed Passed flag.
-     * @param judgeScores Judge scores map.
+     * @param judgeScores The list of judge scores.
      * @param videoUrl Video URL.
      * @param screenshotPath Screenshot path.
      * @param sessionId Session UUID.
      * @param observations Observations.
      */
     public BenchmarkRunResult {
-        judgeScores = judgeScores != null ? new HashMap<>(judgeScores) : new HashMap<>();
+        judgeScores = judgeScores != null ? new ArrayList<>(judgeScores) : new ArrayList<>();
     }
 
     /**
@@ -93,8 +92,9 @@ public record BenchmarkRunResult(
         if (judgeScores == null || judgeScores.isEmpty()) {
             return null;
         }
-        return judgeScores.values().stream()
-                .mapToDouble(Double::doubleValue)
+        return judgeScores.stream()
+                .filter(judge -> judge != null)
+                .mapToDouble(JudgeScore::score)
                 .average()
                 .orElse(0.0);
     }

@@ -67,29 +67,17 @@ public class OpenAiChatCompletionsProvider extends AbstractAiProvider {
     }
 
     /**
-     * Constructs a new universal provider with basic configuration.
+     * Constructs a new universal provider with a custom acquisition URI.
      * @param uuid The unique provider ID.
      * @param displayName The user-facing name.
      * @param baseUrl The API endpoint URL.
+     * @param apiKeyAcquisitionUri The URI where users can obtain API keys for this provider.
      */
-    public OpenAiChatCompletionsProvider(String uuid, String displayName, String baseUrl) {
-        this(uuid, displayName, baseUrl, null, null);
-    }
-
-    /**
-     * Constructs a new universal provider with a custom storage folder and acquisition URI.
-     * @param uuid The unique provider ID.
-     * @param displayName The user-facing name.
-     * @param baseUrl The API endpoint URL.
-     * @param folderName The custom folder name for configuration and key storage.
-     * @param apiKeyAdquisitionUri The URI where users can obtain API keys for this provider.
-     */
-    public OpenAiChatCompletionsProvider(String uuid, String displayName, String baseUrl, String folderName, String apiKeyAdquisitionUri) {
+    public OpenAiChatCompletionsProvider(String uuid, String displayName, String baseUrl, String apiKeyAcquisitionUri) {
         super(uuid);
         setDisplayName(displayName);
         setBaseUrl(baseUrl);
-        setKeysAcquisitionUri(apiKeyAdquisitionUri);
-        setFolderName(folderName);
+        setKeysAcquisitionUri(apiKeyAcquisitionUri);
         setDescription("Universal OpenAI-compatible client for Groq, DeepSeek, Ollama, etc.");
         setTokenizerType(TokenizerType.CL100K_BASE);
     }
@@ -157,18 +145,7 @@ public class OpenAiChatCompletionsProvider extends AbstractAiProvider {
         return statusCode == 429 || statusCode == 503 || statusCode == 500 || statusCode == 499 || statusCode == 408;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Triggers a hokus-pocus rotation to the next API key in the pool, rebinding any active clients.
-     * </p>
-     */
-    @Override
-    public void hokusPocus() {
-        super.hokusPocus(); 
-        getNextKey();
-    }
-
+    
     /**
      * {@inheritDoc}
      * <p>

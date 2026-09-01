@@ -111,6 +111,32 @@ public class NetBeansAsiContainer extends AbstractSwingAsiContainer {
         return new NetBeansAgiConfig(this);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Queries the NetBeans Module System for the active implementation or specification version
+     * of the Anahata ASI NetBeans module ({@code uno.anahata.asi.nb}).
+     * </p>
+     */
+    @Override
+    public String getContainerImplementationVersion() {
+        try {
+            org.openide.modules.ModuleInfo info = org.openide.modules.Modules.getDefault().ownerOf(getClass());
+            if (info != null) {
+                String implVer = info.getImplementationVersion();
+                if (implVer != null && !implVer.isBlank()) {
+                    return implVer;
+                }
+                if (info.getSpecificationVersion() != null) {
+                    return info.getSpecificationVersion().toString();
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Could not resolve NetBeans module version from ModuleInfo", e);
+        }
+        return super.getContainerImplementationVersion();
+    }
+
     @Override
     protected void focusUI(Agi agi) {
         AgiTopComponent atc = findTopComponent(agi);

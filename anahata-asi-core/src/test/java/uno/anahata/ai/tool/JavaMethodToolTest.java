@@ -8,6 +8,7 @@ package uno.anahata.ai.tool;
 import uno.anahata.asi.agi.tool.ToolManager;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.Map;
+import lombok.SneakyThrows;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,7 @@ public class JavaMethodToolTest {
      * Initializes the test environment with a mock container and toolkit.
      */
     @BeforeAll
+    @SneakyThrows
     public static void setUp() {
         AbstractAsiContainer container = new MockAsiContainer("test-app");
         AgiConfig config = new AgiConfig(container, "test-session");

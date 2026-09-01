@@ -127,18 +127,13 @@ public class AsiDesktopMainPanel extends JPanel {
         asiContainerPanel.showPreferences();
     }
     /**
-     * Starts the background refresh of the session list and loads persisted sessions.
-     * If no sessions are loaded, a new empty agi is created.
+     * Starts the background refresh of the session list and loads persisted
+     * sessions. If no sessions are loaded, a new empty agi is created.
      */
     public void start() {
         asiContainerPanel.startRefresh();
 
-        // 1. Container-wide Model Discovery Task
-        new SwingTask<>(this, asiContainer, "Discovering AI Models", () -> {
-            return asiContainer.getAllModels(true);
-        }).start();
-
-        // 2. Container-wide Session Restoration Task
+        // Container-wide Session Restoration Task
         new SwingTask<>(this, asiContainer, "Restoring Sessions", () -> {
             asiContainer.loadSessions();
             return null;

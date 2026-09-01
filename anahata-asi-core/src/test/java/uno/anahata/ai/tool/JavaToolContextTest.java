@@ -4,6 +4,7 @@ package uno.anahata.ai.tool;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,6 +36,7 @@ public class JavaToolContextTest {
      * the mock toolkit before each test run.
      */
     @BeforeEach
+    @SneakyThrows
     public void setup() {
         AbstractAsiContainer container = new MockAsiContainer("test-app");
         AgiConfig config = new AgiConfig(container);

@@ -143,17 +143,6 @@ public class HardcodedGeminiModel extends GeminiModel {
     /**
      * {@inheritDoc}
      * <p>
-     * Returns a simple description for hardcoded models.
-     * </p>
-     */
-    @Override
-    public String getDescription() {
-        return "Hardcoded model manifest for restricted API environments.";
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
      * Returns a basic metadata summary for the model.
      * </p>
      */

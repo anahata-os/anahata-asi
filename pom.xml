@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>uno.anahata</groupId>
     <artifactId>anahata-asi-parent</artifactId>
-    <version>1.1.14-SNAPSHOT</version>
+    <version>1.2.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Anahata ASI Parent</name>
     <description>Parent POM for the Anahata ASI multi-module project.</description>
@@ -323,6 +323,14 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>${maven-jar-plugin.version}</version>
+                    <configuration>
+                        <archive>
+                            <manifest>
+                                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                            </manifest>
+                        </archive>
+                    </configuration>
                 </plugin>
                 <!-- Surefire Plugin for running tests -->
                 <plugin>

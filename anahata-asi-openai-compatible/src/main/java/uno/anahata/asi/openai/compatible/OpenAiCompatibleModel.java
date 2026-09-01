@@ -245,14 +245,6 @@ public class OpenAiCompatibleModel extends AbstractModel {
      * {@inheritDoc}
      */
     @Override
-    public String getDescription() {
-        return modelId;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public List<String> getSupportedActions() {
         return List.of("chat/completions");
     }

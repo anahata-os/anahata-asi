@@ -42,8 +42,7 @@ public class HuggingFaceProvider extends OpenAiChatCompletionsProvider {
      * and pre-configured endpoint and acquisition URIs.
      */
     public HuggingFaceProvider() {
-        super("HuggingFace", "Hugging Face", "https://router.huggingface.co/v1",
-                "HuggingFace", "https://huggingface.co/settings/tokens");
+        super("HuggingFace", "Hugging Face", "https://router.huggingface.co/v1", "https://huggingface.co/settings/tokens");
         setDescription("Hugging Face Serverless Inference API client for open-source models.");
     }
 

@@ -23,11 +23,12 @@ import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.persistence.kryo.KryoUtils;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.agi.provider.AbstractModel;
+import uno.anahata.asi.swing.components.ExceptionDialog;
 import uno.anahata.asi.swing.icons.SaveIcon;
 import uno.anahata.asi.swing.icons.SearchIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingTask;
-import uno.anahata.asi.swing.provider.AiProviderRegistryViewer;
+import uno.anahata.asi.swing.provider.AiModelsPanel;
 import uno.anahata.asi.swing.provider.AiProviderRenderer;
 import uno.anahata.asi.swing.provider.ModelRenderer;
 
@@ -85,6 +86,11 @@ public class HeaderPanel extends JPanel {
      * The button to open the global model registry viewer for deep exploration.
      */
     private JButton searchModelsButton;
+
+    /**
+     * Active listener for changes in the selected provider's models list.
+     */
+    private EdtPropertyChangeListener providerModelsListener;
 
     /**
      * Constructs the header panel and initializes references.
@@ -230,7 +236,7 @@ public class HeaderPanel extends JPanel {
         }, allModels -> {
             JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "AI Provider & Model Registry", JDialog.ModalityType.MODELESS);
 
-            AiProviderRegistryViewer viewer = new AiProviderRegistryViewer(allModels, selectedModel -> {
+            AiModelsPanel viewer = new AiModelsPanel(allModels, selectedModel -> {
                 dialog.dispose();
                 // 1. Update domain model first so updateModelsForSelectedProvider picks it up
                 agi.setSelectedModel(selectedModel);
@@ -258,53 +264,66 @@ public class HeaderPanel extends JPanel {
     /**
      * Updates the model combo box items based on the currently selected
      * provider.
-     * <p>This operation is performed asynchronously to avoid freezing the EDT 
-     * while the provider fetches fresh models from its API.</p>
      */
     private void updateModelsForSelectedProvider() {
         AbstractAiProvider selectedProvider = (AbstractAiProvider) providerComboBox.getSelectedItem();
         
+        if (providerModelsListener != null) {
+            providerModelsListener.unbind();
+            providerModelsListener = null;
+        }
+
         if (selectedProvider != null) {
-            // Visual feedback: disable selection while discovery is in progress
-            modelComboBox.setEnabled(false);
-            
-            new SwingTask<List<? extends AbstractModel>>(agiPanel, "Discovering Models", () -> {
-                return selectedProvider.getModels();
-            }, models -> {
-                DefaultComboBoxModel<AbstractModel> comboModel = new DefaultComboBoxModel<>();
-                for (AbstractModel model : models) {
-                    comboModel.addElement(model);
-                }
-                modelComboBox.setModel(comboModel);
-                modelComboBox.setEnabled(true);
-                
-                // Restore selection from domain if it belongs to this provider
-                AbstractModel currentAgiModel = agi.getSelectedModel();
-                if (currentAgiModel != null && currentAgiModel.getProviderId().equals(selectedProvider.getProviderId())) {
-                    for (int i = 0; i < modelComboBox.getItemCount(); i++) {
-                        if (modelComboBox.getItemAt(i).getModelId().equals(currentAgiModel.getModelId())) {
-                            modelComboBox.setSelectedIndex(i);
-                            return;
-                        }
-                    }
-                }
-                
-                // Fallback to first model if nothing selected
-                if (modelComboBox.getItemCount() > 0 && (modelComboBox.getSelectedIndex() == -1 || agi.getSelectedModel() == null)) {
-                    modelComboBox.setSelectedIndex(0);
-                }
-                
-                // Explicitly sync back to domain to ensure the Agi session is aware of the final choice
-                AbstractModel selected = (AbstractModel) modelComboBox.getSelectedItem();
-                if (selected != null) {
-                    agi.setSelectedModel(selected);
-                }
-            }, error -> {
-                log.error("Failed to discover models for provider: {}", selectedProvider.getDisplayName(), error);
-                modelComboBox.setEnabled(true);
-            }, false).start();
+            providerModelsListener = new EdtPropertyChangeListener(this, selectedProvider, "models", evt -> {
+                refreshModelsComboFromProvider(selectedProvider);
+            });
+            refreshModelsComboFromProvider(selectedProvider);
         } else {
             modelComboBox.setModel(new DefaultComboBoxModel<>());
+        }
+    }
+
+    /**
+     * Refreshes the models combo box from the provider's local models list, preserving the current selection.
+     *
+     * @param selectedProvider The active AI provider.
+     */
+    private void refreshModelsComboFromProvider(AbstractAiProvider selectedProvider) {
+        List<AbstractModel> models = selectedProvider.getEnabledModels();
+        if (models.isEmpty()) {
+            models = selectedProvider.getModels();
+        }
+
+        DefaultComboBoxModel<AbstractModel> comboModel = new DefaultComboBoxModel<>();
+        for (AbstractModel model : models) {
+            comboModel.addElement(model);
+        }
+        modelComboBox.setModel(comboModel);
+        modelComboBox.setEnabled(true);
+
+        // 1. Check if the newly selected provider has a model with the exact same model ID
+        AbstractModel currentAgiModel = agi.getSelectedModel();
+        if (currentAgiModel != null) {
+            String targetModelId = currentAgiModel.getModelId();
+            for (int i = 0; i < modelComboBox.getItemCount(); i++) {
+                if (modelComboBox.getItemAt(i).getModelId().equals(targetModelId)) {
+                    modelComboBox.setSelectedIndex(i);
+                    AbstractModel matched = modelComboBox.getItemAt(i);
+                    agi.setSelectedModel(matched);
+                    return;
+                }
+            }
+        }
+
+        // 2. Fallback to first model if no matching modelId found
+        if (modelComboBox.getItemCount() > 0) {
+            modelComboBox.setSelectedIndex(0);
+        }
+
+        // Explicitly sync back to domain
+        AbstractModel selected = (AbstractModel) modelComboBox.getSelectedItem();
+        if (selected != null) {
+            agi.setSelectedModel(selected);
         }
     }
 
@@ -378,7 +397,12 @@ public class HeaderPanel extends JPanel {
             "Dispose Session", JOptionPane.YES_NO_OPTION);
 
         if (result == JOptionPane.YES_OPTION) {
-            agi.getConfig().getAsiContainer().dispose(agi);
+            try {
+                agi.getConfig().getAsiContainer().dispose(agi);
+            } catch (Exception e) {
+                log.error("Exception disposing session");
+                ExceptionDialog.show(agiPanel, "Dispose Session", "Could not dispose session!!!!", e);
+            }
         }
     }
 

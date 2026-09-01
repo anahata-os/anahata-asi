@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import lombok.SneakyThrows;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.tool.ToolPermission;
 import uno.anahata.asi.toolkit.History;
@@ -91,11 +92,11 @@ public class Agi1TestCatalog extends TestCatalog {
             .build();
     
     /**
-     * Test #3: Classic Snake Game.
+     * Test #4: Nou Camp Nou 3D Stadium Model.
      */
     public static final TestDefinition JAVA_3D_NOU_CAMP_NOU_1 = TestDefinition.builder()
             .testCode("JAVA-NOU-CAMP-NOU-1")
-            .title("Snake Game")
+            .title("Nou Camp Nou 3D Model")
             .rawPrompt("Make a 3D model of what the Nou Camp Nou will look like when completed")
             .toolkits(List.of(
                     ToolkitSettings.of(Java.class, "compileAndExecute", ToolPermission.APPROVE_ALWAYS),
@@ -111,16 +112,14 @@ public class Agi1TestCatalog extends TestCatalog {
      *
      * @return The path to the Anahata-AGI-1 results directory.
      */
+    @SneakyThrows
     public static Path resolveOfficialResultsDirectory() {
         Path devWebPath = Paths.get(System.getProperty("user.home"), "NetBeansProjects", "anahata-asi-parent",
                 "anahata-asi-web", "src", "main", "resources", "web", "benchmarks", "anahata-agi-1");
         if (Files.exists(devWebPath)) {
             return devWebPath;
         }
-        Path relativeWebPath = Paths.get("anahata-asi-web", "src", "main", "resources", "web", "benchmarks", "anahata-agi-1");
-        if (Files.exists(relativeWebPath)) {
-            return relativeWebPath;
-        }
+
         return AbstractAsiContainer.getWorkDirSubDir("benchmarks").resolve("anahata-agi-1");
     }
 
