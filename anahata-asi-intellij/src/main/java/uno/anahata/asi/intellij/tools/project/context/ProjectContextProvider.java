@@ -2,6 +2,8 @@
 package uno.anahata.asi.intellij.tools.project.context;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.projectRoots.Sdk;
+import com.intellij.openapi.roots.ProjectRootManager;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.context.ContextPosition;
 import uno.anahata.asi.agi.message.RagMessage;
@@ -85,7 +87,17 @@ public class ProjectContextProvider extends AbstractProjectContextProvider {
                 // Ignore
             }
         }
-        sb.append("  - Java Version: JDK 21 (source)\n");
+        Project p = getProject();
+        if (p != null) {
+            Sdk sdk = ProjectRootManager.getInstance(p).getProjectSdk();
+            if (sdk != null) {
+                sb.append("  - Project SDK: `").append(sdk.getName()).append("` (")
+                  .append(sdk.getVersionString() != null ? sdk.getVersionString() : "unknown").append(")\n");
+                sb.append("    * Home Path: `").append(sdk.getHomePath()).append("`\n");
+            } else {
+                sb.append("  - Project SDK: ⚠️ **Not Configured** (use `Projects.autoConfigureProjectSdk` or `Projects.setProjectSdk`)\n");
+            }
+        }
         ragMessage.addTextPart(sb.toString());
     }
 

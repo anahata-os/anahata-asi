@@ -42,8 +42,8 @@ public class AgiContextDecorator implements ProjectViewNodeDecorator {
         }
         int sessions = AgiContext.sessionsContaining(file);
         if (sessions > 0) {
-            String marker = sessions > 1 ? " ● AGI ×" + sessions : " ● AGI";
-            data.addText(marker, SimpleTextAttributes.GRAYED_ATTRIBUTES);
+            String marker = sessions > 1 ? " ● AGI (" + sessions + ")" : " ● AGI";
+            data.setLocationString(marker);
         }
     }
 }

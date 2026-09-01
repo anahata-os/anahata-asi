@@ -23,6 +23,7 @@ import com.intellij.psi.codeStyle.JavaCodeStyleManager;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.agi.tool.AgiToolParam;
@@ -94,32 +95,65 @@ public class BatchCodeRefiner extends AnahataToolkit {
     public String refine(
             @AgiToolParam("The batch of member-level modifications to apply.") CodeRefinementBatch batch) throws AgiToolException {
 
-        PsiJavaFile javaFile = resolveJavaFile(batch.getFilePath());
+        PsiJavaFile javaFile = resolveJavaFile(batch);
         Project project = javaFile.getProject();
         String fileName = javaFile.getName();
 
         String before = ReadAction.compute(javaFile::getText);
 
-        runWrite(project, () -> {
-            PsiElementFactory factory = JavaPsiFacade.getElementFactory(project);
-            for (CodeRefinementIntent intent : batch.getIntents()) {
-                applyIntent(project, factory, intent);
-            }
-            JavaCodeStyleManager styleManager = JavaCodeStyleManager.getInstance(project);
-            styleManager.shortenClassReferences(javaFile);
-            if (batch.isOptimizeImports()) {
-                styleManager.optimizeImports(javaFile);
-            }
-            CodeStyleManager.getInstance(project).reformat(javaFile);
-            if (batch.isSave()) {
-                saveFile(project, javaFile);
-            }
-        });
+        if (batch.getManualOverride() != null && !batch.getManualOverride().isBlank()) {
+            runWrite(project, () -> {
+                Document doc = FileDocumentManager.getInstance().getDocument(javaFile.getVirtualFile());
+                if (doc != null) {
+                    doc.setText(batch.getManualOverride());
+                }
+                if (batch.isSave()) {
+                    saveFile(project, javaFile);
+                }
+            });
+        } else {
+            runWrite(project, () -> {
+                PsiElementFactory factory = JavaPsiFacade.getElementFactory(project);
+                for (CodeRefinementIntent intent : batch.getIntents()) {
+                    applyIntent(project, factory, intent);
+                }
+                JavaCodeStyleManager styleManager = JavaCodeStyleManager.getInstance(project);
+                styleManager.shortenClassReferences(javaFile);
+                if (batch.isOptimizeImports()) {
+                    styleManager.optimizeImports(javaFile);
+                }
+                CodeStyleManager.getInstance(project).reformat(javaFile);
+                if (batch.isSave()) {
+                    saveFile(project, javaFile);
+                }
+            });
+        }
 
         String after = ReadAction.compute(javaFile::getText);
-        String diff = AnahataDiffUtils.generateUnifiedDiff(before, after, fileName);
+        String diff = AnahataDiffUtils.generateUnifiedDiff(fileName, before, after);
         log(diff);
         return diff;
+    }
+
+    /**
+     * Resolves the target Java file from either explicit filePath or the session's resource UUID.
+     *
+     * @param batch the refinement batch.
+     * @return the resolved Java PSI file.
+     * @throws AgiToolException if file cannot be resolved.
+     */
+    private PsiJavaFile resolveJavaFile(CodeRefinementBatch batch) throws AgiToolException {
+        String filePath = batch.getFilePath();
+        if (filePath == null && batch.getResourceUuid() != null) {
+            Resource r = getToolContext().getResourceManager().get(batch.getResourceUuid());
+            if (r != null && r.getHandle() instanceof uno.anahata.asi.agi.resource.handle.PathHandle ph) {
+                filePath = ph.getPath();
+            }
+        }
+        if (filePath == null) {
+            throw new AgiToolException("Neither filePath nor a valid resourceUuid was provided for refinement batch.");
+        }
+        return resolveJavaFile(filePath);
     }
 
     //<editor-fold defaultstate="collapsed" desc="Intent application">

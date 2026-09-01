@@ -231,7 +231,7 @@ public class Hints extends AnahataToolkit {
         List<HighlightInfo> infos = new ArrayList<>();
         ProgressManager.getInstance().runProcess(() -> {
             DaemonCodeAnalyzerImpl analyzer = (DaemonCodeAnalyzerImpl) DaemonCodeAnalyzer.getInstance(project);
-            infos.addAll(analyzer.runMainPasses(psiFile, document, new EmptyProgressIndicator()));
+            ReadAction.run(() -> infos.addAll(analyzer.runMainPasses(psiFile, document, new EmptyProgressIndicator())));
         }, new EmptyProgressIndicator());
         return infos;
     }

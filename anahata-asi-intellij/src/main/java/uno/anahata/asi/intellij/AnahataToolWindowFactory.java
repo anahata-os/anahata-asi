@@ -53,6 +53,7 @@ public class AnahataToolWindowFactory implements ToolWindowFactory {
      */
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+        IntellijAsiContainer.initEnvironment();
         IntellijAsiContainer asiContainer = new IntellijAsiContainer(toolWindow);
         // Keep the persisted AGI template's toolkit list in sync with the currently registered
         // toolkits, so newly added toolkits appear in Preferences and in new sessions.

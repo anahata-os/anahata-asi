@@ -44,19 +44,23 @@ public class IntellijAsiContainer extends AbstractSwingAsiContainer {
     private static final List<IntellijAsiContainer> INSTANCES = new CopyOnWriteArrayList<>();
 
     /**
-     * Registers the IntelliJ diff visualization for the core text-write tool arguments.
-     * <p>
-     * Mirrors the NetBeans container's renderer registration: each concrete
-     * {@code AbstractTextResourceWrite} DTO type is mapped to the shared
-     * {@link IntellijTextResourceWriteRenderer}, so every file-writing tool call renders as
-     * an editable side-by-side diff instead of raw JSON.
-     * </p>
+     * Registers the IntelliJ diff visualization for the core text-write tool arguments and the IntelliJ ResourceUI.
      */
     static {
+        initEnvironment();
+    }
+
+    /**
+     * Bootstraps the IntelliJ global environment configuration, registering parameter
+     * renderers, JSON serialization modules, and the IntelliJ native {@link uno.anahata.asi.swing.agi.resources.ResourceUI} strategy.
+     */
+    public static void initEnvironment() {
         ParameterRendererFactory.register(FullTextResourceUpdate.class, IntellijTextResourceWriteRenderer.class);
         ParameterRendererFactory.register(FullTextFileCreate.class, IntellijTextResourceWriteRenderer.class);
         ParameterRendererFactory.register(TextResourceReplacements.class, IntellijTextResourceWriteRenderer.class);
         ParameterRendererFactory.register(TextResourceLineEdits.class, IntellijTextResourceWriteRenderer.class);
+        ParameterRendererFactory.register(uno.anahata.asi.intellij.tools.java.coderefiner.CodeRefinementBatch.class, IntellijTextResourceWriteRenderer.class);
+        uno.anahata.asi.swing.agi.resources.ResourceUiRegistry.getInstance().setResourceUI(new uno.anahata.asi.intellij.ui.resources.IntellijResourceUI());
     }
 
     /**
