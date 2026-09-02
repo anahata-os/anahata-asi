@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
 /**
@@ -152,7 +153,7 @@ public class KryoUtils {
         }
         byte[] bytes = byteArrayOutputStream.toByteArray();
         long end = System.currentTimeMillis();
-        log.info("Kryo serialization of {} took {} ms, size: {} bytes", object.getClass().getSimpleName(), (end - start), bytes.length);
+        log.info("Kryo serialization of {} took {} ms, size: {}", object.getClass().getSimpleName(), (end - start), FileUtils.byteCountToDisplaySize(bytes.length));
         return bytes;
     }
 
@@ -170,8 +171,9 @@ public class KryoUtils {
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
         try (Input input = new Input(byteArrayInputStream)) {
             Object object = kryo.readClassAndObject(input);
+            String className = object != null ? object.getClass().getSimpleName() : clazz.getSimpleName();
             long end = System.currentTimeMillis();
-            log.info("Kryo deserialization of {} took {} ms, size: {} bytes", clazz.getSimpleName(), (end - start), bytes.length);
+            log.info("Kryo deserialization of {} took {} ms, size: {}", className, (end - start), FileUtils.byteCountToDisplaySize(bytes.length));
             return clazz.cast(object);
         }
     }
