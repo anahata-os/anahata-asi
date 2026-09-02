@@ -8,7 +8,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.AsiContainerPreferences;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.intellij.ui.IntellijTextResourceWriteRenderer;
@@ -106,40 +105,6 @@ public class IntellijAsiContainer extends AbstractSwingAsiContainer {
      */
     public static void removeInstance(IntellijAsiContainer container) {
         INSTANCES.remove(container);
-    }
-
-    /**
-     * Reconciles the persisted AGI template's toolkit list with the toolkits currently registered
-     * in {@link IntellijAgiConfig}.
-     * <p>
-     * The template config is persisted via Kryo, which bypasses {@code IntellijAgiConfig}'s instance
-     * initializer on restore — so newly registered toolkits never reach the stored template, and
-     * therefore never appear in Preferences or in new sessions (which are cloned from the template).
-     * This adds any missing toolkit classes and drops any obsolete ones, preserving all other
-     * template settings, and persists the result only when it actually changed. It is idempotent and
-     * safe to call on every tool-window open.
-     * </p>
-     */
-    public void syncTemplateToolkits() {
-        AsiContainerPreferences preferences = getPreferences();
-        preferences.ensureTemplatesInitialized(this);
-
-        List<Class<?>> templateTools = preferences.getAgiTemplate().getToolClasses();
-        List<Class<?>> currentTools = createNewAgiConfig().getToolClasses();
-
-        boolean changed = false;
-        for (Class<?> toolClass : currentTools) {
-            if (!templateTools.contains(toolClass)) {
-                templateTools.add(toolClass);
-                changed = true;
-            }
-        }
-        changed |= templateTools.removeIf(toolClass -> !currentTools.contains(toolClass));
-
-        if (changed) {
-            savePreferences();
-            log.info("Synced AGI template toolkits with the registered defaults ({} toolkits).", templateTools.size());
-        }
     }
 
     /**

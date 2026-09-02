@@ -55,9 +55,6 @@ public class AnahataToolWindowFactory implements ToolWindowFactory {
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         IntellijAsiContainer.initEnvironment();
         IntellijAsiContainer asiContainer = new IntellijAsiContainer(toolWindow);
-        // Keep the persisted AGI template's toolkit list in sync with the currently registered
-        // toolkits, so newly added toolkits appear in Preferences and in new sessions.
-        asiContainer.syncTemplateToolkits();
         // Deregister the container from the live registry when the project is disposed,
         // so closed projects no longer surface stale sessions to the Project-view UI.
         Disposer.register(project, () -> IntellijAsiContainer.removeInstance(asiContainer));

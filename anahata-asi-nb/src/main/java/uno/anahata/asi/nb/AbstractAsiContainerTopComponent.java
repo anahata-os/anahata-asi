@@ -6,24 +6,24 @@ import lombok.Getter;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
-import uno.anahata.asi.swing.AbstractAsiContainerPanel;
+import uno.anahata.asi.swing.AbstractAsiContainerDashboardPanel;
 
 /**
  * Abstract base class for container-level dashboard {@link TopComponent}s
  * (Cards and Table views).
  * <p>
- * Manages the embedding of an {@link AbstractAsiContainerPanel}, automatically
+ * Manages the embedding of an {@link AbstractAsiContainerDashboardPanel}, automatically
  * binding its periodic refresh timer to the TopComponent's visibility lifecycle
  * ({@link #componentOpened()} and {@link #componentClosed()}), and implementing
  * {@link ReloadableTopComponent} to guarantee timer stoppage during module
  * reloads.
  * </p>
  *
- * @param <P> The concrete {@link AbstractAsiContainerPanel} type.
+ * @param <P> The concrete {@link AbstractAsiContainerDashboardPanel} type.
  * @author anahata
  */
 @Getter
-public abstract class AbstractAsiContainerTopComponent<P extends AbstractAsiContainerPanel>
+public abstract class AbstractAsiContainerTopComponent<P extends AbstractAsiContainerDashboardPanel>
         extends TopComponent implements ReloadableTopComponent {
 
     /**

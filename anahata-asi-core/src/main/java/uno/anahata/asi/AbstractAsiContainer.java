@@ -121,9 +121,9 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
      *
      * @param hostApplicationId A unique identifier for the host application
      * (e.g., "netbeans").
-     * @throws IOException If creating directories or loading providers fails.
      */
-    public AbstractAsiContainer(String hostApplicationId) throws IOException {
+    @SneakyThrows
+    public AbstractAsiContainer(String hostApplicationId) {
         this.hostApplicationId = hostApplicationId;
         //this.preferences = AsiContainerPreferences.load(this);
         //this.preferences.ensureTemplatesInitialized(this);
@@ -139,9 +139,9 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
      * provider entities.
      *
      * @return The number of providers loaded from disk.
-     * @throws IOException If listing the providers directory fails.
      */
-    public int loadProvidersFromDisk() throws IOException {
+    @SneakyThrows
+    public int loadProvidersFromDisk() {
         Path providersDir = getProvidersDir();
 
         int loadedCount = 0;
@@ -1008,9 +1008,9 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
      * is typically called during application startup.
      *
      * @return The number of sessions that failed to load.
-     * @throws IOException If listing the sessions directory fails.
      */
-    public int loadSessions() throws IOException {
+    @SneakyThrows
+    public int loadSessions() {
         Path sessionsDir = getSessionsDir();
 
         AtomicInteger failedCount = new AtomicInteger(0);
