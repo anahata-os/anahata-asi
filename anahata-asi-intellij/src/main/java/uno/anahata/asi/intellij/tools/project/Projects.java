@@ -7,6 +7,10 @@ import com.intellij.openapi.compiler.CompilerManager;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.projectRoots.JavaSdk;
+import com.intellij.openapi.projectRoots.ProjectJdkTable;
+import com.intellij.openapi.projectRoots.Sdk;
+import com.intellij.openapi.roots.ProjectRootManager;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.context.ContextProvider;
 import uno.anahata.asi.intellij.tools.project.context.ProjectContextProvider;
@@ -346,6 +350,9 @@ public class Projects extends AnahataToolkit {
             throw new AgiToolException("Project is not open: " + projectPath);
         }
 
+        // Auto-configure SDK if not set
+        ensureProjectSdkConfigured(project);
+
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<String> summary = new AtomicReference<>("Build did not report a result.");
         ApplicationManager.getApplication().invokeLater(() -> {
@@ -404,6 +411,290 @@ public class Projects extends AnahataToolkit {
                 return project;
             }
         }
+        return null;
+    }
+
+    /**
+     * Returns information about the currently configured Project SDK for an open project.
+     *
+     * @param projectPath The absolute path of the open project.
+     * @return A formatted summary of the configured SDK, or an unconfigured warning.
+     * @throws AgiToolException if the project is not open.
+     */
+    @AgiTool("Returns the currently configured Project SDK for an open project.")
+    public String getProjectSdk(
+            @AgiToolParam("The absolute path of the open project.") String projectPath) throws AgiToolException {
+        Project project = findProjectByPath(projectPath);
+        if (project == null) {
+            throw new AgiToolException("Project is not open: " + projectPath);
+        }
+
+        Sdk sdk = ProjectRootManager.getInstance(project).getProjectSdk();
+        if (sdk == null) {
+            return "Project SDK is NOT configured for " + project.getName() + " (" + projectPath + ").";
+        }
+
+        return "Project SDK for " + project.getName() + ":\n" +
+                "  - Name: " + sdk.getName() + "\n" +
+                "  - Version: " + (sdk.getVersionString() != null ? sdk.getVersionString() : "unknown") + "\n" +
+                "  - Home Path: " + sdk.getHomePath() + "\n" +
+                "  - Type: " + sdk.getSdkType().getName();
+    }
+
+    /**
+     * Lists all JDKs registered in IntelliJ's ProjectJdkTable as well as suggested system JDK paths.
+     *
+     * @return A formatted list of available SDKs and detected system JDK paths.
+     */
+    @AgiTool("Lists all configured SDKs in IntelliJ and available system JDK home paths.")
+    public String listAvailableSdks() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("## Registered IntelliJ SDKs\n");
+
+        Sdk[] allJdks = ProjectJdkTable.getInstance().getAllJdks();
+        if (allJdks.length == 0) {
+            sb.append("- None registered in ProjectJdkTable.\n");
+        } else {
+            for (Sdk sdk : allJdks) {
+                sb.append("- **").append(sdk.getName()).append("** (")
+                  .append(sdk.getVersionString() != null ? sdk.getVersionString() : "unknown").append(")\n")
+                  .append("  * Home Path: `").append(sdk.getHomePath()).append("`\n")
+                  .append("  * Type: ").append(sdk.getSdkType().getName()).append("\n");
+            }
+        }
+
+        sb.append("\n## Detected System JDK Home Paths\n");
+        try {
+            JavaSdk javaSdk = JavaSdk.getInstance();
+            java.util.Collection<String> suggested = javaSdk.suggestHomePaths();
+            if (suggested.isEmpty()) {
+                sb.append("- None auto-detected by JavaSdk.\n");
+            } else {
+                for (String path : suggested) {
+                    String version = javaSdk.getVersionString(path);
+                    sb.append("- `").append(path).append("` (Version: ").append(version != null ? version : "unknown").append(")\n");
+                }
+            }
+        } catch (Throwable t) {
+            sb.append("- Error querying suggested home paths: ").append(t.getMessage()).append("\n");
+        }
+
+        String javaHome = System.getProperty("java.home");
+        if (javaHome != null) {
+            sb.append("- Running IDE Runtime: `").append(javaHome).append("`\n");
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * Configures the project SDK for an open project.
+     * <p>
+     * If an existing registered SDK name is supplied (e.g. {@code "21"} or {@code "corretto-25"}),
+     * it is attached directly to the project. If a directory path to a JDK home is supplied,
+     * the JDK is first registered in {@link ProjectJdkTable} and then attached to the project.
+     * </p>
+     *
+     * @param projectPath        The absolute path of the open project.
+     * @param sdkNameOrHomePath  The registered SDK name or absolute path to a JDK home directory.
+     * @return A confirmation message describing the configured SDK.
+     * @throws AgiToolException if the project is not open or the SDK could not be configured.
+     */
+    @AgiTool("Configures the project SDK for an open project, either by registered SDK name or by JDK home directory path.")
+    public String setProjectSdk(
+            @AgiToolParam("The absolute path of the open project.") String projectPath,
+            @AgiToolParam("The registered SDK name or absolute path to a JDK home directory.") String sdkNameOrHomePath) throws AgiToolException {
+
+        Project project = findProjectByPath(projectPath);
+        if (project == null) {
+            throw new AgiToolException("Project is not open: " + projectPath);
+        }
+
+        if (sdkNameOrHomePath == null || sdkNameOrHomePath.isBlank()) {
+            throw new AgiToolException("SDK name or home path cannot be blank.");
+        }
+
+        AtomicReference<Sdk> selectedSdk = new AtomicReference<>();
+        ProjectJdkTable jdkTable = ProjectJdkTable.getInstance();
+
+        // 1. Check if it matches an existing registered SDK name
+        Sdk existing = jdkTable.findJdk(sdkNameOrHomePath.trim());
+        if (existing != null) {
+            selectedSdk.set(existing);
+        } else {
+            // 2. Treat as directory path
+            Path path = Path.of(sdkNameOrHomePath.trim());
+            if (!Files.exists(path) || !Files.isDirectory(path)) {
+                throw new AgiToolException("SDK home path does not exist or is not a directory: " + sdkNameOrHomePath);
+            }
+
+            JavaSdk javaSdk = JavaSdk.getInstance();
+            String homePathStr = path.toAbsolutePath().toString();
+            String suggestedName = javaSdk.suggestSdkName(null, homePathStr);
+            if (suggestedName == null || suggestedName.isBlank()) {
+                suggestedName = "JDK-" + path.getFileName().toString();
+            }
+
+            // Ensure unique name in ProjectJdkTable
+            String finalName = suggestedName;
+            int counter = 1;
+            while (jdkTable.findJdk(finalName) != null && !jdkTable.findJdk(finalName).getHomePath().equals(homePathStr)) {
+                finalName = suggestedName + " (" + (++counter) + ")";
+            }
+
+            Sdk existingByPath = null;
+            for (Sdk s : jdkTable.getAllJdks()) {
+                if (homePathStr.equals(s.getHomePath())) {
+                    existingByPath = s;
+                    break;
+                }
+            }
+
+            if (existingByPath != null) {
+                selectedSdk.set(existingByPath);
+            } else {
+                final String sdkName = finalName;
+                ApplicationManager.getApplication().invokeAndWait(() -> {
+                    ApplicationManager.getApplication().runWriteAction(() -> {
+                        Sdk newJdk = javaSdk.createJdk(sdkName, homePathStr, false);
+                        jdkTable.addJdk(newJdk);
+                        selectedSdk.set(newJdk);
+                        log.info("Registered new JDK in ProjectJdkTable: {} -> {}", sdkName, homePathStr);
+                    });
+                });
+            }
+        }
+
+        Sdk sdkToApply = selectedSdk.get();
+        if (sdkToApply == null) {
+            throw new AgiToolException("Failed to resolve or create SDK for: " + sdkNameOrHomePath);
+        }
+
+        ApplicationManager.getApplication().invokeAndWait(() -> {
+            ApplicationManager.getApplication().runWriteAction(() -> {
+                ProjectRootManager.getInstance(project).setProjectSdk(sdkToApply);
+                log.info("Set project SDK for {} to {}", project.getName(), sdkToApply.getName());
+            });
+        });
+
+        String msg = "Successfully configured Project SDK for " + project.getName() + ": " +
+                sdkToApply.getName() + " (" + (sdkToApply.getVersionString() != null ? sdkToApply.getVersionString() : "") +
+                ") at " + sdkToApply.getHomePath();
+        log(msg);
+        return msg;
+    }
+
+    /**
+     * Automatically discovers the best available JDK on the system and assigns it as the Project SDK.
+     *
+     * @param projectPath The absolute path of the open project.
+     * @return A status message describing the configured SDK.
+     * @throws AgiToolException if the project is not open or no JDK can be found.
+     */
+    @AgiTool("Automatically detects and configures the best available JDK for the project if not already set.")
+    public String autoConfigureProjectSdk(
+            @AgiToolParam("The absolute path of the open project.") String projectPath) throws AgiToolException {
+        Project project = findProjectByPath(projectPath);
+        if (project == null) {
+            throw new AgiToolException("Project is not open: " + projectPath);
+        }
+
+        Sdk sdk = ensureProjectSdkConfigured(project);
+        if (sdk == null) {
+            throw new AgiToolException("Unable to auto-detect or configure a JDK for project: " + projectPath);
+        }
+
+        return "Project SDK for " + project.getName() + " is configured: " +
+                sdk.getName() + " (" + (sdk.getVersionString() != null ? sdk.getVersionString() : "") +
+                ") at " + sdk.getHomePath();
+    }
+
+    /**
+     * Ensures that the specified project has a valid Project SDK attached, auto-detecting and registering
+     * one if needed.
+     *
+     * @param project The open project to inspect.
+     * @return The active or newly configured Sdk, or {@code null} if no JDK could be found.
+     */
+    private Sdk ensureProjectSdkConfigured(Project project) {
+        ProjectRootManager rootManager = ProjectRootManager.getInstance(project);
+        Sdk existing = rootManager.getProjectSdk();
+        if (existing != null) {
+            return existing;
+        }
+
+        log.info("Project SDK is unconfigured for {}. Attempting auto-detection...", project.getName());
+        ProjectJdkTable jdkTable = ProjectJdkTable.getInstance();
+        Sdk[] allJdks = jdkTable.getAllJdks();
+
+        // 1. Prefer an already registered Java SDK
+        JavaSdk javaSdk = JavaSdk.getInstance();
+        for (Sdk s : allJdks) {
+            if (s.getSdkType() instanceof JavaSdk) {
+                ApplicationManager.getApplication().invokeAndWait(() -> {
+                    ApplicationManager.getApplication().runWriteAction(() -> {
+                        rootManager.setProjectSdk(s);
+                    });
+                });
+                log.info("Auto-assigned existing JDK '{}' to project {}", s.getName(), project.getName());
+                return s;
+            }
+        }
+
+        // 2. Look for suggested home paths
+        try {
+            java.util.Collection<String> suggested = javaSdk.suggestHomePaths();
+            for (String homePath : suggested) {
+                if (Files.exists(Path.of(homePath))) {
+                    String name = javaSdk.suggestSdkName(null, homePath);
+                    if (name == null || name.isBlank()) {
+                        name = "JDK-" + Path.of(homePath).getFileName().toString();
+                    }
+                    final String finalName = name;
+                    AtomicReference<Sdk> created = new AtomicReference<>();
+                    ApplicationManager.getApplication().invokeAndWait(() -> {
+                        ApplicationManager.getApplication().runWriteAction(() -> {
+                            Sdk newSdk = javaSdk.createJdk(finalName, homePath, false);
+                            jdkTable.addJdk(newSdk);
+                            rootManager.setProjectSdk(newSdk);
+                            created.set(newSdk);
+                        });
+                    });
+                    if (created.get() != null) {
+                        log.info("Auto-registered and assigned detected JDK '{}' ({}) to project {}",
+                                finalName, homePath, project.getName());
+                        return created.get();
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            log.warn("Error auto-detecting JDK paths: {}", t.getMessage());
+        }
+
+        // 3. Fallback to host running JVM (e.g. JBR)
+        String javaHome = System.getProperty("java.home");
+        if (javaHome != null && Files.exists(Path.of(javaHome))) {
+            try {
+                String name = "IDE-JBR-" + System.getProperty("java.specification.version", "runtime");
+                AtomicReference<Sdk> created = new AtomicReference<>();
+                ApplicationManager.getApplication().invokeAndWait(() -> {
+                    ApplicationManager.getApplication().runWriteAction(() -> {
+                        Sdk newSdk = javaSdk.createJdk(name, javaHome, false);
+                        jdkTable.addJdk(newSdk);
+                        rootManager.setProjectSdk(newSdk);
+                        created.set(newSdk);
+                    });
+                });
+                if (created.get() != null) {
+                    log.info("Auto-registered and assigned host JBR '{}' ({}) to project {}",
+                            name, javaHome, project.getName());
+                    return created.get();
+                }
+            } catch (Throwable t) {
+                log.warn("Error configuring host JBR fallback: {}", t.getMessage());
+            }
+        }
+
         return null;
     }
 }

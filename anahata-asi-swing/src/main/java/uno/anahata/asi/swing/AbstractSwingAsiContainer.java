@@ -46,6 +46,7 @@ import uno.anahata.asi.swing.toolkit.radio.RadioRenderer;
 import uno.anahata.asi.swing.toolkit.render.ToolkitUiRegistry;
 import uno.anahata.asi.toolkit.resources.text.FullTextFileCreate;
 import uno.anahata.asi.yam.tools.Radio;
+import lombok.SneakyThrows;
 
 /**
  * A Swing-specific base class for Anahata ASI containers.
@@ -134,7 +135,8 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
      *
      * @param hostApplicationId The unique ID of the host application.
      */
-    public AbstractSwingAsiContainer(String hostApplicationId) throws IOException {
+    @SneakyThrows
+    public AbstractSwingAsiContainer(String hostApplicationId) {
         super(hostApplicationId);
 
         if (getProvider("GeminiGCExpress") == null) {

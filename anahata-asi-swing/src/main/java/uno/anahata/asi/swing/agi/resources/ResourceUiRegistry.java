@@ -35,10 +35,10 @@ public class ResourceUiRegistry {
 
     /** 
      * The active UI strategy provider. 
-     * Defaults to null; host applications must register their preferred UI.
+     * Defaults to DefaultResourceUI; host applications can register their preferred UI.
      */
     @Getter
     @Setter
-    private ResourceUI resourceUI;
+    private ResourceUI resourceUI = new DefaultResourceUI();
 
 }

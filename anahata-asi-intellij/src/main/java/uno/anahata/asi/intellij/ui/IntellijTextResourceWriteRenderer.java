@@ -21,11 +21,14 @@ import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.util.Disposer;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.agi.resource.handle.PathHandle;
 import uno.anahata.asi.agi.tool.ToolExecutionStatus;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
+import uno.anahata.asi.intellij.internal.JavaPsi;
 import uno.anahata.asi.persistence.kryo.KryoUtils;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRenderer;
@@ -195,6 +198,25 @@ public class IntellijTextResourceWriteRenderer implements ParameterRenderer<Abst
     }
 
     /**
+     * Resolves the hosting project for this diff renderer.
+     *
+     * @return the project, or null if none is open.
+     */
+    private Project resolveProject() {
+        if (update != null && update.getOriginalResourceName() != null) {
+            VirtualFile vf = JavaPsi.findVirtualFile(update.getOriginalResourceName());
+            if (vf != null) {
+                Project p = JavaPsi.findHostProject(vf);
+                if (p != null) {
+                    return p;
+                }
+            }
+        }
+        Project[] open = ProjectManager.getInstance().getOpenProjects();
+        return open.length > 0 ? open[0] : null;
+    }
+
+    /**
      * Builds (or refreshes) the side-by-side diff and wires write-back on the proposed pane.
      *
      * @param base     the current on-disk content.
@@ -202,7 +224,7 @@ public class IntellijTextResourceWriteRenderer implements ParameterRenderer<Abst
      * @param editable whether the proposed pane should be editable (PENDING only).
      */
     private void buildDiff(String base, String proposed, boolean editable) {
-        Project project = ProjectManager.getInstance().getDefaultProject();
+        Project project = resolveProject();
         FileType fileType = fileTypeFor(update.getOriginalResourceName());
         DiffContentFactory factory = DiffContentFactory.getInstance();
 
@@ -256,7 +278,7 @@ public class IntellijTextResourceWriteRenderer implements ParameterRenderer<Abst
      */
     private void addGutterComments(Project project, DocumentContent content) {
         List<LineComment> comments = lineComments();
-        if (comments.isEmpty()) {
+        if (comments.isEmpty() || project == null) {
             return;
         }
         Document doc = content.getDocument();

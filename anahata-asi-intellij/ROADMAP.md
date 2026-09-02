@@ -15,7 +15,7 @@ context providers, and UI**.
 | NetBeans toolkit | IntelliJ status | IntelliJ API target | Notes |
 |---|---|---|---|
 | (core) file/shell/session | ✅ (via core) | — | works out of the box |
-| `Projects` | ✅ | `ProjectManager`, `CompilerManager`, `ProjectRootManager` | open/close, structure+alerts context, `anahata.md`, `buildProject`, `saveAllDocuments`. Deeper module/source-group structure = 🟡 |
+| `Projects` | ✅ | `ProjectManager`, `CompilerManager`, `ProjectRootManager`, `ProjectJdkTable`, `JavaSdk` | open/close, structure+alerts context, `anahata.md`, `buildProject`, `saveAllDocuments`, `getProjectSdk`, `listAvailableSdks`, `setProjectSdk`, `autoConfigureProjectSdk` (auto-detection and setup). Deeper module/source-group structure = 🟡 |
 | `CodeModel` | ✅ | PSI (`JavaPsiFacade`, `PsiShortNamesCache`, `ClassInheritorsSearch`) | read-action wrapped |
 | `Editor` | ✅ | `FileEditorManager`, `Editor`, `Caret` | open/list/close + live caret/selection/visible context |
 | `IDE` | ✅ | `PathManager`, `ProjectView`, `ToolWindowManager` | `monitorLogs`, `selectIn`, tool-windows report+context |
@@ -65,6 +65,7 @@ context providers, and UI**.
 - ✅ `Terminals` (open/type/close) — terminal-plugin dep wired.
 
 - ✅ Advanced `Refactor` — pullUp/pushDown/inlineMethod/changeMethodSignature/extractSuperclass/extractInterface + `copyClass` (`java-impl-refactorings` + PSI copy). **Refactor is complete.**
+- ✅ Project SDK / JDK Management & Auto-Configuration — `getProjectSdk`, `listAvailableSdks`, `setProjectSdk`, `autoConfigureProjectSdk`, auto-configuration hook before `buildProject`, and live SDK status in `ProjectContextProvider` RAG context.
 
 ## Suggested next tranche (in order)
 1. **Structured test results** — attach an `SMTRunnerEventsListener`/`AbstractTestProxy` reader so `runConfiguration` returns pass/fail counts.

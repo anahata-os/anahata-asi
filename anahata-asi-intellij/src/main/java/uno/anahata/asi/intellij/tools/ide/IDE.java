@@ -120,7 +120,7 @@ public class IDE extends AnahataToolkit {
      * @throws AgiToolException if the path cannot be resolved or hosted by an open project.
      */
     @AgiTool("Reveals and selects the specified file or folder in the IDE Project view.")
-    public String selectIn(
+    public static String selectIn(
             @AgiToolParam("The absolute path of the file or folder to reveal.") String path) throws AgiToolException {
         VirtualFile vf = VfsUtil.findFile(Path.of(path), true);
         if (vf == null) {
@@ -171,7 +171,7 @@ public class IDE extends AnahataToolkit {
      * @param file the file to host.
      * @return a hosting project, or {@code null} if no projects are open.
      */
-    private Project findHostProject(VirtualFile file) {
+    private static Project findHostProject(VirtualFile file) {
         Project[] open = ProjectManager.getInstance().getOpenProjects();
         for (Project project : open) {
             if (ProjectRootManager.getInstance(project).getFileIndex().isInContent(file)) {

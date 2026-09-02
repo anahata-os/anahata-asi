@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.intellij.internal;
 
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
@@ -108,13 +109,24 @@ public final class JavaPsi {
      * @return a hosting project, or {@code null} if no projects are open.
      */
     public static Project findHostProject(VirtualFile file) {
-        Project[] open = ProjectManager.getInstance().getOpenProjects();
-        for (Project project : open) {
-            if (ProjectRootManager.getInstance(project).getFileIndex().isInContent(file)) {
-                return project;
-            }
+        if (file == null) {
+            Project[] open = ProjectManager.getInstance().getOpenProjects();
+            return open.length > 0 ? open[0] : null;
         }
-        return open.length > 0 ? open[0] : null;
+        return ReadAction.compute(() -> {
+            Project[] open = ProjectManager.getInstance().getOpenProjects();
+            for (Project project : open) {
+                if (project != null && !project.isDisposed()) {
+                    try {
+                        if (ProjectRootManager.getInstance(project).getFileIndex().isInContent(file)) {
+                            return project;
+                        }
+                    } catch (Throwable ignored) {
+                    }
+                }
+            }
+            return open.length > 0 ? open[0] : null;
+        });
     }
 
     /**
