@@ -114,6 +114,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
         this.provider = provider;
         this.modelId = modelId;
         this.displayName = displayName;
+        this.supportedActions = new ArrayList<>(List.of("chat/completions"));
     }
 
     /**
@@ -128,6 +129,9 @@ public class OpenAiCompatibleModel extends AbstractModel {
         this(provider,
                 node.path("id").asText(),
                 resolveDisplayName(node));
+
+        this.supportedActions = new ArrayList<>(List.of("chat/completions"));
+        this.rawDescription = node.toPrettyString();
 
         long created = node.path("created").asLong(0);
         if (created > 0) {
@@ -241,22 +245,6 @@ public class OpenAiCompatibleModel extends AbstractModel {
             return countTokens(toolCall.asText());
         }
     }
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public List<String> getSupportedActions() {
-        return List.of("chat/completions");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getRawDescription() {
-        return "<html><b>Model ID:</b> " + modelId + "</html>";
-    }
-
     /**
      * {@inheritDoc}
      */

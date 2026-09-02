@@ -96,23 +96,8 @@ public class GeminiModel extends AbstractModel {
         this.defaultTemperature = genaiModel.temperature().orElse(null);
         this.defaultTopK = genaiModel.topK().orElse(null);
         this.defaultTopP = genaiModel.topP().orElse(null);
-    }
-
-    /**
-     * Lazily restores or returns the native GenAI model metadata.
-     *
-     * @return The active Model instance.
-     */
-    private synchronized Model getGenaiModel() {
-        if (genaiModel == null) {
-            log.info("Restoring transient Gemini model: {}", modelId);
-            var pager = provider.getClient().models.list(ListModelsConfig.builder().build());
-            genaiModel = StreamSupport.stream(pager.spliterator(), false)
-                    .filter(m -> modelId.equals(m.name().orElse(null)))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalStateException("Could not restore Gemini model: " + modelId));
-        }
-        return genaiModel;
+        this.supportedActions = new ArrayList<>(genaiModel.supportedActions().orElse(Collections.emptyList()));
+        this.rawDescription = genaiModel.toJson();
     }
 
     /**
@@ -279,56 +264,6 @@ public class GeminiModel extends AbstractModel {
     @Override
     public String getModelId() {
         return modelId;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public List<String> getSupportedActions() {
-        return getGenaiModel().supportedActions().orElse(Collections.emptyList());
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Implementation details: Escapes special HTML characters in the model
-     * metadata to ensure safe rendering in the NetBeans HTML view.</p>
-     */
-    @Override
-    public String getRawDescription() {
-        Model m = getGenaiModel();
-        String json = m.toJson();
-        String toString = m.toString();
-
-        // Return only the inner content. WrappingHtmlPane add the <html><body> tags.
-        return "<html><b>ID: </b>" + escapeHtml(getModelId()) + "<br>"
-                + "<b>Display Name: </b>" + escapeHtml(getDisplayName()) + "<br>"
-                + "<b>Version: </b>" + escapeHtml(getVersion()) + "<br>"
-                + "<b>Description: </b>" + escapeHtml(getDescription()) + "<br>"
-                + "<b>Supported Actions: </b>" + getSupportedActions() + "<br>"
-                + "<b>Labels: </b>" + m.labels().orElse(Collections.EMPTY_MAP) + "<br>"
-                + "<b>TunedModelInfo: </b>" + m.tunedModelInfo().orElse(null) + "<br>"
-                + "<hr>"
-                + "<b>toString():</b><pre style='white-space: pre-wrap; word-wrap: break-word;'></pre>"
-                + "<div style='width: 300px;'>"
-                + toString
-                + "</pre></div></html>";
-    }
-
-    /**
-     * Escapes special HTML characters in a string.
-     *
-     * @param text The text to escape.
-     * @return The escaped text.
-     */
-    private String escapeHtml(String text) {
-        return text.replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\"", "&quot;")
-                .replace("'", "&#x27;")
-                .replace("/", "&#x2F;");
     }
 
     /**

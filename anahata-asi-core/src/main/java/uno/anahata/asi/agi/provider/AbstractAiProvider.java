@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -225,8 +226,23 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
     }
 
     /**
+     * Gets the directory where model entities that failed to load are quarantined.
+     *
+     * @return The unloadable models directory path.
+     * @throws IOException If creating the directory fails.
+     */
+    public Path getUnloadableModelsDirectory() throws IOException {
+        return AbstractAsiContainer.getSubdirectory(getModelsDirectory(), "unloadable");
+    }
+
+    /**
      * Loads all persisted models from this provider's models directory on disk
      * into memory.
+     * <p>
+     * Implements resilient per-model deserialization: if a model cache file is corrupt or in an
+     * incompatible legacy format, it is quarantined to the {@code models/unloadable/} directory and
+     * a notification is recorded in the parent container without failing the provider initialization.
+     * </p>
      *
      * @return The list of models loaded from disk and bound to this provider.
      * @throws IOException if reading the models directory fails.
@@ -234,21 +250,35 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
     public synchronized List<AbstractModel> loadModelsFromDisk() throws IOException {
         Path modelsDir = getModelsDirectory();
         this.models.clear();
-        //we should probably do a try catch on each model and then use the bulk addModels method to fire one event only
-        log.info("{} Deserializing {} models from {}", getProviderId(), Files.list(modelsDir), modelsDir);
-        
+        log.info("{} Deserializing models from {}", getProviderId(), modelsDir);
+
+        List<AbstractModel> loaded = new ArrayList<>();
         try (Stream<Path> stream = Files.list(modelsDir)) {
-            List<Path> files = stream.filter(p -> p.toString().endsWith(".kryo")).collect(Collectors.toList());
+            List<Path> files = stream.filter(p -> !Files.isDirectory(p))
+                    .filter(p -> p.toString().endsWith(".kryo"))
+                    .collect(Collectors.toList());
             for (Path file : files) {
-                byte[] data = Files.readAllBytes(file);
-                log.info("Deserializing " + file);
-                AbstractModel model = KryoUtils.deserialize(data, AbstractModel.class);
-                log.info("Desserialized" + model);
-                model.setProvider(this);
-                this.models.add(model);
+                try {
+                    byte[] data = Files.readAllBytes(file);
+                    AbstractModel model = KryoUtils.deserialize(data, AbstractModel.class);
+                    model.setProvider(this);
+                    loaded.add(model);
+                } catch (Throwable t) {
+                    log.warn("Incompatible or corrupted model file '{}' for provider '{}', moving to unloadable: {}", file.getFileName(), getDisplayName(), t.getMessage());
+                    try {
+                        Path unloadablePath = getUnloadableModelsDirectory().resolve(file.getFileName());
+                        Files.move(file, unloadablePath, StandardCopyOption.REPLACE_EXISTING);
+                        log.info("Moved incompatible model to: {}", unloadablePath);
+                        if (asiContainer != null) {
+                            asiContainer.addNotification("Incompatible model cache for '" + getDisplayName() + "' moved to unloadable: " + file.getFileName());
+                        }
+                    } catch (IOException e) {
+                        log.error("Failed to move incompatible model file to unloadable directory: {}", file, e);
+                    }
+                }
             }
         }
-
+        this.models.addAll(loaded);
         log.info("Loaded {} model(s) from disk for provider '{}'", this.models.size(), getProviderId());
         return this.models;
     }

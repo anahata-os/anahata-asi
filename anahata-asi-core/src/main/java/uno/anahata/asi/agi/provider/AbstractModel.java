@@ -107,6 +107,16 @@ public abstract class AbstractModel {
     protected List<ResponseModality> supportedResponseModalities = new ArrayList<>(List.of(ResponseModality.TEXT));
 
     /**
+     * The list of API actions supported by this model (e.g. 'generateContent', 'batchEmbedContents', 'chat/completions').
+     */
+    protected List<String> supportedActions = new ArrayList<>();
+
+    /**
+     * The raw description or raw JSON representation of the model as received from the remote API endpoint.
+     */
+    protected String rawDescription;
+
+    /**
      * Checks if this model is registered in its parent provider's master
      * persisted models list.
      *
@@ -300,22 +310,6 @@ public abstract class AbstractModel {
      * @return The model ID.
      */
     public abstract String getModelId();
-
-    /**
-     * Gets the list of supported API actions for this model (e.g.,
-     * "generateContent").
-     *
-     * @return A list of supported actions.
-     */
-    public abstract List<String> getSupportedActions();
-
-    /**
-     * Gets a rich, potentially HTML-formatted description of the model,
-     * including all its metadata.
-     *
-     * @return The raw description string.
-     */
-    public abstract String getRawDescription();
 
     /**
      * Delegate method to get the id of this models provider.
