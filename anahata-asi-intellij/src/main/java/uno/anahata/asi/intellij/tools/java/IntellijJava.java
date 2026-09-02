@@ -362,23 +362,32 @@ public class IntellijJava extends SwingJava {
     /**
      * {@inheritDoc}
      * <p>
-     * Compiles Java source code. If in-memory {@link ToolProvider#getSystemJavaCompiler()} is available,
-     * it uses in-memory compilation. If running on JRE/JBR without javac module, it automatically
-     * delegates to {@link #compileWithExternalJavac}.
+     * Compiles Java source code. If in-memory {@link JavaCompiler} is available,
+     * it delegates to the in-memory compiler in {@code super.compile}. If running on JRE/JBR
+     * where in-memory javac is omitted, it automatically delegates to {@link #compileWithExternalJavac}.
      * </p>
      */
     @Override
-    public Class<?> compile(String sourceCode, String className, String extraClassPath, String[] compilerOptions)
-            throws Exception {
-        if (ToolProvider.getSystemJavaCompiler() != null) {
+    public Class<?> compile(
+            String sourceCode,
+            String className,
+            String extraClassPath,
+            String[] compilerOptions,
+            javax.tools.JavaCompiler compiler)
+            throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, java.lang.reflect.InvocationTargetException {
+        if (compiler != null) {
             try {
-                return super.compile(sourceCode, className, extraClassPath, compilerOptions);
+                return super.compile(sourceCode, className, extraClassPath, compilerOptions, compiler);
             } catch (Throwable t) {
                 log.warn("In-memory JavaCompiler failed, falling back to external javac: {}", t.getMessage());
             }
         }
-        Path javac = resolveJavac(null);
-        return compileWithExternalJavac(sourceCode, className, extraClassPath, compilerOptions, javac);
+        try {
+            Path javac = resolveJavac(null);
+            return compileWithExternalJavac(sourceCode, className, extraClassPath, compilerOptions, javac);
+        } catch (Exception e) {
+            throw new RuntimeException("Compilation failed via external javac", e);
+        }
     }
 
     /**
@@ -421,21 +430,7 @@ public class IntellijJava extends SwingJava {
                 command.addAll(Arrays.asList(compilerOptions));
             }
 
-            boolean hasVersionFlag = false;
-            if (compilerOptions != null) {
-                for (String opt : compilerOptions) {
-                    if (opt.equals("--release") || opt.equals("-source") || opt.equals("-target")) {
-                        hasVersionFlag = true;
-                        break;
-                    }
-                }
-            }
-            if (!hasVersionFlag) {
-                String runtimeVersion = System.getProperty("java.specification.version");
-                command.add("--release");
-                command.add(runtimeVersion);
-            }
-
+            // Only pass --proc:none to avoid annotation processing delays
             command.add("-proc:none");
             command.add(sourceFile.toAbsolutePath().toString());
 
