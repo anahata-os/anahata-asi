@@ -35,7 +35,12 @@ import uno.anahata.asi.swing.agi.message.part.tool.param.ResourceUUIDParameterRe
 import uno.anahata.asi.swing.agi.message.part.tool.param.UriParameterRenderer;
 import uno.anahata.asi.swing.components.ExceptionDialog;
 import uno.anahata.asi.swing.internal.SwingUtils;
+import uno.anahata.asi.swing.provider.AiProviderUiRegistry;
+import uno.anahata.asi.swing.provider.AnthropicProviderPanel;
 import uno.anahata.asi.swing.provider.DiscoverModelsTask;
+import uno.anahata.asi.swing.provider.GeminiAiProviderPanel;
+import uno.anahata.asi.swing.provider.OpenAiChatCompletionsProviderPanel;
+import uno.anahata.asi.swing.provider.OpenAiResponsesProviderPanel;
 import uno.anahata.asi.swing.settings.AsiContainerSettingsFrame;
 import uno.anahata.asi.swing.toolkit.radio.RadioRenderer;
 import uno.anahata.asi.swing.toolkit.render.ToolkitUiRegistry;
@@ -66,6 +71,12 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
         ParameterRendererFactory.registerById("uri", UriParameterRenderer.class);
         ParameterRendererFactory.registerById("resource", ResourceUUIDParameterRenderer.class);
         ParameterRendererFactory.registerById("path", PathParameterRenderer.class);
+
+        // Provider UI Panel Registry
+        AiProviderUiRegistry.getInstance().register(GeminiAiProvider.class, GeminiAiProviderPanel.class);
+        AiProviderUiRegistry.getInstance().register(AnthropicProvider.class, AnthropicProviderPanel.class);
+        AiProviderUiRegistry.getInstance().register(OpenAiChatCompletionsProvider.class, OpenAiChatCompletionsProviderPanel.class);
+        AiProviderUiRegistry.getInstance().register(OpenAiResponsesProvider.class, OpenAiResponsesProviderPanel.class);
     }
     
     /**

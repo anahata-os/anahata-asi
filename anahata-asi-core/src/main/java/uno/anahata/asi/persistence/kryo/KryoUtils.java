@@ -138,7 +138,7 @@ public class KryoUtils {
     }
 
     /**
-     * Serializes an object into a byte array.
+     * Serializes an object into a byte array, embedding the concrete class header.
      *
      * @param object The object to serialize.
      * @return A byte array representing the serialized object.
@@ -148,7 +148,7 @@ public class KryoUtils {
         Kryo kryo = getKryo();
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         try (Output output = new Output(byteArrayOutputStream)) {
-            kryo.writeObject(output, object);
+            kryo.writeClassAndObject(output, object);
         }
         byte[] bytes = byteArrayOutputStream.toByteArray();
         long end = System.currentTimeMillis();
@@ -157,22 +157,22 @@ public class KryoUtils {
     }
 
     /**
-     * Deserializes a byte array into an object.
+     * Deserializes a byte array into an object using the embedded concrete class header.
      *
-     * @param <T>   The type of the object to deserialize.
+     * @param <T>   The expected return type.
      * @param bytes The byte array to deserialize.
-     * @param clazz The class of the object.
-     * @return The deserialized object.
+     * @param clazz The expected class or interface.
+     * @return The deserialized object cast to T.
      */
     public static <T> T deserialize(byte[] bytes, Class<T> clazz) {
         long start = System.currentTimeMillis();
         Kryo kryo = getKryo();
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
         try (Input input = new Input(byteArrayInputStream)) {
-            T object = kryo.readObject(input, clazz);
+            Object object = kryo.readClassAndObject(input);
             long end = System.currentTimeMillis();
             log.info("Kryo deserialization of {} took {} ms, size: {} bytes", clazz.getSimpleName(), (end - start), bytes.length);
-            return object;
+            return clazz.cast(object);
         }
     }
 }

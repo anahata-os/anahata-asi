@@ -23,12 +23,12 @@ import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JLabel;
-import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.UIManager;
+import javax.swing.event.PopupMenuListener;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -56,6 +56,28 @@ public class EnumSetComboBox<E extends Enum<E>> extends JButton {
     private final Function<E, String> labelProvider;
     /** Callback invoked whenever the selection changes. */
     private Consumer<Set<E>> onSelectionChanged;
+    /** Registered popup menu listeners forwarded to the active JPopupMenu instance. */
+    private final List<PopupMenuListener> popupMenuListeners = new ArrayList<>();
+
+    /**
+     * Registers a PopupMenuListener to be notified when the multi-selection popup opens or closes.
+     *
+     * @param l The listener to add.
+     */
+    public void addPopupMenuListener(PopupMenuListener l) {
+        if (l != null && !popupMenuListeners.contains(l)) {
+            popupMenuListeners.add(l);
+        }
+    }
+
+    /**
+     * Unregisters a PopupMenuListener.
+     *
+     * @param l The listener to remove.
+     */
+    public void removePopupMenuListener(PopupMenuListener l) {
+        popupMenuListeners.remove(l);
+    }
 
     /**
      * Constructs a new EnumSetComboBox.
@@ -141,34 +163,29 @@ public class EnumSetComboBox<E extends Enum<E>> extends JButton {
     }
 
     /**
-     * Opens the multi-selection checkbox popup menu beneath the button.
+     * Opens the multi-selection checkbox popup menu beneath the button using native JCheckBoxMenuItems.
      */
     public void showPopup() {
         JPopupMenu popup = new JPopupMenu();
         popup.setBorder(BorderFactory.createLineBorder(new Color(180, 180, 180)));
 
+        for (PopupMenuListener l : popupMenuListeners) {
+            popup.addPopupMenuListener(l);
+        }
+
         E[] allConstants = enumClass.getEnumConstants();
         for (E constant : allConstants) {
-            JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
-            row.setOpaque(false);
-
-            JCheckBox cb = new JCheckBox();
-            cb.setOpaque(false);
-            cb.setSelected(selectedValues.contains(constant));
-
-            JLabel textLabel = new JLabel(labelProvider.apply(constant));
+            JCheckBoxMenuItem item = new JCheckBoxMenuItem(labelProvider.apply(constant));
             if (iconProvider != null) {
                 Icon icon = iconProvider.apply(constant);
                 if (icon != null) {
-                    textLabel.setIcon(icon);
+                    item.setIcon(icon);
                 }
             }
+            item.setSelected(selectedValues.contains(constant));
 
-            row.add(cb);
-            row.add(textLabel);
-
-            cb.addActionListener(evt -> {
-                if (cb.isSelected()) {
+            item.addActionListener(evt -> {
+                if (item.isSelected()) {
                     selectedValues.add(constant);
                 } else {
                     selectedValues.remove(constant);
@@ -179,19 +196,7 @@ public class EnumSetComboBox<E extends Enum<E>> extends JButton {
                 }
             });
 
-            row.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    cb.setSelected(!cb.isSelected());
-                    cb.getActionListeners()[0].actionPerformed(null);
-                }
-            });
-
-            JMenuItem menuItem = new JMenuItem();
-            menuItem.setLayout(new BorderLayout());
-            menuItem.add(row, BorderLayout.CENTER);
-            menuItem.setPreferredSize(new Dimension(160, 26));
-            popup.add(menuItem);
+            popup.add(item);
         }
 
         popup.show(this, 0, getHeight());

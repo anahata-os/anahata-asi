@@ -11,6 +11,9 @@ import java.util.function.Function;
 import javax.swing.AbstractCellEditor;
 import javax.swing.Icon;
 import javax.swing.JTable;
+import javax.swing.SwingUtilities;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import javax.swing.table.TableCellEditor;
 import lombok.Getter;
 import lombok.NonNull;
@@ -44,12 +47,28 @@ public class EnumSetTableCellEditor<E extends Enum<E>> extends AbstractCellEdito
             Function<E, String> labelProvider
     ) {
         this.comboBox = new EnumSetComboBox<>(enumClass, null, iconProvider, labelProvider, null);
+        this.comboBox.addPopupMenuListener(new PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+            }
+
+            @Override
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+                stopCellEditing();
+            }
+
+            @Override
+            public void popupMenuCanceled(PopupMenuEvent e) {
+                cancelCellEditing();
+            }
+        });
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * Populates the combo component with the cell's current enum collection and returns it.
+     * Populates the combo component with the cell's current enum collection, schedules
+     * opening the popup menu, and returns the combo editor.
      * </p>
      */
     @Override
@@ -68,6 +87,7 @@ public class EnumSetTableCellEditor<E extends Enum<E>> extends AbstractCellEdito
             }
         }
         comboBox.setSelectedValues(currentSet);
+        SwingUtilities.invokeLater(() -> comboBox.showPopup());
         return comboBox;
     }
 

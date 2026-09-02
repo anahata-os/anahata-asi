@@ -235,12 +235,15 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
         Path modelsDir = getModelsDirectory();
         this.models.clear();
         //we should probably do a try catch on each model and then use the bulk addModels method to fire one event only
-
+        log.info("{} Deserializing {} models from {}", getProviderId(), Files.list(modelsDir), modelsDir);
+        
         try (Stream<Path> stream = Files.list(modelsDir)) {
             List<Path> files = stream.filter(p -> p.toString().endsWith(".kryo")).collect(Collectors.toList());
             for (Path file : files) {
                 byte[] data = Files.readAllBytes(file);
+                log.info("Deserializing " + file);
                 AbstractModel model = KryoUtils.deserialize(data, AbstractModel.class);
+                log.info("Desserialized" + model);
                 model.setProvider(this);
                 this.models.add(model);
             }

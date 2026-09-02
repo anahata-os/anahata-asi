@@ -7,6 +7,7 @@ import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Desktop;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Image;
@@ -18,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -73,112 +75,134 @@ public class AiProviderPanel extends ScrollablePanel {
     /**
      * The parent ASI container instance.
      */
-    private final AbstractSwingAsiContainer container;
+    protected AbstractSwingAsiContainer container;
     /**
      * The domain entity representing the AI provider being configured.
      */
-    private AbstractAiProvider provider;
+    protected AbstractAiProvider provider;
     /**
      * Visual container for provider logo icon in the top header row.
      */
-    private final JPanel headerLeft;
+    protected JPanel headerLeft;
     /**
      * Visual container hosting promo banner, dynamically updated per provider.
      */
-    private final JPanel promoBannerContainer;
+    protected JPanel promoBannerContainer;
     /**
      * Readonly label displaying the active provider UUID.
      */
-    private final JLabel uuidLabel;
+    protected JLabel uuidLabel;
     /**
      * Readonly field displaying the concrete provider class FQN.
      */
-    private final JTextField classField;
+    protected JTextField classField;
     /**
      * Monospace editor for the 'api_keys.txt' file, supporting multiple keys.
      */
-    private final JTextArea textArea;
+    protected JTextArea textArea;
     /**
      * User-facing name for this provider instance.
      */
-    private final JTextField displayNameField;
+    protected JTextField displayNameField;
     /**
      * Editable description for this provider instance.
      */
-    private final JTextField descriptionField;
+    protected JTextField descriptionField;
     /**
      * Visual indicator of where this provider's data is stored on the host FS.
      */
-    private final JLabel folderLabel;
+    protected JLabel folderLabel;
     /**
      * The pending custom API keys file path selected by the user.
      */
-    private String currentApiKeysPath;
+    protected String currentApiKeysPath;
     /**
      * Master switch to enable/disable the provider globally.
      */
-    private final JCheckBox enabledCheck;
+    protected JCheckBox enabledCheck;
     /**
      * Determines if the key pool must be populated for this provider to
      * function.
      */
-    private final JCheckBox apiKeyRequiredCheck;
+    protected JCheckBox apiKeyRequiredCheck;
     /**
      * Selector for the tokenizer used for pre-flight metabolic estimations.
      */
-    private final JComboBox<TokenizerType> tokenizerCombo;
+    protected JComboBox<TokenizerType> tokenizerCombo;
 
     /**
      * Checkbox to toggle automatically registering newly discovered models.
      */
-    private JCheckBox autoRegisterCheck;
+    protected JCheckBox autoRegisterCheck;
 
-    /**
-     * Checkbox to toggle Google Cloud Vertex AI endpoint usage.
-     */
-    private JCheckBox vertexCheck;
-
-    /**
-     * Toggle for forcing HTTP/1.1 on OpenAI-compatible providers.
-     */
-    private JCheckBox preferHttp11Check;
-
-    // --- OpenAI Compatible Extensions ---
     /**
      * The endpoint root for Chat Completion API calls.
      */
-    private JTextField baseUrlField;
-    /**
-     * The version header for Anthropic API calls.
-     */
-    private JTextField anthropicVersionField;
-    /**
-     * Vendor-specific quirks defined as Key: Value headers.
-     */
-    private JTextArea customHeadersArea;
+    protected JTextField baseUrlField;
+
     /**
      * Triggers an immediate model discovery probe to verify the URL and Auth.
      */
-    private JButton testConnectionBtn;
+    protected JButton testConnectionBtn;
 
-    private final AiModelsPanel registryViewer;
+    /**
+     * Embedded models explorer panel.
+     */
+    protected AiModelsPanel registryViewer;
+
     /**
      * Link to the API key acquisition page.
      */
-    private final JLabel acquisitionLinkLabel;
+    protected JLabel acquisitionLinkLabel;
 
     /**
-     * Constructs a new provider configuration panel bound directly to a container.
+     * The main scrollable form panel container.
+     */
+    protected JPanel formPanel;
+
+    /**
+     * The callback invoked when the user requests provider deletion.
+     */
+    protected Runnable removeCallback;
+
+    /**
+     * Constructs an uninitialized AiProviderPanel.
+     * <p>
+     * Subclasses and registry instantiators must call {@link #init(AbstractSwingAsiContainer, AbstractAiProvider, Runnable)}
+     * before displaying this panel.
+     * </p>
+     */
+    public AiProviderPanel() {
+        setOpaque(false);
+        setLayout(new BorderLayout());
+    }
+
+    /**
+     * Constructs and immediately initializes a new provider configuration panel bound directly to a container.
      *
      * @param container The parent ASI container instance.
      * @param provider The provider instance to bind to.
      * @param removeCallback Callback to trigger when the user deletes the provider.
      */
-    public AiProviderPanel(AbstractSwingAsiContainer container, AbstractAiProvider provider, Runnable removeCallback) {
+    public AiProviderPanel(@NonNull AbstractSwingAsiContainer container, @NonNull AbstractAiProvider provider, Runnable removeCallback) {
+        this();
+        init(container, provider, removeCallback);
+    }
+
+    /**
+     * Initializes all UI components, listeners, and models table bound to the specified provider.
+     *
+     * @param container The parent ASI container instance.
+     * @param provider The provider instance to bind to.
+     * @param removeCallback Callback to trigger when the user deletes the provider.
+     */
+    public void init(@NonNull AbstractSwingAsiContainer container, @NonNull AbstractAiProvider provider, Runnable removeCallback) {
         this.container = container;
         this.provider = provider;
+        this.removeCallback = removeCallback;
         this.currentApiKeysPath = provider.getApiKeysFile();
-        setOpaque(false);
+        removeAll();
+
         this.acquisitionLinkLabel = new JLabel();
         this.folderLabel = new JLabel();
         updateFolderLabel();
@@ -188,9 +212,8 @@ public class AiProviderPanel extends ScrollablePanel {
         PromptSupport.setPrompt(provider.getApiKeyHint(), textArea);
         PromptSupport.setFocusBehavior(PromptSupport.FocusBehavior.HIDE_PROMPT, textArea);
         PromptSupport.setForeground(UIManager.getColor("Label.disabledForeground"), textArea);
-        setLayout(new BorderLayout());
 
-        JPanel formPanel = new JPanel(new MigLayout("fillx, insets 15", "[right]12[grow,fill]5[]"));
+        this.formPanel = new JPanel(new MigLayout("fillx, insets 15", "[right]12[grow,fill]5[]"));
         formPanel.setOpaque(false);
 
         promoBannerContainer = new JPanel(new BorderLayout());
@@ -200,7 +223,11 @@ public class AiProviderPanel extends ScrollablePanel {
 
         JButton removeBtn = new JButton("Delete", new DeleteIcon(16));
         removeBtn.setToolTipText("Remove Provider");
-        removeBtn.addActionListener(e -> removeCallback.run());
+        removeBtn.addActionListener(e -> {
+            if (this.removeCallback != null) {
+                this.removeCallback.run();
+            }
+        });
 
         JButton saveBtn = new JButton("Save", new SaveIcon(16));
         saveBtn.setToolTipText("Save Provider Configuration & API Keys");
@@ -300,7 +327,7 @@ public class AiProviderPanel extends ScrollablePanel {
         textArea.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(textArea, e));
         textArea.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
         JScrollPane textScroll = new JScrollPane(textArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        textScroll.setPreferredSize(new java.awt.Dimension(400, 160));
+        textScroll.setPreferredSize(new Dimension(400, 160));
         keysContainer.add(textScroll, "grow, wrap");
 
         formPanel.add(keysContainer, "span 2, grow, wrap");
@@ -352,53 +379,6 @@ public class AiProviderPanel extends ScrollablePanel {
         autoRegisterCheck.setToolTipText("Automatically register and persist newly discovered models when API discovery runs.");
         formPanel.add(autoRegisterCheck, "span 2, wrap");
 
-        if (provider instanceof GeminiAiProvider gemini && vertexCheck != null) {
-            formPanel.add(new JLabel("Use Vertex AI:"), "gaptop 5");
-            vertexCheck = new JCheckBox("", gemini.isVertex());
-            vertexCheck.setOpaque(false);
-            vertexCheck.setToolTipText("Use Google Cloud Vertex AI endpoint instead of the standard Google AI Studio.");
-            formPanel.add(vertexCheck, "span 2, wrap");
-        }
-
-        if (provider instanceof AnthropicProvider anthropic) {
-            formPanel.add(new JLabel("Anthropic Version:"));
-            anthropicVersionField = new JTextField(anthropic.getAnthropicVersion());
-            formPanel.add(anthropicVersionField, "span 2, wrap");
-        }
-
-        if (provider instanceof OpenAiResponsesProvider nativeOai) {
-            formPanel.add(new JLabel("Verified Organization:"), "gaptop 5");
-            JCheckBox verifiedCheck = new JCheckBox("", nativeOai.isVerifiedOrganization());
-            verifiedCheck.setOpaque(false);
-            verifiedCheck.setToolTipText("Enable if your API key belongs to a verified OpenAI organization. Allows stateful API calls and plain-text reasoning summaries.");
-            verifiedCheck.addActionListener(e -> {
-                nativeOai.setVerifiedOrganization(verifiedCheck.isSelected());
-            });
-            formPanel.add(verifiedCheck, "span 2, wrap");
-        }
-
-        if (provider instanceof OpenAiChatCompletionsProvider oai) {
-            formPanel.add(new JLabel("Custom Headers:"), "top, gaptop 5");
-            customHeadersArea = new JTextArea(3, 20);
-            customHeadersArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-            customHeadersArea.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(customHeadersArea, e));
-            if (oai.getCustomHeaders() != null) {
-                String headers = oai.getCustomHeaders().entrySet().stream()
-                        .map(entry -> entry.getKey() + ": " + entry.getValue())
-                        .collect(Collectors.joining("\n"));
-                customHeadersArea.setText(headers);
-            }
-            PromptSupport.setPrompt("Header-Name: Header-Value\nOne per line...", customHeadersArea);
-            JScrollPane headersScroll = new JScrollPane(customHeadersArea);
-            formPanel.add(headersScroll, "span 2, growx, wrap");
-
-            formPanel.add(new JLabel("Prefer HTTP/1.1:"), "gaptop 5");
-            preferHttp11Check = new JCheckBox("", oai.isPreferHttp11());
-            preferHttp11Check.setOpaque(false);
-            preferHttp11Check.setToolTipText("Force HTTP/1.1 to avoid protocol hangs on some local servers/routers.");
-            formPanel.add(preferHttp11Check, "span 2, wrap");
-        }
-
         // Initial state sync
         textArea.setEnabled(provider.isApiKeyRequired());
         loadKeys();
@@ -415,6 +395,8 @@ public class AiProviderPanel extends ScrollablePanel {
         subTabs.addTab("Models", registryViewer);
 
         add(subTabs, BorderLayout.CENTER);
+        revalidate();
+        repaint();
     }
 
     /**
@@ -520,11 +502,13 @@ public class AiProviderPanel extends ScrollablePanel {
     /**
      * Loads the raw key pool text.
      */
-    private void loadKeys() {
+    protected void loadKeys() {
         Path path = provider.getKeysFilePath();
         try {
             if (Files.exists(path)) {
                 textArea.setText(Files.readString(path));
+            } else {
+                textArea.setText("");
             }
         } catch (IOException e) {
             log.error("Failed to load keys from {}", path, e);
@@ -535,7 +519,7 @@ public class AiProviderPanel extends ScrollablePanel {
     /**
      * Updates the provider icon in the top-left header.
      */
-    private void updateHeaderIcon() {
+    protected void updateHeaderIcon() {
         headerLeft.removeAll();
         Icon providerIcon = IconUtils.getIcon("aiproviders/" + provider.getClass().getName() + ".png", 32, 32);
         if (providerIcon != null) {
@@ -548,7 +532,7 @@ public class AiProviderPanel extends ScrollablePanel {
     /**
      * Updates the promo banner in the promo container based on active provider.
      */
-    private void updatePromoBanner() {
+    protected void updatePromoBanner() {
         promoBannerContainer.removeAll();
         JLabel banner = createPromoBannerLabel();
         if (banner != null) {
@@ -567,30 +551,7 @@ public class AiProviderPanel extends ScrollablePanel {
      * @param newProvider The new provider to display and configure.
      */
     public void setProvider(@NonNull AbstractAiProvider newProvider) {
-        this.provider = newProvider;
-        this.currentApiKeysPath = newProvider.getApiKeysFile();
-        uuidLabel.setText(newProvider.getUuid());
-        classField.setText(newProvider.getClass().getName());
-        updateHeaderIcon();
-        updatePromoBanner();
-        displayNameField.setText(newProvider.getDisplayName() != null ? newProvider.getDisplayName() : "");
-        descriptionField.setText(newProvider.getDescription() != null ? newProvider.getDescription() : "");
-        enabledCheck.setSelected(newProvider.isEnabled());
-        apiKeyRequiredCheck.setSelected(newProvider.isApiKeyRequired());
-        textArea.setEnabled(newProvider.isApiKeyRequired());
-        tokenizerCombo.setSelectedItem(newProvider.getTokenizerType());
-        if (autoRegisterCheck != null) {
-            autoRegisterCheck.setSelected(newProvider.isAutomaticallyRegisterNewlyDiscoveredModels());
-        }
-        if (baseUrlField != null) {
-            baseUrlField.setText(newProvider.getBaseUrl() != null ? newProvider.getBaseUrl() : "");
-        }
-        updateFolderLabel();
-        updateLinkLabel();
-        loadKeys();
-        if (registryViewer != null) {
-            registryViewer.setTargetProvider(newProvider);
-        }
+        init(container, newProvider, removeCallback);
     }
 
     /**
@@ -599,14 +560,14 @@ public class AiProviderPanel extends ScrollablePanel {
      * @return true if there are unsaved modifications.
      */
     public boolean isModified() {
-        boolean fieldsModified = !java.util.Objects.equals(displayNameField.getText().trim(), provider.getDisplayName() != null ? provider.getDisplayName() : "")
-                || !java.util.Objects.equals(descriptionField.getText().trim(), provider.getDescription() != null ? provider.getDescription() : "")
+        boolean fieldsModified = !Objects.equals(displayNameField.getText().trim(), provider.getDisplayName() != null ? provider.getDisplayName() : "")
+                || !Objects.equals(descriptionField.getText().trim(), provider.getDescription() != null ? provider.getDescription() : "")
                 || enabledCheck.isSelected() != provider.isEnabled()
                 || apiKeyRequiredCheck.isSelected() != provider.isApiKeyRequired()
-                || (baseUrlField != null && !java.util.Objects.equals(baseUrlField.getText().trim(), provider.getBaseUrl() != null ? provider.getBaseUrl() : ""))
+                || (baseUrlField != null && !Objects.equals(baseUrlField.getText().trim(), provider.getBaseUrl() != null ? provider.getBaseUrl() : ""))
                 || (autoRegisterCheck != null && autoRegisterCheck.isSelected() != provider.isAutomaticallyRegisterNewlyDiscoveredModels())
                 || tokenizerCombo.getSelectedItem() != provider.getTokenizerType()
-                || !java.util.Objects.equals(currentApiKeysPath, provider.getApiKeysFile());
+                || !Objects.equals(currentApiKeysPath, provider.getApiKeysFile());
 
         if (fieldsModified) {
             return true;
@@ -616,7 +577,7 @@ public class AiProviderPanel extends ScrollablePanel {
         if (Files.exists(path)) {
             try {
                 String diskContent = Files.readString(path);
-                return !java.util.Objects.equals(textArea.getText().trim(), diskContent.trim());
+                return !Objects.equals(textArea.getText().trim(), diskContent.trim());
             } catch (IOException e) {
                 return true;
             }
@@ -629,7 +590,7 @@ public class AiProviderPanel extends ScrollablePanel {
      * Synchronizes the UI state back to the provider domain and flushes the key
      * pool to disk.
      *
-     * @throws java_io_IOException If writing the keys file or syncing the
+     * @throws java.io.IOException If writing the keys file or syncing the
      * provider state fails.
      */
     public void syncToProvider() throws IOException {
@@ -647,31 +608,6 @@ public class AiProviderPanel extends ScrollablePanel {
 
         if (baseUrlField != null) {
             provider.setBaseUrl(baseUrlField.getText().trim());
-        }
-
-        if (provider instanceof GeminiAiProvider gemini && vertexCheck != null) {
-            gemini.setVertex(vertexCheck.isSelected());
-        }
-
-        if (provider instanceof AnthropicProvider anthropic && anthropicVersionField != null) {
-            anthropic.setAnthropicVersion(anthropicVersionField.getText().trim());
-        }
-
-        if (provider instanceof OpenAiChatCompletionsProvider oai) {
-            oai.setPreferHttp11(preferHttp11Check.isSelected());
-            if (customHeadersArea != null) {
-                Map<String, String> headers = new HashMap<>();
-                String text = customHeadersArea.getText().trim();
-                if (!text.isEmpty()) {
-                    for (String line : text.split("\n")) {
-                        int colon = line.indexOf(":");
-                        if (colon > 0) {
-                            headers.put(line.substring(0, colon).trim(), line.substring(colon + 1).trim());
-                        }
-                    }
-                }
-                oai.setCustomHeaders(headers);
-            }
         }
 
         Path path = provider.getKeysFilePath();

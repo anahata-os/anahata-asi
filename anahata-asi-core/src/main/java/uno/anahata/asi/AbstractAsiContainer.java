@@ -160,7 +160,7 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
                         Path unloadablePath = getUnloadableProvidersDir().resolve(file.getFileName());
                         Files.move(file, unloadablePath, StandardCopyOption.REPLACE_EXISTING);
                         log.info("Moved incompatible provider to: {}", unloadablePath);
-                        addNotification("Incompatible provider moved to unloadable: " + file.getFileName());
+                        addNotification("Incompatible AI provider moved to unloadable: " + file.getFileName());
                     } catch (IOException e) {
                         log.error("Failed to move incompatible provider to unloadable directory: {}", file, e);
                     }
@@ -169,6 +169,7 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
 
                 provider.setAsiContainer(this);
                 try {
+                    log.info("Initializing: {}", provider);
                     provider.initialize();
                 } catch (Exception e) {
                     log.error("Provider '{}' failed to initialize and was disabled", provider.getProviderId(), e);
@@ -289,8 +290,8 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Registers a new provider instance in the master registry and persists it
-     * to preferences.
+     * Registers a new provider instance in the master registry, binds its container reference,
+     * and persists it directly to disk in the container's providers directory.
      *
      * @param provider The provider instance to register.
      */
@@ -298,6 +299,11 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
         log.info("Registering AI provider instance: {} ({})", provider.getDisplayName(), provider.getUuid());
         provider.setAsiContainer(this);
         providerRegistry.put(provider.getUuid(), provider);
+        try {
+            provider.persist();
+        } catch (IOException e) {
+            log.error("Failed to persist newly registered provider: {}", provider.getUuid(), e);
+        }
     }
 
     /**
