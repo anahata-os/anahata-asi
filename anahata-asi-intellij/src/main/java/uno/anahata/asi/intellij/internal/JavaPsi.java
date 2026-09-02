@@ -109,11 +109,20 @@ public final class JavaPsi {
      * @return a hosting project, or {@code null} if no projects are open.
      */
     public static Project findHostProject(VirtualFile file) {
-        Project[] open = ProjectManager.getInstance().getOpenProjects();
+        if (file == null) {
+            Project[] open = ProjectManager.getInstance().getOpenProjects();
+            return open.length > 0 ? open[0] : null;
+        }
         return ReadAction.compute(() -> {
+            Project[] open = ProjectManager.getInstance().getOpenProjects();
             for (Project project : open) {
-                if (ProjectRootManager.getInstance(project).getFileIndex().isInContent(file)) {
-                    return project;
+                if (project != null && !project.isDisposed()) {
+                    try {
+                        if (ProjectRootManager.getInstance(project).getFileIndex().isInContent(file)) {
+                            return project;
+                        }
+                    } catch (Throwable ignored) {
+                    }
                 }
             }
             return open.length > 0 ? open[0] : null;
