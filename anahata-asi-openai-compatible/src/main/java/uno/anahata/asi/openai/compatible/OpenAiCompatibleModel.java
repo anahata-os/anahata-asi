@@ -289,14 +289,6 @@ public class OpenAiCompatibleModel extends AbstractModel {
      * {@inheritDoc}
      */
     @Override
-    public List<ResponseModality> getSupportedResponseModalities() {
-        return List.of(ResponseModality.TEXT);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public List<ServerTool> getAvailableServerTools() {
         return Collections.emptyList();
     }
@@ -307,46 +299,6 @@ public class OpenAiCompatibleModel extends AbstractModel {
     @Override
     public List<ServerTool> getDefaultServerTools() {
         return Collections.emptyList();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Float getDefaultTemperature() {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Integer getDefaultTopK() {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Float getDefaultTopP() {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Integer getMaxInputTokens() {
-        return maxInputTokens;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Integer getMaxOutputTokens() {
-        return maxOutputTokens;
     }
 
     /**

@@ -11,7 +11,6 @@ import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.GenerateContentResponse;
 import com.google.genai.types.GenerateContentResponseUsageMetadata;
 import com.google.genai.types.GoogleSearch;
-import com.google.genai.types.ListModelsConfig;
 import com.google.genai.types.Model;
 import com.google.genai.types.Part;
 import com.google.genai.types.ToolCodeExecution;
@@ -22,7 +21,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.gemini.adapter.GeminiContentAdapter;
@@ -48,6 +46,7 @@ import uno.anahata.asi.agi.tool.ToolResponseAttachment;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.gemini.adapter.GeminiPartAdapter;
 import com.google.genai.LocalTokenizer;
+import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
 import uno.anahata.asi.internal.ImageMetadataUtils;
 import uno.anahata.asi.internal.ImageMetadataUtils.ImageMetadata;
 import uno.anahata.asi.internal.JacksonUtils;
@@ -98,6 +97,20 @@ public class GeminiModel extends AbstractModel {
         this.defaultTopP = genaiModel.topP().orElse(null);
         this.supportedActions = new ArrayList<>(genaiModel.supportedActions().orElse(Collections.emptyList()));
         this.rawDescription = genaiModel.toJson();
+
+        List<ResponseModality> modalities = new ArrayList<>();
+        String id = getModelId().toLowerCase();
+        modalities.add(ResponseModality.TEXT);
+        if (id.contains("image") || id.contains("banana") || id.contains("omni")) {
+            modalities.add(ResponseModality.IMAGE);
+        }
+        if (id.contains("lyria") || id.contains("live") || id.contains("tts") || id.contains("audio") || id.contains("omni")) {
+            modalities.add(ResponseModality.AUDIO);
+        }
+        if (id.contains("veo") || id.contains("omni")) {
+            modalities.add(ResponseModality.VIDEO);
+        }
+        this.supportedResponseModalities = modalities;
     }
 
     /**
@@ -308,33 +321,6 @@ public class GeminiModel extends AbstractModel {
         return getSupportedActions().contains("createCachedContent");
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public List<ResponseModality> getSupportedResponseModalities() {
-        List<ResponseModality> modalities = new ArrayList<>();
-        String id = getModelId().toLowerCase();
-        
-        modalities.add(ResponseModality.TEXT);
-        
-        // 1. Image generation models (e.g. imagen-3.0-generate-002, gemini-2.5-flash-image, nano-banana)
-        if (id.contains("image") || id.contains("banana") || id.contains("omni")) {
-            modalities.add(ResponseModality.IMAGE);
-        } 
-
-        // 2. Audio generation / TTS models
-        if (id.contains("lyria") || id.contains("live") || id.contains("tts") || id.contains("audio") || id.contains("omni")) {
-            modalities.add(ResponseModality.AUDIO);
-        }
-
-        // 3. Video generation models
-        if (id.contains("veo") || id.contains("omni")) {
-            modalities.add(ResponseModality.VIDEO);
-        }
-
-        return modalities;
-    }
 
     /**
      * {@inheritDoc}

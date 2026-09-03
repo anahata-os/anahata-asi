@@ -122,7 +122,9 @@ public class AnthropicProvider extends AbstractAiProvider {
                             String id = modelNode.path("id").asText();
                             String name = modelNode.path("display_name").asText(id);
                             String version = modelNode.path("created_at").asText("");
-                            models.add(new AnthropicModel(this, id, name, version));
+                            AnthropicModel model = new AnthropicModel(this, id, name, version);
+                            model.setRawDescription(modelNode.toPrettyString());
+                            models.add(model);
                         }
                         return models;
                     }

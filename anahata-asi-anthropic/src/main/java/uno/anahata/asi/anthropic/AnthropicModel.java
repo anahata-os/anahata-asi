@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -75,6 +76,9 @@ public class AnthropicModel extends AbstractModel {
         this.modelId = modelId;
         this.displayName = displayName;
         this.version = version;
+        this.defaultTemperature = 0.7f;
+        this.supportedActions = new ArrayList<>(List.of("messages"));
+        this.supportedResponseModalities = new ArrayList<>(List.of(ResponseModality.TEXT));
     }
 
     /**
@@ -136,42 +140,6 @@ public class AnthropicModel extends AbstractModel {
      * {@inheritDoc}
      */
     @Override
-    public String getDisplayName() { return displayName; }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getVersion() { return version; }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Integer getMaxInputTokens() { return null; }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Integer getMaxOutputTokens() { return null; }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public List<String> getSupportedActions() { return List.of("messages"); }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getRawDescription() { return "<html><b>Model ID:</b> " + modelId + "<br><b>Version:</b> " + version + "</html>"; }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public boolean isSupportsFunctionCalling() { return true; }
 
     /**
@@ -202,12 +170,6 @@ public class AnthropicModel extends AbstractModel {
      * {@inheritDoc}
      */
     @Override
-    public List<ResponseModality> getSupportedResponseModalities() { return List.of(ResponseModality.TEXT); }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public List<ServerTool> getAvailableServerTools() { return Collections.emptyList(); }
 
     /**
@@ -215,24 +177,6 @@ public class AnthropicModel extends AbstractModel {
      */
     @Override
     public List<ServerTool> getDefaultServerTools() { return Collections.emptyList(); }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Float getDefaultTemperature() { return 0.7f; }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Integer getDefaultTopK() { return null; }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Float getDefaultTopP() { return null; }
 
     /**
      * Helper to prepare the final JSON payload containing the system instructions,
