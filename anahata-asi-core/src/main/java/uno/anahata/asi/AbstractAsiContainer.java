@@ -413,7 +413,6 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
      * on the classpath.</li>
      * <li>Falls back to {@link #getAsiCoreImplementationVersion()}.</li>
      * </ol>
-     * </p>
      *
      * @return The container implementation version string, or {@code null} if
      * unresolved.
@@ -833,7 +832,6 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
      * Gets the directory where active agi sessions are stored.
      *
      * @return The sessions directory path.
-     * @throws IOException If creating the directory fails.
      */
     @SneakyThrows
     public Path getSessionsDir() {
@@ -844,7 +842,6 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
      * Gets the directory where manually saved agi sessions are stored.
      *
      * @return The saved sessions directory path.
-     * @throws IOException If creating the directory fails.
      */
     @SneakyThrows
     public Path getSavedSessionsDir() {
@@ -855,7 +852,6 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
      * Gets the directory where disposed agi sessions are moved.
      *
      * @return The disposed sessions directory path.
-     * @throws IOException If creating the directory fails.
      */
     @SneakyThrows
     public Path getDisposedSessionsDir() {
@@ -866,7 +862,6 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
      * Gets the directory where agi sessions that failed to load are moved.
      *
      * @return The unloadable sessions directory path.
-     * @throws IOException If creating the directory fails.
      */
     @SneakyThrows
     public Path getUnloadableSessionsDir() {

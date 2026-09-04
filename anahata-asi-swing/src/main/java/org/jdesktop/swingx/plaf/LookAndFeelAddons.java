@@ -23,8 +23,6 @@ package org.jdesktop.swingx.plaf;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -208,41 +206,13 @@ public abstract class LookAndFeelAddons {
     }
 
     private static ClassLoader getClassLoader() {
-        ClassLoader cl = null;
-        
-        try {
-            cl = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
-                @Override
-                public ClassLoader run() {
-                    return LookAndFeelAddons.class.getClassLoader();
-                }
-            });
-        } catch (SecurityException ignore) { }
-        
+        ClassLoader cl = LookAndFeelAddons.class.getClassLoader();
         if (cl == null) {
-            final Thread t = Thread.currentThread();
-            
-            try {
-                cl = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
-                    @Override
-                    public ClassLoader run() {
-                        return t.getContextClassLoader();
-                    }
-                });
-            } catch (SecurityException ignore) { }
+            cl = Thread.currentThread().getContextClassLoader();
         }
-        
         if (cl == null) {
-            try {
-                cl = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
-                    @Override
-                    public ClassLoader run() {
-                        return ClassLoader.getSystemClassLoader();
-                    }
-                });
-            } catch (SecurityException ignore) { }
+            cl = ClassLoader.getSystemClassLoader();
         }
-        
         return cl;
     }
     
@@ -281,13 +251,8 @@ public abstract class LookAndFeelAddons {
 
     public static String getCrossPlatformAddonClassName() {
         try {
-            return AccessController.doPrivileged(new PrivilegedAction<String>() {
-                @Override
-                public String run() {
-                    return System.getProperty("swing.crossplatformlafaddon",
-                            "org.jdesktop.swingx.plaf.metal.MetalLookAndFeelAddons");
-                }
-            });
+            return System.getProperty("swing.crossplatformlafaddon",
+                    "org.jdesktop.swingx.plaf.metal.MetalLookAndFeelAddons");
         } catch (SecurityException ignore) {
         }
 

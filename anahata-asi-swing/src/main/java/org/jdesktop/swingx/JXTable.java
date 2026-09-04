@@ -166,8 +166,6 @@ import org.jdesktop.swingx.table.TableColumnModelExt;
  * subsequent click on a header reverses the order of the sort, and a sort arrow
  * icon is automatically drawn on the header. 
  * 
- * <p>
- * 
  * <h2>Rendering and Highlighting</h2>
  * 
  * As all SwingX collection views, a JXTable is a HighlighterClient (PENDING JW:
@@ -308,9 +306,6 @@ import org.jdesktop.swingx.table.TableColumnModelExt;
  * indicator of the preferred size of the column. This can be useful if some
  * data in a given column is very long, but where the resize algorithm would
  * normally not pick this up.
- * 
- * <p>
- * 
  * 
  * <p>
  * Keys/Actions registered with this component:
@@ -694,7 +689,6 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
 
     /**
      * Creates and returns the RolloverProducer to use with this component.
-     * <p>
      * 
      * @return <code>RolloverProducer</code> to use with this component
      * 
@@ -707,7 +701,6 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
 
     /**
      * Returns the column control visible property.
-     * <p>
      * 
      * @return boolean to indicate whether the column control is visible.
      * @see #setColumnControlVisible(boolean)
@@ -779,7 +772,6 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * <code>JComponent</code> to add to and keep in the trailing corner of the
      * scrollpane. (if any). It's up the concrete control to configure itself
      * from and keep synchronized to the columns' states.
-     * <p>
      * 
      * @param columnControl the <code>JComponent</code> to use as columnControl.
      * @see #getColumnControl()
@@ -818,7 +810,6 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * Overridden to work around a core bug: <code>JScrollPane</code> can't cope
      * with corners when changing component orientation at runtime. This method
      * explicitly re-configures the column control.
-     * <p>
      * 
      * @param o the ComponentOrientation for this table.
      * @see java.awt.Component#setComponentOrientation(ComponentOrientation)
@@ -915,7 +906,6 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * 
      * Adds the <code>ColumnControl</code> if the
      * <code>columnControlVisible</code> property is true.
-     * <p>
      * 
      * @see #setColumnControlVisible(boolean)
      * @see #setColumnControl(JComponent)
@@ -1439,13 +1429,13 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
     }
 
     /**
-     * {@inheritDoc} <p>
-     * 
+     * {@inheritDoc}
+     * <p>
      * Overridden for documentation reasons only: same behaviour but different default value.
+     * </p>
      * <p>
-     * 
      * The default value is <code>true</code>.
-     * <p>
+     * </p>
      */
     @Override
     public void setFillsViewportHeight(boolean fillsViewportHeight) {
@@ -1551,8 +1541,6 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * <li> update string representation control after structureChanged
      * <li> core bug #6791934 logic to force revalidate if appropriate
      * </ul>
-     * <p>
-     * 
      */
     @Override
     public void tableChanged(TableModelEvent e) {
@@ -1818,7 +1806,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
     }
 
     /**
-     * Returns the table's sortable property.<p>
+     * Returns the table's sortable property.
      * 
      * @return true if the table is sortable.
      * @see #setSortable(boolean)
@@ -1836,7 +1824,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * if controlsSorterProperties is true. 
      * <p> 
      * 
-     * The default value is true.<p>
+     * The default value is true.
      *
      * @param sortsOnUpdates whether or not to sort on update events
      * @see #getSortsOnUpdates()
@@ -1896,7 +1884,6 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
     /**
      * Sets the filter to the sorter, if available and of type SortController.
      * Does nothing otherwise.
-     * <p>
      *
      * @param filter the filter used to determine what entries should be
      *        included
@@ -1943,15 +1930,14 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
     /**
      * 
      * Toggles the sort order of the column at columnIndex.
-     * Delegates to the SortController if available, or does nothing if not.<p>
-     * 
+     * Delegates to the SortController if available, or does nothing if not.
      * <p>
      * The exact behaviour is defined by the SortController's toggleSortOrder
      * implementation. Typically a unsorted column is sorted in ascending order,
      * a sorted column's order is reversed.
      * <p>
      * 
-     * PRE: 0 <= columnIndex < getColumnCount()
+     * PRE: 0 &lt;= columnIndex &lt; getColumnCount()
      * 
      * @param columnIndex the columnIndex in view coordinates.
      * 
@@ -1964,11 +1950,10 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
 
     /**
      * Sorts the table by the given column using SortOrder.
-     * Delegates to the SortController if available, or does nothing if not.<p>
-     * 
-     * PRE: 0 <= columnIndex < getColumnCount()
+     * Delegates to the SortController if available, or does nothing if not.
      * <p>
-     * 
+     * PRE: 0 &lt;= columnIndex &lt; getColumnCount()
+     * </p>
      * 
      * @param columnIndex the column index in view coordinates.
      * @param sortOrder the sort order to use.
@@ -1983,7 +1968,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
 
     /**
      * Returns the SortOrder of the given column.
-     * Delegates to the SortController if available, or returns SortOrder.UNSORTED if not.<p>
+     * Delegates to the SortController if available, or returns SortOrder.UNSORTED if not.
      * 
      * @param columnIndex the column index in view coordinates.
      * @return the interactive sorter's SortOrder if matches the column or
@@ -2383,7 +2368,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      *         index
      * @throws ArrayIndexOutOfBoundsException if columnIndex out of allowed
      *         range, that is if
-     *         <code> (columnIndex < 0) || (columnIndex >= getColumnCount())</code>
+     *         {@code (columnIndex < 0) || (columnIndex >= getColumnCount())}
      *         .
      * 
      * @see #getColumnExt(Object)
@@ -2497,7 +2482,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
     /**
      * Synch's the SortController column sortable property to the new value, if 
      * controlsSorterProperties. Does nothing otherwise. This method is
-     * called on sortable property change notification from the ext column model. <p>
+     * called on sortable property change notification from the ext column model.
      * 
      * @param column the <code>TableColumn</code> which sent the change
      *        notifcation
@@ -2512,11 +2497,11 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
     /**
      * Synch's the SortController column comparator property to the new value, if 
      * controlsSorterProperties. Does nothing otherwise. This method is
-     * called on comparator property change notification from the ext column model. <p>
+     * called on comparator property change notification from the ext column model.
      * 
      * @param column the <code>TableColumn</code> which sent the change
      *        notifcation
-     * @param sortable the new value of the column's sortable property
+     * @param comparator the new comparator of the column
      */
     private void updateComparatorAfterColumnChanged(TableColumn column,
             Comparator<?> comparator) {
@@ -2558,9 +2543,6 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
     /**
      * Creates and adds <code>TableColumn</code>s for each column of the table
      * model.
-     * <p>
-     * 
-     * 
      */
     private void createAndAddColumns() {
         /*
@@ -2585,7 +2567,6 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
 
     /**
      * Remove all columns, make sure to include hidden.
-     * <p>
      */
     private void removeColumns() {
         /*
@@ -2601,7 +2582,6 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
 
     /**
      * Returns the ColumnFactory.
-     * <p>
      * 
      * @return the columnFactory to use for column creation and configuration,
      *         guaranteed to not be null.
@@ -2855,7 +2835,6 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
     /**
      * Initialize the width related properties of all contained TableColumns,
      * both visible and hidden.
-     * <p>
      * <ul>
      * <li>PENDING: move into ColumnFactory?
      * <li>PENDING: what to do if autoCreateColumn off?
@@ -3074,7 +3053,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
          * @param modelColumn the column index in model coordinates, must be valid
          * @return the first contained TableColumn with the given model index, or
          *   null if none is found
-         * @throws IllegalArgumentExcetpion if model index invalid  
+         * @throws IllegalArgumentException if model index invalid  
          */
         protected TableColumn getColumnByModelIndex(int modelColumn) {
             if ((modelColumn < 0) || (modelColumn >= getColumnCount())) {
@@ -3116,7 +3095,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
         }
 
         /** 
-         * @inherited <p>
+         * {@inheritDoc}
          */
         @Override
         public Class<?> getColumnClass(int column) {
@@ -3254,12 +3233,12 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * Sets the <code>Highlighter</code>s to the table, replacing any old
      * settings. None of the given Highlighters must be null.
      * <p>
-     * 
      * This is a bound property.
+     * </p>
      * <p>
-     * 
      * Note: as of version #1.257 the null constraint is enforced strictly. To
      * remove all highlighters use this method without param.
+     * </p>
      * 
      * @param highlighters zero or more not null highlighters to use for
      *        renderer decoration.
@@ -3384,7 +3363,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
     }
 
     /**
-     * Creates and returns the default registry for StringValues.<p>
+     * Creates and returns the default registry for StringValues.
      * 
      * @return the default registry for StringValues.
      */
@@ -3568,7 +3547,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * Convenience method to get the rendering component for the given cell.
      * 
      * @param row the row of the cell to render, where 0 is the first row
-     * @param column the column of the cell to render, where 0 is the first
+     * @param col the column of the cell to render, where 0 is the first
      *        column
      * @return the decorated <code>Component</code> used as a stamp to render
      *         the specified cell
@@ -3917,7 +3896,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * edit.
      * <p>
      * The default value is <code>true</code>.
-     * <p>
+     * </p>
      * 
      * @param autoStart boolean to determine whether a keyStroke should try to
      *        start editing.
@@ -4292,7 +4271,7 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * key "JXTable.rowHeight"). If none is available, calculates a "reasonable"
      * height from the table's fontMetrics, assuming that most renderers/editors
      * will have a border with top/bottom of 1.
-     * <p>
+     * </p>
      * 
      * @param respectRowSetFlag a boolean to indicate whether client-code flag
      *        should be respected.
@@ -4316,7 +4295,6 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
      * Convenience to set both grid line visibility and default margin for
      * horizontal/vertical lines. The margin defaults to 1 or 0 if the grid
      * lines are drawn or not drawn.
-     * <p>
      * 
      * @param showHorizontalLines boolean to decide whether to draw horizontal
      *        grid lines.

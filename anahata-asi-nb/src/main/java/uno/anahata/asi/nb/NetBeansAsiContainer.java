@@ -94,7 +94,7 @@ public class NetBeansAsiContainer extends AbstractSwingAsiContainer {
 
     /**
      * Default constructor for the NetBeans container.
-     * @throws java.io.IOException if an error occurs when 
+     * @throws java.io.IOException if an error occurs initializing the container.
      */
     public NetBeansAsiContainer() throws IOException {
         super("netbeans");

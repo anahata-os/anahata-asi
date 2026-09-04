@@ -72,7 +72,7 @@ public class AiProviderUiRegistry {
      * Resolves the most specific {@link AiProviderPanel} class for a given AI provider type.
      * <p>
      * Walks up the superclass hierarchy starting from {@code providerClass} up to {@link AbstractAiProvider}
-     * to find the closest registered panel class. If no specialized mapping is found, returns {@link AiProviderPanel#class}.
+     * to find the closest registered panel class. If no specialized mapping is found, returns {@link AiProviderPanel}.
      * </p>
      *
      * @param providerClass The concrete class of the AI provider.

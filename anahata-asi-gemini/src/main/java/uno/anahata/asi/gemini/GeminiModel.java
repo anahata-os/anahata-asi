@@ -114,7 +114,9 @@ public class GeminiModel extends AbstractModel {
     }
 
     /**
-     * {@inheritDoc}
+     * Returns the parent {@link GeminiAiProvider} instance that owns this model.
+     *
+     * @return The Gemini AI provider instance.
      */
     @Override
     public AbstractAiProvider getProvider() {

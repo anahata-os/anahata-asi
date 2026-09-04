@@ -453,7 +453,7 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      * updating the cache.
      *
      * @return The list of models discovered directly from the API.
-     * @throws java_lang_Exception if remote API communication or model
+     * @throws Exception if remote API communication or model
      * discovery fails.
      */
     public synchronized List<AbstractModel> refreshCachedApiModels() throws Exception {
@@ -564,7 +564,7 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      * Checks if this provider is effectively enabled and ready for active model
      * requests.
      * <p>
-     * A provider is effectively enabled if {@link #isEnabled} is {@code true}
+     * A provider is effectively enabled if {@code isEnabled()} is {@code true}
      * AND either it does not require an API key (e.g. local Ollama) or at least
      * one valid API key is configured.
      * </p>
@@ -649,7 +649,7 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      * Reloads the API key pool from the provider's configuration file and
      * triggers an initial key selection.
      *
-     * @throws java_io_IOException If reading the key file fails.
+     * @throws IOException If reading the key file fails.
      */
     public synchronized void reloadKeyPool() throws IOException {
         keyPool = readApiKeysFile();
@@ -700,7 +700,7 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
 
     /**
      * Resolves the path to the API keys configuration file for this provider.
-     * Defaults to ~/.anahata/asi/<uuid>_api_keys.txt if apiKeysFile is not
+     * Defaults to {@code ~/.anahata/asi/<uuid>_api_keys.txt} if apiKeysFile is not
      * specified.
      *
      * @return The path to the API keys configuration file.
@@ -735,7 +735,7 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      *
      * @return A list of cleaned, non-empty, non-comment API key strings read
      * from the file.
-     * @throws java_io_IOException If reading the file fails.
+     * @throws IOException If reading the file fails.
      */
     private List<String> readApiKeysFile() throws IOException {
         ensureKeysFileExists();
