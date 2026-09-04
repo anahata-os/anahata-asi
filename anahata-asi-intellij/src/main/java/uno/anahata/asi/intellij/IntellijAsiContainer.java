@@ -3,6 +3,7 @@ package uno.anahata.asi.intellij;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import lombok.Getter;
@@ -71,8 +72,9 @@ public class IntellijAsiContainer extends AbstractSwingAsiContainer {
 
     /**
      * Default constructor initializing with the "intellij" host application ID.
+     * @throws java.io.IOException if it cannot read or write from disk
      */
-    public IntellijAsiContainer() {
+    public IntellijAsiContainer() throws IOException{
         super("intellij");
     }
 
@@ -81,8 +83,9 @@ public class IntellijAsiContainer extends AbstractSwingAsiContainer {
      * in the live {@link #INSTANCES} registry.
      *
      * @param toolWindow The target ToolWindow.
+     * @throws java.io.IOException if it cannot read or write from disk
      */
-    public IntellijAsiContainer(ToolWindow toolWindow) {
+    public IntellijAsiContainer(ToolWindow toolWindow) throws IOException{
         this();
         this.toolWindow = toolWindow;
         INSTANCES.add(this);
