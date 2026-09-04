@@ -24,7 +24,6 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
-import uno.anahata.asi.persistence.kryo.KryoUtils;
 import java.util.ArrayList;
 import uno.anahata.asi.persistence.kryo.KryoUtils;
 
