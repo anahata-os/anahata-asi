@@ -28,6 +28,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.UIManager;
+import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import lombok.Getter;
 import lombok.NonNull;
@@ -58,6 +59,8 @@ public class EnumSetComboBox<E extends Enum<E>> extends JButton {
     private Consumer<Set<E>> onSelectionChanged;
     /** Registered popup menu listeners forwarded to the active JPopupMenu instance. */
     private final List<PopupMenuListener> popupMenuListeners = new ArrayList<>();
+    /** Reference to the currently visible popup menu instance. */
+    private JPopupMenu activePopup;
 
     /**
      * Registers a PopupMenuListener to be notified when the multi-selection popup opens or closes.
@@ -165,9 +168,30 @@ public class EnumSetComboBox<E extends Enum<E>> extends JButton {
     /**
      * Opens the multi-selection checkbox popup menu beneath the button using native JCheckBoxMenuItems.
      */
-    public void showPopup() {
+    public synchronized void showPopup() {
+        if (!isShowing() || !isDisplayable() || (activePopup != null && activePopup.isVisible())) {
+            return;
+        }
+
         JPopupMenu popup = new JPopupMenu();
+        this.activePopup = popup;
         popup.setBorder(BorderFactory.createLineBorder(new Color(180, 180, 180)));
+
+        popup.addPopupMenuListener(new PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+            }
+
+            @Override
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+                activePopup = null;
+            }
+
+            @Override
+            public void popupMenuCanceled(PopupMenuEvent e) {
+                activePopup = null;
+            }
+        });
 
         for (PopupMenuListener l : popupMenuListeners) {
             popup.addPopupMenuListener(l);
@@ -199,6 +223,10 @@ public class EnumSetComboBox<E extends Enum<E>> extends JButton {
             popup.add(item);
         }
 
-        popup.show(this, 0, getHeight());
+        try {
+            popup.show(this, 0, getHeight());
+        } catch (Exception ex) {
+            this.activePopup = null;
+        }
     }
 }

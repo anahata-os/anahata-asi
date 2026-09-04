@@ -140,6 +140,16 @@ public class AiModelsPanel extends JPanel {
     private final JButton addNewModelsButton;
 
     /**
+     * Button to remove selected models from local storage.
+     */
+    private final JButton removeSelectedButton;
+
+    /**
+     * Button to reset selected models with discrepancies back to API specifications.
+     */
+    private final JButton resetSelectedButton;
+
+    /**
      * Bottom status bar label showing active model counts and operations feedback.
      */
     private final JLabel statusLabel;
@@ -237,6 +247,16 @@ public class AiModelsPanel extends JPanel {
         addNewModelsButton.setVisible(false);
         addNewModelsButton.addActionListener(e -> addAllNewModels());
 
+        removeSelectedButton = new JButton("Remove Selected", new DeleteIcon(16));
+        removeSelectedButton.setToolTipText("Remove selected models from local storage");
+        removeSelectedButton.setEnabled(false);
+        removeSelectedButton.addActionListener(e -> removeSelectedModels());
+
+        resetSelectedButton = new JButton("Reset Selected", new RestartIcon(16));
+        resetSelectedButton.setToolTipText("Reset selected models with discrepancies back to API endpoint specifications");
+        resetSelectedButton.setEnabled(false);
+        resetSelectedButton.addActionListener(e -> resetSelectedModels());
+
         providerLabel = new JLabel("Provider:");
         filterPanel.add(providerLabel);
         filterPanel.add(providerComboBox);
@@ -249,6 +269,8 @@ public class AiModelsPanel extends JPanel {
         filterPanel.add(effectivelyEnabledCheckbox);
         filterPanel.add(refreshButton);
         filterPanel.add(addNewModelsButton);
+        filterPanel.add(removeSelectedButton);
+        filterPanel.add(resetSelectedButton);
 
         add(filterPanel, BorderLayout.NORTH);
 
@@ -265,30 +287,7 @@ public class AiModelsPanel extends JPanel {
 
         // Table
         tableModel = new AiModelTableModel(models);
-
-        table = new JXTable(tableModel) {
-
-            /**
-             * {@inheritDoc}
-             * <p>
-             * Provides the full, non-truncated model description as a tooltip
-             * when hovering over a specific row.
-             * </p>
-             */
-            @Override
-            public String getToolTipText(MouseEvent e) {
-                Point p = e.getPoint();
-                int viewRow = rowAtPoint(p);
-                if (viewRow >= 0) {
-                    int modelRow = convertRowIndexToModel(viewRow);
-                    AbstractModel model = tableModel.getModelAt(modelRow);
-                    if (model != null) {
-                        return model.getRawDescription();
-                    }
-                }
-                return super.getToolTipText(e);
-            }
-        };
+        table = new JXTable(tableModel);
 
         table.setColumnControlVisible(true);
         table.setHorizontalScrollEnabled(true);
@@ -304,8 +303,24 @@ public class AiModelsPanel extends JPanel {
             }
         }
 
-        // Add double-click listener
+        // Add double-click and right-click listeners
         table.addMouseListener(new MouseAdapter() {
+            /**
+             * {@inheritDoc}
+             * <p>
+             * Selects the row on right-click without initiating cell editing.
+             * </p>
+             */
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    int row = table.rowAtPoint(e.getPoint());
+                    if (row >= 0 && !table.isRowSelected(row)) {
+                        table.setRowSelectionInterval(row, row);
+                    }
+                }
+            }
+
             /**
              * {@inheritDoc}
              * <p>
@@ -349,9 +364,8 @@ public class AiModelsPanel extends JPanel {
         });
 
         // Set cell renderer and editor on Column 0 (Enabled: Checkbox for registered, [+ Add] button for unregistered)
-        Column0CellRendererEditor col0Cell = new Column0CellRendererEditor();
-        table.getColumnModel().getColumn(0).setCellRenderer(col0Cell);
-        table.getColumnModel().getColumn(0).setCellEditor(col0Cell);
+        table.getColumnModel().getColumn(0).setCellRenderer(new Column0CellRenderer());
+        table.getColumnModel().getColumn(0).setCellEditor(new Column0CellEditor());
 
         // Set cell renderer on AI Provider column (shows provider icon and display name)
         table.getColumnModel().getColumn(1).setCellRenderer(new AiProviderRenderer());
@@ -372,11 +386,10 @@ public class AiModelsPanel extends JPanel {
                         setToolTipText("Discovered from API, not yet registered in local database");
                     } else {
                         setIcon(null);
+                        setText(m.getModelId());
                         if (m.hasDiscrepancy()) {
-                            setText("⚠️ " + m.getModelId());
-                            setToolTipText("Model configuration differs from API endpoint specifications");
+                            setToolTipText("Model has customized configuration (Reset button available to restore API defaults)");
                         } else {
-                            setText(m.getModelId());
                             setToolTipText(null);
                         }
                     }
@@ -405,9 +418,11 @@ public class AiModelsPanel extends JPanel {
         });
 
         // Set cell renderer and editor on Actions column
-        ModelActionsPanelCell cellRendererEditor = new ModelActionsPanelCell();
-        table.getColumnExt("Actions").setCellRenderer(cellRendererEditor);
-        table.getColumnExt("Actions").setCellEditor(cellRendererEditor);
+        table.getColumnExt("Actions").setCellRenderer(new ModelActionsCellRenderer());
+        table.getColumnExt("Actions").setCellEditor(new ModelActionsCellEditor());
+
+        // Update batch buttons on selection change
+        table.getSelectionModel().addListSelectionListener(e -> updateSelectionActionButtons());
 
         // Set preferred column widths
         table.getColumnModel().getColumn(0).setPreferredWidth(60);  // Enabled
@@ -547,6 +562,105 @@ public class AiModelsPanel extends JPanel {
         tableModel.setModels(displayModels);
         applyFilter();
         updateAddNewModelsButton();
+        updateSelectionActionButtons();
+    }
+
+    /**
+     * Updates the enabled state of the 'Remove Selected' and 'Reset Selected' buttons based on active table selection.
+     */
+    private void updateSelectionActionButtons() {
+        int[] selectedRows = table.getSelectedRows();
+        if (selectedRows.length == 0) {
+            removeSelectedButton.setEnabled(false);
+            resetSelectedButton.setEnabled(false);
+            return;
+        }
+
+        boolean hasRegistered = false;
+        boolean hasDiscrepancy = false;
+        for (int row : selectedRows) {
+            int modelRow = table.convertRowIndexToModel(row);
+            AbstractModel m = tableModel.getModelAt(modelRow);
+            if (m != null && m.isRegistered()) {
+                hasRegistered = true;
+                if (m.hasDiscrepancy()) {
+                    hasDiscrepancy = true;
+                }
+            }
+        }
+        removeSelectedButton.setEnabled(hasRegistered);
+        resetSelectedButton.setEnabled(hasDiscrepancy);
+    }
+
+    /**
+     * Removes all selected registered models from local storage in a single batch.
+     */
+    private void removeSelectedModels() {
+        int[] selectedRows = table.getSelectedRows();
+        List<AbstractModel> toRemove = new ArrayList<>();
+        for (int row : selectedRows) {
+            int modelRow = table.convertRowIndexToModel(row);
+            AbstractModel m = tableModel.getModelAt(modelRow);
+            if (m != null && m.isRegistered()) {
+                toRemove.add(m);
+            }
+        }
+        if (toRemove.isEmpty()) {
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to remove " + toRemove.size() + " selected model(s) from local storage?",
+                "Remove Selected Models", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (confirm == JOptionPane.YES_OPTION) {
+            int removed = 0;
+            for (AbstractModel m : toRemove) {
+                try {
+                    m.remove();
+                    removed++;
+                } catch (IOException ex) {
+                    log.error("Failed to remove model {}", m.getModelId(), ex);
+                }
+            }
+            refreshTableData();
+            statusLabel.setText("Removed " + removed + " model(s) from local storage.");
+        }
+    }
+
+    /**
+     * Resets all selected registered models with discrepancies back to API specifications.
+     */
+    private void resetSelectedModels() {
+        int[] selectedRows = table.getSelectedRows();
+        List<AbstractModel> toReset = new ArrayList<>();
+        for (int row : selectedRows) {
+            int modelRow = table.convertRowIndexToModel(row);
+            AbstractModel m = tableModel.getModelAt(modelRow);
+            if (m != null && m.isRegistered() && m.hasDiscrepancy()) {
+                toReset.add(m);
+            }
+        }
+        if (toReset.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "None of the selected models have configuration discrepancies.", "No Discrepancies", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Reset " + toReset.size() + " selected model(s) back to API endpoint specifications?",
+                "Reset Selected Models", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        if (confirm == JOptionPane.YES_OPTION) {
+            int reset = 0;
+            for (AbstractModel m : toReset) {
+                try {
+                    m.resetFromApi();
+                    reset++;
+                } catch (IOException ex) {
+                    log.error("Failed to reset model {}", m.getModelId(), ex);
+                }
+            }
+            refreshTableData();
+            statusLabel.setText("Reset " + reset + " model(s) to API specifications.");
+        }
     }
 
     /**
@@ -647,79 +761,25 @@ public class AiModelsPanel extends JPanel {
     }
 
     /**
-     * Specialized cell renderer and editor for Column 0.
-     * <p>
-     * Displays an interactive {@link JCheckBox} for locally registered and persisted models to
-     * toggle their enabled state, and an intuitive {@link JButton} labeled "Add" for unregistered
-     * API models to immediately persist them into the provider's local database.
-     * </p>
+     * Stateless cell renderer for Column 0.
      */
-    private class Column0CellRendererEditor extends AbstractCellEditor implements TableCellRenderer, TableCellEditor {
+    private class Column0CellRenderer implements TableCellRenderer {
 
-        /**
-         * The container panel hosting either the checkbox or the add button.
-         */
-        private final JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
-
-        /**
-         * The interactive checkbox component for toggling model activation.
-         */
+        private final JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 2));
         private final JCheckBox checkBox = new JCheckBox();
-
-        /**
-         * The action button to register and persist an unregistered API model.
-         */
         private final JButton addBtn = new JButton("Add", new AddIcon(12));
 
-        /**
-         * The current model entity represented by this renderer/editor instance.
-         */
-        private AbstractModel currentModel;
-
-        /**
-         * Constructs a new Column0CellRendererEditor with wired action listeners.
-         */
-        public Column0CellRendererEditor() {
+        public Column0CellRenderer() {
             panel.setOpaque(true);
             checkBox.setOpaque(false);
             addBtn.setFont(addBtn.getFont().deriveFont(11f));
-
-            addBtn.addActionListener(e -> {
-                if (currentModel != null && currentModel.getProvider() != null) {
-                    try {
-                        currentModel.getProvider().addModel(currentModel);
-                        fireEditingStopped();
-                        refreshTableData();
-                    } catch (IOException ex) {
-                        log.error("Failed to add model {}", currentModel.getModelId(), ex);
-                        JOptionPane.showMessageDialog(AiModelsPanel.this, "Failed to add model: " + ex.getMessage());
-                    }
-                }
-            });
-
-            checkBox.addActionListener(e -> {
-                if (currentModel != null && currentModel.isRegistered()) {
-                    currentModel.setEnabled(checkBox.isSelected());
-                    try {
-                        currentModel.persist();
-                    } catch (IOException ex) {
-                        log.error("Failed to persist model enabled state {}", currentModel.getModelId(), ex);
-                    }
-                    fireEditingStopped();
-                }
-            });
+            addBtn.setMargin(new java.awt.Insets(1, 4, 1, 4));
         }
 
-        /**
-         * Updates the container panel state based on the registration state of the given model.
-         *
-         * @param model The target model entity.
-         * @param isSelected Whether the table cell is currently selected.
-         * @param table The parent table component.
-         * @return The configured container panel component.
-         */
-        private Component updateComponent(AbstractModel model, boolean isSelected, JTable table) {
-            this.currentModel = model;
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            int modelRow = table.convertRowIndexToModel(row);
+            AbstractModel model = tableModel.getModelAt(modelRow);
             panel.removeAll();
             panel.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
             if (model != null) {
@@ -732,119 +792,94 @@ public class AiModelsPanel extends JPanel {
             }
             return panel;
         }
+    }
 
-        /**
-         * {@inheritDoc}
-         * <p>
-         * Renders either the enabled checkbox for registered models or the "Add" button for API models.
-         * </p>
-         */
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            int modelRow = table.convertRowIndexToModel(row);
-            AbstractModel model = tableModel.getModelAt(modelRow);
-            return updateComponent(model, isSelected, table);
+    /**
+     * Active cell editor for Column 0.
+     */
+    private class Column0CellEditor extends AbstractCellEditor implements TableCellEditor {
+
+        private final JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 2));
+        private final JCheckBox checkBox = new JCheckBox();
+        private final JButton addBtn = new JButton("Add", new AddIcon(12));
+        private AbstractModel editingModel;
+
+        public Column0CellEditor() {
+            panel.setOpaque(true);
+            checkBox.setOpaque(false);
+            addBtn.setFont(addBtn.getFont().deriveFont(11f));
+            addBtn.setMargin(new java.awt.Insets(1, 4, 1, 4));
+
+            addBtn.addActionListener(e -> {
+                if (editingModel != null && editingModel.getProvider() != null) {
+                    try {
+                        editingModel.getProvider().addModel(editingModel);
+                        fireEditingStopped();
+                        refreshTableData();
+                    } catch (IOException ex) {
+                        log.error("Failed to add model {}", editingModel.getModelId(), ex);
+                        JOptionPane.showMessageDialog(AiModelsPanel.this, "Failed to add model: " + ex.getMessage());
+                    }
+                }
+            });
+
+            checkBox.addActionListener(e -> {
+                if (editingModel != null && editingModel.isRegistered()) {
+                    editingModel.setEnabled(checkBox.isSelected());
+                    try {
+                        editingModel.persist();
+                    } catch (IOException ex) {
+                        log.error("Failed to persist model enabled state {}", editingModel.getModelId(), ex);
+                    }
+                    fireEditingStopped();
+                }
+            });
         }
 
-        /**
-         * {@inheritDoc}
-         * <p>
-         * Configures and returns the interactive component for cell editing.
-         * </p>
-         */
         @Override
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
             int modelRow = table.convertRowIndexToModel(row);
-            AbstractModel model = tableModel.getModelAt(modelRow);
-            return updateComponent(model, true, table);
+            this.editingModel = tableModel.getModelAt(modelRow);
+            panel.removeAll();
+            panel.setBackground(table.getSelectionBackground());
+            if (editingModel != null) {
+                if (editingModel.isRegistered()) {
+                    checkBox.setSelected(editingModel.isEnabled());
+                    panel.add(checkBox);
+                } else {
+                    panel.add(addBtn);
+                }
+            }
+            return panel;
         }
 
-        /**
-         * {@inheritDoc}
-         * <p>
-         * Returns the active model entity currently bound to this cell editor.
-         * </p>
-         */
         @Override
         public Object getCellEditorValue() {
-            return currentModel;
+            return editingModel;
         }
     }
 
     /**
-     * Specialized cell renderer and editor providing Remove and Reset buttons for table rows.
+     * Stateless cell renderer providing Remove and Reset buttons for table rows.
      */
-    private class ModelActionsPanelCell extends AbstractCellEditor implements TableCellRenderer, TableCellEditor {
+    private class ModelActionsCellRenderer implements TableCellRenderer {
 
-        /**
-         * Container panel holding the action buttons.
-         */
-        private final JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
-
-        /**
-         * Button to remove/delete a persisted model.
-         */
+        private final JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 2));
         private final JButton removeBtn = new JButton("Remove", new DeleteIcon(12));
-
-        /**
-         * Button to reset a modified model back to API specifications.
-         */
         private final JButton resetBtn = new JButton("Reset", new RestartIcon(12));
 
-        /**
-         * The active model bound to this cell editor/renderer instance.
-         */
-        private AbstractModel currentModel;
-
-        /**
-         * Constructs a new ModelActionsPanelCell with configured button listeners.
-         */
-        public ModelActionsPanelCell() {
+        public ModelActionsCellRenderer() {
             panel.setOpaque(true);
             removeBtn.setFont(removeBtn.getFont().deriveFont(11f));
+            removeBtn.setMargin(new java.awt.Insets(1, 4, 1, 4));
             resetBtn.setFont(resetBtn.getFont().deriveFont(11f));
-
-            removeBtn.addActionListener(e -> {
-                if (currentModel != null) {
-                    int confirm = JOptionPane.showConfirmDialog(AiModelsPanel.this,
-                            "Are you sure you want to remove model '" + currentModel.getModelId() + "' from local storage?",
-                            "Remove Model", JOptionPane.YES_NO_OPTION);
-                    if (confirm == JOptionPane.YES_OPTION) {
-                        try {
-                            currentModel.remove();
-                            fireEditingStopped();
-                            refreshTableData();
-                        } catch (IOException ex) {
-                            log.error("Failed to remove model {}", currentModel.getModelId(), ex);
-                            JOptionPane.showMessageDialog(AiModelsPanel.this, "Failed to remove model: " + ex.getMessage());
-                        }
-                    }
-                }
-            });
-
-            resetBtn.addActionListener(e -> {
-                if (currentModel != null) {
-                    try {
-                        currentModel.resetFromApi();
-                        fireEditingStopped();
-                        refreshTableData();
-                    } catch (IOException ex) {
-                        log.error("Failed to reset model {}", currentModel.getModelId(), ex);
-                        JOptionPane.showMessageDialog(AiModelsPanel.this, "Failed to reset model: " + ex.getMessage());
-                    }
-                }
-            });
+            resetBtn.setMargin(new java.awt.Insets(1, 4, 1, 4));
         }
 
-        /**
-         * Updates the panel buttons based on the registration and discrepancy state of the given model.
-         *
-         * @param model The model entity to represent.
-         * @param isSelected Whether the row is selected.
-         * @param table The parent table.
-         */
-        private void updatePanel(AbstractModel model, boolean isSelected, JTable table) {
-            this.currentModel = model;
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            int modelRow = table.convertRowIndexToModel(row);
+            AbstractModel model = tableModel.getModelAt(modelRow);
             panel.removeAll();
             panel.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
 
@@ -854,39 +889,78 @@ public class AiModelsPanel extends JPanel {
                     panel.add(resetBtn);
                 }
             }
-        }
-
-        /**
-         * {@inheritDoc}
-         * <p>Renders the appropriate action buttons based on model registration status.</p>
-         */
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            int modelRow = table.convertRowIndexToModel(row);
-            AbstractModel model = tableModel.getModelAt(modelRow);
-            updatePanel(model, isSelected, table);
             return panel;
         }
+    }
 
-        /**
-         * {@inheritDoc}
-         * <p>Provides interactive action buttons during cell editing.</p>
-         */
+    /**
+     * Active cell editor providing Remove and Reset buttons for table rows.
+     */
+    private class ModelActionsCellEditor extends AbstractCellEditor implements TableCellEditor {
+
+        private final JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 2));
+        private final JButton removeBtn = new JButton("Remove", new DeleteIcon(12));
+        private final JButton resetBtn = new JButton("Reset", new RestartIcon(12));
+        private AbstractModel editingModel;
+
+        public ModelActionsCellEditor() {
+            panel.setOpaque(true);
+            removeBtn.setFont(removeBtn.getFont().deriveFont(11f));
+            removeBtn.setMargin(new java.awt.Insets(1, 4, 1, 4));
+            resetBtn.setFont(resetBtn.getFont().deriveFont(11f));
+            resetBtn.setMargin(new java.awt.Insets(1, 4, 1, 4));
+
+            removeBtn.addActionListener(e -> {
+                if (editingModel != null) {
+                    int confirm = JOptionPane.showConfirmDialog(AiModelsPanel.this,
+                            "Are you sure you want to remove model '" + editingModel.getModelId() + "' from local storage?",
+                            "Remove Model", JOptionPane.YES_NO_OPTION);
+                    if (confirm == JOptionPane.YES_OPTION) {
+                        try {
+                            editingModel.remove();
+                            fireEditingStopped();
+                            refreshTableData();
+                        } catch (IOException ex) {
+                            log.error("Failed to remove model {}", editingModel.getModelId(), ex);
+                            JOptionPane.showMessageDialog(AiModelsPanel.this, "Failed to remove model: " + ex.getMessage());
+                        }
+                    }
+                }
+            });
+
+            resetBtn.addActionListener(e -> {
+                if (editingModel != null) {
+                    try {
+                        editingModel.resetFromApi();
+                        fireEditingStopped();
+                        refreshTableData();
+                    } catch (IOException ex) {
+                        log.error("Failed to reset model {}", editingModel.getModelId(), ex);
+                        JOptionPane.showMessageDialog(AiModelsPanel.this, "Failed to reset model: " + ex.getMessage());
+                    }
+                }
+            });
+        }
+
         @Override
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
             int modelRow = table.convertRowIndexToModel(row);
-            AbstractModel model = tableModel.getModelAt(modelRow);
-            updatePanel(model, true, table);
+            this.editingModel = tableModel.getModelAt(modelRow);
+            panel.removeAll();
+            panel.setBackground(table.getSelectionBackground());
+
+            if (editingModel != null && editingModel.isRegistered()) {
+                panel.add(removeBtn);
+                if (editingModel.hasDiscrepancy()) {
+                    panel.add(resetBtn);
+                }
+            }
             return panel;
         }
 
-        /**
-         * {@inheritDoc}
-         * <p>Returns the model entity associated with this cell editor.</p>
-         */
         @Override
         public Object getCellEditorValue() {
-            return currentModel;
+            return editingModel;
         }
     }
 }

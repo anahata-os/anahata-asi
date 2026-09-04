@@ -54,12 +54,12 @@ public class EnumSetTableCellEditor<E extends Enum<E>> extends AbstractCellEdito
 
             @Override
             public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
-                stopCellEditing();
+                SwingUtilities.invokeLater(() -> stopCellEditing());
             }
 
             @Override
             public void popupMenuCanceled(PopupMenuEvent e) {
-                cancelCellEditing();
+                SwingUtilities.invokeLater(() -> cancelCellEditing());
             }
         });
     }
@@ -67,8 +67,7 @@ public class EnumSetTableCellEditor<E extends Enum<E>> extends AbstractCellEdito
     /**
      * {@inheritDoc}
      * <p>
-     * Populates the combo component with the cell's current enum collection, schedules
-     * opening the popup menu, and returns the combo editor.
+     * Populates the combo component with the cell's current enum collection and returns the combo editor.
      * </p>
      */
     @Override
@@ -87,7 +86,6 @@ public class EnumSetTableCellEditor<E extends Enum<E>> extends AbstractCellEdito
             }
         }
         comboBox.setSelectedValues(currentSet);
-        SwingUtilities.invokeLater(() -> comboBox.showPopup());
         return comboBox;
     }
 

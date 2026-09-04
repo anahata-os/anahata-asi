@@ -135,8 +135,7 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
      *
      * @param hostApplicationId The unique ID of the host application.
      */
-    @SneakyThrows
-    public AbstractSwingAsiContainer(String hostApplicationId) {
+    public AbstractSwingAsiContainer(String hostApplicationId) throws IOException{
         super(hostApplicationId);
 
         if (getProvider("GeminiGCExpress") == null) {
