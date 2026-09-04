@@ -19,6 +19,7 @@ import uno.anahata.asi.swing.AsiCardsContainerPanel;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
+import lombok.SneakyThrows;
 
 /**
  * Factory for creating the Anahata ASI Tool Window in IntelliJ.
@@ -52,6 +53,7 @@ public class AnahataToolWindowFactory implements ToolWindowFactory {
      * </p>
      */
     @Override
+    @SneakyThrows
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         IntellijAsiContainer.initEnvironment();
         IntellijAsiContainer asiContainer = new IntellijAsiContainer(toolWindow);

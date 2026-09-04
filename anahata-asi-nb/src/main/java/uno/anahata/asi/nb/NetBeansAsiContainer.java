@@ -2,6 +2,7 @@
 package uno.anahata.asi.nb;
 
 import java.beans.PropertyChangeListener;
+import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -93,10 +94,10 @@ public class NetBeansAsiContainer extends AbstractSwingAsiContainer {
 
     /**
      * Default constructor for the NetBeans container.
+     * @throws java.io.IOException if an error occurs when 
      */
-    public NetBeansAsiContainer() {
+    public NetBeansAsiContainer() throws IOException {
         super("netbeans");
-        new SwingTask<>(this, "Discovering AI Models", () -> getAllModels(true)).start();
     }
 
     /**

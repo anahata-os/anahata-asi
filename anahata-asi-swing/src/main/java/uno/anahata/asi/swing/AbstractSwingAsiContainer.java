@@ -103,34 +103,6 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
     private AsiContainerSettingsFrame settingsFrame;
 
     /**
-     * Displays the global ASI settings Command Center in maximized mode.
-     */
-    public void showSettings() {
-        showSettings(0);
-    }
-
-    /**
-     * Displays the global ASI settings Command Center with a specific tab selected.
-     * <p>
-     * Reuses the existing {@link AsiContainerSettingsFrame} instance if already open,
-     * bringing it to front and selecting the requested tab index.
-     * </p>
-     *
-     * @param initialTabIndex The index of the tab to open.
-     */
-    public synchronized void showSettings(int initialTabIndex) {
-        if (settingsFrame == null || !settingsFrame.isDisplayable()) {
-            settingsFrame = new AsiContainerSettingsFrame(this, initialTabIndex);
-        } else {
-            settingsFrame.getSettingsPanel().selectTab(initialTabIndex);
-        }
-        settingsFrame.setExtendedState(javax.swing.JFrame.MAXIMIZED_BOTH);
-        settingsFrame.toFront();
-        settingsFrame.requestFocus();
-        settingsFrame.setVisible(true);
-    }
-
-    /**
      * Constructs a new Swing ASI container.
      *
      * @param hostApplicationId The unique ID of the host application.
@@ -197,6 +169,34 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
         for (AbstractAiProvider provider : getEffectivelyEnabledProviders()) {
             new DiscoverModelsTask(provider, false).start();
         }
+    }
+    
+        /**
+     * Displays the global ASI settings Command Center in maximized mode.
+     */
+    public void showSettings() {
+        showSettings(0);
+    }
+
+    /**
+     * Displays the global ASI settings Command Center with a specific tab selected.
+     * <p>
+     * Reuses the existing {@link AsiContainerSettingsFrame} instance if already open,
+     * bringing it to front and selecting the requested tab index.
+     * </p>
+     *
+     * @param initialTabIndex The index of the tab to open.
+     */
+    public synchronized void showSettings(int initialTabIndex) {
+        if (settingsFrame == null || !settingsFrame.isDisplayable()) {
+            settingsFrame = new AsiContainerSettingsFrame(this, initialTabIndex);
+        } else {
+            settingsFrame.getSettingsPanel().selectTab(initialTabIndex);
+        }
+        settingsFrame.setExtendedState(javax.swing.JFrame.MAXIMIZED_BOTH);
+        settingsFrame.toFront();
+        settingsFrame.requestFocus();
+        settingsFrame.setVisible(true);
     }
 
     /**
