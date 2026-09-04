@@ -3270,7 +3270,6 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
     /**
      * Appends a <code>Highlighter</code> to the end of the list of used
      * <code>Highlighter</code>s. The argument must not be null.
-     * <p>
      * 
      * @param highlighter the <code>Highlighter</code> to add, must not be null.
      * @throws NullPointerException if <code>Highlighter</code> is null.
@@ -3287,8 +3286,8 @@ public class JXTable extends JTable implements TableColumnModelExtListener {
     /**
      * Removes the given Highlighter.
      * <p>
-     * 
      * Does nothing if the Highlighter is not contained.
+     * </p>
      * 
      * @param highlighter the Highlighter to remove.
      * @see #addHighlighter(Highlighter)
