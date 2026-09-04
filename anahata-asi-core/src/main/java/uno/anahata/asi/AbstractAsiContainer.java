@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -85,6 +86,11 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     private final List<Agi> activeAgis = new ArrayList<>();
 
     /**
+     * The list of reusable AGI session templates managed by this container.
+     */
+    private final List<Agi> templates = new ArrayList<>();
+
+    /**
      * A master registry of AI provider instances.
      * <p>
      * Keyed by the provider's unique UUID. These instances are shared across
@@ -132,6 +138,9 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
         // Populate the registry from persisted providers on disk
         int diskProviders = loadProvidersFromDisk();
         log.info("Loaded {} AI Providers from disk for host application '{}'", diskProviders, hostApplicationId);
+
+        int diskTemplates = loadTemplatesFromDisk();
+        log.info("Loaded {} AGI Templates from disk for host application '{}'", diskTemplates, hostApplicationId);
     }
 
     /**
@@ -554,6 +563,10 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
      * @return The newly created and opened Agi session.
      */
     public final Agi createNewAgi() {
+        Agi defaultTemplate = getDefaultTemplate();
+        if (defaultTemplate != null) {
+            return createNewAgiFromTemplate(defaultTemplate);
+        }
         return createNewAgi(createNewAgiConfig());
     }
 
@@ -571,7 +584,7 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     public final Agi createNewAgi(AgiConfig config) {
         Agi agi = new Agi(config);
         configureNewAgi(agi);
-        registerInternal(agi);
+        registerActiveAgi(agi);
         open(agi);
         return agi;
     }
@@ -624,7 +637,7 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
      *
      * @param agi The session to register.
      */
-    private void registerInternal(Agi agi) {
+    private void registerActiveAgi(Agi agi) {
         synchronized (activeAgis) {
             for (Agi existing : activeAgis) {
                 if (existing.getConfig().getSessionId().equals(agi.getConfig().getSessionId())) {
@@ -644,26 +657,28 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Authoritatively clones an existing Agi session.
+     * Authoritatively clones an existing Agi session or template.
      * <p>
-     * Implementation details: Performs a deep clone using Kryo, assigns a new
-     * unique session ID, and updates the nickname. By placing this logic in the
-     * core container, we ensure architectural purity across different UI
-     * frameworks.</p>
+     * Implementation details: Performs a deep clone using Kryo, assigns the new
+     * session ID, and updates the nickname. By placing this logic in the core
+     * container, we ensure architectural purity across different UI frameworks.
+     * </p>
      *
      * @param agi The source Agi session to clone.
+     * @param newSessionId Optional custom ID for the cloned session or template. If null or blank, a random UUID is generated.
      * @return The newly cloned and registered Agi session.
      */
-    public Agi cloneSession(@NonNull Agi agi) {
-        log.info("Cloning session: {}", agi.getConfig().getSessionId());
+    public Agi cloneAgi(@NonNull Agi agi, String newSessionId) {
+        log.info("Cloning {}: {}", isTemplate(agi) ? "template" : "session", agi.getConfig().getSessionId());
         try {
             Agi clonedAgi = KryoUtils.clone(agi);
 
-            String newSessionId = java.util.UUID.randomUUID().toString();
-            clonedAgi.getConfig().setSessionId(newSessionId);
+            String targetId = (newSessionId != null && !newSessionId.isBlank())
+                    ? newSessionId
+                    : java.util.UUID.randomUUID().toString();
+            clonedAgi.getConfig().setSessionId(targetId);
 
             clonedAgi.bindToContainer(this);
-            registerInternal(clonedAgi);
 
             String currentNick = clonedAgi.getNickname();
             if (currentNick != null && !currentNick.isBlank()) {
@@ -672,10 +687,16 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
                 clonedAgi.setNickname("Clone");
             }
 
-            autoSaveSession(clonedAgi, "cloneSession");
-            open(clonedAgi);
+            if (isTemplate(agi)) {
+                registerTemplate(clonedAgi);
+                saveAgi(clonedAgi);
+            } else {
+                registerActiveAgi(clonedAgi);
+                saveAgi(clonedAgi);
+                open(clonedAgi);
+            }
 
-            log.info("Session cloned successfully into new session: {}", newSessionId);
+            log.info("Cloned successfully into: {}", targetId);
             return clonedAgi;
         } catch (Exception e) {
             log.error("Failed to clone session {}", agi.getConfig().getSessionId(), e);
@@ -684,12 +705,13 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Registers a newly spawned or cloned Agi session with this container.
+     * Authoritatively clones an existing Agi session or template with an auto-generated UUID.
      *
-     * @param agi The session to register.
+     * @param agi The source Agi session to clone.
+     * @return The newly cloned and registered Agi session.
      */
-    public void registerSession(Agi agi) {
-        registerInternal(agi);
+    public Agi cloneAgi(@NonNull Agi agi) {
+        return AbstractAsiContainer.this.cloneAgi(agi, null);
     }
 
     /**
@@ -698,7 +720,7 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
      *
      * @param agi The agi session to unregister.
      */
-    public void unregister(Agi agi) {
+    public void unregisterAgi(Agi agi) {
         synchronized (activeAgis) {
             List<Agi> old = new ArrayList<>(activeAgis);
             if (activeAgis.remove(agi)) {
@@ -922,19 +944,44 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
             return;
         }
 
-        log.info("auto-save for session {} - status: {} - reason:" + reason,
-                reason, agi.getConfig().getSessionId(), status);
+        log.info("auto-save for {} {} - status: {} - reason: {}",
+                isTemplate(agi) ? "template" : "session", agi.getConfig().getSessionId(), status, reason);
 
-        saveSessionTo(agi, getSessionsDir());
+        saveAgi(agi);
     }
 
     /**
-     * Manually saves the session to the 'saved' directory.
+     * Gets the primary persistence directory for the given AGI session or template.
+     *
+     * @param agi The AGI instance.
+     * @return The templates directory if template, or sessions directory if active session.
+     * @throws IOException If creating the directory fails.
+     */
+    public Path getPersistenceDir(Agi agi) throws IOException {
+        return isTemplate(agi) ? getTemplatesDir() : getSessionsDir();
+    }
+
+    /**
+     * Saves the AGI instance to its designated persistence directory.
+     *
+     * @param agi The AGI instance to save.
+     * @throws IOException If saving fails.
+     */
+    public void saveAgi(Agi agi) throws IOException {
+        saveAgiTo(agi, getPersistenceDir(agi));
+    }
+
+    /**
+     * Manually saves the session to the 'saved' directory, or to templates if template.
      *
      * @param agi The agi session to save.
      */
     public void manualSaveSession(Agi agi) throws IOException {
-        saveSessionTo(agi, getSavedSessionsDir());
+        if (isTemplate(agi)) {
+            saveAgi(agi);
+        } else {
+            saveAgiTo(agi, getSavedSessionsDir());
+        }
     }
 
     /**
@@ -946,7 +993,7 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
      * @param dir The destination directory.
      * @throws IOException If saving fails.
      */
-    private void saveSessionTo(Agi agi, Path dir) throws IOException {
+    private void saveAgiTo(Agi agi, Path dir) throws IOException {
         synchronized (agi) {
             String sessionId = agi.getConfig().getSessionId();
             Path file = dir.resolve(sessionId + ".kryo");
@@ -956,7 +1003,7 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Permanently disposes of a agi session, shutting it down and moving its
+     * Permanently disposes of a agi session or template, shutting it down and moving its
      * serialized file to the 'disposed' directory.
      *
      * @param agi The agi session to dispose.
@@ -964,7 +1011,7 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     @SneakyThrows
     public void dispose(Agi agi) {
         String sessionId = agi.getConfig().getSessionId();
-        log.info("Disposing session: {}", sessionId);
+        log.info("Disposing {}: {}", isTemplate(agi) ? "template" : "session", sessionId);
 
         // 0. Authoritatively close the UI if it's open
         close(agi);
@@ -972,16 +1019,21 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
         // 1. Shutdown the agi (stops executors, etc.)
         agi.shutdown();
 
-        // 2. Move the session file from active to disposed
-        Path activeFile = getSessionsDir().resolve(sessionId + ".kryo");
+        // 2. Move the file from active to disposed
+        Path sourceDir = getPersistenceDir(agi);
+        Path activeFile = sourceDir.resolve(sessionId + ".kryo");
         if (Files.exists(activeFile)) {
-            Path disposedFile = getDisposedSessionsDir().resolve(sessionId + ".kryo");
+            Path disposedFile = getSubdirectory(sourceDir, "disposed").resolve(sessionId + ".kryo");
             Files.move(activeFile, disposedFile, StandardCopyOption.REPLACE_EXISTING);
-            log.info("Moved session file to disposed directory: {}", disposedFile);
+            log.info("Moved file to disposed directory: {}", disposedFile);
         }
 
-        // 3. Unregister from active list (fires property change)
-        unregister(agi);
+        // 3. Unregister from list (fires property change)
+        if (isTemplate(agi)) {
+            unregisterTemplate(agi);
+        } else {
+            unregisterAgi(agi);
+        }
     }
 
     /**
@@ -1000,59 +1052,222 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
         agi.getConfig().setSessionId(UUID.randomUUID().toString());
 
         agi.bindToContainer(this);
-        registerInternal(agi);
+        registerActiveAgi(agi);
         return agi;
     }
 
     /**
-     * Scans the sessions directory and loads all serialized Agi sessions. This
-     * is typically called during application startup.
+     * Deserializes an Agi instance from a file, rebinds it to this container, and
+     * automatically moves it to the 'unloadable' subdirectory on failure.
      *
-     * @return The number of sessions that failed to load.
+     * @param path The path to the serialized AGI file.
+     * @return The loaded Agi instance, or null if loading failed.
      */
-    @SneakyThrows
-    public int loadSessions() {
-        Path sessionsDir = getSessionsDir();
-
-        AtomicInteger failedCount = new AtomicInteger(0);
-        try (Stream<Path> stream = Files.list(sessionsDir)) {
-            stream.filter(p -> !Files.isDirectory(p)) // Only load files from the root (active sessions)
-                    .filter(p -> p.toString().endsWith(".kryo"))
-                    .parallel()
-                    .forEach(p -> {
-                        if (!loadSession(p)) {
-                            failedCount.incrementAndGet();
-                        }
-                    });
+    public Agi loadAgi(Path path) {
+        try {
+            log.info("Loading AGI from {}", path);
+            Agi agi = KryoUtils.loadFromFile(path, Agi.class);
+            agi.bindToContainer(this);
+            return agi;
+        } catch (Throwable t) {
+            log.error("Failed to load AGI from {}. Moving to unloadable directory.", path, t);
+            try {
+                Path unloadablePath = getSubdirectory(path.getParent(), "unloadable").resolve(path.getFileName());
+                Files.move(path, unloadablePath, StandardCopyOption.REPLACE_EXISTING);
+                log.info("Moved incompatible AGI to: {}", unloadablePath);
+                addNotification("Incompatible AGI moved to unloadable: " + path.getFileName());
+            } catch (IOException e) {
+                log.error("Failed to move incompatible AGI to unloadable directory: {}", path, e);
+            }
+            return null;
         }
-        return failedCount.get();
     }
 
     /**
-     * Loads a single Agi session from a file, rebinds it to this container, and
-     * registers it.
+     * Scans a directory for .kryo files in parallel, deserializes each via {@link #loadAgi(Path)},
+     * and invokes the registration callback as each finishes loading.
      *
-     * @param path The path to the serialized session file.
-     * @return true if the session was loaded successfully, false otherwise.
+     * @param dir The directory to load from.
+     * @param registrationCallback The callback to invoke for each successfully loaded AGI.
+     * @return The count of successfully loaded AGIs.
      */
-    private boolean loadSession(Path path) {
-        try {
-            log.info("Loading session from {}", path);
-            Agi agi = KryoUtils.loadFromFile(path, Agi.class);
-            agi.bindToContainer(this);
-            registerInternal(agi);
-            return true;
-        } catch (Throwable t) {
-            log.error("Failed to load session from {}. Moving to unloadable directory.", path, t);
-            try {
-                Path unloadablePath = getUnloadableSessionsDir().resolve(path.getFileName());
-                Files.move(path, unloadablePath, StandardCopyOption.REPLACE_EXISTING);
-                log.info("Moved incompatible session to: {}", unloadablePath);
-            } catch (IOException e) {
-                log.error("Failed to move incompatible session to unloadable directory: {}", path, e);
-            }
-            return false;
+    public int loadAgis(Path dir, Consumer<Agi> registrationCallback) {
+        AtomicInteger count = new AtomicInteger(0);
+        try (Stream<Path> stream = Files.list(dir)) {
+            stream.filter(p -> !Files.isDirectory(p))
+                    .filter(p -> p.toString().endsWith(".kryo"))
+                    .parallel()
+                    .forEach(p -> {
+                        Agi agi = loadAgi(p);
+                        if (agi != null) {
+                            registrationCallback.accept(agi);
+                            count.incrementAndGet();
+                        }
+                    });
+        } catch (IOException e) {
+            log.error("Failed to list directory: {}", dir, e);
         }
+        return count.get();
+    }
+
+    /**
+     * Scans the sessions directory and loads all serialized active Agi sessions.
+     *
+     * @return The number of sessions loaded.
+     */
+    @SneakyThrows
+    public int loadSessions() {
+        return loadAgis(getSessionsDir(), this::registerActiveAgi);
+    }
+
+    // --- TEMPLATE MANAGEMENT ---
+
+    /**
+     * Checks if the given session is an AGI template managed by this container.
+     *
+     * @param agi The AGI session to check.
+     * @return true if the session is registered in the templates list.
+     */
+    public boolean isTemplate(@NonNull Agi agi) {
+        synchronized (templates) {
+            return templates.contains(agi);
+        }
+    }
+
+    /**
+     * Scans the templates directory and loads all serialized AGI templates into memory.
+     *
+     * @return The number of templates loaded from disk.
+     */
+    @SneakyThrows
+    public int loadTemplatesFromDisk() {
+        return loadAgis(getTemplatesDir(), this::registerTemplate);
+    }
+
+    /**
+     * Gets an unmodifiable list of all registered AGI templates.
+     *
+     * @return List of AGI templates.
+     */
+    public List<Agi> getTemplates() {
+        synchronized (templates) {
+            return Collections.unmodifiableList(new ArrayList<>(templates));
+        }
+    }
+
+    /**
+     * Finds the default template whose session ID is "default" (case-insensitive).
+     *
+     * @return The default template, or null if none is configured.
+     */
+    public Agi getDefaultTemplate() {
+        synchronized (templates) {
+            return templates.stream()
+                    .filter(t -> "default".equalsIgnoreCase(t.getConfig().getSessionId()))
+                    .findFirst()
+                    .orElse(null);
+        }
+    }
+
+    /**
+     * Registers a template instance into the container's template registry and fires a property change event.
+     * If a template with the same session ID already exists, it is replaced.
+     *
+     * @param templateAgi The template to register.
+     */
+    public void registerTemplate(@NonNull Agi templateAgi) {
+        synchronized (templates) {
+            List<Agi> old = new ArrayList<>(templates);
+            templates.removeIf(t -> t.getConfig().getSessionId().equals(templateAgi.getConfig().getSessionId()));
+            templates.add(templateAgi);
+            propertyChangeSupport.firePropertyChange("templates", old, Collections.unmodifiableList(templates));
+            log.info("Registered AGI template: {}", templateAgi.getConfig().getSessionId());
+        }
+    }
+
+    /**
+     * Unregisters a template from the container's template registry and fires a property change event.
+     *
+     * @param templateAgi The template to unregister.
+     */
+    public void unregisterTemplate(Agi templateAgi) {
+        synchronized (templates) {
+            List<Agi> old = new ArrayList<>(templates);
+            if (templates.remove(templateAgi)) {
+                propertyChangeSupport.firePropertyChange("templates", old, Collections.unmodifiableList(templates));
+                log.info("Unregistered AGI template: {}", templateAgi.getConfig().getSessionId());
+            }
+        }
+    }
+
+    /**
+     * Authoritatively creates and opens a new active AGI session cloned directly from a template file on disk.
+     *
+     * @param templateId The unique ID of the template.
+     * @return The newly created, active, and opened AGI session.
+     */
+    public Agi createNewAgiFromTemplate(String templateId) {
+        log.info("Creating new AGI session from template: {}", templateId);
+        try {
+            Path file = getTemplatesDir().resolve(templateId + ".kryo");
+            Agi newAgi = KryoUtils.loadFromFile(file, Agi.class);
+            String newSessionId = UUID.randomUUID().toString();
+            newAgi.getConfig().setSessionId(newSessionId);
+            newAgi.getConfig().setParentUuid(null);
+            newAgi.bindToContainer(this);
+            registerActiveAgi(newAgi);
+            saveAgi(newAgi);
+            open(newAgi);
+            return newAgi;
+        } catch (Exception e) {
+            log.error("Failed to create AGI from template {}", templateId, e);
+            throw new RuntimeException("Failed to create AGI from template", e);
+        }
+    }
+
+    /**
+     * Authoritatively creates and opens a new active AGI session cloned from a template instance.
+     *
+     * @param templateAgi The template to clone from.
+     * @return The newly created, active, and opened AGI session.
+     */
+    public Agi createNewAgiFromTemplate(Agi templateAgi) {
+        return createNewAgiFromTemplate(templateAgi.getConfig().getSessionId());
+    }
+
+    /**
+     * Creates and saves a new template cloned from an active AGI session, preserving its nickname.
+     *
+     * @param sessionAgi The source session to base the template on.
+     * @param templateId The unique template ID (used as sessionId and filename).
+     * @return The created template Agi.
+     * @throws IOException If saving fails.
+     */
+    public Agi createTemplateFromSession(@NonNull Agi sessionAgi, @NonNull String templateId) throws IOException {
+        Agi templateAgi = KryoUtils.clone(sessionAgi);
+        templateAgi.getConfig().setSessionId(templateId);
+        templateAgi.getConfig().setParentUuid(null);
+        registerTemplate(templateAgi);
+        templateAgi.bindToContainer(this);
+        saveAgi(templateAgi);
+        return templateAgi;
+    }
+
+    /**
+     * Creates, configures, and saves a fresh new template.
+     *
+     * @param templateId The unique template ID.
+     * @return The created template Agi.
+     * @throws IOException If saving fails.
+     */
+    public Agi createTemplate(@NonNull String templateId) throws IOException {
+        AgiConfig config = createNewAgiConfig();
+        config.setSessionId(templateId);
+        Agi templateAgi = new Agi(config);
+        configureNewAgi(templateAgi);
+        registerTemplate(templateAgi);
+        saveAgi(templateAgi);
+        return templateAgi;
     }
 
     /**

@@ -7,12 +7,15 @@ package uno.anahata.asi.swing;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.HierarchyEvent;
+import java.util.List;
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
@@ -70,9 +73,14 @@ public abstract class AbstractAsiContainerDashboardPanel extends JPanel {
         toolBar.setFloatable(false);
 
         JButton newButton = new JButton("New AGI", new RestartIcon(16));
-        newButton.setToolTipText("Create a new AGI");
+        newButton.setToolTipText("Create a new default AGI");
         newButton.addActionListener(e -> createNew());
         toolBar.add(newButton);
+
+        JButton templateMenuButton = new JButton("▾");
+        templateMenuButton.setToolTipText("Select from stored AGI templates");
+        templateMenuButton.addActionListener(e -> showNewAgiMenu(templateMenuButton));
+        toolBar.add(templateMenuButton);
 
         JButton importButton = new JButton("Import", new LoadSessionIcon(16));
         importButton.setToolTipText("Import a previously saved AI session");
@@ -169,6 +177,64 @@ public abstract class AbstractAsiContainerDashboardPanel extends JPanel {
      */
     public void dispose(@NonNull Agi agi) {
         asiContainer.dispose(agi);
+    }
+
+    /**
+     * Displays a popup menu anchored to the "New AGI" button allowing the user
+     * to choose between the default AGI or any stored template.
+     *
+     * @param button The source button to anchor the popup to.
+     */
+    private void showNewAgiMenu(JButton button) {
+        JPopupMenu menu = new JPopupMenu();
+
+        Agi defaultTemplate = asiContainer.getDefaultTemplate();
+        if (defaultTemplate == null) {
+            JMenuItem defaultItem = new JMenuItem("New AGI (Default)", new RestartIcon(16));
+            defaultItem.addActionListener(e -> createNew());
+            menu.add(defaultItem);
+            menu.addSeparator();
+        }
+
+        List<Agi> templates = asiContainer.getTemplates();
+        if (templates.isEmpty()) {
+            JMenuItem emptyItem = new JMenuItem("(No templates available)");
+            emptyItem.setEnabled(false);
+            menu.add(emptyItem);
+        } else {
+            for (Agi template : templates) {
+                String id = template.getConfig().getSessionId();
+                String nick = template.getNickname();
+                boolean isDefault = "default".equalsIgnoreCase(id);
+
+                String label = isDefault ? "⭐ " + id : id;
+                if (nick != null && !nick.isBlank() && !nick.equalsIgnoreCase(id)) {
+                    label += " (" + nick + ")";
+                }
+
+                JMenuItem templateItem = new JMenuItem(label, IconUtils.getIcon("v2/anahata.png", 16, 16));
+                templateItem.addActionListener(e -> {
+                    if (!asiContainer.hasAnyProviderConfigured()) {
+                        JOptionPane.showMessageDialog(this,
+                                "<html>To begin, you need to configure at least one AI provider.<br>" +
+                                "I am opening the <b>Preferences</b> dashboard for you now.</html>",
+                                "Setup Required", JOptionPane.INFORMATION_MESSAGE);
+                        showPreferences(0);
+                        return;
+                    }
+                    asiContainer.createNewAgiFromTemplate(template);
+                });
+                menu.add(templateItem);
+            }
+        }
+
+        menu.addSeparator();
+
+        JMenuItem manageItem = new JMenuItem("Manage Templates...", new SettingsIcon(16));
+        manageItem.addActionListener(e -> showSettings(1));
+        menu.add(manageItem);
+
+        menu.show(button, 0, button.getHeight());
     }
 
     /** 

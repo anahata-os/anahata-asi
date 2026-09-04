@@ -125,17 +125,24 @@ public class HeaderPanel extends JPanel {
 
         // Session Buttons
         saveSessionButton = new JButton(new SaveIcon(ICON_SIZE));
-        saveSessionButton.setToolTipText("Save Session");
+        saveSessionButton.setToolTipText(agi.isTemplate() ? "Save Template" : "Save Session");
         saveSessionButton.addActionListener(e -> saveSession());
         add(saveSessionButton);
 
+        if (!agi.isTemplate()) {
+            JButton saveAsTemplateBtn = new JButton(new uno.anahata.asi.swing.icons.CopyIcon(ICON_SIZE));
+            saveAsTemplateBtn.setToolTipText("Save as Template...");
+            saveAsTemplateBtn.addActionListener(e -> saveAsTemplate());
+            add(saveAsTemplateBtn);
+        }
+
         cloneSessionButton = new JButton(new uno.anahata.asi.swing.icons.CloneIcon(ICON_SIZE));
-        cloneSessionButton.setToolTipText("Clone Session");
+        cloneSessionButton.setToolTipText(agi.isTemplate() ? "Duplicate Template" : "Clone Session");
         cloneSessionButton.addActionListener(e -> cloneSession());
         add(cloneSessionButton);
 
         disposeSessionButton = new JButton(new uno.anahata.asi.swing.icons.DeleteIcon(ICON_SIZE));
-        disposeSessionButton.setToolTipText("Dispose Session");
+        disposeSessionButton.setToolTipText(agi.isTemplate() ? "Delete Template" : "Dispose Session");
         disposeSessionButton.addActionListener(e -> disposeSession());
         add(disposeSessionButton);
 
@@ -328,10 +335,21 @@ public class HeaderPanel extends JPanel {
     }
 
     /**
-     * Triggers a manual save and exports the session to a .kryo file chosen by
-     * the user.
+     * Saves the current AGI session or template.
      */
     private void saveSession() {
+        if (agi.isTemplate()) {
+            new SwingTask<>(agiPanel, "Save Template", () -> {
+                agi.save();
+                log.info("Template {} saved successfully.", agi.getConfig().getSessionId());
+                JOptionPane.showMessageDialog(this,
+                        "Template '" + agi.getConfig().getSessionId() + "' saved successfully.",
+                        "Template Saved", JOptionPane.INFORMATION_MESSAGE);
+                return null;
+            }).start();
+            return;
+        }
+
         new SwingTask<>(agiPanel, "Save Session", () -> {
             // 1. Perform standard auto-save
             agi.save();
@@ -378,30 +396,103 @@ public class HeaderPanel extends JPanel {
     }
 
     /**
-     * Clones the current session and opens it in a new tab.
+     * Creates and saves a new template based on the current active session.
      */
-    private void cloneSession() {
-        new SwingTask<>(agiPanel, "Clone Session", () -> {
-            agi.getConfig().getAsiContainer().cloneSession(agi);
-            return null;
-        }).start();
+    private void saveAsTemplate() {
+        String defaultId = agi.getNickname() != null && !agi.getNickname().isBlank()
+                ? agi.getNickname().toLowerCase().replaceAll("[^a-z0-9_-]", "-")
+                : "template-" + agi.getShortId();
+
+        String templateId = JOptionPane.showInputDialog(this,
+                "Enter unique ID for the new template based on this session:",
+                defaultId);
+
+        if (templateId != null && !templateId.trim().isEmpty()) {
+            templateId = templateId.trim();
+            final String finalId = templateId;
+            AbstractAsiContainer container = agi.getConfig().getAsiContainer();
+            boolean exists = container.getTemplates().stream()
+                    .anyMatch(t -> t.getConfig().getSessionId().equalsIgnoreCase(finalId));
+            if (exists) {
+                JOptionPane.showMessageDialog(this,
+                        "A template with ID '" + templateId + "' already exists.",
+                        "Template Exists", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            try {
+                container.createTemplateFromSession(agi, templateId);
+                JOptionPane.showMessageDialog(this,
+                        "Template '" + templateId + "' created successfully!",
+                        "Template Saved", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                log.error("Failed to create template from session", ex);
+                JOptionPane.showMessageDialog(this,
+                        "Failed to create template: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     /**
-     * Disposes the current session.
+     * Clones the current session or template.
+     */
+    private void cloneSession() {
+        if (agi.isTemplate()) {
+            String defaultId = agi.getConfig().getSessionId() + "-copy";
+            String newId = JOptionPane.showInputDialog(this,
+                    "Enter unique ID for the duplicated template:",
+                    defaultId);
+            if (newId != null && !newId.trim().isEmpty()) {
+                newId = newId.trim();
+                final String finalId = newId;
+                AbstractAsiContainer container = agi.getConfig().getAsiContainer();
+                boolean exists = container.getTemplates().stream()
+                        .anyMatch(t -> t.getConfig().getSessionId().equalsIgnoreCase(finalId));
+                if (exists) {
+                    JOptionPane.showMessageDialog(this,
+                            "A template with ID '" + newId + "' already exists.",
+                            "Template Exists", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                try {
+                    container.cloneAgi(agi, newId);
+                    JOptionPane.showMessageDialog(this,
+                            "Template '" + newId + "' duplicated successfully!",
+                            "Template Duplicated", JOptionPane.INFORMATION_MESSAGE);
+                } catch (Exception ex) {
+                    log.error("Failed to duplicate template", ex);
+                    JOptionPane.showMessageDialog(this,
+                            "Failed to duplicate template: " + ex.getMessage(),
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        } else {
+            new SwingTask<>(agiPanel, "Clone Session", () -> {
+                agi.getConfig().getAsiContainer().cloneAgi(agi);
+                return null;
+            }).start();
+        }
+    }
+
+    /**
+     * Disposes the current session or template.
      */
     private void disposeSession() {
-        int result = JOptionPane.showConfirmDialog(this, 
-            "Are you sure you want to dispose this session?\n\n"
-                    + "If you ever need it back, you can import it from the 'diposed' sessions folder ", 
-            "Dispose Session", JOptionPane.YES_NO_OPTION);
+        boolean isTemplate = agi.isTemplate();
+        String title = isTemplate ? "Delete Template" : "Dispose Session";
+        String msg = isTemplate
+                ? "Are you sure you want to delete this template?\n\nIt will be moved to the 'templates/disposed' directory."
+                : "Are you sure you want to dispose this session?\n\nIf you ever need it back, you can import it from the 'disposed' sessions folder.";
+
+        int result = JOptionPane.showConfirmDialog(this, msg, title, JOptionPane.YES_NO_OPTION);
 
         if (result == JOptionPane.YES_OPTION) {
             try {
                 agi.getConfig().getAsiContainer().dispose(agi);
             } catch (Exception e) {
-                log.error("Exception disposing session");
-                ExceptionDialog.show(agiPanel, "Dispose Session", "Could not dispose session!!!!", e);
+                log.error("Exception disposing {}", isTemplate ? "template" : "session", e);
+                ExceptionDialog.show(agiPanel, title, "Could not dispose " + (isTemplate ? "template" : "session") + "!", e);
             }
         }
     }

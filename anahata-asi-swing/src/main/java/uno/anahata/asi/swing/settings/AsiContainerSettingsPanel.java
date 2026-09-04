@@ -43,6 +43,11 @@ public class AsiContainerSettingsPanel extends ScrollablePanel {
     private final AiProvidersPanel providersPanel;
 
     /**
+     * The dedicated AGI Templates management panel.
+     */
+    private final TemplatesPanel templatesPanel;
+
+    /**
      * The telemetry and diagnostics About panel.
      */
     private final AsiContainerAboutPanel aboutPanel;
@@ -74,9 +79,11 @@ public class AsiContainerSettingsPanel extends ScrollablePanel {
 
         this.mainTabs = new JTabbedPane();
         this.providersPanel = new AiProvidersPanel(container);
+        this.templatesPanel = new TemplatesPanel(container);
         this.aboutPanel = new AsiContainerAboutPanel(container);
 
         mainTabs.addTab("AI Providers", providersPanel);
+        mainTabs.addTab("Templates", templatesPanel);
         mainTabs.addTab("About", aboutPanel);
 
         if (initialTabIndex >= 0 && initialTabIndex < mainTabs.getTabCount()) {
