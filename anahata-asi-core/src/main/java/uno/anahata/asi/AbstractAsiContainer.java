@@ -8,16 +8,20 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.concurrent.ExecutorService;
@@ -118,7 +122,7 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     /**
      * Container-level operational notifications and boot diagnostic records.
      */
-    private final List<String> notifications = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private final List<String> notifications = new CopyOnWriteArrayList<>();
 
     /**
      * Creates a configuration instance for a specific host application. Upon
@@ -363,7 +367,7 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
         }
         try (var is = AbstractAsiContainer.class.getResourceAsStream("/uno/anahata/asi/version.properties")) {
             if (is != null) {
-                java.util.Properties props = new java.util.Properties();
+                Properties props = new Properties();
                 props.load(is);
                 String pomVer = props.getProperty("version");
                 if (pomVer != null && !pomVer.isBlank()) {
@@ -441,7 +445,7 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
             String resPath = "/META-INF/maven/" + groupId + "/" + artifactId + "/pom.properties";
             try (var is = getClass().getResourceAsStream(resPath)) {
                 if (is != null) {
-                    var props = new java.util.Properties();
+                    var props = new Properties();
                     props.load(is);
                     String pomVer = props.getProperty("version");
                     if (pomVer != null && !pomVer.isBlank()) {
@@ -456,19 +460,61 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
+     * Resolves the clean container version string used for the container directory.
+     * <p>
+     * Discards any qualifiers or build timestamps after the first dash ('-').
+     * For example, '1.2.0-20260904' or '1.2.0-SNAPSHOT' becomes '1.2.0'.
+     * </p>
+     *
+     * @return The clean version string, or {@code null} if unresolved.
+     */
+    public String getContainerVersion() {
+        String ver = getContainerImplementationVersion();
+        if (ver == null || ver.isBlank()) {
+            return null;
+        }
+        int dashIdx = ver.indexOf('-');
+        return (dashIdx != -1) ? ver.substring(0, dashIdx).trim() : ver.trim();
+    }
+
+    /**
      * Gets the root working directory for this specific host application
-     * instance. e.g., ~/.anahata/asi/netbeans or ~/.anahata/asi/netbeans/1.1.14
+     * instance. e.g., ~/.anahata/asi/netbeans or ~/.anahata/asi/netbeans/1.2.0
      *
      * @return The application-specific working directory path.
      * @throws IOException If creating the directory fails.
      */
     public Path getDirectory() throws IOException {
         Path base = getWorkDirSubDir(hostApplicationId);
-        String version = getContainerImplementationVersion();
+        String version = getContainerVersion();
         if (version != null && !version.isBlank()) {
-            return getSubdirectory(base, version);
+            Path dir = getSubdirectory(base, version);
+            if (!AsiContainerProperties.exists(dir)) {
+                AsiContainerProperties.save(dir, version, hostApplicationId, Instant.now());
+            }
+            return dir;
         }
         return base;
+    }
+
+    /**
+     * Retrieves the creation time of this container's directory from metadata or filesystem attributes.
+     *
+     * @return The creation {@link Instant}, or {@code null} if it could not be determined.
+     */
+    public Instant getContainerCreationTime() {
+        try {
+            Path dir = getDirectory();
+            Optional<AsiContainerProperties> propsOpt = AsiContainerProperties.load(dir);
+            if (propsOpt.isPresent() && propsOpt.get().getCreationTime() != null) {
+                return propsOpt.get().getCreationTime();
+            }
+            BasicFileAttributes attrs = Files.readAttributes(dir, BasicFileAttributes.class);
+            return attrs.creationTime().toInstant();
+        } catch (Exception e) {
+            log.warn("Could not read creation time for container directory: {}", e.getMessage());
+            return null;
+        }
     }
 
     /**
@@ -567,6 +613,16 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
         if (defaultTemplate != null) {
             return createNewAgiFromTemplate(defaultTemplate);
         }
+        return createNewAgi(createNewAgiConfig());
+    }
+
+    /**
+     * Authoritatively creates, configures, registers, and opens a brand-new Agi
+     * session using the clean framework config, bypassing any default template.
+     *
+     * @return The newly created and opened Agi session.
+     */
+    public final Agi createNewBlankAgi() {
         return createNewAgi(createNewAgiConfig());
     }
 
@@ -675,7 +731,7 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
 
             String targetId = (newSessionId != null && !newSessionId.isBlank())
                     ? newSessionId
-                    : java.util.UUID.randomUUID().toString();
+                    : UUID.randomUUID().toString();
             clonedAgi.getConfig().setSessionId(targetId);
 
             clonedAgi.bindToContainer(this);

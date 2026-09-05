@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -56,7 +57,14 @@ public class AsiContainer extends AnahataToolkit {
     @Override
     public List<String> getSystemInstructions() throws Exception {
         List<String> inst = new ArrayList<>(super.getSystemInstructions());
-        inst.add("### The **AsiContainer** toolkit is a proxy toolkit for " + getAsiContainer().getClass().getName() + ". It provides some convenience, on-shot tools to query and manage sub agents.\n"
+        AbstractAsiContainer container = getAsiContainer();
+        Instant creationTime = container.getContainerCreationTime();
+        inst.add("### The **AsiContainer** toolkit is a proxy toolkit for " + container.getClass().getName() + ".\n"
+                + "- **Container Version**: " + container.getContainerVersion() + "\n"
+                + "- **Container Implementation Version**: " + container.getContainerImplementationVersion() + "\n"
+                + "- **Container Creation Time**: " + (creationTime != null ? creationTime.toString() : "Unknown") + "\n"
+                + "  *(The filesystem creation timestamp of this container's version directory on disk. Indicates when this container environment was first initialized, helping determine if this is a brand-new installation, a recent upgrade, or an established environment)*\n\n"
+                + "It provides some convenience, on-shot tools to query and manage sub agents.\n"
                 + "Programmatic Container Access (from the java toolkit, if available:)\n"
                 + "When scripting custom automation via the java toolkit, "
                 + "you can programmatically query the ASI container's configurations, providers, and secure API keys:\n"
@@ -88,9 +96,14 @@ public class AsiContainer extends AnahataToolkit {
         StringBuilder sb = new StringBuilder();
         sb.append("## ASI Container Overview\n");
         sb.append("- **Container Class**: ").append(container.getClass().getName()).append("\n");
+        sb.append("- **Container Version**: ").append(container.getContainerVersion()).append("\n");
         sb.append("- **Container Implementation Version**: ").append(container.getContainerImplementationVersion()).append("\n");
         sb.append("- **Container Directory**: ").append(container.getDirectory()).append("\n");
         sb.append("- **Host Application**: ").append(container.getHostApplicationId()).append("\n");
+        Instant creationTime = container.getContainerCreationTime();
+        if (creationTime != null) {
+            sb.append("- **Container Creation Time**: ").append(creationTime).append("\n");
+        }
 
         sb.append("\n### Configured AI Providers\n");
         sb.append(listAiProviders(false));

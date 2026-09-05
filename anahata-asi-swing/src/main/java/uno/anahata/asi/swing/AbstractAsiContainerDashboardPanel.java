@@ -188,13 +188,22 @@ public abstract class AbstractAsiContainerDashboardPanel extends JPanel {
     private void showNewAgiMenu(JButton button) {
         JPopupMenu menu = new JPopupMenu();
 
-        Agi defaultTemplate = asiContainer.getDefaultTemplate();
-        if (defaultTemplate == null) {
-            JMenuItem defaultItem = new JMenuItem("New AGI (Default)", new RestartIcon(16));
-            defaultItem.addActionListener(e -> createNew());
-            menu.add(defaultItem);
-            menu.addSeparator();
-        }
+        JMenuItem rawItem = new JMenuItem("Raw AGI (from new AgiConfig, no template)", new RestartIcon(16));
+        rawItem.setToolTipText("Create a clean session directly from createNewAgiConfig(), bypassing any default template");
+        rawItem.addActionListener(e -> {
+            if (!asiContainer.hasAnyProviderConfigured()) {
+                JOptionPane.showMessageDialog(this,
+                        "<html>Welcome to the Anahata Java Renaissance!<br><br>" +
+                        "To begin, you need to configure at least one AI provider.<br>" +
+                        "I am opening the <b>Preferences</b> dashboard for you now.</html>",
+                        "Setup Required", JOptionPane.INFORMATION_MESSAGE);
+                showPreferences(0);
+                return;
+            }
+            asiContainer.createNewBlankAgi();
+        });
+        menu.add(rawItem);
+        menu.addSeparator();
 
         List<Agi> templates = asiContainer.getTemplates();
         if (templates.isEmpty()) {
