@@ -439,7 +439,15 @@ jobs:
           git add apidocs/ nb/
           if ! git diff --cached --quiet; then
             git commit -m "chore: persist versioned Javadocs & update catalogs from run ${{ github.run_id }} 📚"
-            git push origin gh-pages
+            for i in {1..5}; do
+              echo "[INFO] Pushing to gh-pages (attempt $i)..."
+              if git pull --rebase origin gh-pages && git push origin gh-pages; then
+                echo "[SUCCESS] Successfully pushed Javadocs and catalogs to gh-pages!"
+                break
+              fi
+              echo "[WARN] Push to gh-pages rejected. Retrying in 5s..."
+              sleep 5
+            done
           else
             echo "No new Javadoc or catalog changes to persist."
           fi
@@ -576,6 +584,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -615,3 +624,12 @@ jobs:
           make_latest: ${{ startsWith(github.ref, 'refs/tags/') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trigger Downstream Snapshot Build for Main
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🎉 Official release ${{ github.ref_name }} successfully published!"
+          echo "[INFO] Triggering follow-up continuous snapshot build for main branch..."
+          gh workflow run build3.yml --ref "main"

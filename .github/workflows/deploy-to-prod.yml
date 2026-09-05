@@ -127,7 +127,7 @@ jobs:
           echo "[INFO] Advancing all POMs to development cycle: $NEXT_SNAP..."
           mvn versions:set -DnewVersion=$NEXT_SNAP -DgenerateBackupPoms=false -ntp
 
-          git commit -am "chore: open $NEXT_SNAP development cycle"
+          git commit -am "chore: open $NEXT_SNAP development cycle [skip ci]"
 
       - name: Push Release Commits & Tags
         run: |
@@ -148,7 +148,3 @@ jobs:
             -f release_intellij="${{ inputs.release_intellij }}" \
             -f release_snap="${{ inputs.release_snap }}"
           echo "🚀 Master build3 pipeline successfully triggered on tag v$RELEASE_VER!"
-
-          echo "[INFO] Triggering continuous snapshot build3.yml pipeline for main (development cycle $NEXT_SNAP)..."
-          gh workflow run build3.yml --ref "main"
-          echo "🚀 Snapshot build3 pipeline successfully triggered for main!"
