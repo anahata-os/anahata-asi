@@ -13,6 +13,11 @@ on:
         required: false
         default: ''
         type: string
+      deploy_central:
+        description: 'Deploy Core Platform JARs to Maven Central (repo1.maven.org)'
+        required: true
+        type: boolean
+        default: false
       release_nb_300:
         description: 'Release NetBeans 30 ASI Studio (Target 300 NBM)'
         required: true
@@ -136,6 +141,7 @@ jobs:
         run: |
           echo "[INFO] Triggering master build3.yml pipeline for release tag [v$RELEASE_VER]..."
           gh workflow run build3.yml --ref "v$RELEASE_VER" \
+            -f deploy_central="${{ inputs.deploy_central }}" \
             -f release_nb_300="${{ inputs.release_nb_300 }}" \
             -f release_nb_310="${{ inputs.release_nb_310 }}" \
             -f release_nb_uc="${{ inputs.release_nb_uc }}" \
