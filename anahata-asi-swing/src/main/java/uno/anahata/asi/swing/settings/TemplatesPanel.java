@@ -30,6 +30,7 @@ import javax.swing.UIManager;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import net.miginfocom.swing.MigLayout;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.agi.AgiPanel;
@@ -37,6 +38,7 @@ import uno.anahata.asi.swing.icons.AddIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.icons.RestartIcon;
+import uno.anahata.asi.swing.icons.SaveIcon;
 import uno.anahata.asi.swing.icons.SearchIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 
@@ -278,6 +280,26 @@ public class TemplatesPanel extends JPanel {
                 Agi created = container.createTemplate(templateId);
                 refreshTemplateList();
                 templateList.setSelectedValue(created, true);
+
+                JPanel panel = new JPanel(new MigLayout("ins 5, fillx, gap 8", "[]", "[]8[]"));
+                panel.setOpaque(false);
+                panel.add(new JLabel("<html><b>New template '" + templateId + "' created!</b></html>"), "wrap");
+
+                JPanel saveRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+                saveRow.setOpaque(false);
+                saveRow.add(new JLabel("Click the"));
+                JLabel saveIconBadge = new JLabel(new SaveIcon(18));
+                saveIconBadge.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(new Color(180, 180, 180)),
+                        BorderFactory.createEmptyBorder(2, 4, 2, 4)
+                ));
+                saveRow.add(saveIconBadge);
+                saveRow.add(new JLabel("<html><b>Save</b> button once you have finished customizing your template.</html>"));
+
+                panel.add(saveRow);
+
+                JOptionPane.showMessageDialog(this, panel, "New Template Created",
+                        JOptionPane.INFORMATION_MESSAGE, new SaveIcon(32));
             } catch (IOException ex) {
                 log.error("Failed to create template: {}", templateId, ex);
                 JOptionPane.showMessageDialog(this,
