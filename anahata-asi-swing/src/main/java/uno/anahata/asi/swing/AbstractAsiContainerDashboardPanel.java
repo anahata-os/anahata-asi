@@ -31,6 +31,7 @@ import uno.anahata.asi.swing.icons.LoadSessionIcon;
 import uno.anahata.asi.swing.agi.status.TaskStatusComponent;
 import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.icons.RestartIcon;
+import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.settings.AsiContainerSettingsFrame;
 import uno.anahata.asi.swing.icons.SettingsIcon;
 
@@ -54,6 +55,8 @@ public abstract class AbstractAsiContainerDashboardPanel extends JPanel {
     protected final JButton closeButton;
     /** Button to permanently dispose of the selected session. */
     protected final JButton disposeButton;
+    /** Button to open global settings. */
+    protected final JButton settingsBtn;
     /** A global warning label indicating if the DNA template loaded cleanly. */
     protected final JLabel warningLabel;
     
@@ -87,20 +90,20 @@ public abstract class AbstractAsiContainerDashboardPanel extends JPanel {
         importButton.addActionListener(e -> importSession());
         toolBar.add(importButton);
 
-        JButton settingsBtn = new JButton("Settings", new SettingsIcon(16));
+        this.settingsBtn = new JButton("Settings", new SettingsIcon(16));
         settingsBtn.setToolTipText("Configure global ASI settings and API keys");
-        
-        this.warningLabel = new JLabel("<html><font color='red'><b>&#9888;</b></font></html>");
-        this.warningLabel.setToolTipText("Check Notifications in the About Panel");
-        this.warningLabel.setVisible(!asiContainer.getNotifications().isEmpty());
-        
         settingsBtn.addActionListener(e -> {
-            showPreferences();
+            showPreferences(!asiContainer.getNotifications().isEmpty() ? 2 : 0);
         });
         toolBar.add(settingsBtn);
 
-        toolBar.add(Box.createHorizontalStrut(5));
-        toolBar.add(warningLabel);
+        this.warningLabel = new JLabel();
+        this.warningLabel.setVisible(false);
+
+        updateSettingsButton();
+        new EdtPropertyChangeListener(this, asiContainer, "notifications", evt -> {
+            updateSettingsButton();
+        });
 
         toolBar.add(Box.createHorizontalGlue());
 
@@ -359,9 +362,23 @@ public abstract class AbstractAsiContainerDashboardPanel extends JPanel {
         boolean isSelected = selected != null;
         disposeButton.setEnabled(isSelected);
         closeButton.setEnabled(isSelected);
-        
-        if (warningLabel != null) {
-            //warningLabel.setVisible(asiContainer.getPreferences().isLoadFailed());
+        updateSettingsButton();
+    }
+
+    /**
+     * Dynamically updates the Settings button text and tooltip depending on whether
+     * operational notifications or warnings are present in the container.
+     */
+    private void updateSettingsButton() {
+        if (settingsBtn != null) {
+            boolean hasNotifs = !asiContainer.getNotifications().isEmpty();
+            if (hasNotifs) {
+                settingsBtn.setText("<html>Settings <font color='red'><b>&#9888;</b></font></html>");
+                settingsBtn.setToolTipText("Configure global ASI settings - Check Notifications in the About Panel");
+            } else {
+                settingsBtn.setText("Settings");
+                settingsBtn.setToolTipText("Configure global ASI settings and API keys");
+            }
         }
     }
 

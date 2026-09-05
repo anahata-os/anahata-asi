@@ -211,7 +211,7 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
                         ensureDir(targetDir);
                         int count = AsiContainerUpgrade.copySettings(predecessorDir, targetDir);
                         log.info("Successfully imported {} settings from version {} to {}", count, prevVerStr, currentVer);
-                        addNotification("Successfully imported " + count + " settings from version " + prevVerStr);
+                        showImportSuccess(count, prevVerStr);
                     }
                 }
             }
@@ -263,6 +263,35 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
             log.error("Failed to display upgrade prompt: {}", e.getMessage(), e);
         }
         return accepted.get();
+    }
+
+    /**
+     * Displays an informational dialog confirming that settings were successfully
+     * imported from an earlier version.
+     *
+     * @param count The number of entities imported.
+     * @param prevVerStr The predecessor version string.
+     */
+    private void showImportSuccess(int count, String prevVerStr) {
+        if (GraphicsEnvironment.isHeadless()) {
+            return;
+        }
+        try {
+            SwingUtils.runInEDTAndWait(() -> {
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Successfully imported " + count + " settings from version " + prevVerStr + ".\n\n"
+                        + "Your AI providers, templates, and sessions are ready.",
+                        "Settings Imported",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+            });
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Import success dialog interrupted: {}", e.getMessage());
+        } catch (Exception e) {
+            log.error("Failed to display import success dialog: {}", e.getMessage(), e);
+        }
     }
     
     /**

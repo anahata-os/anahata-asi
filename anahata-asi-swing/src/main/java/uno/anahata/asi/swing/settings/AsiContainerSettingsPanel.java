@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.components.ScrollablePanel;
 import uno.anahata.asi.swing.icons.CancelIcon;
+import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 
 /**
  * The unified Command Center panel for managing the ASI container.
@@ -86,6 +87,11 @@ public class AsiContainerSettingsPanel extends ScrollablePanel {
         mainTabs.addTab("Templates", templatesPanel);
         mainTabs.addTab("About", aboutPanel);
 
+        updateAboutTabTitle();
+        new EdtPropertyChangeListener(this, container, "notifications", evt -> {
+            updateAboutTabTitle();
+        });
+
         if (initialTabIndex >= 0 && initialTabIndex < mainTabs.getTabCount()) {
             mainTabs.setSelectedIndex(initialTabIndex);
         }
@@ -125,5 +131,14 @@ public class AsiContainerSettingsPanel extends ScrollablePanel {
         if (index >= 0 && index < mainTabs.getTabCount()) {
             mainTabs.setSelectedIndex(index);
         }
+    }
+
+    /**
+     * Dynamically updates the title of the About tab to display a warning symbol
+     * whenever operational notifications or diagnostic alerts are present.
+     */
+    private void updateAboutTabTitle() {
+        boolean hasNotifs = !container.getNotifications().isEmpty();
+        mainTabs.setTitleAt(2, hasNotifs ? "About ⚠" : "About");
     }
 }
