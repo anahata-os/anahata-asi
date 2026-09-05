@@ -442,9 +442,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: binaries-linux
-          path: |
-            staging-binaries/*
-            staging-catalogs/nb/*/*.xml
+          path: staging-binaries/*
 
   # =========================================================================
   # 2. WINDOWS DESKTOP BUILDER (Native .zip with jpackage - Parallel VM)
@@ -591,11 +589,11 @@ jobs:
           body: |
             ${{ startsWith(github.ref, 'refs/tags/') && 'Official Stable GA Release' || '🚀 This is an automated rolling snapshot of the main branch. Use with caution!' }}
           files: |
-            all-binaries/*.nbm
-            all-binaries/*.zip
-            all-binaries/*.tar.gz
-            all-binaries/*.deb
-            all-binaries/*.AppImage
+            all-binaries/**/*.nbm
+            all-binaries/**/*.zip
+            all-binaries/**/*.tar.gz
+            all-binaries/**/*.deb
+            all-binaries/**/*.AppImage
           draft: false
           prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
           make_latest: ${{ startsWith(github.ref, 'refs/tags/') }}
