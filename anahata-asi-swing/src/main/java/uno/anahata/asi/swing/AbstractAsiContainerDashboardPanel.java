@@ -188,7 +188,7 @@ public abstract class AbstractAsiContainerDashboardPanel extends JPanel {
     private void showNewAgiMenu(JButton button) {
         JPopupMenu menu = new JPopupMenu();
 
-        JMenuItem rawItem = new JMenuItem("Raw AGI (from new AgiConfig, no template)", new RestartIcon(16));
+        JMenuItem rawItem = new JMenuItem("new Agi() (via new AgiConfig(), no template)", new RestartIcon(16));
         rawItem.setToolTipText("Create a clean session directly from createNewAgiConfig(), bypassing any default template");
         rawItem.addActionListener(e -> {
             if (!asiContainer.hasAnyProviderConfigured()) {
