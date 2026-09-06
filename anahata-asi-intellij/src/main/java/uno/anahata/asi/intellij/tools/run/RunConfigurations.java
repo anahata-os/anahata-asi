@@ -73,14 +73,19 @@ public class RunConfigurations extends AnahataToolkit {
     }
 
     /**
-     * Regex pattern to detect Maven/JUnit test runner summary lines.
+     * Regex patterns to detect test runner summary lines across Maven, Gradle, JUnit, and TestNG.
      */
-    private static final Pattern TEST_SUMMARY_PATTERN = Pattern.compile("(?i)Tests run:\\s*\\d+.*");
+    private static final Pattern TEST_SUMMARY_PATTERN = Pattern.compile("(?i).*(Tests run:|tests found|tests started|tests successful|tests failed|tests skipped|Test summary:).*");
 
     /**
-     * Regex pattern to detect Maven build status lines.
+     * Regex pattern to detect test failure and error details.
      */
-    private static final Pattern BUILD_STATUS_PATTERN = Pattern.compile("(?i)BUILD\\s+(SUCCESS|FAILURE).*");
+    private static final Pattern TEST_FAILURE_PATTERN = Pattern.compile("(?i).*(<<< FAILURE!|<<< ERROR!|FAILED:|Failure in|Error in|AssertionError|Exception:).*");
+
+    /**
+     * Regex pattern to detect Maven/Gradle build status lines.
+     */
+    private static final Pattern BUILD_STATUS_PATTERN = Pattern.compile("(?i).*(BUILD\\s+(SUCCESS|FAILURE)|BUILD\\s+SUCCESSFUL|BUILD\\s+FAILED).*");
 
     /**
      * Launches a run configuration by name using the standard Run executor.
@@ -145,13 +150,15 @@ public class RunConfigurations extends AnahataToolkit {
                                 String text = event.getText();
                                 if (text != null) {
                                     outputCollector.append(text);
-                                    Matcher testMatcher = TEST_SUMMARY_PATTERN.matcher(text.trim());
-                                    if (testMatcher.matches()) {
-                                        testSummaries.append("- ").append(testMatcher.group()).append("\n");
-                                    }
-                                    Matcher buildMatcher = BUILD_STATUS_PATTERN.matcher(text.trim());
-                                    if (buildMatcher.matches()) {
-                                        testSummaries.append("- Status: ").append(buildMatcher.group()).append("\n");
+                                    String trimmed = text.trim();
+                                    if (!trimmed.isEmpty()) {
+                                        if (TEST_SUMMARY_PATTERN.matcher(trimmed).matches()) {
+                                            testSummaries.append("- ").append(trimmed).append("\n");
+                                        } else if (TEST_FAILURE_PATTERN.matcher(trimmed).matches()) {
+                                            testSummaries.append("  * ").append(trimmed).append("\n");
+                                        } else if (BUILD_STATUS_PATTERN.matcher(trimmed).matches()) {
+                                            testSummaries.append("- Status: ").append(trimmed).append("\n");
+                                        }
                                     }
                                 }
                             }

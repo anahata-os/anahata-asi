@@ -40,7 +40,19 @@ public class IntellijTextResourceViewer extends AbstractTextResourceViewer {
     /**
      * The wrapper panel hosting the active editor component.
      */
-    private final JPanel wrapper = new JPanel(new BorderLayout());
+    private JPanel wrapper;
+
+    /**
+     * Returns the wrapper panel, lazily initializing it if null.
+     *
+     * @return the wrapper panel hosting the editor.
+     */
+    private JPanel getWrapper() {
+        if (wrapper == null) {
+            wrapper = new JPanel(new BorderLayout());
+        }
+        return wrapper;
+    }
 
     /**
      * The IntelliJ editor instance.
@@ -80,7 +92,7 @@ public class IntellijTextResourceViewer extends AbstractTextResourceViewer {
         if (editor == null) {
             initEditor();
         }
-        return wrapper;
+        return getWrapper();
     }
 
     /**
@@ -137,8 +149,8 @@ public class IntellijTextResourceViewer extends AbstractTextResourceViewer {
             }
         });
 
-        wrapper.removeAll();
-        wrapper.add(editor.getComponent(), BorderLayout.CENTER);
+        getWrapper().removeAll();
+        getWrapper().add(editor.getComponent(), BorderLayout.CENTER);
         configureScrollBehavior();
     }
 
