@@ -16,7 +16,7 @@ import org.jdesktop.swingx.prompt.PromptSupport;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
-import uno.anahata.asi.swing.AiProviderPanel;
+import uno.anahata.asi.swing.AbstractAiProviderPanel;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
@@ -27,7 +27,7 @@ import uno.anahata.asi.swing.internal.SwingUtils;
  *
  * @author anahata
  */
-public class OpenAiChatCompletionsProviderPanel extends AiProviderPanel {
+public class OpenAiChatCompletionsProviderPanel extends AbstractAiProviderPanel {
 
     /**
      * Text area for multi-line custom HTTP header configuration.

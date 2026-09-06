@@ -8,7 +8,7 @@ import lombok.NonNull;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.openai.OpenAiResponsesProvider;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
-import uno.anahata.asi.swing.AiProviderPanel;
+import uno.anahata.asi.swing.AbstractAiProviderPanel;
 
 /**
  * Specialized Swing configuration panel for OpenAI Responses API providers.
@@ -18,7 +18,7 @@ import uno.anahata.asi.swing.AiProviderPanel;
  *
  * @author anahata
  */
-public class OpenAiResponsesProviderPanel extends AiProviderPanel {
+public class OpenAiResponsesProviderPanel extends AbstractAiProviderPanel {
 
     /**
      * Checkbox to toggle verified organization mode.

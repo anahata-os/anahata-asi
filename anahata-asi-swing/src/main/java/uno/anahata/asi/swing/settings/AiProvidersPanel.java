@@ -33,7 +33,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
-import uno.anahata.asi.swing.AiProviderPanel;
+import uno.anahata.asi.swing.AbstractAiProviderPanel;
 import uno.anahata.asi.swing.icons.AddIcon;
 import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.provider.AiProviderRenderer;
@@ -42,7 +42,7 @@ import uno.anahata.asi.swing.provider.AiProviderRenderer;
  * A dedicated master-detail management panel for AI Providers in the ASI Container.
  * <p>
  * Implements a high-efficiency Master-Detail architecture consisting of a left-hand
- * sidebar list of all registered providers and exactly one reusable {@link AiProviderPanel}
+ * sidebar list of all registered providers and exactly one reusable {@link AbstractAiProviderPanel}
  * on the right side. This design drastically reduces component overhead by reusing a single
  * form and table instance across all provider switches.
  * </p>
@@ -81,7 +81,7 @@ public class AiProvidersPanel extends JPanel {
     /**
      * The single active detail panel instance hosting provider forms and model tables.
      */
-    private AiProviderPanel detailPanel;
+    private AbstractAiProviderPanel detailPanel;
 
     /**
      * The currently selected and displayed AI provider instance.
@@ -92,7 +92,7 @@ public class AiProvidersPanel extends JPanel {
      * Constructs a new Master-Detail AiProvidersPanel bound to the specified container.
      * <p>
      * Initializes the left sidebar with provider icons and compact add controls,
-     * wires the dynamic {@link AiProviderPanel} in the center, and configures
+     * wires the dynamic {@link AbstractAiProviderPanel} in the center, and configures
      * reactive selection listeners with dirty checking.
      * </p>
      *

@@ -7,7 +7,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
-import uno.anahata.asi.swing.AiProviderPanel;
+import uno.anahata.asi.swing.AbstractAiProviderPanel;
 
 /**
  * A centralized, thread-safe UI registry for mapping AI provider classes to their specialized Swing configuration panels.
@@ -18,7 +18,7 @@ import uno.anahata.asi.swing.AiProviderPanel;
  * </p>
  * <p>
  * <b>Inheritance Walk-Up:</b> When looking up a panel class for a concrete provider, this registry automatically walks up the
- * class hierarchy until a registered panel class is found, defaulting cleanly to {@link AiProviderPanel} if no specialized panel
+ * class hierarchy until a registered panel class is found, defaulting cleanly to {@link AbstractAiProviderPanel} if no specialized panel
  * is registered for that provider type.
  * </p>
  * 
@@ -35,7 +35,7 @@ public class AiProviderUiRegistry {
     /**
      * The backing concurrent map mapping provider domain types to their corresponding Swing panel classes.
      */
-    private final Map<Class<? extends AbstractAiProvider>, Class<? extends AiProviderPanel>> registry = new ConcurrentHashMap<>();
+    private final Map<Class<? extends AbstractAiProvider>, Class<? extends AbstractAiProviderPanel>> registry = new ConcurrentHashMap<>();
 
     /**
      * Private constructor to enforce singleton pattern.
@@ -60,7 +60,7 @@ public class AiProviderUiRegistry {
      * @param providerClass The domain class of the AI provider.
      * @param panelClass The Swing panel class responsible for configuring the provider.
      */
-    public <P extends AbstractAiProvider, U extends AiProviderPanel> void register(
+    public <P extends AbstractAiProvider, U extends AbstractAiProviderPanel> void register(
             @NonNull Class<P> providerClass,
             @NonNull Class<U> panelClass
     ) {
@@ -69,48 +69,48 @@ public class AiProviderUiRegistry {
     }
 
     /**
-     * Resolves the most specific {@link AiProviderPanel} class for a given AI provider type.
+     * Resolves the most specific {@link AbstractAiProviderPanel} class for a given AI provider type.
      * <p>
      * Walks up the superclass hierarchy starting from {@code providerClass} up to {@link AbstractAiProvider}
-     * to find the closest registered panel class. If no specialized mapping is found, returns {@link AiProviderPanel}.
+     * to find the closest registered panel class. If no specialized mapping is found, returns {@link AbstractAiProviderPanel}.
      * </p>
      *
      * @param providerClass The concrete class of the AI provider.
-     * @return The resolved {@link AiProviderPanel} class.
+     * @return The resolved {@link AbstractAiProviderPanel} class.
      */
-    public Class<? extends AiProviderPanel> getPanelClass(@NonNull Class<? extends AbstractAiProvider> providerClass) {
+    public Class<? extends AbstractAiProviderPanel> getPanelClass(@NonNull Class<? extends AbstractAiProvider> providerClass) {
         Class<?> curr = providerClass;
         while (curr != null && AbstractAiProvider.class.isAssignableFrom(curr)) {
-            Class<? extends AiProviderPanel> panelClass = registry.get(curr);
+            Class<? extends AbstractAiProviderPanel> panelClass = registry.get(curr);
             if (panelClass != null) {
                 return panelClass;
             }
             curr = curr.getSuperclass();
         }
-        return AiProviderPanel.class;
+        return AbstractAiProviderPanel.class;
     }
 
     /**
-     * Instantiates and initializes the appropriate typed {@link AiProviderPanel} for the given AI provider.
+     * Instantiates and initializes the appropriate typed {@link AbstractAiProviderPanel} for the given AI provider.
      *
      * @param container The parent ASI container instance.
      * @param provider The AI provider entity to configure.
      * @param removeCallback The callback to execute when the user deletes the provider.
-     * @return A newly instantiated and initialized {@link AiProviderPanel} instance.
+     * @return A newly instantiated and initialized {@link AbstractAiProviderPanel} instance.
      */
-    public AiProviderPanel createPanel(
+    public AbstractAiProviderPanel createPanel(
             @NonNull AbstractSwingAsiContainer container,
             @NonNull AbstractAiProvider provider,
             Runnable removeCallback
     ) {
-        Class<? extends AiProviderPanel> panelClass = getPanelClass(provider.getClass());
+        Class<? extends AbstractAiProviderPanel> panelClass = getPanelClass(provider.getClass());
         try {
-            AiProviderPanel panel = panelClass.getDeclaredConstructor().newInstance();
+            AbstractAiProviderPanel panel = panelClass.getDeclaredConstructor().newInstance();
             panel.init(container, provider, removeCallback);
             return panel;
         } catch (Exception e) {
             log.error("Failed to instantiate custom provider panel '{}', falling back to base AiProviderPanel", panelClass.getName(), e);
-            AiProviderPanel fallback = new AiProviderPanel();
+            AbstractAiProviderPanel fallback = new AbstractAiProviderPanel();
             fallback.init(container, provider, removeCallback);
             return fallback;
         }

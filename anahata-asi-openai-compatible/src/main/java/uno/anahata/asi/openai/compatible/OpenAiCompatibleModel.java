@@ -564,24 +564,43 @@ public class OpenAiCompatibleModel extends AbstractModel {
         
         log.info("delta is " + choice);
 
-        // AUTODETECT: Check for reasoning_content field on first chunk if not explicitly configured
-        if (reasoningStyle == OpenAiCompatibleReasoningStyle.NONE
-                && delta.has("reasoning_content") && !delta.get("reasoning_content").isNull()) {
-            log.info("Auto-detected FIELD reasoning style with field 'reasoning_content' for model {}", modelId);
-            this.reasoningStyle = OpenAiCompatibleReasoningStyle.FIELD;
-            this.reasoningFieldName = "reasoning_content";
+        // 1. AUTODETECT / FIELD DISCOVERY: Check if field name is unknown or style is unconfigured
+        if (reasoningFieldName == null) {
+            if (delta.has("reasoning") && !delta.get("reasoning").isNull()) {
+                log.info("Auto-detected FIELD reasoning style with field 'reasoning' for model {}", modelId);
+                this.reasoningStyle = OpenAiCompatibleReasoningStyle.FIELD;
+                this.reasoningFieldName = "reasoning";
+            } else if (delta.has("reasoning_content") && !delta.get("reasoning_content").isNull()) {
+                log.info("Auto-detected FIELD reasoning style with field 'reasoning_content' for model {}", modelId);
+                this.reasoningStyle = OpenAiCompatibleReasoningStyle.FIELD;
+                this.reasoningFieldName = "reasoning_content";
+            } else if (delta.has("thinking") && !delta.get("thinking").isNull()) {
+                log.info("Auto-detected FIELD reasoning style with field 'thinking' for model {}", modelId);
+                this.reasoningStyle = OpenAiCompatibleReasoningStyle.FIELD;
+                this.reasoningFieldName = "thinking";
+            } else if (reasoningStyle == OpenAiCompatibleReasoningStyle.NONE
+                    && delta.has("content") && !delta.get("content").isNull()
+                    && delta.get("content").asText().contains("<think>")) {
+                log.info("Auto-detected TAGS reasoning style with '<think>' for model {}", modelId);
+                this.reasoningStyle = OpenAiCompatibleReasoningStyle.TAGS;
+                this.reasoningTags = List.of("<think>", "</think>");
+            }
         }
 
-        if (reasoningStyle == OpenAiCompatibleReasoningStyle.NONE
-                && delta.has("content") && !delta.get("content").isNull()
-                && delta.get("content").asText().contains("<think>")) {
-            log.info("Auto-detected TAGS reasoning style with '<think>' for model {}", modelId);
-            this.reasoningStyle = OpenAiCompatibleReasoningStyle.TAGS;
-            this.reasoningTags = List.of("<think>", "</think>");
-        }
-
-        if (reasoningStyle == OpenAiCompatibleReasoningStyle.FIELD && reasoningFieldName != null && delta.has(reasoningFieldName) && !delta.get(reasoningFieldName).isNull()) {
-            target.appendThoughts(delta.get(reasoningFieldName).asText());
+        // 2. Extract Thoughts (FIELD style)
+        if (reasoningStyle == OpenAiCompatibleReasoningStyle.FIELD) {
+            if (reasoningFieldName != null && delta.has(reasoningFieldName) && !delta.get(reasoningFieldName).isNull()) {
+                target.appendThoughts(delta.get(reasoningFieldName).asText());
+            } else if (delta.has("reasoning") && !delta.get("reasoning").isNull()) {
+                this.reasoningFieldName = "reasoning";
+                target.appendThoughts(delta.get("reasoning").asText());
+            } else if (delta.has("reasoning_content") && !delta.get("reasoning_content").isNull()) {
+                this.reasoningFieldName = "reasoning_content";
+                target.appendThoughts(delta.get("reasoning_content").asText());
+            } else if (delta.has("thinking") && !delta.get("thinking").isNull()) {
+                this.reasoningFieldName = "thinking";
+                target.appendThoughts(delta.get("thinking").asText());
+            }
         }
 
         // 2. Handle Content (might contain TAGS style reasoning)

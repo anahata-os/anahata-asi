@@ -8,7 +8,7 @@ import lombok.NonNull;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.gemini.GeminiAiProvider;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
-import uno.anahata.asi.swing.AiProviderPanel;
+import uno.anahata.asi.swing.AbstractAiProviderPanel;
 
 /**
  * Specialized Swing configuration panel for Google Gemini AI providers.
@@ -18,7 +18,7 @@ import uno.anahata.asi.swing.AiProviderPanel;
  *
  * @author anahata
  */
-public class GeminiAiProviderPanel extends AiProviderPanel {
+public class GeminiAiProviderPanel extends AbstractAiProviderPanel {
 
     /**
      * Checkbox to toggle Google Cloud Vertex AI endpoint usage.

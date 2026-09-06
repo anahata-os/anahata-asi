@@ -70,7 +70,7 @@ import uno.anahata.asi.swing.provider.DiscoverModelsTask;
  * @author anahata
  */
 @Slf4j
-public class AiProviderPanel extends ScrollablePanel {
+public class AbstractAiProviderPanel extends ScrollablePanel {
 
     /**
      * The parent ASI container instance.
@@ -172,7 +172,7 @@ public class AiProviderPanel extends ScrollablePanel {
      * before displaying this panel.
      * </p>
      */
-    public AiProviderPanel() {
+    public AbstractAiProviderPanel() {
         setOpaque(false);
         setLayout(new BorderLayout());
     }
@@ -184,7 +184,7 @@ public class AiProviderPanel extends ScrollablePanel {
      * @param provider The provider instance to bind to.
      * @param removeCallback Callback to trigger when the user deletes the provider.
      */
-    public AiProviderPanel(@NonNull AbstractSwingAsiContainer container, @NonNull AbstractAiProvider provider, Runnable removeCallback) {
+    public AbstractAiProviderPanel(@NonNull AbstractSwingAsiContainer container, @NonNull AbstractAiProvider provider, Runnable removeCallback) {
         this();
         init(container, provider, removeCallback);
     }

@@ -98,26 +98,43 @@ public class OpenAiCompatibleModelMessage extends AbstractModelMessage<OpenAiCom
             return;
         }
 
-        // 0. AUTODETECT: Check for reasoning_content field on first chunk if not explicitly configured
-        if (reasoningStyle == OpenAiCompatibleReasoningStyle.NONE
-                && messageNode.has("reasoning_content") && !messageNode.get("reasoning_content").isNull()) {
-            log.info("Auto-detected FIELD reasoning style with field 'reasoning_content' for model {}", getModelId());
-            reasoningStyle = OpenAiCompatibleReasoningStyle.FIELD;
-            reasoningFieldName = "reasoning_content";
-        }
-
-        if (reasoningStyle == OpenAiCompatibleReasoningStyle.NONE
-                && messageNode.has("content") && !messageNode.get("content").isNull()
-                && messageNode.get("content").asText().contains("<think>")) {
-            log.info("Auto-detected TAGS reasoning style with '<think>' for model {}", getModelId());
-            reasoningStyle = OpenAiCompatibleReasoningStyle.TAGS;
-            reasoningTags = List.of("<think>", "</think>");
+        // 0. AUTODETECT / FIELD DISCOVERY: Check if field name is unknown or style is unconfigured
+        if (reasoningFieldName == null) {
+            if (messageNode.has("reasoning") && !messageNode.get("reasoning").isNull()) {
+                log.info("Auto-detected FIELD reasoning style with field 'reasoning' for model {}", getModelId());
+                reasoningStyle = OpenAiCompatibleReasoningStyle.FIELD;
+                reasoningFieldName = "reasoning";
+            } else if (messageNode.has("reasoning_content") && !messageNode.get("reasoning_content").isNull()) {
+                log.info("Auto-detected FIELD reasoning style with field 'reasoning_content' for model {}", getModelId());
+                reasoningStyle = OpenAiCompatibleReasoningStyle.FIELD;
+                reasoningFieldName = "reasoning_content";
+            } else if (messageNode.has("thinking") && !messageNode.get("thinking").isNull()) {
+                log.info("Auto-detected FIELD reasoning style with field 'thinking' for model {}", getModelId());
+                reasoningStyle = OpenAiCompatibleReasoningStyle.FIELD;
+                reasoningFieldName = "thinking";
+            } else if (reasoningStyle == OpenAiCompatibleReasoningStyle.NONE
+                    && messageNode.has("content") && !messageNode.get("content").isNull()
+                    && messageNode.get("content").asText().contains("<think>")) {
+                log.info("Auto-detected TAGS reasoning style with '<think>' for model {}", getModelId());
+                reasoningStyle = OpenAiCompatibleReasoningStyle.TAGS;
+                reasoningTags = List.of("<think>", "</think>");
+            }
         }
 
         // 1. Reasoning Content (FIELD style)
-        if (reasoningStyle == OpenAiCompatibleReasoningStyle.FIELD && reasoningFieldName != null
-                && messageNode.has(reasoningFieldName) && !messageNode.get(reasoningFieldName).isNull()) {
-            appendThoughts(messageNode.get(reasoningFieldName).asText());
+        if (reasoningStyle == OpenAiCompatibleReasoningStyle.FIELD) {
+            if (reasoningFieldName != null && messageNode.has(reasoningFieldName) && !messageNode.get(reasoningFieldName).isNull()) {
+                appendThoughts(messageNode.get(reasoningFieldName).asText());
+            } else if (messageNode.has("reasoning") && !messageNode.get("reasoning").isNull()) {
+                reasoningFieldName = "reasoning";
+                appendThoughts(messageNode.get("reasoning").asText());
+            } else if (messageNode.has("reasoning_content") && !messageNode.get("reasoning_content").isNull()) {
+                reasoningFieldName = "reasoning_content";
+                appendThoughts(messageNode.get("reasoning_content").asText());
+            } else if (messageNode.has("thinking") && !messageNode.get("thinking").isNull()) {
+                reasoningFieldName = "thinking";
+                appendThoughts(messageNode.get("thinking").asText());
+            }
         }
 
         // 2. Text Content
