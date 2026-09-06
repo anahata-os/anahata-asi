@@ -470,6 +470,24 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
     }
 
     /**
+     * Tests connectivity to the provider's remote API endpoint and returns a human-readable status summary.
+     * <p>
+     * The default implementation executes {@link #refreshCachedApiModels()} and formats a summary
+     * of discovered models. Subclasses (like Ollama) can override this to return rich diagnostic details
+     * such as server versions and live running models.
+     * </p>
+     *
+     * @return A descriptive connection confirmation message.
+     * @throws Exception if remote connectivity or authentication fails.
+     */
+    public String testConnection() throws Exception {
+        List<? extends AbstractModel> discovered = refreshCachedApiModels();
+        int count = discovered != null ? discovered.size() : 0;
+        String endpoint = getBaseUrl() != null ? getBaseUrl() : getDisplayName();
+        return String.format("Connection OK!\n\nDiscovered %d model(s) from %s.", count, endpoint);
+    }
+
+    /**
      * Finds a cached API model by its unique ID.
      *
      * @param modelId The ID of the model to look up in cached API models.

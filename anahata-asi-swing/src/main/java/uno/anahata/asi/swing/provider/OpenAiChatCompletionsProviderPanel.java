@@ -27,7 +27,7 @@ import uno.anahata.asi.swing.internal.SwingUtils;
  *
  * @author anahata
  */
-public class OpenAiChatCompletionsProviderPanel extends AbstractAiProviderPanel {
+public class OpenAiChatCompletionsProviderPanel<P extends OpenAiChatCompletionsProvider> extends AbstractAiProviderPanel<P> {
 
     /**
      * Text area for multi-line custom HTTP header configuration.
@@ -51,29 +51,27 @@ public class OpenAiChatCompletionsProviderPanel extends AbstractAiProviderPanel 
      * <p>Adds custom headers multi-line editor and prefer HTTP/1.1 checkbox.</p>
      */
     @Override
-    public void init(@NonNull AbstractSwingAsiContainer container, @NonNull AbstractAiProvider provider, Runnable removeCallback) {
+    public void init(@NonNull AbstractSwingAsiContainer container, @NonNull P provider, Runnable removeCallback) {
         super.init(container, provider, removeCallback);
-        if (provider instanceof OpenAiChatCompletionsProvider oai) {
-            formPanel.add(new JLabel("Custom Headers:"), "top, gaptop 5");
-            customHeadersArea = new JTextArea(3, 20);
-            customHeadersArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-            customHeadersArea.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(customHeadersArea, e));
-            if (oai.getCustomHeaders() != null) {
-                String headers = oai.getCustomHeaders().entrySet().stream()
-                        .map(entry -> entry.getKey() + ": " + entry.getValue())
-                        .collect(Collectors.joining("\n"));
-                customHeadersArea.setText(headers);
-            }
-            PromptSupport.setPrompt("Header-Name: Header-Value\nOne per line...", customHeadersArea);
-            JScrollPane headersScroll = new JScrollPane(customHeadersArea);
-            formPanel.add(headersScroll, "span 2, growx, wrap");
-
-            formPanel.add(new JLabel("Prefer HTTP/1.1:"), "gaptop 5");
-            preferHttp11Check = new JCheckBox("", oai.isPreferHttp11());
-            preferHttp11Check.setOpaque(false);
-            preferHttp11Check.setToolTipText("Force HTTP/1.1 to avoid protocol hangs on some local servers/routers.");
-            formPanel.add(preferHttp11Check, "span 2, wrap");
+        formPanel.add(new JLabel("Custom Headers:"), "top, gaptop 5");
+        customHeadersArea = new JTextArea(3, 20);
+        customHeadersArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        customHeadersArea.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(customHeadersArea, e));
+        if (provider.getCustomHeaders() != null) {
+            String headers = provider.getCustomHeaders().entrySet().stream()
+                    .map(entry -> entry.getKey() + ": " + entry.getValue())
+                    .collect(Collectors.joining("\n"));
+            customHeadersArea.setText(headers);
         }
+        PromptSupport.setPrompt("Header-Name: Header-Value\nOne per line...", customHeadersArea);
+        JScrollPane headersScroll = new JScrollPane(customHeadersArea);
+        formPanel.add(headersScroll, "span 2, growx, wrap");
+
+        formPanel.add(new JLabel("Prefer HTTP/1.1:"), "gaptop 5");
+        preferHttp11Check = new JCheckBox("", provider.isPreferHttp11());
+        preferHttp11Check.setOpaque(false);
+        preferHttp11Check.setToolTipText("Force HTTP/1.1 to avoid protocol hangs on some local servers/routers.");
+        formPanel.add(preferHttp11Check, "span 2, wrap");
     }
 
     /**
@@ -85,15 +83,13 @@ public class OpenAiChatCompletionsProviderPanel extends AbstractAiProviderPanel 
         if (super.isModified()) {
             return true;
         }
-        if (provider instanceof OpenAiChatCompletionsProvider oai) {
-            if (preferHttp11Check != null && preferHttp11Check.isSelected() != oai.isPreferHttp11()) {
-                return true;
-            }
-            if (customHeadersArea != null) {
-                Map<String, String> parsed = parseHeaders();
-                Map<String, String> existing = oai.getCustomHeaders() != null ? oai.getCustomHeaders() : Map.of();
-                return !Objects.equals(parsed, existing);
-            }
+        if (preferHttp11Check != null && preferHttp11Check.isSelected() != provider.isPreferHttp11()) {
+            return true;
+        }
+        if (customHeadersArea != null) {
+            Map<String, String> parsed = parseHeaders();
+            Map<String, String> existing = provider.getCustomHeaders() != null ? provider.getCustomHeaders() : Map.of();
+            return !Objects.equals(parsed, existing);
         }
         return false;
     }
@@ -105,13 +101,11 @@ public class OpenAiChatCompletionsProviderPanel extends AbstractAiProviderPanel 
     @Override
     public void syncToProvider() throws IOException {
         super.syncToProvider();
-        if (provider instanceof OpenAiChatCompletionsProvider oai) {
-            if (preferHttp11Check != null) {
-                oai.setPreferHttp11(preferHttp11Check.isSelected());
-            }
-            if (customHeadersArea != null) {
-                oai.setCustomHeaders(parseHeaders());
-            }
+        if (preferHttp11Check != null) {
+            provider.setPreferHttp11(preferHttp11Check.isSelected());
+        }
+        if (customHeadersArea != null) {
+            provider.setCustomHeaders(parseHeaders());
         }
     }
 

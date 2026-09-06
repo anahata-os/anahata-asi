@@ -35,6 +35,7 @@ import uno.anahata.asi.mistral.MistralAiProvider;
 import uno.anahata.asi.modal.ModalProvider;
 import uno.anahata.asi.novarouteai.NovaRouteAiProvider;
 import uno.anahata.asi.nvidia.NvidiaAiProvider;
+import uno.anahata.asi.ollama.OllamaAiProvider;
 import uno.anahata.asi.openai.OpenAiResponsesProvider;
 import uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider;
 import uno.anahata.asi.swing.agi.AgiPanel;
@@ -49,6 +50,7 @@ import uno.anahata.asi.swing.provider.AiProviderUiRegistry;
 import uno.anahata.asi.swing.provider.AnthropicProviderPanel;
 import uno.anahata.asi.swing.provider.DiscoverModelsTask;
 import uno.anahata.asi.swing.provider.GeminiAiProviderPanel;
+import uno.anahata.asi.swing.provider.OllamaAiProviderPanel;
 import uno.anahata.asi.swing.provider.OpenAiChatCompletionsProviderPanel;
 import uno.anahata.asi.swing.provider.OpenAiResponsesProviderPanel;
 import uno.anahata.asi.swing.settings.AsiContainerSettingsFrame;
@@ -87,22 +89,25 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
         AiProviderUiRegistry.getInstance().register(AnthropicProvider.class, AnthropicProviderPanel.class);
         AiProviderUiRegistry.getInstance().register(OpenAiChatCompletionsProvider.class, OpenAiChatCompletionsProviderPanel.class);
         AiProviderUiRegistry.getInstance().register(OpenAiResponsesProvider.class, OpenAiResponsesProviderPanel.class);
+        AiProviderUiRegistry.getInstance().register(OllamaAiProvider.class, OllamaAiProviderPanel.class);
     }
     
     /**
      * List of all known AI Providers.
      */
-    public static final List<Class<? extends AbstractAiProvider>> AVAILABLE_PROVIDER_CLASSES = List.of(OpenAiChatCompletionsProvider.class,
-        uno.anahata.asi.openai.OpenAiResponsesProvider.class,
-        uno.anahata.asi.anthropic.AnthropicProvider.class,
-        uno.anahata.asi.minimax.MinimaxAnthropicProvider.class,
-        uno.anahata.asi.mistral.MistralAiProvider.class,
-        uno.anahata.asi.gemini.GeminiAiProvider.class,
-        uno.anahata.asi.gemini.GeminiGoogleCloudExpressAIProvider.class,
-        uno.anahata.asi.huggingface.HuggingFaceProvider.class,
-        uno.anahata.asi.modal.ModalProvider.class,
-        uno.anahata.asi.novarouteai.NovaRouteAiProvider.class,
-        uno.anahata.asi.nvidia.NvidiaAiProvider.class
+    public static final List<Class<? extends AbstractAiProvider>> AVAILABLE_PROVIDER_CLASSES = List.of(
+        OpenAiChatCompletionsProvider.class,
+        OpenAiResponsesProvider.class,
+        AnthropicProvider.class,
+        MinimaxAnthropicProvider.class,
+        MistralAiProvider.class,
+        GeminiAiProvider.class,
+        GeminiGoogleCloudExpressAIProvider.class,
+        HuggingFaceProvider.class,
+        ModalProvider.class,
+        NovaRouteAiProvider.class,
+        NvidiaAiProvider.class,
+        OllamaAiProvider.class
     );
 
 
@@ -172,6 +177,11 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
         if (getProvider("Nvidia") == null) {
             log.info("Registering NVIDIA");
             registerProvider(new NvidiaAiProvider());
+        }
+
+        if (getProvider("Ollama") == null) {
+            log.info("Registering Ollama");
+            registerProvider(new OllamaAiProvider());
         }
 
         // Background Model Discovery for effectively enabled providers

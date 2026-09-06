@@ -1,12 +1,14 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.provider;
 
+import java.awt.Color;
 import java.awt.Component;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JTable;
+import javax.swing.UIManager;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
@@ -46,49 +48,59 @@ public class AiProviderRenderer extends DefaultListCellRenderer implements Table
     @Override
     public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-        configure(this, value);
+        configure(this, value, isSelected);
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Configures the table cell renderer component with the provider's logo icon and display name.
-     * </p>
-     *
-     * @param table The JTable being rendered.
-     * @param value The cell value (typically an {@link AbstractAiProvider} or {@code null}).
-     * @param isSelected True if the cell is selected.
-     * @param hasFocus True if the cell has focus.
-     * @param row The row index of the cell.
-     * @param column The column index of the cell.
-     * @return The configured table cell component.
-     */
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         Component comp = tableRenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-        configure(comp, value);
+        configure(comp, value, isSelected);
         return comp;
     }
 
     /**
-     * Configures a target label component with provider iconography and label text.
+     * Configures a target label component with provider iconography, label text,
+     * and visual graying out if the provider is disabled or missing required API keys.
      *
      * @param comp The target component to configure.
      * @param value The provider entity or placeholder object.
+     * @param isSelected Whether the cell is currently selected.
      */
-    private static void configure(Component comp, Object value) {
+    private static void configure(Component comp, Object value, boolean isSelected) {
         if (comp instanceof JLabel label) {
             if (value instanceof AbstractAiProvider p) {
                 label.setText(p.getDisplayName() != null ? p.getDisplayName() : p.getUuid());
                 Icon icon = IconUtils.getIcon("aiproviders/" + p.getClass().getName() + ".png", 16, 16);
-                label.setIcon(icon);
+                boolean effectivelyEnabled = p.isEffectivelyEnabled();
+                label.setEnabled(effectivelyEnabled);
+                if (!effectivelyEnabled && icon != null) {
+                    Icon disabledIcon = UIManager.getLookAndFeel().getDisabledIcon(label, icon);
+                    label.setIcon(disabledIcon != null ? disabledIcon : icon);
+                } else {
+                    label.setIcon(icon);
+                }
+                if (!isSelected && !effectivelyEnabled) {
+                    Color disabledFg = UIManager.getColor("Label.disabledForeground");
+                    label.setForeground(disabledFg != null ? disabledFg : Color.GRAY);
+                }
+                if (!p.isEnabled()) {
+                    label.setToolTipText("Provider is disabled");
+                } else if (!p.isEffectivelyEnabled()) {
+                    label.setToolTipText("Provider is enabled but has no configured API keys");
+                } else {
+                    label.setToolTipText(null);
+                }
             } else if (value == null) {
                 label.setText("All AI Providers");
                 label.setIcon(null);
+                label.setEnabled(true);
+                label.setToolTipText(null);
             } else {
                 label.setText(value.toString());
                 label.setIcon(null);
+                label.setEnabled(true);
+                label.setToolTipText(null);
             }
         }
     }

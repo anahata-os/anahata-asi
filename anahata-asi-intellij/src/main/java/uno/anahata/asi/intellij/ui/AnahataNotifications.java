@@ -39,4 +39,30 @@ public final class AnahataNotifications {
                 .createNotification(content, NotificationType.INFORMATION)
                 .notify(project);
     }
+
+    /**
+     * Shows a warning balloon notification.
+     *
+     * @param project the project context (may be {@code null} for an application-level balloon).
+     * @param content the message body.
+     */
+    public static void warn(Project project, String content) {
+        NotificationGroupManager.getInstance()
+                .getNotificationGroup(GROUP_ID)
+                .createNotification(content, NotificationType.WARNING)
+                .notify(project);
+    }
+
+    /**
+     * Shows an error balloon notification.
+     *
+     * @param project the project context (may be {@code null} for an application-level balloon).
+     * @param content the message body.
+     */
+    public static void error(Project project, String content) {
+        NotificationGroupManager.getInstance()
+                .getNotificationGroup(GROUP_ID)
+                .createNotification(content, NotificationType.ERROR)
+                .notify(project);
+    }
 }

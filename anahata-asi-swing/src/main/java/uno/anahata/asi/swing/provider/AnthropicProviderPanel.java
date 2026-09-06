@@ -19,7 +19,7 @@ import uno.anahata.asi.swing.AbstractAiProviderPanel;
  *
  * @author anahata
  */
-public class AnthropicProviderPanel extends AbstractAiProviderPanel {
+public class AnthropicProviderPanel extends AbstractAiProviderPanel<AnthropicProvider> {
 
     /**
      * Text field for configuring the Anthropic API version header.
@@ -38,13 +38,11 @@ public class AnthropicProviderPanel extends AbstractAiProviderPanel {
      * <p>Adds the 'Anthropic Version' text field to the form.</p>
      */
     @Override
-    public void init(@NonNull AbstractSwingAsiContainer container, @NonNull AbstractAiProvider provider, Runnable removeCallback) {
+    public void init(@NonNull AbstractSwingAsiContainer container, @NonNull AnthropicProvider provider, Runnable removeCallback) {
         super.init(container, provider, removeCallback);
-        if (provider instanceof AnthropicProvider anthropic) {
-            formPanel.add(new JLabel("Anthropic Version:"), "gaptop 5");
-            anthropicVersionField = new JTextField(anthropic.getAnthropicVersion() != null ? anthropic.getAnthropicVersion() : "");
-            formPanel.add(anthropicVersionField, "span 2, wrap");
-        }
+        formPanel.add(new JLabel("Anthropic Version:"), "gaptop 5");
+        anthropicVersionField = new JTextField(provider.getAnthropicVersion() != null ? provider.getAnthropicVersion() : "");
+        formPanel.add(anthropicVersionField, "span 2, wrap");
     }
 
     /**
@@ -56,8 +54,8 @@ public class AnthropicProviderPanel extends AbstractAiProviderPanel {
         if (super.isModified()) {
             return true;
         }
-        if (provider instanceof AnthropicProvider anthropic && anthropicVersionField != null) {
-            String current = anthropic.getAnthropicVersion() != null ? anthropic.getAnthropicVersion() : "";
+        if (anthropicVersionField != null) {
+            String current = provider.getAnthropicVersion() != null ? provider.getAnthropicVersion() : "";
             return !Objects.equals(anthropicVersionField.getText().trim(), current);
         }
         return false;
@@ -70,8 +68,8 @@ public class AnthropicProviderPanel extends AbstractAiProviderPanel {
     @Override
     public void syncToProvider() throws IOException {
         super.syncToProvider();
-        if (provider instanceof AnthropicProvider anthropic && anthropicVersionField != null) {
-            anthropic.setAnthropicVersion(anthropicVersionField.getText().trim());
+        if (anthropicVersionField != null) {
+            provider.setAnthropicVersion(anthropicVersionField.getText().trim());
         }
     }
 }

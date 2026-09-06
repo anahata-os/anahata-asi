@@ -18,7 +18,7 @@ import uno.anahata.asi.swing.AbstractAiProviderPanel;
  *
  * @author anahata
  */
-public class GeminiAiProviderPanel extends AbstractAiProviderPanel {
+public class GeminiAiProviderPanel extends AbstractAiProviderPanel<GeminiAiProvider> {
 
     /**
      * Checkbox to toggle Google Cloud Vertex AI endpoint usage.
@@ -37,15 +37,13 @@ public class GeminiAiProviderPanel extends AbstractAiProviderPanel {
      * <p>Adds the Gemini-specific 'Use Vertex AI' toggle control to the form panel.</p>
      */
     @Override
-    public void init(@NonNull AbstractSwingAsiContainer container, @NonNull AbstractAiProvider provider, Runnable removeCallback) {
+    public void init(@NonNull AbstractSwingAsiContainer container, @NonNull GeminiAiProvider provider, Runnable removeCallback) {
         super.init(container, provider, removeCallback);
-        if (provider instanceof GeminiAiProvider gemini) {
-            formPanel.add(new JLabel("Use Vertex AI:"), "gaptop 5");
-            vertexCheck = new JCheckBox("", gemini.isVertex());
-            vertexCheck.setOpaque(false);
-            vertexCheck.setToolTipText("Use Google Cloud Vertex AI endpoint instead of the standard Google AI Studio.");
-            formPanel.add(vertexCheck, "span 2, wrap");
-        }
+        formPanel.add(new JLabel("Use Vertex AI:"), "gaptop 5");
+        vertexCheck = new JCheckBox("", provider.isVertex());
+        vertexCheck.setOpaque(false);
+        vertexCheck.setToolTipText("Use Google Cloud Vertex AI endpoint instead of the standard Google AI Studio.");
+        formPanel.add(vertexCheck, "span 2, wrap");
     }
 
     /**
@@ -57,8 +55,8 @@ public class GeminiAiProviderPanel extends AbstractAiProviderPanel {
         if (super.isModified()) {
             return true;
         }
-        if (provider instanceof GeminiAiProvider gemini && vertexCheck != null) {
-            return vertexCheck.isSelected() != gemini.isVertex();
+        if (vertexCheck != null) {
+            return vertexCheck.isSelected() != provider.isVertex();
         }
         return false;
     }
@@ -70,8 +68,8 @@ public class GeminiAiProviderPanel extends AbstractAiProviderPanel {
     @Override
     public void syncToProvider() throws IOException {
         super.syncToProvider();
-        if (provider instanceof GeminiAiProvider gemini && vertexCheck != null) {
-            gemini.setVertex(vertexCheck.isSelected());
+        if (vertexCheck != null) {
+            provider.setVertex(vertexCheck.isSelected());
         }
     }
 }

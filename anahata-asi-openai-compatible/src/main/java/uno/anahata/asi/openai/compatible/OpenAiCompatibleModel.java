@@ -127,7 +127,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
      */
     public OpenAiCompatibleModel(OpenAiChatCompletionsProvider provider, JsonNode node) {
         this(provider,
-                node.path("id").asText(),
+                resolveModelId(node),
                 resolveDisplayName(node));
 
         this.supportedActions = new ArrayList<>(List.of("chat/completions"));
@@ -157,6 +157,27 @@ public class OpenAiCompatibleModel extends AbstractModel {
     }
 
     /**
+     * Resolves the unique model ID from a model JSON node.
+     * <p>
+     * Checks for {@code id}, {@code name}, or {@code model} fields, defaulting to 'unknown' if missing.
+     * </p>
+     * @param node The JSON node containing model metadata.
+     * @return The resolved model ID string.
+     */
+    private static String resolveModelId(JsonNode node) {
+        if (node.hasNonNull("id") && !node.path("id").asText().isBlank()) {
+            return node.path("id").asText().trim();
+        }
+        if (node.hasNonNull("name") && !node.path("name").asText().isBlank()) {
+            return node.path("name").asText().trim();
+        }
+        if (node.hasNonNull("model") && !node.path("model").asText().isBlank()) {
+            return node.path("model").asText().trim();
+        }
+        return "unknown";
+    }
+
+    /**
      * Resolves a human-readable display name from a model JSON node.
      * <p>
      * Checks for {@code display_name}, {@code name}, or {@code owned_by} fields,
@@ -166,7 +187,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
      * @return The resolved display name string.
      */
     private static String resolveDisplayName(JsonNode node) {
-        String id = node.path("id").asText();
+        String id = resolveModelId(node);
         if (node.hasNonNull("display_name") && !node.path("display_name").asText().isBlank()) {
             return node.path("display_name").asText();
         }

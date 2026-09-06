@@ -32,6 +32,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
@@ -70,7 +71,7 @@ import uno.anahata.asi.swing.provider.DiscoverModelsTask;
  * @author anahata
  */
 @Slf4j
-public class AbstractAiProviderPanel extends ScrollablePanel {
+public class AbstractAiProviderPanel<P extends AbstractAiProvider> extends ScrollablePanel {
 
     /**
      * The parent ASI container instance.
@@ -79,7 +80,8 @@ public class AbstractAiProviderPanel extends ScrollablePanel {
     /**
      * The domain entity representing the AI provider being configured.
      */
-    protected AbstractAiProvider provider;
+    @Getter
+    protected P provider;
     /**
      * Visual container for provider logo icon in the top header row.
      */
@@ -100,6 +102,22 @@ public class AbstractAiProviderPanel extends ScrollablePanel {
      * Monospace editor for the 'api_keys.txt' file, supporting multiple keys.
      */
     protected JTextArea textArea;
+    /**
+     * Label for the API Key Pool section.
+     */
+    protected JLabel keyPoolLabel;
+    /**
+     * Container panel for the API key pool text area.
+     */
+    protected JPanel keysContainer;
+    /**
+     * Label for the API Keys File row.
+     */
+    protected JLabel keysFileLabel;
+    /**
+     * Row panel containing the keys file path label and choose/open buttons.
+     */
+    protected JPanel folderRow;
     /**
      * User-facing name for this provider instance.
      */
@@ -184,7 +202,7 @@ public class AbstractAiProviderPanel extends ScrollablePanel {
      * @param provider The provider instance to bind to.
      * @param removeCallback Callback to trigger when the user deletes the provider.
      */
-    public AbstractAiProviderPanel(@NonNull AbstractSwingAsiContainer container, @NonNull AbstractAiProvider provider, Runnable removeCallback) {
+    public AbstractAiProviderPanel(@NonNull AbstractSwingAsiContainer container, @NonNull P provider, Runnable removeCallback) {
         this();
         init(container, provider, removeCallback);
     }
@@ -196,7 +214,7 @@ public class AbstractAiProviderPanel extends ScrollablePanel {
      * @param provider The provider instance to bind to.
      * @param removeCallback Callback to trigger when the user deletes the provider.
      */
-    public void init(@NonNull AbstractSwingAsiContainer container, @NonNull AbstractAiProvider provider, Runnable removeCallback) {
+    public void init(@NonNull AbstractSwingAsiContainer container, @NonNull P provider, Runnable removeCallback) {
         this.container = container;
         this.provider = provider;
         this.removeCallback = removeCallback;
@@ -213,7 +231,7 @@ public class AbstractAiProviderPanel extends ScrollablePanel {
         PromptSupport.setFocusBehavior(PromptSupport.FocusBehavior.HIDE_PROMPT, textArea);
         PromptSupport.setForeground(UIManager.getColor("Label.disabledForeground"), textArea);
 
-        this.formPanel = new JPanel(new MigLayout("fillx, insets 15", "[right]12[grow,fill]5[]"));
+        this.formPanel = new JPanel(new MigLayout("fillx, insets 15, hidemode 3", "[right]12[grow,fill]5[]"));
         formPanel.setOpaque(false);
 
         promoBannerContainer = new JPanel(new BorderLayout());
@@ -302,12 +320,14 @@ public class AbstractAiProviderPanel extends ScrollablePanel {
         apiKeyRequiredCheck.setOpaque(false);
         apiKeyRequiredCheck.addActionListener(e -> {
             textArea.setEnabled(apiKeyRequiredCheck.isSelected());
+            updateKeySectionVisibility();
         });
         formPanel.add(apiKeyRequiredCheck, "span 2, wrap");
 
         // --- Key Pool Section ---
-        formPanel.add(new JLabel("API Key Pool:"), "top, gaptop 10");
-        JPanel keysContainer = new JPanel(new MigLayout("ins 0, fill", "[grow,fill]", "[][][grow,fill]"));
+        keyPoolLabel = new JLabel("API Key Pool:");
+        formPanel.add(keyPoolLabel, "top, gaptop 10");
+        keysContainer = new JPanel(new MigLayout("ins 0, fill", "[grow,fill]", "[][][grow,fill]"));
         keysContainer.setOpaque(false);
 
         JPanel keysHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
@@ -332,8 +352,9 @@ public class AbstractAiProviderPanel extends ScrollablePanel {
 
         formPanel.add(keysContainer, "span 2, grow, wrap");
 
-        formPanel.add(new JLabel("API Keys File:"));
-        JPanel folderRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        keysFileLabel = new JLabel("API Keys File:");
+        formPanel.add(keysFileLabel);
+        folderRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         folderRow.setOpaque(false);
         folderRow.add(folderLabel);
         JButton chooseFileBtn = new JButton("Choose...");
@@ -381,6 +402,7 @@ public class AbstractAiProviderPanel extends ScrollablePanel {
 
         // Initial state sync
         textArea.setEnabled(provider.isApiKeyRequired());
+        updateKeySectionVisibility();
         loadKeys();
 
         // Tabbed Interface: Tab 1 = Details, Tab 2 = Models
@@ -397,6 +419,27 @@ public class AbstractAiProviderPanel extends ScrollablePanel {
         add(subTabs, BorderLayout.CENTER);
         revalidate();
         repaint();
+    }
+
+    /**
+     * Toggles visibility of the key pool and keys file rows based on whether an API key is required.
+     */
+    protected void updateKeySectionVisibility() {
+        boolean required = apiKeyRequiredCheck != null && apiKeyRequiredCheck.isSelected();
+        if (keyPoolLabel != null) {
+            keyPoolLabel.setVisible(required);
+        }
+        if (keysContainer != null) {
+            keysContainer.setVisible(required);
+        }
+        if (keysFileLabel != null) {
+            keysFileLabel.setVisible(required);
+        }
+        if (folderRow != null) {
+            folderRow.setVisible(required);
+        }
+        formPanel.revalidate();
+        formPanel.repaint();
     }
 
     /**
@@ -550,7 +593,7 @@ public class AbstractAiProviderPanel extends ScrollablePanel {
      *
      * @param newProvider The new provider to display and configure.
      */
-    public void setProvider(@NonNull AbstractAiProvider newProvider) {
+    public void setProvider(@NonNull P newProvider) {
         init(container, newProvider, removeCallback);
     }
 

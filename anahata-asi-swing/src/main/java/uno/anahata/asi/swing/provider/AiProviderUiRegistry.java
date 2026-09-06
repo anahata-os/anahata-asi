@@ -35,7 +35,7 @@ public class AiProviderUiRegistry {
     /**
      * The backing concurrent map mapping provider domain types to their corresponding Swing panel classes.
      */
-    private final Map<Class<? extends AbstractAiProvider>, Class<? extends AbstractAiProviderPanel>> registry = new ConcurrentHashMap<>();
+    private final Map<Class<? extends AbstractAiProvider>, Class<? extends AbstractAiProviderPanel<?>>> registry = new ConcurrentHashMap<>();
 
     /**
      * Private constructor to enforce singleton pattern.
@@ -60,11 +60,12 @@ public class AiProviderUiRegistry {
      * @param providerClass The domain class of the AI provider.
      * @param panelClass The Swing panel class responsible for configuring the provider.
      */
-    public <P extends AbstractAiProvider, U extends AbstractAiProviderPanel> void register(
+    @SuppressWarnings("unchecked")
+    public <P extends AbstractAiProvider, U extends AbstractAiProviderPanel<P>> void register(
             @NonNull Class<P> providerClass,
             @NonNull Class<U> panelClass
     ) {
-        registry.put(providerClass, panelClass);
+        registry.put(providerClass, (Class<? extends AbstractAiProviderPanel<?>>) (Class<?>) panelClass);
         log.info("Registered AI provider UI panel: {} -> {}", providerClass.getSimpleName(), panelClass.getSimpleName());
     }
 
@@ -78,39 +79,42 @@ public class AiProviderUiRegistry {
      * @param providerClass The concrete class of the AI provider.
      * @return The resolved {@link AbstractAiProviderPanel} class.
      */
-    public Class<? extends AbstractAiProviderPanel> getPanelClass(@NonNull Class<? extends AbstractAiProvider> providerClass) {
+    @SuppressWarnings("unchecked")
+    public Class<? extends AbstractAiProviderPanel<?>> getPanelClass(@NonNull Class<? extends AbstractAiProvider> providerClass) {
         Class<?> curr = providerClass;
         while (curr != null && AbstractAiProvider.class.isAssignableFrom(curr)) {
-            Class<? extends AbstractAiProviderPanel> panelClass = registry.get(curr);
+            Class<? extends AbstractAiProviderPanel<?>> panelClass = registry.get(curr);
             if (panelClass != null) {
                 return panelClass;
             }
             curr = curr.getSuperclass();
         }
-        return AbstractAiProviderPanel.class;
+        return (Class<? extends AbstractAiProviderPanel<?>>) (Class<?>) AbstractAiProviderPanel.class;
     }
 
     /**
      * Instantiates and initializes the appropriate typed {@link AbstractAiProviderPanel} for the given AI provider.
      *
+     * @param <P> The provider type.
      * @param container The parent ASI container instance.
      * @param provider The AI provider entity to configure.
      * @param removeCallback The callback to execute when the user deletes the provider.
      * @return A newly instantiated and initialized {@link AbstractAiProviderPanel} instance.
      */
-    public AbstractAiProviderPanel createPanel(
+    @SuppressWarnings("unchecked")
+    public <P extends AbstractAiProvider> AbstractAiProviderPanel<P> createPanel(
             @NonNull AbstractSwingAsiContainer container,
-            @NonNull AbstractAiProvider provider,
+            @NonNull P provider,
             Runnable removeCallback
     ) {
-        Class<? extends AbstractAiProviderPanel> panelClass = getPanelClass(provider.getClass());
+        Class<? extends AbstractAiProviderPanel<?>> panelClass = getPanelClass(provider.getClass());
         try {
-            AbstractAiProviderPanel panel = panelClass.getDeclaredConstructor().newInstance();
+            AbstractAiProviderPanel<P> panel = (AbstractAiProviderPanel<P>) panelClass.getDeclaredConstructor().newInstance();
             panel.init(container, provider, removeCallback);
             return panel;
         } catch (Exception e) {
             log.error("Failed to instantiate custom provider panel '{}', falling back to base AiProviderPanel", panelClass.getName(), e);
-            AbstractAiProviderPanel fallback = new AbstractAiProviderPanel();
+            AbstractAiProviderPanel<P> fallback = new AbstractAiProviderPanel<>();
             fallback.init(container, provider, removeCallback);
             return fallback;
         }

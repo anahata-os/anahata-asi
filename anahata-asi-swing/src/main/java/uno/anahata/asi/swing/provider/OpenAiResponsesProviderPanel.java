@@ -18,7 +18,7 @@ import uno.anahata.asi.swing.AbstractAiProviderPanel;
  *
  * @author anahata
  */
-public class OpenAiResponsesProviderPanel extends AbstractAiProviderPanel {
+public class OpenAiResponsesProviderPanel extends AbstractAiProviderPanel<OpenAiResponsesProvider> {
 
     /**
      * Checkbox to toggle verified organization mode.
@@ -37,15 +37,13 @@ public class OpenAiResponsesProviderPanel extends AbstractAiProviderPanel {
      * <p>Adds the verified organization checkbox control.</p>
      */
     @Override
-    public void init(@NonNull AbstractSwingAsiContainer container, @NonNull AbstractAiProvider provider, Runnable removeCallback) {
+    public void init(@NonNull AbstractSwingAsiContainer container, @NonNull OpenAiResponsesProvider provider, Runnable removeCallback) {
         super.init(container, provider, removeCallback);
-        if (provider instanceof OpenAiResponsesProvider nativeOai) {
-            formPanel.add(new JLabel("Verified Organization:"), "gaptop 5");
-            verifiedCheck = new JCheckBox("", nativeOai.isVerifiedOrganization());
-            verifiedCheck.setOpaque(false);
-            verifiedCheck.setToolTipText("Enable if your API key belongs to a verified OpenAI organization. Allows stateful API calls and plain-text reasoning summaries.");
-            formPanel.add(verifiedCheck, "span 2, wrap");
-        }
+        formPanel.add(new JLabel("Verified Organization:"), "gaptop 5");
+        verifiedCheck = new JCheckBox("", provider.isVerifiedOrganization());
+        verifiedCheck.setOpaque(false);
+        verifiedCheck.setToolTipText("Enable if your API key belongs to a verified OpenAI organization. Allows stateful API calls and plain-text reasoning summaries.");
+        formPanel.add(verifiedCheck, "span 2, wrap");
     }
 
     /**
@@ -57,8 +55,8 @@ public class OpenAiResponsesProviderPanel extends AbstractAiProviderPanel {
         if (super.isModified()) {
             return true;
         }
-        if (provider instanceof OpenAiResponsesProvider nativeOai && verifiedCheck != null) {
-            return verifiedCheck.isSelected() != nativeOai.isVerifiedOrganization();
+        if (verifiedCheck != null) {
+            return verifiedCheck.isSelected() != provider.isVerifiedOrganization();
         }
         return false;
     }
@@ -70,8 +68,8 @@ public class OpenAiResponsesProviderPanel extends AbstractAiProviderPanel {
     @Override
     public void syncToProvider() throws IOException {
         super.syncToProvider();
-        if (provider instanceof OpenAiResponsesProvider nativeOai && verifiedCheck != null) {
-            nativeOai.setVerifiedOrganization(verifiedCheck.isSelected());
+        if (verifiedCheck != null) {
+            provider.setVerifiedOrganization(verifiedCheck.isSelected());
         }
     }
 }
