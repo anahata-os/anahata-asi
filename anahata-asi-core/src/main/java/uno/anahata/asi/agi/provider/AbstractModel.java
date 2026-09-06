@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -35,12 +36,21 @@ import uno.anahata.asi.persistence.kryo.KryoUtils;
 public abstract class AbstractModel {
 
     /**
-     * The parent AI provider that owns this model instance. Mark transient to prevent serialization of provider graph in model caches.
+     * Markdown table header for model listings.
+     */
+    public static final String MARKUP_TABLE_HEADER
+            = "| Provider UUID | Model ID | Display Name | Enabled | Version | Modalities | In Tokens | Out Tokens | Actions | Description |\n"
+            + "|---|---|---|---|---|---|---|---|---|---|\n";
+
+    /**
+     * The parent AI provider that owns this model instance. Mark transient to
+     * prevent serialization of provider graph in model caches.
      */
     protected transient AbstractAiProvider provider;
 
     /**
-     * Whether this model is enabled and offered in model selectors and tool listings.
+     * Whether this model is enabled and offered in model selectors and tool
+     * listings.
      */
     protected boolean enabled = true;
 
@@ -71,7 +81,8 @@ public abstract class AbstractModel {
     protected Integer maxInputTokens;
 
     /**
-     * The maximum number of output tokens this model can generate in a single turn, or null if unspecified.
+     * The maximum number of output tokens this model can generate in a single
+     * turn, or null if unspecified.
      */
     protected Integer maxOutputTokens;
 
@@ -91,9 +102,26 @@ public abstract class AbstractModel {
     protected Integer defaultTopK;
 
     /**
-     * Checks if this model is registered in its parent provider's master persisted models list.
+     * The list of response modalities supported by this model (e.g., TEXT, IMAGE, AUDIO, VIDEO).
+     */
+    protected List<ResponseModality> supportedResponseModalities = new ArrayList<>(List.of(ResponseModality.TEXT));
+
+    /**
+     * The list of API actions supported by this model (e.g. 'generateContent', 'batchEmbedContents', 'chat/completions').
+     */
+    protected List<String> supportedActions = new ArrayList<>();
+
+    /**
+     * The raw description or raw JSON representation of the model as received from the remote API endpoint.
+     */
+    protected String rawDescription;
+
+    /**
+     * Checks if this model is registered in its parent provider's master
+     * persisted models list.
      *
-     * @return true if this model exists in {@code provider.getModels()}, false otherwise.
+     * @return true if this model exists in {@code provider.getModels()}, false
+     * otherwise.
      */
     public boolean isRegistered() {
         if (provider == null) {
@@ -103,10 +131,12 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Checks if this locally registered model entity has different configuration values compared to its
-     * corresponding cached API model in the provider.
+     * Checks if this locally registered model entity has different
+     * configuration values compared to its corresponding cached API model in
+     * the provider.
      *
-     * @return true if any field value differs, false if identical or no cached API model is available.
+     * @return true if any field value differs, false if identical or no cached
+     * API model is available.
      * @throws IllegalStateException if called on an unregistered model.
      */
     public boolean hasDiscrepancy() {
@@ -130,10 +160,12 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Resets this locally registered model entity from its cached API model counterpart and persists changes to disk.
+     * Resets this locally registered model entity from its cached API model
+     * counterpart and persists changes to disk.
      *
      * @throws IOException if persisting the updated model fails.
-     * @throws IllegalStateException if this model is not registered or no cached API model is available.
+     * @throws IllegalStateException if this model is not registered or no
+     * cached API model is available.
      */
     public synchronized void resetFromApi() throws IOException {
         if (!isRegistered()) {
@@ -170,7 +202,9 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Persists this model entity directly to disk in its parent provider's models directory (~/.anahata/asi/&lt;provider&gt;/models/&lt;model_id&gt;.kryo).
+     * Persists this model entity directly to disk in its parent provider's
+     * models directory
+     * (~/.anahata/asi/&lt;provider&gt;/models/&lt;model_id&gt;.kryo).
      *
      * @throws IOException If creating the directory or saving the file fails.
      */
@@ -188,7 +222,8 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Deletes the persisted .kryo file for this model from disk and removes it from its parent provider.
+     * Deletes the persisted .kryo file for this model from disk and removes it
+     * from its parent provider.
      *
      * @throws IOException If deleting the file fails.
      */
@@ -238,17 +273,19 @@ public abstract class AbstractModel {
      */
     public abstract int countTokens(AbstractToolCall<?, ?> toolCall);
 
-
     /**
-     * Counts the number of tokens consumed by raw binary data based on its MIME type
-     * and model-specific multimodal billing rules.
+     * Counts the number of tokens consumed by raw binary data based on its MIME
+     * type and model-specific multimodal billing rules.
      * <p>
-     * This generic signature provides complete decoupling from domain part classes,
-     * allowing the model to tokenize any binary payload (such as blob parts or tool attachments).
+     * This generic signature provides complete decoupling from domain part
+     * classes, allowing the model to tokenize any binary payload (such as blob
+     * parts or tool attachments).
      * </p>
+     *
      * @param mimeType The MIME type of the binary data (e.g. "image/png").
      * @param data The raw binary data.
-     * @return The precise token count, or 0 if no model is active or the data is null.
+     * @return The precise token count, or 0 if no model is active or the data
+     * is null.
      */
     public abstract int countTokens(byte[] data, String mimeType);
 
@@ -273,22 +310,6 @@ public abstract class AbstractModel {
      * @return The model ID.
      */
     public abstract String getModelId();
-
-    /**
-     * Gets the list of supported API actions for this model (e.g.,
-     * "generateContent").
-     *
-     * @return A list of supported actions.
-     */
-    public abstract List<String> getSupportedActions();
-
-    /**
-     * Gets a rich, potentially HTML-formatted description of the model,
-     * including all its metadata.
-     *
-     * @return The raw description string.
-     */
-    public abstract String getRawDescription();
 
     /**
      * Delegate method to get the id of this models provider.
@@ -336,18 +357,13 @@ public abstract class AbstractModel {
     public abstract boolean isSupportsCachedContent();
 
     /**
-     * Gets the list of response modalities supported by this model (e.g.,
-     * TEXT, IMAGE, AUDIO, VIDEO).
+     * Checks if this model matches a search query (regex or substring) AND all
+     * target response modalities.
      *
-     * @return A list of supported response modalities.
-     */
-    public abstract List<ResponseModality> getSupportedResponseModalities();
-
-    /**
-     * Checks if this model matches a search query (regex or substring) AND all target response modalities.
-     *
-     * @param queryPattern Optional compiled regex pattern to match against model attributes. If null, matches all.
-     * @param targetModalities Optional set of required response modalities. If not empty, the model must support ALL specified modalities.
+     * @param queryPattern Optional compiled regex pattern to match against
+     * model attributes. If null, matches all.
+     * @param targetModalities Optional set of required response modalities. If
+     * not empty, the model must support ALL specified modalities.
      * @return true if the model satisfies all active criteria (AND logic).
      */
     public boolean matches(Pattern queryPattern, Set<ResponseModality> targetModalities) {
@@ -442,14 +458,8 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Markdown table header for model listings.
-     */
-    public static final String MARKUP_TABLE_HEADER =
-            "| Provider UUID | Model ID | Display Name | Enabled | Version | Modalities | In Tokens | Out Tokens | Actions | Description |\n"
-            + "|---|---|---|---|---|---|---|---|---|---|\n";
-
-    /**
-     * Formats this model as a Markdown table row for model listing and discovery tools.
+     * Formats this model as a Markdown table row for model listing and
+     * discovery tools.
      *
      * @return A Markdown row representing this model.
      */

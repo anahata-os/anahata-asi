@@ -7,12 +7,15 @@ package uno.anahata.asi.swing;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.HierarchyEvent;
+import java.util.List;
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
@@ -28,6 +31,7 @@ import uno.anahata.asi.swing.icons.LoadSessionIcon;
 import uno.anahata.asi.swing.agi.status.TaskStatusComponent;
 import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.icons.RestartIcon;
+import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.settings.AsiContainerSettingsFrame;
 import uno.anahata.asi.swing.icons.SettingsIcon;
 
@@ -51,6 +55,8 @@ public abstract class AbstractAsiContainerDashboardPanel extends JPanel {
     protected final JButton closeButton;
     /** Button to permanently dispose of the selected session. */
     protected final JButton disposeButton;
+    /** Button to open global settings. */
+    protected final JButton settingsBtn;
     /** A global warning label indicating if the DNA template loaded cleanly. */
     protected final JLabel warningLabel;
     
@@ -70,29 +76,34 @@ public abstract class AbstractAsiContainerDashboardPanel extends JPanel {
         toolBar.setFloatable(false);
 
         JButton newButton = new JButton("New AGI", new RestartIcon(16));
-        newButton.setToolTipText("Create a new AGI");
+        newButton.setToolTipText("Create a new default AGI");
         newButton.addActionListener(e -> createNew());
         toolBar.add(newButton);
+
+        JButton templateMenuButton = new JButton("▾");
+        templateMenuButton.setToolTipText("Select from stored AGI templates");
+        templateMenuButton.addActionListener(e -> showNewAgiMenu(templateMenuButton));
+        toolBar.add(templateMenuButton);
 
         JButton importButton = new JButton("Import", new LoadSessionIcon(16));
         importButton.setToolTipText("Import a previously saved AI session");
         importButton.addActionListener(e -> importSession());
         toolBar.add(importButton);
 
-        JButton settingsBtn = new JButton("Settings", new SettingsIcon(16));
+        this.settingsBtn = new JButton("Settings", new SettingsIcon(16));
         settingsBtn.setToolTipText("Configure global ASI settings and API keys");
-        
-        this.warningLabel = new JLabel("<html><font color='red'><b>&#9888;</b></font></html>");
-        this.warningLabel.setToolTipText("Check Notifications in the About Panel");
-        this.warningLabel.setVisible(!asiContainer.getNotifications().isEmpty());
-        
         settingsBtn.addActionListener(e -> {
-            showPreferences();
+            showPreferences(!asiContainer.getNotifications().isEmpty() ? 2 : 0);
         });
         toolBar.add(settingsBtn);
 
-        toolBar.add(Box.createHorizontalStrut(5));
-        toolBar.add(warningLabel);
+        this.warningLabel = new JLabel();
+        this.warningLabel.setVisible(false);
+
+        updateSettingsButton();
+        new EdtPropertyChangeListener(this, asiContainer, "notifications", evt -> {
+            updateSettingsButton();
+        });
 
         toolBar.add(Box.createHorizontalGlue());
 
@@ -169,6 +180,73 @@ public abstract class AbstractAsiContainerDashboardPanel extends JPanel {
      */
     public void dispose(@NonNull Agi agi) {
         asiContainer.dispose(agi);
+    }
+
+    /**
+     * Displays a popup menu anchored to the "New AGI" button allowing the user
+     * to choose between the default AGI or any stored template.
+     *
+     * @param button The source button to anchor the popup to.
+     */
+    private void showNewAgiMenu(JButton button) {
+        JPopupMenu menu = new JPopupMenu();
+
+        JMenuItem rawItem = new JMenuItem("new Agi() (via new AgiConfig(), no template)", new RestartIcon(16));
+        rawItem.setToolTipText("Create a clean session directly from createNewAgiConfig(), bypassing any default template");
+        rawItem.addActionListener(e -> {
+            if (!asiContainer.hasAnyProviderConfigured()) {
+                JOptionPane.showMessageDialog(this,
+                        "<html>Welcome to the Anahata Java Renaissance!<br><br>" +
+                        "To begin, you need to configure at least one AI provider.<br>" +
+                        "I am opening the <b>Preferences</b> dashboard for you now.</html>",
+                        "Setup Required", JOptionPane.INFORMATION_MESSAGE);
+                showPreferences(0);
+                return;
+            }
+            asiContainer.createNewBlankAgi();
+        });
+        menu.add(rawItem);
+        menu.addSeparator();
+
+        List<Agi> templates = asiContainer.getTemplates();
+        if (templates.isEmpty()) {
+            JMenuItem emptyItem = new JMenuItem("(No templates available)");
+            emptyItem.setEnabled(false);
+            menu.add(emptyItem);
+        } else {
+            for (Agi template : templates) {
+                String id = template.getConfig().getSessionId();
+                String nick = template.getNickname();
+                boolean isDefault = "default".equalsIgnoreCase(id);
+
+                String label = isDefault ? "⭐ " + id : id;
+                if (nick != null && !nick.isBlank() && !nick.equalsIgnoreCase(id)) {
+                    label += " (" + nick + ")";
+                }
+
+                JMenuItem templateItem = new JMenuItem(label, IconUtils.getIcon("v2/anahata.png", 16, 16));
+                templateItem.addActionListener(e -> {
+                    if (!asiContainer.hasAnyProviderConfigured()) {
+                        JOptionPane.showMessageDialog(this,
+                                "<html>To begin, you need to configure at least one AI provider.<br>" +
+                                "I am opening the <b>Preferences</b> dashboard for you now.</html>",
+                                "Setup Required", JOptionPane.INFORMATION_MESSAGE);
+                        showPreferences(0);
+                        return;
+                    }
+                    asiContainer.createNewAgiFromTemplate(template);
+                });
+                menu.add(templateItem);
+            }
+        }
+
+        menu.addSeparator();
+
+        JMenuItem manageItem = new JMenuItem("Manage Templates...", new SettingsIcon(16));
+        manageItem.addActionListener(e -> showSettings(1));
+        menu.add(manageItem);
+
+        menu.show(button, 0, button.getHeight());
     }
 
     /** 
@@ -284,9 +362,23 @@ public abstract class AbstractAsiContainerDashboardPanel extends JPanel {
         boolean isSelected = selected != null;
         disposeButton.setEnabled(isSelected);
         closeButton.setEnabled(isSelected);
-        
-        if (warningLabel != null) {
-            //warningLabel.setVisible(asiContainer.getPreferences().isLoadFailed());
+        updateSettingsButton();
+    }
+
+    /**
+     * Dynamically updates the Settings button text and tooltip depending on whether
+     * operational notifications or warnings are present in the container.
+     */
+    private void updateSettingsButton() {
+        if (settingsBtn != null) {
+            boolean hasNotifs = !asiContainer.getNotifications().isEmpty();
+            if (hasNotifs) {
+                settingsBtn.setText("<html>Settings <font color='red'><b>&#9888;</b></font></html>");
+                settingsBtn.setToolTipText("Configure global ASI settings - Check Notifications in the About Panel");
+            } else {
+                settingsBtn.setText("Settings");
+                settingsBtn.setToolTipText("Configure global ASI settings and API keys");
+            }
         }
     }
 

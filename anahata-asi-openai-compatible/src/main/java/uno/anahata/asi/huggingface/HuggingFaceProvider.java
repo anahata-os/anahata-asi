@@ -111,6 +111,12 @@ public class HuggingFaceProvider extends OpenAiChatCompletionsProvider {
                         if (json.has("max_position_embeddings")) {
                             model.setMaxInputTokens(json.get("max_position_embeddings").asInt());
                         }
+                        if (json.has("version")) {
+                            model.setVersion(json.get("version").asText());
+                        }
+                        if (json.has("model_type")) {
+                            model.setDescription("[" + json.get("model_type").asText() + "]");
+                        }
 
                         String modelType = json.path("model_type").asText("").toLowerCase();
                         if (modelType.contains("deepseek") || modelType.contains("qwen")) {
@@ -154,12 +160,24 @@ public class HuggingFaceProvider extends OpenAiChatCompletionsProvider {
                         if (json.has("max_new_tokens")) {
                             model.setMaxOutputTokens(json.get("max_new_tokens").asInt());
                         }
+                        if (json.has("temperature")) {
+                            model.setDefaultTemperature((float) json.get("temperature").asDouble());
+                        }
+                        if (json.has("top_k")) {
+                            model.setDefaultTopK(json.get("top_k").asInt());
+                        }
+                        if (json.has("top_p")) {
+                            model.setDefaultTopP((float) json.get("top_p").asDouble());
+                        }
                     } else {
                         log.warn("Could not fetch generation_config.json for " + modelId);
                     }
                 });
 
         CompletableFuture.allOf(configFuture, tokenizerFuture, generationFuture).join();
+        model.setRawDescription(model.buildHubHtmlDescription());
+        model.setSupportedActions(List.of("chat/completions"));
+        model.setSupportedResponseModalities(List.of(uno.anahata.asi.agi.provider.ResponseModality.TEXT));
         return model;
     }
 

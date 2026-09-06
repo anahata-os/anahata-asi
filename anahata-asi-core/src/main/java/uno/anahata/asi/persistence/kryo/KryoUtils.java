@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
 /**
@@ -98,7 +99,7 @@ public class KryoUtils {
             throw new IllegalArgumentException ("Cannot clone a null object.");
         }
         byte[] bytes = serialize(object);
-        return (T) deserialize(bytes, object.getClass());
+        return (T) deserialize(bytes, Object.class);
     }
 
     /**
@@ -138,7 +139,7 @@ public class KryoUtils {
     }
 
     /**
-     * Serializes an object into a byte array.
+     * Serializes an object into a byte array, embedding the concrete class header.
      *
      * @param object The object to serialize.
      * @return A byte array representing the serialized object.
@@ -148,31 +149,32 @@ public class KryoUtils {
         Kryo kryo = getKryo();
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         try (Output output = new Output(byteArrayOutputStream)) {
-            kryo.writeObject(output, object);
+            kryo.writeClassAndObject(output, object);
         }
         byte[] bytes = byteArrayOutputStream.toByteArray();
         long end = System.currentTimeMillis();
-        log.info("Kryo serialization of {} took {} ms, size: {} bytes", object.getClass().getSimpleName(), (end - start), bytes.length);
+        log.info("Kryo serialization of {} took {} ms, size: {}", object.getClass().getSimpleName(), (end - start), FileUtils.byteCountToDisplaySize(bytes.length));
         return bytes;
     }
 
     /**
-     * Deserializes a byte array into an object.
+     * Deserializes a byte array into an object using the embedded concrete class header.
      *
-     * @param <T>   The type of the object to deserialize.
+     * @param <T>   The expected return type.
      * @param bytes The byte array to deserialize.
-     * @param clazz The class of the object.
-     * @return The deserialized object.
+     * @param clazz The expected class or interface.
+     * @return The deserialized object cast to T.
      */
     public static <T> T deserialize(byte[] bytes, Class<T> clazz) {
         long start = System.currentTimeMillis();
         Kryo kryo = getKryo();
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
         try (Input input = new Input(byteArrayInputStream)) {
-            T object = kryo.readObject(input, clazz);
+            Object object = kryo.readClassAndObject(input);
+            String className = object != null ? object.getClass().getSimpleName() : clazz.getSimpleName();
             long end = System.currentTimeMillis();
-            log.info("Kryo deserialization of {} took {} ms, size: {} bytes", clazz.getSimpleName(), (end - start), bytes.length);
-            return object;
+            log.info("Kryo deserialization of {} took {} ms, size: {}", className, (end - start), FileUtils.byteCountToDisplaySize(bytes.length));
+            return clazz.cast(object);
         }
     }
 }

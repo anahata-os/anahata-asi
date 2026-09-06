@@ -56,99 +56,11 @@ public class HuggingFaceModel extends OpenAiCompatibleModel {
     }
 
     /**
-     * {@inheritDoc}
-     * <p>Implementation details: Prioritizes 'max_position_embeddings' from config.json.</p>
+     * Builds a rich HTML view combining architecture, tokenizer class, and deep-inspected sampling parameters.
+     *
+     * @return The formatted HTML summary string.
      */
-    @Override
-    public Integer getMaxInputTokens() {
-        if (hubConfig != null && hubConfig.has("max_position_embeddings")) {
-            return hubConfig.get("max_position_embeddings").asInt();
-        }
-        return super.getMaxInputTokens();
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>Implementation details: Prioritizes 'max_new_tokens' from generation_config.json.</p>
-     */
-    @Override
-    public Integer getMaxOutputTokens() {
-        if (generationConfig != null && generationConfig.has("max_new_tokens")) {
-            return generationConfig.get("max_new_tokens").asInt();
-        }
-        return super.getMaxOutputTokens();
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>Implementation details: Prioritizes the 'temperature' value from 
-     * generation_config.json if available.</p>
-     */
-    @Override
-    public Float getDefaultTemperature() {
-        if (generationConfig != null && generationConfig.has("temperature")) {
-            return (float) generationConfig.get("temperature").asDouble();
-        }
-        return super.getDefaultTemperature();
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>Implementation details: Prioritizes the 'top_k' value from 
-     * generation_config.json if available.</p>
-     */
-    @Override
-    public Integer getDefaultTopK() {
-        if (generationConfig != null && generationConfig.has("top_k")) {
-            return generationConfig.get("top_k").asInt();
-        }
-        return super.getDefaultTopK();
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>Implementation details: Prioritizes the 'top_p' value from 
-     * generation_config.json if available.</p>
-     */
-    @Override
-    public Float getDefaultTopP() {
-        if (generationConfig != null && generationConfig.has("top_p")) {
-            return (float) generationConfig.get("top_p").asDouble();
-        }
-        return super.getDefaultTopP();
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>Implementation details: Extracts the model version from the Hub metadata if available.</p>
-     */
-    @Override
-    public String getVersion() {
-        if (hubConfig != null && hubConfig.has("version")) {
-            return hubConfig.get("version").asText();
-        }
-        return "";
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>Implementation details: Prefixes the description with the architecture type (e.g. [llama]).</p>
-     */
-    @Override
-    public String getDescription() {
-        if (hubConfig != null && hubConfig.has("model_type")) {
-            return "[" + hubConfig.get("model_type").asText() + "] ";
-        }
-        return super.getDescription();
-    }
-    
-    /**
-     * {@inheritDoc}
-     * <p>Implementation details: Builds a rich HTML view combining architecture, 
-     * tokenizer class, and deep-inspected sampling parameters.</p>
-     */
-    @Override
-    public String getRawDescription() {
+    public String buildHubHtmlDescription() {
         StringBuilder sb = new StringBuilder("<html>");
         sb.append("<b>Hugging Face Model:</b> ").append(getModelId()).append("<br>");
         if (hubConfig != null) {

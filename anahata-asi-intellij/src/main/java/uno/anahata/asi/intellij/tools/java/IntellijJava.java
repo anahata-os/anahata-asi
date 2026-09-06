@@ -56,6 +56,7 @@ import java.util.stream.Stream;
  * dynamic scripts on the application JVM and against a specific open project's classpath.
  * <p>
  * This toolkit handles:
+ * </p>
  * <ul>
  *   <li>Automatic discovery of the full IntelliJ plugin classpath (combining IntelliJ platform libraries,
  *       bundled plugin dependencies, and runtime classes).</li>
@@ -64,7 +65,6 @@ import java.util.stream.Stream;
  *   <li>Project classpath resolution via {@link OrderEnumerator} for hot-reloading project bytecode.</li>
  *   <li>Parent-first classloader delegation to preserve ThreadLocal context and singleton identities.</li>
  * </ul>
- * </p>
  *
  * @author anahata
  */
@@ -362,7 +362,7 @@ public class IntellijJava extends SwingJava {
     /**
      * {@inheritDoc}
      * <p>
-     * Compiles Java source code. If in-memory {@link JavaCompiler} is available,
+     * Compiles Java source code. If in-memory {@link javax.tools.JavaCompiler} is available,
      * it delegates to the in-memory compiler in {@code super.compile}. If running on JRE/JBR
      * where in-memory javac is omitted, it automatically delegates to {@link #compileWithExternalJavac}.
      * </p>

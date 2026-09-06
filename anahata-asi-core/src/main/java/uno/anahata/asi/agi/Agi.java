@@ -282,6 +282,15 @@ public class Agi extends BasicPropertyChangeSource {
     }
 
     /**
+     * Checks if this session is a template managed by the container.
+     *
+     * @return true if this session is in the container's templates list.
+     */
+    public boolean isTemplate() {
+        return config != null && config.getAsiContainer() != null && config.getAsiContainer().isTemplate(this);
+    }
+
+    /**
      * Manually saves the session to the 'saved' directory.
      * @throws java.io.IOException
      */
@@ -312,13 +321,22 @@ public class Agi extends BasicPropertyChangeSource {
      */
     public void setSelectedModel(AbstractModel selectedModel) {
         AbstractModel oldModel = this.selectedModel;
+        if (Objects.equals(oldModel, selectedModel)) {
+            return;
+        }
         this.selectedModel = selectedModel;
 
+        boolean modelIdChanged;
         // Mirror state to the DNA (AgiConfig)
         if (selectedModel != null) {
-            this.config.setSelectedProviderUuid(selectedModel.getProvider().getUuid());
-            this.config.setSelectedModelId(selectedModel.getModelId());
+            String newProviderUuid = selectedModel.getProvider().getUuid();
+            String newModelId = selectedModel.getModelId();
+            modelIdChanged = !Objects.equals(this.config.getSelectedProviderUuid(), newProviderUuid)
+                    || !Objects.equals(this.config.getSelectedModelId(), newModelId);
+            this.config.setSelectedProviderUuid(newProviderUuid);
+            this.config.setSelectedModelId(newModelId);
         } else {
+            modelIdChanged = this.config.getSelectedProviderUuid() != null || this.config.getSelectedModelId() != null;
             this.config.setSelectedProviderUuid(null);
             this.config.setSelectedModelId(null);
         }
@@ -344,7 +362,9 @@ public class Agi extends BasicPropertyChangeSource {
         getResourceManager().resetTokenCounts();
 
         propertyChangeSupport.firePropertyChange("selectedModel", oldModel, selectedModel);
-        autoSave("model changed to: " + selectedModel.getModelId());
+        if (modelIdChanged) {
+            autoSave("model changed to: " + (selectedModel != null ? selectedModel.getModelId() : "none"));
+        }
     }
 
     /**
@@ -906,7 +926,8 @@ public class Agi extends BasicPropertyChangeSource {
     public void shutdown() {
         shutdown.set(true);
         log.info("Shuts down Agi for session {}", config.getSessionId());
-        config.getAsiContainer().unregister(this);
+        //this line seems unnecessary as the only caller of this method already unregisters the agi
+        //config.getAsiContainer().unregisterAgi(this);
         if (executor != null && !executor.isShutdown()) {
             executor.shutdown();
         }

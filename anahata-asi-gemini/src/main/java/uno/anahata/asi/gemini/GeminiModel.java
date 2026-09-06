@@ -11,7 +11,6 @@ import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.GenerateContentResponse;
 import com.google.genai.types.GenerateContentResponseUsageMetadata;
 import com.google.genai.types.GoogleSearch;
-import com.google.genai.types.ListModelsConfig;
 import com.google.genai.types.Model;
 import com.google.genai.types.Part;
 import com.google.genai.types.ToolCodeExecution;
@@ -22,7 +21,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.gemini.adapter.GeminiContentAdapter;
@@ -48,6 +46,7 @@ import uno.anahata.asi.agi.tool.ToolResponseAttachment;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.gemini.adapter.GeminiPartAdapter;
 import com.google.genai.LocalTokenizer;
+import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
 import uno.anahata.asi.internal.ImageMetadataUtils;
 import uno.anahata.asi.internal.ImageMetadataUtils.ImageMetadata;
 import uno.anahata.asi.internal.JacksonUtils;
@@ -96,27 +95,28 @@ public class GeminiModel extends AbstractModel {
         this.defaultTemperature = genaiModel.temperature().orElse(null);
         this.defaultTopK = genaiModel.topK().orElse(null);
         this.defaultTopP = genaiModel.topP().orElse(null);
-    }
+        this.supportedActions = new ArrayList<>(genaiModel.supportedActions().orElse(Collections.emptyList()));
+        this.rawDescription = genaiModel.toJson();
 
-    /**
-     * Lazily restores or returns the native GenAI model metadata.
-     *
-     * @return The active Model instance.
-     */
-    private synchronized Model getGenaiModel() {
-        if (genaiModel == null) {
-            log.info("Restoring transient Gemini model: {}", modelId);
-            var pager = provider.getClient().models.list(ListModelsConfig.builder().build());
-            genaiModel = StreamSupport.stream(pager.spliterator(), false)
-                    .filter(m -> modelId.equals(m.name().orElse(null)))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalStateException("Could not restore Gemini model: " + modelId));
+        List<ResponseModality> modalities = new ArrayList<>();
+        String id = getModelId().toLowerCase();
+        modalities.add(ResponseModality.TEXT);
+        if (id.contains("image") || id.contains("banana") || id.contains("omni")) {
+            modalities.add(ResponseModality.IMAGE);
         }
-        return genaiModel;
+        if (id.contains("lyria") || id.contains("live") || id.contains("tts") || id.contains("audio") || id.contains("omni")) {
+            modalities.add(ResponseModality.AUDIO);
+        }
+        if (id.contains("veo") || id.contains("omni")) {
+            modalities.add(ResponseModality.VIDEO);
+        }
+        this.supportedResponseModalities = modalities;
     }
 
     /**
-     * {@inheritDoc}
+     * Returns the parent {@link GeminiAiProvider} instance that owns this model.
+     *
+     * @return The Gemini AI provider instance.
      */
     @Override
     public AbstractAiProvider getProvider() {
@@ -285,56 +285,6 @@ public class GeminiModel extends AbstractModel {
      * {@inheritDoc}
      */
     @Override
-    public List<String> getSupportedActions() {
-        return getGenaiModel().supportedActions().orElse(Collections.emptyList());
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Implementation details: Escapes special HTML characters in the model
-     * metadata to ensure safe rendering in the NetBeans HTML view.</p>
-     */
-    @Override
-    public String getRawDescription() {
-        Model m = getGenaiModel();
-        String json = m.toJson();
-        String toString = m.toString();
-
-        // Return only the inner content. WrappingHtmlPane add the <html><body> tags.
-        return "<html><b>ID: </b>" + escapeHtml(getModelId()) + "<br>"
-                + "<b>Display Name: </b>" + escapeHtml(getDisplayName()) + "<br>"
-                + "<b>Version: </b>" + escapeHtml(getVersion()) + "<br>"
-                + "<b>Description: </b>" + escapeHtml(getDescription()) + "<br>"
-                + "<b>Supported Actions: </b>" + getSupportedActions() + "<br>"
-                + "<b>Labels: </b>" + m.labels().orElse(Collections.EMPTY_MAP) + "<br>"
-                + "<b>TunedModelInfo: </b>" + m.tunedModelInfo().orElse(null) + "<br>"
-                + "<hr>"
-                + "<b>toString():</b><pre style='white-space: pre-wrap; word-wrap: break-word;'></pre>"
-                + "<div style='width: 300px;'>"
-                + toString
-                + "</pre></div></html>";
-    }
-
-    /**
-     * Escapes special HTML characters in a string.
-     *
-     * @param text The text to escape.
-     * @return The escaped text.
-     */
-    private String escapeHtml(String text) {
-        return text.replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\"", "&quot;")
-                .replace("'", "&#x27;")
-                .replace("/", "&#x2F;");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public boolean isSupportsFunctionCalling() {
         // Currently we have no way of knowing if a model supports tool calling or not 
         // (because 'tool' is never listed as a supported action). Just always return true for now.
@@ -373,33 +323,6 @@ public class GeminiModel extends AbstractModel {
         return getSupportedActions().contains("createCachedContent");
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public List<ResponseModality> getSupportedResponseModalities() {
-        List<ResponseModality> modalities = new ArrayList<>();
-        String id = getModelId().toLowerCase();
-        
-        modalities.add(ResponseModality.TEXT);
-        
-        // 1. Image generation models (e.g. imagen-3.0-generate-002, gemini-2.5-flash-image, nano-banana)
-        if (id.contains("image") || id.contains("banana") || id.contains("omni")) {
-            modalities.add(ResponseModality.IMAGE);
-        } 
-
-        // 2. Audio generation / TTS models
-        if (id.contains("lyria") || id.contains("live") || id.contains("tts") || id.contains("audio") || id.contains("omni")) {
-            modalities.add(ResponseModality.AUDIO);
-        }
-
-        // 3. Video generation models
-        if (id.contains("veo") || id.contains("omni")) {
-            modalities.add(ResponseModality.VIDEO);
-        }
-
-        return modalities;
-    }
 
     /**
      * {@inheritDoc}

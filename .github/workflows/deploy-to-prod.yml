@@ -13,6 +13,11 @@ on:
         required: false
         default: ''
         type: string
+      deploy_central:
+        description: 'Deploy Core Platform JARs to Maven Central (repo1.maven.org)'
+        required: true
+        type: boolean
+        default: false
       release_nb_300:
         description: 'Release NetBeans 30 ASI Studio (Target 300 NBM)'
         required: true
@@ -122,7 +127,7 @@ jobs:
           echo "[INFO] Advancing all POMs to development cycle: $NEXT_SNAP..."
           mvn versions:set -DnewVersion=$NEXT_SNAP -DgenerateBackupPoms=false -ntp
 
-          git commit -am "chore: open $NEXT_SNAP development cycle"
+          git commit -am "chore: open $NEXT_SNAP development cycle [skip ci]"
 
       - name: Push Release Commits & Tags
         run: |
@@ -136,13 +141,10 @@ jobs:
         run: |
           echo "[INFO] Triggering master build3.yml pipeline for release tag [v$RELEASE_VER]..."
           gh workflow run build3.yml --ref "v$RELEASE_VER" \
+            -f deploy_central="${{ inputs.deploy_central }}" \
             -f release_nb_300="${{ inputs.release_nb_300 }}" \
             -f release_nb_310="${{ inputs.release_nb_310 }}" \
             -f release_nb_uc="${{ inputs.release_nb_uc }}" \
             -f release_intellij="${{ inputs.release_intellij }}" \
             -f release_snap="${{ inputs.release_snap }}"
           echo "🚀 Master build3 pipeline successfully triggered on tag v$RELEASE_VER!"
-
-          echo "[INFO] Triggering continuous snapshot build3.yml pipeline for main (development cycle $NEXT_SNAP)..."
-          gh workflow run build3.yml --ref "main"
-          echo "🚀 Snapshot build3 pipeline successfully triggered for main!"

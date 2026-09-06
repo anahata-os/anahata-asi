@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -23,7 +24,6 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
-import uno.anahata.asi.persistence.kryo.KryoUtils;
 import java.util.ArrayList;
 import uno.anahata.asi.persistence.kryo.KryoUtils;
 
@@ -225,8 +225,23 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
     }
 
     /**
+     * Gets the directory where model entities that failed to load are quarantined.
+     *
+     * @return The unloadable models directory path.
+     * @throws IOException If creating the directory fails.
+     */
+    public Path getUnloadableModelsDirectory() throws IOException {
+        return AbstractAsiContainer.getSubdirectory(getModelsDirectory(), "unloadable");
+    }
+
+    /**
      * Loads all persisted models from this provider's models directory on disk
      * into memory.
+     * <p>
+     * Implements resilient per-model deserialization: if a model cache file is corrupt or in an
+     * incompatible legacy format, it is quarantined to the {@code models/unloadable/} directory and
+     * a notification is recorded in the parent container without failing the provider initialization.
+     * </p>
      *
      * @return The list of models loaded from disk and bound to this provider.
      * @throws IOException if reading the models directory fails.
@@ -234,18 +249,35 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
     public synchronized List<AbstractModel> loadModelsFromDisk() throws IOException {
         Path modelsDir = getModelsDirectory();
         this.models.clear();
-        //we should probably do a try catch on each model and then use the bulk addModels method to fire one event only
+        log.info("{} Deserializing models from {}", getProviderId(), modelsDir);
 
+        List<AbstractModel> loaded = new ArrayList<>();
         try (Stream<Path> stream = Files.list(modelsDir)) {
-            List<Path> files = stream.filter(p -> p.toString().endsWith(".kryo")).collect(Collectors.toList());
+            List<Path> files = stream.filter(p -> !Files.isDirectory(p))
+                    .filter(p -> p.toString().endsWith(".kryo"))
+                    .collect(Collectors.toList());
             for (Path file : files) {
-                byte[] data = Files.readAllBytes(file);
-                AbstractModel model = KryoUtils.deserialize(data, AbstractModel.class);
-                model.setProvider(this);
-                this.models.add(model);
+                try {
+                    byte[] data = Files.readAllBytes(file);
+                    AbstractModel model = KryoUtils.deserialize(data, AbstractModel.class);
+                    model.setProvider(this);
+                    loaded.add(model);
+                } catch (Throwable t) {
+                    log.warn("Incompatible or corrupted model file '{}' for provider '{}', moving to unloadable: {}", file.getFileName(), getDisplayName(), t.getMessage());
+                    try {
+                        Path unloadablePath = getUnloadableModelsDirectory().resolve(file.getFileName());
+                        Files.move(file, unloadablePath, StandardCopyOption.REPLACE_EXISTING);
+                        log.info("Moved incompatible model to: {}", unloadablePath);
+                        if (asiContainer != null) {
+                            asiContainer.addNotification("Incompatible model cache for '" + getDisplayName() + "' moved to unloadable: " + file.getFileName());
+                        }
+                    } catch (IOException e) {
+                        log.error("Failed to move incompatible model file to unloadable directory: {}", file, e);
+                    }
+                }
             }
         }
-
+        this.models.addAll(loaded);
         log.info("Loaded {} model(s) from disk for provider '{}'", this.models.size(), getProviderId());
         return this.models;
     }
@@ -421,7 +453,7 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      * updating the cache.
      *
      * @return The list of models discovered directly from the API.
-     * @throws java_lang_Exception if remote API communication or model
+     * @throws Exception if remote API communication or model
      * discovery fails.
      */
     public synchronized List<AbstractModel> refreshCachedApiModels() throws Exception {
@@ -532,7 +564,7 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      * Checks if this provider is effectively enabled and ready for active model
      * requests.
      * <p>
-     * A provider is effectively enabled if {@link #isEnabled} is {@code true}
+     * A provider is effectively enabled if {@code isEnabled()} is {@code true}
      * AND either it does not require an API key (e.g. local Ollama) or at least
      * one valid API key is configured.
      * </p>
@@ -617,7 +649,7 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      * Reloads the API key pool from the provider's configuration file and
      * triggers an initial key selection.
      *
-     * @throws java_io_IOException If reading the key file fails.
+     * @throws IOException If reading the key file fails.
      */
     public synchronized void reloadKeyPool() throws IOException {
         keyPool = readApiKeysFile();
@@ -668,7 +700,7 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
 
     /**
      * Resolves the path to the API keys configuration file for this provider.
-     * Defaults to ~/.anahata/asi/<uuid>_api_keys.txt if apiKeysFile is not
+     * Defaults to {@code ~/.anahata/asi/<uuid>_api_keys.txt} if apiKeysFile is not
      * specified.
      *
      * @return The path to the API keys configuration file.
@@ -703,7 +735,7 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      *
      * @return A list of cleaned, non-empty, non-comment API key strings read
      * from the file.
-     * @throws java_io_IOException If reading the file fails.
+     * @throws IOException If reading the file fails.
      */
     private List<String> readApiKeysFile() throws IOException {
         ensureKeysFileExists();

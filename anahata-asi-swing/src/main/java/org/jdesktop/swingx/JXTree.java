@@ -80,7 +80,6 @@ import org.jdesktop.swingx.tree.DefaultXTreeCellRenderer;
 /**
  * Enhanced Tree component with support for SwingX rendering, highlighting,
  * rollover and search functionality.
- * <p>
  * 
  * <h2>Rendering and Highlighting</h2>
  * 
@@ -88,7 +87,6 @@ import org.jdesktop.swingx.tree.DefaultXTreeCellRenderer;
  * formally define and implement, like in AbstractTestHighlighter), that is it
  * provides consistent api to add and remove Highlighters which can visually
  * decorate the rendering component.
- * <p>
  * 
  * <pre><code>
  * 
@@ -101,7 +99,7 @@ import org.jdesktop.swingx.tree.DefaultXTreeCellRenderer;
  *    public boolean isHighlighted(Component renderer,
  *                     ComponentAdapter adapter) {
  *       File file = getUserObject(adapter.getValue());
- *       return file != null ? lastWeek < file.lastModified : false;
+ *       return file != null ? lastWeek &lt; file.lastModified : false;
  *    }
  * };
  * // highlight with foreground color 
@@ -118,7 +116,7 @@ import org.jdesktop.swingx.tree.DefaultXTreeCellRenderer;
  * the Highlighter after delegating the default configuration to the wrappee. As
  * a side-effect, getCellRenderer does return the wrapper instead of the custom
  * renderer. To access the latter, client code must call getWrappedCellRenderer.
- * <p>
+ * 
  * <h2>Rollover</h2>
  * 
  * As all SwingX collection views, a JXTree supports per-cell rollover. If
@@ -617,10 +615,9 @@ public class JXTree extends JTree {
      * @see #setForeground
      * @see #setBackground
      * @see #setFont
-     * @beaninfo
-     *       bound: true
-     *   attribute: visualUpdate true
-     * description: The foreground color of selected cells.
+     * <p>
+     * <b>BeanInfo:</b> bound: true, attribute: visualUpdate true, description: The foreground color of selected cells.
+     * </p>
      */
     public void setSelectionForeground(Color selectionForeground) {
         Object oldValue = getSelectionForeground();
@@ -645,10 +642,9 @@ public class JXTree extends JTree {
      * @see #setForeground
      * @see #setBackground
      * @see #setFont
-     * @beaninfo
-     *       bound: true
-     *   attribute: visualUpdate true
-     * description: The background color of selected cells.
+     * <p>
+     * <b>BeanInfo:</b> bound: true, attribute: visualUpdate true, description: The background color of selected cells.
+     * </p>
      */
     public void setSelectionBackground(Color selectionBackground) {
         Object oldValue = getSelectionBackground();
@@ -814,7 +810,6 @@ public class JXTree extends JTree {
 
     /**
      * Creates and returns the RolloverProducer to use with this tree.
-     * <p>
      * 
      * @return <code>RolloverProducer</code> to use with this tree
      * 
@@ -864,7 +859,6 @@ public class JXTree extends JTree {
     /**
      * Appends a <code>Highlighter</code> to the end of the list of used
      * <code>Highlighter</code>s. The argument must not be null. 
-     * <p>
      * 
      * @param highlighter the <code>Highlighter</code> to add, must not be null.
      * @throws NullPointerException if <code>Highlighter</code> is null.
@@ -980,7 +974,7 @@ public class JXTree extends JTree {
      * Need to review if we really want it - problematic if sharing the same
      * renderer instance across different trees.
      * 
-     * PENDING JW: incomplete api (no getter) and not a bound property.<p>
+     * PENDING JW: incomplete api (no getter) and not a bound property.
      * 
      * @param leafIcon the Icon to use for a leaf node.
      */
@@ -1087,7 +1081,7 @@ public class JXTree extends JTree {
      * 
      * Overridden to return the delegating renderer which is wrapped around the
      * original to support highlighting. The returned renderer is of type 
-     * DelegatingRenderer and guaranteed to not-null<p>
+     * DelegatingRenderer and guaranteed to not-null.
      * 
      * @see #setCellRenderer(TreeCellRenderer)
      * @see DelegatingRenderer
@@ -1144,7 +1138,7 @@ public class JXTree extends JTree {
      * after messaging the delegate.<p>
      * 
      * PENDING JW: formally implement UIDependent? 
-     * PENDING JW: missing updateUI anyway (got lost when c&p from JXList ;-)
+     * PENDING JW: missing updateUI anyway (got lost when c&amp;p from JXList ;-)
      * PENDING JW: missing override of updateUI in xtree ...
      */
     public class DelegatingRenderer implements TreeCellRenderer, RolloverRenderer {

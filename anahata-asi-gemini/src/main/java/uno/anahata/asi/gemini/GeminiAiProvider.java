@@ -106,6 +106,7 @@ public class GeminiAiProvider extends AbstractAiProvider {
      */
     @Override
     public synchronized void hokusPocus() {
+        super.hokusPocus();
         client = null;
     }
 

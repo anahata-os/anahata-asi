@@ -9,7 +9,7 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 
 /**
- * A sleek vector icon rendering a crisp 'NEW' badge.
+ * A sleek vector icon rendering a crisp 'NEW' badge with comfortable horizontal padding.
  * 
  * @author anahata
  */
@@ -18,22 +18,33 @@ public class NewIcon extends AbstractAnahataIcon {
     /**
      * Constructs a NewIcon of the specified size.
      *
-     * @param size The width and height in pixels.
+     * @param size The height in pixels.
      */
     public NewIcon(int size) {
         super(size);
     }
 
     /**
-     * Constructs a default 16x16 NewIcon.
+     * Constructs a default 14px NewIcon.
      */
     public NewIcon() {
-        super(16);
+        super(14);
     }
 
     /**
      * {@inheritDoc}
-     * <p>Renders a rounded pill badge with the text 'NEW' centered inside.</p>
+     * <p>
+     * Returns an elongated width to ensure the 'NEW' text has ample blue padding on both sides.
+     * </p>
+     */
+    @Override
+    public int getIconWidth() {
+        return (int) Math.round(size * 1.8);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>Renders a rounded pill badge with vibrant blue background and 'NEW' centered inside.</p>
      */
     @Override
     public void paintIcon(Component c, java.awt.Graphics g, int x, int y) {
@@ -42,22 +53,25 @@ public class NewIcon extends AbstractAnahataIcon {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
-            int pad = 1;
-            int badgeW = size - (pad * 2);
-            int badgeH = size - (pad * 2);
+            int width = getIconWidth();
+            int height = getIconHeight();
+            int padY = 1;
+            int badgeH = height - (padY * 2);
+            int badgeW = width - 2;
 
-            // Fill badge pill
-            g2.setColor(new Color(0, 122, 255)); // Vibrant Blue
-            g2.fillRoundRect(x + pad, y + pad, badgeW, badgeH, 4, 4);
+            // Fill badge pill with vibrant blue
+            g2.setColor(new Color(0, 122, 255));
+            g2.fillRoundRect(x + 1, y + padY, badgeW, badgeH, 4, 4);
 
-            // Draw text
+            // Draw bold white text centered with padding
             g2.setColor(Color.WHITE);
-            Font font = new Font(Font.SANS_SERIF, Font.BOLD, Math.max(7, size - 7));
+            int fontSize = Math.max(8, size - 5);
+            Font font = new Font(Font.SANS_SERIF, Font.BOLD, fontSize);
             g2.setFont(font);
             FontMetrics fm = g2.getFontMetrics(font);
             String text = "NEW";
-            int textX = x + pad + (badgeW - fm.stringWidth(text)) / 2;
-            int textY = y + pad + ((badgeH - fm.getHeight()) / 2) + fm.getAscent();
+            int textX = x + 1 + (badgeW - fm.stringWidth(text)) / 2;
+            int textY = y + padY + ((badgeH - fm.getHeight()) / 2) + fm.getAscent();
             g2.drawString(text, textX, textY);
         } finally {
             g2.dispose();

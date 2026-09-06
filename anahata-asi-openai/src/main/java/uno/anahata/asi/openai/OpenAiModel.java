@@ -82,6 +82,9 @@ public class OpenAiModel extends AbstractModel {
         this.provider = provider;
         this.modelId = node.get("id").asText();
         this.displayName = node.path("name").asText(modelId);
+        this.supportedActions = new ArrayList<>(List.of("generateContent"));
+        this.rawDescription = node.toPrettyString();
+        this.supportedResponseModalities = new ArrayList<>(List.of(ResponseModality.TEXT));
     }
 
     /**
@@ -116,59 +119,6 @@ public class OpenAiModel extends AbstractModel {
             return countTokens(toolCall.asText());
         }
     }
-    /**
-     * {@inheritDoc}
-     * <p>Implementation details: Returns the display name or model ID.</p>
-     */
-    @Override
-    public String getDescription() {
-        return displayName;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>Implementation details: Always returns null as Responses API models 
-     * use the base ID for versioning.</p>
-     */
-    @Override
-    public String getVersion() {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Integer getMaxInputTokens() {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Integer getMaxOutputTokens() {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public List<String> getSupportedActions() {
-        return List.of("generateContent");
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>Returns a high-density HTML summary of the model and its specialized 
-     * Responses API provider.</p>
-     */
-    @Override
-    public String getRawDescription() {
-        return "<html><b>Model ID:</b> " + modelId + "<br><b>Provider:</b> OpenAI Responses API</html>";
-    }
-
     /**
      * {@inheritDoc}
      */
@@ -211,14 +161,6 @@ public class OpenAiModel extends AbstractModel {
 
     /**
      * {@inheritDoc}
-     */
-    @Override
-    public List<ResponseModality> getSupportedResponseModalities() {
-        return List.of(ResponseModality.TEXT);
-    }
-
-    /**
-     * {@inheritDoc}
      * <p>Implementation details: Provides 'web_search' and 'code_interpreter' 
      * as native server-side tools.</p>
      */
@@ -238,30 +180,6 @@ public class OpenAiModel extends AbstractModel {
         return getAvailableServerTools().stream()
                 .filter((ServerTool st) -> "web_search".equals(st.getId()))
                 .collect(Collectors.toList());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Float getDefaultTemperature() {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Integer getDefaultTopK() {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Float getDefaultTopP() {
-        return null;
     }
 
     /**

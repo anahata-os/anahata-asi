@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import lombok.SneakyThrows;
 import org.netbeans.core.windows.persistence.PersistenceManager;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
@@ -54,6 +55,7 @@ public class AnahataInstaller extends ModuleInstall {
      *
      * @return The container instance.
      */
+    @SneakyThrows
     public static synchronized NetBeansAsiContainer getContainer() {
         if (container == null) {
             container = new NetBeansAsiContainer();

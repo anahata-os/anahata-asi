@@ -1,6 +1,11 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.internal;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Robust utility for parsing primitive and wrapper numbers from heterogeneous input objects.
  * <p>
@@ -16,6 +21,40 @@ public final class TypeParsers {
      * Private constructor to prevent instantiation of utility class.
      */
     private TypeParsers() {
+    }
+
+    /**
+     * Parses a heterogeneous collection or object into a typed {@link List} of enum constants.
+     *
+     * @param <E> The enum type.
+     * @param val The source value (Collection, Enum, String, or null).
+     * @param enumClass The target enum class.
+     * @return A list of matching enum constants, never null.
+     */
+    public static <E extends Enum<E>> List<E> parseEnumList(Object val, Class<E> enumClass) {
+        if (val == null) {
+            return Collections.emptyList();
+        }
+        if (val instanceof Collection<?> col) {
+            List<E> list = new ArrayList<>();
+            for (Object item : col) {
+                if (enumClass.isInstance(item)) {
+                    list.add(enumClass.cast(item));
+                } else if (item instanceof String s) {
+                    for (E constant : enumClass.getEnumConstants()) {
+                        if (constant.name().equalsIgnoreCase(s.trim())) {
+                            list.add(constant);
+                            break;
+                        }
+                    }
+                }
+            }
+            return list;
+        }
+        if (enumClass.isInstance(val)) {
+            return List.of(enumClass.cast(val));
+        }
+        return Collections.emptyList();
     }
 
     /**

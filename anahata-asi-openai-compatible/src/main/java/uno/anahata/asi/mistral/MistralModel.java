@@ -46,6 +46,7 @@ public class MistralModel extends OpenAiCompatibleModel {
         }
 
         this.descriptionText = node.path("description").asText("");
+        this.rawDescription = node.toPrettyString();
 
         // 2. Parse Capabilities
         JsonNode caps = node.path("capabilities");
@@ -78,14 +79,7 @@ public class MistralModel extends OpenAiCompatibleModel {
             this.ocr = false;
             this.moderation = false;
         }
-    }
 
-    /**
-     * {@inheritDoc}
-     * <p>Maps Mistral capabilities to supported action endpoints.</p>
-     */
-    @Override
-    public List<String> getSupportedActions() {
         List<String> actions = new ArrayList<>();
         if (completionChat) {
             actions.add("chat/completions");
@@ -105,15 +99,8 @@ public class MistralModel extends OpenAiCompatibleModel {
         if (moderation) {
             actions.add("moderations");
         }
-        return actions.isEmpty() ? List.of("chat/completions") : actions;
-    }
+        this.supportedActions = actions.isEmpty() ? new ArrayList<>(List.of("chat/completions")) : actions;
 
-    /**
-     * {@inheritDoc}
-     * <p>Maps Mistral vision/audio flags to supported response modalities.</p>
-     */
-    @Override
-    public List<ResponseModality> getSupportedResponseModalities() {
         List<ResponseModality> modalities = new ArrayList<>();
         modalities.add(ResponseModality.TEXT);
         if (vision) {
@@ -122,14 +109,10 @@ public class MistralModel extends OpenAiCompatibleModel {
         if (audio || audioSpeech) {
             modalities.add(ResponseModality.AUDIO);
         }
-        return modalities;
-    }
+        this.supportedResponseModalities = modalities;
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getDescription() {
-        return descriptionText.isBlank() ? super.getDescription() : descriptionText;
+        if (!descriptionText.isBlank()) {
+            this.description = descriptionText;
+        }
     }
 }

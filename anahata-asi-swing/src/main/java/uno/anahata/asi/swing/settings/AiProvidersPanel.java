@@ -74,9 +74,14 @@ public class AiProvidersPanel extends JPanel {
     private final JList<AbstractAiProvider> providerList;
 
     /**
-     * The single reusable detail panel instance hosting provider forms and model tables.
+     * Visual container panel holding the active typed detail panel.
      */
-    private final AiProviderPanel detailPanel;
+    private final JPanel detailPanelContainer;
+
+    /**
+     * The single active detail panel instance hosting provider forms and model tables.
+     */
+    private AiProviderPanel detailPanel;
 
     /**
      * The currently selected and displayed AI provider instance.
@@ -87,7 +92,7 @@ public class AiProvidersPanel extends JPanel {
      * Constructs a new Master-Detail AiProvidersPanel bound to the specified container.
      * <p>
      * Initializes the left sidebar with provider icons and compact add controls,
-     * wires the single reusable {@link AiProviderPanel} in the center, and configures
+     * wires the dynamic {@link AiProviderPanel} in the center, and configures
      * reactive selection listeners with dirty checking.
      * </p>
      *
@@ -122,11 +127,14 @@ public class AiProvidersPanel extends JPanel {
 
         add(sidebar, BorderLayout.WEST);
 
-        // Initial Provider & Detail Panel (CENTER)
+        // Dynamic Detail Container (CENTER)
+        detailPanelContainer = new JPanel(new BorderLayout());
+        detailPanelContainer.setOpaque(false);
+        add(detailPanelContainer, BorderLayout.CENTER);
+
         List<AbstractAiProvider> all = container.getAllProviders();
         currentProvider = !all.isEmpty() ? all.get(0) : null;
-        detailPanel = new AiProviderPanel(container, currentProvider != null ? currentProvider : new uno.anahata.asi.gemini.GeminiAiProvider(), () -> removeCurrentProvider());
-        add(detailPanel, BorderLayout.CENTER);
+        updateDetailPanel(currentProvider);
 
         refreshProviderList();
 
@@ -136,13 +144,31 @@ public class AiProvidersPanel extends JPanel {
                 if (selected != null && selected != currentProvider) {
                     if (checkUnsavedChanges()) {
                         currentProvider = selected;
-                        detailPanel.setProvider(selected);
+                        updateDetailPanel(selected);
                     } else {
                         providerList.setSelectedValue(currentProvider, false);
                     }
                 }
             }
         });
+    }
+
+    /**
+     * Updates the center detail panel with the appropriate typed panel for the given provider.
+     *
+     * @param provider The active provider entity to display.
+     */
+    private void updateDetailPanel(AbstractAiProvider provider) {
+        detailPanelContainer.removeAll();
+        if (provider != null) {
+            this.detailPanel = uno.anahata.asi.swing.provider.AiProviderUiRegistry.getInstance()
+                    .createPanel(container, provider, () -> removeCurrentProvider());
+            detailPanelContainer.add(detailPanel, BorderLayout.CENTER);
+        } else {
+            this.detailPanel = null;
+        }
+        detailPanelContainer.revalidate();
+        detailPanelContainer.repaint();
     }
 
     /**
@@ -159,7 +185,7 @@ public class AiProvidersPanel extends JPanel {
         } else if (!listModel.isEmpty()) {
             currentProvider = listModel.get(0);
             providerList.setSelectedValue(currentProvider, true);
-            detailPanel.setProvider(currentProvider);
+            updateDetailPanel(currentProvider);
         }
     }
 
@@ -171,7 +197,7 @@ public class AiProvidersPanel extends JPanel {
      *         {@code false} if the user cancelled the transition.
      */
     public boolean checkUnsavedChanges() {
-        if (detailPanel.isModified() && currentProvider != null) {
+        if (detailPanel != null && detailPanel.isModified() && currentProvider != null) {
             int choice = JOptionPane.showConfirmDialog(this,
                     "You have unsaved changes for provider '" + currentProvider.getDisplayName() + "'.\n\nWould you like to save them before proceeding?",
                     "Unsaved Changes", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
@@ -230,7 +256,7 @@ public class AiProvidersPanel extends JPanel {
                     container.registerProvider(newProvider);
                     currentProvider = newProvider;
                     refreshProviderList();
-                    detailPanel.setProvider(newProvider);
+                    updateDetailPanel(newProvider);
                 } catch (Exception ex) {
                     log.error("Failed to instantiate and register provider", ex);
                     JOptionPane.showMessageDialog(this, "Failed to create provider: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);

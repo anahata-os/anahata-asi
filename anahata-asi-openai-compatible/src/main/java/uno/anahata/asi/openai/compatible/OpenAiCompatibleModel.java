@@ -114,6 +114,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
         this.provider = provider;
         this.modelId = modelId;
         this.displayName = displayName;
+        this.supportedActions = new ArrayList<>(List.of("chat/completions"));
     }
 
     /**
@@ -128,6 +129,9 @@ public class OpenAiCompatibleModel extends AbstractModel {
         this(provider,
                 node.path("id").asText(),
                 resolveDisplayName(node));
+
+        this.supportedActions = new ArrayList<>(List.of("chat/completions"));
+        this.rawDescription = node.toPrettyString();
 
         long created = node.path("created").asLong(0);
         if (created > 0) {
@@ -245,22 +249,6 @@ public class OpenAiCompatibleModel extends AbstractModel {
      * {@inheritDoc}
      */
     @Override
-    public List<String> getSupportedActions() {
-        return List.of("chat/completions");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getRawDescription() {
-        return "<html><b>Model ID:</b> " + modelId + "</html>";
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public boolean isSupportsFunctionCalling() {
         return supportsFunctionCalling;
     }
@@ -301,14 +289,6 @@ public class OpenAiCompatibleModel extends AbstractModel {
      * {@inheritDoc}
      */
     @Override
-    public List<ResponseModality> getSupportedResponseModalities() {
-        return List.of(ResponseModality.TEXT);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public List<ServerTool> getAvailableServerTools() {
         return Collections.emptyList();
     }
@@ -319,46 +299,6 @@ public class OpenAiCompatibleModel extends AbstractModel {
     @Override
     public List<ServerTool> getDefaultServerTools() {
         return Collections.emptyList();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Float getDefaultTemperature() {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Integer getDefaultTopK() {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Float getDefaultTopP() {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Integer getMaxInputTokens() {
-        return maxInputTokens;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Integer getMaxOutputTokens() {
-        return maxOutputTokens;
     }
 
     /**
