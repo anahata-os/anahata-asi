@@ -1,7 +1,7 @@
 # 🧘 Anahata ASI: The AI Operating System
 **The world's first 100% Air-Gapped, Stateful Java ASI Container. Zero Telemetry. Zero Ngrok tunnels. Complete Data Sovereignty.**
 
-[![Build & Deploy](https://github.com/anahata-os/anahata-asi/actions/workflows/build.yml/badge.svg)](https://github.com/anahata-os/anahata-asi/actions/workflows/build.yml)
+[![Build & Deploy](https://github.com/anahata-os/anahata-asi/actions/workflows/build3.yml/badge.svg)](https://github.com/anahata-os/anahata-asi/actions/workflows/build3.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/uno.anahata/anahata-asi-parent.svg)](https://central.sonatype.com/artifact/uno.anahata/anahata-asi-parent)
 [![License: Apache ASL 2](https://img.shields.io/badge/License-Apache%20ASL%202-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![License: Anahata ASL 108](https://img.shields.io/badge/License-Anahata%20ASL%20108-blueviolet.svg)](https://asi.anahata.uno/ASL_108.html)
