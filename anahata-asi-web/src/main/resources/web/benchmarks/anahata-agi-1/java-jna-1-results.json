@@ -22,7 +22,7 @@
   "videoUrl" : "https://youtu.be/KH_LqQGkeF0",
   "screenshotPath" : "/home/pablo/.anahata/asi/recordings/JAVA-JNA-1_gemini-3.8-flash_20260907_202539_thumb.png",
   "sessionId" : "031c947d-7108-429f-9026-ad48096aed99",
-  "observations" : "Deep native telemetry with microsecond-level C-call latency profiling table, one-click formatted ASCII report export to clipboard, and per-core CPU frequency scaling/governor telemetry. However, UI card container was clamped to 160px causing bottom detail labels to clip, and experienced a 42k-token thinking loop."
+  "observations" : "Features microsecond C-call latency profiling table, clipboard report export, and per-core CPU frequency/governor telemetry. Card panel clamped to 160px caused bottom labels to clip."
 }, {
   "participant" : {
     "providerUuid" : "GeminiGCExpress",
