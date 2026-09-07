@@ -76,6 +76,7 @@ uno.anahata.asi.nb.ui.resources
 uno.anahata.asi.nb.util
 uno.anahata.asi.novarouteai
 uno.anahata.asi.nvidia
+uno.anahata.asi.ollama
 uno.anahata.asi.openai
 uno.anahata.asi.openai.compatible
 uno.anahata.asi.openai.compatible.adapter
