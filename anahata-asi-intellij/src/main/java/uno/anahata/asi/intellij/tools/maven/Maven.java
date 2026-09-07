@@ -15,7 +15,6 @@ import org.jetbrains.idea.maven.execution.MavenRunnerParameters;
 import org.jetbrains.idea.maven.indices.MavenArtifactSearchResult;
 import org.jetbrains.idea.maven.indices.MavenArtifactSearcher;
 import org.jetbrains.idea.maven.model.MavenArtifact;
-import org.jetbrains.idea.maven.onlinecompletion.model.MavenRepositoryArtifactInfo;
 import org.jetbrains.idea.maven.project.MavenProject;
 import org.jetbrains.idea.maven.project.MavenProjectsManager;
 import uno.anahata.asi.agi.tool.AgiTool;
@@ -27,11 +26,11 @@ import uno.anahata.asi.intellij.internal.JavaPsi;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import org.jetbrains.idea.maven.model.MavenRepoArtifactInfo;
 
 /**
  * A toolkit for inspecting and building Maven projects through the IntelliJ IDEA Maven
@@ -198,7 +197,7 @@ public class Maven extends AnahataToolkit {
 
         StringBuilder sb = new StringBuilder("## Maven Index Results: '").append(query).append("'\n");
         for (MavenArtifactSearchResult result : results) {
-            MavenRepositoryArtifactInfo info = result.getSearchResults();
+            MavenRepoArtifactInfo info = result.getSearchResults();
             if (info != null) {
                 sb.append("- `").append(info.getGroupId()).append(":").append(info.getArtifactId());
                 if (info.getVersion() != null) {
