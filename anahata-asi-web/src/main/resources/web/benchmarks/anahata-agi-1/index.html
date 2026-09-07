@@ -12,17 +12,31 @@
         .bench-filter:focus { border-color: var(--barca-gold, #edbb00); }
         .bench-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
         .bench-table th { text-align: left; padding: 0.8rem; color: #cbd5e1; border-bottom: 2px solid rgba(255,255,255,0.12); white-space: nowrap; }
-        .bench-table td { padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.06); vertical-align: top; }
+        .bench-table td { padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.06); vertical-align: middle; }
+        .run-row { cursor: pointer; transition: background 0.15s ease; }
+        .run-row:hover { background: rgba(255,255,255,0.03); }
         .badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; }
         .badge-pass { background: #16a34a; color: #fff; }
         .badge-fail { background: #dc2626; color: #fff; }
         .badge-cert { background: #16a34a; color: #fff; }
         .badge-pending { background: rgba(255,255,255,0.1); color: #94a3b8; }
+        .badge-thinking { background: rgba(237, 187, 0, 0.15); color: var(--barca-gold, #edbb00); border: 1px solid rgba(237, 187, 0, 0.3); font-size: 0.68rem; margin-left: 4px; }
         .stat-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 1.2rem; text-align: center; }
         .stat-card .num { font-size: 1.9rem; font-weight: 800; color: var(--barca-gold, #edbb00); }
         .stat-card .lbl { font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.25rem; }
-        a.video-link { color: #60a5fa; text-decoration: none; }
-        a.video-link:hover { text-decoration: underline; }
+        a.video-link { color: #60a5fa; text-decoration: none; font-size: 1.1rem; }
+        a.video-link:hover { color: var(--barca-gold, #edbb00); }
+        .token-sub { font-size: 0.75rem; color: #94a3b8; margin-top: 3px; }
+        .expand-icon { transition: transform 0.2s ease; display: inline-block; color: #94a3b8; }
+        .expand-icon.open { transform: rotate(90deg); color: var(--barca-gold, #edbb00); }
+        .detail-card { background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 1.2rem; margin: 0.5rem 0; }
+        .telemetry-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1rem; }
+        .telemetry-pill { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 8px 12px; }
+        .telemetry-pill .t-val { font-size: 1.1rem; font-weight: 700; color: #f1f5f9; }
+        .telemetry-pill .t-lbl { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; margin-top: 2px; }
+        .obs-box { background: rgba(220, 38, 38, 0.08); border: 1px solid rgba(220, 38, 38, 0.25); border-radius: 6px; padding: 10px 14px; font-family: monospace; font-size: 0.82rem; color: #fca5a5; white-space: pre-wrap; margin-top: 0.8rem; }
+        .video-player-wrap { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 8px; margin-top: 1rem; }
+        .video-player-wrap iframe { position: absolute; top:0; left: 0; width: 100%; height: 100%; border: 0; }
     </style>
 </head>
 <body>
@@ -65,9 +79,15 @@
                         </select>
                         <select id="sortBy" class="bench-filter">
                             <option value="newest">Sort: Newest</option>
+                            <option value="oldest">Sort: Oldest</option>
                             <option value="scoreDesc">Sort: Score (High-Low)</option>
+                            <option value="scoreAsc">Sort: Score (Low-High)</option>
                             <option value="durationAsc">Sort: Duration (Fastest)</option>
-                            <option value="tokensAsc">Sort: Tokens (Fewest)</option>
+                            <option value="durationDesc">Sort: Duration (Slowest)</option>
+                            <option value="tokensAsc">Sort: Total Tokens (Fewest)</option>
+                            <option value="tokensDesc">Sort: Total Tokens (Most)</option>
+                            <option value="thoughtsDesc">Sort: Reasoning Tokens (Most)</option>
+                            <option value="turnsAsc">Sort: Turns (Fewest)</option>
                         </select>
                         <button id="resetBtn" class="bench-filter" style="cursor:pointer; background: var(--barca-gold, #edbb00); color:#000; font-weight:700; border:none;">Reset</button>
                     </div>
@@ -97,9 +117,11 @@
     (function () {
         var catalog = { tests: [] };
         var results = [];
+        var expandedRows = {};
 
         function modelOf(r) { return r && r.participant ? (r.participant.modelId || 'unknown') : 'unknown'; }
         function providerOf(r) { return r && r.participant ? (r.participant.providerUuid || 'unknown') : 'unknown'; }
+        function thinkingOf(r) { return r && r.participant ? r.participant.thinkingLevel : null; }
         function titleOf(code) {
             var t = (catalog.tests || []).filter(function (x) { return x.testCode === code; })[0];
             return t ? t.title : code;
@@ -114,8 +136,45 @@
                 return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
             });
         }
+        function fmt(n) {
+            return Number(n || 0).toLocaleString();
+        }
+        function extractYouTubeId(url) {
+            if (!url) return null;
+            var m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/);
+            return m ? m[1] : null;
+        }
+
+        function syncUrlParams() {
+            var params = new URLSearchParams();
+            var search = document.getElementById('search').value;
+            var testF = document.getElementById('testFilter').value;
+            var provF = document.getElementById('providerFilter').value;
+            var passF = document.getElementById('passedFilter').value;
+            var sort = document.getElementById('sortBy').value;
+
+            if (search) params.set('search', search);
+            if (testF) params.set('test', testF);
+            if (provF) params.set('provider', provF);
+            if (passF !== '') params.set('status', passF);
+            if (sort !== 'newest') params.set('sort', sort);
+
+            var q = params.toString();
+            var url = window.location.pathname + (q ? '?' + q : '');
+            window.history.replaceState({}, '', url);
+        }
+
+        function applyUrlParams() {
+            var params = new URLSearchParams(window.location.search);
+            if (params.has('search')) document.getElementById('search').value = params.get('search');
+            if (params.has('test')) document.getElementById('testFilter').value = params.get('test');
+            if (params.has('provider')) document.getElementById('providerFilter').value = params.get('provider');
+            if (params.has('status')) document.getElementById('passedFilter').value = params.get('status');
+            if (params.has('sort')) document.getElementById('sortBy').value = params.get('sort');
+        }
 
         function render() {
+            syncUrlParams();
             var search = (document.getElementById('search').value || '').toLowerCase();
             var testF = document.getElementById('testFilter').value;
             var provF = document.getElementById('providerFilter').value;
@@ -127,16 +186,22 @@
                 if (provF && providerOf(r) !== provF) return false;
                 if (passF !== '' && String(r.passed) !== passF) return false;
                 if (search) {
-                    var hay = (modelOf(r) + ' ' + providerOf(r) + ' ' + r.testCode + ' ' + titleOf(r.testCode)).toLowerCase();
+                    var hay = (modelOf(r) + ' ' + providerOf(r) + ' ' + r.testCode + ' ' + titleOf(r.testCode) + ' ' + (r.asiContainer || '') + ' ' + (r.observations || '')).toLowerCase();
                     if (hay.indexOf(search) === -1) return false;
                 }
                 return true;
             });
 
             filtered.sort(function (a, b) {
+                if (sort === 'oldest') { return (a.timestamp || '').localeCompare(b.timestamp || ''); }
                 if (sort === 'scoreDesc') { return (avgScore(b) || -1e9) - (avgScore(a) || -1e9); }
+                if (sort === 'scoreAsc') { return (avgScore(a) || 1e9) - (avgScore(b) || 1e9); }
                 if (sort === 'durationAsc') { return (a.durationSeconds || 1e9) - (b.durationSeconds || 1e9); }
+                if (sort === 'durationDesc') { return (b.durationSeconds || 0) - (a.durationSeconds || 0); }
                 if (sort === 'tokensAsc') { return (a.totalTokens || 1e15) - (b.totalTokens || 1e15); }
+                if (sort === 'tokensDesc') { return (b.totalTokens || 0) - (a.totalTokens || 0); }
+                if (sort === 'thoughtsDesc') { return (b.thoughtsTokens || 0) - (a.thoughtsTokens || 0); }
+                if (sort === 'turnsAsc') { return (a.turns || 1e9) - (b.turns || 1e9); }
                 return (b.timestamp || '').localeCompare(a.timestamp || ''); // newest default
             });
 
@@ -178,7 +243,7 @@
                 var avg = scores.length ? (scores.reduce(function (a, b) { return a + b; }, 0) / scores.length).toFixed(1) : '—';
                 var passRate = Math.round(100 * m.runs.filter(function (r) { return r.passed; }).length / m.runs.length) + '%';
                 var certified = catalog.tests.length > 0 && Object.keys(m.passedTests).length >= catalog.tests.length;
-                return '<tr>' +
+                return '<tr style="cursor:pointer;" onclick="window.filterByModel(\'' + esc(k) + '\')">' +
                     '<td><code>' + esc(k) + '</code></td>' +
                     '<td>' + esc(m.provider) + '</td>' +
                     '<td>' + m.runs.length + '</td>' +
@@ -193,36 +258,94 @@
                 '</tr></thead><tbody>' + rows + '</tbody></table>';
         }
 
+        window.filterByModel = function (modelId) {
+            document.getElementById('search').value = modelId;
+            render();
+        };
+
+        window.toggleRunDetails = function (idx) {
+            expandedRows[idx] = !expandedRows[idx];
+            render();
+        };
+
         function renderRuns(filtered) {
             document.getElementById('runCount').textContent = '(' + filtered.length + ')';
             if (!filtered.length) {
                 document.getElementById('runs').innerHTML = '<p style="color: var(--text-muted);">No runs match the current filters.</p>';
                 return;
             }
-            var rows = filtered.map(function (r) {
+            var rows = filtered.map(function (r, idx) {
                 var a = avgScore(r);
                 var scoreStr = a != null ? a.toFixed(1) : '<span style="color: var(--text-muted);">Unrated</span>';
-                var vid = r.videoUrl ? ' <a class="video-link" href="' + esc(r.videoUrl) + '" target="_blank" rel="noopener"><i class="fas fa-video"></i></a>' : '';
+                var vid = r.videoUrl ? ' <a class="video-link" href="' + esc(r.videoUrl) + '" target="_blank" rel="noopener" title="Watch on YouTube" onclick="event.stopPropagation();"><i class="fab fa-youtube" style="color: #ef4444;"></i></a>' : '';
                 var judges = (r.judgeScores || []).filter(function (s) { return s != null; }).map(function (s) {
-                    return esc(s.name) + ':' + s.score + (s.comments ? ' (' + esc(s.comments) + ')' : '');
+                    return esc(s.name) + ':' + s.score;
                 }).join(', ');
-                return '<tr>' +
+
+                var thinkLvl = thinkingOf(r);
+                var thinkBadge = (thinkLvl && thinkLvl !== 'THINKING_LEVEL_UNSPECIFIED' && thinkLvl !== 'NONE')
+                    ? '<span class="badge badge-thinking">' + esc(thinkLvl) + '</span>'
+                    : '';
+
+                var isExpanded = !!expandedRows[idx];
+                var chevron = '<i class="fas fa-chevron-right expand-icon ' + (isExpanded ? 'open' : '') + '"></i>';
+
+                var mainRow = '<tr class="run-row" onclick="window.toggleRunDetails(' + idx + ')">' +
+                    '<td style="text-align:center; width: 30px;">' + chevron + '</td>' +
                     '<td>' + esc((r.timestamp || '').substring(0, 10)) + '</td>' +
-                    '<td><code>' + esc(modelOf(r)) + '</code></td>' +
+                    '<td><code>' + esc(modelOf(r)) + '</code>' + thinkBadge + '</td>' +
                     '<td>' + esc(providerOf(r)) + '</td>' +
                     '<td>' + esc(r.testCode) + '<br><span style="color: var(--text-muted); font-size:0.8rem;">' + esc(titleOf(r.testCode)) + '</span></td>' +
                     '<td>' + (r.passed ? '<span class="badge badge-pass">Pass</span>' : '<span class="badge badge-fail">Fail</span>') + '</td>' +
                     '<td>' + (r.durationSeconds || 0) + 's</td>' +
                     '<td>' + (r.turns || 0) + '</td>' +
-                    '<td>' + (r.totalTokens || 0) + '</td>' +
+                    '<td><strong>' + fmt(r.totalTokens) + '</strong>' +
+                    '<div class="token-sub">In: ' + fmt(r.promptTokens) + ' | Out: ' + fmt(r.candidatesTokens) + ' | Think: ' + fmt(r.thoughtsTokens) + '</div></td>' +
                     '<td>' + scoreStr + '</td>' +
                     '<td>' + (judges || '<span style="color: var(--text-muted);">—</span>') + '</td>' +
-                    '<td>' + vid + '</td>' +
+                    '<td style="text-align:center;">' + vid + '</td>' +
                     '</tr>';
+
+                var detailRow = '';
+                if (isExpanded) {
+                    var ytid = extractYouTubeId(r.videoUrl);
+                    var videoPlayer = ytid
+                        ? '<div class="video-player-wrap"><iframe src="https://www.youtube.com/embed/' + ytid + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>'
+                        : '';
+
+                    var judgeDetails = (r.judgeScores || []).map(function (j) {
+                        return '<div style="margin-bottom: 4px;"><strong>' + esc(j.name) + ': ' + j.score + '</strong>' +
+                            (j.comments ? ' — <span style="color: var(--text-muted);">' + esc(j.comments) + '</span>' : '') + '</div>';
+                    }).join('');
+
+                    var obs = (r.observations && r.observations.trim())
+                        ? '<div class="obs-box"><strong>Observations & Errors:</strong>\n' + esc(r.observations) + '</div>'
+                        : '';
+
+                    detailRow = '<tr style="background: rgba(0,0,0,0.2);"><td colspan="12" style="padding: 0 1rem 1.2rem 1rem;">' +
+                        '<div class="detail-card">' +
+                        '<div class="telemetry-grid">' +
+                        '<div class="telemetry-pill"><div class="t-val">' + fmt(r.promptTokens) + '</div><div class="t-lbl">Prompt (Input)</div></div>' +
+                        '<div class="telemetry-pill"><div class="t-val">' + fmt(r.candidatesTokens) + '</div><div class="t-lbl">Candidate (Output)</div></div>' +
+                        '<div class="telemetry-pill"><div class="t-val">' + fmt(r.thoughtsTokens) + '</div><div class="t-lbl">Thoughts (Reasoning)</div></div>' +
+                        '<div class="telemetry-pill"><div class="t-val">' + fmt(r.totalTokens) + '</div><div class="t-lbl">Total Tokens</div></div>' +
+                        '<div class="telemetry-pill"><div class="t-val">' + (r.durationSeconds || 0) + 's</div><div class="t-lbl">Wall Clock Duration</div></div>' +
+                        '<div class="telemetry-pill"><div class="t-val">' + (r.turns || 0) + '</div><div class="t-lbl">Turns</div></div>' +
+                        '<div class="telemetry-pill"><div class="t-val">' + esc(r.asiContainer || 'NetBeans') + '</div><div class="t-lbl">ASI Container</div></div>' +
+                        '</div>' +
+                        (r.sessionId ? '<div style="font-size:0.75rem; color:#94a3b8; margin-bottom:8px;">Session ID: <code>' + esc(r.sessionId) + '</code></div>' : '') +
+                        (judgeDetails ? '<div style="margin-top: 0.8rem;"><h4>Judge Evaluations:</h4>' + judgeDetails + '</div>' : '') +
+                        obs +
+                        videoPlayer +
+                        '</div></td></tr>';
+                }
+
+                return mainRow + detailRow;
             }).join('');
+
             document.getElementById('runs').innerHTML =
                 '<table class="bench-table"><thead><tr>' +
-                '<th>Date</th><th>Model</th><th>Provider</th><th>Test</th><th>Status</th><th>Duration</th><th>Turns</th><th>Tokens</th><th>Score</th><th>Judges</th><th>Video</th>' +
+                '<th></th><th>Date</th><th>Model</th><th>Provider</th><th>Test</th><th>Status</th><th>Duration</th><th>Turns</th><th>Tokens</th><th>Score</th><th>Judges</th><th>Video</th>' +
                 '</tr></thead><tbody>' + rows + '</tbody></table>';
         }
 
@@ -247,6 +370,7 @@
                 catalog = data[0] || { tests: [] };
                 results = data[1] || [];
                 populateSelects();
+                applyUrlParams();
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('dashboardContent').style.display = 'block';
                 render();

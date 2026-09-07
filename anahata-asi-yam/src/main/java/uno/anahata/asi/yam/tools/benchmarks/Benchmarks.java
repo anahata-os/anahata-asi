@@ -31,8 +31,6 @@ import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.ToolPermission;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
-import uno.anahata.asi.agi.tool.spi.java.JavaObjectToolkit;
-import uno.anahata.asi.toolkit.java.Java;
 import uno.anahata.asi.yam.tools.screenrecording.ScreenRecordingOverlay;
 import uno.anahata.asi.yam.tools.screenrecording.ScreenRecorder;
 import uno.anahata.asi.yam.tools.screenrecording.RecordedSession;
@@ -59,8 +57,9 @@ public class Benchmarks extends AnahataToolkit {
 
     /**
      * The list of active registered test catalogs available in this benchmark session.
+     * Marked transient to avoid serializing stale catalog definitions into Kryo session backups.
      */
-    private final List<TestCatalog> catalogs = new ArrayList<>(List.of(new Agi1TestCatalog()));
+    private transient List<TestCatalog> catalogs;
 
     /**
      * Default constructor for the Benchmarks toolkit.
@@ -71,12 +70,49 @@ public class Benchmarks extends AnahataToolkit {
     /**
      * {@inheritDoc}
      * <p>
-     * Disables the Benchmarks toolkit on startup by default.
+     * Disables the Benchmarks toolkit on startup by default and initializes fresh catalogs.
      * </p>
      */
     @Override
     public void initialize() {
         getToolkit().setEnabled(false);
+        initCatalogs();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Rebinds transient catalog instances upon deserialization.
+     * </p>
+     */
+    @Override
+    public void rebind() {
+        super.rebind();
+        initCatalogs();
+    }
+
+    /**
+     * Initializes or refreshes the default test catalogs, ensuring fresh code instances
+     * are bound without relying on serialized Kryo state.
+     */
+    private synchronized void initCatalogs() {
+        if (this.catalogs == null) {
+            this.catalogs = new ArrayList<>();
+        }
+        this.catalogs.removeIf(c -> "ANAHATA-AGI-1".equalsIgnoreCase(c.getId()));
+        this.catalogs.add(0, new Agi1TestCatalog());
+    }
+
+    /**
+     * Retrieves the active list of registered test catalogs, ensuring initialization.
+     *
+     * @return The list of test catalogs.
+     */
+    public List<TestCatalog> getCatalogs() {
+        if (catalogs == null) {
+            initCatalogs();
+        }
+        return catalogs;
     }
 
     /**
@@ -85,8 +121,8 @@ public class Benchmarks extends AnahataToolkit {
      * @param catalog The catalog to register.
      */
     public void registerCatalog(TestCatalog catalog) {
-        if (catalog != null && !catalogs.contains(catalog)) {
-            catalogs.add(catalog);
+        if (catalog != null && !getCatalogs().contains(catalog)) {
+            getCatalogs().add(catalog);
             log.info("Registered benchmark catalog: {} ({})", catalog.getName(), catalog.getId());
         }
     }
@@ -101,7 +137,7 @@ public class Benchmarks extends AnahataToolkit {
         if (catalogId == null || catalogId.isBlank()) {
             return Optional.empty();
         }
-        return catalogs.stream()
+        return getCatalogs().stream()
                 .filter(c -> c.getId().equalsIgnoreCase(catalogId.trim()) || c.getName().equalsIgnoreCase(catalogId.trim()))
                 .findFirst();
     }
@@ -118,10 +154,10 @@ public class Benchmarks extends AnahataToolkit {
         try {
             StringBuilder sb = new StringBuilder("## Benchmark Suites & Catalogs\n\n");
 
-            if (catalogs.isEmpty()) {
+            if (getCatalogs().isEmpty()) {
                 sb.append("- No benchmark catalogs currently registered.\n");
             } else {
-                for (TestCatalog catalog : catalogs) {
+                for (TestCatalog catalog : getCatalogs()) {
                     sb.append(catalog.toString()).append("\n\n");
                 }
             }
@@ -173,7 +209,7 @@ public class Benchmarks extends AnahataToolkit {
         TestCatalog targetCatalog = null;
         TestDefinition targetTest = null;
 
-        for (TestCatalog cat : catalogs) {
+        for (TestCatalog cat : getCatalogs()) {
             Optional<TestDefinition> found = cat.findByCode(testCode);
             if (found.isPresent()) {
                 targetCatalog = cat;
@@ -216,7 +252,7 @@ public class Benchmarks extends AnahataToolkit {
                 .toolkits(null) // Null inherits container defaults cleanly
                 .build();
 
-        TestCatalog primaryCatalog = !catalogs.isEmpty() ? catalogs.get(0) : new Agi1TestCatalog();
+        TestCatalog primaryCatalog = !getCatalogs().isEmpty() ? getCatalogs().get(0) : new Agi1TestCatalog();
         return executeBenchmark(primaryCatalog, customTestDef, participant, openSession);
     }
 
@@ -260,7 +296,7 @@ public class Benchmarks extends AnahataToolkit {
             @AgiToolParam("The unique session ID of the benchmark run to score.") String sessionId,
             @AgiToolParam("The judge score DTO (name, score, comments).") JudgeScore judgeScore) throws Exception {
 
-        for (TestCatalog cat : catalogs) {
+        for (TestCatalog cat : getCatalogs()) {
             for (TestDefinition test : cat.getTests()) {
                 Path resultsFile = cat.getResultsFileForTest(test.testCode());
                 if (BenchmarkResultsStore.submitJudgeScore(resultsFile, sessionId, judgeScore)) {
@@ -282,7 +318,7 @@ public class Benchmarks extends AnahataToolkit {
     @AgiTool(value = "Lists all recorded benchmark runs and scores for a specific test code.", permission = ToolPermission.APPROVE_ALWAYS)
     public List<BenchmarkRunResult> listResults(
             @AgiToolParam("The test code (e.g., 'JAVA-JNA-1', 'JAVA-ARKANOID-1').") String testCode) throws Exception {
-        for (TestCatalog cat : catalogs) {
+        for (TestCatalog cat : getCatalogs()) {
             if (cat.findByCode(testCode).isPresent()) {
                 return BenchmarkResultsStore.loadResults(cat, testCode);
             }
@@ -312,7 +348,7 @@ public class Benchmarks extends AnahataToolkit {
             @AgiToolParam(value = "Optional passed/failed status filter.", required = false) Boolean passed,
             @AgiToolParam(value = "Optional session ID filter.", required = false) String sessionId) throws Exception {
         List<BenchmarkRunResult> matches = new ArrayList<>();
-        for (TestCatalog cat : catalogs) {
+        for (TestCatalog cat : getCatalogs()) {
             for (TestDefinition test : cat.getTests()) {
                 if (testCode != null && !testCode.isBlank() && !test.testCode().equalsIgnoreCase(testCode.trim())) {
                     continue;
@@ -334,7 +370,7 @@ public class Benchmarks extends AnahataToolkit {
     @AgiTool(value = "Updates an entire benchmark run result JSON record on disk, matching by session ID.", permission = ToolPermission.APPROVE_ALWAYS)
     public String updateResults(
             @AgiToolParam("The fully populated BenchmarkRunResult to persist, replacing the matching existing record by session ID.") BenchmarkRunResult result) throws Exception {
-        for (TestCatalog cat : catalogs) {
+        for (TestCatalog cat : getCatalogs()) {
             if (cat.findByCode(result.testCode()).isPresent()) {
                 boolean updated = BenchmarkResultsStore.updateResult(cat.getResultsFileForTest(result.testCode()), result);
                 if (updated) {
@@ -450,17 +486,36 @@ public class Benchmarks extends AnahataToolkit {
                     try {
                         log("Finalizing recording and uploading to YouTube...");
                         RecordedSession session = recorder.stopRecording(true, null);
-                        String videoUrl = null;
-                        if (session != null && session.videoPath() != null) {
-                            videoUrl = uploadBenchmarkVideoToYouTube(testDef, participant, session);
-                        }
                         double duration = session != null ? session.durationSeconds() : 0.0;
                         String localVideoPath = session != null && session.videoPath() != null ? session.videoPath().toString() : null;
                         String thumbPath = session != null && session.thumbnailPath() != null ? session.thumbnailPath().toString() : null;
                         if (localVideoPath != null) {
                             log("Recording saved to disk at: " + localVideoPath);
                         }
-                        BenchmarkRunResult runResult = compileRunResult(candidateAgi, testDef, participant, duration, thumbPath, videoUrl);
+                        // Compile metrics first so token and turn stats can be enriched into the YouTube description
+                        BenchmarkRunResult rawMetrics = compileRunResult(candidateAgi, testDef, participant, duration, thumbPath, null);
+                        String videoUrl = null;
+                        if (session != null && session.videoPath() != null) {
+                            videoUrl = uploadBenchmarkVideoToYouTube(catalog, testDef, participant, session, rawMetrics);
+                        }
+                        BenchmarkRunResult runResult = BenchmarkRunResult.builder()
+                                .participant(rawMetrics.participant())
+                                .testCode(rawMetrics.testCode())
+                                .asiContainer(rawMetrics.asiContainer())
+                                .timestamp(rawMetrics.timestamp())
+                                .durationSeconds(rawMetrics.durationSeconds())
+                                .turns(rawMetrics.turns())
+                                .promptTokens(rawMetrics.promptTokens())
+                                .candidatesTokens(rawMetrics.candidatesTokens())
+                                .thoughtsTokens(rawMetrics.thoughtsTokens())
+                                .totalTokens(rawMetrics.totalTokens())
+                                .passed(rawMetrics.passed())
+                                .judgeScores(rawMetrics.judgeScores())
+                                .videoUrl(videoUrl)
+                                .screenshotPath(rawMetrics.screenshotPath())
+                                .sessionId(rawMetrics.sessionId())
+                                .observations(rawMetrics.observations())
+                                .build();
                         BenchmarkResultsStore.recordResult(catalog, runResult);
                         runResultFuture.complete(runResult);
                     } catch (Exception e) {
@@ -529,7 +584,17 @@ public class Benchmarks extends AnahataToolkit {
      * @param session The recorded video session.
      * @return The uploaded YouTube video URL, or {@code null} if authentication is missing.
      */
-    private String uploadBenchmarkVideoToYouTube(TestDefinition testDef, BenchmarkParticipant participant, RecordedSession session) {
+    /**
+     * Uploads the recorded benchmark demonstration video to YouTube with metadata, telemetry description, and thumbnail.
+     *
+     * @param catalog The catalog owning the test.
+     * @param testDef The test definition.
+     * @param participant The participant descriptor.
+     * @param session The recorded video session.
+     * @param metrics The compiled telemetry metrics for the run.
+     * @return The uploaded YouTube video URL, or {@code null} if authentication is missing.
+     */
+    private String uploadBenchmarkVideoToYouTube(TestCatalog catalog, TestDefinition testDef, BenchmarkParticipant participant, RecordedSession session, BenchmarkRunResult metrics) {
         try {
             YouTubeCredentials creds = YouTubeCredentials.load();
             if (!creds.isAuthenticated()) {
@@ -537,30 +602,60 @@ public class Benchmarks extends AnahataToolkit {
                 return null;
             }
 
-            String title = "⚡ Anahata-AGI-1: " + participant.modelId() + " on " + testDef.testCode() + " (" + testDef.title() + ")";
-            String testUrlCode = testDef.testCode().toLowerCase().replace('_', '-');
-            String description = "⚡ Anahata-AGI-1 Benchmark Run: " + testDef.testCode() + "\n"
-                    + "--------------------------------------------------\n"
-                    + "Model: " + participant.modelId() + "\n"
-                    + "Provider: " + participant.providerUuid() + "\n"
-                    + "Challenge: " + testDef.title() + "\n"
-                    + "Duration: " + session.durationSeconds() + "s\n\n"
-                    + "📊 Interactive Telemetry & Leaderboard:\n"
-                    + "https://asi.anahata.uno/benchmarks/anahata-agi-1/" + testUrlCode + ".html\n\n"
-                    + "🏆 Master Suite Leaderboard:\n"
-                    + "https://asi.anahata.uno/benchmarks/anahata-agi-1/index.html\n\n"
-                    + "Prompt:\n\"" + testDef.rawPrompt() + "\"\n\n"
-                    + "#AnahataASI #Java #AI #Benchmarks #LLM #OpenSource #ForcaBarca";
+            String catalogName = catalog != null && catalog.getName() != null ? catalog.getName() : "Anahata-AGI-1";
+            String catalogId = catalog != null && catalog.getId() != null ? catalog.getId() : "ANAHATA-AGI-1";
+            String catalogUrlCode = catalogId.toLowerCase().replace('_', '-');
 
-            List<String> tags = List.of("AnahataASI", "Java", "AI", "Benchmarks", "LLM", testDef.testCode());
+            String title = "⚡ " + catalogName + ": " + participant.modelId() + " on " + testDef.testCode() + " (" + testDef.title() + ")";
+
+            String statusStr = (metrics != null && metrics.passed()) ? "✅ PASSED (Zero Defects)" : "❌ FAILED";
+            int promptTokens = metrics != null ? metrics.promptTokens() : 0;
+            int candidatesTokens = metrics != null ? metrics.candidatesTokens() : 0;
+            int thoughtsTokens = metrics != null ? metrics.thoughtsTokens() : 0;
+            int totalTokens = metrics != null ? metrics.totalTokens() : 0;
+            int turns = metrics != null ? metrics.turns() : 0;
+            double duration = metrics != null ? metrics.durationSeconds() : session.durationSeconds();
+            String container = metrics != null && metrics.asiContainer() != null ? metrics.asiContainer() : getAsiContainer().getClass().getSimpleName();
+
+            StringBuilder desc = new StringBuilder();
+            desc.append("⚡ ").append(catalogName).append(" Benchmark Run: ").append(testDef.testCode()).append("\n");
+            desc.append("==================================================\n");
+            desc.append("🎯 CHALLENGE: ").append(testDef.title()).append("\n");
+            desc.append("🤖 MODEL: ").append(participant.modelId()).append("\n");
+            desc.append("🏢 PROVIDER: ").append(participant.providerUuid()).append("\n");
+            desc.append("🧠 THINKING LEVEL: ").append(participant.thinkingLevel()).append("\n");
+            desc.append("💻 CONTAINER: ").append(container).append("\n");
+            desc.append("--------------------------------------------------\n");
+            desc.append("📈 TELEMETRY METRICS:\n");
+            desc.append("• Status: ").append(statusStr).append("\n");
+            desc.append("• Duration: ").append(duration).append("s\n");
+            desc.append("• Interaction Turns: ").append(turns).append("\n");
+            desc.append("• Total Tokens: ").append(String.format("%,d", totalTokens)).append("\n");
+            desc.append("  - Prompt (Input): ").append(String.format("%,d", promptTokens)).append("\n");
+            desc.append("  - Candidate (Output): ").append(String.format("%,d", candidatesTokens)).append("\n");
+            desc.append("  - Thoughts (Reasoning): ").append(String.format("%,d", thoughtsTokens)).append("\n");
+            desc.append("--------------------------------------------------\n");
+            desc.append("📊 Interactive Telemetry & Leaderboard:\n");
+            desc.append("https://asi.anahata.uno/benchmarks/").append(catalogUrlCode).append("/index.html?test=").append(testDef.testCode()).append("\n\n");
+            desc.append("🏆 Master Suite Leaderboard:\n");
+            desc.append("https://asi.anahata.uno/benchmarks/").append(catalogUrlCode).append("/index.html\n\n");
+
+            if (metrics != null && metrics.observations() != null && !metrics.observations().isBlank()) {
+                desc.append("⚠️ Observations / Error Details:\n").append(metrics.observations()).append("\n\n");
+            }
+
+            desc.append("Prompt:\n\"").append(testDef.rawPrompt()).append("\"\n\n");
+            desc.append("#AnahataASI #Java #AI #Benchmarks #LLM #OpenSource #ForcaBarca");
+
+            List<String> tags = List.of("AnahataASI", "Java", "AI", "Benchmarks", "LLM", testDef.testCode(), participant.providerUuid());
 
             YouTube youtube = getAgi().getToolkit(YouTube.class).orElse(new YouTube());
 
             String playlistId = creds.playlistId();
             try {
-                String playlistTitle = "Anahata-AGI-1: " + testDef.testCode();
+                String playlistTitle = catalogName + ": " + testDef.testCode();
                 playlistId = youtube.resolveOrCreatePlaylist(playlistTitle,
-                        "Automated Anahata-AGI-1 benchmark runs for " + testDef.testCode() + " (" + testDef.title() + ").");
+                        "Automated " + catalogName + " benchmark runs for " + testDef.testCode() + " (" + testDef.title() + ").");
                 log("Resolved per-test playlist '" + playlistTitle + "' -> " + playlistId);
             } catch (Exception e) {
                 log.error("Could not resolve per-test playlist; falling back to default playlist", e);
@@ -570,10 +665,10 @@ public class Benchmarks extends AnahataToolkit {
             YouTubeVideoUploadRequest request = YouTubeVideoUploadRequest.builder()
                     .videoFilePath(session.videoPath().toString())
                     .title(title)
-                    .description(description)
+                    .description(desc.toString())
                     .tags(tags)
                     .playlistId(playlistId)
-                    .privacyStatus("unlisted")
+                    .privacyStatus("public")
                     .build();
 
             String videoUrl = youtube.uploadVideo(request);
@@ -674,7 +769,7 @@ public class Benchmarks extends AnahataToolkit {
      * for every registered catalog, keeping the static leaderboard in sync with the engine.
      */
     private void refreshWebsiteArtifacts() {
-        for (TestCatalog catalog : catalogs) {
+        for (TestCatalog catalog : getCatalogs()) {
             try {
                 BenchmarkResultsStore.refreshWebsiteManifests(catalog);
             } catch (Exception e) {

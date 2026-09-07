@@ -530,26 +530,36 @@ public class YouTube extends AnahataToolkit {
         YouTubeCredentials credentials = YouTubeCredentials.load();
         String accessToken = YouTubeAuthHelper.getValidAccessToken(credentials);
 
-        String url = "https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&mine=true&maxResults=50";
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Authorization", "Bearer " + accessToken)
-                .GET()
-                .build();
+        List<JsonNode> allItems = new ArrayList<>();
+        String pageToken = null;
+        do {
+            StringBuilder urlBuilder = new StringBuilder("https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&mine=true&maxResults=50");
+            if (pageToken != null && !pageToken.isBlank()) {
+                urlBuilder.append("&pageToken=").append(pageToken);
+            }
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(urlBuilder.toString()))
+                    .header("Authorization", "Bearer " + accessToken)
+                    .GET()
+                    .build();
 
-        HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) {
-            throw new AgiToolException("Failed to list playlists: HTTP " + response.statusCode() + " - " + response.body());
-        }
+            HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new AgiToolException("Failed to list playlists: HTTP " + response.statusCode() + " - " + response.body());
+            }
 
-        JsonNode json = MAPPER.readTree(response.body());
-        JsonNode items = json.path("items");
-        if (items.isEmpty()) {
+            JsonNode json = MAPPER.readTree(response.body());
+            JsonNode items = json.path("items");
+            items.forEach(allItems::add);
+            pageToken = json.hasNonNull("nextPageToken") ? json.path("nextPageToken").asText() : null;
+        } while (pageToken != null && !pageToken.isBlank());
+
+        if (allItems.isEmpty()) {
             return "No playlists found for the authenticated channel.";
         }
 
-        StringBuilder sb = new StringBuilder("📋 **Channel Playlists (" + items.size() + ")**\n");
-        for (JsonNode item : items) {
+        StringBuilder sb = new StringBuilder("📋 **Channel Playlists (" + allItems.size() + ")**\n");
+        for (JsonNode item : allItems) {
             String id = item.path("id").asText();
             String title = item.path("snippet").path("title").asText();
             int itemCount = item.path("contentDetails").path("itemCount").asInt(0);
@@ -642,7 +652,7 @@ public class YouTube extends AnahataToolkit {
             snippet.put("description", description);
         }
         ObjectNode status = root.putObject("status");
-        status.put("privacyStatus", "unlisted");
+        status.put("privacyStatus", "public");
 
         String jsonBody = MAPPER.writeValueAsString(root);
 
@@ -674,29 +684,37 @@ public class YouTube extends AnahataToolkit {
      * @throws Exception If the API call fails.
      */
     private String findPlaylistByTitleInternal(String accessToken, String title) throws Exception {
-        String url = "https://www.googleapis.com/youtube/v3/playlists?part=snippet&mine=true&maxResults=50";
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Authorization", "Bearer " + accessToken)
-                .GET()
-                .build();
-
-        HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) {
-            log.warn("Failed to list playlists while resolving by title: HTTP {} - {}", response.statusCode(), response.body());
-            return null;
-        }
-
-        JsonNode json = MAPPER.readTree(response.body());
-        JsonNode items = json.path("items");
         String lower = title.trim().toLowerCase();
-        for (JsonNode item : items) {
-            String id = item.path("id").asText();
-            String itemTitle = item.path("snippet").path("title").asText();
-            if (itemTitle != null && itemTitle.toLowerCase().equals(lower)) {
-                return id;
+        String pageToken = null;
+        do {
+            StringBuilder urlBuilder = new StringBuilder("https://www.googleapis.com/youtube/v3/playlists?part=snippet&mine=true&maxResults=50");
+            if (pageToken != null && !pageToken.isBlank()) {
+                urlBuilder.append("&pageToken=").append(pageToken);
             }
-        }
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(urlBuilder.toString()))
+                    .header("Authorization", "Bearer " + accessToken)
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                log.warn("Failed to list playlists while resolving by title: HTTP {} - {}", response.statusCode(), response.body());
+                return null;
+            }
+
+            JsonNode json = MAPPER.readTree(response.body());
+            JsonNode items = json.path("items");
+            for (JsonNode item : items) {
+                String id = item.path("id").asText();
+                String itemTitle = item.path("snippet").path("title").asText();
+                if (itemTitle != null && itemTitle.trim().equalsIgnoreCase(lower)) {
+                    return id;
+                }
+            }
+            pageToken = json.hasNonNull("nextPageToken") ? json.path("nextPageToken").asText() : null;
+        } while (pageToken != null && !pageToken.isBlank());
+
         return null;
     }
 
@@ -763,7 +781,6 @@ public class YouTube extends AnahataToolkit {
         HttpRequest streamRequest = HttpRequest.newBuilder()
                 .uri(URI.create(uploadUrl))
                 .header("Content-Type", "video/mp4")
-                .header("Content-Length", String.valueOf(fileSize))
                 .PUT(HttpRequest.BodyPublishers.ofFile(videoPath))
                 .build();
 

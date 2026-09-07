@@ -39,8 +39,10 @@ public class Agi1TestCatalog extends TestCatalog {
      * Standard footer template for Anahata-AGI-1 tests.
      */
     public static final String STANDARD_FOOTER =
-            "Do not seek user prompt, confirmation, or follow-up. Execute all necessary tools "
-            + "and continue until your task has been completely fulfilled.";
+            "This is a single-shot benchmark challenge: aim to complete and launch your implementation "
+            + "in your very first tool call. Only take additional turns if you encounter a compilation or runtime "
+            + "error that requires self-alignment and correction. Once your task is running with zero defects, "
+            + "provide a concise final summary and conclude immediately.";
 
     /**
      * Test #1: OS Hardware &amp; System Values Dashboard (JNA Native C-Library Binding).
@@ -48,14 +50,15 @@ public class Agi1TestCatalog extends TestCatalog {
     public static final TestDefinition JAVA_JNA_1 = TestDefinition.builder()
             .testCode("JAVA-JNA-1")
             .title("OS Hardware & System Values Dashboard")
-            .rawPrompt("Build a real-time, interactive system telemetry dashboard "
-                    + "using JNA (com.sun.jna.Library) to monitor host system CPU/GPU temperatures "
-                    + "and process ID. You have complete creative freedom to decide what metrics to retrieve, what UI "
-                    + "framework to use, and how to design the interface. Window title MUST contain your Model ID.")
+            .rawPrompt("Build a real-time, interactive native system telemetry dashboard using JNA (com.sun.jna.Library) to monitor live host system and hardware values.\n\n"
+                    + "Your implementation will be evaluated on:\n"
+                    + "1. Native JNA Depth: Richness of native C-library integration (e.g. binding native functions or C structs for sysinfo, memory usage via getrusage, load averages, kernel/OS specs, or available hardware sensors).\n"
+                    + "2. Real-Time Interactivity & UI Thread Safety: Continuous live updates (e.g. 1-second refresh), strictly respecting the threading model of your chosen UI framework (e.g. Swing EDT via runInEdtAndWait/invokeLater or JavaFX Application Thread via Platform.runLater).\n"
+                    + "3. Dashboard Polish & Presentation: Clean layout, metric cards, visual indicators, or live charts.\n"
+                    + "4. Zero-Defect Resilience: Robust handling of missing hardware sensors or platform variations with zero crashes.\n\n"
+                    + "Window title MUST contain your Model ID. You have complete creative freedom to choose your UI framework (Swing, JavaFX, etc.), styling, and interface design.")
             .toolkits(List.of(
-                    ToolkitSettings.of(Java.class, "compileAndExecute", ToolPermission.APPROVE_ALWAYS),
-                    ToolkitSettings.of(Host.class),
-                    ToolkitSettings.of(Shell.class)
+                    ToolkitSettings.of(Java.class, "compileAndExecute", ToolPermission.APPROVE_ALWAYS)
             ))
             .build();
 
