@@ -38,16 +38,13 @@ public final class AgiContext {
     }
 
     /**
-     * Returns all active sessions across every live tool-window container.
+     * Returns all active sessions from the application-level ASI container.
      *
      * @return the active sessions.
      */
     public static List<Agi> activeSessions() {
-        List<Agi> all = new ArrayList<>();
-        for (IntellijAsiContainer container : IntellijAsiContainer.getInstances()) {
-            all.addAll(container.getActiveAgis());
-        }
-        return all;
+        IntellijAsiContainer container = IntellijAsiContainer.getInstance();
+        return container != null ? container.getActiveAgis() : List.of();
     }
 
     /**
