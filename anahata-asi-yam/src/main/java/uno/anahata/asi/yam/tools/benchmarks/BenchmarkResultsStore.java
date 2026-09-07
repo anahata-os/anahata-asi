@@ -292,6 +292,17 @@ public class BenchmarkResultsStore {
             t.put("testCode", test.testCode());
             t.put("title", test.title());
             t.put("rawPrompt", test.rawPrompt() != null ? test.rawPrompt() : "");
+            ArrayNode toolkitsArray = t.putArray("toolkits");
+            if (test.toolkits() != null) {
+                for (ToolkitSettings ts : test.toolkits()) {
+                    ObjectNode tkNode = toolkitsArray.addObject();
+                    tkNode.put("toolkit", ts.toolkit());
+                    ObjectNode permMap = tkNode.putObject("permissions");
+                    if (ts.permissions() != null) {
+                        ts.permissions().forEach((toolName, perm) -> permMap.put(toolName, perm.name()));
+                    }
+                }
+            }
         }
 
         MAPPER.writeValue(dir.resolve("catalog.json").toFile(), root);

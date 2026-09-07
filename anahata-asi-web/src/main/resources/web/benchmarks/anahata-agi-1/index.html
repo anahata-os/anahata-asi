@@ -9,7 +9,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         .bench-filter { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: #e2e8f0; border-radius: 8px; padding: 10px 14px; font-size: 0.9rem; outline: none; }
+        .bench-filter option { background-color: #0f172a; color: #f1f5f9; }
         .bench-filter:focus { border-color: var(--barca-gold, #edbb00); }
+        .tab-btn { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 8px 18px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; }
+        .tab-btn.active { background: rgba(237, 187, 0, 0.15); border-color: var(--barca-gold, #edbb00); color: var(--barca-gold, #edbb00); }
+        .tab-btn:hover:not(.active) { background: rgba(255,255,255,0.05); color: #f1f5f9; }
+        .sortable-th { cursor: pointer; user-select: none; transition: color 0.15s ease; white-space: nowrap; }
+        .sortable-th:hover { color: var(--barca-gold, #edbb00); }
+        .sort-icon { margin-left: 4px; font-size: 0.75rem; color: #64748b; }
+        .sort-icon.active { color: var(--barca-gold, #edbb00); }
         .bench-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
         .bench-table th { text-align: left; padding: 0.8rem; color: #cbd5e1; border-bottom: 2px solid rgba(255,255,255,0.12); white-space: nowrap; }
         .bench-table td { padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.06); vertical-align: middle; }
@@ -65,40 +73,57 @@
 
                 <div id="dashboardContent" style="display:none;">
                     <!-- Stats -->
-                    <div id="stats" class="responsive-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.8rem;"></div>
+                    <div id="stats" class="responsive-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;"></div>
 
-                    <!-- Filters -->
-                    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 1rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; margin-bottom: 2rem;">
-                        <input id="search" class="bench-filter" type="text" placeholder="🔍 Search model, provider, test…" style="flex: 1 1 220px; min-width: 180px;">
-                        <select id="testFilter" class="bench-filter"><option value="">All Tests</option></select>
-                        <select id="providerFilter" class="bench-filter"><option value="">All Providers</option></select>
-                        <select id="passedFilter" class="bench-filter">
-                            <option value="">All Status</option>
-                            <option value="true">Passed</option>
-                            <option value="false">Failed</option>
-                        </select>
-                        <select id="sortBy" class="bench-filter">
-                            <option value="newest">Sort: Newest</option>
-                            <option value="oldest">Sort: Oldest</option>
-                            <option value="scoreDesc">Sort: Score (High-Low)</option>
-                            <option value="scoreAsc">Sort: Score (Low-High)</option>
-                            <option value="durationAsc">Sort: Duration (Fastest)</option>
-                            <option value="durationDesc">Sort: Duration (Slowest)</option>
-                            <option value="tokensAsc">Sort: Total Tokens (Fewest)</option>
-                            <option value="tokensDesc">Sort: Total Tokens (Most)</option>
-                            <option value="thoughtsDesc">Sort: Reasoning Tokens (Most)</option>
-                            <option value="turnsAsc">Sort: Turns (Fewest)</option>
-                        </select>
-                        <button id="resetBtn" class="bench-filter" style="cursor:pointer; background: var(--barca-gold, #edbb00); color:#000; font-weight:700; border:none;">Reset</button>
+                    <!-- Top-level View Tabs -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+                        <button id="tabResultsBtn" class="tab-btn active" onclick="window.switchTab('results')"><i class="fas fa-chart-line"></i> Benchmark Results &amp; Runs</button>
+                        <button id="tabSpecsBtn" class="tab-btn" onclick="window.switchTab('specs')"><i class="fas fa-vial"></i> Test Catalog &amp; Specifications (<span id="specTestCount">4</span>)</button>
                     </div>
 
-                    <!-- Leaderboard -->
-                    <h2 style="margin-bottom: 1rem;"><i class="fas fa-trophy" style="color: var(--barca-gold);"></i> Model Leaderboard</h2>
-                    <div style="overflow-x: auto; margin-bottom: 3rem;" id="leaderboard"></div>
+                    <!-- Tab 1: Results View -->
+                    <div id="tabResultsView">
+                        <!-- Filters -->
+                        <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 1rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; margin-bottom: 1.5rem;">
+                            <input id="search" class="bench-filter" type="text" placeholder="🔍 Search model, provider, test…" style="flex: 1 1 220px; min-width: 180px;">
+                            <select id="testFilter" class="bench-filter"><option value="">All Tests</option></select>
+                            <select id="providerFilter" class="bench-filter"><option value="">All Providers</option></select>
+                            <select id="passedFilter" class="bench-filter">
+                                <option value="">All Status</option>
+                                <option value="true">Passed</option>
+                                <option value="false">Failed</option>
+                            </select>
+                            <select id="sortBy" class="bench-filter">
+                                <option value="newest">Sort: Newest</option>
+                                <option value="oldest">Sort: Oldest</option>
+                                <option value="scoreDesc">Sort: Score (High-Low)</option>
+                                <option value="scoreAsc">Sort: Score (Low-High)</option>
+                                <option value="durationAsc">Sort: Duration (Fastest)</option>
+                                <option value="durationDesc">Sort: Duration (Slowest)</option>
+                                <option value="tokensAsc">Sort: Total Tokens (Fewest)</option>
+                                <option value="tokensDesc">Sort: Total Tokens (Most)</option>
+                                <option value="thoughtsDesc">Sort: Reasoning Tokens (Most)</option>
+                                <option value="turnsAsc">Sort: Turns (Fewest)</option>
+                            </select>
+                            <button id="resetBtn" class="bench-filter" style="cursor:pointer; background: var(--barca-gold, #edbb00); color:#000; font-weight:700; border:none;">Reset</button>
+                        </div>
 
-                    <!-- Runs -->
-                    <h2 style="margin-bottom: 1rem;"><i class="fas fa-list"></i> All Runs <span id="runCount" style="font-size:0.8rem; color: var(--text-muted);"></span></h2>
-                    <div style="overflow-x: auto;" id="runs"></div>
+                        <!-- Runs Header -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h2 style="margin: 0;"><i class="fas fa-list"></i> Recorded Runs <span id="runCount" style="font-size:0.85rem; color: var(--text-muted);"></span></h2>
+                            <span style="font-size:0.8rem; color:#94a3b8;"><i class="fas fa-mouse-pointer"></i> Click column headers to sort &bull; Click row to expand telemetry</span>
+                        </div>
+                        <div style="overflow-x: auto;" id="runs"></div>
+                    </div>
+
+                    <!-- Tab 2: Test Specs View -->
+                    <div id="tabSpecsView" style="display:none;">
+                        <div style="margin-bottom: 1.2rem;">
+                            <h2 style="margin: 0 0 0.4rem 0;"><i class="fas fa-vial" style="color: var(--barca-gold, #edbb00);"></i> Anahata-AGI-1 Benchmark Challenges</h2>
+                            <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">Complete challenge prompts, sandbox toolkits, and permission policies evaluated across all candidate models.</p>
+                        </div>
+                        <div id="testCatalogCards" class="responsive-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.2rem;"></div>
+                    </div>
                 </div>
 
             </div>
@@ -118,6 +143,8 @@
         var catalog = { tests: [] };
         var results = [];
         var expandedRows = {};
+        var currentSortCol = 'timestamp';
+        var currentSortDir = 'desc';
 
         function modelOf(r) { return r && r.participant ? (r.participant.modelId || 'unknown') : 'unknown'; }
         function providerOf(r) { return r && r.participant ? (r.participant.providerUuid || 'unknown') : 'unknown'; }
@@ -125,6 +152,9 @@
         function titleOf(code) {
             var t = (catalog.tests || []).filter(function (x) { return x.testCode === code; })[0];
             return t ? t.title : code;
+        }
+        function testDefOf(code) {
+            return (catalog.tests || []).filter(function (x) { return x.testCode === code; })[0];
         }
         function avgScore(r) {
             var s = (r.judgeScores || []).filter(function (x) { return x != null; }).map(function (x) { return x.score; });
@@ -144,6 +174,46 @@
             var m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/);
             return m ? m[1] : null;
         }
+
+        window.switchTab = function (tab) {
+            var resultsView = document.getElementById('tabResultsView');
+            var specsView = document.getElementById('tabSpecsView');
+            var resBtn = document.getElementById('tabResultsBtn');
+            var specsBtn = document.getElementById('tabSpecsBtn');
+            if (tab === 'specs') {
+                resultsView.style.display = 'none';
+                specsView.style.display = 'block';
+                resBtn.classList.remove('active');
+                specsBtn.classList.add('active');
+            } else {
+                resultsView.style.display = 'block';
+                specsView.style.display = 'none';
+                resBtn.classList.add('active');
+                specsBtn.classList.remove('active');
+            }
+        };
+
+        window.sortByCol = function (col) {
+            if (currentSortCol === col) {
+                currentSortDir = (currentSortDir === 'asc' ? 'desc' : 'asc');
+            } else {
+                currentSortCol = col;
+                if (col === 'score' || col === 'tokens' || col === 'timestamp') {
+                    currentSortDir = 'desc';
+                } else {
+                    currentSortDir = 'asc';
+                }
+            }
+
+            var sortSelect = document.getElementById('sortBy');
+            if (col === 'timestamp') sortSelect.value = (currentSortDir === 'desc' ? 'newest' : 'oldest');
+            else if (col === 'score') sortSelect.value = (currentSortDir === 'desc' ? 'scoreDesc' : 'scoreAsc');
+            else if (col === 'duration') sortSelect.value = (currentSortDir === 'asc' ? 'durationAsc' : 'durationDesc');
+            else if (col === 'tokens') sortSelect.value = (currentSortDir === 'asc' ? 'tokensAsc' : 'tokensDesc');
+            else if (col === 'turns') sortSelect.value = 'turnsAsc';
+
+            render();
+        };
 
         function syncUrlParams() {
             var params = new URLSearchParams();
@@ -170,7 +240,18 @@
             if (params.has('test')) document.getElementById('testFilter').value = params.get('test');
             if (params.has('provider')) document.getElementById('providerFilter').value = params.get('provider');
             if (params.has('status')) document.getElementById('passedFilter').value = params.get('status');
-            if (params.has('sort')) document.getElementById('sortBy').value = params.get('sort');
+            if (params.has('sort')) {
+                var s = params.get('sort');
+                document.getElementById('sortBy').value = s;
+                if (s === 'oldest') { currentSortCol = 'timestamp'; currentSortDir = 'asc'; }
+                else if (s === 'scoreDesc') { currentSortCol = 'score'; currentSortDir = 'desc'; }
+                else if (s === 'scoreAsc') { currentSortCol = 'score'; currentSortDir = 'asc'; }
+                else if (s === 'durationAsc') { currentSortCol = 'duration'; currentSortDir = 'asc'; }
+                else if (s === 'durationDesc') { currentSortCol = 'duration'; currentSortDir = 'desc'; }
+                else if (s === 'tokensAsc') { currentSortCol = 'tokens'; currentSortDir = 'asc'; }
+                else if (s === 'tokensDesc') { currentSortCol = 'tokens'; currentSortDir = 'desc'; }
+                else if (s === 'turnsAsc') { currentSortCol = 'turns'; currentSortDir = 'asc'; }
+            }
         }
 
         function render() {
@@ -179,7 +260,6 @@
             var testF = document.getElementById('testFilter').value;
             var provF = document.getElementById('providerFilter').value;
             var passF = document.getElementById('passedFilter').value;
-            var sort = document.getElementById('sortBy').value;
 
             var filtered = results.filter(function (r) {
                 if (testF && r.testCode !== testF) return false;
@@ -193,21 +273,67 @@
             });
 
             filtered.sort(function (a, b) {
-                if (sort === 'oldest') { return (a.timestamp || '').localeCompare(b.timestamp || ''); }
-                if (sort === 'scoreDesc') { return (avgScore(b) || -1e9) - (avgScore(a) || -1e9); }
-                if (sort === 'scoreAsc') { return (avgScore(a) || 1e9) - (avgScore(b) || 1e9); }
-                if (sort === 'durationAsc') { return (a.durationSeconds || 1e9) - (b.durationSeconds || 1e9); }
-                if (sort === 'durationDesc') { return (b.durationSeconds || 0) - (a.durationSeconds || 0); }
-                if (sort === 'tokensAsc') { return (a.totalTokens || 1e15) - (b.totalTokens || 1e15); }
-                if (sort === 'tokensDesc') { return (b.totalTokens || 0) - (a.totalTokens || 0); }
-                if (sort === 'thoughtsDesc') { return (b.thoughtsTokens || 0) - (a.thoughtsTokens || 0); }
-                if (sort === 'turnsAsc') { return (a.turns || 1e9) - (b.turns || 1e9); }
-                return (b.timestamp || '').localeCompare(a.timestamp || ''); // newest default
+                var mul = (currentSortDir === 'asc') ? 1 : -1;
+                if (currentSortCol === 'timestamp') {
+                    return mul * (a.timestamp || '').localeCompare(b.timestamp || '');
+                } else if (currentSortCol === 'model') {
+                    return mul * modelOf(a).localeCompare(modelOf(b));
+                } else if (currentSortCol === 'provider') {
+                    return mul * providerOf(a).localeCompare(providerOf(b));
+                } else if (currentSortCol === 'test') {
+                    return mul * (a.testCode || '').localeCompare(b.testCode || '');
+                } else if (currentSortCol === 'passed') {
+                    return mul * ((a.passed === b.passed) ? 0 : (a.passed ? 1 : -1));
+                } else if (currentSortCol === 'duration') {
+                    return mul * ((a.durationSeconds || 0) - (b.durationSeconds || 0));
+                } else if (currentSortCol === 'turns') {
+                    return mul * ((a.turns || 0) - (b.turns || 0));
+                } else if (currentSortCol === 'tokens') {
+                    return mul * ((a.totalTokens || 0) - (b.totalTokens || 0));
+                } else if (currentSortCol === 'score') {
+                    var sa = avgScore(a) != null ? avgScore(a) : -1;
+                    var sb = avgScore(b) != null ? avgScore(b) : -1;
+                    return mul * (sa - sb);
+                }
+                return (b.timestamp || '').localeCompare(a.timestamp || '');
             });
 
             renderStats(results);
-            renderLeaderboard(results);
+            renderCatalogCards();
             renderRuns(filtered);
+        }
+
+        function renderCatalogCards() {
+            var container = document.getElementById('testCatalogCards');
+            if (!container) return;
+            if (!catalog.tests || !catalog.tests.length) {
+                container.innerHTML = '<p style="color: var(--text-muted);">No challenge definitions available.</p>';
+                return;
+            }
+            document.getElementById('specTestCount').textContent = catalog.tests.length;
+            var html = catalog.tests.map(function (t) {
+                var tkList = '';
+                if (t.toolkits && t.toolkits.length) {
+                    tkList = t.toolkits.map(function (tk) {
+                        var pKeys = Object.keys(tk.permissions || {});
+                        var pStr = pKeys.length ? ' (' + pKeys.map(function (k) { return '<code style="color:var(--barca-gold,#edbb00);">' + esc(k) + ': ' + esc(tk.permissions[k]) + '</code>'; }).join(', ') + ')' : '';
+                        return '<li><code>' + esc(tk.toolkit) + '</code>' + pStr + '</li>';
+                    }).join('');
+                } else {
+                    tkList = '<li><span style="color:#94a3b8;">Container Defaults (All Toolkits)</span></li>';
+                }
+
+                return '<div class="stat-card" style="text-align: left; padding: 1.4rem;">' +
+                    '<div style="font-size:0.8rem; font-weight:800; color:var(--barca-gold, #edbb00); text-transform:uppercase;">' + esc(t.testCode) + '</div>' +
+                    '<h3 style="font-size:1.15rem; margin: 0.3rem 0 0.8rem 0; color:#f1f5f9;">' + esc(t.title) + '</h3>' +
+                    '<div style="font-size:0.85rem; margin-bottom: 0.8rem;"><strong>Toolkits &amp; Sandbox Permissions:</strong><ul style="margin:4px 0 0 16px; padding:0;">' + tkList + '</ul></div>' +
+                    '<details open style="font-size:0.85rem; color:#94a3b8; cursor:pointer;">' +
+                    '<summary style="color:#60a5fa; font-weight:600; margin-bottom:4px;">Task Prompt Instructions</summary>' +
+                    '<pre style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 10px 12px; font-size:0.8rem; color:#e2e8f0; white-space:pre-wrap; font-family:monospace; margin-top:6px; line-height:1.5;">' + esc(t.rawPrompt) + '</pre>' +
+                    '</details>' +
+                    '</div>';
+            }).join('');
+            container.innerHTML = html;
         }
 
         function renderStats(all) {
@@ -225,53 +351,24 @@
         }
         function stat(num, lbl) { return '<div class="stat-card"><div class="num">' + esc(num) + '</div><div class="lbl">' + esc(lbl) + '</div></div>'; }
 
-        function renderLeaderboard(all) {
-            if (!all.length) {
-                document.getElementById('leaderboard').innerHTML = '<p style="color: var(--text-muted);">No runs recorded yet. Run a benchmark to populate the leaderboard.</p>';
-                return;
-            }
-            var byModel = {};
-            all.forEach(function (r) {
-                var k = modelOf(r);
-                if (!byModel[k]) { byModel[k] = { model: k, provider: providerOf(r), runs: [], passedTests: {} }; }
-                byModel[k].runs.push(r);
-                if (r.passed) byModel[k].passedTests[r.testCode] = true;
-            });
-            var rows = Object.keys(byModel).map(function (k) {
-                var m = byModel[k];
-                var scores = m.runs.map(avgScore).filter(function (s) { return s != null; });
-                var avg = scores.length ? (scores.reduce(function (a, b) { return a + b; }, 0) / scores.length).toFixed(1) : '—';
-                var passRate = Math.round(100 * m.runs.filter(function (r) { return r.passed; }).length / m.runs.length) + '%';
-                var certified = catalog.tests.length > 0 && Object.keys(m.passedTests).length >= catalog.tests.length;
-                return '<tr style="cursor:pointer;" onclick="window.filterByModel(\'' + esc(k) + '\')">' +
-                    '<td><code>' + esc(k) + '</code></td>' +
-                    '<td>' + esc(m.provider) + '</td>' +
-                    '<td>' + m.runs.length + '</td>' +
-                    '<td>' + passRate + '</td>' +
-                    '<td>' + avg + '</td>' +
-                    '<td>' + (certified ? '<span class="badge badge-cert">Certified AGI</span>' : '<span class="badge badge-pending">Pending</span>') + '</td>' +
-                    '</tr>';
-            }).join('');
-            document.getElementById('leaderboard').innerHTML =
-                '<table class="bench-table"><thead><tr>' +
-                '<th>Model ID</th><th>Provider</th><th>Runs</th><th>Pass Rate</th><th>Avg Score</th><th>Certification</th>' +
-                '</tr></thead><tbody>' + rows + '</tbody></table>';
-        }
-
-        window.filterByModel = function (modelId) {
-            document.getElementById('search').value = modelId;
-            render();
-        };
-
         window.toggleRunDetails = function (idx) {
             expandedRows[idx] = !expandedRows[idx];
             render();
         };
 
+        function getSortIcon(col) {
+            if (currentSortCol !== col) {
+                return '<i class="fas fa-sort sort-icon"></i>';
+            }
+            return (currentSortDir === 'asc')
+                ? '<i class="fas fa-sort-up sort-icon active"></i>'
+                : '<i class="fas fa-sort-down sort-icon active"></i>';
+        }
+
         function renderRuns(filtered) {
             document.getElementById('runCount').textContent = '(' + filtered.length + ')';
             if (!filtered.length) {
-                document.getElementById('runs').innerHTML = '<p style="color: var(--text-muted);">No runs match the current filters.</p>';
+                document.getElementById('runs').innerHTML = '<p style="color: var(--text-muted); padding: 2rem 0; text-align:center;">No runs match the current filters.</p>';
                 return;
             }
             var rows = filtered.map(function (r, idx) {
@@ -290,18 +387,23 @@
                 var isExpanded = !!expandedRows[idx];
                 var chevron = '<i class="fas fa-chevron-right expand-icon ' + (isExpanded ? 'open' : '') + '"></i>';
 
+                var tDef = testDefOf(r.testCode);
+                var promptTooltip = esc(tDef ? (tDef.title + '\n\n' + tDef.rawPrompt) : r.testCode);
+
                 var mainRow = '<tr class="run-row" onclick="window.toggleRunDetails(' + idx + ')">' +
                     '<td style="text-align:center; width: 30px;">' + chevron + '</td>' +
                     '<td>' + esc((r.timestamp || '').substring(0, 10)) + '</td>' +
                     '<td><code>' + esc(modelOf(r)) + '</code>' + thinkBadge + '</td>' +
                     '<td>' + esc(providerOf(r)) + '</td>' +
-                    '<td>' + esc(r.testCode) + '<br><span style="color: var(--text-muted); font-size:0.8rem;">' + esc(titleOf(r.testCode)) + '</span></td>' +
+                    '<td title="' + promptTooltip + '" style="cursor:help;">' +
+                    '<code>' + esc(r.testCode) + '</code> <i class="fas fa-info-circle" style="color:#60a5fa; font-size:0.75rem;"></i>' +
+                    '<br><span style="color: var(--text-muted); font-size:0.8rem;">' + esc(titleOf(r.testCode)) + '</span></td>' +
                     '<td>' + (r.passed ? '<span class="badge badge-pass">Pass</span>' : '<span class="badge badge-fail">Fail</span>') + '</td>' +
                     '<td>' + (r.durationSeconds || 0) + 's</td>' +
                     '<td>' + (r.turns || 0) + '</td>' +
                     '<td><strong>' + fmt(r.totalTokens) + '</strong>' +
                     '<div class="token-sub">In: ' + fmt(r.promptTokens) + ' | Out: ' + fmt(r.candidatesTokens) + ' | Think: ' + fmt(r.thoughtsTokens) + '</div></td>' +
-                    '<td>' + scoreStr + '</td>' +
+                    '<td><strong>' + scoreStr + '</strong></td>' +
                     '<td>' + (judges || '<span style="color: var(--text-muted);">—</span>') + '</td>' +
                     '<td style="text-align:center;">' + vid + '</td>' +
                     '</tr>';
@@ -319,8 +421,29 @@
                     }).join('');
 
                     var obs = (r.observations && r.observations.trim())
-                        ? '<div class="obs-box"><strong>Observations & Errors:</strong>\n' + esc(r.observations) + '</div>'
+                        ? '<div class="obs-box"><strong>Observations & Feedback:</strong>\n' + esc(r.observations) + '</div>'
                         : '';
+
+                    var specHtml = '';
+                    if (tDef) {
+                        var tkList = '';
+                        if (tDef.toolkits && tDef.toolkits.length) {
+                            tkList = tDef.toolkits.map(function (tk) {
+                                var pKeys = Object.keys(tk.permissions || {});
+                                var pStr = pKeys.length ? ' (' + pKeys.map(function (k) { return '<code style="color:var(--barca-gold,#edbb00);">' + esc(k) + ': ' + esc(tk.permissions[k]) + '</code>'; }).join(', ') + ')' : '';
+                                return '<li style="margin-top:2px;"><code>' + esc(tk.toolkit) + '</code>' + pStr + '</li>';
+                            }).join('');
+                        } else {
+                            tkList = '<li><span style="color:#94a3b8;">Container Defaults (All Standard Toolkits)</span></li>';
+                        }
+
+                        specHtml = '<div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07); border-radius: 6px; padding: 12px; margin-top: 0.8rem;">' +
+                            '<div style="font-weight:700; color:var(--barca-gold, #edbb00); margin-bottom:6px;"><i class="fas fa-terminal"></i> Challenge Specification: ' + esc(tDef.testCode) + ' — ' + esc(tDef.title) + '</div>' +
+                            '<div style="font-size:0.82rem; margin-bottom:6px;"><strong>Enabled Toolkits &amp; Permissions:</strong><ul style="margin:4px 0 8px 18px; padding:0;">' + tkList + '</ul></div>' +
+                            '<div style="font-size:0.82rem;"><strong>Raw Prompt Delivered to Model:</strong>' +
+                            '<pre style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 4px; padding: 10px; font-size: 0.8rem; color: #e2e8f0; white-space: pre-wrap; font-family: monospace; margin-top:4px;">' + esc(tDef.rawPrompt) + '</pre></div>' +
+                            '</div>';
+                    }
 
                     detailRow = '<tr style="background: rgba(0,0,0,0.2);"><td colspan="12" style="padding: 0 1rem 1.2rem 1rem;">' +
                         '<div class="detail-card">' +
@@ -336,6 +459,7 @@
                         (r.sessionId ? '<div style="font-size:0.75rem; color:#94a3b8; margin-bottom:8px;">Session ID: <code>' + esc(r.sessionId) + '</code></div>' : '') +
                         (judgeDetails ? '<div style="margin-top: 0.8rem;"><h4>Judge Evaluations:</h4>' + judgeDetails + '</div>' : '') +
                         obs +
+                        specHtml +
                         videoPlayer +
                         '</div></td></tr>';
                 }
@@ -345,7 +469,18 @@
 
             document.getElementById('runs').innerHTML =
                 '<table class="bench-table"><thead><tr>' +
-                '<th></th><th>Date</th><th>Model</th><th>Provider</th><th>Test</th><th>Status</th><th>Duration</th><th>Turns</th><th>Tokens</th><th>Score</th><th>Judges</th><th>Video</th>' +
+                '<th style="width: 30px;"></th>' +
+                '<th class="sortable-th" onclick="window.sortByCol(\'timestamp\')">Date ' + getSortIcon('timestamp') + '</th>' +
+                '<th class="sortable-th" onclick="window.sortByCol(\'model\')">Model ' + getSortIcon('model') + '</th>' +
+                '<th class="sortable-th" onclick="window.sortByCol(\'provider\')">Provider ' + getSortIcon('provider') + '</th>' +
+                '<th class="sortable-th" onclick="window.sortByCol(\'test\')">Test ' + getSortIcon('test') + '</th>' +
+                '<th class="sortable-th" onclick="window.sortByCol(\'passed\')">Status ' + getSortIcon('passed') + '</th>' +
+                '<th class="sortable-th" onclick="window.sortByCol(\'duration\')">Duration ' + getSortIcon('duration') + '</th>' +
+                '<th class="sortable-th" onclick="window.sortByCol(\'turns\')">Turns ' + getSortIcon('turns') + '</th>' +
+                '<th class="sortable-th" onclick="window.sortByCol(\'tokens\')">Tokens ' + getSortIcon('tokens') + '</th>' +
+                '<th class="sortable-th" onclick="window.sortByCol(\'score\')">Score ' + getSortIcon('score') + '</th>' +
+                '<th>Judges</th>' +
+                '<th style="text-align:center;">Video</th>' +
                 '</tr></thead><tbody>' + rows + '</tbody></table>';
         }
 
@@ -381,8 +516,21 @@
             });
         }
 
-        ['search', 'testFilter', 'providerFilter', 'passedFilter', 'sortBy'].forEach(function (id) {
+        ['search', 'testFilter', 'providerFilter', 'passedFilter'].forEach(function (id) {
             document.getElementById(id).addEventListener('input', render);
+        });
+        document.getElementById('sortBy').addEventListener('change', function () {
+            var s = document.getElementById('sortBy').value;
+            if (s === 'newest') { currentSortCol = 'timestamp'; currentSortDir = 'desc'; }
+            else if (s === 'oldest') { currentSortCol = 'timestamp'; currentSortDir = 'asc'; }
+            else if (s === 'scoreDesc') { currentSortCol = 'score'; currentSortDir = 'desc'; }
+            else if (s === 'scoreAsc') { currentSortCol = 'score'; currentSortDir = 'asc'; }
+            else if (s === 'durationAsc') { currentSortCol = 'duration'; currentSortDir = 'asc'; }
+            else if (s === 'durationDesc') { currentSortCol = 'duration'; currentSortDir = 'desc'; }
+            else if (s === 'tokensAsc') { currentSortCol = 'tokens'; currentSortDir = 'asc'; }
+            else if (s === 'tokensDesc') { currentSortCol = 'tokens'; currentSortDir = 'desc'; }
+            else if (s === 'turnsAsc') { currentSortCol = 'turns'; currentSortDir = 'asc'; }
+            render();
         });
         document.getElementById('resetBtn').addEventListener('click', function () {
             document.getElementById('search').value = '';
@@ -390,6 +538,8 @@
             document.getElementById('providerFilter').value = '';
             document.getElementById('passedFilter').value = '';
             document.getElementById('sortBy').value = 'newest';
+            currentSortCol = 'timestamp';
+            currentSortDir = 'desc';
             render();
         });
 

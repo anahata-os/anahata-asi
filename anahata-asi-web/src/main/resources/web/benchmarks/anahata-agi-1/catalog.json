@@ -5,18 +5,78 @@
   "tests" : [ {
     "testCode" : "JAVA-JNA-1",
     "title" : "OS Hardware & System Values Dashboard",
-    "rawPrompt" : "Build a real-time, interactive native system telemetry dashboard using JNA (com.sun.jna.Library) to monitor live host system and hardware values.\n\nYour implementation will be evaluated on:\n1. Native JNA Depth: Richness of native C-library integration (e.g. binding native functions or C structs for sysinfo, memory usage via getrusage, load averages, kernel/OS specs, or available hardware sensors).\n2. Real-Time Interactivity & UI Thread Safety: Continuous live updates (e.g. 1-second refresh), strictly respecting the threading model of your chosen UI framework (e.g. Swing EDT via runInEdtAndWait/invokeLater or JavaFX Application Thread via Platform.runLater).\n3. Dashboard Polish & Presentation: Clean layout, metric cards, visual indicators, or live charts.\n4. Zero-Defect Resilience: Robust handling of missing hardware sensors or platform variations with zero crashes.\n\nWindow title MUST contain your Model ID. You have complete creative freedom to choose your UI framework (Swing, JavaFX, etc.), styling, and interface design."
+    "rawPrompt" : "Build a real-time, interactive native system telemetry dashboard using JNA (com.sun.jna.Library) to monitor live host system and hardware values.\n\nYour implementation will be evaluated on:\n1. Native JNA Depth: Richness of native C-library integration (e.g. binding native functions or C structs for sysinfo, memory usage via getrusage, load averages, kernel/OS specs, or available hardware sensors).\n2. Real-Time Interactivity & UI Thread Safety: Continuous live updates (e.g. 1-second refresh), strictly respecting the threading model of your chosen UI framework (e.g. Swing EDT via runInEdtAndWait/invokeLater or JavaFX Application Thread via Platform.runLater).\n3. Dashboard Polish & Presentation: Clean layout, metric cards, visual indicators, or live charts.\n4. Zero-Defect Resilience: Robust handling of missing hardware sensors or platform variations with zero crashes.\n\nWindow title MUST contain your Model ID. You have complete creative freedom to choose your UI framework (Swing, JavaFX, etc.), styling, and interface design.",
+    "toolkits" : [ {
+      "toolkit" : "uno.anahata.asi.toolkit.java.Java",
+      "permissions" : {
+        "compileAndExecute" : "APPROVE_ALWAYS"
+      }
+    } ]
   }, {
     "testCode" : "JAVA-ARKANOID-1",
     "title" : "Retro Arcade Game Execution",
-    "rawPrompt" : "Build a fully playable, retro Arkanoid brick-breaker game in Swing with smooth 60 FPS animation loop. Window title MUST contain your Model ID."
+    "rawPrompt" : "Build a fully playable, retro Arkanoid brick-breaker game in Swing with smooth 60 FPS animation loop. Window title MUST contain your Model ID.",
+    "toolkits" : [ {
+      "toolkit" : "uno.anahata.asi.toolkit.java.Java",
+      "permissions" : {
+        "compileAndExecute" : "APPROVE_ALWAYS"
+      }
+    }, {
+      "toolkit" : "uno.anahata.asi.toolkit.Host",
+      "permissions" : { }
+    }, {
+      "toolkit" : "uno.anahata.asi.toolkit.Session",
+      "permissions" : { }
+    }, {
+      "toolkit" : "uno.anahata.asi.toolkit.History",
+      "permissions" : { }
+    }, {
+      "toolkit" : "uno.anahata.asi.toolkit.resources.Resources",
+      "permissions" : { }
+    } ]
   }, {
     "testCode" : "JAVA-SNAKE-GAME-1",
     "title" : "Snake Game",
-    "rawPrompt" : "Make a snake game using the java tool. Window title MUST contain your Model ID."
+    "rawPrompt" : "Make a snake game using the java tool. Window title MUST contain your Model ID.",
+    "toolkits" : [ {
+      "toolkit" : "uno.anahata.asi.toolkit.java.Java",
+      "permissions" : {
+        "compileAndExecute" : "APPROVE_ALWAYS"
+      }
+    }, {
+      "toolkit" : "uno.anahata.asi.toolkit.Host",
+      "permissions" : { }
+    }, {
+      "toolkit" : "uno.anahata.asi.toolkit.Session",
+      "permissions" : { }
+    }, {
+      "toolkit" : "uno.anahata.asi.toolkit.History",
+      "permissions" : { }
+    }, {
+      "toolkit" : "uno.anahata.asi.toolkit.resources.Resources",
+      "permissions" : { }
+    } ]
   }, {
     "testCode" : "JAVA-NOU-CAMP-NOU-1",
     "title" : "Nou Camp Nou 3D Model",
-    "rawPrompt" : "Make a 3D model of what the Nou Camp Nou will look like when completed"
+    "rawPrompt" : "Make a 3D model of what the Nou Camp Nou will look like when completed",
+    "toolkits" : [ {
+      "toolkit" : "uno.anahata.asi.toolkit.java.Java",
+      "permissions" : {
+        "compileAndExecute" : "APPROVE_ALWAYS"
+      }
+    }, {
+      "toolkit" : "uno.anahata.asi.toolkit.Host",
+      "permissions" : { }
+    }, {
+      "toolkit" : "uno.anahata.asi.toolkit.Session",
+      "permissions" : { }
+    }, {
+      "toolkit" : "uno.anahata.asi.toolkit.History",
+      "permissions" : { }
+    }, {
+      "toolkit" : "uno.anahata.asi.toolkit.resources.Resources",
+      "permissions" : { }
+    } ]
   } ]
 }
