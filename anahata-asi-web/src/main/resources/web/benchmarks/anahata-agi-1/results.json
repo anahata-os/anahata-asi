@@ -23,4 +23,29 @@
   "screenshotPath" : "/home/pablo/.anahata/asi/recordings/JAVA-JNA-1_gemini-3.8-flash_20260907_202539_thumb.png",
   "sessionId" : "031c947d-7108-429f-9026-ad48096aed99",
   "observations" : ""
+}, {
+  "participant" : {
+    "providerUuid" : "GeminiGCExpress",
+    "modelId" : "gemini-3.7-flash",
+    "thinkingLevel" : "HIGH"
+  },
+  "testCode" : "JAVA-JNA-1",
+  "asiContainer" : "NetBeansAsiContainer",
+  "timestamp" : "2026-09-07T19:02:36.971001245Z",
+  "durationSeconds" : 386.45,
+  "turns" : 2,
+  "promptTokens" : 75563,
+  "candidatesTokens" : 20655,
+  "thoughtsTokens" : 21211,
+  "totalTokens" : 117429,
+  "passed" : true,
+  "judgeScores" : [ {
+    "name" : "Priyanka",
+    "score" : 5.5,
+    "comments" : "nice, it even seems more efficient than 3.8 flash in terms of tokens used, also copying the values to the clipboard was cute"
+  } ],
+  "videoUrl" : "https://youtu.be/zjUZXxQql5s",
+  "screenshotPath" : "/home/pablo/.anahata/asi/recordings/JAVA-JNA-1_gemini-3.7-flash_20260907_205610_thumb.png",
+  "sessionId" : "b38d5c3a-8098-4172-897f-3f0185e094a0",
+  "observations" : ""
 } ]
