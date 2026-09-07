@@ -5,22 +5,26 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
+import com.intellij.ui.content.ContentManagerEvent;
+import com.intellij.ui.content.ContentManagerListener;
 import com.intellij.util.ui.JBUI;
 import org.jetbrains.annotations.NotNull;
 import uno.anahata.asi.swing.AsiCardsContainerPanel;
+import uno.anahata.asi.swing.agi.AgiPanel;
 
 import com.intellij.ide.plugins.DynamicPlugins;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
-import com.intellij.ide.plugins.IdeaPluginDescriptorImpl;
+import com.intellij.ide.plugins.PluginMainDescriptor;
 import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.openapi.extensions.PluginId;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.intellij.ui.AnahataNotifications;
 
@@ -30,6 +34,7 @@ import java.awt.BorderLayout;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.stream.Stream;
 import lombok.SneakyThrows;
 
@@ -69,11 +74,16 @@ public class AnahataToolWindowFactory implements ToolWindowFactory {
     @Override
     @SneakyThrows
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        IntellijAsiContainer.initEnvironment();
-        IntellijAsiContainer asiContainer = new IntellijAsiContainer(toolWindow);
-        // Deregister the container from the live registry when the project is disposed,
-        // so closed projects no longer surface stale sessions to the Project-view UI.
-        Disposer.register(project, () -> IntellijAsiContainer.removeInstance(asiContainer));
+        IntellijAsiContainer asiContainer = IntellijAsiContainer.getInstance();
+
+        toolWindow.getContentManager().addContentManagerListener(new ContentManagerListener() {
+            @Override
+            public void contentRemoved(@NotNull ContentManagerEvent event) {
+                if (event.getContent().getComponent() instanceof AgiPanel panel) {
+                    asiContainer.close(panel.getAgi());
+                }
+            }
+        });
 
         JPanel mainView = new JPanel(new BorderLayout());
 
@@ -161,33 +171,68 @@ public class AnahataToolWindowFactory implements ToolWindowFactory {
         try {
             PluginId pluginId = PluginId.getId("uno.anahata.asi.intellij");
             IdeaPluginDescriptor descriptor = PluginManagerCore.getPlugin(pluginId);
-            if (!(descriptor instanceof IdeaPluginDescriptorImpl descriptorImpl)) {
+            if (!(descriptor instanceof PluginMainDescriptor descriptorImpl)) {
                 AnahataNotifications.error(project, "Cannot reload: Anahata plugin descriptor not found.");
                 return;
             }
 
-            // 1. Sync the freshly built JAR from target/ into the installed plugin's lib/ directory if available
+            // 1. Sync updated JARs or assembly ZIP from target/ into the installed plugin directory
             Path pluginPath = descriptor.getPluginPath();
             if (project != null && project.getBasePath() != null && pluginPath != null) {
-                Path targetDir = Path.of(project.getBasePath()).resolve("anahata-asi-intellij").resolve("target");
-                if (Files.isDirectory(targetDir)) {
+                Path projectRoot = Path.of(project.getBasePath());
+                Path targetDir = projectRoot.resolve("anahata-asi-intellij").resolve("target");
+                Path installedLib = pluginPath.resolve("lib");
+
+                if (Files.isDirectory(targetDir) && Files.isDirectory(installedLib)) {
+                    // Option A: If the full assembly ZIP was built, unpack all runtime JARs from it
+                    Path assemblyZip = null;
                     try (Stream<Path> stream = Files.list(targetDir)) {
-                        Path candidateJar = stream
-                                .filter(p -> p.getFileName().toString().startsWith("anahata-asi-intellij-")
-                                        && p.toString().endsWith(".jar")
-                                        && !p.toString().endsWith("-sources.jar"))
+                        assemblyZip = stream
+                                .filter(p -> p.getFileName().toString().endsWith(".zip") && !p.getFileName().toString().startsWith("."))
                                 .findFirst()
                                 .orElse(null);
-                        if (candidateJar != null) {
-                            Path installedLib = pluginPath.resolve("lib");
-                            if (Files.isDirectory(installedLib)) {
-                                try (Stream<Path> libStream = Files.list(installedLib)) {
-                                    Path targetDest = libStream
-                                            .filter(p -> p.getFileName().toString().startsWith("anahata-asi-intellij-") && p.toString().endsWith(".jar"))
-                                            .findFirst()
-                                            .orElse(installedLib.resolve(candidateJar.getFileName()));
-                                    Files.copy(candidateJar, targetDest, StandardCopyOption.REPLACE_EXISTING);
-                                    log.info("Synced updated jar from {} to {}", candidateJar, targetDest);
+                    }
+
+                    if (assemblyZip != null) {
+                        try (ZipFile zip = new ZipFile(assemblyZip.toFile())) {
+                            var entries = zip.entries();
+                            while (entries.hasMoreElements()) {
+                                ZipEntry entry = entries.nextElement();
+                                String entryName = entry.getName();
+                                if (!entry.isDirectory() && entryName.contains("/lib/") && entryName.endsWith(".jar")) {
+                                    String fileName = Path.of(entryName).getFileName().toString();
+                                    Path dest = installedLib.resolve(fileName);
+                                    try (var is = zip.getInputStream(entry)) {
+                                        Files.copy(is, dest, StandardCopyOption.REPLACE_EXISTING);
+                                    }
+                                }
+                            }
+                            log.info("Synced full plugin assembly ZIP from {} to {}", assemblyZip, installedLib);
+                        }
+                    } else {
+                        // Option B: Sync all anahata-asi-*.jar from open module target directories (core, swing, intellij)
+                        List<Path> candidateModules = List.of(
+                                projectRoot.resolve("anahata-asi-intellij"),
+                                projectRoot.resolve("anahata-asi-core"),
+                                projectRoot.resolve("anahata-asi-swing")
+                        );
+                        for (Path mod : candidateModules) {
+                            Path modTarget = mod.resolve("target");
+                            if (Files.isDirectory(modTarget)) {
+                                try (Stream<Path> stream = Files.list(modTarget)) {
+                                    stream.filter(p -> p.getFileName().toString().startsWith("anahata-asi-")
+                                                    && p.toString().endsWith(".jar")
+                                                    && !p.toString().endsWith("-sources.jar")
+                                                    && !p.toString().endsWith("-javadoc.jar"))
+                                            .forEach(candidateJar -> {
+                                                try {
+                                                    Path dest = installedLib.resolve(candidateJar.getFileName());
+                                                    Files.copy(candidateJar, dest, StandardCopyOption.REPLACE_EXISTING);
+                                                    log.info("Synced updated jar from {} to {}", candidateJar, dest);
+                                                } catch (Exception ex) {
+                                                    log.warn("Failed to copy jar {}: {}", candidateJar, ex.getMessage());
+                                                }
+                                            });
                                 }
                             }
                         }
