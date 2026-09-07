@@ -24,6 +24,8 @@
         <!-- Surfaces anahata.md as a branded node at the top of the Project view. -->
         <treeStructureProvider
                 implementation="uno.anahata.asi.intellij.tools.ide.nodes.AnahataTreeStructureProvider"/>
+        <!-- Application-level singleton ASI container. -->
+        <applicationService serviceImplementation="uno.anahata.asi.intellij.IntellijAsiContainer"/>
         <!-- Persisted plugin defaults + native Settings page under Tools. -->
         <applicationService serviceImplementation="uno.anahata.asi.intellij.settings.AnahataSettings"/>
         <applicationConfigurable parentId="tools" id="anahata.asi.settings" displayName="Anahata ASI"
