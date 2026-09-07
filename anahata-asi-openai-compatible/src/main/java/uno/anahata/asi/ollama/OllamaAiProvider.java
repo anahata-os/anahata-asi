@@ -95,11 +95,8 @@ public class OllamaAiProvider extends OpenAiChatCompletionsProvider {
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
      * Automatically normalizes user-entered URLs by stripping trailing slashes or native {@code /api/chat} endpoints
      * and ensuring it terminates with {@code /v1} for OpenAI chat completion compliance.
-     * </p>
      * 
      * @param raw the raw URL entered by the user
      */

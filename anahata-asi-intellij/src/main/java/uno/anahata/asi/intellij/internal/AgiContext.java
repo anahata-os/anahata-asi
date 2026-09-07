@@ -19,7 +19,7 @@ import java.util.Optional;
  * This is the IntelliJ counterpart of the NetBeans {@code FilesContextActionLogic}. It adds
  * and removes files (recursing into directories) from a session's context, and reports
  * membership so the decorator can badge in-context files. All session lookups go through the
- * live {@link IntellijAsiContainer#getInstances()} registry.
+ * live {@link IntellijAsiContainer#getInstance()} registry.
  * </p>
  *
  * @author anahata

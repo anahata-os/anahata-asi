@@ -14,7 +14,7 @@ import uno.anahata.asi.openai.compatible.OpenAiCompatibleReasoningStyle;
  * A specialized model implementation for Ollama that parses parameter sizes,
  * quantization formats, true context window limits, and capability tags from Ollama's native API.
  * <p>
- * Captures 100% of the raw JSON metadata in {@link #getRawDescription()} without deceptive fallback defaults.
+ * Captures 100% of the raw JSON metadata in {@link #rawDescription} without deceptive fallback defaults.
  * Automatically injects the model's reported context length via {@code options.num_ctx} so that Ollama
  * does not truncate requests to its default 2,048 token window.
  * </p>
