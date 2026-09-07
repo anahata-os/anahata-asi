@@ -116,6 +116,9 @@ public class IntellijJava extends SwingJava {
      * Appends IntelliJ-specific guidance describing classpath architecture, JDK selection,
      * and when to prefer {@code compileAndExecuteInProject} over the default {@code compileAndExecute}.
      * </p>
+     *
+     * @return the list of system instruction blocks.
+     * @throws Exception if an error occurs while assembling instructions.
      */
     @Override
     public List<String> getSystemInstructions() throws Exception {
@@ -133,6 +136,9 @@ public class IntellijJava extends SwingJava {
      * <p>
      * Appends open projects' configured SDKs to the RAG message.
      * </p>
+     *
+     * @param ragMessage the incoming RAG message to populate.
+     * @throws Exception if an error occurs during message population.
      */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
@@ -157,6 +163,8 @@ public class IntellijJava extends SwingJava {
      * Augments standard system JDK discovery with IntelliJ's registered SDKs from
      * {@link ProjectJdkTable}, open projects' configured SDKs, and IntelliJ's suggested home paths.
      * </p>
+     *
+     * @return the list of discovered {@link KnownJdk} instances.
      */
     @Override
     public List<KnownJdk> getKnownJdks() {
