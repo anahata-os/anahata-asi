@@ -28,7 +28,7 @@ import uno.anahata.asi.swing.agi.SwingAgiConfig;
 public class SwingJava extends Java {
 
     /**
-     * Constructs a new instance of the toolkit and adds SwingAgiTool to the list of parentFirstClassess.
+     * Constructs a new instance of the toolkit and adds SwingAgiTool to the list of parentFirstClasses.
      */
     public SwingJava() {
         registerParentFirstClass(SwingAgiConfig.class);
@@ -44,9 +44,12 @@ public class SwingJava extends Java {
      * enabling the model to use {@code runInEdt} and {@code runInEdtAndWait} 
      * for safe UI interactions.
      * </p> 
+     *
+     * @return the list of system instruction blocks.
+     * @throws Exception if an error occurs while assembling instructions.
      */
     @Override
-        public List<String> getSystemInstructions() throws Exception {
+    public List<String> getSystemInstructions() throws Exception {
         List<String> instructions = new ArrayList<>(super.getSystemInstructions());
 
                 StringBuilder sb = new StringBuilder();

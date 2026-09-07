@@ -25,6 +25,9 @@ import javax.tools.SimpleJavaFileObject;
  */
 public class InMemoryJavaFileManager extends ForwardingJavaFileManager<JavaFileManager> {
 
+    /**
+     * Map of class binary names to their intercepted in-memory byte output streams.
+     */
     private final Map<String, ByteArrayOutputStream> compiledStreams = new HashMap<>();
 
     /**
@@ -42,6 +45,13 @@ public class InMemoryJavaFileManager extends ForwardingJavaFileManager<JavaFileM
      * Intercepts output of class files to capture their bytes in memory rather than
      * writing them to disk.
      * </p>
+     *
+     * @param location the package location.
+     * @param className the name of the new class.
+     * @param kind the kind of file, expected to be {@link JavaFileObject.Kind#CLASS}.
+     * @param sibling a file object used as a hint for placement; may be {@code null}.
+     * @return a file object for output.
+     * @throws IOException if an I/O error occurred.
      */
     @Override
     public JavaFileObject getJavaFileForOutput(

@@ -16,6 +16,8 @@ import org.apache.commons.lang3.concurrent.BasicThreadFactory;
  * <p>Infrastructure Note: These pools serve both the global {@link AbstractAsiContainer} 
  * (for management tasks) and individual {@link uno.anahata.asi.agi.Agi} 
  * sessions (for lifecycle and tool execution).</p>
+ *
+ * @author anahata
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class AsiExecutors {
