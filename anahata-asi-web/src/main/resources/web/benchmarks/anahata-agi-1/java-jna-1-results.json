@@ -6,7 +6,7 @@
   },
   "testCode" : "JAVA-JNA-1",
   "asiContainer" : "NetBeansAsiContainer",
-  "timestamp" : "2026-09-07T18:35:20.074140672Z",
+  "timestamp" : "2026-09-07T18:35:20.074140Z",
   "durationSeconds" : 580.18,
   "turns" : 2,
   "promptTokens" : 95394,
@@ -22,7 +22,7 @@
   "videoUrl" : "https://youtu.be/KH_LqQGkeF0",
   "screenshotPath" : "/home/pablo/.anahata/asi/recordings/JAVA-JNA-1_gemini-3.8-flash_20260907_202539_thumb.png",
   "sessionId" : "031c947d-7108-429f-9026-ad48096aed99",
-  "observations" : ""
+  "observations" : "Deep native telemetry with microsecond-level C-call latency profiling table, one-click formatted ASCII report export to clipboard, and per-core CPU frequency scaling/governor telemetry. However, UI card container was clamped to 160px causing bottom detail labels to clip, and experienced a 42k-token thinking loop."
 }, {
   "participant" : {
     "providerUuid" : "GeminiGCExpress",
@@ -48,4 +48,25 @@
   "screenshotPath" : "/home/pablo/.anahata/asi/recordings/JAVA-JNA-1_gemini-3.7-flash_20260907_205610_thumb.png",
   "sessionId" : "b38d5c3a-8098-4172-897f-3f0185e094a0",
   "observations" : ""
+}, {
+  "participant" : {
+    "providerUuid" : "GeminiGCExpress",
+    "modelId" : "gemini-3.5-flash",
+    "thinkingLevel" : "HIGH"
+  },
+  "testCode" : "JAVA-JNA-1",
+  "asiContainer" : "NetBeansAsiContainer",
+  "timestamp" : "2026-09-07T19:59:23.420681051Z",
+  "durationSeconds" : 282.53,
+  "turns" : 3,
+  "promptTokens" : 76620,
+  "candidatesTokens" : 14759,
+  "thoughtsTokens" : 12517,
+  "totalTokens" : 103896,
+  "passed" : false,
+  "judgeScores" : [ ],
+  "videoUrl" : null,
+  "screenshotPath" : "/home/pablo/.anahata/asi/recordings/JAVA-JNA-1_gemini-3.5-flash_20260907_215440_thumb.png",
+  "sessionId" : "d156187c-4cd9-491e-b77e-b69fb0e74601",
+  "observations" : "Tool error in NbJava.compileAndExecute: java.lang.RuntimeException: Compilation error:\nCompiler: com.sun.tools.javac.api.JavacTool@416f9f84\nTask:com.sun.tools.javac.api.JavacTaskImpl@11e28621\nDiagnostics: \n/Anahata.java:243: error: cannot find symbol\n            g2.fillRoundRectangle(0, 0, getWidth(), getHeight(), 15, 15);\n              ^\n  symbol:   method fillRoundRectangle(int,int,int,int,int,int)\n  location: variable g2 of type java.awt.Graphics2D\n/Anahata.java:245: error: cannot find symbol\n            g2.drawRoundRectangle(0, 0, getWidth() - 1, getHeight() - 1, 15, 15);\n              ^\n  symbol:   method drawRoundRectangle(int,int,int,int,int,int)\n  location: variable g2 of type java.awt.Graphics2D\n/Anahata.java:278: error: cannot find symbol\n            g2.fillRoundRectangle(0, 0, w, h, 15, 15);\n              ^\n  symbol:   method fillRoundRectangle(int,int,int,int,int,int)\n  location: variable g2 of type java.awt.Graphics2D\n/Anahata.java:280: error: cannot find symbol\n            g2.drawRoundRectangle(0, 0, w - 1, h - 1, 15, 15);\n              ^\n  symbol:   method drawRoundRectangle(int,int,int,int,int,int)\n  location: variable g2 of type java.awt.Graphics2D\n/Anahata.java:418: error: cannot find symbol\n                        g2.fillRoundRectangle(0, 0, getWidth(), getHeight(), 10, 10);\n                          ^\n  symbol:   method fillRoundRectangle(int,int,int,int,int,int)\n  location: variable g2 of type java.awt.Graphics2D\n/Anahata.java:420: error: cannot find symbol\n                        g2.drawRoundRectangle(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);\n                          ^\n  symbol:   method drawRoundRectangle(int,int,int,int,int,int)\n  location: variable g2 of type java.awt.Graphics2D\n\n\tat uno.anahata.asi.toolkit.java.Java.compileInMemory(Java.java:888)\n\tat uno.anahata.asi.toolkit.java.Java.compile(Java.java:773)\n\tat uno.anahata.asi.toolkit.java.Java.compileAndExecute(Java.java:1092)\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:565)\n\tat uno.anahata.asi.agi.tool.spi.java.JavaMethodToolResponse.execute(JavaMethodToolResponse.java:125)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:186)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:197)\n\tat java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:214)\n\tat java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1724)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:570)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:560)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:153)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:176)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:265)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:632)\n\tat uno.anahata.asi.agi.message.AbstractModelMessage.executeAllPending(AbstractModelMessage.java:351)\n\tat uno.anahata.asi.agi.Agi.chooseCandidate(Agi.java:710)\n\tat uno.anahata.asi.agi.Agi.handleTurnResult(Agi.java:677)\n\tat uno.anahata.asi.agi.Agi.performSingleTurn(Agi.java:546)\n\tat uno.anahata.asi.agi.Agi.executeTurnLoop(Agi.java:496)\n\tat uno.anahata.asi.agi.Agi.sendMessage(Agi.java:433)\n\tat uno.anahata.asi.yam.tools.benchmarks.Benchmarks.executeCandidateTurn(Benchmarks.java:555)\n\tat uno.anahata.asi.yam.tools.benchmarks.Benchmarks.lambda$executeBenchmark$2(Benchmarks.java:457)\n\tat java.base/java.lang.Thread.run(Thread.java:1516)"
 } ]
