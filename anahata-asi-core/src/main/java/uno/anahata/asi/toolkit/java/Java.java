@@ -1,16 +1,16 @@
 package uno.anahata.asi.toolkit.java;
 
 import uno.anahata.asi.toolkit.java.classpath.VeryPrettyClassPathPrinter;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -19,17 +19,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 import javax.swing.text.html.ImageView;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
-import javax.tools.FileObject;
-import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaCompiler;
-import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
@@ -39,7 +35,7 @@ import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.agi.context.ContextPosition;
-import uno.anahata.asi.internal.TextUtils;
+import uno.anahata.asi.internal.SystemPropertiesUtils;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.resource.RefreshPolicy;
 import uno.anahata.asi.agi.resource.Resource;
@@ -251,7 +247,7 @@ public class Java extends AnahataToolkit {
         sb.append("\n");
         sb.append("\n");
         sb.append("**JVM System Properties**:\n");
-        sb.append(getSystemProperties());
+        sb.append(SystemPropertiesUtils.getSystemProperties());
 
         return Collections.singletonList(sb.toString());
     }
@@ -361,6 +357,33 @@ public class Java extends AnahataToolkit {
                 + "\nParent-First Infrastructure Classes (loaded by host loader to preserve ThreadLocal & context identity): " + getParentFirstClassess()
                 + "\nDefault Compiler and ClassLoader Classpath (abbreviated):\n" + getPrettyPrintedDefaultClasspath();
         ragMessage.addTextPart(ragText);
+
+        JavaCompiler compiler = getDefaultJavaCompiler();
+        StringBuilder jdksInfo = new StringBuilder("\n### Available Java Compilers & JDKs\n");
+        jdksInfo.append("- **In-Memory JavaCompiler**: ")
+                .append(compiler != null ? "Available (" + compiler.getClass().getSimpleName() + ")" : "Not Available (Running on JRE/JBR)")
+                .append("\n");
+        List<KnownJdk> knownJdks = getKnownJdks();
+        if (!knownJdks.isEmpty()) {
+            jdksInfo.append("- **Known JDKs**:\n");
+            for (KnownJdk jdk : knownJdks) {
+                jdksInfo.append("  * `").append(jdk.name()).append("`");
+                if (jdk.version() != null) {
+                    jdksInfo.append(" (v").append(jdk.version()).append(")");
+                }
+                if (jdk.homePath() != null) {
+                    jdksInfo.append(": ").append(jdk.homePath());
+                }
+                if (jdk.javacPath() != null) {
+                    jdksInfo.append(" [javac: ").append(jdk.javacPath()).append("]");
+                }
+                if (jdk.preferred()) {
+                    jdksInfo.append(" *(Default)*");
+                }
+                jdksInfo.append("\n");
+            }
+        }
+        ragMessage.addTextPart(jdksInfo.toString());
     }
 
     /**
@@ -405,7 +428,7 @@ public class Java extends AnahataToolkit {
      * @param sb The StringBuilder to append to.
      * @param clazz The class to inspect.
      */
-    protected void appendMethods(StringBuilder sb, Class<?> clazz) {
+    protected static void appendMethods(StringBuilder sb, Class<?> clazz) {
 
         for (Method m : clazz.getMethods()) {
             if (!m.getDeclaringClass().equals(Object.class)) {
@@ -430,32 +453,325 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Compiles Java source code into a Class object using the system's Java
-     * compiler.
-     *
-     * @param sourceCode The Java source code to compile.
-     * @param className The fully qualified name of the class.
-     * @param extraClassPath Additional classpath entries to include.
-     * @param compilerOptions Additional options for the Java compiler.
-     * @return The compiled Class object.
-     * @throws ClassNotFoundException if the class cannot be found after
-     * compilation.
-     * @throws NoSuchMethodException if a required method is missing.
-     * @throws IllegalAccessException if access to a member is denied.
-     * @throws InvocationTargetException if a method invocation fails.
+     * Specialized child-first, hot-reloading {@link URLClassLoader} used for executing dynamic
+     * scripts compiled in memory or via external javac.
      */
-    public Class compile(
-            @AgiToolParam(value = "The source code", rendererId = "java") String sourceCode,
-            @AgiToolParam("The class name") String className,
-            @AgiToolParam(value = "Additional classpath entries", required = false) String extraClassPath,
-            @AgiToolParam(value = "Additional compiler options", required = false) String[] compilerOptions,
+    public class AnahataURLClassLoader extends URLClassLoader {
+
+        private final Map<String, byte[]> compiledClasses;
+
+        /**
+         * Constructs a new AnahataURLClassLoader.
+         *
+         * @param urls            the child-first classpath URLs.
+         * @param compiledClasses in-memory bytecode map (class name -> bytes).
+         * @param parent          the parent classloader (defaults to {@code Java.this.getClass().getClassLoader()} if null).
+         */
+        public AnahataURLClassLoader(List<URL> urls, Map<String, byte[]> compiledClasses, ClassLoader parent) {
+            super(urls.toArray(new URL[0]), parent != null ? parent : Java.this.getClass().getClassLoader());
+            this.compiledClasses = compiledClasses != null ? compiledClasses : Collections.emptyMap();
+        }
+
+        @Override
+        protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+            synchronized (getClassLoadingLock(name)) {
+                // 1. Check if class is already loaded by this loader
+                Class<?> c = findLoadedClass(name);
+                if (c == null) {
+                    // 2. PARENT-FIRST for critical infrastructure:
+                    // These classes MUST maintain a single identity across all loaders
+                    // to preserve ThreadLocals and static context anchors.
+                    if (parentFirstClassess.contains(name)) {
+                        ToolContext ctx = getToolContext();
+                        if (ctx != null) {
+                            ctx.log("Delegating infrastructure class to parent: " + name);
+                        }
+                        return super.loadClass(name, resolve);
+                    }
+
+                    // 3. Check for our in-memory compiled class first (the "hot-reload" part for Anahata.java)
+                    byte[] bytes = compiledClasses.get(name);
+                    if (bytes != null) {
+                        log.info("Hot-reloading in-memory class: {}", name);
+                        c = defineClass(name, bytes, 0, bytes.length);
+                    } else {
+                        try {
+                            // 4. CHILD-FIRST: Try to find the class in our own URLs (e.g., target/classes)
+                            c = findClass(name);
+                            log.info("Loaded class from default classpath (Child-First): {}", name);
+                        } catch (ClassNotFoundException e) {
+                            // 5. FALLBACK: Ask the toolkit if it can find the bytes elsewhere (e.g. MR-JARs)
+                            byte[] fallbackBytes = findClassFallbackBytes(name);
+                            if (fallbackBytes != null) {
+                                ToolContext ctx = getToolContext();
+                                if (ctx != null) {
+                                    ctx.log("Loaded class from Fallback Bridge: " + name);
+                                }
+                                c = defineClass(name, fallbackBytes, 0, fallbackBytes.length);
+                            } else {
+                                // 6. PARENT-LAST: If not found, delegate to the parent classloader.
+                                try {
+                                    c = super.loadClass(name, resolve);
+                                } catch (ClassNotFoundException parentEx) {
+                                    // 7. SIBLING / EXTRA CLASSLOADERS: (e.g., NetBeans JavaFX module)
+                                    for (ClassLoader extraLoader : getExtraClassLoaders()) {
+                                        try {
+                                            c = extraLoader.loadClass(name);
+                                            break;
+                                        } catch (ClassNotFoundException ignored) {
+                                        }
+                                    }
+                                    if (c == null) {
+                                        throw parentEx;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (resolve) {
+                    resolveClass(c);
+                }
+                return c;
+            }
+        }
+    }
+
+    /**
+     * Factory method to create an instance of {@link AnahataURLClassLoader}.
+     *
+     * @param extraUrls         extra URLs to search child-first.
+     * @param compiledClasses   in-memory compiled bytecode map.
+     * @param parentClassLoader parent classloader (defaults to {@code getClass().getClassLoader()} if null).
+     * @return a new {@link AnahataURLClassLoader}.
+     */
+    protected AnahataURLClassLoader createReloadingClassLoader(
+            List<URL> extraUrls,
+            Map<String, byte[]> compiledClasses,
+            ClassLoader parentClassLoader) {
+        return new AnahataURLClassLoader(extraUrls, compiledClasses, parentClassLoader != null ? parentClassLoader : getClass().getClassLoader());
+    }
+
+    /**
+     * Discovers all known JDK installations on the host environment.
+     * <p>
+     * Scans:
+     * 1. The currently running JVM (via {@code System.getProperty("java.home")}).
+     * 2. The {@code JAVA_HOME} environment variable.
+     * 3. Standard platform JDK directories (/usr/lib/jvm, /Library/Java/JavaVirtualMachines, C:\Program Files\Java, etc.).
+     * 4. The {@code javac} executable available on the system {@code PATH}.
+     * </p>
+     * <p>
+     * Subclasses (such as {@code NbJava} and {@code IntellijJava}) override this method to add
+     * IDE-registered platforms and project SDKs.
+     * </p>
+     *
+     * @return a list of discovered {@link KnownJdk} instances.
+     */
+    public List<KnownJdk> getKnownJdks() {
+        List<KnownJdk> result = new ArrayList<>();
+        Set<Path> seenJavacPaths = new HashSet<>();
+
+        // 1. Current running JVM
+        try {
+            String javaHomeProp = System.getProperty("java.home");
+            if (javaHomeProp != null) {
+                Path home = Path.of(javaHomeProp);
+                Path javac = findJavacInJdkHome(home);
+                if (javac != null && seenJavacPaths.add(javac.toAbsolutePath().normalize())) {
+                    result.add(new KnownJdk("Current JVM (" + System.getProperty("java.version") + ")", home, javac, System.getProperty("java.version"), true));
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Error checking java.home for javac", e);
+        }
+
+        // 2. JAVA_HOME environment variable
+        try {
+            String envJavaHome = System.getenv("JAVA_HOME");
+            if (envJavaHome != null && !envJavaHome.isBlank()) {
+                Path home = Path.of(envJavaHome.trim());
+                Path javac = findJavacInJdkHome(home);
+                if (javac != null && seenJavacPaths.add(javac.toAbsolutePath().normalize())) {
+                    result.add(new KnownJdk("JAVA_HOME (" + home.getFileName() + ")", home, javac, null, false));
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Error checking JAVA_HOME for javac", e);
+        }
+
+        // 3. Standard OS directories
+        List<Path> standardRoots = List.of(
+                Path.of("/usr/lib/jvm"),
+                Path.of("/Library/Java/JavaVirtualMachines"),
+                Path.of("C:\\Program Files\\Java"),
+                Path.of("C:\\Program Files\\Eclipse Adoptium"),
+                Path.of("C:\\Program Files\\Amazon Corretto")
+        );
+        for (Path root : standardRoots) {
+            if (Files.exists(root) && Files.isDirectory(root)) {
+                try (Stream<Path> stream = Files.list(root)) {
+                    for (Path candidate : stream.toList()) {
+                        Path javac = findJavacInJdkHome(candidate);
+                        if (javac != null && seenJavacPaths.add(javac.toAbsolutePath().normalize())) {
+                            result.add(new KnownJdk(candidate.getFileName().toString(), candidate, javac, null, false));
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+        }
+
+        // 4. Javac on system PATH
+        try {
+            String pathEnv = System.getenv("PATH");
+            if (pathEnv != null) {
+                for (String p : pathEnv.split(File.pathSeparator)) {
+                    if (!p.isBlank()) {
+                        Path dir = Path.of(p.trim());
+                        Path javac = dir.resolve(org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS ? "javac.exe" : "javac");
+                        if (Files.isExecutable(javac) && seenJavacPaths.add(javac.toAbsolutePath().normalize())) {
+                            result.add(new KnownJdk("PATH (" + javac.toAbsolutePath() + ")", dir.getParent(), javac, null, false));
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+
+        return result;
+    }
+
+    /**
+     * Helper to find a javac executable within a candidate JDK home directory.
+     *
+     * @param home candidate JDK home path.
+     * @return path to javac binary if found and executable, or null.
+     */
+    public static Path findJavacInJdkHome(Path home) {
+        if (home == null || !Files.exists(home)) {
+            return null;
+        }
+        Path direct = home.resolve("bin").resolve(org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS ? "javac.exe" : "javac");
+        if (Files.isExecutable(direct)) {
+            return direct;
+        }
+        Path macHome = home.resolve("Contents").resolve("Home").resolve("bin").resolve("javac");
+        if (Files.isExecutable(macHome)) {
+            return macHome;
+        }
+        return null;
+    }
+
+    /**
+     * Resolves an explicit JDK identifier, name, or path to a javac executable path.
+     *
+     * @param jdkNameOrPath optional name, ID, directory, or direct javac executable path.
+     * @return the resolved Path to javac, or null if null/empty string provided.
+     * @throws AgiToolException if an explicit identifier or path was specified but could not be found.
+     */
+    public Path resolveJavacPath(String jdkNameOrPath) throws AgiToolException {
+        if (jdkNameOrPath == null || jdkNameOrPath.isBlank()) {
+            return null;
+        }
+        String query = jdkNameOrPath.trim();
+
+        // 1. Check if direct executable path
+        Path asPath = Path.of(query);
+        if (Files.isExecutable(asPath) && asPath.getFileName().toString().startsWith("javac")) {
+            return asPath;
+        }
+
+        // 2. Check if directory containing bin/javac
+        if (Files.isDirectory(asPath)) {
+            Path javac = findJavacInJdkHome(asPath);
+            if (javac != null) {
+                return javac;
+            }
+        }
+
+        // 3. Match against known JDK names/IDs
+        for (KnownJdk known : getKnownJdks()) {
+            if (known.name().equalsIgnoreCase(query) || known.name().toLowerCase().contains(query.toLowerCase())) {
+                if (known.hasCompiler()) {
+                    return known.javacPath();
+                }
+            }
+        }
+
+        throw new AgiToolException("Specified JDK / javac '" + query + "' could not be resolved to an executable javac binary.");
+    }
+
+    /**
+     * Compiles Java source code into a Class object.
+     * <p>
+     * Resolution order:
+     * 1. If an explicit {@code javacPath} is provided, compiles externally using that binary.
+     * 2. If {@code javacPath} is null and in-memory {@link JavaCompiler} is available, compiles in memory.
+     * 3. If {@code javacPath} is null and in-memory compiler is NOT available (JRE/JBR), automatically falls back
+     *    to the first available JDK javac from {@link #getKnownJdks()}.
+     * </p>
+     *
+     * @param sourceCode      the Java source code to compile.
+     * @param className       the simple or fully qualified name of the class.
+     * @param extraClassPath  additional classpath entries to include.
+     * @param compilerOptions additional options for the compiler.
+     * @param javacPath       optional explicit path to a javac executable.
+     * @return the compiled Class object.
+     * @throws Exception if compilation or classloading fails.
+     */
+    public Class<?> compile(
+            String sourceCode,
+            String className,
+            String extraClassPath,
+            String[] compilerOptions,
+            Path javacPath) throws Exception {
+
+        if (javacPath != null) {
+            return compileWithExternalJavac(sourceCode, className, extraClassPath, compilerOptions, javacPath);
+        }
+
+        JavaCompiler inMemoryCompiler = getDefaultJavaCompiler();
+        if (inMemoryCompiler != null) {
+            return compileInMemory(sourceCode, className, extraClassPath, compilerOptions, inMemoryCompiler);
+        }
+
+        // Auto-fallback to external javac if running on JBR/JRE without in-memory compiler
+        for (KnownJdk known : getKnownJdks()) {
+            if (known.hasCompiler()) {
+                log.info("No in-memory JavaCompiler available; auto-selected known JDK javac: {}", known.javacPath());
+                return compileWithExternalJavac(sourceCode, className, extraClassPath, compilerOptions, known.javacPath());
+            }
+        }
+
+        throw new AgiToolException("No Java compiler available. Running on a JRE without in-memory compiler, and no external JDK javac was found.");
+    }
+
+    /**
+     * Compiles Java source code in memory using {@link JavaCompiler}.
+     *
+     * @param sourceCode      the Java source code to compile.
+     * @param className       the fully qualified name of the class.
+     * @param extraClassPath  additional classpath entries to include.
+     * @param compilerOptions additional options for the Java compiler.
+     * @param compiler        the compiler instance.
+     * @return the compiled Class object.
+     * @throws ClassNotFoundException    if class not found.
+     * @throws NoSuchMethodException    if method not found.
+     * @throws IllegalAccessException    if access denied.
+     * @throws InvocationTargetException if invocation fails.
+     */
+    public Class<?> compileInMemory(
+            String sourceCode,
+            String className,
+            String extraClassPath,
+            String[] compilerOptions,
             JavaCompiler compiler)
             throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 
         final ToolContext ctx = getToolContext();
 
-        log("Compiling class: " + className);
-        
+        log("Compiling class in memory: " + className);
 
         if (compiler == null) {
             throw new RuntimeException("JDK required (running on JRE).");
@@ -471,32 +787,7 @@ public class Java extends AnahataToolkit {
 
         DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
 
-        ForwardingJavaFileManager<JavaFileManager> fileManager = new ForwardingJavaFileManager<JavaFileManager>(compiler.getStandardFileManager(diagnostics, null, null)) {
-            private final Map<String, ByteArrayOutputStream> compiledClasses = new HashMap<>();
-
-            @Override
-            public JavaFileObject getJavaFileForOutput(JavaFileManager.Location location, String className, JavaFileObject.Kind kind, FileObject sibling) throws IOException {
-                if (kind == JavaFileObject.Kind.CLASS) {
-                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                    compiledClasses.put(className, outputStream);
-                    return new SimpleJavaFileObject(URI.create("mem:///" + className.replace('.', '/') + ".class"), JavaFileObject.Kind.CLASS) {
-                        @Override
-                        public OutputStream openOutputStream() throws IOException {
-                            return outputStream;
-                        }
-                    };
-                }
-                return super.getJavaFileForOutput(location, className, kind, sibling);
-            }
-
-            public Map<String, byte[]> getCompiledClasses() {
-                Map<String, byte[]> result = new HashMap<>();
-                for (Map.Entry<String, ByteArrayOutputStream> entry : compiledClasses.entrySet()) {
-                    result.put(entry.getKey(), entry.getValue().toByteArray());
-                }
-                return result;
-            }
-        };
+        InMemoryJavaFileManager fileManager = new InMemoryJavaFileManager(compiler.getStandardFileManager(diagnostics, null, null));
 
         if (extraClassPath != null) {
             log("Including extra classpath entries: " + extraClassPath.split(File.pathSeparator).length);
@@ -520,7 +811,6 @@ public class Java extends AnahataToolkit {
             options.addAll(Arrays.asList(compilerOptions));
         }
 
-        // START of new code
         boolean hasVersionFlag = false;
         if (compilerOptions != null) {
             for (String option : compilerOptions) {
@@ -538,7 +828,6 @@ public class Java extends AnahataToolkit {
             options.add("--release");
             options.add(runtimeVersion);
         }
-        // END of new code
 
         if (!options.contains("-proc:none")) {
             options.add("-proc:none");
@@ -562,7 +851,7 @@ public class Java extends AnahataToolkit {
             throw new RuntimeException("Compilation error:\n" + error.toString());
         }
 
-        Map<String, byte[]> compiledClasses = ((Map<String, byte[]>) fileManager.getClass().getMethod("getCompiledClasses").invoke(fileManager));
+        Map<String, byte[]> compiledClasses = fileManager.getCompiledClasses();
 
         List<URL> urlList = new ArrayList<>();
         if (extraClassPath != null && !extraClassPath.isEmpty()) {
@@ -576,67 +865,134 @@ public class Java extends AnahataToolkit {
             }
         }
 
-        URLClassLoader reloadingClassLoader = new URLClassLoader(urlList.toArray(new URL[0]), Thread.currentThread().getContextClassLoader()) {
-            @Override
-            protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-                synchronized (getClassLoadingLock(name)) {
-                    // 1. Check if class is already loaded by this loader
-                    Class<?> c = findLoadedClass(name);
-                    if (c == null) {
-                        // 2. PARENT-FIRST for critical infrastructure:
-                        // These classes MUST maintain a single identity across all loaders
-                        // to preserve ThreadLocals and static context anchors.
-                        if (parentFirstClassess.contains(name)) {
-                            ctx.log("Delegating infrastructure class to parent: " + name);
-                            return super.loadClass(name, resolve);
-                        }
+        AnahataURLClassLoader reloadingClassLoader = createReloadingClassLoader(urlList, compiledClasses, getClass().getClassLoader());
+        return reloadingClassLoader.loadClass(className);
+    }
 
-                        // 3. Check for our in-memory compiled class first (the "hot-reload" part for Anahata.java)
-                        byte[] bytes = compiledClasses.get(name);
-                        if (bytes != null) {
-                            log.info("Hot-reloading in-memory class: {}", name);
-                            c = defineClass(name, bytes, 0, bytes.length);
-                        } else {
-                            try {
-                                // 4. CHILD-FIRST: Try to find the class in our own URLs (e.g., target/classes)
-                                c = findClass(name);
-                                log.info("Loaded class from default classpath (Child-First): {}" + name);
-                            } catch (ClassNotFoundException e) {
-                                // 5. FALLBACK: Ask the toolkit if it can find the bytes elsewhere (e.g. MR-JARs)
-                                byte[] fallbackBytes = findClassFallbackBytes(name);
-                                if (fallbackBytes != null) {
-                                    ctx.log("Loaded class from Fallback Bridge: " + name);
-                                    c = defineClass(name, fallbackBytes, 0, fallbackBytes.length);
-                                } else {
-                                    // 6. PARENT-LAST: If not found, delegate to the parent classloader.
-                                    try {
-                                        c = super.loadClass(name, resolve);
-                                    } catch (ClassNotFoundException parentEx) {
-                                        // 7. SIBLING / EXTRA CLASSLOADERS: (e.g., NetBeans JavaFX module)
-                                        for (ClassLoader extraLoader : getExtraClassLoaders()) {
-                                            try {
-                                                c = extraLoader.loadClass(name);
-                                                break;
-                                            } catch (ClassNotFoundException ignored) {
-                                            }
-                                        }
-                                        if (c == null) {
-                                            throw parentEx;
-                                        }
-                                    }
-                                }
-                            }
-                        }
+    /**
+     * Compiles Java source code using an external {@code javac} process and loads the resulting class.
+     * <p>
+     * Robust implementation:
+     * 1. Writes all compiler options to an {@code @argfile} to completely bypass OS/Windows command-line length limits.
+     * 2. Enforces matching {@code --release} bytecode compatibility to avoid UnsupportedClassVersionError.
+     * 3. Performs atomic cleanup of the scratch directory in a finally block (zero disk leaks).
+     * </p>
+     *
+     * @param sourceCode      the Java source code.
+     * @param className       the simple class name.
+     * @param extraClassPath  optional additional classpath entries.
+     * @param compilerOptions optional compiler options.
+     * @param javacPath       the absolute path to the javac executable.
+     * @return the loaded {@link Class}.
+     * @throws Exception on compilation or classloading failure.
+     */
+    protected Class<?> compileWithExternalJavac(
+            String sourceCode,
+            String className,
+            String extraClassPath,
+            String[] compilerOptions,
+            Path javacPath) throws Exception {
+
+        final ToolContext ctx = getToolContext();
+        Path tempDir = Files.createTempDirectory("anahata-javac-" + className + "-");
+        try {
+            Path sourceFile = tempDir.resolve(className + ".java");
+            Files.writeString(sourceFile, sourceCode, StandardCharsets.UTF_8);
+
+            String classpath = getDefaultClasspath();
+            if (extraClassPath != null && !extraClassPath.isEmpty()) {
+                classpath = extraClassPath + File.pathSeparator + classpath;
+            }
+
+            List<String> options = new ArrayList<>();
+            options.add("-d");
+            options.add(tempDir.toAbsolutePath().toString());
+            options.add("-classpath");
+            options.add(classpath);
+
+            if (compilerOptions != null) {
+                options.addAll(Arrays.asList(compilerOptions));
+            }
+
+            boolean hasVersionFlag = false;
+            if (compilerOptions != null) {
+                for (String option : compilerOptions) {
+                    if (option.equals("--release") || option.equals("-source") || option.equals("-target")) {
+                        hasVersionFlag = true;
+                        break;
                     }
-                    if (resolve) {
-                        resolveClass(c);
-                    }
-                    return c;
                 }
             }
-        };
 
-        return reloadingClassLoader.loadClass(className);
+            if (!hasVersionFlag) {
+                String runtimeVersion = System.getProperty("java.specification.version");
+                log.info("No explicit Java version compiler flag found for external javac. Defaulting to --release {}.", runtimeVersion);
+                if (ctx != null) {
+                    ctx.log("No explicit Java version compiler flag found. Defaulting to --release " + runtimeVersion);
+                }
+                options.add("--release");
+                options.add(runtimeVersion);
+            }
+
+            if (!options.contains("-proc:none")) {
+                options.add("-proc:none");
+            }
+            options.add(sourceFile.toAbsolutePath().toString());
+
+            // Write all arguments to an @argfile to avoid Windows/OS command line length limits
+            Path argFile = tempDir.resolve("javac_args.txt");
+            Files.write(argFile, options, StandardCharsets.UTF_8);
+
+            List<String> command = List.of(javacPath.toAbsolutePath().toString(), "@" + argFile.toAbsolutePath());
+            log.info("Executing external javac via argfile: {} with {} options", javacPath, options.size());
+
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+            String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            int exitCode = process.waitFor();
+
+            if (exitCode != 0) {
+                log.error("Compilation error via javac ({}):\n{}", javacPath, output);
+                throw new AgiToolException("Compilation error via javac (" + javacPath.getFileName() + "):\n" + output);
+            }
+
+            // Read compiled .class files into memory
+            Map<String, byte[]> compiledClasses = new HashMap<>();
+            try (Stream<Path> stream = Files.walk(tempDir)) {
+                for (Path file : stream.filter(p -> p.toString().endsWith(".class")).toList()) {
+                    String relative = tempDir.relativize(file).toString();
+                    String classFqn = relative.replace(File.separatorChar, '.').replace('/', '.');
+                    if (classFqn.endsWith(".class")) {
+                        classFqn = classFqn.substring(0, classFqn.length() - 6);
+                    }
+                    compiledClasses.put(classFqn, Files.readAllBytes(file));
+                }
+            }
+
+            List<URL> urlList = new ArrayList<>();
+            if (extraClassPath != null && !extraClassPath.isEmpty()) {
+                for (String entry : extraClassPath.split(File.pathSeparator)) {
+                    try {
+                        urlList.add(new File(entry).toURI().toURL());
+                    } catch (Exception e) {
+                        log.warn("Invalid classpath entry: {}", entry, e);
+                    }
+                }
+            }
+
+            AnahataURLClassLoader reloadingClassLoader = createReloadingClassLoader(urlList, compiledClasses, getClass().getClassLoader());
+            return reloadingClassLoader.loadClass(className);
+        } finally {
+            // Guarantee atomic cleanup of the scratch directory (Zero Leaks!)
+            try (Stream<Path> walk = Files.walk(tempDir)) {
+                walk.sorted(java.util.Comparator.reverseOrder())
+                        .map(Path::toFile)
+                        .forEach(File::delete);
+            } catch (Exception e) {
+                log.warn("Failed to delete temp compilation dir: {}", tempDir, e);
+            }
+        }
     }
 
     /**
@@ -686,12 +1042,14 @@ public class Java extends AnahataToolkit {
     public Object compileAndExecute(
             @AgiToolParam(value = "Source code of the 'Anahata' class.", rendererId = "java") String sourceCode,
             @AgiToolParam(value = "Optional Compiler's additional classpath entries separated with File.pathSeparator. These will be first in the final compiler's classpath and the child-first set of the ClassLoader's classpath", required = false) String extraClassPath,
-            @AgiToolParam(value = "Optional Compiler's options.", required = false) String[] compilerOptions) throws Exception {
+            @AgiToolParam(value = "Optional Compiler's options.", required = false) String[] compilerOptions,
+            @AgiToolParam(value = "Optional JDK name (from Available JDKs) or explicit path to a javac executable. If omitted, uses the default compiler.", required = false) String jdk) throws Exception {
 
         log.info("executeJavaCode: \nsource={}", sourceCode);
         log.info("executeJavaCode: \nextraCompilerClassPath={}", extraClassPath);
 
-        Class c = compile(sourceCode, "Anahata", extraClassPath, compilerOptions, getDefaultJavaCompiler());
+        Path javacPath = resolveJavacPath(jdk);
+        Class<?> c = compile(sourceCode, "Anahata", extraClassPath, compilerOptions, javacPath);
 
         // CRITICAL FIX: Use setAccessible(true) to allow instantiation even if the class/constructor is not public.
         var constructor = c.getDeclaredConstructor();
@@ -713,6 +1071,19 @@ public class Java extends AnahataToolkit {
             throw new AgiToolException("Source file should extend AnahataTool or implement java.util.Callable");
         }
     }
+
+    /**
+     * Convenience overload for {@link #compileAndExecute(String, String, String[], String)} using default compiler.
+     *
+     * @param sourceCode      the source code.
+     * @param extraClassPath  additional classpath.
+     * @param compilerOptions compiler options.
+     * @return the execution result.
+     * @throws Exception on error.
+     */
+    public Object compileAndExecute(String sourceCode, String extraClassPath, String[] compilerOptions) throws Exception {
+        return compileAndExecute(sourceCode, extraClassPath, compilerOptions, (String) null);
+    }
     
     /**
      * Overridable method for implementations to decide what compiler to use by default.
@@ -721,126 +1092,5 @@ public class Java extends AnahataToolkit {
      */
     protected JavaCompiler getDefaultJavaCompiler() {
         return ToolProvider.getSystemJavaCompiler();
-    }
-
-    /**
-     * Represents a node in the hierarchical tree of system properties.
-     */
-    private static class SystemPropertyNode {
-
-        /**
-         * The segment name of this node (e.g., "java").
-         */
-        String segment;
-        /**
-         * The full dot-separated path to this node (e.g., "java.vendor").
-         */
-        String fullPath;
-        /**
-         * The value of the property, if this is a leaf node.
-         */
-        Object value;
-        /**
-         * The children of this node, keyed by their segment name.
-         */
-        Map<String, SystemPropertyNode> children = new TreeMap<>();
-
-        /**
-         * Constructs a new node.
-         *
-         * @param segment The segment name.
-         * @param fullPath The full path.
-         */
-        SystemPropertyNode(String segment, String fullPath) {
-            this.segment = segment;
-            this.fullPath = fullPath;
-        }
-
-        /**
-         * Checks if this node is a leaf (has no children).
-         *
-         * @return true if it's a leaf.
-         */
-        boolean isLeaf() {
-            return children.isEmpty();
-        }
-    }
-
-    /**
-     * Generates a token-efficient, hierarchical representation of all JVM
-     * system properties (excluding the classpath itself).
-     *
-     * @return A formatted string of system properties.
-     * @throws Exception if an error occurs.
-     */
-    public String getSystemProperties() throws Exception {
-        Properties props = System.getProperties();
-        SystemPropertyNode root = new SystemPropertyNode("", "");
-
-        for (Object keyObj : props.keySet()) {
-            String key = (String) keyObj;
-            if (key.startsWith("java.class.path")) {
-                continue;
-            }
-
-            String[] parts = key.split("\\.");
-            SystemPropertyNode current = root;
-            StringBuilder pathAcc = new StringBuilder();
-            for (String part : parts) {
-                if (pathAcc.length() > 0) {
-                    pathAcc.append(".");
-                }
-                pathAcc.append(part);
-                current = current.children.computeIfAbsent(part, k -> new SystemPropertyNode(k, pathAcc.toString()));
-            }
-            current.value = props.get(key);
-        }
-
-        StringBuilder sb = new StringBuilder();
-        // Process top-level groups
-        for (SystemPropertyNode child : root.children.values()) {
-            renderSysProp(sb, child, 0);
-        }
-        return sb.toString();
-    }
-
-    /**
-     * Recursively renders a system property node and its children into a
-     * formatted string.
-     *
-     * @param sb The StringBuilder to append to.
-     * @param node The node to render.
-     * @param indent The current indentation level.
-     */
-    private void renderSysProp(StringBuilder sb, SystemPropertyNode node, int indent) {
-        String tabs = "  ".repeat(indent);
-
-        // Collapse logic: if a node has exactly one child and no value, merge with child
-        SystemPropertyNode current = node;
-        String displayLabel = current.segment;
-        while (current.children.size() == 1 && current.value == null) {
-            SystemPropertyNode next = current.children.values().iterator().next();
-            displayLabel += "." + next.segment;
-            current = next;
-        }
-
-        if (current.isLeaf()) {
-            // It's a single property or a fully collapsed path
-            sb.append(tabs).append("- `").append(displayLabel).append("`: ")
-                    .append(TextUtils.formatValue(current.value)).append("\n");
-        } else {
-            // It's a group
-            // User requested full prefix in the header
-            sb.append(tabs).append("**").append(current.fullPath).append("**:\n");
-
-            if (current.value != null) {
-                // If the prefix node itself has a value (e.g. java.vendor)
-                sb.append(tabs).append("  - `value`: ").append(TextUtils.formatValue(current.value)).append("\n");
-            }
-
-            for (SystemPropertyNode child : current.children.values()) {
-                renderSysProp(sb, child, indent + 1);
-            }
-        }
     }
 }
