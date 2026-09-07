@@ -98,7 +98,11 @@ public class NbJava extends SwingJava {
      * <p>
      * Injects NetBeans-specific instructions explaining the distinction between
      * the Plugins Classpath (for module uno.anahata.asi.nb) and the NbJava
-     * toolkit's Default Classpath.</p>
+     * toolkit's Default Classpath.
+     * </p>
+     *
+     * @return the list of system instruction blocks.
+     * @throws Exception if an error occurs while assembling instructions.
      */
     @Override
     public List<String> getSystemInstructions() throws Exception {
@@ -117,7 +121,11 @@ public class NbJava extends SwingJava {
      * <p>
      * Appends an indicator to the RAG message specifying whether the NbJava
      * toolkit's default classpath is identical to the plugin's classpath, as
-     * well as the active JavaFX runtime status.</p>
+     * well as the active JavaFX runtime status.
+     * </p>
+     *
+     * @param ragMessage the incoming RAG message to populate.
+     * @throws Exception if an error occurs during message population.
      */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
@@ -134,7 +142,11 @@ public class NbJava extends SwingJava {
      * {@inheritDoc}
      * <p>
      * Overrides the factory to inject the specialized
-     * {@link NetBeansJarHandler}.</p>
+     * {@link NetBeansJarHandler}.
+     * </p>
+     *
+     * @return a new {@link VeryPrettyClassPathPrinter} configured with NetBeans
+     * handlers.
      */
     @Override
     protected VeryPrettyClassPathPrinter createClassPathPrinter() {
@@ -153,7 +165,11 @@ public class NbJava extends SwingJava {
      * {@inheritDoc}
      * <p>
      * Invalidates the MR-JAR registry when the classpath changes to ensure
-     * environmental consistency.</p>
+     * environmental consistency.
+     * </p>
+     *
+     * @param defaultCompilerClasspath the new default compiler classpath
+     * string.
      */
     @Override
     public void setDefaultClasspath(String defaultCompilerClasspath) {
@@ -194,7 +210,11 @@ public class NbJava extends SwingJava {
      * Implements the surgical fallback by searching for missing classes within
      * the registered Multi-Release JARs using the current JVM version.
      * Restricted to "org.lwjgl." as it is just to workaround a netbeans bug in
-     * JarClassLoader.</p>
+     * JarClassLoader.
+     * </p>
+     *
+     * @param name the binary name of the requested class.
+     * @return the byte array of the class file, or {@code null} if not found.
      */
     @Override
     protected byte[] findClassFallbackBytes(String name) {
@@ -231,7 +251,11 @@ public class NbJava extends SwingJava {
      * {@inheritDoc}
      * <p>
      * Dynamically augments the default compiler classpath with the JavaFX
-     * module classpath if JavaFX is enabled in NetBeans.</p>
+     * module classpath if JavaFX is enabled in NetBeans.
+     * </p>
+     *
+     * @return the full default classpath string including active JavaFX
+     * modules.
      */
     @Override
     public String getDefaultClasspath() {
@@ -247,7 +271,10 @@ public class NbJava extends SwingJava {
      * {@inheritDoc}
      * <p>
      * Provides the JavaFX module's ClassLoader as a sibling classloader if
-     * JavaFX support is enabled in NetBeans.</p>
+     * JavaFX support is enabled in NetBeans.
+     * </p>
+     *
+     * @return a list of sibling class loaders including JavaFX if available.
      */
     @Override
     protected List<ClassLoader> getExtraClassLoaders() {
@@ -258,7 +285,7 @@ public class NbJava extends SwingJava {
         }
         return loaders;
     }
-    
+
     /**
      * Lazily populates the Multi-Release JAR registry by scanning the current
      * default classpath.
@@ -472,12 +499,12 @@ public class NbJava extends SwingJava {
      *
      * @param sourceCode Source code of a public class named **Anahata** that
      * has **no package declaration** and **extends AnahataTool**.
-     * @param compilerOptions Optional additional compiler options.
-     * @param includeTestContext Whether to include the project's test source
-     * folders and test dependencies.
+     * @param projectPath The absolute path of the NetBeans project to run in.
      * @param includeProjectDependencies Whether to include the project's
      * COMPILE and EXECUTE dependencies.
-     * @param projectPath The absolute path of the NetBeans project to run in.
+     * @param includeTestContext Whether to include the project's test source
+     * folders and test dependencies.
+     * @param compilerOptions Optional additional compiler options.
      * @return The result of the execution.
      * @throws Exception on error.
      */

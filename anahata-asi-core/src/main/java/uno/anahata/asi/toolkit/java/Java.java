@@ -157,6 +157,14 @@ public class Java extends AnahataToolkit {
 
     /**
      * {@inheritDoc}
+     * <p>
+     * Provides system instructions for runtime Java code compilation, detailing
+     * available methods, multi-threading patterns, memory safety, and JVM
+     * properties.
+     * </p>
+     *
+     * @return the list of system instruction blocks.
+     * @throws Exception if an error occurs while assembling instructions.
      */
     @Override
     public List<String> getSystemInstructions() throws Exception {
@@ -344,9 +352,14 @@ public class Java extends AnahataToolkit {
     /**
      * {@inheritDoc}
      * <p>
-     * Adds session/container map keys and the abbreviated classpath manifest to
-     * the RAG message to provide the model with awareness of its persistent
-     * state and available libraries.</p>
+     * Adds session/container map keys, the abbreviated classpath manifest, and
+     * available Java compilers and JDKs to the RAG message to provide the model
+     * with awareness of its persistent state, available libraries, and
+     * compilation environments.
+     * </p>
+     *
+     * @param ragMessage the incoming RAG message to populate.
+     * @throws Exception if an error occurs during message population.
      */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
@@ -453,25 +466,43 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Specialized child-first, hot-reloading {@link URLClassLoader} used for executing dynamic
-     * scripts compiled in memory or via external javac.
+     * Specialized child-first, hot-reloading {@link URLClassLoader} used for
+     * executing dynamic scripts compiled in memory or via external javac.
      */
     public class AnahataURLClassLoader extends URLClassLoader {
 
+        /**
+         * In-memory bytecode definitions for newly compiled classes, mapped by
+         * binary class name.
+         */
         private final Map<String, byte[]> compiledClasses;
 
         /**
          * Constructs a new AnahataURLClassLoader.
          *
-         * @param urls            the child-first classpath URLs.
+         * @param urls the child-first classpath URLs.
          * @param compiledClasses in-memory bytecode map (class name -> bytes).
-         * @param parent          the parent classloader (defaults to {@code Java.this.getClass().getClassLoader()} if null).
+         * @param parent the parent classloader (defaults to
+         * {@code Java.this.getClass().getClassLoader()} if null).
          */
         public AnahataURLClassLoader(List<URL> urls, Map<String, byte[]> compiledClasses, ClassLoader parent) {
             super(urls.toArray(new URL[0]), parent != null ? parent : Java.this.getClass().getClassLoader());
             this.compiledClasses = compiledClasses != null ? compiledClasses : Collections.emptyMap();
         }
 
+        /**
+         * {@inheritDoc}
+         * <p>
+         * Implements child-first class loading with parent-first delegation for
+         * whitelisted framework infrastructure classes and direct in-memory
+         * bytecode definition.
+         * </p>
+         *
+         * @param name the binary name of the class.
+         * @param resolve if true then resolve the class.
+         * @return the resulting Class object.
+         * @throws ClassNotFoundException if the class could not be found.
+         */
         @Override
         protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
             synchronized (getClassLoadingLock(name)) {
@@ -540,9 +571,10 @@ public class Java extends AnahataToolkit {
     /**
      * Factory method to create an instance of {@link AnahataURLClassLoader}.
      *
-     * @param extraUrls         extra URLs to search child-first.
-     * @param compiledClasses   in-memory compiled bytecode map.
-     * @param parentClassLoader parent classloader (defaults to {@code getClass().getClassLoader()} if null).
+     * @param extraUrls extra URLs to search child-first.
+     * @param compiledClasses in-memory compiled bytecode map.
+     * @param parentClassLoader parent classloader (defaults to
+     * {@code getClass().getClassLoader()} if null).
      * @return a new {@link AnahataURLClassLoader}.
      */
     protected AnahataURLClassLoader createReloadingClassLoader(
@@ -555,15 +587,15 @@ public class Java extends AnahataToolkit {
     /**
      * Discovers all known JDK installations on the host environment.
      * <p>
-     * Scans:
-     * 1. The currently running JVM (via {@code System.getProperty("java.home")}).
-     * 2. The {@code JAVA_HOME} environment variable.
-     * 3. Standard platform JDK directories (/usr/lib/jvm, /Library/Java/JavaVirtualMachines, C:\Program Files\Java, etc.).
-     * 4. The {@code javac} executable available on the system {@code PATH}.
+     * Scans: 1. The currently running JVM (via
+     * {@code System.getProperty("java.home")}). 2. The {@code JAVA_HOME}
+     * environment variable. 3. Standard platform JDK directories (/usr/lib/jvm,
+     * /Library/Java/JavaVirtualMachines, C:\Program Files\Java, etc.). 4. The
+     * {@code javac} executable available on the system {@code PATH}.
      * </p>
      * <p>
-     * Subclasses (such as {@code NbJava} and {@code IntellijJava}) override this method to add
-     * IDE-registered platforms and project SDKs.
+     * Subclasses (such as {@code NbJava} and {@code IntellijJava}) override
+     * this method to add IDE-registered platforms and project SDKs.
      * </p>
      *
      * @return a list of discovered {@link KnownJdk} instances.
@@ -664,11 +696,15 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Resolves an explicit JDK identifier, name, or path to a javac executable path.
+     * Resolves an explicit JDK identifier, name, or path to a javac executable
+     * path.
      *
-     * @param jdkNameOrPath optional name, ID, directory, or direct javac executable path.
-     * @return the resolved Path to javac, or null if null/empty string provided.
-     * @throws AgiToolException if an explicit identifier or path was specified but could not be found.
+     * @param jdkNameOrPath optional name, ID, directory, or direct javac
+     * executable path.
+     * @return the resolved Path to javac, or null if null/empty string
+     * provided.
+     * @throws AgiToolException if an explicit identifier or path was specified
+     * but could not be found.
      */
     public Path resolveJavacPath(String jdkNameOrPath) throws AgiToolException {
         if (jdkNameOrPath == null || jdkNameOrPath.isBlank()) {
@@ -705,18 +741,19 @@ public class Java extends AnahataToolkit {
     /**
      * Compiles Java source code into a Class object.
      * <p>
-     * Resolution order:
-     * 1. If an explicit {@code javacPath} is provided, compiles externally using that binary.
-     * 2. If {@code javacPath} is null and in-memory {@link JavaCompiler} is available, compiles in memory.
-     * 3. If {@code javacPath} is null and in-memory compiler is NOT available (JRE/JBR), automatically falls back
-     *    to the first available JDK javac from {@link #getKnownJdks()}.
+     * Resolution order: 1. If an explicit {@code javacPath} is provided,
+     * compiles externally using that binary. 2. If {@code javacPath} is null
+     * and in-memory {@link JavaCompiler} is available, compiles in memory. 3.
+     * If {@code javacPath} is null and in-memory compiler is NOT available
+     * (JRE/JBR), automatically falls back to the first available JDK javac from
+     * {@link #getKnownJdks()}.
      * </p>
      *
-     * @param sourceCode      the Java source code to compile.
-     * @param className       the simple or fully qualified name of the class.
-     * @param extraClassPath  additional classpath entries to include.
+     * @param sourceCode the Java source code to compile.
+     * @param className the simple or fully qualified name of the class.
+     * @param extraClassPath additional classpath entries to include.
      * @param compilerOptions additional options for the compiler.
-     * @param javacPath       optional explicit path to a javac executable.
+     * @param javacPath optional explicit path to a javac executable.
      * @return the compiled Class object.
      * @throws Exception if compilation or classloading fails.
      */
@@ -750,15 +787,15 @@ public class Java extends AnahataToolkit {
     /**
      * Compiles Java source code in memory using {@link JavaCompiler}.
      *
-     * @param sourceCode      the Java source code to compile.
-     * @param className       the fully qualified name of the class.
-     * @param extraClassPath  additional classpath entries to include.
+     * @param sourceCode the Java source code to compile.
+     * @param className the fully qualified name of the class.
+     * @param extraClassPath additional classpath entries to include.
      * @param compilerOptions additional options for the Java compiler.
-     * @param compiler        the compiler instance.
+     * @param compiler the compiler instance.
      * @return the compiled Class object.
-     * @throws ClassNotFoundException    if class not found.
-     * @throws NoSuchMethodException    if method not found.
-     * @throws IllegalAccessException    if access denied.
+     * @throws ClassNotFoundException if class not found.
+     * @throws NoSuchMethodException if method not found.
+     * @throws IllegalAccessException if access denied.
      * @throws InvocationTargetException if invocation fails.
      */
     public Class<?> compileInMemory(
@@ -870,19 +907,21 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Compiles Java source code using an external {@code javac} process and loads the resulting class.
+     * Compiles Java source code using an external {@code javac} process and
+     * loads the resulting class.
      * <p>
-     * Robust implementation:
-     * 1. Writes all compiler options to an {@code @argfile} to completely bypass OS/Windows command-line length limits.
-     * 2. Enforces matching {@code --release} bytecode compatibility to avoid UnsupportedClassVersionError.
-     * 3. Performs atomic cleanup of the scratch directory in a finally block (zero disk leaks).
+     * Robust implementation: 1. Writes all compiler options to an
+     * {@code @argfile} to completely bypass OS/Windows command-line length
+     * limits. 2. Enforces matching {@code --release} bytecode compatibility to
+     * avoid UnsupportedClassVersionError. 3. Performs atomic cleanup of the
+     * scratch directory in a finally block (zero disk leaks).
      * </p>
      *
-     * @param sourceCode      the Java source code.
-     * @param className       the simple class name.
-     * @param extraClassPath  optional additional classpath entries.
+     * @param sourceCode the Java source code.
+     * @param className the simple class name.
+     * @param extraClassPath optional additional classpath entries.
      * @param compilerOptions optional compiler options.
-     * @param javacPath       the absolute path to the javac executable.
+     * @param javacPath the absolute path to the javac executable.
      * @return the loaded {@link Class}.
      * @throws Exception on compilation or classloading failure.
      */
@@ -1027,6 +1066,7 @@ public class Java extends AnahataToolkit {
      * @param sourceCode The Java source code to compile and execute.
      * @param extraClassPath Additional classpath entries.
      * @param compilerOptions Additional compiler options.
+     * @param jdk Optional JDK name, ID, or path to a javac executable.
      * @return The result of the execution.
      * @throws Exception if compilation or execution fails.
      */
@@ -1073,10 +1113,12 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Convenience overload for {@link #compileAndExecute(String, String, String[], String)} using default compiler.
+     * Convenience overload for
+     * {@link #compileAndExecute(String, String, String[], String)} using
+     * default compiler.
      *
-     * @param sourceCode      the source code.
-     * @param extraClassPath  additional classpath.
+     * @param sourceCode the source code.
+     * @param extraClassPath additional classpath.
      * @param compilerOptions compiler options.
      * @return the execution result.
      * @throws Exception on error.
@@ -1084,10 +1126,11 @@ public class Java extends AnahataToolkit {
     public Object compileAndExecute(String sourceCode, String extraClassPath, String[] compilerOptions) throws Exception {
         return compileAndExecute(sourceCode, extraClassPath, compilerOptions, (String) null);
     }
-    
+
     /**
-     * Overridable method for implementations to decide what compiler to use by default.
-     * 
+     * Overridable method for implementations to decide what compiler to use by
+     * default.
+     *
      * @return <code>ToolProvider.getSystemJavaCompiler();</code>
      */
     protected JavaCompiler getDefaultJavaCompiler() {
