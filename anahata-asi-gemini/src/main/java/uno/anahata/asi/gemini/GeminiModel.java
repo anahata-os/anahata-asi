@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.gemini;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.genai.Client;
 import com.google.genai.ResponseStream;
 import com.google.genai.types.Candidate;
@@ -34,7 +35,6 @@ import uno.anahata.asi.agi.message.ModelTextPart;
 import uno.anahata.asi.agi.provider.RequestConfig;
 import uno.anahata.asi.agi.provider.Response;
 import uno.anahata.asi.agi.provider.StreamObserver;
-import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.agi.provider.ApiCallInterruptedException;
 import uno.anahata.asi.agi.provider.FinishReason;
@@ -46,7 +46,6 @@ import uno.anahata.asi.agi.tool.ToolResponseAttachment;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.gemini.adapter.GeminiPartAdapter;
 import com.google.genai.LocalTokenizer;
-import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
 import uno.anahata.asi.internal.ImageMetadataUtils;
 import uno.anahata.asi.internal.ImageMetadataUtils.ImageMetadata;
 import uno.anahata.asi.internal.JacksonUtils;
@@ -93,7 +92,12 @@ public class GeminiModel extends AbstractModel {
         this.defaultTopK = genaiModel.topK().orElse(null);
         this.defaultTopP = genaiModel.topP().orElse(null);
         this.supportedActions = new ArrayList<>(genaiModel.supportedActions().orElse(Collections.emptyList()));
-        this.rawDescription = genaiModel.toJson();
+        try {
+            JsonNode node = JacksonUtils.parse(genaiModel.toJson(), JsonNode.class);
+            this.rawDescription = node.toPrettyString();
+        } catch (Exception e) {
+            this.rawDescription = genaiModel.toJson();
+        }
 
         List<ResponseModality> modalities = new ArrayList<>();
         String id = getModelId().toLowerCase();
