@@ -73,4 +73,29 @@
   "screenshotPath" : "/home/pablo/.anahata/asi/recordings/JAVA-JNA-1_gemini-3.6-flash_20260907_233844_thumb.png",
   "sessionId" : "5dd4f955-448d-4f94-b567-112d4495dabb",
   "observations" : "Tool error in NbJava.compileAndExecute: java.lang.RuntimeException: Compilation error:\nCompiler: com.sun.tools.javac.api.JavacTool@1c15a9e\nTask:com.sun.tools.javac.api.JavacTaskImpl@50092591\nDiagnostics: \n/Anahata.java:190: error: local variables referenced from a lambda expression must be final or effectively final\n                DashboardPanel dashboard = new DashboardPanel(modelId);\n                                                              ^\n\n\tat uno.anahata.asi.toolkit.java.Java.compileInMemory(Java.java:888)\n\tat uno.anahata.asi.toolkit.java.Java.compile(Java.java:773)\n\tat uno.anahata.asi.toolkit.java.Java.compileAndExecute(Java.java:1092)\n\tat java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:565)\n\tat uno.anahata.asi.agi.tool.spi.java.JavaMethodToolResponse.execute(JavaMethodToolResponse.java:125)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:186)\n\tat java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:197)\n\tat java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:214)\n\tat java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1724)\n\tat java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:570)\n\tat java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:560)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:153)\n\tat java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:176)\n\tat java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:265)\n\tat java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:632)\n\tat uno.anahata.asi.agi.message.AbstractModelMessage.executeAllPending(AbstractModelMessage.java:351)\n\tat uno.anahata.asi.agi.Agi.chooseCandidate(Agi.java:710)\n\tat uno.anahata.asi.agi.Agi.handleTurnResult(Agi.java:677)\n\tat uno.anahata.asi.agi.Agi.performSingleTurn(Agi.java:546)\n\tat uno.anahata.asi.agi.Agi.executeTurnLoop(Agi.java:496)\n\tat uno.anahata.asi.agi.Agi.sendMessage(Agi.java:433)\n\tat uno.anahata.asi.yam.tools.benchmarks.Benchmarks.executeCandidateTurn(Benchmarks.java:555)\n\tat uno.anahata.asi.yam.tools.benchmarks.Benchmarks.lambda$executeBenchmark$2(Benchmarks.java:457)\n\tat java.base/java.lang.Thread.run(Thread.java:1516)"
+}, {
+  "participant" : {
+    "providerUuid" : "HuggingFace",
+    "modelId" : "zai-org/GLM-5.3-BF16",
+    "thinkingLevel" : "HIGH"
+  },
+  "testCode" : "JAVA-JNA-1",
+  "asiContainer" : "NetBeansAsiContainer",
+  "timestamp" : "2026-09-08T12:57:53.366090Z",
+  "durationSeconds" : 350.17,
+  "turns" : 3,
+  "promptTokens" : 98326,
+  "candidatesTokens" : 27822,
+  "thoughtsTokens" : 9056,
+  "totalTokens" : 126148,
+  "passed" : false,
+  "judgeScores" : [ {
+    "name" : "Priyanka",
+    "score" : 2.0,
+    "comments" : "terrible compile errors and overlayed labels. very bad. not AGI"
+  } ],
+  "videoUrl" : null,
+  "screenshotPath" : "/home/pablo/.anahata/asi/recordings/JAVA-JNA-1_zai-org_GLM-5.3-BF16_20260908_145203_thumb.png",
+  "sessionId" : "34a31aeb-770a-449a-8af0-9dc2b5064b4f",
+  "observations" : "1. Turn 1 Compilation Failure (Single-shot failed):\n- Missing import: java.util.ArrayDeque in SparkLine component.\n- Scoping error: variable swapTotal referenced instead of s.swapTotal in DashboardUI.apply().\nResulted in javac compilation failure on turn 1, requiring a second turn to self-align.\n\n2. UI Layout Defect (Overlaid Labels):\n- GridBagLayout coordinate collision: Card constructor places the card title label at gridx=0, gridy=0. Subsequently, bigLabel() places the 26pt bold metric value also at gridx=0, gridy=0 in the same cell.\n- Metric values in CPU, Memory, and Load Average cards are rendered stamped directly over the card header titles.\n\n3. Model Reasoning vs Execution Disconnect:\n- Model spent ~21,000 tokens of internal reasoning calculating low-level 64-bit C struct byte alignments and glibc syscall ABIs, but failed on elementary Java imports, variable scoping, and GridBag coordinate management."
 } ]
