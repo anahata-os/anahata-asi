@@ -47,10 +47,7 @@ import uno.anahata.asi.internal.TokenizerUtils;
 @Slf4j
 public class AnthropicModel extends AbstractModel {
 
-    /**
-     * The parent provider instance.
-     */
-    private final AnthropicProvider provider;
+
     /**
      * The unique identifier for the model.
      */
@@ -92,12 +89,17 @@ public class AnthropicModel extends AbstractModel {
     }
 
     /**
-     * Returns the parent {@link AnthropicProvider} instance that owns this model.
+     * {@inheritDoc}
+     * <p>
+     * Returns the parent {@link AnthropicProvider} instance owning this model.
+     * </p>
      *
      * @return The Anthropic provider instance.
      */
     @Override
-    public AnthropicProvider getProvider() { return provider; }
+    public AnthropicProvider getProvider() {
+        return (AnthropicProvider) provider;
+    }
 
     /**
      * {@inheritDoc}
@@ -242,16 +244,16 @@ public class AnthropicModel extends AbstractModel {
 
         log.info("Executing Anthropic request to messages endpoint");
         try {
-            HttpRequest httpRequest = provider.createRequestBuilder("messages")
+            HttpRequest httpRequest = getProvider().createRequestBuilder("messages")
                     .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
                     .build();
-            HttpClient client = provider.getHttpClient(); {
+            HttpClient client = getProvider().getHttpClient(); {
                 HttpResponse<String> httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
                 if (httpResponse.statusCode() != 200) {
                     String errorBody = httpResponse.body();
-                    if (provider.isRetryable(httpResponse.statusCode(), errorBody)) {
-                        provider.hokusPocus();
-                        throw new RetryableApiException(provider.getCurrentKey(), "API error (" + httpResponse.statusCode() + "): " + errorBody, null);
+                    if (getProvider().isRetryable(httpResponse.statusCode(), errorBody)) {
+                        getProvider().hokusPocus();
+                        throw new RetryableApiException(getProvider().getCurrentKey(), "API error (" + httpResponse.statusCode() + "): " + errorBody, null);
                     }
                     throw new RuntimeException("API error (" + httpResponse.statusCode() + "): " + errorBody);
                 }
@@ -277,12 +279,12 @@ public class AnthropicModel extends AbstractModel {
 
         log.info("Executing Anthropic streaming request");
         try {
-            HttpRequest httpRequest = provider.createRequestBuilder("messages")
+            HttpRequest httpRequest = getProvider().createRequestBuilder("messages")
                     .header("Accept", "text/event-stream")
                     .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
                     .build();
                     
-            HttpClient client = provider.getHttpClient(); {
+            HttpClient client = getProvider().getHttpClient(); {
                 AnthropicMessage target = new AnthropicMessage(agi, modelId);
                 target.setStreaming(true);
                 List<AnthropicMessage> targets = List.of(target);
@@ -294,9 +296,9 @@ public class AnthropicModel extends AbstractModel {
                     try (Stream<String> bodyStream = response.body()) {
                         errorMsg = bodyStream.collect(Collectors.joining("\n"));
                     }
-                    if (provider.isRetryable(response.statusCode(), errorMsg)) {
-                        provider.hokusPocus();
-                        observer.onError(new RetryableApiException(provider.getCurrentKey(), "Stream Error (" + response.statusCode() + "): " + errorMsg, null));
+                    if (getProvider().isRetryable(response.statusCode(), errorMsg)) {
+                        getProvider().hokusPocus();
+                        observer.onError(new RetryableApiException(getProvider().getCurrentKey(), "Stream Error (" + response.statusCode() + "): " + errorMsg, null));
                     } else {
                         observer.onError(new RuntimeException("Stream Error (" + response.statusCode() + "): " + errorMsg));
                     }

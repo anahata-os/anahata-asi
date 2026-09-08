@@ -61,10 +61,7 @@ import uno.anahata.asi.internal.JacksonUtils;
 @Slf4j
 public class GeminiModel extends AbstractModel {
 
-    /**
-     * The owning provider instance.
-     */
-    private final GeminiAiProvider provider;
+
     /**
      * The unique model identifier (e.g. 'models/gemini-1.5-flash').
      */
@@ -114,13 +111,16 @@ public class GeminiModel extends AbstractModel {
     }
 
     /**
-     * Returns the parent {@link GeminiAiProvider} instance that owns this model.
+     * {@inheritDoc}
+     * <p>
+     * Returns the parent {@link GeminiAiProvider} instance owning this model.
+     * </p>
      *
      * @return The Gemini AI provider instance.
      */
     @Override
-    public AbstractAiProvider getProvider() {
-        return provider;
+    public GeminiAiProvider getProvider() {
+        return (GeminiAiProvider) provider;
     }
 
     /**
@@ -408,7 +408,7 @@ public class GeminiModel extends AbstractModel {
      */
     @Override
     public Response generateContent(GenerationRequest request) {
-        Client client = provider.getClient();
+        Client client = getProvider().getClient();
         GeminiGenerateContentParameters prepared = prepareGenerateContentParameters(request);
 
         log.info("Sending request to Gemini model: {} {} content elements", getModelId(), prepared.history().size());
@@ -435,7 +435,7 @@ public class GeminiModel extends AbstractModel {
                 throw new ApiCallInterruptedException(e);
             }
             if (isRetryable(e)) {
-                provider.hokusPocus();
+                getProvider().hokusPocus();
                 throw new RetryableApiException(client.apiKey(), e.toString(), e);
             }
             throw e;
@@ -458,7 +458,7 @@ public class GeminiModel extends AbstractModel {
      */
     @Override
     public void generateContentStream(GenerationRequest request, StreamObserver<Response<? extends AbstractModelMessage>> observer) {
-        Client client = provider.getClient();
+        Client client = getProvider().getClient();
         GeminiGenerateContentParameters prepared = prepareGenerateContentParameters(request);
         Agi agi = request.config().getAgi();
 
@@ -528,7 +528,7 @@ public class GeminiModel extends AbstractModel {
             if (isInterruption(e)) {
                 observer.onError(new ApiCallInterruptedException(e));
             } else if (isRetryable(e)) {
-                provider.hokusPocus();
+                getProvider().hokusPocus();
                 observer.onError(new RetryableApiException(client.apiKey(), e.toString(), e));
             } else {
                 observer.onError(e);

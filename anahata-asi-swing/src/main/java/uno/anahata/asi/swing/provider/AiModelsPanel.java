@@ -48,6 +48,7 @@ import javax.swing.UIManager;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.JXTable;
@@ -175,16 +176,6 @@ public class AiModelsPanel extends JPanel {
     private AbstractAiProvider targetProvider;
 
     /**
-     * Constructs a new AiModelsPanel with full search, filter, and selection capabilities.
-     * 
-     * @param models The initial list of models to display.
-     * @param modelSelectionCallback A callback for when a model is double-clicked.
-     */
-    public AiModelsPanel(List<AbstractModel> models, Consumer<AbstractModel> modelSelectionCallback) {
-        this(models, null, modelSelectionCallback);
-    }
-
-    /**
      * Constructs a new AiModelsPanel with container-aware refresh capabilities.
      *
      * @param models The initial list of models to display.
@@ -193,7 +184,7 @@ public class AiModelsPanel extends JPanel {
      * @param modelSelectionCallback A callback for when a model is
      * double-clicked.
      */
-    public AiModelsPanel(List<AbstractModel> models, AbstractAsiContainer asiContainer, Consumer<AbstractModel> modelSelectionCallback) {
+    public AiModelsPanel(List<AbstractModel> models, @NonNull AbstractAsiContainer asiContainer, Consumer<AbstractModel> modelSelectionCallback) {
         super(new BorderLayout(10, 10));
         this.asiContainer = asiContainer;
         this.modelSelectionCallback = modelSelectionCallback;
@@ -203,12 +194,10 @@ public class AiModelsPanel extends JPanel {
         JPanel filterPanel = new JPanel(new WrapLayout(FlowLayout.LEFT, 6, 4));
         filterPanel.setOpaque(false);
 
-        // Extract all providers from container or models
+        // Extract all providers from container
         DefaultComboBoxModel<AbstractAiProvider> comboModel = new DefaultComboBoxModel<>();
         comboModel.addElement(null); // Represents "All AI Providers"
-        List<AbstractAiProvider> allProviders = (asiContainer != null)
-                ? asiContainer.getAllProviders()
-                : models.stream().map(AbstractModel::getProvider).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        List<AbstractAiProvider> allProviders = asiContainer.getAllProviders();
         for (AbstractAiProvider p : allProviders) {
             comboModel.addElement(p);
         }

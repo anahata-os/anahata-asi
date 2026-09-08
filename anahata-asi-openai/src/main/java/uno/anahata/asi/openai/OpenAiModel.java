@@ -61,9 +61,17 @@ public class OpenAiModel extends AbstractModel {
      */
     private static final ObjectMapper API_MAPPER = new ObjectMapper();
     /**
-     * The parent provider for this model.
+     * {@inheritDoc}
+     * <p>
+     * Returns the parent {@link OpenAiResponsesProvider} instance owning this model.
+     * </p>
+     *
+     * @return The OpenAI Responses provider instance.
      */
-    private final OpenAiResponsesProvider provider;
+    @Override
+    public OpenAiResponsesProvider getProvider() {
+        return (OpenAiResponsesProvider) provider;
+    }
     /**
      * The unique identifier for the OpenAI model (e.g., 'gpt-4o').
      */
@@ -205,7 +213,7 @@ public class OpenAiModel extends AbstractModel {
         root.put("model", modelId);
         
         // 0. Deduce statefulness and reasoning transmission capabilities
-        boolean isVerifiedOrg = provider.isVerifiedOrganization();
+        boolean isVerifiedOrg = getProvider().isVerifiedOrganization();
         root.put("store", isVerifiedOrg); 
         
         if (stream) root.put("stream", true);
@@ -320,25 +328,25 @@ public class OpenAiModel extends AbstractModel {
     @SneakyThrows
     public Response generateContent(GenerationRequest request) {
         PreparedPayload prepared = preparePayload(request, false);
-        String apiKey = provider.getCurrentKey();
+        String apiKey = getProvider().getCurrentKey();
 
         System.out.println("--- Request Config JSON (SI & Tools) ---");
         System.out.println(prepared.configJson());
         System.out.println("--- History JSON (User & Model) ---");
         System.out.println(prepared.historyJson());
 
-        HttpRequest httpRequest = provider.createRequestBuilder("responses")
+        HttpRequest httpRequest = getProvider().createRequestBuilder("responses")
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(prepared.fullPayload()))
                 .build();
 
-        HttpResponse<String> httpResponse = provider.getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> httpResponse = getProvider().getHttpClient().send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
         System.out.println("--- Entire Response JSON ---");
         System.out.println(httpResponse.body());
 
         if (httpResponse.statusCode() == 429 || httpResponse.statusCode() == 503) {
-            provider.hokusPocus();
+            getProvider().hokusPocus();
             throw new RetryableApiException(apiKey, "OpenAI API " + httpResponse.statusCode() + ": " + httpResponse.body(), null);
         }
 
@@ -363,13 +371,13 @@ public class OpenAiModel extends AbstractModel {
         
         log.info("Executing OpenAI streaming request to Responses API");
         try {
-            HttpRequest httpRequest = provider.createRequestBuilder("responses")
+            HttpRequest httpRequest = getProvider().createRequestBuilder("responses")
                     .header("Content-Type", "application/json")
                     .header("Accept", "text/event-stream")
                     .POST(HttpRequest.BodyPublishers.ofString(prepared.fullPayload()))
                     .build();
                     
-            HttpClient client = provider.getHttpClient(); {
+            HttpClient client = getProvider().getHttpClient(); {
                 OpenAiModelMessage targetMessage = new OpenAiModelMessage(agi, getModelId());
                 targetMessage.setStreaming(true);
                 List<OpenAiModelMessage> targets = List.of(targetMessage);
@@ -381,9 +389,9 @@ public class OpenAiModel extends AbstractModel {
                     try (Stream<String> bodyStream = response.body()) {
                         errorMsg = bodyStream.collect(Collectors.joining("\n"));
                     }
-                    if (provider.isRetryable(response.statusCode(), errorMsg)) {
-                        provider.hokusPocus();
-                        observer.onError(new RetryableApiException(provider.getCurrentKey(), "Stream Error (" + response.statusCode() + "): " + errorMsg, null));
+                    if (getProvider().isRetryable(response.statusCode(), errorMsg)) {
+                        getProvider().hokusPocus();
+                        observer.onError(new RetryableApiException(getProvider().getCurrentKey(), "Stream Error (" + response.statusCode() + "): " + errorMsg, null));
                     } else {
                         observer.onError(new RuntimeException("Stream Error (" + response.statusCode() + "): " + errorMsg));
                     }

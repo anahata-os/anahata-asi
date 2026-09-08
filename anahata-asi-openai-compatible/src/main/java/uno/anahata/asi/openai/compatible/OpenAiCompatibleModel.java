@@ -63,9 +63,17 @@ import uno.anahata.asi.openai.compatible.adapter.OpenAiCompatibleResponseAdapter
 public class OpenAiCompatibleModel extends AbstractModel {
 
     /**
-     * The provider instance managing this model.
+     * {@inheritDoc}
+     * <p>
+     * Returns the parent {@link OpenAiChatCompletionsProvider} instance owning this model.
+     * </p>
+     *
+     * @return The OpenAI-compatible provider instance.
      */
-    private final OpenAiChatCompletionsProvider provider;
+    @Override
+    public OpenAiChatCompletionsProvider getProvider() {
+        return (OpenAiChatCompletionsProvider) provider;
+    }
     /**
      * The unique identifier for the model (e.g., 'gpt-4o', 'claude-3-5-sonnet').
      */
@@ -373,14 +381,14 @@ public class OpenAiCompatibleModel extends AbstractModel {
         }
         log.info("Executing OpenAI request to endpoint: {}", getEndpoint());
         try {
-            HttpRequest httpRequest = provider.createRequestBuilder(getEndpoint()).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(payload.toString())).build();
-            try (HttpClient client = provider.createHttpClient()) {
+            HttpRequest httpRequest = getProvider().createRequestBuilder(getEndpoint()).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(payload.toString())).build();
+            try (HttpClient client = getProvider().createHttpClient()) {
                 HttpResponse<String> httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
                 if (httpResponse.statusCode() != 200) {
                     String errorBody = httpResponse.body();
-                    if (provider.isRetryable(httpResponse.statusCode(), errorBody)) {
-                        provider.hokusPocus();
-                        throw new RetryableApiException(provider.getCurrentKey(), "API error (" + httpResponse.statusCode() + "): " + errorBody, null);
+                    if (getProvider().isRetryable(httpResponse.statusCode(), errorBody)) {
+                        getProvider().hokusPocus();
+                        throw new RetryableApiException(getProvider().getCurrentKey(), "API error (" + httpResponse.statusCode() + "): " + errorBody, null);
                     }
                     throw new RuntimeException("API error (" + httpResponse.statusCode() + "): " + errorBody);
                 }
@@ -419,8 +427,8 @@ public class OpenAiCompatibleModel extends AbstractModel {
         String configJson = configNode.toString();
         log.info("Executing OpenAI streaming request to endpoint: {}", getEndpoint());
         try {
-            HttpRequest httpRequest = provider.createRequestBuilder(getEndpoint()).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(jsonPayload)).build();
-            try (HttpClient client = provider.createHttpClient()) {
+            HttpRequest httpRequest = getProvider().createRequestBuilder(getEndpoint()).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(jsonPayload)).build();
+            try (HttpClient client = getProvider().createHttpClient()) {
                 List<OpenAiCompatibleModelMessage> targets = new ArrayList<>();
                 AtomicBoolean started = new AtomicBoolean(false);
                 HttpResponse<Stream<String>> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofLines());
@@ -429,10 +437,10 @@ public class OpenAiCompatibleModel extends AbstractModel {
                     try (Stream<String> bodyStream = response.body()) {
                         errorMsg = bodyStream.collect(Collectors.joining("\n"));
                     }
-                    if (provider.isRetryable(response.statusCode(), errorMsg)) {
+                    if (getProvider().isRetryable(response.statusCode(), errorMsg)) {
                         log.info("Retryable streaming error detected ({}). Rotating key and retrying...", response.statusCode());
-                        provider.hokusPocus();
-                        observer.onError(new RetryableApiException(provider.getCurrentKey(), "OpenAI Stream Error (" + response.statusCode() + "): " + errorMsg, null));
+                        getProvider().hokusPocus();
+                        observer.onError(new RetryableApiException(getProvider().getCurrentKey(), "OpenAI Stream Error (" + response.statusCode() + "): " + errorMsg, null));
                     } else {
                         observer.onError(new RuntimeException("OpenAIModel Stream Error (" + response.statusCode() + "): " + errorMsg));
                     }

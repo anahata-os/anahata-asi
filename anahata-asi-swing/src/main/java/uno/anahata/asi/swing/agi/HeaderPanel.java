@@ -243,7 +243,7 @@ public class HeaderPanel extends JPanel {
         }, allModels -> {
             JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "AI Provider & Model Registry", JDialog.ModalityType.MODELESS);
 
-            AiModelsPanel viewer = new AiModelsPanel(allModels, selectedModel -> {
+            AiModelsPanel viewer = new AiModelsPanel(allModels, agi.getConfig().getAsiContainer(), selectedModel -> {
                 dialog.dispose();
                 // 1. Update domain model first so updateModelsForSelectedProvider picks it up
                 agi.setSelectedModel(selectedModel);
