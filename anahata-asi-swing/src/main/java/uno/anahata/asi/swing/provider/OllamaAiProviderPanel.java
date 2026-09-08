@@ -2,6 +2,7 @@
 package uno.anahata.asi.swing.provider;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -9,29 +10,32 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
-import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
-import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.internal.TimeUtils;
+import org.apache.commons.io.FileUtils;
+import org.jdesktop.swingx.prompt.PromptSupport;
 import uno.anahata.asi.ollama.OllamaAiProvider;
-import uno.anahata.asi.ollama.OllamaPullProgress;
 import uno.anahata.asi.ollama.OllamaRemoteModel;
 import uno.anahata.asi.ollama.OllamaRunningModel;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
@@ -152,7 +156,7 @@ public class OllamaAiProviderPanel extends OpenAiChatCompletionsProviderPanel<Ol
         unloadModelBtn.addActionListener(e -> unloadSelectedModel());
         topRow.add(unloadModelBtn);
 
-        pullModelBtn = new JButton("Pull Model...", new AddIcon(14));
+        pullModelBtn = new JButton("Pull Model from ollama.com", new AddIcon(14));
         pullModelBtn.setToolTipText("Download and install a model from ollama.com or custom tag");
         pullModelBtn.addActionListener(e -> showPullModelDialog());
         topRow.add(pullModelBtn);
@@ -344,48 +348,100 @@ public class OllamaAiProviderPanel extends OpenAiChatCompletionsProviderPanel<Ol
     }
 
     /**
-     * Constructs and opens the model pull dialog with autocomplete.
+     * Constructs and opens the model pull dialog with an alphabetically sorted list
+     * showing model sizes, release dates, and installed status from the live server.
      *
-     * @param remoteModels the list of remote models fetched from ollama.com, sorted newest first
+     * @param remoteModels the list of remote models fetched from ollama.com
      */
     private void openPullDialog(List<OllamaRemoteModel> remoteModels) {
-        DefaultComboBoxModel<String> comboModel = new DefaultComboBoxModel<>();
-        for (OllamaRemoteModel rm : remoteModels) {
-            comboModel.addElement(rm.name());
+        List<OllamaRemoteModel> sortedModels = new ArrayList<>(remoteModels);
+        sortedModels.sort((a, b) -> a.name().compareToIgnoreCase(b.name()));
+
+        DefaultComboBoxModel<OllamaRemoteModel> comboModel = new DefaultComboBoxModel<>();
+        for (OllamaRemoteModel rm : sortedModels) {
+            comboModel.addElement(rm);
         }
-        JComboBox<String> modelCombo = new JComboBox<>(comboModel);
-        modelCombo.setEditable(true);
-        AutoCompleteDecorator.decorate(modelCombo);
+        JComboBox<OllamaRemoteModel> modelCombo = new JComboBox<>(comboModel);
+        modelCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof OllamaRemoteModel rm) {
+                    String sizeStr = rm.size() > 0 ? FileUtils.byteCountToDisplaySize(rm.size()) : "";
+                    String dateStr = rm.modifiedAt() != null ? TimeUtils.formatSmartTimestamp(rm.modifiedAt()) : "";
+                    boolean installed = isModelInstalled(rm.name());
+                    
+                    StringBuilder sb = new StringBuilder("<html><b>").append(rm.name()).append("</b>");
+                    if (!sizeStr.isBlank()) {
+                        sb.append("&nbsp;&nbsp;<font color='#888888'>").append(sizeStr).append("</font>");
+                    }
+                    if (!dateStr.isBlank()) {
+                        sb.append("&nbsp;&nbsp;<font color='#777777'>• ").append(dateStr).append("</font>");
+                    }
+                    if (installed) {
+                        sb.append("&nbsp;&nbsp;<font color='#008800'><b>[Installed]</b></font>");
+                    }
+                    sb.append("</html>");
+                    setText(sb.toString());
+                } else if (value != null) {
+                    setText(value.toString());
+                }
+                return this;
+            }
+        });
 
-        JPanel dialogPanel = new JPanel(new MigLayout("fillx, insets 10", "[grow,fill]", "[]8[]8[]"));
-        dialogPanel.add(new JLabel("<html><b>Download Model to Ollama Server:</b><br/>"
-                + "Select a popular model from ollama.com or enter any custom model tag:</html>"), "wrap");
+        JPanel dialogPanel = new JPanel(new MigLayout("fillx, insets 10", "[grow,fill]", "[]8[]"));
+        dialogPanel.add(new JLabel("<html><b>Select Model to Download from ollama.com:</b></html>"), "wrap");
         dialogPanel.add(modelCombo, "growx, wrap");
-
-        JLabel hintLabel = new JLabel("<html><i>Examples: qwen2.5-coder:7b, deepseek-r1:8b, llama3.3, mistral</i></html>");
-        hintLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
-        dialogPanel.add(hintLabel, "wrap");
 
         int option = JOptionPane.showConfirmDialog(this, dialogPanel, "Pull Model from ollama.com", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (option == JOptionPane.OK_OPTION) {
-            Object selectedObj = modelCombo.getSelectedItem();
-            if (selectedObj == null || selectedObj.toString().isBlank()) {
+            OllamaRemoteModel selected = (OllamaRemoteModel) modelCombo.getSelectedItem();
+            if (selected == null) {
                 return;
             }
-            String modelTag = selectedObj.toString().trim();
+            String modelTag = selected.name();
 
-            boolean alreadyInstalled = provider.getModels().stream()
-                    .anyMatch(m -> m.getModelId().equalsIgnoreCase(modelTag)
-                            || m.getModelId().equalsIgnoreCase(modelTag + ":latest")
-                            || (modelTag.endsWith(":latest") && m.getModelId().equalsIgnoreCase(modelTag.substring(0, modelTag.length() - 7))));
-
-            if (alreadyInstalled) {
-                JOptionPane.showMessageDialog(this, "That model is already installed on this Ollama server.", "Already Installed", JOptionPane.WARNING_MESSAGE);
+            if (isModelInstalled(modelTag)) {
+                JOptionPane.showMessageDialog(this, "Model '" + modelTag + "' is already installed on this Ollama server.", "Already Installed", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
             executePull(modelTag);
         }
+    }
+
+    /**
+     * Checks if a model tag is already installed on the Ollama server by comparing
+     * against live discovered models from {@code /api/tags} and registered local models.
+     * 
+     * @param modelTag the model tag to check
+     * @return true if installed on the server
+     */
+    private boolean isModelInstalled(String modelTag) {
+        if (modelTag == null || modelTag.isBlank()) {
+            return false;
+        }
+        String clean = modelTag.trim().toLowerCase();
+        String withLatest = clean.contains(":") ? clean : clean + ":latest";
+        String withoutLatest = clean.endsWith(":latest") ? clean.substring(0, clean.length() - 7) : clean;
+
+        // 1. Authoritative: Check live models reported by Ollama /api/tags
+        boolean inApiTags = provider.getCachedApiModels().stream()
+                .anyMatch(m -> {
+                    String id = m.getModelId().toLowerCase();
+                    return id.equals(clean) || id.equals(withLatest) || id.equals(withoutLatest);
+                });
+        if (inApiTags) {
+            return true;
+        }
+
+        // 2. Check locally registered models
+        return provider.getModels().stream()
+                .anyMatch(m -> {
+                    String id = m.getModelId().toLowerCase();
+                    return id.equals(clean) || id.equals(withLatest) || id.equals(withoutLatest);
+                });
     }
 
     /**
@@ -427,19 +483,13 @@ public class OllamaAiProviderPanel extends OpenAiChatCompletionsProviderPanel<Ol
     }
 
     /**
-     * Formats bytes into human-readable MB or GB.
+     * Formats bytes into human-readable representation using commons-io.
      * 
      * @param bytes the raw byte count
      * @return formatted string
      */
     private static String formatBytes(long bytes) {
-        if (bytes < 1024 * 1024) {
-            return bytes / 1024 + " KB";
-        }
-        if (bytes < 1024L * 1024L * 1024L) {
-            return String.format("%.1f MB", bytes / (1024.0 * 1024.0));
-        }
-        return String.format("%.2f GB", bytes / (1024.0 * 1024.0 * 1024.0));
+        return FileUtils.byteCountToDisplaySize(bytes);
     }
 
     /**

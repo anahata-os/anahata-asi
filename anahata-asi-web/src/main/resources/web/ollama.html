@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WMGS1YH2WD"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-WMGS1YH2WD');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="description" content="Anahata ASI Ollama Provider. Air-gapped, zero cloud dependency, sovereign local intelligence with live GPU VRAM monitoring and 1-click model pulling.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Ollama | Anahata ASI Platform</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .docs-wrapper { display: flex; max-width: 1400px; margin: 0 auto; padding: 160px 2rem 100px; gap: 4rem; }
+        .sidebar { width: 300px; flex-shrink: 0; position: sticky; top: 130px; height: calc(100vh - 160px); overflow-y: auto; padding-right: 1.5rem; }
+        .sidebar-nav h4 { color: var(--barca-gold); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(237, 187, 0, 0.2); padding-bottom: 8px; }
+        .sidebar-nav ul { list-style: none; padding: 0; }
+        .sidebar-nav a { color: var(--text-muted); text-decoration: none; display: block; padding: 10px 15px; transition: var(--transition); border-left: 3px solid transparent; }
+        .sidebar-nav a:hover, .sidebar-nav a.active { color: var(--primary-light); border-left-color: var(--primary-light); background: linear-gradient(to right, rgba(44, 122, 123, 0.1), transparent); }
+        .main-content { flex-grow: 1; max-width: 900px; }
+        .screenshot-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
+            margin: 2rem 0;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        .screenshot-card img {
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: transform 0.2s ease;
+        }
+        .screenshot-card img:hover {
+            transform: scale(1.01);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="main-nav"></div>
+
+    <div class="docs-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-nav">
+                <h4>Ollama Provider</h4>
+                <ul>
+                    <li><a href="#overview" class="active">Overview</a></li>
+                    <li><a href="#vram-monitor">GPU VRAM Monitor</a></li>
+                    <li><a href="#pull-models">1-Click Model Pull</a></li>
+                    <li><a href="#architecture">Zero-Lockin Architecture</a></li>
+                    <li><a href="#context-window">Dynamic Context Allocation</a></li>
+                    <li><a href="#air-gapped">Air-Gapped Sovereign AI</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <section id="overview">
+                <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 0.5rem;">
+                    <img src="assets/logos/uno.anahata.asi.ollama.OllamaAiProvider.png" alt="Ollama Logo" style="height: 38px;">
+                    <h1 style="margin: 0;">Local <span style="color: var(--barca-gold)">Ollama</span></h1>
+                </div>
+                <div style="display: flex; gap: 8px; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                    <span class="nb-badge" style="border-color: var(--verified-green); color: var(--verified-green);">100% Offline</span>
+                    <span class="nb-badge" style="border-color: var(--barca-blue); color: var(--primary-light);">Zero Cloud Egress</span>
+                    <span class="nb-badge" style="border-color: var(--barca-gold); color: var(--barca-gold);">Live VRAM Diagnostics</span>
+                </div>
+                <p class="tagline" style="text-align: left;">Air-gapped, zero cloud dependency, sovereign local intelligence.</p>
+                <p>The <strong>Ollama AI Provider</strong> (<code>uno.anahata.asi.ollama.OllamaAiProvider</code>) equips your Anahata ASI container with direct, first-class control over local and self-hosted Ollama instances. Run frontier open-source models like <strong>Llama 3.3</strong>, <strong>DeepSeek R1</strong>, <strong>Qwen 2.5 Coder</strong>, and <strong>Mistral</strong> right on your developer workstation or air-gapped enterprise cluster.</p>
+
+                <!-- Featured Screenshot -->
+                <div class="screenshot-card">
+                    <img src="screenshots/ollamaaiproviderpanel.png" alt="Ollama AI Provider Panel with Live VRAM Monitor and Model Pulling" class="clickable-media" data-caption="Anahata ASI - Local Ollama Provider Panel with Real-time GPU VRAM Monitor and 1-Click Model Pulling">
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.8rem; margin-bottom: 0;">
+                        <i class="fas fa-search-plus" style="color: var(--barca-gold); margin-right: 4px;"></i> Click to enlarge: Live VRAM telemetry (Total RAM, GPU VRAM, Context, Expiry) and 1-click model pulling from ollama.com.
+                    </p>
+                </div>
+            </section>
+
+            <section id="vram-monitor">
+                <h2>Real-Time GPU VRAM & Process Monitor</h2>
+                <p>Unlike basic API wrappers that treat local servers as black boxes, Anahata ASI actively communicates with Ollama's native management endpoints:</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1.5rem 0;">
+                    <div class="adapter-box" style="margin: 0; border-top: 4px solid var(--barca-gold);">
+                        <i class="fas fa-microchip" style="color: var(--barca-gold); font-size: 1.4rem; margin-bottom: 0.8rem; display: block;"></i>
+                        <h4>Native <code>/api/ps</code> Inspection</h4>
+                        <p>Monitors exactly which models are loaded in host RAM and dedicated GPU VRAM, along with active context length, parameter count, and quantization level (e.g. <code>Q4_K_M</code>).</p>
+                    </div>
+                    <div class="adapter-box" style="margin: 0; border-top: 4px solid var(--verified-green);">
+                        <i class="fas fa-trash-arrow-up" style="color: var(--verified-green); font-size: 1.4rem; margin-bottom: 0.8rem; display: block;"></i>
+                        <h4>Instant GPU Memory Unloading</h4>
+                        <p>Need GPU memory for gaming, training, or switching models? The <b>"Unload from Memory"</b> button sends an atomic <code>keep_alive: 0</code> call to release dedicated VRAM instantly without killing the server process.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="pull-models">
+                <h2>1-Click Model Pulling from ollama.com</h2>
+                <p>Never leave your development environment to run terminal commands. Click <b>"Pull Model from ollama.com"</b> to open a unified download dialog:</p>
+                <div class="adapter-box">
+                    <ul>
+                        <li><strong>Live Registry Discovery</strong>: Queries <code>https://ollama.com/api/tags</code> directly to fetch available models, archive sizes, and release dates.</li>
+                        <li><strong>Already-Installed Detection</strong>: Cross-references models against your live server's <code>/api/tags</code>, marking installed models with a green <code>[Installed]</code> badge so you never re-download models by accident.</li>
+                        <li><strong>Streaming Download Telemetry</strong>: Streams real-time progress percentages, download rates, and layer extraction status directly into the panel's progress bar.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="architecture">
+                <h2>Zero-Lockin Architecture</h2>
+                <p><code>OllamaAiProvider</code> extends Anahata's universal <code>OpenAiChatCompletionsProvider</code>:</p>
+                <div class="adapter-box" style="border-top: 4px solid var(--primary-light);">
+                    <p>
+                        By speaking standard <code>/v1/chat/completions</code> over HTTP, Anahata treats Ollama with the exact same first-class streaming and function calling pipeline as cloud providers. There are no vendor SDK dependencies, no binary bloat, and no closed-source libraries.
+                    </p>
+                </div>
+            </section>
+
+            <section id="context-window">
+                <h2>Dynamic Context Allocation (<code>num_ctx</code>)</h2>
+                <p>By default, Ollama clamps requests to a 2,048 token context window unless explicitly instructed otherwise. Anahata ASI solves this automatically:</p>
+                <div class="adapter-box" style="border-top: 4px solid var(--accent);">
+                    <p>
+                        When querying <code>/api/tags</code> or <code>/api/show</code>, Anahata extracts the model's true context limit (e.g., 32,768, 65,536, or 131,072 tokens). During every request, <code>OllamaModel.enrichPayload()</code> injects:
+                    </p>
+                    <pre style="background: rgba(0,0,0,0.4); padding: 12px; border-radius: 6px; overflow-x: auto; font-family: monospace; font-size: 0.9rem; color: var(--barca-gold);">"options": { "num_ctx": 32768 }</pre>
+                    <p style="margin-top: 8px; margin-bottom: 0;">
+                        This ensures your local models never suffer from premature context truncation when performing deep workspace analysis or large Java file edits.
+                    </p>
+                </div>
+            </section>
+
+            <section id="air-gapped">
+                <h2>Air-Gapped Sovereign AI</h2>
+                <p>For defense, government, healthcare, financial institutions, and privacy-focused developers, running AI completely air-gapped is a strict requirement:</p>
+                <div class="adapter-box" style="border-top: 4px solid var(--barca-blue);">
+                    <p>
+                        With <code>apiKeyRequired = false</code> and direct binding to <code>localhost:11434</code> or local private networks, not a single byte of your source code, system prompts, or tool execution outputs ever touches the public internet.
+                    </p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="nav.js"></script>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=f19c44f5-8b2e-458f-beab-96e4f9f8e603" />
+</body>
+</html>
