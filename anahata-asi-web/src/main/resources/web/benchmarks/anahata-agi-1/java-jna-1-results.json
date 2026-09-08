@@ -148,4 +148,29 @@
   "screenshotPath" : "/home/pablo/.anahata/asi/recordings/JAVA-JNA-1_kimi_kimi-k3_20260908_180554_thumb.png",
   "sessionId" : "e6dd91e0-42ea-4ff5-adcf-fde13efe2e3c",
   "observations" : "Disqualified / Failed: Mutated global host JVM UIManager / Look & Feel ('com.formdev.flatlaf.FlatDarkLaf') violating sandbox safety rules. Uninitialized nested TimeVal structs in JNA Rusage and glibc struct alignment errors caused all native C calls to fail silently. Unclosed Files.lines Stream caused file descriptor leaks in the sampler loop. No live telemetry data was displayed."
+}, {
+  "participant" : {
+    "providerUuid" : "NovaRouteAI",
+    "modelId" : "qwen3.8-max",
+    "thinkingLevel" : "HIGH"
+  },
+  "testCode" : "JAVA-JNA-1",
+  "asiContainer" : "AsiDesktopAsiContainer",
+  "timestamp" : "2026-09-08T16:45:34.889410Z",
+  "durationSeconds" : 1704.56,
+  "turns" : 3,
+  "promptTokens" : 192547,
+  "candidatesTokens" : 81099,
+  "thoughtsTokens" : 35235,
+  "totalTokens" : 273646,
+  "passed" : true,
+  "judgeScores" : [ {
+    "name" : "Priyanka",
+    "score" : 4.0,
+    "comments" : "pretty good but basic swing compile errors"
+  } ],
+  "videoUrl" : "https://youtu.be/cNMZGJSD7g0",
+  "screenshotPath" : "/home/pablo/.anahata/asi/recordings/JAVA-JNA-1_qwen3.8-max_20260908_181710_thumb.png",
+  "sessionId" : "66593ab7-36d8-414f-bc19-525dbef3c192",
+  "observations" : "Self-healed & Passed on Turn 2: Incredible native depth and architecture. Mapped 11 C-library functions with hand-crafted JNA Structures (sysinfo with LP64 alignment/slack, uname 6x65B arrays, rusage with nested TimeVal, statvfs, sysconf, rlimit, clock_gettime). Implemented non-blocking background daemon sampling off-EDT with SwingUtilities.invokeLater dispatch, custom radial gauges, dual-series gradient sparklines, 24 per-core bars, 20 sysfs sensors, and live probe tables. Turn 1 failed due to minor typos (getAvailableFamilyNames -> getAvailableFontFamilyNames and a leftover moveTo2 marker); Turn 2 diagnosed compiler diagnostics cleanly and executed with ZERO defects. Respects host LaF without mutating global UIManager."
 } ]
