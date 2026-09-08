@@ -276,7 +276,27 @@ public class AiModelsPanel extends JPanel {
 
         // Table
         tableModel = new AiModelTableModel(models);
-        table = new JXTable(tableModel);
+        table = new JXTable(tableModel) {
+            @Override
+            public String getToolTipText(MouseEvent e) {
+                int viewRow = rowAtPoint(e.getPoint());
+                if (viewRow >= 0) {
+                    int modelRow = convertRowIndexToModel(viewRow);
+                    AbstractModel m = tableModel.getModelAt(modelRow);
+                    if (m != null) {
+                        String rawDesc = m.getRawDescription();
+                        if (rawDesc != null && !rawDesc.isBlank()) {
+                            return rawDesc;
+                        }
+                        String desc = m.getDescription();
+                        if (desc != null && !desc.isBlank()) {
+                            return desc;
+                        }
+                    }
+                }
+                return super.getToolTipText(e);
+            }
+        };
 
         table.setColumnControlVisible(true);
         table.setHorizontalScrollEnabled(true);
