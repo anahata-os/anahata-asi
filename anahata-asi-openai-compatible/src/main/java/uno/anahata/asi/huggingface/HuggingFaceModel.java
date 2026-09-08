@@ -2,61 +2,253 @@
 package uno.anahata.asi.huggingface;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.net.URI;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.agi.provider.GenerationRequest;
+import uno.anahata.asi.agi.provider.ResponseModality;
+import uno.anahata.asi.internal.JacksonUtils;
+import uno.anahata.asi.internal.TokenizerUtils;
 import uno.anahata.asi.openai.compatible.OpenAiCompatibleModel;
+import uno.anahata.asi.openai.compatible.OpenAiCompatibleReasoningStyle;
 
 /**
- * A model instance that carries additional metadata discovered from the Hugging Face Hub.
+ * A specialized model instance that encapsulates its own metadata discovery
+ * from the Hugging Face Hub.
+ * <p>
+ * Fetches and parses architectural specifications ({@code config.json}), chat
+ * templates and tokenizer settings ({@code tokenizer_config.json}), and
+ * sampling parameters ({@code generation_config.json}) in parallel, enriching
+ * generation requests with explicit {@code max_tokens} limits.
+ * </p>
+ *
+ * @author anahata
  */
+@Slf4j
 @Getter
 @Setter
 public class HuggingFaceModel extends OpenAiCompatibleModel {
 
     /**
-     * The raw JSON from the model's 'config.json', containing architectural 
+     * The raw JSON from the model's 'config.json', containing architectural
      * details and token limits.
      */
     private JsonNode hubConfig;
+
     /**
-     * The raw JSON from the model's 'tokenizer_config.json', used to 
-     * discover chat templates and tool support markers.
+     * The raw JSON from the model's 'tokenizer_config.json', used to discover
+     * chat templates and tool support markers.
      */
     private JsonNode tokenizerConfig;
+
     /**
-     * The raw JSON from the model's 'generation_config.json', used to 
-     * extract default sampling parameters like temperature and top-p.
+     * The raw JSON from the model's 'generation_config.json', used to extract
+     * default sampling parameters like temperature and top-p.
      */
     private JsonNode generationConfig;
-    
-    /**
-     * Flag derived from the chat template or config indicating if the model 
-     * supports tool calling.
-     */
-    private boolean supportsFunctionCalling = false;
 
     /**
      * Constructs a new Hugging Face model instance.
-     * @param provider    The owning HF provider.
-     * @param modelId     The full repo ID.
+     *
+     * @param provider The owning HF provider.
+     * @param modelId The full repo ID.
      * @param displayName The display name.
      */
     public HuggingFaceModel(HuggingFaceProvider provider, String modelId, String displayName) {
         super(provider, modelId, displayName);
+        setSupportsFunctionCalling(false);
     }
 
     /**
      * {@inheritDoc}
-     * <p>Implementation details: Returns the value discovered during the Hub 
-     * inspection phase.</p>
+     * <p>
+     * Returns the typed parent {@link HuggingFaceProvider} owning this model.
+     * </p>
      */
     @Override
-    public boolean isSupportsFunctionCalling() {
-        return supportsFunctionCalling;
+    public HuggingFaceProvider getProvider() {
+        return (HuggingFaceProvider) provider;
     }
 
     /**
-     * Builds a rich HTML view combining architecture, tokenizer class, and deep-inspected sampling parameters.
+     * Performs deep inspection of this model by asynchronously fetching its
+     * configuration files from the Hugging Face Hub in parallel, using a
+     * pre-resolved API key.
+     *
+     * @param apiKey The pre-resolved API key to avoid lock contention with the
+     * provider.
+     * @return A CompletableFuture completing when all three Hub JSON files have
+     * been parsed.
+     */
+    public CompletableFuture<Void> inspectAsync(String apiKey) {
+        log.info("Inspecting Hugging Face model {}", getModelId());
+
+        CompletableFuture<Void> configFuture = fetchHubJsonAsync("config.json", apiKey)
+                .thenAccept(json -> {
+                    if (json != null) {
+                        log.info("Got config.json for {}", getModelId());
+                        this.hubConfig = json;
+                        if (json.has("max_position_embeddings")) {
+                            setMaxInputTokens(json.get("max_position_embeddings").asInt());
+                        } else if (json.has("max_sequence_length")) {
+                            setMaxInputTokens(json.get("max_sequence_length").asInt());
+                        } else if (json.has("seq_length")) {
+                            setMaxInputTokens(json.get("seq_length").asInt());
+                        } else if (json.has("context_length")) {
+                            setMaxInputTokens(json.get("context_length").asInt());
+                        }
+
+                        if (json.has("version")) {
+                            setVersion(json.get("version").asText());
+                        }
+                        if (json.has("model_type")) {
+                            setDescription("[" + json.get("model_type").asText() + "]");
+                        }
+
+                        // Response modalities: Hugging Face router chat/completions endpoints generate text responses
+                        setSupportedResponseModalities(new ArrayList<>(List.of(ResponseModality.TEXT)));
+                    } else {
+                        log.warn("Could not fetch config.json for {}", getModelId());
+                    }
+                });
+
+        CompletableFuture<Void> tokenizerFuture = fetchHubJsonAsync("tokenizer_config.json", apiKey)
+                .thenAccept(json -> {
+                    if (json != null) {
+                        log.info("Got tokenizer_config.json for {}", getModelId());
+                        this.tokenizerConfig = json;
+                        String chatTemplate = json.path("chat_template").asText("");
+                        if (!chatTemplate.isBlank()) {
+                            if (chatTemplate.contains("tools") || chatTemplate.contains("tool_calls")
+                                    || chatTemplate.contains("<tool_call>") || chatTemplate.contains("[TOOL_CALLS]")
+                                    || chatTemplate.contains("[AVAILABLE_TOOLS]") || chatTemplate.contains("observation")) {
+                                setSupportsFunctionCalling(true);
+                            }
+                            if (chatTemplate.contains("<think>")) {
+                                setReasoningStyle(OpenAiCompatibleReasoningStyle.TAGS);
+                                setReasoningTags(List.of("<think>", "</think>"));
+                            } else if (chatTemplate.contains("<|thought|>")) {
+                                setReasoningStyle(OpenAiCompatibleReasoningStyle.TAGS);
+                                setReasoningTags(List.of("<|thought|>", "<|assistant|>"));
+                            }
+                        }
+                        if (getMaxInputTokens() == null && json.has("model_max_length")) {
+                            int mml = json.get("model_max_length").asInt();
+                            if (mml > 0 && mml < 10_000_000) {
+                                setMaxInputTokens(mml);
+                            }
+                        }
+                    } else {
+                        log.warn("Could not fetch tokenizer_config.json for {}", getModelId());
+                    }
+                });
+
+        CompletableFuture<Void> generationFuture = fetchHubJsonAsync("generation_config.json", apiKey)
+                .thenAccept(json -> {
+                    if (json != null) {
+                        log.info("Got generation_config.json for {}", getModelId());
+                        this.generationConfig = json;
+                        // Note: max_new_tokens in generation_config is an author demo default, not a model ceiling.
+                        // We leave maxOutputTokens unconstrained so generation can fill available context.
+                        if (json.has("temperature")) {
+                            setDefaultTemperature((float) json.get("temperature").asDouble());
+                        }
+                        if (json.has("top_k")) {
+                            setDefaultTopK(json.get("top_k").asInt());
+                        }
+                        if (json.has("top_p")) {
+                            setDefaultTopP((float) json.get("top_p").asDouble());
+                        }
+                    } else {
+                        log.warn("Could not fetch generation_config.json for {}", getModelId());
+                    }
+                });
+
+        return CompletableFuture.allOf(configFuture, tokenizerFuture, generationFuture)
+                .thenRun(() -> {
+                    setRawDescription(buildHubHtmlDescription());
+                    setSupportedActions(List.of("chat/completions"));
+                });
+    }
+
+    /**
+     * Helper to fetch a JSON file from the Hugging Face Hub's main branch.
+     *
+     * @param filename The config filename (e.g. 'config.json').
+     * @param apiKey The pre-resolved Bearer token.
+     * @return A CompletableFuture resolving to the parsed JSON or null.
+     */
+    private CompletableFuture<JsonNode> fetchHubJsonAsync(String filename, String apiKey) {
+        String url = HuggingFaceProvider.HF_HUB_BASE + getModelId() + "/resolve/main/" + filename;
+        log.info("Fetching Hub metadata: {}", url);
+
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(Duration.ofSeconds(30))
+                .GET();
+
+        if (apiKey != null && !apiKey.isBlank()) {
+            builder.header("Authorization", "Bearer " + apiKey);
+        } else {
+            log.warn("fetching hf json files without api key.... could this lead to hugging face denying the request due to too much parallelism?");
+        }
+
+        return HuggingFaceProvider.HUB_CLIENT.sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString())
+                .thenApply(resp -> {
+                    if (resp.statusCode() == 200) {
+                        try {
+                            return JacksonUtils.parse(resp.body(), JsonNode.class);
+                        } catch (Exception e) {
+                            log.error("Exception parsing response body for {} {}", getModelId(), filename, e);
+                        }
+                    } else {
+                        log.debug("HTTP {} fetching {} for {}", resp.statusCode(), filename, getModelId());
+                    }
+                    return null;
+                });
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Ensures that {@code max_tokens} is populated in
+     * the request payload so Hugging Face router does not truncate generations
+     * at its low server default.
+     * </p>
+     */
+    @Override
+    protected void enrichPayload(ObjectNode payload, GenerationRequest request) {
+        super.enrichPayload(payload, request);
+
+        if (!payload.has("max_tokens")) {
+            if (getMaxInputTokens() != null && getMaxInputTokens() > 0) {
+                int roughPromptTokens = TokenizerUtils.countTokens(payload.toString(), getTokenizerType());
+                // 1% tokenizer discrepancy forgiveness + 64 tokens safety buffer to prevent router context overflow
+                int safePromptBudget = (int) Math.ceil(roughPromptTokens * 1.01d) + 64;
+                int maxOut = Math.max(1, getMaxInputTokens() - safePromptBudget);
+                // Cap single generation at 128K tokens (131,072) to prevent serverless router rejects on 1M+ context models
+                maxOut = Math.min(maxOut, 131072);
+                payload.put("max_tokens", maxOut);
+                log.info("Worked out dynamic max_tokens: {} (context: {}, safe prompt budget: {}) for model {}",
+                        maxOut, getMaxInputTokens(), safePromptBudget, getModelId());
+            } else {
+                payload.put("max_tokens", 131072);
+                log.info("Defaulting max_tokens to 128K as model does not report max input tokens for {}", getModelId());
+            }
+        }
+    }
+
+    /**
+     * Builds a rich HTML view combining architecture, tokenizer class, and
+     * deep-inspected sampling parameters.
      *
      * @return The formatted HTML summary string.
      */
@@ -66,7 +258,7 @@ public class HuggingFaceModel extends OpenAiCompatibleModel {
         if (hubConfig != null) {
             sb.append("<b>Architecture:</b> ").append(hubConfig.path("model_type").asText("unknown")).append("<br>");
             if (hubConfig.has("architectures") && hubConfig.get("architectures").isArray()) {
-                 sb.append("<b>Class:</b> ").append(hubConfig.get("architectures").get(0).asText()).append("<br>");
+                sb.append("<b>Class:</b> ").append(hubConfig.get("architectures").get(0).asText()).append("<br>");
             }
             sb.append("<b>DType:</b> ").append(hubConfig.path("torch_dtype").asText("unknown")).append("<br>");
             sb.append("<b>Context Window:</b> ").append(getMaxInputTokens()).append(" tokens<br>");
@@ -76,7 +268,8 @@ public class HuggingFaceModel extends OpenAiCompatibleModel {
         }
         sb.append("<b>Function Calling:</b> ").append(isSupportsFunctionCalling()).append("<br>");
         sb.append("<b>Reasoning Style:</b> ").append(getReasoningStyle()).append("<br>");
-        
+        sb.append("<b>Modalities:</b> ").append(getSupportedResponseModalities().stream().map(Enum::name).collect(java.util.stream.Collectors.joining(", "))).append("<br>");
+
         if (generationConfig != null) {
             sb.append("<hr><b>Default Sampling:</b><br>");
             sb.append("&nbsp;&nbsp;Temperature: ").append(getDefaultTemperature()).append("<br>");
@@ -85,11 +278,11 @@ public class HuggingFaceModel extends OpenAiCompatibleModel {
                 sb.append("&nbsp;&nbsp;Max Output Tokens: ").append(getMaxOutputTokens()).append("<br>");
             }
         }
-        
+
         if (hubConfig != null && hubConfig.has("transformers_version")) {
             sb.append("<hr><font size='-2'>Built with Transformers ").append(hubConfig.get("transformers_version").asText()).append("</font>");
         }
-        
+
         sb.append("</html>");
         return sb.toString();
     }
