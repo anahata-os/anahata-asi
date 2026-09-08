@@ -312,6 +312,7 @@ public class Resources extends AnahataToolkit {
      * Performs surgical text replacements in an existing file.
      *
      * @param replacements The replacements DTO.
+     * @param reason the overall reason for the update
      * @return A standard unified diff of the changes applied.
      * @throws Exception if replacements fail.
      */
@@ -321,13 +322,15 @@ public class Resources extends AnahataToolkit {
             + "\n**3. Turn Sequencing & Multi-File Batching**: You CAN call this tool on multiple DIFFERENT files in the same turn (batching edits across different files is encouraged!). However, for any single given resource, you can only call this tool ONCE per turn because executing the edit updates that file's lastModified timestamp on disk. If you have multiple edits in the SAME file, combine them into the `replacements` list of that single tool call. "
             + "\n**4. Validation**: Requires `resourceUuid` and the latest `lastModified` timestamp from the RAG message."
             + "\n**5. Coding java**: If you are using this tool for coding java, don't use fqn in method bodies, simply add another replacement for the imports section and import whatever fqns you need.")
-    public String findAndReplaceInTextResource(@AgiToolParam("The set of replacements.") TextResourceReplacements replacements) throws Exception {
+    public String findAndReplaceInTextResource(
+            @AgiToolParam("The set of replacements.") TextResourceReplacements replacements,
+            @AgiToolParam(value = "The overall reason for modifying the text resource, summarizing all changes made.", required = false) String reason) throws Exception {
         replacements.validate(getAgi());
         Resource res = getAgi().getResourceManager().getResources().get(replacements.getResourceUuid());
         String revised = replacements.calculateResultingContent(getAgi());
         res.write(revised);
         replacements.setResultingContent(res.asText());
-        log("Performed replacements in: " + res.getName());
+        log("Performed replacements in: " + res.getName() + (reason != null && !reason.isBlank() ? " (" + reason + ")" : ""));
         return replacements.getUnifiedDiff(getAgi()) + "\n---END OF DIFF---\nResource saved. New Last Modified: " + res.getLastLoadTimestamp();
     }
 
