@@ -1303,8 +1303,11 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
         Agi templateAgi = KryoUtils.clone(sessionAgi);
         templateAgi.getConfig().setSessionId(templateId);
         templateAgi.getConfig().setParentUuid(null);
-        registerTemplate(templateAgi);
+        templateAgi.setOpen(false);
+        templateAgi.setStagedUserMessage(null);
+        templateAgi.clearToolPrompt();
         templateAgi.bindToContainer(this);
+        registerTemplate(templateAgi);
         saveAgi(templateAgi);
         return templateAgi;
     }

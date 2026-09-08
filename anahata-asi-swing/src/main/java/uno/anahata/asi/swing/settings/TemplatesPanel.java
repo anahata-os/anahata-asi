@@ -27,6 +27,7 @@ import javax.swing.JScrollPane;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
 import javax.swing.UIManager;
+import uno.anahata.asi.swing.components.ExceptionDialog;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -302,9 +303,7 @@ public class TemplatesPanel extends JPanel {
                         JOptionPane.INFORMATION_MESSAGE, new SaveIcon(32));
             } catch (IOException ex) {
                 log.error("Failed to create template: {}", templateId, ex);
-                JOptionPane.showMessageDialog(this,
-                        "Failed to create template: " + ex.getMessage(),
-                        "Error", JOptionPane.ERROR_MESSAGE);
+                ExceptionDialog.show(this, "New AGI Template", "Failed to create template: " + templateId, ex);
             }
         }
     }
@@ -334,9 +333,7 @@ public class TemplatesPanel extends JPanel {
                 templateList.setSelectedValue(defaultAgi, true);
             } catch (IOException ex) {
                 log.error("Failed to set template as default", ex);
-                JOptionPane.showMessageDialog(this,
-                        "Failed to set default template: " + ex.getMessage(),
-                        "Error", JOptionPane.ERROR_MESSAGE);
+                ExceptionDialog.show(this, "Set as Default Template", "Failed to set default template", ex);
             }
         }
     }

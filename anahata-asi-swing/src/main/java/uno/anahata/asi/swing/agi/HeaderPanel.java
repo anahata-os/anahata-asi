@@ -427,9 +427,7 @@ public class HeaderPanel extends JPanel {
                         "Template Saved", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
                 log.error("Failed to create template from session", ex);
-                JOptionPane.showMessageDialog(this,
-                        "Failed to create template: " + ex.getMessage(),
-                        "Error", JOptionPane.ERROR_MESSAGE);
+                ExceptionDialog.show(this, "Save as Template", "Failed to create template from session", ex);
             }
         }
     }
@@ -462,9 +460,7 @@ public class HeaderPanel extends JPanel {
                             "Template Duplicated", JOptionPane.INFORMATION_MESSAGE);
                 } catch (Exception ex) {
                     log.error("Failed to duplicate template", ex);
-                    JOptionPane.showMessageDialog(this,
-                            "Failed to duplicate template: " + ex.getMessage(),
-                            "Error", JOptionPane.ERROR_MESSAGE);
+                    ExceptionDialog.show(this, "Duplicate Template", "Failed to duplicate template", ex);
                 }
             }
         } else {
