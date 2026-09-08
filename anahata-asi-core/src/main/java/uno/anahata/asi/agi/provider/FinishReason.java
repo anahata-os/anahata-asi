@@ -45,5 +45,5 @@ public enum FinishReason {
     /** The generated image was blocked for other reasons. */
     IMAGE_OTHER,
     /** Anahata-specific catch-all for reasons not recognized in this version. */
-    GOD_FUCKING_KNOWS;
+    GOD_KNOWS;
 }

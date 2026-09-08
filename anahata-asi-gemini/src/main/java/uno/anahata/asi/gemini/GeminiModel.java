@@ -521,7 +521,7 @@ public class GeminiModel extends AbstractModel {
                     target.setModelId(lastGeminiResponse.getModelVersion());
 
                     if (target.getFinishReason() == null) {
-                        target.setFinishReason(FinishReason.GOD_FUCKING_KNOWS);
+                        target.setFinishReason(FinishReason.GOD_KNOWS);
                     }
                 }
             }

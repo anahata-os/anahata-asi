@@ -210,14 +210,14 @@ public class GeminiModelMessage extends AbstractModelMessage<GeminiResponse> {
      */
     public static FinishReason toAnahataFinishReason(com.google.genai.types.FinishReason fr) {
         if (fr == null) {
-            return FinishReason.GOD_FUCKING_KNOWS;
+            return FinishReason.GOD_KNOWS;
         }
         
         try {
             return FinishReason.valueOf(fr.knownEnum().name());
         } catch (IllegalArgumentException e) {
             log.warn("Unknown Gemini finish reason: {}. Mapping to GOD_FUCKING_KNOWS.", fr.knownEnum().name());
-            return FinishReason.GOD_FUCKING_KNOWS;
+            return FinishReason.GOD_KNOWS;
         }
     }
 }
