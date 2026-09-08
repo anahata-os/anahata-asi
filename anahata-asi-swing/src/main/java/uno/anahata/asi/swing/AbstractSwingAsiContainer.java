@@ -178,11 +178,13 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
             log.info("Registering NVIDIA");
             registerProvider(new NvidiaAiProvider());
         }
-
+        //Ollamas can be added manually or else the default one will be trying to connect to localhost all the time as it doesn't need api keys
+        /*
         if (getProvider("Ollama") == null) {
             log.info("Registering Ollama");
             registerProvider(new OllamaAiProvider());
         }
+        */
 
         // Background Model Discovery for effectively enabled providers
         for (AbstractAiProvider provider : getEffectivelyEnabledProviders()) {
