@@ -79,104 +79,96 @@ public class HuggingFaceModel extends OpenAiCompatibleModel {
     }
 
     /**
-     * Performs deep inspection of this model by asynchronously fetching its
-     * configuration files from the Hugging Face Hub in parallel, using a
+     * Performs deep inspection of this model by fetching its configuration files
+     * from the Hugging Face Hub sequentially in a single thread, using a
      * pre-resolved API key.
      *
      * @param apiKey The pre-resolved API key to avoid lock contention with the
      * provider.
-     * @return A CompletableFuture completing when all three Hub JSON files have
-     * been parsed.
      */
-    public CompletableFuture<Void> inspectAsync(String apiKey) {
+    public void inspect(String apiKey) {
         log.info("Inspecting Hugging Face model {}", getModelId());
 
-        CompletableFuture<Void> configFuture = fetchHubJsonAsync("config.json", apiKey)
-                .thenAccept(json -> {
-                    if (json != null) {
-                        log.info("Got config.json for {}", getModelId());
-                        this.hubConfig = json;
-                        if (json.has("max_position_embeddings")) {
-                            setMaxInputTokens(json.get("max_position_embeddings").asInt());
-                        } else if (json.has("max_sequence_length")) {
-                            setMaxInputTokens(json.get("max_sequence_length").asInt());
-                        } else if (json.has("seq_length")) {
-                            setMaxInputTokens(json.get("seq_length").asInt());
-                        } else if (json.has("context_length")) {
-                            setMaxInputTokens(json.get("context_length").asInt());
-                        }
+        // 1. config.json
+        JsonNode config = fetchHubJson("config.json", apiKey);
+        if (config != null) {
+            log.info("Got config.json for {}", getModelId());
+            this.hubConfig = config;
+            if (config.has("max_position_embeddings")) {
+                setMaxInputTokens(config.get("max_position_embeddings").asInt());
+            } else if (config.has("max_sequence_length")) {
+                setMaxInputTokens(config.get("max_sequence_length").asInt());
+            } else if (config.has("seq_length")) {
+                setMaxInputTokens(config.get("seq_length").asInt());
+            } else if (config.has("context_length")) {
+                setMaxInputTokens(config.get("context_length").asInt());
+            }
 
-                        if (json.has("version")) {
-                            setVersion(json.get("version").asText());
-                        }
-                        if (json.has("model_type")) {
-                            setDescription("[" + json.get("model_type").asText() + "]");
-                        }
+            if (config.has("version")) {
+                setVersion(config.get("version").asText());
+            }
+            if (config.has("model_type")) {
+                setDescription("[" + config.get("model_type").asText() + "]");
+            }
 
-                        // Response modalities: Hugging Face router chat/completions endpoints generate text responses
-                        setSupportedResponseModalities(new ArrayList<>(List.of(ResponseModality.TEXT)));
-                    } else {
-                        log.warn("Could not fetch config.json for {}", getModelId());
-                    }
-                });
+            // Response modalities: Hugging Face router chat/completions endpoints generate text responses
+            setSupportedResponseModalities(new ArrayList<>(List.of(ResponseModality.TEXT)));
+        } else {
+            log.warn("Could not fetch config.json for {}", getModelId());
+        }
 
-        CompletableFuture<Void> tokenizerFuture = fetchHubJsonAsync("tokenizer_config.json", apiKey)
-                .thenAccept(json -> {
-                    if (json != null) {
-                        log.info("Got tokenizer_config.json for {}", getModelId());
-                        this.tokenizerConfig = json;
-                        String chatTemplate = json.path("chat_template").asText("");
-                        if (!chatTemplate.isBlank()) {
-                            if (chatTemplate.contains("tools") || chatTemplate.contains("tool_calls")
-                                    || chatTemplate.contains("<tool_call>") || chatTemplate.contains("[TOOL_CALLS]")
-                                    || chatTemplate.contains("[AVAILABLE_TOOLS]") || chatTemplate.contains("observation")) {
-                                setSupportsFunctionCalling(true);
-                            }
-                            if (chatTemplate.contains("<think>")) {
-                                setReasoningStyle(OpenAiCompatibleReasoningStyle.TAGS);
-                                setReasoningTags(List.of("<think>", "</think>"));
-                            } else if (chatTemplate.contains("<|thought|>")) {
-                                setReasoningStyle(OpenAiCompatibleReasoningStyle.TAGS);
-                                setReasoningTags(List.of("<|thought|>", "<|assistant|>"));
-                            }
-                        }
-                        if (getMaxInputTokens() == null && json.has("model_max_length")) {
-                            int mml = json.get("model_max_length").asInt();
-                            if (mml > 0 && mml < 10_000_000) {
-                                setMaxInputTokens(mml);
-                            }
-                        }
-                    } else {
-                        log.warn("Could not fetch tokenizer_config.json for {}", getModelId());
-                    }
-                });
+        // 2. tokenizer_config.json
+        JsonNode tokConfig = fetchHubJson("tokenizer_config.json", apiKey);
+        if (tokConfig != null) {
+            log.info("Got tokenizer_config.json for {}", getModelId());
+            this.tokenizerConfig = tokConfig;
+            String chatTemplate = tokConfig.path("chat_template").asText("");
+            if (!chatTemplate.isBlank()) {
+                if (chatTemplate.contains("tools") || chatTemplate.contains("tool_calls")
+                        || chatTemplate.contains("<tool_call>") || chatTemplate.contains("[TOOL_CALLS]")
+                        || chatTemplate.contains("[AVAILABLE_TOOLS]") || chatTemplate.contains("observation")) {
+                    setSupportsFunctionCalling(true);
+                }
+                if (chatTemplate.contains("<think>")) {
+                    setReasoningStyle(OpenAiCompatibleReasoningStyle.TAGS);
+                    setReasoningTags(List.of("<think>", "</think>"));
+                } else if (chatTemplate.contains("<|thought|>")) {
+                    setReasoningStyle(OpenAiCompatibleReasoningStyle.TAGS);
+                    setReasoningTags(List.of("<|thought|>", "<|assistant|>"));
+                }
+            }
+            if (getMaxInputTokens() == null && tokConfig.has("model_max_length")) {
+                int mml = tokConfig.get("model_max_length").asInt();
+                if (mml > 0 && mml < 10_000_000) {
+                    setMaxInputTokens(mml);
+                }
+            }
+        } else {
+            log.warn("Could not fetch tokenizer_config.json for {}", getModelId());
+        }
 
-        CompletableFuture<Void> generationFuture = fetchHubJsonAsync("generation_config.json", apiKey)
-                .thenAccept(json -> {
-                    if (json != null) {
-                        log.info("Got generation_config.json for {}", getModelId());
-                        this.generationConfig = json;
-                        // Note: max_new_tokens in generation_config is an author demo default, not a model ceiling.
-                        // We leave maxOutputTokens unconstrained so generation can fill available context.
-                        if (json.has("temperature")) {
-                            setDefaultTemperature((float) json.get("temperature").asDouble());
-                        }
-                        if (json.has("top_k")) {
-                            setDefaultTopK(json.get("top_k").asInt());
-                        }
-                        if (json.has("top_p")) {
-                            setDefaultTopP((float) json.get("top_p").asDouble());
-                        }
-                    } else {
-                        log.warn("Could not fetch generation_config.json for {}", getModelId());
-                    }
-                });
+        // 3. generation_config.json
+        JsonNode genConfig = fetchHubJson("generation_config.json", apiKey);
+        if (genConfig != null) {
+            log.info("Got generation_config.json for {}", getModelId());
+            this.generationConfig = genConfig;
+            // Note: max_new_tokens in generation_config is an author demo default, not a model ceiling.
+            // We leave maxOutputTokens unconstrained so generation can fill available context.
+            if (genConfig.has("temperature")) {
+                setDefaultTemperature((float) genConfig.get("temperature").asDouble());
+            }
+            if (genConfig.has("top_k")) {
+                setDefaultTopK(genConfig.get("top_k").asInt());
+            }
+            if (genConfig.has("top_p")) {
+                setDefaultTopP((float) genConfig.get("top_p").asDouble());
+            }
+        } else {
+            log.warn("Could not fetch generation_config.json for {}", getModelId());
+        }
 
-        return CompletableFuture.allOf(configFuture, tokenizerFuture, generationFuture)
-                .thenRun(() -> {
-                    setRawDescription(buildHubHtmlDescription());
-                    setSupportedActions(List.of("chat/completions"));
-                });
+        setRawDescription(buildHubHtmlDescription());
+        setSupportedActions(List.of("chat/completions"));
     }
 
     /**
@@ -184,15 +176,15 @@ public class HuggingFaceModel extends OpenAiCompatibleModel {
      *
      * @param filename The config filename (e.g. 'config.json').
      * @param apiKey The pre-resolved Bearer token.
-     * @return A CompletableFuture resolving to the parsed JSON or null.
+     * @return The parsed JSON or null if not found/error.
      */
-    private CompletableFuture<JsonNode> fetchHubJsonAsync(String filename, String apiKey) {
+    private JsonNode fetchHubJson(String filename, String apiKey) {
         String url = HuggingFaceProvider.HF_HUB_BASE + getModelId() + "/resolve/main/" + filename;
         log.info("Fetching Hub metadata: {}", url);
 
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
-                .timeout(Duration.ofSeconds(30))
+                .timeout(Duration.ofSeconds(15))
                 .GET();
 
         if (apiKey != null && !apiKey.isBlank()) {
@@ -201,19 +193,17 @@ public class HuggingFaceModel extends OpenAiCompatibleModel {
             log.warn("fetching hf json files without api key.... could this lead to hugging face denying the request due to too much parallelism?");
         }
 
-        return HuggingFaceProvider.HUB_CLIENT.sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString())
-                .thenApply(resp -> {
-                    if (resp.statusCode() == 200) {
-                        try {
-                            return JacksonUtils.parse(resp.body(), JsonNode.class);
-                        } catch (Exception e) {
-                            log.error("Exception parsing response body for {} {}", getModelId(), filename, e);
-                        }
-                    } else {
-                        log.debug("HTTP {} fetching {} for {}", resp.statusCode(), filename, getModelId());
-                    }
-                    return null;
-                });
+        try {
+            HttpResponse<String> resp = HuggingFaceProvider.HUB_CLIENT.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            if (resp.statusCode() == 200) {
+                return JacksonUtils.parse(resp.body(), JsonNode.class);
+            } else {
+                log.debug("HTTP {} fetching {} for {}", resp.statusCode(), filename, getModelId());
+            }
+        } catch (Exception e) {
+            log.warn("Exception fetching Hub metadata for {} {}", getModelId(), filename, e);
+        }
+        return null;
     }
 
     /**

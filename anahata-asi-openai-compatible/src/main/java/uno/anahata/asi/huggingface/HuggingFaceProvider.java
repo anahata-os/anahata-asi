@@ -27,9 +27,11 @@ public class HuggingFaceProvider extends OpenAiChatCompletionsProvider {
 
     /**
      * A specialized HTTP client for fetching model configuration files from the Hub.
-     * Uses connection pooling and follows redirects to the Hub's CDN.
+     * Uses connection pooling and follows redirects to the Hub's CDN. Configured
+     * with HTTP/1.1 to prevent HTTP/2 multiplexed stream exhaustion.
      */
     public static final HttpClient HUB_CLIENT = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_1_1)
             .followRedirects(HttpClient.Redirect.ALWAYS)
             .connectTimeout(Duration.ofSeconds(15))
             .build();
@@ -67,7 +69,7 @@ public class HuggingFaceProvider extends OpenAiChatCompletionsProvider {
                 .collect(Collectors.toList());
 
         List<CompletableFuture<Void>> futures = hfModels.stream()
-                .map(m -> CompletableFuture.runAsync(() -> m.inspectAsync(apiKey).join(), getAsiContainer().getExecutor()))
+                .map(m -> CompletableFuture.runAsync(() -> m.inspect(apiKey), getAsiContainer().getExecutor()))
                 .collect(Collectors.toList());
 
         // Wait for all model inspections to complete
