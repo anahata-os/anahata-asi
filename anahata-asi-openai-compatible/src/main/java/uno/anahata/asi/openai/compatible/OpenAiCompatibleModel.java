@@ -547,7 +547,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
                         target.setResponse(finalResponse);
                         target.setStreaming(false);
                         if (target.getFinishReason() == null) {
-                            target.setFinishReason(uno.anahata.asi.agi.provider.FinishReason.GOD_FUCKING_KNOWS);
+                            target.setFinishReason(uno.anahata.asi.agi.provider.FinishReason.GOD_KNOWS);
                         }
                     }
                 }
