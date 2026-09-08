@@ -21,18 +21,6 @@
       "permissions" : {
         "compileAndExecute" : "APPROVE_ALWAYS"
       }
-    }, {
-      "toolkit" : "uno.anahata.asi.toolkit.Host",
-      "permissions" : { }
-    }, {
-      "toolkit" : "uno.anahata.asi.toolkit.Session",
-      "permissions" : { }
-    }, {
-      "toolkit" : "uno.anahata.asi.toolkit.History",
-      "permissions" : { }
-    }, {
-      "toolkit" : "uno.anahata.asi.toolkit.resources.Resources",
-      "permissions" : { }
     } ]
   }, {
     "testCode" : "JAVA-SNAKE-GAME-1",
@@ -43,18 +31,6 @@
       "permissions" : {
         "compileAndExecute" : "APPROVE_ALWAYS"
       }
-    }, {
-      "toolkit" : "uno.anahata.asi.toolkit.Host",
-      "permissions" : { }
-    }, {
-      "toolkit" : "uno.anahata.asi.toolkit.Session",
-      "permissions" : { }
-    }, {
-      "toolkit" : "uno.anahata.asi.toolkit.History",
-      "permissions" : { }
-    }, {
-      "toolkit" : "uno.anahata.asi.toolkit.resources.Resources",
-      "permissions" : { }
     } ]
   }, {
     "testCode" : "JAVA-NOU-CAMP-NOU-1",
@@ -65,18 +41,6 @@
       "permissions" : {
         "compileAndExecute" : "APPROVE_ALWAYS"
       }
-    }, {
-      "toolkit" : "uno.anahata.asi.toolkit.Host",
-      "permissions" : { }
-    }, {
-      "toolkit" : "uno.anahata.asi.toolkit.Session",
-      "permissions" : { }
-    }, {
-      "toolkit" : "uno.anahata.asi.toolkit.History",
-      "permissions" : { }
-    }, {
-      "toolkit" : "uno.anahata.asi.toolkit.resources.Resources",
-      "permissions" : { }
     } ]
   } ]
 }
