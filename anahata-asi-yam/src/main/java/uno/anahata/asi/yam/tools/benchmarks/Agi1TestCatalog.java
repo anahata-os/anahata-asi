@@ -70,11 +70,7 @@ public class Agi1TestCatalog extends TestCatalog {
             .title("Retro Arcade Game Execution")
             .rawPrompt("Build a fully playable, retro Arkanoid brick-breaker game in Swing with smooth 60 FPS animation loop. Window title MUST contain your Model ID.")
             .toolkits(List.of(
-                    ToolkitSettings.of(Java.class, "compileAndExecute", ToolPermission.APPROVE_ALWAYS),
-                    ToolkitSettings.of(Host.class),
-                    ToolkitSettings.of(Session.class),
-                    ToolkitSettings.of(History.class),
-                    ToolkitSettings.of(Resources.class)
+                    ToolkitSettings.of(Java.class, "compileAndExecute", ToolPermission.APPROVE_ALWAYS)
             ))
             .build();
 
@@ -86,11 +82,8 @@ public class Agi1TestCatalog extends TestCatalog {
             .title("Snake Game")
             .rawPrompt("Make a snake game using the java tool. Window title MUST contain your Model ID.")
             .toolkits(List.of(
-                    ToolkitSettings.of(Java.class, "compileAndExecute", ToolPermission.APPROVE_ALWAYS),
-                    ToolkitSettings.of(Host.class),
-                    ToolkitSettings.of(Session.class),
-                    ToolkitSettings.of(History.class),
-                    ToolkitSettings.of(Resources.class)
+                    ToolkitSettings.of(Java.class, "compileAndExecute", ToolPermission.APPROVE_ALWAYS)
+                    
             ))
             .build();
     
@@ -102,11 +95,7 @@ public class Agi1TestCatalog extends TestCatalog {
             .title("Nou Camp Nou 3D Model")
             .rawPrompt("Make a 3D model of what the Nou Camp Nou will look like when completed")
             .toolkits(List.of(
-                    ToolkitSettings.of(Java.class, "compileAndExecute", ToolPermission.APPROVE_ALWAYS),
-                    ToolkitSettings.of(Host.class),
-                    ToolkitSettings.of(Session.class),
-                    ToolkitSettings.of(History.class),
-                    ToolkitSettings.of(Resources.class)
+                    ToolkitSettings.of(Java.class, "compileAndExecute", ToolPermission.APPROVE_ALWAYS)
             ))
             .build();
 
