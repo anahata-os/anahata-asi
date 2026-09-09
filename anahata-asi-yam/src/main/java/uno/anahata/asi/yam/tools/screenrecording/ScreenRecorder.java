@@ -352,13 +352,19 @@ public class ScreenRecorder {
             cmd.add(":0.0+" + bounds.x + "," + bounds.y);
         }
 
-        // Fast video encoding presets for low CPU overhead
+        // Fast video encoding presets optimized for low CPU overhead and rapid YouTube HD processing
         cmd.add("-c:v");
         cmd.add("libx264");
         cmd.add("-preset");
-        cmd.add("ultrafast");
+        cmd.add("veryfast");
+        cmd.add("-crf");
+        cmd.add("20");
+        cmd.add("-g");
+        cmd.add("60");
         cmd.add("-pix_fmt");
         cmd.add("yuv420p");
+        cmd.add("-movflags");
+        cmd.add("+faststart");
         cmd.add(outputPath);
 
         return cmd;

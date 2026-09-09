@@ -4,6 +4,7 @@
 package uno.anahata.asi.yam.tools.benchmarks;
 
 import java.awt.GraphicsEnvironment;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -29,6 +30,7 @@ import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
+import uno.anahata.asi.agi.tool.ToolContext;
 import uno.anahata.asi.agi.tool.ToolPermission;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.yam.tools.screenrecording.ScreenRecordingOverlay;
@@ -299,13 +301,61 @@ public class Benchmarks extends AnahataToolkit {
         for (TestCatalog cat : getCatalogs()) {
             for (TestDefinition test : cat.getTests()) {
                 Path resultsFile = cat.getResultsFileForTest(test.testCode());
-                if (BenchmarkResultsStore.submitJudgeScore(resultsFile, sessionId, judgeScore)) {
+                if (Files.exists(resultsFile) && BenchmarkResultsStore.submitJudgeScore(resultsFile, sessionId, judgeScore)) {
                     refreshWebsiteArtifacts();
                     return "Successfully recorded judge score of " + judgeScore.score() + " by " + judgeScore.name() + " for session " + sessionId;
                 }
             }
         }
         return "No matching benchmark run found for session " + sessionId + ". Execute the test first before scoring.";
+    }
+
+    /**
+     * Sets or updates the qualitative observations notes for a specific benchmark test run, matching by session ID.
+     *
+     * @param sessionId The unique session ID of the benchmark run.
+     * @param observations The qualitative observations, tool output notes, or defect descriptions to record.
+     * @return Confirmation message indicating whether the observations were updated.
+     * @throws Exception If updating the results store fails.
+     */
+    @AgiTool(value = "Sets or updates the observations notes for a specific benchmark test run, matching by session ID.", permission = ToolPermission.APPROVE_ALWAYS)
+    public String setObservations(
+            @AgiToolParam("The unique session ID of the benchmark run.") String sessionId,
+            @AgiToolParam("The qualitative observations, tool output notes, or defect descriptions to record.") String observations) throws Exception {
+
+        for (TestCatalog cat : getCatalogs()) {
+            for (TestDefinition test : cat.getTests()) {
+                Path resultsFile = cat.getResultsFileForTest(test.testCode());
+                if (Files.exists(resultsFile) && BenchmarkResultsStore.setObservations(resultsFile, sessionId, observations)) {
+                    refreshWebsiteArtifacts();
+                    return "Successfully updated observations for session " + sessionId + " on test " + test.testCode();
+                }
+            }
+        }
+        return "No matching benchmark run found for session " + sessionId + ". Execute the test first before recording observations.";
+    }
+
+    /**
+     * Deletes a recorded benchmark run from the results database across all catalogs by its session ID.
+     *
+     * @param sessionId The unique session ID of the benchmark run to delete.
+     * @return Confirmation message indicating whether the run was deleted.
+     * @throws Exception If deleting fails or if no matching run is found.
+     */
+    @AgiTool(value = "Deletes a recorded benchmark run from the results database by its session ID.", permission = ToolPermission.APPROVE_ALWAYS)
+    public String deleteResult(
+            @AgiToolParam("The unique session ID of the benchmark run to delete.") String sessionId) throws Exception {
+
+        for (TestCatalog cat : getCatalogs()) {
+            for (TestDefinition test : cat.getTests()) {
+                Path resultsFile = cat.getResultsFileForTest(test.testCode());
+                if (Files.exists(resultsFile) && BenchmarkResultsStore.deleteResult(resultsFile, sessionId)) {
+                    refreshWebsiteArtifacts();
+                    return "Successfully deleted benchmark run for session " + sessionId + " from test " + test.testCode();
+                }
+            }
+        }
+        throw new AgiToolException("No matching benchmark run found for session " + sessionId + " across any catalogs.");
     }
 
     /**
@@ -394,6 +444,7 @@ public class Benchmarks extends AnahataToolkit {
      * @throws Exception If an unrecoverable execution error occurs.
      */
     private BenchmarkRunResult executeBenchmark(TestCatalog catalog, TestDefinition testDef, BenchmarkParticipant participant, boolean openSession) throws Exception {
+        final ToolContext ctx = getToolContext();
         AbstractAsiContainer container = getAsiContainer();
 
         AgiConfig config = container.createNewAgiConfig();
@@ -416,10 +467,11 @@ public class Benchmarks extends AnahataToolkit {
             }
         }
 
-        log("Spawning candidate AGI session for test: " + testDef.testCode() + " with model: " + participant.modelId());
+        ctx.log("Spawning candidate AGI session for test: " + testDef.testCode() + " with model: " + participant.modelId());
         Agi candidateAgi = container.createNewAgi(config);
         candidateAgi.setNickname("Bench: " + testDef.testCode() + " - " + participant.modelId());
         candidateAgi.getRequestConfig().setThinkingLevel(participant.thinkingLevel());
+        ctx.log("Candidate AGI session spawned with ID: " + candidateAgi.getConfig().getSessionId() + " (" + candidateAgi.getShortId() + ")");
 
         // Apply strict tool permission overrides if toolkits are explicitly configured
         permissionOverrides.forEach((toolName, permission) -> {
@@ -433,7 +485,7 @@ public class Benchmarks extends AnahataToolkit {
 
         // Headless execution fallback
         if (GraphicsEnvironment.isHeadless()) {
-            return executeAutonomousDirectRun(catalog, candidateAgi, testDef, participant);
+            return executeAutonomousDirectRun(catalog, candidateAgi, testDef, participant, ctx);
         }
 
         ScreenRecorder recorder = new ScreenRecorder();
@@ -450,28 +502,28 @@ public class Benchmarks extends AnahataToolkit {
                 () -> {
                     try {
                         int deviceIdx = overlayHolder[0].getSelectedDeviceIndex();
-                        log("Starting screen recording on Screen " + deviceIdx + " for " + testDef.testCode());
+                        ctx.log("Starting screen recording on Screen " + deviceIdx + " for " + testDef.testCode());
                         recorder.startRecording(testDef.testCode(), participant.modelId(), deviceIdx);
 
                         candidateThreadHolder[0] = Thread.currentThread();
-                        executeCandidateTurn(catalog, candidateAgi, testDef);
+                        executeCandidateTurn(catalog, candidateAgi, testDef, ctx);
                         executionFinished.set(true);
-                        log("Candidate AGI execution completed. Candidate window is live. Waiting for user demonstration & stop...");
+                        ctx.log("Candidate AGI execution completed. Candidate window is live. Waiting for user demonstration & stop...");
                     } catch (Exception e) {
                         log.error("Error during candidate AGI execution", e);
-                        error(e);
+                        ctx.error(e);
                     }
                 },
                 // onSaveLocalAction: Finalize MP4 & save result locally without YouTube upload
                 () -> {
                     try {
-                        log("Finalizing recording (Save Local)...");
+                        ctx.log("Finalizing recording (Save Local)...");
                         RecordedSession session = recorder.stopRecording(true, null);
                         double duration = session != null ? session.durationSeconds() : 0.0;
                         String localVideoPath = session != null && session.videoPath() != null ? session.videoPath().toString() : null;
                         String thumbPath = session != null && session.thumbnailPath() != null ? session.thumbnailPath().toString() : null;
                         if (localVideoPath != null) {
-                            log("Recording saved to disk at: " + localVideoPath);
+                            ctx.log("Recording saved to disk at: " + localVideoPath);
                         }
                         BenchmarkRunResult runResult = compileRunResult(candidateAgi, testDef, participant, duration, thumbPath, null);
                         BenchmarkResultsStore.recordResult(catalog, runResult);
@@ -484,19 +536,19 @@ public class Benchmarks extends AnahataToolkit {
                 // onUploadAction: Finalize MP4, upload to YouTube, set thumbnail, add to playlist, save results.json
                 () -> {
                     try {
-                        log("Finalizing recording and uploading to YouTube...");
+                        ctx.log("Finalizing recording and uploading to YouTube...");
                         RecordedSession session = recorder.stopRecording(true, null);
                         double duration = session != null ? session.durationSeconds() : 0.0;
                         String localVideoPath = session != null && session.videoPath() != null ? session.videoPath().toString() : null;
                         String thumbPath = session != null && session.thumbnailPath() != null ? session.thumbnailPath().toString() : null;
                         if (localVideoPath != null) {
-                            log("Recording saved to disk at: " + localVideoPath);
+                            ctx.log("Recording saved to disk at: " + localVideoPath);
                         }
                         // Compile metrics first so token and turn stats can be enriched into the YouTube description
                         BenchmarkRunResult rawMetrics = compileRunResult(candidateAgi, testDef, participant, duration, thumbPath, null);
                         String videoUrl = null;
                         if (session != null && session.videoPath() != null) {
-                            videoUrl = uploadBenchmarkVideoToYouTube(catalog, testDef, participant, session, rawMetrics);
+                            videoUrl = uploadBenchmarkVideoToYouTube(catalog, testDef, participant, session, rawMetrics, ctx);
                         }
                         BenchmarkRunResult runResult = BenchmarkRunResult.builder()
                                 .participant(rawMetrics.participant())
@@ -525,7 +577,7 @@ public class Benchmarks extends AnahataToolkit {
                 },
                 // onCancelAction: Discard recording and cancel
                 () -> {
-                    log("Benchmark run cancelled by tester.");
+                    ctx.log("Benchmark run cancelled by tester.");
                     recorder.cancelRecording();
                     if (candidateThreadHolder[0] != null && !executionFinished.get()) {
                         candidateThreadHolder[0].interrupt();
@@ -546,10 +598,11 @@ public class Benchmarks extends AnahataToolkit {
      * @param catalog The catalog owning the test templates.
      * @param candidateAgi The child session.
      * @param testDef The test definition.
+     * @param ctx The captured tool execution context.
      */
-    private void executeCandidateTurn(TestCatalog catalog, Agi candidateAgi, TestDefinition testDef) {
+    private void executeCandidateTurn(TestCatalog catalog, Agi candidateAgi, TestDefinition testDef, ToolContext ctx) {
         String prompt = catalog.formatPrompt(testDef);
-        log("Submitting official benchmark prompt to candidate AGI: " + candidateAgi.getShortId());
+        ctx.log("Submitting official benchmark prompt to candidate AGI session: " + candidateAgi.getConfig().getSessionId() + " (" + candidateAgi.getShortId() + ")");
         AgiUserMessage userMsg = new AgiUserMessage(candidateAgi, getAgi().getConfig().getSessionId());
         userMsg.addTextPart(prompt);
         candidateAgi.sendMessage(userMsg);
@@ -562,12 +615,13 @@ public class Benchmarks extends AnahataToolkit {
      * @param candidateAgi The child session.
      * @param testDef The test definition.
      * @param participant The participant.
+     * @param ctx The captured tool execution context.
      * @return The benchmark run result.
      * @throws Exception If execution fails.
      */
-    private BenchmarkRunResult executeAutonomousDirectRun(TestCatalog catalog, Agi candidateAgi, TestDefinition testDef, BenchmarkParticipant participant) throws Exception {
+    private BenchmarkRunResult executeAutonomousDirectRun(TestCatalog catalog, Agi candidateAgi, TestDefinition testDef, BenchmarkParticipant participant, ToolContext ctx) throws Exception {
         long startMillis = System.currentTimeMillis();
-        executeCandidateTurn(catalog, candidateAgi, testDef);
+        executeCandidateTurn(catalog, candidateAgi, testDef, ctx);
         long durationMillis = System.currentTimeMillis() - startMillis;
         double durationSeconds = Math.round((durationMillis / 1000.0) * 100.0) / 100.0;
 
@@ -577,14 +631,6 @@ public class Benchmarks extends AnahataToolkit {
     }
 
     /**
-     * Uploads the recorded benchmark demonstration video to YouTube with metadata, description, and thumbnail.
-     *
-     * @param testDef The test definition.
-     * @param participant The participant descriptor.
-     * @param session The recorded video session.
-     * @return The uploaded YouTube video URL, or {@code null} if authentication is missing.
-     */
-    /**
      * Uploads the recorded benchmark demonstration video to YouTube with metadata, telemetry description, and thumbnail.
      *
      * @param catalog The catalog owning the test.
@@ -592,13 +638,14 @@ public class Benchmarks extends AnahataToolkit {
      * @param participant The participant descriptor.
      * @param session The recorded video session.
      * @param metrics The compiled telemetry metrics for the run.
+     * @param ctx The captured tool context for pass-through logging.
      * @return The uploaded YouTube video URL, or {@code null} if authentication is missing.
      */
-    private String uploadBenchmarkVideoToYouTube(TestCatalog catalog, TestDefinition testDef, BenchmarkParticipant participant, RecordedSession session, BenchmarkRunResult metrics) {
+    private String uploadBenchmarkVideoToYouTube(TestCatalog catalog, TestDefinition testDef, BenchmarkParticipant participant, RecordedSession session, BenchmarkRunResult metrics, ToolContext ctx) {
         try {
             YouTubeCredentials creds = YouTubeCredentials.load();
             if (!creds.isAuthenticated()) {
-                log("YouTube is not authenticated. Video saved locally at: " + session.videoPath());
+                ctx.log("YouTube is not authenticated. Video saved locally at: " + session.videoPath());
                 return null;
             }
 
@@ -656,10 +703,10 @@ public class Benchmarks extends AnahataToolkit {
                 String playlistTitle = catalogName + ": " + testDef.testCode();
                 playlistId = youtube.resolveOrCreatePlaylist(playlistTitle,
                         "Automated " + catalogName + " benchmark runs for " + testDef.testCode() + " (" + testDef.title() + ").");
-                log("Resolved per-test playlist '" + playlistTitle + "' -> " + playlistId);
+                ctx.log("Resolved per-test playlist '" + playlistTitle + "' -> " + playlistId);
             } catch (Exception e) {
                 log.error("Could not resolve per-test playlist; falling back to default playlist", e);
-                error("Could not resolve per-test playlist; falling back to default playlist: " + e.getMessage());
+                ctx.error("Could not resolve per-test playlist; falling back to default playlist: " + e.getMessage());
             }
 
             YouTubeVideoUploadRequest request = YouTubeVideoUploadRequest.builder()
@@ -672,13 +719,13 @@ public class Benchmarks extends AnahataToolkit {
                     .build();
 
             String videoUrl = youtube.uploadVideo(request);
-            log("YouTube video published: " + videoUrl);
+            ctx.log("YouTube video published: " + videoUrl);
 
             if (session.thumbnailPath() != null) {
                 try {
                     String videoId = videoUrl.substring(videoUrl.lastIndexOf('/') + 1);
                     youtube.setThumbnail(videoId, session.thumbnailPath().toString());
-                    log("Custom thumbnail set for video: " + videoId);
+                    ctx.log("Custom thumbnail set for video: " + videoId);
                 } catch (Exception e) {
                     log.warn("Could not set custom thumbnail on YouTube", e);
                 }

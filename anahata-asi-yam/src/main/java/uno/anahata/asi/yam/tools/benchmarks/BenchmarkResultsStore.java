@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -197,6 +198,81 @@ public class BenchmarkResultsStore {
             return false;
         }
         return submitJudgeScore(catalog.getResultsFileForTest(testCode), sessionId, judgeScore);
+    }
+
+    /**
+     * Updates the qualitative observations for a specific run in a results file, keyed by session ID.
+     *
+     * @param resultsFile The path to the JSON results file.
+     * @param sessionId The unique session ID of the run to update.
+     * @param observations The updated observations or failure analysis text.
+     * @return {@code true} if a matching run was found and updated, {@code false} otherwise.
+     * @throws IOException If the results file is missing or saving to disk fails.
+     */
+    public static synchronized boolean setObservations(Path resultsFile, String sessionId, String observations) throws IOException {
+        if (!Files.exists(resultsFile)) {
+            throw new FileNotFoundException("Benchmark results file does not exist: " + resultsFile);
+        }
+
+        List<BenchmarkRunResult> runs = new ArrayList<>(loadResults(resultsFile));
+        boolean found = false;
+
+        for (int i = 0; i < runs.size(); i++) {
+            BenchmarkRunResult run = runs.get(i);
+            if (sessionId.equals(run.sessionId())) {
+                BenchmarkRunResult updatedRun = BenchmarkRunResult.builder()
+                        .participant(run.participant())
+                        .testCode(run.testCode())
+                        .asiContainer(run.asiContainer())
+                        .timestamp(run.timestamp())
+                        .durationSeconds(run.durationSeconds())
+                        .turns(run.turns())
+                        .promptTokens(run.promptTokens())
+                        .candidatesTokens(run.candidatesTokens())
+                        .thoughtsTokens(run.thoughtsTokens())
+                        .totalTokens(run.totalTokens())
+                        .passed(run.passed())
+                        .judgeScores(run.judgeScores())
+                        .videoUrl(run.videoUrl())
+                        .screenshotPath(run.screenshotPath())
+                        .sessionId(run.sessionId())
+                        .observations(observations)
+                        .build();
+
+                runs.set(i, updatedRun);
+                found = true;
+                break;
+            }
+        }
+
+        if (found) {
+            MAPPER.writeValue(resultsFile.toFile(), runs);
+            log.info("Updated observations for session {} in {}", sessionId, resultsFile);
+        }
+        return found;
+    }
+
+    /**
+     * Deletes a recorded benchmark run from a specific results file, matching by session ID.
+     *
+     * @param resultsFile The path to the JSON results file.
+     * @param sessionId The unique session ID of the run to delete.
+     * @return {@code true} if a matching run was found and deleted, {@code false} otherwise.
+     * @throws IOException If the results file does not exist or saving to disk fails.
+     */
+    public static synchronized boolean deleteResult(Path resultsFile, String sessionId) throws IOException {
+        if (!Files.exists(resultsFile)) {
+            throw new FileNotFoundException("Benchmark results file does not exist: " + resultsFile);
+        }
+
+        List<BenchmarkRunResult> runs = new ArrayList<>(loadResults(resultsFile));
+        boolean removed = runs.removeIf(run -> sessionId.equals(run.sessionId()));
+
+        if (removed) {
+            MAPPER.writeValue(resultsFile.toFile(), runs);
+            log.info("Deleted benchmark run for session {} from {}", sessionId, resultsFile);
+        }
+        return removed;
     }
 
     /**
