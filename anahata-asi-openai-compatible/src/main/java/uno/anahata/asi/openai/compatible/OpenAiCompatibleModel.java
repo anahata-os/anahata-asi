@@ -65,7 +65,8 @@ public class OpenAiCompatibleModel extends AbstractModel {
     /**
      * {@inheritDoc}
      * <p>
-     * Returns the parent {@link OpenAiChatCompletionsProvider} instance owning this model.
+     * Returns the parent {@link OpenAiChatCompletionsProvider} instance owning
+     * this model.
      * </p>
      *
      * @return The OpenAI-compatible provider instance.
@@ -75,45 +76,71 @@ public class OpenAiCompatibleModel extends AbstractModel {
         return (OpenAiChatCompletionsProvider) provider;
     }
     /**
-     * The unique identifier for the model (e.g., 'gpt-4o', 'claude-3-5-sonnet').
+     * The unique identifier for the model (e.g., 'gpt-4o',
+     * 'claude-3-5-sonnet').
      */
     private final String modelId;
     /**
      * The user-friendly name of the model.
      */
     private final String displayName;
-    /** The model version. */
+    /**
+     * The model version.
+     */
     private String version = "";
-    /** The maximum input tokens allowed, or null if unknown. */
+    /**
+     * The maximum input tokens allowed, or null if unknown.
+     */
     private Integer maxInputTokens = null;
-    /** The maximum output tokens allowed, or null if unknown. */
+    /**
+     * The maximum output tokens allowed, or null if unknown.
+     */
     private Integer maxOutputTokens = null;
 
-    /** The reasoning extraction style used by this model. */
+    /**
+     * The reasoning extraction style used by this model.
+     */
     private OpenAiCompatibleReasoningStyle reasoningStyle = OpenAiCompatibleReasoningStyle.NONE;
-    /** The specific field name representing thoughts in the JSON response. */
+    /**
+     * The specific field name representing thoughts in the JSON response.
+     */
     private String reasoningFieldName;
-    /** The start and end tags wrapping reasoning content. */
+    /**
+     * The start and end tags wrapping reasoning content.
+     */
     private List<String> reasoningTags;
 
-    /** Whether the model supports native function calling. */
+    /**
+     * Whether the model supports native function calling.
+     */
     private boolean supportsFunctionCalling = true;
-    /** Whether the model supports content generation. */
+    /**
+     * Whether the model supports content generation.
+     */
     private boolean supportsContentGeneration = true;
-    /** Whether the model supports batch embeddings. */
+    /**
+     * Whether the model supports batch embeddings.
+     */
     private boolean supportsBatchEmbeddings = false;
-    /** Whether the model supports simple embeddings. */
+    /**
+     * Whether the model supports simple embeddings.
+     */
     private boolean supportsEmbeddings = false;
-    /** Whether the model supports content caching. */
+    /**
+     * Whether the model supports content caching.
+     */
     private boolean supportsCachedContent = false;
 
-    /** The shared, thread-safe HTTP Client instance. */
+    /**
+     * The shared, thread-safe HTTP Client instance.
+     */
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(30))
             .build();
 
     /**
      * Constructs an OpenAiCompatibleModel with explicit metadata parameters.
+     *
      * @param provider the parent provider instance.
      * @param modelId the unique model identifier.
      * @param displayName the human-readable display name.
@@ -167,8 +194,10 @@ public class OpenAiCompatibleModel extends AbstractModel {
     /**
      * Resolves the unique model ID from a model JSON node.
      * <p>
-     * Checks for {@code id}, {@code name}, or {@code model} fields, defaulting to 'unknown' if missing.
+     * Checks for {@code id}, {@code name}, or {@code model} fields, defaulting
+     * to 'unknown' if missing.
      * </p>
+     *
      * @param node The JSON node containing model metadata.
      * @return The resolved model ID string.
      */
@@ -188,9 +217,11 @@ public class OpenAiCompatibleModel extends AbstractModel {
     /**
      * Resolves a human-readable display name from a model JSON node.
      * <p>
-     * Checks for {@code display_name}, {@code name}, or {@code owned_by} fields,
-     * defaulting cleanly to the model ID if no additional metadata is present.
+     * Checks for {@code display_name}, {@code name}, or {@code owned_by}
+     * fields, defaulting cleanly to the model ID if no additional metadata is
+     * present.
      * </p>
+     *
      * @param node The JSON node containing model metadata.
      * @return The resolved display name string.
      */
@@ -210,58 +241,68 @@ public class OpenAiCompatibleModel extends AbstractModel {
 
     /**
      * {@inheritDoc}
-     * <p>Utilizes TokenizerUtils to perform offline, BPE token counting based on configured TokenizerType.</p>
+     * <p>
+     * Utilizes TokenizerUtils to perform offline, BPE token counting based on
+     * configured TokenizerType.</p>
+     *
      * @param text The text to count tokens for.
      * @return The token count, or 0 if the text is null or empty.
      */
-    @Override public int countTokens(java.lang.String text) {
+    @Override
+    public int countTokens(java.lang.String text) {
         return TokenizerUtils.countTokens(text, getTokenizerType());
     }
-
 
     /**
      * {@inheritDoc}
      * <p>
-     * Serializes the base tool response to its flat JSON representation and adds the
-     * token cost of any generated attachments (like images or logs) by delegating
-     * to the generic binary tokenizer. This mirrors the exact OpenAI-compatible
-     * wire-format, where attachments are sent as a separate message item.
+     * Serializes the base tool response to its flat JSON representation and
+     * adds the token cost of any generated attachments (like images or logs) by
+     * delegating to the generic binary tokenizer. This mirrors the exact
+     * OpenAI-compatible wire-format, where attachments are sent as a separate
+     * message item.
      * </p>
+     *
      * @param toolResponse The tool response instance to count.
      * @return The precise, billing-identical token count.
      */
-    @Override public int countTokens(AbstractToolResponse<?> toolResponse) {
+    @Override
+    public int countTokens(AbstractToolResponse<?> toolResponse) {
         if (toolResponse == null) {
-                    return 0;
-                }
-                try {
-                    int total = countTokens(JacksonUtils.serialize(toolResponse));
+            return 0;
+        }
+        try {
+            int total = countTokens(JacksonUtils.serialize(toolResponse));
 
-                    // Replicate the OpenAI-compatible wire format: attachments are sent
-                    // as a separate top-level message containing input_image or input_audio parts.
-                    if (!toolResponse.getAttachments().isEmpty()) {
-                        total += 20; // Message packaging overhead
-                        total += countTokens("The following are multimodal attachments generated by the tool '" + toolResponse.getToolName() + "':");
-                        for (ToolResponseAttachment att : toolResponse.getAttachments()) {
-                            total += countTokens(att.getData(), att.getMimeType());
-                        }
-                    }
-                    return total;
-                } catch (Exception e) {
-                    log.error("Failed to serialize OpenAI-compatible tool response for token counting", e);
-                    throw new RuntimeException(e);
+            // Replicate the OpenAI-compatible wire format: attachments are sent
+            // as a separate top-level message containing input_image or input_audio parts.
+            if (!toolResponse.getAttachments().isEmpty()) {
+                total += 20; // Message packaging overhead
+                total += countTokens("The following are multimodal attachments generated by the tool '" + toolResponse.getToolName() + "':");
+                for (ToolResponseAttachment att : toolResponse.getAttachments()) {
+                    total += countTokens(att.getData(), att.getMimeType());
                 }
+            }
+            return total;
+        } catch (Exception e) {
+            log.error("Failed to serialize OpenAI-compatible tool response for token counting", e);
+            throw new RuntimeException(e);
+        }
     }
+
     /**
      * {@inheritDoc}
      * <p>
      * Serializes the tool call into a standard OpenAI function call JSON object
-     * containing 'name' and 'arguments' properties, and counts its tokens using the active BPE encoding.
+     * containing 'name' and 'arguments' properties, and counts its tokens using
+     * the active BPE encoding.
      * </p>
+     *
      * @param toolCall The tool call to count tokens for.
      * @return The total token count.
      */
-    @Override public int countTokens(AbstractToolCall<?, ?> toolCall) {
+    @Override
+    public int countTokens(AbstractToolCall<?, ?> toolCall) {
         if (toolCall == null) {
             return 0;
         }
@@ -274,6 +315,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
             return countTokens(toolCall.asText());
         }
     }
+
     /**
      * {@inheritDoc}
      */
@@ -332,6 +374,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
 
     /**
      * Gets the relative endpoint URL for Chat Completion requests.
+     *
      * @return the sub-resource endpoint string.
      */
     protected String getEndpoint() {
@@ -340,6 +383,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
 
     /**
      * Instantiates an OpenAI-compatible message container.
+     *
      * @param agi the parent AGI session.
      * @return a new OpenAiCompatibleModelMessage.
      */
@@ -402,11 +446,11 @@ public class OpenAiCompatibleModel extends AbstractModel {
     // --- Refined Partitioning ---
     // Include consolidated SI in Config view for better clarity
     // Filter out system roles from history JSON as they are now in the Config partition
-        // --- Refined Partitioning ---
+    // --- Refined Partitioning ---
     // Include consolidated SI in Config view for better clarity
     // Filter out system roles from history JSON as they are now in the Config partition
-        // Partition JSON: History vs Config (Gemini-style partitioning for status panel)
-    
+    // Partition JSON: History vs Config (Gemini-style partitioning for status panel)
+
     @Override
     public void generateContentStream(GenerationRequest request, StreamObserver<Response<? extends AbstractModelMessage>> observer) {
         Agi agi = request.config().getAgi();
@@ -518,7 +562,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
                 }
                 if (!targets.isEmpty()) {
                     boolean usageProvided = targets.stream()
-                            .anyMatch(t-> t.getBilledCompletionTokens() > 0 || t.getBilledPromptTokens() > 0);
+                            .anyMatch(t -> t.getBilledCompletionTokens() > 0 || t.getBilledPromptTokens() > 0);
                     OpenAiCompatibleResponse finalResponse;
                     if (!usageProvided) {
                         log.info("No usage metadata provided by API, estimating tokens using {} tokenizer", getTokenizerType());
@@ -570,10 +614,11 @@ public class OpenAiCompatibleModel extends AbstractModel {
     // Estimate completion tokens from accumulated content per target
     // Get accumulated text content from parts
     // Create response with estimated usage metadata
-    
+
     /**
      * Routes a streaming JSON choice chunk to the target message, extracting
      * thoughts or text content dynamically.
+     *
      * @param choice the JSON choice node from the chunk event.
      * @param target the target message accumulating the content.
      */
@@ -590,7 +635,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
         if (delta == null) {
             return;
         }
-        
+
         log.info("delta is " + choice);
 
         // 1. AUTODETECT / FIELD DISCOVERY: Check if field name is unknown or style is unconfigured
@@ -668,9 +713,10 @@ public class OpenAiCompatibleModel extends AbstractModel {
 
     /**
      * Builds the JSON Schema parameters node for a tool.
-     * 
+     *
      * @param tool The tool to build parameters for.
-     * @param strict Whether to enforce OpenAI 'strict' mode (requires additionalProperties: false).
+     * @param strict Whether to enforce OpenAI 'strict' mode (requires
+     * additionalProperties: false).
      * @return The constructed ObjectNode.
      */
     protected ObjectNode buildParametersNode(AbstractTool<?, ?> tool, boolean strict) {
@@ -749,6 +795,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
     /**
      * Prepares the final JSON request payload combining system instructions,
      * history, tools, and temperature.
+     *
      * @param request the current generation request.
      * @param stream whether the request is streaming.
      * @return the constructed JSON ObjectNode payload.
@@ -798,34 +845,53 @@ public class OpenAiCompatibleModel extends AbstractModel {
             payload.put("reasoning_effort", "none");
         } else if (level != null && level != ThinkingLevel.THINKING_LEVEL_UNSPECIFIED) {
             String effort = switch (level) {
-                case MINIMAL, LOW -> "low";
-                case MEDIUM -> "medium";
-                case HIGH -> "high";
-                case XHIGH -> "xhigh";
-                default -> null;
+                case MINIMAL, LOW ->
+                    "low";
+                case MEDIUM ->
+                    "medium";
+                case HIGH ->
+                    "high";
+                case XHIGH ->
+                    "xhigh";
+                default ->
+                    null;
             };
             if (effort != null) {
                 payload.put("reasoning_effort", effort);
             }
         }
         // 4. Dynamic max_tokens calculation
-        if (request.config().getMaxOutputTokens() != null) {
-            int requestedMaxOutput = request.config().getMaxOutputTokens();
-            int actualMaxOutput = requestedMaxOutput;
-            if (maxInputTokens != null && maxInputTokens > 0) {
-                int userThreshold = request.config().getAgi().getConfig().getTokenThreshold();
-                int effectiveLimit = Math.min(maxInputTokens, userThreshold > 0 ? userThreshold : maxInputTokens);
-                String payloadStr = payload.toString();
-                int estimatedPayloadTokens = TokenizerUtils.countTokens(payloadStr, getTokenizerType());
-                int availableForOutput = effectiveLimit - estimatedPayloadTokens;
-                actualMaxOutput = Math.min(requestedMaxOutput, availableForOutput);
-                if (actualMaxOutput < requestedMaxOutput) {
-                    log.warn("Reducing max_tokens from {} to {} due to context limit", requestedMaxOutput, actualMaxOutput);
-                }
-            }
-            actualMaxOutput = Math.max(actualMaxOutput, 1);
-            payload.put("max_tokens", actualMaxOutput);
+        Integer targetMaxOutput = request.config().getMaxOutputTokens() != null
+                ? request.config().getMaxOutputTokens()
+                : getMaxOutputTokens();//whatever the user had in the request config or in the model default
+
+        log.info(getModelId() + " starting targetMaxOutput: " + targetMaxOutput);
+        
+        int effectiveMaxContextWindowSize = request.config().getAgi().getConfig().getTokenThreshold();
+        if (maxInputTokens != null && maxInputTokens > 0) {
+            effectiveMaxContextWindowSize = Math.min(maxInputTokens, effectiveMaxContextWindowSize > 0 ? effectiveMaxContextWindowSize : maxInputTokens);
         }
+        log.info(getModelId() + " effectiveMaxContextWindowSize: " + effectiveMaxContextWindowSize);
+        
+        String payloadStr = payload.toString();
+        int estimatedPayloadTokens = (int) (TokenizerUtils.countTokens(payloadStr, getTokenizerType()) * 1.01);
+        log.info(getModelId() + " payload tokens (+1.01%): " + estimatedPayloadTokens);
+
+        int availableForOutput = Math.max(1, effectiveMaxContextWindowSize - estimatedPayloadTokens);
+        log.info(getModelId() + " availableForOutput : " + availableForOutput);
+        
+        if (targetMaxOutput != null && targetMaxOutput > 0 && targetMaxOutput > availableForOutput) {
+            log.warn("Reducing max_tokens from {} to {} due to max context windows size", targetMaxOutput, availableForOutput);
+            targetMaxOutput = Math.min(targetMaxOutput, availableForOutput);
+        } 
+        
+        if (targetMaxOutput != null) {
+            log.info("setting max_tokens to: {}", targetMaxOutput);        
+            payload.put("max_tokens", targetMaxOutput);
+        } else {
+            log.info("targetMaxOutput was null so, not setting max_tokens: {}", targetMaxOutput);
+        }
+        
         enrichPayload(payload, request);
         return payload;
     }
@@ -833,7 +899,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
     // 2. Inject Conversation History
     // 3. Local Tools
     // 4. Dynamic max_tokens calculation
-        // Standard OpenAI include_usage for compatible providers
+    // Standard OpenAI include_usage for compatible providers
     // 1. Inject System Instructions if present in config
     // 2. Inject Conversation History
     // 3. Local Tools
@@ -843,7 +909,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
     // Calculate available tokens for output
     // Final max_tokens is the minimum of requested and available
     // Ensure at least 1 token for output
-        // 1. Inject System Instructions if present in config
+    // 1. Inject System Instructions if present in config
     // 2. Inject Conversation History
     // 3. Local Tools
     // 4. Dynamic max_tokens calculation to prevent context overflow
@@ -852,7 +918,7 @@ public class OpenAiCompatibleModel extends AbstractModel {
     // Calculate available tokens for output
     // Final max_tokens is the minimum of requested and available
     // Ensure at least 1 token for output
-    
+
     /**
      * Hook for subclasses to add or modify payload parameters before sending
      * the request.
@@ -867,22 +933,26 @@ public class OpenAiCompatibleModel extends AbstractModel {
     /**
      * {@inheritDoc}
      * <p>
-     * Calculates the exact, model-specific multimodal token count for OpenAI-compatible image data.
-     * Delegates the header-only image dimension reading to the core {@link ImageMetadataUtils} utility,
-     * and performs the OpenAI-specific high-detail scaling and tiling calculations.
+     * Calculates the exact, model-specific multimodal token count for
+     * OpenAI-compatible image data. Delegates the header-only image dimension
+     * reading to the core {@link ImageMetadataUtils} utility, and performs the
+     * OpenAI-specific high-detail scaling and tiling calculations.
      * </p>
-     * @param mimeType The detected MIME type of the binary data (e.g. "image/png").
+     *
+     * @param mimeType The detected MIME type of the binary data (e.g.
+     * "image/png").
      * @param data The raw binary data of the file or attachment.
      * @return The precise, billing-identical multimodal token count.
      */
-    @Override public int countTokens(byte[] data, String mimeType) {
+    @Override
+    public int countTokens(byte[] data, String mimeType) {
         if (data == null || data.length == 0) {
-                    return 0;
-                }
-                if (mimeType != null && mimeType.startsWith("image/")) {
-                    ImageMetadata metadata = ImageMetadataUtils.readMetadata(data);
-                    return ImageMetadataUtils.calculateOpenAiTileTokens(metadata);
-                }
-                return 85; // Fallback for non-image binary data
+            return 0;
+        }
+        if (mimeType != null && mimeType.startsWith("image/")) {
+            ImageMetadata metadata = ImageMetadataUtils.readMetadata(data);
+            return ImageMetadataUtils.calculateOpenAiTileTokens(metadata);
+        }
+        return 85; // Fallback for non-image binary data
     }
 }
