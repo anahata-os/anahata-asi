@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WMGS1YH2WD"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-WMGS1YH2WD');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="description" content="Anahata ASI OpenRouter Provider. Unified model aggregation with intelligent routing, live benchmarks, and automated capability discovery.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenRouter | Anahata ASI Platform</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .docs-wrapper { display: flex; max-width: 1400px; margin: 0 auto; padding: 160px 2rem 100px; gap: 4rem; }
+        .sidebar { width: 300px; flex-shrink: 0; position: sticky; top: 130px; height: calc(100vh - 160px); overflow-y: auto; padding-right: 1.5rem; }
+        .sidebar-nav h4 { color: var(--barca-gold); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(237, 187, 0, 0.2); padding-bottom: 8px; }
+        .sidebar-nav ul { list-style: none; padding: 0; }
+        .sidebar-nav a { color: var(--text-muted); text-decoration: none; display: block; padding: 10px 15px; transition: var(--transition); border-left: 3px solid transparent; }
+        .sidebar-nav a:hover, .sidebar-nav a.active { color: var(--primary-light); border-left-color: var(--primary-light); background: linear-gradient(to right, rgba(44, 122, 123, 0.1), transparent); }
+        .main-content { flex-grow: 1; max-width: 900px; }
+        .adapter-box { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.8rem; margin: 2rem 0; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .adapter-box h4 { color: var(--white); font-size: 1.1rem; margin-bottom: 0.8rem; display: flex; align-items: center; }
+    </style>
+</head>
+<body>
+    <div id="main-nav"></div>
+
+    <div class="docs-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-nav">
+                <h4>OpenRouter Provider</h4>
+                <ul>
+                    <li><a href="#overview" class="active">Overview</a></li>
+                    <li><a href="#metadata-discovery">Deep Metadata Discovery</a></li>
+                    <li><a href="#output-ceilings">True Output Ceilings</a></li>
+                    <li><a href="#benchmarks-pricing">Live Benchmarks & Pricing</a></li>
+                    <li><a href="#configuration">1-Click Configuration</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <section id="overview">
+                <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 0.5rem;">
+                    <img src="assets/logos/uno.anahata.asi.openrouter.OpenRouterAiProvider.png" alt="OpenRouter Logo" style="height: 38px;">
+                    <h1 style="margin: 0;">Open<span style="color: var(--barca-gold)">Router</span></h1>
+                </div>
+                <div style="display: flex; gap: 8px; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                    <span class="nb-badge" style="border-color: var(--barca-gold); color: var(--barca-gold);">Unified Aggregator</span>
+                    <span class="nb-badge" style="border-color: var(--verified-green); color: var(--verified-green);">Intelligent Routing</span>
+                    <span class="nb-badge" style="border-color: var(--primary-light); color: var(--primary-light);">Live Benchmarks</span>
+                </div>
+                <p class="tagline" style="text-align: left;">Unified model aggregation with intelligent routing and competitive pricing.</p>
+                <p>The <strong>OpenRouter AI Provider</strong> (<code>uno.anahata.asi.openrouter.OpenRouterAiProvider</code>) connects your Anahata ASI container to <a href="https://openrouter.ai" target="_blank" style="color: var(--barca-gold); text-decoration: underline;">openrouter.ai</a>. Through a single API key, gain instant, native access to hundreds of frontier and open-source models from OpenAI, Anthropic, Google, Meta, DeepSeek, Mistral, and xAI (Grok).</p>
+            </section>
+
+            <section id="metadata-discovery">
+                <h2>Deep Metadata Discovery</h2>
+                <p>Anahata's specialized <code>OpenRouterModel</code> automatically queries OpenRouter's <code>/v1/models</code> endpoint and discovers the true architectural specifications of every available model:</p>
+                <div class="adapter-box" style="border-top: 4px solid var(--barca-gold);">
+                    <ul>
+                        <li><strong>Input Context Lengths</strong>: Maps <code>context_length</code> and <code>top_provider.context_length</code> directly to <code>maxInputTokens</code> (from 8K up to 1M+).</li>
+                        <li><strong>True Output Modalities</strong>: Reads <code>architecture.output_modalities</code> cleanly, eliminating ambiguity between input perception and output response generation.</li>
+                        <li><strong>Native Function Calling</strong>: Automatically inspects <code>supported_parameters</code> for <code>tools</code>, enabling Anahata's Java execution and workspace tools without manual toggling.</li>
+                        <li><strong>Sampling Defaults</strong>: Pre-seeds optimal temperature, top-p, and top-k values directly from the model creator's <code>default_parameters</code>.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="output-ceilings">
+                <h2>Provider-Specific Output Ceilings</h2>
+                <p>Unlike generic OpenAI proxies that assume a static 4K or 16K output ceiling, OpenRouter reports the top provider's maximum single-turn completion capacity:</p>
+                <div class="adapter-box" style="border-top: 4px solid var(--verified-green);">
+                    <p>
+                        For long-generation models like <strong>Grok 4.6</strong>, <code>top_provider.max_completion_tokens</code> reveals up to <strong>450,000 output tokens</strong>. Anahata ASI automatically captures this limit into <code>maxOutputTokens</code> and dynamically negotiates generation headroom during deep coding and architectural turns.
+                    </p>
+                </div>
+            </section>
+
+            <section id="benchmarks-pricing">
+                <h2>Live Benchmarks & Pricing Transparency</h2>
+                <p>OpenRouter bundles live performance and economics directly into its model responses:</p>
+                <div class="adapter-box" style="border-top: 4px solid var(--primary-light);">
+                    <p>
+                        Anahata ASI extracts per-token prompt and completion costs and embeds them cleanly into model descriptions (e.g. <code>[In: $2.00/M | Out: $6.00/M]</code>). Live Artificial Analysis coding and intelligence benchmarks are rendered directly inside model tooltips and inspection cards.
+                    </p>
+                </div>
+            </section>
+
+            <section id="configuration">
+                <h2>1-Click Configuration</h2>
+                <p>Getting started with OpenRouter in Anahata ASI takes seconds:</p>
+                <div class="adapter-box" style="border-top: 4px solid var(--barca-blue);">
+                    <ol style="margin-left: 1.2rem; line-height: 1.8;">
+                        <li>Obtain an API key from <a href="https://openrouter.ai/keys" target="_blank" style="color: var(--barca-gold); text-decoration: underline;">openrouter.ai/keys</a>.</li>
+                        <li>Open the <b>AI Providers</b> settings panel in Anahata ASI (NetBeans, Desktop, or IntelliJ).</li>
+                        <li>Select <b>OpenRouter</b> from the provider list and paste your API key into the Key Pool.</li>
+                        <li>Click <b>Test Connection</b> to instantly discover hundreds of models and start prompting!</li>
+                    </ol>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="nav.js"></script>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=f19c44f5-8b2e-458f-beab-96e4f9f8e603" />
+</body>
+</html>
