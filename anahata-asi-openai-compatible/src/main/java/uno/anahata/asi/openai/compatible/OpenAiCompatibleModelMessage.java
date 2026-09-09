@@ -12,6 +12,7 @@ import uno.anahata.asi.agi.message.AbstractPart;
 import uno.anahata.asi.agi.message.ModelTextPart;
 import uno.anahata.asi.agi.provider.FinishReason;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
+import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.internal.JacksonUtils;
 
 /**
@@ -237,7 +238,16 @@ public class OpenAiCompatibleModelMessage extends AbstractModelMessage<OpenAiCom
                     Map<String, Object> args = JacksonUtils.parse(fullJson, Map.class);
                     getAgi().getToolManager().createToolCall(this, id, name, args);
                 } catch (Exception e) {
-                    log.error("Failed to parse buffered tool call arguments for index {}: {}", index, fullJson, e);
+                    log.error("Failed to parse buffered tool call arguments for tool '{}' (index {}): {}", name, index, fullJson, e);
+                    if (getFinishReason() == null || getFinishReason() == FinishReason.STOP) {
+                        setFinishReason(FinishReason.GOD_KNOWS);
+                        setFinishMessage("Stream terminated prematurely before tool call arguments were completed: " + e.getMessage());
+                    }
+                    Map<String, Object> fallbackArgs = new HashMap<>();
+                    fallbackArgs.put("raw_arguments", fullJson);
+                    AbstractToolCall<?, ?> failedCall = getAgi().getToolManager().createToolCall(this, id, name, fallbackArgs);
+                    failedCall.getResponse().fail("Tool call arguments truncated or unparseable: " + e.getMessage(), fullJson);
+                    failedCall.getResponse().addError(e);
                 }
             }
         }
@@ -253,9 +263,7 @@ public class OpenAiCompatibleModelMessage extends AbstractModelMessage<OpenAiCom
      */
     public void setFinishReasonFromOpenAi(String fr) {
         setFinishReason(mapFinishReason(fr));
-        if ("stop".equals(fr) || "tool_calls".equals(fr)) {
-            flushToolCalls();
-        }
+        flushToolCalls();
     }
 
     /**
