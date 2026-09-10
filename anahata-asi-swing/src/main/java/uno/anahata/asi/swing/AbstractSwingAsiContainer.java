@@ -36,6 +36,7 @@ import uno.anahata.asi.modal.ModalProvider;
 import uno.anahata.asi.novarouteai.NovaRouteAiProvider;
 import uno.anahata.asi.nvidia.NvidiaAiProvider;
 import uno.anahata.asi.ollama.OllamaAiProvider;
+import uno.anahata.asi.openrouter.OpenRouterAiProvider;
 import uno.anahata.asi.openai.OpenAiResponsesProvider;
 import uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider;
 import uno.anahata.asi.swing.agi.AgiPanel;
@@ -107,7 +108,8 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
         ModalProvider.class,
         NovaRouteAiProvider.class,
         NvidiaAiProvider.class,
-        OllamaAiProvider.class
+        OllamaAiProvider.class,
+        OpenRouterAiProvider.class
     );
 
 
@@ -177,6 +179,11 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
         if (getProvider("Nvidia") == null) {
             log.info("Registering NVIDIA");
             registerProvider(new NvidiaAiProvider());
+        }
+
+        if (getProvider("OpenRouter") == null) {
+            log.info("Registering OpenRouter");
+            registerProvider(new OpenRouterAiProvider());
         }
         //Ollamas can be added manually or else the default one will be trying to connect to localhost all the time as it doesn't need api keys
         /*
