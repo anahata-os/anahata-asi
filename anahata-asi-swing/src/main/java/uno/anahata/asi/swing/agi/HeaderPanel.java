@@ -241,10 +241,11 @@ public class HeaderPanel extends JPanel {
         new SwingTask<List<AbstractModel>>(agiPanel, "Collecting Models from Providers", () -> {
             return agi.getConfig().getAsiContainer().getAllModels(false);
         }, allModels -> {
-            JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "AI Provider & Model Registry", JDialog.ModalityType.MODELESS);
+            JFrame frame = new JFrame("AI Provider & Model Registry");
+            frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
             AiModelsPanel viewer = new AiModelsPanel(allModels, agi.getConfig().getAsiContainer(), selectedModel -> {
-                dialog.dispose();
+                frame.dispose();
                 // 1. Update domain model first so updateModelsForSelectedProvider picks it up
                 agi.setSelectedModel(selectedModel);
 
@@ -260,11 +261,11 @@ public class HeaderPanel extends JPanel {
                 }
             });
 
-            dialog.getContentPane().add(viewer);
-            dialog.setPreferredSize(new Dimension(1200, 800));
-            dialog.pack();
-            dialog.setLocationRelativeTo(this);
-            dialog.setVisible(true);
+            frame.getContentPane().add(viewer);
+            frame.setPreferredSize(new Dimension(1200, 800));
+            frame.pack();
+            frame.setLocationRelativeTo(this);
+            frame.setVisible(true);
         }).start();
     }
 
