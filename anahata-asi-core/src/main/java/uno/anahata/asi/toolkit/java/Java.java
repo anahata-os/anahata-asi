@@ -255,7 +255,7 @@ public class Java extends AnahataToolkit {
         sb.append("1. **Tier 1 - Host ClassLoader (Platform & Environment Runtime)**:\n");
         sb.append("   - The root loader containing the JDK, host application APIs, and all bundled libraries.\n");
         sb.append("   - **Extra ClassLoaders**: In extensible environments, this tier also delegates to any additional platform classloaders registered by the host environment.\n");
-        sb.append("   - **Parent-First Infrastructure Guard**: Core framework classes (`Agi`, `ToolContext`, `SwingAgiTool`, `Resource`, etc.) are whitelisted to always load here. This preserves ThreadLocal bindings, tool context propagation, and singleton identities.\n\n");
+        sb.append("   - **Parent-First Infrastructure Guard**: Core framework classes (`Agi`, `ToolContext`, `DesktopAgiTool`, `Resource`, etc.) are whitelisted to always load here. This preserves ThreadLocal bindings, tool context propagation, and singleton identities.\n\n");
         sb.append("2. **Tier 2 - AgiClassLoader (Session-Scoped In-Memory Metaspace)**:\n");
         sb.append("   - A persistent, session-scoped classloader that holds all modular Java classes compiled via `Java.compile(...)` (e.g. `Person`, `FlightContact`, domain entities, helper utilities) and any external library JARs passed via `extraClassPath`.\n");
         sb.append("   - **Type Identity Across Turns**: Classes defined here are compiled into session RAM and maintain identical `Class<?>` identity across turns. You can compile a class in Turn 1, instantiate it in Turn 2, store it, and use it across subsequent turns without `ClassCastException`.\n");
@@ -265,7 +265,7 @@ public class Java extends AnahataToolkit {
         sb.append("   - **Automatic URL Pruning**: Any library URLs already registered in `AgiClassLoader` are automatically filtered out from `AnahataClassLoader` so both the script and compiled session classes link to the exact same library types.\n\n");
         sb.append("💡 **Multi-Turn Modular Development Workflow (`compile` vs `compileAndExecute`)**:\n");
         sb.append("- **`Java.compile(classFqn, sourceCode, extraClassPath, ...)`**: Compiles a modular top-level class, record, or interface into the session metaspace without executing it. Use this across turns to construct clean, multi-file architectures rather than cramming all logic into a single giant script file.\n");
-        sb.append("- **`Java.compileAndExecute(sourceCode, extraClassPath, ...)`**: Compiles and runs a single-shot execution script extending `SwingAgiTool`. Can import and instantiate any classes previously compiled via `Java.compile`.\n");
+        sb.append("- **`Java.compileAndExecute(sourceCode, extraClassPath, ...)`**: Compiles and runs a single-shot execution script extending `" + getConcreteClassModelShouldExtend() + "`. Can import and instantiate any classes previously compiled via `Java.compile`.\n");
         sb.append("- **Inspection & Cleanup Tools**: Use `Java.getAgiClassSources` to inspect stored source code from earlier turns, `Java.removeAgiClasses` to purge specific classes, or `Java.clearAllAgiClasses` to reset.\n\n");
 
         sb.append("\n Multi-threading, Background Tasks, and Context Propagation:\n");

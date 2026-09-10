@@ -13,10 +13,10 @@
  * <ul>
  *   <li><b>{@link uno.anahata.asi.swing.toolkit.Screens}</b>: 
  *       Hardware-level display and window capture utility.</li>
- *   <li><b>{@link uno.anahata.asi.swing.toolkit.SwingJava}</b>: 
+ *   <li><b>{@link uno.anahata.asi.swing.toolkit.DesktopJava}</b>: 
  *       An advanced Java execution toolkit that automatically injects Swing-specific 
  *       helpers into the model's generated code.</li>
- *   <li><b>{@link uno.anahata.asi.swing.toolkit.SwingToolContext}</b>: 
+ *   <li><b>{@link uno.anahata.asi.swing.toolkit.DesktopToolContext}</b>: 
  *       The backbone of context-aware Swing execution, providing thread-local 
  *       capture and re-application across thread boundaries.</li>
  * </ul>

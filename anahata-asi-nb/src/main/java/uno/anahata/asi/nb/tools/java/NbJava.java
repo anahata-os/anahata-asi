@@ -30,23 +30,18 @@ import java.util.zip.ZipFile;
 import java.io.IOException;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.project.MavenProject;
-import org.netbeans.api.autoupdate.OperationContainer;
-import org.netbeans.api.autoupdate.OperationSupport;
-import org.netbeans.api.autoupdate.UpdateElement;
-import org.netbeans.api.autoupdate.UpdateManager;
-import org.netbeans.api.autoupdate.UpdateUnit;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.nb.module.NetBeansModuleUtils;
 
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.toolkit.java.Java;
-import uno.anahata.asi.swing.toolkit.SwingJava;
+import uno.anahata.asi.swing.toolkit.DesktopJava;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiTool;
-import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.nb.NetBeansAsiContainer;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
+import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.toolkit.java.classpath.VeryPrettyClassPathPrinter;
 
 /**
@@ -58,7 +53,7 @@ import uno.anahata.asi.toolkit.java.classpath.VeryPrettyClassPathPrinter;
  */
 @Slf4j
 @AgiToolkit("A NetBeans-aware toolkit for compiling and executing Java code.")
-public class NbJava extends SwingJava {
+public class NbJava extends DesktopJava {
 
     /**
      * {@inheritDoc}
@@ -134,8 +129,9 @@ public class NbJava extends SwingJava {
         String defaultCp = getDefaultClasspath();
         boolean identical = java.util.Objects.equals(pluginCp, defaultCp);
         ragMessage.addTextPart("\nNbJava toolkit's default classpath and Plugins default classpath identical: " + (identical ? "Yes" : "No"));
-        String fxVersion = NetBeansModuleUtils.getJavaFxVersion();
-        ragMessage.addTextPart("\nJavaFX Runtime Status: " + (fxVersion != null ? "Active (" + fxVersion + ")" : "Not Available (Use IDE.installJavaFxSupport to activate)"));
+        if (AbstractSwingAsiContainer.getJavaFxVersionInfo() == null) {
+            ragMessage.addTextPart("\nJavaFX Runtime Status: Not Available (Use IDE.installJavaFxSupport to activate)");
+        }
     }
 
     /**
@@ -515,7 +511,7 @@ public class NbJava extends SwingJava {
             + "Only use this tool (`compileAndExecuteInProject`) if your script explicitly needs to import or instantiate Java types compiled from the target project's local `ClassPath.SOURCE` (its 'target/classes' folder) or types from its project-specific external `.jar` dependencies that are NOT already on the default classpath."
     )
     public Object compileAndExecuteInProject(
-            @AgiToolParam(value = "Source code of a public class named **Anahata** that has **no package declaration**, extends **SwingAgiTool**, and implements the call() method of java.util.concurrent.Callable.", rendererId = "java") String sourceCode,
+            @AgiToolParam(value = "Source code of a public class named **Anahata** that has **no package declaration**, extends **DesktopAgiTool**, and implements the call() method of java.util.concurrent.Callable.", rendererId = "java") String sourceCode,
             @AgiToolParam("The absolute path of the NetBeans project to run in.") String projectPath,
             @AgiToolParam("Controls whether the `.jar` dependencies and open-project dependency outputs from the project's main `ClassPath.COMPILE` and `ClassPath.EXECUTE` are added to the script's custom URLClassLoader.\n"
                     + "Mechanism: If `true`, it extracts all external `.jar` files and the `target/classes` directories of any open NetBeans projects this project depends on, and adds them to the script's classpath.\n"

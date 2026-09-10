@@ -14,7 +14,7 @@ import uno.anahata.asi.agi.tool.ToolPermission;
  * <p>
  * Binds a target toolkit name or FQN to an optional map of simple tool method names
  * and their respective {@link ToolPermission}s. Automatically resolves composite permission keys
- * (e.g. {@code "SwingJava.compileAndExecute"} or {@code "NbJava.compileAndExecute"}).
+ * (e.g. {@code "DesktopJava.compileAndExecute"} or {@code "NbJava.compileAndExecute"}).
  * </p>
  *
  * @param toolkit The simple name (e.g. "Java", "Host") or FQN of the toolkit.

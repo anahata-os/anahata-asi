@@ -874,9 +874,9 @@ public class Agi extends BasicPropertyChangeSource {
      * Resolves the effective maximum output tokens configured for this session.
      * <p>
      * Evaluates the user's explicit request configuration override first
-     * ({@link RequestConfig#getMaxOutputTokens()}). If not explicitly specified by
+     * ({@link RequestConfig#maxOutputTokens}). If not explicitly specified by
      * the user, it falls back to the selected model's default maximum output tokens
-     * ({@link AbstractModel#getMaxOutputTokens()}). If no model is active or both
+     * ({@link AbstractModel#maxOutputTokens}). If no model is active or both
      * values are null, returns null.
      * </p>
      *

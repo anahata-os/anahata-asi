@@ -16,7 +16,7 @@ import uno.anahata.asi.agi.tool.ToolPermission;
 import uno.anahata.asi.agi.status.AgiStatus;
 import uno.anahata.asi.swing.icons.IconProvider;
 import uno.anahata.asi.swing.toolkit.Screens;
-import uno.anahata.asi.swing.toolkit.SwingJava;
+import uno.anahata.asi.swing.toolkit.DesktopJava;
 import uno.anahata.asi.toolkit.java.Java;
 import uno.anahata.asi.yam.tools.chrome.Chrome;
 import uno.anahata.asi.yam.tools.firefox.Firefox;
@@ -53,7 +53,7 @@ public class SwingAgiConfig extends AgiConfig {
     {
         // Replace java for swing java
         getToolClasses().remove(Java.class);
-        getToolClasses().add(SwingJava.class);
+        getToolClasses().add(DesktopJava.class);
         getToolClasses().add(Screens.class);
         // Add yam tools
         getToolClasses().add(Radio.class);        

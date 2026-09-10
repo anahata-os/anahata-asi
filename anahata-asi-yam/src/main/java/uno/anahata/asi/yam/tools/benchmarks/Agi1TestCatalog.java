@@ -138,8 +138,7 @@ public class Agi1TestCatalog extends TestCatalog {
     public static final TestDefinition JAVA_EARTH_GLOBE_1 = TestDefinition.builder()
             .testCode("JAVA-EARTH-GLOBE-1")
             .title("Interactive 3D Multi-Layer Satellite Earth Globe")
-            .rawPrompt("Output Budget: You have a massive 65,536 output token budget."
-                    + " This is a single-shot benchmark challenge: aim to complete and launch your implementation in your very first tool call."
+            .rawPrompt(" This is a single-shot benchmark challenge: aim to complete and launch your implementation in your very first tool call."
                     + " Only use extra preliminary compile() turns if you cannot fit it all in a single compileAndExecute() tool call due to output token budget.\n\n"
                     + "Build a high-performance, interactive 3D Satellite Earth Globe Viewer in Java (resembling Google Earth / NASA WorldWind).\n\n"
                     + "Your implementation will be evaluated on:\n\n"

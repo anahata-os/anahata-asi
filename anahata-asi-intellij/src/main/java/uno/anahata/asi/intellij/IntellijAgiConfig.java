@@ -16,7 +16,7 @@ import uno.anahata.asi.intellij.tools.run.RunConfigurations;
 import uno.anahata.asi.intellij.tools.terminal.Terminals;
 import uno.anahata.asi.intellij.tools.vcs.Vcs;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
-import uno.anahata.asi.swing.toolkit.SwingJava;
+import uno.anahata.asi.swing.toolkit.DesktopJava;
 
 /**
  * IntelliJ-specific AGI configuration.
@@ -55,7 +55,7 @@ public class IntellijAgiConfig extends SwingAgiConfig {
     {
 
         // Replace the Swing Java toolkit with the IntelliJ project-aware one (mirrors NbJava).
-        getToolClasses().remove(SwingJava.class);
+        getToolClasses().remove(DesktopJava.class);
         getToolClasses().add(IntellijJava.class);
 
         getToolClasses().add(Projects.class);

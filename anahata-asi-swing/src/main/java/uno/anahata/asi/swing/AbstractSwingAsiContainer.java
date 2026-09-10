@@ -7,6 +7,8 @@ import java.awt.Component;
 import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -75,7 +77,12 @@ import uno.anahata.asi.yam.tools.Radio;
 @Setter
 public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
     
+    @Getter
+    protected static String javaFxVersionInfo;
+
     static {
+        javaFxVersionInfo = initJavaFx();
+
         //Legengary Radio toolkit
         ToolkitUiRegistry.getInstance().register(Radio.class, RadioRenderer.class);
         
@@ -93,6 +100,60 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
         AiProviderUiRegistry.getInstance().register(OllamaAiProvider.class, OllamaAiProviderPanel.class);
     }
     
+    /**
+     * Reflectively detects and initializes the JavaFX Platform if available on the classpath,
+     * setting Platform.setImplicitExit(false) to ensure the JavaFX Application Thread persists
+     * across tool execution turns.
+     *
+     * @return the detected JavaFX version string, or null if JavaFX is not available.
+     */
+    private static String initJavaFx() {
+        try {
+            ClassLoader cl = AbstractSwingAsiContainer.class.getClassLoader();
+            Class<?> platformClass = null;
+            try {
+                platformClass = Class.forName("javafx.application.Platform", true, cl);
+            } catch (ClassNotFoundException e) {
+                try {
+                    platformClass = Class.forName("javafx.application.Platform", true, Thread.currentThread().getContextClassLoader());
+                } catch (ClassNotFoundException ignored) {
+                }
+            }
+            if (platformClass == null) {
+                return null;
+            }
+
+            // 1. Ensure startup if not already booted
+            Method startup = platformClass.getMethod("startup", Runnable.class);
+            try {
+                startup.invoke(null, (Runnable) () -> {});
+            } catch (InvocationTargetException ite) {
+                // Already started -> valid state
+            }
+
+            // 2. Lock implicitExit to false so FX Application Thread never terminates when windows close
+            Method setImplicitExit = platformClass.getMethod("setImplicitExit", boolean.class);
+            setImplicitExit.invoke(null, false);
+
+            // 3. Resolve version string
+            String version = "Available";
+            try {
+                Class<?> verClass = Class.forName("com.sun.javafx.runtime.VersionInfo", true, platformClass.getClassLoader());
+                version = (String) verClass.getMethod("getVersion").invoke(null);
+            } catch (Throwable ignored) {
+                String sysVer = System.getProperty("javafx.runtime.version");
+                if (sysVer != null) {
+                    version = sysVer;
+                }
+            }
+            log.info("JavaFX runtime initialized with Platform.setImplicitExit(false). Version: {}", version);
+            return version;
+        } catch (Throwable t) {
+            log.debug("JavaFX not present or initialization deferred: {}", t.getMessage());
+            return null;
+        }
+    }
+
     /**
      * List of all known AI Providers.
      */

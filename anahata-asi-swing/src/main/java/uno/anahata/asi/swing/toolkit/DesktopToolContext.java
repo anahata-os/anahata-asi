@@ -10,18 +10,18 @@ import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
  * An advanced execution context that bridges the gap between background tool execution 
- * and the Swing Event Dispatch Thread (EDT).
+ * and the Swing Event Dispatch Thread (EDT) or the JavaFX Application Thread.
  * <p>
  * This class provides the critical infrastructure for <b>Context Propagation</b>. 
  * Since the AI toolchain relies on {@link ThreadLocal} state for logging and 
  * attachments, moving execution to the EDT would normally break these links. 
- * {@code SwingToolContext} solves this by capturing the state and re-applying it 
+ * {@code DesktopToolContext} solves this by capturing the state and re-applying it 
  * within the EDT task scope.
  * </p>
  * 
  * @author anahata
  */
-public class SwingToolContext extends ToolContext {
+public class DesktopToolContext extends ToolContext {
     
     /**
      * Convenience method to get the AgiPanel for this Agi from the java tool.

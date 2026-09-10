@@ -12,7 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * A session-scoped {@link URLClassLoader} that maintains identity and holds
- * in-memory compiled classes ({@link AgiCompiledClass}) across turns for an AGI session.
+ * in-memory compiled classes ({@link AgiCompiledClass}) across turns for an AGI
+ * session.
  * <p>
  * Serving as the parent classloader for ephemeral script loaders (such as
  * {@link Java.AnahataClassLoader}), {@code AgiClassLoader} ensures that classes
@@ -28,15 +29,16 @@ import lombok.extern.slf4j.Slf4j;
 public class AgiClassLoader extends URLClassLoader {
 
     /**
-     * Reference to the owning {@link Java} toolkit for accessing compiled classes,
-     * parent-first whitelist, fallback bytes, and sibling loaders.
+     * Reference to the owning {@link Java} toolkit for accessing compiled
+     * classes, parent-first whitelist, fallback bytes, and sibling loaders.
      */
     private final Java javaToolkit;
 
     /**
      * Constructs a new {@link AgiClassLoader}.
      *
-     * @param urls initial classpath URLs (from extraClassPath entries across compiled classes).
+     * @param urls initial classpath URLs (from extraClassPath entries across
+     * compiled classes).
      * @param javaToolkit the owning Java toolkit instance.
      * @param parent the host parent classloader.
      */
@@ -46,7 +48,8 @@ public class AgiClassLoader extends URLClassLoader {
     }
 
     /**
-     * Adds extra classpath directory or JAR entries dynamically to this loader's URLs.
+     * Adds extra classpath directory or JAR entries dynamically to this
+     * loader's URLs.
      *
      * @param extraClassPath path-separator delimited classpath string.
      */
@@ -77,7 +80,8 @@ public class AgiClassLoader extends URLClassLoader {
     }
 
     /**
-     * Checks whether a class has already been loaded and defined by this classloader.
+     * Checks whether a class has already been loaded and defined by this
+     * classloader.
      *
      * @param name the binary name of the class.
      * @return {@code true} if the class is already defined in this loader.
@@ -88,17 +92,22 @@ public class AgiClassLoader extends URLClassLoader {
 
     /**
      * {@inheritDoc}
-     * <p>
+     * 
      * Implements session-scoped classloading:
      * <ol>
-     *   <li>Returns previously loaded classes (guaranteeing single-instance identity).</li>
-     *   <li>Delegates parent-first infrastructure classes to the host loader.</li>
-     *   <li>Defines in-memory compiled bytecode from active {@link AgiCompiledClass}es in {@link Java}.</li>
-     *   <li>Searches child-first URLs for libraries supplied in extra classpath.</li>
-     *   <li>Falls back to the host parent classloader.</li>
-     *   <li>Queries toolkit fallback bytes and extra sibling classloaders (e.g. JavaFX).</li>
+     * <li>Returns previously loaded classes (guaranteeing single-instance
+     * identity).</li>
+     * <li>Delegates parent-first infrastructure classes to the host
+     * loader.</li>
+     * <li>Defines in-memory compiled bytecode from active
+     * {@link AgiCompiledClass}es in {@link Java}.</li>
+     * <li>Searches child-first URLs for libraries supplied in extra
+     * classpath.</li>
+     * <li>Falls back to the host parent classloader.</li>
+     * <li>Queries toolkit fallback bytes and extra sibling classloaders (e.g.
+     * JavaFX).</li>
      * </ol>
-     * </p>
+     * 
      *
      * @param name the binary name of the class.
      * @param resolve if true, resolves the class.
@@ -177,7 +186,8 @@ public class AgiClassLoader extends URLClassLoader {
     }
 
     /**
-     * Resolves bytecode for a class or any of its inner/nested classes from {@link AgiCompiledClass}es.
+     * Resolves bytecode for a class or any of its inner/nested classes from
+     * {@link AgiCompiledClass}es.
      *
      * @param name the binary class name.
      * @return the bytecode byte array, or null if not found.

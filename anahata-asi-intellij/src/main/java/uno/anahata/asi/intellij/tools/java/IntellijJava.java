@@ -11,14 +11,11 @@ import com.intellij.openapi.roots.OrderEnumerator;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.SystemUtils;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiToolkit;
-import uno.anahata.asi.agi.tool.OnTheFlyAgiTool;
-import uno.anahata.asi.agi.tool.ToolContext;
 import uno.anahata.asi.intellij.IntellijAsiContainer;
 import uno.anahata.asi.intellij.internal.IntellijPluginUtils;
 import uno.anahata.asi.intellij.internal.JavaPsi;
@@ -26,27 +23,15 @@ import uno.anahata.asi.intellij.tools.project.Projects;
 import uno.anahata.asi.intellij.ui.IntellijTextResourceWriteRenderer;
 import uno.anahata.asi.intellij.ui.resources.IntellijResourceUI;
 import uno.anahata.asi.intellij.ui.resources.IntellijTextResourceViewer;
-import uno.anahata.asi.swing.toolkit.SwingJava;
+import uno.anahata.asi.swing.toolkit.DesktopJava;
 import uno.anahata.asi.toolkit.java.KnownJdk;
 
-import javax.tools.ToolProvider;
 import java.io.File;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.stream.Stream;
 
 /**
  * An IntelliJ-aware extension of the core {@code Java} toolkit that can compile and execute
@@ -67,7 +52,7 @@ import java.util.stream.Stream;
  */
 @Slf4j
 @AgiToolkit("An IntelliJ-aware toolkit for compiling and executing Java code against a project's classpath.")
-public class IntellijJava extends SwingJava {
+public class IntellijJava extends DesktopJava {
 
     /**
      * Constructs the IntellijJava toolkit (instantiated reflectively via its public no-arg constructor).
@@ -240,7 +225,7 @@ public class IntellijJava extends SwingJava {
      */
     @AgiTool("Executes a Java script within the context of a specific open IntelliJ project, appending that project's classpath to the script's child-first class loader.")
     public Object compileAndExecuteInProject(
-            @AgiToolParam(value = "The script source (a public class with no package declaration, extending the Swing tool base).", rendererId = "java") String sourceCode,
+            @AgiToolParam(value = "The script source (a public class with no package declaration, extending the class indicated in the system instructions).", rendererId = "java") String sourceCode,
             @AgiToolParam("The absolute base path of the open IntelliJ project to run in.") String projectPath,
             @AgiToolParam("Whether to include the project's external library dependencies.") boolean includeProjectDependencies,
             @AgiToolParam("Whether to include the project's test outputs and test-scoped dependencies.") boolean includeTestContext,

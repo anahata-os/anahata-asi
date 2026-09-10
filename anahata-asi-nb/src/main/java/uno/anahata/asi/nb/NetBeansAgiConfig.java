@@ -21,7 +21,7 @@ import uno.anahata.asi.nb.tools.java.CodeRefiner;
 import uno.anahata.asi.nb.tools.terminal.NbTerminal;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.toolkit.Host;
-import uno.anahata.asi.swing.toolkit.SwingJava;
+import uno.anahata.asi.swing.toolkit.DesktopJava;
 
 /**
  * NetBeans-specific agi configuration.
@@ -37,8 +37,8 @@ import uno.anahata.asi.swing.toolkit.SwingJava;
 public class NetBeansAgiConfig extends SwingAgiConfig {
 
     {
-        // Replace SwingJava with NbJava
-        getToolClasses().remove(SwingJava.class);
+        // Replace DesktopJava with NbJava
+        getToolClasses().remove(DesktopJava.class);
         getToolClasses().add(NbJava.class);
                 
         getToolClasses().add(Maven.class);

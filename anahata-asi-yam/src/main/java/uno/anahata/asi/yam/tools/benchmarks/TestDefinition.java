@@ -63,7 +63,7 @@ public record TestDefinition(
      * Aggregates and resolves all tool permission overrides configured across all toolkits.
      *
      * @param concreteJavaClass The resolved concrete class for Java tooling in the active container.
-     * @return A consolidated map of tool permission keys (e.g. {@code "SwingJava.compileAndExecute"}) to their permissions.
+     * @return A consolidated map of tool permission keys (e.g. {@code "DesktopJava.compileAndExecute"}) to their permissions.
      */
     public Map<String, ToolPermission> getResolvedToolPermissions(Class<?> concreteJavaClass) {
         if (toolkits == null || toolkits.isEmpty()) {

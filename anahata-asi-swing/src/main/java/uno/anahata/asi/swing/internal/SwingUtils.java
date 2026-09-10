@@ -313,11 +313,8 @@ public class SwingUtils {
      * @param language The language for syntax highlighting.
      */
     public static void showCodeBlockDialog(Component parent, String title, String text, String language) {
-        AgiPanel agiPanel = (AgiPanel) SwingUtilities.getAncestorOfClass(AgiPanel.class, parent);
-        if (agiPanel == null) {
-            log.warn("Could not find AgiPanel ancestor for showCodeBlockDialog.");
-            return;
-        }
+        AgiPanel agiPanel = (parent instanceof AgiPanel ap) ? ap 
+                : (parent != null ? (AgiPanel) SwingUtilities.getAncestorOfClass(AgiPanel.class, parent) : null);
 
         Window ancestorWindow = SwingUtilities.getWindowAncestor(parent);
         JDialog dialog;
