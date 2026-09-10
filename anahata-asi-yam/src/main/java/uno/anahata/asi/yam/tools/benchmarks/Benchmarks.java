@@ -224,11 +224,45 @@ public class Benchmarks extends AnahataToolkit {
             throw new AgiToolException("Unknown benchmark test code across all catalogs: " + testCode);
         }
 
-        return executeBenchmark(targetCatalog, targetTest, participant, openSession);
+        return executeBenchmark(targetCatalog, targetTest, participant, openSession, true);
     }
 
     /**
-     * Runs an ad-hoc benchmark on a custom prompt with container default toolkits and permissions.
+     * Runs an ad-hoc benchmark on a custom test definition (prompt, title, isolated toolkits)
+     * without persisting to official catalog scorecards or results.json.
+     *
+     * @param testDefinition The test definition specifying test code, title, raw prompt, and optional toolkit settings.
+     * @param participant The candidate participant descriptor.
+     * @param openSession Whether to open the child session tab in the UI during execution.
+     * @return The complete telemetry record of the benchmark run.
+     * @throws Exception If benchmark execution fails.
+     */
+    @AgiTool(value = "Runs an ad-hoc benchmark on a custom test definition (prompt, title, isolated toolkits) without persisting to official catalog scorecards.", permission = ToolPermission.APPROVE_ALWAYS)
+    public BenchmarkRunResult runCustomPrompt(
+            @AgiToolParam("The custom test definition DTO (testCode, title, rawPrompt, toolkits).") TestDefinition testDefinition,
+            @AgiToolParam("The candidate participant descriptor.") BenchmarkParticipant participant,
+            @AgiToolParam(value = "Whether to open the child session tab in the UI during execution.", required = false) boolean openSession) throws Exception {
+
+        String testCode = (testDefinition.testCode() != null && !testDefinition.testCode().isBlank())
+                ? testDefinition.testCode().trim()
+                : "CUSTOM-" + (System.currentTimeMillis() % 100000);
+
+        String title = (testDefinition.title() != null && !testDefinition.title().isBlank())
+                ? testDefinition.title().trim()
+                : "Custom Benchmark Challenge";
+
+        TestDefinition effectiveTestDef = TestDefinition.builder()
+                .testCode(testCode)
+                .title(title)
+                .rawPrompt(testDefinition.rawPrompt())
+                .toolkits(testDefinition.toolkits())
+                .build();
+
+        return executeBenchmark(null, effectiveTestDef, participant, openSession, false);
+    }
+
+    /**
+     * Convenience Java helper to run an ad-hoc benchmark on a custom prompt string and title without persisting.
      *
      * @param customPrompt The raw task prompt to benchmark the model with.
      * @param participant The candidate participant descriptor.
@@ -237,25 +271,12 @@ public class Benchmarks extends AnahataToolkit {
      * @return The complete telemetry record of the benchmark run.
      * @throws Exception If benchmark execution fails.
      */
-    @AgiTool(value = "Runs an ad-hoc benchmark on a custom prompt with container default toolkits and permissions.", permission = ToolPermission.APPROVE_ALWAYS)
-    public BenchmarkRunResult runCustomPrompt(
-            @AgiToolParam("The raw task prompt to benchmark the model with.") String customPrompt,
-            @AgiToolParam("The candidate participant descriptor.") BenchmarkParticipant participant,
-            @AgiToolParam(value = "Optional title for this custom challenge.", required = false) String title,
-            @AgiToolParam(value = "Whether to open the child session tab in the UI during execution.", required = false) boolean openSession) throws Exception {
-
-        String effectiveTitle = (title != null && !title.isBlank()) ? title.trim() : "Custom Benchmark Challenge";
-        String testCode = "CUSTOM-" + (System.currentTimeMillis() % 100000);
-
-        TestDefinition customTestDef = TestDefinition.builder()
-                .testCode(testCode)
-                .title(effectiveTitle)
+    public BenchmarkRunResult runCustomPrompt(String customPrompt, BenchmarkParticipant participant, String title, boolean openSession) throws Exception {
+        TestDefinition testDef = TestDefinition.builder()
+                .title(title)
                 .rawPrompt(customPrompt)
-                .toolkits(null) // Null inherits container defaults cleanly
                 .build();
-
-        TestCatalog primaryCatalog = !getCatalogs().isEmpty() ? getCatalogs().get(0) : new Agi1TestCatalog();
-        return executeBenchmark(primaryCatalog, customTestDef, participant, openSession);
+        return runCustomPrompt(testDef, participant, openSession);
     }
 
     /**
@@ -278,7 +299,7 @@ public class Benchmarks extends AnahataToolkit {
         List<BenchmarkRunResult> results = new ArrayList<>();
         for (TestDefinition testDef : catalog.getTests()) {
             log("Starting benchmark test: " + testDef.testCode() + " (" + testDef.title() + ") in catalog " + catalog.getName());
-            BenchmarkRunResult result = executeBenchmark(catalog, testDef, participant, openSession);
+            BenchmarkRunResult result = executeBenchmark(catalog, testDef, participant, openSession, true);
             results.add(result);
         }
 
@@ -434,16 +455,17 @@ public class Benchmarks extends AnahataToolkit {
 
     /**
      * Internal execution harness that provisions the child AGI, executes the test autonomously,
-     * harvests fine-grained telemetry, and persists the result to the matching catalog.
+     * harvests fine-grained telemetry, and conditionally persists the result to the matching catalog.
      *
-     * @param catalog The catalog owning the test.
+     * @param catalog The catalog owning the test, or {@code null} for ad-hoc custom runs.
      * @param testDef The test definition.
      * @param participant The candidate participant.
      * @param openSession Whether to open the session UI.
+     * @param persistResults Whether to record results into the catalog results file and results.json.
      * @return The complete benchmark run result.
      * @throws Exception If an unrecoverable execution error occurs.
      */
-    private BenchmarkRunResult executeBenchmark(TestCatalog catalog, TestDefinition testDef, BenchmarkParticipant participant, boolean openSession) throws Exception {
+    private BenchmarkRunResult executeBenchmark(TestCatalog catalog, TestDefinition testDef, BenchmarkParticipant participant, boolean openSession, boolean persistResults) throws Exception {
         final ToolContext ctx = getToolContext();
         AbstractAsiContainer container = getAsiContainer();
 
@@ -485,7 +507,7 @@ public class Benchmarks extends AnahataToolkit {
 
         // Headless execution fallback
         if (GraphicsEnvironment.isHeadless()) {
-            return executeAutonomousDirectRun(catalog, candidateAgi, testDef, participant, ctx);
+            return executeAutonomousDirectRun(catalog, candidateAgi, testDef, participant, ctx, persistResults);
         }
 
         ScreenRecorder recorder = new ScreenRecorder();
@@ -526,7 +548,9 @@ public class Benchmarks extends AnahataToolkit {
                             ctx.log("Recording saved to disk at: " + localVideoPath);
                         }
                         BenchmarkRunResult runResult = compileRunResult(candidateAgi, testDef, participant, duration, thumbPath, null);
-                        BenchmarkResultsStore.recordResult(catalog, runResult);
+                        if (persistResults) {
+                            BenchmarkResultsStore.recordResult(catalog, runResult);
+                        }
                         runResultFuture.complete(runResult);
                     } catch (Exception e) {
                         log.error("Failed to save local benchmark result", e);
@@ -568,7 +592,9 @@ public class Benchmarks extends AnahataToolkit {
                                 .sessionId(rawMetrics.sessionId())
                                 .observations(rawMetrics.observations())
                                 .build();
-                        BenchmarkResultsStore.recordResult(catalog, runResult);
+                        if (persistResults) {
+                            BenchmarkResultsStore.recordResult(catalog, runResult);
+                        }
                         runResultFuture.complete(runResult);
                     } catch (Exception e) {
                         log.error("Failed to upload benchmark result to YouTube", e);
@@ -593,16 +619,16 @@ public class Benchmarks extends AnahataToolkit {
     }
 
     /**
-     * Executes the candidate AGI turn by formatting the standardized prompt from the catalog.
+     * Executes the candidate AGI turn by formatting the standardized prompt from the catalog or using the raw prompt.
      *
-     * @param catalog The catalog owning the test templates.
+     * @param catalog The catalog owning the test templates, or {@code null} for custom runs.
      * @param candidateAgi The child session.
      * @param testDef The test definition.
      * @param ctx The captured tool execution context.
      */
     private void executeCandidateTurn(TestCatalog catalog, Agi candidateAgi, TestDefinition testDef, ToolContext ctx) {
-        String prompt = catalog.formatPrompt(testDef);
-        ctx.log("Submitting official benchmark prompt to candidate AGI session: " + candidateAgi.getConfig().getSessionId() + " (" + candidateAgi.getShortId() + ")");
+        String prompt = (catalog != null) ? catalog.formatPrompt(testDef, candidateAgi) : testDef.rawPrompt();
+        ctx.log("Submitting benchmark prompt to candidate AGI session: " + candidateAgi.getConfig().getSessionId() + " (" + candidateAgi.getShortId() + ")");
         AgiUserMessage userMsg = new AgiUserMessage(candidateAgi, getAgi().getConfig().getSessionId());
         userMsg.addTextPart(prompt);
         candidateAgi.sendMessage(userMsg);
@@ -611,29 +637,32 @@ public class Benchmarks extends AnahataToolkit {
     /**
      * Headless fallback execution path.
      *
-     * @param catalog The catalog context.
+     * @param catalog The catalog context, or {@code null} for custom runs.
      * @param candidateAgi The child session.
      * @param testDef The test definition.
      * @param participant The participant.
      * @param ctx The captured tool execution context.
+     * @param persistResults Whether to record results into the catalog scorecard.
      * @return The benchmark run result.
      * @throws Exception If execution fails.
      */
-    private BenchmarkRunResult executeAutonomousDirectRun(TestCatalog catalog, Agi candidateAgi, TestDefinition testDef, BenchmarkParticipant participant, ToolContext ctx) throws Exception {
+    private BenchmarkRunResult executeAutonomousDirectRun(TestCatalog catalog, Agi candidateAgi, TestDefinition testDef, BenchmarkParticipant participant, ToolContext ctx, boolean persistResults) throws Exception {
         long startMillis = System.currentTimeMillis();
         executeCandidateTurn(catalog, candidateAgi, testDef, ctx);
         long durationMillis = System.currentTimeMillis() - startMillis;
         double durationSeconds = Math.round((durationMillis / 1000.0) * 100.0) / 100.0;
 
         BenchmarkRunResult runResult = compileRunResult(candidateAgi, testDef, participant, durationSeconds, null, null);
-        BenchmarkResultsStore.recordResult(catalog, runResult);
+        if (persistResults) {
+            BenchmarkResultsStore.recordResult(catalog, runResult);
+        }
         return runResult;
     }
 
     /**
      * Uploads the recorded benchmark demonstration video to YouTube with metadata, telemetry description, and thumbnail.
      *
-     * @param catalog The catalog owning the test.
+     * @param catalog The catalog owning the test, or {@code null} for custom runs.
      * @param testDef The test definition.
      * @param participant The participant descriptor.
      * @param session The recorded video session.
@@ -649,8 +678,8 @@ public class Benchmarks extends AnahataToolkit {
                 return null;
             }
 
-            String catalogName = catalog != null && catalog.getName() != null ? catalog.getName() : "Anahata-AGI-1";
-            String catalogId = catalog != null && catalog.getId() != null ? catalog.getId() : "ANAHATA-AGI-1";
+            String catalogName = (catalog != null && catalog.getName() != null) ? catalog.getName() : "Custom Challenge";
+            String catalogId = (catalog != null && catalog.getId() != null) ? catalog.getId() : "CUSTOM";
             String catalogUrlCode = catalogId.toLowerCase().replace('_', '-');
 
             String title = "⚡ " + catalogName + ": " + participant.modelId() + " on " + testDef.testCode() + " (" + testDef.title() + ")";
@@ -682,10 +711,12 @@ public class Benchmarks extends AnahataToolkit {
             desc.append("  - Candidate (Output): ").append(String.format("%,d", candidatesTokens)).append("\n");
             desc.append("  - Thoughts (Reasoning): ").append(String.format("%,d", thoughtsTokens)).append("\n");
             desc.append("--------------------------------------------------\n");
-            desc.append("📊 Interactive Telemetry & Leaderboard:\n");
-            desc.append("https://asi.anahata.uno/benchmarks/").append(catalogUrlCode).append("/index.html?test=").append(testDef.testCode()).append("\n\n");
-            desc.append("🏆 Master Suite Leaderboard:\n");
-            desc.append("https://asi.anahata.uno/benchmarks/").append(catalogUrlCode).append("/index.html\n\n");
+            if (catalog != null) {
+                desc.append("📊 Interactive Telemetry & Leaderboard:\n");
+                desc.append("https://asi.anahata.uno/benchmarks/").append(catalogUrlCode).append("/index.html?test=").append(testDef.testCode()).append("\n\n");
+                desc.append("🏆 Master Suite Leaderboard:\n");
+                desc.append("https://asi.anahata.uno/benchmarks/").append(catalogUrlCode).append("/index.html\n\n");
+            }
 
             if (metrics != null && metrics.observations() != null && !metrics.observations().isBlank()) {
                 desc.append("⚠️ Observations / Error Details:\n").append(metrics.observations()).append("\n\n");
@@ -699,14 +730,16 @@ public class Benchmarks extends AnahataToolkit {
             YouTube youtube = getAgi().getToolkit(YouTube.class).orElse(new YouTube());
 
             String playlistId = creds.playlistId();
-            try {
-                String playlistTitle = catalogName + ": " + testDef.testCode();
-                playlistId = youtube.resolveOrCreatePlaylist(playlistTitle,
-                        "Automated " + catalogName + " benchmark runs for " + testDef.testCode() + " (" + testDef.title() + ").");
-                ctx.log("Resolved per-test playlist '" + playlistTitle + "' -> " + playlistId);
-            } catch (Exception e) {
-                log.error("Could not resolve per-test playlist; falling back to default playlist", e);
-                ctx.error("Could not resolve per-test playlist; falling back to default playlist: " + e.getMessage());
+            if (catalog != null) {
+                try {
+                    String playlistTitle = catalogName + ": " + testDef.testCode();
+                    playlistId = youtube.resolveOrCreatePlaylist(playlistTitle,
+                            "Automated " + catalogName + " benchmark runs for " + testDef.testCode() + " (" + testDef.title() + ").");
+                    ctx.log("Resolved per-test playlist '" + playlistTitle + "' -> " + playlistId);
+                } catch (Exception e) {
+                    log.error("Could not resolve per-test playlist; falling back to default playlist", e);
+                    ctx.error("Could not resolve per-test playlist; falling back to default playlist: " + e.getMessage());
+                }
             }
 
             YouTubeVideoUploadRequest request = YouTubeVideoUploadRequest.builder()

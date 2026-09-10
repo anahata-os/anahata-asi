@@ -120,13 +120,32 @@ public abstract class TestCatalog {
      * @return The formatted prompt ready for submission to the candidate AGI.
      */
     public String formatPrompt(TestDefinition test) {
+        return formatPrompt(test, null);
+    }
+
+    /**
+     * Formats the full prompt for a test by applying this catalog's standard header and footer templates,
+     * dynamically resolving token placeholders (e.g. $effective.user.max.out.tokens$) against the target Agi session.
+     *
+     * @param test The test definition.
+     * @param agi The target candidate AGI session, or null if unknown.
+     * @return The formatted prompt ready for submission to the candidate AGI.
+     */
+    public String formatPrompt(TestDefinition test, uno.anahata.asi.agi.Agi agi) {
         StringBuilder sb = new StringBuilder();
         if (standardHeader != null && !standardHeader.isBlank()) {
             sb.append(String.format(standardHeader, test.testCode(), test.title())).append("\n\n");
         }
         sb.append(test.rawPrompt());
         if (standardFooter != null && !standardFooter.isBlank()) {
-            sb.append("\n\n").append(standardFooter);
+            String footer = standardFooter;
+            if (agi != null) {
+                Integer maxOut = agi.getEffectiveUserMaxOutputTokens();
+                String maxOutStr = maxOut != null ? String.format("%,d", maxOut) : "model default";
+                footer = footer.replace("$effective.user.max.out.tokens$", maxOutStr)
+                               .replace("$max.tokens$", maxOutStr);
+            }
+            sb.append("\n\n").append(footer);
         }
         return sb.toString();
     }

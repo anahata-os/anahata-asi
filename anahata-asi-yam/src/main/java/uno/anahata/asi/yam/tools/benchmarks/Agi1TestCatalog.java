@@ -39,9 +39,11 @@ public class Agi1TestCatalog extends TestCatalog {
      * Standard footer template for Anahata-AGI-1 tests.
      */
     public static final String STANDARD_FOOTER =
-            "This is a single-shot benchmark challenge: aim to complete and launch your implementation "
-            + "in your very first tool call. Only take additional turns if you encounter a compilation or runtime "
-            + "error that requires self-alignment and correction. Once your task is running with zero defects, "
+            "Note: This is a single-shot benchmark challenge: aim to complete and launch your implementation "
+            + "in your very first tool call. Only take additional turns if \n"
+            + "a) you encounter a compilation or runtime error that requires self-alignment and correction."
+            + "b) you cannot fit the entire deliverable within your $effective.user.max.out.tokens$ max output tokens"
+            + "\n\nOnce your task is running with zero defects, "
             + "provide a concise final summary and conclude immediately.";
 
     /**
@@ -100,6 +102,80 @@ public class Agi1TestCatalog extends TestCatalog {
             .build();
 
     /**
+     * Test #5: 3D Planetary Satellite Tracker & Air Defense Command Center.
+     */
+    public static final TestDefinition JAVA_ORBITAL_C4ISR_1 = TestDefinition.builder()
+            .testCode("JAVA-ORBITAL-C4ISR-1")
+            .title("3D Planetary Satellite Tracker & Air Defense Command Center")
+            .rawPrompt("Build a high-performance, real-time 3D Planetary Satellite Tracker & Air Defense Flight Radar Command Center in Java (resembling NASA WorldWind / Palantir C4ISR).\n\n"
+                    + "Your implementation will be evaluated on:\n"
+                    + "1. 3D Globe & Surface Texture Mapping: Hardware-accelerated 3D spherical Earth globe with mouse drag rotation, pitch tilt, and mouse-wheel zoom. "
+                    + "Render photorealistic satellite imagery or dark tactical terrain (e.g. using a global spherical texture or slippy map tile grid). "
+                    + "The following endpoints have been tested and verified to work without API keys: "
+                    + "Global NASA Blue Marble texture: https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg ; "
+                    + "Night city lights: https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_lights_2048.png ; "
+                    + "ArcGIS World Satellite tiles: https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.jpg ; "
+                    + "CartoDB Dark Matter tiles: https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png . "
+                    + "You are completely free to use these verified links or source your own data/imagery.\n"
+                    + "2. 3D Elevated Airspace & Defense Domes: Render aircraft physically elevated in 3D above the planetary surface proportional to flight level. "
+                    + "Render semi-transparent glowing 3D SAM engagement domes over strategic defense airbases (Ramstein, Torrejón, Sigonella, Nevatim) and tactical interceptor vectors.\n"
+                    + "3. Satellite Mechanics & Telemetry: Live or simulated satellite orbital propagation (e.g. ISS live coordinates via http://api.open-notify.org/iss-now.json, Starlink shell, GPS/Galileo ring) with glowing orbital paths and sub-satellite ground footprints.\n"
+                    + "4. Tactical C4ISR HUD: Dark military cyberpunk HUD overlay (FlatLaf Dark), target lock telemetry card (callsign, altitude, speed, lat/lon), Zulu UTC clock, and simulation controls.\n"
+                    + "5. Performance & Thread Safety: Background threads for network/telemetry updates and smooth 60 FPS animation loop with zero UI freezing.\n\n"
+                    + "Window title MUST contain your Model ID. You have complete creative freedom over visual styling, architecture, and technology choice.")
+            .toolkits(List.of(
+                    ToolkitSettings.of(Java.class, "compile", ToolPermission.APPROVE_ALWAYS),
+                    ToolkitSettings.of(Java.class, "compileAndExecute", ToolPermission.APPROVE_ALWAYS),
+                    ToolkitSettings.of(Java.class, "getAgiClassSources", ToolPermission.APPROVE_ALWAYS),
+                    ToolkitSettings.of(Java.class, "removeAgiClasses", ToolPermission.APPROVE_ALWAYS),
+                    ToolkitSettings.of(Java.class, "clearAllAgiClasses", ToolPermission.APPROVE_ALWAYS)
+            ))
+            .build();
+
+    /**
+     * Test #6: Interactive 3D Multi-Layer Satellite Earth Globe (Google Earth / NASA WorldWind).
+     */
+    public static final TestDefinition JAVA_EARTH_GLOBE_1 = TestDefinition.builder()
+            .testCode("JAVA-EARTH-GLOBE-1")
+            .title("Interactive 3D Multi-Layer Satellite Earth Globe")
+            .rawPrompt("Output Budget: You have a massive 65,536 output token budget."
+                    + " This is a single-shot benchmark challenge: aim to complete and launch your implementation in your very first tool call."
+                    + " Only use extra preliminary compile() turns if you cannot fit it all in a single compileAndExecute() tool call due to output token budget.\n\n"
+                    + "Build a high-performance, interactive 3D Satellite Earth Globe Viewer in Java (resembling Google Earth / NASA WorldWind).\n\n"
+                    + "Your implementation will be evaluated on:\n\n"
+                    + "1. Interactive 3D Sphere & Natural Camera Controls:\n"
+                    + "   - Hardware-accelerated 3D spherical Earth.\n"
+                    + "   - Natural Dragging: Mouse drag must grab the planetary surface naturally (dragging right pulls the surface right, dragging left pulls the surface left, dragging up tilts North, dragging down tilts South).\n"
+                    + "   - Continuous Smooth Zoom & Altitude Range: Continuous logarithmic zoom from global orbit down to street/ground level (~5 km altitude), with altitude clamping to keep the camera gracefully outside the globe surface.\n"
+                    + "   - Fly-To Presets: Preset locations with smooth camera animation (e.g. Barcelona Camp Nou, Madrid, Paris, New York, Tokyo, Giza Pyramids).\n\n"
+                    + "2. Live Multi-Layer Slippy Map Imagery (No API Keys Required):\n"
+                    + "   - Provide a top toolbar or combo box to switch live between 2 free, high-resolution slippy map tile pyramids:\n"
+                    + "     * Esri ArcGIS World Satellite: https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.jpg\n"
+                    + "     * OpenStreetMap (OSM): https://tile.openstreetmap.org/{z}/{x}/{y}.png\n\n"
+                    + "3. High-Performance Concurrency & LIFO Streaming:\n"
+                    + "   - Thread Pool Sizing: Use a background daemon worker thread pool sized to Runtime.getRuntime().availableProcessors() (one thread per available CPU core).\n"
+                    + "   - LIFO (Last-In, First-Out) Priority: Prioritize newly requested tiles currently visible in the camera frustum over older, stale off-screen requests.\n\n"
+                    + "   - Visual Continuity: Maintain low-resolution base or parent tiles visible on the globe until higher-detail child tiles have finished downloading and decoding, ensuring the planetary surface never disappears or displays empty voids while streaming."
+                    + "4. Persistent Local Disk Caching:\n"
+                    + "   - Cache all downloaded tiles locally under ${user.home}/.anahata/asi/cache/<host>/<path> (e.g. ${user.home}/.anahata/asi/cache/server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.jpg and ${user.home}/.anahata/asi/cache/tile.openstreetmap.org/{z}/{x}/{y}.png).\n"
+                    + "   - Check if the tile file already exists on disk before initiating any HTTP request. If present, load it immediately from disk; otherwise download, persist to disk, and decode.\n\n"
+                    + "5. HUD, Telemetry & UI Styling:\n"
+                    + "   - Sleek overlay showing live Camera Lat / Lon, Altitude, active Zoom LOD level, memory/disk cache stats, and a 'Reset View' button.\n"
+                    + "   - Apply styling locally to your window and components, preserving host environment defaults (don't change the host system's look and feel).\n\n"
+                    + "6. Execution:\n"
+                    + "   - Smooth 60 FPS animation loop with strict UI thread safety (tile I/O on worker threads).\n"
+                    + "   - Window title MUST contain your Model ID.\n\n"
+                    + "“**Environment Note**: All libraries available on the default classpath are pre-configured and manage any native library extraction and loading.”")
+            .toolkits(List.of(
+                    ToolkitSettings.of(Java.class, "compile", ToolPermission.APPROVE_ALWAYS),
+                    ToolkitSettings.of(Java.class, "compileAndExecute", ToolPermission.APPROVE_ALWAYS),
+                    ToolkitSettings.of(Java.class, "getAgiClassSources", ToolPermission.APPROVE_ALWAYS),
+                    ToolkitSettings.of(Java.class, "removeAgiClasses", ToolPermission.APPROVE_ALWAYS),
+                    ToolkitSettings.of(Java.class, "clearAllAgiClasses", ToolPermission.APPROVE_ALWAYS)
+            ))
+            .build();
+
+    /**
      * Resolves the official results directory in the website source tree or fallback.
      *
      * @return The path to the Anahata-AGI-1 results directory.
@@ -140,5 +216,7 @@ public class Agi1TestCatalog extends TestCatalog {
         addTest(JAVA_ARKANOID_1);
         addTest(JAVA_SNAKE_GAME_1);
         addTest(JAVA_3D_NOU_CAMP_NOU_1);
+        addTest(JAVA_ORBITAL_C4ISR_1);
+        addTest(JAVA_EARTH_GLOBE_1);
     }
 }
