@@ -871,6 +871,28 @@ public class Agi extends BasicPropertyChangeSource {
     }
 
     /**
+     * Resolves the effective maximum output tokens configured for this session.
+     * <p>
+     * Evaluates the user's explicit request configuration override first
+     * ({@link RequestConfig#getMaxOutputTokens()}). If not explicitly specified by
+     * the user, it falls back to the selected model's default maximum output tokens
+     * ({@link AbstractModel#getMaxOutputTokens()}). If no model is active or both
+     * values are null, returns null.
+     * </p>
+     *
+     * @return the effective maximum output tokens, or {@code null} if unconstrained.
+     */
+    public Integer getEffectiveUserMaxOutputTokens() {
+        if (requestConfig != null && requestConfig.getMaxOutputTokens() != null) {
+            return requestConfig.getMaxOutputTokens();
+        }
+        if (selectedModel != null && selectedModel.getMaxOutputTokens() != null) {
+            return selectedModel.getMaxOutputTokens();
+        }
+        return null;
+    }
+
+    /**
      * Gets a human-readable display name for the session.
      *
      * @return The session display name (nickname or short ID).

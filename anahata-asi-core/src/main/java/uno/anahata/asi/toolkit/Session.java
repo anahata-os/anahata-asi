@@ -274,6 +274,8 @@ public class Session extends AnahataToolkit {
         sb.append("- **Model Class**: ").append(domainAgi.getSelectedModel().getClass().getName()).append("\n");
         sb.append("- **Model Id (you)**: ").append(domainAgi.getSelectedModel() != null ? domainAgi.getSelectedModel().getModelId() : "None").append("\n");
         sb.append("- **Thinking Level**: ").append(domainAgi.getRequestConfig().getThinkingLevel()).append("\n");
+        Integer effectiveMaxOut = domainAgi.getEffectiveUserMaxOutputTokens();
+        sb.append("- **User defined Max Output Tokens**: ").append(effectiveMaxOut != null ? String.format("%,d", effectiveMaxOut) : "Unconstrained / Model Default").append("\n");
         sb.append("- **Session ID**: ").append(config.getSessionId()).append("\n");
         sb.append("- **Start Time**: ").append(sessionStart).append("\n");
         sb.append("- **Last Restore Time** (last time this session was loaded/deserialized from disk): ").append(sessionRestored != null ? sessionRestored : " This session has not yet been deserialized").append("\n");
