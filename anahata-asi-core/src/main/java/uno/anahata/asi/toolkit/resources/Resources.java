@@ -106,7 +106,7 @@ public class Resources extends AnahataToolkit {
     @AgiTool(value = "Loads multiple resources into the context by their URIs.", permission = ToolPermission.APPROVE_ALWAYS)
     public List<String> loadResources(
             @AgiToolParam(value = "The full URIs of the resources.", rendererId = "uri") List<String> uriStrings,
-            @AgiToolParam(value = "Initial viewport settings for text resources. If not provided, it uses the system default viewport (0-65K chars, 1024 chars col width incluedLines=true)", required = false) TextViewportSettings initialSettings) throws Exception {
+            @AgiToolParam(value = "Initial viewport settings for text resources. If not provided, it uses the system default viewport (0-128K chars, 1024 chars col width incluedLines=true)", required = false) TextViewportSettings initialSettings) throws Exception {
 
         List<Resource> toRegister = new ArrayList<>();
         List<String> ids = new ArrayList<>();

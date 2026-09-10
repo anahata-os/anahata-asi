@@ -58,7 +58,7 @@ public class TextViewportSettings {
     private int startChar = 0;
 
     /** The maximum number of characters to load in a single page. */
-    private int pageSizeInChars = 64 * 1024;
+    private int pageSizeInChars = 128 * 1024;
 
     /** The maximum line width before horizontal truncation. */
     private int columnWidth = 1024;
