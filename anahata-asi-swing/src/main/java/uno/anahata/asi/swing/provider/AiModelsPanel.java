@@ -51,6 +51,13 @@ import javax.swing.table.TableCellRenderer;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import uno.anahata.asi.swing.icons.CopyIcon;
+import uno.anahata.asi.swing.icons.SearchIcon;
+import uno.anahata.asi.swing.internal.SwingUtils;
 import org.jdesktop.swingx.JXTable;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
@@ -284,14 +291,7 @@ public class AiModelsPanel extends JPanel {
                     int modelRow = convertRowIndexToModel(viewRow);
                     AbstractModel m = tableModel.getModelAt(modelRow);
                     if (m != null) {
-                        String rawDesc = m.getRawDescription();
-                        if (rawDesc != null && !rawDesc.isBlank()) {
-                            return rawDesc;
-                        }
-                        String desc = m.getDescription();
-                        if (desc != null && !desc.isBlank()) {
-                            return desc;
-                        }
+                        return formatModelToolTip(m);
                     }
                 }
                 return super.getToolTipText(e);
@@ -322,11 +322,19 @@ public class AiModelsPanel extends JPanel {
              */
             @Override
             public void mousePressed(MouseEvent e) {
-                if (SwingUtilities.isRightMouseButton(e)) {
+                if (e.isPopupTrigger() || SwingUtilities.isRightMouseButton(e)) {
                     int row = table.rowAtPoint(e.getPoint());
                     if (row >= 0 && !table.isRowSelected(row)) {
                         table.setRowSelectionInterval(row, row);
                     }
+                    showTableContextMenu(e);
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showTableContextMenu(e);
                 }
             }
 
@@ -455,6 +463,109 @@ public class AiModelsPanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
 
         updateAddNewModelsButton();
+    }
+
+    /**
+     * Formats a clean, bounded HTML tooltip card for a model without overflowing the monitor.
+     *
+     * @param m The model entity.
+     * @return Bounded HTML tooltip string, or null.
+     */
+    private String formatModelToolTip(AbstractModel m) {
+        String rawDesc = m.getRawDescription();
+        String desc = m.getDescription();
+
+        if (rawDesc != null && !rawDesc.isBlank() && rawDesc.trim().startsWith("{")) {
+            StringBuilder sb = new StringBuilder("<html><div style='width: 460px; padding: 4px;'>");
+            sb.append("<b>Model:</b> <font color='#0066cc'>").append(m.getModelId()).append("</font><br>");
+            if (m.getDisplayName() != null && !m.getDisplayName().equals(m.getModelId())) {
+                sb.append("<b>Name:</b> ").append(m.getDisplayName()).append("<br>");
+            }
+            if (desc != null && !desc.isBlank()) {
+                String shortDesc = desc.length() > 220 ? desc.substring(0, 217) + "..." : desc;
+                sb.append("<b>Description:</b> ").append(shortDesc).append("<br>");
+            }
+            if (m.getMaxInputTokens() != null) {
+                sb.append("<b>Context Window:</b> ").append(String.format("%,d", m.getMaxInputTokens())).append(" tokens<br>");
+            }
+            if (m.getMaxOutputTokens() != null) {
+                sb.append("<b>Max Output:</b> ").append(String.format("%,d", m.getMaxOutputTokens())).append(" tokens<br>");
+            }
+            if (m.getSupportedResponseModalities() != null && !m.getSupportedResponseModalities().isEmpty()) {
+                sb.append("<b>Modalities:</b> ").append(m.getSupportedResponseModalities().stream().map(Enum::name).collect(Collectors.joining(", "))).append("<br>");
+            }
+            sb.append("<hr style='margin-top: 4px; margin-bottom: 4px;'>");
+            sb.append("<i style='color: #888888; font-size: 10px;'>Right-click row to view full metadata dialog</i>");
+            sb.append("</div></html>");
+            return sb.toString();
+        }
+
+        if (rawDesc != null && !rawDesc.isBlank() && rawDesc.trim().toLowerCase().startsWith("<html>")) {
+            if (!rawDesc.contains("width:")) {
+                return rawDesc.replace("<html>", "<html><div style='width: 460px; padding: 4px;'>") + "</div>";
+            }
+            return rawDesc;
+        }
+
+        if (rawDesc != null && !rawDesc.isBlank()) {
+            String[] lines = rawDesc.split("\n");
+            if (lines.length > 20) {
+                StringBuilder sb = new StringBuilder("<html><div style='width: 460px; padding: 4px;'>");
+                for (int i = 0; i < 20; i++) {
+                    sb.append(lines[i]).append("<br>");
+                }
+                sb.append("<i>... (Right-click row to view all ").append(lines.length).append(" lines)</i>");
+                sb.append("</div></html>");
+                return sb.toString();
+            }
+            return "<html><div style='width: 460px; padding: 4px;'>" + rawDesc.replace("\n", "<br>") + "</div></html>";
+        }
+
+        if (desc != null && !desc.isBlank()) {
+            return "<html><div style='width: 460px; padding: 4px;'>" + desc.replace("\n", "<br>") + "</div></html>";
+        }
+
+        return null;
+    }
+
+    /**
+     * Displays a context menu on right-click allowing quick copying of the model ID
+     * or inspecting full raw metadata in the environment's native code viewer.
+     *
+     * @param e The mouse event.
+     */
+    private void showTableContextMenu(MouseEvent e) {
+        int row = table.rowAtPoint(e.getPoint());
+        if (row < 0) {
+            return;
+        }
+        int modelRow = table.convertRowIndexToModel(row);
+        AbstractModel model = tableModel.getModelAt(modelRow);
+        if (model == null) {
+            return;
+        }
+
+        JPopupMenu popup = new JPopupMenu();
+
+        JMenuItem copyIdItem = new JMenuItem("Copy Model ID", new CopyIcon(14));
+        copyIdItem.addActionListener(ev -> {
+            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(model.getModelId()), null);
+        });
+        popup.add(copyIdItem);
+
+        String raw = model.getRawDescription();
+        if (raw != null && !raw.isBlank()) {
+            JMenuItem viewMetaItem = new JMenuItem("View Raw Metadata...", new SearchIcon(14));
+            viewMetaItem.addActionListener(ev -> {
+                String trimmed = raw.trim();
+                String lang = (trimmed.startsWith("{") || trimmed.startsWith("[")) ? "json"
+                        : (trimmed.toLowerCase().startsWith("<html>") ? "html" : "text");
+                SwingUtils.showCodeBlockDialog(this, "Model Metadata: " + model.getModelId(), raw, lang);
+            });
+            popup.add(viewMetaItem);
+        }
+
+        popup.show(table, e.getX(), e.getY());
     }
 
     /**
