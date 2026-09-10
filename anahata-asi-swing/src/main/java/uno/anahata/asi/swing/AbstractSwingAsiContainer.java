@@ -12,8 +12,12 @@ import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -77,12 +81,9 @@ import uno.anahata.asi.yam.tools.Radio;
 @Setter
 public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
     
-    @Getter
     protected static String javaFxVersionInfo;
 
     static {
-        javaFxVersionInfo = initJavaFx();
-
         //Legengary Radio toolkit
         ToolkitUiRegistry.getInstance().register(Radio.class, RadioRenderer.class);
         
@@ -101,57 +102,36 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
     }
     
     /**
-     * Reflectively detects and initializes the JavaFX Platform if available on the classpath,
-     * setting Platform.setImplicitExit(false) to ensure the JavaFX Application Thread persists
-     * across tool execution turns.
+     * Checks if the JavaFX Platform class is present on the classpath without loading it.
      *
-     * @return the detected JavaFX version string, or null if JavaFX is not available.
+     * @return true if JavaFX is available.
      */
-    private static String initJavaFx() {
+    public static boolean isJavaFxAvailable() {
         try {
-            ClassLoader cl = AbstractSwingAsiContainer.class.getClassLoader();
-            Class<?> platformClass = null;
+            Class.forName("javafx.application.Platform", false, AbstractSwingAsiContainer.class.getClassLoader());
+            return true;
+        } catch (ClassNotFoundException e) {
             try {
-                platformClass = Class.forName("javafx.application.Platform", true, cl);
-            } catch (ClassNotFoundException e) {
-                try {
-                    platformClass = Class.forName("javafx.application.Platform", true, Thread.currentThread().getContextClassLoader());
-                } catch (ClassNotFoundException ignored) {
-                }
+                Class.forName("javafx.application.Platform", false, Thread.currentThread().getContextClassLoader());
+                return true;
+            } catch (ClassNotFoundException ignored) {
+                return false;
             }
-            if (platformClass == null) {
-                return null;
-            }
-
-            // 1. Ensure startup if not already booted
-            Method startup = platformClass.getMethod("startup", Runnable.class);
-            try {
-                startup.invoke(null, (Runnable) () -> {});
-            } catch (InvocationTargetException ite) {
-                // Already started -> valid state
-            }
-
-            // 2. Lock implicitExit to false so FX Application Thread never terminates when windows close
-            Method setImplicitExit = platformClass.getMethod("setImplicitExit", boolean.class);
-            setImplicitExit.invoke(null, false);
-
-            // 3. Resolve version string
-            String version = "Available";
-            try {
-                Class<?> verClass = Class.forName("com.sun.javafx.runtime.VersionInfo", true, platformClass.getClassLoader());
-                version = (String) verClass.getMethod("getVersion").invoke(null);
-            } catch (Throwable ignored) {
-                String sysVer = System.getProperty("javafx.runtime.version");
-                if (sysVer != null) {
-                    version = sysVer;
-                }
-            }
-            log.info("JavaFX runtime initialized with Platform.setImplicitExit(false). Version: {}", version);
-            return version;
-        } catch (Throwable t) {
-            log.debug("JavaFX not present or initialization deferred: {}", t.getMessage());
-            return null;
         }
+    }
+
+    /**
+     * Returns the detected JavaFX version and supported conditional features string,
+     * initializing the platform lazily via {@link uno.anahata.asi.swing.internal.JavaFxBridge}
+     * if available on the classpath.
+     *
+     * @return formatted JavaFX version and feature string, or null if JavaFX is not available.
+     */
+    public static synchronized String getJavaFxVersionInfo() {
+        if (javaFxVersionInfo == null && isJavaFxAvailable()) {
+            javaFxVersionInfo = uno.anahata.asi.swing.internal.JavaFxBridge.init();
+        }
+        return javaFxVersionInfo;
     }
 
     /**

@@ -28,23 +28,7 @@ public class Host extends AnahataToolkit {
     /** {@inheritDoc} */
     @Override
     public void populateMessage(RagMessage ragMessage) {
-        StringBuilder sb = new StringBuilder(" Host System\n");
-        sb.append("- **OS**: ").append(SystemUtils.OS_NAME).append(" (").append(SystemUtils.OS_VERSION).append(")\n");
-        sb.append("- **Architecture**: ").append(SystemUtils.OS_ARCH).append("\n");
-        sb.append("- **Java Version**: ").append(SystemUtils.JAVA_VERSION).append("\n");
-        sb.append("- **Available Processors**: ").append(Runtime.getRuntime().availableProcessors()).append("\n");
-        
-        long maxMemory = Runtime.getRuntime().maxMemory();
-        long totalMemory = Runtime.getRuntime().totalMemory();
-        long freeMemory = Runtime.getRuntime().freeMemory();
-        long usedMemory = totalMemory - freeMemory;
-        
-        sb.append("- **Memory (JVM)**: ")
-          .append(usedMemory / 1024 / 1024).append("MB used / ")
-          .append(totalMemory / 1024 / 1024).append("MB total / ")
-          .append(maxMemory / 1024 / 1024).append("MB max\n");
-          
-        ragMessage.addTextPart(sb.toString());
+        // System identity, CPU cores, and JVM/Host memory are centrally provided by CoreContextProvider.
     }
 
     /**

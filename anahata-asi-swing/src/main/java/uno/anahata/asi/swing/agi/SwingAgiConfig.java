@@ -22,7 +22,7 @@ import uno.anahata.asi.yam.tools.chrome.Chrome;
 import uno.anahata.asi.yam.tools.firefox.Firefox;
 import uno.anahata.asi.yam.tools.Radio;
 import uno.anahata.asi.yam.tools.Speech;
-import uno.anahata.asi.yam.tools.benchmarks.Benchmarks;
+import uno.anahata.asi.swing.toolkit.benchmarks.Benchmarks;
 import uno.anahata.asi.yam.tools.youtube.YouTube;
 
 /**

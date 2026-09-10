@@ -5,4 +5,4 @@
 /**
  * Benchmark orchestration models, specifications, and test catalogs for the Anahata-AGI-1 suite.
  */
-package uno.anahata.asi.yam.tools.benchmarks;
+package uno.anahata.asi.swing.toolkit.benchmarks;

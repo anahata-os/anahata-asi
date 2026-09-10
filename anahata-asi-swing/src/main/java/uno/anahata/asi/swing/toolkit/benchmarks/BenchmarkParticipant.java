@@ -1,7 +1,7 @@
 /*
  * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
  */
-package uno.anahata.asi.yam.tools.benchmarks;
+package uno.anahata.asi.swing.toolkit.benchmarks;
 
 import lombok.Builder;
 import uno.anahata.asi.agi.provider.ThinkingLevel;

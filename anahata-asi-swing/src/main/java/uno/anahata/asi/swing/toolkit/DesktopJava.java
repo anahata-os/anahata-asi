@@ -3,6 +3,8 @@ package uno.anahata.asi.swing.toolkit;
 
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.LookAndFeel;
+import javax.swing.UIManager;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.tool.ToolContext;
@@ -104,6 +106,10 @@ public class DesktopJava extends Java {
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
         super.populateMessage(ragMessage);
+        LookAndFeel laf = UIManager.getLookAndFeel();
+        if (laf != null) {
+            ragMessage.addTextPart("\nActive Swing Look & Feel: " + laf.getClass().getName() + " (" + laf.getName() + ")");
+        }
         String fxVer = AbstractSwingAsiContainer.getJavaFxVersionInfo();
         if (fxVer != null) {
             ragMessage.addTextPart("\nJavaFX Runtime Status: Active (" + fxVer + ", Platform.setImplicitExit(false))");

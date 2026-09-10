@@ -1,7 +1,7 @@
 /*
  * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
  */
-package uno.anahata.asi.yam.tools.benchmarks;
+package uno.anahata.asi.swing.toolkit.benchmarks;
 
 import java.awt.GraphicsEnvironment;
 import java.nio.file.Files;
@@ -528,7 +528,7 @@ public class Benchmarks extends AnahataToolkit {
                         recorder.startRecording(testDef.testCode(), participant.modelId(), deviceIdx);
 
                         candidateThreadHolder[0] = Thread.currentThread();
-                        executeCandidateTurn(catalog, candidateAgi, testDef, ctx);
+                        executeCandidateTurn(catalog, candidateAgi, testDef, deviceIdx, ctx);
                         executionFinished.set(true);
                         ctx.log("Candidate AGI execution completed. Candidate window is live. Waiting for user demonstration & stop...");
                     } catch (Exception e) {
@@ -624,10 +624,11 @@ public class Benchmarks extends AnahataToolkit {
      * @param catalog The catalog owning the test templates, or {@code null} for custom runs.
      * @param candidateAgi The child session.
      * @param testDef The test definition.
+     * @param targetScreenIndex The display screen index currently being recorded, or null if default.
      * @param ctx The captured tool execution context.
      */
-    private void executeCandidateTurn(TestCatalog catalog, Agi candidateAgi, TestDefinition testDef, ToolContext ctx) {
-        String prompt = (catalog != null) ? catalog.formatPrompt(testDef, candidateAgi) : testDef.rawPrompt();
+    private void executeCandidateTurn(TestCatalog catalog, Agi candidateAgi, TestDefinition testDef, Integer targetScreenIndex, ToolContext ctx) {
+        String prompt = (catalog != null) ? catalog.formatPrompt(testDef, candidateAgi, targetScreenIndex) : testDef.rawPrompt();
         ctx.log("Submitting benchmark prompt to candidate AGI session: " + candidateAgi.getConfig().getSessionId() + " (" + candidateAgi.getShortId() + ")");
         AgiUserMessage userMsg = new AgiUserMessage(candidateAgi, getAgi().getConfig().getSessionId());
         userMsg.addTextPart(prompt);
@@ -648,7 +649,7 @@ public class Benchmarks extends AnahataToolkit {
      */
     private BenchmarkRunResult executeAutonomousDirectRun(TestCatalog catalog, Agi candidateAgi, TestDefinition testDef, BenchmarkParticipant participant, ToolContext ctx, boolean persistResults) throws Exception {
         long startMillis = System.currentTimeMillis();
-        executeCandidateTurn(catalog, candidateAgi, testDef, ctx);
+        executeCandidateTurn(catalog, candidateAgi, testDef, 0, ctx);
         long durationMillis = System.currentTimeMillis() - startMillis;
         double durationSeconds = Math.round((durationMillis / 1000.0) * 100.0) / 100.0;
 

@@ -38,6 +38,22 @@ public class IconUtils {
     private static final Map<String, Icon> ICON_REGISTRY = new ConcurrentHashMap<>();
 
     /**
+     * Cache key identifying a scaled icon by its resource name and dimensions.
+     *
+     * @param name The icon resource name.
+     * @param width The target width in pixels.
+     * @param height The target height in pixels.
+     */
+    private record IconCacheKey(String name, int width, int height) {
+    }
+
+    /** 
+     * In-memory cache for scaled {@link ImageIcon} instances to prevent repeated 
+     * disk I/O, decoding, and {@link Image#SCALE_SMOOTH} downsampling on UI threads. 
+     */
+    private static final Map<IconCacheKey, ImageIcon> SCALED_ICON_CACHE = new ConcurrentHashMap<>();
+
+    /**
      * Registers an icon in the global registry.
      * @param id The unique identifier for the icon.
      * @param icon The icon object.
@@ -94,6 +110,16 @@ public class IconUtils {
      * @return A scaled ImageIcon, or null if the resource is not found.
      */
     public static ImageIcon getIcon(String name, int width, int height) {
+        if (name == null) {
+            return null;
+        }
+
+        IconCacheKey cacheKey = new IconCacheKey(name, width, height);
+        ImageIcon cached = SCALED_ICON_CACHE.get(cacheKey);
+        if (cached != null) {
+            return cached;
+        }
+
         try {
             java.net.URL resource = IconUtils.class.getResource("/icons/" + name);
             if (resource == null) {
@@ -109,6 +135,7 @@ public class IconUtils {
 
             // If the size matches, return as is
             if (originalIcon.getIconWidth() == width && originalIcon.getIconHeight() == height) {
+                SCALED_ICON_CACHE.put(cacheKey, originalIcon);
                 return originalIcon;
             }
             
@@ -122,6 +149,7 @@ public class IconUtils {
                 return null;
             }
             
+            SCALED_ICON_CACHE.put(cacheKey, scaledIcon);
             return scaledIcon;
         } catch (Exception e) {
             log.error("Error loading icon: {}", name, e);

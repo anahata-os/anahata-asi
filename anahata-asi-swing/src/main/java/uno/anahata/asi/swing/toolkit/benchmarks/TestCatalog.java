@@ -1,7 +1,7 @@
 /*
  * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
  */
-package uno.anahata.asi.yam.tools.benchmarks;
+package uno.anahata.asi.swing.toolkit.benchmarks;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.Getter;
 import lombok.Setter;
+import uno.anahata.asi.agi.Agi;
 
 /**
  * Abstract base catalog representing an extensible benchmark suite and repository of test definitions.
@@ -131,7 +132,20 @@ public abstract class TestCatalog {
      * @param agi The target candidate AGI session, or null if unknown.
      * @return The formatted prompt ready for submission to the candidate AGI.
      */
-    public String formatPrompt(TestDefinition test, uno.anahata.asi.agi.Agi agi) {
+    public String formatPrompt(TestDefinition test, Agi agi) {
+        return formatPrompt(test, agi, null);
+    }
+
+    /**
+     * Formats the full prompt for a test by applying this catalog's standard header and footer templates,
+     * dynamically resolving token and target screen placeholders against the target Agi session and recording device.
+     *
+     * @param test The test definition.
+     * @param agi The target candidate AGI session, or null if unknown.
+     * @param targetScreenIndex The display screen index currently being recorded, or null if default.
+     * @return The formatted prompt ready for submission to the candidate AGI.
+     */
+    public String formatPrompt(TestDefinition test, Agi agi, Integer targetScreenIndex) {
         StringBuilder sb = new StringBuilder();
         if (standardHeader != null && !standardHeader.isBlank()) {
             sb.append(String.format(standardHeader, test.testCode(), test.title())).append("\n\n");
@@ -139,6 +153,8 @@ public abstract class TestCatalog {
         sb.append(test.rawPrompt());
         if (standardFooter != null && !standardFooter.isBlank()) {
             String footer = standardFooter;
+            int screenIdx = targetScreenIndex != null ? targetScreenIndex : 0;
+            footer = footer.replace("$target.screen$", String.valueOf(screenIdx));
             if (agi != null) {
                 Integer maxOut = agi.getEffectiveUserMaxOutputTokens();
                 String maxOutStr = maxOut != null ? String.format("%,d", maxOut) : "model default";

@@ -10,6 +10,7 @@ import java.util.List;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.context.ContextProvider;
 import uno.anahata.asi.agi.message.RagMessage;
@@ -168,6 +169,31 @@ public class CoreContextProvider implements ContextProvider {
         sb.append("- **User & Directory**: user=").append(System.getProperty("user.name", "unknown"))
                 .append(" | dir=").append(System.getProperty("user.dir", "")).append("\n");
         sb.append("- **Java Runtime**: JDK ").append(System.getProperty("java.version", "unknown")).append("\n");
+
+        Runtime rt = Runtime.getRuntime();
+        int cores = rt.availableProcessors();
+        long maxMem = rt.maxMemory() / (1024 * 1024);
+        long totalMem = rt.totalMemory() / (1024 * 1024);
+        long usedMem = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);
+
+        sb.append("- **Available Processors (CPU Cores)**: ").append(cores).append("\n");
+        sb.append("- **JVM Memory (Heap)**: ").append(String.format("%,d", usedMem)).append(" MB used / ")
+                .append(String.format("%,d", totalMem)).append(" MB allocated / ")
+                .append(String.format("%,d", maxMem)).append(" MB max\n");
+
+        try {
+            java.lang.management.OperatingSystemMXBean osBean = java.lang.management.ManagementFactory.getOperatingSystemMXBean();
+            if (osBean instanceof com.sun.management.OperatingSystemMXBean sunOs) {
+                long totalPhysicalMb = sunOs.getTotalMemorySize() / (1024 * 1024);
+                long freePhysicalMb = sunOs.getFreeMemorySize() / (1024 * 1024);
+                sb.append("- **Host Physical Memory**: ").append(String.format("%,d", totalPhysicalMb)).append(" MB total (")
+                        .append(String.format("%,d", freePhysicalMb)).append(" MB free)\n");
+            }
+        } catch (Throwable t) {
+            sb.append("- **Host Physical Memory**: Error querying physical memory: \n```\n")
+                    .append(ExceptionUtils.getStackTrace(t))
+                    .append("```\n");
+        }
 
         ragMessage.addTextPart(sb.toString());
     }

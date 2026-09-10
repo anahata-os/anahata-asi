@@ -84,6 +84,14 @@
             <artifactId>slf4j-api</artifactId>
         </dependency>
         
+        <!-- JavaFX bridge -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-graphics</artifactId>
+            <version>21.0.6</version>
+            <scope>provided</scope>
+        </dependency>
+        
         <!-- Utilities -->
         <dependency>
             <groupId>org.apache.commons</groupId>

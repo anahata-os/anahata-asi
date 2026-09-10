@@ -125,6 +125,16 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     private final List<String> notifications = new CopyOnWriteArrayList<>();
 
     /**
+     * Flag controlling the execution loop of the background key file watcher daemon thread.
+     */
+    private volatile boolean keyWatcherRunning = true;
+
+    /**
+     * Dedicated daemon thread polling provider API key files on disk.
+     */
+    private Thread keyWatcherThread;
+
+    /**
      * Creates a configuration instance for a specific host application. Upon
      * instantiation, it loads the preferences and persisted providers for that
      * application.
@@ -145,6 +155,8 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
 
         int diskTemplates = loadTemplatesFromDisk();
         log.info("Loaded {} AGI Templates from disk for host application '{}'", diskTemplates, hostApplicationId);
+
+        startKeyFileWatcherThread();
     }
 
     /**
@@ -1330,10 +1342,43 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
+     * Starts a dedicated low-priority daemon thread that polls API key files once per second.
+     * <p>
+     * This ensures that external edits to key files on disk are detected within 1 second without
+     * placing any synchronous disk I/O onto the Swing Event Dispatch Thread (EDT).
+     * </p>
+     */
+    private void startKeyFileWatcherThread() {
+        keyWatcherThread = new Thread(() -> {
+            while (keyWatcherRunning) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    break;
+                }
+                for (AbstractAiProvider provider : providerRegistry.values()) {
+                    try {
+                        provider.reloadKeyPoolIfNeeded();
+                    } catch (Throwable t) {
+                        log.warn("Error checking key file for provider {}: {}", provider.getUuid(), t.getMessage());
+                    }
+                }
+            }
+        }, "anahata-asi-key-file-watcher");
+        keyWatcherThread.setDaemon(true);
+        keyWatcherThread.setPriority(Thread.MIN_PRIORITY);
+        keyWatcherThread.start();
+    }
+
+    /**
      * Shuts down the container and its shared executor.
      */
     public void shutdown() {
         log.info("Shutting down AsiContainer: {}", hostApplicationId);
+        keyWatcherRunning = false;
+        if (keyWatcherThread != null) {
+            keyWatcherThread.interrupt();
+        }
         executor.shutdown();
     }
 

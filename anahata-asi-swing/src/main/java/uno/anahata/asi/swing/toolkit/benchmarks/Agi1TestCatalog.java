@@ -1,7 +1,7 @@
 /*
  * Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça!
  */
-package uno.anahata.asi.yam.tools.benchmarks;
+package uno.anahata.asi.swing.toolkit.benchmarks;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -10,12 +10,8 @@ import java.util.List;
 import lombok.SneakyThrows;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.tool.ToolPermission;
-import uno.anahata.asi.toolkit.History;
-import uno.anahata.asi.toolkit.Host;
-import uno.anahata.asi.toolkit.Session;
+import uno.anahata.asi.swing.toolkit.Screens;
 import uno.anahata.asi.toolkit.java.Java;
-import uno.anahata.asi.toolkit.resources.Resources;
-import uno.anahata.asi.toolkit.shell.Shell;
 
 /**
  * The official Anahata-AGI-1 benchmark suite catalog.
@@ -39,12 +35,13 @@ public class Agi1TestCatalog extends TestCatalog {
      * Standard footer template for Anahata-AGI-1 tests.
      */
     public static final String STANDARD_FOOTER =
-            "Note: This is a single-shot benchmark challenge: aim to complete and launch your implementation "
-            + "in your very first tool call. Only take additional turns if \n"
-            + "a) you encounter a compilation or runtime error that requires self-alignment and correction."
-            + "b) you cannot fit the entire deliverable within your $effective.user.max.out.tokens$ max output tokens"
-            + "\n\nOnce your task is running with zero defects, "
-            + "provide a concise final summary and conclude immediately.";
+            "Note: This is an official Anahata-AGI-1 benchmark challenge being recorded live on Screen $target.screen$ for community review and crowd voting on YouTube:\n"
+            + "- Position and launch your application window on Screen $target.screen$ within the recorded display bounds.\n"
+            + "- Aim to complete and launch your implementation in your very first tool call.\n"
+            + "- Only take additional turns if:\n"
+            + "  a) you encounter a compilation or runtime error that requires self-alignment and correction.\n"
+            + "  b) you cannot fit the entire deliverable within your $effective.user.max.out.tokens$ max output tokens.\n\n"
+            + "Once your task is running with zero defects, provide a concise final summary and conclude immediately.";
 
     /**
      * Test #1: OS Hardware &amp; System Values Dashboard (JNA Native C-Library Binding).
@@ -138,39 +135,45 @@ public class Agi1TestCatalog extends TestCatalog {
     public static final TestDefinition JAVA_EARTH_GLOBE_1 = TestDefinition.builder()
             .testCode("JAVA-EARTH-GLOBE-1")
             .title("Interactive 3D Multi-Layer Satellite Earth Globe")
-            .rawPrompt(" This is a single-shot benchmark challenge: aim to complete and launch your implementation in your very first tool call."
-                    + " Only use extra preliminary compile() turns if you cannot fit it all in a single compileAndExecute() tool call due to output token budget.\n\n"
-                    + "Build a high-performance, interactive 3D Satellite Earth Globe Viewer in Java (resembling Google Earth / NASA WorldWind).\n\n"
+            .rawPrompt("Build a high-performance, interactive 3D Satellite Earth Globe Viewer in Java (resembling Google Earth / NASA WorldWind).\n\n"
                     + "Your implementation will be evaluated on:\n\n"
                     + "1. Interactive 3D Sphere & Natural Camera Controls:\n"
                     + "   - Hardware-accelerated 3D spherical Earth.\n"
                     + "   - Natural Dragging: Mouse drag must grab the planetary surface naturally (dragging right pulls the surface right, dragging left pulls the surface left, dragging up tilts North, dragging down tilts South).\n"
+                    + "   - Global Interaction: Ensure mouse drag and scroll interactions seamlessly rotate and zoom the globe across the entire window area.\n"
                     + "   - Continuous Smooth Zoom & Altitude Range: Continuous logarithmic zoom from global orbit down to street/ground level (~5 km altitude), with altitude clamping to keep the camera gracefully outside the globe surface.\n"
-                    + "   - Fly-To Presets: Preset locations with smooth camera animation (e.g. Barcelona Camp Nou, Madrid, Paris, New York, Tokyo, Giza Pyramids).\n\n"
+                    + "   - Fly-To Presets: Preset locations with smooth camera animation (e.g. Barcelona Camp Nou, Giza Pyramids, Messi's home town, Angkor Wat, Mount Kailash, CIA headquarters, and anything else entertaining).\n\n"
                     + "2. Live Multi-Layer Slippy Map Imagery (No API Keys Required):\n"
                     + "   - Provide a top toolbar or combo box to switch live between 2 free, high-resolution slippy map tile pyramids:\n"
                     + "     * Esri ArcGIS World Satellite: https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.jpg\n"
                     + "     * OpenStreetMap (OSM): https://tile.openstreetmap.org/{z}/{x}/{y}.png\n\n"
-                    + "3. High-Performance Concurrency & LIFO Streaming:\n"
+                    + "3. High-Performance Concurrency, Frustum Culling & Cache Sizing:\n"
                     + "   - Thread Pool Sizing: Use a background daemon worker thread pool sized to Runtime.getRuntime().availableProcessors() (one thread per available CPU core).\n"
-                    + "   - LIFO (Last-In, First-Out) Priority: Prioritize newly requested tiles currently visible in the camera frustum over older, stale off-screen requests.\n\n"
-                    + "   - Visual Continuity: Maintain low-resolution base or parent tiles visible on the globe until higher-detail child tiles have finished downloading and decoding, ensuring the planetary surface never disappears or displays empty voids while streaming."
+                    + "   - LIFO (Last-In, First-Out) Priority: Prioritize newly requested tiles currently visible in the camera frustum over older, stale off-screen requests.\n"
+                    + "   - Frustum Tile Budget: Cull off-screen and back-facing tiles to keep active visible geometry tightly bounded to the immediate camera viewpoint.\n"
+                    + "   - Memory Cache Sizing: Ensure your in-memory RAM cache capacity comfortably exceeds this visible tile demand to prevent LRU cache eviction thrashing.\n"
+                    + "   - Visual Continuity: Maintain low-resolution base or parent tiles visible on the globe until higher-detail child tiles have finished downloading and decoding, ensuring the planetary surface never disappears or displays empty voids while streaming.\n\n"
                     + "4. Persistent Local Disk Caching:\n"
-                    + "   - Cache all downloaded tiles locally under ${user.home}/.anahata/asi/cache/<host>/<path> (e.g. ${user.home}/.anahata/asi/cache/server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.jpg and ${user.home}/.anahata/asi/cache/tile.openstreetmap.org/{z}/{x}/{y}.png).\n"
-                    + "   - Check if the tile file already exists on disk before initiating any HTTP request. If present, load it immediately from disk; otherwise download, persist to disk, and decode.\n\n"
-                    + "5. HUD, Telemetry & UI Styling:\n"
-                    + "   - Sleek overlay showing live Camera Lat / Lon, Altitude, active Zoom LOD level, memory/disk cache stats, and a 'Reset View' button.\n"
-                    + "   - Apply styling locally to your window and components, preserving host environment defaults (don't change the host system's look and feel).\n\n"
-                    + "6. Execution:\n"
+                    + "   - Check if the tile file already exists on disk before initiating any HTTP request. If present, load it immediately from disk; otherwise download, persist to disk, and decode.\n"
+                    + "   - Cache all downloaded tiles locally under ${user.home}/.anahata/asi/cache/<host>/<path> (e.g. ${user.home}/.anahata/asi/cache/server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.jpg and ${user.home}/.anahata/asi/cache/tile.openstreetmap.org/{z}/{x}/{y}.png).\n\n"
+                    + "5. Atmospheric Rendering & Surface Clarity:\n"
+                    + "   - If rendering an atmospheric haze or rim glow, ensure terrain and ground-level map imagery remain bright, clear, and visible from ground level up to orbit without obscuring the surface.\n\n"
+                    + "6. HUD, Telemetry & UI Styling:\n"
+                    + "   - Top Toolbar Layout: Anchor the controls neatly to the top edge of the window so they do not obstruct or float across the 3D globe viewport.\n"
+                    + "   - Telemetry Overlay: Sleek overlay showing live Camera Lat / Lon, Altitude, active Zoom LOD level, memory/disk cache stats, FPS, basic JVM runtime stats, and a 'Reset View' button.\n"
+                    + "   - Apply styling locally to your window and components, preserving host environment defaults (don't alter the host system's look and feel).\n\n"
+                    + "7. Execution & Self-Verification:\n"
                     + "   - Smooth 60 FPS animation loop with strict UI thread safety (tile I/O on worker threads).\n"
-                    + "   - Window title MUST contain your Model ID.\n\n"
-                    + "“**Environment Note**: All libraries available on the default classpath are pre-configured and manage any native library extraction and loading.”")
+                    + "   - Window title MUST contain your Model ID.\n"
+                    + "   - Once launched, allow a brief delay (e.g. 2-3 seconds) for the window to open, render its initial 3D scene, and load base tiles, then take a screenshot of using the Screens toolkit to visually verify that your application has opened and rendered properly.\n\n"
+                    + "\"**Environment Note**: All libraries available on the default classpath are pre-configured and manage any native library extraction and loading.\"")
             .toolkits(List.of(
                     ToolkitSettings.of(Java.class, "compile", ToolPermission.APPROVE_ALWAYS),
                     ToolkitSettings.of(Java.class, "compileAndExecute", ToolPermission.APPROVE_ALWAYS),
                     ToolkitSettings.of(Java.class, "getAgiClassSources", ToolPermission.APPROVE_ALWAYS),
                     ToolkitSettings.of(Java.class, "removeAgiClasses", ToolPermission.APPROVE_ALWAYS),
-                    ToolkitSettings.of(Java.class, "clearAllAgiClasses", ToolPermission.APPROVE_ALWAYS)
+                    ToolkitSettings.of(Java.class, "clearAllAgiClasses", ToolPermission.APPROVE_ALWAYS),
+                    ToolkitSettings.of(Screens.class, "takeScreenshot", ToolPermission.APPROVE_ALWAYS)
             ))
             .build();
 

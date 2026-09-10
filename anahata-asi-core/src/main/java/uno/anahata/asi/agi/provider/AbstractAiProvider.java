@@ -170,6 +170,7 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      */
     public void initialize() throws Exception {
         loadModelsFromDisk();
+        reloadKeyPoolIfNeeded();
     }
 
     /**
@@ -564,7 +565,9 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      * @return true if at least one key exists.
      */
     public boolean hasKeys() {
-        reloadKeyPoolIfNeeded();
+        if (keyPool == null) {
+            reloadKeyPoolIfNeeded();
+        }
         return keyPool != null && !keyPool.isEmpty();
     }
 
@@ -574,7 +577,9 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      * @return The count of valid API keys in the key pool.
      */
     public int getKeyPoolSize() {
-        reloadKeyPoolIfNeeded();
+        if (keyPool == null) {
+            reloadKeyPoolIfNeeded();
+        }
         return keyPool != null ? keyPool.size() : 0;
     }
 
@@ -650,15 +655,37 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      * it was last loaded. If modified, reloads the key pool from disk.
      */
     public synchronized void reloadKeyPoolIfNeeded() {
+        if (!isApiKeyRequired()) {
+            return;
+        }
         Path path = getKeysFilePath();
+        //log.info("Checking if keys file exists for {} : {}", getUuid(), path);
         if (Files.exists(path)) {
             try {
                 long lastModified = Files.getLastModifiedTime(path).toMillis();
                 if (keyPool == null || lastModified > keyPoolLastModified) {
+                    boolean hadKeysBefore = (keyPool != null && !keyPool.isEmpty());
                     reloadKeyPool();
+                    boolean hasKeysNow = (keyPool != null && !keyPool.isEmpty());
+                    if (hadKeysBefore != hasKeysNow) {
+                        log.info("Key pool effectivelyEnabled changed for provider '{}' ({} -> {})",
+                                getDisplayName(), hadKeysBefore, hasKeysNow);
+                        propertyChangeSupport.firePropertyChange("effectivelyEnabled", hadKeysBefore, hasKeysNow);
+                    }
                 }
             } catch (IOException e) {
                 log.error("Failed to check last modified time of API keys file: {}", path, e);
+            }
+        } else {
+            boolean hadKeysBefore = (keyPool != null && !keyPool.isEmpty());
+            if (keyPool == null || hadKeysBefore) {
+                keyPool = Collections.emptyList();
+                currentKey = null;
+                keyPoolLastModified = 0;
+                if (hadKeysBefore) {
+                    log.info("API keys file removed for provider '{}', key pool emptied", getDisplayName());
+                    propertyChangeSupport.firePropertyChange("effectivelyEnabled", true, false);
+                }
             }
         }
     }
@@ -686,7 +713,9 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      * @return The active API key, or {@code null} if the pool is empty.
      */
     public synchronized String getCurrentKey() {
-        reloadKeyPoolIfNeeded();
+        if (keyPool == null) {
+            reloadKeyPoolIfNeeded();
+        }
         return currentKey;
     }
 
@@ -695,7 +724,9 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      * Subclasses override to invalidate native API clients.
      */
     public synchronized void hokusPocus() {
-        reloadKeyPoolIfNeeded();
+        if (keyPool == null) {
+            reloadKeyPoolIfNeeded();
+        }
         if (keyPool == null || keyPool.isEmpty()) {
             currentKey = null;
             return;
@@ -756,6 +787,7 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
      * @throws IOException If reading the file fails.
      */
     private List<String> readApiKeysFile() throws IOException {
+        log.info("reading api keys file for {}", getUuid());
         ensureKeysFileExists();
         Path keysFilePath = getKeysFilePath();
         keyPoolLastModified = Files.getLastModifiedTime(keysFilePath).toMillis();
