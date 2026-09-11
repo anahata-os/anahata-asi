@@ -37,11 +37,17 @@ public class Agi1TestCatalog extends TestCatalog {
     public static final String STANDARD_FOOTER =
             "Note: This is an official Anahata-AGI-1 benchmark challenge being recorded live on Screen $target.screen$ for community review and crowd voting on YouTube:\n"
             + "- Position and launch your application window on Screen $target.screen$ within the recorded display bounds.\n"
-            + "- Aim to complete and launch your implementation in your very first tool call.\n"
+            + "- Aim to complete and launch your implementation in your very first turn.\n"
             + "- Only take additional turns if:\n"
             + "  a) you encounter a compilation or runtime error that requires self-alignment and correction.\n"
-            + "  b) you cannot fit the entire deliverable within your $effective.user.max.out.tokens$ max output tokens.\n\n"
-            + "Once your task is running with zero defects, provide a concise final summary and conclude immediately.";
+            + "  b) you cannot fit the entire deliverable within your $effective.user.max.out.tokens$ max output tokens in a single output.\n"
+            + "  c) you need an extra turn for verification,\n"
+            + "Once your task is running with zero defects, provide a concise final summary and conclude immediately.\n\n"
+            + "Some of the general benchmarked criterias are \n "
+            + " a) total tokens taken (both input and output)\n"
+            + " b) total turns taken\n"
+            + " c) youtube likes\n"
+            + " d) subjective score by human judges (anahata community members)\n";
 
     /**
      * Test #1: OS Hardware &amp; System Values Dashboard (JNA Native C-Library Binding).
@@ -141,12 +147,13 @@ public class Agi1TestCatalog extends TestCatalog {
                     + "   - Hardware-accelerated 3D spherical Earth.\n"
                     + "   - Natural Dragging: Mouse drag must grab the planetary surface naturally (dragging right pulls the surface right, dragging left pulls the surface left, dragging up tilts North, dragging down tilts South).\n"
                     + "   - Global Interaction: Ensure mouse drag and scroll interactions seamlessly rotate and zoom the globe across the entire window area.\n"
-                    + "   - Continuous Smooth Zoom & Altitude Range: Continuous logarithmic zoom from global orbit down to street/ground level (~5 km altitude), with altitude clamping to keep the camera gracefully outside the globe surface.\n"
+                    + "   - Continuous Smooth Zoom & Altitude Range: Continuous logarithmic zoom from global orbit down to street/ground level (~200 meters altitude at zoom 19), with altitude clamping to keep the camera gracefully outside the globe surface.\n"
                     + "   - Fly-To Presets: Preset locations with smooth camera animation (e.g. Barcelona Camp Nou, Giza Pyramids, Messi's home town, Angkor Wat, Mount Kailash, CIA headquarters, and anything else entertaining).\n\n"
                     + "2. Live Multi-Layer Slippy Map Imagery (No API Keys Required):\n"
                     + "   - Provide a top toolbar or combo box to switch live between 2 free, high-resolution slippy map tile pyramids:\n"
                     + "     * Esri ArcGIS World Satellite: https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.jpg\n"
-                    + "     * OpenStreetMap (OSM): https://tile.openstreetmap.org/{z}/{x}/{y}.png\n\n"
+                    + "     * OpenStreetMap (OSM): https://tile.openstreetmap.org/{z}/{x}/{y}.png\n"
+                    + "   - Dynamic Level of Detail (LOD): Both tile providers support continuous zoom levels from global orbit (z=1) down to street/building detail (up to zoom 19), returning valid HTTP 200 imagery across land and oceans.\n\n"
                     + "3. High-Performance Concurrency, Frustum Culling & Cache Sizing:\n"
                     + "   - Thread Pool Sizing: Use a background daemon worker thread pool sized to Runtime.getRuntime().availableProcessors() (one thread per available CPU core).\n"
                     + "   - LIFO (Last-In, First-Out) Priority: Prioritize newly requested tiles currently visible in the camera frustum over older, stale off-screen requests.\n"
@@ -166,7 +173,8 @@ public class Agi1TestCatalog extends TestCatalog {
                     + "   - Smooth 60 FPS animation loop with strict UI thread safety (tile I/O on worker threads).\n"
                     + "   - Window title MUST contain your Model ID.\n"
                     + "   - Once launched, allow a brief delay (e.g. 2-3 seconds) for the window to open, render its initial 3D scene, and load base tiles, then take a screenshot of using the Screens toolkit to visually verify that your application has opened and rendered properly.\n\n"
-                    + "\"**Environment Note**: All libraries available on the default classpath are pre-configured and manage any native library extraction and loading.\"")
+                    + "\"**Environment Note**: All libraries available on the default classpath are pre-configured and manage any native library extraction and loading.\n" 
+                    + "")
             .toolkits(List.of(
                     ToolkitSettings.of(Java.class, "compile", ToolPermission.APPROVE_ALWAYS),
                     ToolkitSettings.of(Java.class, "compileAndExecute", ToolPermission.APPROVE_ALWAYS),
