@@ -63,11 +63,8 @@ import uno.anahata.asi.openai.compatible.adapter.OpenAiCompatibleResponseAdapter
 public class OpenAiCompatibleModel extends AbstractModel {
 
     /**
-     * {@inheritDoc}
-     * <p>
      * Returns the parent {@link OpenAiChatCompletionsProvider} instance owning
      * this model.
-     * </p>
      *
      * @return The OpenAI-compatible provider instance.
      */

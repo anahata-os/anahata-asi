@@ -105,7 +105,7 @@ public class Agi1TestCatalog extends TestCatalog {
             .build();
 
     /**
-     * Test #5: 3D Planetary Satellite Tracker & Air Defense Command Center.
+     * Test #5: 3D Planetary Satellite Tracker &amp; Air Defense Command Center.
      */
     public static final TestDefinition JAVA_ORBITAL_C4ISR_1 = TestDefinition.builder()
             .testCode("JAVA-ORBITAL-C4ISR-1")

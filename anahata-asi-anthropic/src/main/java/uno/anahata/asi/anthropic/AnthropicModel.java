@@ -89,10 +89,7 @@ public class AnthropicModel extends AbstractModel {
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
      * Returns the parent {@link AnthropicProvider} instance owning this model.
-     * </p>
      *
      * @return The Anthropic provider instance.
      */

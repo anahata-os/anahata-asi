@@ -61,10 +61,7 @@ public class OpenAiModel extends AbstractModel {
      */
     private static final ObjectMapper API_MAPPER = new ObjectMapper();
     /**
-     * {@inheritDoc}
-     * <p>
      * Returns the parent {@link OpenAiResponsesProvider} instance owning this model.
-     * </p>
      *
      * @return The OpenAI Responses provider instance.
      */
