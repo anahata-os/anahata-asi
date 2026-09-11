@@ -217,12 +217,15 @@ public class Screens extends AnahataToolkit {
      * attachment.
      * @throws IOException if the native capture operation fails.
      */
-    @AgiTool("Takes a screenshot of a specific graphics device.")
+    @AgiTool("Takes a screenshot of a specific graphics device, attaches it to the tool response, stores it in the local file system and returns the absolute path of the screenshot on the file system")
     public String takeScreenshot(
             @AgiToolParam("The index of the device to capture (0 for primary).") int deviceIdx) throws Exception {
+        log("capturing screen " + deviceIdx);
         java.nio.file.Path file = UICapture.screenshotToFile(deviceIdx);
+        log("screenshot saved to " + file.toAbsolutePath().toString() + " attaching to tool response...");
         addAttachment(file);
-        return "Screenshot of device " + deviceIdx + " captured and attached.";
+        log("screenshot attached to tool response");
+        return file.toAbsolutePath().toString();
     }
 
     /**
