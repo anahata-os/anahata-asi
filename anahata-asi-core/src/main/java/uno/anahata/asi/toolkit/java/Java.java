@@ -111,7 +111,8 @@ public class Java extends AnahataToolkit {
     protected Map<String, AgiCompiledClass> agiCompiledClasses = new ConcurrentHashMap<>();
 
     /**
-     * Session-scoped classloader holding in-memory compiled classes and library URLs.
+     * Session-scoped classloader holding in-memory compiled classes and library
+     * URLs.
      */
     protected transient AgiClassLoader agiClassLoader;
 
@@ -187,8 +188,8 @@ public class Java extends AnahataToolkit {
     /**
      * {@inheritDoc}
      * <p>
-     * Dynamically includes all active in-memory {@link AgiCompiledClass} instances
-     * as child context providers.
+     * Dynamically includes all active in-memory {@link AgiCompiledClass}
+     * instances as child context providers.
      * </p>
      */
     @Override
@@ -199,8 +200,9 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Returns the active session-scoped {@link AgiClassLoader}, lazily instantiating it
-     * from all accumulated {@link AgiCompiledClass} library URLs if not yet created.
+     * Returns the active session-scoped {@link AgiClassLoader}, lazily
+     * instantiating it from all accumulated {@link AgiCompiledClass} library
+     * URLs if not yet created.
      *
      * @return the active {@link AgiClassLoader}.
      */
@@ -233,8 +235,9 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Closes and resets the active {@link AgiClassLoader}. Required when re-compiling or
-     * removing classes to allow the JVM to reload redefined classes on the next execution.
+     * Closes and resets the active {@link AgiClassLoader}. Required when
+     * re-compiling or removing classes to allow the JVM to reload redefined
+     * classes on the next execution.
      */
     public synchronized void resetAgiClassLoader() {
         if (agiClassLoader != null) {
@@ -450,8 +453,8 @@ public class Java extends AnahataToolkit {
      * {@inheritDoc}
      * <p>
      * Adds session/container map keys, the abbreviated classpath manifest,
-     * in-memory compiled classes held by {@link AgiClassLoader}, and
-     * available Java compilers and JDKs to the RAG message.
+     * in-memory compiled classes held by {@link AgiClassLoader}, and available
+     * Java compilers and JDKs to the RAG message.
      * </p>
      *
      * @param ragMessage the incoming RAG message to populate.
@@ -572,7 +575,8 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Collects all compiled bytecode maps from active {@link AgiCompiledClass} instances.
+     * Collects all compiled bytecode maps from active {@link AgiCompiledClass}
+     * instances.
      *
      * @return map of binary class name to compiled bytecode byte array.
      */
@@ -659,13 +663,14 @@ public class Java extends AnahataToolkit {
         }
         return sb.toString();
     }
+
     /**
      * Emits a high-salience classloading lifecycle log message.
      * <p>
-     * If called within an active tool execution thread, it logs directly to the active
-     * {@link JavaMethodToolResponse} so the AI model and developer see classloader events
-     * live in the tool response. If called outside a tool execution thread, it logs to SLF4J
-     * at INFO level.
+     * If called within an active tool execution thread, it logs directly to the
+     * active {@link JavaMethodToolResponse} so the AI model and developer see
+     * classloader events live in the tool response. If called outside a tool
+     * execution thread, it logs to SLF4J at INFO level.
      * </p>
      *
      * @param message the classloading log message.
@@ -692,12 +697,14 @@ public class Java extends AnahataToolkit {
         private final Map<String, byte[]> compiledClasses;
 
         /**
-         * Constructs a new AnahataClassLoader with the active {@link AgiClassLoader}
-         * as parent.
+         * Constructs a new AnahataClassLoader with the active
+         * {@link AgiClassLoader} as parent.
          *
-         * @param urls the child-first classpath URLs (pruned of URLs already in AgiClassLoader).
+         * @param urls the child-first classpath URLs (pruned of URLs already in
+         * AgiClassLoader).
          * @param compiledClasses in-memory bytecode map (class name -> bytes).
-         * @param parent the parent classloader (typically {@link #getOrCreateAgiClassLoader()}).
+         * @param parent the parent classloader (typically
+         * {@link #getOrCreateAgiClassLoader()}).
          */
         public AnahataClassLoader(List<URL> urls, Map<String, byte[]> compiledClasses, ClassLoader parent) {
             super(urls.toArray(new URL[0]), parent != null ? parent : getOrCreateAgiClassLoader());
@@ -1296,7 +1303,7 @@ public class Java extends AnahataToolkit {
     public Object compileAndExecute(String sourceCode, String extraClassPath, String[] compilerOptions) throws Exception {
         return compileAndExecute(sourceCode, extraClassPath, compilerOptions, (String) null);
     }
-    
+
     /**
      * Overridable method for implementations to decide what compiler to use by
      * default.
@@ -1308,18 +1315,8 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Compiles source code in memory and extracts all generated class bytecode byte arrays.
-     *
-     * @param sourceCode the Java source code.
-     * @param classFqn the class fully qualified name.
-     * @param extraClassPath optional extra classpath.
-     * @param compilerOptions optional compiler options.
-     * @param compiler the JavaCompiler instance.
-     * @return map of class binary names to compiled byte arrays.
-     * @throws Exception on compilation error.
-     */
-    /**
-     * Compiles source code in memory and extracts all generated class bytecode byte arrays.
+     * Compiles source code in memory and extracts all generated class bytecode
+     * byte arrays.
      *
      * @param sourceCode the Java source code.
      * @param classFqn the class fully qualified name.
@@ -1339,7 +1336,8 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Compiles multiple source files in memory simultaneously and extracts all generated class bytecode byte arrays.
+     * Compiles multiple source files in memory simultaneously and extracts all
+     * generated class bytecode byte arrays.
      *
      * @param sources the list of source descriptors.
      * @param extraClassPath optional extra classpath.
@@ -1415,7 +1413,8 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Compiles a modular Java class and returns all resulting bytecode byte arrays.
+     * Compiles a modular Java class and returns all resulting bytecode byte
+     * arrays.
      *
      * @param sourceCode the Java source code.
      * @param classFqn the class fully qualified name.
@@ -1435,7 +1434,8 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Compiles multiple modular Java classes simultaneously and returns all resulting bytecode byte arrays.
+     * Compiles multiple modular Java classes simultaneously and returns all
+     * resulting bytecode byte arrays.
      *
      * @param sources the list of source descriptors.
      * @param extraClassPath optional extra classpath.
@@ -1559,9 +1559,11 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Compiles a modular Java class into the in-memory classpath of this AGI session without executing it.
+     * Compiles a modular Java class into the in-memory classpath of this AGI
+     * session without executing it.
      *
-     * @param classFqn The fully qualified class name (e.g. 'uno.anahata.benchmarks.FlightContact').
+     * @param classFqn The fully qualified class name (e.g.
+     * 'uno.anahata.benchmarks.FlightContact').
      * @param sourceCode The Java source code of the class.
      * @param extraClassPath Optional extra classpath entries.
      * @param compilerOptions Optional compiler options.
@@ -1570,16 +1572,23 @@ public class Java extends AnahataToolkit {
      * @throws Exception on compilation error.
      */
     /**
-     * Compiles one or more modular Java classes into the in-memory classpath of this AGI session without executing them.
+     * Compiles one or more modular Java classes into the in-memory classpath of
+     * this AGI session without executing them.
      * <p>
-     * The compiled classes are registered in the session's RAM and automatically included in the RAG message as context providers.
-     * Passing multiple sources compiles them simultaneously, allowing mutual or circular dependencies (e.g. Class A references Class B and Class B references Class A).
+     * The compiled classes are registered in the session's RAM and
+     * automatically included in the RAG message as context providers. Passing
+     * multiple sources compiles them simultaneously, allowing mutual or
+     * circular dependencies (e.g. Class A references Class B and Class B
+     * references Class A).
      * </p>
      *
-     * @param sources List of Java class source descriptors (each containing fqn and sourceCode).
-     * @param extraClassPath Optional extra classpath entries separated by File.pathSeparator.
+     * @param sources List of Java class source descriptors (each containing fqn
+     * and sourceCode).
+     * @param extraClassPath Optional extra classpath entries separated by
+     * File.pathSeparator.
      * @param compilerOptions Optional compiler options.
-     * @param jdk Optional JDK name (from Available JDKs) or explicit path to javac binary.
+     * @param jdk Optional JDK name (from Available JDKs) or explicit path to
+     * javac binary.
      * @return Confirmation message with compilation summary.
      * @throws Exception on compilation error.
      */
@@ -1652,9 +1661,11 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Sets whether one or more in-memory compiled classes should have their full source code included in the RAG message.
+     * Sets whether one or more in-memory compiled classes should have their
+     * full source code included in the RAG message.
      *
-     * @param fqns List of class fully qualified names to update providing status for.
+     * @param fqns List of class fully qualified names to update providing
+     * status for.
      * @param providing Whether to include the source code in the RAG message.
      * @return Confirmation message.
      */
@@ -1682,11 +1693,13 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Retrieves the stored Java source code for one or more previously compiled AGI classes.
-     * If a requested class is already providing its source code in the RAG message, an error is logged
-     * and an informative notice is returned instead to avoid prompt token duplication.
+     * Retrieves the stored Java source code for one or more previously compiled
+     * AGI classes. If a requested class is already providing its source code in
+     * the RAG message, an error is logged and an informative notice is returned
+     * instead to avoid prompt token duplication.
      *
-     * @param classFqns List of class fully qualified names to retrieve source code for.
+     * @param classFqns List of class fully qualified names to retrieve source
+     * code for.
      * @return Map of class FQN to its Java source code.
      */
     @AgiTool(
@@ -1768,9 +1781,7 @@ public class Java extends AnahataToolkit {
      *
      * @return Confirmation message.
      */
-    @AgiTool(
-            value = "Clears all compiled classes and sources from the AGI in-memory registry, resetting the in-memory workspace to clean state."
-    )
+    @AgiTool(value = "Clears all compiled classes and sources from the AGI in-memory registry, resetting the in-memory workspace to clean state.")
     public String clearAllAgiClasses() {
         int count = agiCompiledClasses.size();
         agiCompiledClasses.clear();
