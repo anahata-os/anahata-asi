@@ -80,6 +80,7 @@ uno.anahata.asi.ollama
 uno.anahata.asi.openai
 uno.anahata.asi.openai.compatible
 uno.anahata.asi.openai.compatible.adapter
+uno.anahata.asi.openrouter
 uno.anahata.asi.persistence
 uno.anahata.asi.persistence.kryo
 uno.anahata.asi.swing
@@ -109,6 +110,7 @@ uno.anahata.asi.swing.internal
 uno.anahata.asi.swing.provider
 uno.anahata.asi.swing.settings
 uno.anahata.asi.swing.toolkit
+uno.anahata.asi.swing.toolkit.benchmarks
 uno.anahata.asi.swing.toolkit.radio
 uno.anahata.asi.swing.toolkit.render
 uno.anahata.asi.toolkit
@@ -121,7 +123,6 @@ uno.anahata.asi.toolkit.resources.text.lines
 uno.anahata.asi.toolkit.shell
 uno.anahata.asi.yam.games.asikart
 uno.anahata.asi.yam.tools
-uno.anahata.asi.yam.tools.benchmarks
 uno.anahata.asi.yam.tools.browser
 uno.anahata.asi.yam.tools.chrome
 uno.anahata.asi.yam.tools.firefox
