@@ -2,6 +2,7 @@
 package uno.anahata.asi.swing.toolkit;
 
 import java.lang.reflect.InvocationTargetException;
+import uno.anahata.asi.agi.tool.Internal;
 import uno.anahata.asi.agi.tool.ToolContext;
 import uno.anahata.asi.agi.tool.spi.java.JavaMethodToolResponse;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
@@ -28,6 +29,7 @@ public class DesktopToolContext extends ToolContext {
      * 
      * @return the AgiPanel for the current Agi.
      */
+    @Internal(value = "Gets the Swing AgiPanel for this Agi", requiresCapturedToolContext = false)
     public AgiPanel getAgiPanel() {
         return ((AbstractSwingAsiContainer)getAsiContainer()).getAgiPanel(getAgi());
     }
@@ -43,6 +45,7 @@ public class DesktopToolContext extends ToolContext {
      * 
      * @param runnable The UI-bound task to execute.
      */
+    @Internal(value = "Executes a task on the Swing EDT with automatic context propagation", requiresCapturedToolContext = false)
     public void runInEdt(Runnable runnable) {
         final JavaMethodToolResponse response = JavaMethodToolResponse.getCurrent();
         SwingUtils.runInEDT(() -> {
@@ -70,6 +73,7 @@ public class DesktopToolContext extends ToolContext {
      * @throws InterruptedException if the background thread is interrupted during wait.
      * @throws InvocationTargetException if the EDT task throws an unhandled exception.
      */
+    @Internal(value = "Executes a task on the Swing EDT blocking until complete with automatic context propagation", requiresCapturedToolContext = false)
     public void runInEdtAndWait(Runnable runnable) throws InterruptedException, InvocationTargetException {
         final JavaMethodToolResponse response = JavaMethodToolResponse.getCurrent();
         SwingUtils.runInEDTAndWait(() -> {

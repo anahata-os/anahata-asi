@@ -11,6 +11,7 @@ import java.util.function.Consumer;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.message.AbstractModelMessage;
@@ -46,6 +47,7 @@ public class ToolContext {
      * @throws IllegalStateException if called outside the scope of a tool
      * execution.
      */
+    @Internal(value = "Gets the current tool response", requiresCapturedToolContext = true)
     public JavaMethodToolResponse getResponse() {
         JavaMethodToolResponse response = peekResponse();
         if (response == null) {
@@ -70,6 +72,7 @@ public class ToolContext {
      * 
      * @return true if a tool is executing.
      */
+    @Internal(value = "Checks if executing within an active tool context", requiresCapturedToolContext = false)
     public boolean isToolExecution() {
         return peekResponse() != null;
     }
@@ -79,15 +82,17 @@ public class ToolContext {
      *
      * @return The id of model that is executing the tool.
      */
+    @Internal(value = "The model ID of the executing model", requiresCapturedToolContext = true)
     public String getModelId() {
         return getModelMessage().getModelId();
-    }
+        }
     
     /**
      * The id of model that is executing the tool.
      *
      * @return The id of model that is executing the tool.
      */
+    @Internal(value = "The originating model message", requiresCapturedToolContext = true)
     public AbstractModelMessage getModelMessage() {
         return getResponse().getCall().getMessage();
     }
@@ -100,6 +105,7 @@ public class ToolContext {
      *
      * @return A thread-safe ToolContext instance.
      */
+    @Internal(value = "Returns a thread-safe snapshot of this context for propagation to subthreads", requiresCapturedToolContext = false)
     public ToolContext getToolContext() {
         JavaMethodToolResponse current = JavaMethodToolResponse.getCurrent();
         if (current != null) {
@@ -114,6 +120,7 @@ public class ToolContext {
      *
      * @return The current tool call.
      */
+    @Internal(value = "The current tool call descriptor", requiresCapturedToolContext = true)
     public JavaMethodToolCall getCall() {
         return getResponse().getCall();
     }
@@ -124,6 +131,7 @@ public class ToolContext {
      *
      * @return The current tool metadata.
      */
+    @Internal(value = "The current tool metadata", requiresCapturedToolContext = true)
     public JavaMethodTool getTool() {
         return getCall().getTool();
     }
@@ -133,6 +141,7 @@ public class ToolContext {
      *
      * @return The ToolManager instance.
      */
+    @Internal(value = "The application's global ToolManager instance", requiresCapturedToolContext = false)
     public ToolManager getToolManager() {
         if (toolkit != null) {
             return toolkit.getToolManager();
@@ -148,6 +157,7 @@ public class ToolContext {
      * @return The toolkit instance.
      * @throws IllegalArgumentException if the toolkit is not found.
      */
+    @Internal(value = "Retrieves the singleton instance of a registered toolkit class", requiresCapturedToolContext = false)
     public <T> T getToolkit(Class<T> toolkitClass) {
         return getToolManager().getToolkitInstance(toolkitClass)
                 .orElseThrow(() -> {
@@ -161,6 +171,7 @@ public class ToolContext {
      *
      * @return The parent Agi instance.
      */
+    @Internal(value = "The parent Agi session orchestrator", requiresCapturedToolContext = false)
     public Agi getAgi() {
         if (toolkit != null) {
             return toolkit.getToolManager().getAgi();
@@ -173,6 +184,7 @@ public class ToolContext {
      *
      * @return The container-scoped attributes map.
      */
+    @Internal(value = "The hosting ASI container", requiresCapturedToolContext = false)
     public AbstractAsiContainer getAsiContainer() {
         return getAgi().getConfig().getAsiContainer();
     }
@@ -182,6 +194,7 @@ public class ToolContext {
      *
      * @return The ResourceManager instance.
      */
+    @Internal(value = "The session ResourceManager instance", requiresCapturedToolContext = false)
     public ResourceManager getResourceManager() {
         return getAgi().getResourceManager();
     }
@@ -192,6 +205,7 @@ public class ToolContext {
      *
      * @return The session-scoped ExecutorService.
      */
+    @Internal(value = "The session-scoped ExecutorService", requiresCapturedToolContext = false)
     public ExecutorService getExecutorService() {
         return getAgi().getExecutor();
     }
@@ -202,6 +216,7 @@ public class ToolContext {
      *
      * @param message The log message to add.
      */
+    @Internal(value = "Logs a standard message to the tool response logs", requiresCapturedToolContext = true)
     public void log(String message) {
         JavaMethodToolResponse response = peekResponse();
         if (response != null) {
@@ -217,6 +232,7 @@ public class ToolContext {
      *
      * @param message The error message to add.
      */
+    @Internal(value = "Logs an error message to the tool response errors", requiresCapturedToolContext = true)
     public void error(String message) {
         JavaMethodToolResponse response = peekResponse();
         if (response != null) {
@@ -232,6 +248,7 @@ public class ToolContext {
      *
      * @param t The error message to add.
      */
+    @Internal(value = "Logs an exception stack trace to the tool response errors", requiresCapturedToolContext = true)
     public void error(Throwable t) {
         JavaMethodToolResponse response = peekResponse();
         if (response != null) {
@@ -242,11 +259,29 @@ public class ToolContext {
     }
 
     /**
+     * Adds an error message and exception stack trace to the current tool's response.
+     * If called outside a tool execution thread, it logs to the SLF4J logger.
+     *
+     * @param message The descriptive error message.
+     * @param t The exception thrown.
+     */
+    @Internal(value = "Logs an error message and exception stack trace to the tool response errors", requiresCapturedToolContext = true)
+    public void error(String message, Throwable t) {
+        JavaMethodToolResponse response = peekResponse();
+        if (response != null) {
+            response.addError(message + ": " + ExceptionUtils.getStackTrace(t));
+        } else {
+            log.error("ToolContext error outside of tool execution context on " + getClass().getSimpleName() + ": " + message, t);
+        }
+    }
+
+    /**
      * Attaches a binary blob to the current tool's response.
      *
      * @param data The binary data to attach.
      * @param mimeType The MIME type of the data (e.g., 'image/png').
      */
+    @Internal(value = "Attaches binary data to the tool response", requiresCapturedToolContext = true)
     public void addAttachment(byte[] data, String mimeType) {
         getResponse().addAttachment(data, mimeType);
     }
@@ -259,6 +294,7 @@ public class ToolContext {
      * @throws IOException if the file cannot be read or the MIME type detection
      * fails.
      */
+    @Internal(value = "Attaches a file to the tool response with auto-detected MIME type", requiresCapturedToolContext = true)
     public void addAttachment(File file) throws IOException {
         addAttachment(file.toPath());
     }
@@ -271,6 +307,7 @@ public class ToolContext {
      * @throws IOException if the file cannot be read or the MIME type detection
      * fails.
      */
+    @Internal(value = "Attaches a file from a Path to the tool response with auto-detected MIME type", requiresCapturedToolContext = true)
     public void addAttachment(Path path) throws IOException {
         byte[] data = Files.readAllBytes(path);
         String mimeType;
@@ -288,6 +325,7 @@ public class ToolContext {
      *
      * @return The turn-scoped attributes map.
      */
+    @Internal(value = "Turn-scoped map for sharing state across tool calls within the same turn", requiresCapturedToolContext = true)
     public Map getTurnMap() {
         return getModelMessage().getTurnAttributes();
     }
@@ -298,6 +336,7 @@ public class ToolContext {
      *
      * @return The session-scoped attributes map.
      */
+    @Internal(value = "Session-scoped persistent map across turns", requiresCapturedToolContext = false)
     public Map getSessionMap() {
         return getToolManager().getSessionAttributes();
     }
@@ -308,6 +347,7 @@ public class ToolContext {
      *
      * @return The container-scoped attributes map.
      */
+    @Internal(value = "Container-scoped map across sessions", requiresCapturedToolContext = false)
     public Map getAsiContainerMap() {
         return getAsiContainer().getContainerAttributes();
     }
@@ -318,6 +358,7 @@ public class ToolContext {
      *
      * @return The application-scoped attributes map.
      */
+    @Internal(value = "JVM-wide static application map", requiresCapturedToolContext = false)
     public Map getApplicationMap() {
         return AbstractAsiContainer.applicationAttributes;
     }
@@ -330,6 +371,7 @@ public class ToolContext {
      * @param taskName A descriptive name for the task (used for thread naming).
      * @param task The task to execute.
      */
+    @Internal(value = "Executes a task asynchronously with automatic context propagation", requiresCapturedToolContext = false)
     public void runAsync(String taskName, Runnable task) {
         final JavaMethodToolResponse response = getResponse();
         getExecutorService().submit(() -> {
@@ -358,6 +400,7 @@ public class ToolContext {
      *
      * @return A context-aware logging consumer.
      */
+    @Internal(value = "Gets a context-aware thread-safe logging consumer", requiresCapturedToolContext = false)
     public Consumer<String> getThreadSafeLogger() {
         final JavaMethodToolResponse response = getResponse();
         return (msg) -> {

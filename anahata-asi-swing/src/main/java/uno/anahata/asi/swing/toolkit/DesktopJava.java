@@ -75,11 +75,12 @@ public class DesktopJava extends Java {
             sb.append("\n**Pure JavaFX Applications (Native Stage)**:\n");
             sb.append("JavaFX runtime is active (v").append(fxVer).append(") and pre-initialized with `Platform.setImplicitExit(false)` so your windows remain active across turns. You can launch a native JavaFX `Stage` directly without wrapping it in a Swing `JFrame` or `JFXPanel`:\n\n");
             sb.append("```java\n");
-            sb.append("final ToolContext ctx = getToolContext(); // Capture tool context for the JavaFX thread!\n\n");
+            sb.append("final ToolContext ctx = getToolContext(); // Capture tool context for the JavaFX thread!\n");
+            sb.append("final String modelId = getModelId(); // Resolve on tool execution thread!\n\n");
             sb.append("Platform.runLater(() -> {\n");
             sb.append("    try {\n");
             sb.append("        Stage stage = new Stage();\n");
-            sb.append("        stage.setTitle(\"My 3D App - \" + getModelId());\n");
+            sb.append("        stage.setTitle(\"My 3D App - \" + modelId);\n");
             sb.append("        stage.setScene(scene);\n");
             sb.append("        stage.show();\n");
             sb.append("        ctx.log(\"JavaFX Stage launched successfully.\");\n");

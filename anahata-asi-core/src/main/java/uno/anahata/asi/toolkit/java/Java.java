@@ -15,6 +15,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,11 +35,14 @@ import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.SystemUtils;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.agi.context.ContextPosition;
+import uno.anahata.asi.agi.context.ContextProvider;
 import uno.anahata.asi.internal.SystemPropertiesUtils;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.resource.RefreshPolicy;
@@ -65,6 +69,7 @@ import uno.anahata.asi.agi.tool.spi.java.JavaObjectToolkit;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiTool;
+import uno.anahata.asi.agi.tool.Internal;
 
 /**
  * A powerful toolkit for compiling and executing Java code dynamically within
@@ -160,16 +165,39 @@ public class Java extends AnahataToolkit {
         log.debug("initialize(): parentFirstClasses: " + parentFirstClassess);
     }
 
+    @Override
+    public void rebind() {
+        super.rebind();
+        this.classpathPrinter = null;
+        this.agiClassLoader = null;
+    }
+
     /**
      * {@inheritDoc}
      * <p>
      * Synchronizes the classpath printer with the current default classpath
-     * after the toolkit has been activated or deserialized.</p>
+     * after the toolkit has been activated or deserialized.
+     * </p>
      */
     @Override
     public void postActivate() {
+        super.postActivate();
         this.classpathPrinter = null;
         this.agiClassLoader = null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Dynamically includes all active in-memory {@link AgiCompiledClass} instances
+     * as child context providers.
+     * </p>
+     */
+    @Override
+    public List<ContextProvider> getChildrenProviders() {
+        List<ContextProvider> list = new ArrayList<>(super.getChildrenProviders());
+        list.addAll(agiCompiledClasses.values());
+        return list;
     }
 
     /**
@@ -240,10 +268,8 @@ public class Java extends AnahataToolkit {
         sb.append("When using `compileAndExecute`, your class should be **public**, named **Anahata**, extend `" + getConcreteClassModelShouldExtend().getName() + "`, have no package declaration and implement the call() method of " + Callable.class.getName() + "<Object>. ");
         sb.append("This provides the following helper methods for a rich, context-aware execution:\n\n");
 
-        sb.append(" Available Methods that you can use within the code you write:\n");
-
-        sb.append("**Inherited from " + getConcreteClassModelShouldExtend().getName() + "**:\n");
-        appendMethods(sb, getConcreteClassModelShouldExtend());
+        sb.append(" Available Methods that you can use within the code you write:\n\n");
+        sb.append(formatInternalMethods(getConcreteClassModelShouldExtend())).append("\n");
 
         sb.append("\n⚠️ **IN-PROCESS JVM EXECUTION SAFETY WARNING**:\n");
         sb.append("Your compiled Java code executes directly **inside the host application's JVM process**.\n");
@@ -263,13 +289,14 @@ public class Java extends AnahataToolkit {
         sb.append("3. **Tier 3 - AnahataClassLoader (Ephemeral Script Runner)**:\n");
         sb.append("   - A throwaway, child-first classloader created per `compileAndExecute` invocation specifically to run your `Anahata.java` script.\n");
         sb.append("   - **Automatic URL Pruning**: Any library URLs already registered in `AgiClassLoader` are automatically filtered out from `AnahataClassLoader` so both the script and compiled session classes link to the exact same library types.\n\n");
-        sb.append("💡 **Multi-Turn Modular Development Workflow (`compile` vs `compileAndExecute`)**:\n");
-        sb.append("- **`Java.compile(classFqn, sourceCode, extraClassPath, ...)`**: Compiles a modular top-level class, record, or interface into the session metaspace without executing it. Use this across turns to construct clean, multi-file architectures rather than cramming all logic into a single giant script file.\n");
-        sb.append("- **`Java.compileAndExecute(sourceCode, extraClassPath, ...)`**: Compiles and runs a single-shot execution script extending `" + getConcreteClassModelShouldExtend() + "`. Can import and instantiate any classes previously compiled via `Java.compile`.\n");
-        sb.append("- **Inspection & Cleanup Tools**: Use `Java.getAgiClassSources` to inspect stored source code from earlier turns, `Java.removeAgiClasses` to purge specific classes, or `Java.clearAllAgiClasses` to reset.\n\n");
+        sb.append("💡 **Multi-Turn Modular Prototyping & Architecture Guidance**:\n");
+        sb.append("- **Modular Compilation (`Java.compile`)**: When prototyping complex systems, prefer compiling supporting types (entities, math helpers, renderers) as separate modular classes rather than stuffing everything into a giant `Anahata.java` class with nested inner classes. If only one component needs revision, you can recompile that specific class without re-emitting the entire architecture, saving massive output tokens.\n");
+        sb.append("- **Script Execution (`Java.compileAndExecute`)**: Compiles and runs a single-shot execution script extending `" + getConcreteClassModelShouldExtend().getName() + "`. It can seamlessly import and instantiate any classes previously compiled via `Java.compile`.\n");
+        sb.append("- **Cross-Turn Object State via Maps**: Instances instantiated in one turn can be stored in `getSessionMap()` or `getAsiContainerMap()` (e.g. `getSessionMap().put(\"engine\", engine)`) and safely retrieved in subsequent turns (`Engine e = (Engine) getSessionMap().get(\"engine\")`).\n");
+        sb.append("- **Ephemeral Cleanup**: Once temporary or exploratory test classes have served their purpose, remove them using `Java.removeAgiClasses` to keep the session metaspace and prompt lean.\n\n");
 
         sb.append("\n Multi-threading, Background Tasks, and Context Propagation:\n");
-        sb.append("The logging (`log`), error reporting (`error`), attachment (`addAttachment`), turn map (`getTurnMap`), and response inspection (`getResponse`, `getCall`, `getModelMessage`) methods rely on ThreadLocal state bound to the tool execution thread.\n");
+        sb.append("The logging (`log`), error reporting (`error`), attachment (`addAttachment`), turn map (`getTurnMap`), model ID (`getModelId`), and response inspection (`getResponse`, `getCall`, `getModelMessage`) methods rely on ThreadLocal state bound to the tool execution thread.\n");
         sb.append("If you spawn background threads (e.g. `new Thread()`, `CompletableFuture`, `ExecutorService`), that ThreadLocal context will NOT be present on the new thread unless explicitly propagated.\n\n");
 
         sb.append("### Recommended Multi-Threading Patterns:\n\n");
@@ -560,37 +587,80 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Appends the signatures of all declared methods of a class to a
-     * StringBuilder, filtering out standard Object methods and internal
-     * lambda/abstract cruft.
+     * Inspects the internal helper and context methods of a target class or
+     * hierarchy, describing what each method does and whether it requires a
+     * captured ToolContext when called from subthreads.
      *
-     * @param sb The StringBuilder to append to.
-     * @param clazz The class to inspect.
+     * @param classFqn The fully qualified name of the class to inspect.
+     * @return Formatted Markdown summary of the class hierarchy and its
+     * annotated internal methods.
+     * @throws java.lang.Exception If the class cannot be found.
      */
-    protected static void appendMethods(StringBuilder sb, Class<?> clazz) {
-
-        for (Method m : clazz.getMethods()) {
-            if (!m.getDeclaringClass().equals(Object.class)) {
-                String methodString = JavaMethodTool.buildMethodSignature(m);
-                if (!methodString.contains("anahata") && !methodString.contains("lambda$") && !methodString.contains("abstract")) {
-                    sb.append("- `").append(methodString).append("`\n");
-                }
-            }
+    @AgiTool("Inspects the internal helper and context methods of a target class or hierarchy, describing what each method does and whether it requires a captured ToolContext when called from subthreads.")
+    public String getInternalMethods(
+            @AgiToolParam("The fully qualified name of the class to inspect (e.g. 'uno.anahata.asi.swing.agi.tool.DesktopAgiTool' or 'uno.anahata.asi.agi.tool.ToolContext').") String classFqn) throws Exception {
+        if (classFqn == null || classFqn.isBlank()) {
+            throw new AgiToolException("classFqn is required.");
         }
-
-        sb.append("\nInternal anahata Agi container apis. Mostly for debugging / troubleshooting. Don't guess members on anahata types. If you think you need to use them or you think they could help you complete "
-                + "a task, discover their members first.\n");
-
-        for (Method m : clazz.getMethods()) {
-            if (!m.getDeclaringClass().equals(Object.class)) {
-                String methodString = JavaMethodTool.buildMethodSignature(m);
-                if (methodString.contains("anahata") && !methodString.contains("etToolkit(")) {
-                    sb.append("- `").append(methodString).append("`\n");
-                }
-            }
-        }
+        Class<?> clazz = Class.forName(classFqn.trim(), false, getClass().getClassLoader());
+        return formatInternalMethods(clazz);
     }
 
+    /**
+     * Traverses the inheritance hierarchy of a class and formats all declared
+     * methods annotated with Internal.
+     *
+     * @param clazz The class to inspect.
+     * @return Formatted Markdown report.
+     */
+    public static String formatInternalMethods(@NonNull Class<?> clazz) {
+        List<Class<?>> hierarchy = new ArrayList<>();
+        Class<?> cur = clazz;
+        while (cur != null && !cur.equals(Object.class)) {
+            hierarchy.add(cur);
+            cur = cur.getSuperclass();
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("**Class Inheritance Hierarchy**:\n`");
+        for (int i = 0; i < hierarchy.size(); i++) {
+            sb.append(hierarchy.get(i).getName());
+            if (i < hierarchy.size() - 1) {
+                sb.append(" -> ");
+            }
+        }
+        sb.append("`\n\n");
+
+        sb.append("### Available Helper & Context Methods:\n");
+        boolean anyFound = false;
+        for (Class<?> c : hierarchy) {
+            Method[] methods = c.getDeclaredMethods();
+            List<Method> annotated = new ArrayList<>();
+            for (Method m : methods) {
+                if (m.isAnnotationPresent(Internal.class)) {
+                    annotated.add(m);
+                }
+            }
+            if (!annotated.isEmpty()) {
+                anyFound = true;
+                sb.append("\n**Declared in `").append(c.getName()).append("`**:\n");
+                for (Method m : annotated) {
+                    Internal ann = m.getAnnotation(Internal.class);
+                    String sig = JavaMethodTool.buildMethodSignature(m);
+                    sb.append("- `").append(sig).append("` (declared in `").append(c.getSimpleName()).append("`): ").append(ann.value());
+                    if (ann.requiresCapturedToolContext()) {
+                        sb.append(" *(Requires captured ToolContext if called from subthread)*");
+                    }
+                    sb.append("\n");
+                }
+            }
+        }
+
+        if (!anyFound) {
+            sb.append("- No methods annotated with @Internal found in hierarchy of `").append(clazz.getName()).append("`.\n");
+        }
+        return sb.toString();
+    }
     /**
      * Emits a high-salience classloading lifecycle log message.
      * <p>
@@ -1250,21 +1320,53 @@ public class Java extends AnahataToolkit {
      * @return map of class binary names to compiled byte arrays.
      * @throws Exception on compilation error.
      */
+    /**
+     * Compiles source code in memory and extracts all generated class bytecode byte arrays.
+     *
+     * @param sourceCode the Java source code.
+     * @param classFqn the class fully qualified name.
+     * @param extraClassPath optional extra classpath.
+     * @param compilerOptions optional compiler options.
+     * @param compiler the JavaCompiler instance.
+     * @return map of class binary names to compiled byte arrays.
+     * @throws Exception on compilation error.
+     */
     public Map<String, byte[]> compileInMemoryBytecodes(
             String sourceCode,
             String classFqn,
             String extraClassPath,
             String[] compilerOptions,
             JavaCompiler compiler) throws Exception {
+        return compileInMemoryBytecodes(Collections.singletonList(new AgiClassSource(classFqn, sourceCode)), extraClassPath, compilerOptions, compiler);
+    }
 
-        String simpleName = classFqn.contains(".") ? classFqn.substring(classFqn.lastIndexOf('.') + 1) : classFqn;
-        String sourceFile = simpleName + ".java";
-        JavaFileObject source = new SimpleJavaFileObject(URI.create("string:///" + sourceFile), JavaFileObject.Kind.SOURCE) {
-            @Override
-            public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-                return sourceCode;
-            }
-        };
+    /**
+     * Compiles multiple source files in memory simultaneously and extracts all generated class bytecode byte arrays.
+     *
+     * @param sources the list of source descriptors.
+     * @param extraClassPath optional extra classpath.
+     * @param compilerOptions optional compiler options.
+     * @param compiler the JavaCompiler instance.
+     * @return map of class binary names to compiled byte arrays.
+     * @throws Exception on compilation error.
+     */
+    public Map<String, byte[]> compileInMemoryBytecodes(
+            List<AgiClassSource> sources,
+            String extraClassPath,
+            String[] compilerOptions,
+            JavaCompiler compiler) throws Exception {
+
+        List<JavaFileObject> compilationUnits = new ArrayList<>();
+        for (AgiClassSource src : sources) {
+            String simpleName = src.fqn().contains(".") ? src.fqn().substring(src.fqn().lastIndexOf('.') + 1) : src.fqn();
+            String sourceFile = simpleName + ".java";
+            compilationUnits.add(new SimpleJavaFileObject(URI.create("string:///" + sourceFile), JavaFileObject.Kind.SOURCE) {
+                @Override
+                public CharSequence getCharContent(boolean ignoreEncodingErrors) {
+                    return src.sourceCode();
+                }
+            });
+        }
 
         DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
         InMemoryJavaFileManager fileManager = new InMemoryJavaFileManager(compiler.getStandardFileManager(diagnostics, null, null), getAllAgiCompiledBytecodes());
@@ -1300,7 +1402,7 @@ public class Java extends AnahataToolkit {
         }
 
         StringWriter writer = new StringWriter();
-        JavaCompiler.CompilationTask task = compiler.getTask(writer, fileManager, diagnostics, options, null, Collections.singletonList(source));
+        JavaCompiler.CompilationTask task = compiler.getTask(writer, fileManager, diagnostics, options, null, compilationUnits);
         boolean success = task.call();
 
         if (!success) {
@@ -1308,7 +1410,7 @@ public class Java extends AnahataToolkit {
             for (Diagnostic<? extends JavaFileObject> d : diagnostics.getDiagnostics()) {
                 error.append(d.toString()).append("\n");
             }
-            throw new AgiToolException("Compilation error in class '" + classFqn + "':\n" + error.toString());
+            throw new AgiToolException("Compilation error in batch " + sources.stream().map(AgiClassSource::fqn).toList() + ":\n" + error.toString());
         }
 
         return fileManager.getCompiledClasses();
@@ -1331,9 +1433,27 @@ public class Java extends AnahataToolkit {
             String extraClassPath,
             String[] compilerOptions,
             Path javacPath) throws Exception {
+        return compileBytecodes(Collections.singletonList(new AgiClassSource(classFqn, sourceCode)), extraClassPath, compilerOptions, javacPath);
+    }
+
+    /**
+     * Compiles multiple modular Java classes simultaneously and returns all resulting bytecode byte arrays.
+     *
+     * @param sources the list of source descriptors.
+     * @param extraClassPath optional extra classpath.
+     * @param compilerOptions optional compiler options.
+     * @param javacPath optional path to javac executable.
+     * @return map of class binary names to compiled byte arrays.
+     * @throws Exception on error.
+     */
+    public Map<String, byte[]> compileBytecodes(
+            List<AgiClassSource> sources,
+            String extraClassPath,
+            String[] compilerOptions,
+            Path javacPath) throws Exception {
 
         if (javacPath != null) {
-            Path tempDir = Files.createTempDirectory("anahata-compile-" + classFqn.replace('.', '_') + "-");
+            Path tempDir = Files.createTempDirectory("anahata-compile-batch-");
             try {
                 for (Map.Entry<String, byte[]> entry : getAllAgiCompiledBytecodes().entrySet()) {
                     String binaryName = entry.getKey();
@@ -1344,11 +1464,9 @@ public class Java extends AnahataToolkit {
                     Files.write(classFilePath, entry.getValue());
                 }
 
-                Path sourceFile = tempDir.resolve(classFqn.replace('.', File.separatorChar) + ".java");
-                if (sourceFile.getParent() != null) {
-                    Files.createDirectories(sourceFile.getParent());
-                }
-                Files.writeString(sourceFile, sourceCode, StandardCharsets.UTF_8);
+                List<String> options = new ArrayList<>();
+                options.add("-d");
+                options.add(tempDir.toAbsolutePath().toString());
 
                 String classpath = tempDir.toAbsolutePath().toString();
                 if (extraClassPath != null && !extraClassPath.isEmpty()) {
@@ -1356,9 +1474,6 @@ public class Java extends AnahataToolkit {
                 }
                 classpath = classpath + File.pathSeparator + getDefaultClasspath();
 
-                List<String> options = new ArrayList<>();
-                options.add("-d");
-                options.add(tempDir.toAbsolutePath().toString());
                 options.add("-classpath");
                 options.add(classpath);
 
@@ -1385,7 +1500,15 @@ public class Java extends AnahataToolkit {
                 if (!options.contains("-proc:none")) {
                     options.add("-proc:none");
                 }
-                options.add(sourceFile.toAbsolutePath().toString());
+
+                for (AgiClassSource src : sources) {
+                    Path sourceFile = tempDir.resolve(src.fqn().replace('.', File.separatorChar) + ".java");
+                    if (sourceFile.getParent() != null) {
+                        Files.createDirectories(sourceFile.getParent());
+                    }
+                    Files.writeString(sourceFile, src.sourceCode(), StandardCharsets.UTF_8);
+                    options.add(sourceFile.toAbsolutePath().toString());
+                }
 
                 Path argFile = tempDir.resolve("javac_args.txt");
                 Files.write(argFile, options, StandardCharsets.UTF_8);
@@ -1409,10 +1532,7 @@ public class Java extends AnahataToolkit {
                         if (fqn.endsWith(".class")) {
                             fqn = fqn.substring(0, fqn.length() - 6);
                         }
-                        // Only capture newly generated classes for this FQN (or its nested classes)
-                        if (fqn.equals(classFqn) || fqn.startsWith(classFqn + "$")) {
-                            newBytes.put(fqn, Files.readAllBytes(file));
-                        }
+                        newBytes.put(fqn, Files.readAllBytes(file));
                     }
                 }
                 return newBytes;
@@ -1428,12 +1548,12 @@ public class Java extends AnahataToolkit {
 
         JavaCompiler inMemoryCompiler = getDefaultJavaCompiler();
         if (inMemoryCompiler != null) {
-            return compileInMemoryBytecodes(sourceCode, classFqn, extraClassPath, compilerOptions, inMemoryCompiler);
+            return compileInMemoryBytecodes(sources, extraClassPath, compilerOptions, inMemoryCompiler);
         }
 
         for (KnownJdk known : getKnownJdks()) {
             if (known.hasCompiler()) {
-                return compileBytecodes(sourceCode, classFqn, extraClassPath, compilerOptions, known.javacPath());
+                return compileBytecodes(sources, extraClassPath, compilerOptions, known.javacPath());
             }
         }
 
@@ -1451,94 +1571,158 @@ public class Java extends AnahataToolkit {
      * @return Confirmation message with compilation summary.
      * @throws Exception on compilation error.
      */
+    /**
+     * Compiles one or more modular Java classes into the in-memory classpath of this AGI session without executing them.
+     * <p>
+     * The compiled classes are registered in the session's RAM and automatically included in the RAG message as context providers.
+     * Passing multiple sources compiles them simultaneously, allowing mutual or circular dependencies (e.g. Class A references Class B and Class B references Class A).
+     * </p>
+     *
+     * @param sources List of Java class source descriptors (each containing fqn and sourceCode).
+     * @param extraClassPath Optional extra classpath entries separated by File.pathSeparator.
+     * @param compilerOptions Optional compiler options.
+     * @param jdk Optional JDK name (from Available JDKs) or explicit path to javac binary.
+     * @return Confirmation message with compilation summary.
+     * @throws Exception on compilation error.
+     */
     @AgiTool(
-            value = "Compiles a modular Java class into the in-memory classpath of this AGI session without executing it.\n"
-            + "The compiled class is registered in the session's RAM and can be imported and instantiated by subsequent compile() and compileAndExecute() calls in this session.\n"
-            + "Allows building complex, multi-file modular architectures across turns without squeezing all code into a single Anahata.java file."
+            value = "Compiles one or more modular Java classes into the in-memory classpath of this AGI session without executing them.\n"
+            + "The compiled classes are registered in the session's RAM and automatically included in the RAG message as context providers.\n"
+            + "Passing multiple sources compiles them simultaneously, allowing mutual or circular dependencies (e.g. Class A references Class B and Class B references Class A)."
     )
     public String compile(
-            @AgiToolParam("The fully qualified class name (e.g. 'uno.anahata.benchmarks.FlightContact' or 'Airbase').") String classFqn,
-            @AgiToolParam(value = "The Java source code of the class.", rendererId = "java") String sourceCode,
+            @AgiToolParam("List of Java class source descriptors (each containing fqn and sourceCode).") List<AgiClassSource> sources,
             @AgiToolParam(value = "Optional extra classpath entries separated by File.pathSeparator.", required = false) String extraClassPath,
             @AgiToolParam(value = "Optional compiler options.", required = false) String[] compilerOptions,
             @AgiToolParam(value = "Optional JDK name (from Available JDKs) or explicit path to javac binary.", required = false) String jdk) throws Exception {
 
-        String fqn = classFqn != null ? classFqn.trim() : null;
-        if (fqn == null || fqn.isBlank()) {
-            throw new AgiToolException("classFqn parameter is required (e.g. 'uno.anahata.benchmarks.FlightContact').");
+        if (sources == null || sources.isEmpty()) {
+            throw new AgiToolException("sources list parameter is required and cannot be empty.");
         }
 
         Path javacPath = resolveJavacPath(jdk);
-        Map<String, byte[]> bytecodes = compileBytecodes(sourceCode, fqn, extraClassPath, compilerOptions, javacPath);
+        Map<String, byte[]> allBytecodes = compileBytecodes(sources, extraClassPath, compilerOptions, javacPath);
 
-        if (bytecodes.isEmpty()) {
-            throw new AgiToolException("Compilation produced zero .class bytecode for class '" + fqn + "'.");
+        if (allBytecodes.isEmpty()) {
+            throw new AgiToolException("Compilation produced zero .class bytecode for requested sources.");
         }
 
-        int lineCount = sourceCode.split("\r\n|\r|\n").length;
-        AgiCompiledClass agiClass = new AgiCompiledClass(fqn, sourceCode, bytecodes, extraClassPath, System.currentTimeMillis(), lineCount);
+        List<String> compiledFqns = new ArrayList<>();
+        int totalBytecodeBytes = 0;
 
-        // If this class was already defined in the active AgiClassLoader, reset loader to allow redefinition
-        if (agiClassLoader != null && agiClassLoader.isClassLoaded(fqn)) {
-            String msg = "Class '" + fqn + "' was already defined in active AgiClassLoader; resetting loader for class redefinition.";
-            log.info(msg);
-            log(msg);
-            resetAgiClassLoader();
+        for (AgiClassSource src : sources) {
+            String fqn = src.fqn();
+            Map<String, byte[]> classBytecodes = new HashMap<>();
+            for (Map.Entry<String, byte[]> entry : allBytecodes.entrySet()) {
+                String binName = entry.getKey();
+                if (binName.equals(fqn) || binName.startsWith(fqn + "$")) {
+                    classBytecodes.put(binName, entry.getValue());
+                }
+            }
+
+            AgiCompiledClass agiClass = new AgiCompiledClass(this, src, classBytecodes, extraClassPath, System.currentTimeMillis());
+
+            if (agiClassLoader != null && agiClassLoader.isClassLoaded(fqn)) {
+                String msg = "Class '" + fqn + "' was already defined in active AgiClassLoader; resetting loader for class redefinition.";
+                log.info(msg);
+                log(msg);
+                resetAgiClassLoader();
+            }
+
+            agiCompiledClasses.put(fqn, agiClass);
+
+            compiledFqns.add(fqn);
+            totalBytecodeBytes += agiClass.getTotalBytecodeSize();
         }
 
-        agiCompiledClasses.put(fqn, agiClass);
         if (extraClassPath != null && !extraClassPath.isBlank()) {
             getOrCreateAgiClassLoader().addExtraClassPath(extraClassPath);
         }
 
-        int totalBytes = agiClass.getTotalBytecodeSize();
-        log.info("Successfully compiled and registered AgiCompiledClass '{}' ({} bytes, {} classes/inner-classes)", fqn, totalBytes, bytecodes.size());
-
         StringBuilder sb = new StringBuilder();
-        sb.append("SUCCESS: Compiled class '").append(fqn).append("' (")
-                .append(String.format("%.1f KB", totalBytes / 1024.0)).append(", ")
-                .append(lineCount).append(" lines");
-        if (bytecodes.size() > 1) {
-            sb.append(", nested classes: ").append(bytecodes.keySet());
-        }
-        sb.append(").\nActive session compiled classes (").append(agiCompiledClasses.size()).append("): ")
+        sb.append("SUCCESS: Compiled ").append(compiledFqns.size()).append(" class(es): ").append(compiledFqns)
+                .append(" (").append(String.format("%.1f KB", totalBytecodeBytes / 1024.0)).append(" total bytecode, ")
+                .append(allBytecodes.size()).append(" total classes/inner-classes).\n")
+                .append("Active session compiled classes (").append(agiCompiledClasses.size()).append("): ")
                 .append(agiCompiledClasses.keySet());
         return sb.toString();
     }
 
     /**
+     * Sets whether one or more in-memory compiled classes should have their full source code included in the RAG message.
+     *
+     * @param fqns List of class fully qualified names to update providing status for.
+     * @param providing Whether to include the source code in the RAG message.
+     * @return Confirmation message.
+     */
+    @AgiTool("Sets whether one or more in-memory compiled classes should have their full source code included in the RAG message.")
+    public String setProviding(
+            @AgiToolParam("List of class fully qualified names to update providing status for.") List<String> fqns,
+            @AgiToolParam("Whether to include the source code in the RAG message.") boolean providing) {
+        if (fqns == null || fqns.isEmpty()) {
+            throw new AgiToolException("List of class FQNs cannot be null or empty.");
+        }
+        List<String> updated = new ArrayList<>();
+        for (String fqn : fqns) {
+            if (fqn == null || fqn.isBlank()) {
+                continue;
+            }
+            AgiCompiledClass acc = agiCompiledClasses.get(fqn.trim());
+            if (acc != null) {
+                acc.setProviding(providing);
+                updated.add(acc.getFqn());
+            } else {
+                error("Class '" + fqn.trim() + "' not found in active AGI compiled classes.");
+            }
+        }
+        return (providing ? "Enabled" : "Disabled") + " RAG source code inclusion for compiled classes: " + updated;
+    }
+
+    /**
      * Retrieves the stored Java source code for one or more previously compiled AGI classes.
+     * If a requested class is already providing its source code in the RAG message, an error is logged
+     * and an informative notice is returned instead to avoid prompt token duplication.
      *
      * @param classFqns List of class fully qualified names to retrieve source code for.
      * @return Map of class FQN to its Java source code.
      */
     @AgiTool(
             value = "Retrieves the stored Java source code for one or more previously compiled AGI classes.\n"
-            + "Use this to inspect or refactor classes compiled in previous turns that may have scrolled past the tool context window."
+            + "Use this to inspect or refactor classes whose sources are not currently providing in the RAG message."
     )
     public Map<String, String> getAgiClassSources(
             @AgiToolParam("List of class fully qualified names to retrieve source code for.") List<String> classFqns) {
 
         Map<String, String> result = new HashMap<>();
+        List<AgiCompiledClass> targets = new ArrayList<>();
+
         if (classFqns == null || classFqns.isEmpty()) {
-            for (Map.Entry<String, AgiCompiledClass> entry : agiCompiledClasses.entrySet()) {
-                result.put(entry.getKey(), entry.getValue().getSourceCode());
+            targets.addAll(agiCompiledClasses.values());
+        } else {
+            for (String fqn : classFqns) {
+                if (fqn == null || fqn.isBlank()) {
+                    continue;
+                }
+                String trimmed = fqn.trim();
+                AgiCompiledClass acc = agiCompiledClasses.get(trimmed);
+                if (acc != null) {
+                    targets.add(acc);
+                } else {
+                    error("Class '" + trimmed + "' not found in active AGI compiled classes.");
+                    result.put(trimmed, "/* ERROR: Class '" + trimmed + "' not found in active AGI compiled classes. Available: " + agiCompiledClasses.keySet() + " */");
+                }
             }
-            return result;
         }
 
-        for (String fqn : classFqns) {
-            if (fqn == null || fqn.isBlank()) {
-                continue;
-            }
-            String trimmed = fqn.trim();
-            AgiCompiledClass acc = agiCompiledClasses.get(trimmed);
-            if (acc != null) {
-                result.put(trimmed, acc.getSourceCode());
+        for (AgiCompiledClass acc : targets) {
+            if (acc.isProviding()) {
+                error("Class '" + acc.getFqn() + "' source code is already being provided in the RAG message.");
+                result.put(acc.getFqn(), "/* INFO: Source code for '" + acc.getFqn() + "' is already being provided in the RAG message. Use Java.setProviding to disable RAG inclusion if needed. */");
             } else {
-                result.put(trimmed, "/* ERROR: Class '" + trimmed + "' not found in active AGI compiled classes. Available: " + agiCompiledClasses.keySet() + " */");
+                result.put(acc.getFqn(), acc.getSourceCode());
             }
         }
+
         return result;
     }
 
