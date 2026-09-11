@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.agi.resources;
 
+import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -32,6 +33,15 @@ public interface ResourceUI {
      * @return The JComponent representing the content view.
      */
     JComponent createContent(Resource resource, AgiPanel agiPanel);
+
+    /**
+     * Creates the primary content component for the given resource in container scope.
+     * 
+     * @param resource The resource to render.
+     * @param container The parent ASI container.
+     * @return The JComponent representing the content view.
+     */
+    JComponent createContent(Resource resource, AbstractAsiContainer container);
 
     /**
      * Injects host-specific actions into the provided container.
