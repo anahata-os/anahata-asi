@@ -1,12 +1,16 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.swing.agi.message.part.tool.param;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.Displayable;
 import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.toolkit.java.AgiClassSource;
+import uno.anahata.asi.toolkit.resources.text.FullTextFileCreate;
 
 /**
  * A factory for creating specialized {@link ParameterRenderer} instances.
@@ -30,6 +34,15 @@ public class ParameterRendererFactory {
 
     /** Static registry mapping string IDs to their specialized renderer classes. */
     private static final Map<String, Class<? extends ParameterRenderer<?>>> ID_REGISTRY = new ConcurrentHashMap<>();
+
+    static {
+        register(AgiClassSource.class, AgiClassSourceParameterRenderer.class);
+        register(FullTextFileCreate.class, FullTextFileCreateRenderer.class);
+        registerById("tabs", TabbedListParameterRenderer.class);
+        registerById("list_tabs", TabbedListParameterRenderer.class);
+        registerById("vbox", VBoxListParameterRenderer.class);
+        registerById("list_vbox", VBoxListParameterRenderer.class);
+    }
 
     /**
      * Registers a specialized renderer class for a specific parameter value type.
@@ -102,7 +115,17 @@ public class ParameterRendererFactory {
             }
         }
 
-        // 2. Authoritative Fallback: High-Fidelity Object-to-String Renderer
+        // 2. Collection / List Handling
+        if (value instanceof List<?> list) {
+            boolean preferTabs = !list.isEmpty() && (list.get(0) instanceof Displayable);
+            AbstractListParameterRenderer<Object> listRenderer = preferTabs 
+                    ? new TabbedListParameterRenderer() 
+                    : new VBoxListParameterRenderer();
+            listRenderer.init(agiPanel, call, paramName, (List<Object>) (List<?>) list);
+            return listRenderer;
+        }
+
+        // 3. Authoritative Fallback: High-Fidelity Object-to-String Renderer
         String lang = (rendererId != null && !rendererId.isEmpty()) ? rendererId : "text";
 
         ObjectToStringParameterRenderer renderer = new ObjectToStringParameterRenderer();

@@ -34,10 +34,8 @@ import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
  * @author anahata
  */
 @Slf4j
-public class ObjectToStringParameterRenderer implements ParameterRenderer<Object> {
+public class ObjectToStringParameterRenderer extends AbstractParameterRenderer<Object> {
     
-    /** The parent panel. */
-    protected AgiPanel agiPanel;
     /** The main container panel. */
     private final JPanel container = new JPanel(new BorderLayout());
     /** The high-fidelity viewer. */
@@ -75,7 +73,7 @@ public class ObjectToStringParameterRenderer implements ParameterRenderer<Object
      */
     @Override
     public void init(AgiPanel agiPanel, AbstractToolCall<?, ?> call, String paramName, Object value) {
-        this.agiPanel = agiPanel;
+        super.init(agiPanel, call, paramName, value);
         
         // 1. Resolve Purity: Convert object to string using authoritative utility
         String content = TextUtils.resolveContentString(value);
@@ -100,7 +98,7 @@ public class ObjectToStringParameterRenderer implements ParameterRenderer<Object
                 
                 // WIRE PERSISTENCE: Save refinements back to the tool call
                 viewer.setSaveAction(contentStr -> {
-                    call.setModifiedArgument(paramName, contentStr);
+                    valueChanged(contentStr);
                     viewer.setEditing(false);
                 });
             }

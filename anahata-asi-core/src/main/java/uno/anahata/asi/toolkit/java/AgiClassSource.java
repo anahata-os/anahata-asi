@@ -3,6 +3,7 @@ package uno.anahata.asi.toolkit.java;
 
 import lombok.Builder;
 import lombok.NonNull;
+import uno.anahata.asi.Displayable;
 
 /**
  * Immutable source code descriptor for an in-memory Java class.
@@ -23,7 +24,7 @@ public record AgiClassSource(
         String fqn,
         @NonNull
         String sourceCode
-        ) {
+        ) implements Displayable {
 
     /**
      * Canonical constructor validating that FQN and sourceCode are non-null and
@@ -49,5 +50,17 @@ public record AgiClassSource(
      */
     public int getLineCount() {
         return sourceCode.split("\r\n|\r|\n").length;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns the simple class name (the portion of {@link #fqn} after the last dot)
+     * for concise UI tab headers and displays.
+     * </p>
+     */
+    @Override
+    public String getDisplayValue() {
+        return fqn.contains(".") ? fqn.substring(fqn.lastIndexOf('.') + 1) : fqn;
     }
 }

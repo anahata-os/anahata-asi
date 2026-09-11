@@ -1587,11 +1587,16 @@ public class Java extends AnahataToolkit {
      */
     @AgiTool(
             value = "Compiles one or more modular Java classes into the in-memory classpath of this AGI session without executing them.\n"
-            + "The compiled classes are registered in the session's RAM and automatically included in the RAG message as context providers.\n"
-            + "Passing multiple sources compiles them simultaneously, allowing mutual or circular dependencies (e.g. Class A references Class B and Class B references Class A)."
+            + "The compiled classes are registered in session RAM and automatically included in the RAG message as context providers.\n"
+            + "Passing multiple sources compiles them simultaneously, cleanly resolving mutual or circular dependencies (e.g. Class A references Class B and Class B references Class A).\n\n"
+            + "PRO-TIP (Batching & Token Efficiency):\n"
+            + "You can emit multiple compile() tool calls in the SAME turn! Group your classes wisely:\n"
+            + "- Independent classes: Put each in its own separate compile() call with a single AgiClassSource (e.g. Call 1: compile([MathHelper]), Call 2: compile([Config])).\n"
+            + "- Mutually dependent classes: Group only the circular classes together in one compile() call (e.g. Call 3: compile([Node, Edge])).\n"
+            + "Benefit: If one class fails to compile, only that specific tool call fails. The successful ones remain cached in RAM, so in your next turn you only need to recompile the failed tool call, saving massive output tokens!"
     )
     public String compile(
-            @AgiToolParam("List of Java class source descriptors (each containing fqn and sourceCode).") List<AgiClassSource> sources,
+            @AgiToolParam(value = "List of Java class source descriptors (each containing fqn and sourceCode).", rendererId = "tabs") List<AgiClassSource> sources,
             @AgiToolParam(value = "Optional extra classpath entries separated by File.pathSeparator.", required = false) String extraClassPath,
             @AgiToolParam(value = "Optional compiler options.", required = false) String[] compilerOptions,
             @AgiToolParam(value = "Optional JDK name (from Available JDKs) or explicit path to javac binary.", required = false) String jdk) throws Exception {

@@ -41,4 +41,34 @@ public interface ParameterRenderer<T> {
      * @return True if a visual update occurred.
      */
     boolean render();
+
+    /**
+     * Returns the enclosing composite parent renderer, or {@code null} if this is a top-level parameter renderer.
+     * 
+     * @return The parent renderer, or null.
+     */
+    default ParameterRenderer<?> getParentRenderer() {
+        return null;
+    }
+
+    /**
+     * Sets the enclosing composite parent renderer.
+     * 
+     * @param parentRenderer The parent renderer.
+     */
+    default void setParentRenderer(ParameterRenderer<?> parentRenderer) {
+    }
+
+    /**
+     * Notifies this renderer that one of its child renderers has changed its value.
+     * Default implementation bubbles the notification up to {@link #getParentRenderer()} if present.
+     * 
+     * @param child The child renderer that changed.
+     * @param newChildValue The new value emitted by the child.
+     */
+    default void childValueChanged(ParameterRenderer<?> child, Object newChildValue) {
+        if (getParentRenderer() != null) {
+            getParentRenderer().childValueChanged(child, newChildValue);
+        }
+    }
 }

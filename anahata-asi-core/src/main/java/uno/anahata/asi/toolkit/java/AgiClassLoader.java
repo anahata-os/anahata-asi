@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
  * <p>
  * Serving as the parent classloader for ephemeral script loaders (such as
  * {@link Java.AnahataClassLoader}), {@code AgiClassLoader} ensures that classes
- * compiled via {@link Java#compile(String, String, String, String[], String)}
+ * compiled via {@link Java#compile}
  * are defined exactly once in the session metaspace. This completely eliminates
  * {@link ClassCastException} when instantiating compiled types in one turn and
  * casting them in subsequent turns (e.g. via {@code sessionMap}).

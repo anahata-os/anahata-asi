@@ -38,15 +38,7 @@ import uno.anahata.asi.toolkit.resources.text.FullTextFileCreate;
  * @author anahata
  */
 @Slf4j
-public class FullTextFileCreateRenderer implements ParameterRenderer<FullTextFileCreate> {
-    /** The agi panel instance providing session context. */
-    private AgiPanel agiPanel;
-    /** The tool call containing the parameter being rendered. */
-    private AbstractToolCall<?, ?> call;
-    /** The technical name of the parameter. */
-    private String paramName;
-    /** The current creation DTO containing path and content. */
-    private FullTextFileCreate value;
+public class FullTextFileCreateRenderer extends AbstractParameterRenderer<FullTextFileCreate> {
     
     /** The main container panel for the renderer. */
     private final JPanel container = new JPanel(new BorderLayout());
@@ -73,10 +65,7 @@ public class FullTextFileCreateRenderer implements ParameterRenderer<FullTextFil
      */
     @Override
     public void init(AgiPanel agiPanel, AbstractToolCall<?, ?> call, String paramName, FullTextFileCreate value) {
-        this.agiPanel = agiPanel;
-        this.call = call;
-        this.paramName = paramName;
-        this.value = value;
+        super.init(agiPanel, call, paramName, value);
         container.setOpaque(false);
         actionPanel.setOpaque(false);
     }
@@ -205,6 +194,7 @@ public class FullTextFileCreateRenderer implements ParameterRenderer<FullTextFil
                 // WIRE PERSISTENCE: Refinements in the UI update the DTO
                 viewer.setSaveAction(contentStr -> {
                     value.setContent(contentStr);
+                    valueChanged(value);
                     log.info("Proposed file content updated via UI editor: {}", value.getPath());
                 });
             }
