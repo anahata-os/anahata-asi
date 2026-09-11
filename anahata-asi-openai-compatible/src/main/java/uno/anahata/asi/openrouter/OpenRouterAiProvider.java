@@ -31,8 +31,10 @@ public class OpenRouterAiProvider extends OpenAiChatCompletionsProvider {
         super("OpenRouter", "OpenRouter", "https://openrouter.ai/api/v1", "https://openrouter.ai/keys");
         setPriority(15);
         setDescription("OpenRouter unified model aggregator with intelligent routing, live benchmarks, and competitive pricing.");
-        getCustomHeaders().put("HTTP-Referer", "https://anahata.uno");
-        getCustomHeaders().put("X-Title", "Anahata ASI");
+        getCustomHeaders().put("HTTP-Referer", "https://asi.anahata.uno");
+        getCustomHeaders().put("X-OpenRouter-Title", "Anahata ASI");
+        getCustomHeaders().put("X-OpenRouter-Categories", "ide-extension,programming-app");
+        
     }
 
     /**
