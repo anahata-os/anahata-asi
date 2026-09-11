@@ -6,6 +6,7 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.resource.handle.PathHandle;
 import uno.anahata.asi.intellij.internal.JavaPsi;
@@ -46,6 +47,24 @@ public class IntellijResourceUI extends DefaultResourceUI {
             return new IntellijTextResourceViewer(agiPanel, resource);
         }
         return super.createContent(resource, agiPanel);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns an IntelliJ-native {@link IntellijTextResourceViewer} bound to a container context
+     * for textual resources, providing authentic IDE editor frames.
+     * </p>
+     */
+    @Override
+    public JComponent createContent(Resource resource, AbstractAsiContainer container) {
+        if (resource.getHandle().isTextual()) {
+            if (resource.getName().toLowerCase().endsWith(".log")) {
+                return super.createContent(resource, container);
+            }
+            return new IntellijTextResourceViewer(container, resource);
+        }
+        return super.createContent(resource, container);
     }
 
     /**

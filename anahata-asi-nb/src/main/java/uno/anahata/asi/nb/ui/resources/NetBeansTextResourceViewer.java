@@ -20,6 +20,7 @@ import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.FileSystem;
 import org.openide.loaders.DataObject;
+import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.resource.handle.PathHandle;
 import uno.anahata.asi.agi.resource.handle.StringHandle;
@@ -96,6 +97,21 @@ public class NetBeansTextResourceViewer extends AbstractTextResourceViewer {
      */
     public NetBeansTextResourceViewer(AgiPanel agiPanel, Resource resource) {
         super(agiPanel, resource);
+        // FORCE SINGULARITY: We stay on the editor card to avoid parentage 
+        // conflicts and redundant IDE frame assembly.
+        setPreviewAsEditor(true);
+        // RE-SIGNAL: Explicitly trigger the card swap now that we've locked in singularity mode.
+        setEditing(false);
+    }
+
+    /**
+     * Constructs a new NetBeansTextResourceViewer bound to a container context.
+     *
+     * @param container The parent container.
+     * @param resource The resource to render.
+     */
+    public NetBeansTextResourceViewer(AbstractAsiContainer container, Resource resource) {
+        super(container, resource);
         // FORCE SINGULARITY: We stay on the editor card to avoid parentage 
         // conflicts and redundant IDE frame assembly.
         setPreviewAsEditor(true);

@@ -18,6 +18,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.resource.view.MediaView;
 import uno.anahata.asi.agi.resource.handle.PathHandle;
 import uno.anahata.asi.agi.resource.Resource;
@@ -51,6 +52,22 @@ public class DefaultResourceUI implements ResourceUI {
     public JComponent createContent(Resource resource, AgiPanel agiPanel) {
         if (resource.getHandle().isTextual()) {
             return new RSyntaxTextAreaTextResourceViewer(agiPanel, resource);
+        } else if (resource.getView() instanceof MediaView mv) {
+            return createMediaComponent(resource, mv);
+        }
+        
+        return new JLabel("No viewer available for: " + resource.getMimeType());
+    }
+
+    /** 
+     * {@inheritDoc} 
+     * <p>Implementation details: Dispatches to {@link RSyntaxTextAreaTextResourceViewer} 
+     * bound to a container context for text resources or a custom label for binary/media resources.</p>
+     */
+    @Override
+    public JComponent createContent(Resource resource, AbstractAsiContainer container) {
+        if (resource.getHandle().isTextual()) {
+            return new RSyntaxTextAreaTextResourceViewer(container, resource);
         } else if (resource.getView() instanceof MediaView mv) {
             return createMediaComponent(resource, mv);
         }

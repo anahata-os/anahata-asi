@@ -22,6 +22,7 @@ import javax.swing.SwingUtilities;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.icons.RestartIcon;
@@ -61,6 +62,8 @@ public abstract class AbstractTextResourceViewer extends JPanel {
 
     /** The parent AgiPanel providing the session context. */
     protected final AgiPanel agiPanel;
+    /** The parent AbstractAsiContainer providing the container context. */
+    protected final AbstractAsiContainer container;
     /** The resource orchestrator being viewed. */
     protected final Resource resource;
 
@@ -114,13 +117,35 @@ public abstract class AbstractTextResourceViewer extends JPanel {
     private EdtPropertyChangeListener resourceListener;
 
     /**
-     * Constructs a new AbstractTextResourceViewer.
+     * Constructs a new AbstractTextResourceViewer bound to a session context.
      * 
      * @param agiPanel The parent AgiPanel.
      * @param resource The text resource.
      */
     protected AbstractTextResourceViewer(AgiPanel agiPanel, Resource resource) {
         this.agiPanel = agiPanel;
+        this.container = (agiPanel != null && agiPanel.getAgi() != null && agiPanel.getAgi().getConfig() != null)
+                ? agiPanel.getAgi().getConfig().getAsiContainer() : null;
+        this.resource = resource;
+        
+        // Authoritative Default: Virtual snippets use 'Preview-as-Editor' mode
+        this.previewAsEditor = resource.getHandle().isVirtual();
+        
+        setLayout(new BorderLayout());
+        initComponents();
+        
+        this.resourceListener = new EdtPropertyChangeListener(this, resource, null, evt -> syncWithResource());
+    }
+
+    /**
+     * Constructs a new AbstractTextResourceViewer bound to a container context.
+     * 
+     * @param container The parent AbstractAsiContainer.
+     * @param resource The text resource.
+     */
+    protected AbstractTextResourceViewer(AbstractAsiContainer container, Resource resource) {
+        this.agiPanel = null;
+        this.container = container;
         this.resource = resource;
         
         // Authoritative Default: Virtual snippets use 'Preview-as-Editor' mode
@@ -403,27 +428,56 @@ public abstract class AbstractTextResourceViewer extends JPanel {
         }
         
         this.syncing = true;
-        new SwingTask<>(agiPanel, "Loading Content", () -> {
-            return resource.asText();
-        }, text -> {
-            try {
-                updatePreviewContent(text);
-                if (!verticalScrollEnabled) {
-                    SwingUtilities.invokeLater(this::configureScrollBehavior);
+        if (agiPanel != null) {
+            new SwingTask<>(agiPanel, "Loading Content", () -> {
+                return resource.asText();
+            }, text -> {
+                try {
+                    updatePreviewContent(text);
+                    if (!verticalScrollEnabled) {
+                        SwingUtilities.invokeLater(this::configureScrollBehavior);
+                    }
+                } finally {
+                    this.syncing = false;
                 }
-            } finally {
-                this.syncing = false;
-            }
-        }, error -> {
-            try {
-                log.error("Failed to synchronize content from resource: {}", resource.getName(), error);
-                updatePreviewContent("Error loading content: " + error.getMessage());
-                if (!verticalScrollEnabled) {
-                    SwingUtilities.invokeLater(this::configureScrollBehavior);
+            }, error -> {
+                try {
+                    log.error("Failed to synchronize content from resource: {}", resource.getName(), error);
+                    updatePreviewContent("Error loading content: " + error.getMessage());
+                    if (!verticalScrollEnabled) {
+                        SwingUtilities.invokeLater(this::configureScrollBehavior);
+                    }
+                } finally {
+                    this.syncing = false;
                 }
-            } finally {
-                this.syncing = false;
-            }
-        }, false).start();
+            }, false).start();
+        } else if (container != null) {
+            new SwingTask<>(this, container, "Loading Content", () -> {
+                return resource.asText();
+            }, text -> {
+                try {
+                    updatePreviewContent(text);
+                    if (!verticalScrollEnabled) {
+                        SwingUtilities.invokeLater(this::configureScrollBehavior);
+                    }
+                } finally {
+                    this.syncing = false;
+                }
+            }, error -> {
+                try {
+                    log.error("Failed to synchronize content from resource: {}", resource.getName(), error);
+                    updatePreviewContent("Error loading content: " + error.getMessage());
+                    if (!verticalScrollEnabled) {
+                        SwingUtilities.invokeLater(this::configureScrollBehavior);
+                    }
+                } finally {
+                    this.syncing = false;
+                }
+            }, false).start();
+        } else {
+            this.syncing = false;
+            throw new IllegalStateException("Cannot synchronize text resource viewer for '" + resource.getName()
+                    + "' without either an AgiPanel or an AbstractAsiContainer.");
+        }
     }
 }

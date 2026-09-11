@@ -35,6 +35,7 @@ import javax.swing.SwingUtilities;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import javax.swing.JComponent;
+import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.resource.handle.StringHandle;
 import uno.anahata.asi.swing.agi.resources.ResourceUI;
@@ -312,10 +313,61 @@ public class SwingUtils {
      * @param text The text to display.
      * @param language The language for syntax highlighting.
      */
+    /**
+     * Displays a modal or modeless dialog with a syntax-highlighted code block in session scope.
+     *
+     * @param agiPanel The owning AgiPanel.
+     * @param title The dialog title.
+     * @param text The text to display.
+     * @param language The language for syntax highlighting.
+     */
+    public static void showCodeBlockDialog(AgiPanel agiPanel, String title, String text, String language) {
+        showCodeBlockDialog(agiPanel, agiPanel, null, title, text, language);
+    }
+
+    /**
+     * Displays a dialog with a syntax-highlighted code block in container scope.
+     *
+     * @param parent The parent component.
+     * @param container The parent ASI container.
+     * @param title The dialog title.
+     * @param text The text to display.
+     * @param language The language for syntax highlighting.
+     */
+    public static void showCodeBlockDialog(Component parent, AbstractAsiContainer container, String title, String text, String language) {
+        showCodeBlockDialog(parent, null, container, title, text, language);
+    }
+
+    /**
+     * Displays a modal or modeless dialog with a syntax-highlighted code block.
+     * <p>
+     * Dynamically resolves the AgiPanel or AbstractAsiContainer from the parent hierarchy if possible.
+     * </p>
+     *
+     * @param parent The parent component.
+     * @param title The dialog title.
+     * @param text The text to display.
+     * @param language The language for syntax highlighting.
+     */
     public static void showCodeBlockDialog(Component parent, String title, String text, String language) {
         AgiPanel agiPanel = (parent instanceof AgiPanel ap) ? ap 
                 : (parent != null ? (AgiPanel) SwingUtilities.getAncestorOfClass(AgiPanel.class, parent) : null);
+        AbstractAsiContainer container = agiPanel != null 
+                ? agiPanel.getAgi().getConfig().getAsiContainer() : null;
+        showCodeBlockDialog(parent, agiPanel, container, title, text, language);
+    }
 
+    /**
+     * Internal implementation for displaying a code block dialog in either session or container scope.
+     *
+     * @param parent The parent component for positioning.
+     * @param agiPanel The optional session AgiPanel.
+     * @param container The optional container instance.
+     * @param title The dialog title.
+     * @param text The text to display.
+     * @param language The language for syntax highlighting.
+     */
+    public static void showCodeBlockDialog(Component parent, AgiPanel agiPanel, AbstractAsiContainer container, String title, String text, String language) {
         Window ancestorWindow = SwingUtilities.getWindowAncestor(parent);
         JDialog dialog;
         if (ancestorWindow instanceof JDialog) {
@@ -346,7 +398,9 @@ public class SwingUtils {
 
             ResourceUI strategy = ResourceUiRegistry.getInstance().getResourceUI();
             if (strategy != null) {
-                JComponent viewer = strategy.createContent(resource, agiPanel);
+                JComponent viewer = (agiPanel != null)
+                        ? strategy.createContent(resource, agiPanel)
+                        : strategy.createContent(resource, container);
                 if (viewer instanceof AbstractTextResourceViewer atv) {
                     atv.setToolbarVisible(true); // Integrated actions (Copy)
                     atv.setReadOnly(true); // Strictly read-only for popups

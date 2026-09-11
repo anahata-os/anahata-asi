@@ -204,19 +204,19 @@ public class StatusPanel extends JPanel {
         JPanel linksPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         linksPanel.setOpaque(false);
         
-        rawJsonRequestConfigLink = new CodeHyperlink("Request", 
+        rawJsonRequestConfigLink = new CodeHyperlink(agiPanel, "Request", 
                 () -> "Raw JSON Request", 
                 () -> agi.getLastResponse().map(Response::getRawRequestConfigJson).orElse(""), 
                 "json");
         linksPanel.add(rawJsonRequestConfigLink);
 
-        historyJsonLink = new CodeHyperlink("History",
+        historyJsonLink = new CodeHyperlink(agiPanel, "History",
                 () -> "Conversation History JSON",
                 () -> agi.getLastResponse().map(Response::getRawHistoryJson).orElse(""),
                 "json");
         linksPanel.add(historyJsonLink);
 
-        rawJsonResponseLink = new CodeHyperlink("Response", 
+        rawJsonResponseLink = new CodeHyperlink(agiPanel, "Response", 
                 () -> "Raw JSON Response", 
                 () -> agi.getLastResponse().map(r -> r.getRawJson()).orElse(""), 
                 "json");

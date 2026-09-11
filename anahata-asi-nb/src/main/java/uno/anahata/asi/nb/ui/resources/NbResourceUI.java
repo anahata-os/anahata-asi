@@ -12,6 +12,7 @@ import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
 import org.openide.util.ImageUtilities;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
+import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.nb.tools.ide.IDE;
 import uno.anahata.asi.agi.resource.handle.PathHandle;
 import uno.anahata.asi.agi.resource.Resource;
@@ -47,6 +48,23 @@ public class NbResourceUI extends DefaultResourceUI {
             return new NetBeansTextResourceViewer(agiPanel, resource);
         }
         return super.createContent(resource, agiPanel);
+    }
+    
+    /** 
+     * {@inheritDoc} 
+     * <p>Implementation details: Returns a native {@link NetBeansTextResourceViewer} 
+     * bound to a container context for textual resources, providing real IDE editor frames.</p>
+     */
+    @Override
+    public JComponent createContent(Resource resource, AbstractAsiContainer container) {
+        if (resource.getHandle().isTextual()) {
+            // Bypass IDE fidelity for log files to prevent 'Modified Externally' popups
+            if (resource.getName().toLowerCase().endsWith(".log")) {
+                return super.createContent(resource, container);
+            }
+            return new NetBeansTextResourceViewer(container, resource);
+        }
+        return super.createContent(resource, container);
     }
     
         /** 

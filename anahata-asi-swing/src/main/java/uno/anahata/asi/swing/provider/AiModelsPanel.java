@@ -560,7 +560,7 @@ public class AiModelsPanel extends JPanel {
                 String trimmed = raw.trim();
                 String lang = (trimmed.startsWith("{") || trimmed.startsWith("[")) ? "json"
                         : (trimmed.toLowerCase().startsWith("<html>") ? "html" : "text");
-                SwingUtils.showCodeBlockDialog(this, "Model Metadata: " + model.getModelId(), raw, lang);
+                SwingUtils.showCodeBlockDialog(this, asiContainer, "Model Metadata: " + model.getModelId(), raw, lang);
             });
             popup.add(viewMetaItem);
         }

@@ -16,6 +16,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.resource.handle.PathHandle;
 import uno.anahata.asi.intellij.internal.JavaPsi;
@@ -72,6 +73,18 @@ public class IntellijTextResourceViewer extends AbstractTextResourceViewer {
      */
     public IntellijTextResourceViewer(AgiPanel agiPanel, Resource resource) {
         super(agiPanel, resource);
+        setPreviewAsEditor(true);
+        setEditing(false);
+    }
+
+    /**
+     * Constructs the IntelliJ text resource viewer bound to a container context.
+     *
+     * @param container the owning ASI container.
+     * @param resource the text resource being displayed.
+     */
+    public IntellijTextResourceViewer(AbstractAsiContainer container, Resource resource) {
+        super(container, resource);
         setPreviewAsEditor(true);
         setEditing(false);
     }
