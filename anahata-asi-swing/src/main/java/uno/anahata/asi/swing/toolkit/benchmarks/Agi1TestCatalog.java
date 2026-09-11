@@ -85,7 +85,7 @@ public class Agi1TestCatalog extends TestCatalog {
     public static final TestDefinition JAVA_SNAKE_GAME_1 = TestDefinition.builder()
             .testCode("JAVA-SNAKE-GAME-1")
             .title("Snake Game")
-            .rawPrompt("Make a snake game using the java tool. Window title MUST contain your Model ID.")
+            .rawPrompt("Make a snake game using the java tool. Choose whatever framework you want. Window title MUST contain your Model ID.")
             .toolkits(List.of(
                     ToolkitSettings.of(Java.class, "compileAndExecute", ToolPermission.APPROVE_ALWAYS)
                     

@@ -173,4 +173,29 @@
   "screenshotPath" : "/home/pablo/.anahata/asi/recordings/JAVA-JNA-1_qwen3.8-max_20260908_181710_thumb.png",
   "sessionId" : "66593ab7-36d8-414f-bc19-525dbef3c192",
   "observations" : "Self-healed & Passed on Turn 2: Incredible native depth and architecture. Mapped 11 C-library functions with hand-crafted JNA Structures (sysinfo with LP64 alignment/slack, uname 6x65B arrays, rusage with nested TimeVal, statvfs, sysconf, rlimit, clock_gettime). Implemented non-blocking background daemon sampling off-EDT with SwingUtilities.invokeLater dispatch, custom radial gauges, dual-series gradient sparklines, 24 per-core bars, 20 sysfs sensors, and live probe tables. Turn 1 failed due to minor typos (getAvailableFamilyNames -> getAvailableFontFamilyNames and a leftover moveTo2 marker); Turn 2 diagnosed compiler diagnostics cleanly and executed with ZERO defects. Respects host LaF without mutating global UIManager."
+}, {
+  "participant" : {
+    "providerUuid" : "OpenRouter",
+    "modelId" : "poolside/laguna-s-2.1",
+    "thinkingLevel" : "HIGH"
+  },
+  "testCode" : "JAVA-ARKANOID-1",
+  "asiContainer" : "AsiDesktopAsiContainer",
+  "timestamp" : "2026-09-11T19:01:54.383547568Z",
+  "durationSeconds" : 500.73,
+  "turns" : 3,
+  "promptTokens" : 102119,
+  "candidatesTokens" : 23692,
+  "thoughtsTokens" : 15844,
+  "totalTokens" : 125811,
+  "passed" : false,
+  "judgeScores" : [ {
+    "name" : "Priyanka",
+    "score" : 2.0,
+    "comments" : "impressive free model, very good for a totally free open router option"
+  } ],
+  "videoUrl" : "https://youtu.be/AKVALoefC_o",
+  "screenshotPath" : "/home/pablo/.anahata/asi/recordings/JAVA-ARKANOID-1_poolside_laguna-s-2.1_20260911_205333_thumb.png",
+  "sessionId" : "6b2feff2-c1b4-482e-a2c3-442c77960a70",
+  "observations" : "Observations by openrouter/free models router: The poolside/laguna-s-2.1 session completed the JAVA-ARKANOID-1 task by producing a self-contained Swing Arkanoid implementation, correcting its first tool-argument coercion error, recompiling successfully, and launching the game on the requested display. The implementation used a Swing Timer game loop, EDT-safe window creation, model-ID window titling, mouse paddle control, brick and paddle collisions, score/lives state, restart handling, and basic visual polish. The main notable issue was verbosity during planning and code generation; the session history shows roughly 50K tokens rather than the higher aggregate token figure previously reported. The implementation was functional and technically coherent, with room for improvement in concision, modular architecture, audio/effects, keyboard paddle controls, and collision robustness."
 } ]

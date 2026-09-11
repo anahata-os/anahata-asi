@@ -42,5 +42,70 @@
         "compileAndExecute" : "APPROVE_ALWAYS"
       }
     } ]
+  }, {
+    "testCode" : "JAVA-ORBITAL-C4ISR-1",
+    "title" : "3D Planetary Satellite Tracker & Air Defense Command Center",
+    "rawPrompt" : "Build a high-performance, real-time 3D Planetary Satellite Tracker & Air Defense Flight Radar Command Center in Java (resembling NASA WorldWind / Palantir C4ISR).\n\nYour implementation will be evaluated on:\n1. 3D Globe & Surface Texture Mapping: Hardware-accelerated 3D spherical Earth globe with mouse drag rotation, pitch tilt, and mouse-wheel zoom. Render photorealistic satellite imagery or dark tactical terrain (e.g. using a global spherical texture or slippy map tile grid). The following endpoints have been tested and verified to work without API keys: Global NASA Blue Marble texture: https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg ; Night city lights: https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_lights_2048.png ; ArcGIS World Satellite tiles: https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.jpg ; CartoDB Dark Matter tiles: https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png . You are completely free to use these verified links or source your own data/imagery.\n2. 3D Elevated Airspace & Defense Domes: Render aircraft physically elevated in 3D above the planetary surface proportional to flight level. Render semi-transparent glowing 3D SAM engagement domes over strategic defense airbases (Ramstein, Torrejón, Sigonella, Nevatim) and tactical interceptor vectors.\n3. Satellite Mechanics & Telemetry: Live or simulated satellite orbital propagation (e.g. ISS live coordinates via http://api.open-notify.org/iss-now.json, Starlink shell, GPS/Galileo ring) with glowing orbital paths and sub-satellite ground footprints.\n4. Tactical C4ISR HUD: Dark military cyberpunk HUD overlay (FlatLaf Dark), target lock telemetry card (callsign, altitude, speed, lat/lon), Zulu UTC clock, and simulation controls.\n5. Performance & Thread Safety: Background threads for network/telemetry updates and smooth 60 FPS animation loop with zero UI freezing.\n\nWindow title MUST contain your Model ID. You have complete creative freedom over visual styling, architecture, and technology choice.",
+    "toolkits" : [ {
+      "toolkit" : "uno.anahata.asi.toolkit.java.Java",
+      "permissions" : {
+        "compile" : "APPROVE_ALWAYS"
+      }
+    }, {
+      "toolkit" : "uno.anahata.asi.toolkit.java.Java",
+      "permissions" : {
+        "compileAndExecute" : "APPROVE_ALWAYS"
+      }
+    }, {
+      "toolkit" : "uno.anahata.asi.toolkit.java.Java",
+      "permissions" : {
+        "getAgiClassSources" : "APPROVE_ALWAYS"
+      }
+    }, {
+      "toolkit" : "uno.anahata.asi.toolkit.java.Java",
+      "permissions" : {
+        "removeAgiClasses" : "APPROVE_ALWAYS"
+      }
+    }, {
+      "toolkit" : "uno.anahata.asi.toolkit.java.Java",
+      "permissions" : {
+        "clearAllAgiClasses" : "APPROVE_ALWAYS"
+      }
+    } ]
+  }, {
+    "testCode" : "JAVA-EARTH-GLOBE-1",
+    "title" : "Interactive 3D Multi-Layer Satellite Earth Globe",
+    "rawPrompt" : "Build a high-performance, interactive 3D Satellite Earth Globe Viewer in Java (resembling Google Earth / NASA WorldWind).\n\nYour implementation will be evaluated on:\n\n1. Interactive 3D Sphere & Natural Camera Controls:\n   - Hardware-accelerated 3D spherical Earth.\n   - Natural Dragging: Mouse drag must grab the planetary surface naturally (dragging right pulls the surface right, dragging left pulls the surface left, dragging up tilts North, dragging down tilts South).\n   - Global Interaction: Ensure mouse drag and scroll interactions seamlessly rotate and zoom the globe across the entire window area.\n   - Continuous Smooth Zoom & Altitude Range: Continuous logarithmic zoom from global orbit down to street/ground level (~200 meters altitude at zoom 19), with altitude clamping to keep the camera gracefully outside the globe surface.\n   - Fly-To Presets: Preset locations with smooth camera animation (e.g. Barcelona Camp Nou, Giza Pyramids, Messi's home town, Angkor Wat, Mount Kailash, CIA headquarters, and anything else entertaining).\n\n2. Live Multi-Layer Slippy Map Imagery (No API Keys Required):\n   - Provide a top toolbar or combo box to switch live between 2 free, high-resolution slippy map tile pyramids:\n     * Esri ArcGIS World Satellite: https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.jpg\n     * OpenStreetMap (OSM): https://tile.openstreetmap.org/{z}/{x}/{y}.png\n   - Dynamic Level of Detail (LOD): Both tile providers support continuous zoom levels from global orbit (z=1) down to street/building detail (up to zoom 19), returning valid HTTP 200 imagery across land and oceans.\n\n3. High-Performance Concurrency, Frustum Culling & Cache Sizing:\n   - Thread Pool Sizing: Use a background daemon worker thread pool sized to Runtime.getRuntime().availableProcessors() (one thread per available CPU core).\n   - LIFO (Last-In, First-Out) Priority: Prioritize newly requested tiles currently visible in the camera frustum over older, stale off-screen requests.\n   - Frustum Tile Budget: Cull off-screen and back-facing tiles to keep active visible geometry tightly bounded to the immediate camera viewpoint.\n   - Memory Cache Sizing: Ensure your in-memory RAM cache capacity comfortably exceeds this visible tile demand to prevent LRU cache eviction thrashing.\n   - Visual Continuity: Maintain low-resolution base or parent tiles visible on the globe until higher-detail child tiles have finished downloading and decoding, ensuring the planetary surface never disappears or displays empty voids while streaming.\n\n4. Persistent Local Disk Caching:\n   - Check if the tile file already exists on disk before initiating any HTTP request. If present, load it immediately from disk; otherwise download, persist to disk, and decode.\n   - Cache all downloaded tiles locally under ${user.home}/.anahata/asi/cache/<host>/<path> (e.g. ${user.home}/.anahata/asi/cache/server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.jpg and ${user.home}/.anahata/asi/cache/tile.openstreetmap.org/{z}/{x}/{y}.png).\n\n5. Atmospheric Rendering & Surface Clarity:\n   - If rendering an atmospheric haze or rim glow, ensure terrain and ground-level map imagery remain bright, clear, and visible from ground level up to orbit without obscuring the surface.\n\n6. HUD, Telemetry & UI Styling:\n   - Top Toolbar Layout: Anchor the controls neatly to the top edge of the window so they do not obstruct or float across the 3D globe viewport.\n   - Telemetry Overlay: Sleek overlay showing live Camera Lat / Lon, Altitude, active Zoom LOD level, memory/disk cache stats, FPS, basic JVM runtime stats, and a 'Reset View' button.\n   - Apply styling locally to your window and components, preserving host environment defaults (don't alter the host system's look and feel).\n\n7. Execution & Self-Verification:\n   - Smooth 60 FPS animation loop with strict UI thread safety (tile I/O on worker threads).\n   - Window title MUST contain your Model ID.\n   - Once launched, allow a brief delay (e.g. 2-3 seconds) for the window to open, render its initial 3D scene, and load base tiles, then take a screenshot of using the Screens toolkit to visually verify that your application has opened and rendered properly.\n\n\"**Environment Note**: All libraries available on the default classpath are pre-configured and manage any native library extraction and loading.\n",
+    "toolkits" : [ {
+      "toolkit" : "uno.anahata.asi.toolkit.java.Java",
+      "permissions" : {
+        "compile" : "APPROVE_ALWAYS"
+      }
+    }, {
+      "toolkit" : "uno.anahata.asi.toolkit.java.Java",
+      "permissions" : {
+        "compileAndExecute" : "APPROVE_ALWAYS"
+      }
+    }, {
+      "toolkit" : "uno.anahata.asi.toolkit.java.Java",
+      "permissions" : {
+        "getAgiClassSources" : "APPROVE_ALWAYS"
+      }
+    }, {
+      "toolkit" : "uno.anahata.asi.toolkit.java.Java",
+      "permissions" : {
+        "removeAgiClasses" : "APPROVE_ALWAYS"
+      }
+    }, {
+      "toolkit" : "uno.anahata.asi.toolkit.java.Java",
+      "permissions" : {
+        "clearAllAgiClasses" : "APPROVE_ALWAYS"
+      }
+    }, {
+      "toolkit" : "uno.anahata.asi.swing.toolkit.Screens",
+      "permissions" : {
+        "takeScreenshot" : "APPROVE_ALWAYS"
+      }
+    } ]
   } ]
 }
