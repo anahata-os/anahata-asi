@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.agi.provider;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
 /**
@@ -18,21 +19,25 @@ public enum ResponseModality {
     /** 
      * Textual output, markdown, code, reasoning thoughts, and function/tool calls. 
      */
+    @Schema(description = "Textual output, markdown, code, reasoning thoughts, and function/tool calls.")
     TEXT("Text"),
 
     /** 
      * Binary image generation and visual editing artifacts. 
      */
+    @Schema(description = "Binary image generation and visual editing artifacts.")
     IMAGE("Image"),
 
     /** 
      * Binary audio synthesis, voice streams, speech-to-speech, and music generation. 
      */
+    @Schema(description = "Binary audio synthesis, voice streams, speech-to-speech, and music generation.")
     AUDIO("Audio"),
 
     /** 
      * Video generation and video synthesis streams. 
      */
+    @Schema(description = "Video generation and video synthesis streams.")
     VIDEO("Video");
 
     /**
