@@ -679,11 +679,21 @@ public class Benchmarks extends AnahataToolkit {
                 return null;
             }
 
-            String catalogName = (catalog != null && catalog.getName() != null) ? catalog.getName() : "Custom Challenge";
-            String catalogId = (catalog != null && catalog.getId() != null) ? catalog.getId() : "CUSTOM";
+            String catalogName = (catalog != null && catalog.getName() != null) ? catalog.getName() : "Anahata-AGI-1";
+            String catalogId = (catalog != null && catalog.getId() != null) ? catalog.getId() : "ANAHATA-AGI-1";
             String catalogUrlCode = catalogId.toLowerCase().replace('_', '-');
 
-            String title = "⚡ " + catalogName + ": " + participant.modelId() + " on " + testDef.testCode() + " (" + testDef.title() + ")";
+            String rawModelId = participant.modelId();
+            String simpleModelId = rawModelId.contains("/") ? rawModelId.substring(rawModelId.lastIndexOf('/') + 1) : rawModelId;
+            String providerUuid = participant.providerUuid();
+            String testCode = testDef.testCode();
+
+            String title = simpleModelId + " on " + providerUuid + " - " + testCode + " - " + catalogName + " - Anahata ASI";
+
+            // YouTube Data API v3 enforces a strict 100-character limit on video titles
+            if (title.length() > 100) {
+                title = title.substring(0, 100);
+            }
 
             String statusStr = (metrics != null && metrics.passed()) ? "✅ PASSED (Zero Defects)" : "❌ FAILED";
             int promptTokens = metrics != null ? metrics.promptTokens() : 0;

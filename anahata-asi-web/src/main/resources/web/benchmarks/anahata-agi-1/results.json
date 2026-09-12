@@ -198,4 +198,29 @@
   "screenshotPath" : "/home/pablo/.anahata/asi/recordings/JAVA-ARKANOID-1_poolside_laguna-s-2.1_20260911_205333_thumb.png",
   "sessionId" : "6b2feff2-c1b4-482e-a2c3-442c77960a70",
   "observations" : "Observations by openrouter/free models router: The poolside/laguna-s-2.1 session completed the JAVA-ARKANOID-1 task by producing a self-contained Swing Arkanoid implementation, correcting its first tool-argument coercion error, recompiling successfully, and launching the game on the requested display. The implementation used a Swing Timer game loop, EDT-safe window creation, model-ID window titling, mouse paddle control, brick and paddle collisions, score/lives state, restart handling, and basic visual polish. The main notable issue was verbosity during planning and code generation; the session history shows roughly 50K tokens rather than the higher aggregate token figure previously reported. The implementation was functional and technically coherent, with room for improvement in concision, modular architecture, audio/effects, keyboard paddle controls, and collision robustness."
+}, {
+  "participant" : {
+    "providerUuid" : "Nvidia",
+    "modelId" : "deepseek-ai/deepseek-v4-pro-0813",
+    "thinkingLevel" : "HIGH"
+  },
+  "testCode" : "JAVA-ARKANOID-1",
+  "asiContainer" : "AsiDesktopAsiContainer",
+  "timestamp" : "2026-09-11T21:51:46.413951201Z",
+  "durationSeconds" : 1178.34,
+  "turns" : 2,
+  "promptTokens" : 45202,
+  "candidatesTokens" : 5101,
+  "thoughtsTokens" : 925,
+  "totalTokens" : 50303,
+  "passed" : true,
+  "judgeScores" : [ {
+    "name" : "Priyanka",
+    "score" : 3.0,
+    "comments" : "its allright, only one level"
+  } ],
+  "videoUrl" : "https://youtu.be/h-O9D0PZ97s",
+  "screenshotPath" : "/home/pablo/.anahata/asi/recordings/JAVA-ARKANOID-1_deepseek-ai_deepseek-v4-pro-0813_20260911_233207_thumb.png",
+  "sessionId" : "54a5c27c-60bd-4310-bd77-c5ff5cc1f3b0",
+  "observations" : ""
 } ]

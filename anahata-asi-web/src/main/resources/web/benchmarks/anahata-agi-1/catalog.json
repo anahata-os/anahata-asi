@@ -25,7 +25,7 @@
   }, {
     "testCode" : "JAVA-SNAKE-GAME-1",
     "title" : "Snake Game",
-    "rawPrompt" : "Make a snake game using the java tool. Window title MUST contain your Model ID.",
+    "rawPrompt" : "Make a snake game using the java tool. Choose whatever framework you want. Window title MUST contain your Model ID.",
     "toolkits" : [ {
       "toolkit" : "uno.anahata.asi.toolkit.java.Java",
       "permissions" : {
