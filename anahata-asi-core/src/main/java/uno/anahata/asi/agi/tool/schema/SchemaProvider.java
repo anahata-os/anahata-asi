@@ -404,7 +404,7 @@ public class SchemaProvider {
             }
 
             for (Object obj : constants) {
-                String name = obj.toString();
+                String name = (obj instanceof Enum<?> e) ? e.name() : obj.toString();
                 enumValues.add(name);
                 descBuilder.append("\n- `").append(name).append("` ");
                 try {
@@ -939,7 +939,7 @@ public class SchemaProvider {
                 descBuilder.append("(Details: Values:");
             }
             for (Object obj : constants) {
-                String name = obj.toString();
+                String name = (obj instanceof Enum<?> e) ? e.name() : obj.toString();
                 descBuilder.append("\n- `").append(name).append("` ");
                 try {
                     Field field = clazz.getField(name);
