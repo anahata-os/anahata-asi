@@ -99,6 +99,12 @@ public class JavaMethodToolParameter extends AbstractToolParameter<JavaMethodToo
             throw new IllegalArgumentException("Could not generate schema for parameter " + p.getName() + " in method " + p.getDeclaringExecutable().getName());
         }
 
+        if (p.getType().isPrimitive() && !required) {
+            throw new IllegalArgumentException("Method parameter '" + p.getName() + "' in tool '" + tool.getName()
+                    + "' is a primitive type ('" + p.getType().getName()
+                    + "') but marked as required=false. Primitive types cannot be optional because omitting them passes null to reflection, causing a NullPointerException. Change it to its boxed wrapper (e.g. Boolean, Integer, Long, Double) or mark it as required=true.");
+        }
+
         return new JavaMethodToolParameter(
             tool,
             p.getName(),
