@@ -3,7 +3,6 @@
  */
 package uno.anahata.asi.swing.toolkit.benchmarks;
 
-import java.awt.GraphicsEnvironment;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -205,8 +204,7 @@ public class Benchmarks extends AnahataToolkit {
     @AgiTool(value = "Runs a specific benchmark test from a registered catalog.", permission = ToolPermission.APPROVE_ALWAYS)
     public BenchmarkRunResult runTest(
             @AgiToolParam("The test code from the catalog (e.g., 'JAVA-JNA-1', 'JAVA-ARKANOID-1', 'JAVA-SNAKEGAME-1').") String testCode,
-            @AgiToolParam("The candidate participant descriptor.") BenchmarkParticipant participant,
-            @AgiToolParam(value = "Whether to open the child session tab in the UI.", required = false) boolean openSession) throws Exception {
+            @AgiToolParam("The candidate participant descriptor.") BenchmarkParticipant participant) throws Exception {
 
         TestCatalog targetCatalog = null;
         TestDefinition targetTest = null;
@@ -224,7 +222,7 @@ public class Benchmarks extends AnahataToolkit {
             throw new AgiToolException("Unknown benchmark test code across all catalogs: " + testCode);
         }
 
-        return executeBenchmark(targetCatalog, targetTest, participant, openSession, true);
+        return executeBenchmark(targetCatalog, targetTest, participant, true);
     }
 
     /**
@@ -240,8 +238,7 @@ public class Benchmarks extends AnahataToolkit {
     @AgiTool(value = "Runs an ad-hoc benchmark on a custom test definition (prompt, title, isolated toolkits) without persisting to official catalog scorecards.", permission = ToolPermission.APPROVE_ALWAYS)
     public BenchmarkRunResult runCustomPrompt(
             @AgiToolParam("The custom test definition DTO (testCode, title, rawPrompt, toolkits).") TestDefinition testDefinition,
-            @AgiToolParam("The candidate participant descriptor.") BenchmarkParticipant participant,
-            @AgiToolParam(value = "Whether to open the child session tab in the UI during execution.", required = false) boolean openSession) throws Exception {
+            @AgiToolParam("The candidate participant descriptor.") BenchmarkParticipant participant) throws Exception {
 
         String testCode = (testDefinition.testCode() != null && !testDefinition.testCode().isBlank())
                 ? testDefinition.testCode().trim()
@@ -258,7 +255,7 @@ public class Benchmarks extends AnahataToolkit {
                 .toolkits(testDefinition.toolkits())
                 .build();
 
-        return executeBenchmark(null, effectiveTestDef, participant, openSession, false);
+        return executeBenchmark(null, effectiveTestDef, participant, false);
     }
 
     /**
@@ -267,16 +264,15 @@ public class Benchmarks extends AnahataToolkit {
      * @param customPrompt The raw task prompt to benchmark the model with.
      * @param participant The candidate participant descriptor.
      * @param title Optional title for this custom challenge.
-     * @param openSession Whether to open the child session tab in the UI during execution.
      * @return The complete telemetry record of the benchmark run.
      * @throws Exception If benchmark execution fails.
      */
-    public BenchmarkRunResult runCustomPrompt(String customPrompt, BenchmarkParticipant participant, String title, boolean openSession) throws Exception {
+    public BenchmarkRunResult runCustomPrompt(String customPrompt, BenchmarkParticipant participant, String title) throws Exception {
         TestDefinition testDef = TestDefinition.builder()
                 .title(title)
                 .rawPrompt(customPrompt)
                 .build();
-        return runCustomPrompt(testDef, participant, openSession);
+        return runCustomPrompt(testDef, participant);
     }
 
     /**
@@ -291,15 +287,14 @@ public class Benchmarks extends AnahataToolkit {
     @AgiTool(value = "Sequentially executes all registered benchmark tests in a specific catalog for a candidate model.", permission = ToolPermission.APPROVE_ALWAYS)
     public List<BenchmarkRunResult> runCatalog(
             @AgiToolParam("The catalog identifier (e.g. 'ANAHATA-AGI-1').") String catalogId,
-            @AgiToolParam("The candidate participant descriptor.") BenchmarkParticipant participant,
-            @AgiToolParam(value = "Whether to open child session tabs in the UI.", required = false) boolean openSession) throws Exception {
+            @AgiToolParam("The candidate participant descriptor.") BenchmarkParticipant participant) throws Exception {
         TestCatalog catalog = findCatalog(catalogId)
                 .orElseThrow(() -> new AgiToolException("Unknown benchmark catalog: " + catalogId));
 
         List<BenchmarkRunResult> results = new ArrayList<>();
         for (TestDefinition testDef : catalog.getTests()) {
             log("Starting benchmark test: " + testDef.testCode() + " (" + testDef.title() + ") in catalog " + catalog.getName());
-            BenchmarkRunResult result = executeBenchmark(catalog, testDef, participant, openSession, true);
+            BenchmarkRunResult result = executeBenchmark(catalog, testDef, participant, true);
             results.add(result);
         }
 
@@ -465,7 +460,7 @@ public class Benchmarks extends AnahataToolkit {
      * @return The complete benchmark run result.
      * @throws Exception If an unrecoverable execution error occurs.
      */
-    private BenchmarkRunResult executeBenchmark(TestCatalog catalog, TestDefinition testDef, BenchmarkParticipant participant, boolean openSession, boolean persistResults) throws Exception {
+    private BenchmarkRunResult executeBenchmark(TestCatalog catalog, TestDefinition testDef, BenchmarkParticipant participant, boolean persistResults) throws Exception {
         final ToolContext ctx = getToolContext();
         AbstractAsiContainer container = getAsiContainer();
 
@@ -501,14 +496,7 @@ public class Benchmarks extends AnahataToolkit {
                     .ifPresent(tool -> tool.setPermission(permission));
         });
 
-        if (!openSession) {
-            container.close(candidateAgi);
-        }
-
-        // Headless execution fallback
-        if (GraphicsEnvironment.isHeadless()) {
-            return executeAutonomousDirectRun(catalog, candidateAgi, testDef, participant, ctx, persistResults);
-        }
+        container.open(candidateAgi);
 
         ScreenRecorder recorder = new ScreenRecorder();
         CompletableFuture<BenchmarkRunResult> runResultFuture = new CompletableFuture<>();
@@ -635,30 +623,7 @@ public class Benchmarks extends AnahataToolkit {
         candidateAgi.sendMessage(userMsg);
     }
 
-    /**
-     * Headless fallback execution path.
-     *
-     * @param catalog The catalog context, or {@code null} for custom runs.
-     * @param candidateAgi The child session.
-     * @param testDef The test definition.
-     * @param participant The participant.
-     * @param ctx The captured tool execution context.
-     * @param persistResults Whether to record results into the catalog scorecard.
-     * @return The benchmark run result.
-     * @throws Exception If execution fails.
-     */
-    private BenchmarkRunResult executeAutonomousDirectRun(TestCatalog catalog, Agi candidateAgi, TestDefinition testDef, BenchmarkParticipant participant, ToolContext ctx, boolean persistResults) throws Exception {
-        long startMillis = System.currentTimeMillis();
-        executeCandidateTurn(catalog, candidateAgi, testDef, 0, ctx);
-        long durationMillis = System.currentTimeMillis() - startMillis;
-        double durationSeconds = Math.round((durationMillis / 1000.0) * 100.0) / 100.0;
 
-        BenchmarkRunResult runResult = compileRunResult(candidateAgi, testDef, participant, durationSeconds, null, null);
-        if (persistResults) {
-            BenchmarkResultsStore.recordResult(catalog, runResult);
-        }
-        return runResult;
-    }
 
     /**
      * Uploads the recorded benchmark demonstration video to YouTube with metadata, telemetry description, and thumbnail.
