@@ -7,17 +7,11 @@ import java.awt.Component;
 import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -46,113 +40,45 @@ import uno.anahata.asi.openrouter.OpenRouterAiProvider;
 import uno.anahata.asi.openai.OpenAiResponsesProvider;
 import uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider;
 import uno.anahata.asi.swing.agi.AgiPanel;
-import uno.anahata.asi.swing.agi.message.part.tool.param.FullTextFileCreateRenderer;
-import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory;
-import uno.anahata.asi.swing.agi.message.part.tool.param.PathParameterRenderer;
-import uno.anahata.asi.swing.agi.message.part.tool.param.ResourceUUIDParameterRenderer;
-import uno.anahata.asi.swing.agi.message.part.tool.param.UriParameterRenderer;
 import uno.anahata.asi.swing.components.ExceptionDialog;
+import uno.anahata.asi.swing.internal.JavaFxBridge;
 import uno.anahata.asi.swing.internal.SwingUtils;
-import uno.anahata.asi.swing.provider.AiProviderUiRegistry;
-import uno.anahata.asi.swing.provider.AnthropicProviderPanel;
 import uno.anahata.asi.swing.provider.DiscoverModelsTask;
-import uno.anahata.asi.swing.provider.GeminiAiProviderPanel;
-import uno.anahata.asi.swing.provider.OllamaAiProviderPanel;
-import uno.anahata.asi.swing.provider.OpenAiChatCompletionsProviderPanel;
-import uno.anahata.asi.swing.provider.OpenAiResponsesProviderPanel;
 import uno.anahata.asi.swing.settings.AsiContainerSettingsFrame;
-import uno.anahata.asi.swing.toolkit.radio.RadioRenderer;
-import uno.anahata.asi.swing.toolkit.render.ToolkitUiRegistry;
-import uno.anahata.asi.toolkit.resources.text.FullTextFileCreate;
-import uno.anahata.asi.yam.tools.Radio;
 
 /**
  * A Swing-specific base class for Anahata ASI containers.
  * <p>
- * This class bridges the gap between model-agnostic session logic and the 
- * Swing UI environment. It provides shared utilities for UI-based session 
- * imports and defines the hooks for environment-specific window/tab management.
+ * This class bridges the gap between model-agnostic session logic and the Swing
+ * UI environment. It provides shared utilities for UI-based session imports and
+ * defines the hooks for environment-specific window/tab management.
  * </p>
- * 
+ *
  * @author anahata
  */
 @Slf4j
 @Getter
 @Setter
 public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
-    
-    protected static String javaFxVersionInfo;
-
-    static {
-        //Legengary Radio toolkit
-        ToolkitUiRegistry.getInstance().register(Radio.class, RadioRenderer.class);
-        
-        //Default parameter renderers
-        ParameterRendererFactory.register(FullTextFileCreate.class, FullTextFileCreateRenderer.class);
-        ParameterRendererFactory.registerById("uri", UriParameterRenderer.class);
-        ParameterRendererFactory.registerById("resource", ResourceUUIDParameterRenderer.class);
-        ParameterRendererFactory.registerById("path", PathParameterRenderer.class);
-
-        // Provider UI Panel Registry
-        AiProviderUiRegistry.getInstance().register(GeminiAiProvider.class, GeminiAiProviderPanel.class);
-        AiProviderUiRegistry.getInstance().register(AnthropicProvider.class, AnthropicProviderPanel.class);
-        AiProviderUiRegistry.getInstance().register(OpenAiChatCompletionsProvider.class, OpenAiChatCompletionsProviderPanel.class);
-        AiProviderUiRegistry.getInstance().register(OpenAiResponsesProvider.class, OpenAiResponsesProviderPanel.class);
-        AiProviderUiRegistry.getInstance().register(OllamaAiProvider.class, OllamaAiProviderPanel.class);
-    }
-    
-    /**
-     * Checks if the JavaFX Platform class is present on the classpath without loading it.
-     *
-     * @return true if JavaFX is available.
-     */
-    public static boolean isJavaFxAvailable() {
-        try {
-            Class.forName("javafx.application.Platform", false, AbstractSwingAsiContainer.class.getClassLoader());
-            return true;
-        } catch (ClassNotFoundException e) {
-            try {
-                Class.forName("javafx.application.Platform", false, Thread.currentThread().getContextClassLoader());
-                return true;
-            } catch (ClassNotFoundException ignored) {
-                return false;
-            }
-        }
-    }
-
-    /**
-     * Returns the detected JavaFX version and supported conditional features string,
-     * initializing the platform lazily via {@link uno.anahata.asi.swing.internal.JavaFxBridge}
-     * if available on the classpath.
-     *
-     * @return formatted JavaFX version and feature string, or null if JavaFX is not available.
-     */
-    public static synchronized String getJavaFxVersionInfo() {
-        if (javaFxVersionInfo == null && isJavaFxAvailable()) {
-            javaFxVersionInfo = uno.anahata.asi.swing.internal.JavaFxBridge.init();
-        }
-        return javaFxVersionInfo;
-    }
 
     /**
      * List of all known AI Providers.
      */
     public static final List<Class<? extends AbstractAiProvider>> AVAILABLE_PROVIDER_CLASSES = List.of(
-        OpenAiChatCompletionsProvider.class,
-        OpenAiResponsesProvider.class,
-        AnthropicProvider.class,
-        MinimaxAnthropicProvider.class,
-        MistralAiProvider.class,
-        GeminiAiProvider.class,
-        GeminiGoogleCloudExpressAIProvider.class,
-        HuggingFaceProvider.class,
-        ModalProvider.class,
-        NovaRouteAiProvider.class,
-        NvidiaAiProvider.class,
-        OllamaAiProvider.class,
-        OpenRouterAiProvider.class
+            OpenAiChatCompletionsProvider.class,
+            OpenAiResponsesProvider.class,
+            AnthropicProvider.class,
+            MinimaxAnthropicProvider.class,
+            MistralAiProvider.class,
+            GeminiAiProvider.class,
+            GeminiGoogleCloudExpressAIProvider.class,
+            HuggingFaceProvider.class,
+            ModalProvider.class,
+            NovaRouteAiProvider.class,
+            NvidiaAiProvider.class,
+            OllamaAiProvider.class,
+            OpenRouterAiProvider.class
     );
-
 
     /**
      * The single-instance Settings Command Center frame for this container.
@@ -160,11 +86,17 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
     private AsiContainerSettingsFrame settingsFrame;
 
     /**
+     * Cached JavaFX version and conditional features info for this container
+     * instance.
+     */
+    protected String javaFxVersionInfo;
+
+    /**
      * Constructs a new Swing ASI container.
      *
      * @param hostApplicationId The unique ID of the host application.
      */
-    public AbstractSwingAsiContainer(String hostApplicationId) throws IOException{
+    public AbstractSwingAsiContainer(String hostApplicationId) throws IOException {
         super(hostApplicationId);
 
         if (getProvider("GeminiGCExpress") == null) {
@@ -232,20 +164,22 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
             log.info("Registering Ollama");
             registerProvider(new OllamaAiProvider());
         }
-        */
+         */
 
         // Background Model Discovery for effectively enabled providers
         for (AbstractAiProvider provider : getEffectivelyEnabledProviders()) {
             new DiscoverModelsTask(provider, false).start();
         }
+
+        initJavaFx();
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * Intercepts container directory resolution prior to creation to detect predecessor version
-     * directories. Prompts the user via Swing UI dialog and automatically migrates persistent
-     * settings if requested.
+     * Intercepts container directory resolution prior to creation to detect
+     * predecessor version directories. Prompts the user via Swing UI dialog and
+     * automatically migrates persistent settings if requested.
      * </p>
      */
     @Override
@@ -286,17 +220,16 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
     }
 
     /**
-     * Prompts the user via a native Swing dialog asking whether they would like to import
-     * persistent settings from an earlier detected version.
+     * Prompts the user via a native Swing dialog asking whether they would like
+     * to import persistent settings from an earlier detected version.
      *
      * @param previousVersion The predecessor version string.
      * @param currentVersion The running container version string.
-     * @return {@code true} if the user elected to import, {@code false} to start fresh.
+     * @return {@code true} if the user elected to import, {@code false} to
+     * start fresh.
      */
     protected boolean promptUpgrade(String previousVersion, String currentVersion) {
-        if (GraphicsEnvironment.isHeadless()) {
-            return false;
-        }
+
         AtomicBoolean accepted = new AtomicBoolean(false);
         try {
             SwingUtils.runInEDTAndWait(() -> {
@@ -326,16 +259,14 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
     }
 
     /**
-     * Displays an informational dialog confirming that settings were successfully
-     * imported from an earlier version.
+     * Displays an informational dialog confirming that settings were
+     * successfully imported from an earlier version.
      *
      * @param count The number of entities imported.
      * @param prevVerStr The predecessor version string.
      */
     private void showImportSuccess(int count, String prevVerStr) {
-        if (GraphicsEnvironment.isHeadless()) {
-            return;
-        }
+
         try {
             SwingUtils.runInEDTAndWait(() -> {
                 JOptionPane.showMessageDialog(
@@ -353,7 +284,7 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
             log.error("Failed to display import success dialog: {}", e.getMessage(), e);
         }
     }
-    
+
     /**
      * Displays the global ASI settings Command Center in maximized mode.
      */
@@ -362,10 +293,11 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
     }
 
     /**
-     * Displays the global ASI settings Command Center with a specific tab selected.
+     * Displays the global ASI settings Command Center with a specific tab
+     * selected.
      * <p>
-     * Reuses the existing {@link AsiContainerSettingsFrame} instance if already open,
-     * bringing it to front and selecting the requested tab index.
+     * Reuses the existing {@link AsiContainerSettingsFrame} instance if already
+     * open, bringing it to front and selecting the requested tab index.
      * </p>
      *
      * @param initialTabIndex The index of the tab to open.
@@ -384,7 +316,7 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
 
     /**
      * Retrieves the AgiPanel associated with a specific Agi session.
-     * 
+     *
      * @param agi The session.
      * @return The AgiPanel instance.
      */
@@ -399,7 +331,10 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
     /**
      * {@inheritDoc}
      * <p>
-     * Implementation details: Marshals the logical 'open' intent to the Event Dispatch Thread (EDT) and delegates to the environment-specific {@link #focusUI(Agi)} method. This guarantees safe UI manipulation regardless of the calling thread.
+     * Implementation details: Marshals the logical 'open' intent to the Event
+     * Dispatch Thread (EDT) and delegates to the environment-specific
+     * {@link #focusUI(Agi)} method. This guarantees safe UI manipulation
+     * regardless of the calling thread.
      * </p>
      */
     @Override
@@ -410,7 +345,10 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
     /**
      * {@inheritDoc}
      * <p>
-     * Implementation details: Marshals the logical 'close' intent to the Event Dispatch Thread (EDT) and delegates to the environment-specific {@link #closeUI(Agi)} method. This guarantees safe UI manipulation regardless of the calling thread.
+     * Implementation details: Marshals the logical 'close' intent to the Event
+     * Dispatch Thread (EDT) and delegates to the environment-specific
+     * {@link #closeUI(Agi)} method. This guarantees safe UI manipulation
+     * regardless of the calling thread.
      * </p>
      */
     @Override
@@ -419,27 +357,25 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
     }
 
     /**
-     * Environment-specific logic to visually focus or select the UI component 
+     * Environment-specific logic to visually focus or select the UI component
      * associated with the given session.
-     * 
+     *
      * @param agi The session to focus.
      */
     protected abstract void focusUI(Agi agi);
 
     /**
-     * Environment-specific logic to visually close or hide the UI component 
+     * Environment-specific logic to visually close or hide the UI component
      * associated with the given session.
-     * 
+     *
      * @param agi The session to close.
      */
     protected abstract void closeUI(Agi agi);
 
-
-
     /**
-     * Opens a standard Swing {@link JFileChooser} to allow the user to select 
-     * a saved session (.kryo) for import.
-     * 
+     * Opens a standard Swing {@link JFileChooser} to allow the user to select a
+     * saved session (.kryo) for import.
+     *
      * @param parent The parent component for the dialog.
      */
     public void importSessionWithUI(Component parent) {
@@ -460,4 +396,32 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
             }
         }
     }
+
+    /**
+     * Initializes the JavaFX runtime on the container's designated ClassLoader once during startup.
+     */
+    private void initJavaFx() {
+        this.javaFxVersionInfo = JavaFxBridge.init(getJavaFxClassLoader());
+    }
+
+    /**
+     * Returns the ClassLoader to search for JavaFX runtime classes. Defaults to
+     * the container's own ClassLoader; overridden in NetBeans to query the
+     * JavaFX module loader.
+     *
+     * @return the ClassLoader for JavaFX.
+     */
+    public ClassLoader getJavaFxClassLoader() {
+        return getClass().getClassLoader();
+    }
+
+    /**
+     * Checks if JavaFX is available and initialized in this container.
+     *
+     * @return true if JavaFX version info is resolved.
+     */
+    public boolean isJavaFxAvailable() {
+        return javaFxVersionInfo != null;
+    }
+
 }

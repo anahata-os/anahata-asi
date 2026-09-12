@@ -70,7 +70,7 @@ public class DesktopJava extends Java {
         sb.append("});\n");
         sb.append("```\n");
 
-        String fxVer = AbstractSwingAsiContainer.getJavaFxVersionInfo();
+        String fxVer = ((AbstractSwingAsiContainer)getAsiContainer()).getJavaFxVersionInfo();
         if (fxVer != null) {
             sb.append("\n**Pure JavaFX Applications (Native Stage)**:\n");
             sb.append("JavaFX runtime is active (v").append(fxVer).append(") and pre-initialized with `Platform.setImplicitExit(false)` so your windows remain active across turns. You can launch a native JavaFX `Stage` directly without wrapping it in a Swing `JFrame` or `JFXPanel`:\n\n");
@@ -111,7 +111,7 @@ public class DesktopJava extends Java {
         if (laf != null) {
             ragMessage.addTextPart("\nActive Swing Look & Feel: " + laf.getClass().getName() + " (" + laf.getName() + ")");
         }
-        String fxVer = AbstractSwingAsiContainer.getJavaFxVersionInfo();
+        String fxVer = ((AbstractSwingAsiContainer)getAsiContainer()).getJavaFxVersionInfo();
         if (fxVer != null) {
             ragMessage.addTextPart("\nJavaFX Runtime Status: Active (" + fxVer + ", Platform.setImplicitExit(false))");
         }

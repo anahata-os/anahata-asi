@@ -23,8 +23,8 @@ import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
 import uno.anahata.asi.agi.tool.schema.SchemaProvider;
+import uno.anahata.asi.nb.module.NetBeansModuleUtils;
 import uno.anahata.asi.nb.ui.render.JavaCodeParameterRenderer;
-import uno.anahata.asi.swing.internal.SwingTask;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.toolkit.resources.text.FullTextResourceUpdate;
 import uno.anahata.asi.toolkit.resources.text.TextResourceReplacements;
@@ -98,6 +98,17 @@ public class NetBeansAsiContainer extends AbstractSwingAsiContainer {
      */
     public NetBeansAsiContainer() throws IOException {
         super("netbeans");
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns the NetBeans JavaFX provider module's ClassLoader.
+     * </p>
+     */
+    @Override
+    public ClassLoader getJavaFxClassLoader() {
+        return NetBeansModuleUtils.getJavaFxModuleClassLoader();
     }
 
     /**

@@ -129,9 +129,17 @@ public class NbJava extends DesktopJava {
         String defaultCp = getDefaultClasspath();
         boolean identical = java.util.Objects.equals(pluginCp, defaultCp);
         ragMessage.addTextPart("\nNbJava toolkit's default classpath and Plugins default classpath identical: " + (identical ? "Yes" : "No"));
-        if (AbstractSwingAsiContainer.getJavaFxVersionInfo() == null) {
-            ragMessage.addTextPart("\nJavaFX Runtime Status: Not Available (Use IDE.installJavaFxSupport to activate)");
+
+        String fxVer = ((AbstractSwingAsiContainer) getAsiContainer()).getJavaFxVersionInfo();
+
+        if (fxVer == null) {
+            if (!NetBeansModuleUtils.isJavaFxModuleInstalled()) {
+                ragMessage.addTextPart("\nJavaFX Runtime Status: Not installed (Use IDE.installJavaFxSupport to activate)");
+            } else if (!NetBeansModuleUtils.isJavaFxModuleEnabled()) {
+                ragMessage.addTextPart("\nJavaFX Runtime Status: Not enabled (Use IDE.installJavaFxSupport to enable)");
+            }
         }
+
     }
 
     /**

@@ -58,7 +58,9 @@ public class AnahataInstaller extends ModuleInstall {
     @SneakyThrows
     public static synchronized NetBeansAsiContainer getContainer() {
         if (container == null) {
+            log.info("Instantiating NetBeansAsiContainer()");
             container = new NetBeansAsiContainer();
+            log.info("NetBeansAsiContainer instantiated " + container + " javaFxVersionInfo=" + container.getJavaFxVersionInfo());
         }
         return container;
     }
