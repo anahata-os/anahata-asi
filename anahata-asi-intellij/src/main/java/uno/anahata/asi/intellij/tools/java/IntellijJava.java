@@ -25,6 +25,7 @@ import uno.anahata.asi.intellij.ui.resources.IntellijResourceUI;
 import uno.anahata.asi.intellij.ui.resources.IntellijTextResourceViewer;
 import uno.anahata.asi.swing.toolkit.DesktopJava;
 import uno.anahata.asi.toolkit.java.KnownJdk;
+import uno.anahata.asi.toolkit.java.AgiClassSource;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -109,10 +110,10 @@ public class IntellijJava extends DesktopJava {
     public List<String> getSystemInstructions() throws Exception {
         List<String> instructions = new ArrayList<>(super.getSystemInstructions());
         instructions.add(
-                "\n**IntelliJ Classpath & Compilation Architecture**:\n"
-                + "- **Plugin Classpath**: Includes all IntelliJ Platform OpenAPI libraries, bundled plugin dependencies (core, swing, intellij), and active IDE runtime classes.\n"
+                "\n**IntelliJ Environment & Runtime Classpath (`IntellijJava`)**:\n"
+                + "- **Default Classpath**: Initialized with the Anahata ASI IntelliJ plugin's classpath. All code compiled via `compile()`, `compileAndExecute()`, or `compileAndExecuteInProject()` has direct access to whatever JARs or directories are listed under the 'Default Compiler and ClassLoader Classpath' section of the RAG message.\n"
                 + "- **JDK / Javac Resolution**: When running inside JetBrains Runtime (JBR), the toolkit automatically invokes `javac` from the configured Project SDK or registered SDKs in `ProjectJdkTable`. You can also supply an explicit JDK name or path.\n"
-                + "- **Hot Reloading via `compileAndExecuteInProject`**: Appends the target project's compiled `target/classes` and library dependencies to the child-first classloader, prioritizing project bytecode.\n");
+                + "- **Project-Context Execution (`compileAndExecuteInProject`, `compileInProject`)**: Compile modular classes or execute scripts within the context of any currently open IntelliJ project, resolving the project's compiled output directory (`target/classes`) and dependencies as extra classpath.\n");
         return instructions;
     }
 
@@ -208,6 +209,50 @@ public class IntellijJava extends DesktopJava {
     }
 
     /**
+     * Compiles one or more modular Java classes into the in-memory classpath of this AGI
+     * session using an open IntelliJ project's compiled output and dependencies.
+     *
+     * @param sources List of Java class source descriptors (each containing fqn and sourceCode).
+     * @param projectPath The absolute base path of the open IntelliJ project to compile against.
+     * @param includeProjectDependencies Whether to include library dependencies.
+     * @param includeTestContext Whether to include test outputs and test dependencies.
+     * @param compilerOptions Optional additional compiler options.
+     * @param jdk Optional explicit JDK name or path to javac.
+     * @return Confirmation message with compilation summary.
+     * @throws Exception on compilation error.
+     */
+    @AgiTool(
+            value = "Compiles one or more modular Java classes into your AgiClassLoader (the session's in-memory metaspace) using an open IntelliJ project's classpath (target/classes and dependencies).\n"
+            + "The compiled classes are registered in your AgiClassLoader and automatically included in the RAG message as context providers."
+    )
+    public String compileInProject(
+            @AgiToolParam(value = "List of Java class source descriptors (each containing fqn and sourceCode).", rendererId = "tabs") List<AgiClassSource> sources,
+            @AgiToolParam("The absolute base path of the open IntelliJ project to compile against.") String projectPath,
+            @AgiToolParam("Controls whether the project's external library dependencies (resolved via OrderEnumerator from compile and runtime scopes) are included.") boolean includeProjectDependencies,
+            @AgiToolParam("Controls whether the project's test output directory (e.g. 'target/test-classes') and test-scoped dependencies are included.") boolean includeTestContext,
+            @AgiToolParam(value = "Optional additional compiler options (e.g. ['--release','21']).", required = false) String[] compilerOptions,
+            @AgiToolParam(value = "Optional JDK name (from Available JDKs) or explicit path to a javac executable.", required = false) String jdk) throws Exception {
+
+        Project project = resolveProject(projectPath);
+        String extraClassPath = buildProjectClasspathString(projectPath, includeProjectDependencies, includeTestContext);
+
+        String projectJavac = null;
+        if (jdk != null && !jdk.isBlank()) {
+            projectJavac = resolveJavacPath(jdk).toAbsolutePath().toString();
+        } else {
+            Sdk sdk = ProjectRootManager.getInstance(project).getProjectSdk();
+            if (sdk != null && sdk.getHomePath() != null) {
+                Path javac = findJavacInJdkHome(Path.of(sdk.getHomePath()));
+                if (javac != null) {
+                    projectJavac = javac.toAbsolutePath().toString();
+                }
+            }
+        }
+
+        return compile(sources, extraClassPath, compilerOptions, projectJavac);
+    }
+
+    /**
      * Compiles and executes a Java script against a specific open project's classpath.
      * <p>
      * The project's compiled module outputs (and, optionally, its library dependencies and
@@ -223,12 +268,15 @@ public class IntellijJava extends DesktopJava {
      * @return the result of the execution.
      * @throws Exception on resolution or execution failure.
      */
-    @AgiTool("Executes a Java script within the context of a specific open IntelliJ project, appending that project's classpath to the script's child-first class loader.")
+    @AgiTool(
+            value = "Compiles and executes the 'Anahata' class within the context of a specific open IntelliJ project.\n"
+            + "Automatically mounts the project's main compiled output directory (target/classes) and dependencies into the script's classpath, prioritizing local project bytecode over older versions in memory."
+    )
     public Object compileAndExecuteInProject(
             @AgiToolParam(value = "The script source (a public class with no package declaration, extending the class indicated in the system instructions).", rendererId = "java") String sourceCode,
             @AgiToolParam("The absolute base path of the open IntelliJ project to run in.") String projectPath,
-            @AgiToolParam("Whether to include the project's external library dependencies.") boolean includeProjectDependencies,
-            @AgiToolParam("Whether to include the project's test outputs and test-scoped dependencies.") boolean includeTestContext,
+            @AgiToolParam("Controls whether the project's external library dependencies (resolved via OrderEnumerator from compile and runtime scopes) are included.") boolean includeProjectDependencies,
+            @AgiToolParam("Controls whether the project's test output directory (e.g. 'target/test-classes') and test-scoped dependencies are included.") boolean includeTestContext,
             @AgiToolParam(value = "Optional additional compiler options (e.g. ['--release','21']).", required = false) String[] compilerOptions) throws Exception {
 
         Project project = resolveProject(projectPath);

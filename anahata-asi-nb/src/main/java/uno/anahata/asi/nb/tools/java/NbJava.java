@@ -35,6 +35,7 @@ import uno.anahata.asi.nb.module.NetBeansModuleUtils;
 
 import uno.anahata.asi.nb.tools.project.Projects;
 import uno.anahata.asi.toolkit.java.Java;
+import uno.anahata.asi.toolkit.java.AgiClassSource;
 import uno.anahata.asi.swing.toolkit.DesktopJava;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiToolParam;
@@ -103,10 +104,11 @@ public class NbJava extends DesktopJava {
     public List<String> getSystemInstructions() throws Exception {
         List<String> instructions = new ArrayList<>(super.getSystemInstructions());
         StringBuilder sb = new StringBuilder();
-        sb.append("\n**NetBeans Classpath & Execution Architecture**:\n");
-        sb.append("- **Plugins Classpath**: The full classpath of the **Anahata ASI Studio - NetBeans plugin** (`uno.anahata.asi.nb` / `uno-anahata-asi-nb.jar`), containing the NetBeans Platform APIs the plugin uses and many other libraries bundled with the plugin (i.e. all the classess available to the plugin's OneModuleClassLoader).\n");
-        sb.append("- **NbJava Toolkit's Default Classpath**: The default classpath configured on this `NbJava` toolkit instance used by `javac` and the child-first ClassLoader of `compileAndExecute` and `compileAndExecuteInProject`. It is initialized from the Plugins Classpath and can be reset using `resetDefaultClasspath()`.\n");
-        sb.append("- **Hot Reloading via `compileAndExecuteInProject`**: When executing in a project context, the project's compiled `target/classes` is appended to `extraClassPath`, prioritizing local project bytecode over older versions in memory.\n");
+        sb.append("\n**NetBeans Environment & Runtime Classpath (`NbJava`)**:\n");
+        sb.append("- **Default Classpath**: Initialized with the main module JAR of the Anahata ASI Studio NetBeans plugin (`uno.anahata.asi.nb` / `uno-anahata-asi-nb.jar`) and all its transitive dependencies, as detailed under the 'Default Compiler and ClassLoader Classpath' section of the RAG message.\n");
+        sb.append("- **JavaFX Dynamic Classpath**: When NetBeans JavaFX support is enabled, its runtime JARs are appended dynamically to your classpath at runtime. Calling `getDefaultClasspath()` returns all classpath entries including the active JavaFX JARs. When calling `setDefaultClasspath()`, you do not need to include the JavaFX JARs as they are managed and appended dynamically.\n");
+        sb.append("- **NetBeans APIs & Platform Access**: By default, all code compiled via `compile()` or `compileAndExecute()` or `compileAndExecuteInProject()` has direct access to whatever jars or directories are listed under the 'Default Compiler and ClassLoader Classpath' section of the RAG message, so that would include whatever OpenIDE, NetBeans Platform APIs or 3rd party jars shown in the RAG message.\n");
+        sb.append("- **Project-Context Execution (`compileAndExecuteInProject`, `compileInProject`)**: Compile modular classes or execute scripts within the context of any currently open NetBeans project, resolving the project's compiled output directory (`target/classes`) and dependencies as extra classpath.\n");
         instructions.add(sb.toString());
         return instructions;
     }
@@ -126,9 +128,9 @@ public class NbJava extends DesktopJava {
     public void populateMessage(RagMessage ragMessage) throws Exception {
         super.populateMessage(ragMessage);
         String pluginCp = NetBeansModuleUtils.getFullAnahataAsiModuleClasspath();
-        String defaultCp = getDefaultClasspath();
+        String defaultCp = super.getDefaultClasspath();
         boolean identical = java.util.Objects.equals(pluginCp, defaultCp);
-        ragMessage.addTextPart("\nNbJava toolkit's default classpath and Plugins default classpath identical: " + (identical ? "Yes" : "No"));
+        ragMessage.addTextPart("\nNbJava toolkit's default classpath and Plugins default classpath identical (without javafx): " + (identical ? "Yes" : "No"));
 
         String fxVer = ((AbstractSwingAsiContainer) getAsiContainer()).getJavaFxVersionInfo();
 
@@ -177,6 +179,17 @@ public class NbJava extends DesktopJava {
      */
     @Override
     public void setDefaultClasspath(String defaultCompilerClasspath) {
+        String fxCp = NetBeansModuleUtils.getJavaFxModuleClasspath();
+        if (defaultCompilerClasspath != null && fxCp != null && !fxCp.isEmpty()) {
+            Set<String> fxJars = new HashSet<>(Arrays.asList(fxCp.split(File.pathSeparator)));
+            List<String> cleaned = new ArrayList<>();
+            for (String entry : defaultCompilerClasspath.split(File.pathSeparator)) {
+                if (!entry.isBlank() && !fxJars.contains(entry.trim())) {
+                    cleaned.add(entry.trim());
+                }
+            }
+            defaultCompilerClasspath = String.join(File.pathSeparator, cleaned);
+        }
         super.setDefaultClasspath(defaultCompilerClasspath);
         synchronized (this) {
             mrJarRegistry = null;
@@ -495,6 +508,39 @@ public class NbJava extends DesktopJava {
     }
 
     /**
+     * Compiles one or more modular Java classes into the in-memory classpath of this AGI
+     * session using an open NetBeans project's compiled output and dependencies.
+     *
+     * @param sources List of Java class source descriptors (each containing fqn and sourceCode).
+     * @param projectPath The absolute path of the NetBeans project to compile against.
+     * @param includeProjectDependencies Whether to include the project's library dependencies.
+     * @param includeTestContext Whether to include test outputs and test dependencies.
+     * @param compilerOptions Optional additional compiler options.
+     * @param jdk Optional JDK name or explicit path to a javac binary.
+     * @return Confirmation message with compilation summary.
+     * @throws Exception on compilation error.
+     */
+    @AgiTool(
+            value = "Compiles one or more modular Java classes into your AgiClassLoader (the session's in-memory metaspace) using an open NetBeans project's classpath (target/classes and dependencies).\n"
+            + "The compiled classes are registered in your AgiClassLoader and automatically included in the RAG message as context providers."
+    )
+    public String compileInProject(
+            @AgiToolParam(value = "List of Java class source descriptors (each containing fqn and sourceCode).", rendererId = "tabs") List<AgiClassSource> sources,
+            @AgiToolParam("The absolute path of the NetBeans project to compile against.") String projectPath,
+            @AgiToolParam("Controls whether the project's external library dependencies from ClassPath.COMPILE (compile and provided scopes) and ClassPath.EXECUTE (runtime scope) are included. When true, extracts dependency JARs and target/classes of open project dependencies. NetBeans platform JARs and host IDE libraries are automatically deduplicated.") boolean includeProjectDependencies,
+            @AgiToolParam("Controls whether the project's test output directory (e.g. 'target/test-classes') and test-exclusive dependencies (e.g. JUnit) from the test source group are included.") boolean includeTestContext,
+            @AgiToolParam(value = "Optional additional compiler options (e.g., '--release', '21').", required = false) String[] compilerOptions,
+            @AgiToolParam(value = "Optional JDK name (from Available JDKs) or explicit path to a javac executable.", required = false) String jdk) throws Exception {
+        Project project = Projects.findOpenProject(projectPath);
+        Projects projectsToolkit = getToolManager().getToolkitInstance(Projects.class).orElseThrow(() -> new IllegalStateException("Projects toolkit not found"));
+
+        waitForIde(project, projectsToolkit.isCompileOnSaveEnabled(project));
+
+        String extraClassPath = buildProjectClasspathString(projectPath, includeProjectDependencies, includeTestContext);
+        return compile(sources, extraClassPath, compilerOptions, jdk);
+    }
+
+    /**
      * Compiles and executes Java source code within the context of a specific
      * NetBeans project. This tool enables a powerful 'hot-reload' workflow by
      * creating a dynamic classpath that prioritizes the project's own build
@@ -513,21 +559,14 @@ public class NbJava extends DesktopJava {
      * @throws Exception on error.
      */
     @AgiTool(
-            value = "Executes a Java script within the context of a specific NetBeans project.\n\n"
-            + "Mechanism: This tool creates a custom child-first URLClassLoader for your script. It automatically includes the target project's main compiled output directory (e.g., 'target/classes'—which contains the compiled bytecode of the project's `ClassPath.SOURCE`) in this classloader so your script can execute the project's local code.\n\n"
-            + "Usage Rule: Do NOT use this tool if you only need to perform file I/O or use libraries already loaded in the IDE. The standard `compileAndExecute` tool already has access to the filesystem and all libraries listed under the 'Default Compiler and ClassLoader Classpath' section of the RAG message (which contains standard NetBeans APIs and bundled libraries that are natively available in the plugin's `OneModuleClassLoader`). "
-            + "Only use this tool (`compileAndExecuteInProject`) if your script explicitly needs to import or instantiate Java types compiled from the target project's local `ClassPath.SOURCE` (its 'target/classes' folder) or types from its project-specific external `.jar` dependencies that are NOT already on the default classpath."
+            value = "Compiles and executes the 'Anahata' class within the context of a specific open NetBeans project.\n"
+            + "Automatically mounts the project's main compiled output directory (target/classes from ClassPath.SOURCE) and dependencies into the script's classpath, prioritizing local project bytecode over older versions in memory."
     )
     public Object compileAndExecuteInProject(
             @AgiToolParam(value = "Source code of a public class named **Anahata** that has **no package declaration**, extends **DesktopAgiTool**, and implements the call() method of java.util.concurrent.Callable.", rendererId = "java") String sourceCode,
             @AgiToolParam("The absolute path of the NetBeans project to run in.") String projectPath,
-            @AgiToolParam("Controls whether the `.jar` dependencies and open-project dependency outputs from the project's main `ClassPath.COMPILE` and `ClassPath.EXECUTE` are added to the script's custom URLClassLoader.\n"
-                    + "Mechanism: If `true`, it extracts all external `.jar` files and the `target/classes` directories of any open NetBeans projects this project depends on, and adds them to the script's classpath.\n"
-                    + "Set to `true` for standard Java applications (e.g., Spring Boot) so your script can import their external libraries.\n"
-                    + "CRITICAL RULE: Set to `false` when testing NetBeans plugins (NBMs) that share APIs with the host IDE (such as Anahata ASI plugins). The plugin's native NetBeans `OneModuleClassLoader` parent classloader already has these dependency classes loaded in memory. If you set this to `true`, the script's custom URLClassLoader will load duplicate copies of those `.jar` files from the project's `ClassPath.COMPILE`. This breaks JVM type-safety, causing fatal `ClassCastException` and `isInstance()` failures when the script passes objects to or from the live IDE context.") boolean includeProjectDependencies,
-            @AgiToolParam("Controls whether the project's test environment is added to the script's custom URLClassLoader.\n"
-                    + "Mechanism: If `true`, it queries the test source group's `ClassPath.COMPILE` and `ClassPath.EXECUTE`. It extracts the local test output directory (e.g., 'target/test-classes') and any test-exclusive `.jar` files (like JUnit) that are not present in the main dependencies (to prevent duplication), and adds them to the script's classpath.\n"
-                    + "Set to `true` ONLY if your script needs to import, execute, or inspect the project's compiled test classes.") boolean includeTestContext,
+            @AgiToolParam("Controls whether the project's external library dependencies from ClassPath.COMPILE (compile and provided scopes) and ClassPath.EXECUTE (runtime scope) are included. When true, extracts dependency JARs and target/classes of open project dependencies. NetBeans platform JARs and host IDE libraries are automatically deduplicated.") boolean includeProjectDependencies,
+            @AgiToolParam("Controls whether the project's test output directory (e.g. 'target/test-classes') and test-exclusive dependencies (e.g. JUnit) from the test source group are included.") boolean includeTestContext,
             @AgiToolParam(value = "Optional additional compiler options (e.g., '--release', '21').", required = false) String[] compilerOptions) throws Exception {
         Project project = Projects.findOpenProject(projectPath);
         Projects projectsToolkit = getToolManager().getToolkitInstance(Projects.class).orElseThrow(() -> new IllegalStateException("Projects toolkit not found"));

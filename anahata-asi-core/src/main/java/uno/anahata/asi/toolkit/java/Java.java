@@ -1248,13 +1248,14 @@ public class Java extends AnahataToolkit {
      * @throws Exception if compilation or execution fails.
      */
     @AgiTool(
-            value = "Compiles and executes the 'Anahata' class on the application's JVM.\n"
+            value = "Compiles and executes the 'Anahata' class on the application's JVM in a single shot.\n"
+            + "For standalone scripts or self-contained tasks, this single tool call is all you need.\n"
             + "The class should:\n"
             + "- be public, \n"
             + "- have no package declaration, \n"
-            + "- extend uno.anahata.asi.agi.tool.OnTheFlyAgiTool (or the concreate subtype specified in the toolkit instructions, if any) and \n"
+            + "- extend the base class specified in the toolkit instructions (subclass of uno.anahata.asi.agi.tool.ToolContext) and \n"
             + "- implement the call method of java.util.concurrent.Callable<Object>.\n"
-            + "\nNote: Like any other tool, If call() throws an exception, the Exception's stack trace will be automatically converted to a string and included in the 'errors' attribute of the tool's response.\n"
+            + "\nNote: If call() throws an exception, the stack trace is automatically included in the 'errors' attribute of the tool's response.\n"
     )
     public Object compileAndExecute(
             @AgiToolParam(value = "Source code of the 'Anahata' class.", rendererId = "java") String sourceCode,
@@ -1593,14 +1594,15 @@ public class Java extends AnahataToolkit {
      * @throws Exception on compilation error.
      */
     @AgiTool(
-            value = "Compiles one or more modular Java classes into the in-memory classpath of this AGI session without executing them.\n"
-            + "The compiled classes are registered in session RAM and automatically included in the RAG message as context providers.\n"
+            value = "Compiles one or more modular Java classes into your AgiClassLoader (the session's in-memory metaspace) without executing them.\n"
+            + "Use this tool to define separate modular helper classes (e.g. entities, utilities). For single-file tasks or standalone scripts, you do not need this tool. Use compileAndExecute() directly.\n"
+            + "The compiled classes are registered in your AgiClassLoader and automatically included in the RAG message as context providers.\n"
             + "Passing multiple sources compiles them simultaneously, cleanly resolving mutual or circular dependencies (e.g. Class A references Class B and Class B references Class A).\n\n"
             + "PRO-TIP (Batching & Token Efficiency):\n"
             + "You can emit multiple compile() tool calls in the SAME turn! Group your classes wisely:\n"
             + "- Independent classes: Put each in its own separate compile() call with a single AgiClassSource (e.g. Call 1: compile([MathHelper]), Call 2: compile([Config])).\n"
             + "- Mutually dependent classes: Group only the circular classes together in one compile() call (e.g. Call 3: compile([Node, Edge])).\n"
-            + "Benefit: If one class fails to compile, only that specific tool call fails. The successful ones remain cached in RAM, so in your next turn you only need to recompile the failed tool call, saving massive output tokens!"
+            + "Benefit: If one class fails to compile, only that specific tool call fails. The successful ones remain defined in your AgiClassLoader, so in your next turn you only need to recompile the failed tool call, saving massive output tokens!"
     )
     public String compile(
             @AgiToolParam(value = "List of Java class source descriptors (each containing fqn and sourceCode).", rendererId = "tabs") List<AgiClassSource> sources,
