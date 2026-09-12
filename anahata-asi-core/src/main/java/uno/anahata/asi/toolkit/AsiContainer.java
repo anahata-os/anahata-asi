@@ -176,7 +176,7 @@ public class AsiContainer extends AnahataToolkit {
      */
     @AgiTool("Lists all configured AI providers and their current status.")
     public String listAiProviders(
-            @AgiToolParam(value = "Whether to include the full comma-separated list of model IDs or just the total count.", required = false) boolean includeModelIds) {
+            @AgiToolParam(value = "Whether to include the full comma-separated list of model IDs or just the total count.", required = false) Boolean includeModelIds) {
         List<AbstractAiProvider> providers = getAsiContainer().getAllProviders();
         if (providers.isEmpty()) {
             return "No registered AI providers found in the container.";
@@ -185,7 +185,7 @@ public class AsiContainer extends AnahataToolkit {
         StringBuilder sb = new StringBuilder();
         sb.append(AbstractAiProvider.MARKUP_TABLE_HEADER);
         for (AbstractAiProvider p : providers) {
-            sb.append(p.toMarkupRow(includeModelIds));
+            sb.append(p.toMarkupRow(Boolean.TRUE.equals(includeModelIds)));
         }
         return sb.toString();
     }
@@ -491,7 +491,7 @@ public class AsiContainer extends AnahataToolkit {
             @AgiToolParam(value = "Optional list of resource URIs (e.g. images or documents) to provide to the model for image-to-image or editing.", required = false) List<String> resourceURIs,
             @AgiToolParam(value = "List of target response modalities. Defaults to [TEXT, IMAGE]. Can include IMAGE, AUDIO, VIDEO, TEXT.", required = false) List<ResponseModality> responseModalities,
             @AgiToolParam(value = "Optional nickname for the background AGI session. Defaults to 'Media Generation'.", required = false) String nickName,
-            @AgiToolParam(value = "Whether to open the sub-AGI session in the UI. Defaults to false.", required = false) boolean open,
+            @AgiToolParam(value = "Whether to open the sub-AGI session in the UI. Defaults to false.", required = false) Boolean open,
             @AgiToolParam(value = "Optional file path to save the generated media directly to disk.", required = false) String saveToPath,
             @AgiToolParam(value = "Optional thinking level/mode for generation.", required = false) ThinkingLevel thinkingLevel
     ) throws Exception {
@@ -502,7 +502,7 @@ public class AsiContainer extends AnahataToolkit {
         String sessionNick = (nickName != null && !nickName.isBlank()) ? nickName : "Media Generation";
 
         // Spawn a sub-session with no toolkits
-        Agi subAgi = createNewAgiInternal(open, false, sessionNick, aiProviderUUID, modelID, List.of(), resourceURIs, null, null, thinkingLevel, modalities);
+        Agi subAgi = createNewAgiInternal(Boolean.TRUE.equals(open), false, sessionNick, aiProviderUUID, modelID, List.of(), resourceURIs, null, null, thinkingLevel, modalities);
 
         // If thinking level is null or NONE, disable includeThoughts specifically for media generation
         if (thinkingLevel == null || thinkingLevel == ThinkingLevel.NONE) {
