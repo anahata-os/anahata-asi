@@ -4,7 +4,6 @@
 package uno.anahata.asi.swing;
 
 import java.awt.Component;
-import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -40,11 +39,32 @@ import uno.anahata.asi.openrouter.OpenRouterAiProvider;
 import uno.anahata.asi.openai.OpenAiResponsesProvider;
 import uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.message.part.tool.param.AgiClassSourceParameterRenderer;
+import uno.anahata.asi.swing.agi.message.part.tool.param.FullTextFileCreateRenderer;
+import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory;
+import static uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory.register;
+import static uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory.registerById;
+import uno.anahata.asi.swing.agi.message.part.tool.param.PathParameterRenderer;
+import uno.anahata.asi.swing.agi.message.part.tool.param.ResourceUUIDParameterRenderer;
+import uno.anahata.asi.swing.agi.message.part.tool.param.TabbedListParameterRenderer;
+import uno.anahata.asi.swing.agi.message.part.tool.param.UriParameterRenderer;
+import uno.anahata.asi.swing.agi.message.part.tool.param.VBoxListParameterRenderer;
 import uno.anahata.asi.swing.components.ExceptionDialog;
 import uno.anahata.asi.swing.internal.JavaFxBridge;
 import uno.anahata.asi.swing.internal.SwingUtils;
+import uno.anahata.asi.swing.provider.AiProviderUiRegistry;
+import uno.anahata.asi.swing.provider.AnthropicProviderPanel;
 import uno.anahata.asi.swing.provider.DiscoverModelsTask;
+import uno.anahata.asi.swing.provider.GeminiAiProviderPanel;
+import uno.anahata.asi.swing.provider.OllamaAiProviderPanel;
+import uno.anahata.asi.swing.provider.OpenAiChatCompletionsProviderPanel;
+import uno.anahata.asi.swing.provider.OpenAiResponsesProviderPanel;
 import uno.anahata.asi.swing.settings.AsiContainerSettingsFrame;
+import uno.anahata.asi.swing.toolkit.radio.RadioRenderer;
+import uno.anahata.asi.swing.toolkit.render.ToolkitUiRegistry;
+import uno.anahata.asi.toolkit.java.AgiClassSource;
+import uno.anahata.asi.toolkit.resources.text.FullTextFileCreate;
+import uno.anahata.asi.yam.tools.Radio;
 
 /**
  * A Swing-specific base class for Anahata ASI containers.
@@ -61,6 +81,30 @@ import uno.anahata.asi.swing.settings.AsiContainerSettingsFrame;
 @Setter
 public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
 
+    static {
+        //Legengary Radio toolkit
+        ToolkitUiRegistry.getInstance().register(Radio.class, RadioRenderer.class);
+        
+        //Default parameter renderers
+        ParameterRendererFactory.register(FullTextFileCreate.class, FullTextFileCreateRenderer.class);
+        ParameterRendererFactory.register(AgiClassSource.class, AgiClassSourceParameterRenderer.class);
+        
+        ParameterRendererFactory.registerById("tabs", TabbedListParameterRenderer.class);
+        ParameterRendererFactory.registerById("list_tabs", TabbedListParameterRenderer.class);
+        ParameterRendererFactory.registerById("vbox", VBoxListParameterRenderer.class);
+        ParameterRendererFactory.registerById("list_vbox", VBoxListParameterRenderer.class);
+        ParameterRendererFactory.registerById("uri", UriParameterRenderer.class);
+        ParameterRendererFactory.registerById("resource_uuid", ResourceUUIDParameterRenderer.class);
+        ParameterRendererFactory.registerById("path", PathParameterRenderer.class);
+
+        // Provider UI Panel Registry
+        AiProviderUiRegistry.getInstance().register(GeminiAiProvider.class, GeminiAiProviderPanel.class);
+        AiProviderUiRegistry.getInstance().register(AnthropicProvider.class, AnthropicProviderPanel.class);
+        AiProviderUiRegistry.getInstance().register(OpenAiChatCompletionsProvider.class, OpenAiChatCompletionsProviderPanel.class);
+        AiProviderUiRegistry.getInstance().register(OpenAiResponsesProvider.class, OpenAiResponsesProviderPanel.class);
+        AiProviderUiRegistry.getInstance().register(OllamaAiProvider.class, OllamaAiProviderPanel.class);
+    }
+    
     /**
      * List of all known AI Providers.
      */

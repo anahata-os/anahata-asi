@@ -34,15 +34,7 @@ public class ParameterRendererFactory {
 
     /** Static registry mapping string IDs to their specialized renderer classes. */
     private static final Map<String, Class<? extends ParameterRenderer<?>>> ID_REGISTRY = new ConcurrentHashMap<>();
-
-    static {
-        register(AgiClassSource.class, AgiClassSourceParameterRenderer.class);
-        register(FullTextFileCreate.class, FullTextFileCreateRenderer.class);
-        registerById("tabs", TabbedListParameterRenderer.class);
-        registerById("list_tabs", TabbedListParameterRenderer.class);
-        registerById("vbox", VBoxListParameterRenderer.class);
-        registerById("list_vbox", VBoxListParameterRenderer.class);
-    }
+    
 
     /**
      * Registers a specialized renderer class for a specific parameter value type.
