@@ -222,10 +222,18 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
 
     /**
      * {@inheritDoc}
+     * <p>
+     * Returns the complete text representation of the tool call, including its
+     * Java-like arguments signature and the full execution response details.
+     * </p>
      */
     @Override
     public String asText() {
-        return "[Tool: " + getToolName() + " with args: " + args.toString() + "]";
+        String callStr = getToolName() + "(" + getArgumentsString(true) + ")";
+        if (response != null) {
+            return callStr + "\nResponse:\n" + response.asText();
+        }
+        return callStr;
     }
 
     /**

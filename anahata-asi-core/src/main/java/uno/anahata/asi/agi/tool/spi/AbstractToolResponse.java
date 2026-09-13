@@ -488,9 +488,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
         if (attachments != null && !attachments.isEmpty()) {
             sb.append("\nAttachments:");
             for (ToolResponseAttachment att : attachments) {
-                long size = att.getData() != null ? att.getData().length : 0;
-                sb.append("\n  - Size: ").append(TextUtils.formatSize(size))
-                  .append(" (").append(size).append(" bytes), MimeType: ").append(att.getMimeType());
+                sb.append("\n  - ").append(att.getDisplayValue());
             }
         }
         return sb.toString();
