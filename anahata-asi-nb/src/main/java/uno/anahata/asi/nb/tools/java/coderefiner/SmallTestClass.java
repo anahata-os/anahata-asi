@@ -4,9 +4,10 @@ import java.util.AbstractCollection;
 import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * Base Test Class for AST (Updated with ToString).
+ * Base Test Class for AST (Updated with ToString and Slf4j).
  */
 @lombok.ToString
 @lombok.extern.slf4j.Slf4j

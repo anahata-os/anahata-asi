@@ -352,9 +352,9 @@ public class CodeRefinementBatchTest {
         i20.setType(CodeRefinementIntent.Type.UPDATE);
         i20.setClassFqn("uno.anahata.asi.nb.tools.java.coderefiner.SmallTestClass");
         i20.setMemberFqn("uno.anahata.asi.nb.tools.java.coderefiner.SmallTestClass");
-        i20.setDeclaration("@lombok.ToString\npublic class SmallTestClass");
+        i20.setDeclaration("@lombok.ToString\n@lombok.extern.slf4j.Slf4j\npublic class SmallTestClass");
         JavadocIntent j20 = new JavadocIntent();
-        j20.setDescription("Base Test Class for AST (Updated with ToString).");
+        j20.setDescription("Base Test Class for AST (Updated with ToString and Slf4j).");
         i20.setJavadoc(j20);
 
         CodeRefinementBatch batch20 = buildBatch.apply(List.of(i20));
@@ -364,11 +364,12 @@ public class CodeRefinementBatchTest {
         finalContent = new String(handle.getFileObject().asBytes(), "UTF-8");
         logToToolContext("Test 20 Result:\n" + finalContent);
 
-        if (!finalContent.contains("Base Test Class for AST (Updated with ToString).")) {
+        if (!finalContent.contains("Base Test Class for AST (Updated with ToString and Slf4j).")) {
             throw new Exception("Test 20 Failed: Class javadoc was not updated!");
         }
-        if (!finalContent.contains("@lombok.ToString\npublic class SmallTestClass")) {
-            throw new Exception("Test 20 Failed: Class declaration was not updated with @ToString!");
+        if (!finalContent.contains("@lombok.ToString\n@lombok.extern.slf4j.Slf4j\npublic class SmallTestClass")
+                && !finalContent.contains("@ToString\n@Slf4j\npublic class SmallTestClass")) {
+            throw new Exception("Test 20 Failed: Class declaration was not updated with @ToString and @Slf4j!");
         }
         if (!finalContent.contains("String s = \"cat.eat.the.dog\";") || !finalContent.contains("Type.member or Type$NestedType")) {
             throw new Exception("Test 20 Failed: Enclosed string literals in untouched methods were corrupted by class update!");
@@ -377,6 +378,37 @@ public class CodeRefinementBatchTest {
             throw new Exception("Test 20 Failed: Enclosed method Javadoc in untouched method was chopped by class update!");
         }
         
+        logToToolContext("Test 21: Slf4j Logger and Method Invocation Selectors Immunity (Preventing log.info -> info corruption)");
+        CodeRefinementIntent i21 = new CodeRefinementIntent();
+        i21.setType(CodeRefinementIntent.Type.INSERT);
+        i21.setClassFqn("uno.anahata.asi.nb.tools.java.coderefiner.SmallTestClass");
+        i21.setPosition(RelativePosition.END);
+        i21.setDeclaration("public void testSlf4jLogging()");
+        i21.setInnerBlockOrInitializer("java.util.Collections.emptyList();\nlog.info(\"Testing log.info {}\", \"arg\");\nlog.warn(\"Testing log.warn {}\", \"arg2\");");
+
+        CodeRefinementBatch batch21 = buildBatch.apply(List.of(i21));
+        batch21.setOptimize(true);
+        runBatch.accept(batch21);
+
+        finalContent = new String(handle.getFileObject().asBytes(), "UTF-8");
+        logToToolContext("Test 21 Result:\n" + finalContent);
+
+        if (!finalContent.contains("log.info(\"Testing log.info {}\", \"arg\");")) {
+            throw new Exception("Test 21 Failed: log.info was corrupted or 'log.' was removed!");
+        }
+        if (!finalContent.contains("log.warn(\"Testing log.warn {}\", \"arg2\");")) {
+            throw new Exception("Test 21 Failed: log.warn was corrupted or 'log.' was removed!");
+        }
+        if (finalContent.contains("import log.info;") || finalContent.contains("import log.warn;")) {
+            throw new Exception("Test 21 Failed: Fake imports 'import log.info;' or 'import log.warn;' were generated!");
+        }
+        if (!finalContent.contains("Collections.emptyList();")) {
+            throw new Exception("Test 21 Failed: Legitimate FQN java.util.Collections was not shortened to Collections!");
+        }
+        if (!finalContent.contains("import java.util.Collections;")) {
+            throw new Exception("Test 21 Failed: Legitimate import java.util.Collections was not added!");
+        }
+
         logToToolContext("Validation SUCCESS. The AST is perfect.");
     }
 }
