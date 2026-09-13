@@ -117,7 +117,7 @@ public class AnahataToolWindowFactory implements ToolWindowFactory {
             @Override
             public void actionPerformed(@NotNull AnActionEvent e) {
                 dashboard.createNew();
-                uno.anahata.asi.intellij.ui.AnahataNotifications.info(e.getProject(), "New Anahata session created.");
+                AnahataNotifications.info(e.getProject(), "New Anahata session created.");
             }
         };
         AnAction importSession = new DumbAwareAction("Import Session", "Import a saved Anahata ASI session", AllIcons.ToolbarDecorator.Import) {

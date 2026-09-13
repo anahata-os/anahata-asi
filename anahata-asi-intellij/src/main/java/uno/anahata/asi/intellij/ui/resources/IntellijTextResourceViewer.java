@@ -7,11 +7,14 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.ex.EditorEx;
+import com.intellij.openapi.editor.highlighter.EditorHighlighter;
+import com.intellij.openapi.editor.highlighter.EditorHighlighterFactory;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.DocumentListener;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.FileTypeManager;
+import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -119,11 +122,82 @@ public class IntellijTextResourceViewer extends AbstractTextResourceViewer {
     }
 
     /**
+     * Normalizes the resource name by mapping markdown language identifiers to standard
+     * file extensions recognized by the IntelliJ {@link FileTypeManager}.
+     *
+     * @param name the raw resource or snippet name.
+     * @return the normalized file name with a canonical extension.
+     */
+    private static String normalizeResourceFileName(String name) {
+        if (name == null || name.isBlank()) {
+            return "snippet.txt";
+        }
+        String prefix;
+        String ext;
+        if (!name.contains(".")) {
+            prefix = "snippet.";
+            ext = name.trim().toLowerCase();
+        } else {
+            int lastDot = name.lastIndexOf('.');
+            prefix = name.substring(0, lastDot + 1);
+            ext = name.substring(lastDot + 1).trim().toLowerCase();
+        }
+        String canonicalExt = switch (ext) {
+            case "javascript", "js", "mjs", "cjs" -> "js";
+            case "typescript", "ts", "mts", "cts" -> "ts";
+            case "python", "py", "pyw" -> "py";
+            case "golang", "go" -> "go";
+            case "rust", "rs" -> "rs";
+            case "ruby", "rb" -> "rb";
+            case "shell", "sh", "bash", "zsh" -> "sh";
+            case "bat", "batch", "cmd" -> "bat";
+            case "yaml", "yml" -> "yml";
+            case "json", "jsonc" -> "json";
+            case "markdown", "md" -> "md";
+            case "html", "htm" -> "html";
+            case "xml" -> "xml";
+            case "sql" -> "sql";
+            case "kotlin", "kt", "kts" -> "kt";
+            case "java" -> "java";
+            case "css" -> "css";
+            case "scss" -> "scss";
+            case "less" -> "less";
+            case "properties" -> "properties";
+            case "ini" -> "ini";
+            case "dockerfile", "docker" -> "dockerfile";
+            case "text", "txt", "plain", "plaintext" -> "txt";
+            case "c" -> "c";
+            case "cpp", "c++", "cc", "cxx" -> "cpp";
+            case "csharp", "cs", "c#" -> "cs";
+            case "php" -> "php";
+            case "scala" -> "scala";
+            case "groovy" -> "groovy";
+            case "diff", "patch" -> "patch";
+            case "lua" -> "lua";
+            case "dart" -> "dart";
+            case "perl", "pl" -> "pl";
+            case "r" -> "r";
+            case "swift" -> "swift";
+            case "graphql", "gql" -> "graphql";
+            case "proto", "protobuf" -> "proto";
+            case "vue" -> "vue";
+            case "jsx" -> "jsx";
+            case "tsx" -> "tsx";
+            default -> ext;
+        };
+        return prefix + canonicalExt;
+    }
+
+    /**
      * Initializes the IntelliJ editor and binds it to the resource document.
      */
     private void initEditor() {
         Project project = resolveProject();
-        FileType fileType = FileTypeManager.getInstance().getFileTypeByFileName(resource.getName());
+        String normalizedName = normalizeResourceFileName(resource.getName());
+        FileType fileType = FileTypeManager.getInstance().getFileTypeByFileName(normalizedName);
+        if (fileType == null || fileType.isBinary() || fileType.getName().equalsIgnoreCase("UNKNOWN")) {
+            fileType = PlainTextFileType.INSTANCE;
+        }
 
         VirtualFile vf = null;
         if (resource.getHandle() instanceof PathHandle ph) {
@@ -143,11 +217,28 @@ public class IntellijTextResourceViewer extends AbstractTextResourceViewer {
             document = EditorFactory.getInstance().createDocument(text);
         }
 
-        if (isEditing()) {
-            editor = EditorFactory.getInstance().createEditor(document, project);
+        boolean isViewer = !isEditing();
+        if (vf != null) {
+            editor = EditorFactory.getInstance().createEditor(document, project, vf, isViewer);
         } else {
-            editor = EditorFactory.getInstance().createViewer(document, project);
+            editor = EditorFactory.getInstance().createEditor(document, project, fileType, isViewer);
         }
+
+        if (editor instanceof EditorEx editorEx) {
+            EditorHighlighter highlighter;
+            if (vf != null) {
+                highlighter = EditorHighlighterFactory.getInstance().createEditorHighlighter(project, vf);
+            } else {
+                highlighter = EditorHighlighterFactory.getInstance().createEditorHighlighter(editorEx.getColorsScheme(), normalizedName, project);
+                if (highlighter == null) {
+                    highlighter = EditorHighlighterFactory.getInstance().createEditorHighlighter(project, fileType);
+                }
+            }
+            if (highlighter != null) {
+                editorEx.setHighlighter(highlighter);
+            }
+        }
+
         editor.getSettings().setLineNumbersShown(true);
         editor.getSettings().setFoldingOutlineShown(true);
         editor.getSettings().setLineMarkerAreaShown(true);
@@ -256,14 +347,19 @@ public class IntellijTextResourceViewer extends AbstractTextResourceViewer {
     @Override
     protected void updatePreviewContent(String content) {
         if (document != null && content != null && !document.getText().equals(content)) {
-            Project project = resolveProject();
-            ApplicationManager.getApplication().invokeLater(() -> {
+            Runnable write = () -> {
+                Project project = resolveProject();
                 if (project != null && !project.isDisposed()) {
                     WriteCommandAction.runWriteCommandAction(project, () -> document.setText(content));
                 } else {
                     ApplicationManager.getApplication().runWriteAction(() -> document.setText(content));
                 }
-            });
+            };
+            if (ApplicationManager.getApplication().isDispatchThread()) {
+                write.run();
+            } else {
+                ApplicationManager.getApplication().invokeLater(write);
+            }
         }
     }
 }
