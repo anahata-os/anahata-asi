@@ -69,6 +69,13 @@ public class IntellijTextResourceViewer extends AbstractTextResourceViewer {
     private Document document;
 
     /**
+     * The document listener that re-lays out the viewer when embedded (non-scrolling) content
+     * changes. Held so it can be detached in {@link #removeNotify()} — critical when {@link #document}
+     * is a shared live file document, otherwise listeners (and this viewer) leak on every open.
+     */
+    private DocumentListener documentListener;
+
+    /**
      * Constructs the IntelliJ text resource viewer.
      *
      * @param agiPanel the owning AGI panel.
@@ -243,7 +250,7 @@ public class IntellijTextResourceViewer extends AbstractTextResourceViewer {
         editor.getSettings().setFoldingOutlineShown(true);
         editor.getSettings().setLineMarkerAreaShown(true);
 
-        document.addDocumentListener(new DocumentListener() {
+        documentListener = new DocumentListener() {
             @Override
             public void documentChanged(DocumentEvent event) {
                 if (!verticalScrollEnabled) {
@@ -251,7 +258,8 @@ public class IntellijTextResourceViewer extends AbstractTextResourceViewer {
                     repaint();
                 }
             }
-        });
+        };
+        document.addDocumentListener(documentListener);
 
         getWrapper().removeAll();
         getWrapper().add(editor.getComponent(), BorderLayout.CENTER);
@@ -280,12 +288,35 @@ public class IntellijTextResourceViewer extends AbstractTextResourceViewer {
     /**
      * {@inheritDoc}
      * <p>
-     * Releases the editor when the component is detached from the UI hierarchy.
+     * Recreates the editor when the component is (re)attached to the UI hierarchy, so a viewer
+     * that was detached and shown again (e.g. a tab hide/show cycle, which releases the editor in
+     * {@link #removeNotify()}) rebuilds its editor instead of displaying a disposed one.
+     * </p>
+     */
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        if (editor == null) {
+            initEditor();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Detaches the document listener and releases the editor when the component leaves the UI
+     * hierarchy. Removing the listener is essential when {@link #document} is a shared live file
+     * document, which outlives this viewer and would otherwise retain the listener (and this
+     * viewer) indefinitely.
      * </p>
      */
     @Override
     public void removeNotify() {
         super.removeNotify();
+        if (document != null && documentListener != null) {
+            document.removeDocumentListener(documentListener);
+            documentListener = null;
+        }
         if (editor != null && !editor.isDisposed()) {
             EditorFactory.getInstance().releaseEditor(editor);
             editor = null;
