@@ -19,6 +19,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AbstractAsiContainer;
+import uno.anahata.asi.swing.AbstractSwingAsiContainer;
+import uno.anahata.asi.swing.agi.render.MediaViewerComponent;
 import uno.anahata.asi.agi.resource.view.MediaView;
 import uno.anahata.asi.agi.resource.handle.PathHandle;
 import uno.anahata.asi.agi.resource.Resource;
@@ -46,14 +48,14 @@ public class DefaultResourceUI implements ResourceUI {
     /** 
      * {@inheritDoc} 
      * <p>Implementation details: Dispatches to {@link RSyntaxTextAreaTextResourceViewer} 
-     * for text resources or a custom label for binary/media resources.</p>
+     * for text resources or {@link MediaRenderer#createViewer} for binary/media resources.</p>
      */
     @Override
     public JComponent createContent(Resource resource, AgiPanel agiPanel) {
         if (resource.getHandle().isTextual()) {
             return new RSyntaxTextAreaTextResourceViewer(agiPanel, resource);
         } else if (resource.getView() instanceof MediaView mv) {
-            return createMediaComponent(resource, mv);
+            return createMediaComponent(resource, mv, null, agiPanel);
         }
         
         return new JLabel("No viewer available for: " + resource.getMimeType());
@@ -62,40 +64,56 @@ public class DefaultResourceUI implements ResourceUI {
     /** 
      * {@inheritDoc} 
      * <p>Implementation details: Dispatches to {@link RSyntaxTextAreaTextResourceViewer} 
-     * bound to a container context for text resources or a custom label for binary/media resources.</p>
+     * bound to a container context for text resources or {@link MediaRenderer#createViewer} for binary/media resources.</p>
      */
     @Override
     public JComponent createContent(Resource resource, AbstractAsiContainer container) {
         if (resource.getHandle().isTextual()) {
             return new RSyntaxTextAreaTextResourceViewer(container, resource);
         } else if (resource.getView() instanceof MediaView mv) {
-            return createMediaComponent(resource, mv);
+            return createMediaComponent(resource, mv, container, null);
         }
         
         return new JLabel("No viewer available for: " + resource.getMimeType());
     }
 
     /**
-     * Creates a Swing component for media-based resources.
+     * Creates a Swing component for media-based resources using {@link MediaRenderer#createViewer}.
+     * 
      * @param resource The resource instance.
      * @param mv The associated media view.
-     * @return The media JComponent.
+     * @param container The optional container instance.
+     * @param agiPanel The optional AgiPanel instance.
+     * @return The configured media JComponent.
      */
-    private JComponent createMediaComponent(Resource resource, MediaView mv) {
-        JPanel container = new JPanel(new BorderLayout());
-        byte[] data = mv.getCachedData();
-        String mime = resource.getMimeType();
-        
-        if (data != null) {
-            if (mime.startsWith("image/")) {
-                container.add(MediaRenderer.createImageComponent(data, container), BorderLayout.CENTER);
-            } else {
-                container.add(new JLabel("Binary resource: " + resource.getName() + " (" + mime + ")"), BorderLayout.CENTER);
-            }
+    private JComponent createMediaComponent(Resource resource, MediaView mv, AbstractAsiContainer container, AgiPanel agiPanel) {
+        AbstractSwingAsiContainer swingContainer = (container instanceof AbstractSwingAsiContainer sac) ? sac
+                : (agiPanel != null && agiPanel.getAgi().getConfig().getAsiContainer() instanceof AbstractSwingAsiContainer sac2 ? sac2 : null);
+
+        byte[] data = null;
+        if (mv != null && mv.getCachedData() != null) {
+            data = mv.getCachedData();
         } else {
-            container.add(new JLabel("Media data not loaded. Check 'providing' status."), BorderLayout.CENTER);
+            try {
+                data = resource.asBytes();
+            } catch (Exception ex) {
+                log.debug("Could not read binary data directly from resource handle: {}", ex.getMessage());
+            }
         }
-        return container;
+
+        URI uri = (resource.getHandle() != null) ? resource.getHandle().getUri() : null;
+
+        if ((data == null || data.length == 0) && uri == null) {
+            return new JLabel("Media data not available.");
+        }
+
+        MediaViewerComponent viewer = MediaRenderer.createViewer(
+                data,
+                resource.getMimeType(),
+                resource.getName(),
+                uri,
+                swingContainer);
+        return viewer.getComponent();
     }
 
     /** 

@@ -79,8 +79,8 @@ public final class ToolResponseAttachment implements Displayable {
     @Override
     public String getDisplayValue() {
         String size = data != null ? FileUtils.byteCountToDisplaySize(data.length) : "0 bytes";
-        if (sourcePath != null && sourcePath.getFileName() != null) {
-            return sourcePath.getFileName().toString() + " (" + size + ", " + mimeType + ")";
+        if (sourcePath != null) {
+            return sourcePath.toString() + " (" + size + ", " + mimeType + ")";
         }
         return mimeType + " (" + size + ")";
     }

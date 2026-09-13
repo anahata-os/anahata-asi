@@ -1,18 +1,17 @@
 package uno.anahata.asi.nb.tools.java.coderefiner;
 
 import java.util.AbstractCollection;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
-import lombok.Getter;
-import lombok.SneakyThrows;
+import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * Base Test Class for AST (Updated with ToString).
+ * Base Test Class for AST (Updated with ToString and Slf4j).
  */
-@lombok.ToString
-public class SmallTestClass {
+@ToString
+@Slf4j
+public abstract class SmallTestClass {
 
     /**
      * Inner Class Doc.
@@ -127,4 +126,12 @@ public class SmallTestClass {
         ConcurrentHashMap<String, Object> map = new ConcurrentHashMap<>();
         System.out.println(c);
     }
+
+    public void testSlf4jLogging() {
+        Collections.emptyList();
+        log.info("Testing log.info {}", "arg");
+        log.warn("Testing log.warn {}", "arg2");
+    }
+
+    public abstract void abstractTarget();
 }

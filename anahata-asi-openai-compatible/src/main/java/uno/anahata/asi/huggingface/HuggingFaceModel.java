@@ -92,7 +92,7 @@ public class HuggingFaceModel extends OpenAiCompatibleModel {
         // 1. config.json
         JsonNode config = fetchHubJson("config.json", apiKey);
         if (config != null) {
-            log.info("Got config.json for {}", getModelId());
+            log.debug("Got config.json for {}", getModelId());
             this.hubConfig = config;
             if (config.has("max_position_embeddings")) {
                 setMaxInputTokens(config.get("max_position_embeddings").asInt());
@@ -120,7 +120,7 @@ public class HuggingFaceModel extends OpenAiCompatibleModel {
         // 2. tokenizer_config.json
         JsonNode tokConfig = fetchHubJson("tokenizer_config.json", apiKey);
         if (tokConfig != null) {
-            log.info("Got tokenizer_config.json for {}", getModelId());
+            log.debug("Got tokenizer_config.json for {}", getModelId());
             this.tokenizerConfig = tokConfig;
             String chatTemplate = tokConfig.path("chat_template").asText("");
             if (!chatTemplate.isBlank()) {

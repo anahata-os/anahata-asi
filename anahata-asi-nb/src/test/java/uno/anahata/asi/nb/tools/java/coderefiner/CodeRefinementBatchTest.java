@@ -352,9 +352,9 @@ public class CodeRefinementBatchTest {
         i20.setType(CodeRefinementIntent.Type.UPDATE);
         i20.setClassFqn("uno.anahata.asi.nb.tools.java.coderefiner.SmallTestClass");
         i20.setMemberFqn("uno.anahata.asi.nb.tools.java.coderefiner.SmallTestClass");
-        i20.setDeclaration("@lombok.ToString\npublic class SmallTestClass");
+        i20.setDeclaration("@lombok.ToString\n@lombok.extern.slf4j.Slf4j\npublic class SmallTestClass");
         JavadocIntent j20 = new JavadocIntent();
-        j20.setDescription("Base Test Class for AST (Updated with ToString).");
+        j20.setDescription("Base Test Class for AST (Updated with ToString and Slf4j).");
         i20.setJavadoc(j20);
 
         CodeRefinementBatch batch20 = buildBatch.apply(List.of(i20));
@@ -364,11 +364,12 @@ public class CodeRefinementBatchTest {
         finalContent = new String(handle.getFileObject().asBytes(), "UTF-8");
         logToToolContext("Test 20 Result:\n" + finalContent);
 
-        if (!finalContent.contains("Base Test Class for AST (Updated with ToString).")) {
+        if (!finalContent.contains("Base Test Class for AST (Updated with ToString and Slf4j).")) {
             throw new Exception("Test 20 Failed: Class javadoc was not updated!");
         }
-        if (!finalContent.contains("@lombok.ToString\npublic class SmallTestClass")) {
-            throw new Exception("Test 20 Failed: Class declaration was not updated with @ToString!");
+        if (!finalContent.contains("@lombok.ToString\n@lombok.extern.slf4j.Slf4j\npublic class SmallTestClass")
+                && !finalContent.contains("@ToString\n@Slf4j\npublic class SmallTestClass")) {
+            throw new Exception("Test 20 Failed: Class declaration was not updated with @ToString and @Slf4j!");
         }
         if (!finalContent.contains("String s = \"cat.eat.the.dog\";") || !finalContent.contains("Type.member or Type$NestedType")) {
             throw new Exception("Test 20 Failed: Enclosed string literals in untouched methods were corrupted by class update!");
@@ -377,6 +378,78 @@ public class CodeRefinementBatchTest {
             throw new Exception("Test 20 Failed: Enclosed method Javadoc in untouched method was chopped by class update!");
         }
         
+        logToToolContext("Test 21: Slf4j Logger and Method Invocation Selectors Immunity (Preventing log.info -> info corruption)");
+        CodeRefinementIntent i21 = new CodeRefinementIntent();
+        i21.setType(CodeRefinementIntent.Type.INSERT);
+        i21.setClassFqn("uno.anahata.asi.nb.tools.java.coderefiner.SmallTestClass");
+        i21.setPosition(RelativePosition.END);
+        i21.setDeclaration("public void testSlf4jLogging()");
+        i21.setInnerBlockOrInitializer("java.util.Collections.emptyList();\nlog.info(\"Testing log.info {}\", \"arg\");\nlog.warn(\"Testing log.warn {}\", \"arg2\");");
+
+        CodeRefinementBatch batch21 = buildBatch.apply(List.of(i21));
+        batch21.setOptimize(true);
+        runBatch.accept(batch21);
+
+        finalContent = new String(handle.getFileObject().asBytes(), "UTF-8");
+        logToToolContext("Test 21 Result:\n" + finalContent);
+
+        if (!finalContent.contains("log.info(\"Testing log.info {}\", \"arg\");")) {
+            throw new Exception("Test 21 Failed: log.info was corrupted or 'log.' was removed!");
+        }
+        if (!finalContent.contains("log.warn(\"Testing log.warn {}\", \"arg2\");")) {
+            throw new Exception("Test 21 Failed: log.warn was corrupted or 'log.' was removed!");
+        }
+        if (finalContent.contains("import log.info;") || finalContent.contains("import log.warn;")) {
+            throw new Exception("Test 21 Failed: Fake imports 'import log.info;' or 'import log.warn;' were generated!");
+        }
+        if (!finalContent.contains("Collections.emptyList();")) {
+            throw new Exception("Test 21 Failed: Legitimate FQN java.util.Collections was not shortened to Collections!");
+        }
+        if (!finalContent.contains("import java.util.Collections;")) {
+            throw new Exception("Test 21 Failed: Legitimate import java.util.Collections was not added!");
+        }
+
+        logToToolContext("Test 22: Abstract Method Conversions (Abstract -> Concrete and Concrete -> Abstract)");
+        CodeRefinementIntent i22_class = new CodeRefinementIntent();
+        i22_class.setType(CodeRefinementIntent.Type.UPDATE);
+        i22_class.setMemberFqn("uno.anahata.asi.nb.tools.java.coderefiner.SmallTestClass");
+        i22_class.setDeclaration("@ToString\n@Slf4j\npublic abstract class SmallTestClass");
+        runBatch.accept(buildBatch.apply(List.of(i22_class)));
+
+        CodeRefinementIntent i22a = new CodeRefinementIntent();
+        i22a.setType(CodeRefinementIntent.Type.INSERT);
+        i22a.setClassFqn("uno.anahata.asi.nb.tools.java.coderefiner.SmallTestClass");
+        i22a.setPosition(RelativePosition.END);
+        i22a.setDeclaration("public abstract void abstractTarget()");
+        runBatch.accept(buildBatch.apply(List.of(i22a)));
+
+        CodeRefinementIntent i22b = new CodeRefinementIntent();
+        i22b.setType(CodeRefinementIntent.Type.UPDATE);
+        i22b.setMemberFqn("uno.anahata.asi.nb.tools.java.coderefiner.SmallTestClass.abstractTarget()");
+        i22b.setDeclaration("public void abstractTarget()");
+        i22b.setInnerBlockOrInitializer("System.out.println(\"Now concrete!\");");
+        runBatch.accept(buildBatch.apply(List.of(i22b)));
+
+        finalContent = new String(handle.getFileObject().asBytes(), "UTF-8");
+        logToToolContext("Test 22 Abstract->Concrete Result:\n" + finalContent);
+        if (!finalContent.contains("public void abstractTarget() {\n        System.out.println(\"Now concrete!\");\n    }")
+                || finalContent.contains("Now concrete!\");\n    };")) {
+            throw new Exception("Test 22 Failed: Abstract -> Concrete conversion left a dangling semicolon or failed!");
+        }
+
+        CodeRefinementIntent i22c = new CodeRefinementIntent();
+        i22c.setType(CodeRefinementIntent.Type.UPDATE);
+        i22c.setMemberFqn("uno.anahata.asi.nb.tools.java.coderefiner.SmallTestClass.abstractTarget()");
+        i22c.setDeclaration("public abstract void abstractTarget();");
+        i22c.setInnerBlockOrInitializer("");
+        runBatch.accept(buildBatch.apply(List.of(i22c)));
+
+        finalContent = new String(handle.getFileObject().asBytes(), "UTF-8");
+        logToToolContext("Test 22 Concrete->Abstract Result:\n" + finalContent);
+        if (!finalContent.contains("public abstract void abstractTarget();") || finalContent.contains("abstractTarget();\n\n    {") || finalContent.contains("abstractTarget();\n    {")) {
+            throw new Exception("Test 22 Failed: Concrete -> Abstract conversion left leftover braces from previous body!");
+        }
+
         logToToolContext("Validation SUCCESS. The AST is perfect.");
     }
 }

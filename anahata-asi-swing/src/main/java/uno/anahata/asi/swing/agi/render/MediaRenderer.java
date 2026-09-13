@@ -8,6 +8,8 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.Image;
 import java.awt.event.ItemEvent;
 import java.awt.event.MouseAdapter;
@@ -15,18 +17,23 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.util.function.Consumer;
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
-import javax.swing.JScrollPane;
+import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.swing.internal.SwingUtils;
+import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.audio.AudioPlaybackPanel;
+import uno.anahata.asi.swing.internal.JavaFxBridgeClassLoader;
+import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
  * Multimodal rendering engine for non-textual message parts.
@@ -103,21 +110,164 @@ public class MediaRenderer {
 
     /**
      * Displays a full-size image in a non-modal popup dialog.
-     * 
+     *
      * @param image The image to display.
      * @param parent The parent component.
      */
     public static void showFullSizeImagePopup(BufferedImage image, Component parent) {
-        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(parent), "Full Size Image", Dialog.ModalityType.MODELESS);
+        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(parent), "Image Viewer", Dialog.ModalityType.MODELESS);
         dialog.setLayout(new BorderLayout());
-        
-        JLabel imageLabel = new JLabel(new ImageIcon(image));
-        JScrollPane scrollPane = new JScrollPane(imageLabel);
-        scrollPane.setPreferredSize(new Dimension(Math.min(image.getWidth(), 800), Math.min(image.getHeight(), 600)));
-        
-        dialog.add(scrollPane, BorderLayout.CENTER);
-        dialog.pack();
+
+        SwingImageViewer viewer = new SwingImageViewer();
+        try {
+            byte[] pngData = SwingUtils.encodeToPng(image);
+            viewer.load(pngData, "image/png", "image.png", null);
+        } catch (Exception ex) {
+            log.error("Failed to encode image to PNG for viewer", ex);
+        }
+
+        dialog.add(viewer, BorderLayout.CENTER);
+        dialog.setSize(new Dimension(Math.min(image.getWidth() + 40, 1100), Math.min(image.getHeight() + 80, 800)));
         dialog.setLocationRelativeTo(parent);
         dialog.setVisible(true);
+    }
+
+    /**
+     * Creates an interactive {@link SwingImageViewer} initialized with raw
+     * image data, MIME type, and optional source URI.
+     *
+     * @param mimeType The detected image MIME type (e.g. 'image/png',
+     * 'image/jpeg').
+     * @param data The raw binary image data.
+     * @param displayName The human-readable display name or file name.
+     * @param sourceUri The optional disk or network URI of the image source.
+     * @return A fully configured {@link SwingImageViewer} ready for embedding
+     * in the UI.
+     */
+    public static SwingImageViewer createImageViewer(byte[] data, String mimeType, String displayName, URI sourceUri) {
+        SwingImageViewer viewer = new SwingImageViewer();
+        viewer.load(data, mimeType, displayName, sourceUri);
+        return viewer;
+    }
+
+    /**
+     * Creates the optimal {@link MediaViewerComponent} based on MIME type and container runtime capabilities.
+     *
+     * @param data The raw binary data.
+     * @param mimeType The detected MIME type.
+     * @param displayName An optional human-readable name or file name.
+     * @param sourceUri An optional source URI.
+     * @param container The active ASI container (for resolving JavaFX runtime availability).
+     * @return A configured {@link MediaViewerComponent}.
+     */
+    public static MediaViewerComponent createViewer(byte[] data, String mimeType, String displayName, URI sourceUri, AbstractSwingAsiContainer container) {
+        if (mimeType == null) {
+            mimeType = "application/octet-stream";
+        }
+        String cleanMime = mimeType.toLowerCase().split(";")[0].trim();
+
+        // 1. High-fidelity Interactive Image Viewer (Pure Swing, universal)
+        if (cleanMime.startsWith("image/")) {
+            return createImageViewer(data, cleanMime, displayName, sourceUri);
+        }
+
+        // 2. Hardware-accelerated Video & Audio with JavaFX
+        boolean fxAvailable = container != null && container.isJavaFxAvailable();
+        if (fxAvailable && (cleanMime.startsWith("video/") || cleanMime.startsWith("audio/"))) {
+            ClassLoader fxLoader = container.getJavaFxClassLoader();
+            if (fxLoader != null) {
+                ClassLoader prevCl = Thread.currentThread().getContextClassLoader();
+                try {
+                    JavaFxBridgeClassLoader bridge = new JavaFxBridgeClassLoader(MediaRenderer.class.getClassLoader(), fxLoader);
+                    Thread.currentThread().setContextClassLoader(bridge);
+                    Class<?> viewerCls = bridge.loadClass("uno.anahata.asi.swing.agi.render.JavaFxMediaViewerImpl");
+                    MediaViewerComponent viewer = (MediaViewerComponent) viewerCls.getDeclaredConstructor().newInstance();
+                    viewer.load(data, cleanMime, displayName, sourceUri);
+                    return viewer;
+                } catch (Throwable t) {
+                    //this is an error, if there is a javafx class loader and we get here, we have an error
+                    log.error("Failed to instantiate JavaFxMediaViewer via bridge, falling back to Swing audio or card: {}", t);
+                } finally {
+                    Thread.currentThread().setContextClassLoader(prevCl);
+                }
+            }
+        }
+
+        // 3. Pure Swing Audio fallback (JavaSound)
+        if (cleanMime.startsWith("audio/")) {
+            SwingAudioViewer audioViewer = new SwingAudioViewer();
+            audioViewer.load(data, cleanMime, displayName, sourceUri);
+            return audioViewer;
+        }
+
+        // 4. Generic Binary File card with MediaToolbar
+        return new GenericMediaCard(data, cleanMime, displayName, sourceUri);
+    }
+
+    /**
+     * Minimal card viewer for generic binary or document files.
+     */
+    public static class GenericMediaCard extends JPanel implements MediaViewerComponent {
+        @Getter
+        private final MediaToolbar toolbar = new MediaToolbar();
+        private final JLabel nameLabel = new JLabel();
+
+        public GenericMediaCard(byte[] data, String mimeType, String displayName, URI sourceUri) {
+            super(new BorderLayout(10, 10));
+            setOpaque(true);
+            setBackground(new Color(24, 28, 36));
+            setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
+
+            nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD, 13f));
+            nameLabel.setForeground(new Color(226, 232, 240));
+
+            JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 4));
+            centerPanel.setOpaque(false);
+            centerPanel.add(nameLabel);
+
+            add(centerPanel, BorderLayout.CENTER);
+            add(toolbar, BorderLayout.SOUTH);
+
+            load(data, mimeType, displayName, sourceUri);
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Returns this JPanel as the primary visual component.</p>
+         */
+        @Override
+        public JComponent getComponent() {
+            return this;
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Updates the card label and configures the action toolbar with binary metadata.</p>
+         */
+        @Override
+        public void load(byte[] data, String mimeType, String displayName, URI sourceUri) {
+            nameLabel.setText(displayName != null ? displayName : "Binary Resource");
+            toolbar.setData(data);
+            toolbar.setMimeType(mimeType);
+            toolbar.setDisplayName(displayName);
+            toolbar.setSourceUri(sourceUri);
+            toolbar.updateMetadata(null);
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>No active playback stream to stop in generic card view.</p>
+         */
+        @Override
+        public void stop() {
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Disposes of toolbar resources.</p>
+         */
+        @Override
+        public void dispose() {
+        }
     }
 }

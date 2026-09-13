@@ -132,20 +132,26 @@ public final class AudioPlaybackPanel extends JPanel {
                 
                 Clip clip;
                 if (mixerInfo != null) {
-                    Mixer mixer = AudioSystem.getMixer(mixerInfo);
-                    clip = (Clip) mixer.getLine(new DataLine.Info(Clip.class, inputStream.getFormat()));
+                    try {
+                        Mixer mixer = AudioSystem.getMixer(mixerInfo);
+                        clip = (Clip) mixer.getLine(new DataLine.Info(Clip.class, inputStream.getFormat()));
+                    } catch (Exception ex) {
+                        log.warn("Mixer '{}' unavailable for notification sound: {}. Falling back to default Clip.", mixerInfo.getName(), ex.getMessage());
+                        clip = AudioSystem.getClip();
+                    }
                 } else {
                     clip = AudioSystem.getClip();
                 }
                 
-                clip.addLineListener(event -> {
+                final Clip finalClip = clip;
+                finalClip.addLineListener(event -> {
                     if (event.getType() == LineEvent.Type.STOP) {
-                        clip.close();
+                        finalClip.close();
                     }
                 });
-                clip.open(inputStream);
-                clip.start();
-                this.currentClip = clip;
+                finalClip.open(inputStream);
+                finalClip.start();
+                this.currentClip = finalClip;
             } catch (Exception e) {
                 log.warn("Could not play sound resource: {} on device: {}", resourceName, configDevice, e);
             }
@@ -228,7 +234,7 @@ public final class AudioPlaybackPanel extends JPanel {
      * Discovers available playback hardware and populates the UI dropdown.
      */
     private void initPlaybackLineComboBox() {
-        new SwingTask<List<AudioDevice>>(
+        new SwingTask<>(
             agiPanel,
             "Load Playback Devices",
             () -> AudioDevice.listAvailableDevices(AudioDevice.Type.OUTPUT),

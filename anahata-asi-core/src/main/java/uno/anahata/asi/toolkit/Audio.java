@@ -123,9 +123,25 @@ public class Audio extends AnahataToolkit {
         propertyChangeSupport.firePropertyChange("selectedOutputDevice", old, device);
     }
 
+    /**
+     * Verifies that the currently selected input and output devices are still physically present on the host.
+     * If a device was unplugged or disconnected, automatically heals by selecting the live system default.
+     */
+    public synchronized void verifyAndHealDevices() {
+        if (selectedInputDevice != null && selectedInputDevice.getMixerInfo() == null) {
+            log.warn("Selected input device '{}' is no longer connected. Falling back to default input device.", selectedInputDevice.getName());
+            initInputLineFromDefault();
+        }
+        if (selectedOutputDevice != null && selectedOutputDevice.getMixerInfo() == null) {
+            log.warn("Selected output device '{}' is no longer connected. Falling back to default output device.", selectedOutputDevice.getName());
+            initOutputLineFromDefault();
+        }
+    }
+
     /** {@inheritDoc} */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
+        verifyAndHealDevices();
         StringBuilder sb = new StringBuilder("\n## Audio Hardware Configuration\n");
         
         sb.append("\n### Available Input Lines\n");
@@ -191,6 +207,7 @@ public class Audio extends AnahataToolkit {
     public String record(@AgiToolParam("Duration in seconds.") int durationSeconds,
                          @AgiToolParam(value = "Optional specific device ID to use.", required = false) String deviceId) throws Exception {
         
+        verifyAndHealDevices();
         AudioDevice targetDevice = (deviceId != null) 
                 ? AudioDevice.findDevice(AudioDevice.Type.INPUT, deviceId)
                 : selectedInputDevice;
@@ -234,6 +251,7 @@ public class Audio extends AnahataToolkit {
     public String play(@AgiToolParam("The URI to the audio file.") String uri,
                        @AgiToolParam(value = "Optional specific device ID to use.", required = false) String deviceId) throws Exception {
         
+        verifyAndHealDevices();
         URL url = URI.create(uri).toURL();
         AudioDevice targetDevice = (deviceId != null)
                 ? AudioDevice.findDevice(AudioDevice.Type.OUTPUT, deviceId)

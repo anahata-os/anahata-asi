@@ -18,6 +18,7 @@ import java.util.Objects;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeKind;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -218,14 +219,24 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
                             }
                             if (inRange) {
                                 TreePath path = getCurrentPath();
+                                Tree parentLeaf = path.getParentPath() != null ? path.getParentPath().getLeaf() : null;
+                                if (parentLeaf instanceof MethodInvocationTree mit && mit.getMethodSelect() == node) {
+                                    return super.visitMemberSelect(node, p);
+                                }
+
                                 Element e = cc.getTrees().getElement(path);
                                 if (e instanceof TypeElement te) {
+                                    if (te.asType() == null || te.asType().getKind() != TypeKind.DECLARED) {
+                                        return super.visitMemberSelect(node, p);
+                                    }
+
                                     String fqn = te.getQualifiedName().toString();
                                     String rawText = content.substring((int) start, (int) end).replaceAll("\\s+", "");
                                     if (rawText.equals(fqn)) {
                                         PackageElement pkg = cc.getElements().getPackageOf(te);
                                         String pkgName = (pkg != null) ? pkg.getQualifiedName().toString() : "";
-                                        if (!"java.lang".equals(pkgName)) {
+                                        String currentPkg = cut.getPackage() != null ? cut.getPackage().getPackageName().toString() : "";
+                                        if (!"java.lang".equals(pkgName) && !currentPkg.equals(pkgName) && !pkgName.isEmpty()) {
                                             if (importsToAddCollector != null && !importsToAddCollector.contains(fqn)) {
                                                 importsToAddCollector.add(fqn);
                                             }

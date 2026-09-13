@@ -16,6 +16,7 @@ import uno.anahata.asi.agi.message.AbstractPart;
 import uno.anahata.asi.agi.message.AbstractModelMessage;
 import uno.anahata.asi.agi.message.ThoughtSignature;
 import uno.anahata.asi.agi.provider.AbstractModel;
+import uno.anahata.asi.agi.tool.ToolResponseAttachment;
 
 /**
  * Represents a request to execute a specific tool. It holds a direct reference
@@ -221,10 +222,18 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
 
     /**
      * {@inheritDoc}
+     * <p>
+     * Returns the complete text representation of the tool call, including its
+     * Java-like arguments signature and the full execution response details.
+     * </p>
      */
     @Override
     public String asText() {
-        return "[Tool: " + getToolName() + " with args: " + args.toString() + "]";
+        String callStr = getToolName() + "(" + getArgumentsString(true) + ")";
+        if (response != null) {
+            return callStr + "\nResponse:\n" + response.asText();
+        }
+        return callStr;
     }
 
     /**
@@ -275,10 +284,6 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
             sb.append(" | Errors: ").append(TextUtils.formatValue(response.getErrors()));
         }
         
-        if (!response.getAttachments().isEmpty()) {
-            sb.append(" | Attachments: ").append(TextUtils.formatValue(response.getAttachments()));
-        }
-        
         return sb.toString();
     }
 
@@ -288,7 +293,11 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
     @Override
     protected void appendMetadata(StringBuilder sb) {
         if (!response.getAttachments().isEmpty()) {
-            sb.append(" | Attachments: ").append(TextUtils.formatValue(response.getAttachments()));
+            sb.append(" | Attachments: ").append(
+                response.getAttachments().stream()
+                    .map(ToolResponseAttachment::getDisplayValue)
+                    .collect(Collectors.joining(", ", "[", "]"))
+            );
         }
     }
 

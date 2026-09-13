@@ -197,7 +197,6 @@ public class Benchmarks extends AnahataToolkit {
      *
      * @param testCode The test code (e.g., "JAVA-JNA-1", "JAVA-ARKANOID-1", "JAVA-SNAKEGAME-1").
      * @param participant The candidate participant descriptor.
-     * @param openSession Whether to open the child AGI session tab in the UI.
      * @return The telemetry record of the benchmark run.
      * @throws Exception If benchmark orchestration fails or test code is unknown.
      */
@@ -231,7 +230,6 @@ public class Benchmarks extends AnahataToolkit {
      *
      * @param testDefinition The test definition specifying test code, title, raw prompt, and optional toolkit settings.
      * @param participant The candidate participant descriptor.
-     * @param openSession Whether to open the child session tab in the UI during execution.
      * @return The complete telemetry record of the benchmark run.
      * @throws Exception If benchmark execution fails.
      */
@@ -280,7 +278,6 @@ public class Benchmarks extends AnahataToolkit {
      *
      * @param catalogId The catalog identifier code (e.g. "ANAHATA-AGI-1").
      * @param participant The candidate participant descriptor.
-     * @param openSession Whether to open child session tabs in the UI.
      * @return A list of telemetry records for all executed tests in that catalog.
      * @throws Exception If any benchmark execution fails or catalog is not found.
      */
@@ -455,7 +452,6 @@ public class Benchmarks extends AnahataToolkit {
      * @param catalog The catalog owning the test, or {@code null} for ad-hoc custom runs.
      * @param testDef The test definition.
      * @param participant The candidate participant.
-     * @param openSession Whether to open the session UI.
      * @param persistResults Whether to record results into the catalog results file and results.json.
      * @return The complete benchmark run result.
      * @throws Exception If an unrecoverable execution error occurs.

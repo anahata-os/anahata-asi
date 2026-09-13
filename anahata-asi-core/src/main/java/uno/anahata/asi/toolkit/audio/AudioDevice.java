@@ -8,6 +8,7 @@ import javax.sound.sampled.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Represents a stable, model-agnostic descriptor for an audio device.
@@ -17,6 +18,7 @@ import lombok.NoArgsConstructor;
  * (opening lines) to ensure consistency across the model and UI.
  * </p>
  */
+@Slf4j
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -86,8 +88,15 @@ public class AudioDevice {
         List<AudioDevice> devices = new ArrayList<>();
         Mixer.Info[] mixerInfos = AudioSystem.getMixerInfo();
         
-        Mixer defaultMixer = AudioSystem.getMixer(null);
-        Mixer.Info defaultMixerInfo = (defaultMixer != null) ? defaultMixer.getMixerInfo() : null;
+        Mixer.Info defaultMixerInfo = null;
+        try {
+            Mixer defaultMixer = AudioSystem.getMixer(null);
+            if (defaultMixer != null) {
+                defaultMixerInfo = defaultMixer.getMixerInfo();
+            }
+        } catch (Throwable t) {
+            log.debug("Could not resolve default mixer info: {}", t.getMessage());
+        }
 
         for (Mixer.Info info : mixerInfos) {
             Mixer mixer = AudioSystem.getMixer(info);
@@ -143,23 +152,39 @@ public class AudioDevice {
      */
     public SourceDataLine getOutputLine(AudioFormat format) throws LineUnavailableException {
         Mixer.Info info = getMixerInfo();
-        DataLine.Info lineInfo = new DataLine.Info(SourceDataLine.class, format);
-        return (info != null) ? (SourceDataLine) AudioSystem.getMixer(info).getLine(lineInfo) 
-                              : (SourceDataLine) AudioSystem.getSourceDataLine(format);
+        if (info != null) {
+            try {
+                DataLine.Info lineInfo = new DataLine.Info(SourceDataLine.class, format);
+                return (SourceDataLine) AudioSystem.getMixer(info).getLine(lineInfo);
+            } catch (Throwable t) {
+                log.warn("Audio output line on device '{}' ({}) unavailable: {}. Falling back to system default line.", name, id, t.getMessage());
+            }
+        }
+        return (SourceDataLine) AudioSystem.getSourceDataLine(format);
     }
 
     /**
      * Resolves an input line (TargetDataLine) for this device and a format.
+     * <p>
+     * If the configured device mixer is unavailable or disconnected, automatically
+     * falls back to the system default input line.
+     * </p>
      * 
      * @param format The desired audio format.
      * @return A TargetDataLine instance.
-     * @throws LineUnavailableException if the line is already in use.
+     * @throws LineUnavailableException if no audio line is available.
      */
     public TargetDataLine getInputLine(AudioFormat format) throws LineUnavailableException {
         Mixer.Info info = getMixerInfo();
-        DataLine.Info lineInfo = new DataLine.Info(TargetDataLine.class, format);
-        return (info != null) ? (TargetDataLine) AudioSystem.getMixer(info).getLine(lineInfo) 
-                              : (TargetDataLine) AudioSystem.getTargetDataLine(format);
+        if (info != null) {
+            try {
+                DataLine.Info lineInfo = new DataLine.Info(TargetDataLine.class, format);
+                return (TargetDataLine) AudioSystem.getMixer(info).getLine(lineInfo);
+            } catch (Throwable t) {
+                log.warn("Audio input line on device '{}' ({}) unavailable: {}. Falling back to system default line.", name, id, t.getMessage());
+            }
+        }
+        return (TargetDataLine) AudioSystem.getTargetDataLine(format);
     }
 
     /**
