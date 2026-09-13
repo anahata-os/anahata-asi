@@ -22,11 +22,12 @@ import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.internal.TikaUtils;
 import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
 import uno.anahata.asi.agi.tool.ToolResponseAttachment;
+import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.render.MediaRenderer;
+import uno.anahata.asi.swing.agi.render.MediaViewerComponent;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.SearchIcon;
-import uno.anahata.asi.swing.audio.AudioPlaybackPanel;
 
 /**
  * A panel for rendering a list of {@link ToolResponseAttachment}s.
@@ -43,8 +44,8 @@ public class ToolResponseAttachmentsPanel extends JPanel {
     private AbstractToolResponse<?> response;
     /** Cache of rendered panels to support incremental diff-based updates. */
     private final Map<ToolResponseAttachment, JPanel> cachedPanels = new HashMap<>();
-    /** Map to track playback stoppers for audio attachments to ensure clean disposal. */
-    private final Map<ToolResponseAttachment, Runnable> playbackStoppers = new HashMap<>();
+    /** Map to track active media viewers for attachments to ensure clean disposal. */
+    private final Map<ToolResponseAttachment, MediaViewerComponent> activeViewers = new HashMap<>();
 
     /**
      * Constructs a new ToolResponseAttachmentsPanel.
@@ -72,8 +73,8 @@ public class ToolResponseAttachmentsPanel extends JPanel {
                 if (panel != null) {
                     remove(panel);
                 }
-                Runnable stopper = playbackStoppers.remove(attachment);
-                if (stopper != null) stopper.run();
+                MediaViewerComponent viewer = activeViewers.remove(attachment);
+                if (viewer != null) viewer.dispose();
                 return true;
             }
             return false;
@@ -139,20 +140,11 @@ public class ToolResponseAttachmentsPanel extends JPanel {
         itemPanel.add(viewButton, "gapright push");
         itemPanel.add(deleteButton, "right, wrap");
 
-        // Media Content (Image/Audio) below the label
-        if (mimeType.startsWith("image/")) {
-            itemPanel.add(MediaRenderer.createImageComponent(data, this), "growx, wrap");
-        } else if (mimeType.startsWith("audio/")) {
-            AudioPlaybackPanel audioPanel = agiPanel.getStatusPanel().getAudioPlaybackPanel();
-            itemPanel.add(MediaRenderer.createAudioComponent(data, audioPanel, stopper -> {
-                if (stopper == null) {
-                    Runnable oldStopper = playbackStoppers.remove(attachment);
-                    if (oldStopper != null) oldStopper.run();
-                } else {
-                    playbackStoppers.put(attachment, stopper);
-                }
-            }), "growx, wrap");
-        }
+        // Unified multimodal viewer (Image, Video, Audio, or File card)
+        AbstractSwingAsiContainer container = (AbstractSwingAsiContainer) agiPanel.getAgi().getConfig().getAsiContainer();
+        MediaViewerComponent viewer = MediaRenderer.createViewer(data, mimeType, "attachment", null, container);
+        activeViewers.put(attachment, viewer);
+        itemPanel.add(viewer.getComponent(), "growx, wrap");
 
         return itemPanel;
     }
@@ -181,13 +173,12 @@ public class ToolResponseAttachmentsPanel extends JPanel {
 
     /** 
      * {@inheritDoc} 
-     * <p>Implementation details: Ensures all active audio playback stoppers 
-     * are triggered when the component is removed from the UI hierarchy.</p>
+     * <p>Implementation details: Ensures all active media viewers 
+     * are stopped when the component is removed from the UI hierarchy.</p>
      */
     @Override
     public void removeNotify() {
-        playbackStoppers.values().forEach(Runnable::run);
-        playbackStoppers.clear();
+        activeViewers.values().forEach(MediaViewerComponent::stop);
         super.removeNotify();
     }
 }
