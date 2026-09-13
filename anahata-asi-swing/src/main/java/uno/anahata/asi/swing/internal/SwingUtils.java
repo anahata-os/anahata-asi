@@ -249,6 +249,56 @@ public class SwingUtils {
     }
 
     /**
+     * Copies a list of File objects to the system clipboard.
+     * <p>
+     * Implementation details: Uses {@link DataFlavor#javaFileListFlavor} to allow 
+     * pasting directly into OS file managers, IDEs, or communication applications.
+     * </p>
+     *
+     * @param files The list of files to copy. Must not be null or empty.
+     */
+    public static void copyFilesToClipboard(List<File> files) {
+        Objects.requireNonNull(files, "Files to copy cannot be null.");
+        if (files.isEmpty()) {
+            return;
+        }
+
+        Transferable transferable = new Transferable() {
+            /**
+             * {@inheritDoc}
+             * <p>Returns the supported data flavors for file lists.</p>
+             */
+            @Override
+            public DataFlavor[] getTransferDataFlavors() {
+                return new DataFlavor[]{DataFlavor.javaFileListFlavor};
+            }
+
+            /**
+             * {@inheritDoc}
+             * <p>Checks if the requested flavor is javaFileListFlavor.</p>
+             */
+            @Override
+            public boolean isDataFlavorSupported(DataFlavor flavor) {
+                return DataFlavor.javaFileListFlavor.equals(flavor);
+            }
+
+            /**
+             * {@inheritDoc}
+             * <p>Returns the list of File objects.</p>
+             */
+            @Override
+            public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException {
+                if (DataFlavor.javaFileListFlavor.equals(flavor)) {
+                    return files;
+                }
+                throw new UnsupportedFlavorException(flavor);
+            }
+        };
+
+        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(transferable, null);
+    }
+
+    /**
      * Redispatches a {@link MouseWheelEvent} to the appropriate ancestor scroll
      * pane.
      * <p>
