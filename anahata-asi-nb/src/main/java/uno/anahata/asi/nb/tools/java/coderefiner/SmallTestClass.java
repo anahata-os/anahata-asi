@@ -9,9 +9,9 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Base Test Class for AST (Updated with ToString and Slf4j).
  */
-@lombok.ToString
-@lombok.extern.slf4j.Slf4j
-public class SmallTestClass {
+@ToString
+@Slf4j
+public abstract class SmallTestClass {
 
     /**
      * Inner Class Doc.
@@ -132,4 +132,6 @@ public class SmallTestClass {
         log.info("Testing log.info {}", "arg");
         log.warn("Testing log.warn {}", "arg2");
     }
+
+    public abstract void abstractTarget();
 }

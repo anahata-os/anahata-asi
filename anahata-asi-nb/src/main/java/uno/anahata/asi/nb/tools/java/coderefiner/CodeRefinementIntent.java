@@ -269,9 +269,34 @@ public class CodeRefinementIntent implements Serializable {
             long bodyEnd = endPos;
             long initStart = -1;
             long initEnd = -1;
-            if (member instanceof MethodTree mt && mt.getBody() != null) {
-                bodyStart = sp.getStartPosition(cut, mt.getBody());
-                bodyEnd = sp.getEndPosition(cut, mt.getBody());
+            long declEnd;
+
+            boolean isMethod = member instanceof MethodTree;
+            boolean oldMethodIsAbstract = false;
+            boolean newMethodIsAbstract = false;
+
+            if (isMethod) {
+                MethodTree mt = (MethodTree) member;
+                oldMethodIsAbstract = (mt.getBody() == null);
+                newMethodIsAbstract = (declaration != null && (declaration.contains("abstract ") || declaration.startsWith("abstract ")))
+                        || (declaration == null && oldMethodIsAbstract && (innerBlockOrInitializer == null || innerBlockOrInitializer.isEmpty()));
+
+                if (newMethodIsAbstract) {
+                    bodyStart = endPos;
+                    bodyEnd = endPos;
+                    declEnd = endPos;
+                } else if (oldMethodIsAbstract) {
+                    declEnd = endPos;
+                    if (endPos > 0 && currentContent.charAt((int) endPos - 1) == ';') {
+                        declEnd = endPos - 1;
+                    }
+                    bodyStart = declEnd;
+                    bodyEnd = endPos;
+                } else {
+                    bodyStart = sp.getStartPosition(cut, mt.getBody());
+                    bodyEnd = sp.getEndPosition(cut, mt.getBody());
+                    declEnd = bodyStart;
+                }
             } else if (member instanceof VariableTree vt) {
                 initStart = vt.getInitializer() != null ? sp.getStartPosition(cut, vt.getInitializer()) : -1;
                 initEnd = vt.getInitializer() != null ? sp.getEndPosition(cut, vt.getInitializer()) : -1;
@@ -295,15 +320,11 @@ public class CodeRefinementIntent implements Serializable {
                         bodyEnd = endPos - 1;
                     }
                 }
+                declEnd = bodyStart;
             } else if (member instanceof BlockTree bt) {
                 bodyStart = sp.getStartPosition(cut, bt);
                 bodyEnd = sp.getEndPosition(cut, bt);
-            } else if (member instanceof MethodTree mt && mt.getBody() == null) {
-                bodyStart = endPos;
-                if (currentContent.charAt((int) endPos - 1) == ';') {
-                    bodyStart = endPos - 1;
-                    bodyEnd = endPos - 1;
-                }
+                declEnd = bodyStart;
             } else if (member instanceof ClassTree ct) {
                 long cStart = sp.getStartPosition(cut, ct);
                 int brace = currentContent.indexOf('{', (int) cStart);
@@ -311,9 +332,10 @@ public class CodeRefinementIntent implements Serializable {
                     bodyStart = brace;
                     bodyEnd = endPos;
                 }
+                declEnd = bodyStart;
+            } else {
+                declEnd = bodyStart;
             }
-
-            long declEnd = bodyStart;
 
             String oldDoc = currentContent.substring((int) docStart, (int) startPos);
             String oldDecl = currentContent.substring((int) startPos, (int) declEnd);
@@ -341,13 +363,30 @@ public class CodeRefinementIntent implements Serializable {
                 if (member instanceof VariableTree && newDeclStr.endsWith(";")) {
                     newDeclStr = newDeclStr.substring(0, newDeclStr.length() - 1).trim();
                 }
-                if (member instanceof MethodTree || member instanceof ClassTree) {
+                if (isMethod) {
+                    if (newMethodIsAbstract) {
+                        if (!newDeclStr.endsWith(";")) {
+                            newDeclStr += ";";
+                        }
+                    } else {
+                        if (newDeclStr.endsWith(";")) {
+                            newDeclStr = newDeclStr.substring(0, newDeclStr.length() - 1).trim();
+                        }
+                        newDeclStr += " ";
+                    }
+                } else if (member instanceof ClassTree) {
                     newDeclStr += " ";
+                }
+            } else if (isMethod && newMethodIsAbstract) {
+                if (!newDeclStr.trim().endsWith(";")) {
+                    newDeclStr = newDeclStr.trim() + ";";
                 }
             }
 
             String newBodyStr = oldBody;
-            if (innerBlockOrInitializer != null) {
+            if (isMethod && newMethodIsAbstract) {
+                newBodyStr = "";
+            } else if (innerBlockOrInitializer != null) {
                 if (member instanceof VariableTree vt) {
                     if (innerBlockOrInitializer.isBlank()) {
                         newBodyStr = "";

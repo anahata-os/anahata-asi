@@ -409,6 +409,47 @@ public class CodeRefinementBatchTest {
             throw new Exception("Test 21 Failed: Legitimate import java.util.Collections was not added!");
         }
 
+        logToToolContext("Test 22: Abstract Method Conversions (Abstract -> Concrete and Concrete -> Abstract)");
+        CodeRefinementIntent i22_class = new CodeRefinementIntent();
+        i22_class.setType(CodeRefinementIntent.Type.UPDATE);
+        i22_class.setMemberFqn("uno.anahata.asi.nb.tools.java.coderefiner.SmallTestClass");
+        i22_class.setDeclaration("@ToString\n@Slf4j\npublic abstract class SmallTestClass");
+        runBatch.accept(buildBatch.apply(List.of(i22_class)));
+
+        CodeRefinementIntent i22a = new CodeRefinementIntent();
+        i22a.setType(CodeRefinementIntent.Type.INSERT);
+        i22a.setClassFqn("uno.anahata.asi.nb.tools.java.coderefiner.SmallTestClass");
+        i22a.setPosition(RelativePosition.END);
+        i22a.setDeclaration("public abstract void abstractTarget()");
+        runBatch.accept(buildBatch.apply(List.of(i22a)));
+
+        CodeRefinementIntent i22b = new CodeRefinementIntent();
+        i22b.setType(CodeRefinementIntent.Type.UPDATE);
+        i22b.setMemberFqn("uno.anahata.asi.nb.tools.java.coderefiner.SmallTestClass.abstractTarget()");
+        i22b.setDeclaration("public void abstractTarget()");
+        i22b.setInnerBlockOrInitializer("System.out.println(\"Now concrete!\");");
+        runBatch.accept(buildBatch.apply(List.of(i22b)));
+
+        finalContent = new String(handle.getFileObject().asBytes(), "UTF-8");
+        logToToolContext("Test 22 Abstract->Concrete Result:\n" + finalContent);
+        if (!finalContent.contains("public void abstractTarget() {\n        System.out.println(\"Now concrete!\");\n    }")
+                || finalContent.contains("Now concrete!\");\n    };")) {
+            throw new Exception("Test 22 Failed: Abstract -> Concrete conversion left a dangling semicolon or failed!");
+        }
+
+        CodeRefinementIntent i22c = new CodeRefinementIntent();
+        i22c.setType(CodeRefinementIntent.Type.UPDATE);
+        i22c.setMemberFqn("uno.anahata.asi.nb.tools.java.coderefiner.SmallTestClass.abstractTarget()");
+        i22c.setDeclaration("public abstract void abstractTarget();");
+        i22c.setInnerBlockOrInitializer("");
+        runBatch.accept(buildBatch.apply(List.of(i22c)));
+
+        finalContent = new String(handle.getFileObject().asBytes(), "UTF-8");
+        logToToolContext("Test 22 Concrete->Abstract Result:\n" + finalContent);
+        if (!finalContent.contains("public abstract void abstractTarget();") || finalContent.contains("abstractTarget();\n\n    {") || finalContent.contains("abstractTarget();\n    {")) {
+            throw new Exception("Test 22 Failed: Concrete -> Abstract conversion left leftover braces from previous body!");
+        }
+
         logToToolContext("Validation SUCCESS. The AST is perfect.");
     }
 }
