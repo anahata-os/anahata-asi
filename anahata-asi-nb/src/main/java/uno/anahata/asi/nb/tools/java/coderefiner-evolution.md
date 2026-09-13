@@ -31,6 +31,12 @@ Replacing a method body using pure AST (`wc.rewrite(oldTree, newTree)`) often ca
 - Rely entirely on `CasualDiff` and `Reformatter` to natively handle text generation and formatting.
 
 ## Turn 232: Comprehensive Test Suite (`CodeRefinementBatchTest.java`)
+
+> [!IMPORTANT]
+> **Pro-Tips for Executing `CodeRefinementBatchTest`**:
+> 1. **Test Classpath Required:** When compiling and executing the test suite via `NbJava.compileAndExecuteInProject`, **`includeTestContext` MUST be set to `true`** (since `CodeRefinementBatchTest` resides in `src/test/java`).
+> 2. **`SmallTestClass.java` Must Be in Context:** `SmallTestClass.java` **MUST be loaded as a managed resource** in the active session's context (`ResourceManager`) prior to running `CodeRefinementBatchTest.runAllTests(getAgi())`.
+
 To validate the robust V3 AST manipulation without regressions, we have implemented a programmatic test suite covering the following edge cases:
 - Inserting / updating / moving a method with `@SneakyThrows`.
 - Updating the Javadoc of a member only.
@@ -343,7 +349,63 @@ To guarantee stability and zero regressions across all IDE states and persistenc
   - Slices AST in RAM, updates `StyledDocument`, calls `ec.saveDocument()` (clearing `*` star).
 - **BCR-5: Unsaved Edits Protection Guard** [PASSED ✅]
   - If a file has unsaved editor modifications (`dobj.isModified() == true`), fails fast with `AgiToolException` preventing silent data loss.
-- **BCR-6: Full 19-Stage AST Regression Test Suite (`CodeRefinementBatchTest`)** [PASSED 100% ✅]
-  - Verifies all 19 structural AST edge cases, including generics, enum constant arguments, chained anchoring, field initializers, inner enum parameters, string literal immunity (`"cat.eat.the.dog"`, `"Type$NestedType"`), and multi-line FQN snippet shortening.
+- **BCR-6: Full 22-Stage AST Regression Test Suite (`CodeRefinementBatchTest`)** [PASSED 100% ✅]
+  - Verifies all 22 structural AST edge cases, including generics, enum constant arguments, chained anchoring, field initializers, inner enum parameters, string literal immunity (`"cat.eat.the.dog"`, `"Type$NestedType"`), multi-line FQN snippet shortening, Slf4j logger/method selector immunity (Test 21), and abstract method conversions (Test 22).
+
+---
+
+## Turn 600: Slf4j Logger & Method Selector Immunity in `shortenFqnsInModifiedRanges` (Test 21)
+
+### The Problem
+When refactoring code using Lombok's `@Slf4j` (e.g. `log.info(...)`, `log.warn(...)`), `CodeRefinementBatch`'s AST pass runs on an isolated in-memory `JavaSource` on NetBeans' `MemoryFileSystem`. Because Lombok's annotation processor has not generated the synthetic field `private static final Logger log;` in that isolated symbol table, Javac encounters an unknown symbol.
+Per JLS §6.5, Javac attempts syntactic package/type disambiguation. Failing to find a class `log.info`, Javac generates an internal placeholder `ClassSymbol` with `TypeKind.ERROR`.
+Because `ClassSymbol` implements `TypeElement`, `shortenFqnsInModifiedRanges` previously saw `e instanceof TypeElement` and `rawText.equals(fqn)` as true, stripping `log.` into `info(...)` and generating bogus imports like `import log.info;`!
+
+### The Solution
+1. **Strict Type Validation:**
+   ```java
+   if (te.asType() == null || te.asType().getKind() != TypeKind.DECLARED) {
+       return super.visitMemberSelect(node, p);
+   }
+   ```
+   Ensures that only real, declared types on the classpath are eligible for FQN shortening. Placeholder error types (`TypeKind.ERROR`) are strictly ignored.
+2. **Method Selector Context Guard:**
+   ```java
+   Tree parentLeaf = path.getParentPath() != null ? path.getParentPath().getLeaf() : null;
+   if (parentLeaf instanceof MethodInvocationTree mit && mit.getMethodSelect() == node) {
+       return super.visitMemberSelect(node, p);
+   }
+   ```
+   If a `MemberSelectTree` is the target of a `MethodInvocationTree` (e.g. `obj.method()`), it is an expression invocation, not a type reference. It is strictly preserved.
+
+---
+
+## Turn 601: Abstract <-> Concrete Method Conversions & Semicolon Cleanup (Test 22)
+
+### The Problem
+1. **Abstract -> Concrete:** When updating an existing abstract method declaration (e.g. `public abstract void doSomething();`) to a concrete method implementation with a body, the AST replacement was anchoring `declEnd` to `bodyStart` (the end of the method including the semicolon). The injected method body followed the semicolon, resulting in a dangling semicolon after the closing brace:
+   ```java
+   public void doSomething() {
+       ...
+   };
+   ```
+2. **Concrete -> Abstract:** When updating an existing concrete method back to abstract (e.g. `public abstract void doSomething();`), the AST replacement was leaving the original method body braces `{ ... }` behind.
+
+### The Solution
+In `CodeRefinementIntent.applyToText()`:
+1. Detect whether the existing method is abstract (`mt.getBody() == null`) and whether the target declaration is abstract (`newMethodIsAbstract`).
+2. When converting **Abstract -> Concrete**:
+   - `declEnd` is adjusted to point before the trailing semicolon:
+     ```java
+     if (endPos > 0 && currentContent.charAt((int) endPos - 1) == ';') {
+         declEnd = endPos - 1;
+     }
+     ```
+   - The trailing semicolon is discarded and replaced seamlessly by the new body block `{ ... }`.
+3. When converting **Concrete -> Abstract**:
+   - The new declaration is ensured to end with `;`.
+   - `bodyStart = endPos` and `newBodyStr = ""` so the previous method body is completely sliced out without leaving orphan braces.
+
+Verified 100% by Test 22 in `CodeRefinementBatchTest`.
 
 Go Anahata!
