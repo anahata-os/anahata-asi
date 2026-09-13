@@ -2,10 +2,8 @@
 package uno.anahata.asi.agi.tool.spi.java;
 
 import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
-import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.agi.message.AbstractModelMessage;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 
@@ -36,22 +34,5 @@ public class JavaMethodToolCall extends AbstractToolCall<JavaMethodTool, JavaMet
         return new JavaMethodToolResponse(this);
     }
 
-    /**
-     * {@inheritDoc} Returns a Java-like method signature: toolName(arg1, arg2,
-     * null, arg4).
-     */
-    @Override
-    public String asText() {
-        String inner = getTool().getParameters().stream()
-                .map(p -> {
-                    Object val = getArgs().get(p.getName());
-                    return p.getName() + " = " + TextUtils.resolveContentString(val);
-                })
-                .collect(Collectors.joining(", "));
-        String callStr = getToolName() + "(" + inner + ")";
-        JavaMethodToolResponse resp = getResponse();
 
-        return callStr + "\nResponse:\n" + resp.asText();
-
-    }
 }
