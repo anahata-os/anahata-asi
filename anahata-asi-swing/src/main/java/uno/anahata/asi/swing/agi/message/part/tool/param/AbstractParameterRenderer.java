@@ -63,4 +63,13 @@ public abstract class AbstractParameterRenderer<T> implements ParameterRenderer<
             call.setModifiedArgument(paramName, newValue);
         }
     }
+
+    /**
+     * Requests deletion of this renderer from its enclosing parent container.
+     */
+    public void deleteSelf() {
+        if (parentRenderer != null) {
+            parentRenderer.childDeleted(this);
+        }
+    }
 }

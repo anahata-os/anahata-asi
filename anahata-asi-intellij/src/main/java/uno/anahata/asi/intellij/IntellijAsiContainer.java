@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.intellij;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
@@ -26,18 +27,20 @@ import uno.anahata.asi.toolkit.resources.text.lines.TextResourceLineEdits;
 /**
  * Concrete implementation of the ASI Container for IntelliJ IDEA.
  * <p>
- * This container integrates the Anahata framework with the IntelliJ IDEA platform as an
- * application-level singleton service, managing sessions, AI providers, and multi-window
- * tool window tabs.
+ * This container integrates the Anahata framework with the IntelliJ IDEA
+ * platform as an application-level singleton service, managing sessions, AI
+ * providers, and multi-window tool window tabs. Implements {@link Disposable}
+ * to ensure clean dynamic plugin unloading.
  * </p>
- * 
+ *
  * @author anahata
  */
 @Slf4j
-public class IntellijAsiContainer extends AbstractSwingAsiContainer {
+public class IntellijAsiContainer extends AbstractSwingAsiContainer implements Disposable {
 
     /**
-     * Registers the IntelliJ diff visualization for the core text-write tool arguments and the IntelliJ ResourceUI.
+     * Registers the IntelliJ diff visualization for the core text-write tool
+     * arguments and the IntelliJ ResourceUI.
      */
     static {
         initEnvironment();
@@ -92,7 +95,8 @@ public class IntellijAsiContainer extends AbstractSwingAsiContainer {
      * {@inheritDoc}
      * <p>
      * Returns {@code "anahata-asi-intellij"} to allow resolving {@code pom.properties}
-     * in development mode when running directly off {@code target/classes}.
+     * in development mode when running directly off
+     * {@code target/classes}.
      * </p>
      *
      * @return {@code "anahata-asi-intellij"}.
@@ -102,6 +106,39 @@ public class IntellijAsiContainer extends AbstractSwingAsiContainer {
         return "anahata-asi-intellij";
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Automatically approves migration of settings from predecessor versions
+     * without displaying a modal dialog, preventing EDT deadlocks and circular
+     * initialization exceptions during IDE startup.
+     * </p>
+     *
+     * @param previousVersion The predecessor version string.
+     * @param currentVersion The running container version string.
+     * @return Always {@code true} to automatically import settings.
+     */
+    @Override
+    protected boolean promptUpgrade(String previousVersion, String currentVersion) {
+        log.info("Automatically importing settings from predecessor version {} to {}", previousVersion, currentVersion);
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Suppresses the modal confirmation dialog during IDE startup, logging the
+     * result and recording a container notification instead.
+     * </p>
+     *
+     * @param count The number of entities imported.
+     * @param prevVerStr The predecessor version string.
+     */
+    @Override
+    protected void showImportSuccess(int count, String prevVerStr) {
+        log.info("Successfully imported {} settings from version {}.", count, prevVerStr);
+        addNotification("Imported " + count + " settings from version " + prevVerStr);
+    }
     /**
      * {@inheritDoc}
      * <p>
@@ -174,6 +211,18 @@ public class IntellijAsiContainer extends AbstractSwingAsiContainer {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Shuts down background threads, key watcher, and container executors when
+     * the plugin is dynamically unloaded by IntelliJ IDEA.
+     * </p>
+     */
+    @Override
+    public void dispose() {
+        log.info("IntellijAsiContainer disposed by IntelliJ platform - shutting down container");
+        shutdown();
+    }
     /**
      * {@inheritDoc}
      * <p>

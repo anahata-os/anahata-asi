@@ -28,6 +28,9 @@ public abstract class AbstractListParameterRenderer<E> extends AbstractParameter
     /** Active list of child renderers corresponding to items in the collection. */
     protected final List<ParameterRenderer<E>> childRenderers = new ArrayList<>();
 
+    /** Optional specific renderer ID to use for child item renderers. */
+    protected String itemRendererId;
+
     /**
      * {@inheritDoc}
      * <p>Initializes the list parameter renderer with an editable copy of the list.</p>
@@ -46,7 +49,7 @@ public abstract class AbstractListParameterRenderer<E> extends AbstractParameter
      * @return The configured child parameter renderer.
      */
     protected ParameterRenderer<E> createChildRenderer(E item, int index) {
-        ParameterRenderer<E> child = (ParameterRenderer<E>) ParameterRendererFactory.create(agiPanel, call, paramName, item, null);
+        ParameterRenderer<E> child = (ParameterRenderer<E>) ParameterRendererFactory.create(agiPanel, call, paramName, item, itemRendererId);
         child.setParentRenderer(this);
         return child;
     }
@@ -95,5 +98,21 @@ public abstract class AbstractListParameterRenderer<E> extends AbstractParameter
      */
     protected void onChildItemUpdated(int index, E updatedItem) {
         // Default: no-op
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>Removes the deleted child item from the list, calls valueChanged, and re-renders.</p>
+     */
+    @Override
+    public void childDeleted(ParameterRenderer<?> child) {
+        int index = childRenderers.indexOf(child);
+        if (index != -1 && this.value != null && index < this.value.size()) {
+            this.value.remove(index);
+            valueChanged(this.value);
+            render();
+        } else if (getParentRenderer() != null) {
+            getParentRenderer().childDeleted(child);
+        }
     }
 }

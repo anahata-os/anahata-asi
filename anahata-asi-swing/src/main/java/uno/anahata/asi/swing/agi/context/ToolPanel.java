@@ -141,7 +141,7 @@ public class ToolPanel extends ScrollablePanel {
         add(headerPanel, BorderLayout.NORTH);
 
         // 2. Tabs Container (Center)
-        tabbedPane = new AdjustingTabPane(150);
+        tabbedPane = new AdjustingTabPane(100);
         add(tabbedPane, BorderLayout.CENTER);
     }
 

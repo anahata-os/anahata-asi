@@ -2,6 +2,7 @@
 package uno.anahata.asi.agi.tool.spi;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.nio.file.Path;
 import uno.anahata.asi.agi.tool.ToolResponseAttachment;
 import uno.anahata.asi.agi.tool.ToolExecutionStatus;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -365,15 +366,29 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
     }
 
     /**
+     * Attaches a binary blob to this response with source file path traceability.
+     *
+     * @param data The binary data.
+     * @param mimeType The MIME type of the data.
+     * @param sourcePath The source file path on disk, or null.
+     * @return the attachment
+     */
+    public ToolResponseAttachment addAttachment(byte[] data, String mimeType, Path sourcePath) {
+        ToolResponseAttachment ret = new ToolResponseAttachment(data, mimeType, sourcePath);
+        this.attachments.add(ret);
+        updateTokenCount();
+        propertyChangeSupport.firePropertyChange("attachments", null, attachments);
+        return ret;
+    }
+
+    /**
      * Attaches a binary blob to this response.
      *
      * @param data The binary data.
      * @param mimeType The MIME type of the data.
      */
     public void addAttachment(byte[] data, String mimeType) {
-        this.attachments.add(new ToolResponseAttachment(data, mimeType));
-        updateTokenCount();
-        propertyChangeSupport.firePropertyChange("attachments", null, attachments);
+        addAttachment(data, mimeType, null);
     }
 
     /**

@@ -12,6 +12,7 @@ import java.awt.GraphicsEnvironment;
 import java.awt.GraphicsDevice;
 import java.awt.MouseInfo;
 import java.awt.Point;
+import java.nio.file.Path;
 import java.util.UUID;
 import javax.imageio.ImageIO;
 import lombok.AllArgsConstructor;
@@ -75,16 +76,16 @@ public class Screens extends AnahataToolkit {
     private final List<SharedRegion> sharedRegions = new ArrayList<>();
 
     /**
-     * {@inheritDoc} 
+     * {@inheritDoc}
      */
     @Override
     public List<String> getSystemInstructions() {
         return Collections.singletonList(
                 "**Screens Toolkit Instructions**:\n"
                 + "- You can use these tools to 'see' the user's screen or specific windows.\n"
-                + "- **Multimodal Sharing**: If you see BlobParts in the RAG message, these are live captures of shared screens or regions. "
-                + "Each BlobPart is preceded by a text part identifying the source.\n"
-                + "- **Displaying Images**: To show a local image file beautifully in the chat, use Markdown attributes syntax in your text response: `![Screenshot](file:///path/to/image.png){width=500}`. This ensures it fits perfectly and prevents stretching the UI."
+                + "- **Live Screen Sharing**: If you see BlobParts in the RAG message, these are live captures of shared screens or regions. Each BlobPart is preceded by a text part identifying the source. Live screen captures are streamed in-memory.\n"
+                + "- **Displaying Disk Images**: When referencing image files that have been written to disk by tools (such as takeScreenshot or screenshotAllWindows) or any other images on disk or from a URL, use Markdown attributes syntax in your text response: `![Screenshot](file:///path/to/image.png){width=500}`. This ensures it fits nicely in the chat without stretching the UI.\n"
+                + "- **Markdown & HTML Rendering Support in Swing**: The chat renders markdown via Flexmark converted to HTML inside Swing's JEditorPane (supporting tables, lists, basic styling, autolinks, and images). It does NOT support JavaScript-dependent extensions such as LaTeX math syntax (e.g. `$...$` or `$$...$$` formulas/arrows) or dynamic client-side scripts, which will not render properly."
         );
     }
 
@@ -143,15 +144,13 @@ public class Screens extends AnahataToolkit {
         }
     }
 
-
-
     /**
      * Toggles sharing for a specific screen device.
-     * 
+     *
      * @param deviceIdx The index of the device.
      * @return A status message.
      */
-    @AgiTool("Starts or stops sharing a physical screen.")
+    @AgiTool("Starts or stops live sharing a physical screen in multimodal turns (streamed in-memory, not written to disk).")
     public String toggleDeviceSharing(@AgiToolParam("The index of the device") int deviceIdx) {
         if (sharedDeviceIndexes.contains(deviceIdx)) {
             sharedDeviceIndexes.remove(Integer.valueOf(deviceIdx));
@@ -163,10 +162,10 @@ public class Screens extends AnahataToolkit {
             return "Started sharing Screen " + deviceIdx;
         }
     }
-    
+
     /**
      * Adds a specific rectangular region to the live share.
-     * 
+     *
      * @param x X coordinate.
      * @param y Y coordinate.
      * @param w Width.
@@ -174,11 +173,11 @@ public class Screens extends AnahataToolkit {
      * @param name Optional name for the region.
      * @return A status message with the ID.
      */
-    @AgiTool("Adds a specific rectangular region to the live share.")
+    @AgiTool("Adds a specific rectangular region to live screen sharing in multimodal turns (streamed in-memory, not written to disk).")
     public String startSharingRegion(
-            @AgiToolParam("X coordinate") int x, 
-            @AgiToolParam("Y coordinate") int y, 
-            @AgiToolParam("Width") int w, 
+            @AgiToolParam("X coordinate") int x,
+            @AgiToolParam("Y coordinate") int y,
+            @AgiToolParam("Width") int w,
             @AgiToolParam("Height") int h,
             @AgiToolParam("A Name for the region you are capturing") String name) {
         String id = UUID.randomUUID().toString();
@@ -217,12 +216,13 @@ public class Screens extends AnahataToolkit {
      * attachment.
      * @throws IOException if the native capture operation fails.
      */
-    @AgiTool("Takes a screenshot of a specific graphics device, attaches it to the tool response, stores it in the local file system and returns the absolute path of the screenshot on the file system")
+    @AgiTool("Takes a screenshot of a specific graphics device, attaches it to the tool response, writes it to the local file system and returns the absolute path of the file")
     public String takeScreenshot(
             @AgiToolParam("The index of the device to capture (0 for primary).") int deviceIdx) throws Exception {
         log("capturing screen " + deviceIdx);
-        java.nio.file.Path file = UICapture.screenshotToFile(deviceIdx);
-        log("screenshot saved to " + file.toAbsolutePath().toString() + " attaching to tool response...");
+        Path file = UICapture.screenshotToFile(deviceIdx);
+        file.toFile().deleteOnExit();
+        log("screenshot saved to " + file.toAbsolutePath().toString() + " and marked it for deleteOnExit() attaching to tool response...");
         addAttachment(file);
         log("screenshot attached to tool response");
         return file.toAbsolutePath().toString();
@@ -239,13 +239,19 @@ public class Screens extends AnahataToolkit {
      * @return A status message indicating the total number of windows captured.
      * @throws Exception if the window enumeration or capture fails.
      */
-    @AgiTool("Takes screenshots of all visible application windows.")
-    public String screenshotAllGraphicsDevices() throws Exception {
-        List<java.nio.file.Path> files = UICapture.screenshotAllWindows();
-        for (java.nio.file.Path file : files) {
+    @AgiTool("Takes screenshots of all visible swing application windows, writes them to disk and attaches them to the tool output. Returns the absolute path of all screenshots")
+    public List<String> screenshotAllWindows() throws Exception {
+        log("Taking screenshot of all visible application windows");
+        List<Path> files = UICapture.screenshotAllWindows();
+        List<String> ret = new ArrayList<>();
+        for (Path file : files) {
+            log("attaching " + file + " to tool response and marking it for deleteOnExit()");
             addAttachment(file);
+            file.toFile().deleteOnExit();
+            log("attached " + file + " to tool response and marked it for deleteOnExit()");
+            ret.add(file.toAbsolutePath().toString());
         }
-        return files.size() + " window(s) captured and attached.";
+        return ret;
     }
 
     /**
@@ -258,21 +264,27 @@ public class Screens extends AnahataToolkit {
      * @return A status message with the file path.
      * @throws Exception if the native capture operation fails.
      */
-    @AgiTool("Captures a screenshot of a specific region of the primary screen.")
+    @AgiTool("Captures a screenshot of a specific region of the primary screen, writes it to disk, attaches it to the tool response, and returns the absolute file path.")
     public String captureRegion(
             @AgiToolParam("X coordinate of the top-left corner.") int x,
             @AgiToolParam("Y coordinate of the top-left corner.") int y,
             @AgiToolParam("Width of the region.") int width,
             @AgiToolParam("Height of the region.") int height) throws Exception {
-
         Rectangle screenRect = new Rectangle(x, y, width, height);
+        log("Capturing screenshot for : " + screenRect);
         BufferedImage capture = new Robot().createScreenCapture(screenRect);
+        log("Captured BufferedImage");
 
-        java.nio.file.Path screenshotDir = AbstractAsiContainer.getWorkDirSubDir("screenshots");
-        java.nio.file.Path file = screenshotDir.resolve("region_" + System.currentTimeMillis() + ".png");
+        Path screenshotDir = AbstractAsiContainer.getWorkDirSubDir("screenshots");
+        Path file = screenshotDir.resolve("region_" + System.currentTimeMillis() + ".png");
+        log("Writing to " + file.toFile());
         ImageIO.write(capture, "png", file.toFile());
+        log("Marking file as deleteOnExit() ");
+        file.toFile().deleteOnExit();
 
+        log("Attaching to tool response");
         addAttachment(file);
-        return "Region captured and attached. Path: " + file.toAbsolutePath().toString();
+        log("Region captured, written to disk and attached to tool response.");
+        return file.toAbsolutePath().toString();
     }
 }

@@ -71,4 +71,16 @@ public interface ParameterRenderer<T> {
             getParentRenderer().childValueChanged(child, newChildValue);
         }
     }
+
+    /**
+     * Notifies this renderer that one of its child renderers requested to be deleted.
+     * Default implementation bubbles the notification up to {@link #getParentRenderer()} if present.
+     * 
+     * @param child The child renderer requesting deletion.
+     */
+    default void childDeleted(ParameterRenderer<?> child) {
+        if (getParentRenderer() != null) {
+            getParentRenderer().childDeleted(child);
+        }
+    }
 }

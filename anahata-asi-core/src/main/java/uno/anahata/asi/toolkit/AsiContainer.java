@@ -501,8 +501,9 @@ public class AsiContainer extends AnahataToolkit {
 
         String sessionNick = (nickName != null && !nickName.isBlank()) ? nickName : "Media Generation";
 
-        // Spawn a sub-session with no toolkits
+        // Spawn a sub-session with no toolkits and local tools disabled
         Agi subAgi = createNewAgiInternal(Boolean.TRUE.equals(open), false, sessionNick, aiProviderUUID, modelID, List.of(), resourceURIs, null, null, thinkingLevel, modalities);
+        subAgi.getConfig().setLocalToolsEnabled(false);
 
         // If thinking level is null or NONE, disable includeThoughts specifically for media generation
         if (thinkingLevel == null || thinkingLevel == ThinkingLevel.NONE) {

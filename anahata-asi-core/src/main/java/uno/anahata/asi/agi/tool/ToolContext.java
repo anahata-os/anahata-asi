@@ -276,6 +276,20 @@ public class ToolContext {
     }
 
     /**
+     * Attaches a binary blob to the current tool's response with source file path traceability.
+     *
+     * @param data The binary data to attach.
+     * @param mimeType The MIME type of the data (e.g., 'image/png').
+     * @param sourcePath The source file path on disk, or null.
+     */
+    @Internal(value = "Attaches binary data with source path to the tool response", requiresCapturedToolContext = true)
+    public void addAttachment(byte[] data, String mimeType, Path sourcePath) {
+        log("attaching " + data.length + "b mimeType=" + mimeType + " sourcePath=" + sourcePath);
+        ToolResponseAttachment tra = getResponse().addAttachment(data, mimeType, sourcePath);
+        log("attached " + tra);
+    }
+
+    /**
      * Attaches a binary blob to the current tool's response.
      *
      * @param data The binary data to attach.
@@ -316,7 +330,7 @@ public class ToolContext {
         } catch (Exception e) {
             throw new IOException("Failed to detect MIME type for " + path, e);
         }
-        addAttachment(data, mimeType);
+        addAttachment(data, mimeType, path);
     }
     
     /**

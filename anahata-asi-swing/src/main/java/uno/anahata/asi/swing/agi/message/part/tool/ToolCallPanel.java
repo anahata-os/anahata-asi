@@ -121,6 +121,8 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
     private JButton revertButton;
     /** Progress bar visible during execution. */
     private JProgressBar toolProgressBar;
+    /** Flag to suppress action listener events during programmatic UI updates. */
+    private boolean updatingControls = false;
 
     /**
      * Constructs a new ToolCallPanel.
@@ -134,8 +136,13 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         new EdtPropertyChangeListener(this, part.getResponse(), null, this::handlePropertyChange);
         new EdtPropertyChangeListener(this, part.getTool(), "permission", evt -> {
             ToolPermission tp = (ToolPermission) evt.getNewValue();
-            permissionCombo.setSelectedItem(tp);
-            permissionCombo.setForeground(SwingAgiConfig.getColor(tp));
+            updatingControls = true;
+            try {
+                permissionCombo.setSelectedItem(tp);
+                permissionCombo.setForeground(SwingAgiConfig.getColor(tp));
+            } finally {
+                updatingControls = false;
+            }
         });
     }
 
@@ -266,6 +273,9 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         });
         permissionCombo.setRenderer(new ToolPermissionRenderer());
         permissionCombo.addActionListener(e -> {
+            if (updatingControls) {
+                return;
+            }
             ToolPermission tp = (ToolPermission) permissionCombo.getSelectedItem();
             getPart().getTool().setPermission(tp);
             permissionCombo.setForeground(SwingAgiConfig.getColor(tp));
@@ -286,6 +296,9 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         statusCombo = new JComboBox<>(ToolExecutionStatus.values());
         statusCombo.setRenderer(new ToolExecutionStatusRenderer());
         statusCombo.addActionListener(e -> {
+            if (updatingControls) {
+                return;
+            }
             ToolExecutionStatus status = (ToolExecutionStatus) statusCombo.getSelectedItem();
             getPart().getResponse().setStatus(status);
             statusCombo.setForeground(SwingAgiConfig.getColor(status));
@@ -500,14 +513,19 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
      * @param call The tool call context.
      */
     private void updateControls(AbstractToolCall<?, ?> call, AbstractToolResponse<?> response) {
-        ToolPermission tp = call.getTool().getPermission();
-        permissionCombo.setSelectedItem(tp);
-        permissionCombo.setForeground(SwingAgiConfig.getColor(tp));
-        statusCombo.setSelectedItem(response.getStatus());
-        statusCombo.setForeground(SwingAgiConfig.getColor(response.getStatus()));
-        
-        if (!feedbackField.getText().equals(response.getUserFeedback())) {
-            feedbackField.setText(response.getUserFeedback());
+        updatingControls = true;
+        try {
+            ToolPermission tp = call.getTool().getPermission();
+            permissionCombo.setSelectedItem(tp);
+            permissionCombo.setForeground(SwingAgiConfig.getColor(tp));
+            statusCombo.setSelectedItem(response.getStatus());
+            statusCombo.setForeground(SwingAgiConfig.getColor(response.getStatus()));
+            
+            if (!feedbackField.getText().equals(response.getUserFeedback())) {
+                feedbackField.setText(response.getUserFeedback());
+            }
+        } finally {
+            updatingControls = false;
         }
         
         // Remove all action listeners before adding new ones
@@ -606,7 +624,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         String argsStr = call.getTool().getParameters().stream()
                 .map(p -> {
                     Object val = effectiveArgs.get(p.getName());
-                    String valStr = val == null ? "null" : TextUtils.formatValue(val.toString());
+                    String valStr = TextUtils.formatValue(val);
                     if (call.getModifiedArgs().containsKey(p.getName())) {
                         return "<font color='blue'>" + valStr + "</font>";
                     }
@@ -614,7 +632,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
                 })
                 .collect(Collectors.joining(", "));
         
-        sb.append(argsStr).append(")");
+        sb.append(TextUtils.formatValue(argsStr)).append(")");
         
         String statusText = response.getStatus() != null ? response.getStatus().name() : "";
         String color = SwingUtils.toHtmlColor(SwingAgiConfig.getColor(response.getStatus()));

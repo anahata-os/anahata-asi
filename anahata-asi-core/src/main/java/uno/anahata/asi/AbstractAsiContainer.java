@@ -19,10 +19,8 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -31,7 +29,6 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tika.utils.ParserUtils;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
@@ -1344,13 +1341,14 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     /**
      * Starts a dedicated low-priority daemon thread that polls API key files once per second.
      * <p>
-     * This ensures that external edits to key files on disk are detected within 1 second without
-     * placing any synchronous disk I/O onto the Swing Event Dispatch Thread (EDT).
+     * This ensures that external edits to key files on disk are detected within
+     * 1 second without placing any synchronous disk I/O onto the Swing Event
+     * Dispatch Thread (EDT).
      * </p>
      */
     private void startKeyFileWatcherThread() {
         keyWatcherThread = new Thread(() -> {
-            while (keyWatcherRunning) {
+            while (!Thread.currentThread().isInterrupted() && keyWatcherRunning) {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
@@ -1371,15 +1369,17 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Shuts down the container and its shared executor.
+     * Shuts down the container, interrupts the key watcher thread, and
+     * terminates the shared executor.
      */
     public void shutdown() {
         log.info("Shutting down AsiContainer: {}", hostApplicationId);
         keyWatcherRunning = false;
         if (keyWatcherThread != null) {
             keyWatcherThread.interrupt();
+            keyWatcherThread = null;
         }
-        executor.shutdown();
+        executor.shutdownNow();
     }
 
     /**

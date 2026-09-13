@@ -1,9 +1,11 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.agi.context;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -12,7 +14,9 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.message.AbstractMessage;
 import uno.anahata.asi.agi.message.AbstractPart;
 import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
+import uno.anahata.asi.agi.message.BlobPart;
 import uno.anahata.asi.agi.message.RagMessage;
+import uno.anahata.asi.agi.message.TextPart;
 import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
@@ -147,26 +151,26 @@ public class ContextWindowGarbageCollector extends BasicPropertyChangeSource {
      * @return The formatted summary string.
      */
     private String summarizeParts(AbstractMessage message) {
-        java.util.List<String> summaries = new java.util.ArrayList<>();
+        List<String> summaries = new ArrayList<>();
         for (AbstractPart part : message.getParts(true)) {
             if (part instanceof AbstractToolCall<?, ?> toolCall) {
                 String status = toolCall.getResponse() != null && toolCall.getResponse().getStatus() != null
                         ? toolCall.getResponse().getStatus().name()
                         : "UNKNOWN";
-                summaries.add(part.getClass().getSimpleName() + "(tool: " + toolCall.getToolName() + ", status: " + status + ")");
-            } else if (part instanceof uno.anahata.asi.agi.message.TextPart textPart) {
+                summaries.add(toolCall.getToolName() + "(" + toolCall.getArgumentsString(true) + ") [" + status + "]");
+            } else if (part instanceof TextPart textPart) {
                 if (textPart.isThought()) {
                     summaries.add(part.getClass().getSimpleName() + "(thought)");
                 } else {
                     summaries.add(part.getClass().getSimpleName());
                 }
-            } else if (part instanceof uno.anahata.asi.agi.message.BlobPart blobPart) {
+            } else if (part instanceof BlobPart blobPart) {
                 summaries.add(part.getClass().getSimpleName() + "(mime: " + blobPart.getMimeType() + ")");
             } else {
                 summaries.add(part.getClass().getSimpleName());
             }
         }
-        return summaries.stream().collect(java.util.stream.Collectors.joining(", ", "[", "]"));
+        return summaries.stream().collect(Collectors.joining(", ", "[", "]"));
     }
 
     /**

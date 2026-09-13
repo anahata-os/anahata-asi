@@ -42,13 +42,12 @@ import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.message.part.tool.param.AgiClassSourceParameterRenderer;
 import uno.anahata.asi.swing.agi.message.part.tool.param.FullTextFileCreateRenderer;
 import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory;
-import static uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory.register;
-import static uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory.registerById;
 import uno.anahata.asi.swing.agi.message.part.tool.param.PathParameterRenderer;
 import uno.anahata.asi.swing.agi.message.part.tool.param.ResourceUUIDParameterRenderer;
 import uno.anahata.asi.swing.agi.message.part.tool.param.TabbedListParameterRenderer;
 import uno.anahata.asi.swing.agi.message.part.tool.param.UriParameterRenderer;
 import uno.anahata.asi.swing.agi.message.part.tool.param.VBoxListParameterRenderer;
+import uno.anahata.asi.swing.agi.message.part.tool.param.WrapListParameterRenderer;
 import uno.anahata.asi.swing.components.ExceptionDialog;
 import uno.anahata.asi.swing.internal.JavaFxBridge;
 import uno.anahata.asi.swing.internal.SwingUtils;
@@ -90,11 +89,11 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
         ParameterRendererFactory.register(AgiClassSource.class, AgiClassSourceParameterRenderer.class);
         
         ParameterRendererFactory.registerById("tabs", TabbedListParameterRenderer.class);
-        ParameterRendererFactory.registerById("list_tabs", TabbedListParameterRenderer.class);
         ParameterRendererFactory.registerById("vbox", VBoxListParameterRenderer.class);
-        ParameterRendererFactory.registerById("list_vbox", VBoxListParameterRenderer.class);
+        ParameterRendererFactory.registerById("wrap", WrapListParameterRenderer.class);
         ParameterRendererFactory.registerById("uri", UriParameterRenderer.class);
         ParameterRendererFactory.registerById("resource_uuid", ResourceUUIDParameterRenderer.class);
+        ParameterRendererFactory.registerById("resource", ResourceUUIDParameterRenderer.class);
         ParameterRendererFactory.registerById("path", PathParameterRenderer.class);
 
         // Provider UI Panel Registry
@@ -309,7 +308,7 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
      * @param count The number of entities imported.
      * @param prevVerStr The predecessor version string.
      */
-    private void showImportSuccess(int count, String prevVerStr) {
+    protected void showImportSuccess(int count, String prevVerStr) {
 
         try {
             SwingUtils.runInEDTAndWait(() -> {

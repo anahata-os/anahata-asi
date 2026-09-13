@@ -79,21 +79,84 @@ public class ParameterRendererFactory {
      * @return A specialized or fallback renderer.
      */
     public static ParameterRenderer<?> create(AgiPanel agiPanel, AbstractToolCall<?, ?> call, String paramName, Object value, String rendererId) {
-        // 0. Check for String ID hits
-        if (rendererId != null && !rendererId.isEmpty()) {
-            Class<? extends ParameterRenderer<?>> rendererClass = ID_REGISTRY.get(rendererId.toLowerCase());
-            if (rendererClass != null) {
+        String token0 = null;
+        String token1 = null;
+
+        if (rendererId != null && !rendererId.isBlank()) {
+            String[] tokens = rendererId.split(",");
+            token0 = tokens[0].trim().toLowerCase();
+            if (tokens.length > 1 && !tokens[1].trim().isBlank()) {
+                token1 = tokens[1].trim().toLowerCase();
+            }
+        }
+
+        // 1. Collection / List Handling
+        if (value instanceof List<?> list) {
+            Class<? extends ParameterRenderer<?>> containerClass = null;
+            String itemRendererId = null;
+
+            if (token0 != null) {
+                Class<? extends ParameterRenderer<?>> clazz0 = ID_REGISTRY.get(token0);
+                if (clazz0 != null && AbstractListParameterRenderer.class.isAssignableFrom(clazz0)) {
+                    // token0 is explicitly registered as a list container (e.g. tabs, vbox, wrap)
+                    containerClass = clazz0;
+                    itemRendererId = token1;
+                } else {
+                    // token0 is an item renderer (e.g. uri, java, resource_uuid)
+                    itemRendererId = token0;
+                    if (token1 != null) {
+                        Class<? extends ParameterRenderer<?>> clazz1 = ID_REGISTRY.get(token1);
+                        if (clazz1 != null && AbstractListParameterRenderer.class.isAssignableFrom(clazz1)) {
+                            containerClass = clazz1;
+                        }
+                    }
+                }
+            }
+
+            // Default list container resolution if not explicitly matched in registry
+            if (containerClass == null) {
+                String defaultContainerId = (!list.isEmpty() && list.get(0) instanceof Displayable) ? "tabs" : "vbox";
+                Class<? extends ParameterRenderer<?>> defaultClass = ID_REGISTRY.get(defaultContainerId);
+                if (defaultClass != null && AbstractListParameterRenderer.class.isAssignableFrom(defaultClass)) {
+                    containerClass = defaultClass;
+                } else {
+                    containerClass = VBoxListParameterRenderer.class;
+                }
+            }
+
+            try {
+                AbstractListParameterRenderer<Object> listRenderer = (AbstractListParameterRenderer<Object>) containerClass.getDeclaredConstructor().newInstance();
+                listRenderer.setItemRendererId(itemRendererId);
+                listRenderer.init(agiPanel, call, paramName, (List<Object>) (List<?>) list);
+                return listRenderer;
+            } catch (Exception e) {
+                log.error("Failed to instantiate list container renderer: {}", containerClass.getName(), e);
+            }
+        }
+
+        // 2. Single Item: Check String ID hits (avoiding list containers if single item)
+        String singleItemId = token0;
+        if (token0 != null) {
+            Class<? extends ParameterRenderer<?>> clazz0 = ID_REGISTRY.get(token0);
+            if (clazz0 != null && AbstractListParameterRenderer.class.isAssignableFrom(clazz0) && token1 != null) {
+                singleItemId = token1;
+            }
+        }
+
+        if (singleItemId != null) {
+            Class<? extends ParameterRenderer<?>> rendererClass = ID_REGISTRY.get(singleItemId);
+            if (rendererClass != null && !AbstractListParameterRenderer.class.isAssignableFrom(rendererClass)) {
                 try {
                     ParameterRenderer<Object> renderer = (ParameterRenderer<Object>) rendererClass.getDeclaredConstructor().newInstance();
                     renderer.init(agiPanel, call, paramName, value);
                     return renderer;
                 } catch (Exception e) {
-                    log.error("Failed to instantiate ID-based specialized renderer", e);
+                    log.error("Failed to instantiate ID-based specialized renderer for id: {}", singleItemId, e);
                 }
             }
         }
 
-        // 1. Check for Specialized Registry Hits
+        // 3. Single Item: Check for Specialized Registry Hits by Class
         if (value != null) {
             Class<? extends ParameterRenderer<?>> rendererClass = REGISTRY.get(value.getClass());
             if (rendererClass != null) {
@@ -107,18 +170,8 @@ public class ParameterRendererFactory {
             }
         }
 
-        // 2. Collection / List Handling
-        if (value instanceof List<?> list) {
-            boolean preferTabs = !list.isEmpty() && (list.get(0) instanceof Displayable);
-            AbstractListParameterRenderer<Object> listRenderer = preferTabs 
-                    ? new TabbedListParameterRenderer() 
-                    : new VBoxListParameterRenderer();
-            listRenderer.init(agiPanel, call, paramName, (List<Object>) (List<?>) list);
-            return listRenderer;
-        }
-
-        // 3. Authoritative Fallback: High-Fidelity Object-to-String Renderer
-        String lang = (rendererId != null && !rendererId.isEmpty()) ? rendererId : "text";
+        // 4. Authoritative Fallback: High-Fidelity Object-to-String Renderer
+        String lang = (singleItemId != null) ? singleItemId : "text";
 
         ObjectToStringParameterRenderer renderer = new ObjectToStringParameterRenderer();
         renderer.setLanguage(lang);

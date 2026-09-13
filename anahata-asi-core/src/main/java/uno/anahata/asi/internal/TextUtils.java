@@ -3,14 +3,17 @@
  */
 package uno.anahata.asi.internal;
 
+import java.lang.reflect.Array;
 import java.net.InetAddress;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Map;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
+import uno.anahata.asi.Displayable;
 
 /**
  * A collection of general-purpose text and formatting utility methods.
@@ -101,16 +104,20 @@ public class TextUtils {
         if (value == null) {
             return "null";
         }
+        if (value instanceof Displayable d) {
+            return d.getDisplayValue();
+        }
         if (value instanceof Collection<?> col) {
             return col.stream()
-                .map(String::valueOf)
-                .collect(Collectors.joining("\n"));
+                .map(item -> item instanceof Displayable d ? d.getDisplayValue() : String.valueOf(item))
+                .collect(Collectors.joining(", ", "[", "]"));
         }
         if (value.getClass().isArray()) {
-            int length = java.lang.reflect.Array.getLength(value);
-            java.util.StringJoiner sj = new java.util.StringJoiner(", ", "[", "]");
+            int length = Array.getLength(value);
+            StringJoiner sj = new StringJoiner(", ", "[", "]");
             for (int i = 0; i < length; i++) {
-                sj.add(String.valueOf(java.lang.reflect.Array.get(value, i)));
+                Object item = Array.get(value, i);
+                sj.add(item instanceof Displayable d ? d.getDisplayValue() : String.valueOf(item));
             }
             return sj.toString();
         }

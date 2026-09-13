@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -227,6 +228,26 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
     }
 
     /**
+     * Formats the tool call's arguments into a concise, Java-like comma-separated string.
+     * Honors {@link uno.anahata.asi.Displayable#getDisplayValue()} and bracketed collections via {@link TextUtils#formatValue}.
+     *
+     * @param effective If true, uses effective args (including user modifications); otherwise original args.
+     * @return The formatted comma-separated arguments string (e.g. "true, [FlightContact, Airport]").
+     */
+    public String getArgumentsString(boolean effective) {
+        Map<String, Object> targetArgs = effective ? getEffectiveArgs() : getArgs();
+        if (targetArgs.isEmpty()) {
+            return "";
+        }
+        return tool.getParameters().stream()
+                .map(p -> {
+                    Object val = targetArgs.get(p.getName());
+                    return TextUtils.formatValue(val);
+                })
+                .collect(Collectors.joining(", "));
+    }
+
+    /**
      * {@inheritDoc}
      * Overridden to provide a rich, detailed execution summary in the pruned metadata header.
      */
@@ -238,7 +259,7 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
         
         sb.append(" | Args: ").append(TextUtils.formatValue(response.getExecutedArgs()));
         if (!response.getModifiedArgs().isEmpty()) {
-            sb.append(" | Modified Args: ").append(response.getModifiedArgs().keySet());
+            sb.append(" | Modified Args: ").append(TextUtils.formatValue(response.getModifiedArgs().keySet()));
         }
         
         if (response.getResult() != null) {
@@ -254,7 +275,21 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
             sb.append(" | Errors: ").append(TextUtils.formatValue(response.getErrors()));
         }
         
+        if (!response.getAttachments().isEmpty()) {
+            sb.append(" | Attachments: ").append(TextUtils.formatValue(response.getAttachments()));
+        }
+        
         return sb.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void appendMetadata(StringBuilder sb) {
+        if (!response.getAttachments().isEmpty()) {
+            sb.append(" | Attachments: ").append(TextUtils.formatValue(response.getAttachments()));
+        }
     }
 
 }
