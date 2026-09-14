@@ -8,8 +8,8 @@
     </parent>
     <artifactId>anahata-asi-openai</artifactId>
     <packaging>jar</packaging>
-    <name>Anahata ASI OpenAI Responses Provider</name>
-    <description>Pre-configured provider for OpenAI using OpenAI's responses api</description>
+    <name>Anahata ASI OpenAI Provider</name>
+    <description>Implementation of OpenAI's chat/completions and Responses API providers</description>
 
     <dependencies>
         <!-- Core Anahata ASI API -->

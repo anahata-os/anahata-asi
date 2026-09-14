@@ -36,8 +36,8 @@ import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.agi.tool.spi.AbstractToolParameter;
 import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
-import uno.anahata.asi.internal.ImageMetadataUtils;
-import uno.anahata.asi.internal.ImageMetadataUtils.ImageMetadata;
+import uno.anahata.asi.internal.MediaMetadataUtils;
+import uno.anahata.asi.internal.MediaMetadataUtils.ImageMetadata;
 import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.internal.TokenizerUtils;
 
@@ -513,7 +513,7 @@ public class OpenAiModel extends AbstractModel {
      * {@inheritDoc}
      * <p>
      * Calculates the exact, model-specific multimodal token count for OpenAI image data.
-     * Delegates the header-only image dimension reading to the core {@link ImageMetadataUtils} utility,
+     * Delegates the header-only image dimension reading to the core {@link MediaMetadataUtils} utility,
      * and performs the OpenAI-specific high-detail scaling and tiling calculations.
      * </p>
      * @param data The raw binary data of the file or attachment.
@@ -525,8 +525,8 @@ public class OpenAiModel extends AbstractModel {
                     return 0;
                 }
                 if (mimeType != null && mimeType.startsWith("image/")) {
-                    ImageMetadata metadata = ImageMetadataUtils.readMetadata(data);
-                    return ImageMetadataUtils.calculateOpenAiTileTokens(metadata);
+                    ImageMetadata metadata = MediaMetadataUtils.readImageMetadata(data);
+                    return OpenAiTokenUtils.calculateOpenAiTileTokens(metadata);
                 }
                 return 85; // Fallback for non-image binary data
     }

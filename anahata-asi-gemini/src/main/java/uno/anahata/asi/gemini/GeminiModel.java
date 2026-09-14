@@ -46,8 +46,8 @@ import uno.anahata.asi.agi.tool.ToolResponseAttachment;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.gemini.adapter.GeminiPartAdapter;
 import com.google.genai.LocalTokenizer;
-import uno.anahata.asi.internal.ImageMetadataUtils;
-import uno.anahata.asi.internal.ImageMetadataUtils.ImageMetadata;
+import uno.anahata.asi.internal.MediaMetadataUtils;
+import uno.anahata.asi.internal.MediaMetadataUtils.ImageMetadata;
 import uno.anahata.asi.internal.JacksonUtils;
 
 /**
@@ -213,7 +213,7 @@ public class GeminiModel extends AbstractModel {
             return 0;
         }
         if (mimeType != null && mimeType.startsWith("image/")) {
-            ImageMetadata metadata = ImageMetadataUtils.readMetadata(data);
+            ImageMetadata metadata = MediaMetadataUtils.readImageMetadata(data);
             if (metadata != null) {
                 int width = metadata.getWidth();
                 int height = metadata.getHeight();
