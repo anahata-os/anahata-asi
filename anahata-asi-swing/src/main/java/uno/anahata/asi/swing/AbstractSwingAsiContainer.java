@@ -92,7 +92,6 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
         ParameterRendererFactory.registerById("vbox", VBoxListParameterRenderer.class);
         ParameterRendererFactory.registerById("wrap", WrapListParameterRenderer.class);
         ParameterRendererFactory.registerById("uri", UriParameterRenderer.class);
-        ParameterRendererFactory.registerById("resource_uuid", ResourceUUIDParameterRenderer.class);
         ParameterRendererFactory.registerById("resource", ResourceUUIDParameterRenderer.class);
         ParameterRendererFactory.registerById("path", PathParameterRenderer.class);
 
