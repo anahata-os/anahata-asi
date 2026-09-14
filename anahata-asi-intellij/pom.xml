@@ -4,7 +4,7 @@
     <parent>
         <groupId>uno.anahata</groupId>
         <artifactId>anahata-asi-parent</artifactId>
-        <version>1.2.7-SNAPSHOT</version>
+        <version>1.2.8-SNAPSHOT</version>
     </parent>
     
     <artifactId>anahata-asi-intellij</artifactId>
@@ -159,6 +159,92 @@
                     <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <!-- Platform SM test-runner API (SMTRunnerEventsListener/Adapter, SMTestProxy) and the
+             base test-runner model (AbstractTestProxy) for structured test results. These are
+             platform modules supplied by the running IDE, so no plugin <depends> is required. -->
+        <dependency>
+            <groupId>com.jetbrains.intellij.platform</groupId>
+            <artifactId>sm-runner</artifactId>
+            <version>${intellij.plugins.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.jetbrains.intellij.platform</groupId>
+            <artifactId>test-runner</artifactId>
+            <version>${intellij.plugins.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- External-system framework (Gradle task execution via the provider-agnostic API).
+             Platform modules supplied by the running IDE; Gradle dispatch needs the bundled
+             Gradle plugin, declared in plugin.xml. -->
+        <dependency>
+            <groupId>com.jetbrains.intellij.platform</groupId>
+            <artifactId>external-system</artifactId>
+            <version>${intellij.plugins.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.jetbrains.intellij.platform</groupId>
+            <artifactId>external-system-impl</artifactId>
+            <version>${intellij.plugins.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- Platform XDebugger API (XDebuggerManager, XBreakpointManager, XDebugSession,
+             XDebuggerEvaluator, frame/value model). A platform module supplied by the running IDE,
+             so the Debugger toolkit needs no plugin <depends>: xdebugger lives in
+             com.intellij.modules.platform and concrete line-breakpoint types are contributed by
+             com.intellij.modules.java, both already declared. The toolkit uses only this
+             provider-agnostic API, never the Java/Kotlin debugger implementations. -->
+        <dependency>
+            <groupId>com.jetbrains.intellij.platform</groupId>
+            <artifactId>debugger</artifactId>
+            <version>${intellij.plugins.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- Unit tests (JUnit 5; versions managed by the parent). -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

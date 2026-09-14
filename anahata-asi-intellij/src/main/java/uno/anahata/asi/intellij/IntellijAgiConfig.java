@@ -12,6 +12,8 @@ import uno.anahata.asi.intellij.tools.java.Hints;
 import uno.anahata.asi.intellij.tools.java.IntellijJava;
 import uno.anahata.asi.intellij.tools.maven.Maven;
 import uno.anahata.asi.intellij.tools.project.Projects;
+import uno.anahata.asi.intellij.tools.gradle.Gradle;
+import uno.anahata.asi.intellij.tools.debugger.Debugger;
 import uno.anahata.asi.intellij.tools.run.RunConfigurations;
 import uno.anahata.asi.intellij.tools.terminal.Terminals;
 import uno.anahata.asi.intellij.tools.vcs.Vcs;
@@ -60,10 +62,12 @@ public class IntellijAgiConfig extends SwingAgiConfig {
 
         getToolClasses().add(Projects.class);
         getToolClasses().add(Maven.class);
+        getToolClasses().add(Gradle.class);
         getToolClasses().add(CodeModel.class);
         getToolClasses().add(Editor.class);
         getToolClasses().add(IDE.class);
         getToolClasses().add(RunConfigurations.class);
+        getToolClasses().add(Debugger.class);
         getToolClasses().add(Vcs.class);
         getToolClasses().add(CodeRefiner.class);
         getToolClasses().add(BatchCodeRefiner.class);

@@ -229,7 +229,9 @@ public class IntellijTextResourceWriteRenderer implements ParameterRenderer<Abst
         DiffContentFactory factory = DiffContentFactory.getInstance();
 
         DocumentContent baseContent = factory.create(project, base, fileType);
-        DocumentContent proposedContent = factory.create(project, proposed, fileType);
+        DocumentContent proposedContent = (editable && project != null)
+                ? factory.createEditable(project, proposed, fileType)
+                : factory.create(project, proposed, fileType);
         addGutterComments(project, proposedContent);
 
         if (diffPanel == null) {

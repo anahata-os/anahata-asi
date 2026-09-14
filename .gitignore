@@ -62,3 +62,6 @@ target/site/apidocs/
 /dist-deb/
 /AppDir/
 /anahata-asi-desktop/lwjgl_libs/
+
+# macOS
+.DS_Store
