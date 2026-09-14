@@ -94,7 +94,8 @@ public class BlobPartPanel extends AbstractPartPanel<BlobPart> {
     @Override
     public void removeNotify() {
         if (activeViewer != null) {
-            activeViewer.stop();
+            activeViewer.dispose();
+            activeViewer = null;
         }
         super.removeNotify();
     }

@@ -77,6 +77,8 @@ public class SwingImageViewer extends JPanel implements MediaViewerComponent {
         add(scrollPane, BorderLayout.CENTER);
         add(toolbar, BorderLayout.SOUTH);
 
+        canvas.setToolTipText("Ctrl + Scroll to zoom in / out (Double-click to toggle 1:1)");
+
         // Bind toolbar image supplier for clipboard copy
         toolbar.setImageSupplier(() -> image);
 
@@ -128,8 +130,15 @@ public class SwingImageViewer extends JPanel implements MediaViewerComponent {
 
             @Override
             public void mouseWheelMoved(MouseWheelEvent e) {
-                double zoomFactor = (e.getWheelRotation() < 0) ? 1.15 : 0.87;
-                zoom(zoomFactor, e.getPoint());
+                if (e.isControlDown()) {
+                    double zoomFactor = (e.getWheelRotation() < 0) ? 1.15 : 0.87;
+                    zoom(zoomFactor, e.getPoint());
+                    e.consume();
+                } else {
+                    if (getParent() != null) {
+                        getParent().dispatchEvent(e);
+                    }
+                }
             }
         };
 

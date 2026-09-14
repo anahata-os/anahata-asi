@@ -99,6 +99,8 @@ public class JavaFxMediaViewerImpl extends JPanel implements MediaViewerComponen
         setOpaque(true);
         setBackground(new Color(20, 24, 32));
 
+        jfxPanel.setToolTipText("Ctrl + Scroll to zoom in / out");
+
         add(jfxPanel, BorderLayout.CENTER);
         add(toolbar, BorderLayout.SOUTH);
     }
@@ -200,6 +202,20 @@ public class JavaFxMediaViewerImpl extends JPanel implements MediaViewerComponen
         mediaContainer.setStyle("-fx-background-color: #000000;");
         mediaView.fitWidthProperty().bind(mediaContainer.widthProperty());
         mediaView.fitHeightProperty().bind(mediaContainer.heightProperty());
+
+        mediaContainer.setOnScroll(event -> {
+            if (event.isControlDown()) {
+                double zoomFactor = event.getDeltaY() > 0 ? 1.15 : 0.87;
+                double newFitW = mediaView.getFitWidth() * zoomFactor;
+                double newFitH = mediaView.getFitHeight() * zoomFactor;
+                if (newFitW > 50 && newFitH > 50 && newFitW < 10000 && newFitH < 10000) {
+                    mediaView.setFitWidth(newFitW);
+                    mediaView.setFitHeight(newFitH);
+                }
+                event.consume();
+            }
+        });
+
         rootLayout.setCenter(mediaContainer);
 
         // Control bar at bottom
