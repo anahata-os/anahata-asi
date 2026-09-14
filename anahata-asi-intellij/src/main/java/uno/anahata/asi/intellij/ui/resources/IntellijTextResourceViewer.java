@@ -135,7 +135,7 @@ public class IntellijTextResourceViewer extends AbstractTextResourceViewer {
      * @param name the raw resource or snippet name.
      * @return the normalized file name with a canonical extension.
      */
-    private static String normalizeResourceFileName(String name) {
+    static String normalizeResourceFileName(String name) {
         if (name == null || name.isBlank()) {
             return "snippet.txt";
         }
