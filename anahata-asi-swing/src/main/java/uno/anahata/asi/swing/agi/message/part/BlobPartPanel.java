@@ -55,7 +55,7 @@ public class BlobPartPanel extends AbstractPartPanel<BlobPart> {
         String currentMimeType = blobPart.getMimeType();
         byte[] currentData = blobPart.getData();
 
-        boolean contentChanged = !Arrays.equals(currentData, lastRenderedData) || !Objects.equals(currentMimeType, lastRenderedMimeType);
+        boolean contentChanged = activeViewer == null || !Arrays.equals(currentData, lastRenderedData) || !Objects.equals(currentMimeType, lastRenderedMimeType);
 
         if (mainContentLabel == null) {
             mainContentLabel = new JLabel();
@@ -84,6 +84,18 @@ public class BlobPartPanel extends AbstractPartPanel<BlobPart> {
             lastRenderedMimeType = currentMimeType;
             revalidate();
             repaint();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>Re-renders the viewer component if re-attached to the UI hierarchy after being pruned/removed.</p>
+     */
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        if (activeViewer == null && part != null && part.getData() != null) {
+            renderContent();
         }
     }
 
