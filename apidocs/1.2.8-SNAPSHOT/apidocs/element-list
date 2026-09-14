@@ -31,6 +31,7 @@ uno.anahata.asi.huggingface
 uno.anahata.asi.intellij
 uno.anahata.asi.intellij.internal
 uno.anahata.asi.intellij.settings
+uno.anahata.asi.intellij.tools.gradle
 uno.anahata.asi.intellij.tools.ide
 uno.anahata.asi.intellij.tools.ide.actions
 uno.anahata.asi.intellij.tools.ide.context
