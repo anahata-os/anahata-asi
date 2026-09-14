@@ -231,7 +231,7 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
     public String asText() {
         String callStr = getToolName() + "(" + getArgumentsString(true) + ")";
         if (response != null) {
-            return callStr + "\nResponse:\n" + response.asText();
+            return new StringBuilder(callStr).append("\nResponse:\n").append(response.asText()).toString();
         }
         return callStr;
     }
@@ -292,12 +292,18 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
      */
     @Override
     protected void appendMetadata(StringBuilder sb) {
-        if (!response.getAttachments().isEmpty()) {
-            sb.append(" | Attachments: ").append(
-                response.getAttachments().stream()
-                    .map(ToolResponseAttachment::getDisplayValue)
-                    .collect(Collectors.joining(", ", "[", "]"))
-            );
+        if (response != null) {
+            String feedback = response.getUserFeedback();
+            if (feedback != null && !feedback.isBlank()) {
+                sb.append(" | User Feedback: ").append(feedback);
+            }
+            if (!response.getAttachments().isEmpty()) {
+                sb.append(" | Attachments: ").append(
+                    response.getAttachments().stream()
+                        .map(ToolResponseAttachment::getDisplayValue)
+                        .collect(Collectors.joining(", ", "[", "]"))
+                );
+            }
         }
     }
 
