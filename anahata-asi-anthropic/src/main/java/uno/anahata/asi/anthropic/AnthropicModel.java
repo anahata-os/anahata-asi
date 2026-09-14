@@ -34,8 +34,8 @@ import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.agi.tool.spi.AbstractToolParameter;
 import uno.anahata.asi.anthropic.adapter.AnthropicContentAdapter;
-import uno.anahata.asi.internal.ImageMetadataUtils;
-import uno.anahata.asi.internal.ImageMetadataUtils.ImageMetadata;
+import uno.anahata.asi.internal.MediaMetadataUtils;
+import uno.anahata.asi.internal.MediaMetadataUtils.ImageMetadata;
 import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.internal.TokenizerUtils;
 
@@ -401,7 +401,7 @@ public class AnthropicModel extends AbstractModel {
      * {@inheritDoc}
      * <p>
      * Calculates the exact, model-specific multimodal token count for Anthropic image data.
-     * Delegates the header-only image dimension reading to the core {@link ImageMetadataUtils} utility,
+     * Delegates the header-only image dimension reading to the core {@link MediaMetadataUtils} utility,
      * and performs the Anthropic-specific megapixel-based calculation locally to maintain strict,
      * provider-decoupled modular boundaries.
      * </p>
@@ -414,7 +414,7 @@ public class AnthropicModel extends AbstractModel {
                     return 0;
                 }
                 if (mimeType != null && mimeType.startsWith("image/")) {
-                    ImageMetadata metadata = ImageMetadataUtils.readMetadata(data);
+                    ImageMetadata metadata = MediaMetadataUtils.readImageMetadata(data);
                     if (metadata != null) {
                         // Anthropic Claude 3/3.5 Vision Token Pricing Formula:
                         // tokens = (width * height) / 750

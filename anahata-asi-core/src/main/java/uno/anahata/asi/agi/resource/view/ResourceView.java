@@ -67,6 +67,28 @@ public interface ResourceView {
     }
 
     /**
+     * Returns the percentage of the underlying resource content currently visible
+     * or provided by this view to the model.
+     * <p>
+     * For unclipped or complete views (e.g. full-view text or complete media), this returns 100.0.
+     * For paginated, clipped, or truncated views, returns a value between 0.0 and 100.0.
+     * </p>
+     *
+     * @return The percentage of visible content, from 0.0 to 100.0.
+     */
+    double getVisiblePercentage();
+
+    /**
+     * Checks whether this view's content is currently truncated or clipped
+     * (i.e. less than 100% of the underlying resource is visible).
+     *
+     * @return true if truncated, false if 100% complete.
+     */
+    default boolean isTruncated() {
+        return getVisiblePercentage() < 100.0;
+    }
+
+    /**
      * Associates this view with its parent resource.
      * @param owner The owning Resource.
      */

@@ -253,12 +253,12 @@ public class Resources extends AnahataToolkit {
             @AgiToolParam(value = "The list of resource UUIDs.", rendererId = "resource") List<String> resourceIds, 
             @AgiToolParam("True to enable, false to disable.") boolean providing) {
         ResourceManager manager = getAgi().getResourceManager();
+        List<Resource> modified = manager.setProviding(resourceIds, providing);
+        for (Resource res : modified) {
+            log("Set providing=" + providing + " for resource: " + res.getName());
+        }
         for (String id : resourceIds) {
-            Resource res = manager.get(id);
-            if (res != null) {
-                res.setProviding(providing);
-                log("Set providing=" + providing + " for resource: " + res.getName());
-            } else {
+            if (manager.get(id) == null) {
                 error("Resource not found: " + id);
             }
         }

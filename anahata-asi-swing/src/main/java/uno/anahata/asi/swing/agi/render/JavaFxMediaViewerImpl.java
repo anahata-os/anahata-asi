@@ -91,6 +91,12 @@ public class JavaFxMediaViewerImpl extends JPanel implements MediaViewerComponen
     /** Temporary file holding media bytes if loaded from memory. */
     private File tempMediaFile;
 
+    /** Stored effective URI for lazy player resurrection on addNotify. */
+    private URI effectiveUri;
+
+    /** Stored MIME type for lazy player resurrection on addNotify. */
+    private String mimeType;
+
     /**
      * Constructs a new JavaFxMediaViewerImpl.
      */
@@ -98,6 +104,8 @@ public class JavaFxMediaViewerImpl extends JPanel implements MediaViewerComponen
         super(new BorderLayout());
         setOpaque(true);
         setBackground(new Color(20, 24, 32));
+
+        jfxPanel.setToolTipText("Ctrl + Scroll to zoom in / out");
 
         add(jfxPanel, BorderLayout.CENTER);
         add(toolbar, BorderLayout.SOUTH);
@@ -124,17 +132,19 @@ public class JavaFxMediaViewerImpl extends JPanel implements MediaViewerComponen
         toolbar.setSourceUri(sourceUri);
         toolbar.updateMetadata(null);
 
-        URI effectiveUri = resolveMediaUri(data, mimeType, displayName, sourceUri);
-        if (effectiveUri == null) {
+        this.mimeType = mimeType;
+        URI effective = resolveMediaUri(data, mimeType, displayName, sourceUri);
+        this.effectiveUri = effective;
+        if (effective == null) {
             log.warn("JavaFxMediaViewer: Unable to resolve a playable media URI.");
             return;
         }
 
         Platform.runLater(() -> {
             try {
-                initFxPlayer(effectiveUri, mimeType);
+                initFxPlayer(effective, mimeType);
             } catch (Throwable t) {
-                log.error("Failed to initialize JavaFX media player for URI: {}", effectiveUri, t);
+                log.error("Failed to initialize JavaFX media player for URI: {}", effective, t);
             }
         });
     }
@@ -200,6 +210,20 @@ public class JavaFxMediaViewerImpl extends JPanel implements MediaViewerComponen
         mediaContainer.setStyle("-fx-background-color: #000000;");
         mediaView.fitWidthProperty().bind(mediaContainer.widthProperty());
         mediaView.fitHeightProperty().bind(mediaContainer.heightProperty());
+
+        mediaContainer.setOnScroll(event -> {
+            if (event.isControlDown()) {
+                double zoomFactor = event.getDeltaY() > 0 ? 1.15 : 0.87;
+                double newFitW = mediaView.getFitWidth() * zoomFactor;
+                double newFitH = mediaView.getFitHeight() * zoomFactor;
+                if (newFitW > 50 && newFitH > 50 && newFitW < 10000 && newFitH < 10000) {
+                    mediaView.setFitWidth(newFitW);
+                    mediaView.setFitHeight(newFitH);
+                }
+                event.consume();
+            }
+        });
+
         rootLayout.setCenter(mediaContainer);
 
         // Control bar at bottom
@@ -379,12 +403,52 @@ public class JavaFxMediaViewerImpl extends JPanel implements MediaViewerComponen
 
     /**
      * {@inheritDoc}
+     * <p>
+     * Lazily reconstructs the JavaFX media player if re-attached to the UI hierarchy
+     * after being detached.
+     * </p>
+     */
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        if (mediaPlayer == null && effectiveUri != null) {
+            final URI uriToRestore = effectiveUri;
+            final String mimeToRestore = mimeType;
+            Platform.runLater(() -> {
+                if (mediaPlayer == null && uriToRestore.equals(effectiveUri)) {
+                    try {
+                        initFxPlayer(uriToRestore, mimeToRestore);
+                    } catch (Throwable t) {
+                        log.error("Failed to re-initialize JavaFX media player on addNotify", t);
+                    }
+                }
+            });
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Automatically stops playback and releases native OS decoders when detached from
+     * any Swing container (e.g. pruned message, closed tab, or dialog teardown).
+     * </p>
+     */
+    @Override
+    public void removeNotify() {
+        stop();
+        disposeFxPlayer();
+        super.removeNotify();
+    }
+
+    /**
+     * {@inheritDoc}
      * <p>Permanently releases player resources, temporary files, and decoders.</p>
      */
     @Override
     public void dispose() {
         stop();
         disposeFxPlayer();
+        this.effectiveUri = null;
         if (tempMediaFile != null && tempMediaFile.exists()) {
             tempMediaFile.delete();
             tempMediaFile = null;

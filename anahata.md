@@ -27,12 +27,16 @@ This project uses a set of key documents to guide development. For detailed info
 
 > [!NOTE]
 > **Simplicity and Stability**
-> The absolute priority for all development is **Simplicity and Stability** (or Stability through Simplicity). These principles rule above all others. 
+> The absolute priority for all development is **Simplicity and Stability** (or Stability through Simplicity). These principles rule above all others.
 
+- **CRITICAL: NO FQNs ON METHOD BODIES (STRICT CLEANLINESS)**:
+    Never, under any circumstances, use fully qualified class names (FQNs) inside method bodies or field declarations (e.g. `uno.anahata.asi.foo.Bar b = ...`). It looks terrible, degrades readability, and is strictly forbidden. **Always add the appropriate import statement at the top of the file** whenever you introduce or reference a type. If you are modifying code using the `Resources` toolkit, always include an extra replacement in the same turn to add the necessary imports.
+- **CRITICAL: NO BLIND CODING — LOAD ALL RELATED SOURCES FIRST**:
+    You are strictly forbidden from proposing or suggesting solutions that involve Anahata framework types or project files that you do not have in context (e.g. `TextViewportSettings`, `ResourceHandle`, etc.). Never code blind or rely on assumptions about method signatures, constructors, or internal fields. Before discussing, planning, or modifying code, proactively load all Java types, resources, and configuration files that could be directly or indirectly involved in the use case into context.
 - **DRY Principle (Don't Repeat Yourself)**: Avoid duplicating logic across classes. Extract shared behaviors (like Swing UI updates, event listeners, or domain state checks) into common base classes or utility methods.
 - **Domain Driven Architecture (DDA)**: The entire multimodule project is based on DDA. Business logic and state transitions must reside in the domain model entities. Anything UI agnositc should be in `anahata-asi-core`. UI components of core in `anahata-asi-swing`.
 - **Architectural Integrity**: We do not implement "dirty hacks" or workarounds to mask architectural flaws. If a design is broken, we fix the design.
-- **JDK 25 Standard**: All modules are built and documented using **JDK 25**.
+- **JDK 25 Standard**: All modules are built and documented using **JDK 25** but we want to support people using **JDK 21+**.
 - **Engineering over Patching**: There is no requirement for backwards compatibility in this beta stage. Redesign flawed components instead of adding null checks.
 - **Unified Content API**: Always prefer `message.addTextPart(text)` or `message.addBlobPart(...)` over direct instantiation of `TextPart` or `BlobPart`.
 - **API Leanliness**: Avoid redundant signatures or secondary constructors. Keep the API lean and consistent.
@@ -66,9 +70,6 @@ This project uses a set of key documents to guide development. For detailed info
     4. `@AgiTool` methods with @AgiToolParam annotations on parameters (If using pojos in parameters or returned types, use @Schema, @JsonIngore, etc type of annotations to control schema definitions and serialization mappings)
     5. Public helper methods (if needed that can be accessed by other toolkits via getToolkit(OtherToolkit.class) or by any other classess of the host application. Calling one toolkit from another toolkit supports context propagation via thread local of the associated ToolContex (this works for all methods of ToolContext such as log(""), error(""), addAttachment(), getModelId(), etc.) 
     6. Private implementation details (internal private methods )
-
-- **NO fqns on method bodies**: 
-    1. Never add fqns inside a class, looks terrible. If you are using the resources toolkit, you need to include the imports. 
 
 - **No second turn to add javadocs**: Javadocs should be given when the method or field or class is created, not later in a second turn. I.e. no java code should be written in the codebase without javadoc.
 

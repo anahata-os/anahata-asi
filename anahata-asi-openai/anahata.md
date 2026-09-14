@@ -1,5 +1,21 @@
-# Project Instructions: anahata-asi-openai-java
+# Anahata ASI OpenAI Provider (`anahata-asi-openai`)
 
-This file contains project-specific system instructions for the **anahata-asi-openai-java** project.
+> [!IMPORTANT]
+> This file is an extension of the `anahata.md` in the parent project. Always keep the root `anahata.md` in context as it contains the master Coding Principles and Javadoc Standards.
 
-**Note**: This is a **Sub-module** of **anahata-asi-parent**. These instructions are intended to extend the shared context provided by the parent project's `anahata.md`.
+## 1. Purpose & Scope
+This module is the canonical implementation for all OpenAI API protocols:
+1. **OpenAI Responses API** (`uno.anahata.asi.openai`):
+   - Modern, stateful, item-based protocol (`/v1/responses`).
+   - Supports native server-side tools (Web Search, Code Interpreter).
+   - Manages encrypted reasoning transmission for stateless clients and plain-text reasoning summaries for verified organizations.
+2. **OpenAI Chat Completions Protocol** (`uno.anahata.asi.openai.compatible`):
+   - Universal specification for standard `/v1/chat/completions`.
+   - Base engine inherited by the "Universal Alliance" providers (Ollama, Mistral, NovaRouteAI, OpenRouter, Nvidia, HuggingFace, Modal).
+   - Supports pluggable reasoning extraction strategies (FIELD, TAGS, NONE).
+
+## 2. Dependencies
+- Depends on `anahata-asi-core`.
+- Serves as the upstream dependency for `anahata-asi-openai-compatible`.
+
+Força Barça!

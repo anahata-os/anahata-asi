@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
@@ -234,17 +235,29 @@ public class Resource extends BasicPropertyChangeSource implements Rebindable, C
     }
 
     /**
+     * Sets the providing status and optionally fires an individual property change event.
+     *
+     * @param providing True to enable context contribution.
+     * @param fireEvent Whether to fire the "providing" property change event.
+     */
+    public void setProviding(boolean providing, boolean fireEvent) {
+        boolean old = this.providing;
+        if (old != providing) {
+            this.providing = providing;
+            if (fireEvent) {
+                propertyChangeSupport.firePropertyChange("providing", old, providing);
+            }
+        }
+    }
+
+    /**
      * Sets the providing status and fires a property change event if different.
      *
      * @param providing True to enable context contribution.
      */
     @Override
     public void setProviding(boolean providing) {
-        boolean old = this.providing;
-        if (old != providing) {
-            this.providing = providing;
-            propertyChangeSupport.firePropertyChange("providing", old, providing);
-        }
+        setProviding(providing, true);
     }
 
     /**
@@ -388,8 +401,18 @@ public class Resource extends BasicPropertyChangeSource implements Rebindable, C
         sb.append("Refresh Policy: ").append(getRefreshPolicy()).append("\n");
         sb.append("Context Position: ").append(getContextPosition()).append("\n");
 
-        if (view != null) {
+        if (!providing) {
+            sb.append("Status: **DISABLED / NOT PROVIDING** (Content is hidden from context to save tokens. Use Resources.setProviding([\"").append(uuid).append("\"], true) to view content)\n");
+        } else if (view != null) {
             sb.append(view.getHeader()).append("\n");
+            if (view.isTruncated()) {
+                double pct = view.getVisiblePercentage();
+                sb.append("ViewPort Status: **WARNING: PARTIAL VIEW** (")
+                        .append(String.format(Locale.US, "%.1f%%", pct))
+                        .append(" of resource visible). Use Resources.setFullView([\"")
+                        .append(uuid)
+                        .append("\"], true) to view the complete resource.\n");
+            }
         }
 
         if (contextPosition == ContextPosition.SYSTEM_INSTRUCTIONS && view instanceof MediaView) {

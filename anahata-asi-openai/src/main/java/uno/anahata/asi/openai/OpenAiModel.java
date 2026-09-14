@@ -36,8 +36,9 @@ import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.agi.tool.spi.AbstractToolParameter;
 import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
-import uno.anahata.asi.internal.ImageMetadataUtils;
-import uno.anahata.asi.internal.ImageMetadataUtils.ImageMetadata;
+import uno.anahata.asi.internal.MediaMetadata;
+import uno.anahata.asi.internal.MediaMetadataUtils;
+import uno.anahata.asi.internal.MediaMetadataUtils.ImageMetadata;
 import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.internal.TokenizerUtils;
 
@@ -513,7 +514,7 @@ public class OpenAiModel extends AbstractModel {
      * {@inheritDoc}
      * <p>
      * Calculates the exact, model-specific multimodal token count for OpenAI image data.
-     * Delegates the header-only image dimension reading to the core {@link ImageMetadataUtils} utility,
+     * Delegates the header-only image dimension reading to the core {@link MediaMetadataUtils} utility,
      * and performs the OpenAI-specific high-detail scaling and tiling calculations.
      * </p>
      * @param data The raw binary data of the file or attachment.
@@ -522,12 +523,22 @@ public class OpenAiModel extends AbstractModel {
      */
     @Override public int countTokens(byte[] data, String mimeType) {
         if (data == null || data.length == 0) {
-                    return 0;
-                }
-                if (mimeType != null && mimeType.startsWith("image/")) {
-                    ImageMetadata metadata = ImageMetadataUtils.readMetadata(data);
-                    return ImageMetadataUtils.calculateOpenAiTileTokens(metadata);
-                }
-                return 85; // Fallback for non-image binary data
+            return 0;
+        }
+        if (mimeType != null && mimeType.startsWith("image/")) {
+            ImageMetadata metadata = MediaMetadataUtils.readImageMetadata(data);
+            return OpenAiTokenUtils.calculateOpenAiTileTokens(metadata);
+        }
+        if (mimeType != null && mimeType.startsWith("audio/")) {
+            MediaMetadata meta = MediaMetadataUtils.readMediaMetadata(data, mimeType);
+            double sec = (meta != null && meta.durationSeconds() > 0.0) ? meta.durationSeconds() : 1.0;
+            return (int) Math.ceil(sec * 10.0); // OpenAI standard 10 tokens per second (1 token per 100ms)
+        }
+        if (mimeType != null && mimeType.startsWith("video/")) {
+            MediaMetadata meta = MediaMetadataUtils.readMediaMetadata(data, mimeType);
+            double sec = (meta != null && meta.durationSeconds() > 0.0) ? meta.durationSeconds() : 1.0;
+            return (int) Math.ceil(sec * 85.0); // 1 frame per second at low-detail image rate
+        }
+        return 85; // Fallback for other binary data
     }
 }

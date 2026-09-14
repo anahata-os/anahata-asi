@@ -46,8 +46,9 @@ import uno.anahata.asi.agi.tool.ToolResponseAttachment;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.gemini.adapter.GeminiPartAdapter;
 import com.google.genai.LocalTokenizer;
-import uno.anahata.asi.internal.ImageMetadataUtils;
-import uno.anahata.asi.internal.ImageMetadataUtils.ImageMetadata;
+import uno.anahata.asi.internal.MediaMetadata;
+import uno.anahata.asi.internal.MediaMetadataUtils;
+import uno.anahata.asi.internal.MediaMetadataUtils.ImageMetadata;
 import uno.anahata.asi.internal.JacksonUtils;
 
 /**
@@ -213,7 +214,7 @@ public class GeminiModel extends AbstractModel {
             return 0;
         }
         if (mimeType != null && mimeType.startsWith("image/")) {
-            ImageMetadata metadata = ImageMetadataUtils.readMetadata(data);
+            ImageMetadata metadata = MediaMetadataUtils.readImageMetadata(data);
             if (metadata != null) {
                 int width = metadata.getWidth();
                 int height = metadata.getHeight();
@@ -235,6 +236,16 @@ public class GeminiModel extends AbstractModel {
                 // 4. Each tile costs 258 tokens
                 return (tilesW * tilesH) * 258;
             }
+        }
+        if (mimeType != null && mimeType.startsWith("video/")) {
+            MediaMetadata meta = MediaMetadataUtils.readMediaMetadata(data, mimeType);
+            double sec = (meta != null && meta.durationSeconds() > 0.0) ? meta.durationSeconds() : 1.0;
+            return (int) Math.ceil(sec * 290.0); // 258 fps video + 32 fps audio track
+        }
+        if (mimeType != null && mimeType.startsWith("audio/")) {
+            MediaMetadata meta = MediaMetadataUtils.readMediaMetadata(data, mimeType);
+            double sec = (meta != null && meta.durationSeconds() > 0.0) ? meta.durationSeconds() : 1.0;
+            return (int) Math.ceil(sec * 32.0); // 32 tokens per second
         }
         return 258;
     }

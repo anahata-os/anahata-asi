@@ -102,7 +102,7 @@ public class ParameterRendererFactory {
                     containerClass = clazz0;
                     itemRendererId = token1;
                 } else {
-                    // token0 is an item renderer (e.g. uri, java, resource_uuid)
+                    // token0 is an item renderer (e.g. uri, java, resource)
                     itemRendererId = token0;
                     if (token1 != null) {
                         Class<? extends ParameterRenderer<?>> clazz1 = ID_REGISTRY.get(token1);
@@ -115,7 +115,18 @@ public class ParameterRendererFactory {
 
             // Default list container resolution if not explicitly matched in registry
             if (containerClass == null) {
-                String defaultContainerId = (!list.isEmpty() && list.get(0) instanceof Displayable) ? "tabs" : "vbox";
+                String defaultContainerId;
+                if (itemRendererId != null) {
+                    Class<? extends ParameterRenderer<?>> itemClass = ID_REGISTRY.get(itemRendererId);
+                    if (itemClass != null && AbstractChipParameterRenderer.class.isAssignableFrom(itemClass)) {
+                        defaultContainerId = "wrap";
+                    } else {
+                        defaultContainerId = (!list.isEmpty() && list.get(0) instanceof Displayable) ? "tabs" : "vbox";
+                    }
+                } else {
+                    defaultContainerId = (!list.isEmpty() && list.get(0) instanceof Displayable) ? "tabs" : "vbox";
+                }
+
                 Class<? extends ParameterRenderer<?>> defaultClass = ID_REGISTRY.get(defaultContainerId);
                 if (defaultClass != null && AbstractListParameterRenderer.class.isAssignableFrom(defaultClass)) {
                     containerClass = defaultClass;

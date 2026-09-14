@@ -8,13 +8,18 @@
     </parent>
     <artifactId>anahata-asi-openai-compatible</artifactId>
     <packaging>jar</packaging>
-    <name>Anahata ASI OpenAI Compatible Provider</name>
+    <name>Anahata ASI OpenAI Compatible Providers</name>
     <description>Universal raw-json-parsing provider implementation using the jdks http client for OpenAI using leagcy /chat/completions (Groq, DeepSeek, Ollama, etc.)</description>
 
     <dependencies>
         <dependency>
             <groupId>uno.anahata</groupId>
             <artifactId>anahata-asi-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>uno.anahata</groupId>
+            <artifactId>anahata-asi-openai</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -25,10 +30,6 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
         </dependency>
         <!-- Testing -->
         <dependency>

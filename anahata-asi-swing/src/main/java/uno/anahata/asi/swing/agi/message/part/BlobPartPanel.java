@@ -55,7 +55,7 @@ public class BlobPartPanel extends AbstractPartPanel<BlobPart> {
         String currentMimeType = blobPart.getMimeType();
         byte[] currentData = blobPart.getData();
 
-        boolean contentChanged = !Arrays.equals(currentData, lastRenderedData) || !Objects.equals(currentMimeType, lastRenderedMimeType);
+        boolean contentChanged = activeViewer == null || !Arrays.equals(currentData, lastRenderedData) || !Objects.equals(currentMimeType, lastRenderedMimeType);
 
         if (mainContentLabel == null) {
             mainContentLabel = new JLabel();
@@ -89,12 +89,25 @@ public class BlobPartPanel extends AbstractPartPanel<BlobPart> {
 
     /**
      * {@inheritDoc}
+     * <p>Re-renders the viewer component if re-attached to the UI hierarchy after being pruned/removed.</p>
+     */
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        if (activeViewer == null && part != null && part.getData() != null) {
+            renderContent();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
      * <p>Stops active media playback when the panel is removed from the UI hierarchy.</p>
      */
     @Override
     public void removeNotify() {
         if (activeViewer != null) {
-            activeViewer.stop();
+            activeViewer.dispose();
+            activeViewer = null;
         }
         super.removeNotify();
     }

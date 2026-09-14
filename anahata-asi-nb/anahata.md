@@ -52,6 +52,6 @@ Standard tool calls (the ones that show run buttons in the ui) will not reflect 
 - **Turn Sequencing**: Never batch `nbmreload` with source write operations. Wait for a successful compilation before triggering a reload.
 
 ## 6. Tasks & Bug Reports
-- **BCR Abstract Method Replacement Semicolon** [RESOLVED & VERIFIED ✅]: Fixed in `CodeRefinementIntent.applyToText()`. Both Abstract -> Concrete and Concrete -> Abstract conversions are cleanly handled without dangling semicolons or orphan braces. Verified by Test 22 in `CodeRefinementBatchTest`.
+- **Resources.setProviding on many resources fires many events glitches the ui** [PENDING]
 
 Força Barça!
