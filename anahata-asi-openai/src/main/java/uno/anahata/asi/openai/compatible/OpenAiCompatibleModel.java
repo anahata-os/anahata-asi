@@ -47,6 +47,7 @@ import uno.anahata.asi.agi.tool.schema.SchemaProvider;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
+import uno.anahata.asi.internal.MediaMetadata;
 import uno.anahata.asi.internal.MediaMetadataUtils;
 import uno.anahata.asi.internal.MediaMetadataUtils.ImageMetadata;
 import uno.anahata.asi.internal.JacksonUtils;
@@ -950,6 +951,16 @@ public class OpenAiCompatibleModel extends AbstractModel {
         if (mimeType != null && mimeType.startsWith("image/")) {
             ImageMetadata metadata = MediaMetadataUtils.readImageMetadata(data);
             return OpenAiTokenUtils.calculateOpenAiTileTokens(metadata);
+        }
+        if (mimeType != null && mimeType.startsWith("audio/")) {
+            MediaMetadata meta = MediaMetadataUtils.readMediaMetadata(data, mimeType);
+            double sec = (meta != null && meta.durationSeconds() > 0.0) ? meta.durationSeconds() : 1.0;
+            return (int) Math.ceil(sec * 10.0); // OpenAI standard 10 tokens per second
+        }
+        if (mimeType != null && mimeType.startsWith("video/")) {
+            MediaMetadata meta = MediaMetadataUtils.readMediaMetadata(data, mimeType);
+            double sec = (meta != null && meta.durationSeconds() > 0.0) ? meta.durationSeconds() : 1.0;
+            return (int) Math.ceil(sec * 85.0); // 1 frame per second estimate
         }
         return 85; // Fallback for non-image binary data
     }
