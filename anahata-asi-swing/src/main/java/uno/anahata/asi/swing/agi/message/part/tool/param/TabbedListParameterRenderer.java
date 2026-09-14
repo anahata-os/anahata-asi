@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.Displayable;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.components.AdjustingTabPane;
 
 /**
@@ -93,6 +94,6 @@ public class TabbedListParameterRenderer extends AbstractListParameterRenderer<O
     protected void onChildItemUpdated(int index, Object updatedItem) {
         String title = (updatedItem instanceof Displayable d) ? d.getDisplayValue() : ("#" + (index + 1));
         tabPane.setTitleAt(index, title + "*");
-        tabPane.setForegroundAt(index, Color.BLUE);
+        tabPane.setForegroundAt(index, SwingAgiConfig.theme().getLinkFg());
     }
 }

@@ -25,6 +25,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
 import uno.anahata.asi.AbstractAsiContainer;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.components.ScrollablePanel;
@@ -159,7 +160,7 @@ public class AsiContainerAboutPanel extends ScrollablePanel {
         updateNotifications();
 
         JScrollPane notifScroll = new JScrollPane(notificationsArea);
-        notifScroll.setBorder(BorderFactory.createLineBorder(new Color(180, 180, 180)));
+        notifScroll.setBorder(BorderFactory.createLineBorder(SwingAgiConfig.theme().getChromeBorder()));
         notifSection.add(notifScroll, BorderLayout.CENTER);
 
         JPanel notifActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
@@ -191,8 +192,8 @@ public class AsiContainerAboutPanel extends ScrollablePanel {
         JPanel panel = new JPanel();
         panel.setOpaque(false);
         panel.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(new Color(200, 200, 200)),
-                title, 0, 0, getFont().deriveFont(Font.BOLD, 12f), new Color(80, 80, 80)));
+                BorderFactory.createLineBorder(SwingAgiConfig.theme().getChromeBorder()),
+                title, 0, 0, getFont().deriveFont(Font.BOLD, 12f), SwingAgiConfig.theme().getMutedFg()));
         return panel;
     }
 

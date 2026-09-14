@@ -29,6 +29,7 @@ import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.resource.RefreshPolicy;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.message.RagMessagePanel;
 import uno.anahata.asi.swing.agi.resources.handle.AbstractHandlePanel;
 import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
@@ -257,7 +258,7 @@ public class ResourcePanel extends ScrollablePanel {
         JTextField f = new JTextField(35); // Long enough for UUID
         f.setEditable(false);
         f.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Color.LIGHT_GRAY),
+                BorderFactory.createLineBorder(SwingAgiConfig.theme().getChromeBorder()),
                 BorderFactory.createEmptyBorder(2, 5, 2, 5)
         ));
         f.setOpaque(true);

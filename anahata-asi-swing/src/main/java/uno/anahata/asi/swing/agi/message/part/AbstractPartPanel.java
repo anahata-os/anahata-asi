@@ -143,7 +143,7 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends Collapsi
         
         this.remainingDepthLabel = new JLabel();
         this.remainingDepthLabel.setFont(new Font("SansSerif", Font.ITALIC, 10));
-        this.remainingDepthLabel.setForeground(new Color(160, 160, 160));
+        this.remainingDepthLabel.setForeground(theme.getMutedFg());
 
         // Copy button on the left
         setLeftDecoration(copyButton);

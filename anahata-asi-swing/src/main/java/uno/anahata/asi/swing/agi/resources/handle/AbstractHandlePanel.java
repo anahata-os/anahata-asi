@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.internal.TimeUtils;
 import uno.anahata.asi.agi.resource.handle.ResourceHandle;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.internal.SwingTask;
 
 /**
@@ -108,7 +109,7 @@ public class AbstractHandlePanel<H extends ResourceHandle> extends JPanel {
         writableBox.setEnabled(false);
 
         addProperty("Class:", classLabel);
-        classLabel.setForeground(Color.GRAY);
+        classLabel.setForeground(SwingAgiConfig.theme().getMutedFg());
         addProperty("URI:", uriField);
         addProperty("MIME:", mimeLabel);
         addProperty("Status:", statusLabel);
@@ -183,7 +184,7 @@ public class AbstractHandlePanel<H extends ResourceHandle> extends JPanel {
         virtualBox.setSelected(handle.isVirtual());
 
         statusLabel.setText("Loading...");
-        statusLabel.setForeground(Color.GRAY);
+        statusLabel.setForeground(SwingAgiConfig.theme().getMutedFg());
         sizeLabel.setText("Loading...");
         modifiedLabel.setText("Loading...");
         mimeLabel.setText("Loading...");

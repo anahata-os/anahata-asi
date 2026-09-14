@@ -50,7 +50,7 @@ public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage
 
         this.finishLabel = new JLabel();
         this.finishLabel.setFont(this.finishLabel.getFont().deriveFont(11f));
-        this.finishLabel.setForeground(new Color(120, 120, 120));
+        this.finishLabel.setForeground(agiConfig.getTheme().getMutedFg());
         this.footerActionsPanel.add(this.finishLabel, BorderLayout.WEST);
 
         // Use a lazy supplier for the JSON content and title.

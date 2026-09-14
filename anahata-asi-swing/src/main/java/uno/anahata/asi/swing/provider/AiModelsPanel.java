@@ -9,6 +9,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.components.WrapLayout;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
@@ -272,7 +273,7 @@ public class AiModelsPanel extends JPanel {
 
         // Status Bar Panel (SOUTH)
         JPanel statusBar = new JPanel(new MigLayout("insets 4 8 4 8, fillx", "[grow,fill][]", "[]"));
-        statusBar.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(200, 200, 200)));
+        statusBar.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, SwingAgiConfig.theme().getChromeBorder()));
         statusLabel = new JLabel("Showing " + models.size() + " models");
         progressBar = new JProgressBar();
         progressBar.setIndeterminate(true);

@@ -32,6 +32,7 @@ import uno.anahata.asi.agi.resource.handle.ResourceHandle;
 import uno.anahata.asi.agi.resource.ResourceManager;
 import uno.anahata.asi.agi.status.AgiStatus;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.AgiTransferHandler;
 import uno.anahata.asi.swing.icons.AttachIcon;
 import uno.anahata.asi.swing.icons.CancelIcon;
@@ -242,10 +243,10 @@ public class InputPanel extends JPanel {
         // --- STAGED MESSAGE PANEL ---
         stagedMessagePanel = new JPanel(new BorderLayout(5, 0));
         stagedMessagePanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(1, 0, 1, 0, Color.LIGHT_GRAY),
+                BorderFactory.createMatteBorder(1, 0, 1, 0, SwingAgiConfig.theme().getChromeBorder()),
                 BorderFactory.createEmptyBorder(2, 5, 2, 5)
         ));
-        stagedMessagePanel.setBackground(new Color(220, 235, 255));
+        stagedMessagePanel.setBackground(SwingAgiConfig.theme().getChipBackground());
         stagedMessagePanel.setVisible(false);
 
         stagedMessageLabel = new JLabel("Staged Message: ");
