@@ -42,27 +42,18 @@ public class GeminiGoogleCloudExpressAIProvider extends GeminiAiProvider {
     public List<? extends AbstractModel> listModels() {
         List<HardcodedGeminiModel> manifest = new ArrayList<>();
         
-        //manifest.add(createModel("gemini-flash-latest", "Gemini Flash Latest", "Latest", 1048576, 65000));
-        manifest.add(createModel("gemini-3.8-flash", "Gemini 3.8 Flash", "v3.8", 1048576, 65000));
-        manifest.add(createModel("gemini-3.7-flash", "Gemini 3.7 Flash", "v3.7", 1048576, 65000));
-        manifest.add(createModel("gemini-3.6-flash", "Gemini 3.6 Flash", "v3.6", 1048576, 65000));
-        manifest.add(createModel("gemini-3.1-pro-preview", "Gemini 3.1 Pro (Preview)", "v3.1", 2097152, 65000));        
-        manifest.add(createModel("gemini-3.5-flash", "Gemini 3.5 Flash", "v3.5", 1048576, 65000));
-        
-        manifest.add(createModel("gemini-3.1-flash-image", "Gemini 3.1 Flash Image", "v3.1", 65536, 65536));
-        manifest.add(createModel("gemini-3.1-flash-lite-image", "Gemini 3.1 Flash Lite Image", "v3.1", 65536, 65536));
-        manifest.add(createModel("gemini-3-pro-image", "Gemini 3 Pro Image", "v3.0", 131072, 32768));
-        manifest.add(createModel("gemini-3-pro-preview", "Gemini 3 Pro (Preview)", "v3", 2097152, 8192));
-        manifest.add(createModel("gemini-3-flash-preview", "Gemini 3 Flash (Preview)", "v3", 1048576, 8192));
-        manifest.add(createModel("gemini-2.5-pro", "Gemini 2.5 Pro", "v2.5", 2097152, 8192));
-        manifest.add(createModel("gemini-2.5-flash", "Gemini 2.5 Flash", "v2.5", 1048576, 8192));
-        manifest.add(createModel("gemini-2.5-flash-lite", "Gemini 2.5 Flash Lite", "v2.5", 1048576, 8192));
-        manifest.add(createModel("gemini-2.0-flash-001", "Gemini 2.0 Flash", "v2.0", 1048576, 8192));
-        
-        // Add standard 1.5 models as they are usually the stable workhorses
-        manifest.add(createModel("gemini-1.5-pro", "Gemini 1.5 Pro", "v1.5", 2097152, 8192));
-        manifest.add(createModel("gemini-1.5-flash", "Gemini 1.5 Flash", "v1.5", 1048576, 8192));
-        manifest.add(createModel("gemini-1.5-flash-8b", "Gemini 1.5 Flash 8B", "v1.5", 1048576, 8192));
+        manifest.add(createModel("gemini-3.8-flash", "Gemini 3.8 Flash", "3.0", 1048576, 65536));
+        manifest.add(createModel("gemini-3.7-flash", "Gemini 3.7 Flash", "3.7-flash-08-2026", 1048576, 65536));
+        manifest.add(createModel("gemini-3.6-flash", "Gemini 3.6 Flash", "3.6-flash-07-2026", 1048576, 65536));
+        manifest.add(createModel("gemini-3.5-flash", "Gemini 3.5 Flash", "3.5-flash-05-2026", 1048576, 65536));
+        manifest.add(createModel("gemini-3.5-flash-lite", "Gemini 3.5 Flash Lite", "3.5-flash-lite-07-2026", 1048576, 65536));
+        manifest.add(createModel("gemini-3.1-pro-preview", "Gemini 3.1 Pro Preview", "3.1-pro-preview-01-2026", 1048576, 65536));
+        manifest.add(createModel("gemini-3.1-flash-lite", "Gemini 3.1 Flash Lite", "3.1-flash-lite-05-2026", 1048576, 65536));
+        manifest.add(createModel("gemini-3.1-flash-image", "Nano Banana 2", "3.0", 65536, 65536));
+        manifest.add(createModel("gemini-3.1-flash-lite-image", "Nano Banana 2 Lite", "3.0", 65536, 65536));
+        manifest.add(createModel("gemini-3-pro-image", "Nano Banana Pro", "3.0", 131072, 32768));
+        manifest.add(createModel("gemini-3-flash-preview", "Gemini 3 Flash Preview", "3-flash-preview-12-2025", 1048576, 65536));
+        manifest.add(createModel("gemini-3-pro-preview", "Gemini 3 Pro (Preview)", "v3.0", 2097152, 65536));
 
         return manifest;
     }

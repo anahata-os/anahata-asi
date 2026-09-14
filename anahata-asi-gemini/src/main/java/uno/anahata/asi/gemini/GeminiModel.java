@@ -199,13 +199,24 @@ public class GeminiModel extends AbstractModel {
 
 
     /**
+     * Checks if this model instance belongs to the low-latency, high-efficiency Flash family.
+     *
+     * @return true if the model ID indicates a Flash variant.
+     */
+    public boolean isFlashModel() {
+        return getModelId() != null && getModelId().toLowerCase().contains("flash");
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
-     * Counts the multimodal tokens for raw binary data under Gemini's flat-rate billing scheme.
-     * Gemini typically bills a model-independent flat-rate of 258 tokens per standard image, 
-     * which is preserved here.
+     * Counts the multimodal tokens for raw binary data under Gemini's billing schemes.
+     * Flash models default to low-resolution video tiling (~66 tokens/sec at 1 FPS)
+     * plus 32 tokens/sec for the audio track. Pro models utilize high-resolution tiling
+     * (258 tokens/sec at 1 FPS) plus 32 tokens/sec for audio. Audio-only streams are
+     * billed at 32 tokens/sec. Images follow standard 768px tile scaling.
      * </p>
-     * @param mimeType The MIME type of the binary data (e.g. "image/png").
+     * @param mimeType The MIME type of the binary data (e.g. "image/png", "video/mp4").
      * @param data The raw binary data.
      * @return The precise token count, or 0 if the data is null or empty.
      */
@@ -240,7 +251,9 @@ public class GeminiModel extends AbstractModel {
         if (mimeType != null && mimeType.startsWith("video/")) {
             MediaMetadata meta = MediaMetadataUtils.readMediaMetadata(data, mimeType);
             double sec = (meta != null && meta.durationSeconds() > 0.0) ? meta.durationSeconds() : 1.0;
-            return (int) Math.ceil(sec * 290.0); // 258 fps video + 32 fps audio track
+            double videoRate = isFlashModel() ? 66.0 : 258.0;
+            double audioRate = 32.0;
+            return (int) Math.ceil(sec * (videoRate + audioRate));
         }
         if (mimeType != null && mimeType.startsWith("audio/")) {
             MediaMetadata meta = MediaMetadataUtils.readMediaMetadata(data, mimeType);
