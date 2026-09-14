@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import java.awt.Cursor;
 import uno.anahata.asi.swing.icons.CancelIcon;
 import uno.anahata.asi.swing.icons.CopyIcon;
@@ -176,7 +177,7 @@ public abstract class AbstractTextResourceViewer extends JPanel {
         // 1. Integrated Control Strip
         controlStrip = new JToolBar();
         controlStrip.setFloatable(false);
-        controlStrip.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY));
+        controlStrip.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, SwingAgiConfig.theme().getChromeBorder()));
 
         // 1b. Action Nexus (Edit/Save)
         actionNexus = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));

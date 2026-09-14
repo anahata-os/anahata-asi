@@ -23,6 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.resource.handle.StringHandle;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
+import uno.anahata.asi.swing.agi.SwingAgiConfig.UITheme;
 import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
 import uno.anahata.asi.swing.agi.resources.ResourceUI;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
@@ -112,23 +114,24 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
             // 1. Initialize the viewer (The Sense)
             initViewer();
 
+            UITheme theme = SwingAgiConfig.theme();
             JPanel container = new JPanel(new BorderLayout());
             container.setOpaque(false);
-            container.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1, true));
-            
+            container.setBorder(BorderFactory.createLineBorder(theme.getChromeBorder(), 1, true));
+
             // 2. Header Panel
             if (headerVisible) {
                 JPanel headerPanel = new JPanel(new BorderLayout());
                 headerPanel.setOpaque(true);
-                headerPanel.setBackground(new Color(240, 240, 240, 180)); 
-                headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(210, 210, 210)));
-                
+                headerPanel.setBackground(theme.getPartHeaderBg());
+                headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, theme.getChromeBorder()));
+
                 JPanel leftHeaderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
                 leftHeaderPanel.setOpaque(false);
 
                 JLabel langLabel = new JLabel((language != null ? language.toUpperCase() : "CODE"));
                 langLabel.setFont(new Font("SansSerif", Font.BOLD, 10));
-                langLabel.setForeground(new Color(120, 120, 120));
+                langLabel.setForeground(theme.getMutedFg());
                 leftHeaderPanel.add(langLabel);
 
                 JButton copyButton = new JButton("Copy", new CopyIcon(12));

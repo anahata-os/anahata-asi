@@ -14,6 +14,7 @@ import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.resource.handle.StringHandle;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
 import uno.anahata.asi.swing.agi.resources.ResourceUI;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
@@ -52,7 +53,7 @@ public class ObjectToStringParameterRenderer extends AbstractParameterRenderer<O
     /** No-arg constructor for factory instantiation. */
     public ObjectToStringParameterRenderer() {
         container.setOpaque(false);
-        container.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1, true));
+        container.setBorder(BorderFactory.createLineBorder(SwingAgiConfig.theme().getChromeBorder(), 1, true));
     }
 
     /**

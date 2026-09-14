@@ -32,6 +32,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.AbstractAiProviderPanel;
 import uno.anahata.asi.swing.icons.AddIcon;
@@ -111,7 +112,7 @@ public class AiProvidersPanel extends JPanel {
         // Left Sidebar (WEST)
         JPanel sidebar = new JPanel(new BorderLayout());
         sidebar.setPreferredSize(new Dimension(230, -1));
-        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(200, 200, 200)));
+        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, SwingAgiConfig.theme().getChromeBorder()));
 
         JPanel sidebarHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
         sidebarHeader.setOpaque(false);

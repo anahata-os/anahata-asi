@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JButton;
@@ -175,7 +176,7 @@ public class EnumSetComboBox<E extends Enum<E>> extends JButton {
 
         JPopupMenu popup = new JPopupMenu();
         this.activePopup = popup;
-        popup.setBorder(BorderFactory.createLineBorder(new Color(180, 180, 180)));
+        popup.setBorder(BorderFactory.createLineBorder(SwingAgiConfig.theme().getChromeBorder()));
 
         popup.addPopupMenuListener(new PopupMenuListener() {
             @Override

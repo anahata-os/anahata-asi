@@ -206,6 +206,19 @@ public class SwingAgiConfig extends AgiConfig {
     }
 
     /**
+     * Convenience factory returning a {@link UITheme} that reflects the currently active Look and
+     * Feel, for leaf UI components (renderers, dialogs, secondary panels) that do not hold a
+     * {@code SwingAgiConfig} instance. A fresh theme is returned on each call so it always tracks the
+     * live LaF (light/dark); callers should capture it once at construction time rather than in a
+     * per-paint path.
+     *
+     * @return a UI theme for the active Look and Feel.
+     */
+    public static UITheme theme() {
+        return new UITheme();
+    }
+
+    /**
      * A collection of color and font definitions that define the visual
      * identity of the Anahata Swing UI, dynamically adjusting between light
      * and dark aesthetics based on the active Look and Feel.
@@ -270,6 +283,31 @@ public class SwingAgiConfig extends AgiConfig {
         private final Color thoughtFg = UIManager.getColor("Label.disabledForeground") != null
                 ? UIManager.getColor("Label.disabledForeground")
                 : (isDarkLaf() ? new Color(120, 120, 120) : new Color(150, 150, 150));
+
+        /**
+         * Generic chrome border color for separators, matte borders and line borders on secondary
+         * panels (control strips, sidebars, code-block frames). Follows the active Look and Feel via
+         * {@code Separator.foreground}, with dark/light fallbacks so it never renders a light-only
+         * hairline on a dark IDE theme.
+         */
+        private final Color chromeBorder = UIManager.getColor("Separator.foreground") != null
+                ? UIManager.getColor("Separator.foreground")
+                : (isDarkLaf() ? new Color(70, 73, 78) : new Color(200, 200, 200));
+        /**
+         * Generic muted/secondary foreground for de-emphasised labels (language tags, class names,
+         * status hints). Follows {@code Label.disabledForeground} with dark/light fallbacks.
+         */
+        private final Color mutedFg = UIManager.getColor("Label.disabledForeground") != null
+                ? UIManager.getColor("Label.disabledForeground")
+                : (isDarkLaf() ? new Color(150, 150, 150) : new Color(110, 110, 110));
+        /**
+         * Foreground for hyperlinks and active/selected tab labels. Follows
+         * {@code Component.linkColor} with dark/light fallbacks, so links stay legible on a dark IDE
+         * theme (plain {@link Color#BLUE} is far too dark on a dark background).
+         */
+        private final Color linkFg = UIManager.getColor("Component.linkColor") != null
+                ? UIManager.getColor("Component.linkColor")
+                : (isDarkLaf() ? new Color(88, 157, 246) : new Color(0, 102, 204));
 
         /** Default background color for message headers if role is undefined. */
         private final Color defaultHeaderBg = isDarkLaf() ? new Color(30, 30, 30) : Color.WHITE;

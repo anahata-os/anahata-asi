@@ -14,6 +14,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
@@ -108,7 +109,7 @@ public class CodeHyperlink extends JLabel {
         this.contentSupplier = contentSupplier;
         this.language = language;
         
-        setForeground(Color.BLUE);
+        setForeground(SwingAgiConfig.theme().getLinkFg());
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         
         addMouseListener(new MouseAdapter() {

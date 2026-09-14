@@ -33,6 +33,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
 import uno.anahata.asi.internal.TimeUtils;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import org.apache.commons.io.FileUtils;
 import org.jdesktop.swingx.prompt.PromptSupport;
 import uno.anahata.asi.ollama.OllamaAiProvider;
@@ -132,9 +133,9 @@ public class OllamaAiProviderPanel extends OpenAiChatCompletionsProviderPanel<Ol
         JPanel diagPanel = new JPanel(new MigLayout("insets 8, fillx", "[grow,fill]", "[]6[]"));
         diagPanel.setOpaque(false);
         diagPanel.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                BorderFactory.createLineBorder(SwingAgiConfig.theme().getChromeBorder()),
                 "Ollama Server & VRAM Monitor", 0, 0,
-                getFont().deriveFont(Font.BOLD, 12f), new Color(100, 100, 100)));
+                getFont().deriveFont(Font.BOLD, 12f), SwingAgiConfig.theme().getMutedFg()));
 
         JPanel topRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         topRow.setOpaque(false);
@@ -170,7 +171,7 @@ public class OllamaAiProviderPanel extends OpenAiChatCompletionsProviderPanel<Ol
 
         pullProgressPanel = new JPanel(new MigLayout("insets 4, fillx", "[grow,fill]", "[]2[]"));
         pullProgressPanel.setOpaque(false);
-        pullProgressPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(220, 220, 220)));
+        pullProgressPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, SwingAgiConfig.theme().getChromeBorder()));
         pullStatusLabel = new JLabel("Preparing download...");
         pullStatusLabel.setFont(pullStatusLabel.getFont().deriveFont(Font.BOLD, 11f));
         pullProgressBar = new JProgressBar(0, 100);

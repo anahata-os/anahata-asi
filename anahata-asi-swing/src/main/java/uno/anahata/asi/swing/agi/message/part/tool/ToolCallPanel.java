@@ -239,10 +239,10 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
 
         responseTitledPanel = new JXTitledPanel("Response");
         responseTitledPanel.setTitleFont(new Font("SansSerif", Font.BOLD, 11));
-        responseTitledPanel.setTitleForeground(new Color(100, 100, 100));
+        responseTitledPanel.setTitleForeground(theme.getMutedFg());
         responseTitledPanel.setContentContainer(resultsTabbedPane);
         responseTitledPanel.setOpaque(false);
-        responseTitledPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.LIGHT_GRAY));
+        responseTitledPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, theme.getChromeBorder()));
 
         // Add expand/collapse logic and tooltip to the response titled panel header
         if (responseTitledPanel.getComponentCount() > 0) {
@@ -265,7 +265,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         // --- Bottom Control Bar ---
         JPanel controlBar = new JPanel(new MigLayout("fillx, insets 5", "[][grow][]", "[][]"));
         controlBar.setOpaque(false);
-        controlBar.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.LIGHT_GRAY));
+        controlBar.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, theme.getChromeBorder()));
 
         // Row 1: Permission (Left) and Feedback (Right, Large)
         permissionCombo = new JComboBox<>(new ToolPermission[]{
@@ -386,10 +386,10 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
             
             // Visual feedback for modified arguments
             if (call.getModifiedArgs().containsKey(paramName)) {
-                argsTabbedPane.setForegroundAt(tabIndex, Color.BLUE);
+                argsTabbedPane.setForegroundAt(tabIndex, agiConfig.getTheme().getLinkFg());
                 argsTabbedPane.setTitleAt(tabIndex, paramName + "*");
             } else if (value == null) {
-                argsTabbedPane.setForegroundAt(tabIndex, Color.LIGHT_GRAY);
+                argsTabbedPane.setForegroundAt(tabIndex, agiConfig.getTheme().getMutedFg());
                 argsTabbedPane.setTitleAt(tabIndex, paramName);
             } else {
                 argsTabbedPane.setForegroundAt(tabIndex, null);

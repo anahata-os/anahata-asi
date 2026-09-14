@@ -19,6 +19,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
 import uno.anahata.asi.internal.TextUtils;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.internal.TikaUtils;
 import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
 import uno.anahata.asi.agi.tool.ToolResponseAttachment;
@@ -115,7 +116,7 @@ public class ToolResponseAttachmentsPanel extends JPanel {
     private JPanel createAttachmentPanel(ToolResponseAttachment attachment) {
         JPanel itemPanel = new JPanel(new MigLayout("fillx, insets 5, gap 0", "[grow]", "[]0[]"));
         itemPanel.setOpaque(false);
-        itemPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY));
+        itemPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, SwingAgiConfig.theme().getChromeBorder()));
 
         String mimeType = attachment.getMimeType();
         byte[] data = attachment.getData();
