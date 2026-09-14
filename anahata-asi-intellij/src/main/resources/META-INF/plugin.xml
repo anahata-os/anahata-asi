@@ -14,6 +14,7 @@
          classloaders are on Anahata's classpath at runtime. -->
     <depends>org.jetbrains.idea.maven</depends>
     <depends>org.jetbrains.plugins.terminal</depends>
+    <depends>org.jetbrains.plugins.gradle</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="Anahata ASI" secondary="true" icon="/icons/anahataToolWindow.png" anchor="right"

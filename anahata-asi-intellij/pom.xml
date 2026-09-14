@@ -188,6 +188,34 @@
             </exclusions>
         </dependency>
 
+        <!-- External-system framework (Gradle task execution via the provider-agnostic API).
+             Platform modules supplied by the running IDE; Gradle dispatch needs the bundled
+             Gradle plugin, declared in plugin.xml. -->
+        <dependency>
+            <groupId>com.jetbrains.intellij.platform</groupId>
+            <artifactId>external-system</artifactId>
+            <version>${intellij.plugins.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.jetbrains.intellij.platform</groupId>
+            <artifactId>external-system-impl</artifactId>
+            <version>${intellij.plugins.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <!-- Unit tests (JUnit 5; versions managed by the parent). -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
