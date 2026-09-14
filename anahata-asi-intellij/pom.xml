@@ -216,6 +216,25 @@
             </exclusions>
         </dependency>
 
+        <!-- Platform XDebugger API (XDebuggerManager, XBreakpointManager, XDebugSession,
+             XDebuggerEvaluator, frame/value model). A platform module supplied by the running IDE,
+             so the Debugger toolkit needs no plugin <depends>: xdebugger lives in
+             com.intellij.modules.platform and concrete line-breakpoint types are contributed by
+             com.intellij.modules.java, both already declared. The toolkit uses only this
+             provider-agnostic API, never the Java/Kotlin debugger implementations. -->
+        <dependency>
+            <groupId>com.jetbrains.intellij.platform</groupId>
+            <artifactId>debugger</artifactId>
+            <version>${intellij.plugins.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <!-- Unit tests (JUnit 5; versions managed by the parent). -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
