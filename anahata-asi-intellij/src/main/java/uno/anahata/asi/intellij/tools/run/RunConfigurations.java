@@ -299,7 +299,7 @@ public class RunConfigurations extends AnahataToolkit {
      * @param message the raw message.
      * @return the first line, stripped.
      */
-    private static String firstLine(String message) {
+    static String firstLine(String message) {
         String trimmed = message.strip();
         int newline = trimmed.indexOf('\n');
         return newline >= 0 ? trimmed.substring(0, newline).strip() : trimmed;

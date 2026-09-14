@@ -50,4 +50,15 @@ class IntellijTextResourceViewerTest {
     void unknownExtensionPassesThrough() {
         assertEquals("data.xyz", IntellijTextResourceViewer.normalizeResourceFileName("data.XYZ"));
     }
+
+    /**
+     * A representative sample of the alias mappings resolve to their canonical extensions.
+     */
+    @Test
+    void aliasesMapToCanonicalExtensions() {
+        assertEquals("main.cpp", IntellijTextResourceViewer.normalizeResourceFileName("main.c++"));
+        assertEquals("component.tsx", IntellijTextResourceViewer.normalizeResourceFileName("component.tsx"));
+        assertEquals("query.graphql", IntellijTextResourceViewer.normalizeResourceFileName("query.gql"));
+        assertEquals("run.sh", IntellijTextResourceViewer.normalizeResourceFileName("run.bash"));
+    }
 }

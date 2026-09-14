@@ -94,7 +94,7 @@
         <!-- Dependency Group Versions -->
         <lombok.version>1.18.48</lombok.version>
         <swagger.version>2.2.22</swagger.version><!--2.2.48 seems the latest-->
-        <jackson.version>2.17.1</jackson.version><!--2.32.2 seems the latest-->
+        <jackson.version>2.18.9</jackson.version><!--bumped from 2.17.1 for GHSA (CVE) fixes; 2.32.2 seems the latest-->
         <slf4j.version>2.0.17</slf4j.version>
         <junit.version>5.10.3</junit.version>
         <flatlaf.version>3.7.2</flatlaf.version>
