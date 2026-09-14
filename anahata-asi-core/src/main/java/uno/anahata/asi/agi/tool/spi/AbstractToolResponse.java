@@ -477,7 +477,7 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
             sb.append("\nErrors: ").append(errors);
         }
         if (userFeedback != null && !userFeedback.isBlank()) {
-            sb.append("\nUser Feedback: ").append(userFeedback);
+            sb.append("\n**User Feedback:** ").append(userFeedback);
         }
         if (modifiedArgs != null && !modifiedArgs.isEmpty()) {
             sb.append("\nModified Args: ").append(modifiedArgs);
