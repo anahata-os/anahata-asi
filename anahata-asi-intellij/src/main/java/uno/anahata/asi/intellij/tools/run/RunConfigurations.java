@@ -11,6 +11,9 @@ import com.intellij.execution.process.ProcessEvent;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.process.ProcessListener;
 import com.intellij.execution.runners.ExecutionEnvironment;
+import com.intellij.execution.testframework.sm.runner.SMTRunnerEventsAdapter;
+import com.intellij.execution.testframework.sm.runner.SMTRunnerEventsListener;
+import com.intellij.execution.testframework.sm.runner.SMTestProxy;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
@@ -24,6 +27,8 @@ import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,10 +40,11 @@ import java.util.regex.Pattern;
  * <p>
  * A beyond-parity capability with no NetBeans equivalent: it uses the platform
  * {@link RunManager}/{@link ProgramRunnerUtil} to enumerate configured run configurations and
- * execute them with the standard Run executor. Test configurations (JUnit/TestNG/etc.) run the
- * same way; their results appear in the IDE's Run/Test tool window. Capturing structured test
- * results programmatically is deferred (it requires attaching to the test process's event
- * listener).
+ * execute them with the standard Run executor. When run with a timeout, test configurations
+ * (JUnit/TestNG/etc.) also report structured results — exact passed/failed/ignored counts and
+ * per-failure messages — by subscribing to the platform test-event bus
+ * ({@link SMTRunnerEventsListener#TEST_STATUS}) and walking the resulting test tree, independent
+ * of console text format. Non-test runs fall back to exit code, duration and captured output.
  * </p>
  *
  * @author anahata
@@ -138,8 +144,25 @@ public class RunConfigurations extends AnahataToolkit {
         StringBuilder testSummaries = new StringBuilder();
         long startTime = System.currentTimeMillis();
 
+        // Structured test results, collected from the platform test-event bus (independent of
+        // console text). testingDoneLatch fires only when a test framework actually reports.
+        CountDownLatch testingDoneLatch = new CountDownLatch(1);
+        AtomicInteger testsPassed = new AtomicInteger();
+        AtomicInteger testsFailed = new AtomicInteger();
+        AtomicInteger testsIgnored = new AtomicInteger();
+        List<String> failedTests = new CopyOnWriteArrayList<>();
+
         MessageBusConnection connection = project.getMessageBus().connect();
         try {
+            connection.subscribe(SMTRunnerEventsListener.TEST_STATUS, new SMTRunnerEventsAdapter() {
+                @Override
+                public void onTestingFinished(SMTestProxy.SMRootTestProxy root) {
+                    for (SMTestProxy child : root.getChildren()) {
+                        countLeafTests(child, testsPassed, testsFailed, testsIgnored, failedTests);
+                    }
+                    testingDoneLatch.countDown();
+                }
+            });
             connection.subscribe(ExecutionManager.EXECUTION_TOPIC, new ExecutionListener() {
                 @Override
                 public void processStarted(String executorId, ExecutionEnvironment env, ProcessHandler handler) {
@@ -192,6 +215,26 @@ public class RunConfigurations extends AnahataToolkit {
                   .append("- **Exit Code**: ").append(exitCode).append(exitCode == 0 ? " (SUCCESS)" : " (FAILED)").append("\n")
                   .append("- **Duration**: ").append(durationMs).append(" ms\n");
 
+            // Give the test framework a brief window to deliver its final tree, then prefer the
+            // structured counts over console-scraped summaries when a test run actually reported.
+            testingDoneLatch.await(3, TimeUnit.SECONDS);
+            int passed = testsPassed.get();
+            int failed = testsFailed.get();
+            int ignored = testsIgnored.get();
+            if (passed + failed + ignored > 0) {
+                result.append("### Test Results\n")
+                      .append("- **Total**: ").append(passed + failed + ignored)
+                      .append(" | **Passed**: ").append(passed)
+                      .append(" | **Failed**: ").append(failed)
+                      .append(" | **Ignored**: ").append(ignored).append("\n");
+                if (!failedTests.isEmpty()) {
+                    result.append("#### Failures\n");
+                    for (String failedTest : failedTests) {
+                        result.append("- ").append(failedTest).append("\n");
+                    }
+                }
+            }
+
             if (testSummaries.length() > 0) {
                 result.append("### Test / Build Summary\n").append(testSummaries);
             } else {
@@ -216,5 +259,49 @@ public class RunConfigurations extends AnahataToolkit {
         } finally {
             connection.disconnect();
         }
+    }
+
+    /**
+     * Recursively counts leaf tests in the SM test tree by outcome and records failure details.
+     *
+     * @param node     the current test node.
+     * @param passed   accumulator for passed leaf tests.
+     * @param failed   accumulator for failed/errored leaf tests.
+     * @param ignored  accumulator for ignored/skipped leaf tests.
+     * @param failures collector for up to 25 {@code "name: message"} failure descriptions.
+     */
+    private static void countLeafTests(SMTestProxy node, AtomicInteger passed, AtomicInteger failed,
+                                       AtomicInteger ignored, List<String> failures) {
+        List<? extends SMTestProxy> children = node.getChildren();
+        if (children.isEmpty()) {
+            if (node.isIgnored()) {
+                ignored.incrementAndGet();
+            } else if (node.isDefect()) {
+                failed.incrementAndGet();
+                if (failures.size() < 25) {
+                    String message = node.getErrorMessage();
+                    failures.add(node.getPresentableName()
+                            + (message != null && !message.isBlank() ? ": " + firstLine(message) : ""));
+                }
+            } else if (node.isPassed()) {
+                passed.incrementAndGet();
+            }
+            return;
+        }
+        for (SMTestProxy child : children) {
+            countLeafTests(child, passed, failed, ignored, failures);
+        }
+    }
+
+    /**
+     * Returns the first non-blank line of a (possibly multi-line) message, for compact display.
+     *
+     * @param message the raw message.
+     * @return the first line, stripped.
+     */
+    private static String firstLine(String message) {
+        String trimmed = message.strip();
+        int newline = trimmed.indexOf('\n');
+        return newline >= 0 ? trimmed.substring(0, newline).strip() : trimmed;
     }
 }

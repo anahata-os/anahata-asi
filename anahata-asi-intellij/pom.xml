@@ -160,6 +160,33 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- Platform SM test-runner API (SMTRunnerEventsListener/Adapter, SMTestProxy) and the
+             base test-runner model (AbstractTestProxy) for structured test results. These are
+             platform modules supplied by the running IDE, so no plugin <depends> is required. -->
+        <dependency>
+            <groupId>com.jetbrains.intellij.platform</groupId>
+            <artifactId>sm-runner</artifactId>
+            <version>${intellij.plugins.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.jetbrains.intellij.platform</groupId>
+            <artifactId>test-runner</artifactId>
+            <version>${intellij.plugins.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
 
     <build>
