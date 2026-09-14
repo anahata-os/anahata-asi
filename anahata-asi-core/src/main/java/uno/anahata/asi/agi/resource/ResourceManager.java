@@ -146,6 +146,37 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
     }
 
     /**
+     * Sets the providing flag for multiple resources in a single atomic batch pass,
+     * firing a single consolidated change event to eliminate UI cascades.
+     *
+     * @param resourceIds The collection of resource UUIDs to update.
+     * @param providing True to enable context contribution, false to disable.
+     * @return The list of resources whose providing status was changed.
+     */
+    public List<Resource> setProviding(Collection<String> resourceIds, boolean providing) {
+        if (resourceIds == null || resourceIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Resource> modified = new ArrayList<>();
+        synchronized (resources) {
+            for (String id : resourceIds) {
+                Resource res = resources.get(id);
+                if (res != null && res.isProviding() != providing) {
+                    res.setProviding(providing, false);
+                    modified.add(res);
+                }
+            }
+        }
+
+        if (!modified.isEmpty()) {
+            propertyChangeSupport.firePropertyChange("resourcesProviding", null, modified);
+            propertyChangeSupport.firePropertyChange("resources", null, getResourcesList());
+        }
+        return modified;
+    }
+
+    /**
      * Returns an unmodifiable list of currently managed resources.
      * @return an unmodifiable list of all managed resources.
      */

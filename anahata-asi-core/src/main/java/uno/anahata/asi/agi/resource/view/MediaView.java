@@ -22,6 +22,23 @@ public class MediaView extends AbstractResourceView {
     /** Cached binary data. */
     private transient byte[] cachedData;
 
+    /**
+     * Returns the cached binary data, lazily reloading from the source handle if null
+     * (e.g. following session deserialization from disk).
+     *
+     * @return The binary data, or null on read failure.
+     */
+    public byte[] getCachedData() {
+        if (cachedData == null && owner != null && owner.getHandle() != null && owner.getHandle().exists()) {
+            try {
+                reload();
+            } catch (Exception e) {
+                log.error("Failed to lazily load media data for {}", owner.getHandle().getUri(), e);
+            }
+        }
+        return cachedData;
+    }
+
     /** 
      * {@inheritDoc} 
      * <p>Implementation details: Reads all bytes from the handle. 
@@ -45,8 +62,9 @@ public class MediaView extends AbstractResourceView {
      */
     @Override
     public void populateRag(RagMessage ragMessage) throws Exception {
-        if (cachedData != null) {
-            ragMessage.addBlobPart(owner.getHandle().getMimeType(), cachedData);
+        byte[] data = getCachedData();
+        if (data != null) {
+            ragMessage.addBlobPart(owner.getHandle().getMimeType(), data);
         }
     }
 
@@ -58,14 +76,29 @@ public class MediaView extends AbstractResourceView {
      * </p>
      */
     @Override
-        public int getTokenCount() {
+    public int getTokenCount() {
         if (tokenCount == null) {
-                    AbstractModel model = getOwner() != null ? getOwner().getSelectedModel() : null;
-                    if (model == null) {
-                        return 0;
-                    }
-                    tokenCount = model.countTokens(cachedData, owner.getMimeType());
-                }
-                return tokenCount;
+            AbstractModel model = getOwner() != null ? getOwner().getSelectedModel() : null;
+            if (model == null) {
+                return 0;
+            }
+            tokenCount = model.countTokens(getCachedData(), owner.getMimeType());
+        }
+        return tokenCount;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns 100.0 by default as the complete binary payload is provided.
+     * Future releases will compute spatial bounding-box ratios for images or
+     * temporal start/end second ratios for video and audio clipping.
+     * </p>
+     *
+     * @return 100.0 by default.
+     */
+    @Override
+    public double getVisiblePercentage() {
+        return 100.0;
     }
 }

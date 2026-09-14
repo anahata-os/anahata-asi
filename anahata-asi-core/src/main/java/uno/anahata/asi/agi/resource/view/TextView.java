@@ -111,11 +111,13 @@ public class TextView extends AbstractResourceView {
     }
 
     /**
-     * Checks whether the text viewport is currently truncated in prompt view
-     * (i.e. not in Full View mode, or has start offset / page size bounds active).
-     *
-     * @return true if the viewport content in prompt is truncated.
+     * {@inheritDoc}
+     * <p>
+     * Evaluates viewport settings to determine if content is truncated,
+     * checking full-view status, character limits, offsets, grep, and tailing.
+     * </p>
      */
+    @Override
     public boolean isTruncated() {
         TextViewportSettings settings = viewport.getSettings();
         if (settings.isFullView()) {
@@ -128,19 +130,40 @@ public class TextView extends AbstractResourceView {
     }
 
     /**
-     * Calculates the percentage of the total resource content currently visible in prompt.
-     *
-     * @return The percentage between 0.0 and 100.0.
+     * {@inheritDoc}
+     * <p>
+     * Calculates the exact percentage of characters currently visible in prompt memory.
+     * If even a single character is missing from EOF or pagination, ensures the value
+     * never rounds up to 100.0%.
+     * </p>
      */
+    @Override
     public double getVisiblePercentage() {
+        if (!isTruncated()) {
+            return 100.0;
+        }
         long total = viewport.getTotalChars();
         if (total <= 0) {
             return 100.0;
         }
-        String visible = viewport.getVisibleContent();
-        long visibleChars = (visible != null) ? visible.length() : 0;
-        double pct = (visibleChars * 100.0) / total;
-        return Math.min(100.0, pct);
+        TextViewportSettings settings = viewport.getSettings();
+        long rawVisibleChars;
+        if (settings.getGrepPattern() != null && !settings.getGrepPattern().isBlank()) {
+            String visible = viewport.getVisibleContent();
+            rawVisibleChars = visible != null ? visible.length() : 0;
+        } else if (settings.isTail()) {
+            String visible = viewport.getVisibleContent();
+            rawVisibleChars = visible != null ? visible.length() : 0;
+        } else {
+            long start = settings.getStartChar();
+            long end = Math.min(total, (long) start + settings.getPageSizeInChars());
+            rawVisibleChars = Math.max(0, end - start);
+        }
+        double pct = (rawVisibleChars * 100.0) / total;
+        if (rawVisibleChars < total && pct >= 100.0) {
+            pct = 99.9;
+        }
+        return Math.min(99.9, Math.max(0.0, pct));
     }
 
     /**
