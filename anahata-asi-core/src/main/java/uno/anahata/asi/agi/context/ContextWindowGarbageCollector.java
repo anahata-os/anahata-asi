@@ -154,10 +154,13 @@ public class ContextWindowGarbageCollector extends BasicPropertyChangeSource {
         List<String> summaries = new ArrayList<>();
         for (AbstractPart part : message.getParts(true)) {
             if (part instanceof AbstractToolCall<?, ?> toolCall) {
-                String status = toolCall.getResponse() != null && toolCall.getResponse().getStatus() != null
+                String status = toolCall.getResponse().getStatus() != null
                         ? toolCall.getResponse().getStatus().name()
                         : "UNKNOWN";
-                summaries.add(toolCall.getToolName() + "(" + toolCall.getArgumentsString(true) + ") [" + status + "]");
+                String feedback = (toolCall.getResponse().getUserFeedback() != null && !toolCall.getResponse().getUserFeedback().isBlank())
+                        ? " | User Feedback: " + toolCall.getResponse().getUserFeedback()
+                        : "";
+                summaries.add(toolCall.getToolName() + "(" + toolCall.getArgumentsString(true) + ") [" + status + "]" + feedback);
             } else if (part instanceof TextPart textPart) {
                 if (textPart.isThought()) {
                     summaries.add(part.getClass().getSimpleName() + "(thought)");
