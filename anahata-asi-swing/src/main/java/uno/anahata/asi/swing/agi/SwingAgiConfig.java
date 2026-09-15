@@ -98,12 +98,41 @@ public class SwingAgiConfig extends AgiConfig {
     }
 
     /**
-     * Look-and-Feel-agnostic relative luminance check to determine if the
-     * active theme is a dark mode variant.
+     * Optional host-supplied detector for dark mode. When a host IDE (e.g. IntelliJ IDEA) knows its
+     * own theme authoritatively, it registers a detector here so the shared Swing UI follows the IDE
+     * theme exactly instead of relying on the built-in luminance heuristic. {@code null} (the
+     * default, e.g. in the NetBeans and standalone Desktop hosts) falls back to the heuristic.
+     */
+    private static java.util.function.BooleanSupplier darkModeDetector;
+
+    /**
+     * Registers a host-specific dark-mode detector, overriding the built-in luminance heuristic.
+     * <p>
+     * Intended for IDE hosts whose Look and Feel does not expose a reliable {@code Panel.background}
+     * to the heuristic (for instance IntelliJ IDEA's New UI): the host passes a supplier backed by
+     * its own theme API so {@link #isDarkLaf()} tracks the IDE theme precisely. Passing {@code null}
+     * restores the heuristic.
      *
-     * @return true if the active Look and Feel is dark, false otherwise.
+     * @param detector the dark-mode detector, or {@code null} to use the built-in heuristic.
+     */
+    public static void setDarkModeDetector(java.util.function.BooleanSupplier detector) {
+        darkModeDetector = detector;
+    }
+
+    /**
+     * Determines whether the active theme is a dark-mode variant.
+     * <p>
+     * Uses the host-supplied {@linkplain #setDarkModeDetector(java.util.function.BooleanSupplier)
+     * dark-mode detector} when one is registered; otherwise falls back to a Look-and-Feel-agnostic
+     * relative-luminance check on {@code Panel.background}.
+     *
+     * @return true if the active theme is dark, false otherwise.
      */
     public static boolean isDarkLaf() {
+        java.util.function.BooleanSupplier detector = darkModeDetector;
+        if (detector != null) {
+            return detector.getAsBoolean();
+        }
         Color bg = UIManager.getColor("Panel.background");
         if (bg == null) {
             return false;

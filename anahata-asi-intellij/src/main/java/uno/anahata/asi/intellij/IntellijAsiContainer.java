@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.intellij;
 
+import com.intellij.ide.ui.LafManagerListener;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -8,10 +9,13 @@ import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.openapi.wm.WindowManager;
+import com.intellij.ui.JBColor;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
+import java.awt.Component;
 import java.io.IOException;
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
@@ -19,6 +23,7 @@ import uno.anahata.asi.intellij.ui.IntellijJavaCodeParameterRenderer;
 import uno.anahata.asi.intellij.ui.IntellijTextResourceWriteRenderer;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory;
 import uno.anahata.asi.toolkit.resources.text.FullTextResourceUpdate;
 import uno.anahata.asi.toolkit.resources.text.TextResourceReplacements;
@@ -51,6 +56,12 @@ public class IntellijAsiContainer extends AbstractSwingAsiContainer implements D
      * renderers, JSON serialization modules, and the IntelliJ native {@link uno.anahata.asi.swing.agi.resources.ResourceUI} strategy.
      */
     public static void initEnvironment() {
+        // Make the shared Swing UI follow IntelliJ's theme authoritatively. IntelliJ's New UI does
+        // not expose a reliable Panel.background to the swing module's luminance heuristic, so the
+        // chat/dashboard rendered light even under a dark IDE theme; JBColor.isBright() is the IDE's
+        // own light/dark flag. Set before any UITheme is constructed (this runs in the container's
+        // static initializer, ahead of the tool-window dashboard build).
+        SwingAgiConfig.setDarkModeDetector(() -> !JBColor.isBright());
         ParameterRendererFactory.register(FullTextResourceUpdate.class, IntellijTextResourceWriteRenderer.class);
         ParameterRendererFactory.register(TextResourceReplacements.class, IntellijTextResourceWriteRenderer.class);
         ParameterRendererFactory.register(TextResourceLineEdits.class, IntellijTextResourceWriteRenderer.class);
@@ -69,6 +80,40 @@ public class IntellijAsiContainer extends AbstractSwingAsiContainer implements D
         super("intellij");
         int loaded = loadSessions();
         log.info("IntellijAsiContainer initialized as application service; loaded {} active sessions from disk.", loaded);
+
+        // Follow the IDE theme live: when the user switches the IntelliJ theme
+        // (Settings | Appearance & Behavior | Appearance | Theme) refresh the open Anahata UIs so
+        // they re-adopt the new light/dark palette. Disposed with this application service.
+        ApplicationManager.getApplication().getMessageBus().connect(this)
+                .subscribe(LafManagerListener.TOPIC, (LafManagerListener) source -> refreshOpenUiThemes());
+    }
+
+    /**
+     * Refreshes every open Anahata tool-window content after an IDE theme change, re-running the
+     * Swing UI delegates so components pick up the new light/dark palette.
+     * <p>
+     * The authoritative dark-mode flag is read live via the detector registered in
+     * {@link #initEnvironment()}, so newly built panels are already correct; this updates the panels
+     * that are currently on screen.
+     * </p>
+     */
+    private void refreshOpenUiThemes() {
+        SwingUtilities.invokeLater(() -> {
+            for (Project project : ProjectManager.getInstance().getOpenProjects()) {
+                ToolWindow tw = ToolWindowManager.getInstance(project).getToolWindow("Anahata ASI");
+                if (tw == null) {
+                    continue;
+                }
+                for (Content c : tw.getContentManager().getContents()) {
+                    Component component = c.getComponent();
+                    if (component != null) {
+                        SwingUtilities.updateComponentTreeUI(component);
+                        component.revalidate();
+                        component.repaint();
+                    }
+                }
+            }
+        });
     }
 
     /**
