@@ -26,9 +26,10 @@ import uno.anahata.asi.agi.resource.handle.ResourceHandle;
 /**
  * The next-generation V2 Resource Manager.
  * <p>
- * This manager is URI-centric and capability-based. It orchestrates V2 
- * {@link Resource} instances, providing a reactive and unified context source 
- * for the AI model. It fires property change events to maintain UI synchronization.
+ * This manager is URI-centric and capability-based. It orchestrates V2
+ * {@link Resource} instances, providing a reactive and unified context source
+ * for the AI model. It fires property change events to maintain UI
+ * synchronization.
  * </p>
  */
 @Slf4j
@@ -36,19 +37,25 @@ import uno.anahata.asi.agi.resource.handle.ResourceHandle;
 @RequiredArgsConstructor
 public class ResourceManager extends BasicPropertyChangeSource implements Rebindable, ContextProvider {
 
-    /** The parent agi session. */
+    /**
+     * The parent agi session.
+     */
     private final Agi agi;
 
-    /** Registry of V2 resources, keyed by UUID. */
+    /**
+     * Registry of V2 resources, keyed by UUID.
+     */
     private final Map<String, Resource> resources = new LinkedHashMap<>();
 
-    /** Whether this manager is currently providing context augmentation. */
+    /**
+     * Whether this manager is currently providing context augmentation.
+     */
     @Setter
     private boolean providing = true;
 
     /**
      * Registers a new V2 resource, making it managed by the framework.
-     * 
+     *
      * @param resource The resource to register. Must not be null.
      * @param registeredBy A string describing who registered the resource.
      */
@@ -59,46 +66,54 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
     /**
      * Registers multiple resources in a single atomic operation.
      * <p>
-     * This method filters out any resources whose URI is already registered 
-     * to prevent duplicates. It performs the update within a synchronized block 
+     * This method filters out any resources whose URI is already registered to
+     * prevent duplicates. It performs the update within a synchronized block
      * and fires exactly ONE property change event to maintain UI performance.
      * </p>
-     * 
-     * @param toRegister The collection of resources to register. Must not be null.
+     *
+     * @param toRegister The collection of resources to register. Must not be
+     * null.
      * @param registeredBy A string describing who registered the resources.
      */
     public void registerAll(@NonNull Collection<Resource> toRegister, String registeredBy) {
         if (toRegister.isEmpty()) {
-                    return;
-                }
+            return;
+        }
 
-                List<Resource> added = new ArrayList<>();
-                synchronized (resources) {
-                    for (Resource res : toRegister) {
-                        String uri = res.getHandle().getUri().toString();
-                        if (findByUri(uri).isEmpty()) {
+        List<Resource> added = new ArrayList<>();
+        synchronized (resources) {
+            for (Resource res : toRegister) {
+                String uri = res.getHandle().getUri().toString();
+                if (findByUri(uri).isEmpty()) {
 
-                            // Authoritative Registration Metadata
-                            res.setAgi(agi);
-                            res.setRegistrationTime(System.currentTimeMillis());
-                            res.setDescription(registeredBy);
+                    // Authoritative Registration Metadata
+                    res.setAgi(agi);
+                    res.setRegistrationTime(System.currentTimeMillis());
+                    res.setDescription(registeredBy);
 
-                            resources.put(res.getId(), res);
-                            added.add(res);
-                            log.info("Registered V2 resource: {} ({}) [By: {}]", res.getName(), res.getId(), registeredBy);
-                        } else {
-                            log.debug("Skipping duplicate resource registration for URI: {}", uri);
-                        }
+                    try {
+                        res.reloadIfNeeded();
+                    } catch (Exception ex) {
+                        log.warn("Initial load of resource {} failed: {}", res.getName(), ex.getMessage());
                     }
-                }
 
-                if (!added.isEmpty()) {
-                    propertyChangeSupport.firePropertyChange("resources", null, getResourcesList());
+                    resources.put(res.getId(), res);
+                    added.add(res);
+                    log.info("Registered V2 resource: {} ({}) [By: {}]", res.getName(), res.getId(), registeredBy);
+                } else {
+                    log.debug("Skipping duplicate resource registration for URI: {}", uri);
                 }
+            }
+        }
+
+        if (!added.isEmpty()) {
+            propertyChangeSupport.firePropertyChange("resources", null, getResourcesList());
+        }
     }
 
     /**
      * Unregisters a resource and cleans up its handle.
+     *
      * @param id The resource UUID.
      * @return the Resource unregistered or null
      */
@@ -116,7 +131,9 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
     }
 
     /**
-     * Unregisters multiple resources in a single operation and fires a single refresh event.
+     * Unregisters multiple resources in a single operation and fires a single
+     * refresh event.
+     *
      * @param ids The collection of resource UUIDs to unregister.
      * @return The list of successfully unregistered resources.
      */
@@ -138,7 +155,7 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
                 }
             }
         }
-        
+
         if (!unregistered.isEmpty()) {
             propertyChangeSupport.firePropertyChange("resources", null, getResourcesList());
         }
@@ -146,8 +163,8 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
     }
 
     /**
-     * Sets the providing flag for multiple resources in a single atomic batch pass,
-     * firing a single consolidated change event to eliminate UI cascades.
+     * Sets the providing flag for multiple resources in a single atomic batch
+     * pass, firing a single consolidated change event to eliminate UI cascades.
      *
      * @param resourceIds The collection of resource UUIDs to update.
      * @param providing True to enable context contribution, false to disable.
@@ -178,6 +195,7 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
 
     /**
      * Returns an unmodifiable list of currently managed resources.
+     *
      * @return an unmodifiable list of all managed resources.
      */
     public List<Resource> getResourcesList() {
@@ -188,6 +206,7 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
 
     /**
      * Finds a managed resource by its URI.
+     *
      * @param uri The URI to search for.
      * @return Optional containing the resource.
      */
@@ -195,8 +214,8 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
         String search = normalizeUri(uri);
         synchronized (resources) {
             List<Resource> matches = resources.values().stream()
-                     .filter(r -> normalizeUri(r.getHandle().getUri().toString()).equals(search))
-                     .collect(Collectors.toList());
+                    .filter(r -> normalizeUri(r.getHandle().getUri().toString()).equals(search))
+                    .collect(Collectors.toList());
             if (matches.size() > 1) {
                 throw new IllegalStateException("Multiple resources found with the same URI: " + uri + "\nUse the UUID method to disambiguate");
             }
@@ -205,8 +224,8 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
     }
 
     /**
-     * Normalizes a file URI string to the standard triple-slash format (file:///)
-     * while preserving UNC paths (file://host).
+     * Normalizes a file URI string to the standard triple-slash format
+     * (file:///) while preserving UNC paths (file://host).
      *
      * @param uri The URI string to normalize.
      * @return The normalized URI string.
@@ -217,10 +236,10 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
         }
         return uri.replaceFirst("^file:/+", "file:///");
     }
-    
 
     /**
      * Finds a managed resource by its physical path.
+     *
      * @param path The absolute path to search for.
      * @return Optional containing the resource if found.
      */
@@ -230,17 +249,17 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
 
     /**
      * Finds the UUID of a managed resource by its URI.
-     * 
+     *
      * @param uri The URI to search for.
      * @return The UUID of the resource, or null if not found.
      */
     public String getUuidByUri(@NonNull String uri) {
         return findByUri(uri).map(Resource::getId).orElse(null);
     }
-    
+
     /**
      * Finds a managed resource by its uuid
-     * 
+     *
      * @param uuid of the resource
      * @return the resources or null
      */
@@ -250,7 +269,7 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
 
     /**
      * Registers multiple filesystem paths as managed resources.
-     * 
+     *
      * @param paths The list of paths to register.
      * @param registeredBy A description of the origin.
      * @return The list of created resources.
@@ -269,11 +288,11 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
     /**
      * Registers a pre-created resource handle directly.
      * <p>
-     * <b>Technical Purity:</b> This convenience method avoids redundant 
-     * handle creation cycles when a host-aware toolkit (like NetBeans) 
-     * already has an authoritative object (like a FileObject).
+     * <b>Technical Purity:</b> This convenience method avoids redundant handle
+     * creation cycles when a host-aware toolkit (like NetBeans) already has an
+     * authoritative object (like a FileObject).
      * </p>
-     * 
+     *
      * @param handle The source handle.
      * @param registeredBy A description of the origin.
      * @return The created and registered Resource orchestrator.
@@ -284,7 +303,9 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
         return res;
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<ContextProvider> getChildrenProviders() {
         synchronized (resources) {
@@ -292,22 +313,25 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void rebind() {
         log.info("Rebinding ResourceManager for session: {}", agi.getConfig().getSessionId());
         super.rebind();
     }
 
-    /** {@inheritDoc} 
-     * Injects a summary of disabled V2 resources into the RAG message.
+    /**
+     * {@inheritDoc} Injects a summary of disabled V2 resources into the RAG
+     * message.
      */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
         List<Resource> disabled = getResourcesList().stream()
                 .filter(r -> !r.isEffectivelyProviding())
                 .collect(Collectors.toList());
-        
+
         if (!disabled.isEmpty()) {
             StringBuilder sb = new StringBuilder("**Disabled Resources (V2)** (Registered but not effectively providing context):\n");
             for (Resource r : disabled) {
@@ -318,25 +342,33 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getId() {
         return "resources2";
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getName() {
         return "Resources (V2)";
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getDescription() {
         return "Unified URI-centric resource management.";
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ContextProvider getParentProvider() {
         return null; // Root level provider
