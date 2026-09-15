@@ -33,6 +33,7 @@ import org.jdesktop.swingx.JXTreeTable;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.context.ContextProvider;
 import uno.anahata.asi.agi.resource.Resource;
+import uno.anahata.asi.agi.status.AgiStatus;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.message.AbstractMessagePanel;
 import uno.anahata.asi.swing.agi.message.MessagePanelFactory;
@@ -139,6 +140,16 @@ public class ContextPanel extends JPanel {
      * Listener for resource changes to trigger tree refreshes.
      */
     private EdtPropertyChangeListener resourcesListener;
+
+    /**
+     * Listener for batch resource providing changes to update row styling without structural rebuilds.
+     */
+    private EdtPropertyChangeListener resourcesProvidingListener;
+
+    /**
+     * Listener for session status changes to trigger organic token recalculation upon turn completion.
+     */
+    private EdtPropertyChangeListener statusListener;
     /**
      * Flag to ensure initComponents is only called once.
      */
@@ -250,9 +261,60 @@ public class ContextPanel extends JPanel {
         if (resourcesListener != null) {
             resourcesListener.unbind();
         }
+        if (resourcesProvidingListener != null) {
+            resourcesProvidingListener.unbind();
+        }
+        if (statusListener != null) {
+            statusListener.unbind();
+        }
 
-        this.historyListener = new EdtPropertyChangeListener(this, agi.getContextManager(), "history", evt -> refresh(false));
-        this.resourcesListener = new EdtPropertyChangeListener(this, agi.getResourceManager(), "resources", evt -> refresh(false));
+        this.historyListener = new EdtPropertyChangeListener(this, agi.getContextManager(), "history", evt -> refreshHistoryBranch());
+        this.resourcesListener = new EdtPropertyChangeListener(this, agi.getResourceManager(), "resources", evt -> refreshResourcesBranch());
+        this.resourcesProvidingListener = new EdtPropertyChangeListener(this, agi.getResourceManager(), "resourcesProviding", evt -> {
+            treeTable.repaint();
+            refreshTokens(null);
+        });
+        this.statusListener = new EdtPropertyChangeListener(this, agi.getStatusManager(), "currentStatus", evt -> {
+            if (evt.getNewValue() == AgiStatus.IDLE) {
+                refreshTokens(null);
+            }
+        });
+    }
+
+    /**
+     * Refreshes only the Resources branch when resources are added or removed.
+     */
+    private void refreshResourcesBranch() {
+        ResourcesNode resNode = treeTableModel.getResourcesNode();
+        if (resNode != null) {
+            TreePath path = resNode.getTreePath();
+            boolean wasExpanded = treeTable.isExpanded(path);
+            treeTableModel.refreshBranch(resNode);
+            if (wasExpanded) {
+                treeTable.expandPath(path);
+            }
+            refreshTokens(null);
+        } else {
+            refresh(false);
+        }
+    }
+
+    /**
+     * Refreshes only the History branch when messages are added or pruned.
+     */
+    private void refreshHistoryBranch() {
+        HistoryNode histNode = treeTableModel.getHistoryNode();
+        if (histNode != null) {
+            TreePath path = histNode.getTreePath();
+            boolean wasExpanded = treeTable.isExpanded(path);
+            treeTableModel.refreshBranch(histNode);
+            if (wasExpanded) {
+                treeTable.expandPath(path);
+            }
+            refreshTokens(null);
+        } else {
+            refresh(false);
+        }
     }
 
     /**
@@ -283,7 +345,10 @@ public class ContextPanel extends JPanel {
 
         JButton refreshButton = new JButton("Refresh Tokens", new RestartIcon(16));
         refreshButton.setToolTipText("Recalculate token counts for all context items (Snapshot)");
-        refreshButton.addActionListener(e -> refreshTokens());
+        refreshButton.addActionListener(e -> {
+            agi.getResourceManager().resetTokenCounts();
+            refreshTokens();
+        });
         toolBar.add(refreshButton);
 
         add(toolBar, BorderLayout.NORTH);
@@ -553,6 +618,24 @@ public class ContextPanel extends JPanel {
 
         // 4. Status Column - Model Index 6
         applyColumnWidth(6, 120, 80);
+
+        // Hide secondary metric columns by default so table is clean: Name | Total | Status
+        hideSecondaryColumnsByDefault();
+    }
+
+    /**
+     * Hides secondary metric columns by default so the tree table remains lean:
+     * Name | Total | Status.
+     * Users can re-enable Instructions, Declarations, History, and RAG anytime
+     * from the JXTreeTable Column Control button in the corner.
+     */
+    private void hideSecondaryColumnsByDefault() {
+        for (String colName : new String[]{"Instructions", "Declarations", "History", "RAG"}) {
+            org.jdesktop.swingx.table.TableColumnExt col = treeTable.getColumnExt(colName);
+            if (col != null) {
+                col.setVisible(false);
+            }
+        }
     }
 
     /**
@@ -677,6 +760,10 @@ public class ContextPanel extends JPanel {
 
     /**
      * Triggers a background recalculation of token counts.
+     * <p>
+     * Implementation details: Emits {@code firePathChanged} in the tree table model,
+     * repainting metrics without collapsing folders or interrupting active row selection.
+     * </p>
      *
      * @param onDone Optional callback to run after tokens are refreshed.
      */
@@ -689,19 +776,10 @@ public class ContextPanel extends JPanel {
         }
         calculatingTokens = true;
 
-        // Capture expansion and selection state to restore it after the background task fires its event
-        Set<TreePath> expandedPaths = getExpandedPaths();
-        TreePath selectedPath = treeTable.getTreeSelectionModel().getSelectionPath();
-        this.refreshing = true;
-
         try {
             treeTableModel.refreshTokens(() -> {
-                restoreExpandedPaths(expandedPaths);
-                if (selectedPath != null) {
-                    treeTable.getTreeSelectionModel().setSelectionPath(selectedPath);
-                }
-                this.refreshing = false;
                 this.calculatingTokens = false;
+                treeTable.repaint();
 
                 if (onDone != null) {
                     onDone.run();
@@ -709,7 +787,6 @@ public class ContextPanel extends JPanel {
             });
         } catch (Exception e) {
             this.calculatingTokens = false;
-            this.refreshing = false;
             log.error("Error refreshing context tokens", e);
         }
     }

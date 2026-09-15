@@ -5,10 +5,14 @@ package uno.anahata.asi.swing.agi.context;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Font;
+import java.util.Locale;
 import javax.swing.Icon;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import uno.anahata.asi.agi.tool.ToolManager;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
+import uno.anahata.asi.swing.agi.resources.ResourceNode;
 import uno.anahata.asi.swing.icons.AtomsIcon;
 import uno.anahata.asi.swing.icons.DoubleToolIconRefined;
 import uno.anahata.asi.swing.icons.IconUtils;
@@ -59,6 +63,7 @@ public class ContextTreeCellRenderer extends DefaultTreeCellRenderer {
     @Override
     public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
         Component c = super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+        setFont(tree.getFont().deriveFont(Font.PLAIN)); // Reset to plain to kill bold leakage
 
         if (value instanceof AbstractContextNode<?> node) {
             setText(node.getName());
@@ -95,9 +100,20 @@ public class ContextTreeCellRenderer extends DefaultTreeCellRenderer {
                 }
             }
 
-            // Gray out text for inactive nodes
+            // Gray out text for inactive nodes, or highlight truncated resources with warning color
             if (!node.isActive()) {
                 setForeground(Color.GRAY);
+            } else if (node instanceof ResourceNode rn && rn.isTruncated()) {
+                if (!sel) {
+                    Color warningFg = SwingAgiConfig.isDarkLaf()
+                            ? new Color(255, 175, 45)
+                            : new Color(225, 85, 0);
+                    setForeground(warningFg);
+                    setFont(getFont().deriveFont(Font.BOLD));
+                } else {
+                    setForeground(getTextSelectionColor());
+                }
+                setToolTipText(String.format(Locale.US, "Partial View: %.1f%% visible (use setFullView to expand)", rn.getVisiblePercentage()));
             } else {
                 setForeground(sel ? getTextSelectionColor() : getTextNonSelectionColor());
             }

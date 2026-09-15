@@ -7,6 +7,7 @@ import javax.swing.tree.TreePath;
 import lombok.extern.slf4j.Slf4j;
 import org.jdesktop.swingx.treetable.AbstractTreeTableModel;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.resources.ResourcesNode;
 import uno.anahata.asi.swing.internal.SwingTask;
 
 /**
@@ -72,6 +73,10 @@ public class ContextTreeTableModel extends AbstractTreeTableModel {
      * Triggers an asynchronous recalculation of token counts for all nodes in
      * the tree. Uses SwingTask to run the calculation pass on a background
      * thread.
+     * <p>
+     * Implementation details: Emits {@code firePathChanged} instead of resetting
+     * the tree structure, ensuring zero flickering and preserving active row selection.
+     * </p>
      *
      * @param onDone An optional callback to run on the EDT after the refresh is
      * complete.
@@ -82,12 +87,86 @@ public class ContextTreeTableModel extends AbstractTreeTableModel {
                 node.refreshData();
                 return null;
             }, (v) -> {
-                modelSupport.fireTreeStructureChanged(new TreePath(root));
+                modelSupport.firePathChanged(new TreePath(root));
                 if (onDone != null) {
                     onDone.run();
                 }
             }, null, false).start();
         }
+    }
+
+    /**
+     * Refreshes the child structure of a specific branch node without resetting the rest of the tree.
+     *
+     * @param branch The branch node whose children changed.
+     */
+    public void refreshBranch(AbstractContextNode<?> branch) {
+        if (branch != null) {
+            branch.refresh();
+            modelSupport.fireTreeStructureChanged(branch.getTreePath());
+        }
+    }
+
+    /**
+     * Notifies the tree table that a specific node's data (tokens, status) has changed.
+     *
+     * @param node The node whose data changed.
+     */
+    public void refreshNodeData(AbstractContextNode<?> node) {
+        if (node != null) {
+            node.refreshData();
+            modelSupport.firePathChanged(node.getTreePath());
+        }
+    }
+
+    /**
+     * Gets the child node representing the conversation history.
+     *
+     * @return The HistoryNode, or null if not yet created.
+     */
+    public HistoryNode getHistoryNode() {
+        if (root instanceof ContextManagerNode cmn) {
+            return cmn.getHistoryNode();
+        }
+        return null;
+    }
+
+    /**
+     * Gets the child node representing the managed resources.
+     *
+     * @return The ResourcesNode, or null if not yet created.
+     */
+    public ResourcesNode getResourcesNode() {
+        if (root instanceof ContextManagerNode cmn) {
+            return cmn.getResourcesNode();
+        }
+        return null;
+    }
+
+    /**
+     * Recursively searches for a node wrapping the specified domain user object.
+     *
+     * @param userObject The domain user object to search for.
+     * @return The matching AbstractContextNode, or null if not found.
+     */
+    public AbstractContextNode<?> findNode(Object userObject) {
+        if (root instanceof AbstractContextNode<?> rootNode) {
+            return findNodeRecursive(rootNode, userObject);
+        }
+        return null;
+    }
+
+    private AbstractContextNode<?> findNodeRecursive(AbstractContextNode<?> current, Object userObject) {
+        if (current.getUserObject() == userObject) {
+            return current;
+        }
+        for (AbstractContextNode<?> child : current.getChildren()) {
+            AbstractContextNode<?> found = findNodeRecursive(child, userObject);
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
     }
 
     /**

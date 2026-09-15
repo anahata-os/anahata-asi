@@ -5,6 +5,8 @@ package uno.anahata.asi.swing.agi.context;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Font;
+import java.util.Locale;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -67,19 +69,26 @@ public class ContextTableCellRenderer extends DefaultTableCellRenderer {
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        c.setFont(table.getFont()); // Always reset font to table default to prevent bold leakage
 
         if (table instanceof JXTreeTable treeTable) {
             TreePath path = treeTable.getPathForRow(row);
             if (path != null && path.getLastPathComponent() instanceof ResourceNode rn) {
                 if (rn.isTruncated()) {
-                    Color warningColor = SwingAgiConfig.getTruncatedTokenColor();
+                    Color warningFg = SwingAgiConfig.isDarkLaf()
+                            ? new Color(255, 175, 45)
+                            : new Color(225, 90, 0);
+
                     if (!isSelected) {
-                        c.setForeground(warningColor);
+                        c.setForeground(warningFg);
+                        c.setBackground(SwingAgiConfig.isDarkLaf() ? new Color(45, 32, 16) : new Color(255, 244, 230));
                     } else {
-                        c.setForeground(SwingAgiConfig.isDarkLaf() ? new Color(255, 210, 120) : new Color(255, 235, 190));
+                        c.setForeground(SwingAgiConfig.isDarkLaf() ? new Color(255, 215, 120) : new Color(255, 240, 200));
+                        c.setBackground(table.getSelectionBackground());
                     }
+                    c.setFont(c.getFont().deriveFont(Font.BOLD));
                     if (c instanceof JLabel label) {
-                        label.setToolTipText("Viewport is truncated (only partial file content loaded into prompt)");
+                        label.setToolTipText(String.format(Locale.US, "Partial View: %.1f%% visible (use setFullView to expand)", rn.getVisiblePercentage()));
                     }
                     return c;
                 }
@@ -88,8 +97,10 @@ public class ContextTableCellRenderer extends DefaultTableCellRenderer {
 
         if (!isSelected) {
             c.setForeground(table.getForeground());
+            c.setBackground(table.getBackground());
         } else {
             c.setForeground(table.getSelectionForeground());
+            c.setBackground(table.getSelectionBackground());
         }
         setToolTipText(null);
         return c;
