@@ -9,6 +9,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.provider.AbstractModel;
+import uno.anahata.asi.persistence.Rebindable;
 
 /**
  * A resource view that interprets content as binary media (images, audio, etc.).
@@ -23,20 +24,36 @@ public class MediaView extends AbstractResourceView {
     private transient byte[] cachedData;
 
     /**
-     * Returns the cached binary data, lazily reloading from the source handle if null
-     * (e.g. following session deserialization from disk).
+     * Authoritatively retrieves the binary data for this media view,
+     * ensuring the owner resource has executed reloadIfNeeded() so that
+     * the cache is guaranteed to be fresh and loaded.
      *
-     * @return The binary data, or null on read failure.
+     * @return The binary data byte array.
+     * @throws Exception if reading fails.
+     */
+    public byte[] getData() throws Exception {
+        owner.reloadIfNeeded();
+        return cachedData;
+    }
+
+    /**
+     * Pure, side-effect-free getter for the currently cached binary data.
+     *
+     * @return The cached byte array, or null if not yet loaded into memory.
      */
     public byte[] getCachedData() {
-        if (cachedData == null && owner != null && owner.getHandle() != null && owner.getHandle().exists()) {
-            try {
-                reload();
-            } catch (Exception e) {
-                log.error("Failed to lazily load media data for {}", owner.getHandle().getUri(), e);
-            }
-        }
         return cachedData;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns true if binary data is resident in memory.
+     * </p>
+     */
+    @Override
+    public boolean hasContent() {
+        return cachedData != null && cachedData.length > 0;
     }
 
     /** 
@@ -46,6 +63,7 @@ public class MediaView extends AbstractResourceView {
      */
     @Override
     public void reload() throws Exception {
+        resetTokenCount();
         ResourceHandle handle = owner.getHandle();
         log.debug("Reloading MediaView for: {}", handle.getUri());
         try (InputStream is = handle.openStream()) {
@@ -62,8 +80,8 @@ public class MediaView extends AbstractResourceView {
      */
     @Override
     public void populateRag(RagMessage ragMessage) throws Exception {
-        byte[] data = getCachedData();
-        if (data != null) {
+        byte[] data = getData();
+        if (data != null && data.length > 0) {
             ragMessage.addBlobPart(owner.getHandle().getMimeType(), data);
         }
     }
@@ -82,7 +100,12 @@ public class MediaView extends AbstractResourceView {
             if (model == null) {
                 return 0;
             }
-            tokenCount = model.countTokens(getCachedData(), owner.getMimeType());
+            try {
+                tokenCount = model.countTokens(getData(), owner.getMimeType());
+            } catch (Exception e) {
+                log.error("Failed to load media data in getTokenCount for {}", owner.getName(), e);
+                tokenCount = 0;
+            }
         }
         return tokenCount;
     }
