@@ -89,6 +89,13 @@ public interface ResourceView {
     }
 
     /**
+     * Checks whether this view currently has its in-memory content loaded and ready.
+     *
+     * @return true if content is resident in memory, false if cold or uninitialized.
+     */
+    boolean hasContent();
+
+    /**
      * Associates this view with its parent resource.
      * @param owner The owning Resource.
      */
