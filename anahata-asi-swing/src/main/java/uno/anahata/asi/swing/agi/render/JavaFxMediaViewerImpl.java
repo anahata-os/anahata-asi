@@ -3,6 +3,9 @@ package uno.anahata.asi.swing.agi.render;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -97,6 +100,15 @@ public class JavaFxMediaViewerImpl extends JPanel implements MediaViewerComponen
     /** Stored MIME type for lazy player resurrection on addNotify. */
     private String mimeType;
 
+    /** The container holding the mediaView. */
+    private StackPane mediaContainer;
+
+    /** Cached native video width in pixels. */
+    private int videoWidth = 0;
+
+    /** Cached native video height in pixels. */
+    private int videoHeight = 0;
+
     /**
      * Constructs a new JavaFxMediaViewerImpl.
      */
@@ -104,6 +116,8 @@ public class JavaFxMediaViewerImpl extends JPanel implements MediaViewerComponen
         super(new BorderLayout());
         setOpaque(true);
         setBackground(new Color(20, 24, 32));
+        setMinimumSize(new Dimension(320, 240));
+        setPreferredSize(new Dimension(640, 420));
 
         jfxPanel.setToolTipText("Ctrl + Scroll to zoom in / out");
 
@@ -206,20 +220,30 @@ public class JavaFxMediaViewerImpl extends JPanel implements MediaViewerComponen
         rootLayout.setStyle("-fx-background-color: #0b0f19;");
 
         // Media display container with responsive sizing
-        StackPane mediaContainer = new StackPane(mediaView);
+        this.mediaContainer = new StackPane(mediaView);
         mediaContainer.setStyle("-fx-background-color: #000000;");
+        mediaContainer.setMinSize(0, 0);
         mediaView.fitWidthProperty().bind(mediaContainer.widthProperty());
         mediaView.fitHeightProperty().bind(mediaContainer.heightProperty());
 
         mediaContainer.setOnScroll(event -> {
             if (event.isControlDown()) {
                 double zoomFactor = event.getDeltaY() > 0 ? 1.15 : 0.87;
-                double newFitW = mediaView.getFitWidth() * zoomFactor;
-                double newFitH = mediaView.getFitHeight() * zoomFactor;
-                if (newFitW > 50 && newFitH > 50 && newFitW < 10000 && newFitH < 10000) {
-                    mediaView.setFitWidth(newFitW);
-                    mediaView.setFitHeight(newFitH);
+                double newScaleX = mediaView.getScaleX() * zoomFactor;
+                double newScaleY = mediaView.getScaleY() * zoomFactor;
+                if (newScaleX >= 0.25 && newScaleX <= 10.0) {
+                    mediaView.setScaleX(newScaleX);
+                    mediaView.setScaleY(newScaleY);
                 }
+                event.consume();
+            } else {
+                forwardScrollToSwing(event);
+            }
+        });
+        mediaContainer.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                mediaView.setScaleX(1.0);
+                mediaView.setScaleY(1.0);
                 event.consume();
             }
         });
@@ -299,10 +323,21 @@ public class JavaFxMediaViewerImpl extends JPanel implements MediaViewerComponen
             // Update toolbar metadata with video dimensions or duration
             int w = mediaPlayer.getMedia().getWidth();
             int h = mediaPlayer.getMedia().getHeight();
+            this.videoWidth = w;
+            this.videoHeight = h;
             String durStr = formatTime(totalDuration);
             String extra = (w > 0 && h > 0) ? (w + " × " + h + " • " + durStr) : durStr;
 
-            SwingUtilities.invokeLater(() -> toolbar.updateMetadata(extra));
+            if (w > 0 && h > 0 && mediaContainer != null) {
+                double aspect = (double) h / w;
+                mediaContainer.maxHeightProperty().bind(mediaContainer.widthProperty().multiply(aspect));
+            }
+
+            SwingUtilities.invokeLater(() -> {
+                toolbar.updateMetadata(extra);
+                revalidate();
+                repaint();
+            });
         });
 
         mediaPlayer.currentTimeProperty().addListener((obs, oldTime, newTime) -> {
@@ -348,6 +383,54 @@ public class JavaFxMediaViewerImpl extends JPanel implements MediaViewerComponen
         int mins = totalSecs / 60;
         int secs = totalSecs % 60;
         return String.format(Locale.US, "%02d:%02d", mins, secs);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Dynamically calculates preferred height based on the current component width
+     * and native video aspect ratio to prevent letterboxing padding in vertical layouts.
+     * </p>
+     */
+    @Override
+    public Dimension getPreferredSize() {
+        int currentWidth = getWidth();
+        if (currentWidth > 0 && videoWidth > 0 && videoHeight > 0) {
+            int videoHeightAtCurrentWidth = (int) (currentWidth * ((double) videoHeight / videoWidth));
+            int controlsHeight = 70; // 40px JavaFX control bar + 30px MediaToolbar
+            return new Dimension(currentWidth, videoHeightAtCurrentWidth + controlsHeight);
+        }
+        return super.getPreferredSize();
+    }
+
+    /**
+     * Bridges JavaFX scroll wheel events up to the enclosing Swing JScrollPane.
+     *
+     * @param event The JavaFX scroll event.
+     */
+    private void forwardScrollToSwing(javafx.scene.input.ScrollEvent event) {
+        double deltaY = event.getDeltaY();
+        if (deltaY == 0) return;
+
+        int wheelRotation = deltaY > 0 ? -1 : 1;
+        SwingUtilities.invokeLater(() -> {
+            javax.swing.JScrollPane scrollPane = (javax.swing.JScrollPane) SwingUtilities.getAncestorOfClass(javax.swing.JScrollPane.class, this);
+            if (scrollPane != null) {
+                MouseWheelEvent mwe = new MouseWheelEvent(
+                        scrollPane,
+                        MouseEvent.MOUSE_WHEEL,
+                        System.currentTimeMillis(),
+                        0,
+                        0, 0,
+                        1,
+                        false,
+                        MouseWheelEvent.WHEEL_UNIT_SCROLL,
+                        3,
+                        wheelRotation
+                );
+                scrollPane.dispatchEvent(mwe);
+            }
+        });
     }
 
     /**
@@ -429,14 +512,14 @@ public class JavaFxMediaViewerImpl extends JPanel implements MediaViewerComponen
     /**
      * {@inheritDoc}
      * <p>
-     * Automatically stops playback and releases native OS decoders when detached from
-     * any Swing container (e.g. pruned message, closed tab, or dialog teardown).
+     * Automatically stops playback when detached from a Swing container
+     * (e.g. switching tabs), while keeping the player initialized in memory.
+     * Full destruction is handled by {@link #dispose()}.
      * </p>
      */
     @Override
     public void removeNotify() {
         stop();
-        disposeFxPlayer();
         super.removeNotify();
     }
 
