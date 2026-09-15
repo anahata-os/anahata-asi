@@ -202,6 +202,25 @@ public class UrlHandle extends AbstractResourceHandle {
     /**
      * {@inheritDoc}
      * <p>
+     * Implementation details: For LIVE refresh policy, bypasses the local metadata
+     * cache to query the remote server via a fresh HEAD request, detecting remote
+     * modifications accurately.
+     * </p>
+     */
+    @Override
+    public boolean isStale(long lastLoadTimestamp) {
+        this.cache = null; // Invalidate cache to force a fresh remote HEAD check
+        refreshMetadata();
+        long remoteLm = cache.lastModified();
+        if (remoteLm > 0) {
+            return remoteLm > lastLoadTimestamp;
+        }
+        return lastLoadTimestamp == -1;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
      * Clears the metadata cache to force a fresh HEAD request on next
      * access.</p>
      */
