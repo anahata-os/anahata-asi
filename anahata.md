@@ -29,10 +29,16 @@ This project uses a set of key documents to guide development. For detailed info
 > **Simplicity and Stability**
 > The absolute priority for all development is **Simplicity and Stability** (or Stability through Simplicity). These principles rule above all others.
 
-- **CRITICAL: NO FQNs ON METHOD BODIES (STRICT CLEANLINESS)**:
-    Never, under any circumstances, use fully qualified class names (FQNs) inside method bodies or field declarations (e.g. `uno.anahata.asi.foo.Bar b = ...`). It looks terrible, degrades readability, and is strictly forbidden. **Always add the appropriate import statement at the top of the file** whenever you introduce or reference a type. If you are modifying code using the `Resources` toolkit, always include an extra replacement in the same turn to add the necessary imports.
+- **CRITICAL: NO "SPAGHETTI ON THE WALL" SOLUTIONS (SINGLE SOURCE OF TRUTH)**:
+    Never throw multiple redundant hacks, duplicate properties, or speculative fixes at a problem hoping one sticks. Every architectural decision must be minimal, elegant, and anchored to a single source of truth. If a property or standard mechanism already handles the requirement, do not duplicate it across multiple configuration blocks or invent parallel workarounds.
+- **🚨 CRITICAL: ABSOLUTELY ZERO FQNs IN METHOD BODIES OR FIELD DECLARATIONS (STRICTEST CLEANLINESS) 🚨**:
+    Never, under any circumstances, write fully qualified class names (FQNs) inside method bodies or field declarations (e.g., `uno.anahata.asi.foo.Bar b = ...`, `new uno.anahata.asi.bar.Baz()`, `node instanceof uno.anahata...`). It looks terrible, degrades readability, and is strictly forbidden across all modules! **You MUST ALWAYS add the appropriate import statement at the top of the file** whenever introducing or referencing any type. If you are modifying code using the `Resources` toolkit (which does NOT auto-import), you MUST ALWAYS include an extra replacement in the same turn to add the necessary imports to the import block.
 - **CRITICAL: NO BLIND CODING — LOAD ALL RELATED SOURCES FIRST**:
     You are strictly forbidden from proposing or suggesting solutions that involve Anahata framework types or project files that you do not have in context (e.g. `TextViewportSettings`, `ResourceHandle`, etc.). Never code blind or rely on assumptions about method signatures, constructors, or internal fields. Before discussing, planning, or modifying code, proactively load all Java types, resources, and configuration files that could be directly or indirectly involved in the use case into context.
+- **🚨 CRITICAL: NO `getMemberSourcesByFqn` WHEN WORKING ON A PROJECT — ALWAYS LOAD FULL RESOURCE IN CONTEXT 🚨**:
+    Never use `CodeModel.getMemberSourcesByFqn` or piecemeal member extraction tools when inspecting or refactoring project codebase files! You must always load the full `.java` source file into context as a managed resource (with Full View). Piecemeal member inspection creates blind spots regarding imports, annotations, surrounding fields, and exact line offsets, and is strictly prohibited across all project development turns!
+- **CRITICAL: NO DEFENSIVE PROGRAMMING / NO METHOD-START NULL CHECKS (FAIL FAST)**:
+    You are strictly forbidden from starting methods with defensive null checks on framework parameters or internal component references (e.g., `if (other == null) return;` or `if (agiPanel.getAgi() != null && agiPanel.getAgi().getResourceManager() != null)`). How can an `AgiPanel` not have an `Agi`? In Anahata, foundational references are non-null by contract. Never check internal framework singletons for null. Let the JVM throw the NullPointerException immediately so root causes can be exposed and corrected.
 - **DRY Principle (Don't Repeat Yourself)**: Avoid duplicating logic across classes. Extract shared behaviors (like Swing UI updates, event listeners, or domain state checks) into common base classes or utility methods.
 - **Domain Driven Architecture (DDA)**: The entire multimodule project is based on DDA. Business logic and state transitions must reside in the domain model entities. Anything UI agnositc should be in `anahata-asi-core`. UI components of core in `anahata-asi-swing`.
 - **Architectural Integrity**: We do not implement "dirty hacks" or workarounds to mask architectural flaws. If a design is broken, we fix the design.
@@ -42,8 +48,6 @@ This project uses a set of key documents to guide development. For detailed info
 - **API Leanliness**: Avoid redundant signatures or secondary constructors. Keep the API lean and consistent.
 - **Identity & Distributed Observability**: Message metadata must distinguish between the Logical Actor (`getFrom()`) and the Physical/Virtual Host (`getDevice()`).
 - **No Reinventing Commons**: Use existing libraries like **Apache Commons Lang 3**.
-- **Fail Fast**: Avoid defensive programming like redundant null checks for internal components. Let it fail so root causes can be fixed. 
-- **No Method-Start Null Checks**: You are strictly forbidden from starting a method with a null check on parameters for the sake of defensive programming (e.g., `if (other == null) return;`). Let the JVM throw the NullPointerException so the caller can be corrected.
 - **No Quietly Catching Exceptions**: You are strictly forbidden from catching exceptions and doing nothing. All exceptions should be logged. 
 - **Clean Execution**: Do not use try-catch blocks inside `@AgiTool` methods unless performing specific recovery. The framework handles exceptions automatically. If you need to throw an error intended for the user, prefer throwing an `AgiToolException` to ensure a clean message without stack traces.
 - **Mandatory Braces**: Always use curly braces `{}` for all control flow statements (`if`, `else`, `for`, `while`, `do`). Single-line lambdas without braces (e.g., `list.stream().filter(m -> m.isCool())...`) are perfectly fine and often preferred for readability.
@@ -106,4 +110,4 @@ This project is in a pre-production state. We value architectural purity and lon
 
 - **Working Directory**: `~/.anahata/asi` (Standardized for V2).
 
-Força Barça!
+Força Barça y Visca Catalunya!
