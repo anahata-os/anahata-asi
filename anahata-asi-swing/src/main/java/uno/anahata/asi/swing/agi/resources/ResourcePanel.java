@@ -4,7 +4,6 @@ package uno.anahata.asi.swing.agi.resources;
 import com.jgoodies.forms.layout.CellConstraints;
 import com.jgoodies.forms.layout.FormLayout;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -31,6 +30,7 @@ import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.message.RagMessagePanel;
+import uno.anahata.asi.swing.agi.render.MediaViewerComponent;
 import uno.anahata.asi.swing.agi.resources.handle.AbstractHandlePanel;
 import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
 import uno.anahata.asi.swing.agi.resources.view.AbstractViewPanel;
@@ -311,6 +311,9 @@ public class ResourcePanel extends ScrollablePanel {
         this.currentResource = res;
 
         // 1. Initial Cleanup
+        if (activeViewer instanceof MediaViewerComponent mvc) {
+            mvc.dispose();
+        }
         viewerContainer.removeAll();
         actionPanel.removeAll();
         handleSectorContainer.removeAll();
