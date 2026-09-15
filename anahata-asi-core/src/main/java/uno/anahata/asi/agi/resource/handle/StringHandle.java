@@ -153,8 +153,13 @@ public class StringHandle extends AbstractResourceHandle {
 
     /**
      * {@inheritDoc}
-     * <p>Returns the length of the in-memory string.</p>
+     * <p>
+     * Implementation details: Returns the character length of the in-memory text snippet.
+     * </p>
+     *
+     * @return The character count of the content, or 0 if null.
      */
+    @Override
     public long length() {
         return content != null ? content.length() : 0;
     }
