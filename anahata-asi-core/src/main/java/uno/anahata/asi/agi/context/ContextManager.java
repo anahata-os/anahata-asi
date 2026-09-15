@@ -21,6 +21,8 @@ import uno.anahata.asi.agi.message.AbstractPart;
 import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.persistence.Rebindable;
+import java.util.Locale;
+import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.agi.resource.Resource;
 
 /**
@@ -199,6 +201,7 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
                 if (provider.isProviding()) {
 
                     long start = System.currentTimeMillis();
+                    int beforeParts = augmentedMessage.getParts().size();
                     try {
                         if (provider instanceof Resource r) {
                             if (r.getContextPosition() == ContextPosition.SYSTEM_INSTRUCTIONS) {
@@ -212,7 +215,15 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
                         augmentedMessage.addTextPart(provider.getHeader());
                         provider.populateMessage(augmentedMessage);
                         long duration = System.currentTimeMillis() - start;
-                        augmentedMessage.addTextPart("\n(Provider " + provider.getName() + " took: " + duration + "ms)");
+
+                        int tokens = 0;
+                        AbstractModel model = (agi != null) ? agi.getSelectedModel() : null;
+                        if (model != null) {
+                            for (int i = beforeParts; i < augmentedMessage.getParts().size(); i++) {
+                                tokens += augmentedMessage.getParts().get(i).getTokenCount();
+                            }
+                        }
+                        augmentedMessage.addTextPart(String.format(Locale.US, "\n(Provider %s took: %dms, Tokens: %,d)", provider.getName(), duration, tokens));
                     } catch (Exception e) {
                         log.error("Error populating rag message for provider: {}", provider.getName(), e);
                         augmentedMessage.addTextPart("\nError populating rag message for provider: " + provider.getName()
