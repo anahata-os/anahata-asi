@@ -24,16 +24,16 @@ import org.apache.commons.io.input.ReversedLinesFileReader;
 /**
  * The V2 Universal Streaming Viewport Engine.
  * <p>
- * Handles memory-efficient processing (Tail, Grep, Pagination) for any 
- * {@link ResourceHandle}. It ensures that huge resources never kill the JVM 
+ * Handles memory-efficient processing (Tail, Grep, Pagination) for any
+ * {@link ResourceHandle}. It ensures that huge resources never kill the JVM
  * heap by streaming content directly from the source.
  * </p>
  * <p>
- * <b>Virtual Fidelity:</b> For virtual resources (snippets), this engine 
- * skips viewport processing and returns the full content to ensure 
- * consistent IDE fidelity.
+ * <b>Virtual Fidelity:</b> For virtual resources (snippets), this engine skips
+ * viewport processing and returns the full content to ensure consistent IDE
+ * fidelity.
  * </p>
- * 
+ *
  * @author anahata
  */
 @Slf4j
@@ -43,17 +43,40 @@ import org.apache.commons.io.input.ReversedLinesFileReader;
 public class TextViewport {
 
     /**
+     * The processed text chunk captured during the last process pass.
+     */
+    private String visibleContent;
+
+    /**
+     * Total size of the source in characters.
+     */
+    private long totalChars;
+
+    /**
+     * Number of matches found if grepping.
+     */
+    private Integer matchingLineCount;
+
+    /**
+     * Number of lines that were horizontally truncated.
+     */
+    private int truncatedLinesCount;
+
+    /**
      * Back-reference to the parent TextView interpreter.
      */
     @JsonIgnore
     @Schema(hidden = true)
     private TextView view;
 
-    /** Current viewport configuration. */
+    /**
+     * Current viewport configuration.
+     */
     private TextViewportSettings settings = new TextViewportSettings(this);
 
     /**
      * Constructs a viewport engine linked to a parent TextView view.
+     *
      * @param view The parent view.
      */
     public TextViewport(TextView view) {
@@ -64,7 +87,17 @@ public class TextViewport {
     }
 
     /**
-     * Synchronously notifies the parent view that viewport settings have changed.
+     * Constructs a viewport engine with specific initial settings.
+     *
+     * @param settings The viewport configuration.
+     */
+    public TextViewport(TextViewportSettings settings) {
+        this.settings = settings;
+    }
+
+    /**
+     * Synchronously notifies the parent view that viewport settings have
+     * changed.
      */
     public void markDirty() {
         if (view != null) {
@@ -74,7 +107,7 @@ public class TextViewport {
 
     /**
      * Sets the viewport configuration and binds the back-reference.
-     * 
+     *
      * @param settings The new viewport configuration.
      */
     public void setSettings(TextViewportSettings settings) {
@@ -85,32 +118,12 @@ public class TextViewport {
         }
     }
 
-    /** The processed text chunk captured during the last process pass. */
-    private String visibleContent;
-
-    /** Total size of the source in characters. */
-    private long totalChars;
-    
-    /** Number of matches found if grepping. */
-    private Integer matchingLineCount;
-    
-    /** Number of lines that were horizontally truncated. */
-    private int truncatedLinesCount;
-
-    /**
-     * Constructs a viewport engine with specific initial settings.
-     * @param settings The viewport configuration.
-     */
-    public TextViewport(TextViewportSettings settings) {
-        this.settings = settings;
-    }
-
     /**
      * Expands the viewport settings to fit the entire resource content.
      * <p>
-     * This adjusts the pagination to start from 0 and include the full 
-     * resource size. It also expands the column width to the maximum integer 
-     * value if any lines were previously truncated, ensuring an unclipped view.
+     * This adjusts the pagination to start from 0 and include the full resource
+     * size. It also expands the column width to the maximum integer value if
+     * any lines were previously truncated, ensuring an unclipped view.
      * </p>
      */
     public void expandToFit() {
@@ -122,15 +135,15 @@ public class TextViewport {
     }
 
     /**
-     * Processes a resource handle and authoritatively updates the internal 
+     * Processes a resource handle and authoritatively updates the internal
      * {@code visibleContent} and metrics.
-     * 
+     *
      * @param handle The source handle.
      * @throws Exception if processing fails.
      */
     public void process(ResourceHandle handle) throws Exception {
         log.debug("Processing viewport engine for: {}", handle.getUri());
-        
+
         // 1. Initial metadata update
         this.totalChars = handle.length();
         this.matchingLineCount = null;
@@ -150,8 +163,9 @@ public class TextViewport {
         this.visibleContent = finalizeOutput(lines);
     }
 
-    /** 
-     * Memory-efficient tail implementation. 
+    /**
+     * Memory-efficient tail implementation.
+     *
      * @param handle The source handle.
      * @return The list of trailing lines.
      * @throws Exception if reading fails.
@@ -162,7 +176,7 @@ public class TextViewport {
             List<String> lines = new ArrayList<>();
             Pattern pattern = (settings.getGrepPattern() != null) ? Pattern.compile(settings.getGrepPattern()) : null;
             File file = new File(handle.getUri());
-            
+
             Charset charset = handle.getCharset();
             // Workaround for commons-io 2.19.0 object identity bug in modular environments
             if ("UTF-8".equalsIgnoreCase(charset.name())) {
@@ -180,7 +194,7 @@ public class TextViewport {
                     }
                 }
             } catch (Throwable e) {
-                log.warn("ReversedLinesFileReader failed for {} ({}). Falling back to forward-buffering tail. Reason: {}", 
+                log.warn("ReversedLinesFileReader failed for {} ({}). Falling back to forward-buffering tail. Reason: {}",
                         handle.getUri(), charset, e.getMessage());
                 return processForwardTail(handle);
             }
@@ -193,7 +207,9 @@ public class TextViewport {
     }
 
     /**
-     * Fallback forward-buffering tail for remote streams or when backward reading fails.
+     * Fallback forward-buffering tail for remote streams or when backward
+     * reading fails.
+     *
      * @param handle The source handle.
      * @return The list of trailing lines.
      * @throws Exception if reading fails.
@@ -218,8 +234,9 @@ public class TextViewport {
         return new ArrayList<>(buffer);
     }
 
-    /** 
-     * Memory-efficient grep implementation. 
+    /**
+     * Memory-efficient grep implementation.
+     *
      * @param handle The source handle.
      * @return The list of matching lines.
      * @throws Exception if reading fails.
@@ -244,8 +261,9 @@ public class TextViewport {
         return lines;
     }
 
-    /** 
-     * Full-view processing reading the complete stream up to EOF. 
+    /**
+     * Full-view processing reading the complete stream up to EOF.
+     *
      * @param handle The source handle.
      * @return The complete list of lines.
      * @throws Exception if reading fails.
@@ -261,8 +279,9 @@ public class TextViewport {
         }
     }
 
-    /** 
-     * Character-based pagination. 
+    /**
+     * Character-based pagination.
+     *
      * @param handle The source handle.
      * @return The list of lines in the page.
      * @throws Exception if reading fails.
@@ -276,15 +295,18 @@ public class TextViewport {
             while (totalRead < buffer.length && (charsRead = reader.read(buffer, totalRead, buffer.length - totalRead)) != -1) {
                 totalRead += charsRead;
             }
-            if (totalRead <= 0) return Collections.emptyList();
+            if (totalRead <= 0) {
+                return Collections.emptyList();
+            }
             String chunk = new String(buffer, 0, totalRead);
             return chunk.lines().collect(Collectors.toList());
         }
     }
 
     /**
-     * Formats a line or chunk with dynamic line-number padding based on total line count.
-     * 
+     * Formats a line or chunk with dynamic line-number padding based on total
+     * line count.
+     *
      * @param format The line-number format string (e.g. "%4d | %s").
      * @param lineNumber The 1-based line number.
      * @param content The line or chunk text.
@@ -297,15 +319,16 @@ public class TextViewport {
         return content;
     }
 
-    /** 
-     * Finalizes output with line numbers and truncation. 
+    /**
+     * Finalizes output with line numbers and truncation.
+     *
      * @param lines The raw processed lines.
      * @return The formatted output string.
      */
     private String finalizeOutput(List<String> lines) {
         this.truncatedLinesCount = 0;
         List<String> processed = new ArrayList<>(lines.size());
-        
+
         int lineDigits = Math.max(4, String.valueOf(lines.size()).length());
         String lineFormat = "%" + lineDigits + "d | %s";
 
@@ -318,7 +341,7 @@ public class TextViewport {
 
         for (int i = 0; i < lines.size(); i++) {
             String line = lines.get(i);
-            
+
             // 1. Truncation (Now Wrapping)
             if (line.length() > settings.getColumnWidth()) {
                 this.truncatedLinesCount++;
@@ -337,9 +360,11 @@ public class TextViewport {
         return String.join("\n", processed);
     }
 
-    /** 
-     * {@inheritDoc} 
-     * <p>Returns a descriptive string representing the current state of the viewport engine.</p>
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns a descriptive string representing the current state of the
+     * viewport engine.</p>
      */
     @Override
     public String toString() {
