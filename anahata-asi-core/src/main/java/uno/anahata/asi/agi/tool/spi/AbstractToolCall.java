@@ -82,7 +82,7 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
      * The signature of the thought process as a byte array.
      */
     private byte[] thoughtSignature;
-    
+
     /**
      * Constructs a new AbstractToolCall.
      *
@@ -98,7 +98,7 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
         this.tool = tool;
         this.rawArgs = rawArgs;
         this.args = args;
-        
+
         // 1. Initialize the response object.
         this.response = createResponse();
         ExpandToolsPreference expandPref = getAgiConfig().getExpandTools();
@@ -169,33 +169,37 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
         return effective;
     }
 
-
     /**
      * {@inheritDoc}
      * <p>
      * Performs the lazy calculation of the total tool call and response tokens.
      * </p>
      */
-    @Override protected void calculateTokenCount() {
+    @Override
+    protected void calculateTokenCount() {
         setTokenCount(calculateTotalTokens());
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * Resets the cached token counts of both the tool call and its nested response,
-     * forcing a lazy recalculation under the new selected model.
+     * Resets the cached token counts of both the tool call and its nested
+     * response, forcing a lazy recalculation under the new selected model.
      * </p>
      */
-    @Override public void resetTokenCount() {
+    @Override
+    public void resetTokenCount() {
         super.resetTokenCount();
         if (response != null) {
             response.resetTokenCount();
         }
     }
+
     /**
      * Calculates the total tokens consumed by this tool call, including its
-     * nested execution response, by delegating to the selected model's offline tokenizer.
+     * nested execution response, by delegating to the selected model's offline
+     * tokenizer.
+     *
      * @return The total token count.
      */
     private int calculateTotalTokens() {
@@ -237,11 +241,15 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
     }
 
     /**
-     * Formats the tool call's arguments into a concise, Java-like comma-separated string.
-     * Honors {@link uno.anahata.asi.Displayable#getDisplayValue()} and bracketed collections via {@link TextUtils#formatValue}.
+     * Formats the tool call's arguments into a concise, Java-like
+     * comma-separated string. Honors
+     * {@link uno.anahata.asi.Displayable#getDisplayValue()} and bracketed
+     * collections via {@link TextUtils#formatValue}.
      *
-     * @param effective If true, uses effective args (including user modifications); otherwise original args.
-     * @return The formatted comma-separated arguments string (e.g. "true, [FlightContact, Airport]").
+     * @param effective If true, uses effective args (including user
+     * modifications); otherwise original args.
+     * @return The formatted comma-separated arguments string (e.g. "true,
+     * [FlightContact, Airport]").
      */
     public String getArgumentsString(boolean effective) {
         Map<String, Object> targetArgs = effective ? getEffectiveArgs() : getArgs();
@@ -257,33 +265,33 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
     }
 
     /**
-     * {@inheritDoc}
-     * Overridden to provide a rich, detailed execution summary in the pruned metadata header.
+     * {@inheritDoc} Overridden to provide a rich, detailed execution summary in
+     * the pruned metadata header.
      */
     @Override
     public String getPrunedHint() {
         StringBuilder sb = new StringBuilder();
         sb.append("Tool: ").append(getToolName());
         sb.append(" | Status: ").append(response.getStatus());
-        
+
         sb.append(" | Args: ").append(TextUtils.formatValue(response.getExecutedArgs()));
         if (!response.getModifiedArgs().isEmpty()) {
             sb.append(" | Modified Args: ").append(TextUtils.formatValue(response.getModifiedArgs().keySet()));
         }
-        
+
         if (response.getResult() != null) {
             sb.append(" | Result: ").append(TextUtils.formatValue(response.getResult()));
         }
-        
+
         String feedback = response.getUserFeedback();
         if (feedback != null && !feedback.isBlank()) {
             sb.append(" | User Feedback: ").append(feedback);
         }
-        
+
         if (response.getErrors() != null && !response.getErrors().isBlank()) {
             sb.append(" | Errors: ").append(TextUtils.formatValue(response.getErrors()));
         }
-        
+
         return sb.toString();
     }
 
@@ -299,9 +307,9 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
             }
             if (!response.getAttachments().isEmpty()) {
                 sb.append(" | Attachments: ").append(
-                    response.getAttachments().stream()
-                        .map(ToolResponseAttachment::getDisplayValue)
-                        .collect(Collectors.joining(", ", "[", "]"))
+                        response.getAttachments().stream()
+                                .map(ToolResponseAttachment::getDisplayValue)
+                                .collect(Collectors.joining(", ", "[", "]"))
                 );
             }
         }
