@@ -1147,7 +1147,7 @@ public class Java extends AnahataToolkit {
 
             // Write all arguments to an @argfile to avoid Windows/OS command line length limits
             Path argFile = tempDir.resolve("javac_args.txt");
-            Files.write(argFile, options, StandardCharsets.UTF_8);
+            Files.write(argFile, escapeArgFileOptions(options), StandardCharsets.UTF_8);
 
             List<String> command = List.of(javacPath.toAbsolutePath().toString(), "@" + argFile.toAbsolutePath());
             log("Executing external javac via argfile: " + javacPath + " with " + options.size() + " options");
@@ -1303,6 +1303,24 @@ public class Java extends AnahataToolkit {
      */
     public Object compileAndExecute(String sourceCode, String extraClassPath, String[] compilerOptions) throws Exception {
         return compileAndExecute(sourceCode, extraClassPath, compilerOptions, (String) null);
+    }
+
+    /**
+     * Encloses javac @argfile arguments containing spaces or tabs in quotes, escaping backslashes.
+     *
+     * @param options the raw compiler options.
+     * @return the properly escaped options for javac argfile.
+     */
+    public static List<String> escapeArgFileOptions(List<String> options) {
+        List<String> escaped = new ArrayList<>(options.size());
+        for (String opt : options) {
+            if (opt.contains(" ") || opt.contains("\t")) {
+                escaped.add("\"" + opt.replace("\\", "\\\\").replace("\"", "\\\"") + "\"");
+            } else {
+                escaped.add(opt);
+            }
+        }
+        return escaped;
     }
 
     /**
@@ -1510,7 +1528,7 @@ public class Java extends AnahataToolkit {
                 }
 
                 Path argFile = tempDir.resolve("javac_args.txt");
-                Files.write(argFile, options, StandardCharsets.UTF_8);
+                Files.write(argFile, escapeArgFileOptions(options), StandardCharsets.UTF_8);
 
                 List<String> command = List.of(javacPath.toAbsolutePath().toString(), "@" + argFile.toAbsolutePath());
                 ProcessBuilder pb = new ProcessBuilder(command);
