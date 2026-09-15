@@ -2,16 +2,13 @@
 package uno.anahata.asi.agi.resource.view;
 
 import uno.anahata.asi.agi.resource.handle.ResourceHandle;
-import java.beans.PropertyChangeListener;
 import java.util.Collections;
 import java.util.List;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.provider.AbstractModel;
-import uno.anahata.asi.persistence.Rebindable;
 import uno.anahata.asi.agi.resource.Resource;
 
 /**
@@ -69,6 +66,7 @@ public class TextView extends AbstractResourceView {
      */
     @Override
     public void reload() throws Exception {
+        resetTokenCount();
         ResourceHandle handle = owner.getHandle();
         log.debug("Reloading TextView (Streaming) for: {}", handle.getUri());
         viewport.process(handle);
@@ -169,6 +167,30 @@ public class TextView extends AbstractResourceView {
     /**
      * {@inheritDoc}
      * <p>
+     * Returns true if the viewport has processed and cached visible content.
+     * </p>
+     */
+    @Override
+    public boolean hasContent() {
+        return viewport.getVisibleContent() != null;
+    }
+
+    /**
+     * Authoritatively retrieves the processed viewport text content for this view,
+     * ensuring the owner resource has executed reloadIfNeeded() so that
+     * content is guaranteed to be loaded.
+     *
+     * @return The visible viewport text content.
+     * @throws Exception if reading fails.
+     */
+    public String getContent() throws Exception {
+        owner.reloadIfNeeded();
+        return viewport.getVisibleContent();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
      * Performs a lazy, model-specific token calculation of the active viewport
      * content, caching the result to prevent redundant, CPU-intensive
      * tokenization.
@@ -181,8 +203,13 @@ public class TextView extends AbstractResourceView {
             if (model == null) {
                 return 0;
             }
-            String content = viewport.getVisibleContent();
-            tokenCount = model.countTokens(content != null ? content : "") + 20;
+            try {
+                String content = getContent();
+                tokenCount = model.countTokens(content != null ? content : "") + 20;
+            } catch (Exception e) {
+                log.error("Failed to load text content in getTokenCount for {}", owner.getName(), e);
+                tokenCount = 20;
+            }
         }
         return tokenCount;
     }
