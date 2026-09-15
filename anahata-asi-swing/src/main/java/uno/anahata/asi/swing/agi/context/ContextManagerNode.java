@@ -104,6 +104,48 @@ public class ContextManagerNode extends AbstractContextNode<ContextManager> {
     }
 
     /**
+     * Gets the child node representing the conversation history.
+     *
+     * @return The HistoryNode, or null if not yet created.
+     */
+    public HistoryNode getHistoryNode() {
+        for (AbstractContextNode<?> child : getChildren()) {
+            if (child instanceof HistoryNode hn) {
+                return hn;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Gets the child node representing the managed resources.
+     *
+     * @return The ResourcesNode, or null if not yet created.
+     */
+    public ResourcesNode getResourcesNode() {
+        for (AbstractContextNode<?> child : getChildren()) {
+            if (child instanceof ResourcesNode rn) {
+                return rn;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Gets the child node representing the tool manager.
+     *
+     * @return The ToolManagerNode, or null if not yet created.
+     */
+    public ToolManagerNode getToolManagerNode() {
+        for (AbstractContextNode<?> child : getChildren()) {
+            if (child instanceof ToolManagerNode tmn) {
+                return tmn;
+            }
+        }
+        return null;
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Implementation details: The manager node is a logical container and does

@@ -10,8 +10,10 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.swing.Icon;
+import javax.swing.tree.TreePath;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.context.ContextProvider;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
@@ -49,6 +51,12 @@ public abstract class AbstractContextNode<T> {
      * The underlying domain object.
      */
     protected final T userObject;
+
+    /**
+     * The parent node in the context tree hierarchy.
+     */
+    @Setter
+    protected AbstractContextNode<?> parent;
 
     /**
      * The cached list of child nodes.
@@ -114,6 +122,21 @@ public abstract class AbstractContextNode<T> {
     }
 
     /**
+     * Constructs the Swing TreePath from the root down to this node.
+     *
+     * @return The complete TreePath representing this node's location.
+     */
+    public TreePath getTreePath() {
+        List<Object> path = new ArrayList<>();
+        AbstractContextNode<?> curr = this;
+        while (curr != null) {
+            path.add(0, curr);
+            curr = curr.getParent();
+        }
+        return new TreePath(path.toArray());
+    }
+
+    /**
      * Refreshes the node's state, including its child list and token counts.
      * <p>
      * This method implements an identity-preserving synchronization logic: it
@@ -137,6 +160,7 @@ public abstract class AbstractContextNode<T> {
                     node = createChildNode(obj);
                 }
                 if (node != null) {
+                    node.setParent(this);
                     node.refresh(); // Recursive structure refresh
                     syncedChildren.add(node);
                 }
