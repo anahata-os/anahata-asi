@@ -81,13 +81,13 @@ public class HtmlRendererUtils {
         // Apply custom CSS for styling and word wrapping
         StyleSheet sheet = kit.getStyleSheet();
 
-        String fontStyle = isThought ? "font-style: italic; color: #888888;" : "color: " + toHtmlColor(theme.getFontColor()) + ";";
+        String fontStyle = isThought ? "font-style: italic; color: " + toHtmlColor(theme.getThoughtFg()) + ";" : "color: " + toHtmlColor(theme.getFontColor()) + ";";
         String fontWeight = isThought ? "font-weight: normal;" : "font-weight: normal;";
 
         sheet.addRule("body { word-wrap: break-word; font-family: sans-serif; font-size: 14px; background-color: transparent; " + fontStyle + fontWeight + "}");
         sheet.addRule("table { border-collapse: collapse; width: 100%; }");
-        sheet.addRule("th, td { border: 1px solid #dddddd; text-align: left; padding: 8px; }");
-        sheet.addRule("th { background-color: #f2f2f2; }");
+        sheet.addRule("th, td { border: 1px solid " + toHtmlColor(theme.getChromeBorder()) + "; text-align: left; padding: 8px; }");
+        sheet.addRule("th { background-color: " + toHtmlColor(theme.getPartHeaderBg()) + "; }");
 
         editorPane.setText("<html><body>" + html + "</body></html>");
         editorPane.setAlignmentX(Component.LEFT_ALIGNMENT);
