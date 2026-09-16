@@ -145,7 +145,7 @@ public class Resources extends AnahataToolkit {
      * @param settings The new settings.
      * @throws Exception if the resource is not found.
      */
-    @AgiTool("Updates the viewport configuration for a text resource. This is not a resource reload tool. Do not updateViewport without any changes as a means to re-read a resource from disk. This is just to update the viewport settings if the resource is too large, the viewport doesn't include the desired range, toggle line numbers, etc.")
+    @AgiTool(permission = ToolPermission.APPROVE_ALWAYS, value= "Updates the viewport configuration for a text resource. This is not a resource reload tool. Do not updateViewport without any changes as a means to re-read a resource from disk. This is just to update the viewport settings if the resource is too large, the viewport doesn't include the desired range, toggle line numbers, etc.")
     public void updateViewport(
             @AgiToolParam(value = "The unique resource identifier.", rendererId = "resource") String resourceId,
             @AgiToolParam("The new viewport settings.") TextViewportSettings settings) throws Exception {
@@ -169,7 +169,7 @@ public class Resources extends AnahataToolkit {
      * @param resourceIds The list of unique resource identifiers.
      * @param fullView True to enable full view mode, false to revert to viewport settings.
      */
-    @AgiTool("Enables or disables Full View mode for one or more text resources. When enabled, the entire file is loaded into prompt memory without character pagination or horizontal column truncation.")
+    @AgiTool(permission = ToolPermission.APPROVE_ALWAYS, value="Enables or disables Full View mode for one or more text resources. When enabled, the entire file is loaded into prompt memory without character pagination or horizontal column truncation.")
     public void setFullView(
             @AgiToolParam(value = "The list of unique resource identifiers.", rendererId = "resource") List<String> resourceIds,
             @AgiToolParam("True to load the full resource up to EOF, false to use viewport pagination.") boolean fullView) {
@@ -196,7 +196,7 @@ public class Resources extends AnahataToolkit {
      *
      * @param resourceIds The UUIDs to unregister.
      */
-    @AgiTool(value = "Unloads multiple resources from the context (from the RAG Message).", maxDepth = 2)
+    @AgiTool(permission = ToolPermission.APPROVE_ALWAYS, value = "Unloads multiple resources from the context (from the RAG Message).", maxDepth = 2)
     public void unloadResources(@AgiToolParam(value = "The list of resource identifiers.", rendererId = "resource") List<String> resourceIds) {
         List<Resource> unregistered = getAgi().getResourceManager().unregisterAll(resourceIds);
         for (Resource r : unregistered) {
@@ -219,7 +219,7 @@ public class Resources extends AnahataToolkit {
      * @param uris The list of URIs to unload.
      * @throws Exception if a URI matches multiple resources.
      */
-    @AgiTool(value = "Unloads multiple resources from the context by their URI for as long as only one resource is registered for that URI.", maxDepth = 2)
+    @AgiTool(permission = ToolPermission.APPROVE_ALWAYS, value = "Unloads multiple resources from the context by their URI for as long as only one resource is registered for that URI.", maxDepth = 2)
     public void unloadResourcesByUri(@AgiToolParam(value = "The list of resource URIs.", rendererId = "uri") List<String> uris) throws Exception {
         ResourceManager manager = getAgi().getResourceManager();
         List<String> uuidsToUnload = new ArrayList<>();
