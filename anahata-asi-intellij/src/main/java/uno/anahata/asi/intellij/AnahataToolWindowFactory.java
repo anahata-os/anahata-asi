@@ -22,11 +22,20 @@ import com.intellij.ide.plugins.DynamicPlugins;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginMainDescriptor;
 import com.intellij.ide.plugins.PluginManagerCore;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.extensions.PluginId;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import lombok.extern.slf4j.Slf4j;
+import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.wm.ToolWindowManager;
+import java.awt.Component;
+import java.awt.Container;
+import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.intellij.internal.IntellijPluginUtils;
 import uno.anahata.asi.intellij.ui.AnahataNotifications;
+import uno.anahata.asi.swing.AbstractAsiContainerDashboardPanel;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -59,6 +68,21 @@ public class AnahataToolWindowFactory implements ToolWindowFactory {
     private static final String DASHBOARD_TAB = "Dashboard";
 
     /**
+     * Flag indicating whether a dynamic plugin reload is currently in progress.
+     * When true, content removal listeners do not mark active sessions as closed.
+     */
+    private static volatile boolean reloading = false;
+
+    /**
+     * Checks whether a dynamic plugin reload is currently in progress.
+     *
+     * @return {@code true} if dynamic reload is active, {@code false} otherwise.
+     */
+    public static boolean isReloading() {
+        return reloading;
+    }
+
+    /**
      * Constructs the tool-window factory (instantiated by the platform via its public no-arg constructor).
      */
     public AnahataToolWindowFactory() {
@@ -79,7 +103,7 @@ public class AnahataToolWindowFactory implements ToolWindowFactory {
         toolWindow.getContentManager().addContentManagerListener(new ContentManagerListener() {
             @Override
             public void contentRemoved(@NotNull ContentManagerEvent event) {
-                if (event.getContent().getComponent() instanceof AgiPanel panel) {
+                if (!reloading && event.getContent().getComponent() instanceof AgiPanel panel) {
                     asiContainer.close(panel.getAgi());
                 }
             }
@@ -102,6 +126,22 @@ public class AnahataToolWindowFactory implements ToolWindowFactory {
         Content content = contentFactory.createContent(mainView, DASHBOARD_TAB, false);
         content.setCloseable(false); // The master dashboard tab remains sticky and cannot be closed.
         toolWindow.getContentManager().addContent(content);
+
+        for (Agi agi : asiContainer.getOpenAgis()) {
+            AgiPanel agiPanel = new AgiPanel(agi);
+            agiPanel.initComponents();
+
+            Content sessionContent = contentFactory.createContent(agiPanel, agi.getDisplayName(), false);
+            sessionContent.setCloseable(true);
+            toolWindow.getContentManager().addContent(sessionContent);
+        }
+
+        if (!asiContainer.getOpenAgis().isEmpty()) {
+            Content lastContent = toolWindow.getContentManager().getContent(toolWindow.getContentManager().getContentCount() - 1);
+            if (lastContent != null) {
+                toolWindow.getContentManager().setSelectedContent(lastContent);
+            }
+        }
 
         installTitleActions(toolWindow, dashboard);
     }
@@ -147,7 +187,10 @@ public class AnahataToolWindowFactory implements ToolWindowFactory {
         AnAction reloadPlugin = new DumbAwareAction("Reload Plugin", "Reload the Anahata ASI plugin dynamically", AllIcons.Actions.Refresh) {
             @Override
             public void actionPerformed(@NotNull AnActionEvent e) {
-                reloadPlugin(e.getProject(), toolWindow);
+                Project project = e.getProject();
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    reloadPlugin(project);
+                }, ModalityState.nonModal());
             }
         };
 
@@ -157,17 +200,31 @@ public class AnahataToolWindowFactory implements ToolWindowFactory {
     }
 
     /**
+     * Recursively traverses a component hierarchy and stops any active dashboard refresh timers.
+     *
+     * @param component the root component to inspect.
+     */
+    private static void stopDashboardTimers(Component component) {
+        if (component instanceof AbstractAsiContainerDashboardPanel dashboard) {
+            dashboard.stopRefresh();
+        } else if (component instanceof Container container) {
+            for (Component child : container.getComponents()) {
+                stopDashboardTimers(child);
+            }
+        }
+    }
+
+    /**
      * Dynamically reloads the Anahata ASI plugin inside IntelliJ IDEA without restarting the IDE.
      * <p>
-     * Syncs the freshly packaged JAR from the workspace target directory directly into the
-     * active plugin lib folder, then uses IntelliJ's {@link DynamicPlugins} engine to unload
-     * and reload the plugin descriptor in place.
+     * Cleans up open UI tabs, stops refresh timers, terminates background executors, unloads the
+     * plugin descriptor, syncs newly built assembly JARs from the target directory into the plugin
+     * lib folder, and reloads the plugin descriptor cleanly.
      * </p>
      *
-     * @param project    the active project context.
-     * @param toolWindow the tool window instance.
+     * @param project the active project context.
      */
-    private static void reloadPlugin(Project project, ToolWindow toolWindow) {
+    private static void reloadPlugin(Project project) {
         try {
             PluginId pluginId = PluginId.getId("uno.anahata.asi.intellij");
             IdeaPluginDescriptor descriptor = PluginManagerCore.getPlugin(pluginId);
@@ -176,7 +233,45 @@ public class AnahataToolWindowFactory implements ToolWindowFactory {
                 return;
             }
 
-            // 1. Sync updated JARs or assembly ZIP from target/ into the installed plugin directory
+            reloading = true;
+
+            // 1. Pre-unload cleanup: stop dashboard timers, detach tool window tabs, and shutdown container
+            for (Project p : ProjectManager.getInstance().getOpenProjects()) {
+                ToolWindow tw = ToolWindowManager.getInstance(p).getToolWindow("Anahata ASI");
+                if (tw != null) {
+                    for (Content c : tw.getContentManager().getContents()) {
+                        Component comp = c.getComponent();
+                        stopDashboardTimers(comp);
+                    }
+                    tw.getContentManager().removeAllContents(true);
+                }
+            }
+
+            IntellijAsiContainer asiContainer = IntellijAsiContainer.getInstance();
+            if (asiContainer != null) {
+                asiContainer.shutdown();
+            }
+
+            IntellijPluginUtils.resetCachedPluginClasspath();
+
+            // 2. Trigger dynamic unload via DynamicPlugins without tying modal progress to the project coroutine scope
+            DynamicPlugins.UnloadPluginOptions options = new DynamicPlugins.UnloadPluginOptions()
+                    .withDisable(false)
+                    .withUpdate(true)
+                    .withSave(true)
+                    .withWaitForClassloaderUnload(false);
+
+            boolean unloaded = DynamicPlugins.INSTANCE.unloadPlugin(
+                    descriptorImpl,
+                    options);
+
+            if (!unloaded) {
+                reloading = false;
+                AnahataNotifications.warn(project, "Plugin could not be unloaded cleanly. Check idea.log for details.");
+                return;
+            }
+
+            // 3. Post-unload file sync: now that the classloader is unloaded and file locks released, sync JARs
             Path pluginPath = descriptor.getPluginPath();
             if (project != null && project.getBasePath() != null && pluginPath != null) {
                 Path projectRoot = Path.of(project.getBasePath());
@@ -184,7 +279,18 @@ public class AnahataToolWindowFactory implements ToolWindowFactory {
                 Path installedLib = pluginPath.resolve("lib");
 
                 if (Files.isDirectory(targetDir) && Files.isDirectory(installedLib)) {
-                    // Option A: If the full assembly ZIP was built, unpack all runtime JARs from it
+                    // Clean out old anahata-asi-*.jar to prevent duplicate version jars in lib
+                    try (Stream<Path> stream = Files.list(installedLib)) {
+                        stream.filter(p -> p.getFileName().toString().startsWith("anahata-asi-") && p.toString().endsWith(".jar"))
+                                .forEach(oldJar -> {
+                                    try {
+                                        Files.deleteIfExists(oldJar);
+                                    } catch (Exception ex) {
+                                        log.warn("Could not delete old jar {}: {}", oldJar, ex.getMessage());
+                                    }
+                                });
+                    }
+
                     Path assemblyZip = null;
                     try (Stream<Path> stream = Files.list(targetDir)) {
                         assemblyZip = stream
@@ -207,64 +313,24 @@ public class AnahataToolWindowFactory implements ToolWindowFactory {
                                     }
                                 }
                             }
-                            log.info("Synced full plugin assembly ZIP from {} to {}", assemblyZip, installedLib);
+                            log.info("Synced plugin assembly ZIP from {} to {}", assemblyZip, installedLib);
                         }
                     } else {
-                        // Option B: Sync all anahata-asi-*.jar from open module target directories (core, swing, intellij)
-                        List<Path> candidateModules = List.of(
-                                projectRoot.resolve("anahata-asi-intellij"),
-                                projectRoot.resolve("anahata-asi-core"),
-                                projectRoot.resolve("anahata-asi-swing")
-                        );
-                        for (Path mod : candidateModules) {
-                            Path modTarget = mod.resolve("target");
-                            if (Files.isDirectory(modTarget)) {
-                                try (Stream<Path> stream = Files.list(modTarget)) {
-                                    stream.filter(p -> p.getFileName().toString().startsWith("anahata-asi-")
-                                                    && p.toString().endsWith(".jar")
-                                                    && !p.toString().endsWith("-sources.jar")
-                                                    && !p.toString().endsWith("-javadoc.jar"))
-                                            .forEach(candidateJar -> {
-                                                try {
-                                                    Path dest = installedLib.resolve(candidateJar.getFileName());
-                                                    Files.copy(candidateJar, dest, StandardCopyOption.REPLACE_EXISTING);
-                                                    log.info("Synced updated jar from {} to {}", candidateJar, dest);
-                                                } catch (Exception ex) {
-                                                    log.warn("Failed to copy jar {}: {}", candidateJar, ex.getMessage());
-                                                }
-                                            });
-                                }
-                            }
-                        }
+                        log.warn("No assembly ZIP found in {}. Ensure 'mvn package' has run.", targetDir);
                     }
                 }
             }
 
-            // 2. Trigger dynamic reload via DynamicPlugins
-            DynamicPlugins.UnloadPluginOptions options = new DynamicPlugins.UnloadPluginOptions()
-                    .withDisable(false)
-                    .withUpdate(true)
-                    .withSave(true)
-                    .withWaitForClassloaderUnload(false);
-
-            boolean unloaded = DynamicPlugins.INSTANCE.unloadPluginWithProgress(
-                    project,
-                    toolWindow != null ? toolWindow.getComponent() : null,
-                    descriptorImpl,
-                    options);
-
-            if (!unloaded) {
-                AnahataNotifications.warn(project, "Plugin could not be unloaded cleanly. Check idea.log for details.");
-                return;
-            }
-
+            // 4. Load the updated plugin
             boolean loaded = DynamicPlugins.INSTANCE.loadPlugin(descriptorImpl, project);
+            reloading = false;
             if (loaded) {
                 AnahataNotifications.info(project, "Anahata ASI plugin reloaded successfully!");
             } else {
                 AnahataNotifications.error(project, "Failed to load plugin after unload. Restart may be required.");
             }
         } catch (Throwable t) {
+            reloading = false;
             log.error("Plugin reload failed", t);
             AnahataNotifications.error(project, "Plugin reload failed: " + t.getMessage());
         }

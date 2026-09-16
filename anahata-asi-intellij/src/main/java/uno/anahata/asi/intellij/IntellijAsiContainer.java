@@ -259,6 +259,27 @@ public class IntellijAsiContainer extends AbstractSwingAsiContainer implements D
     /**
      * {@inheritDoc}
      * <p>
+     * Shuts down all active AGI sessions without closing them or modifying their persisted open state,
+     * ensuring that session-level executor thread pools are terminated cleanly, then proceeds with
+     * the standard container shutdown.
+     * </p>
+     */
+    @Override
+    public void shutdown() {
+        log.info("Shutting down IntellijAsiContainer and all active AGI sessions");
+        for (Agi agi : getActiveAgis()) {
+            try {
+                agi.shutdown();
+            } catch (Throwable t) {
+                log.warn("Error shutting down AGI session {}: {}", agi.getShortId(), t.getMessage());
+            }
+        }
+        super.shutdown();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
      * Shuts down background threads, key watcher, and container executors when
      * the plugin is dynamically unloaded by IntelliJ IDEA.
      * </p>
