@@ -9,12 +9,12 @@ import uno.anahata.asi.agi.Agi;
  * Standardized context annotation and tooltip formatter for IDE project and file views.
  * <p>
  * Provides consistent formatting across all IDE plugins (NetBeans, IntelliJ, Desktop):
+ * </p>
  * <ul>
  *   <li><b>Directories / Packages / Folders:</b> Bracketed resource counts per session (e.g. {@code [4]} or {@code [4][1]}).</li>
  *   <li><b>Files:</b> Single session displays the session nickname in parentheses (e.g. {@code (Intellij)}),
  *       while multiple sessions display the active session count (e.g. {@code (3)}).</li>
  * </ul>
- * </p>
  *
  * @author anahata
  */

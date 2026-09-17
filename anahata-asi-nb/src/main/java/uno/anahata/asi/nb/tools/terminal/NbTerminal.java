@@ -129,7 +129,7 @@ public class NbTerminal extends AnahataToolkit {
      * 
      * @param command The shell command sequence to execute.
      * @param terminalTabId Optional unique ID of an existing terminal tab. If omitted, a new tab is created.
-     * @param tabTitle Title of the new tab if creating one. Defaults to "Anahata - <displayName>".
+     * @param tabTitle Title of the new tab if creating one. Defaults to "Anahata - <code>agi.getDisplayName()</code>".
      * @param directory Initial working directory if a new tab needs to be created.
      * @param timeoutMillis Maximum milliseconds to wait for completion. If null, runs fire-and-forget.
      * @return The captured command output if timeoutMillis is provided, or null if fire-and-forget.

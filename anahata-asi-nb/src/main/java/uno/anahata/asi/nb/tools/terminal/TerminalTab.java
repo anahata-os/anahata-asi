@@ -203,7 +203,6 @@ public class TerminalTab extends BasicContextProvider {
      * @param command The command sequence to execute.
      * @param timeoutMillis Maximum milliseconds to wait before throwing a TimeoutException.
      * @return The combined stdout and stderr visual output produced by the command.
-     * @throws TimeoutException If the command does not complete within timeoutMillis.
      * @throws Exception If an error occurs during execution.
      */
     public String runAndWait(String command, long timeoutMillis) throws Exception {
