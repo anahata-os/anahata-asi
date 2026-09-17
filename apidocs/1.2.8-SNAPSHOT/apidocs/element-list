@@ -30,6 +30,7 @@ uno.anahata.asi.gemini.tokenizer.forremoval
 uno.anahata.asi.huggingface
 uno.anahata.asi.intellij
 uno.anahata.asi.intellij.internal
+uno.anahata.asi.intellij.resources.handle
 uno.anahata.asi.intellij.settings
 uno.anahata.asi.intellij.tools.debugger
 uno.anahata.asi.intellij.tools.gradle
