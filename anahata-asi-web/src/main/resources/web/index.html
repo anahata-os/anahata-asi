@@ -174,6 +174,204 @@
             margin-left: 8px;
             display: inline-block;
         }
+        /* Punchline Ticker Carousel */
+        .punchline-carousel-container {
+            margin: 0 auto 1.5rem;
+            max-width: 1150px;
+            width: 100%;
+            height: 52px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(0, 77, 152, 0.2), rgba(165, 0, 68, 0.15));
+            border: 1px solid rgba(237, 187, 0, 0.35);
+            border-radius: 26px;
+            padding: 0 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 0 15px rgba(237, 187, 0, 0.08);
+            overflow: hidden;
+        }
+        .punchline-ticker {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .punchline-slide {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--white);
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1), transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            letter-spacing: 0.3px;
+        }
+        .punchline-slide.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .punchline-slide i {
+            color: var(--primary-light);
+        }
+        .punchline-slide b {
+            color: var(--barca-gold);
+            text-shadow: 0 0 12px rgba(237, 187, 0, 0.4);
+        }
+        /* Hero Image Carousel */
+        .hero-carousel-wrapper {
+            position: relative;
+            max-width: 1150px;
+            width: 100%;
+            margin: 0 auto 1.5rem;
+        }
+        .hero-carousel {
+            position: relative;
+            height: 560px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: #080c14;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .hero-carousel-track {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        .hero-carousel-slide {
+            display: none;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .hero-carousel-slide.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+            animation: carouselFadeIn 0.5s ease forwards;
+        }
+        @keyframes carouselFadeIn {
+            from { opacity: 0; transform: scale(0.99); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .hero-carousel-slide img {
+            max-height: 540px;
+            max-width: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        .hero-carousel-slide img:hover {
+            transform: scale(1.01);
+        }
+        .hero-carousel-caption {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(8, 12, 20, 0.88);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 30px;
+            padding: 6px 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            z-index: 5;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        .hero-carousel-caption .caption-tag {
+            background: var(--barca-gold);
+            color: #080c14;
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 3px 9px;
+            border-radius: 12px;
+        }
+        .hero-carousel-caption p {
+            margin: 0;
+            font-size: 0.88rem;
+            color: var(--white);
+            font-weight: 500;
+        }
+        .carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(8, 12, 20, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--white);
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s ease;
+            z-index: 10;
+            backdrop-filter: blur(6px);
+        }
+        .carousel-btn:hover {
+            background: var(--barca-gold);
+            color: #080c14;
+            border-color: var(--barca-gold);
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: 0 0 15px rgba(237, 187, 0, 0.5);
+        }
+        .carousel-btn.prev-btn { left: 14px; }
+        .carousel-btn.next-btn { right: 14px; }
+        .carousel-dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 1rem;
+        }
+        .carousel-dots .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .carousel-dots .dot.active {
+            width: 28px;
+            background: var(--barca-gold);
+            box-shadow: 0 0 12px rgba(237, 187, 0, 0.6);
+        }
+        @media (max-width: 768px) {
+            .hero-carousel { height: 320px; }
+            .hero-carousel-slide img { max-height: 300px; }
+            .punchline-carousel-container { height: auto; padding: 10px 14px; }
+            .punchline-slide { font-size: 0.95rem; }
+            .hero-carousel-caption { padding: 4px 12px; font-size: 0.75rem; max-width: 90%; white-space: normal; text-align: center; }
+            .carousel-btn { width: 36px; height: 36px; font-size: 0.9rem; }
+        }
     </style>
 </head>
 <body>
@@ -195,17 +393,66 @@
             </div>
 
             <h1 class="fade-in" style="margin: 0;">Anahata <span style="color: var(--barca-gold)">ASI</span></h1>
+
+            <p class="tagline fade-in-delay-2" style="margin-top: 1rem; margin-bottom: 2rem;">The First Artificial Super Intelligence platform. 100% Java. Atomic context, reactive state, cross-platform singularity.</p>
             
-            <div class="hero-badges fade-in-delay" style="display: flex; flex-direction: row; justify-content: center; gap: 1rem; height: 60px; align-items: center; margin-bottom: 0.5rem;">
-                <span class="nb-badge" style="border-color: var(--barca-blue); color: #4faaff; padding: 4px 14px; font-size: 0.85rem; text-transform: none;">Pure Java</span>
-                <span class="nb-badge" style="border-color: var(--barca-red); color: #ff5c5c; padding: 4px 14px; font-size: 0.85rem; text-transform: none;">Enterprise Ready</span>
-                <span class="nb-badge" style="border-color: var(--barca-gold); color: var(--barca-gold); padding: 4px 14px; font-size: 0.85rem; text-transform: none;">Apache Licensed</span>
+            <!-- Rotating Punchlines Ticker -->
+            <div class="punchline-carousel-container fade-in-delay-2">
+                <div class="punchline-ticker" id="punchline-ticker">
+                    <div class="punchline-slide active">
+                        <span>Multi Provider, Multi Model, Multi Modal, Cross Platform, <i>Pure Java</i> Orchestration.</span>
+                    </div>
+                    <div class="punchline-slide">
+                        <span>Write your Agents Once, Run them <b><i>EveryWhere</i></b>.</span>
+                    </div>
+                    <div class="punchline-slide">
+                        <span>The Only AI Platform Where Agents Define and Run Their Own Bytecode.</span>
+                    </div>
+                    <div class="punchline-slide">
+                        <span>Agents that Compile, Evolve, and Isolate Their Own Runtime.</span>
+                    </div>
+                    <div class="punchline-slide">
+                        <span><span style="color: #ff5c5c; font-weight: 800; text-shadow: 0 0 10px rgba(255, 92, 92, 0.4);">Zero</span> Vendor Lock-In. Seamlessly Switch Across 12+ Providers with Zero Code Rewrites.</span>
+                    </div>
+                    <div class="punchline-slide">
+                        <span><span style="color: var(--barca-gold); font-weight: 800; text-shadow: 0 0 10px rgba(237, 187, 0, 0.4);"><i class="fas fa-shield-halved" style="color: var(--barca-gold); margin-right: 6px;"></i>100% Sovereign &amp; Air-Gapped.</span> Local LLMs, In-Memory JVM Isolation &amp; Zero Cloud Leakage.</span>
+                    </div>
+                    <div class="punchline-slide">
+                        <span><span style="color: #4faaff; font-weight: 700; text-shadow: 0 0 10px rgba(79, 170, 255, 0.4);">Pure Java</span> &nbsp;&bull;&nbsp; <span style="color: #ff5c5c; font-weight: 700; text-shadow: 0 0 10px rgba(255, 92, 92, 0.4);">Enterprise Ready</span> &nbsp;&bull;&nbsp; <span style="color: var(--barca-gold); font-weight: 700; text-shadow: 0 0 10px rgba(237, 187, 0, 0.4);">Apache Licensed</span></span>
+                    </div>
+                </div>
             </div>
 
-            <p class="tagline fade-in-delay-2" style="margin-top: 0; margin-bottom: 2rem;">The First Artificial Super Intelligence platform. 100% Java. Atomic context, reactive state, cross-platform singularity.</p>
-            
-            <div class="architecture-viz fade-in-delay-2" style="margin-top: 2rem;">
-                <img src="assets/architecture.png" alt="Anahata ASI Architecture Stack" style="max-width: 850px; width: 100%; border-radius: 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1);">
+            <!-- Hero Architecture Visual Carousel -->
+            <div class="hero-carousel-wrapper fade-in-delay-2">
+                <div class="hero-carousel" id="hero-architecture-carousel">
+                    <div class="hero-carousel-track">
+                        <!-- Slide 1: System Architecture Stack -->
+                        <div class="hero-carousel-slide active">
+                            <img src="assets/architecture-pro.png" alt="Anahata ASI Architecture Stack" class="clickable-media" data-caption="Anahata ASI Architecture Stack — Multi Provider, Multi Model, Multi Modal, Cross Platform, Pure Java Orchestration">
+                            <div class="hero-carousel-caption">
+                                <span class="caption-tag">Architecture Stack</span>
+                                <p>Multi-Provider, Multi-Model, Cross-Platform Pure Java Orchestration</p>
+                            </div>
+                        </div>
+                        <!-- Slide 2: 3-Tier ClassLoader & Metaspace Engine -->
+                        <div class="hero-carousel-slide">
+                            <img src="assets/classloader-architecture.png" alt="Anahata ASI ClassLoader & Metaspace Engine" class="clickable-media" data-caption="Anahata ASI 3-Tier ClassLoader & Metaspace Engine — In-Memory Bytecode Creation & Per-Agent Metaspace Isolation">
+                            <div class="hero-carousel-caption">
+                                <span class="caption-tag">ClassLoader & Metaspace</span>
+                                <p>Self-Evolving Runtime: Agents Define & Run Their Own Bytecode</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Controls -->
+                    <button class="carousel-btn prev-btn" id="hero-carousel-prev" aria-label="Previous Slide"><i class="fas fa-chevron-left"></i></button>
+                    <button class="carousel-btn next-btn" id="hero-carousel-next" aria-label="Next Slide"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                <!-- Indicators -->
+                <div class="carousel-dots" id="hero-carousel-dots">
+                    <span class="dot active" data-index="0"></span>
+                    <span class="dot" data-index="1"></span>
+                </div>
             </div>
 
             <div class="hero-cta fade-in-delay-2" style="margin-top: 3rem; grid-template-columns: repeat(2, minmax(200px, 280px));">
@@ -482,5 +729,109 @@
         <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=f19c44f5-8b2e-458f-beab-96e4f9f8e603" />
     </footer>
     <script src="nav.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Punchlines Ticker Logic (~3.6s interval for comfortable reading)
+            const punchlineSlides = document.querySelectorAll('.punchline-slide');
+            const punchlineWrapper = document.querySelector('.punchline-carousel-container');
+            let currentPunchlineIdx = 0;
+            let punchlineInterval = null;
+
+            function nextPunchline() {
+                if (punchlineSlides.length <= 1) return;
+                punchlineSlides[currentPunchlineIdx].classList.remove('active');
+                currentPunchlineIdx = (currentPunchlineIdx + 1) % punchlineSlides.length;
+                punchlineSlides[currentPunchlineIdx].classList.add('active');
+            }
+
+            function startPunchlines() {
+                if (!punchlineInterval) {
+                    punchlineInterval = setInterval(nextPunchline, 3600);
+                }
+            }
+
+            function stopPunchlines() {
+                if (punchlineInterval) {
+                    clearInterval(punchlineInterval);
+                    punchlineInterval = null;
+                }
+            }
+
+            if (punchlineWrapper) {
+                punchlineWrapper.addEventListener('mouseenter', stopPunchlines);
+                punchlineWrapper.addEventListener('mouseleave', startPunchlines);
+            }
+
+            startPunchlines();
+
+            // 2. Hero Image Carousel Logic (~3.8s interval)
+            const imageSlides = document.querySelectorAll('.hero-carousel-slide');
+            const dots = document.querySelectorAll('#hero-carousel-dots .dot');
+            const prevBtn = document.getElementById('hero-carousel-prev');
+            const nextBtn = document.getElementById('hero-carousel-next');
+            const carouselWrapper = document.querySelector('.hero-carousel-wrapper');
+            let currentImageIdx = 0;
+            let imageInterval = null;
+
+            function showImageSlide(index) {
+                if (imageSlides.length === 0) return;
+                if (index >= imageSlides.length) currentImageIdx = 0;
+                else if (index < 0) currentImageIdx = imageSlides.length - 1;
+                else currentImageIdx = index;
+
+                imageSlides.forEach((slide, i) => {
+                    slide.classList.toggle('active', i === currentImageIdx);
+                });
+                dots.forEach((dot, i) => {
+                    dot.classList.toggle('active', i === currentImageIdx);
+                });
+            }
+
+            function nextImage() {
+                showImageSlide(currentImageIdx + 1);
+            }
+
+            function prevImage() {
+                showImageSlide(currentImageIdx - 1);
+            }
+
+            function startImageCarousel() {
+                if (!imageInterval) {
+                    imageInterval = setInterval(nextImage, 3800);
+                }
+            }
+
+            function stopImageCarousel() {
+                if (imageInterval) {
+                    clearInterval(imageInterval);
+                    imageInterval = null;
+                }
+            }
+
+            if (nextBtn) nextBtn.addEventListener('click', () => { nextImage(); stopImageCarousel(); startImageCarousel(); });
+            if (prevBtn) prevBtn.addEventListener('click', () => { prevImage(); stopImageCarousel(); startImageCarousel(); });
+
+            dots.forEach(dot => {
+                dot.addEventListener('click', () => {
+                    const idx = parseInt(dot.getAttribute('data-index'), 10);
+                    showImageSlide(idx);
+                    stopImageCarousel();
+                    startImageCarousel();
+                });
+            });
+
+            // Pause on hover
+            if (carouselWrapper) {
+                carouselWrapper.addEventListener('mouseenter', () => {
+                    stopImageCarousel();
+                });
+                carouselWrapper.addEventListener('mouseleave', () => {
+                    startImageCarousel();
+                });
+            }
+
+            startImageCarousel();
+        });
+    </script>
 </body>
 </html>
