@@ -87,12 +87,6 @@ public class NetBeansAsiContainer extends AbstractSwingAsiContainer {
     }
 
     /**
-     * Map to track the resource listeners for each session to ensure cleanup on
-     * disposal.
-     */
-    private final Map<String, PropertyChangeListener> sessionListeners = new ConcurrentHashMap<>();
-
-    /**
      * Default constructor for the NetBeans container.
      * @throws java.io.IOException if an error occurs initializing the container.
      */
@@ -192,50 +186,18 @@ public class NetBeansAsiContainer extends AbstractSwingAsiContainer {
     /**
      * {@inheritDoc}
      * <p>
-     * Implementation details: Establishes a reactive bridge between the core
-     * Resource Manager and the NetBeans Annotation system. The pulse logic is
-     * triggered for nickname updates, resource changes, and session visibility
-     * (open/closed) transitions.
+     * Implementation details: Broadcasts an annotation refresh to NetBeans filesystem annotation
+     * providers whenever session resources, nicknames, or visibility changes.
      * </p>
+     *
+     * @param agi The session whose state changed.
+     * @param propertyName The property that changed.
      */
     @Override
-    public void onAgiRegistered(Agi agi) {
-        log.info("Attaching reactive annotation pulse for agi session: {}", agi.getShortId());
-
-        // REACTIVE BRIDGE: Trigger IDE refresh on nickname, resources, or visibility changes
-        PropertyChangeListener listener = evt -> {
-            String prop = evt.getPropertyName();
-            boolean isVisibilityChange = "open".equals(prop);
-
-            // Only fire refresh for open sessions or during visibility transitions
-            if (isVisibilityChange || agi.isOpen()) {
-                if ("nickname".equals(prop) || "resources".equals(prop) || isVisibilityChange) {
-                    log.info("Reactive pulse trigger ('{}') in session '{}'. Firing IDE annotation refresh.", prop, agi.getDisplayName());
-                    AnahataAnnotationProvider.fireRefresh(null, null);
-                }
-            }
-        };
-
-        agi.getResourceManager().addPropertyChangeListener("resources", listener);
-        agi.addPropertyChangeListener(listener);
-        sessionListeners.put(agi.getConfig().getSessionId(), listener);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Implementation details: Detaches all reactive pulse listeners during
-     * session disposal.
-     * </p>
-     */
-    @Override
-    public void onAgiUnregistered(Agi agi) {
-        PropertyChangeListener listener = sessionListeners.remove(agi.getConfig().getSessionId());
-        if (listener != null) {
-            log.info("Cleaning up annotation pulse for agi session: {}", agi.getShortId());
-            agi.getResourceManager().removePropertyChangeListener("resources", listener);
-            agi.removePropertyChangeListener(listener);
-        }
+    protected void onSessionContextChanged(Agi agi, String propertyName) {
+        log.info("Reactive pulse trigger ('{}') in session '{}'. Firing NetBeans annotation refresh.",
+                propertyName, agi.getDisplayName());
+        AnahataAnnotationProvider.fireRefresh(null, null);
     }
 
 }
