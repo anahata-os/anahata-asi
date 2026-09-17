@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
+import com.intellij.util.IconUtil;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.Icon;
@@ -25,6 +26,30 @@ public class AnahataFileIconProvider implements FileIconProvider {
      * The branded Anahata icon for instructions files.
      */
     private static final Icon ICON = IconLoader.getIcon("/icons/anahataToolWindow.png", AnahataFileIconProvider.class);
+
+    /**
+     * The scaled badge icon used for Project View context annotations.
+     */
+    private static final Icon BADGE_ICON;
+
+    static {
+        Icon badge = null;
+        try {
+            badge = IconUtil.downscaleIconToSize(ICON, 8, 8);
+        } catch (Throwable t) {
+            badge = ICON;
+        }
+        BADGE_ICON = badge;
+    }
+
+    /**
+     * Gets the scaled Anahata badge icon for decorating tree nodes.
+     *
+     * @return The 8x8 Anahata badge icon.
+     */
+    public static Icon getBadgeIcon() {
+        return BADGE_ICON;
+    }
 
     /**
      * Constructs the file icon provider (instantiated by the platform via its public no-arg constructor).

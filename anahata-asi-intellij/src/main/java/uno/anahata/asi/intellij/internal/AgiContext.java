@@ -8,7 +8,9 @@ import uno.anahata.asi.intellij.IntellijAsiContainer;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -53,18 +55,31 @@ public final class AgiContext {
      * @param file the file to test.
      * @return the number of sessions containing the file (0 if none, or if it is a directory).
      */
+    /**
+     * Resolves all in-context resources under a file or directory per open session.
+     *
+     * @param file the virtual file or directory to test.
+     * @return a map of open sessions to their matching in-context resources.
+     */
+    public static Map<Agi, List<Resource>> sessionResources(VirtualFile file) {
+        if (file == null || !file.isInLocalFileSystem()) {
+            return Collections.emptyMap();
+        }
+        IntellijAsiContainer container = IntellijAsiContainer.getInstance();
+        if (container == null) {
+            return Collections.emptyMap();
+        }
+        return container.getSessionResourcesUnderPath(file.getPath(), file.isDirectory(), true);
+    }
+
+    /**
+     * Counts how many active sessions currently hold items under the given file or directory in context.
+     *
+     * @param file the file or directory to test.
+     * @return the number of sessions containing items under the file or directory.
+     */
     public static int sessionsContaining(VirtualFile file) {
-        if (file.isDirectory()) {
-            return 0;
-        }
-        String key = pathKey(file);
-        int count = 0;
-        for (Agi agi : activeSessions()) {
-            if (agi.getResourceManager().findByPath(key).isPresent()) {
-                count++;
-            }
-        }
-        return count;
+        return sessionResources(file).size();
     }
 
     /**

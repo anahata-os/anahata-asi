@@ -1,9 +1,11 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.intellij;
 
+import com.intellij.ide.projectView.ProjectView;
 import com.intellij.ide.ui.LafManagerListener;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.wm.ToolWindow;
@@ -13,7 +15,10 @@ import com.intellij.ui.JBColor;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import java.awt.Component;
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
@@ -311,6 +316,35 @@ public class IntellijAsiContainer extends AbstractSwingAsiContainer implements D
             }
         }
         return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Triggers a reactive UI refresh of the Project View tree across
+     * all open IntelliJ project windows whenever session resources, nicknames, or visibility changes.
+     * </p>
+     *
+     * @param agi The session whose state changed.
+     * @param propertyName The property that changed.
+     */
+    @Override
+    protected void onSessionContextChanged(Agi agi, String propertyName) {
+        refreshProjectViews();
+    }
+
+    /**
+     * Triggers a reactive UI refresh of the Project View tree across all open IntelliJ project windows.
+     */
+    public static void refreshProjectViews() {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            for (Project project : ProjectManager.getInstance().getOpenProjects()) {
+                ProjectView pv = ProjectView.getInstance(project);
+                if (pv != null) {
+                    pv.refresh();
+                }
+            }
+        }, ModalityState.any());
     }
 
     /**
