@@ -3,6 +3,7 @@
  */
 package uno.anahata.asi;
 
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,6 +14,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,6 +33,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
+import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.agi.status.AgiStatus;
 import uno.anahata.asi.persistence.kryo.KryoUtils;
@@ -67,6 +70,11 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
             throw new RuntimeException("Could not create root work dir: " + getWorkDir(), e);
         }
     }
+
+    /**
+     * Map tracking active property change listeners per session to allow clean detaching on unregistration.
+     */
+    private final Map<String, PropertyChangeListener> sessionListeners = new ConcurrentHashMap<>();
 
     /**
      * The unique identifier for the host application (e.g., "netbeans",
@@ -863,19 +871,82 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
+     * Resolves in-context resources under a given filesystem path across all open AGI sessions.
+     *
+     * @param absolutePath The absolute filesystem path to check.
+     * @param isDirectory Whether the path represents a directory/folder.
+     * @param recursive Whether to search child directories recursively.
+     * @return A map of open AGI sessions to their matching resources (only sessions with matching items).
+     */
+    public Map<Agi, List<Resource>> getSessionResourcesUnderPath(@NonNull String absolutePath, boolean isDirectory, boolean recursive) {
+        Map<Agi, List<Resource>> result = new LinkedHashMap<>();
+        for (Agi agi : getOpenAgis()) {
+            List<Resource> found = agi.getResourceManager().findUnderPath(absolutePath, isDirectory, recursive);
+            if (!found.isEmpty()) {
+                result.put(agi, found);
+            }
+        }
+        return result;
+    }
+
+    /**
      * Hook invoked whenever a session enters the active pool.
+     * <p>
+     * Implementation details: Attaches a reactive bridge listener to the session and its
+     * {@link uno.anahata.asi.agi.resource.ResourceManager}. Whenever resources are registered
+     * or unregistered (via drag-and-drop, context menu, or AI tool calls), or when the session
+     * nickname or visibility changes, {@link #onSessionContextChanged(Agi, String)} is invoked.
+     * </p>
      *
      * @param agi The registered session.
      */
     public void onAgiRegistered(Agi agi) {
+        PropertyChangeListener listener = evt -> {
+            String prop = evt.getPropertyName();
+            boolean isVisibilityChange = "open".equals(prop);
+            if (isVisibilityChange || agi.isOpen()) {
+                if ("nickname".equals(prop) || "resources".equals(prop) || isVisibilityChange) {
+                    onSessionContextChanged(agi, prop);
+                }
+            }
+        };
+
+        agi.getResourceManager().addPropertyChangeListener("resources", listener);
+        agi.addPropertyChangeListener(listener);
+        sessionListeners.put(agi.getConfig().getSessionId(), listener);
     }
 
     /**
      * Hook invoked whenever a session is removed from the active pool.
+     * <p>
+     * Implementation details: Detaches the reactive bridge listener from the session and its
+     * resource manager, then notifies {@link #onSessionContextChanged(Agi, String)} to allow
+     * host IDEs to clear stale badges.
+     * </p>
      *
      * @param agi The unregistered session.
      */
     public void onAgiUnregistered(Agi agi) {
+        PropertyChangeListener listener = sessionListeners.remove(agi.getConfig().getSessionId());
+        if (listener != null) {
+            agi.getResourceManager().removePropertyChangeListener("resources", listener);
+            agi.removePropertyChangeListener(listener);
+        }
+        onSessionContextChanged(agi, null);
+    }
+
+    /**
+     * Hook invoked whenever an AGI session's context, resources, nickname, or visibility state changes,
+     * or when a session is unregistered.
+     * <p>
+     * Subclasses (such as NetBeans and IntelliJ containers) override this method to trigger
+     * host IDE project view tree repaints.
+     * </p>
+     *
+     * @param agi The session whose state changed.
+     * @param propertyName The property that changed ("resources", "nickname", "open", or null on unregistration).
+     */
+    protected void onSessionContextChanged(Agi agi, String propertyName) {
     }
 
     /**
