@@ -21,6 +21,7 @@ import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiTool;
+import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.resource.view.TextViewportSettings;
 import uno.anahata.asi.swing.internal.SwingUtils;
@@ -91,6 +92,9 @@ public class NbTerminal extends AnahataToolkit {
         }
 
         StringBuilder sb = new StringBuilder();
+        sb.append("### NetBeans Terminal Guidance\n");
+        sb.append("- **NbTerminal.run**: Executes commands inside an interactive NetBeans GUI terminal tab (real POSIX PTY, visible in the IDE). If terminalTabId is provided, executes in that specific tab; if omitted, creates a new terminal tab with tabTitle (or 'Anahata - <displayName>'). Supports persistent shell state across turns (environment variables, working directory, SSH sessions, sudo). If timeoutMillis is provided, blocks until completion and returns the combined visual output (throwing TimeoutException on timeout); if omitted, dispatches fire-and-forget and returns null immediately.\n");
+        sb.append("- **Shell.runAndWait**: Spawns an isolated, headless, non-interactive subprocess directly on the local host with no GUI and no persistent session state.\n\n");
         sb.append("### NetBeans Terminal Tabs\n");
         sb.append("| Tab ID | Tab Title | Context Status | Description |\n");
         sb.append("|---|---|---|---|\n");
@@ -110,16 +114,143 @@ public class NbTerminal extends AnahataToolkit {
     }
 
     /**
+     * Executes a command in a NetBeans terminal tab.
+     * <p>
+     * If {@code terminalTabId} is provided, executes the command in that specific tab.
+     * If {@code terminalTabId} is omitted (null), a new terminal tab is created with
+     * {@code tabTitle} (or defaults to {@code "Anahata - " + getAgi().getDisplayName()}).
+     * </p>
+     * <p>
+     * If {@code timeoutMillis} is specified and greater than 0, blocks until command completion,
+     * returning the combined stdout and stderr visual output, or throwing an exception if the timeout
+     * is exceeded. If {@code timeoutMillis} is omitted or non-positive, dispatches asynchronously
+     * (fire-and-forget) and returns {@code null} immediately.
+     * </p>
+     * 
+     * @param command The shell command sequence to execute.
+     * @param terminalTabId Optional unique ID of an existing terminal tab. If omitted, a new tab is created.
+     * @param tabTitle Title of the new tab if creating one. Defaults to "Anahata - <displayName>".
+     * @param directory Initial working directory if a new tab needs to be created.
+     * @param timeoutMillis Maximum milliseconds to wait for completion. If null, runs fire-and-forget.
+     * @return The captured command output if timeoutMillis is provided, or null if fire-and-forget.
+     * @throws Exception If command execution fails or times out.
+     */
+    @AgiTool("Executes a command in a NetBeans terminal tab. "
+            + "If terminalTabId is specified, executes in that tab; if omitted, creates a new terminal tab with tabTitle (or 'Anahata - <displayName>'). "
+            + "If timeoutMillis is specified, blocks until execution completes and returns the output (throwing an exception on timeout); "
+            + "if omitted, dispatches asynchronously (fire-and-forget) and returns null immediately.")
+    public String run(
+            @AgiToolParam(value = "The shell command to execute.", required = true) String command,
+            @AgiToolParam(value = "Optional unique ID of an existing terminal tab. If omitted, a new terminal tab is created.", required = false) Long terminalTabId,
+            @AgiToolParam(value = "Title for the new tab if creating one. Defaults to 'Anahata - <displayName>'.", required = false) String tabTitle,
+            @AgiToolParam(value = "Initial working directory if a new tab needs to be created.", required = false) String directory,
+            @AgiToolParam(value = "Maximum timeout in milliseconds to wait for completion. If provided, blocks and returns output; if omitted, runs fire-and-forget and returns null.", required = false) Long timeoutMillis
+    ) throws Exception {
+        TerminalTab targetTab = null;
+        if (terminalTabId != null) {
+            targetTab = findTabById(terminalTabId).orElseThrow(() -> 
+                    new AgiToolException("Terminal tab not found with ID: " + terminalTabId));
+            log("Targeting existing terminal tab with ID: " + terminalTabId + " ('" + targetTab.getName() + "')");
+        } else {
+            String baseTitle = (tabTitle != null && !tabTitle.isBlank())
+                    ? tabTitle.trim()
+                    : "Anahata - " + getAgi().getDisplayName();
+            String resolvedTitle = resolveUniqueTabTitle(baseTitle);
+
+            List<Long> existingIds = new ArrayList<>();
+            for (ContextProvider cp : childrenProviders) {
+                if (cp instanceof TerminalTab t) {
+                    existingIds.add(t.getTabId());
+                }
+            }
+
+            log("Opening new terminal tab: '" + resolvedTitle + "'" + (directory != null ? " in directory: " + directory : ""));
+            openLocalTerminal(resolvedTitle, directory);
+
+            long startWait = System.currentTimeMillis();
+            while (System.currentTimeMillis() - startWait < 3000) {
+                syncTerminalTabs();
+                for (ContextProvider cp : childrenProviders) {
+                    if (cp instanceof TerminalTab t && !existingIds.contains(t.getTabId())) {
+                        targetTab = t;
+                        break;
+                    }
+                }
+                if (targetTab != null) {
+                    break;
+                }
+                Thread.sleep(50);
+            }
+            if (targetTab == null) {
+                throw new AgiToolException("Failed to create or locate newly opened terminal tab: " + resolvedTitle);
+            }
+            log("Found newly opened terminal tab with ID: " + targetTab.getTabId() + " ('" + targetTab.getName() + "')");
+
+            // Wait for the shell process to initialize and render its initial prompt
+            long promptWait = System.currentTimeMillis();
+            while (System.currentTimeMillis() - promptWait < 2500) {
+                if (!targetTab.getTermContent().trim().isEmpty()) {
+                    break;
+                }
+                Thread.sleep(50);
+            }
+            Thread.sleep(100);
+        }
+
+        final TerminalTab tabToRun = targetTab;
+        log("Dispatching command to tab '" + tabToRun.getName() + "': " + command);
+        if (timeoutMillis != null && timeoutMillis > 0) {
+            log("Waiting for command completion (timeout: " + timeoutMillis + " ms)...");
+            String output = tabToRun.runAndWait(command, timeoutMillis);
+            log("Command completed successfully. Output length: " + (output != null ? output.length() : 0) + " chars.");
+            return output;
+        } else {
+            SwingUtils.runInEDTAndWait(() -> {
+                try {
+                    tabToRun.typeCommand(command);
+                } catch (Exception e) {
+                    log.error("Failed to dispatch command to terminal tab {}: {}", tabToRun.getTabId(), command, e);
+                    throw new RuntimeException("Failed to dispatch command to terminal tab " + tabToRun.getTabId() + ": " + e.getMessage(), e);
+                }
+            });
+            log("Command dispatched asynchronously (fire-and-forget).");
+            return null;
+        }
+    }
+
+    /**
+     * Resolves a unique user-visible tab title, appending ' (2)', ' (3)', etc. if a tab with
+     * the base title already exists.
+     * 
+     * @param baseTitle The desired base title.
+     * @return A unique title not currently used by any open terminal tab.
+     */
+    private String resolveUniqueTabTitle(String baseTitle) {
+        syncTerminalTabs();
+        List<String> existingTitles = new ArrayList<>();
+        for (ContextProvider cp : childrenProviders) {
+            if (cp instanceof TerminalTab tab) {
+                existingTitles.add(tab.getName());
+            }
+        }
+        if (!existingTitles.contains(baseTitle)) {
+            return baseTitle;
+        }
+        int count = 2;
+        while (existingTitles.contains(baseTitle + " (" + count + ")")) {
+            count++;
+        }
+        return baseTitle + " (" + count + ")";
+    }
+
+    /**
      * Opens an interactive local terminal tab in the IDE.
      * 
      * @param title             The title for the terminal tab.
      * @param workingDirectory  The initial working directory.
      * @return A confirmation message.
      */
-    @AgiTool("Opens a new local terminal tab in the IDE.")
-    public String openLocalTerminal(
-            @AgiToolParam("The title of the terminal tab.") String title,
-            @AgiToolParam("The initial working directory for the shell.") String workingDirectory) throws Exception {
+    public String openLocalTerminal(String title, String workingDirectory) throws Exception {
         
         SwingUtils.runInEDTAndWait(() -> {
             try {
@@ -132,33 +263,6 @@ public class NbTerminal extends AnahataToolkit {
         });
 
         return "Requested to open local terminal tab with title: " + title;
-    }
-
-    /**
-     * Types a command sequence into a specific terminal tab and presses Enter.
-     * 
-     * @param terminalTabId The unique ID of the target terminal tab.
-     * @param command       The command sequence to execute.
-     * @return A status message.
-     */
-    @AgiTool("Types a command sequence into a specific terminal tab and executes it.")
-    public String typeCommand(
-            @AgiToolParam("The unique ID of the terminal tab.") long terminalTabId,
-            @AgiToolParam("The command characters to type.") String command) throws Exception {
-        Optional<TerminalTab> tab = findTabById(terminalTabId);
-        if (tab.isEmpty()) {
-            throw new IllegalArgumentException("Terminal tab not found with ID: " + terminalTabId);
-        }
-
-        SwingUtils.runInEDTAndWait(() -> {
-            try {
-                tab.get().typeCommand(command);
-            } catch (Exception e) {
-                log.error("Failed to type command into terminal tab {}: {}", terminalTabId, command, e);
-                throw new RuntimeException("Failed to type command into terminal tab " + terminalTabId + ": " + e.getMessage(), e);
-            }
-        });
-        return "Successfully dispatched command to terminal tab: " + tab.get().getName();
     }
 
     /**
@@ -202,7 +306,7 @@ public class NbTerminal extends AnahataToolkit {
             @AgiToolParam("The unique ID of the terminal tab.") long terminalTabId) throws Exception {
         Optional<TerminalTab> tab = findTabById(terminalTabId);
         if (tab.isEmpty()) {
-            throw new IllegalArgumentException("Terminal tab not found with ID: " + terminalTabId);
+            throw new AgiToolException("Terminal tab not found with ID: " + terminalTabId);
         }
 
         final Term targetTerm = tab.get().getTerm();

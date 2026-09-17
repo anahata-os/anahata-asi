@@ -4,6 +4,10 @@ package uno.anahata.asi.nb.tools.terminal;
 import java.awt.Component;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import uno.anahata.asi.agi.tool.AgiToolException;
 import javax.swing.JTabbedPane;
 import lombok.Getter;
 import lombok.Setter;
@@ -191,5 +195,59 @@ public class TerminalTab extends BasicContextProvider {
         Method fireCharsMethod = Term.class.getDeclaredMethod("fireChars", char[].class, int.class, int.class);
         fireCharsMethod.setAccessible(true);
         fireCharsMethod.invoke(term, chars, 0, chars.length);
+    }
+
+    /**
+     * Executes a command in this terminal tab, waiting until completion or timeout.
+     *
+     * @param command The command sequence to execute.
+     * @param timeoutMillis Maximum milliseconds to wait before throwing a TimeoutException.
+     * @return The combined stdout and stderr visual output produced by the command.
+     * @throws TimeoutException If the command does not complete within timeoutMillis.
+     * @throws Exception If an error occurs during execution.
+     */
+    public String runAndWait(String command, long timeoutMillis) throws Exception {
+        if (term == null) {
+            throw new AgiToolException("Associated Term component is null.");
+        }
+        selectTab();
+
+        String canaryToken = UUID.randomUUID().toString();
+        String cmd = command != null ? command.trim() : "";
+        String wrappedCmd = cmd + " ; echo \"__ANAHATA_CANARY_\"$?\"__" + canaryToken + "\"";
+
+        typeCommand(wrappedCmd);
+
+        Pattern canaryPattern = Pattern.compile("__ANAHATA_CANARY_(\\d+)__" + Pattern.quote(canaryToken));
+        long startNanos = System.nanoTime();
+        long timeoutNanos = timeoutMillis * 1_000_000L;
+
+        while (true) {
+            Thread.sleep(50);
+            String content = getTermContent();
+            Matcher m = canaryPattern.matcher(content);
+            if (m.find()) {
+                int exitCode = Integer.parseInt(m.group(1));
+                int firstToken = content.indexOf(canaryToken);
+                String output = "";
+                if (firstToken != -1 && firstToken < m.start()) {
+                    int newline = content.indexOf('\n', firstToken);
+                    if (newline != -1 && newline < m.start()) {
+                        output = content.substring(newline + 1, m.start());
+                    }
+                }
+                output = output.trim();
+                if (exitCode != 0) {
+                    output = output + (output.isEmpty() ? "" : "\n") + "[Process exited with code " + exitCode + "]";
+                }
+                return output;
+            }
+
+            if (System.nanoTime() - startNanos > timeoutNanos) {
+                String partialContent = getTermContent();
+                throw new AgiToolException("Command timed out after " + timeoutMillis + " ms.\n"
+                        + "Terminal output at timeout:\n" + partialContent);
+            }
+        }
     }
 }
