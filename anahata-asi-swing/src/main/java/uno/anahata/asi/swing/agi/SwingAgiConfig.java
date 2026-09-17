@@ -217,13 +217,54 @@ public class SwingAgiConfig extends AgiConfig {
     }
 
     /**
-     * Gets a theme-adaptive warning color for truncated resource token counts.
-     * High-contrast in both dark and light Look and Feels.
+     * Gets the unselected text color for truncated resources.
+     * Can be overridden by host-specific configurations (e.g. IntellijAgiConfig).
      *
-     * @return The adaptive warning/orange color.
+     * @return The theme-adaptive warning color.
      */
-    public static Color getTruncatedTokenColor() {
-        return isDarkLaf() ? new Color(255, 170, 50) : new Color(210, 105, 0);
+    public Color getTruncatedTokenColor() {
+        return isDark() ? new Color(255, 175, 45) : new Color(215, 85, 0);
+    }
+
+    /**
+     * Gets the selected text color for truncated resources.
+     * High-contrast luminous gold across dark and light selection backgrounds.
+     * Can be overridden by host-specific configurations (e.g. IntellijAgiConfig).
+     *
+     * @return The theme-adaptive selected warning color.
+     */
+    public Color getTruncatedSelectedColor() {
+        return isDark() ? new Color(255, 215, 75) : new Color(255, 235, 120);
+    }
+
+    /**
+     * Gets the background tint color for truncated resource rows.
+     * Can be overridden by host-specific configurations (e.g. IntellijAgiConfig).
+     *
+     * @return The theme-adaptive background tint.
+     */
+    public Color getTruncatedTokenColorBackground() {
+        return isDark() ? new Color(48, 36, 18) : new Color(255, 243, 225);
+    }
+
+    /**
+     * Configures styling for toolbar action buttons (padding, focusable, borders).
+     * Can be overridden by host-specific configurations (e.g. IntellijAgiConfig).
+     *
+     * @param button The toolbar button to configure.
+     */
+    public void configureToolbarButton(javax.swing.AbstractButton button) {
+        //button.setFocusable(false);
+        //you need to explain why for this
+    }
+
+    /**
+     * Checks if the active Look and Feel is a dark variant.
+     *
+     * @return true if dark mode is active.
+     */
+    public boolean isDark() {
+        return isDarkLaf();
     }
 
     /**
