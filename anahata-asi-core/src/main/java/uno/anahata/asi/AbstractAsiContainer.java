@@ -1454,7 +1454,7 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Gets the root Anahata AI working directory (e.g., ~/.anahata/asi).
+     * Gets the root Anahata AI working directory (e.g., ~/.anahata/asi or $SNAP_USER_DATA/.anahata/asi).
      *
      * @return The root working directory path.
      */
