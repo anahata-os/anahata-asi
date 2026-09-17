@@ -35,17 +35,19 @@ import uno.anahata.asi.swing.icons.SaveIcon;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
- * Common abstract base class for chip/pill parameter renderers (e.g. URIs, Paths, Resource UUIDs).
+ * Common abstract base class for chip/pill parameter renderers (e.g. URIs,
+ * Paths, Resource UUIDs).
  * <p>
  * Manages the dual-mode CardLayout lifecycle:
- * <ul>
- * <li><b>Compact Pill View:</b> High-density pill featuring Copy, Name Label (click-to-edit),
- * Open in IDE, Edit, and Delete actions.</li>
- * <li><b>In-Place Editor View:</b> Dynamically expands across the container width hosting
- * the native {@link AbstractTextResourceViewer} with syntax highlighting, line numbers,
- * Cancel, and Save actions.</li>
- * </ul>
  * </p>
+ * <ul>
+ * <li><b>Compact Pill View:</b> High-density pill featuring Copy, Name Label
+ * (click-to-edit), Open in IDE, Edit, and Delete actions.</li>
+ * <li><b>In-Place Editor View:</b> Dynamically expands across the container
+ * width hosting the native {@link AbstractTextResourceViewer} with syntax
+ * highlighting, line numbers, Cancel, and Save actions.</li>
+ * </ul>
+ *
  *
  * @author anahata
  */
@@ -54,10 +56,14 @@ import uno.anahata.asi.swing.internal.SwingUtils;
 @Setter
 public abstract class AbstractChipParameterRenderer extends AbstractParameterRenderer<Object> {
 
-    /** CardLayout for toggling between the compact pill and in-place editor. */
+    /**
+     * CardLayout for toggling between the compact pill and in-place editor.
+     */
     protected final CardLayout cardLayout = new CardLayout();
 
-    /** The root component hosting the card layout. */
+    /**
+     * The root component hosting the card layout.
+     */
     protected final JPanel container = new JPanel(cardLayout) {
         @Override
         public Dimension getPreferredSize() {
@@ -79,22 +85,34 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
         }
     };
 
-    /** The compact chip panel. */
+    /**
+     * The compact chip panel.
+     */
     protected final JPanel pillPanel = new JPanel(new BorderLayout(8, 0));
 
-    /** The editor wrapper panel. */
+    /**
+     * The editor wrapper panel.
+     */
     protected final JPanel editorPanel = new JPanel(new BorderLayout());
 
-    /** Label displaying the primary name of the chip. */
+    /**
+     * Label displaying the primary name of the chip.
+     */
     protected final JLabel nameLabel = new JLabel();
 
-    /** Whether the chip is currently in edit mode. */
+    /**
+     * Whether the chip is currently in edit mode.
+     */
     protected boolean editing = false;
 
-    /** Active high-fidelity viewer when in edit mode. */
+    /**
+     * Active high-fidelity viewer when in edit mode.
+     */
     protected AbstractTextResourceViewer editorViewer;
 
-    /** Button to open the resource or URI in the host environment. */
+    /**
+     * Button to open the resource or URI in the host environment.
+     */
     protected JButton openBtn;
 
     /**
@@ -231,7 +249,8 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
     }
 
     /**
-     * Applies theme-aware colors from UIManager to support light and dark Look and Feels.
+     * Applies theme-aware colors from UIManager to support light and dark Look
+     * and Feels.
      */
     protected void applyColors() {
         Color bg = getPillBackground();
@@ -250,9 +269,11 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
     }
 
     /**
-     * Toggles the editing state and swaps between the pill view and editor view.
+     * Toggles the editing state and swaps between the pill view and editor
+     * view.
      *
-     * @param editing true to enter in-place edit mode, false to return to pill view.
+     * @param editing true to enter in-place edit mode, false to return to pill
+     * view.
      */
     public void setEditing(boolean editing) {
         this.editing = editing;
@@ -274,7 +295,8 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
     }
 
     /**
-     * Mounts the high-fidelity NetBeans/RSyntax editor for modifying the raw value string.
+     * Mounts the high-fidelity NetBeans/RSyntax editor for modifying the raw
+     * value string.
      */
     protected void setupEditor() {
         editorPanel.removeAll();
@@ -384,7 +406,8 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
 
     /**
      * {@inheritDoc}
-     * <p>Renders the single chip for the bound value.</p>
+     * <p>
+     * Renders the single chip for the bound value.</p>
      */
     @Override
     public boolean render() {
