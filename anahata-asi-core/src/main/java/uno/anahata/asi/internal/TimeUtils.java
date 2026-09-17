@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.time.DurationFormatUtils;
@@ -16,8 +17,10 @@ public class TimeUtils {
 
     /** Standard thread-safe formatter for compact hours-minutes-seconds representations. */
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
-    /** Compact thread-safe formatter for month-day representations. */
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd");
+    /** Thread-safe formatter for month-day with full time for dates within the current year. */
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MMM dd HH:mm:ss");
+    /** Thread-safe formatter for timestamps from prior years. */
+    private static final DateTimeFormatter FULL_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     /**
      * Formats a duration in milliseconds into a HH:MM:SS string.
@@ -82,13 +85,16 @@ public class TimeUtils {
         if (timestamp == null) {
             return "N/A";
         }
-        LocalDate messageDate = timestamp.atZone(ZoneId.systemDefault()).toLocalDate();
+        ZonedDateTime zdt = timestamp.atZone(ZoneId.systemDefault());
+        LocalDate messageDate = zdt.toLocalDate();
         LocalDate today = LocalDate.now(ZoneId.systemDefault());
 
         if (messageDate.equals(today)) {
-            return TIME_FORMATTER.format(timestamp.atZone(ZoneId.systemDefault()));
+            return TIME_FORMATTER.format(zdt);
+        } else if (messageDate.getYear() == today.getYear()) {
+            return DATE_TIME_FORMATTER.format(zdt);
         } else {
-            return DATE_FORMATTER.format(timestamp.atZone(ZoneId.systemDefault()));
+            return FULL_DATE_TIME_FORMATTER.format(zdt);
         }
     }
 
