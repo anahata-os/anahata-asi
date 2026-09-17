@@ -10,7 +10,9 @@ import java.util.Locale;
 import javax.swing.Icon;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeCellRenderer;
+import lombok.NonNull;
 import uno.anahata.asi.agi.tool.ToolManager;
+import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.resources.ResourceNode;
 import uno.anahata.asi.swing.icons.AtomsIcon;
@@ -35,6 +37,9 @@ import uno.anahata.asi.swing.icons.ToolIcon;
  */
 public class ContextTreeCellRenderer extends DefaultTreeCellRenderer {
 
+    /** The parent AgiPanel used to resolve instance-based SwingAgiConfig. */
+    private final AgiPanel agiPanel;
+
     /** Default icon for toolkits (authentic Java logo). */
     private final Icon toolkitIcon = IconUtils.getIcon("java.png", 16);
     /** Programmatic icon for individual tools. */
@@ -49,6 +54,15 @@ public class ContextTreeCellRenderer extends DefaultTreeCellRenderer {
     private final Icon messageIcon = IconUtils.getIcon("email.png", 16); 
     /** Default icon for individual message parts. */
     private final Icon partIcon = IconUtils.getIcon("copy.png", 16);
+
+    /**
+     * Constructs a ContextTreeCellRenderer bound to an AgiPanel.
+     *
+     * @param agiPanel The parent AgiPanel.
+     */
+    public ContextTreeCellRenderer(@NonNull AgiPanel agiPanel) {
+        this.agiPanel = agiPanel;
+    }
 
     /**
      * {@inheritDoc}
@@ -100,19 +114,12 @@ public class ContextTreeCellRenderer extends DefaultTreeCellRenderer {
                 }
             }
 
-            // Gray out text for inactive nodes, or highlight truncated resources with warning color
+            // Gray out text for inactive nodes, or set bold & tooltip for truncated resources
             if (!node.isActive()) {
                 setForeground(Color.GRAY);
             } else if (node instanceof ResourceNode rn && rn.isTruncated()) {
-                if (!sel) {
-                    Color warningFg = SwingAgiConfig.isDarkLaf()
-                            ? new Color(255, 175, 45)
-                            : new Color(225, 85, 0);
-                    setForeground(warningFg);
-                    setFont(getFont().deriveFont(Font.BOLD));
-                } else {
-                    setForeground(getTextSelectionColor());
-                }
+                setForeground(sel ? getTextSelectionColor() : getTextNonSelectionColor());
+                setFont(getFont().deriveFont(Font.BOLD));
                 setToolTipText(String.format(Locale.US, "Partial View: %.1f%% visible (use setFullView to expand)", rn.getVisiblePercentage()));
             } else {
                 setForeground(sel ? getTextSelectionColor() : getTextNonSelectionColor());

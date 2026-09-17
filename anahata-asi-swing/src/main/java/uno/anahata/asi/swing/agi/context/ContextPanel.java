@@ -5,6 +5,7 @@ package uno.anahata.asi.swing.agi.context;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Component;
+import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.HashMap;
@@ -22,6 +23,7 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
+import javax.swing.SwingConstants;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 import javax.swing.event.TreeSelectionEvent;
@@ -30,11 +32,14 @@ import javax.swing.tree.TreePath;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jdesktop.swingx.JXTreeTable;
+import org.jdesktop.swingx.decorator.AbstractHighlighter;
+import org.jdesktop.swingx.decorator.ComponentAdapter;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.context.ContextProvider;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.status.AgiStatus;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.message.AbstractMessagePanel;
 import uno.anahata.asi.swing.agi.message.MessagePanelFactory;
 import uno.anahata.asi.swing.agi.message.part.AbstractPartPanel;
@@ -359,16 +364,40 @@ public class ContextPanel extends JPanel {
         treeTable.setEditable(false);
         treeTable.setRootVisible(false);
         treeTable.setShowsRootHandles(true);
-        treeTable.setTreeCellRenderer(new ContextTreeCellRenderer());
+        treeTable.setTreeCellRenderer(new ContextTreeCellRenderer(agiPanel));
 
         // Configure Table Cell Renderers for Token Metrics and Status
-        ContextTableCellRenderer numberRenderer = new ContextTableCellRenderer(javax.swing.SwingConstants.RIGHT);
-        ContextTableCellRenderer textRenderer = new ContextTableCellRenderer(javax.swing.SwingConstants.LEFT);
+        ContextTableCellRenderer numberRenderer = new ContextTableCellRenderer(agiPanel, SwingConstants.RIGHT);
+        ContextTableCellRenderer textRenderer = new ContextTableCellRenderer(agiPanel, SwingConstants.LEFT);
 
         treeTable.setDefaultRenderer(Integer.class, numberRenderer);
         treeTable.setDefaultRenderer(Number.class, numberRenderer);
         treeTable.setDefaultRenderer(String.class, textRenderer);
         treeTable.setDefaultRenderer(Object.class, textRenderer);
+
+        // Install SwingX Highlighter for truncated resources (preserves Git colors on Name column)
+        treeTable.addHighlighter(new AbstractHighlighter() {
+            @Override
+            protected Component doHighlight(Component component, ComponentAdapter adapter) {
+                TreePath path = treeTable.getPathForRow(adapter.row);
+                if (path != null && path.getLastPathComponent() instanceof ResourceNode rn && rn.isTruncated()) {
+                    SwingAgiConfig config = agiPanel.getAgiConfig();
+
+                    if (!adapter.isSelected()) {
+                        component.setBackground(config.getTruncatedTokenColorBackground());
+                        if (adapter.column > 0) {
+                            component.setForeground(config.getTruncatedTokenColor());
+                        }
+                    } else {
+                        if (adapter.column > 0) {
+                            component.setForeground(config.getTruncatedSelectedColor());
+                        }
+                    }
+                    component.setFont(component.getFont().deriveFont(Font.BOLD));
+                }
+                return component;
+            }
+        });
 
         // Disable auto-resize to respect preferred widths
         treeTable.setAutoResizeMode(JXTreeTable.AUTO_RESIZE_OFF);

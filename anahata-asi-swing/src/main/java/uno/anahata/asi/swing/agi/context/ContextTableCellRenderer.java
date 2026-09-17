@@ -9,9 +9,12 @@ import java.awt.Font;
 import java.util.Locale;
 import javax.swing.JLabel;
 import javax.swing.JTable;
+import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.tree.TreePath;
+import lombok.NonNull;
 import org.jdesktop.swingx.JXTreeTable;
+import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.resources.ResourceNode;
 
@@ -32,21 +35,27 @@ import uno.anahata.asi.swing.agi.resources.ResourceNode;
  */
 public class ContextTableCellRenderer extends DefaultTableCellRenderer {
 
+    /** The parent AgiPanel used to resolve instance-based SwingAgiConfig. */
+    private final AgiPanel agiPanel;
+
     /**
-     * Constructs a default {@code ContextTableCellRenderer} with standard left alignment.
+     * Constructs a {@code ContextTableCellRenderer} bound to an AgiPanel with default left alignment.
+     *
+     * @param agiPanel The parent AgiPanel.
      */
-    public ContextTableCellRenderer() {
-        super();
+    public ContextTableCellRenderer(@NonNull AgiPanel agiPanel) {
+        this(agiPanel, SwingConstants.LEFT);
     }
 
     /**
-     * Constructs a {@code ContextTableCellRenderer} with a specific horizontal text alignment.
+     * Constructs a {@code ContextTableCellRenderer} bound to an AgiPanel with a specific horizontal alignment.
      *
-     * @param horizontalAlignment One of the alignment constants defined in {@link javax.swing.SwingConstants}
-     *                            (e.g., {@code javax.swing.SwingConstants.RIGHT} or {@code javax.swing.SwingConstants.LEFT}).
+     * @param agiPanel The parent AgiPanel.
+     * @param horizontalAlignment One of the alignment constants defined in {@link SwingConstants}.
      */
-    public ContextTableCellRenderer(int horizontalAlignment) {
+    public ContextTableCellRenderer(@NonNull AgiPanel agiPanel, int horizontalAlignment) {
         super();
+        this.agiPanel = agiPanel;
         setHorizontalAlignment(horizontalAlignment);
     }
 
@@ -74,23 +83,8 @@ public class ContextTableCellRenderer extends DefaultTableCellRenderer {
         if (table instanceof JXTreeTable treeTable) {
             TreePath path = treeTable.getPathForRow(row);
             if (path != null && path.getLastPathComponent() instanceof ResourceNode rn) {
-                if (rn.isTruncated()) {
-                    Color warningFg = SwingAgiConfig.isDarkLaf()
-                            ? new Color(255, 175, 45)
-                            : new Color(225, 90, 0);
-
-                    if (!isSelected) {
-                        c.setForeground(warningFg);
-                        c.setBackground(SwingAgiConfig.isDarkLaf() ? new Color(45, 32, 16) : new Color(255, 244, 230));
-                    } else {
-                        c.setForeground(SwingAgiConfig.isDarkLaf() ? new Color(255, 215, 120) : new Color(255, 240, 200));
-                        c.setBackground(table.getSelectionBackground());
-                    }
-                    c.setFont(c.getFont().deriveFont(Font.BOLD));
-                    if (c instanceof JLabel label) {
-                        label.setToolTipText(String.format(Locale.US, "Partial View: %.1f%% visible (use setFullView to expand)", rn.getVisiblePercentage()));
-                    }
-                    return c;
+                if (rn.isTruncated() && c instanceof JLabel label) {
+                    label.setToolTipText(String.format(Locale.US, "Partial View: %.1f%% visible (use setFullView to expand)", rn.getVisiblePercentage()));
                 }
             }
         }
