@@ -9,7 +9,6 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.provider.AbstractModel;
-import uno.anahata.asi.persistence.Rebindable;
 
 /**
  * A resource view that interprets content as binary media (images, audio, etc.).
