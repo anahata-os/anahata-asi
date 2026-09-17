@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.agi.resource;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -245,6 +246,41 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
      */
     public Optional<Resource> findByPath(@NonNull String path) {
         return findByUri(Paths.get(path).toUri().toString());
+    }
+
+    /**
+     * Finds all managed resources residing under a given filesystem path.
+     * <p>
+     * If the path is a directory, finds all resources residing within that directory
+     * subtree recursively. If the path is a file, checks for an exact match.
+     * </p>
+     *
+     * @param path The filesystem path to check.
+     * @return A list of matching managed resources under the path.
+     */
+    public List<Resource> findUnderPath(@NonNull Path path) {
+        Path absPath = path.toAbsolutePath().normalize();
+        if (!Files.isDirectory(absPath)) {
+            return findByPath(absPath.toString()).map(Collections::singletonList).orElse(Collections.emptyList());
+        }
+
+        String folderPrefix = absPath.toString().replace('\\', '/');
+        String normalizedPrefix = folderPrefix.endsWith("/") ? folderPrefix : folderPrefix + "/";
+        if (!normalizedPrefix.startsWith("/")) {
+            normalizedPrefix = "/" + normalizedPrefix;
+        }
+
+        final String prefix = normalizedPrefix;
+        return getResourcesList().stream()
+                .filter(r -> {
+                    String rPath = r.getHandle().getUri().getPath();
+                    if (rPath == null) {
+                        return false;
+                    }
+                    String normRPath = rPath.startsWith("/") ? rPath : "/" + rPath;
+                    return normRPath.startsWith(prefix);
+                })
+                .collect(Collectors.toList());
     }
 
     /**

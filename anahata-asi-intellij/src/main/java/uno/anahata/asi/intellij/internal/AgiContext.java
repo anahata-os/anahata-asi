@@ -50,12 +50,6 @@ public final class AgiContext {
     }
 
     /**
-     * Counts how many active sessions currently hold the given file in context.
-     *
-     * @param file the file to test.
-     * @return the number of sessions containing the file (0 if none, or if it is a directory).
-     */
-    /**
      * Resolves all in-context resources under a file or directory per open session.
      *
      * @param file the virtual file or directory to test.
@@ -69,7 +63,7 @@ public final class AgiContext {
         if (container == null) {
             return Collections.emptyMap();
         }
-        return container.getSessionResourcesUnderPath(file.getPath(), file.isDirectory(), true);
+        return container.getSessionResourcesUnderPath(Path.of(file.getPath()));
     }
 
     /**

@@ -116,7 +116,7 @@ public class Resources extends AnahataToolkit {
             Optional<Resource> existing = manager.findByUri(uriString);
             if (existing.isPresent()) {
                 if (initialSettings != null && existing.get().getView() instanceof TextView tv) {
-                    tv.getViewport().setSettings(initialSettings);
+                    tv.getViewport().setSettings(initialSettings.copy());
                 }
                 ids.add(existing.get().getId());
                 continue;
@@ -127,7 +127,7 @@ public class Resources extends AnahataToolkit {
             Resource resource = new Resource(handle);
 
             if (initialSettings != null) {
-                resource.setView(new TextView(resource, initialSettings));
+                resource.setView(new TextView(resource, initialSettings.copy()));
             }
 
             toRegister.add(resource);

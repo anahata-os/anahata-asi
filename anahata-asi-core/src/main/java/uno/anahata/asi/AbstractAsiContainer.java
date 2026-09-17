@@ -873,15 +873,13 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     /**
      * Resolves in-context resources under a given filesystem path across all open AGI sessions.
      *
-     * @param absolutePath The absolute filesystem path to check.
-     * @param isDirectory Whether the path represents a directory/folder.
-     * @param recursive Whether to search child directories recursively.
+     * @param path The filesystem path to check.
      * @return A map of open AGI sessions to their matching resources (only sessions with matching items).
      */
-    public Map<Agi, List<Resource>> getSessionResourcesUnderPath(@NonNull String absolutePath, boolean isDirectory, boolean recursive) {
+    public Map<Agi, List<Resource>> getSessionResourcesUnderPath(@NonNull Path path) {
         Map<Agi, List<Resource>> result = new LinkedHashMap<>();
         for (Agi agi : getOpenAgis()) {
-            List<Resource> found = agi.getResourceManager().findUnderPath(absolutePath, isDirectory, recursive);
+            List<Resource> found = agi.getResourceManager().findUnderPath(path);
             if (!found.isEmpty()) {
                 result.put(agi, found);
             }

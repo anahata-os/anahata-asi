@@ -42,6 +42,33 @@ public class TextViewportSettings {
     }
 
     /**
+     * Copy constructor creating an independent clone of the given settings.
+     *
+     * @param other The existing settings to copy.
+     */
+    public TextViewportSettings(TextViewportSettings other) {
+        if (other != null) {
+            this.fullView = other.fullView;
+            this.startChar = other.startChar;
+            this.pageSizeInChars = other.pageSizeInChars;
+            this.columnWidth = other.columnWidth;
+            this.grepPattern = other.grepPattern;
+            this.includeLineNumbers = other.includeLineNumbers;
+            this.tail = other.tail;
+            this.tailLines = other.tailLines;
+        }
+    }
+
+    /**
+     * Creates an independent deep copy of these viewport settings.
+     *
+     * @return A new TextViewportSettings instance with identical properties.
+     */
+    public TextViewportSettings copy() {
+        return new TextViewportSettings(this);
+    }
+
+    /**
      * Synchronously notifies the parent viewport and view that settings have changed.
      */
     public void markDirty() {
