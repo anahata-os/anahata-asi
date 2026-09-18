@@ -176,6 +176,7 @@ public class StatusPanel extends JPanel {
         statusLabel = new JLabel("Initializing...");
         soundToggle = new JToggleButton(IconUtils.getIcon("bell.png"));
         soundToggle.setSelectedIcon(IconUtils.getIcon("bell_mute.png"));
+        getAgiConfig().forceSquare(soundToggle, 24);
         soundToggle.setToolTipText("Toggle Sound Notifications");
         soundToggle.setSelected(!agiConfig.isAudioFeedbackEnabled());
         soundToggle.addActionListener(e -> agiConfig.setAudioFeedbackEnabled(!soundToggle.isSelected()));

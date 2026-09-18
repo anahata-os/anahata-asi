@@ -66,6 +66,7 @@ public final class MicrophonePanel extends JPanel {
         this.parentPanel = parentPanel;
         
         micButton = new JToggleButton(new MicrophoneIcon(24));
+        parentPanel.getAgiPanel().getAgiConfig().forceSquare(micButton, 24);
         micButton.setSelectedIcon(new RecordingIcon(24));
         micButton.setToolTipText("Click to start/stop recording");
         micButton.addActionListener(e -> toggleRecording());

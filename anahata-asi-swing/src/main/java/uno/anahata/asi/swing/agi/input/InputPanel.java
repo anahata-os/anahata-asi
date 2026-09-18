@@ -41,8 +41,11 @@ import uno.anahata.asi.swing.internal.SwingTask;
 import uno.anahata.asi.swing.internal.UICapture;
 import uno.anahata.asi.swing.audio.MicrophonePanel;
 import java.net.URI;
-import uno.anahata.asi.swing.icons.LinkIcon;
 import uno.anahata.asi.swing.components.ExceptionDialog;
+import uno.anahata.asi.swing.icons.CancelIcon;
+import uno.anahata.asi.swing.icons.RestartIcon;
+import uno.anahata.asi.swing.icons.SendIcon;
+import uno.anahata.asi.swing.icons.StopIcon;
 
 /**
  * A fully functional and responsive user input component for the V2 agi.
@@ -249,8 +252,8 @@ public class InputPanel extends JPanel {
         
         SwingAgiConfig config = agiPanel.getAgiConfig();
 
-        revertStagedButton = config.createSquareButton(ActionIconKey.EDIT_STAGED, 16, "Move staged message back to input for editing");
-        revertStagedButton.setText("Edit");
+        revertStagedButton = new JButton("Edit", config.getActionIcon(ActionIconKey.EDIT, WIDTH));
+        revertStagedButton.setToolTipText("Move staged message back to input for editing");
         revertStagedButton.addActionListener(e -> revertStagedMessage());
         
         deleteStagedButton = config.createSquareButton(ActionIconKey.DELETE, 16, "Delete staged message");
@@ -304,17 +307,14 @@ public class InputPanel extends JPanel {
         JPanel eastButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         eastButtonPanel.setOpaque(false);
         
-        declineAndSendButton = config.createSquareButton(ActionIconKey.CANCEL, 16, null);
-        declineAndSendButton.setText("Decline Pending & Send");
+        declineAndSendButton = new JButton("Decline Pending & Send", new CancelIcon(16));
         declineAndSendButton.addActionListener(e -> declinePendingAndSend());
         declineAndSendButton.setVisible(false);
         
-        sendButton = config.createSquareButton(ActionIconKey.SEND, 16, null);
-        sendButton.setText("Send");
+        sendButton = new JButton("Send", new SendIcon(16));
         sendButton.addActionListener(e -> sendMessage());
         
-        stopButton = config.createSquareButton(ActionIconKey.STOP, 16, null);
-        stopButton.setText("Stop");
+        stopButton = new JButton("Stop", new StopIcon(16));
         stopButton.addActionListener(e -> agi.stop());
         stopButton.setVisible(false);
 

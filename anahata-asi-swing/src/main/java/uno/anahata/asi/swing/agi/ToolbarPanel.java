@@ -3,7 +3,6 @@
  */
 package uno.anahata.asi.swing.agi;
 
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -17,15 +16,12 @@ import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import java.util.Optional;
-import javax.swing.Icon;
-import uno.anahata.asi.swing.icons.AutoReplyIcon;
+import uno.anahata.asi.swing.icons.ActionIconKey;
 import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.icons.ScreenShareIcon;
 import uno.anahata.asi.swing.toolkit.Screens;
 import uno.anahata.asi.swing.icons.LeafIcon;
 import uno.anahata.asi.swing.icons.LeafIcon.LeafState;
-import uno.anahata.asi.swing.icons.RestartIcon;
-import uno.anahata.asi.swing.icons.ServerToolsIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 
 /**
@@ -78,43 +74,41 @@ public class ToolbarPanel extends JPanel {
      */
     public void initComponents() {
         // 1. Clear Agi Button (Top)
-        clearAgiButton = createIconButton(new RestartIcon(ICON_SIZE), "Clear the entire agi history.");
+        clearAgiButton = config.createSquareButton(ActionIconKey.CLEAR_HISTORY, ICON_SIZE, "Clear the entire agi history.");
         clearAgiButton.addActionListener(this::clearAgi);
         add(clearAgiButton);
 
-
-
         // Vertical Glue to push toggles to the middle
         add(Box.createVerticalGlue());
-        
-        // 3. Toggle Pruned Button (Middle)
-        togglePrunedButton = createIconToggleButton(new LeafIcon(ICON_SIZE, LeafState.ACTIVE), "", config.isShowPruned());
+
+        // 2. Toggle Pruned Button (Middle)
+        togglePrunedButton = new JToggleButton(new LeafIcon(ICON_SIZE, LeafState.ACTIVE), config.isShowPruned());
+        config.forceSquare(togglePrunedButton, ICON_SIZE);
         togglePrunedButton.addActionListener(this::togglePruned);
         add(togglePrunedButton);
 
-        // 4. Toggle Local Tools Button (Middle)
-        // Use the authentic Java icon for local tools
-        toggleLocalToolsButton = createIconToggleButton(IconUtils.getIcon("java.png", ICON_SIZE), "", config.isLocalToolsEnabled());
+        // 3. Toggle Local Tools Button (Middle)
+        toggleLocalToolsButton = config.createSquareToggleButton(ActionIconKey.LOCAL_TOOLS, ICON_SIZE, "", config.isLocalToolsEnabled());
         toggleLocalToolsButton.addActionListener(this::toggleLocalTools);
         add(toggleLocalToolsButton);
 
-        // 5. Toggle Server Tools Button (Middle)
-        toggleHostedToolsButton = createIconToggleButton(new ServerToolsIcon(ICON_SIZE), "", config.isHostedToolsEnabled());
+        // 4. Toggle Server Tools Button (Middle)
+        toggleHostedToolsButton = config.createSquareToggleButton(ActionIconKey.SERVER_TOOLS, ICON_SIZE, "", config.isHostedToolsEnabled());
         toggleHostedToolsButton.addActionListener(this::toggleHostedTools);
         add(toggleHostedToolsButton);
-        
-        // 6. Toggle Autoreply Button (Middle)
-        toggleAutoreplyButton = createIconToggleButton(new AutoReplyIcon(ICON_SIZE), "", config.isAutoReplyTools());
+
+        // 5. Toggle Autoreply Button (Middle)
+        toggleAutoreplyButton = config.createSquareToggleButton(ActionIconKey.AUTO_REPLY, ICON_SIZE, "", config.isAutoReplyTools());
         toggleAutoreplyButton.addActionListener(this::toggleAutoreply);
         add(toggleAutoreplyButton);
 
-        // 7. Screen Share Button (Middle)
-        screenShareButton = createIconButton(new ScreenShareIcon(ICON_SIZE), "Configure or toggle live screen sharing.");
+        // 6. Screen Share Button (Middle)
+        screenShareButton = config.createSquareButton(ActionIconKey.SCREEN_SHARE, ICON_SIZE, "Configure or toggle live screen sharing.");
         screenShareButton.addActionListener(e -> {
             new SharedScreenEditorFrame(agiPanel).setVisible(true);
         });
         add(screenShareButton);
-        
+
         // Vertical Glue to keep the toggles in the middle
         add(Box.createVerticalGlue());
 
@@ -141,39 +135,11 @@ public class ToolbarPanel extends JPanel {
         syncToggles();
     }
 
-    /**
-     * Helper method to create a standard icon button.
-     * 
-     * @param icon The icon to display.
-     * @param tooltip The tooltip text.
-     * @return The created JButton.
-     */
-    private JButton createIconButton(Icon icon, String tooltip) {
-        JButton button = new JButton(icon);
-        button.setToolTipText(tooltip);
-        button.setAlignmentX(CENTER_ALIGNMENT);
-        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, button.getPreferredSize().height));
-        return button;
-    }
 
-    /**
-     * Helper method to create a standard icon toggle button.
-     * 
-     * @param icon The icon to display.
-     * @param tooltip The tooltip text.
-     * @param selected The initial selected state.
-     * @return The created JToggleButton.
-     */
-    private JToggleButton createIconToggleButton(Icon icon, String tooltip, boolean selected) {
-        JToggleButton button = new JToggleButton(icon, selected);
-        button.setToolTipText(tooltip);
-        button.setAlignmentX(CENTER_ALIGNMENT);
-        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, button.getPreferredSize().height));
-        return button;
-    }
 
     /**
      * Action listener for the clear agi button.
+     *
      * @param e The action event.
      */
     private void clearAgi(ActionEvent e) {
@@ -221,22 +187,24 @@ public class ToolbarPanel extends JPanel {
         boolean showPruned = config.isShowPruned();
         togglePrunedButton.setSelected(showPruned);
         togglePrunedButton.setIcon(new LeafIcon(ICON_SIZE, showPruned ? LeafState.WITHERED : LeafState.ACTIVE));
-        togglePrunedButton.setToolTipText(showPruned ? 
-                "Showing pruned parts, click to hide" : "Not showing pruned parts, click to show");
-        
+        togglePrunedButton.setToolTipText(showPruned
+                ? "Showing pruned parts, click to hide" : "Not showing pruned parts, click to show");
+
         boolean localToolsEnabled = config.isLocalToolsEnabled();
         toggleLocalToolsButton.setSelected(localToolsEnabled);
-        toggleLocalToolsButton.setIcon(IconUtils.getIcon(localToolsEnabled ? "java.png" : "mapacho.png", ICON_SIZE));
-        toggleLocalToolsButton.setToolTipText(localToolsEnabled ? 
-                "Java Tools enabled: click to disable" : "Java Tools disabled: click to enable");
-        
+        toggleLocalToolsButton.setIcon(localToolsEnabled
+                ? config.getActionIcon(ActionIconKey.LOCAL_TOOLS, ICON_SIZE)
+                : IconUtils.getIcon("mapacho.png", ICON_SIZE));
+        toggleLocalToolsButton.setToolTipText(localToolsEnabled
+                ? "Java Tools enabled: click to disable" : "Java Tools disabled: click to enable");
+
         toggleHostedToolsButton.setSelected(config.isHostedToolsEnabled());
-        toggleHostedToolsButton.setToolTipText(config.isHostedToolsEnabled() ? 
-                "Hosted tools enabled: click to disable" : "Hosted tools disabled: click to enable");
-        
+        toggleHostedToolsButton.setToolTipText(config.isHostedToolsEnabled()
+                ? "Hosted tools enabled: click to disable" : "Hosted tools disabled: click to enable");
+
         toggleAutoreplyButton.setSelected(config.isAutoReplyTools());
-        toggleAutoreplyButton.setToolTipText(config.isAutoReplyTools() ? 
-                "Auto reply tools enabled: click to disable" : "Auto reply tools disabled: click to enable");
+        toggleAutoreplyButton.setToolTipText(config.isAutoReplyTools()
+                ? "Auto reply tools enabled: click to disable" : "Auto reply tools disabled: click to enable");
 
         int sharedCount = 0;
         Optional<Screens> screens = agi.getToolkit(Screens.class);
@@ -257,6 +225,7 @@ public class ToolbarPanel extends JPanel {
 
     /**
      * Action listener for the toggle autoreply button.
+     *
      * @param e The action event.
      */
     private void toggleAutoreply(ActionEvent e) {
