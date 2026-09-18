@@ -72,6 +72,8 @@ public class ConversationPanel extends JPanel {
         this.messagesPanel = new ScrollablePanel();
         this.messagesPanel.setLayout(new BoxLayout(messagesPanel, BoxLayout.Y_AXIS));
         this.messagesPanel.setOpaque(false);
+        // Breathing room so messages are not flush against the panel edges / scroll bar.
+        this.messagesPanel.setBorder(javax.swing.BorderFactory.createEmptyBorder(4, 8, 4, 8));
 
         this.scrollPane = new JScrollPane(messagesPanel);
         this.scrollPane.setBorder(null);

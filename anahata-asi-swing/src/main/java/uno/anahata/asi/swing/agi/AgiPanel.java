@@ -116,6 +116,13 @@ public class AgiPanel extends ScrollablePanel {
         tabbedPane.addTab("Context", contextPanel);
         tabbedPane.addTab("CwGC", createScrollPane(cwGcPanel));
         tabbedPane.addTab("Support", createScrollPane(supportPanel));
+
+        // Native IntelliJ-style tabs: underlined selection, no heavy content border (FlatLaf client
+        // properties, honoured by the IntelliJ and Desktop LaFs and ignored elsewhere).
+        tabbedPane.setBorder(null);
+        tabbedPane.putClientProperty("JTabbedPane.tabType", "underlined");
+        tabbedPane.putClientProperty("JTabbedPane.showTabSeparators", Boolean.TRUE);
+        tabbedPane.putClientProperty("JTabbedPane.tabAreaInsets", new java.awt.Insets(0, 4, 0, 0));
         
         // TAB SELECTION LISTENER: Just-in-time refresh for metabolism metrics
         tabbedPane.addChangeListener(e -> {

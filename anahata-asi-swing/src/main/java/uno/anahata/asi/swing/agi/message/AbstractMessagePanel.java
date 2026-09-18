@@ -114,7 +114,6 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends Co
         // 2. Initialize Header Buttons
         this.pinButton = uno.anahata.asi.swing.internal.SwingUtils.compactIconButton(new JToggleButton(AsiIcons.get(AsiIcons.Key.PIN, 16)));
         this.pinButton.setToolTipText("Pin Interaction (Keep all parts in context)");
-        this.pinButton.setMargin(new Insets(0, 4, 0, 4));
         this.pinButton.addActionListener(e -> {
             if (pinButton.isSelected()) {
                 message.pinAllParts();
@@ -125,12 +124,10 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends Co
         
         this.copyButton = uno.anahata.asi.swing.internal.SwingUtils.compactIconButton(new JButton(AsiIcons.get(AsiIcons.Key.COPY, 16)));
         this.copyButton.setToolTipText("Copy Message Content");
-        this.copyButton.setMargin(new Insets(0, 4, 0, 4));
         this.copyButton.addActionListener(e -> SwingUtils.copyToClipboard(message.asText(false)));
 
         this.removeButton = uno.anahata.asi.swing.internal.SwingUtils.compactIconButton(new JButton(AsiIcons.get(AsiIcons.Key.DELETE, 16)));
         this.removeButton.setToolTipText("Remove Message");
-        this.removeButton.setMargin(new Insets(0, 4, 0, 4));
         this.removeButton.addActionListener(e -> message.remove());
 
         // Copy button on the left
