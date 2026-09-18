@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.intellij.resources.handle;
 
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FileStatus;
@@ -420,18 +421,21 @@ public class IntellijHandle extends AbstractResourceHandle implements VirtualFil
             return null;
         }
         try {
-            Project project = JavaPsi.findHostProject(vf);
-            if (project == null || project.isDisposed()) {
-                return null;
-            }
-            FileStatus status = FileStatusManager.getInstance(project).getStatus(vf);
-            if (status != null && status != FileStatus.NOT_CHANGED) {
-                Color color = status.getColor();
-                if (color != null) {
-                    String hex = String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
-                    return "<html><font color='" + hex + "'>" + getName() + "</font></html>";
+            return ReadAction.compute(() -> {
+                Project project = JavaPsi.findHostProject(vf);
+                if (project == null || project.isDisposed()) {
+                    return null;
                 }
-            }
+                FileStatus status = FileStatusManager.getInstance(project).getStatus(vf);
+                if (status != null && status != FileStatus.NOT_CHANGED) {
+                    Color color = status.getColor();
+                    if (color != null) {
+                        String hex = String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
+                        return "<html><font color='" + hex + "'>" + getName() + "</font></html>";
+                    }
+                }
+                return null;
+            });
         } catch (Throwable t) {
             log.debug("Could not resolve HTML display name for {}: {}", getPath(), t.getMessage());
         }
@@ -450,7 +454,7 @@ public class IntellijHandle extends AbstractResourceHandle implements VirtualFil
         VirtualFile vf = getVirtualFile();
         if (vf != null) {
             try {
-                return FileDocumentManager.getInstance().isFileModified(vf);
+                return ReadAction.compute(() -> FileDocumentManager.getInstance().isFileModified(vf));
             } catch (Throwable t) {
                 log.debug("Could not check isFileModified for {}: {}", getPath(), t.getMessage());
             }

@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.resource.handle.PathHandle;
+import uno.anahata.asi.intellij.resources.handle.IntellijHandle;
 import uno.anahata.asi.intellij.internal.JavaPsi;
 import uno.anahata.asi.intellij.tools.ide.IDE;
 import uno.anahata.asi.swing.agi.AgiPanel;
@@ -65,6 +66,23 @@ public class IntellijResourceUI extends DefaultResourceUI {
             return new IntellijTextResourceViewer(container, resource);
         }
         return super.createContent(resource, container);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns an {@link IntellijHandlePanel} for {@link IntellijHandle} instances,
+     * providing authentic IDE connectivity and VCS metadata.
+     * </p>
+     */
+    @Override
+    public JPanel createHandlePanel(Resource resource, AgiPanel agiPanel) {
+        if (resource.getHandle() instanceof IntellijHandle ih) {
+            IntellijHandlePanel ihp = new IntellijHandlePanel();
+            ihp.setHandle(ih);
+            return ihp;
+        }
+        return super.createHandlePanel(resource, agiPanel);
     }
 
     /**
@@ -135,7 +153,9 @@ public class IntellijResourceUI extends DefaultResourceUI {
      * @return the absolute path, or null if virtual.
      */
     private String getPath(Resource resource) {
-        if (resource.getHandle() instanceof PathHandle ph) {
+        if (resource.getHandle() instanceof IntellijHandle ih) {
+            return ih.getPath();
+        } else if (resource.getHandle() instanceof PathHandle ph) {
             return ph.getPath();
         }
         return null;

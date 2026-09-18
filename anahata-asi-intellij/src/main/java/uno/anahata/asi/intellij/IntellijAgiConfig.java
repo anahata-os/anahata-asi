@@ -1,7 +1,11 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.intellij;
 
+import java.net.URI;
 import uno.anahata.asi.AbstractAsiContainer;
+import uno.anahata.asi.agi.resource.handle.ResourceHandle;
+import uno.anahata.asi.intellij.resources.handle.IntellijHandle;
+import uno.anahata.asi.intellij.ui.IntellijIconProvider;
 import uno.anahata.asi.intellij.tools.ide.Editor;
 import uno.anahata.asi.intellij.tools.ide.IDE;
 import uno.anahata.asi.intellij.tools.ide.Refactor;
@@ -75,6 +79,21 @@ public class IntellijAgiConfig extends SwingAgiConfig {
         getToolClasses().add(Refactor.class);
         getToolClasses().add(Terminals.class);
 
+        setIconProvider(new IntellijIconProvider());
+    }
+
+    /** 
+     * {@inheritDoc} 
+     * <p>
+     * Overrides the factory to return the reactive IntellijHandle for local or JAR resources.
+     * </p>
+     */
+    @Override
+    public ResourceHandle createResourceHandle(URI uri) {
+        if ("file".equalsIgnoreCase(uri.getScheme()) || "jar".equalsIgnoreCase(uri.getScheme())) {
+            return new IntellijHandle(uri);
+        }
+        return super.createResourceHandle(uri);
     }
 
     /**

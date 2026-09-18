@@ -43,6 +43,15 @@ public class AnahataFileIconProvider implements FileIconProvider {
     }
 
     /**
+     * Gets the authentic 16x16 Anahata logo icon for files.
+     *
+     * @return The 16x16 Anahata file icon.
+     */
+    public static Icon getFileIcon() {
+        return ICON;
+    }
+
+    /**
      * Gets the scaled Anahata badge icon for decorating tree nodes.
      *
      * @return The 8x8 Anahata badge icon.
