@@ -118,15 +118,18 @@
         }
         .apps-row {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.5rem;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
         }
+        @media (max-width: 900px) {
+            .apps-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        .app-tile-ij { border-top-color: var(--accent); }
         .comparison-table th, .comparison-table td {
             border: 1px solid rgba(255,255,255,0.05);
-        }
-        .apps-row {
-            grid-template-columns: repeat(2, 1fr);
-            margin-bottom: 0.5rem;
         }
         .provider-tile, .app-tile {
             background: rgba(255,255,255,0.02);
@@ -503,7 +506,12 @@
                                 <a href="nb.html" class="app-tile app-tile-nb">
                                     <i class="fas fa-code"></i>
                                     <h3>NetBeans ASI Studio</h3>
-                                    <p>Full IDE container with deep architectural observability.</p>
+                                    <p>Full NetBeans container with deep architectural observability.</p>
+                                </a>
+                                <a href="intellij.html" class="app-tile app-tile-ij">
+                                    <i class="fas fa-laptop-code" style="color: var(--accent);"></i>
+                                    <h3>IntelliJ ASI Studio <span class="beta-badge" style="margin-left: 4px;">BETA</span></h3>
+                                    <p>JetBrains OpenAPI container with live PSI tree and VFS sync.</p>
                                 </a>
                             </div>
                         </div>
