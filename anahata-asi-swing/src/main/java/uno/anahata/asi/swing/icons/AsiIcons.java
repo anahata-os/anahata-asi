@@ -68,6 +68,8 @@ public final class AsiIcons {
         OPEN_IN_IDE,
         /** Pin. */
         PIN,
+        /** Toggle local (in-process/desktop) tools. */
+        LOCAL_TOOLS,
         /** Toggle host/server-provided tools. */
         SERVER_TOOLS,
         /** Toggle automatic tool replies. */
@@ -159,6 +161,7 @@ public final class AsiIcons {
             case EXTERNAL -> new ExternalIcon(size);
             case OPEN_IN_IDE -> new NextIcon(size);
             case PIN -> new PinnedIcon(size);
+            case LOCAL_TOOLS -> IconUtils.getIcon("java.png", size);
             case SERVER_TOOLS -> new ServerToolsIcon(size);
             case AUTO_REPLY -> new AutoReplyIcon(size);
             case TEST_CONNECTION -> new PulseIcon(size);

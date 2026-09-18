@@ -158,7 +158,7 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends Co
         
         setOpaque(false);
         setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createEmptyBorder(5, 0, 5, 0),
+                BorderFactory.createEmptyBorder(8, 0, 8, 0),
                 getMessageBorder()
         ));
 
@@ -192,7 +192,7 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends Co
         if (agiConfig != null) {
             updateBackgroundColors();
             setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createEmptyBorder(5, 0, 5, 0),
+                    BorderFactory.createEmptyBorder(8, 0, 8, 0),
                     getMessageBorder()
             ));
         }

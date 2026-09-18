@@ -93,7 +93,7 @@ public class ToolbarPanel extends JPanel {
 
         // 4. Toggle Local Tools Button (Middle)
         // Use the authentic Java icon for local tools
-        toggleLocalToolsButton = createIconToggleButton(IconUtils.getIcon("java.png", ICON_SIZE), "", config.isLocalToolsEnabled());
+        toggleLocalToolsButton = createIconToggleButton(AsiIcons.get(AsiIcons.Key.LOCAL_TOOLS, ICON_SIZE), "", config.isLocalToolsEnabled());
         toggleLocalToolsButton.addActionListener(this::toggleLocalTools);
         add(toggleLocalToolsButton);
 

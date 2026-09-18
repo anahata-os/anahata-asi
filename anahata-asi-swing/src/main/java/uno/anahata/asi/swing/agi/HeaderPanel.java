@@ -109,8 +109,11 @@ public class HeaderPanel extends JPanel {
      * selectors.
      */
     public void initComponents() {
-        setLayout(new MigLayout("insets 5, fillx, gap 10",
-                "[][][][]push[][][]", // Nickname, Save, Clone, Dispose, PUSH, Provider, Model, Search
+        // Auto-sized columns so the left session-action cluster stays together regardless of the
+        // optional "save as template" button; the push before the provider combo separates the
+        // session controls (left) from the model selectors (right).
+        setLayout(new MigLayout("insets 5, fillx, gap 4",
+                "", // columns auto-created per component
                 "[]")); // Row constraints
 
         // Nickname Field
@@ -151,7 +154,7 @@ public class HeaderPanel extends JPanel {
         providerComboBox = new JComboBox<>();
         providerComboBox.setToolTipText("Select AI Provider");
         providerComboBox.setRenderer(new AiProviderRenderer());
-        add(providerComboBox, "skip 1, w 150!");
+        add(providerComboBox, "push, w 150!");
 
         // Model ComboBox
         modelComboBox = new JComboBox<>();

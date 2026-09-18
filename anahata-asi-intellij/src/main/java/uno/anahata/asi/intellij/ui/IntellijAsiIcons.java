@@ -54,6 +54,7 @@ public final class IntellijAsiIcons implements AsiIcons.Provider {
             case EXTERNAL -> AllIcons.Ide.External_link_arrow;
             case OPEN_IN_IDE -> AllIcons.Actions.Forward;
             case PIN -> AllIcons.General.Pin_tab;
+            case LOCAL_TOOLS -> AllIcons.Nodes.Toolbox;
             case SERVER_TOOLS -> AllIcons.Nodes.Plugin;
             case AUTO_REPLY -> AllIcons.Actions.Rerun;
             case TEST_CONNECTION -> AllIcons.Actions.Lightning;
