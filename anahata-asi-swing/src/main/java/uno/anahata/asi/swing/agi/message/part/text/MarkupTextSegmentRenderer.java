@@ -74,9 +74,8 @@ public class MarkupTextSegmentRenderer extends AbstractTextSegmentRenderer {
     }
 
     /**
-     * {@inheritDoc}
-     * It reuses the existing {@link WrappingEditorPane} if available and updates its content
-     * only if the markdown text has changed.
+     * {@inheritDoc} It reuses the existing {@link WrappingEditorPane} if
+     * available and updates its content only if the markdown text has changed.
      */
     @Override
     public boolean render() {
@@ -93,11 +92,7 @@ public class MarkupTextSegmentRenderer extends AbstractTextSegmentRenderer {
             innerComponent.setEditorKit(kit);
 
             // Apply custom CSS for styling and word wrapping
-            StyleSheet sheet = kit.getStyleSheet();
-            sheet.addRule("body { word-wrap: break-word; font-family: sans-serif; font-size: 14px; background-color: transparent;}");
-            sheet.addRule("table { border-collapse: collapse; width: 100%; }");
-            sheet.addRule("th, td { border: 1px solid #dddddd; text-align: left; padding: 8px; }");
-            sheet.addRule("th { background-color: #f2f2f2; }");
+            updateStyleSheet(kit.getStyleSheet());
 
             // Wrap in a scroll pane for horizontal scrolling of giant lines
             JScrollPane scrollPane = new JScrollPane(innerComponent);
@@ -106,10 +101,10 @@ public class MarkupTextSegmentRenderer extends AbstractTextSegmentRenderer {
             scrollPane.setBorder(BorderFactory.createEmptyBorder());
             scrollPane.setOpaque(false);
             scrollPane.getViewport().setOpaque(false);
-            
+
             // Redispatch mouse wheel events to the parent scroll pane
             scrollPane.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(scrollPane, e));
-            
+
             this.component = scrollPane;
             changed = true;
         }
@@ -125,8 +120,8 @@ public class MarkupTextSegmentRenderer extends AbstractTextSegmentRenderer {
 
             // Wrap the content in a styled div to ensure the style is applied correctly
             String styledHtml = String.format(
-                "<html><body><div style='color: %s; font-style: %s;'>%s</div></body></html>",
-                color, fontStyle, html
+                    "<html><body><div style='color: %s; font-style: %s;'>%s</div></body></html>",
+                    color, fontStyle, html
             );
 
             innerComponent.setText(styledHtml);
@@ -136,12 +131,30 @@ public class MarkupTextSegmentRenderer extends AbstractTextSegmentRenderer {
         return changed;
     }
 
+    private void updateStyleSheet(StyleSheet sheet) {
+        UITheme theme = agiConfig.getTheme();
+        boolean dark = agiConfig.isDark();
+        String borderColor = SwingUtils.toHtmlColor(theme.getChromeBorder());
+        String thBg = dark ? "#2b2d30" : "#f2f2f2";
+        String fontColor = SwingUtils.toHtmlColor(theme.getFontColor());
+
+        sheet.addRule("body { word-wrap: break-word; font-family: sans-serif; font-size: 14px; background-color: transparent;}");
+        sheet.addRule("table { border-collapse: collapse; width: 100%; }");
+        sheet.addRule("th, td { border: 1px solid " + borderColor + "; text-align: left; padding: 8px; }");
+        sheet.addRule("th { background-color: " + thBg + "; color: " + fontColor + "; font-weight: bold; }");
+        sheet.addRule("td { color: " + fontColor + "; }");
+    }
     /**
      * {@inheritDoc}
-     * <p>Overridden to clear the render cache and force a complete HTML text rebuild with the fresh theme colors.</p>
+     * <p>
+     * Overridden to clear the render cache and force a complete HTML text
+     * rebuild with the fresh theme colors.</p>
      */
     @Override
     public void updateTheme() {
+        if (innerComponent != null && innerComponent.getEditorKit() instanceof HTMLEditorKit kit) {
+            updateStyleSheet(kit.getStyleSheet());
+        }
         lastRenderedContent = null;
         render();
     }
