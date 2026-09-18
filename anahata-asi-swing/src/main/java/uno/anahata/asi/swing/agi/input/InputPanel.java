@@ -42,10 +42,6 @@ import uno.anahata.asi.swing.internal.UICapture;
 import uno.anahata.asi.swing.audio.MicrophonePanel;
 import java.net.URI;
 import uno.anahata.asi.swing.components.ExceptionDialog;
-import uno.anahata.asi.swing.icons.CancelIcon;
-import uno.anahata.asi.swing.icons.RestartIcon;
-import uno.anahata.asi.swing.icons.SendIcon;
-import uno.anahata.asi.swing.icons.StopIcon;
 
 /**
  * A fully functional and responsive user input component for the V2 agi.
@@ -157,11 +153,11 @@ public class InputPanel extends JPanel {
     /**
      * Initializes the UI components and sets up the real-time model binding.
      * This method constructs the input area, preview pane, and action buttons,
-     * ensuring that the split pane is correctly balanced for a seamless 
+     * ensuring that the split pane is correctly balanced for a seamless
      * composition experience.
      */
     private void initComponents() {
-        setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5)); 
+        setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         inputTextArea = new JXTextArea("Type, paste or drop here (images supported).... Press Ctrl+Enter to send");
         inputTextArea.setLineWrap(true);
@@ -169,7 +165,7 @@ public class InputPanel extends JPanel {
 
         // --- UNDO / REDO ---
         inputTextArea.getDocument().addUndoableEditListener(undoManager);
-        
+
         InputMap im = inputTextArea.getInputMap(JComponent.WHEN_FOCUSED);
         ActionMap am = inputTextArea.getActionMap();
 
@@ -226,13 +222,13 @@ public class InputPanel extends JPanel {
 
         previewScrollPane = new JScrollPane(inputMessagePreview);
         previewScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        previewScrollPane.setPreferredSize(new Dimension(0, 150)); 
-        previewScrollPane.setMinimumSize(new Dimension(0, 100)); 
+        previewScrollPane.setPreferredSize(new Dimension(0, 150));
+        previewScrollPane.setMinimumSize(new Dimension(0, 100));
 
         // --- HORIZONTAL SPLIT PANE ---
         splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, inputScrollPane, previewScrollPane);
-        splitPane.setResizeWeight(0.5); 
-        splitPane.setDividerLocation(0.5); 
+        splitPane.setResizeWeight(0.5);
+        splitPane.setDividerLocation(0.5);
         splitPane.setOneTouchExpandable(true);
 
         // --- STAGED MESSAGE PANEL ---
@@ -246,22 +242,22 @@ public class InputPanel extends JPanel {
 
         stagedMessageLabel = new JLabel("Staged Message: ");
         stagedMessageLabel.setFont(stagedMessageLabel.getFont().deriveFont(Font.ITALIC));
-        
+
         JPanel stagedButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         stagedButtons.setOpaque(false);
-        
+
         SwingAgiConfig config = agiPanel.getAgiConfig();
 
-        revertStagedButton = new JButton("Edit", config.getActionIcon(ActionIconKey.EDIT, WIDTH));
+        revertStagedButton = new JButton("Edit", config.getActionIcon(ActionIconKey.EDIT, 16));
         revertStagedButton.setToolTipText("Move staged message back to input for editing");
         revertStagedButton.addActionListener(e -> revertStagedMessage());
-        
+
         deleteStagedButton = config.createSquareButton(ActionIconKey.DELETE, 16, "Delete staged message");
         deleteStagedButton.addActionListener(e -> deleteStagedMessage());
-        
+
         stagedButtons.add(revertStagedButton);
         stagedButtons.add(deleteStagedButton);
-        
+
         stagedMessagePanel.add(stagedMessageLabel, BorderLayout.CENTER);
         stagedMessagePanel.add(stagedButtons, BorderLayout.EAST);
 
@@ -269,7 +265,7 @@ public class InputPanel extends JPanel {
 
         JPanel southContainer = new JPanel(new BorderLayout(0, 5));
         southContainer.setOpaque(false);
-        
+
         southContainer.add(stagedMessagePanel, BorderLayout.NORTH);
 
         JPanel southButtonPanel = new JPanel(new BorderLayout(5, 0));
@@ -283,7 +279,7 @@ public class InputPanel extends JPanel {
 
         attachButton = config.createSquareButton(ActionIconKey.ATTACH, 16, "Add local file as registered Resource");
         attachButton.addActionListener(e -> registerFilesAsResources());
-        
+
         addUrlButton = config.createSquareButton(ActionIconKey.LINK, 16, "Add URL Resource as registered Resource");
         addUrlButton.addActionListener(e -> addUrl());
 
@@ -306,15 +302,15 @@ public class InputPanel extends JPanel {
 
         JPanel eastButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         eastButtonPanel.setOpaque(false);
-        
-        declineAndSendButton = new JButton("Decline Pending & Send", new CancelIcon(16));
+
+        declineAndSendButton = new JButton("Decline Pending & Send", config.getActionIcon(ActionIconKey.CANCEL, 16));
         declineAndSendButton.addActionListener(e -> declinePendingAndSend());
         declineAndSendButton.setVisible(false);
-        
-        sendButton = new JButton("Send", new SendIcon(16));
+
+        sendButton = new JButton("Send", config.getActionIcon(ActionIconKey.SEND, 16));
         sendButton.addActionListener(e -> sendMessage());
-        
-        stopButton = new JButton("Stop", new StopIcon(16));
+
+        stopButton = new JButton("Stop", config.getActionIcon(ActionIconKey.STOP, 16));
         stopButton.addActionListener(e -> agi.stop());
         stopButton.setVisible(false);
 
@@ -327,15 +323,17 @@ public class InputPanel extends JPanel {
 
         southContainer.add(southButtonPanel, BorderLayout.CENTER);
         add(southContainer, BorderLayout.SOUTH);
-        
+
         updateStagedMessageUI();
         updateSendButtonState();
     }
 
     /**
-     * Resynchronizes the input panel with the current {@link Agi} session state.
+     * Resynchronizes the input panel with the current {@link Agi} session
+     * state.
      * <p>
-     * This method is invoked to ensure the UI component is observing the correct 
+     * This method is invoked to ensure the UI component is observing the
+     * correct
      * {@link Agi} instance. It re-initializes reactive property change listeners,
      * clears current input buffers, and updates the send button and staged message 
      * visibility to match the new session's state.
