@@ -59,12 +59,12 @@ public class AsiContainer extends AnahataToolkit {
         List<String> inst = new ArrayList<>(super.getSystemInstructions());
         AbstractAsiContainer container = getAsiContainer();
         Instant creationTime = container.getContainerCreationTime();
-        inst.add("### The **AsiContainer** toolkit is a proxy toolkit for " + container.getClass().getName() + ".\n"
+        inst.add("### The **AsiContainer** toolkit is a proxy toolkit for " + container + ".\n"
                 + "- **Container Version**: " + container.getContainerVersion() + "\n"
                 + "- **Container Implementation Version**: " + container.getContainerImplementationVersion() + "\n"
                 + "- **Container Creation Time**: " + (creationTime != null ? creationTime.toString() : "Unknown") + "\n"
                 + "  *(The filesystem creation timestamp of this container's version directory on disk. Indicates when this container environment was first initialized, helping determine if this is a brand-new installation, a recent upgrade, or an established environment)*\n\n"
-                + "It provides some convenience, on-shot tools to query and manage sub agents.\n"
+                + "It provides some convenience, one-shot tools to query and manage Agis (sub agents).\n"
                 + "Programmatic Container Access (from the java toolkit, if available:)\n"
                 + "When scripting custom automation via the java toolkit, "
                 + "you can programmatically query the ASI container's configurations, providers, and secure API keys:\n"
