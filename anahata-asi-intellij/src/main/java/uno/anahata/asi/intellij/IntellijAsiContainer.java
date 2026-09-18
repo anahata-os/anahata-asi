@@ -24,12 +24,15 @@ import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.AgiConfig;
+import uno.anahata.asi.intellij.tools.java.coderefiner.CodeRefinementBatch;
 import uno.anahata.asi.intellij.ui.IntellijJavaCodeParameterRenderer;
 import uno.anahata.asi.intellij.ui.IntellijTextResourceWriteRenderer;
+import uno.anahata.asi.intellij.ui.resources.IntellijResourceUI;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory;
+import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
 import uno.anahata.asi.toolkit.resources.text.FullTextResourceUpdate;
 import uno.anahata.asi.toolkit.resources.text.TextResourceReplacements;
 import uno.anahata.asi.toolkit.resources.text.lines.TextResourceLineEdits;
@@ -70,9 +73,9 @@ public class IntellijAsiContainer extends AbstractSwingAsiContainer implements D
         ParameterRendererFactory.register(FullTextResourceUpdate.class, IntellijTextResourceWriteRenderer.class);
         ParameterRendererFactory.register(TextResourceReplacements.class, IntellijTextResourceWriteRenderer.class);
         ParameterRendererFactory.register(TextResourceLineEdits.class, IntellijTextResourceWriteRenderer.class);
-        ParameterRendererFactory.register(uno.anahata.asi.intellij.tools.java.coderefiner.CodeRefinementBatch.class, IntellijTextResourceWriteRenderer.class);
+        ParameterRendererFactory.register(CodeRefinementBatch.class, IntellijTextResourceWriteRenderer.class);
         ParameterRendererFactory.registerById("java", IntellijJavaCodeParameterRenderer.class);
-        uno.anahata.asi.swing.agi.resources.ResourceUiRegistry.getInstance().setResourceUI(new uno.anahata.asi.intellij.ui.resources.IntellijResourceUI());
+        ResourceUiRegistry.getInstance().setResourceUI(new IntellijResourceUI());
     }
 
     /**
