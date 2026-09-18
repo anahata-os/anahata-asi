@@ -37,9 +37,7 @@ import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.message.part.AbstractPartPanel;
 import uno.anahata.asi.swing.agi.message.part.PartPanelFactory;
-import uno.anahata.asi.swing.icons.CopyIcon;
-import uno.anahata.asi.swing.icons.DeleteIcon;
-import uno.anahata.asi.swing.icons.PinnedIcon;
+import uno.anahata.asi.swing.icons.ActionIconKey;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
@@ -111,9 +109,7 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends Co
         setTitleFont(new Font("SansSerif", Font.BOLD, 13));
         
         // 2. Initialize Header Buttons
-        this.pinButton = new JToggleButton(new PinnedIcon(16));
-        this.pinButton.setToolTipText("Pin Interaction (Keep all parts in context)");
-        this.pinButton.setMargin(new Insets(0, 4, 0, 4));
+        this.pinButton = agiConfig.createSquareToggleButton(ActionIconKey.PIN, 16, "Pin Interaction (Keep all parts in context)", false);
         this.pinButton.addActionListener(e -> {
             if (pinButton.isSelected()) {
                 message.pinAllParts();
@@ -122,14 +118,10 @@ public abstract class AbstractMessagePanel<T extends AbstractMessage> extends Co
             }
         });
         
-        this.copyButton = new JButton(new CopyIcon(16));
-        this.copyButton.setToolTipText("Copy Message Content");
-        this.copyButton.setMargin(new Insets(0, 4, 0, 4));
+        this.copyButton = agiConfig.createSquareButton(ActionIconKey.COPY, 16, "Copy Message Content");
         this.copyButton.addActionListener(e -> SwingUtils.copyToClipboard(message.asText(false)));
 
-        this.removeButton = new JButton(new DeleteIcon(16));
-        this.removeButton.setToolTipText("Remove Message");
-        this.removeButton.setMargin(new Insets(0, 4, 0, 4));
+        this.removeButton = agiConfig.createSquareButton(ActionIconKey.DELETE, 16, "Remove Message");
         this.removeButton.addActionListener(e -> message.remove());
 
         // Copy button on the left

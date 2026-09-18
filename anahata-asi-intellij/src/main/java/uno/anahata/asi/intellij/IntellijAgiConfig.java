@@ -1,7 +1,16 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.intellij;
 
+import com.intellij.icons.AllIcons;
+import com.intellij.ui.JBColor;
+import java.awt.Dimension;
+import java.awt.Insets;
 import java.net.URI;
+import javax.swing.AbstractButton;
+import javax.swing.Icon;
+import javax.swing.JButton;
+import javax.swing.JToggleButton;
+import lombok.NonNull;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.resource.handle.ResourceHandle;
 import uno.anahata.asi.intellij.resources.handle.IntellijHandle;
@@ -22,6 +31,7 @@ import uno.anahata.asi.intellij.tools.run.RunConfigurations;
 import uno.anahata.asi.intellij.tools.terminal.Terminals;
 import uno.anahata.asi.intellij.tools.vcs.Vcs;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
+import uno.anahata.asi.swing.icons.ActionIconKey;
 import uno.anahata.asi.swing.toolkit.DesktopJava;
 
 /**
@@ -95,6 +105,106 @@ public class IntellijAgiConfig extends SwingAgiConfig {
         }
         return super.createResourceHandle(uri);
     }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Maps semantic action keys to native, theme-adaptive IntelliJ {@link AllIcons}.
+     * Falls back to built-in Anahata vector icons for any keys without a platform equivalent.
+     * </p>
+     */
+    @Override
+    public Icon getActionIcon(@NonNull ActionIconKey key, int size) {
+        Icon icon = switch (key) {
+            case CANCEL -> AllIcons.Actions.Cancel;
+            case DELETE -> AllIcons.General.Delete;
+            case SAVE -> AllIcons.Actions.MenuSaveall;
+            case EDIT, EDIT_STAGED -> AllIcons.Actions.Edit;
+            case COPY -> AllIcons.Actions.Copy;
+            case SEND, RUN_AND_SEND -> AllIcons.Actions.Execute;
+            case STOP -> AllIcons.Actions.Suspend;
+            case ATTACH -> AllIcons.Actions.Attach;
+            case LINK -> AllIcons.Ide.Link;
+            case SCREENSHOT -> AllIcons.Actions.Dump;
+            case SEARCH -> AllIcons.Actions.Search;
+            case OPEN_SESSION -> AllIcons.General.OpenInToolWindow;
+            case REFRESH -> AllIcons.Actions.Refresh;
+            case CLEAR_HISTORY -> AllIcons.Actions.GC;
+            case NEW_SESSION -> AllIcons.General.Add;
+            case IMPORT -> AllIcons.ToolbarDecorator.Import;
+            case SETTINGS -> AllIcons.General.Settings;
+            case EXTERNAL -> AllIcons.Ide.External_link_arrow;
+            case OPEN_IN_IDE, NEXT -> AllIcons.Actions.Forward;
+            case PIN -> AllIcons.General.Pin_tab;
+            case LOCAL_TOOLS -> AllIcons.Nodes.Toolbox;
+            case SERVER_TOOLS -> AllIcons.Nodes.Plugin;
+            case AUTO_REPLY -> AllIcons.Actions.Rerun;
+            case TEST_CONNECTION -> AllIcons.Actions.Lightning;
+            default -> null;
+        };
+        return icon != null ? icon : super.getActionIcon(key, size);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Queries IntelliJ's {@link JBColor#isBright()} to determine whether a dark theme is active.
+     * </p>
+     */
+    @Override
+    public boolean isDark() {
+        return !JBColor.isBright();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Customizes toolbar buttons for IntelliJ: applies the {@code "toolBarButton"} FlatLaf client
+     * property and constrains icon-only buttons to square dimensions so IntelliJ's New UI does not
+     * render them overly wide.
+     * </p>
+     */
+    @Override
+    public JButton createSquareButton(@NonNull ActionIconKey key, int size, String tooltip) {
+        JButton button = super.createSquareButton(key, size, tooltip);
+        forceSquare(button, size);
+        return button;
+    }
+    
+    /**
+     * Creates and styles an action toggle button for the current host environment.
+     *
+     * @param key The semantic action icon key.
+     * @param size The nominal icon size.
+     * @param tooltip Optional tooltip text.
+     * @param selected Initial selection state.
+     * @return The configured JToggleButton.
+     */
+    @Override
+    public JToggleButton createSquareToggleButton(@NonNull ActionIconKey key, int size, String tooltip, boolean selected) {
+        JToggleButton button = super.createSquareToggleButton(key, size, tooltip, selected);
+        forceSquare(button, size);
+        return button;
+    }
+    
+    /**
+     * Forces a button to be square in intellij.
+     * 
+     * @param button the fricking button
+     * @param size the size
+     */
+    @Override
+    public void forceSquare(AbstractButton button, int size) {
+       button.putClientProperty("JButton.buttonType", "toolBarButton");
+       button.setMargin(new Insets(2, 2, 2, 2));
+       button.setFocusPainted(false);
+       int side = size + 10;
+       Dimension square = new Dimension(side, side);
+       button.setPreferredSize(square);
+       button.setMinimumSize(square);
+       button.setMaximumSize(square);
+   }
+   
 
     /**
      * Constructs a new IntelliJ AGI configuration.

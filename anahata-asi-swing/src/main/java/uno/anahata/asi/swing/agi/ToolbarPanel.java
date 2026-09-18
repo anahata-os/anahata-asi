@@ -109,7 +109,7 @@ public class ToolbarPanel extends JPanel {
         add(toggleAutoreplyButton);
 
         // 7. Screen Share Button (Middle)
-        screenShareButton = createIconButton(new ScreenShareIcon(ICON_SIZE, false), "Live Screen Sharing");
+        screenShareButton = createIconButton(new ScreenShareIcon(ICON_SIZE), "Configure or toggle live screen sharing.");
         screenShareButton.addActionListener(e -> {
             new SharedScreenEditorFrame(agiPanel).setVisible(true);
         });
@@ -238,15 +238,21 @@ public class ToolbarPanel extends JPanel {
         toggleAutoreplyButton.setToolTipText(config.isAutoReplyTools() ? 
                 "Auto reply tools enabled: click to disable" : "Auto reply tools disabled: click to enable");
 
-        boolean sharing = false;
+        int sharedCount = 0;
         Optional<Screens> screens = agi.getToolkit(Screens.class);
         if (screens.isPresent()) {
-            sharing = !screens.get().getSharedDeviceIndexes().isEmpty() || !screens.get().getSharedRegions().isEmpty();
+            sharedCount = screens.get().getSharedCount();
             screenShareButton.setEnabled(true);
+            if (sharedCount > 0) {
+                screenShareButton.setToolTipText("Live screen sharing active (" + sharedCount + " " + (sharedCount == 1 ? "source" : "sources") + "). Click to configure.");
+            } else {
+                screenShareButton.setToolTipText("Configure or toggle live screen sharing.");
+            }
         } else {
             screenShareButton.setEnabled(false);
+            screenShareButton.setToolTipText("Screen sharing unavailable (Screens toolkit not present).");
         }
-        screenShareButton.setIcon(new ScreenShareIcon(ICON_SIZE, sharing));
+        screenShareButton.setIcon(new ScreenShareIcon(ICON_SIZE, sharedCount));
     }
 
     /**

@@ -34,15 +34,7 @@ import uno.anahata.asi.agi.status.AgiStatus;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.AgiTransferHandler;
-import uno.anahata.asi.swing.icons.AttachIcon;
-import uno.anahata.asi.swing.icons.CancelIcon;
-import uno.anahata.asi.swing.icons.DeleteIcon;
-import uno.anahata.asi.swing.icons.FramesIcon;
-import uno.anahata.asi.swing.icons.RestartIcon;
-import uno.anahata.asi.swing.icons.RunAndSendIcon;
-import uno.anahata.asi.swing.icons.StopIcon;
-import uno.anahata.asi.swing.icons.ScreenshotIcon;
-import uno.anahata.asi.swing.icons.SendIcon;
+import uno.anahata.asi.swing.icons.ActionIconKey;
 import uno.anahata.asi.swing.internal.AnyChangeDocumentListener;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingTask;
@@ -255,12 +247,13 @@ public class InputPanel extends JPanel {
         JPanel stagedButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         stagedButtons.setOpaque(false);
         
-        revertStagedButton = new JButton("Edit", new RestartIcon(16));
-        revertStagedButton.setToolTipText("Move staged message back to input for editing");
+        SwingAgiConfig config = agiPanel.getAgiConfig();
+
+        revertStagedButton = config.createSquareButton(ActionIconKey.EDIT_STAGED, 16, "Move staged message back to input for editing");
+        revertStagedButton.setText("Edit");
         revertStagedButton.addActionListener(e -> revertStagedMessage());
         
-        deleteStagedButton = new JButton(new DeleteIcon(16));
-        deleteStagedButton.setToolTipText("Delete staged message");
+        deleteStagedButton = config.createSquareButton(ActionIconKey.DELETE, 16, "Delete staged message");
         deleteStagedButton.addActionListener(e -> deleteStagedMessage());
         
         stagedButtons.add(revertStagedButton);
@@ -285,20 +278,16 @@ public class InputPanel extends JPanel {
         microphonePanel = new MicrophonePanel(this);
         actionButtonPanel.add(microphonePanel);
 
-        attachButton = new JButton(new AttachIcon(16));
-        attachButton.setToolTipText("Add local file as registered Resource");
+        attachButton = config.createSquareButton(ActionIconKey.ATTACH, 16, "Add local file as registered Resource");
         attachButton.addActionListener(e -> registerFilesAsResources());
         
-        addUrlButton = new JButton(new LinkIcon(16));
-        addUrlButton.setToolTipText("Add URL Resource as registered Resource");
+        addUrlButton = config.createSquareButton(ActionIconKey.LINK, 16, "Add URL Resource as registered Resource");
         addUrlButton.addActionListener(e -> addUrl());
 
-        screenshotButton = new JButton(new ScreenshotIcon(16));
-        screenshotButton.setToolTipText("Attach Desktop Screenshot to your message");
+        screenshotButton = config.createSquareButton(ActionIconKey.SCREENSHOT, 16, "Attach Desktop Screenshot to your message");
         screenshotButton.addActionListener(e -> attachScreenshot());
 
-        captureFramesButton = new JButton(new FramesIcon(16));
-        captureFramesButton.setToolTipText("Attach Screenshot of this application to your message");
+        captureFramesButton = config.createSquareButton(ActionIconKey.CAPTURE_WINDOW, 16, "Attach Screenshot of this application to your message");
         captureFramesButton.addActionListener(e -> attachWindowCaptures());
 
         actionButtonPanel.add(attachButton);
@@ -315,14 +304,17 @@ public class InputPanel extends JPanel {
         JPanel eastButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         eastButtonPanel.setOpaque(false);
         
-        declineAndSendButton = new JButton("Decline Pending & Send", new CancelIcon(16));
+        declineAndSendButton = config.createSquareButton(ActionIconKey.CANCEL, 16, null);
+        declineAndSendButton.setText("Decline Pending & Send");
         declineAndSendButton.addActionListener(e -> declinePendingAndSend());
         declineAndSendButton.setVisible(false);
         
-        sendButton = new JButton("Send", new SendIcon(16));
+        sendButton = config.createSquareButton(ActionIconKey.SEND, 16, null);
+        sendButton.setText("Send");
         sendButton.addActionListener(e -> sendMessage());
         
-        stopButton = new JButton("Stop", new StopIcon(16));
+        stopButton = config.createSquareButton(ActionIconKey.STOP, 16, null);
+        stopButton.setText("Stop");
         stopButton.addActionListener(e -> agi.stop());
         stopButton.setVisible(false);
 
@@ -584,11 +576,11 @@ public class InputPanel extends JPanel {
         sendButton.setEnabled(canSend);
         if (status == AgiStatus.TOOL_PROMPT) {
             sendButton.setText("Run Pending & Send");
-            sendButton.setIcon(new RunAndSendIcon(16));
+            sendButton.setIcon(agiPanel.getAgiConfig().getActionIcon(ActionIconKey.RUN_AND_SEND, 16));
             declineAndSendButton.setVisible(true);
         } else {
             sendButton.setText("Send");
-            sendButton.setIcon(new SendIcon(16));
+            sendButton.setIcon(agiPanel.getAgiConfig().getActionIcon(ActionIconKey.SEND, 16));
             declineAndSendButton.setVisible(false);
         }
     }

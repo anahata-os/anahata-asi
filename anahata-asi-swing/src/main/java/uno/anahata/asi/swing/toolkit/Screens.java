@@ -76,6 +76,15 @@ public class Screens extends AnahataToolkit {
     private final List<SharedRegion> sharedRegions = new ArrayList<>();
 
     /**
+     * Gets the total number of items currently being shared (displays plus custom regions).
+     *
+     * @return The total count of shared displays and regions.
+     */
+    public int getSharedCount() {
+        return sharedDeviceIndexes.size() + sharedRegions.size();
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override

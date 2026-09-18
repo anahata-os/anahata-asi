@@ -23,9 +23,9 @@ import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.persistence.kryo.KryoUtils;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.agi.provider.AbstractModel;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.components.ExceptionDialog;
-import uno.anahata.asi.swing.icons.SaveIcon;
-import uno.anahata.asi.swing.icons.SearchIcon;
+import uno.anahata.asi.swing.icons.ActionIconKey;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingTask;
 import uno.anahata.asi.swing.provider.AiModelsPanel;
@@ -124,25 +124,23 @@ public class HeaderPanel extends JPanel {
         add(nicknameField, "w 150!");
 
         // Session Buttons
-        saveSessionButton = new JButton(new SaveIcon(ICON_SIZE));
-        saveSessionButton.setToolTipText(agi.isTemplate() ? "Save Template" : "Save Session");
+        SwingAgiConfig config = agiPanel.getAgiConfig();
+
+        saveSessionButton = config.createSquareButton(ActionIconKey.SAVE, ICON_SIZE, agi.isTemplate() ? "Save Template" : "Save Session");
         saveSessionButton.addActionListener(e -> saveSession());
         add(saveSessionButton);
 
         if (!agi.isTemplate()) {
-            JButton saveAsTemplateBtn = new JButton(new uno.anahata.asi.swing.icons.CopyIcon(ICON_SIZE));
-            saveAsTemplateBtn.setToolTipText("Save as Template...");
+            JButton saveAsTemplateBtn = config.createSquareButton(ActionIconKey.COPY, ICON_SIZE, "Save as Template...");
             saveAsTemplateBtn.addActionListener(e -> saveAsTemplate());
             add(saveAsTemplateBtn);
         }
 
-        cloneSessionButton = new JButton(new uno.anahata.asi.swing.icons.CloneIcon(ICON_SIZE));
-        cloneSessionButton.setToolTipText(agi.isTemplate() ? "Duplicate Template" : "Clone Session");
+        cloneSessionButton = config.createSquareButton(ActionIconKey.CLONE, ICON_SIZE, agi.isTemplate() ? "Duplicate Template" : "Clone Session");
         cloneSessionButton.addActionListener(e -> cloneSession());
         add(cloneSessionButton);
 
-        disposeSessionButton = new JButton(new uno.anahata.asi.swing.icons.DeleteIcon(ICON_SIZE));
-        disposeSessionButton.setToolTipText(agi.isTemplate() ? "Delete Template" : "Dispose Session");
+        disposeSessionButton = config.createSquareButton(ActionIconKey.DELETE, ICON_SIZE, agi.isTemplate() ? "Delete Template" : "Dispose Session");
         disposeSessionButton.addActionListener(e -> disposeSession());
         add(disposeSessionButton);
 
@@ -160,8 +158,7 @@ public class HeaderPanel extends JPanel {
         add(modelComboBox, "w 200!");
 
         // Search Button
-        searchModelsButton = new JButton(new SearchIcon(ICON_SIZE));
-        searchModelsButton.setToolTipText("Search and view all available models");
+        searchModelsButton = config.createSquareButton(ActionIconKey.SEARCH, ICON_SIZE, "Search and view all available models");
         add(searchModelsButton);
 
         // Populate providers and models first

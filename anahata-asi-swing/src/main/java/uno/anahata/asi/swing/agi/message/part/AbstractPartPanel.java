@@ -38,11 +38,9 @@ import uno.anahata.asi.agi.message.ThoughtSignature;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.SwingAgiConfig.UITheme;
-import uno.anahata.asi.swing.icons.CopyIcon;
-import uno.anahata.asi.swing.icons.DeleteIcon;
+import uno.anahata.asi.swing.icons.ActionIconKey;
 import uno.anahata.asi.swing.icons.LeafIcon;
 import uno.anahata.asi.swing.icons.LeafIcon.LeafState;
-import uno.anahata.asi.swing.icons.PinnedIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
@@ -118,27 +116,21 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends Collapsi
         setTitleFont(new Font("SansSerif", Font.PLAIN, 11));
 
         // 2. Initialize Header Buttons and Labels
-        this.pinButton = new JToggleButton(new PinnedIcon(14));
-        this.pinButton.setToolTipText("Pin Part (Keep in context indefinitely)");
-        this.pinButton.setMargin(new Insets(0, 2, 0, 2));
+        this.pinButton = agiConfig.createSquareToggleButton(ActionIconKey.PIN, 14, "Pin Part (Keep in context indefinitely)", false);
         this.pinButton.addActionListener(e -> {
             part.setPruningState(pinButton.isSelected() ? PruningState.PINNED : PruningState.AUTO);
         });
 
         this.pruneButton = new JToggleButton();
-        this.pruneButton.setMargin(new Insets(0, 2, 0, 2));
+        agiConfig.forceSquare(this.pruneButton, 14);
         this.pruneButton.addActionListener(e -> {
             part.setPruningState(pruneButton.isSelected() ? PruningState.PRUNED : PruningState.AUTO);
         });
 
-        this.copyButton = new JButton(new CopyIcon(14));
-        this.copyButton.setToolTipText("Copy Part Content");
-        this.copyButton.setMargin(new Insets(0, 2, 0, 2));
+        this.copyButton = agiConfig.createSquareButton(ActionIconKey.COPY, 14, "Copy Part Content");
         this.copyButton.addActionListener(e -> copyToClipboard());
 
-        this.removeButton = new JButton(new DeleteIcon(14));
-        this.removeButton.setToolTipText("Remove Part");
-        this.removeButton.setMargin(new Insets(0, 2, 0, 2));
+        this.removeButton = agiConfig.createSquareButton(ActionIconKey.DELETE, 14, "Remove Part");
         this.removeButton.addActionListener(e -> part.remove());
         
         this.remainingDepthLabel = new JLabel();

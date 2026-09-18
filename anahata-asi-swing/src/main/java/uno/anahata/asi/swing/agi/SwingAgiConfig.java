@@ -5,8 +5,14 @@ package uno.anahata.asi.swing.agi;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Insets;
+import javax.swing.AbstractButton;
+import javax.swing.Icon;
+import javax.swing.JButton;
+import javax.swing.JToggleButton;
 import javax.swing.UIManager;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.AgiConfig;
@@ -14,7 +20,40 @@ import uno.anahata.asi.agi.message.Role;
 import uno.anahata.asi.agi.tool.ToolExecutionStatus;
 import uno.anahata.asi.agi.tool.ToolPermission;
 import uno.anahata.asi.agi.status.AgiStatus;
+import uno.anahata.asi.swing.icons.ActionIconKey;
+import uno.anahata.asi.swing.icons.AddIcon;
+import uno.anahata.asi.swing.icons.AttachIcon;
+import uno.anahata.asi.swing.icons.AutoReplyIcon;
+import uno.anahata.asi.swing.icons.CancelIcon;
+import uno.anahata.asi.swing.icons.CardsIcon;
+import uno.anahata.asi.swing.icons.CloneIcon;
+import uno.anahata.asi.swing.icons.CompressIcon;
+import uno.anahata.asi.swing.icons.CopyIcon;
+import uno.anahata.asi.swing.icons.DeleteIcon;
+import uno.anahata.asi.swing.icons.EditIcon;
+import uno.anahata.asi.swing.icons.ExternalIcon;
+import uno.anahata.asi.swing.icons.FramesIcon;
 import uno.anahata.asi.swing.icons.IconProvider;
+import uno.anahata.asi.swing.icons.IconUtils;
+import uno.anahata.asi.swing.icons.LinkIcon;
+import uno.anahata.asi.swing.icons.LoadSessionIcon;
+import uno.anahata.asi.swing.icons.NewIcon;
+import uno.anahata.asi.swing.icons.NextIcon;
+import uno.anahata.asi.swing.icons.OkIcon;
+import uno.anahata.asi.swing.icons.PinnedIcon;
+import uno.anahata.asi.swing.icons.PrevIcon;
+import uno.anahata.asi.swing.icons.PulseIcon;
+import uno.anahata.asi.swing.icons.RestartIcon;
+import uno.anahata.asi.swing.icons.RunAndSendIcon;
+import uno.anahata.asi.swing.icons.SaveIcon;
+import uno.anahata.asi.swing.icons.ScreenShareIcon;
+import uno.anahata.asi.swing.icons.ScreenshotIcon;
+import uno.anahata.asi.swing.icons.SearchIcon;
+import uno.anahata.asi.swing.icons.SendIcon;
+import uno.anahata.asi.swing.icons.ServerToolsIcon;
+import uno.anahata.asi.swing.icons.SettingsIcon;
+import uno.anahata.asi.swing.icons.StopIcon;
+import uno.anahata.asi.swing.icons.TableIcon;
 import uno.anahata.asi.swing.toolkit.Screens;
 import uno.anahata.asi.swing.toolkit.DesktopJava;
 import uno.anahata.asi.toolkit.java.Java;
@@ -248,14 +287,94 @@ public class SwingAgiConfig extends AgiConfig {
     }
 
     /**
-     * Configures styling for toolbar action buttons (padding, focusable, borders).
-     * Can be overridden by host-specific configurations (e.g. IntellijAgiConfig).
+     * Resolves the icon for a semantic action key at the specified nominal size.
+     * <p>
+     * By default, returns the built-in Anahata vector icons. Host-specific configurations
+     * (such as {@code IntellijAgiConfig}) override this to return native platform icons
+     * (such as IntelliJ's theme-adaptive {@code AllIcons}).
+     * </p>
      *
-     * @param button The toolbar button to configure.
+     * @param key The semantic action key.
+     * @param size The nominal icon dimension in pixels.
+     * @return The resolved icon for the action.
      */
-    public void configureToolbarButton(javax.swing.AbstractButton button) {
-        //button.setFocusable(false);
-        //you need to explain why for this
+    public Icon getActionIcon(@NonNull ActionIconKey key, int size) {
+        return switch (key) {
+            case CANCEL -> new CancelIcon(size);
+            case DELETE -> new DeleteIcon(size);
+            case SAVE -> new SaveIcon(size);
+            case EDIT -> new EditIcon(size);
+            case EDIT_STAGED, REFRESH, CLEAR_HISTORY -> new RestartIcon(size);
+            case COPY -> new CopyIcon(size);
+            case SEND -> new SendIcon(size);
+            case RUN_AND_SEND -> new RunAndSendIcon(size);
+            case STOP -> new StopIcon(size);
+            case ATTACH -> new AttachIcon(size);
+            case LINK -> new LinkIcon(size);
+            case SCREENSHOT -> new ScreenshotIcon(size);
+            case SEARCH, OPEN_SESSION -> new SearchIcon(size);
+            case NEW_SESSION -> new NewIcon(size);
+            case IMPORT -> new LoadSessionIcon(size);
+            case SETTINGS -> new SettingsIcon(size);
+            case EXTERNAL -> new ExternalIcon(size);
+            case OPEN_IN_IDE, NEXT -> new NextIcon(size);
+            case PIN -> new PinnedIcon(size);
+            case LOCAL_TOOLS -> IconUtils.getIcon("java.png", size);
+            case SERVER_TOOLS -> new ServerToolsIcon(size);
+            case AUTO_REPLY -> new AutoReplyIcon(size);
+            case TEST_CONNECTION -> new PulseIcon(size);
+            case CLONE -> new CloneIcon(size);
+            case CAPTURE_WINDOW -> new FramesIcon(size);
+            case SCREEN_SHARE -> new ScreenShareIcon(size);
+            case ADD -> new AddIcon(size);
+            case OK -> new OkIcon(size);
+            case PREV -> new PrevIcon(size);
+            case CARDS_VIEW -> new CardsIcon(size);
+            case TABLE_VIEW -> new TableIcon(size);
+            case COMPRESS -> new CompressIcon(size);
+        };
+    }
+
+    /**
+     * Creates and styles an action button for the current host environment.
+     *
+     * @param key The semantic action icon key.
+     * @param size The nominal icon size.
+     * @param tooltip Optional tooltip text.
+     * @return The configured JButton.
+     */
+    public JButton createSquareButton(@NonNull ActionIconKey key, int size, String tooltip) {
+        JButton button = new JButton(getActionIcon(key, size));
+        if (tooltip != null && !tooltip.isBlank()) {
+            button.setToolTipText(tooltip);
+        }
+        return button;
+    }
+
+    /**
+     * Creates and styles an action toggle button for the current host environment.
+     *
+     * @param key The semantic action icon key.
+     * @param size The nominal icon size.
+     * @param tooltip Optional tooltip text.
+     * @param selected Initial selection state.
+     * @return The configured JToggleButton.
+     */
+    public JToggleButton createSquareToggleButton(@NonNull ActionIconKey key, int size, String tooltip, boolean selected) {
+        JToggleButton button = new JToggleButton(getActionIcon(key, size), selected);
+        if (tooltip != null && !tooltip.isBlank()) {
+            button.setToolTipText(tooltip);
+        }
+        return button;
+    }
+    
+    /**
+     * Does nothing because in normal swing buttons are already square
+     * @param button
+     * @param size 
+     */
+    public void forceSquare(AbstractButton button, int size) {
+        
     }
 
     /**
