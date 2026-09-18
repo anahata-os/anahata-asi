@@ -3,6 +3,7 @@ package uno.anahata.asi.intellij.ui.resources;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.application.WriteIntentReadAction;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
@@ -230,14 +231,16 @@ public class IntellijTextResourceViewer extends AbstractTextResourceViewer {
         }
 
         boolean isViewer = !isEditing();
-        if (vf != null) {
-            editor = EditorFactory.getInstance().createEditor(document, project, vf, isViewer);
-        } else {
-            editor = EditorFactory.getInstance().createEditor(document, project, fileType, isViewer);
-        }
+        final VirtualFile targetVf = vf;
+        editor = WriteIntentReadAction.compute(() -> {
+            if (targetVf != null) {
+                return EditorFactory.getInstance().createEditor(document, project, targetVf, isViewer);
+            } else {
+                return EditorFactory.getInstance().createEditor(document, project, fileType, isViewer);
+            }
+        });
 
         if (editor instanceof EditorEx editorEx) {
-            final VirtualFile targetVf = vf;
             EditorHighlighter highlighter = ReadAction.compute(() -> {
                 if (targetVf != null) {
                     return EditorHighlighterFactory.getInstance().createEditorHighlighter(project, targetVf);
