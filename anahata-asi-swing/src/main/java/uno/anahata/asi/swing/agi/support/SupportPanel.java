@@ -101,19 +101,19 @@ public class SupportPanel extends ScrollablePanel {
 
         // Games Row
         cards.add(createCard("Agi Kart", () -> AgiKart.main(null),
-                "Experience the speed of the first retro pseudo-3D Mode 7 speedway! Força Barça!", new AgiKartIcon(16)));
+                "Experience the speed of the first retro pseudo-3D Mode 7 speedway! Força Barça!", new AgiKartIcon(24)));
 
         cards.add(createCard("Play Arkanoid", () -> Arkanoid.main(null),
-                "Take a break with the classic brick breaker.", new ArkanoidIcon(16)));
+                "Take a break with the classic brick breaker.", new ArkanoidIcon(24)));
 
         cards.add(createCard("Mapacho Snake", () -> Snake.main(null),
-                "Hunt for cigars in the digital jungle. Força Barça!", new SnakeIcon(16)));
+                "Hunt for cigars in the digital jungle. Força Barça!", new SnakeIcon(24)));
 
         cards.add(createCard("Atoms Tetris", () -> Tetris.main(null),
-                "Find the perfect place for every atom.", new TetrisIcon(16)));
+                "Find the perfect place for every atom.", new TetrisIcon(24)));
 
         cards.add(createCard("Bug Defense", () -> BugDefense.main(null),
-                "Defend the digital continent from logic bugs.", new BugDefenseIcon(16)));
+                "Defend the digital continent from logic bugs.", new BugDefenseIcon(24)));
 
         // Shuffle cards for a dynamic experience
         Collections.shuffle(cards);
@@ -144,11 +144,14 @@ public class SupportPanel extends ScrollablePanel {
     private JPanel createCard(String title, Runnable action, String description, Icon icon) {
         JPanel card = new JPanel(new BorderLayout(5, 2));
         card.setOpaque(false);
-        card.setPreferredSize(new Dimension(200, 80));
+        card.setPreferredSize(new Dimension(240, 96));
 
         JButton btn = new JButton(title, icon);
-        btn.setPreferredSize(new Dimension(180, 35));
+        btn.setPreferredSize(new Dimension(220, 44));
         btn.setHorizontalAlignment(SwingConstants.LEFT);
+        // Keep the icon off the left edge and give it room from the label.
+        btn.setMargin(new java.awt.Insets(4, 12, 4, 12));
+        btn.setIconTextGap(10);
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.addActionListener(e -> action.run());
 
@@ -178,7 +181,7 @@ public class SupportPanel extends ScrollablePanel {
      * @return The card panel.
      */
     private JPanel createCard(String title, Runnable action, String description, String iconName) {
-        return createCard(title, action, description, IconUtils.getIcon(iconName, 16, 16));
+        return createCard(title, action, description, IconUtils.getIcon(iconName, 24, 24));
     }
 
     /**
