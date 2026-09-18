@@ -26,6 +26,7 @@ import uno.anahata.asi.agi.context.GarbageCollectorRecord;
 import uno.anahata.asi.internal.TimeUtils;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.icons.DeleteIcon;
+import uno.anahata.asi.swing.icons.AsiIcons;
 import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingTask;
@@ -230,7 +231,7 @@ public class CwGcPanel extends JPanel {
         totalPromptLoadLabel.setFont(valueFont.deriveFont(18f));
         metricsPanel.add(totalPromptLoadLabel, "wrap");
 
-        refreshBtn = new JButton("Refresh Now", new RestartIcon(16));
+        refreshBtn = new JButton("Refresh Now", AsiIcons.get(AsiIcons.Key.REFRESH, 16));
         refreshBtn.addActionListener(e -> refresh());
         metricsPanel.add(refreshBtn, "span 2, gaptop 5");
 
@@ -246,7 +247,7 @@ public class CwGcPanel extends JPanel {
         JPanel logPanel = new JPanel(new BorderLayout());
         logPanel.setBorder(BorderFactory.createTitledBorder("Garbage Collector Logs (Permanently removed messages)"));
 
-        JButton clearBtn = new JButton("Clear GC Logs", new DeleteIcon(16));
+        JButton clearBtn = new JButton("Clear GC Logs", AsiIcons.get(AsiIcons.Key.DELETE, 16));
         clearBtn.addActionListener(e -> {
             agi.getContextManager().getGarbageCollector().clearLog();
             refreshLogTable();

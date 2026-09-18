@@ -51,6 +51,7 @@ import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
 import uno.anahata.asi.swing.agi.resources.ResourcesNode;
 import uno.anahata.asi.swing.components.ScrollablePanel;
 import uno.anahata.asi.swing.icons.DeleteIcon;
+import uno.anahata.asi.swing.icons.AsiIcons;
 import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.agi.tool.ToolManager;
@@ -348,7 +349,7 @@ public class ContextPanel extends JPanel {
         JToolBar toolBar = new JToolBar();
         toolBar.setFloatable(false);
 
-        JButton refreshButton = new JButton("Refresh Tokens", new RestartIcon(16));
+        JButton refreshButton = new JButton("Refresh Tokens", AsiIcons.get(AsiIcons.Key.REFRESH, 16));
         refreshButton.setToolTipText("Recalculate token counts for all context items (Snapshot)");
         refreshButton.addActionListener(e -> {
             agi.getResourceManager().resetTokenCounts();
@@ -494,7 +495,7 @@ public class ContextPanel extends JPanel {
             }
         });
 
-        JMenuItem removeItem = new JMenuItem("Remove from Context", new DeleteIcon(16));
+        JMenuItem removeItem = new JMenuItem("Remove from Context", AsiIcons.get(AsiIcons.Key.DELETE, 16));
         removeItem.addActionListener(e -> {
             for (int row : treeTable.getSelectedRows()) {
                 Object node = treeTable.getPathForRow(row).getLastPathComponent();

@@ -27,6 +27,7 @@ import uno.anahata.asi.swing.agi.resources.ResourceUI;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
 import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
 import uno.anahata.asi.swing.icons.CancelIcon;
+import uno.anahata.asi.swing.icons.AsiIcons;
 import uno.anahata.asi.swing.icons.CopyIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.EditIcon;
@@ -131,7 +132,7 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
             }
         });
 
-        JButton copyBtn = new JButton(new CopyIcon(14));
+        JButton copyBtn = new JButton(AsiIcons.get(AsiIcons.Key.COPY, 14));
         copyBtn.putClientProperty("JButton.buttonType", "toolBarButton");
         copyBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         copyBtn.setToolTipText("Copy to clipboard");
@@ -144,7 +145,7 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
         centerPanel.setOpaque(false);
         centerPanel.add(nameLabel);
 
-        openBtn = new JButton(new ExternalIcon(14));
+        openBtn = uno.anahata.asi.swing.internal.SwingUtils.compactIconButton(new JButton(AsiIcons.get(AsiIcons.Key.EXTERNAL, 14)));
         openBtn.putClientProperty("JButton.buttonType", "toolBarButton");
         openBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         openBtn.setToolTipText("Open");
@@ -152,7 +153,7 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
         openBtn.addActionListener(e -> onOpen());
         centerPanel.add(openBtn);
 
-        JButton editBtn = new JButton(new EditIcon(14));
+        JButton editBtn = uno.anahata.asi.swing.internal.SwingUtils.compactIconButton(new JButton(AsiIcons.get(AsiIcons.Key.EDIT, 14)));
         editBtn.putClientProperty("JButton.buttonType", "toolBarButton");
         editBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         editBtn.setMargin(new Insets(1, 4, 1, 4));
@@ -162,7 +163,7 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
 
         pillPanel.add(centerPanel, BorderLayout.CENTER);
 
-        JButton deleteBtn = new JButton(new DeleteIcon(14));
+        JButton deleteBtn = uno.anahata.asi.swing.internal.SwingUtils.compactIconButton(new JButton(AsiIcons.get(AsiIcons.Key.DELETE, 14)));
         deleteBtn.putClientProperty("JButton.buttonType", "toolBarButton");
         deleteBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         deleteBtn.setToolTipText("Remove");
@@ -321,7 +322,7 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
         JPanel headerActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
         headerActions.setOpaque(false);
 
-        JButton cancelBtn = new JButton("Cancel", new CancelIcon(14));
+        JButton cancelBtn = new JButton("Cancel", AsiIcons.get(AsiIcons.Key.CANCEL, 14));
         cancelBtn.putClientProperty("JButton.buttonType", "toolBarButton");
         cancelBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         cancelBtn.setFont(cancelBtn.getFont().deriveFont(11f));
@@ -329,7 +330,7 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
         cancelBtn.addActionListener(e -> setEditing(false));
         headerActions.add(cancelBtn);
 
-        JButton saveBtn = new JButton("Save", new SaveIcon(14));
+        JButton saveBtn = new JButton("Save", AsiIcons.get(AsiIcons.Key.SAVE, 14));
         saveBtn.putClientProperty("JButton.buttonType", "toolBarButton");
         saveBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         saveBtn.setFont(saveBtn.getFont().deriveFont(Font.BOLD, 11f));

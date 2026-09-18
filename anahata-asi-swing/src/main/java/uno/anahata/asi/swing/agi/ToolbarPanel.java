@@ -4,8 +4,10 @@
 package uno.anahata.asi.swing.agi;
 
 import java.awt.Dimension;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import javax.swing.BorderFactory;
+import java.awt.FlowLayout;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -19,6 +21,7 @@ import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import java.util.Optional;
 import javax.swing.Icon;
 import uno.anahata.asi.swing.icons.AutoReplyIcon;
+import uno.anahata.asi.swing.icons.AsiIcons;
 import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.icons.ScreenShareIcon;
 import uno.anahata.asi.swing.toolkit.Screens;
@@ -37,7 +40,7 @@ import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 @Getter
 public class ToolbarPanel extends JPanel {
     /** The size of the icons in the toolbar. */
-    private static final int ICON_SIZE = 24;
+    private static final int ICON_SIZE = 16;
 
     /** The parent agi panel. */
     private final AgiPanel agiPanel; 
@@ -69,8 +72,9 @@ public class ToolbarPanel extends JPanel {
         this.agi = agiPanel.getAgi();
         this.config = agiPanel.getAgiConfig();
         
-        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        // Horizontal session toolbar (rendered as a compact row at the top of the chat panel).
+        setLayout(new FlowLayout(FlowLayout.LEFT, 2, 2));
+        setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
     }
 
     /**
@@ -78,15 +82,10 @@ public class ToolbarPanel extends JPanel {
      */
     public void initComponents() {
         // 1. Clear Agi Button (Top)
-        clearAgiButton = createIconButton(new RestartIcon(ICON_SIZE), "Clear the entire agi history.");
+        clearAgiButton = createIconButton(AsiIcons.get(AsiIcons.Key.CLEAR_HISTORY, ICON_SIZE), "Clear the entire agi history.");
         clearAgiButton.addActionListener(this::clearAgi);
         add(clearAgiButton);
 
-
-
-        // Vertical Glue to push toggles to the middle
-        add(Box.createVerticalGlue());
-        
         // 3. Toggle Pruned Button (Middle)
         togglePrunedButton = createIconToggleButton(new LeafIcon(ICON_SIZE, LeafState.ACTIVE), "", config.isShowPruned());
         togglePrunedButton.addActionListener(this::togglePruned);
@@ -99,12 +98,12 @@ public class ToolbarPanel extends JPanel {
         add(toggleLocalToolsButton);
 
         // 5. Toggle Server Tools Button (Middle)
-        toggleHostedToolsButton = createIconToggleButton(new ServerToolsIcon(ICON_SIZE), "", config.isHostedToolsEnabled());
+        toggleHostedToolsButton = createIconToggleButton(AsiIcons.get(AsiIcons.Key.SERVER_TOOLS, ICON_SIZE), "", config.isHostedToolsEnabled());
         toggleHostedToolsButton.addActionListener(this::toggleHostedTools);
         add(toggleHostedToolsButton);
         
         // 6. Toggle Autoreply Button (Middle)
-        toggleAutoreplyButton = createIconToggleButton(new AutoReplyIcon(ICON_SIZE), "", config.isAutoReplyTools());
+        toggleAutoreplyButton = createIconToggleButton(AsiIcons.get(AsiIcons.Key.AUTO_REPLY, ICON_SIZE), "", config.isAutoReplyTools());
         toggleAutoreplyButton.addActionListener(this::toggleAutoreply);
         add(toggleAutoreplyButton);
 
@@ -114,9 +113,6 @@ public class ToolbarPanel extends JPanel {
             new SharedScreenEditorFrame(agiPanel).setVisible(true);
         });
         add(screenShareButton);
-        
-        // Vertical Glue to keep the toggles in the middle
-        add(Box.createVerticalGlue());
 
         // Declarative, thread-safe binding to tool enablement changes.
         // We only listen to serverToolsEnabled as it is fired by both setters in AgiConfig.
@@ -152,7 +148,10 @@ public class ToolbarPanel extends JPanel {
         JButton button = new JButton(icon);
         button.setToolTipText(tooltip);
         button.setAlignmentX(CENTER_ALIGNMENT);
-        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, button.getPreferredSize().height));
+        // Compact, borderless square icon-button chrome (honoured by FlatLaf-based LaFs such as
+        // IntelliJ's and the standalone Desktop; ignored elsewhere). This also constrains the width
+        // so the button does not stretch across the vertical toolbar.
+        uno.anahata.asi.swing.internal.SwingUtils.compactIconButton(button);
         return button;
     }
 
@@ -168,7 +167,7 @@ public class ToolbarPanel extends JPanel {
         JToggleButton button = new JToggleButton(icon, selected);
         button.setToolTipText(tooltip);
         button.setAlignmentX(CENTER_ALIGNMENT);
-        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, button.getPreferredSize().height));
+        uno.anahata.asi.swing.internal.SwingUtils.compactIconButton(button);
         return button;
     }
 

@@ -28,6 +28,7 @@ import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import java.awt.Cursor;
 import uno.anahata.asi.swing.icons.CancelIcon;
+import uno.anahata.asi.swing.icons.AsiIcons;
 import uno.anahata.asi.swing.icons.CopyIcon;
 import uno.anahata.asi.swing.icons.EditIcon;
 import uno.anahata.asi.swing.icons.RestartIcon;
@@ -183,21 +184,21 @@ public abstract class AbstractTextResourceViewer extends JPanel {
         actionNexus = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         actionNexus.setOpaque(false);
 
-        copyBtn = new JButton(new CopyIcon(16));
+        copyBtn = uno.anahata.asi.swing.internal.SwingUtils.compactIconButton(new JButton(AsiIcons.get(AsiIcons.Key.COPY, 16)));
         copyBtn.putClientProperty("JButton.buttonType", "toolBarButton");
         copyBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         copyBtn.setToolTipText("Copy content to clipboard");
         copyBtn.addActionListener(e -> SwingUtils.copyToClipboard(getEditorContent()));
         actionNexus.add(copyBtn);
 
-        cancelBtn = new JButton("Cancel", new CancelIcon(16));
+        cancelBtn = new JButton("Cancel", AsiIcons.get(AsiIcons.Key.CANCEL, 16));
         cancelBtn.putClientProperty("JButton.buttonType", "toolBarButton");
         cancelBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         cancelBtn.addActionListener(e -> setEditing(false));
         cancelBtn.setVisible(false);
         actionNexus.add(cancelBtn);
 
-        editBtn = new JButton("Edit", new EditIcon(16));
+        editBtn = new JButton("Edit", AsiIcons.get(AsiIcons.Key.EDIT, 16));
         editBtn.putClientProperty("JButton.buttonType", "toolBarButton");
         editBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         editBtn.addActionListener(e -> toggleEditMode());
@@ -265,14 +266,14 @@ public abstract class AbstractTextResourceViewer extends JPanel {
         this.editing = editing;
         if (editing) {
             editBtn.setText("Save");
-            editBtn.setIcon(new SaveIcon(16));
+            editBtn.setIcon(AsiIcons.get(AsiIcons.Key.SAVE, 16));
             cancelBtn.setVisible(true);
             cardLayout.show(cardPanel, "editor");
             setComponentEditable(true);
             onEditorActivated();
         } else {
             editBtn.setText("Edit");
-            editBtn.setIcon(new EditIcon(16));
+            editBtn.setIcon(AsiIcons.get(AsiIcons.Key.EDIT, 16));
             cancelBtn.setVisible(false);
             
             if (previewAsEditor) {

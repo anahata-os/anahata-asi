@@ -98,7 +98,6 @@ public class StatusPanel extends JPanel {
     /** Hyperlink to view the raw JSON response. */
     private CodeHyperlink rawJsonResponseLink; 
     /** Toggle button for sound notifications. */
-    private JToggleButton soundToggle;
     /** Panel for managing audio playback feedback. */
     private final AudioPlaybackPanel audioPlaybackPanel; 
     /** Label for displaying prompt blocking reasons. */
@@ -174,12 +173,7 @@ public class StatusPanel extends JPanel {
         agiStatusPanel.setOpaque(false);
         statusIndicator = new StatusIndicator();
         statusLabel = new JLabel("Initializing...");
-        soundToggle = new JToggleButton(IconUtils.getIcon("bell.png"));
-        soundToggle.setSelectedIcon(IconUtils.getIcon("bell_mute.png"));
-        soundToggle.setToolTipText("Toggle Sound Notifications");
-        soundToggle.setSelected(!agiConfig.isAudioFeedbackEnabled());
-        soundToggle.addActionListener(e -> agiConfig.setAudioFeedbackEnabled(!soundToggle.isSelected()));
-        agiStatusPanel.add(soundToggle);
+        // The sound-notification toggle now lives in the input action row (next to Send).
         agiStatusPanel.add(statusIndicator);
         agiStatusPanel.add(statusLabel);
         

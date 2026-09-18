@@ -14,6 +14,7 @@ import lombok.NonNull;
 import uno.anahata.asi.agi.message.web.WebSearchCallPart;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.icons.SearchIcon;
+import uno.anahata.asi.swing.icons.AsiIcons;
 
 /**
  * A specialized panel for rendering {@link WebSearchCallPart} instances.
@@ -60,7 +61,7 @@ public class ModelSearchCallPartPanel extends AbstractPartPanel<WebSearchCallPar
         JLabel label = new JLabel("SEARCHING WEB: " + queries);
         label.setFont(new Font("SansSerif", Font.BOLD, 11));
         label.setForeground(new Color(110, 156, 190)); // Search blue
-        label.setIcon(new SearchIcon(14));
+        label.setIcon(AsiIcons.get(AsiIcons.Key.SEARCH, 14));
         label.setIconTextGap(8);
         
         searchHeader.add(label, BorderLayout.WEST);

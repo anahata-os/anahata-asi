@@ -138,9 +138,14 @@ public class AgiPanel extends ScrollablePanel {
         mainSplitPane.setDividerLocation(0.7); // Initial balance
         mainSplitPane.setOneTouchExpandable(true);
 
-        // Add components to the main panel
-        add(headerPanel, BorderLayout.NORTH);
-        add(toolbarPanel, BorderLayout.WEST);
+        // Add components to the main panel. The session toolbar is stacked as a horizontal row
+        // directly under the header (rather than a vertical strip on the left), so the chat and
+        // message area get the full panel width.
+        JPanel northContainer = new JPanel(new BorderLayout());
+        northContainer.setOpaque(false);
+        northContainer.add(headerPanel, BorderLayout.NORTH);
+        northContainer.add(toolbarPanel, BorderLayout.SOUTH);
+        add(northContainer, BorderLayout.NORTH);
         add(mainSplitPane, BorderLayout.CENTER);
     }
     

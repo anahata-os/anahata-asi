@@ -33,6 +33,7 @@ import uno.anahata.asi.internal.TikaUtils;
 import uno.anahata.asi.swing.internal.SwingUtils;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
 import uno.anahata.asi.swing.icons.CopyIcon;
+import uno.anahata.asi.swing.icons.AsiIcons;
 import uno.anahata.asi.swing.icons.ExternalIcon;
 import uno.anahata.asi.swing.icons.NextIcon;
 import uno.anahata.asi.swing.icons.SaveIcon;
@@ -58,16 +59,16 @@ public class MediaToolbar extends JPanel {
     private final JLabel badgeLabel = new JLabel();
 
     /** Button for copying media to the system clipboard. */
-    private final JButton copyButton = new JButton(new CopyIcon(14));
+    private final JButton copyButton = uno.anahata.asi.swing.internal.SwingUtils.compactIconButton(new JButton(AsiIcons.get(AsiIcons.Key.COPY, 14)));
 
     /** Button for saving the media to disk. */
-    private final JButton saveButton = new JButton(new SaveIcon(14));
+    private final JButton saveButton = uno.anahata.asi.swing.internal.SwingUtils.compactIconButton(new JButton(AsiIcons.get(AsiIcons.Key.SAVE, 14)));
 
     /** Button for opening the media in an external application. */
-    private final JButton externalButton = new JButton(new ExternalIcon(14));
+    private final JButton externalButton = uno.anahata.asi.swing.internal.SwingUtils.compactIconButton(new JButton(AsiIcons.get(AsiIcons.Key.EXTERNAL, 14)));
 
     /** Button for opening the media inside the host IDE. */
-    private final JButton ideButton = new JButton(new NextIcon(14));
+    private final JButton ideButton = uno.anahata.asi.swing.internal.SwingUtils.compactIconButton(new JButton(AsiIcons.get(AsiIcons.Key.OPEN_IN_IDE, 14)));
 
     /** The raw binary data. */
     @Getter @Setter

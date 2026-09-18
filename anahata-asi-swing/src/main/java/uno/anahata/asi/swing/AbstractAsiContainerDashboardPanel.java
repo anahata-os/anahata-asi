@@ -25,6 +25,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.swing.icons.DeleteIcon;
+import uno.anahata.asi.swing.icons.AsiIcons;
 import uno.anahata.asi.swing.icons.CancelIcon;
 import uno.anahata.asi.swing.icons.LoadSessionIcon;
 
@@ -75,7 +76,7 @@ public abstract class AbstractAsiContainerDashboardPanel extends JPanel {
         this.toolBar = new JToolBar();
         toolBar.setFloatable(false);
 
-        JButton newButton = new JButton("New AGI", new RestartIcon(16));
+        JButton newButton = new JButton("New AGI", AsiIcons.get(AsiIcons.Key.NEW_SESSION, 16));
         newButton.setToolTipText("Create a new default AGI");
         newButton.addActionListener(e -> createNew());
         toolBar.add(newButton);
@@ -85,12 +86,12 @@ public abstract class AbstractAsiContainerDashboardPanel extends JPanel {
         templateMenuButton.addActionListener(e -> showNewAgiMenu(templateMenuButton));
         toolBar.add(templateMenuButton);
 
-        JButton importButton = new JButton("Import", new LoadSessionIcon(16));
+        JButton importButton = new JButton("Import", AsiIcons.get(AsiIcons.Key.IMPORT, 16));
         importButton.setToolTipText("Import a previously saved AI session");
         importButton.addActionListener(e -> importSession());
         toolBar.add(importButton);
 
-        this.settingsBtn = new JButton("Settings", new SettingsIcon(16));
+        this.settingsBtn = new JButton("Settings", AsiIcons.get(AsiIcons.Key.SETTINGS, 16));
         settingsBtn.setToolTipText("Configure global ASI settings and API keys");
         settingsBtn.addActionListener(e -> {
             showPreferences(!asiContainer.getNotifications().isEmpty() ? 2 : 0);
@@ -107,7 +108,7 @@ public abstract class AbstractAsiContainerDashboardPanel extends JPanel {
 
         toolBar.add(Box.createHorizontalGlue());
 
-        closeButton = new JButton("Close", new CancelIcon(16));
+        closeButton = new JButton("Close", AsiIcons.get(AsiIcons.Key.CANCEL, 16));
         closeButton.setToolTipText("Close the selected AI session window");
         closeButton.addActionListener(e -> {
             Agi agi = getSelectedAgi();
@@ -116,7 +117,7 @@ public abstract class AbstractAsiContainerDashboardPanel extends JPanel {
         closeButton.setEnabled(false);
         toolBar.add(closeButton);
         
-        disposeButton = new JButton("Dispose", new DeleteIcon(16));
+        disposeButton = new JButton("Dispose", AsiIcons.get(AsiIcons.Key.DELETE, 16));
         disposeButton.setToolTipText("Permanently delete the selected AI session");
         disposeButton.addActionListener(e -> {
             Agi agi = getSelectedAgi();
@@ -191,7 +192,7 @@ public abstract class AbstractAsiContainerDashboardPanel extends JPanel {
     private void showNewAgiMenu(JButton button) {
         JPopupMenu menu = new JPopupMenu();
 
-        JMenuItem rawItem = new JMenuItem("new Agi() (via new AgiConfig(), no template)", new RestartIcon(16));
+        JMenuItem rawItem = new JMenuItem("new Agi() (via new AgiConfig(), no template)", AsiIcons.get(AsiIcons.Key.NEW_SESSION, 16));
         rawItem.setToolTipText("Create a clean session directly from createNewAgiConfig(), bypassing any default template");
         rawItem.addActionListener(e -> {
             if (!asiContainer.hasAnyProviderConfigured()) {
@@ -242,7 +243,7 @@ public abstract class AbstractAsiContainerDashboardPanel extends JPanel {
 
         menu.addSeparator();
 
-        JMenuItem manageItem = new JMenuItem("Manage Templates...", new SettingsIcon(16));
+        JMenuItem manageItem = new JMenuItem("Manage Templates...", AsiIcons.get(AsiIcons.Key.SETTINGS, 16));
         manageItem.addActionListener(e -> showSettings(1));
         menu.add(manageItem);
 

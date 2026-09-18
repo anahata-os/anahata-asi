@@ -48,6 +48,7 @@ import uno.anahata.asi.anthropic.AnthropicProvider;
 import uno.anahata.asi.openai.OpenAiResponsesProvider;
 import uno.anahata.asi.gemini.GeminiAiProvider;
 import uno.anahata.asi.swing.icons.PulseIcon;
+import uno.anahata.asi.swing.icons.AsiIcons;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.ExternalIcon;
 import uno.anahata.asi.swing.icons.IconUtils;
@@ -239,7 +240,7 @@ public class AbstractAiProviderPanel<P extends AbstractAiProvider> extends Scrol
         updatePromoBanner();
         formPanel.add(promoBannerContainer, "span, growx, center, wrap, gapbottom 12");
 
-        JButton removeBtn = new JButton("Delete", new DeleteIcon(16));
+        JButton removeBtn = new JButton("Delete", AsiIcons.get(AsiIcons.Key.DELETE, 16));
         removeBtn.setToolTipText("Remove Provider");
         removeBtn.addActionListener(e -> {
             if (this.removeCallback != null) {
@@ -247,7 +248,7 @@ public class AbstractAiProviderPanel<P extends AbstractAiProvider> extends Scrol
             }
         });
 
-        JButton saveBtn = new JButton("Save", new SaveIcon(16));
+        JButton saveBtn = new JButton("Save", AsiIcons.get(AsiIcons.Key.SAVE, 16));
         saveBtn.setToolTipText("Save Provider Configuration & API Keys");
         saveBtn.addActionListener(e -> {
             try {
@@ -260,7 +261,7 @@ public class AbstractAiProviderPanel<P extends AbstractAiProvider> extends Scrol
             }
         });
 
-        testConnectionBtn = new JButton("Test Connection", new PulseIcon(16));
+        testConnectionBtn = new JButton("Test Connection", AsiIcons.get(AsiIcons.Key.TEST_CONNECTION, 16));
         testConnectionBtn.addActionListener(e -> testConnection());
 
         JPanel headerRight = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
@@ -375,7 +376,7 @@ public class AbstractAiProviderPanel<P extends AbstractAiProvider> extends Scrol
             }
         });
         folderRow.add(chooseFileBtn);
-        JButton openFolderBtn = new JButton(new ExternalIcon(16));
+        JButton openFolderBtn = new JButton(AsiIcons.get(AsiIcons.Key.EXTERNAL, 16));
         openFolderBtn.setToolTipText("Open API Keys File in Desktop");
         openFolderBtn.addActionListener(e -> {
             try {

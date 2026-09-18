@@ -29,6 +29,7 @@ import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
 import uno.anahata.asi.swing.agi.resources.ResourceUI;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
 import uno.anahata.asi.swing.icons.CancelIcon;
+import uno.anahata.asi.swing.icons.AsiIcons;
 import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.icons.CopyIcon;
 import uno.anahata.asi.swing.internal.SwingUtils;
@@ -134,7 +135,7 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
                 langLabel.setForeground(theme.getMutedFg());
                 leftHeaderPanel.add(langLabel);
 
-                JButton copyButton = new JButton("Copy", new CopyIcon(12));
+                JButton copyButton = new JButton("Copy", AsiIcons.get(AsiIcons.Key.COPY, 12));
                 copyButton.setToolTipText("Copy Code to Clipboard");
                 copyButton.setFont(new Font("SansSerif", Font.PLAIN, 11));
                 copyButton.setMargin(new Insets(1, 5, 1, 5));
@@ -148,7 +149,7 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
                 addExtraHeaderButtons(leftHeaderPanel);
                 
                 if (editable) {
-                    cancelButton = new JButton("Cancel", new CancelIcon(12));
+                    cancelButton = new JButton("Cancel", AsiIcons.get(AsiIcons.Key.CANCEL, 12));
                     cancelButton.setFont(new Font("SansSerif", Font.PLAIN, 11));
                     cancelButton.setMargin(new Insets(1, 5, 1, 5));
                     cancelButton.setFocusPainted(false);
@@ -327,7 +328,7 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
         
         if (editButton != null) {
             editButton.setText(editing ? "Save" : "Edit");
-            editButton.setIcon(editing ? new RestartIcon(12) : null);
+            editButton.setIcon(editing ? AsiIcons.get(AsiIcons.Key.SAVE, 12) : null);
         }
         if (cancelButton != null) {
             cancelButton.setVisible(editing);

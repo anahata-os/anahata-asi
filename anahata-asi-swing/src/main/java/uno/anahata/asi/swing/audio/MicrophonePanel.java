@@ -62,11 +62,11 @@ public final class MicrophonePanel extends JPanel {
      * @param parentPanel The parent InputPanel.
      */
     public MicrophonePanel(InputPanel parentPanel) {
-        super(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        super(new FlowLayout(FlowLayout.LEFT, 2, 0));
         this.parentPanel = parentPanel;
         
-        micButton = new JToggleButton(new MicrophoneIcon(24));
-        micButton.setSelectedIcon(new RecordingIcon(24));
+        micButton = uno.anahata.asi.swing.internal.SwingUtils.compactIconButton(new JToggleButton(new MicrophoneIcon(20)));
+        micButton.setSelectedIcon(new RecordingIcon(20));
         micButton.setToolTipText("Click to start/stop recording");
         micButton.addActionListener(e -> toggleRecording());
         micButton.setEnabled(false);

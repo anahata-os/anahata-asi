@@ -39,6 +39,7 @@ import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.SwingAgiConfig.UITheme;
 import uno.anahata.asi.swing.icons.CopyIcon;
+import uno.anahata.asi.swing.icons.AsiIcons;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.LeafIcon;
 import uno.anahata.asi.swing.icons.LeafIcon.LeafState;
@@ -118,7 +119,7 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends Collapsi
         setTitleFont(new Font("SansSerif", Font.PLAIN, 11));
 
         // 2. Initialize Header Buttons and Labels
-        this.pinButton = new JToggleButton(new PinnedIcon(14));
+        this.pinButton = uno.anahata.asi.swing.internal.SwingUtils.compactIconButton(new JToggleButton(AsiIcons.get(AsiIcons.Key.PIN, 14)));
         this.pinButton.setToolTipText("Pin Part (Keep in context indefinitely)");
         this.pinButton.setMargin(new Insets(0, 2, 0, 2));
         this.pinButton.addActionListener(e -> {
@@ -131,12 +132,12 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends Collapsi
             part.setPruningState(pruneButton.isSelected() ? PruningState.PRUNED : PruningState.AUTO);
         });
 
-        this.copyButton = new JButton(new CopyIcon(14));
+        this.copyButton = uno.anahata.asi.swing.internal.SwingUtils.compactIconButton(new JButton(AsiIcons.get(AsiIcons.Key.COPY, 14)));
         this.copyButton.setToolTipText("Copy Part Content");
         this.copyButton.setMargin(new Insets(0, 2, 0, 2));
         this.copyButton.addActionListener(e -> copyToClipboard());
 
-        this.removeButton = new JButton(new DeleteIcon(14));
+        this.removeButton = uno.anahata.asi.swing.internal.SwingUtils.compactIconButton(new JButton(AsiIcons.get(AsiIcons.Key.DELETE, 14)));
         this.removeButton.setToolTipText("Remove Part");
         this.removeButton.setMargin(new Insets(0, 2, 0, 2));
         this.removeButton.addActionListener(e -> part.remove());
@@ -312,6 +313,7 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends Collapsi
         }
         
         pruneButton.setIcon(new LeafIcon(14, state));
+        uno.anahata.asi.swing.internal.SwingUtils.compactIconButton(pruneButton);
         
         String tooltip;
         if (part.isPruned()) {

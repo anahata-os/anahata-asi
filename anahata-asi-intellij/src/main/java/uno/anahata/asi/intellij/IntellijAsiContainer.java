@@ -67,6 +67,8 @@ public class IntellijAsiContainer extends AbstractSwingAsiContainer implements D
         // own light/dark flag. Set before any UITheme is constructed (this runs in the container's
         // static initializer, ahead of the tool-window dashboard build).
         SwingAgiConfig.setDarkModeDetector(() -> !JBColor.isBright());
+        // Render the shared UI's action buttons with native, theme-adaptive IntelliJ AllIcons.
+        uno.anahata.asi.swing.icons.AsiIcons.setProvider(new uno.anahata.asi.intellij.ui.IntellijAsiIcons());
         ParameterRendererFactory.register(FullTextResourceUpdate.class, IntellijTextResourceWriteRenderer.class);
         ParameterRendererFactory.register(TextResourceReplacements.class, IntellijTextResourceWriteRenderer.class);
         ParameterRendererFactory.register(TextResourceLineEdits.class, IntellijTextResourceWriteRenderer.class);

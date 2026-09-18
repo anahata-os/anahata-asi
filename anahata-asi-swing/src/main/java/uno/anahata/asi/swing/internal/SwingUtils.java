@@ -190,6 +190,47 @@ public class SwingUtils {
     }
 
     /**
+     * Total padding (in pixels) added around an icon to form the square size of an icon action
+     * button, chosen so a 16&nbsp;px icon yields a ~30&nbsp;px button matching IntelliJ's toolbar
+     * action buttons.
+     */
+    private static final int ICON_BUTTON_PADDING = 14;
+
+    /**
+     * Styles a button as a compact, borderless icon button so icon-only action buttons do not carry
+     * bulky push-button chrome.
+     * <p>
+     * Sets the FlatLaf {@code JButton.buttonType=toolBarButton} client property — honoured by the
+     * IntelliJ IDEA and standalone Desktop Look and Feels (both FlatLaf-based) and harmlessly ignored
+     * by others — together with a tight uniform margin and no focus painting.
+     * </p>
+     *
+     * @param button the button to compact (a {@link javax.swing.JButton} or
+     *               {@link javax.swing.JToggleButton}); {@code null} is ignored.
+     * @param <T>    the concrete button type, returned for call chaining.
+     * @return the same button.
+     */
+    public static <T extends javax.swing.AbstractButton> T compactIconButton(T button) {
+        if (button != null) {
+            button.putClientProperty("JButton.buttonType", "toolBarButton");
+            button.setMargin(new java.awt.Insets(2, 2, 2, 2));
+            button.setFocusPainted(false);
+            // Constrain the button to a square sized like an IntelliJ toolbar action button: enough
+            // padding around the icon to be a clearly-visible, comfortable click target, while
+            // overriding the wide minimum push-button width some LaFs (IntelliJ's New UI) impose.
+            javax.swing.Icon icon = button.getIcon();
+            if (icon != null) {
+                int side = Math.max(icon.getIconWidth(), icon.getIconHeight()) + ICON_BUTTON_PADDING;
+                java.awt.Dimension square = new java.awt.Dimension(side, side);
+                button.setPreferredSize(square);
+                button.setMinimumSize(square);
+                button.setMaximumSize(square);
+            }
+        }
+        return button;
+    }
+
+    /**
      * Copies a Java Image to the system clipboard.
      * <p>
      * Implementation details: Supports both {@link DataFlavor#imageFlavor} and
